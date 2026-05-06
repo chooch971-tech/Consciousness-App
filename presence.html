@@ -199,8 +199,8 @@
 
     /* CONCENTRATION SESSION */
     #concSessionScreen { justify-content:space-between; }
-    .conc-session-label { font-size:9px; letter-spacing:.25em; text-transform:uppercase; color:#d4956e; text-align:center; margin-bottom:8px; }
-    .conc-elapsed-label { font-size:9px; letter-spacing:.2em; text-transform:uppercase; color:var(--muted); text-align:center; margin-top:8px; }
+    .conc-session-label { font-size:9px; letter-spacing:.25em; text-transform:uppercase; color:#d4956e; text-align:center; margin-bottom:24px; }
+    .conc-elapsed-label { font-size:9px; letter-spacing:.2em; text-transform:uppercase; color:var(--muted); text-align:center; margin-top:28px; }
 
     /* CONCENTRATION RESULT */
     #concResultScreen { justify-content:flex-start; overflow-y:auto; }
@@ -946,7 +946,7 @@
       <button class="session-end-btn" id="concStopBtn">Stop</button>
     </div>
     <div style="flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center;">
-      <div class="conc-session-label">focus on the seconds hand</div>
+      <div class="conc-session-label">focus on the tip of the seconds hand</div>
       <div class="clock-wrap">
         <svg class="clock-face" viewBox="0 0 200 200" id="concClock">
           <circle cx="100" cy="100" r="90" fill="none" stroke="var(--border2)" stroke-width="1"/>
@@ -957,7 +957,7 @@
       <div class="conc-elapsed-label">seconds held</div>
     </div>
     <div style="text-align:center; padding-bottom:16px;">
-      <button class="btn primary conc-btn" id="concStopBtn2" style="max-width:300px; margin:0 auto;">I Lost Focus</button>
+      <button class="btn primary conc-btn" id="concStopBtn2" style="max-width:300px; margin:0 auto;">Stop</button>
     </div>
   </div>
 
