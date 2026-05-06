@@ -4393,6 +4393,7 @@ function saveVisSessionResult() {
 
 // ── Exercise tab switching ──
 var currentExercise = 'clock';
+var concHistoryFrom = 'home';
 
 var EXERCISE_DEFS = {
   clock: {
@@ -4403,7 +4404,7 @@ var EXERCISE_DEFS = {
       var bestStr = best > 0
         ? (best >= 60 ? Math.floor(best/60) + 'm ' + (best%60) + 's' : best + 's')
         : 'No record yet';
-      return 'Fix your sight attentively and exclusively on the tip of the colored line moving around the dial. Do not think of anything else, just dispassionately watch the end of the hand steadily and incessantly revolving. At this moment you have no interest in the form, color, etc of the app or anything else, except the part you are watching intently.<br><br>Your eyes must not be distracted by anything and nothing in the world exists for you now, <em>except that moving colored line</em>.<br><br>Once a thought, word, or other kind of mental distraction forces its way in, you must immediately click &ldquo;Stop&rdquo; on the screen.<br><br>The goal of this exercise is to reach ten minutes of completely uninterrupted focus. The longer you can go, the better it will be for you. Do not be discouraged if building up this much concentration takes months. Everything will occur in due time. Lack of patience is the result of all human failures.<br><br><span style="display:block; margin-top:4px; font-size:9px; letter-spacing:.15em; text-transform:uppercase; color:#d4956e;">Current Record &nbsp;·&nbsp; ' + bestStr + '</span>';
+      return 'Fix your sight attentively and exclusively on the tip of the colored line moving around the dial. Do not think of anything else, just dispassionately watch the end of the hand steadily and incessantly revolving. At this moment you have no interest in the form, color, etc of the app or anything else, except the part you are watching intently.<br><br>Your eyes must not be distracted by anything and nothing in the world exists for you now, <em>except that moving colored line</em>.<br><br>Once a thought, word, or other kind of mental distraction forces its way in, you must immediately click &ldquo;Stop&rdquo; on the screen.<br><br>The goal of this exercise is to reach ten minutes of completely uninterrupted focus. The longer you can go, the better it will be for you. Do not be discouraged if building up this much concentration takes months. Everything will occur in due time. Lack of patience is the result of all human failures.<br><br><span style="display:block; margin-top:4px; font-size:9px; letter-spacing:.15em; text-transform:uppercase; color:#d4956e;">Current Record &nbsp;·&nbsp; ' + bestStr + '</span><span onclick="concHistoryFrom=\'exSetupScreen\'; renderConcHistory(); showScreen(\'concHistoryScreen\');" style="display:block; margin-top:8px; font-size:9px; letter-spacing:.15em; text-transform:uppercase; color:var(--accent); cursor:pointer; text-decoration:underline;">View History</span>';
     },
     setupHTML: '',
     begin: function() { startConcentration(); }
@@ -5782,10 +5783,14 @@ document.getElementById('modeConcentration').addEventListener('click', function(
 document.getElementById('modePrayer').addEventListener('click', function() { switchMode('prayer'); });
 document.getElementById('concStopBtn').addEventListener('click', function() { stopConcentration(); });
 document.getElementById('concStopBtn2').addEventListener('click', function() { stopConcentration(); });
-document.getElementById('concHistoryBtn').addEventListener('click', function() { renderConcHistory(); showScreen('concHistoryScreen'); });
+document.getElementById('concHistoryBtn').addEventListener('click', function() { concHistoryFrom='home'; renderConcHistory(); showScreen('concHistoryScreen'); });
 document.getElementById('concHistoryBack').addEventListener('click', function() {
-  showScreen('homeScreen');
-  switchMode('concentration');
+  if (concHistoryFrom === 'exSetupScreen') {
+    showScreen('exSetupScreen');
+  } else {
+    showScreen('homeScreen');
+    switchMode('concentration');
+  }
 });
 document.getElementById('concSaveBtn').addEventListener('click', saveConcResult);
 
