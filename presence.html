@@ -211,6 +211,7 @@
     /* CONCENTRATION HISTORY */
     #concHistoryScreen { overflow-y:auto; }
     #concHistoryScreen::-webkit-scrollbar { display:none; }
+    #concScrollArea::-webkit-scrollbar { display:none; }
     .conc-history-item { background:var(--surface); border:1px solid var(--border); border-radius:8px; padding:16px; margin-bottom:10px; }
     .conc-history-top { display:flex; justify-content:space-between; align-items:center; margin-bottom:4px; }
     .conc-history-date { font-size:10px; letter-spacing:.15em; color:var(--muted); }
@@ -664,7 +665,7 @@
         </div>
       </div>
       <!-- Exercise grid — scrollable area below hero -->
-      <div style="flex:1; overflow-y:auto; -webkit-overflow-scrolling:touch; min-height:0; padding-bottom:80px;">
+      <div style="flex:1; overflow-y:auto; -webkit-overflow-scrolling:touch; min-height:0; padding-bottom:80px; scrollbar-width:none; -ms-overflow-style:none;" id="concScrollArea">
         <!-- Level toggle -->
         <div style="display:flex; gap:8px; padding:0 0 16px 0;">
           <button class="conc-level-tab active" id="concLevelBeginner">Beginner</button>
@@ -3241,6 +3242,15 @@ function showConcResult(seconds) {
 function saveConcResult() {
   var seconds = parseInt(document.getElementById('concResultBig').textContent);
   var notes = document.getElementById('concNotes').value.trim();
+
+  // Sessions under 10 seconds don't count
+  if (seconds < 10) {
+    var div = document.getElementById('concAdaptWrap');
+    if (div) div.innerHTML = '<div class="adapt-card" style="border-color:rgba(212,149,110,.15); opacity:.7;">'
+      + '<div class="adapt-text" style="color:var(--muted);">Session too short to record. Keep going.</div>'
+      + '</div>';
+    return;
+  }
 
   // XP = seconds held (simple and clean)
   var xpEarned = seconds;
