@@ -666,9 +666,10 @@
       <!-- Exercise grid — scrollable area below hero -->
       <div style="flex:1; overflow-y:auto; -webkit-overflow-scrolling:touch; min-height:0; padding-bottom:80px; scrollbar-width:none; -ms-overflow-style:none;" id="concScrollArea">
         <!-- Level toggle -->
-        <div style="display:flex; gap:8px; padding:0 0 16px 0;">
+        <div style="display:flex; gap:8px; padding:0 0 16px 0; justify-content:center;">
           <button class="conc-level-tab active" id="concLevelBeginner">Beginner</button>
           <button class="conc-level-tab" id="concLevelIntermediate">Intermediate</button>
+          <button class="conc-level-tab" id="concLevelExpert">Expert</button>
         </div>
 
         <!-- Beginner grid -->
@@ -723,7 +724,18 @@
             <div class="exercise-card" style="opacity:.4; pointer-events:none; border-color:rgba(255,255,255,.08);">
               <div class="exercise-card-icon">✦</div>
               <div class="exercise-card-name">Coming Soon</div>
-              <div class="exercise-card-desc">More intermediate exercises in a future release. End of v0.1.</div>
+              <div class="exercise-card-desc">More intermediate exercises in a future release.</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Expert grid -->
+        <div id="concExpertGrid" style="display:none;">
+          <div class="exercise-grid">
+            <div class="exercise-card" style="opacity:.4; pointer-events:none; border-color:rgba(255,255,255,.08);">
+              <div class="exercise-card-icon">✦</div>
+              <div class="exercise-card-name">Coming Soon</div>
+              <div class="exercise-card-desc">Expert exercises are in development.</div>
             </div>
           </div>
         </div>
@@ -4613,19 +4625,18 @@ document.getElementById('exerciseGrid').addEventListener('click', function(e) {
 
 // Level tab toggle
 (function() {
-  var levelBeginner = document.getElementById('concLevelBeginner');
-  var levelIntermediate = document.getElementById('concLevelIntermediate');
-  if (levelBeginner) levelBeginner.addEventListener('click', function() {
-    levelBeginner.classList.add('active');
-    levelIntermediate.classList.remove('active');
-    document.getElementById('concBeginnerGrid').style.display = '';
-    document.getElementById('concIntermediateGrid').style.display = 'none';
-  });
-  if (levelIntermediate) levelIntermediate.addEventListener('click', function() {
-    levelIntermediate.classList.add('active');
-    levelBeginner.classList.remove('active');
-    document.getElementById('concBeginnerGrid').style.display = 'none';
-    document.getElementById('concIntermediateGrid').style.display = '';
+  var tabs = [
+    { btn: document.getElementById('concLevelBeginner'),     grid: document.getElementById('concBeginnerGrid') },
+    { btn: document.getElementById('concLevelIntermediate'), grid: document.getElementById('concIntermediateGrid') },
+    { btn: document.getElementById('concLevelExpert'),       grid: document.getElementById('concExpertGrid') }
+  ];
+  tabs.forEach(function(t) {
+    if (!t.btn) return;
+    t.btn.addEventListener('click', function() {
+      tabs.forEach(function(x) { x.btn.classList.remove('active'); x.grid.style.display = 'none'; });
+      t.btn.classList.add('active');
+      t.grid.style.display = '';
+    });
   });
 })();
 
