@@ -657,7 +657,7 @@
           <div id="concHomeSymbol" style="cursor:pointer;" title="Tap for rank details"></div>
           <div class="home-symbol-fill" id="concHomeSymbolFill" style="cursor:pointer;"></div>
         </div>
-        <div class="stats-row">
+        <div class="stats-row" style="margin-bottom:20px;">
           <div class="stat"><div class="stat-val" id="concStatXP" style="color:#d4b08e;">0</div><div class="stat-key">xp</div></div>
           <div class="stat"><div class="stat-val" id="concStatBest" style="color:#d4b08e;">0s</div><div class="stat-key">best</div></div>
           <div class="stat"><div class="stat-val" id="concStatSessions" style="color:#d4b08e;">0</div><div class="stat-key">sessions</div></div>
@@ -2959,6 +2959,13 @@ function saveConcState() {
   localStorage.setItem('presence_conc_v1', JSON.stringify(concState));
 }
 
+// A new "session" is counted only if 2+ hours have passed since the last saved exercise
+function isConcNewSession() {
+  if (!concState.history || !concState.history.length) return true;
+  var lastDate = new Date(concState.history[0].date);
+  return (Date.now() - lastDate.getTime()) >= 2 * 60 * 60 * 1000;
+}
+
 var concState = loadConcState();
 
 // ── Startup migration: recalculate concentration level from raw XP ─────────
@@ -3267,7 +3274,7 @@ function saveConcResult() {
   var xpEarned = seconds;
 
   concState.xp += xpEarned;
-  concState.totalSessions++;
+  if (isConcNewSession()) concState.totalSessions++;
   if (seconds > concState.bestSeconds) concState.bestSeconds = seconds;
 
   // Level up
@@ -4368,7 +4375,7 @@ function saveVisSessionResult() {
   var bestSec = visReps.reduce(function(a,r) { return r.seconds > a ? r.seconds : a; }, 0);
 
   concState.xp += totalXP;
-  concState.totalSessions++;
+  if (isConcNewSession()) concState.totalSessions++;
   if (bestSec > concState.bestSeconds) concState.bestSeconds = bestSec;
 
   var concPrevLevel2 = concState.level;
@@ -4746,7 +4753,7 @@ document.getElementById('visIntermediateFadedBtn').addEventListener('click', fun
   var xpEarned = 50; // flat XP for completing an intermediate session
   var prevLevel = concState.level;
   concState.xp += xpEarned;
-  concState.totalSessions++;
+  if (isConcNewSession()) concState.totalSessions++;
   while(concState.level < 777){
     if(concState.xp - concSumXpToLevel(concState.level) >= concXpForLevel(concState.level)){concState.level++;}else{break;}
   }
@@ -5383,7 +5390,7 @@ function saveAudResult() {
   var sound = SOUNDS.find(function(s) { return s.id === currentSound; });
 
   concState.xp += totalXP;
-  concState.totalSessions++;
+  if (isConcNewSession()) concState.totalSessions++;
   if (bestSec > concState.bestSeconds) concState.bestSeconds = bestSec;
 
   var concPrevLevelA = concState.level;
@@ -5598,7 +5605,7 @@ function saveTCResult() {
   }
 
   concState.xp += xpEarned;
-  concState.totalSessions++;
+  if (isConcNewSession()) concState.totalSessions++;
 
   var concPrevLevelTC = concState.level;
   while (concState.level < 777) {
@@ -5697,7 +5704,7 @@ function showAsanaResult(seconds) {
 
   var xpEarned = seconds;
   concState.xp += xpEarned;
-  concState.totalSessions++;
+  if (isConcNewSession()) concState.totalSessions++;
   if (seconds > (concState.bestAsanaSeconds || 0)) concState.bestAsanaSeconds = seconds;
 
   // Level up
@@ -9051,7 +9058,7 @@ function stopPoreBreath(completed){
 
     var prevLevel = concState.level;
     concState.xp += xpEarned;
-    concState.totalSessions++;
+    if (isConcNewSession()) concState.totalSessions++;
     while(concState.level < 777){
       var xpThis = concState.xp - concSumXpToLevel(concState.level);
       if(xpThis >= concXpForLevel(concState.level)){concState.level++;}else{break;}
