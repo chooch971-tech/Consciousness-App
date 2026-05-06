@@ -6313,6 +6313,50 @@ function renderBarChart(data, labels, color, height) {
   return '<svg width="100%" height="' + (height + 18) + '" viewBox="0 0 100 ' + (height + 18) + '" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">' + bars + labelsSVG + '</svg>';
 }
 
+function renderClockProgressChart(sessions) {
+  if (!sessions.length) return '<div style="text-align:center;color:var(--muted);font-size:11px;padding:20px 0;">No clock sessions yet.</div>';
+  if (sessions.length < 2) return '<div style="text-align:center;color:var(--muted);font-size:11px;padding:20px 0;">Complete more sessions to see your trend.</div>';
+  var height = 80;
+  var maxVal = Math.max(120, Math.max.apply(null, sessions.map(function(s) { return s.seconds; })));
+  var goalY = height - Math.round((600 / maxVal) * (height - 8));
+  var showGoalLine = maxVal >= 120;
+  var n = sessions.length;
+  var step = 100 / (n - 1);
+  var points = sessions.map(function(s, i) {
+    return (i * step).toFixed(1) + ',' + (height - Math.round((s.seconds / maxVal) * (height - 8))).toFixed(1);
+  }).join(' ');
+  var dots = sessions.map(function(s, i) {
+    var cx = (i * step).toFixed(1);
+    var cy = (height - Math.round((s.seconds / maxVal) * (height - 8))).toFixed(1);
+    var isBest = s.seconds === Math.max.apply(null, sessions.map(function(x) { return x.seconds; }));
+    return '<circle cx="' + cx + '" cy="' + cy + '" r="' + (isBest ? 3.5 : 2.5) + '" fill="' + (isBest ? '#e8b88a' : '#d4956e') + '" opacity="' + (isBest ? 1 : 0.75) + '"/>';
+  }).join('');
+  var firstDate = new Date(sessions[0].date).toLocaleDateString('en-US', { month:'short', day:'numeric' });
+  var lastDate = new Date(sessions[sessions.length - 1].date).toLocaleDateString('en-US', { month:'short', day:'numeric' });
+  var vbW = 200;
+  var stepPx = vbW / (n - 1);
+  var pointsPx = sessions.map(function(s, i) {
+    return (i * stepPx).toFixed(1) + ',' + (height - Math.round((s.seconds / maxVal) * (height - 8))).toFixed(1);
+  }).join(' ');
+  var dotsPx = sessions.map(function(s, i) {
+    var cx = (i * stepPx).toFixed(1);
+    var cy = (height - Math.round((s.seconds / maxVal) * (height - 8))).toFixed(1);
+    var isBest = s.seconds === Math.max.apply(null, sessions.map(function(x) { return x.seconds; }));
+    return '<circle cx="' + cx + '" cy="' + cy + '" r="' + (isBest ? 3.5 : 2.5) + '" fill="' + (isBest ? '#e8b88a' : '#d4956e') + '" opacity="' + (isBest ? 1 : 0.75) + '"/>';
+  }).join('');
+  var goalLinePx = showGoalLine && goalY > 0 && goalY < height
+    ? '<line x1="0" y1="' + goalY + '" x2="' + vbW + '" y2="' + goalY + '" stroke="#7eb8a4" stroke-width="0.8" stroke-dasharray="3,3" opacity="0.45"/>'
+      + '<text x="' + (vbW - 2) + '" y="' + (goalY - 2) + '" text-anchor="end" fill="rgba(126,184,164,.55)" font-size="7" font-family="DM Mono,monospace">10 min</text>'
+    : '';
+  return '<svg width="100%" height="' + (height + 20) + '" viewBox="0 0 ' + vbW + ' ' + (height + 20) + '" xmlns="http://www.w3.org/2000/svg">'
+    + goalLinePx
+    + '<polyline points="' + pointsPx + '" fill="none" stroke="#d4956e" stroke-width="1.5" stroke-linejoin="round" opacity="0.8"/>'
+    + dotsPx
+    + '<text x="0" y="' + (height + 15) + '" text-anchor="start" fill="rgba(221,216,206,.35)" font-size="7" font-family="DM Mono,monospace">' + firstDate + '</text>'
+    + '<text x="' + vbW + '" y="' + (height + 15) + '" text-anchor="end" fill="rgba(221,216,206,.35)" font-size="7" font-family="DM Mono,monospace">' + lastDate + '</text>'
+    + '</svg>';
+}
+
 function renderLineChart(data, color, height) {
   color = color || 'var(--accent)';
   height = height || 60;
@@ -6439,6 +6483,28 @@ function renderReport(period) {
     html += '<div class="report-chart"><div class="report-chart-title">Best Hold Per Session (sec)</div>' + renderBarChart(concChartData.values, concChartData.labels, '#d4956e', 56) + '</div>';
   }
   html += '</div>';
+
+  // ── Clock Progress chart (all-time trend) ──
+  var clockSessions = (concState.history || []).filter(function(s) {
+    return s.exercise !== 'asana' && s.type !== 'visualization' && s.type !== 'auditory' && s.type !== 'thought';
+  }).slice().reverse().slice(-50);
+  if (clockSessions.length >= 1) {
+    var clockBest = Math.max.apply(null, clockSessions.map(function(s) { return s.seconds; }));
+    var clockPct = Math.min(100, Math.round(clockBest / 600 * 1000) / 10);
+    html += '<div class="report-section">';
+    html += '<div class="report-section-title" style="color:#d4956e;">Clock Exercise</div>';
+    html += '<div class="report-cards">';
+    html += '<div class="report-card"><div class="report-card-val" style="color:#d4b08e;">' + clockSessions.length + '</div><div class="report-card-label">Total Sessions</div></div>';
+    html += '<div class="report-card"><div class="report-card-val" style="color:#d4b08e;">' + (clockBest >= 60 ? Math.floor(clockBest/60) + 'm ' + (clockBest%60) + 's' : clockBest + 's') + '</div><div class="report-card-label">Personal Best</div></div>';
+    html += '<div class="report-card" style="grid-column:span 2;"><div class="report-card-label" style="margin-bottom:6px;">Progress to 10 minutes</div>';
+    html += '<div style="height:4px;background:var(--border);border-radius:2px;overflow:hidden;margin-bottom:4px;"><div style="height:100%;width:' + clockPct + '%;background:linear-gradient(90deg,#d4956e,#e8b88a);border-radius:2px;transition:width .6s ease;"></div></div>';
+    html += '<div style="font-size:9px;color:var(--muted);">' + (Number.isInteger(clockPct) ? clockPct : clockPct.toFixed(1)) + '% of goal</div>';
+    html += '</div></div>';
+    if (clockSessions.length >= 2) {
+      html += '<div class="report-chart"><div class="report-chart-title">Hold Time Per Session</div>' + renderClockProgressChart(clockSessions) + '</div>';
+    }
+    html += '</div>';
+  }
 
   // ── Prayer stats ──
   var prayerDone = prayerState.todayDone ? prayerState.todayDone.length : 0;
