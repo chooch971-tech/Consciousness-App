@@ -4409,7 +4409,10 @@ var EXERCISE_DEFS = {
     icon: '&#9200;',
     name: 'Clock Exercise',
     desc: function() {
-      var best = concState.bestSeconds || 0;
+      var best = (concState.history || []).reduce(function(b, s) {
+        if (s.exercise === 'asana' || s.type === 'visualization' || s.type === 'auditory' || s.type === 'thought') return b;
+        return s.seconds > b ? s.seconds : b;
+      }, 0);
       var bestStr = best > 0
         ? (best >= 60 ? Math.floor(best/60) + 'm ' + (best%60) + 's' : best + 's')
         : 'No record yet';
