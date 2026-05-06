@@ -922,6 +922,58 @@
     </div>
   </div>
 
+  <!-- VISUALIZATION TUTORIAL SCREEN -->
+  <div class="screen" id="visTutorialScreen" style="overflow-y:auto;">
+    <div style="padding:max(env(safe-area-inset-top),44px) 24px 0; flex-shrink:0; display:flex; justify-content:space-between; align-items:center; margin-bottom:24px;">
+      <button class="history-back" id="visTutorialBack">&#8592; back</button>
+      <span style="font-size:9px; letter-spacing:.2em; text-transform:uppercase; color:#d4956e;">visualization</span>
+    </div>
+    <div style="padding:0 24px max(env(safe-area-inset-bottom),40px); scrollbar-width:none; -ms-overflow-style:none;">
+      <div style="font-family:Cormorant Garamond,serif; font-size:26px; font-weight:300; color:var(--text); margin-bottom:6px;">How to Practise</div>
+      <div style="font-family:Cormorant Garamond,serif; font-size:13px; font-weight:300; color:var(--muted); margin-bottom:32px; font-style:italic;">Visualization Concentration</div>
+
+      <div style="display:flex; flex-direction:column; gap:28px; font-size:13px; line-height:1.9; color:var(--muted);">
+
+        <div>
+          <div style="font-size:9px; letter-spacing:.25em; text-transform:uppercase; color:#d4956e; margin-bottom:10px;">The Goal</div>
+          <p>The aim of this exercise is to hold a clear, stable mental image of an object with the eyes closed — and to hold it <em style="color:#d4956e; font-style:italic;">without it fading, shifting, or being replaced by another thought</em>. The image should be sharp, correctly coloured, and still. When it fades or drifts, that is the end of one rep.</p>
+        </div>
+
+        <div>
+          <div style="font-size:9px; letter-spacing:.25em; text-transform:uppercase; color:#d4956e; margin-bottom:10px;">Step by Step</div>
+          <p style="margin-bottom:12px;"><strong style="color:var(--text); font-weight:400;">1. Study the object.</strong> Before closing your eyes, look at the object on screen carefully. Notice its colour, its edges, any shadows or highlights. Take as long as you need.</p>
+          <p style="margin-bottom:12px;"><strong style="color:var(--text); font-weight:400;">2. Close your eyes and build the image.</strong> With eyes closed, construct the object in your mind's eye exactly as you saw it. Do not rush. Place it in the centre of your inner field of vision.</p>
+          <p style="margin-bottom:12px;"><strong style="color:var(--text); font-weight:400;">3. Hold it.</strong> Keep the image present and stable. Do not let it shrink, blur, drift, or be replaced by another thought. The moment it disappears entirely — tap <em style="color:#d4956e; font-style:italic;">Image Faded</em>.</p>
+          <p><strong style="color:var(--text); font-weight:400;">4. Repeat.</strong> Each attempt is one rep. Begin again with the same or a different object. Over time, the image will stay longer.</p>
+        </div>
+
+        <div>
+          <div style="font-size:9px; letter-spacing:.25em; text-transform:uppercase; color:#d4956e; margin-bottom:10px;">What to Expect</div>
+          <p>In the beginning, the image may vanish within seconds. This is normal. The mind has not yet learned to hold a single thing. With daily practice the duration lengthens — first to thirty seconds, then to minutes. Bardon's standard for passing this exercise is a clear, stable image held for several minutes.</p>
+        </div>
+
+        <div>
+          <div style="font-size:9px; letter-spacing:.25em; text-transform:uppercase; color:#d4956e; margin-bottom:10px;">Common Mistakes</div>
+          <p style="margin-bottom:12px;">— Closing your eyes before you have studied the object thoroughly.</p>
+          <p style="margin-bottom:12px;">— Allowing the image to <em style="color:#d4956e; font-style:italic;">drift or animate</em> — it should be perfectly still.</p>
+          <p style="margin-bottom:12px;">— Waiting too long to tap Image Faded when the image is gone — honesty in logging is essential to real progress.</p>
+          <p>— Switching objects too frequently. Staying with one object until you can hold it clearly builds deeper concentration than variety.</p>
+        </div>
+
+        <div>
+          <div style="font-size:9px; letter-spacing:.25em; text-transform:uppercase; color:#d4956e; margin-bottom:10px;">Open Eyes Mode</div>
+          <p>In open eyes mode, the object remains visible on screen. Instead of recreating it from memory, you focus all attention on holding the visual perception steady — no wandering, no inner commentary, just the object. The image will fade automatically. When it does, your concentration has lapsed.</p>
+        </div>
+
+        <div style="border-top:1px solid var(--border); padding-top:24px;">
+          <p style="font-size:12px; font-style:italic; font-family:Cormorant Garamond,serif; color:var(--muted); line-height:1.8;">"The student should not be discouraged if at first the image will not obey. It is the nature of the untrained mind to resist. Persistence — quiet, daily, unhurried persistence — is the only method."</p>
+          <p style="font-size:9px; letter-spacing:.15em; color:rgba(212,149,110,.5); margin-top:10px; text-transform:uppercase;">— Franz Bardon, Initiation into Hermetics</p>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
   <!-- PRAYER SESSION SCREEN -->
   <div class="screen" id="prayerSessionScreen">
     <div style="padding:max(env(safe-area-inset-top),44px) 24px 0; display:flex; justify-content:space-between; align-items:center;">
@@ -4551,6 +4603,12 @@ function openExerciseSetup(ex) {
   document.getElementById('exSetupIcon').innerHTML = def.icon;
   document.getElementById('exSetupName').textContent = def.name;
   document.getElementById('exSetupDesc').innerHTML = typeof def.desc === 'function' ? def.desc() : def.desc;
+  if (ex === 'visual') {
+    document.getElementById('exSetupDesc').innerHTML +=
+      '<div style="margin-top:12px;">'
+      + '<button onclick="showScreen(\'visTutorialScreen\')" style="background:none; border:none; padding:0; font-family:\'DM Mono\',monospace; font-size:9px; letter-spacing:.15em; text-transform:uppercase; color:#d4956e; cursor:pointer; text-decoration:underline; text-underline-offset:3px;">Read Full Tutorial &nbsp;&#8594;</button>'
+      + '</div>';
+  }
   var contentEl = document.getElementById('exSetupContent');
   var html = typeof def.setupHTML === 'function' ? def.setupHTML() : def.setupHTML;
   contentEl.innerHTML = html;
@@ -4652,6 +4710,9 @@ document.getElementById('exSetupBack').addEventListener('click', function() {
   stopAllAudio();
   showScreen('homeScreen');
   switchMode('concentration');
+});
+document.getElementById('visTutorialBack').addEventListener('click', function() {
+  showScreen('exSetupScreen');
 });
 
 document.getElementById('exSetupBeginBtn').addEventListener('click', function() {
