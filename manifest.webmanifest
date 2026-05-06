@@ -1,0 +1,16 @@
+{
+  "name": "Presence",
+  "short_name": "Presence",
+  "start_url": "./presence.html",
+  "display": "standalone",
+  "background_color": "#07080d",
+  "theme_color": "#07080d",
+  "icons": [
+    {
+      "src": "./presence-icon-redesign.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
