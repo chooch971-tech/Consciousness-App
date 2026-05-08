@@ -527,6 +527,20 @@
         </div>
       </div>
 
+      <!-- Custom Visualization Images -->
+      <div style="margin-bottom:32px;">
+        <div style="font-size:9px; letter-spacing:.25em; text-transform:uppercase; color:var(--muted); margin-bottom:16px;">Visualization Images</div>
+        <div style="background:rgba(255,255,255,.03); border:1px solid var(--border); border-radius:10px; padding:16px 18px;">
+          <div style="font-size:12px; color:var(--text); margin-bottom:4px;">Custom images</div>
+          <div style="font-size:10px; color:var(--muted); line-height:1.6; margin-bottom:14px;">Upload your own images to use in Visualization sessions. They will appear under a Custom tab.</div>
+          <label style="display:block; width:100%; box-sizing:border-box; text-align:center; padding:10px; border:1px solid rgba(212,149,110,.35); border-radius:6px; font-family:'DM Mono',monospace; font-size:9px; letter-spacing:.15em; text-transform:uppercase; color:#d4956e; cursor:pointer; margin-bottom:14px;">
+            + Upload Image
+            <input type="file" id="customVisUpload" accept="image/*" multiple style="display:none;"/>
+          </label>
+          <div id="customVisImageList"></div>
+        </div>
+      </div>
+
       <div style="font-size:9px; color:var(--muted); opacity:.5; text-align:center; line-height:1.8; padding:0 8px;">
         Backups contain all your data in a single JSON file.<br>To move to a new device: export here, transfer the file, import there.
       </div>
@@ -2844,6 +2858,34 @@ document.getElementById('drawerSettings').addEventListener('click', function() {
     document.getElementById('syncLoginBtn').style.display = 'block';
   }
   showScreen('settingsScreen');
+  renderCustomVisImageList();
+});
+
+document.getElementById('customVisUpload').addEventListener('change', function(e) {
+  var files = Array.from(e.target.files);
+  if (!files.length) return;
+  var imgs = loadCustomVisImages();
+  var remaining = files.length;
+  files.forEach(function(file) {
+    var reader = new FileReader();
+    reader.onload = function(ev) {
+      resizeImageForStorage(ev.target.result, function(dataUrl) {
+        imgs.push({
+          id: Date.now() + '_' + Math.random().toString(36).substr(2, 6),
+          name: file.name.replace(/\.[^/.]+$/, ''),
+          dataUrl: dataUrl
+        });
+        remaining--;
+        if (remaining === 0) {
+          saveCustomVisImages(imgs);
+          renderCustomVisImageList();
+          showToast(files.length === 1 ? '1 image added' : files.length + ' images added');
+        }
+      });
+    };
+    reader.readAsDataURL(file);
+  });
+  e.target.value = '';
 });
 
 document.getElementById('syncLogoutBtn').addEventListener('click', function() {
@@ -3653,6 +3695,50 @@ var VIS_HOUSEHOLD = [
   { shape:'emoji', emoji:'🐚', label:'Shell'       },
 ];
 
+// ── Custom Visualization Images ──────────────────────────
+function loadCustomVisImages() {
+  try { var s = localStorage.getItem('presence_custom_vis'); return s ? JSON.parse(s) : []; } catch(e) { return []; }
+}
+function saveCustomVisImages(imgs) {
+  try { localStorage.setItem('presence_custom_vis', JSON.stringify(imgs)); } catch(e) { showToast('Storage full — try deleting some images.', 3000); }
+}
+function deleteCustomVisImage(id) {
+  saveCustomVisImages(loadCustomVisImages().filter(function(img) { return img.id !== id; }));
+  renderCustomVisImageList();
+}
+function renderCustomVisImageList() {
+  var list = document.getElementById('customVisImageList');
+  if (!list) return;
+  var imgs = loadCustomVisImages();
+  if (!imgs.length) {
+    list.innerHTML = '<div style="font-size:10px;color:var(--muted);text-align:center;padding:4px 0;opacity:.6;">No images uploaded yet.</div>';
+    return;
+  }
+  list.innerHTML = imgs.map(function(img) {
+    return '<div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--border);">'
+      + '<img src="' + img.dataUrl + '" style="width:40px;height:40px;object-fit:cover;border-radius:4px;flex-shrink:0;">'
+      + '<span style="flex:1;font-size:10px;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + img.name.replace(/</g,'&lt;') + '</span>'
+      + '<button onclick="deleteCustomVisImage(\'' + img.id + '\')" style="background:none;border:none;color:var(--muted);font-size:14px;cursor:pointer;padding:4px 6px;flex-shrink:0;">✕</button>'
+      + '</div>';
+  }).join('');
+}
+// Resize image to max 800px before storing (keeps localStorage manageable)
+function resizeImageForStorage(dataUrl, callback) {
+  var img = new Image();
+  img.onload = function() {
+    var max = 800, w = img.width, h = img.height;
+    if (w > max || h > max) {
+      var scale = max / Math.max(w, h);
+      w = Math.round(w * scale); h = Math.round(h * scale);
+    }
+    var canvas = document.createElement('canvas');
+    canvas.width = w; canvas.height = h;
+    canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+    callback(canvas.toDataURL('image/jpeg', 0.85));
+  };
+  img.src = dataUrl;
+}
+
 var VIS_REALLIFE = [
   { shape:'photo', src:'https://commons.wikimedia.org/wiki/Special:FilePath/Candle_flame.JPG?width=600',                label:'Candle'          },
   { shape:'photo', src:'https://commons.wikimedia.org/wiki/Special:FilePath/Red_rose.jpg?width=600',                    label:'Red Rose'        },
@@ -4177,6 +4263,12 @@ function switchVisDifficulty(diff) {
 }
 
 function pickVisObject() {
+  if (currentVisCategory === 'custom') {
+    var customImgs = loadCustomVisImages();
+    if (!customImgs.length) return VIS_SHAPES[0];
+    var c = customImgs[Math.floor(Math.random() * customImgs.length)];
+    return { shape: 'photo', src: c.dataUrl, label: c.name };
+  }
   var pool = currentVisCategory === 'objects'  ? VIS_HOUSEHOLD
             : currentVisCategory === 'complex'  ? VIS_COMPLEX
             : currentVisCategory === 'reallife' ? VIS_REALLIFE
@@ -4617,10 +4709,11 @@ var EXERCISE_DEFS = {
     desc: 'Study the object below, then close your eyes and hold its image in your mind. When the image fades, tap Image Faded. Build the clarity and stability of your inner vision.',
     setupHTML: function() {
       return '<div>'
-        + '<div style="display:flex; gap:8px; margin-bottom:16px;">'
+        + '<div style="display:flex; gap:8px; margin-bottom:16px; flex-wrap:wrap;">'
         + '<button class="exercise-tab active" id="visCatShapes" style="font-size:8px; padding:6px 12px;">Shapes</button>'
         + '<button class="exercise-tab" id="visCatObjects" style="font-size:8px; padding:6px 12px;">Objects</button>'
         + '<button class="exercise-tab" id="visCatRealLife" style="font-size:8px; padding:6px 12px;">Real Life</button>'
+        + (loadCustomVisImages().length ? '<button class="exercise-tab" id="visCatCustom" style="font-size:8px; padding:6px 12px;">Custom</button>' : '')
         + '</div>'
         + '<div style="display:flex; align-items:center; gap:10px; margin-bottom:24px;">'
         + '<span style="font-size:9px; letter-spacing:.15em; text-transform:uppercase; color:var(--muted);">Closed Eyes</span>'
@@ -4717,6 +4810,8 @@ function openExerciseSetup(ex) {
     if (objectsBtn2) objectsBtn2.addEventListener('click', function() { switchVisCategory('objects'); });
     var realLifeBtn2 = document.getElementById('visCatRealLife');
     if (realLifeBtn2) realLifeBtn2.addEventListener('click', function() { switchVisCategory('reallife'); });
+    var customBtn2 = document.getElementById('visCatCustom');
+    if (customBtn2) customBtn2.addEventListener('click', function() { switchVisCategory('custom'); });
     // Open/closed eyes toggle
     var modeToggle = document.getElementById('visModeToggle');
     var modeDot = document.getElementById('visModeDot');
@@ -4807,9 +4902,11 @@ function switchVisCategory(cat) {
   var shapesBtn = document.getElementById('visCatShapes');
   var objectsBtn = document.getElementById('visCatObjects');
   var realLifeBtn = document.getElementById('visCatRealLife');
+  var customBtn = document.getElementById('visCatCustom');
   if (shapesBtn) shapesBtn.classList.toggle('active', cat === 'shapes');
   if (objectsBtn) objectsBtn.classList.toggle('active', cat === 'objects');
   if (realLifeBtn) realLifeBtn.classList.toggle('active', cat === 'reallife');
+  if (customBtn) customBtn.classList.toggle('active', cat === 'custom');
   setupVisPreview();
 }
 // visCat listeners wired dynamically in openExerciseSetup
