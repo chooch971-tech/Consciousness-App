@@ -5743,6 +5743,12 @@ function recordThought() {
 function endThoughtControl(completed) {
   cancelAnimationFrame(tcTimerHandle);
   var elapsed = Math.floor((Date.now() - tcStartTime) / 1000);
+  // Under 1 minute and stopped early — no XP, just return to Concentration
+  if (!completed && elapsed < 60) {
+    showScreen('homeScreen');
+    switchMode('concentration');
+    return;
+  }
   if (completed) playTCAlarm();
   showTCResult(elapsed, completed);
 }
