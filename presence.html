@@ -680,7 +680,7 @@
           <div class="exercise-grid" id="exerciseGrid">
             <div class="exercise-card" data-exercise="clock">
               <div class="exercise-card-icon">&#9200;</div>
-              <div class="exercise-card-name">Clock</div>
+              <div class="exercise-card-name">Clock<span id="clockMasteredStar" style="display:none; color:#c0403a; margin-left:3px;">*</span></div>
               <div class="exercise-card-desc">Follow the seconds hand. Stop when focus breaks.</div>
             </div>
             <div class="exercise-card" data-exercise="visual">
@@ -3253,6 +3253,13 @@ function renderConcHome() {
     concSym.innerHTML = renderSymbolSVG(cGroup.id, '#d4956e', 36);
     if (concSymFill) concSymFill.textContent = getSymbolLevelRoman(concState.level);
   }
+  // Show mastered asterisk on Clock card if clock-only best >= 15 min
+  var clockBest = (concState.history || []).reduce(function(b, s) {
+    if (s.exercise === 'asana' || s.type === 'visualization' || s.type === 'auditory' || s.type === 'thought') return b;
+    return s.seconds > b ? s.seconds : b;
+  }, 0);
+  var star = document.getElementById('clockMasteredStar');
+  if (star) star.style.display = clockBest >= 900 ? 'inline' : 'none';
 }
 
 var concCountInterval = null; // track countdown so we can cancel it
