@@ -544,6 +544,20 @@
         </div>
       </div>
 
+      <!-- Custom Auditory Sounds -->
+      <div style="margin-bottom:32px;">
+        <div style="font-size:9px; letter-spacing:.25em; text-transform:uppercase; color:var(--muted); margin-bottom:16px;">Auditory Sounds</div>
+        <div style="background:rgba(255,255,255,.03); border:1px solid var(--border); border-radius:10px; padding:16px 18px;">
+          <div style="font-size:12px; color:var(--text); margin-bottom:4px;">Custom sounds</div>
+          <div style="font-size:10px; color:var(--muted); line-height:1.6; margin-bottom:14px;">Upload your own audio files to use in Auditory sessions. They will appear at the bottom of the sound selector.</div>
+          <label style="display:block; width:100%; box-sizing:border-box; text-align:center; padding:10px; border:1px solid rgba(110,184,164,.35); border-radius:6px; font-family:'DM Mono',monospace; font-size:9px; letter-spacing:.15em; text-transform:uppercase; color:#6eb8a4; cursor:pointer; margin-bottom:14px;">
+            + Upload Sound
+            <input type="file" id="customAudUpload" accept="audio/*" multiple style="display:none;"/>
+          </label>
+          <div id="customAudSoundList"></div>
+        </div>
+      </div>
+
       <div style="font-size:9px; color:var(--muted); opacity:.5; text-align:center; line-height:1.8; padding:0 8px;">
         Backups contain all your data in a single JSON file.<br>To move to a new device: export here, transfer the file, import there.
       </div>
@@ -2862,6 +2876,7 @@ document.getElementById('drawerSettings').addEventListener('click', function() {
   }
   showScreen('settingsScreen');
   renderCustomVisImageList();
+  renderCustomAudSoundList();
 });
 
 document.getElementById('customVisUpload').addEventListener('change', function(e) {
@@ -2890,6 +2905,37 @@ document.getElementById('customVisUpload').addEventListener('change', function(e
           showToast(files.length === 1 ? '1 image added' : files.length + ' images added');
         }
       });
+    };
+    reader.readAsDataURL(file);
+  });
+  e.target.value = '';
+});
+
+document.getElementById('customAudUpload').addEventListener('change', function(e) {
+  var files = Array.from(e.target.files);
+  if (!files.length) return;
+  var MAX_SIZE = 5 * 1024 * 1024; // 5 MB cap
+  var oversized = files.filter(function(f) { return f.size > MAX_SIZE; });
+  files = files.filter(function(f) { return f.size <= MAX_SIZE && f.type.indexOf('audio/') === 0; });
+  if (oversized.length) showToast('Skipped ' + oversized.length + ' file(s) over 5 MB.', 3000);
+  if (!files.length) { e.target.value = ''; return; }
+  var sounds = loadCustomAudSounds();
+  var remaining = files.length;
+  files.forEach(function(file) {
+    var reader = new FileReader();
+    reader.onload = function(ev) {
+      sounds.push({
+        id: 'custom_' + Date.now() + '_' + Math.random().toString(36).substr(2, 6),
+        name: file.name.replace(/\.[^/.]+$/, ''),
+        dataUrl: ev.target.result
+      });
+      remaining--;
+      if (remaining === 0) {
+        saveCustomAudSounds(sounds);
+        renderCustomAudSoundList();
+        if (document.getElementById('soundGrid')) buildSoundGrid();
+        showToast(files.length === 1 ? '1 sound added' : files.length + ' sounds added');
+      }
     };
     reader.readAsDataURL(file);
   });
@@ -3710,6 +3756,39 @@ var VIS_HOUSEHOLD = [
 ];
 
 // ── Custom Visualization Images ──────────────────────────
+function loadCustomAudSounds() {
+  try { var s = localStorage.getItem('presence_custom_aud'); return s ? JSON.parse(s) : []; } catch(e) { return []; }
+}
+function saveCustomAudSounds(sounds) {
+  try { localStorage.setItem('presence_custom_aud', JSON.stringify(sounds)); } catch(e) { showToast('Storage full — try deleting some sounds.', 3000); }
+}
+function deleteCustomAudSound(id) {
+  saveCustomAudSounds(loadCustomAudSounds().filter(function(s) { return s.id !== id; }));
+  renderCustomAudSoundList();
+  if (document.getElementById('soundGrid')) buildSoundGrid();
+}
+function renderCustomAudSoundList() {
+  var list = document.getElementById('customAudSoundList');
+  if (!list) return;
+  var sounds = loadCustomAudSounds();
+  if (!sounds.length) {
+    list.innerHTML = '<div style="font-size:10px;color:var(--muted);text-align:center;padding:4px 0;opacity:.6;">No sounds uploaded yet.</div>';
+    return;
+  }
+  list.innerHTML = sounds.map(function(s) {
+    return '<div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--border);">'
+      + '<span style="font-size:18px;flex-shrink:0;">&#127911;</span>'
+      + '<span style="flex:1;font-size:10px;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + s.name.replace(/</g,'&lt;') + '</span>'
+      + '<button onclick="deleteCustomAudSound(\'' + s.id + '\')" style="background:none;border:none;color:var(--muted);font-size:14px;cursor:pointer;padding:4px 6px;flex-shrink:0;">✕</button>'
+      + '</div>';
+  }).join('');
+}
+function getAudSoundLabel(id) {
+  var s = SOUNDS.find(function(x) { return x.id === id; });
+  if (s) return s.label;
+  var c = loadCustomAudSounds().find(function(x) { return x.id === id; });
+  return c ? c.name : id;
+}
 function loadCustomVisImages() {
   try { var s = localStorage.getItem('presence_custom_vis'); return s ? JSON.parse(s) : []; } catch(e) { return []; }
 }
@@ -5109,6 +5188,7 @@ var audCtx = null;
 var audNodes = []; // active audio nodes to stop
 var audLoopHandle = null;
 var currentSound = 'bowl';
+var customAudElement = null; // <audio> element for custom uploaded sounds
 var audSessionStartTime = null;
 var audRepStartTime = null;
 var audTimerHandle = null;
@@ -5131,6 +5211,7 @@ function stopAllAudio() {
   audNodes.forEach(function(n) { try { n.stop(); } catch(e) {} });
   audNodes = [];
   if (audLoopHandle) { clearTimeout(audLoopHandle); audLoopHandle = null; }
+  if (customAudElement) { customAudElement.pause(); customAudElement.src = ''; customAudElement = null; }
 }
 
 function playGong(ctx, when, volume) {
@@ -5394,8 +5475,23 @@ function playPsychedelic(ctx, when) {
 // Sustained sounds need looping
 var SUSTAINED_SOUNDS = ['creek', 'rain', 'om', 'binaural', 'psychedelic'];
 
+function playCustomSound(id) {
+  var sounds = loadCustomAudSounds();
+  var sound = sounds.find(function(s) { return s.id === id; });
+  if (!sound) return;
+  var audio = new Audio(sound.dataUrl);
+  audio.loop = true;
+  audio.volume = 0.75;
+  audio.play().catch(function() {});
+  customAudElement = audio;
+}
+
 function playSound(soundId) {
   stopAllAudio();
+  if (soundId.indexOf('custom_') === 0) {
+    playCustomSound(soundId);
+    return;
+  }
   var ctx = getAudCtx();
   var when = ctx.currentTime + 0.05;
 
@@ -5454,7 +5550,13 @@ function stopWaveAnimation() {
 function buildSoundGrid() {
   var grid = document.getElementById('soundGrid');
   if (!grid) return;
-  grid.innerHTML = SOUNDS.map(function(s) {
+  var customSounds = loadCustomAudSounds();
+  var allSounds = SOUNDS.map(function(s) {
+    return { id: s.id, label: s.label, icon: s.icon };
+  }).concat(customSounds.map(function(s) {
+    return { id: s.id, label: s.name.replace(/</g, '&lt;'), icon: '&#127911;' };
+  }));
+  grid.innerHTML = allSounds.map(function(s) {
     var sel = s.id === currentSound ? ' selected' : '';
     return '<button class="sound-btn' + sel + '" data-sound="' + s.id + '">'
       + '<span class="sound-icon">' + s.icon + '</span>' + s.label + '</button>';
@@ -5472,7 +5574,7 @@ function selectSound(id) {
   // Preview the sound briefly
   playSound(id);
   // Auto-stop preview after 3 seconds (except sustained)
-  if (SUSTAINED_SOUNDS.indexOf(id) === -1) {
+  if (SUSTAINED_SOUNDS.indexOf(id) === -1 && id.indexOf('custom_') !== 0) {
     setTimeout(function() {
       // Only stop if still on home (not in session)
       if (document.getElementById('audSessionScreen').style.display === 'none' ||
@@ -5490,8 +5592,7 @@ function startAuditorySession() {
   audRepActive = false;
   audSessionStartTime = null; // will be set when user clicks Start
 
-  var sound = SOUNDS.find(function(s) { return s.id === currentSound; });
-  document.getElementById('audSoundName').textContent = sound ? sound.label : currentSound;
+  document.getElementById('audSoundName').textContent = getAudSoundLabel(currentSound);
   document.getElementById('audStateLabel').textContent = 'Listen to the sound.\nTap Start when ready to concentrate.';
   document.getElementById('audRepCount').textContent = '';
   document.getElementById('audHaltCount').textContent = '';
@@ -5614,7 +5715,6 @@ function showAudResult() {
   document.getElementById('audNotes').value = '';
   document.getElementById('audAdaptWrap').innerHTML = '';
 
-  var sound = SOUNDS.find(function(s) { return s.id === currentSound; });
   var wrap = document.getElementById('audRepsWrap');
   if (wrap) {
     wrap.innerHTML = audReps.map(function(r, i) {
@@ -5641,8 +5741,6 @@ function saveAudResult() {
   var notes = document.getElementById('audNotes').value.trim();
   var totalXP = audReps.reduce(function(a,r) { return a + r.seconds; }, 0);
   var bestSec = audReps.reduce(function(a,r) { return r.seconds > a ? r.seconds : a; }, 0);
-  var sound = SOUNDS.find(function(s) { return s.id === currentSound; });
-
   concState.xp += totalXP;
   if (isConcNewSession()) concState.totalSessions++;
   if (bestSec > concState.bestSeconds) concState.bestSeconds = bestSec;
@@ -5661,7 +5759,7 @@ function saveAudResult() {
     reps: audReps.length,
     notes: notes,
     type: 'auditory',
-    object: sound ? sound.label : currentSound
+    object: getAudSoundLabel(currentSound)
   });
   if (concState.history.length > 100) concState.history = concState.history.slice(0, 100);
   saveConcState();
