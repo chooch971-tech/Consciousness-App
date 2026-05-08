@@ -199,8 +199,10 @@
 
     /* CONCENTRATION SESSION */
     #concSessionScreen { justify-content:space-between; }
-    .conc-session-label { font-size:9px; letter-spacing:.25em; text-transform:uppercase; color:#d4956e; text-align:center; margin-bottom:24px; }
+    .conc-session-label { font-size:9px; letter-spacing:.25em; text-transform:uppercase; color:#d4956e; text-align:center; margin-bottom:24px; transition:opacity .6s ease; }
     .conc-elapsed-label { font-size:9px; letter-spacing:.2em; text-transform:uppercase; color:var(--muted); text-align:center; margin-top:28px; }
+    @keyframes concLabelFlash { 0%,100% { opacity:1; } 50% { opacity:0; } }
+    .conc-label-flash { animation: concLabelFlash .9s ease-in-out infinite; }
 
     /* CONCENTRATION RESULT */
     #concResultScreen { justify-content:flex-start; overflow-y:auto; }
@@ -1011,15 +1013,13 @@
       <button class="session-end-btn" id="concStopBtn">Stop</button>
     </div>
     <div style="flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center;">
-      <div class="conc-session-label">focus on the tip of the seconds hand</div>
+      <div class="conc-session-label" id="concSessionLabel">focus on the tip of the seconds hand</div>
       <div class="clock-wrap">
         <svg class="clock-face" viewBox="0 0 200 200" id="concClock">
           <circle cx="100" cy="100" r="90" fill="none" stroke="var(--border2)" stroke-width="1"/>
         </svg>
-        <div class="clock-elapsed" id="concElapsed">0</div>
         <div class="clock-countdown" id="clockCountdown"></div>
       </div>
-      <div class="conc-elapsed-label">seconds held</div>
     </div>
     <div style="text-align:center; padding-bottom:16px;">
       <button class="btn primary conc-btn" id="concStopBtn2" style="max-width:300px; margin:0 auto;">Stop</button>
@@ -3245,8 +3245,11 @@ function startConcentration() {
   concSeconds = 0;
   buildClockSVG();
   updateClockHand(0);
-  document.getElementById('concElapsed').textContent = '';
   showScreen('concSessionScreen');
+
+  // Reset and flash the label
+  var sessionLabel = document.getElementById('concSessionLabel');
+  if (sessionLabel) { sessionLabel.style.opacity = '1'; sessionLabel.classList.add('conc-label-flash'); }
 
   // Disable stop buttons during countdown
   var stopBtn = document.getElementById('concStopBtn');
@@ -3254,9 +3257,9 @@ function startConcentration() {
   if (stopBtn) { stopBtn.disabled = true; stopBtn.style.opacity = '0.3'; }
   if (stopBtn2) { stopBtn2.disabled = true; stopBtn2.style.opacity = '0.3'; }
 
-  // 3-second countdown before hand starts moving
+  // 5-second countdown before hand starts moving
   var countdown = document.getElementById('clockCountdown');
-  var count = 3;
+  var count = 5;
   if (countdown) { countdown.textContent = count; countdown.classList.add('show'); }
 
   if (concCountInterval) clearInterval(concCountInterval);
@@ -3268,7 +3271,11 @@ function startConcentration() {
       clearInterval(concCountInterval);
       concCountInterval = null;
       if (countdown) { countdown.classList.remove('show'); countdown.textContent = ''; }
-      document.getElementById('concElapsed').textContent = '0';
+      // Fade out the label then hide it
+      if (sessionLabel) {
+        sessionLabel.classList.remove('conc-label-flash');
+        sessionLabel.style.opacity = '0';
+      }
       // Re-enable stop buttons
       if (stopBtn) { stopBtn.disabled = false; stopBtn.style.opacity = ''; }
       if (stopBtn2) { stopBtn2.disabled = false; stopBtn2.style.opacity = ''; }
@@ -3283,7 +3290,6 @@ function tickConcentration() {
   if (!concStartTime) return; // guard against null startTime
   var elapsedMs = Date.now() - concStartTime;
   concSeconds = Math.floor(elapsedMs / 1000);
-  document.getElementById('concElapsed').textContent = concSeconds;
   updateClockHand(elapsedMs);
   concTimerHandle = requestAnimationFrame(tickConcentration);
 }
