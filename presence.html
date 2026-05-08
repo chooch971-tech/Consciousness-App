@@ -216,6 +216,7 @@
     #concHistoryScreen { overflow-y:auto; }
     #concHistoryScreen::-webkit-scrollbar { display:none; }
     #concScrollArea::-webkit-scrollbar { display:none; }
+    #settingsScrollBody::-webkit-scrollbar { display:none; }
     .conc-history-item { background:var(--surface); border:1px solid var(--border); border-radius:8px; padding:16px; margin-bottom:10px; }
     .conc-history-top { display:flex; justify-content:space-between; align-items:center; margin-bottom:4px; }
     .conc-history-date { font-size:10px; letter-spacing:.15em; color:var(--muted); }
@@ -495,7 +496,7 @@
       <div style="font-family:Cormorant Garamond,serif; font-size:24px; font-weight:300;">Settings</div>
       <button class="history-back" id="settingsBack">← back</button>
     </div>
-    <div style="flex:1; overflow-y:auto; -webkit-overflow-scrolling:touch;">
+    <div id="settingsScrollBody" style="flex:1; overflow-y:auto; -webkit-overflow-scrolling:touch; scrollbar-width:none; -ms-overflow-style:none;">
 
       <!-- Cloud Sync Status -->
       <div style="margin-bottom:32px;">
