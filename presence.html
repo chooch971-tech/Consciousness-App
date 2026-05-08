@@ -307,6 +307,7 @@
     .tc-intrusion-count { font-size:10px; letter-spacing:.2em; text-transform:uppercase; color:var(--muted); margin-top:8px; }
     .tc-instruction { font-family:Cormorant Garamond,serif; font-size:16px; font-style:italic; color:var(--muted); margin-top:16px; }
     @keyframes tcFlash { 0%{opacity:0;transform:scale(0.8)} 20%{opacity:1;transform:scale(1.05)} 60%{opacity:1;transform:scale(1)} 100%{opacity:0} }
+    @keyframes tcCountPop { 0%{opacity:0;transform:scale(1.2)} 12%{opacity:1;transform:scale(1)} 75%{opacity:1;transform:scale(1)} 100%{opacity:0;transform:scale(0.85)} }
     .tc-intrusion-flash { position:fixed; top:50%; left:50%; transform:translate(-50%,-50%); font-family:Cormorant Garamond,serif; font-size:36px; font-style:italic; color:#a47eb8; pointer-events:none; z-index:20; opacity:0; white-space:nowrap; }
     .tc-intrusion-flash.show { animation:tcFlash 1s ease forwards; }
     .tc-duration-picker { display:flex; flex-direction:column; align-items:center; gap:16px; width:100%; }
@@ -1204,7 +1205,7 @@
     <!-- Countdown overlay -->
     <div id="tcCountdownOverlay" style="display:none; position:absolute; inset:0; z-index:50; background:var(--bg); flex-direction:column; align-items:center; justify-content:center; text-align:center;">
       <div style="font-size:9px; letter-spacing:.3em; text-transform:uppercase; color:var(--muted); margin-bottom:24px;">prepare your mind</div>
-      <div id="tcCountdownNum" style="font-family:Cormorant Garamond,serif; font-size:120px; font-weight:300; color:#c4a8d4; line-height:1; transition:opacity .2s;"></div>
+      <div id="tcCountdownNum" style="font-family:Cormorant Garamond,serif; font-size:120px; font-weight:300; color:#c4a8d4; line-height:1;"></div>
     </div>
   </div>
 
@@ -5684,27 +5685,28 @@ function startThoughtControl() {
   var numEl = document.getElementById('tcCountdownNum');
   overlay.style.display = 'flex';
   var count = 3;
-  numEl.textContent = count;
 
+  function showCountNum(n) {
+    numEl.textContent = n;
+    numEl.style.animation = 'none';
+    void numEl.offsetWidth; // force reflow so animation restarts cleanly
+    numEl.style.animation = 'tcCountPop 1s ease forwards';
+  }
+
+  showCountNum(count);
   var cdInterval = setInterval(function() {
     count--;
     if (count <= 0) {
       clearInterval(cdInterval);
-      numEl.style.opacity = '0';
       setTimeout(function() {
         overlay.style.display = 'none';
-        numEl.style.opacity = '1';
-        // Actually start the session now
+        numEl.style.animation = 'none';
         tcStartTime = Date.now();
         tcLastTapTime = tcStartTime;
         tickTCTimer();
-      }, 200);
+      }, 900);
     } else {
-      numEl.style.opacity = '0';
-      setTimeout(function() {
-        numEl.textContent = count;
-        numEl.style.opacity = '1';
-      }, 200);
+      showCountNum(count);
     }
   }, 1000);
 }
