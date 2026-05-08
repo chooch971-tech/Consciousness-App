@@ -1207,6 +1207,11 @@
       <div style="font-size:9px; letter-spacing:.3em; text-transform:uppercase; color:var(--muted); margin-bottom:24px;">prepare your mind</div>
       <div id="tcCountdownNum" style="font-family:Cormorant Garamond,serif; font-size:120px; font-weight:300; color:#c4a8d4; line-height:1;"></div>
     </div>
+    <!-- Times-up overlay — shown when timer completes, alarm loops until tap -->
+    <div id="tcTimesUpOverlay" style="display:none; position:absolute; inset:0; z-index:51; background:var(--bg); flex-direction:column; align-items:center; justify-content:center; text-align:center;" onclick="dismissTCAlarm()">
+      <div style="font-family:Cormorant Garamond,serif; font-size:36px; font-weight:300; color:#c4a8d4; line-height:1.2; margin-bottom:20px;">Session Complete.</div>
+      <div style="font-size:9px; letter-spacing:.25em; text-transform:uppercase; color:var(--muted);">Tap to continue</div>
+    </div>
   </div>
 
   <!-- THOUGHT CONTROL RESULT -->
@@ -5716,6 +5721,8 @@ var tcStartTime = null;
 var tcDurationSec = 600;
 var tcIntrusions = [];  // timestamps of each thought tap
 var tcLastTapTime = null;
+var _tcAlarmInterval = null;  // loops the alarm until dismissed
+var _tcCompletedElapsed = 0;  // elapsed seconds saved for dismissal
 
 // Thought duration wired in openExerciseSetup
 
@@ -5870,8 +5877,24 @@ function endThoughtControl(completed) {
     switchMode('concentration');
     return;
   }
-  if (completed) playTCAlarm();
-  showTCResult(elapsed, completed);
+  if (completed) {
+    // Show times-up overlay and loop alarm until user taps
+    _tcCompletedElapsed = elapsed;
+    var overlay = document.getElementById('tcTimesUpOverlay');
+    if (overlay) overlay.style.display = 'flex';
+    playTCAlarm();
+    _tcAlarmInterval = setInterval(playTCAlarm, 6000);
+  } else {
+    showTCResult(elapsed, completed);
+  }
+}
+
+function dismissTCAlarm() {
+  clearInterval(_tcAlarmInterval);
+  _tcAlarmInterval = null;
+  var overlay = document.getElementById('tcTimesUpOverlay');
+  if (overlay) overlay.style.display = 'none';
+  showTCResult(_tcCompletedElapsed, true);
 }
 
 function showTCResult(elapsedSec, completed) {
