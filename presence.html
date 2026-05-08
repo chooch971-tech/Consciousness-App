@@ -3313,6 +3313,11 @@ function stopConcentration() {
   // Guard: if concStartTime is null (shouldn't happen now but just in case)
   concSeconds = concStartTime ? Math.floor((Date.now() - concStartTime) / 1000) : 0;
   concStartTime = null;
+  if (concSeconds < 10) {
+    showScreen('homeScreen');
+    switchMode('concentration');
+    return;
+  }
   showConcResult(concSeconds);
 }
 
