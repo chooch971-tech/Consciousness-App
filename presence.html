@@ -660,7 +660,7 @@
           <div id="concHomeSymbol" style="cursor:pointer;" title="Tap for rank details"></div>
           <div class="home-symbol-fill" id="concHomeSymbolFill" style="cursor:pointer;"></div>
         </div>
-        <div class="stats-row" style="margin-bottom:20px;">
+        <div class="stats-row" style="margin-bottom:32px;">
           <div class="stat"><div class="stat-val" id="concStatXP" style="color:#d4b08e;">0</div><div class="stat-key">xp</div></div>
           <div class="stat"><div class="stat-val" id="concStatBest" style="color:#d4b08e;">0s</div><div class="stat-key">best</div></div>
           <div class="stat"><div class="stat-val" id="concStatSessions" style="color:#d4b08e;">0</div><div class="stat-key">sessions</div></div>
@@ -3112,7 +3112,24 @@ if (!localStorage.getItem('presence_auth_token')) {
       if (!result.data) { renderHome(); return; }
       var changed = false;
       Object.entries(result.data).forEach(function([k, v]) {
-        if (v && localStorage.getItem(k) !== v) {
+        if (!v) return;
+        var local = localStorage.getItem(k);
+        if (local === v) return;
+        var shouldTakeCloud = false;
+        if (!local) {
+          shouldTakeCloud = true;
+        } else {
+          try {
+            var localObj = JSON.parse(local);
+            var cloudObj = JSON.parse(v);
+            var localSessions = localObj.totalSessions || (localObj.history && localObj.history.length) || 0;
+            var cloudSessions = cloudObj.totalSessions || (cloudObj.history && cloudObj.history.length) || 0;
+            shouldTakeCloud = cloudSessions >= localSessions;
+          } catch(e) {
+            shouldTakeCloud = true;
+          }
+        }
+        if (shouldTakeCloud) {
           localStorage.setItem(k, v);
           changed = true;
         }
