@@ -217,6 +217,8 @@
     #concHistoryScreen::-webkit-scrollbar { display:none; }
     #concScrollArea::-webkit-scrollbar { display:none; }
     #settingsScrollBody::-webkit-scrollbar { display:none; }
+    #prayerResultScreen, #prayerHistoryScreen { scrollbar-width:none; -ms-overflow-style:none; }
+    #prayerResultScreen::-webkit-scrollbar, #prayerHistoryScreen::-webkit-scrollbar { display:none; }
     .conc-history-item { background:var(--surface); border:1px solid var(--border); border-radius:8px; padding:16px; margin-bottom:10px; }
     .conc-history-top { display:flex; justify-content:space-between; align-items:center; margin-bottom:4px; }
     .conc-history-date { font-size:10px; letter-spacing:.15em; color:var(--muted); }
@@ -805,6 +807,9 @@
           <button class="btn primary" id="prayerBeginAnyBtn" style="background:rgba(155,142,196,0.12); border-color:rgba(155,142,196,.35); color:#c4b8e8; padding:12px;">Begin Prayer Now</button>
         </div>
 
+        <!-- View History -->
+        <button id="prayerHistoryBtn" onclick="openPrayerHistory()" style="width:100%; padding:12px; background:none; border:1px solid var(--border); border-radius:8px; color:var(--muted); font-family:'DM Mono',monospace; font-size:9px; letter-spacing:.2em; text-transform:uppercase; cursor:pointer; margin-bottom:12px;">View History</button>
+
         <!-- Settings inline -->
         <div style="background:var(--surface); border:1px solid var(--border); border-radius:10px; overflow:hidden; margin-bottom:4px;">
           <button id="prayerSettingsToggle" style="width:100%; padding:14px 18px; display:flex; justify-content:space-between; align-items:center; background:none; border:none; cursor:pointer; font-family:'DM Mono',monospace;">
@@ -1025,7 +1030,41 @@
     </div>
   </div>
 
+  <!-- PRAYER RESULT / REFLECTION SCREEN -->
+  <div class="screen" id="prayerResultScreen" style="overflow-y:auto; -webkit-overflow-scrolling:touch;">
+    <div style="padding:max(env(safe-area-inset-top),44px) 24px 0; display:flex; justify-content:space-between; align-items:center;">
+      <span class="session-title" style="color:#9b8ec4;">prayer complete</span>
+      <span id="prayerResultLabel" style="font-size:9px; letter-spacing:.2em; color:var(--muted);"></span>
+    </div>
+    <div style="padding:24px; display:flex; flex-direction:column; gap:18px;">
+      <div style="text-align:center; margin-top:8px;">
+        <div style="font-family:Cormorant Garamond,serif; font-size:48px; font-weight:300; color:#c4b8e8; line-height:1;" id="prayerResultDuration">0:00</div>
+        <div style="font-size:9px; letter-spacing:.2em; text-transform:uppercase; color:var(--muted); margin-top:6px;">time prayed</div>
+      </div>
+      <div style="background:var(--surface); border:1px solid rgba(155,142,196,.2); border-radius:10px; padding:16px 18px; text-align:center;">
+        <div style="font-family:Cormorant Garamond,serif; font-size:18px; font-style:italic; color:var(--text); line-height:1.5;" id="prayerResultPrompt"></div>
+        <div style="font-size:10px; letter-spacing:.1em; color:var(--muted); margin-top:12px; font-style:italic; line-height:1.6;" id="prayerResultEncouragement"></div>
+      </div>
+      <div>
+        <div style="font-size:9px; letter-spacing:.2em; text-transform:uppercase; color:#9b8ec4; margin-bottom:10px;">Reflection</div>
+        <div style="font-size:10px; color:var(--muted); line-height:1.5; margin-bottom:10px;">What came up? What did you bring? What did you receive? Anything is enough.</div>
+        <textarea id="prayerReflection" placeholder="Write freely…" style="width:100%; box-sizing:border-box; min-height:140px; background:rgba(255,255,255,.03); border:1px solid var(--border); border-radius:8px; padding:12px 14px; font-family:'DM Mono',monospace; font-size:11px; line-height:1.6; color:var(--text); resize:vertical;"></textarea>
+      </div>
+      <div style="display:flex; flex-direction:column; gap:10px; padding-bottom:max(env(safe-area-inset-bottom),28px);">
+        <button class="btn primary" onclick="savePrayerReflection()" style="background:rgba(155,142,196,0.12); border-color:rgba(155,142,196,.35); color:#c4b8e8;">Save Reflection</button>
+        <button class="btn ghost" onclick="skipPrayerReflection()" style="font-size:9px; color:var(--muted);">Done — No Reflection</button>
+      </div>
+    </div>
+  </div>
 
+  <!-- PRAYER HISTORY SCREEN -->
+  <div class="screen" id="prayerHistoryScreen" style="overflow-y:auto; -webkit-overflow-scrolling:touch;">
+    <div class="history-header">
+      <div class="history-title" style="color:#c4b8e8;">Prayer</div>
+      <button class="history-back" id="prayerHistoryBack" style="color:#9b8ec4;">← back</button>
+    </div>
+    <div id="prayerHistoryList"></div>
+  </div>
 
   <!-- PRAYER NOTIFICATION MODAL -->
   <div class="prayer-modal" id="prayerModal">
@@ -6440,6 +6479,7 @@ var PRAYER_DEFAULT = {
   todaySkipped: [], // indices skipped today
   streak: 0,
   lastFullDay: '',
+  history: [], // {date, durationSec, prompt, reflection, voluntary, label, xpEarned}
 };
 
 function loadPrayerState() {
@@ -6489,11 +6529,15 @@ async function syncPrayerScheduleToServer() {
 }
 
 var prayerState = loadPrayerState();
+if (!Array.isArray(prayerState.history)) prayerState.history = []; // backfill for older saves
 var prayerCheckInterval = null;
 var prayerActiveTimes = []; // {index, scheduledMs, notifCount, delayUntilMs}
 var currentPrayerIndex = -1;
 var prayerSessionTimerHandle = null;
 var prayerSessionStart = null;
+var currentPrayerPrompt = '';
+var currentPrayerEncouragement = '';
+var currentPrayerLabel = '';
 
 function renderPrayerPanel() {
   var today = new Date().toDateString();
@@ -6644,9 +6688,12 @@ function beginPrayer(index) {
   hidePrayerModal();
   var prompt = PRAYER_PROMPTS[Math.floor(Math.random() * PRAYER_PROMPTS.length)];
   var label = index === -1 ? 'Voluntary Prayer' : 'Prayer ' + (index + 1) + ' of ' + prayerState.count;
+  var enc = PRAYER_ENCOURAGEMENTS[Math.floor(Math.random() * PRAYER_ENCOURAGEMENTS.length)];
+  currentPrayerPrompt = prompt;
+  currentPrayerEncouragement = enc;
+  currentPrayerLabel = label;
   document.getElementById('prayerSessionLabel').textContent = label;
   document.getElementById('prayerSessionPrompt').textContent = prompt;
-  var enc = PRAYER_ENCOURAGEMENTS[Math.floor(Math.random() * PRAYER_ENCOURAGEMENTS.length)];
   var encEl = document.getElementById('prayerEncouragement');
   if (encEl) encEl.textContent = enc;
   document.getElementById('prayerSessionTimer').textContent = '0:00';
@@ -6661,6 +6708,10 @@ function tickPrayerTimer() {
   document.getElementById('prayerSessionTimer').textContent = m + ':' + String(s).padStart(2,'0');
   prayerSessionTimerHandle = requestAnimationFrame(tickPrayerTimer);
 }
+
+// Tracks the in-flight prayer between concludePrayer (move to result screen)
+// and savePrayerReflection (commit + go home).
+var _pendingPrayer = null;
 
 function concludePrayer() {
   cancelAnimationFrame(prayerSessionTimerHandle);
@@ -6697,13 +6748,78 @@ function concludePrayer() {
     prayerState.lastFullDay = new Date().toDateString();
     prayerState.streak = (prayerState.streak || 0) + 1;
   }
-  savePrayerState();
 
-  showToast('+' + xpEarned + ' XP · Prayer ' + (idx + 1) + ' complete');
+  // Push the entry into history NOW with empty reflection. If the user
+  // writes one, we update the entry in place. This guarantees the prayer
+  // is recorded even if the app is closed on the reflection screen.
+  var entry = {
+    date: new Date().toISOString(),
+    durationSec: elapsed,
+    prompt: currentPrayerPrompt,
+    encouragement: currentPrayerEncouragement,
+    label: currentPrayerLabel,
+    voluntary: idx === -1,
+    index: idx,
+    xpEarned: xpEarned,
+    reflection: ''
+  };
+  prayerState.history = prayerState.history || [];
+  prayerState.history.unshift(entry);
+  if (prayerState.history.length > 100) prayerState.history = prayerState.history.slice(0, 100);
+  savePrayerState();
+  _pendingPrayer = entry; // reference into the array so updates are live
+
+  showPrayerResultScreen();
+}
+
+function showPrayerResultScreen() {
+  if (!_pendingPrayer) { showScreen('homeScreen'); switchMode('prayer'); return; }
+  var p = _pendingPrayer;
+  var m = Math.floor(p.durationSec / 60), s = p.durationSec % 60;
+  var durStr = m + ':' + String(s).padStart(2, '0');
+  document.getElementById('prayerResultDuration').textContent = durStr;
+  document.getElementById('prayerResultLabel').textContent = p.label + ' · +' + p.xpEarned + ' XP';
+  document.getElementById('prayerResultPrompt').textContent = p.prompt;
+  document.getElementById('prayerResultEncouragement').textContent = p.encouragement;
+  document.getElementById('prayerReflection').value = '';
+  showScreen('prayerResultScreen');
+}
+
+function savePrayerReflection() {
+  if (!_pendingPrayer) { finishPrayerFlow(); return; }
+  var reflection = (document.getElementById('prayerReflection').value || '').trim();
+  // The entry is already in prayerState.history — update it in place.
+  _pendingPrayer.reflection = reflection;
+  savePrayerState();
+  var entry = _pendingPrayer;
+  var msg = '+' + entry.xpEarned + ' XP · ' + (entry.voluntary ? 'Prayer complete' : 'Prayer ' + (entry.index + 1) + ' complete');
+  if (reflection) msg += ' · reflection saved';
+  showToast(msg);
+  _pendingPrayer = null;
+  finishPrayerFlow();
+}
+
+function skipPrayerReflection() {
+  if (!_pendingPrayer) { finishPrayerFlow(); return; }
+  // Entry is already saved with reflection:'' — just close out.
+  var entry = _pendingPrayer;
+  showToast('+' + entry.xpEarned + ' XP · ' + (entry.voluntary ? 'Prayer complete' : 'Prayer ' + (entry.index + 1) + ' complete'));
+  _pendingPrayer = null;
+  finishPrayerFlow();
+}
+
+function finishPrayerFlow() {
   renderHome();
   renderPrayerPanel();
-  showScreen('homeScreen');
-  switchMode('prayer');
+  // If the user opened prayer mid-awareness-session, drop them back into it
+  // (the existing Return-to-Session button already handles this on the panel,
+  // but the result screen dead-ends without it — so route directly.)
+  if (sessionStartTime) {
+    showScreen('sessionScreen');
+  } else {
+    showScreen('homeScreen');
+    switchMode('prayer');
+  }
 }
 
 // Settings
@@ -6784,6 +6900,63 @@ document.getElementById('prayerSkipBtn').addEventListener('click', function() {
   showToast('Prayer skipped');
 });
 document.getElementById('prayerConcludeBtn').addEventListener('click', concludePrayer);
+
+// ── Prayer history ─────────────────────────────────────
+function openPrayerHistory() {
+  renderPrayerHistory();
+  showScreen('prayerHistoryScreen');
+}
+
+function renderPrayerHistory() {
+  var list = document.getElementById('prayerHistoryList');
+  if (!list) return;
+  var hist = (prayerState.history || []);
+  if (!hist.length) {
+    list.innerHTML = '<div class="history-empty">No prayers recorded yet.</div>';
+    return;
+  }
+  list.innerHTML = hist.map(function(h, idx) {
+    var d = new Date(h.date);
+    var dateStr = d.toLocaleDateString('en-US', { month:'short', day:'numeric', weekday:'short' });
+    var timeStr = d.toLocaleTimeString('en-US', { hour:'numeric', minute:'2-digit' });
+    var m = Math.floor((h.durationSec || 0) / 60), s = (h.durationSec || 0) % 60;
+    var durStr = m + ':' + String(s).padStart(2,'0');
+    var labelStr = h.voluntary ? 'Voluntary' : (h.label || ('Prayer ' + ((h.index||0)+1)));
+    var promptHtml = h.prompt
+      ? '<div style="font-family:Cormorant Garamond,serif; font-style:italic; font-size:13px; color:var(--text); margin-top:8px; line-height:1.5;">' + h.prompt.replace(/</g,'&lt;').replace(/>/g,'&gt;') + '</div>'
+      : '';
+    var reflectionHtml = h.reflection
+      ? '<div class="history-notes">' + h.reflection.replace(/</g,'&lt;').replace(/>/g,'&gt;') + '</div>'
+      : '';
+    return '<div class="conc-history-item" style="position:relative; border-color:rgba(155,142,196,.2);">'
+      + '<button class="history-delete-btn" onclick="deletePrayerHistoryEntry(' + idx + ')">✕</button>'
+      + '<div class="conc-history-top" style="padding-right:28px;">'
+      + '<span class="conc-history-date">' + dateStr + ' · ' + timeStr + '</span>'
+      + '<span class="conc-history-time" style="color:#c4b8e8;">' + durStr + '</span>'
+      + '</div>'
+      + '<div style="display:flex;gap:12px;align-items:center;">'
+      + '<span class="conc-history-xp" style="color:#9b8ec4;">+' + (h.xpEarned || 0) + ' xp</span>'
+      + '<span style="font-size:9px;color:var(--muted);letter-spacing:.1em;">' + labelStr.replace(/</g,'&lt;') + '</span>'
+      + '</div>'
+      + promptHtml
+      + reflectionHtml
+      + '</div>';
+  }).join('');
+}
+
+function deletePrayerHistoryEntry(idx) {
+  if (!confirm('Delete this prayer entry? This cannot be undone.')) return;
+  prayerState.history.splice(idx, 1);
+  savePrayerState();
+  renderPrayerHistory();
+  showToast('Entry deleted');
+}
+
+document.getElementById('prayerHistoryBack').addEventListener('click', function() {
+  showScreen('homeScreen');
+  switchMode('prayer');
+});
+
 // Settings toggle (inline accordion)
 document.getElementById('prayerSettingsToggle').addEventListener('click', function() {
   var inline = document.getElementById('prayerSettingsInline');
