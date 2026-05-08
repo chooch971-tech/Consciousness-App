@@ -2433,6 +2433,7 @@ function submitSurvey() {
   if (Object.keys(surveyAnswers).length < QUESTIONS.length) {
     showToast('Answer all questions first'); return;
   }
+  sessionStorage.removeItem('_sessionJustEnded');
 
   var driftScore = 6 - surveyAnswers.drift;
   var returnScore = 6 - surveyAnswers['return'];
@@ -3080,7 +3081,7 @@ document.addEventListener('visibilitychange', function() {
         }
       });
       var surveyShowing = document.getElementById('surveyScreen') && document.getElementById('surveyScreen').classList.contains('active');
-      if (changed && !sessionStorage.getItem('_pullReloaded') && !surveyShowing) {
+      if (changed && !sessionStorage.getItem('_pullReloaded') && !surveyShowing && !sessionStorage.getItem('_sessionJustEnded')) {
         sessionStorage.setItem('_pullReloaded', '1');
         console.log('[Sync] New cloud data detected — reloading');
         window.location.reload();
@@ -3118,7 +3119,7 @@ if (!localStorage.getItem('presence_auth_token')) {
       if (changed) {
         // Reload once with fresh data — sessionStorage flag prevents infinite loop
         var surveyShowing2 = document.getElementById('surveyScreen') && document.getElementById('surveyScreen').classList.contains('active');
-        if (!sessionStorage.getItem('_pullReloaded') && !surveyShowing2) {
+        if (!sessionStorage.getItem('_pullReloaded') && !surveyShowing2 && !sessionStorage.getItem('_sessionJustEnded')) {
           sessionStorage.setItem('_pullReloaded', '1');
           console.log('[Sync] Fresh data on startup — reloading');
           window.location.reload();
@@ -3150,10 +3151,11 @@ if (!localStorage.getItem('presence_auth_token')) {
       if (elapsed > 86400) { localStorage.removeItem('presence_session'); showScreen('homeScreen'); }
       else if (remaining > 0) { resumeSession(sess); }
       else {
+        sessionStorage.setItem('_sessionJustEnded', '1'); // block sync reload from wiping survey
         localStorage.removeItem('presence_session');
         var actualMin = Math.max(1, Math.min(Math.round(elapsed / 60), Math.round(sess.durationSec / 60) + 5));
         showScreen('homeScreen');
-        setTimeout(function() { showSurvey(actualMin); }, 500);
+        setTimeout(function() { showSurvey(actualMin); }, 300);
       }
     } catch(e) {
       localStorage.removeItem('presence_session');
