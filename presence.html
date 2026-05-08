@@ -2,6 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8"/>
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob: https:; media-src 'self' https:; connect-src 'self' https://presence-server-acik.onrender.com; worker-src 'self'; frame-ancestors 'none'; base-uri 'self'; form-action 'none'"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"/>
   <meta name="apple-mobile-web-app-capable" content="yes"/>
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
@@ -2864,6 +2865,11 @@ document.getElementById('drawerSettings').addEventListener('click', function() {
 document.getElementById('customVisUpload').addEventListener('change', function(e) {
   var files = Array.from(e.target.files);
   if (!files.length) return;
+  var MAX_SIZE = 10 * 1024 * 1024; // 10 MB cap before reading
+  var oversized = files.filter(function(f) { return f.size > MAX_SIZE; });
+  files = files.filter(function(f) { return f.size <= MAX_SIZE && f.type.indexOf('image/') === 0; });
+  if (oversized.length) showToast('Skipped ' + oversized.length + ' file(s) over 10 MB.', 3000);
+  if (!files.length) { e.target.value = ''; return; }
   var imgs = loadCustomVisImages();
   var remaining = files.length;
   files.forEach(function(file) {
@@ -2932,11 +2938,17 @@ document.getElementById('importFile').addEventListener('change', function(e) {
     try {
       var backup = JSON.parse(ev.target.result);
       if (!backup.data || backup.version !== 1) throw new Error('Invalid backup file.');
-      var count = 0;
+      // Allowlist: only restore keys that the export writes. Prevents a malicious
+      // backup from overwriting auth tokens or injecting unknown localStorage keys.
+      var ALLOWED_KEYS = ['presence_v3','presence_conc_v1','presence_prayer_v1','presence_journal_v1','presence_soul_mirror_v1','bardon_rpg_v2','presence_visited'];
+      var count = 0, skipped = 0;
       Object.entries(backup.data).forEach(function([k, v]) {
+        if (ALLOWED_KEYS.indexOf(k) === -1) { skipped++; return; }
+        if (typeof v !== 'string') { skipped++; return; }
         localStorage.setItem(k, v);
         count++;
       });
+      if (skipped > 0) console.warn('[Import] Skipped ' + skipped + ' unknown/invalid keys');
       status.style.display = 'block';
       status.style.color = '#7eb8a4';
       status.textContent = '✓ ' + count + ' data keys restored. Reloading in 2 seconds…';
@@ -7140,27 +7152,26 @@ async function authRegisterOrLogin(email, password, isRegister) {
   try {
     const endpoint = isRegister ? 'register' : 'login';
     const url = SYNC_API_URL + '/auth/' + endpoint;
-    console.log('[Auth] Attempting ' + endpoint + ' at ' + url);
-    
+    console.log('[Auth] Attempting ' + endpoint);
+
     const res = await fetch(url, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ email, password })
     });
-    
+
     console.log('[Auth] Response status:', res.status);
     const result = await res.json();
-    console.log('[Auth] Response:', result);
-    
+
     if (!res.ok) throw new Error(result.error || 'Auth failed (status ' + res.status + ')');
-    
+
     authToken = result.token;
     authEmail = result.email;
     localStorage.setItem('presence_auth_token', authToken);
     localStorage.setItem('presence_auth_email', authEmail);
     syncEnabled = true;
-    
-    console.log('[Auth] Success! Token saved.');
+
+    console.log('[Auth] Success.');
     return true;
   } catch (err) {
     console.error('[Auth] Error:', err.message);
