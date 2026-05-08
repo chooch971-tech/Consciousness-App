@@ -3479,16 +3479,19 @@ function deleteConcSession(index) {
 
 function renderConcHistory() {
   var titleEl = document.querySelector('#concHistoryScreen .history-title');
-  if (titleEl) titleEl.textContent = concHistoryFilter === 'clock' ? 'Clock' : 'Concentration';
+  if (titleEl) titleEl.textContent = concHistoryFilter === 'clock' ? 'Clock' : concHistoryFilter === 'thought' ? 'Thought Control' : 'Concentration';
   var list = document.getElementById('concHistoryList');
   var allHistory = concState.history;
   var filtered = concHistoryFilter === 'clock'
     ? allHistory.map(function(h, i) { return { h: h, i: i }; }).filter(function(x) {
         return x.h.exercise !== 'asana' && x.h.type !== 'visualization' && x.h.type !== 'auditory' && x.h.type !== 'thought';
       })
+    : concHistoryFilter === 'thought'
+    ? allHistory.map(function(h, i) { return { h: h, i: i }; }).filter(function(x) { return x.h.type === 'thought'; })
     : allHistory.map(function(h, i) { return { h: h, i: i }; });
   if (!filtered.length) {
-    list.innerHTML = '<div class="history-empty">' + (concHistoryFilter === 'clock' ? 'No clock sessions yet.' : 'No concentration sessions yet.') + '</div>';
+    var emptyMsg = concHistoryFilter === 'clock' ? 'No clock sessions yet.' : concHistoryFilter === 'thought' ? 'No thought control sessions yet.' : 'No concentration sessions yet.';
+    list.innerHTML = '<div class="history-empty">' + emptyMsg + '</div>';
     return;
   }
   list.innerHTML = filtered.map(function(entry) {
@@ -5696,7 +5699,8 @@ function buildTCSetupHTML() {
     + '</div>'
     + '<div style="font-size:9px;letter-spacing:.1em;color:var(--muted);margin-top:8px;">minutes &middot; 1&ndash;30</div>'
     + '</div>'
-    + buildTCProgressBars(tcMode);
+    + buildTCProgressBars(tcMode)
+    + '<span onclick="concHistoryFrom=\'exSetupScreen\'; concHistoryFilter=\'thought\'; renderConcHistory(); showScreen(\'concHistoryScreen\');" style="display:block;margin-top:20px;font-size:9px;letter-spacing:.15em;text-transform:uppercase;color:var(--muted);cursor:pointer;text-decoration:underline;">View Thought Control History</span>';
 }
 
 function switchTCMode(mode) {
@@ -5958,7 +5962,7 @@ document.getElementById('tcEndBtn').addEventListener('click', function() {
 });
 document.getElementById('tcSaveBtn').addEventListener('click', saveTCResult);
 document.getElementById('tcViewHistoryBtn').addEventListener('click', function() {
-  concHistoryFrom='home'; concHistoryFilter='all'; renderConcHistory(); showScreen('concHistoryScreen');
+  concHistoryFrom='exSetupScreen'; concHistoryFilter='thought'; renderConcHistory(); showScreen('concHistoryScreen');
 });
 
 // ══════════════════════════════════════════
