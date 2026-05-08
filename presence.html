@@ -695,29 +695,29 @@
         <!-- Beginner grid -->
         <div id="concBeginnerGrid">
           <div class="exercise-grid" id="exerciseGrid">
-            <div class="exercise-card" data-exercise="clock">
+            <div class="exercise-card" data-exercise="clock" style="--conc-card-accent:#d4956e; border-color:rgba(212,149,110,.2); background:rgba(212,149,110,.04);">
               <div class="exercise-card-icon">&#9200;</div>
-              <div class="exercise-card-name">Clock<span id="clockMasteredStar" style="display:none; color:#c0403a; margin-left:3px;">*</span></div>
+              <div class="exercise-card-name" style="color:#d4b08e;">Clock<span id="clockMasteredStar" style="display:none; color:#c0403a; margin-left:3px;">*</span></div>
               <div class="exercise-card-desc">Follow the seconds hand. Stop when focus breaks.</div>
             </div>
-            <div class="exercise-card" data-exercise="visual">
+            <div class="exercise-card" data-exercise="visual" style="--conc-card-accent:#6e9fd4; border-color:rgba(110,159,212,.2); background:rgba(110,159,212,.04);">
               <div class="exercise-card-icon">&#128065;</div>
-              <div class="exercise-card-name">Visualization</div>
+              <div class="exercise-card-name" style="color:#8ab8e0;">Visualization</div>
               <div class="exercise-card-desc">Hold a mental image with eyes closed.</div>
             </div>
-            <div class="exercise-card" data-exercise="auditory">
+            <div class="exercise-card" data-exercise="auditory" style="--conc-card-accent:#6eb8a4; border-color:rgba(110,184,164,.2); background:rgba(110,184,164,.04);">
               <div class="exercise-card-icon">&#127911;</div>
-              <div class="exercise-card-name">Auditory</div>
+              <div class="exercise-card-name" style="color:#8eccc0;">Auditory</div>
               <div class="exercise-card-desc">Listen to a sound with complete attention.</div>
             </div>
-            <div class="exercise-card" data-exercise="thought">
+            <div class="exercise-card" data-exercise="thought" style="--conc-card-accent:#9b88c8; border-color:rgba(155,136,200,.2); background:rgba(155,136,200,.04);">
               <div class="exercise-card-icon">&#9711;</div>
-              <div class="exercise-card-name">Thought Control<span id="tcMasteredStar" style="display:none; color:#c0403a; margin-left:3px;">*</span></div>
+              <div class="exercise-card-name" style="color:#b5a8d8;">Thought Control<span id="tcMasteredStar" style="display:none; color:#c0403a; margin-left:3px;">*</span></div>
               <div class="exercise-card-desc">Think of nothing. Tap each intrusion.</div>
             </div>
-            <div class="exercise-card" data-exercise="asana">
+            <div class="exercise-card" data-exercise="asana" style="--conc-card-accent:#c47878; border-color:rgba(196,120,120,.2); background:rgba(196,120,120,.04);">
               <div class="exercise-card-icon">&#129485;</div>
-              <div class="exercise-card-name">Asana</div>
+              <div class="exercise-card-name" style="color:#d49898;">Asana</div>
               <div class="exercise-card-desc">Sit completely motionless. Hold as long as possible.</div>
             </div>
             <div class="exercise-card" data-exercise="soulmirror" style="--conc-card-accent:#a47eb8; border-color:rgba(164,126,184,.2); background:rgba(164,126,184,.04);">
@@ -731,14 +731,14 @@
         <!-- Intermediate grid -->
         <div id="concIntermediateGrid" style="display:none;">
           <div class="exercise-grid">
-            <div class="exercise-card" data-exercise="multisense" style="--conc-card-accent:#d4956e; border-color:rgba(212,149,110,.2); background:rgba(212,149,110,.04);">
+            <div class="exercise-card" data-exercise="multisense" style="--conc-card-accent:#d4b86e; border-color:rgba(212,184,110,.2); background:rgba(212,184,110,.04);">
               <div class="exercise-card-icon">🎵</div>
-              <div class="exercise-card-name" style="color:#d4956e;">Multi-Sense</div>
+              <div class="exercise-card-name" style="color:#d4c88e;">Multi-Sense</div>
               <div class="exercise-card-desc">Hold an object using sight, sound, texture, and weight simultaneously.</div>
             </div>
-            <div class="exercise-card" data-exercise="allangles" style="--conc-card-accent:#d4956e; border-color:rgba(212,149,110,.2); background:rgba(212,149,110,.04);">
+            <div class="exercise-card" data-exercise="allangles" style="--conc-card-accent:#88b87e; border-color:rgba(136,184,126,.2); background:rgba(136,184,126,.04);">
               <div class="exercise-card-icon">🔄</div>
-              <div class="exercise-card-name" style="color:#d4956e;">All Angles</div>
+              <div class="exercise-card-name" style="color:#a8c89e;">All Angles</div>
               <div class="exercise-card-desc">Rotate an object through every perspective. Mouni Sadhu&#39;s method.</div>
             </div>
             <div class="exercise-card" style="opacity:.4; pointer-events:none; border-color:rgba(255,255,255,.08);">
@@ -5715,7 +5715,7 @@ var tcDuration = 10; // minutes
 var TC_MODE_DEFS = {
   observation: {
     label: 'Observation',
-    desc: 'Sit in silence and simply observe the thoughts that arise. Do not follow them, suppress them, or judge them — only watch each thought appear and disappear. Tap when you get lost in a thought. The goal is to <em>be the watcher</em> and not forget yourself in your thoughts.'
+    desc: 'Sit or lay comfortably and observe the thoughts that arise. Do not follow them, suppress them, or judge them — only watch each thought appear and disappear. Tap when you get lost in a thought. The goal is to <em>be the watcher</em> and not forget yourself in your thoughts.'
   },
   focus: {
     label: 'Focus',
