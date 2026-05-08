@@ -3406,6 +3406,23 @@ function saveConcResult() {
   };
 }
 
+// Recalculate totalSessions from history using the same 2-hour window rule
+// used when saving. Sorting chronologically and counting gaps >= 2h.
+function recalcConcSessions(history) {
+  if (!history || !history.length) return 0;
+  var sorted = history.slice().sort(function(a, b) {
+    return new Date(a.date) - new Date(b.date);
+  });
+  var sessions = 1;
+  var lastDate = new Date(sorted[0].date);
+  for (var i = 1; i < sorted.length; i++) {
+    var d = new Date(sorted[i].date);
+    if (d - lastDate >= 2 * 60 * 60 * 1000) sessions++;
+    lastDate = d;
+  }
+  return sessions;
+}
+
 function deleteConcSession(index) {
   var h = concState.history[index];
   if (!h) return;
@@ -3416,7 +3433,7 @@ function deleteConcSession(index) {
     if (newXP >= concSumXpToLevel(newLevel + 1)) { newLevel++; } else { break; }
   }
   var rankWillDrop = newLevel < concState.level;
-  var msg = 'Delete this concentration session?\n\nThis will remove ' + xpLost + ' XP and 1 session from your count.';
+  var msg = 'Delete this concentration session?\n\nThis will remove ' + xpLost + ' XP from your count.';
   if (rankWillDrop) {
     msg += '\n\nWarning: your rank will drop from '
       + getConcRank(concState.level) + ' (level ' + concState.level + ') to '
@@ -3424,11 +3441,12 @@ function deleteConcSession(index) {
   }
   if (!confirm(msg)) return;
 
-  // Remove session
+  // Remove session and recalculate totalSessions from remaining history
+  // (don't blindly decrement — multiple exercises can share a single session)
   concState.history.splice(index, 1);
   concState.xp = newXP;
   concState.level = newLevel;
-  concState.totalSessions = Math.max(0, concState.totalSessions - 1);
+  concState.totalSessions = recalcConcSessions(concState.history);
 
   // Recalculate best seconds from remaining history
   concState.bestSeconds = concState.history.reduce(function(best, s) {
