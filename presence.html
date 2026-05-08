@@ -157,6 +157,7 @@
     .history-score span { color:var(--text); }
     .history-notes { font-size:11px; color:var(--muted); margin-top:8px; line-height:1.5; font-style:italic; border-top:1px solid var(--border); padding-top:8px; }
     .history-empty { text-align:center; font-size:13px; color:var(--muted); padding:60px 0; font-family:Cormorant Garamond,serif; font-style:italic; }
+    .history-date-group { font-size:9px; letter-spacing:.22em; text-transform:uppercase; color:var(--muted); padding:18px 0 8px; border-bottom:1px solid var(--border); margin-bottom:10px; opacity:.7; }
 
     /* SHARED */
     .btn { width:100%; padding:16px; border-radius:6px; border:1px solid var(--border); background:var(--surface); color:var(--text); font-family:'DM Mono',monospace; font-size:10px; letter-spacing:.25em; text-transform:uppercase; cursor:pointer; transition:all .2s; }
@@ -2743,34 +2744,64 @@ function deleteSession(index) {
   showToast('Session deleted');
 }
 
+// Returns "Today", "Yesterday", or "Mon, May 12" for a given Date object
+function dateGroupLabel(d) {
+  var today = new Date(); today.setHours(0,0,0,0);
+  var yesterday = new Date(today); yesterday.setDate(today.getDate() - 1);
+  var check = new Date(d); check.setHours(0,0,0,0);
+  if (check.getTime() === today.getTime()) return 'Today';
+  if (check.getTime() === yesterday.getTime()) return 'Yesterday';
+  return d.toLocaleDateString('en-US', { weekday:'short', month:'short', day:'numeric' });
+}
+
 function renderHistory() {
   var list = document.getElementById('historyList');
   if (!state.history.length) {
     list.innerHTML = '<div class="history-empty">No sessions yet.<br>Begin your practice.</div>';
     return;
   }
-  list.innerHTML = state.history.map(function(h, idx) {
+
+  // Group by calendar date
+  var groups = []; // [{label, entries:[{h,idx}]}]
+  var groupMap = {};
+  state.history.forEach(function(h, idx) {
     var d = new Date(h.date);
-    var dateStr = d.toLocaleDateString('en-US', { month:'short', day:'numeric', weekday:'short' });
-    var durStr = h.durationMin + ' min' + (h.targetMin && h.targetMin !== h.durationMin ? ' (target: ' + h.targetMin + ')' : '');
-    var earlyStr = h.endedEarly ? ' · early' : '';
-    var xpStr = h.xpEarned ? '+' + h.xpEarned + 'xp' : '';
-    var notesHtml = h.notes ? '<div class="history-notes">' + h.notes.replace(/</g,'&lt;').replace(/>/g,'&gt;') + '</div>' : '';
-    return '<div class="history-item">'
-      + '<button class="history-delete-btn" onclick="deleteSession(' + idx + ')">✕</button>'
-      + '<div class="history-item-top">'
-      + '<span class="history-date">' + dateStr + '</span>'
-      + '<span class="history-duration">' + durStr + ' · ' + fmtInterval(h.intervalSec) + earlyStr + '</span>'
-      + '</div>'
-      + '<div class="history-scores">'
-      + '<span class="history-score">score <span>' + h.score + '/5</span></span>'
-      + '<span class="history-score">drift <span>' + h.answers.drift + '</span></span>'
-      + '<span class="history-score">return <span>' + h.answers["return"] + '</span></span>'
-      + '<span class="history-score">needed <span>' + h.answers.redundant + '</span></span>'
-      + (xpStr ? '<span class="history-score" style="color:var(--accent)">' + xpStr + '</span>' : '')
-      + '</div>'
-      + notesHtml
-      + '</div>';
+    var key = new Date(d); key.setHours(0,0,0,0);
+    var keyStr = key.getTime().toString();
+    if (!groupMap[keyStr]) {
+      var g = { label: dateGroupLabel(d), entries: [] };
+      groups.push(g);
+      groupMap[keyStr] = g;
+    }
+    groupMap[keyStr].entries.push({ h: h, idx: idx });
+  });
+
+  list.innerHTML = groups.map(function(group) {
+    var itemsHtml = group.entries.map(function(e) {
+      var h = e.h; var idx = e.idx;
+      var d = new Date(h.date);
+      var timeStr = d.toLocaleTimeString('en-US', { hour:'numeric', minute:'2-digit' });
+      var durStr = h.durationMin + ' min' + (h.targetMin && h.targetMin !== h.durationMin ? ' (target: ' + h.targetMin + ')' : '');
+      var earlyStr = h.endedEarly ? ' · early' : '';
+      var xpStr = h.xpEarned ? '+' + h.xpEarned + 'xp' : '';
+      var notesHtml = h.notes ? '<div class="history-notes">' + h.notes.replace(/</g,'&lt;').replace(/>/g,'&gt;') + '</div>' : '';
+      return '<div class="history-item">'
+        + '<button class="history-delete-btn" onclick="deleteSession(' + idx + ')">✕</button>'
+        + '<div class="history-item-top">'
+        + '<span class="history-date">' + timeStr + '</span>'
+        + '<span class="history-duration">' + durStr + ' · ' + fmtInterval(h.intervalSec) + earlyStr + '</span>'
+        + '</div>'
+        + '<div class="history-scores">'
+        + '<span class="history-score">score <span>' + h.score + '/5</span></span>'
+        + '<span class="history-score">drift <span>' + h.answers.drift + '</span></span>'
+        + '<span class="history-score">return <span>' + h.answers["return"] + '</span></span>'
+        + '<span class="history-score">needed <span>' + h.answers.redundant + '</span></span>'
+        + (xpStr ? '<span class="history-score" style="color:var(--accent)">' + xpStr + '</span>' : '')
+        + '</div>'
+        + notesHtml
+        + '</div>';
+    }).join('');
+    return '<div class="history-date-group">' + group.label + '</div>' + itemsHtml;
   }).join('');
 }
 
@@ -3640,31 +3671,49 @@ function renderConcHistory() {
     list.innerHTML = '<div class="history-empty">' + emptyMsg + '</div>';
     return;
   }
-  list.innerHTML = filtered.map(function(entry) {
-    var h = entry.h; var idx = entry.i;
-    var d = new Date(h.date);
-    var dateStr = d.toLocaleDateString('en-US', { month:'short', day:'numeric', weekday:'short' });
-    var notesHtml = h.notes ? '<div class="history-notes">' + h.notes.replace(/</g,'&lt;').replace(/>/g,'&gt;') + '</div>' : '';
-    var typeStr = h.exercise === 'asana' ? ('Asana' + (h.posture ? ' · ' + h.posture.replace(/</g,'&lt;').replace(/>/g,'&gt;') : ''))
-      : h.type === 'visualization' ? (h.object ? h.object.replace(/</g,'&lt;').replace(/>/g,'&gt;') : 'Visualization')
-      : h.type === 'auditory' ? (h.object ? h.object.replace(/</g,'&lt;').replace(/>/g,'&gt;') : 'Auditory')
-      : h.type === 'thought' ? (h.object ? h.object.replace(/</g,'&lt;').replace(/>/g,'&gt;') : 'Thought Control')
-      : 'Clock';
-    var timeStr = h.exercise === 'asana'
-      ? (Math.floor(h.seconds/60) + ':' + (h.seconds%60 < 10 ? '0' : '') + (h.seconds%60))
-      : h.seconds + 's';
-    return '<div class="conc-history-item" style="position:relative;">'
-      + '<button class="history-delete-btn" onclick="deleteConcSession(' + idx + ')">✕</button>'
-      + '<div class="conc-history-top" style="padding-right:28px;">'
-      + '<span class="conc-history-date">' + dateStr + '</span>'
-      + '<span class="conc-history-time">' + timeStr + '</span>'
-      + '</div>'
-      + '<div style="display:flex;gap:12px;align-items:center;">'
-      + '<span class="conc-history-xp">+' + h.xpEarned + ' xp</span>'
-      + '<span style="font-size:9px;color:var(--muted);letter-spacing:.1em;">' + typeStr + '</span>'
-      + '</div>'
-      + notesHtml
-      + '</div>';
+  // Group by calendar date
+  var groups = [];
+  var groupMap = {};
+  filtered.forEach(function(entry) {
+    var d = new Date(entry.h.date);
+    var key = new Date(d); key.setHours(0,0,0,0);
+    var keyStr = key.getTime().toString();
+    if (!groupMap[keyStr]) {
+      var g = { label: dateGroupLabel(d), entries: [] };
+      groups.push(g);
+      groupMap[keyStr] = g;
+    }
+    groupMap[keyStr].entries.push(entry);
+  });
+
+  list.innerHTML = groups.map(function(group) {
+    var itemsHtml = group.entries.map(function(entry) {
+      var h = entry.h; var idx = entry.i;
+      var d = new Date(h.date);
+      var timeStr = d.toLocaleTimeString('en-US', { hour:'numeric', minute:'2-digit' });
+      var notesHtml = h.notes ? '<div class="history-notes">' + h.notes.replace(/</g,'&lt;').replace(/>/g,'&gt;') + '</div>' : '';
+      var typeStr = h.exercise === 'asana' ? ('Asana' + (h.posture ? ' · ' + h.posture.replace(/</g,'&lt;').replace(/>/g,'&gt;') : ''))
+        : h.type === 'visualization' ? (h.object ? h.object.replace(/</g,'&lt;').replace(/>/g,'&gt;') : 'Visualization')
+        : h.type === 'auditory' ? (h.object ? h.object.replace(/</g,'&lt;').replace(/>/g,'&gt;') : 'Auditory')
+        : h.type === 'thought' ? (h.object ? h.object.replace(/</g,'&lt;').replace(/>/g,'&gt;') : 'Thought Control')
+        : 'Clock';
+      var holdStr = h.exercise === 'asana'
+        ? (Math.floor(h.seconds/60) + ':' + (h.seconds%60 < 10 ? '0' : '') + (h.seconds%60))
+        : h.seconds + 's';
+      return '<div class="conc-history-item" style="position:relative;">'
+        + '<button class="history-delete-btn" onclick="deleteConcSession(' + idx + ')">✕</button>'
+        + '<div class="conc-history-top" style="padding-right:28px;">'
+        + '<span class="conc-history-date">' + timeStr + '</span>'
+        + '<span class="conc-history-time">' + holdStr + '</span>'
+        + '</div>'
+        + '<div style="display:flex;gap:12px;align-items:center;">'
+        + '<span class="conc-history-xp">+' + h.xpEarned + ' xp</span>'
+        + '<span style="font-size:9px;color:var(--muted);letter-spacing:.1em;">' + typeStr + '</span>'
+        + '</div>'
+        + notesHtml
+        + '</div>';
+    }).join('');
+    return '<div class="history-date-group">' + group.label + '</div>' + itemsHtml;
   }).join('');
 }
 
