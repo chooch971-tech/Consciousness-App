@@ -696,7 +696,7 @@
             </div>
             <div class="exercise-card" data-exercise="thought">
               <div class="exercise-card-icon">&#9711;</div>
-              <div class="exercise-card-name">Thought Control</div>
+              <div class="exercise-card-name">Thought Control<span id="tcMasteredStar" style="display:none; color:#c0403a; margin-left:3px;">*</span></div>
               <div class="exercise-card-desc">Think of nothing. Tap each intrusion.</div>
             </div>
             <div class="exercise-card" data-exercise="asana">
@@ -3261,6 +3261,15 @@ function renderConcHome() {
   }, 0);
   var star = document.getElementById('clockMasteredStar');
   if (star) star.style.display = clockBest >= 900 ? 'inline' : 'none';
+
+  // Show mastered asterisk on TC card only when all three modes have best >= 15 min
+  var tcStar = document.getElementById('tcMasteredStar');
+  if (tcStar) {
+    var tcAllMastered = getTCBestGap('observation') >= 900
+      && getTCBestGap('focus') >= 900
+      && getTCBestGap('vacancy') >= 900;
+    tcStar.style.display = tcAllMastered ? 'inline' : 'none';
+  }
 }
 
 var concCountInterval = null; // track countdown so we can cancel it
@@ -4660,18 +4669,8 @@ var EXERCISE_DEFS = {
   thought: {
     icon: '&#9711;',
     name: 'Thought Control',
-    desc: 'Think of nothing. The moment a thought arises, tap the screen. The goal is not to suppress thoughts — simply to notice them and return to silence.',
-    setupHTML: function() {
-      return '<div class="tc-duration-picker" style="margin-bottom:0;">'
-        + '<div style="font-size:9px; letter-spacing:.2em; text-transform:uppercase; color:var(--muted); margin-bottom:12px;">Session duration</div>'
-        + '<div class="tc-duration-row">'
-        + '<button class="tc-duration-btn" onclick="if(tcDuration>1){tcDuration--;document.getElementById(\'tcDurDisplay\').textContent=tcDuration;}">&#8722;</button>'
-        + '<div class="tc-duration-val" id="tcDurDisplay">' + tcDuration + '</div>'
-        + '<button class="tc-duration-btn" onclick="if(tcDuration<30){tcDuration++;document.getElementById(\'tcDurDisplay\').textContent=tcDuration;}">+</button>'
-        + '</div>'
-        + '<div style="font-size:9px; letter-spacing:.1em; color:var(--muted); margin-top:8px;">minutes &middot; 1&ndash;30</div>'
-        + '</div>';
-    },
+    desc: function() { return TC_MODE_DEFS[tcMode].desc; },
+    setupHTML: function() { return buildTCSetupHTML(); },
     begin: function() { startThoughtControl(); }
   },
   asana: {
@@ -5591,7 +5590,123 @@ document.getElementById('audViewHistoryBtn').addEventListener('click', function(
 // THOUGHT CONTROL EXERCISE
 // ═══════════════════════════════════════
 
+// ── Thought Control modes ────────────────────────────────
+var tcMode = 'observation'; // 'observation' | 'focus' | 'vacancy'
 var tcDuration = 10; // minutes
+
+var TC_MODE_DEFS = {
+  observation: {
+    label: 'Observation',
+    desc: 'Sit in silence and simply observe the thoughts that arise. Do not follow them, suppress them, or judge them — only watch each thought appear and disappear. Tap each time a thought arises. The goal is not fewer thoughts, but a clearer awareness of the mind\'s natural activity.'
+  },
+  focus: {
+    label: 'Focus',
+    desc: 'Choose a single thought, word, or simple concept and hold it in the mind exclusively. The moment another thought intrudes, tap the screen. Unlike observation, here you are actively directing the mind — not watching, but holding. The goal is a sustained, unbroken thread of one thought.'
+  },
+  vacancy: {
+    label: 'Vacancy',
+    desc: 'Attempt to hold the mind in complete emptiness — no thoughts, no images, no inner speech. This is the most demanding of the three. Tap at the very first sign of any mental content. The goal is total stillness: a mind as silent and open as empty sky.'
+  }
+};
+
+function getTCBestGap(mode) {
+  return (concState.history || []).reduce(function(b, s) {
+    if (s.type !== 'thought') return b;
+    var m = s.tcMode || 'observation'; // legacy entries default to observation
+    return m === mode && s.seconds > b ? s.seconds : b;
+  }, 0);
+}
+
+function buildTCProgressBars(mode) {
+  var best = getTCBestGap(mode);
+  if (best === 0) return '';
+  var html = '';
+
+  // Bar 1 — progress to 10:00
+  var p1 = Math.min(100, Math.round(best / 600 * 1000) / 10);
+  var p1d = Number.isInteger(p1) ? p1 : p1.toFixed(1);
+  html += '<div style="margin-top:14px;padding:12px 14px;background:rgba(164,126,184,.08);border:1px solid rgba(164,126,184,.2);border-radius:8px;">'
+    + '<div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:8px;">'
+    + '<span style="font-size:9px;letter-spacing:.18em;text-transform:uppercase;color:rgba(164,126,184,.6);">Progress to 10 min</span>'
+    + '<span style="font-family:Cormorant Garamond,serif;font-size:26px;font-weight:300;color:#c4a8d4;line-height:1;">' + p1d + '<span style="font-size:14px;">%</span></span>'
+    + '</div>'
+    + '<div style="height:4px;background:rgba(255,255,255,.07);border-radius:2px;overflow:hidden;">'
+    + '<div style="height:100%;width:' + p1d + '%;background:linear-gradient(90deg,#a47eb8,#c4a8d4);border-radius:2px;"></div>'
+    + '</div></div>';
+
+  // Bar 2 — progress to 12:30 (unlocks at 10 min)
+  if (best >= 600) {
+    var p2 = Math.min(100, Math.round(best / 750 * 1000) / 10);
+    var p2d = Number.isInteger(p2) ? p2 : p2.toFixed(1);
+    html += '<div style="margin-top:10px;padding:12px 14px;background:rgba(164,126,184,.08);border:1px solid rgba(164,126,184,.2);border-radius:8px;">'
+      + '<div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:8px;">'
+      + '<span style="font-size:9px;letter-spacing:.18em;text-transform:uppercase;color:rgba(164,126,184,.6);">Progress to 12:30</span>'
+      + '<span style="font-family:Cormorant Garamond,serif;font-size:26px;font-weight:300;color:#c4a8d4;line-height:1;">' + p2d + '<span style="font-size:14px;">%</span></span>'
+      + '</div>'
+      + '<div style="height:4px;background:rgba(255,255,255,.07);border-radius:2px;overflow:hidden;">'
+      + '<div style="height:100%;width:' + p2d + '%;background:linear-gradient(90deg,#a47eb8,#c4a8d4);border-radius:2px;"></div>'
+      + '</div></div>';
+  }
+
+  // Bar 3 — progress to 15:00 mastery, red (unlocks at 12:30)
+  if (best >= 750) {
+    var p3 = Math.min(100, Math.round(best / 900 * 1000) / 10);
+    var p3d = Number.isInteger(p3) ? p3 : p3.toFixed(1);
+    html += '<div style="margin-top:10px;padding:12px 14px;background:rgba(180,40,40,.07);border:1px solid rgba(180,40,40,.2);border-radius:8px;">'
+      + '<div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:8px;">'
+      + '<span style="font-size:9px;letter-spacing:.18em;text-transform:uppercase;color:rgba(180,60,60,.65);">Progress to 15 min</span>'
+      + '<span style="font-family:Cormorant Garamond,serif;font-size:26px;font-weight:300;color:#c0403a;line-height:1;">' + p3d + '<span style="font-size:14px;">%</span></span>'
+      + '</div>'
+      + '<div style="height:4px;background:rgba(255,255,255,.07);border-radius:2px;overflow:hidden;">'
+      + '<div style="height:100%;width:' + p3d + '%;background:linear-gradient(90deg,#b42828,#d94f4f);border-radius:2px;"></div>'
+      + '</div></div>';
+  }
+
+  // Mastery banner
+  if (best >= 900) {
+    html += '<div style="margin-top:18px;padding:20px 18px;background:rgba(180,40,40,.06);border:1px solid rgba(180,40,40,.25);border-radius:10px;text-align:center;">'
+      + '<div style="font-family:Cormorant Garamond,serif;font-size:22px;font-weight:400;color:#c0403a;line-height:1.4;">This mode has been mastered.</div>'
+      + '<div style="margin-top:8px;font-size:10px;letter-spacing:.18em;text-transform:uppercase;color:rgba(180,60,60,.5);">Fifteen minutes of unbroken silence</div>'
+      + '</div>';
+  }
+
+  return html;
+}
+
+function buildTCSetupHTML() {
+  var tabs = ['observation','focus','vacancy'].map(function(m) {
+    var active = m === tcMode;
+    return '<button onclick="switchTCMode(\'' + m + '\')" style="'
+      + 'flex:1;padding:7px 4px;font-family:\'DM Mono\',monospace;font-size:8px;letter-spacing:.15em;text-transform:uppercase;'
+      + 'border-radius:6px;cursor:pointer;transition:all .2s;'
+      + (active
+        ? 'background:rgba(164,126,184,.18);border:1px solid rgba(164,126,184,.4);color:#c4a8d4;'
+        : 'background:transparent;border:1px solid rgba(164,126,184,.12);color:var(--muted);')
+      + '">' + TC_MODE_DEFS[m].label + '</button>';
+  }).join('');
+
+  return '<div style="display:flex;gap:6px;margin-bottom:20px;">' + tabs + '</div>'
+    + '<div style="height:1px;background:var(--border);margin-bottom:20px;opacity:.4;"></div>'
+    + '<div class="tc-duration-picker" style="margin-bottom:0;">'
+    + '<div style="font-size:9px;letter-spacing:.2em;text-transform:uppercase;color:var(--muted);margin-bottom:12px;">Session duration</div>'
+    + '<div class="tc-duration-row">'
+    + '<button class="tc-duration-btn" onclick="if(tcDuration>1){tcDuration--;document.getElementById(\'tcDurDisplay\').textContent=tcDuration;}">&#8722;</button>'
+    + '<div class="tc-duration-val" id="tcDurDisplay">' + tcDuration + '</div>'
+    + '<button class="tc-duration-btn" onclick="if(tcDuration<30){tcDuration++;document.getElementById(\'tcDurDisplay\').textContent=tcDuration;}">+</button>'
+    + '</div>'
+    + '<div style="font-size:9px;letter-spacing:.1em;color:var(--muted);margin-top:8px;">minutes &middot; 1&ndash;30</div>'
+    + '</div>'
+    + buildTCProgressBars(tcMode);
+}
+
+function switchTCMode(mode) {
+  tcMode = mode;
+  var descEl = document.getElementById('exSetupDesc');
+  if (descEl) descEl.innerHTML = TC_MODE_DEFS[mode].desc;
+  var contentEl = document.getElementById('exSetupContent');
+  if (contentEl) contentEl.innerHTML = buildTCSetupHTML();
+}
+
 var tcTimerHandle = null;
 var tcStartTime = null;
 var tcDurationSec = 600;
@@ -5810,6 +5925,7 @@ function saveTCResult() {
     xpEarned: xpEarned,
     notes: notes,
     type: 'thought',
+    tcMode: tcMode,
     object: tcIntrusions.length + ' thoughts in ' + fmtTimer(elapsedSec)
   });
   if (concState.history.length > 100) concState.history = concState.history.slice(0, 100);
