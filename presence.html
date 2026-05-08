@@ -2030,6 +2030,7 @@ function collectResidue() {
   state.residueGeneratedAt = null;
   state.depth = calcDepth(state.xp);
   saveState();
+  if (syncEnabled && authToken) syncPushData();
   return pending;
 }
 
