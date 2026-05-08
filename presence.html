@@ -5588,29 +5588,75 @@ var tcLastTapTime = null;
 // Thought duration wired in openExerciseSetup
 
 // ── TC Alarm (Web Audio bell) ────────────────────────────
+// AudioContext is pre-created and unlocked on the first user tap so the
+// alarm works on iOS / Android even though it fires outside a gesture.
+var _tcAudioCtx = null;
+
+function _getTCAudioCtx() {
+  if (!_tcAudioCtx) {
+    try { _tcAudioCtx = new (window.AudioContext || window.webkitAudioContext)(); } catch(e) {}
+  }
+  if (_tcAudioCtx && _tcAudioCtx.state === 'suspended') {
+    _tcAudioCtx.resume().catch(function(){});
+  }
+  return _tcAudioCtx;
+}
+
+// Call this on every user-gesture during a TC session so the context is warm
+function _unlockTCAudio() {
+  var ctx = _getTCAudioCtx();
+  if (!ctx) return;
+  // Play a silent buffer to unlock on iOS
+  var buf = ctx.createBuffer(1, 1, 22050);
+  var src = ctx.createBufferSource();
+  src.buffer = buf;
+  src.connect(ctx.destination);
+  src.start(0);
+}
+
 function playTCAlarm() {
-  try {
-    var ctx = new (window.AudioContext || window.webkitAudioContext)();
-    function bell(freq, startTime, duration) {
-      var osc = ctx.createOscillator();
-      var gain = ctx.createGain();
-      osc.connect(gain);
-      gain.connect(ctx.destination);
-      osc.type = 'sine';
-      osc.frequency.setValueAtTime(freq, startTime);
-      gain.gain.setValueAtTime(0.5, startTime);
-      gain.gain.exponentialRampToValueAtTime(0.001, startTime + duration);
-      osc.start(startTime);
-      osc.stop(startTime + duration);
-    }
-    // Three gentle bell tones
-    bell(880, ctx.currentTime,        2.5);
-    bell(660, ctx.currentTime + 0.6,  2.5);
-    bell(440, ctx.currentTime + 1.2,  3.0);
-  } catch(e) { console.log('Alarm audio error:', e); }
+  // Visual flash on the session screen (user may have eyes closed)
+  var tapArea = document.getElementById('tcTapArea');
+  if (tapArea) {
+    tapArea.style.transition = 'background .15s';
+    tapArea.style.background = 'rgba(164,126,184,.18)';
+    setTimeout(function() { tapArea.style.background = ''; }, 600);
+  }
+
+  // Haptic feedback (works on Android; no-op on iOS)
+  if (navigator.vibrate) navigator.vibrate([400, 150, 400, 150, 600]);
+
+  // Audio
+  var ctx = _getTCAudioCtx();
+  if (!ctx) return;
+
+  function bell(freq, startT, dur, vol) {
+    var osc  = ctx.createOscillator();
+    var gain = ctx.createGain();
+    // Add a slight harmonic overtone for a richer bell timbre
+    var osc2  = ctx.createOscillator();
+    var gain2 = ctx.createGain();
+    osc.connect(gain);   gain.connect(ctx.destination);
+    osc2.connect(gain2); gain2.connect(ctx.destination);
+    osc.type  = 'sine'; osc.frequency.setValueAtTime(freq, startT);
+    osc2.type = 'sine'; osc2.frequency.setValueAtTime(freq * 2.756, startT); // inharmonic partial
+    gain.gain.setValueAtTime(vol,   startT);
+    gain.gain.exponentialRampToValueAtTime(0.001, startT + dur);
+    gain2.gain.setValueAtTime(vol * 0.3, startT);
+    gain2.gain.exponentialRampToValueAtTime(0.001, startT + dur * 0.6);
+    osc.start(startT);  osc.stop(startT + dur);
+    osc2.start(startT); osc2.stop(startT + dur);
+  }
+
+  var t = ctx.currentTime;
+  // Three descending bell strikes — clearly audible
+  bell(880, t,        3.5, 0.7);
+  bell(698, t + 1.0,  3.5, 0.65);
+  bell(523, t + 2.0,  4.5, 0.6);
 }
 
 function startThoughtControl() {
+  _unlockTCAudio(); // pre-warm AudioContext while inside a user gesture
   tcDurationSec = tcDuration * 60;
   tcIntrusions = [];
   tcLastTapTime = null;
@@ -5665,6 +5711,7 @@ function tickTCTimer() {
 
 function recordThought() {
   if (!tcStartTime) return; // ignore taps during countdown
+  _unlockTCAudio(); // keep AudioContext warm on each tap
   var now = Date.now();
   tcIntrusions.push(now);
   tcLastTapTime = now;
