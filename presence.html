@@ -4657,9 +4657,9 @@ var EXERCISE_DEFS = {
       return '<div class="tc-duration-picker" style="margin-bottom:0;">'
         + '<div style="font-size:9px; letter-spacing:.2em; text-transform:uppercase; color:var(--muted); margin-bottom:12px;">Session duration</div>'
         + '<div class="tc-duration-row">'
-        + '<button class="tc-duration-btn" id="tcDurMinus">&#8722;</button>'
-        + '<div class="tc-duration-val" id="tcDurDisplay">10</div>'
-        + '<button class="tc-duration-btn" id="tcDurPlus">+</button>'
+        + '<button class="tc-duration-btn" onclick="if(tcDuration>1){tcDuration--;document.getElementById(\'tcDurDisplay\').textContent=tcDuration;}">&#8722;</button>'
+        + '<div class="tc-duration-val" id="tcDurDisplay">' + tcDuration + '</div>'
+        + '<button class="tc-duration-btn" onclick="if(tcDuration<30){tcDuration++;document.getElementById(\'tcDurDisplay\').textContent=tcDuration;}">+</button>'
         + '</div>'
         + '<div style="font-size:9px; letter-spacing:.1em; color:var(--muted); margin-top:8px;">minutes &middot; 1&ndash;30</div>'
         + '</div>';
@@ -4717,20 +4717,6 @@ function openExerciseSetup(ex) {
     });
   }
   if (ex === 'auditory') { buildSoundGrid(); }
-  if (ex === 'thought') {
-    var minus2 = document.getElementById('tcDurMinus');
-    var plus2  = document.getElementById('tcDurPlus');
-    if (minus2) minus2.addEventListener('click', function() {
-      tcDuration = Math.max(1, tcDuration - 1);
-      document.getElementById('tcDurDisplay').textContent = tcDuration;
-    });
-    if (plus2) plus2.addEventListener('click', function() {
-      tcDuration = Math.min(30, tcDuration + 1);
-      document.getElementById('tcDurDisplay').textContent = tcDuration;
-    });
-    var disp2 = document.getElementById('tcDurDisplay');
-    if (disp2) disp2.textContent = tcDuration;
-  }
 }
 
 // Exercise card clicks
