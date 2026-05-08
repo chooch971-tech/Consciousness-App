@@ -4700,7 +4700,8 @@ function openExerciseSetup(ex) {
   }
   if (ex === 'auditory') { buildSoundGrid(); }
   if (ex === 'thought') {
-    var plus2 = document.getElementById('tcDurPlus');
+    var minus2 = document.getElementById('tcDurMinus');
+    var plus2  = document.getElementById('tcDurPlus');
     if (minus2) minus2.addEventListener('click', function() {
       tcDuration = Math.max(1, tcDuration - 1);
       document.getElementById('tcDurDisplay').textContent = tcDuration;
