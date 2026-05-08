@@ -177,8 +177,8 @@
     .conc-btn.ghost { color:var(--muted) !important; }
 
     /* CONCENTRATION CLOCK */
-    .clock-wrap { position:relative; width:280px; height:280px; margin:0 auto 40px; }
-    .clock-face { width:280px; height:280px; overflow:visible; }
+    .clock-wrap { position:relative; width:320px; height:320px; margin:0 auto 40px; }
+    .clock-face { width:320px; height:320px; overflow:visible; }
     .clock-track { fill:none; stroke:var(--border2); stroke-width:1; }
     .clock-tick { stroke:var(--muted); stroke-width:1; }
     .clock-tick-major { stroke:var(--text); stroke-width:1.5; }
@@ -4531,6 +4531,9 @@ var EXERCISE_DEFS = {
         : 'No record yet';
       var pct = best > 0 ? Math.min(100, Math.round(best / 600 * 1000) / 10) : null;
       var pctDisplay = pct !== null ? (Number.isInteger(pct) ? pct : pct.toFixed(1)) : null;
+      var mastered = best >= 900;
+      var pct15 = best >= 600 ? Math.min(100, Math.round(best / 900 * 1000) / 10) : null;
+      var pct15Display = pct15 !== null ? (Number.isInteger(pct15) ? pct15 : pct15.toFixed(1)) : null;
       return 'Fix your sight attentively and exclusively on the tip of the colored line moving around the dial. Do not think of anything else, just dispassionately watch the end of the hand steadily and incessantly revolving. At this moment you have no interest in the form, color, etc of the app or anything else, except the part you are watching intently.<br><br>Your eyes must not be distracted by anything and nothing in the world exists for you now, <em>except that moving colored line</em>.<br><br>Once a thought, word, or other kind of mental distraction forces its way in, you must immediately click &ldquo;Stop&rdquo; on the screen.<br><br>The goal of this exercise is to reach ten minutes of completely uninterrupted focus. The longer you can go, the better it will be for you. Do not be discouraged if building up this much concentration takes months. Everything will occur in due time. Lack of patience is the result of all human failures.<br><br><span style="display:block; margin-top:4px; font-size:11px; letter-spacing:.15em; text-transform:uppercase; color:#d4956e;">Current Record &nbsp;·&nbsp; ' + bestStr + '</span>'
         + (pctDisplay !== null
           ? '<div style="margin-top:14px; padding:12px 14px; background:rgba(212,149,110,0.08); border:1px solid rgba(212,149,110,0.2); border-radius:8px;">'
@@ -4541,6 +4544,23 @@ var EXERCISE_DEFS = {
             + '<div style="height:4px; background:rgba(255,255,255,0.07); border-radius:2px; overflow:hidden;">'
             + '<div style="height:100%; width:' + pctDisplay + '%; background:linear-gradient(90deg,#d4956e,#e8b88a); border-radius:2px;"></div>'
             + '</div>'
+            + '</div>'
+          : '')
+        + (pct15Display !== null
+          ? '<div style="margin-top:10px; padding:12px 14px; background:rgba(180,40,40,0.07); border:1px solid rgba(180,40,40,0.2); border-radius:8px;">'
+            + '<div style="display:flex; justify-content:space-between; align-items:baseline; margin-bottom:8px;">'
+            + '<span style="font-size:9px; letter-spacing:.18em; text-transform:uppercase; color:rgba(180,60,60,0.65);">Progress to 15 min</span>'
+            + '<span style="font-family:Cormorant Garamond,serif; font-size:26px; font-weight:300; color:#c0403a; line-height:1;">' + pct15Display + '<span style="font-size:14px;">%</span></span>'
+            + '</div>'
+            + '<div style="height:4px; background:rgba(255,255,255,0.07); border-radius:2px; overflow:hidden;">'
+            + '<div style="height:100%; width:' + pct15Display + '%; background:linear-gradient(90deg,#b42828,#d94f4f); border-radius:2px;"></div>'
+            + '</div>'
+            + '</div>'
+          : '')
+        + (mastered
+          ? '<div style="margin-top:18px; padding:20px 18px; background:rgba(180,40,40,0.06); border:1px solid rgba(180,40,40,0.25); border-radius:10px; text-align:center;">'
+            + '<div style="font-family:Cormorant Garamond,serif; font-size:22px; font-weight:400; color:#c0403a; line-height:1.4; letter-spacing:.01em;">This exercise has been mastered.</div>'
+            + '<div style="margin-top:8px; font-size:10px; letter-spacing:.18em; text-transform:uppercase; color:rgba(180,60,60,0.5);">Fifteen minutes of unbroken focus</div>'
             + '</div>'
           : '')
         + '<span onclick="concHistoryFrom=\'exSetupScreen\'; concHistoryFilter=\'clock\'; renderConcHistory(); showScreen(\'concHistoryScreen\');" style="display:block; margin-top:16px; font-size:9px; letter-spacing:.15em; text-transform:uppercase; color:var(--muted); cursor:pointer; text-decoration:underline;">View History</span>';
