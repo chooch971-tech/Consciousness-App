@@ -33,7 +33,10 @@
       pointer-events:none; z-index:0;
     }
     .app { position:relative; z-index:1; height:100dvh; display:flex; flex-direction:column; overflow:hidden; }
-    .screen { display:none; flex-direction:column; height:100%; padding:max(env(safe-area-inset-top),44px) 24px max(env(safe-area-inset-bottom),28px); }
+    .screen { display:none; flex-direction:column; height:100%; padding:16px 24px max(env(safe-area-inset-bottom),16px); }
+    @media (display-mode: standalone) {
+      .screen { padding-top:max(env(safe-area-inset-top),44px); padding-bottom:max(env(safe-area-inset-bottom),28px); }
+    }
     .screen.active { display:flex; }
 
     /* INTRO */
