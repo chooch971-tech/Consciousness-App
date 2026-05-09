@@ -25,9 +25,6 @@
       --danger: #b87070;
       --safe-top: 8px; --safe-top-lg: 12px;
     }
-    @media (display-mode: standalone) {
-      :root { --safe-top: var(--safe-top); --safe-top-lg: var(--safe-top-lg); }
-    }
     *, *::before, *::after { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
     html, body { height:100%; background:var(--bg); color:var(--text); font-family:'DM Mono', monospace; overflow:hidden; }
     body::before {
@@ -537,6 +534,20 @@
 .omnia-speak.left { text-align:left; padding:0; }
 .omnia-response { font-size:10px; letter-spacing:.08em; color:#8ecce0; text-align:center; margin-top:6px; opacity:.7; font-style:normal; }
 </style>
+<script>
+  // Set safe-area padding variables before first paint.
+  // window.navigator.standalone is Apple's reliable iOS PWA indicator.
+  (function() {
+    var pwa = window.navigator.standalone === true
+      || window.matchMedia('(display-mode: standalone)').matches;
+    var root = document.documentElement;
+    if (pwa) {
+      root.style.setProperty('--safe-top',    'max(env(safe-area-inset-top),44px)');
+      root.style.setProperty('--safe-top-lg', 'max(env(safe-area-inset-top),52px)');
+    }
+    // browser mode: keep the CSS defaults (8px / 12px)
+  })();
+</script>
 </head>
 <body>
 <div class="app">
