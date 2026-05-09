@@ -23,6 +23,10 @@
       --text: #ddd8ce; --muted: rgba(221,216,206,0.38);
       --accent: #7eb8a4; --accent2: #a4c4b8; --accent-dim: rgba(126,184,164,0.12);
       --danger: #b87070;
+      --safe-top: 16px; --safe-top-lg: 20px;
+    }
+    @media (display-mode: standalone) {
+      :root { --safe-top: var(--safe-top); --safe-top-lg: var(--safe-top-lg); }
     }
     *, *::before, *::after { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
     html, body { height:100%; background:var(--bg); color:var(--text); font-family:'DM Mono', monospace; overflow:hidden; }
@@ -33,10 +37,7 @@
       pointer-events:none; z-index:0;
     }
     .app { position:relative; z-index:1; height:100dvh; display:flex; flex-direction:column; overflow:hidden; }
-    .screen { display:none; flex-direction:column; height:100%; padding:16px 24px max(env(safe-area-inset-bottom),16px); }
-    @media (display-mode: standalone) {
-      .screen { padding-top:max(env(safe-area-inset-top),44px); padding-bottom:max(env(safe-area-inset-bottom),28px); }
-    }
+    .screen { display:none; flex-direction:column; height:100%; padding:var(--safe-top) 24px max(env(safe-area-inset-bottom),28px); }
     .screen.active { display:flex; }
 
     /* INTRO */
@@ -281,7 +282,7 @@
     @keyframes haltFlash { 0%{opacity:0;transform:translateY(-8px)} 15%{opacity:1;transform:translateY(0)} 80%{opacity:1} 100%{opacity:0} }
     .vis-halt-flash { position:fixed; top:50%; left:50%; transform:translate(-50%,-50%); font-family:Cormorant Garamond,serif; font-size:48px; font-weight:300; font-style:italic; color:#d4956e; pointer-events:none; z-index:20; opacity:0; white-space:nowrap; }
     .vis-halt-flash.show { animation:haltFlash 1.2s ease forwards; }
-    .vis-halt-count { position:fixed; top:max(env(safe-area-inset-top),44px); left:50%; transform:translateX(-50%); font-size:9px; letter-spacing:.2em; text-transform:uppercase; color:#d4956e; opacity:0.6; pointer-events:none; z-index:20; }
+    .vis-halt-count { position:fixed; top:var(--safe-top); left:50%; transform:translateX(-50%); font-size:9px; letter-spacing:.2em; text-transform:uppercase; color:#d4956e; opacity:0.6; pointer-events:none; z-index:20; }
 
     /* PRAYER TAB */
     .mode-tab.prayer-mode { color:#9b8ec4; border-bottom-color:#9b8ec4; }
@@ -406,7 +407,7 @@
     .hamburger:hover span { background:var(--accent); }
     .drawer-overlay { position:fixed; inset:0; z-index:300; background:rgba(7,8,13,0.7); backdrop-filter:blur(4px); opacity:0; pointer-events:none; transition:opacity .3s; }
     .drawer-overlay.show { opacity:1; pointer-events:all; }
-    .drawer { position:fixed; top:0; left:0; bottom:0; width:72%; max-width:280px; background:var(--surface); border-right:1px solid var(--border); z-index:301; transform:translateX(-100%); transition:transform .3s cubic-bezier(.4,0,.2,1); padding:max(env(safe-area-inset-top),52px) 0 max(env(safe-area-inset-bottom),32px); display:flex; flex-direction:column; }
+    .drawer { position:fixed; top:0; left:0; bottom:0; width:72%; max-width:280px; background:var(--surface); border-right:1px solid var(--border); z-index:301; transform:translateX(-100%); transition:transform .3s cubic-bezier(.4,0,.2,1); padding:var(--safe-top-lg) 0 max(env(safe-area-inset-bottom),32px); display:flex; flex-direction:column; }
     .drawer-overlay.show .drawer { transform:translateX(0); }
     .drawer-header { padding:0 24px 24px; border-bottom:1px solid var(--border); margin-bottom:8px; }
     .drawer-wordmark { font-family:Cormorant Garamond,serif; font-size:11px; font-weight:300; letter-spacing:.35em; text-transform:uppercase; color:var(--accent); }
@@ -762,7 +763,7 @@
   </div>
 
   <!-- AWARENESS HOME -->
-  <div id="homeScreen" style="display:flex; flex-direction:column; height:100%; padding:max(env(safe-area-inset-top),44px) 24px max(env(safe-area-inset-bottom),28px);">
+  <div id="homeScreen" style="display:flex; flex-direction:column; height:100%; padding:var(--safe-top) 24px max(env(safe-area-inset-bottom),28px);">
     <div class="top-bar">
       <button class="hamburger" id="hamburgerBtn" aria-label="Menu">
         <span></span><span></span><span></span>
@@ -999,7 +1000,7 @@
 
   <!-- SOUL MIRROR SCREEN -->
   <div class="screen" id="soulMirrorScreen" style="padding:0; flex-direction:column;">
-    <div style="padding:max(env(safe-area-inset-top),44px) 24px 0; display:flex; justify-content:space-between; align-items:center; flex-shrink:0; background:var(--bg);">
+    <div style="padding:var(--safe-top) 24px 0; display:flex; justify-content:space-between; align-items:center; flex-shrink:0; background:var(--bg);">
       <div style="font-family:Cormorant Garamond,serif; font-size:24px; font-weight:300; color:#c4a8d4;">Soul Mirror</div>
       <button class="history-back" id="soulMirrorBack">← back</button>
     </div>
@@ -1091,7 +1092,7 @@
 
   <!-- EXERCISE SETUP SCREEN -->
   <div class="screen" id="exSetupScreen" style="padding:0;">
-    <div style="padding:max(env(safe-area-inset-top),44px) 24px 0; flex-shrink:0; display:flex; justify-content:space-between; align-items:center;">
+    <div style="padding:var(--safe-top) 24px 0; flex-shrink:0; display:flex; justify-content:space-between; align-items:center;">
       <button class="history-back" id="exSetupBack">&#8592; back</button>
       <span style="font-size:9px; letter-spacing:.2em; text-transform:uppercase; color:#d4956e;">concentration</span>
     </div>
@@ -1108,7 +1109,7 @@
 
   <!-- VISUALIZATION TUTORIAL SCREEN -->
   <div class="screen" id="visTutorialScreen" style="overflow-y:auto;">
-    <div style="padding:max(env(safe-area-inset-top),44px) 24px 0; flex-shrink:0; display:flex; justify-content:space-between; align-items:center; margin-bottom:24px;">
+    <div style="padding:var(--safe-top) 24px 0; flex-shrink:0; display:flex; justify-content:space-between; align-items:center; margin-bottom:24px;">
       <button class="history-back" id="visTutorialBack">&#8592; back</button>
       <span style="font-size:9px; letter-spacing:.2em; text-transform:uppercase; color:#d4956e;">visualization</span>
     </div>
@@ -1160,7 +1161,7 @@
 
   <!-- PRAYER SESSION SCREEN -->
   <div class="screen" id="prayerSessionScreen">
-    <div style="padding:max(env(safe-area-inset-top),44px) 24px 0; display:flex; justify-content:space-between; align-items:center;">
+    <div style="padding:var(--safe-top) 24px 0; display:flex; justify-content:space-between; align-items:center;">
       <button class="session-discard-btn" onclick="discardSession('prayer')" title="Discard session">✕</button>
       <span class="session-title" style="color:#9b8ec4;">prayer</span>
       <span id="prayerSessionLabel" style="font-size:9px; letter-spacing:.2em; color:var(--muted);"></span>
@@ -1177,7 +1178,7 @@
 
   <!-- PRAYER RESULT / REFLECTION SCREEN -->
   <div class="screen" id="prayerResultScreen" style="overflow-y:auto; -webkit-overflow-scrolling:touch;">
-    <div style="padding:max(env(safe-area-inset-top),44px) 24px 0; display:flex; justify-content:space-between; align-items:center;">
+    <div style="padding:var(--safe-top) 24px 0; display:flex; justify-content:space-between; align-items:center;">
       <span class="session-title" style="color:#9b8ec4;">prayer complete</span>
       <span id="prayerResultLabel" style="font-size:9px; letter-spacing:.2em; color:var(--muted);"></span>
     </div>
@@ -1263,7 +1264,7 @@
 
   <!-- VISUAL EXERCISE STUDY SCREEN -->
   <div class="screen" id="visStudyScreen">
-    <div style="padding:max(env(safe-area-inset-top),44px) 24px 0; display:flex; justify-content:space-between; align-items:center;">
+    <div style="padding:var(--safe-top) 24px 0; display:flex; justify-content:space-between; align-items:center;">
       <span class="session-title" style="color:#d4956e;">study the object</span>
       <button class="session-end-btn" id="visStudyCancelBtn">Cancel</button>
     </div>
@@ -1279,7 +1280,7 @@
 
   <!-- VISUAL EXERCISE SESSION -->
   <div class="screen" id="visSessionScreen">
-    <div style="padding:max(env(safe-area-inset-top),44px) 24px 0; display:flex; justify-content:space-between; align-items:center;">
+    <div style="padding:var(--safe-top) 24px 0; display:flex; justify-content:space-between; align-items:center;">
       <button class="session-discard-btn" onclick="discardSession('vis')" title="Discard session">✕</button>
       <span class="session-title" style="color:#d4956e;">visualization</span>
       <button class="session-end-btn" id="visEndSessionBtn">End Session</button>
@@ -1315,7 +1316,7 @@
 
   <!-- VISUALIZATION INTERMEDIATE SESSION -->
   <div class="screen" id="visIntermediateScreen" style="padding:0;">
-    <div style="padding:max(env(safe-area-inset-top),44px) 24px 0; flex-shrink:0; display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+    <div style="padding:var(--safe-top) 24px 0; flex-shrink:0; display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
       <button class="history-back" onclick="stopSceneAudio(); showScreen('exSetupScreen');">&#8592; back</button>
       <span style="font-size:9px; letter-spacing:.2em; text-transform:uppercase; color:#d4956e;">concentration</span>
     </div>
@@ -1329,7 +1330,7 @@
 
   <!-- VISUALIZATION RESULT -->
   <div class="screen" id="visResultScreen">
-    <div style="padding:max(env(safe-area-inset-top),44px) 24px 0; margin-bottom:16px;">
+    <div style="padding:var(--safe-top) 24px 0; margin-bottom:16px;">
       <div class="survey-title" style="color:#d4956e;">Session Complete.</div>
       <div class="survey-sub" id="visResultSub"></div>
     </div>
@@ -1349,7 +1350,7 @@
 
   <!-- AUDITORY SESSION SCREEN -->
   <div class="screen" id="audSessionScreen">
-    <div style="padding:max(env(safe-area-inset-top),44px) 24px 0; display:flex; justify-content:space-between; align-items:center;">
+    <div style="padding:var(--safe-top) 24px 0; display:flex; justify-content:space-between; align-items:center;">
       <button class="session-discard-btn" onclick="discardSession('auditory')" title="Discard session">✕</button>
       <span class="session-title" style="color:#d4956e;">auditory</span>
       <button class="session-end-btn" id="audEndBtn">End Session</button>
@@ -1387,7 +1388,7 @@
 
   <!-- AUDITORY RESULT SCREEN -->
   <div class="screen" id="audResultScreen">
-    <div style="padding:max(env(safe-area-inset-top),44px) 24px 0; margin-bottom:16px;">
+    <div style="padding:var(--safe-top) 24px 0; margin-bottom:16px;">
       <div class="survey-title" style="color:#d4956e;">Session Complete.</div>
       <div class="survey-sub" id="audResultSub"></div>
     </div>
@@ -1407,7 +1408,7 @@
 
   <!-- THOUGHT CONTROL SESSION -->
   <div class="screen" id="tcSessionScreen">
-    <div style="padding:max(env(safe-area-inset-top),44px) 24px 0; display:flex; justify-content:space-between; align-items:center;">
+    <div style="padding:var(--safe-top) 24px 0; display:flex; justify-content:space-between; align-items:center;">
       <button class="session-discard-btn" onclick="discardSession('tc')" title="Discard session">✕</button>
       <span class="session-title" style="color:#a47eb8;">thought control</span>
       <button class="session-end-btn" id="tcEndBtn">End Session</button>
@@ -1435,7 +1436,7 @@
 
   <!-- THOUGHT CONTROL RESULT -->
   <div class="screen" id="tcResultScreen">
-    <div style="padding:max(env(safe-area-inset-top),44px) 24px 0; margin-bottom:20px;">
+    <div style="padding:var(--safe-top) 24px 0; margin-bottom:20px;">
       <div class="survey-title" style="color:#a47eb8;">Session Complete.</div>
       <div class="survey-sub" id="tcResultSub"></div>
     </div>
@@ -1468,7 +1469,7 @@
 
   <!-- ASANA SESSION SCREEN -->
   <div class="screen" id="asanaSessionScreen">
-    <div style="padding:max(env(safe-area-inset-top),44px) 24px 0; display:flex; justify-content:space-between; align-items:center;">
+    <div style="padding:var(--safe-top) 24px 0; display:flex; justify-content:space-between; align-items:center;">
       <button class="session-discard-btn" onclick="discardSession('asana')" title="Discard session">✕</button>
       <span class="session-title" style="color:#7eb8a4;">asana</span>
       <button class="session-end-btn" id="asanaEndBtn">End Session</button>
@@ -1484,7 +1485,7 @@
 
   <!-- ASANA RESULT SCREEN -->
   <div class="screen" id="asanaResultScreen">
-    <div style="flex:1; overflow-y:auto; -webkit-overflow-scrolling:touch; padding:max(env(safe-area-inset-top),44px) 24px 140px;">
+    <div style="flex:1; overflow-y:auto; -webkit-overflow-scrolling:touch; padding:var(--safe-top) 24px 140px;">
       <div style="font-size:9px; letter-spacing:.3em; text-transform:uppercase; color:#7eb8a4; margin-bottom:24px;">asana complete</div>
       <div style="display:flex; justify-content:space-between; margin-bottom:16px;">
         <span style="font-size:9px; letter-spacing:.2em; text-transform:uppercase; color:var(--muted);">Time held</span>
@@ -1556,7 +1557,7 @@
 
   <!-- REPORTS -->
   <div class="screen" id="reportsScreen">
-    <div style="padding:max(env(safe-area-inset-top),44px) 24px 0 24px; display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+    <div style="padding:var(--safe-top) 24px 0 24px; display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
       <div style="font-family:Cormorant Garamond,serif; font-size:24px; font-weight:300; color:var(--text);">Progress</div>
       <button class="history-back" id="reportsBack">← back</button>
     </div>
@@ -1575,7 +1576,7 @@
   <!-- BARDON GAME SCREEN -->
   <div class="screen" id="bardonScreen" style="position:relative;overflow:hidden;">
     <div id="bardonGame" style="position:absolute;inset:0;overflow:hidden;">
-      <div id="game" style="padding-top:max(env(safe-area-inset-top),44px); display:flex; flex-direction:column; height:100%;">
+      <div id="game" style="padding-top:var(--safe-top); display:flex; flex-direction:column; height:100%;">
         <div class="hdr">
           <div class="hdr-title">Initiation into Hermetics</div>
           <div class="hdr-meta" id="hdrMeta">Age 25 · Mon · 6:00 AM</div>
@@ -1616,7 +1617,7 @@
 
   <!-- JOURNAL LOG SCREEN -->
   <div class="screen" id="journalScreen" style="padding:0; flex-direction:column;">
-    <div style="padding:max(env(safe-area-inset-top),44px) 24px 0; display:flex; justify-content:space-between; align-items:center; flex-shrink:0;">
+    <div style="padding:var(--safe-top) 24px 0; display:flex; justify-content:space-between; align-items:center; flex-shrink:0;">
       <div style="font-family:Cormorant Garamond,serif; font-size:24px; font-weight:300; color:var(--text);">Journal</div>
       <button class="history-back" id="journalBack">← back</button>
     </div>
