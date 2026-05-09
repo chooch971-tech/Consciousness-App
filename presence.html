@@ -3537,20 +3537,6 @@ if (!localStorage.getItem('presence_auth_token')) {
   }
 }
 
-// First-time user: flash About in the drawer after a short delay
-if (!localStorage.getItem('presence_visited') && !state.history.length) {
-  localStorage.setItem('presence_visited', '1');
-  setTimeout(function() {
-    openDrawer();
-    var aboutBtn = document.getElementById('drawerAbout');
-    if (aboutBtn) {
-      aboutBtn.classList.add('drawer-item-pulse');
-      aboutBtn.addEventListener('animationend', function() {
-        aboutBtn.classList.remove('drawer-item-pulse');
-      }, { once: true });
-    }
-  }, 800);
-}
 
 // Clock SVG generation
 function buildClockSVG() {
