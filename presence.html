@@ -105,6 +105,8 @@
     .session-header { display:flex; justify-content:space-between; align-items:center; }
     .session-title { font-size:9px; letter-spacing:.3em; text-transform:uppercase; color:var(--muted); }
     .session-end-btn { font-size:9px; letter-spacing:.15em; text-transform:uppercase; color:var(--danger); background:none; border:1px solid rgba(184,112,112,.2); padding:6px 14px; border-radius:4px; cursor:pointer; font-family:'DM Mono',monospace; }
+    .session-discard-btn { background:none; border:none; color:var(--danger); font-size:16px; cursor:pointer; padding:4px 8px; opacity:0.45; transition:opacity .2s; line-height:1; font-family:'DM Mono',monospace; flex-shrink:0; }
+    .session-discard-btn:hover { opacity:1; }
     .session-main { flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; }
     .session-timer { font-family:Cormorant Garamond,serif; font-size:64px; font-weight:300; color:var(--text); letter-spacing:-.02em; line-height:1; margin-bottom:8px; }
     .session-timer-label { font-size:9px; letter-spacing:.2em; text-transform:uppercase; color:var(--muted); margin-bottom:40px; }
@@ -1080,6 +1082,7 @@
   <!-- PRAYER SESSION SCREEN -->
   <div class="screen" id="prayerSessionScreen">
     <div style="padding:max(env(safe-area-inset-top),44px) 24px 0; display:flex; justify-content:space-between; align-items:center;">
+      <button class="session-discard-btn" onclick="discardSession('prayer')" title="Discard session">✕</button>
       <span class="session-title" style="color:#9b8ec4;">prayer</span>
       <span id="prayerSessionLabel" style="font-size:9px; letter-spacing:.2em; color:var(--muted);"></span>
     </div>
@@ -1143,6 +1146,7 @@
   <!-- CONCENTRATION SESSION -->
   <div class="screen" id="concSessionScreen">
     <div class="session-header">
+      <button class="session-discard-btn" onclick="discardSession('clock')" title="Discard session">✕</button>
       <span class="session-title" style="color:#d4956e;">concentration</span>
       <button class="session-end-btn" id="concStopBtn">Stop</button>
     </div>
@@ -1197,6 +1201,7 @@
   <!-- VISUAL EXERCISE SESSION -->
   <div class="screen" id="visSessionScreen">
     <div style="padding:max(env(safe-area-inset-top),44px) 24px 0; display:flex; justify-content:space-between; align-items:center;">
+      <button class="session-discard-btn" onclick="discardSession('vis')" title="Discard session">✕</button>
       <span class="session-title" style="color:#d4956e;">visualization</span>
       <button class="session-end-btn" id="visEndSessionBtn">End Session</button>
     </div>
@@ -1266,6 +1271,7 @@
   <!-- AUDITORY SESSION SCREEN -->
   <div class="screen" id="audSessionScreen">
     <div style="padding:max(env(safe-area-inset-top),44px) 24px 0; display:flex; justify-content:space-between; align-items:center;">
+      <button class="session-discard-btn" onclick="discardSession('auditory')" title="Discard session">✕</button>
       <span class="session-title" style="color:#d4956e;">auditory</span>
       <button class="session-end-btn" id="audEndBtn">End Session</button>
     </div>
@@ -1323,6 +1329,7 @@
   <!-- THOUGHT CONTROL SESSION -->
   <div class="screen" id="tcSessionScreen">
     <div style="padding:max(env(safe-area-inset-top),44px) 24px 0; display:flex; justify-content:space-between; align-items:center;">
+      <button class="session-discard-btn" onclick="discardSession('tc')" title="Discard session">✕</button>
       <span class="session-title" style="color:#a47eb8;">thought control</span>
       <button class="session-end-btn" id="tcEndBtn">End Session</button>
     </div>
@@ -1383,6 +1390,7 @@
   <!-- ASANA SESSION SCREEN -->
   <div class="screen" id="asanaSessionScreen">
     <div style="padding:max(env(safe-area-inset-top),44px) 24px 0; display:flex; justify-content:space-between; align-items:center;">
+      <button class="session-discard-btn" onclick="discardSession('asana')" title="Discard session">✕</button>
       <span class="session-title" style="color:#7eb8a4;">asana</span>
       <button class="session-end-btn" id="asanaEndBtn">End Session</button>
     </div>
@@ -1431,6 +1439,7 @@
   <!-- SESSION -->
   <div class="screen" id="sessionScreen">
     <div class="session-header">
+      <button class="session-discard-btn" onclick="discardSession('awareness')" title="Discard session">✕</button>
       <span class="session-title">active session</span>
       <button class="session-end-btn" id="endBtn">End Early</button>
     </div>
@@ -5115,6 +5124,71 @@ document.getElementById('exerciseGrid').addEventListener('click', function(e) {
     openExerciseSetup(card.dataset.exercise);
   }
 });
+
+// ── Discard session (red X button on all session screens) ─
+function discardSession(type) {
+  if (!confirm('Discard this session? No data will be saved.')) return;
+  switch (type) {
+    case 'awareness':
+      clearTimeout(sessionTimerHandle);
+      sessionStartTime = null;
+      showScreen('homeScreen');
+      break;
+    case 'clock':
+      if (concCountInterval) { clearInterval(concCountInterval); concCountInterval = null; }
+      cancelAnimationFrame(concTimerHandle);
+      concStartTime = null;
+      var cd = document.getElementById('clockCountdown');
+      if (cd) { cd.classList.remove('show'); cd.textContent = ''; }
+      showScreen('homeScreen');
+      switchMode('concentration');
+      break;
+    case 'vis':
+      cancelAnimationFrame(visTimerHandle);
+      visTimerHandle = null;
+      visSessionStartTime = null;
+      stopAllAudio();
+      showScreen('homeScreen');
+      switchMode('concentration');
+      break;
+    case 'auditory':
+      cancelAnimationFrame(audTimerHandle);
+      stopAllAudio();
+      stopWaveAnimation();
+      audRepActive = false;
+      audSessionStartTime = null;
+      showScreen('homeScreen');
+      switchMode('concentration');
+      break;
+    case 'tc':
+      cancelAnimationFrame(tcTimerHandle);
+      clearInterval(_tcAlarmInterval);
+      _tcAlarmInterval = null;
+      tcStartTime = null;
+      var tco = document.getElementById('tcTimesUpOverlay');
+      if (tco) tco.style.display = 'none';
+      var tcc = document.getElementById('tcCountdownOverlay');
+      if (tcc) tcc.style.display = 'none';
+      showScreen('homeScreen');
+      switchMode('concentration');
+      break;
+    case 'asana':
+      clearTimeout(asanaTimerHandle);
+      asanaTimerHandle = null;
+      asanaStartTime = null;
+      showScreen('homeScreen');
+      switchMode('concentration');
+      break;
+    case 'prayer':
+      cancelAnimationFrame(prayerSessionTimerHandle);
+      prayerSessionTimerHandle = null;
+      prayerSessionStart = null;
+      _pendingPrayer = null;
+      showScreen('homeScreen');
+      switchMode('prayer');
+      break;
+  }
+}
 
 // ── Expanded / carousel view ──────────────────────────────
 var concViewMode = 'grid';
