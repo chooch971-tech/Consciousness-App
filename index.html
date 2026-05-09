@@ -1,0 +1,930 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta name="description" content="Presence — a daily practice for training the mind to stay awake. Concentration, awareness, and inner stillness, one session at a time."/>
+  <meta property="og:title" content="Presence"/>
+  <meta property="og:description" content="Train your mind to stay awake."/>
+  <meta property="og:type" content="website"/>
+  <meta property="og:url" content="https://thepresenceapp.com"/>
+  <meta name="theme-color" content="#07080d"/>
+  <title>Presence — Train your mind to stay awake</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300;1,400&family=DM+Mono:wght@300;400&display=swap" rel="stylesheet"/>
+  <style>
+    :root {
+      --bg: #07080d;
+      --surface: #0e0f17;
+      --surface2: #13141f;
+      --border: rgba(255,255,255,0.07);
+      --border2: rgba(255,255,255,0.12);
+      --text: #ddd8ce;
+      --muted: rgba(221,216,206,0.38);
+      --accent: #7eb8a4;
+      --accent2: #a4c4b8;
+      --accent-dim: rgba(126,184,164,0.12);
+    }
+
+    *, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
+
+    html { scroll-behavior:smooth; }
+
+    body {
+      background:var(--bg);
+      color:var(--text);
+      font-family:'DM Mono', monospace;
+      line-height:1;
+      overflow-x:hidden;
+    }
+
+    /* ─── ambient background ─── */
+    body::before {
+      content:'';
+      position:fixed;
+      inset:0;
+      background:
+        radial-gradient(ellipse 70% 55% at 25% 10%, rgba(126,184,164,0.07) 0%, transparent 65%),
+        radial-gradient(ellipse 50% 40% at 80% 85%, rgba(100,90,160,0.06) 0%, transparent 60%),
+        radial-gradient(ellipse 40% 30% at 60% 50%, rgba(126,184,164,0.03) 0%, transparent 60%);
+      pointer-events:none;
+      z-index:0;
+    }
+
+    /* ─── layout ─── */
+    .page { position:relative; z-index:1; }
+
+    section {
+      max-width:900px;
+      margin:0 auto;
+      padding:0 32px;
+    }
+
+    /* ─── nav ─── */
+    nav {
+      position:fixed;
+      top:0; left:0; right:0;
+      z-index:100;
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      padding:20px 40px;
+      background:rgba(7,8,13,0.7);
+      backdrop-filter:blur(12px);
+      -webkit-backdrop-filter:blur(12px);
+      border-bottom:1px solid transparent;
+      transition:border-color .3s;
+    }
+    nav.scrolled { border-bottom-color:var(--border); }
+    .nav-wordmark {
+      font-family:'Cormorant Garamond', serif;
+      font-size:13px;
+      font-weight:300;
+      letter-spacing:.38em;
+      text-transform:uppercase;
+      color:var(--accent);
+      text-decoration:none;
+    }
+    .nav-cta {
+      font-size:8px;
+      letter-spacing:.25em;
+      text-transform:uppercase;
+      color:var(--accent2);
+      background:var(--accent-dim);
+      border:1px solid rgba(126,184,164,.28);
+      border-radius:4px;
+      padding:9px 18px;
+      cursor:pointer;
+      font-family:'DM Mono', monospace;
+      text-decoration:none;
+      transition:all .2s;
+    }
+    .nav-cta:hover { background:rgba(126,184,164,.2); border-color:rgba(126,184,164,.45); }
+
+    /* ─── hero ─── */
+    .hero {
+      min-height:100svh;
+      display:flex;
+      flex-direction:column;
+      align-items:center;
+      justify-content:center;
+      text-align:center;
+      padding:120px 32px 80px;
+      max-width:100%;
+    }
+    .hero-label {
+      font-size:9px;
+      letter-spacing:.35em;
+      text-transform:uppercase;
+      color:var(--accent);
+      margin-bottom:28px;
+      opacity:0;
+      animation:fadeUp .9s ease forwards .1s;
+    }
+    .hero-headline {
+      font-family:'Cormorant Garamond', serif;
+      font-size:clamp(42px, 8vw, 80px);
+      font-weight:300;
+      line-height:1.15;
+      color:var(--text);
+      margin-bottom:28px;
+      opacity:0;
+      animation:fadeUp .9s ease forwards .3s;
+    }
+    .hero-headline em {
+      color:var(--accent);
+      font-style:normal;
+    }
+    .hero-sub {
+      font-size:13px;
+      line-height:1.9;
+      color:var(--muted);
+      max-width:440px;
+      margin:0 auto 48px;
+      opacity:0;
+      animation:fadeUp .9s ease forwards .5s;
+    }
+    .hero-actions {
+      display:flex;
+      gap:14px;
+      align-items:center;
+      flex-wrap:wrap;
+      justify-content:center;
+      opacity:0;
+      animation:fadeUp .9s ease forwards .65s;
+    }
+    .btn-primary {
+      font-size:9px;
+      letter-spacing:.25em;
+      text-transform:uppercase;
+      color:var(--accent2);
+      background:var(--accent-dim);
+      border:1px solid rgba(126,184,164,.35);
+      border-radius:5px;
+      padding:16px 32px;
+      cursor:pointer;
+      font-family:'DM Mono', monospace;
+      text-decoration:none;
+      transition:all .2s;
+      display:inline-block;
+    }
+    .btn-primary:hover { background:rgba(126,184,164,.2); border-color:rgba(126,184,164,.5); }
+    .btn-ghost {
+      font-size:9px;
+      letter-spacing:.2em;
+      text-transform:uppercase;
+      color:var(--muted);
+      background:none;
+      border:none;
+      cursor:pointer;
+      font-family:'DM Mono', monospace;
+      text-decoration:none;
+      transition:color .2s;
+    }
+    .btn-ghost:hover { color:var(--text); }
+    .hero-scroll-hint {
+      position:absolute;
+      bottom:36px;
+      left:50%;
+      transform:translateX(-50%);
+      font-size:8px;
+      letter-spacing:.3em;
+      text-transform:uppercase;
+      color:var(--muted);
+      opacity:0;
+      animation:fadeUp .9s ease forwards 1.1s, scrollHint 2.5s ease-in-out infinite 1.5s;
+    }
+
+    /* ─── ring hero graphic ─── */
+    .hero-ring-wrap {
+      margin-bottom:52px;
+      opacity:0;
+      animation:fadeUp .9s ease forwards .2s;
+    }
+    .hero-ring {
+      width:120px;
+      height:120px;
+      position:relative;
+      margin:0 auto;
+    }
+    .hero-ring svg {
+      width:120px;
+      height:120px;
+      transform:rotate(-90deg);
+    }
+    .ring-track { fill:none; stroke:var(--border2); stroke-width:1; }
+    .ring-prog {
+      fill:none;
+      stroke:var(--accent);
+      stroke-width:1.5;
+      stroke-linecap:round;
+      stroke-dasharray:339.29;
+      stroke-dashoffset:120;
+      animation:ringFill 2.5s cubic-bezier(.4,0,.2,1) forwards .8s;
+    }
+    .hero-ring-center {
+      position:absolute;
+      inset:0;
+      display:flex;
+      flex-direction:column;
+      align-items:center;
+      justify-content:center;
+      gap:5px;
+    }
+    .hero-ring-num {
+      font-family:'Cormorant Garamond', serif;
+      font-size:30px;
+      font-weight:300;
+      color:var(--text);
+      line-height:1;
+    }
+    .hero-ring-sub {
+      font-size:7px;
+      letter-spacing:.2em;
+      text-transform:uppercase;
+      color:var(--muted);
+    }
+
+    /* ─── divider ─── */
+    .divider {
+      width:32px;
+      height:1px;
+      background:var(--accent);
+      opacity:.35;
+      margin:0 auto;
+    }
+
+    /* ─── intro section ─── */
+    .intro-section {
+      padding:120px 32px;
+      max-width:900px;
+      margin:0 auto;
+    }
+    .section-label {
+      font-size:8px;
+      letter-spacing:.35em;
+      text-transform:uppercase;
+      color:var(--accent);
+      margin-bottom:20px;
+      display:block;
+    }
+    .intro-headline {
+      font-family:'Cormorant Garamond', serif;
+      font-size:clamp(28px, 5vw, 44px);
+      font-weight:300;
+      line-height:1.35;
+      color:var(--text);
+      margin-bottom:28px;
+    }
+    .intro-headline em { color:var(--accent); font-style:italic; }
+    .intro-body {
+      font-size:13px;
+      line-height:1.95;
+      color:var(--muted);
+      max-width:540px;
+    }
+    .intro-body + .intro-body { margin-top:20px; }
+    .intro-body em { color:var(--accent2); font-style:italic; }
+
+    /* ─── features grid ─── */
+    .features-section {
+      padding:80px 32px 120px;
+      max-width:900px;
+      margin:0 auto;
+    }
+    .features-grid {
+      display:grid;
+      grid-template-columns:repeat(auto-fit, minmax(240px, 1fr));
+      gap:16px;
+      margin-top:52px;
+    }
+    .feature-card {
+      background:var(--surface);
+      border:1px solid var(--border);
+      border-radius:12px;
+      padding:28px 24px;
+      position:relative;
+      overflow:hidden;
+      transition:border-color .25s, background .25s;
+    }
+    .feature-card::before {
+      content:'';
+      position:absolute;
+      top:0; left:0; right:0;
+      height:1px;
+      background:linear-gradient(90deg, transparent, var(--card-accent, var(--accent)), transparent);
+      opacity:.35;
+      transition:opacity .25s;
+    }
+    .feature-card:hover { background:var(--surface2); border-color:var(--border2); }
+    .feature-card:hover::before { opacity:.6; }
+    .feature-icon {
+      font-size:22px;
+      margin-bottom:16px;
+      display:block;
+    }
+    .feature-name {
+      font-size:10px;
+      letter-spacing:.18em;
+      text-transform:uppercase;
+      color:var(--card-accent, var(--accent2));
+      margin-bottom:10px;
+    }
+    .feature-desc {
+      font-size:11px;
+      line-height:1.75;
+      color:var(--muted);
+    }
+
+    /* ─── practice section ─── */
+    .practice-section {
+      padding:80px 32px 120px;
+      max-width:900px;
+      margin:0 auto;
+      border-top:1px solid var(--border);
+    }
+    .practice-list {
+      display:flex;
+      flex-direction:column;
+      gap:0;
+      margin-top:48px;
+    }
+    .practice-row {
+      display:flex;
+      align-items:flex-start;
+      gap:28px;
+      padding:28px 0;
+      border-bottom:1px solid var(--border);
+    }
+    .practice-row:first-child { border-top:1px solid var(--border); }
+    .practice-num {
+      font-family:'Cormorant Garamond', serif;
+      font-size:32px;
+      font-weight:300;
+      color:var(--border2);
+      line-height:1;
+      flex-shrink:0;
+      width:40px;
+      text-align:right;
+      margin-top:2px;
+    }
+    .practice-body { flex:1; }
+    .practice-name {
+      font-size:10px;
+      letter-spacing:.2em;
+      text-transform:uppercase;
+      color:var(--text);
+      margin-bottom:10px;
+    }
+    .practice-name span {
+      display:inline-block;
+      width:6px;
+      height:6px;
+      border-radius:50%;
+      background:var(--pill-color, var(--accent));
+      margin-right:10px;
+      vertical-align:middle;
+      margin-top:-1px;
+    }
+    .practice-desc {
+      font-size:12px;
+      line-height:1.8;
+      color:var(--muted);
+    }
+
+    /* ─── philosophy section ─── */
+    .philosophy-section {
+      padding:100px 32px 120px;
+      max-width:680px;
+      margin:0 auto;
+      text-align:center;
+      border-top:1px solid var(--border);
+    }
+    .philosophy-quote {
+      font-family:'Cormorant Garamond', serif;
+      font-size:clamp(22px, 4vw, 34px);
+      font-weight:300;
+      font-style:italic;
+      line-height:1.5;
+      color:var(--text);
+      margin-bottom:20px;
+    }
+    .philosophy-quote em { color:var(--accent); font-style:normal; }
+    .philosophy-source {
+      font-size:9px;
+      letter-spacing:.25em;
+      text-transform:uppercase;
+      color:var(--muted);
+    }
+
+    /* ─── app preview card ─── */
+    .preview-section {
+      padding:80px 32px 120px;
+      max-width:900px;
+      margin:0 auto;
+      border-top:1px solid var(--border);
+    }
+    .preview-grid {
+      display:grid;
+      grid-template-columns:1fr 1fr 1fr;
+      gap:12px;
+      margin-top:52px;
+    }
+    .preview-card {
+      background:var(--surface);
+      border:1px solid var(--border);
+      border-radius:14px;
+      padding:24px 20px;
+      position:relative;
+      overflow:hidden;
+    }
+    .preview-card::before {
+      content:'';
+      position:absolute;
+      top:0; left:0; right:0;
+      height:1px;
+      background:linear-gradient(90deg, transparent, rgba(126,184,164,.4), transparent);
+    }
+    .preview-screen-label {
+      font-size:7px;
+      letter-spacing:.3em;
+      text-transform:uppercase;
+      color:var(--muted);
+      margin-bottom:16px;
+      display:block;
+    }
+    .preview-timer {
+      font-family:'Cormorant Garamond', serif;
+      font-size:40px;
+      font-weight:300;
+      color:var(--text);
+      line-height:1;
+      margin-bottom:6px;
+    }
+    .preview-timer-sub {
+      font-size:7px;
+      letter-spacing:.2em;
+      text-transform:uppercase;
+      color:var(--muted);
+      margin-bottom:20px;
+    }
+    .preview-prompt-lbl {
+      font-size:7px;
+      letter-spacing:.2em;
+      text-transform:uppercase;
+      color:var(--accent);
+      margin-bottom:8px;
+    }
+    .preview-prompt {
+      font-family:'Cormorant Garamond', serif;
+      font-size:14px;
+      font-style:italic;
+      font-weight:300;
+      line-height:1.5;
+      color:var(--text);
+    }
+    .preview-ring-wrap {
+      display:flex;
+      flex-direction:column;
+      align-items:center;
+      gap:12px;
+    }
+    .preview-ring {
+      width:80px;
+      height:80px;
+      position:relative;
+    }
+    .preview-ring svg { width:80px; height:80px; transform:rotate(-90deg); }
+    .preview-ring-center {
+      position:absolute;
+      inset:0;
+      display:flex;
+      flex-direction:column;
+      align-items:center;
+      justify-content:center;
+    }
+    .preview-ring-num {
+      font-family:'Cormorant Garamond', serif;
+      font-size:22px;
+      font-weight:300;
+      color:var(--text);
+      line-height:1;
+    }
+    .preview-ring-lbl {
+      font-size:6px;
+      letter-spacing:.15em;
+      text-transform:uppercase;
+      color:var(--muted);
+    }
+    .preview-stat-row {
+      display:flex;
+      gap:16px;
+      justify-content:center;
+    }
+    .preview-stat { text-align:center; }
+    .preview-stat-val {
+      font-family:'Cormorant Garamond', serif;
+      font-size:20px;
+      font-weight:300;
+      color:var(--accent2);
+      display:block;
+    }
+    .preview-stat-key {
+      font-size:6px;
+      letter-spacing:.18em;
+      text-transform:uppercase;
+      color:var(--muted);
+      margin-top:3px;
+      display:block;
+    }
+    .preview-exercises {
+      display:flex;
+      flex-direction:column;
+      gap:8px;
+    }
+    .preview-ex-chip {
+      border-radius:7px;
+      padding:10px 12px;
+      border:1px solid;
+      display:flex;
+      align-items:center;
+      gap:8px;
+    }
+    .preview-ex-dot {
+      width:5px;
+      height:5px;
+      border-radius:50%;
+      flex-shrink:0;
+    }
+    .preview-ex-name {
+      font-size:8px;
+      letter-spacing:.15em;
+      text-transform:uppercase;
+      flex:1;
+    }
+    .preview-ex-dur {
+      font-size:8px;
+      color:var(--muted);
+    }
+
+    /* ─── cta section ─── */
+    .cta-section {
+      padding:120px 32px 140px;
+      max-width:600px;
+      margin:0 auto;
+      text-align:center;
+      border-top:1px solid var(--border);
+    }
+    .cta-headline {
+      font-family:'Cormorant Garamond', serif;
+      font-size:clamp(32px, 6vw, 56px);
+      font-weight:300;
+      line-height:1.25;
+      color:var(--text);
+      margin-bottom:18px;
+    }
+    .cta-headline em { color:var(--accent); font-style:normal; }
+    .cta-sub {
+      font-size:12px;
+      line-height:1.85;
+      color:var(--muted);
+      margin-bottom:40px;
+    }
+    .cta-note {
+      font-size:9px;
+      letter-spacing:.1em;
+      color:var(--muted);
+      margin-top:18px;
+      opacity:.6;
+    }
+
+    /* ─── footer ─── */
+    footer {
+      border-top:1px solid var(--border);
+      padding:32px 40px;
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      flex-wrap:wrap;
+      gap:16px;
+    }
+    .footer-wordmark {
+      font-family:'Cormorant Garamond', serif;
+      font-size:11px;
+      font-weight:300;
+      letter-spacing:.35em;
+      text-transform:uppercase;
+      color:var(--accent);
+    }
+    .footer-copy {
+      font-size:8px;
+      letter-spacing:.15em;
+      color:var(--muted);
+      opacity:.6;
+    }
+
+    /* ─── animations ─── */
+    @keyframes fadeUp {
+      from { opacity:0; transform:translateY(14px); }
+      to   { opacity:1; transform:translateY(0); }
+    }
+    @keyframes ringFill {
+      from { stroke-dashoffset:339.29; }
+      to   { stroke-dashoffset:80; }
+    }
+    @keyframes scrollHint {
+      0%,100% { transform:translateX(-50%) translateY(0); opacity:.38; }
+      50%      { transform:translateX(-50%) translateY(5px); opacity:.55; }
+    }
+
+    /* ─── scroll reveal ─── */
+    .reveal {
+      opacity:0;
+      transform:translateY(18px);
+      transition:opacity .75s ease, transform .75s ease;
+    }
+    .reveal.visible {
+      opacity:1;
+      transform:translateY(0);
+    }
+
+    /* ─── responsive ─── */
+    @media (max-width:700px) {
+      nav { padding:16px 24px; }
+      .preview-grid { grid-template-columns:1fr; }
+      .features-grid { grid-template-columns:1fr; }
+      footer { flex-direction:column; align-items:flex-start; gap:10px; }
+    }
+    @media (max-width:480px) {
+      .hero-actions { flex-direction:column; gap:10px; width:100%; }
+      .btn-primary { width:100%; text-align:center; padding:15px; }
+    }
+  </style>
+</head>
+<body>
+<div class="page">
+
+  <!-- NAV -->
+  <nav id="nav">
+    <a class="nav-wordmark" href="#">Presence</a>
+    <a class="nav-cta" href="#get-started">Add to Home Screen</a>
+  </nav>
+
+  <!-- HERO -->
+  <section class="hero" style="position:relative;">
+    <div class="hero-label">A daily practice for the mind</div>
+
+    <div class="hero-ring-wrap">
+      <div class="hero-ring">
+        <svg viewBox="0 0 120 120">
+          <circle class="ring-track" cx="60" cy="60" r="54"/>
+          <circle class="ring-prog" cx="60" cy="60" r="54"/>
+        </svg>
+        <div class="hero-ring-center">
+          <span class="hero-ring-num">7</span>
+          <span class="hero-ring-sub">day streak</span>
+        </div>
+      </div>
+    </div>
+
+    <h1 class="hero-headline">
+      Train your mind<br>to stay <em>awake.</em>
+    </h1>
+    <p class="hero-sub">
+      Most of your waking life passes unnoticed — you are somewhere else, caught in memory or anticipation. Presence asks something simple: return, again and again, to right now.
+    </p>
+    <div class="hero-actions">
+      <a class="btn-primary" href="#get-started">Open the App</a>
+      <a class="btn-ghost" href="#how-it-works">How it works ↓</a>
+    </div>
+
+    <div class="hero-scroll-hint">scroll</div>
+  </section>
+
+  <!-- INTRO -->
+  <section class="intro-section" id="how-it-works">
+    <span class="section-label reveal">What is Presence?</span>
+    <h2 class="intro-headline reveal">
+      A practice, not a product.<br>A discipline, not a distraction.
+    </h2>
+    <p class="intro-body reveal">
+      Each session, reminders reach you at regular intervals — not to interrupt, but to ask: <em>are you here?</em> Over time, the intervals grow. The sessions lengthen. The reminders become less necessary.
+    </p>
+    <p class="intro-body reveal" style="margin-top:20px;">
+      Day by day, week by week, you discover an incredible shift in your day-to-day life. You can become consciously aware anywhere, doing anything — at work, at the gym, in conversation with someone you love. There is no excuse not to be here, right now, enjoying all of it.
+    </p>
+  </section>
+
+  <!-- FEATURES -->
+  <section class="features-section">
+    <span class="section-label reveal">Inside the App</span>
+    <h2 class="intro-headline reveal">Seven disciplines.<br>One unbroken thread.</h2>
+
+    <div class="features-grid">
+      <div class="feature-card reveal" style="--card-accent:#d4b08e;">
+        <span class="feature-icon">⧖</span>
+        <div class="feature-name">Concentration Clock</div>
+        <p class="feature-desc">Hold your attention on the second hand of a clock. One object, one point — the most ancient training tool made precise.</p>
+      </div>
+      <div class="feature-card reveal" style="--card-accent:#8ab8e0;">
+        <span class="feature-icon">◈</span>
+        <div class="feature-name">Visualization</div>
+        <p class="feature-desc">Place a form inside the mind and hold it. Custom images, multiple senses, all angles. The imagination becomes an instrument.</p>
+      </div>
+      <div class="feature-card reveal" style="--card-accent:#8eccc0;">
+        <span class="feature-icon">♩</span>
+        <div class="feature-name">Auditory</div>
+        <p class="feature-desc">Listen with complete attention to a single sound until the sound and the listener are indistinguishable.</p>
+      </div>
+      <div class="feature-card reveal" style="--card-accent:#98b4cc;">
+        <span class="feature-icon">◎</span>
+        <div class="feature-name">Thought Control</div>
+        <p class="feature-desc">Observe thoughts without following them. Hold a single thought to the exclusion of all others. Or achieve vacancy — true inner silence.</p>
+      </div>
+      <div class="feature-card reveal" style="--card-accent:#d49898;">
+        <span class="feature-icon">⬡</span>
+        <div class="feature-name">Asana</div>
+        <p class="feature-desc">Sit without moving. Scratch nothing, adjust nothing. Let every impulse arise and pass. The body and the will are the same instrument.</p>
+      </div>
+      <div class="feature-card reveal" style="--card-accent:#c4a8d4;">
+        <span class="feature-icon">✦</span>
+        <div class="feature-name">Soul Mirror</div>
+        <p class="feature-desc">Track your genuine traits — positive and negative — with honesty. The mirror is the beginning of all real work.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- PRACTICE -->
+  <section class="practice-section">
+    <span class="section-label reveal">How it works</span>
+    <h2 class="intro-headline reveal">Simple enough to start.<br>Deep enough to last a lifetime.</h2>
+
+    <div class="practice-list">
+      <div class="practice-row reveal">
+        <div class="practice-num">01</div>
+        <div class="practice-body">
+          <div class="practice-name"><span style="background:#7eb8a4;"></span>Choose a practice</div>
+          <p class="practice-desc">Select from Awareness sessions, Concentration exercises, or Prayer. Each one targets a different layer of the mind.</p>
+        </div>
+      </div>
+      <div class="practice-row reveal">
+        <div class="practice-num">02</div>
+        <div class="practice-body">
+          <div class="practice-name"><span style="background:#d4956e;"></span>Set your session</div>
+          <p class="practice-desc">Choose your duration and reminder interval. Start with five minutes. Extend as your capacity grows. The app adapts to your progress.</p>
+        </div>
+      </div>
+      <div class="practice-row reveal">
+        <div class="practice-num">03</div>
+        <div class="practice-body">
+          <div class="practice-name"><span style="background:#8ab8e0;"></span>Return when you drift</div>
+          <p class="practice-desc">The app prompts you at intervals. Each prompt is a question: are you here? Each return strengthens the muscle of attention.</p>
+        </div>
+      </div>
+      <div class="practice-row reveal">
+        <div class="practice-num">04</div>
+        <div class="practice-body">
+          <div class="practice-name"><span style="background:#c4a8d4;"></span>Track your growth</div>
+          <p class="practice-desc">Sessions are logged with duration, quality scores, and notes. Watch your streak climb. Watch the intervals between reminders widen.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- PHILOSOPHY -->
+  <section class="philosophy-section">
+    <p class="philosophy-quote reveal">
+      "Simply become conscious of the fact<br>that you are <em>conscious.</em>"
+    </p>
+    <span class="philosophy-source reveal" style="margin-top:12px; display:block;">Franz Bardon · Initiation into Hermetics</span>
+    <div class="divider" style="margin-top:48px; opacity:.2;"></div>
+  </section>
+
+  <!-- APP PREVIEW -->
+  <section class="preview-section">
+    <span class="section-label reveal">A glimpse inside</span>
+    <h2 class="intro-headline reveal">Everything you need.<br>Nothing you don't.</h2>
+
+    <div class="preview-grid">
+      <!-- Awareness session card -->
+      <div class="preview-card reveal">
+        <span class="preview-screen-label">Awareness · Active session</span>
+        <div class="preview-timer">24:17</div>
+        <div class="preview-timer-sub">elapsed</div>
+        <div style="height:1px; background:var(--border); margin-bottom:16px;"></div>
+        <div class="preview-prompt-lbl">Current reminder</div>
+        <div class="preview-prompt">"Are you here — right now — in this moment?"</div>
+      </div>
+
+      <!-- Home / progress card -->
+      <div class="preview-card reveal">
+        <span class="preview-screen-label">Home · Progress</span>
+        <div class="preview-ring-wrap">
+          <div class="preview-ring">
+            <svg viewBox="0 0 80 80">
+              <circle class="ring-track" cx="40" cy="40" r="35"/>
+              <circle fill="none" stroke="var(--accent)" stroke-width="1.5" stroke-linecap="round"
+                cx="40" cy="40" r="35"
+                stroke-dasharray="219.91"
+                stroke-dashoffset="75"
+                transform="rotate(-90 40 40)"/>
+            </svg>
+            <div class="preview-ring-center">
+              <span class="preview-ring-num">4</span>
+              <span class="preview-ring-lbl">level</span>
+            </div>
+          </div>
+          <div class="preview-stat-row">
+            <div class="preview-stat">
+              <span class="preview-stat-val">12</span>
+              <span class="preview-stat-key">sessions</span>
+            </div>
+            <div class="preview-stat">
+              <span class="preview-stat-val">7</span>
+              <span class="preview-stat-key">day streak</span>
+            </div>
+            <div class="preview-stat">
+              <span class="preview-stat-val">4.2h</span>
+              <span class="preview-stat-key">total</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Concentration exercises card -->
+      <div class="preview-card reveal">
+        <span class="preview-screen-label">Concentration · Exercises</span>
+        <div class="preview-exercises">
+          <div class="preview-ex-chip" style="background:rgba(212,176,142,.06); border-color:rgba(212,176,142,.2);">
+            <div class="preview-ex-dot" style="background:#d4b08e;"></div>
+            <span class="preview-ex-name" style="color:#d4b08e;">Clock</span>
+            <span class="preview-ex-dur">10 min</span>
+          </div>
+          <div class="preview-ex-chip" style="background:rgba(138,184,224,.06); border-color:rgba(138,184,224,.2);">
+            <div class="preview-ex-dot" style="background:#8ab8e0;"></div>
+            <span class="preview-ex-name" style="color:#8ab8e0;">Visualization</span>
+            <span class="preview-ex-dur">5 min</span>
+          </div>
+          <div class="preview-ex-chip" style="background:rgba(142,204,192,.06); border-color:rgba(142,204,192,.2);">
+            <div class="preview-ex-dot" style="background:#8eccc0;"></div>
+            <span class="preview-ex-name" style="color:#8eccc0;">Auditory</span>
+            <span class="preview-ex-dur">5 min</span>
+          </div>
+          <div class="preview-ex-chip" style="background:rgba(152,180,204,.06); border-color:rgba(152,180,204,.2);">
+            <div class="preview-ex-dot" style="background:#98b4cc;"></div>
+            <span class="preview-ex-name" style="color:#98b4cc;">Thought Control</span>
+            <span class="preview-ex-dur">open</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- CTA -->
+  <section class="cta-section" id="get-started">
+    <h2 class="cta-headline reveal">Begin the<br><em>practice</em> today.</h2>
+    <p class="cta-sub reveal">
+      Presence is a web app — no download required. Add it to your home screen and it works like a native app, with all your data stored privately on your device.
+    </p>
+    <div class="reveal">
+      <a class="btn-primary" href="https://thepresenceapp.com/app" style="font-size:10px; padding:18px 40px;">Open Presence →</a>
+      <p class="cta-note">Works on iPhone, iPad, and Android. Optimized for Apple Watch reminders.</p>
+    </div>
+  </section>
+
+  <!-- FOOTER -->
+  <footer>
+    <span class="footer-wordmark">Presence</span>
+    <span class="footer-copy">© 2026 · thepresenceapp.com</span>
+  </footer>
+
+</div>
+
+<script>
+  // Nav scroll effect
+  var nav = document.getElementById('nav');
+  window.addEventListener('scroll', function() {
+    nav.classList.toggle('scrolled', window.scrollY > 40);
+  }, { passive:true });
+
+  // Scroll reveal
+  var reveals = document.querySelectorAll('.reveal');
+  var observer = new IntersectionObserver(function(entries) {
+    entries.forEach(function(entry) {
+      if (entry.isIntersecting) {
+        entry.target.classList.add('visible');
+        observer.unobserve(entry.target);
+      }
+    });
+  }, { threshold:0.12, rootMargin:'0px 0px -40px 0px' });
+
+  reveals.forEach(function(el) { observer.observe(el); });
+
+  // Stagger reveal children inside feature/practice grids
+  document.querySelectorAll('.features-grid .feature-card.reveal, .practice-list .practice-row.reveal, .preview-grid .preview-card.reveal').forEach(function(el, i) {
+    el.style.transitionDelay = (i * 0.08) + 's';
+  });
+</script>
+</body>
+</html>
