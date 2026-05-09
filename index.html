@@ -199,30 +199,57 @@
     }
 
     /* ─── ring hero graphic ─── */
-    .hero-icon-wrap {
-      margin-bottom:48px;
+    .hero-ring-wrap {
+      margin-bottom:52px;
       opacity:0;
       animation:fadeUp .9s ease forwards .2s;
     }
-    .hero-icon-tile {
-      width:110px;
-      height:110px;
-      border-radius:26px;
-      background:#07080d;
-      border:1px solid var(--border2);
+    .hero-ring {
+      width:120px;
+      height:120px;
+      position:relative;
+      margin:0 auto;
+    }
+    .hero-ring svg {
+      width:120px;
+      height:120px;
+      transform:rotate(-90deg);
+    }
+    .ring-track { fill:none; stroke:var(--border2); stroke-width:1; }
+    .ring-prog {
+      fill:none;
+      stroke:var(--accent);
+      stroke-width:1.5;
+      stroke-linecap:round;
+      stroke-dasharray:339.29;
+      stroke-dashoffset:339.29;
+      animation:ringFill 2.5s cubic-bezier(.4,0,.2,1) forwards .8s;
+    }
+    .hero-ring-center {
+      position:absolute;
+      inset:0;
       display:flex;
+      flex-direction:column;
       align-items:center;
       justify-content:center;
-      margin:0 auto;
-      box-shadow:
-        0 0 0 1px rgba(126,184,164,0.08),
-        0 8px 40px rgba(0,0,0,0.5),
-        0 0 60px rgba(126,184,164,0.06);
-      animation:iconGlow 4s ease-in-out infinite 1.5s;
+      gap:5px;
     }
-    @keyframes iconGlow {
-      0%,100% { box-shadow: 0 0 0 1px rgba(126,184,164,0.08), 0 8px 40px rgba(0,0,0,0.5), 0 0 60px rgba(126,184,164,0.06); }
-      50%      { box-shadow: 0 0 0 1px rgba(126,184,164,0.16), 0 8px 40px rgba(0,0,0,0.5), 0 0 80px rgba(126,184,164,0.13); }
+    .hero-ring-num {
+      font-family:'Cormorant Garamond', serif;
+      font-size:30px;
+      font-weight:300;
+      color:var(--text);
+      line-height:1;
+    }
+    .hero-ring-sub {
+      font-size:7px;
+      letter-spacing:.2em;
+      text-transform:uppercase;
+      color:var(--muted);
+    }
+    @keyframes ringFill {
+      from { stroke-dashoffset:339.29; }
+      to   { stroke-dashoffset:80; }
     }
 
     /* ─── divider ─── */
@@ -642,18 +669,7 @@
 
   <!-- NAV -->
   <nav id="nav">
-    <a class="nav-wordmark" href="#" style="display:flex; align-items:center; gap:10px;">
-      <svg width="22" height="22" viewBox="0 0 1024 1024" fill="none" xmlns="http://www.w3.org/2000/svg" style="flex-shrink:0;">
-        <g transform="translate(96 23) scale(0.78 0.78)" stroke="#7eb8a4" stroke-width="52" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M604 188C482 192 412 292 424 412C432 498 482 550 552 606C626 666 658 728 636 818C610 930 528 992 426 994"/>
-        </g>
-        <g transform="translate(96 23) scale(0.78 0.78)">
-          <circle cx="598" cy="390" r="50" fill="#7eb8a4"/>
-          <circle cx="426" cy="806" r="50" fill="#7eb8a4"/>
-        </g>
-      </svg>
-      Presence
-    </a>
+    <a class="nav-wordmark" href="#">Presence</a>
     <a class="nav-cta" href="/app">Open App</a>
   </nav>
 
@@ -661,17 +677,16 @@
   <section class="hero" style="position:relative;">
     <div class="hero-label">A daily practice for the mind</div>
 
-    <div class="hero-icon-wrap">
-      <div class="hero-icon-tile">
-        <svg width="68" height="68" viewBox="0 0 1024 1024" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <g transform="translate(96 23) scale(0.78 0.78)" stroke="#F2EFE6" stroke-width="52" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M604 188C482 192 412 292 424 412C432 498 482 550 552 606C626 666 658 728 636 818C610 930 528 992 426 994"/>
-          </g>
-          <g transform="translate(96 23) scale(0.78 0.78)">
-            <circle cx="598" cy="390" r="50" fill="#F2EFE6"/>
-            <circle cx="426" cy="806" r="50" fill="#F2EFE6"/>
-          </g>
+    <div class="hero-ring-wrap">
+      <div class="hero-ring">
+        <svg viewBox="0 0 120 120">
+          <circle class="ring-track" cx="60" cy="60" r="54"/>
+          <circle class="ring-prog" cx="60" cy="60" r="54"/>
         </svg>
+        <div class="hero-ring-center">
+          <span class="hero-ring-num">7</span>
+          <span class="hero-ring-sub">day streak</span>
+        </div>
       </div>
     </div>
 
