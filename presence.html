@@ -23,7 +23,7 @@
       --text: #ddd8ce; --muted: rgba(221,216,206,0.38);
       --accent: #7eb8a4; --accent2: #a4c4b8; --accent-dim: rgba(126,184,164,0.12);
       --danger: #b87070;
-      --safe-top: 16px; --safe-top-lg: 20px;
+      --safe-top: env(safe-area-inset-top, 8px); --safe-top-lg: env(safe-area-inset-top, 12px);
     }
     @media (display-mode: standalone) {
       :root { --safe-top: var(--safe-top); --safe-top-lg: var(--safe-top-lg); }
