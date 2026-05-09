@@ -521,6 +521,17 @@
 #bardonGame .stat-small{font-size:8px;color:var(--text-muted);margin-top:6px;letter-spacing:.08em;}
 
 /* ═══ END BARDON GAME ═══ */
+
+/* ─── Omnia — crystalline glass guide character ─── */
+@keyframes omniaFloat { 0%,100%{transform:translateY(0);} 50%{transform:translateY(-7px);} }
+@keyframes omniaFacetPulse { 0%,100%{opacity:.55;} 50%{opacity:.9;} }
+.omnia-wrap { display:flex; flex-direction:column; align-items:center; padding:8px 0 22px; }
+.omnia-figure { animation:omniaFloat 4.5s ease-in-out infinite; filter:drop-shadow(0 0 8px rgba(160,210,240,.35)); }
+.omnia-name { font-family:Cormorant Garamond,serif; font-size:11px; letter-spacing:.42em; text-transform:uppercase; color:#8ecce0; margin-top:10px; opacity:.85; }
+.omnia-speak { font-size:12px; color:var(--muted); line-height:1.85; text-align:center; padding:0 4px; margin-top:10px; font-style:italic; }
+.omnia-speak em { color:#a8d8ec; font-style:normal; }
+.omnia-speak.left { text-align:left; padding:0; }
+.omnia-response { font-size:10px; letter-spacing:.08em; color:#8ecce0; text-align:center; margin-top:6px; opacity:.7; font-style:normal; }
 </style>
 </head>
 <body>
@@ -607,26 +618,77 @@
       <button class="history-back" id="guideBack">← back</button>
     </div>
 
-    <!-- Intro -->
-    <div style="font-size:12px; color:var(--muted); line-height:1.7; margin-bottom:24px;">
-      Not sure what to practice today? Answer one question and we'll suggest a focused plan based on today's cycle.
+    <!-- Omnia character -->
+    <div class="omnia-wrap">
+      <div class="omnia-figure">
+        <svg viewBox="0 0 80 130" width="72" height="118" xmlns="http://www.w3.org/2000/svg" style="overflow:visible;">
+          <defs>
+            <linearGradient id="og1" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stop-color="#ddf0ff" stop-opacity="0.92"/>
+              <stop offset="100%" stop-color="#6ab8d8" stop-opacity="0.48"/>
+            </linearGradient>
+            <linearGradient id="og2" x1="100%" y1="0%" x2="0%" y2="100%">
+              <stop offset="0%" stop-color="#ffffff" stop-opacity="0.78"/>
+              <stop offset="100%" stop-color="#4a9ec0" stop-opacity="0.22"/>
+            </linearGradient>
+            <radialGradient id="og3" cx="50%" cy="38%" r="58%">
+              <stop offset="0%" stop-color="#b8eaff" stop-opacity="0.38"/>
+              <stop offset="100%" stop-color="#2878a0" stop-opacity="0"/>
+            </radialGradient>
+            <filter id="oglow" x="-30%" y="-30%" width="160%" height="160%">
+              <feGaussianBlur stdDeviation="2.5" result="blur"/>
+              <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+            </filter>
+          </defs>
+          <!-- Ambient glow -->
+          <ellipse cx="40" cy="68" rx="28" ry="48" fill="url(#og3)" opacity="0.55"/>
+          <!-- Head gem -->
+          <polygon points="40,3 54,14 40,25 26,14" fill="url(#og1)" stroke="#90cce8" stroke-width="0.55" filter="url(#oglow)"/>
+          <polygon points="40,3 54,14 40,13" fill="#ceeaff" opacity="0.72"/>
+          <polygon points="40,3 26,14 40,13" fill="#b0dcf5" opacity="0.42"/>
+          <line x1="40" y1="3" x2="40" y2="25" stroke="#b8e0f8" stroke-width="0.4" opacity="0.55"/>
+          <line x1="26" y1="14" x2="54" y2="14" stroke="#b8e0f8" stroke-width="0.4" opacity="0.35"/>
+          <!-- Upper body crystal -->
+          <polygon points="40,25 60,36 64,58 40,70 16,58 20,36" fill="url(#og1)" stroke="#88c4e0" stroke-width="0.55"/>
+          <polygon points="40,25 60,36 40,44" fill="#d4ecff" opacity="0.52"/>
+          <polygon points="40,25 20,36 40,44" fill="#bce0f8" opacity="0.32"/>
+          <line x1="40" y1="25" x2="40" y2="70" stroke="#a8d8f2" stroke-width="0.38" opacity="0.48"/>
+          <polygon points="16,58 64,58 40,70" fill="url(#og2)" opacity="0.38"/>
+          <!-- Lower body gem -->
+          <polygon points="40,70 64,58 56,88 40,100 24,88 16,58" fill="url(#og1)" stroke="#88c4e0" stroke-width="0.55" opacity="0.88"/>
+          <!-- Terminus facets -->
+          <polygon points="40,100 56,88 40,114" fill="url(#og2)" stroke="#88c4e0" stroke-width="0.48" opacity="0.72"/>
+          <polygon points="40,100 24,88 40,114" fill="#b4dcf4" stroke="#88c4e0" stroke-width="0.48" opacity="0.52"/>
+          <!-- Sparkle accents -->
+          <g opacity="0.65" filter="url(#oglow)">
+            <line x1="6" y1="22" x2="12" y2="22" stroke="#b8eaff" stroke-width="1"/>
+            <line x1="9" y1="19" x2="9" y2="25" stroke="#b8eaff" stroke-width="1"/>
+          </g>
+          <g opacity="0.48">
+            <line x1="68" y1="48" x2="74" y2="48" stroke="#b8eaff" stroke-width="0.9"/>
+            <line x1="71" y1="45" x2="71" y2="51" stroke="#b8eaff" stroke-width="0.9"/>
+          </g>
+          <g opacity="0.38">
+            <line x1="9" y1="84" x2="14" y2="84" stroke="#b8eaff" stroke-width="0.7"/>
+            <line x1="11.5" y1="81.5" x2="11.5" y2="86.5" stroke="#b8eaff" stroke-width="0.7"/>
+          </g>
+        </svg>
+      </div>
+      <div class="omnia-name">Omnia</div>
+      <div class="omnia-speak">I am here to guide your practice today.<br>Tell me — <em>have you walked this path before?</em></div>
     </div>
 
-    <!-- Prior practice toggle -->
+    <!-- Prior practice toggle — Omnia's question -->
     <button class="guide-prior-btn" id="guidePriorBtn">
       <span>I have prior practice with meditation or hermeticism</span>
       <span id="guidePriorChevron" style="font-size:12px; color:var(--muted); transition:transform .25s;">›</span>
     </button>
 
-    <!-- Assessment panel (hidden until prior btn clicked) -->
+    <!-- Assessment panel -->
     <div id="guideAssessmentPanel" style="display:none; margin-top:20px;">
-      <div style="font-size:9px; letter-spacing:.2em; text-transform:uppercase; color:var(--muted); margin-bottom:4px;">Where do you stand with each exercise?</div>
-      <div style="font-size:10px; color:var(--muted); line-height:1.5; margin-bottom:16px; opacity:.7;">Your selections are remembered and inform the daily plan.</div>
-
-      <!-- Exercise rows — built by JS -->
+      <div class="omnia-speak left" style="margin-bottom:16px;">Good. <em>Tell me where you stand with each discipline.</em> I will remember.</div>
       <div id="guideExRows"></div>
-
-      <button class="btn primary" id="guideGenerateBtn" style="margin-top:20px; background:rgba(212,149,110,0.1); border-color:rgba(212,149,110,.35); color:#d4b08e;">Generate Today's Plan →</button>
+      <button class="btn primary" id="guideGenerateBtn" style="margin-top:20px; background:rgba(142,204,224,0.1); border-color:rgba(142,204,224,.32); color:#8ecce0;">Show me today's path →</button>
     </div>
 
     <!-- Plan output -->
@@ -635,8 +697,22 @@
         <div style="font-size:9px; letter-spacing:.22em; text-transform:uppercase; color:var(--muted);">Today's Practice</div>
         <div style="font-size:9px; color:var(--muted); opacity:.6;" id="guidePlanDayLabel"></div>
       </div>
-      <div style="font-size:9px; letter-spacing:.12em; color:#d4b08e; text-transform:uppercase; margin-bottom:14px;" id="guidePlanFocus"></div>
+      <div style="font-size:9px; letter-spacing:.12em; color:#8ecce0; text-transform:uppercase; margin-bottom:14px;" id="guidePlanFocus"></div>
       <div id="guidePlanCards"></div>
+      <div class="omnia-response" style="margin-top:18px; padding-bottom:8px;">Go well. Return when you are ready.</div>
+    </div>
+  </div>
+
+  <!-- PLAYGROUND -->
+  <div class="screen" id="playgroundScreen" style="flex-direction:column;">
+    <div class="history-header">
+      <div class="history-title">Playground</div>
+      <button class="history-back" id="playgroundBack">← back</button>
+    </div>
+    <div style="flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:40px 24px; text-align:center;">
+      <div style="font-size:36px; margin-bottom:24px; opacity:.28;">🧪</div>
+      <div style="font-family:Cormorant Garamond,serif; font-size:26px; font-weight:300; color:var(--text); margin-bottom:10px; opacity:.55; letter-spacing:.04em;">Under Construction</div>
+      <div style="font-size:8px; letter-spacing:.32em; text-transform:uppercase; color:var(--muted); opacity:.6;">Coming Soon</div>
     </div>
   </div>
 
@@ -1578,6 +1654,9 @@
       <button class="drawer-item" id="drawerReports">
         <span class="drawer-item-icon">📊</span>Progress Reports
       </button>
+      <button class="drawer-item" id="drawerPlayground">
+        <span class="drawer-item-icon">🧪</span>Playground
+      </button>
       <button class="drawer-item" id="drawerBardon" style="display:none;">
         <span class="drawer-item-icon">📖</span>The Path <span style="color:var(--muted); font-size:10px;">(Idle game)</span>
       </button>
@@ -1589,6 +1668,9 @@
       </button>
       <button class="drawer-item" id="drawerAbout">
         <span class="drawer-item-icon">◎</span>About
+      </button>
+      <button class="drawer-item" id="drawerDonate">
+        <span class="drawer-item-icon">☕</span>Donate
       </button>
       <div class="drawer-divider"></div>
       <button class="drawer-item danger" id="drawerReset">
@@ -3172,6 +3254,16 @@ document.getElementById('importFile').addEventListener('change', function(e) {
 });
 document.getElementById('drawerAbout').addEventListener('click', function() {
   closeDrawer(); showScreen('aboutScreen');
+});
+document.getElementById('drawerDonate').addEventListener('click', function() {
+  closeDrawer();
+  window.open('https://www.buymeacoffee.com/', '_blank');
+});
+document.getElementById('drawerPlayground').addEventListener('click', function() {
+  closeDrawer(); showScreen('playgroundScreen');
+});
+document.getElementById('playgroundBack').addEventListener('click', function() {
+  showScreen('homeScreen');
 });
 document.getElementById('drawerFaq').addEventListener('click', function() {
   closeDrawer();
