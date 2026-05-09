@@ -776,8 +776,7 @@
         <!-- Level toggle -->
         <div style="display:flex; gap:8px; padding:0 0 16px 0; align-items:center; justify-content:center;">
           <button class="conc-level-tab active" id="concLevelBeginner">Beginner</button>
-          <button class="conc-level-tab" id="concLevelIntermediate">Intermediate</button>
-          <button class="conc-level-tab" id="concLevelExpert">Expert</button>
+          <button class="conc-level-tab" id="concLevelExpert">Advanced</button>
           <div style="width:1px; height:14px; background:var(--border); margin:0 2px; flex-shrink:0;"></div>
           <button class="conc-view-btn" id="concViewToggle" title="Expanded view">⊞</button>
         </div>
@@ -819,9 +818,9 @@
           </div>
         </div>
 
-        <!-- Intermediate grid -->
-        <div id="concIntermediateGrid" style="display:none;">
-          <div class="carousel-dots" id="concIntermediateDots"></div>
+        <!-- Advanced grid -->
+        <div id="concExpertGrid" style="display:none;">
+          <div class="carousel-dots" id="concExpertDots"></div>
           <div class="exercise-grid">
             <div class="exercise-card" data-exercise="multisense" style="--conc-card-accent:#d4b86e; border-color:rgba(212,184,110,.2); background:rgba(212,184,110,.04);">
               <div class="exercise-card-icon">🎵</div>
@@ -836,19 +835,7 @@
             <div class="exercise-card" style="opacity:.4; pointer-events:none; border-color:rgba(255,255,255,.08);">
               <div class="exercise-card-icon">✦</div>
               <div class="exercise-card-name">Coming Soon</div>
-              <div class="exercise-card-desc">More intermediate exercises in a future release.</div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Expert grid -->
-        <div id="concExpertGrid" style="display:none;">
-          <div class="carousel-dots" id="concExpertDots"></div>
-          <div class="exercise-grid">
-            <div class="exercise-card" style="opacity:.4; pointer-events:none; border-color:rgba(255,255,255,.08);">
-              <div class="exercise-card-icon">✦</div>
-              <div class="exercise-card-name">Coming Soon</div>
-              <div class="exercise-card-desc">Expert exercises are in development.</div>
+              <div class="exercise-card-desc">More advanced exercises in a future release.</div>
             </div>
           </div>
         </div>
@@ -5099,7 +5086,7 @@ document.getElementById('concBeginnerGrid').addEventListener('click', function(e
   if (card && card.dataset.exercise) openExerciseSetup(card.dataset.exercise);
 });
 
-document.getElementById('concIntermediateGrid').addEventListener('click', function(e) {
+document.getElementById('concExpertGrid').addEventListener('click', function(e) {
   var card = e.target.closest('.exercise-card[data-exercise]');
   if (!card) return;
   var def = EXERCISE_DEFS[card.dataset.exercise];
@@ -5177,7 +5164,6 @@ function toggleConcView() {
   }
   [
     document.getElementById('concBeginnerGrid'),
-    document.getElementById('concIntermediateGrid'),
     document.getElementById('concExpertGrid')
   ].forEach(function(w) { if (w) applyConcCarouselToGrid(w); });
 }
@@ -5187,9 +5173,8 @@ document.getElementById('concViewToggle').addEventListener('click', toggleConcVi
 // Level tab toggle
 (function() {
   var tabs = [
-    { btn: document.getElementById('concLevelBeginner'),     grid: document.getElementById('concBeginnerGrid') },
-    { btn: document.getElementById('concLevelIntermediate'), grid: document.getElementById('concIntermediateGrid') },
-    { btn: document.getElementById('concLevelExpert'),       grid: document.getElementById('concExpertGrid') }
+    { btn: document.getElementById('concLevelBeginner'), grid: document.getElementById('concBeginnerGrid') },
+    { btn: document.getElementById('concLevelExpert'),   grid: document.getElementById('concExpertGrid') }
   ];
   tabs.forEach(function(t) {
     if (!t.btn) return;
