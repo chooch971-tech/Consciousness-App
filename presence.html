@@ -356,6 +356,20 @@
     .exercise-card-name { font-size:10px; letter-spacing:.15em; text-transform:uppercase; color:var(--text); }
     .exercise-card-desc { font-size:10px; color:var(--muted); line-height:1.5; }
     .exercise-card-badge { position:absolute; top:10px; right:10px; font-size:8px; letter-spacing:.1em; background:rgba(212,149,110,.15); color:#d4b08e; border-radius:4px; padding:2px 6px; }
+    /* Carousel / expanded view */
+    .exercise-grid.carousel-mode { display:flex; overflow-x:auto; scroll-snap-type:x mandatory; scrollbar-width:none; -ms-overflow-style:none; -webkit-overflow-scrolling:touch; gap:0; margin-bottom:0; }
+    .exercise-grid.carousel-mode::-webkit-scrollbar { display:none; }
+    .exercise-grid.carousel-mode .exercise-card { min-width:100%; scroll-snap-align:start; padding:32px 22px 28px; gap:14px; border-radius:14px; }
+    .exercise-grid.carousel-mode .exercise-card::before { opacity:.5; }
+    .exercise-grid.carousel-mode .exercise-card-icon { font-size:44px; margin-bottom:4px; }
+    .exercise-grid.carousel-mode .exercise-card-name { font-size:13px; letter-spacing:.18em; }
+    .exercise-grid.carousel-mode .exercise-card-desc { font-size:11px; line-height:1.65; }
+    .carousel-dots { display:none; justify-content:center; gap:7px; padding:12px 0 2px; }
+    .carousel-dots.visible { display:flex; }
+    .carousel-dot { width:5px; height:5px; border-radius:50%; background:var(--border); transition:all .25s; flex-shrink:0; }
+    .carousel-dot.active { background:var(--text); transform:scale(1.35); }
+    .conc-view-btn { font-size:15px; background:none; border:1px solid var(--border); border-radius:6px; color:var(--muted); cursor:pointer; padding:3px 8px; line-height:1; flex-shrink:0; transition:color .2s, border-color .2s; }
+    .conc-view-btn.active { color:var(--text); border-color:rgba(255,255,255,.25); }
     /* EXERCISE SETUP SCREEN */
     #exSetupScreen { justify-content:space-between; }
     #exSetupScrollArea::-webkit-scrollbar { display:none; }
@@ -704,14 +718,17 @@
       <!-- Exercise grid — scrollable area below hero -->
       <div style="flex:1; overflow-y:auto; -webkit-overflow-scrolling:touch; min-height:0; padding-bottom:80px; scrollbar-width:none; -ms-overflow-style:none;" id="concScrollArea">
         <!-- Level toggle -->
-        <div style="display:flex; gap:8px; padding:0 0 16px 0; justify-content:center;">
+        <div style="display:flex; gap:8px; padding:0 0 16px 0; align-items:center; justify-content:center;">
           <button class="conc-level-tab active" id="concLevelBeginner">Beginner</button>
           <button class="conc-level-tab" id="concLevelIntermediate">Intermediate</button>
           <button class="conc-level-tab" id="concLevelExpert">Expert</button>
+          <div style="width:1px; height:14px; background:var(--border); margin:0 2px; flex-shrink:0;"></div>
+          <button class="conc-view-btn" id="concViewToggle" title="Expanded view">⊞</button>
         </div>
 
         <!-- Beginner grid -->
         <div id="concBeginnerGrid">
+          <div class="carousel-dots" id="concBeginnerDots"></div>
           <div class="exercise-grid" id="exerciseGrid">
             <div class="exercise-card" data-exercise="clock" style="--conc-card-accent:#d4956e; border-color:rgba(212,149,110,.2); background:rgba(212,149,110,.04);">
               <div class="exercise-card-icon">&#9200;</div>
@@ -748,6 +765,7 @@
 
         <!-- Intermediate grid -->
         <div id="concIntermediateGrid" style="display:none;">
+          <div class="carousel-dots" id="concIntermediateDots"></div>
           <div class="exercise-grid">
             <div class="exercise-card" data-exercise="multisense" style="--conc-card-accent:#d4b86e; border-color:rgba(212,184,110,.2); background:rgba(212,184,110,.04);">
               <div class="exercise-card-icon">🎵</div>
@@ -769,6 +787,7 @@
 
         <!-- Expert grid -->
         <div id="concExpertGrid" style="display:none;">
+          <div class="carousel-dots" id="concExpertDots"></div>
           <div class="exercise-grid">
             <div class="exercise-card" style="opacity:.4; pointer-events:none; border-color:rgba(255,255,255,.08);">
               <div class="exercise-card-icon">✦</div>
@@ -5046,6 +5065,61 @@ document.getElementById('exerciseGrid').addEventListener('click', function(e) {
   }
 });
 
+// ── Expanded / carousel view ──────────────────────────────
+var concViewMode = 'grid';
+
+function applyConcCarouselToGrid(wrapper) {
+  var gridEl = wrapper.querySelector('.exercise-grid');
+  var dotsEl = wrapper.querySelector('.carousel-dots');
+  if (!gridEl || !dotsEl) return;
+  if (concViewMode === 'carousel') {
+    gridEl.classList.add('carousel-mode');
+    gridEl.scrollLeft = 0;
+    // Build dot indicators
+    var cards = gridEl.querySelectorAll('.exercise-card');
+    dotsEl.innerHTML = '';
+    cards.forEach(function(c, i) {
+      var dot = document.createElement('span');
+      dot.className = 'carousel-dot' + (i === 0 ? ' active' : '');
+      dotsEl.appendChild(dot);
+    });
+    dotsEl.classList.add('visible');
+    // Attach scroll listener (store ref so we can remove it later)
+    if (gridEl._carouselFn) gridEl.removeEventListener('scroll', gridEl._carouselFn);
+    gridEl._carouselFn = function() {
+      var idx = Math.round(gridEl.scrollLeft / gridEl.clientWidth);
+      dotsEl.querySelectorAll('.carousel-dot').forEach(function(d, i) {
+        d.classList.toggle('active', i === idx);
+      });
+    };
+    gridEl.addEventListener('scroll', gridEl._carouselFn, { passive: true });
+  } else {
+    gridEl.classList.remove('carousel-mode');
+    dotsEl.classList.remove('visible');
+    if (gridEl._carouselFn) {
+      gridEl.removeEventListener('scroll', gridEl._carouselFn);
+      gridEl._carouselFn = null;
+    }
+  }
+}
+
+function toggleConcView() {
+  concViewMode = concViewMode === 'grid' ? 'carousel' : 'grid';
+  var btn = document.getElementById('concViewToggle');
+  if (btn) {
+    btn.textContent = concViewMode === 'carousel' ? '⊟' : '⊞';
+    btn.classList.toggle('active', concViewMode === 'carousel');
+    btn.title = concViewMode === 'carousel' ? 'Grid view' : 'Expanded view';
+  }
+  [
+    document.getElementById('concBeginnerGrid'),
+    document.getElementById('concIntermediateGrid'),
+    document.getElementById('concExpertGrid')
+  ].forEach(function(w) { if (w) applyConcCarouselToGrid(w); });
+}
+
+document.getElementById('concViewToggle').addEventListener('click', toggleConcView);
+
 // Level tab toggle
 (function() {
   var tabs = [
@@ -5059,6 +5133,8 @@ document.getElementById('exerciseGrid').addEventListener('click', function(e) {
       tabs.forEach(function(x) { x.btn.classList.remove('active'); x.grid.style.display = 'none'; });
       t.btn.classList.add('active');
       t.grid.style.display = '';
+      // Re-apply carousel state to newly visible grid
+      if (concViewMode === 'carousel') applyConcCarouselToGrid(t.grid);
     });
   });
 })();
