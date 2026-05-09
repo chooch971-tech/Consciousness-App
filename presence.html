@@ -220,6 +220,22 @@
     #settingsScrollBody::-webkit-scrollbar { display:none; }
     #prayerResultScreen, #prayerHistoryScreen { scrollbar-width:none; -ms-overflow-style:none; }
     #prayerResultScreen::-webkit-scrollbar, #prayerHistoryScreen::-webkit-scrollbar { display:none; }
+    #guideScreen { scrollbar-width:none; -ms-overflow-style:none; }
+    #guideScreen::-webkit-scrollbar { display:none; }
+    .guide-prior-btn { width:100%; padding:14px 18px; background:rgba(255,255,255,.03); border:1px solid var(--border); border-radius:10px; color:var(--text); font-family:'DM Mono',monospace; font-size:10px; letter-spacing:.1em; text-align:left; cursor:pointer; transition:border-color .2s, background .2s; display:flex; justify-content:space-between; align-items:center; }
+    .guide-prior-btn:active { background:rgba(255,255,255,.06); }
+    .guide-prior-btn.open { border-color:rgba(212,149,110,.3); }
+    .guide-ex-row { display:flex; align-items:center; gap:10px; padding:12px 0; border-bottom:1px solid var(--border); }
+    .guide-ex-label { flex:1; }
+    .guide-ex-name { font-size:10px; letter-spacing:.12em; text-transform:uppercase; color:var(--text); }
+    .guide-ex-sub { font-size:9px; color:var(--muted); margin-top:2px; letter-spacing:.05em; }
+    .guide-opt-row { display:flex; gap:6px; flex-wrap:wrap; justify-content:flex-end; }
+    .guide-opt { font-size:8px; letter-spacing:.1em; text-transform:uppercase; font-family:'DM Mono',monospace; padding:5px 9px; border-radius:4px; border:1px solid var(--border); background:none; color:var(--muted); cursor:pointer; transition:all .15s; white-space:nowrap; }
+    .guide-opt.sel { background:rgba(212,149,110,.12); border-color:rgba(212,149,110,.4); color:#d4b08e; }
+    .guide-plan-card { background:var(--surface); border:1px solid var(--border); border-radius:10px; padding:16px 18px; margin-bottom:10px; }
+    .guide-plan-exname { font-size:10px; letter-spacing:.15em; text-transform:uppercase; color:var(--text); margin-bottom:4px; }
+    .guide-plan-dur { font-size:9px; color:var(--accent); letter-spacing:.1em; margin-bottom:8px; }
+    .guide-plan-tip { font-size:11px; color:var(--muted); line-height:1.6; font-style:italic; }
     .conc-history-item { background:var(--surface); border:1px solid var(--border); border-radius:8px; padding:16px; margin-bottom:10px; }
     .conc-history-top { display:flex; justify-content:space-between; align-items:center; margin-bottom:4px; }
     .conc-history-date { font-size:10px; letter-spacing:.15em; color:var(--muted); }
@@ -579,6 +595,46 @@
         Backups contain all your data in a single JSON file.<br>To move to a new device: export here, transfer the file, import there.
       </div>
 
+    </div>
+  </div>
+
+  <!-- GUIDE -->
+  <div class="screen" id="guideScreen" style="overflow-y:auto; -webkit-overflow-scrolling:touch; padding-bottom:60px;">
+    <div class="history-header">
+      <div class="history-title">Guide</div>
+      <button class="history-back" id="guideBack">← back</button>
+    </div>
+
+    <!-- Intro -->
+    <div style="font-size:12px; color:var(--muted); line-height:1.7; margin-bottom:24px;">
+      Not sure what to practice today? Answer one question and we'll suggest a focused plan based on today's cycle.
+    </div>
+
+    <!-- Prior practice toggle -->
+    <button class="guide-prior-btn" id="guidePriorBtn">
+      <span>I have prior practice with meditation or hermeticism</span>
+      <span id="guidePriorChevron" style="font-size:12px; color:var(--muted); transition:transform .25s;">›</span>
+    </button>
+
+    <!-- Assessment panel (hidden until prior btn clicked) -->
+    <div id="guideAssessmentPanel" style="display:none; margin-top:20px;">
+      <div style="font-size:9px; letter-spacing:.2em; text-transform:uppercase; color:var(--muted); margin-bottom:4px;">Where do you stand with each exercise?</div>
+      <div style="font-size:10px; color:var(--muted); line-height:1.5; margin-bottom:16px; opacity:.7;">Your selections are remembered and inform the daily plan.</div>
+
+      <!-- Exercise rows — built by JS -->
+      <div id="guideExRows"></div>
+
+      <button class="btn primary" id="guideGenerateBtn" style="margin-top:20px; background:rgba(212,149,110,0.1); border-color:rgba(212,149,110,.35); color:#d4b08e;">Generate Today's Plan →</button>
+    </div>
+
+    <!-- Plan output -->
+    <div id="guidePlanOutput" style="display:none; margin-top:28px;">
+      <div style="display:flex; justify-content:space-between; align-items:baseline; margin-bottom:4px;">
+        <div style="font-size:9px; letter-spacing:.22em; text-transform:uppercase; color:var(--muted);">Today's Practice</div>
+        <div style="font-size:9px; color:var(--muted); opacity:.6;" id="guidePlanDayLabel"></div>
+      </div>
+      <div style="font-size:9px; letter-spacing:.12em; color:#d4b08e; text-transform:uppercase; margin-bottom:14px;" id="guidePlanFocus"></div>
+      <div id="guidePlanCards"></div>
     </div>
   </div>
 
@@ -1517,6 +1573,9 @@
       <div class="drawer-level" id="drawerLevel">Level 1 · Initiate</div>
     </div>
     <div class="drawer-items">
+      <button class="drawer-item" id="drawerGuide">
+        <span class="drawer-item-icon">✦</span>Guide
+      </button>
       <button class="drawer-item" id="drawerJournal">
         <span class="drawer-item-icon">📓</span>Journal Log
       </button>
@@ -2949,6 +3008,11 @@ window.bardonGoBack = function() {
 document.getElementById('drawerReports').addEventListener('click', function() {
   closeDrawer(); showReports();
 });
+document.getElementById('drawerGuide').addEventListener('click', function() {
+  closeDrawer();
+  openGuide();
+});
+
 document.getElementById('drawerSettings').addEventListener('click', function() {
   closeDrawer(); 
   // Update sync status when opening settings
@@ -7080,6 +7144,231 @@ function deletePrayerHistoryEntry(idx) {
 document.getElementById('prayerHistoryBack').addEventListener('click', function() {
   showScreen('homeScreen');
   switchMode('prayer');
+});
+
+// ═══════════════════════════════════════
+// GUIDE
+// ═══════════════════════════════════════
+
+// ── Daily plans ───────────────────────────────────────────
+// 7 entries, indexed by day-of-week (0=Sun … 6=Sat).
+// Each entry has: focus (short theme label), intro (1–2 sentences for both tracks),
+// beginner (plan for someone new), experienced (plan for someone with prior practice).
+// Each plan entry: { id, name, duration (minutes), tip }
+// User: replace the placeholder text below with your own suggestions.
+var GUIDE_DAILY_PLANS = [
+  { // 0 — Sunday
+    focus: 'Rest & Inward Turning',
+    intro: 'Sunday is a day of withdrawal. Turn inward rather than outward.',
+    beginner: [
+      { id:'clock',   name:'Clock',          duration:5,  tip:'Sit with the clock and follow the seconds hand. Five minutes of real attention is more than enough to start.' },
+      { id:'asana',   name:'Asana',          duration:5,  tip:'Find a comfortable, upright posture and hold it without any movement for the full five minutes.' }
+    ],
+    experienced: [
+      { id:'asana',   name:'Asana',          duration:15, tip:'Extend your stillness. The body and the will are the same instrument.' },
+      { id:'thought', name:'Thought Control', mode:'observation', duration:10, tip:'After asana, move into pure observation. You have been still — now see what the mind does in that silence.' }
+    ]
+  },
+  { // 1 — Monday
+    focus: 'Attention & Anchoring',
+    intro: 'Begin the week by sharpening the basic tool: the ability to hold one thing.',
+    beginner: [
+      { id:'clock',   name:'Clock',          duration:5,  tip:'One object. One point. Follow the tip of the seconds hand and return each time you lose it.' },
+      { id:'visual',  name:'Visualization',  duration:5,  tip:'Close your eyes and place a simple geometric shape in your mind. Hold it as steadily as you can.' }
+    ],
+    experienced: [
+      { id:'clock',   name:'Clock',          duration:10, tip:'Press your personal best. Each second of unbroken attention counts.' },
+      { id:'visual',  name:'Visualization',  duration:10, tip:'Move beyond simple shapes — hold a real object with color, weight, and texture in the mind simultaneously.' }
+    ]
+  },
+  { // 2 — Tuesday
+    focus: 'Bodily Mastery',
+    intro: 'The body is the first instrument of the will. Work it directly today.',
+    beginner: [
+      { id:'asana',   name:'Asana',          duration:5,  tip:'Sit without moving. Scratch nothing, adjust nothing. Let every impulse arise and pass.' },
+      { id:'clock',   name:'Clock',          duration:5,  tip:'After the stillness of asana, carry that quality into clock work.' }
+    ],
+    experienced: [
+      { id:'asana',   name:'Asana',          duration:20, tip:'Push the edge of your record. Twenty minutes of genuine stillness is a serious threshold.' },
+      { id:'thought', name:'Thought Control', mode:'vacancy', duration:5, tip:'After the body is mastered, attempt full vacancy. Even two minutes of true emptiness is significant.' }
+    ]
+  },
+  { // 3 — Wednesday
+    focus: 'Sensory Concentration',
+    intro: 'Midweek: use the outer senses as a door to inner focus.',
+    beginner: [
+      { id:'auditory', name:'Auditory',      duration:5,  tip:'Choose a sound — the singing bowl works well. Listen with complete attention. When you drift, return.' },
+      { id:'visual',   name:'Visualization', duration:5,  tip:'After sound, shift to pure image. Hold one simple form in the mind.' }
+    ],
+    experienced: [
+      { id:'auditory', name:'Auditory',      duration:10, tip:'Listen until the sound and the listener are indistinguishable. Aim for zero drift this session.' },
+      { id:'thought',  name:'Thought Control', mode:'focus', duration:10, tip:'Carry the auditory concentration into thought focus. Choose one word or concept and hold it exclusively.' }
+    ]
+  },
+  { // 4 — Thursday
+    focus: 'Mirror Work',
+    intro: 'Thursday: turn the gaze on the self. Honest appraisal is the beginning of all real work.',
+    beginner: [
+      { id:'soulmirror', name:'Soul Mirror', duration:null, tip:'Open the Soul Mirror and record one honest negative trait and one genuine positive one. Take your time.' },
+      { id:'clock',      name:'Clock',       duration:5,   tip:'Follow with five minutes of clock to settle the mind after self-examination.' }
+    ],
+    experienced: [
+      { id:'soulmirror', name:'Soul Mirror', duration:null, tip:'Review your existing trait list. Are the negatives still accurate? Have any positives deepened? Update accordingly.' },
+      { id:'thought',    name:'Thought Control', mode:'observation', duration:10, tip:'After mirror work, sit and observe the thoughts that arise. The mirror tends to stir the waters.' }
+    ]
+  },
+  { // 5 — Friday
+    focus: 'Inner Silence',
+    intro: 'End the work week with silence. Noise is the enemy of development.',
+    beginner: [
+      { id:'thought', name:'Thought Control', mode:'observation', duration:5,  tip:'Sit quietly and simply watch the mind without following any thread. Five minutes is a real beginning.' },
+      { id:'asana',   name:'Asana',           duration:5,  tip:'Hold the posture before or after — stillness and silence reinforce each other.' }
+    ],
+    experienced: [
+      { id:'thought', name:'Thought Control', mode:'observation', duration:15, tip:'Fifteen minutes of pure observation. No agenda, no suppression — only watching.' },
+      { id:'visual',  name:'Visualization',   duration:10, tip:'After emptying the mind, plant one intentional image and hold it with full clarity.' }
+    ]
+  },
+  { // 6 — Saturday
+    focus: 'Integration',
+    intro: 'Saturday: your practice day. Touch all the strands if time allows.',
+    beginner: [
+      { id:'clock',   name:'Clock',          duration:5,  tip:'Your standard anchor. Start here.' },
+      { id:'auditory',name:'Auditory',       duration:5,  tip:'Then the ears. Two different sensory doors to the same inner stillness.' }
+    ],
+    experienced: [
+      { id:'asana',   name:'Asana',          duration:10, tip:'Begin with the body.' },
+      { id:'thought', name:'Thought Control', mode:'observation', duration:10, tip:'Then the mind.' },
+      { id:'visual',  name:'Visualization',  duration:10, tip:'Then the imagination. Body → mind → image: the classic Hermetic triad.' }
+    ]
+  }
+];
+
+// ── Exercise definitions for the assessment rows ──────────
+var GUIDE_EXERCISES = [
+  { id:'clock',      name:'Clock',           sub:'Attention on the seconds hand',        opts:['New to me','5 min','10 min','15+ min'] },
+  { id:'visual',     name:'Visualization',   sub:'Holding a mental image',               opts:['New to me','5 min','10 min','15+ min'] },
+  { id:'auditory',   name:'Auditory',        sub:'Concentrated listening',               opts:['New to me','5 min','10 min','15+ min'] },
+  { id:'thought',    name:'Thought Control', sub:'Observation, Focus, or Vacancy',       opts:['New to me','5 min','10 min','15+ min'] },
+  { id:'asana',      name:'Asana',           sub:'Motionless seated posture',            opts:['New to me','5 min','10 min','15+ min'] },
+  { id:'soulmirror', name:'Soul Mirror',     sub:'Trait tracking & pore breathing',      opts:['New to me','Familiar'] }
+];
+
+// ── Persistent selections ──────────────────────────────────
+function loadGuideState() {
+  try { var s = localStorage.getItem('presence_guide_v1'); return s ? JSON.parse(s) : {}; } catch(e) { return {}; }
+}
+function saveGuideState(st) {
+  try { localStorage.setItem('presence_guide_v1', JSON.stringify(st)); } catch(e) {}
+}
+
+var guideState = loadGuideState(); // {[exerciseId]: selectedOption string}
+var guidePriorOpen = false;
+
+// ── Render exercise assessment rows ───────────────────────
+function renderGuideExRows() {
+  var container = document.getElementById('guideExRows');
+  if (!container) return;
+  container.innerHTML = GUIDE_EXERCISES.map(function(ex) {
+    var opts = ex.opts.map(function(opt) {
+      var sel = guideState[ex.id] === opt ? ' sel' : '';
+      return '<button class="guide-opt' + sel + '" data-ex="' + ex.id + '" data-opt="' + opt.replace(/"/g,'&quot;') + '">' + opt + '</button>';
+    }).join('');
+    return '<div class="guide-ex-row">'
+      + '<div class="guide-ex-label"><div class="guide-ex-name">' + ex.name + '</div><div class="guide-ex-sub">' + ex.sub + '</div></div>'
+      + '<div class="guide-opt-row">' + opts + '</div>'
+      + '</div>';
+  }).join('');
+  // Delegate clicks
+  container.addEventListener('click', function(e) {
+    var btn = e.target.closest('.guide-opt');
+    if (!btn) return;
+    var exId = btn.dataset.ex;
+    var opt  = btn.dataset.opt;
+    guideState[exId] = opt;
+    saveGuideState(guideState);
+    container.querySelectorAll('.guide-opt[data-ex="' + exId + '"]').forEach(function(b) {
+      b.classList.toggle('sel', b.dataset.opt === opt);
+    });
+  }, { once: false });
+}
+
+// ── Determine if user counts as "experienced" for an exercise ─
+function guideIsExperienced(exId) {
+  var sel = guideState[exId];
+  if (!sel || sel === 'New to me') return false;
+  return true;
+}
+
+// ── Render the daily plan output ──────────────────────────
+function renderGuidePlan() {
+  var dayIdx = new Date().getDay(); // 0–6
+  var plan = GUIDE_DAILY_PLANS[dayIdx];
+
+  // Pick experienced path if user has marked any exercise as not-new
+  var anyExp = GUIDE_EXERCISES.some(function(ex) { return guideIsExperienced(ex.id); });
+  var items = anyExp ? plan.experienced : plan.beginner;
+
+  document.getElementById('guidePlanFocus').textContent = plan.focus;
+  var dayNames = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+  document.getElementById('guidePlanDayLabel').textContent = dayNames[dayIdx];
+
+  document.getElementById('guidePlanCards').innerHTML = items.map(function(item) {
+    var durLabel = item.duration ? item.duration + ' min' : 'Open-ended';
+    var modeLabel = item.mode ? ' · ' + item.mode : '';
+    var accentColor = item.id === 'clock' ? '#d4b08e'
+      : item.id === 'visual'   ? '#8ab8e0'
+      : item.id === 'auditory' ? '#8eccc0'
+      : item.id === 'thought'  ? '#98b4cc'
+      : item.id === 'asana'    ? '#d49898'
+      : '#c4a8d4'; // soulmirror
+    return '<div class="guide-plan-card">'
+      + '<div class="guide-plan-exname" style="color:' + accentColor + ';">' + item.name + modeLabel + '</div>'
+      + '<div class="guide-plan-dur">' + durLabel + '</div>'
+      + '<div class="guide-plan-tip">' + item.tip + '</div>'
+      + '</div>';
+  }).join('');
+
+  document.getElementById('guidePlanOutput').style.display = 'block';
+  // Scroll to plan
+  setTimeout(function() {
+    var out = document.getElementById('guidePlanOutput');
+    if (out) out.scrollIntoView({ behavior:'smooth', block:'start' });
+  }, 120);
+}
+
+// ── Open / init guide screen ──────────────────────────────
+function openGuide() {
+  guideState = loadGuideState();
+  guidePriorOpen = false;
+  var panel = document.getElementById('guideAssessmentPanel');
+  var chevron = document.getElementById('guidePriorChevron');
+  var btn = document.getElementById('guidePriorBtn');
+  if (panel) panel.style.display = 'none';
+  if (chevron) { chevron.style.transform = ''; }
+  if (btn) btn.classList.remove('open');
+  document.getElementById('guidePlanOutput').style.display = 'none';
+  renderGuideExRows();
+  showScreen('guideScreen');
+}
+
+// ── Event wiring ──────────────────────────────────────────
+document.getElementById('guideBack').addEventListener('click', function() {
+  showScreen('homeScreen');
+});
+
+document.getElementById('guidePriorBtn').addEventListener('click', function() {
+  guidePriorOpen = !guidePriorOpen;
+  var panel = document.getElementById('guideAssessmentPanel');
+  var chevron = document.getElementById('guidePriorChevron');
+  panel.style.display = guidePriorOpen ? 'block' : 'none';
+  chevron.style.transform = guidePriorOpen ? 'rotate(90deg)' : '';
+  this.classList.toggle('open', guidePriorOpen);
+  if (guidePriorOpen) renderGuideExRows();
+});
+
+document.getElementById('guideGenerateBtn').addEventListener('click', function() {
+  renderGuidePlan();
 });
 
 // Settings toggle (inline accordion)
