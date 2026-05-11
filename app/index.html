@@ -10498,7 +10498,7 @@ document.getElementById('startPoreBreathBtn').addEventListener('click',startPore
 document.getElementById('stopPoreBreathBtn').addEventListener('click',function(){stopPoreBreath(false);});
 
 /* ─── First-Time Tutorial ──────────────────────────────────────────────── */
-(function(){
+document.addEventListener('DOMContentLoaded',function(){(function(){
   var VISITED='presence_visited';
   if(localStorage.getItem(VISITED)) return;
 
@@ -10749,8 +10749,7 @@ document.getElementById('stopPoreBreathBtn').addEventListener('click',function()
     });
     obs.observe(homeEl,{attributes:true,attributeFilter:['style']});
   }
-})();
-</script>
+})();});
 
 <!-- ─── Tutorial HTML ─── -->
 <div id="tutOverlay">
