@@ -10534,7 +10534,6 @@ document.getElementById('stopPoreBreathBtn').addEventListener('click',function()
 /* ─── First-Time Tutorial ──────────────────────────────────────────────── */
 document.addEventListener('DOMContentLoaded',function(){(function(){
   var VISITED='presence_visited';
-  if(localStorage.getItem(VISITED)) return;
 
   var STEPS=[
     {mode:'full', sparks:true,
@@ -10769,34 +10768,36 @@ document.addEventListener('DOMContentLoaded',function(){(function(){
     setTimeout(function(){ov.style.opacity='1';go(0);},120);
   }
 
-  // Expose boot so loginSkipBtn can call it directly
-  window.__tutBoot = function(){
-    if(localStorage.getItem(VISITED)) return;
-    window.__tutBoot = null;
-    setTimeout(boot, 900);
-  };
-
-  // Replay tutorial on demand (e.g. from drawer Omnia button)
+  // Replay tutorial on demand (always available, e.g. drawer Omnia button)
   window.__tutReplay = function(){
     cur=0; eyeOn=false; rdy=false;
-    stopSparks();
-    darkSpot();
-    df.style.display='none'; cp.classList.remove('tut-cap-on');
-    clearPulse();
+    stopSparks(); darkSpot();
+    df.classList.remove('tut-float-on');
+    fb.classList.remove('tut-vis');
+    df.style.display=''; cp.classList.remove('tut-cap-on');
+    clearPulse(); closeDrawer();
     ov.style.display='flex'; ov.style.opacity='0';
     ov.style.transition='opacity 0.7s ease';
     setTimeout(function(){ ov.style.opacity='1'; go(0); }, 120);
   };
 
-  // Fallback poller — catches any other path that shows homeScreen
-  var homeEl=document.getElementById('homeScreen');
-  if(homeEl){
-    var _poller=setInterval(function(){
-      if(homeEl.style.display==='flex'&&!localStorage.getItem(VISITED)){
-        clearInterval(_poller);
-        if(window.__tutBoot){window.__tutBoot();}
-      }
-    },300);
+  // First-time auto-boot only (gated by presence_visited)
+  if(!localStorage.getItem(VISITED)){
+    window.__tutBoot = function(){
+      if(localStorage.getItem(VISITED)) return;
+      window.__tutBoot = null;
+      setTimeout(boot, 900);
+    };
+
+    var homeEl=document.getElementById('homeScreen');
+    if(homeEl){
+      var _poller=setInterval(function(){
+        if(homeEl.style.display==='flex'&&!localStorage.getItem(VISITED)){
+          clearInterval(_poller);
+          if(window.__tutBoot) window.__tutBoot();
+        }
+      },300);
+    }
   }
 })();});
 </script>
