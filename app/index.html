@@ -456,6 +456,51 @@
     .levelup-particles { position:absolute; inset:0; pointer-events:none; overflow:hidden; }
     .particle { position:absolute; border-radius:50%; animation:particleFade 2s ease forwards; }
   
+/* ─── Session End Modal ─── */
+#sessionEndModal {
+  display:none; position:fixed; inset:0; z-index:600;
+  background:rgba(7,8,13,0.82); backdrop-filter:blur(6px);
+  flex-direction:column; align-items:center; justify-content:center;
+  padding:32px; opacity:0; transition:opacity 0.22s ease;
+}
+#sessionEndModal.show { display:flex; }
+#sessionEndModal.visible { opacity:1; }
+.sem-card {
+  background:var(--surface); border:1px solid var(--border);
+  border-radius:18px; padding:36px 28px 28px;
+  max-width:300px; width:100%; text-align:center;
+}
+.sem-title {
+  font-family:Cormorant Garamond,serif; font-size:26px;
+  font-weight:300; color:var(--text); margin-bottom:6px;
+}
+.sem-sub {
+  font-size:9px; letter-spacing:.2em; text-transform:uppercase;
+  color:var(--muted); margin-bottom:30px;
+}
+.sem-btn {
+  display:block; width:100%; padding:14px; border-radius:10px;
+  font-family:'DM Mono',monospace; font-size:10px;
+  letter-spacing:.18em; text-transform:uppercase;
+  cursor:pointer; border:none; margin-bottom:10px;
+  transition:background 0.15s, opacity 0.15s;
+}
+.sem-btn-keep {
+  background:rgba(126,184,164,0.12); color:var(--accent);
+  border:1px solid rgba(126,184,164,0.3);
+}
+.sem-btn-keep:hover { background:rgba(126,184,164,0.2); }
+.sem-btn-lose {
+  background:rgba(255,80,80,0.07); color:#d4756e;
+  border:1px solid rgba(212,117,110,0.25);
+}
+.sem-btn-lose:hover { background:rgba(255,80,80,0.13); }
+.sem-btn-back {
+  background:none; color:var(--muted); border:none;
+  font-size:9px; opacity:0.6; margin-bottom:0; padding:10px;
+}
+.sem-btn-back:hover { opacity:1; }
+
 /* ═══ BARDON GAME STYLES ═══ */
 
 
@@ -1675,7 +1720,7 @@
   <!-- SESSION -->
   <div class="screen" id="sessionScreen">
     <div class="session-header">
-      <button class="session-discard-btn" onclick="discardSession('awareness')" title="Discard session">✕</button>
+      <button class="session-discard-btn" onclick="showSessionEndModal()" title="End session">✕</button>
       <span class="session-title">active session</span>
       <button class="session-end-btn" id="endBtn">End Early</button>
     </div>
@@ -1801,6 +1846,17 @@
     <div class="history-list" id="historyList"></div>
   </div>
 </div>
+<!-- ─── Session End Modal ─── -->
+<div id="sessionEndModal">
+  <div class="sem-card">
+    <div class="sem-title">End Session?</div>
+    <div class="sem-sub" id="semSub">Your session is still running</div>
+    <button class="sem-btn sem-btn-keep" id="semKeepBtn">✦ Keep XP</button>
+    <button class="sem-btn sem-btn-lose" id="semLoseBtn">✕ Discard &amp; Lose XP</button>
+    <button class="sem-btn sem-btn-back" id="semBackBtn">← Back to Session</button>
+  </div>
+</div>
+
 <div class="drawer-overlay" id="drawerOverlay">
   <div class="drawer" id="drawer">
     <div class="drawer-header">
@@ -5392,6 +5448,32 @@ document.getElementById('exerciseGrid').addEventListener('click', function(e) {
   } else {
     openExerciseSetup(card.dataset.exercise);
   }
+});
+
+// ── Session end modal (X button on awareness session screen) ──
+function showSessionEndModal() {
+  var modal = document.getElementById('sessionEndModal');
+  var elapsed = sessionStartTime ? Math.max(1, Math.round((Date.now() - sessionStartTime) / 60000)) : 0;
+  document.getElementById('semSub').textContent = elapsed + ' min elapsed';
+  modal.style.display = 'flex';
+  requestAnimationFrame(function() { modal.classList.add('visible'); });
+}
+function hideSessionEndModal() {
+  var modal = document.getElementById('sessionEndModal');
+  modal.classList.remove('visible');
+  setTimeout(function() { modal.style.display = 'none'; }, 220);
+}
+document.getElementById('semBackBtn').addEventListener('click', hideSessionEndModal);
+document.getElementById('semKeepBtn').addEventListener('click', function() {
+  hideSessionEndModal();
+  endSession(); // awards XP and shows survey
+});
+document.getElementById('semLoseBtn').addEventListener('click', function() {
+  hideSessionEndModal();
+  clearTimeout(sessionTimerHandle);
+  sessionStartTime = null;
+  renderHome();
+  showScreen('homeScreen');
 });
 
 // ── Discard session (red X button on all session screens) ─
