@@ -648,6 +648,19 @@
   background:transparent; cursor:pointer;
 }
 #tutDrawerCapture.tut-cap-on { display:block; }
+
+/* Omnia replay button in drawer header */
+.drawer-header { position:relative; }
+#drawerOmniaBtn {
+  position:absolute; top:2px; right:0;
+  background:none; border:none; cursor:pointer; padding:4px;
+  opacity:0.55; transition:opacity 0.2s ease, filter 0.2s ease;
+  line-height:0;
+}
+#drawerOmniaBtn:hover {
+  opacity:1;
+  filter:drop-shadow(0 0 7px rgba(160,210,240,0.65));
+}
 </style>
 <script>
   // Set safe-area padding variables before first paint.
@@ -1790,6 +1803,19 @@
     <div class="drawer-header">
       <div class="drawer-wordmark">Presence</div>
       <div class="drawer-level" id="drawerLevel">Level 1 · Initiate</div>
+      <button id="drawerOmniaBtn" title="Meet Omnia" aria-label="Open guide tutorial">
+        <svg width="26" height="42" viewBox="0 0 72 118" xmlns="http://www.w3.org/2000/svg">
+          <polygon points="36,2 50,14 36,26 22,14" fill="#ceeaff" stroke="#90cce8" stroke-width=".8" opacity=".95"/>
+          <polygon points="36,2 50,14 36,13" fill="#e8f8ff" opacity=".55"/>
+          <polygon points="36,2 22,14 36,13" fill="#b4daf5" opacity=".35"/>
+          <polygon points="36,26 56,37 60,59 36,70 12,59 16,37" fill="#b8dcf5" stroke="#88c4e0" stroke-width=".7" opacity=".88"/>
+          <polygon points="36,26 56,37 36,45" fill="#d4ecff" opacity=".44"/>
+          <polygon points="36,26 16,37 36,45" fill="#a8d4f0" opacity=".28"/>
+          <polygon points="36,70 60,59 52,88 36,100 20,88 12,59" fill="#a8d4f0" stroke="#88c4e0" stroke-width=".7" opacity=".82"/>
+          <polygon points="36,100 52,88 36,116" fill="#98c8e8" stroke="#88c4e0" stroke-width=".6" opacity=".7"/>
+          <polygon points="36,100 20,88 36,116" fill="#88c0e0" stroke="#88c4e0" stroke-width=".6" opacity=".52"/>
+        </svg>
+      </button>
     </div>
     <div class="drawer-items">
       <button class="drawer-item" id="drawerGuide">
@@ -3217,6 +3243,12 @@ function closeDrawer() {
 }
 
 document.getElementById('hamburgerBtn').addEventListener('click', openDrawer);
+document.getElementById('drawerOmniaBtn').addEventListener('click', function() {
+  closeDrawer();
+  setTimeout(function() {
+    if (typeof window.__tutReplay === 'function') window.__tutReplay();
+  }, 320); // wait for drawer slide-out before tutorial appears
+});
 document.getElementById('drawerOverlay').addEventListener('click', function(e) {
   if (e.target === this) closeDrawer();
 });
@@ -10742,6 +10774,18 @@ document.addEventListener('DOMContentLoaded',function(){(function(){
     if(localStorage.getItem(VISITED)) return;
     window.__tutBoot = null;
     setTimeout(boot, 900);
+  };
+
+  // Replay tutorial on demand (e.g. from drawer Omnia button)
+  window.__tutReplay = function(){
+    cur=0; eyeOn=false; rdy=false;
+    stopSparks();
+    darkSpot();
+    df.style.display='none'; cp.classList.remove('tut-cap-on');
+    clearPulse();
+    ov.style.display='flex'; ov.style.opacity='0';
+    ov.style.transition='opacity 0.7s ease';
+    setTimeout(function(){ ov.style.opacity='1'; go(0); }, 120);
   };
 
   // Fallback poller — catches any other path that shows homeScreen
