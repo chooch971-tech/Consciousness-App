@@ -8387,6 +8387,8 @@ document.getElementById('loginToggleBtn').addEventListener('click', function(e) 
 document.getElementById('loginSkipBtn').addEventListener('click', function() {
   renderHome();
   showScreen('homeScreen');
+  // Fire tutorial if first visit
+  if (typeof window.__tutBoot === 'function') window.__tutBoot();
 });
 
 // ═══ BARDON GAME JS ═══
@@ -10735,19 +10737,22 @@ document.addEventListener('DOMContentLoaded',function(){(function(){
     setTimeout(function(){ov.style.opacity='1';go(0);},120);
   }
 
+  // Expose boot so loginSkipBtn can call it directly
+  window.__tutBoot = function(){
+    if(localStorage.getItem(VISITED)) return;
+    window.__tutBoot = null;
+    setTimeout(boot, 900);
+  };
+
+  // Fallback poller — catches any other path that shows homeScreen
   var homeEl=document.getElementById('homeScreen');
-  if(!homeEl) return;
-  if(homeEl.style.display==='flex'){
-    setTimeout(boot,1100);
-  } else {
-    var obs=new MutationObserver(function(mm){
-      mm.forEach(function(m){
-        if(homeEl.style.display==='flex'&&!localStorage.getItem(VISITED)){
-          obs.disconnect();setTimeout(boot,1100);
-        }
-      });
-    });
-    obs.observe(homeEl,{attributes:true,attributeFilter:['style']});
+  if(homeEl){
+    var _poller=setInterval(function(){
+      if(homeEl.style.display==='flex'&&!localStorage.getItem(VISITED)){
+        clearInterval(_poller);
+        if(window.__tutBoot){window.__tutBoot();}
+      }
+    },300);
   }
 })();});
 </script>
