@@ -2785,6 +2785,13 @@ function returnToSessionFromPrayer() {
   var coTab = document.getElementById('modeConcentration');
   if (awTab) { awTab.style.pointerEvents = ''; awTab.style.opacity = ''; }
   if (coTab) { coTab.style.pointerEvents = ''; coTab.style.opacity = ''; }
+  // Restore panels to their normal state
+  var awPanel = document.getElementById('awarenessPanel');
+  var coPanel = document.getElementById('concentrationPanel');
+  var prPanel = document.getElementById('prayerPanel');
+  if (awPanel) awPanel.style.display = '';
+  if (coPanel) coPanel.style.display = '';
+  if (prPanel) prPanel.style.display = '';
   showScreen('sessionScreen');
 }
 
@@ -5394,6 +5401,7 @@ function discardSession(type) {
     case 'awareness':
       clearTimeout(sessionTimerHandle);
       sessionStartTime = null;
+      renderHome();
       showScreen('homeScreen');
       break;
     case 'clock':
