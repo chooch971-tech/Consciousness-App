@@ -2435,8 +2435,16 @@ function collectResidue() {
   state.residue = 0;
   state.residueGeneratedAt = null;
   state.depth = calcDepth(state.xp);
+  // Check for level-ups
+  var prevLevel = state.level;
+  while (state.level < 777) {
+    var xpThis = state.xp - sumXpToLevel(state.level);
+    if (xpThis >= xpForLevel(state.level)) { state.level++; } else { break; }
+  }
+  var didLevelUp = state.level > prevLevel;
   saveState();
   if (syncEnabled && authToken) syncPushData();
+  if (didLevelUp) setTimeout(function() { showLevelUp(state.level); }, 600);
   return pending;
 }
 
