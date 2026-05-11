@@ -533,6 +533,134 @@
 .omnia-speak em { color:#a8d8ec; font-style:normal; }
 .omnia-speak.left { text-align:left; padding:0; }
 .omnia-response { font-size:10px; letter-spacing:.08em; color:#8ecce0; text-align:center; margin-top:6px; opacity:.7; font-style:normal; }
+
+/* ─── First-Time Tutorial ──────────────────────────────────────────── */
+#tutOverlay {
+  display:none; position:fixed; inset:0; z-index:9000;
+  background:rgba(7,8,13,0.92);
+  flex-direction:column; align-items:center; justify-content:center;
+  transition:background 0.4s ease; overflow:hidden;
+  cursor:pointer; user-select:none; -webkit-user-select:none;
+}
+#tutSparkCanvas { position:absolute; inset:0; pointer-events:none; z-index:0; }
+#tutSpotlight {
+  position:fixed; border-radius:14px;
+  box-shadow:0 0 0 9999px rgba(7,8,13,0.88);
+  border:1.5px solid rgba(126,184,164,0.55);
+  z-index:9002; pointer-events:none; opacity:0;
+  transition:opacity 0.38s ease,
+             top 0.42s cubic-bezier(.25,.8,.25,1), left 0.42s cubic-bezier(.25,.8,.25,1),
+             width 0.42s cubic-bezier(.25,.8,.25,1), height 0.42s cubic-bezier(.25,.8,.25,1);
+}
+#tutSpotlight.tut-lit { opacity:1; }
+#tutContent {
+  display:flex; flex-direction:column; align-items:center; gap:18px;
+  position:relative; z-index:9004; padding:0 20px; pointer-events:none;
+  max-width:min(400px,92vw);
+}
+#tutOverlay.tut-spot #tutContent {
+  position:fixed; bottom:28px; left:50%; transform:translateX(-50%); width:100%;
+  align-items:center;
+}
+.tut-bubble {
+  background:rgba(10,15,28,0.97); border:1px solid rgba(126,184,164,0.35);
+  border-radius:16px; padding:18px 22px; max-width:min(340px,88vw);
+  position:relative; opacity:0; transition:opacity 0.4s ease 0.12s; order:0;
+}
+.tut-bubble.tut-vis { opacity:1; }
+.tut-bubble::after {
+  content:''; position:absolute; bottom:-8px; left:50%; transform:translateX(-50%);
+  border-left:8px solid transparent; border-right:8px solid transparent;
+  border-top:8px solid rgba(126,184,164,0.35);
+}
+.tut-bubble p {
+  font-family:'Cormorant Garamond',Georgia,serif; font-size:15px;
+  font-weight:300; font-style:italic; line-height:1.78;
+  color:#ddd8ce; text-align:center; margin:0;
+}
+#tutOmniaWrap {
+  order:1; display:flex; align-items:center; justify-content:center;
+  transition:transform 0.36s cubic-bezier(.34,1.26,.64,1);
+}
+.tut-crystal-svg {
+  width:84px; display:block;
+  animation:omniaFloat 4.5s ease-in-out infinite;
+  filter:drop-shadow(0 0 12px rgba(142,204,224,.45));
+  transition:width 0.4s ease;
+}
+.tut-eye-svg {
+  width:84px; display:none;
+  animation:omniaFloat 4.5s ease-in-out infinite;
+  filter:drop-shadow(0 0 14px rgba(88,180,240,.5));
+  transition:width 0.4s ease;
+}
+#tutOverlay.tut-spot .tut-crystal-svg,
+#tutOverlay.tut-spot .tut-eye-svg { width:54px; }
+#tutOmniaWrap.eye-state .tut-crystal-svg { display:none; }
+#tutOmniaWrap.eye-state .tut-eye-svg    { display:block; }
+.tut-tap-hint {
+  position:absolute; bottom:28px; left:50%; transform:translateX(-50%);
+  font-size:8px; letter-spacing:.28em; text-transform:uppercase;
+  color:rgba(126,184,164,0.4); animation:tutPulse 2.2s ease-in-out infinite;
+  white-space:nowrap; pointer-events:none; z-index:9006;
+}
+@keyframes tutPulse { 0%,100%{opacity:.4;} 50%{opacity:.85;} }
+.tut-skip-btn {
+  position:absolute; top:max(env(safe-area-inset-top),20px); right:20px;
+  font-size:8px; letter-spacing:.22em; text-transform:uppercase;
+  color:rgba(221,216,206,0.28); background:none; border:none; cursor:pointer;
+  z-index:9008; padding:10px; pointer-events:auto; transition:color 0.2s;
+}
+.tut-skip-btn:hover { color:rgba(221,216,206,0.6); }
+/* Drawer float (outside overlay stacking context, always highest) */
+#tutDrawerFloat {
+  display:none; position:fixed; bottom:0; left:0; right:0; z-index:9500;
+  flex-direction:column; align-items:center;
+  padding:0 20px max(env(safe-area-inset-bottom),32px); pointer-events:none; gap:12px;
+}
+#tutDrawerFloat.tut-float-on { display:flex; }
+#tutFloatBubble {
+  background:rgba(10,15,28,0.97); border:1px solid rgba(126,184,164,0.35);
+  border-radius:16px; padding:18px 22px; max-width:min(340px,88vw);
+  opacity:0; transition:opacity 0.4s ease;
+}
+#tutFloatBubble.tut-vis { opacity:1; }
+#tutFloatBubble p {
+  font-family:'Cormorant Garamond',Georgia,serif; font-size:14.5px;
+  font-weight:300; font-style:italic; line-height:1.78;
+  color:#ddd8ce; text-align:center; margin:0;
+}
+#tutDoneBtn {
+  display:none; pointer-events:auto;
+  font-size:8.5px; letter-spacing:.26em; text-transform:uppercase;
+  background:rgba(126,184,164,0.12); border:1px solid rgba(126,184,164,0.3);
+  border-radius:6px; color:#7eb8a4; padding:11px 26px; cursor:pointer;
+  transition:background 0.2s;
+}
+#tutDoneBtn:hover { background:rgba(126,184,164,0.22); }
+.drawer-item.tut-pulse { animation:drawerPulse 1.5s ease-in-out infinite; border-radius:8px; }
+@keyframes drawerPulse {
+  0%,100% { background:transparent; }
+  50%      { background:rgba(126,184,164,0.14); box-shadow:inset 0 0 0 1px rgba(126,184,164,0.28); }
+}
+#tutDrawerCapture {
+  display:none; position:fixed; inset:0; z-index:9001;
+  background:transparent; cursor:pointer;
+}
+#tutDrawerCapture.tut-cap-on { display:block; }
+
+/* Omnia replay button in drawer header */
+.drawer-header { position:relative; }
+#drawerOmniaBtn {
+  position:absolute; top:2px; right:0;
+  background:none; border:none; cursor:pointer; padding:4px;
+  opacity:0.55; transition:opacity 0.2s ease, filter 0.2s ease;
+  line-height:0;
+}
+#drawerOmniaBtn:hover {
+  opacity:1;
+  filter:drop-shadow(0 0 7px rgba(160,210,240,0.65));
+}
 </style>
 <script>
   // Set safe-area padding variables before first paint.
@@ -1675,6 +1803,19 @@
     <div class="drawer-header">
       <div class="drawer-wordmark">Presence</div>
       <div class="drawer-level" id="drawerLevel">Level 1 · Initiate</div>
+      <button id="drawerOmniaBtn" title="Meet Omnia" aria-label="Open guide tutorial">
+        <svg width="26" height="42" viewBox="0 0 72 118" xmlns="http://www.w3.org/2000/svg">
+          <polygon points="36,2 50,14 36,26 22,14" fill="#ceeaff" stroke="#90cce8" stroke-width=".8" opacity=".95"/>
+          <polygon points="36,2 50,14 36,13" fill="#e8f8ff" opacity=".55"/>
+          <polygon points="36,2 22,14 36,13" fill="#b4daf5" opacity=".35"/>
+          <polygon points="36,26 56,37 60,59 36,70 12,59 16,37" fill="#b8dcf5" stroke="#88c4e0" stroke-width=".7" opacity=".88"/>
+          <polygon points="36,26 56,37 36,45" fill="#d4ecff" opacity=".44"/>
+          <polygon points="36,26 16,37 36,45" fill="#a8d4f0" opacity=".28"/>
+          <polygon points="36,70 60,59 52,88 36,100 20,88 12,59" fill="#a8d4f0" stroke="#88c4e0" stroke-width=".7" opacity=".82"/>
+          <polygon points="36,100 52,88 36,116" fill="#98c8e8" stroke="#88c4e0" stroke-width=".6" opacity=".7"/>
+          <polygon points="36,100 20,88 36,116" fill="#88c0e0" stroke="#88c4e0" stroke-width=".6" opacity=".52"/>
+        </svg>
+      </button>
     </div>
     <div class="drawer-items">
       <button class="drawer-item" id="drawerGuide">
@@ -2294,8 +2435,16 @@ function collectResidue() {
   state.residue = 0;
   state.residueGeneratedAt = null;
   state.depth = calcDepth(state.xp);
+  // Check for level-ups
+  var prevLevel = state.level;
+  while (state.level < 777) {
+    var xpThis = state.xp - sumXpToLevel(state.level);
+    if (xpThis >= xpForLevel(state.level)) { state.level++; } else { break; }
+  }
+  var didLevelUp = state.level > prevLevel;
   saveState();
   if (syncEnabled && authToken) syncPushData();
+  if (didLevelUp) setTimeout(function() { showLevelUp(state.level); }, 600);
   return pending;
 }
 
@@ -3102,6 +3251,12 @@ function closeDrawer() {
 }
 
 document.getElementById('hamburgerBtn').addEventListener('click', openDrawer);
+document.getElementById('drawerOmniaBtn').addEventListener('click', function() {
+  closeDrawer();
+  setTimeout(function() {
+    if (typeof window.__tutReplay === 'function') window.__tutReplay();
+  }, 320); // wait for drawer slide-out before tutorial appears
+});
 document.getElementById('drawerOverlay').addEventListener('click', function(e) {
   if (e.target === this) closeDrawer();
 });
@@ -8166,7 +8321,7 @@ async function getSubscription() {
 async function registerWebPush() {
   if (!('serviceWorker' in navigator) || !('PushManager' in window)) return;
   try {
-    var reg = await navigator.serviceWorker.register('./sw.js', { scope: './' });
+    var reg = await navigator.serviceWorker.register('/sw.js', { scope: '/app/' });
     var permission = await Notification.requestPermission();
     if (permission !== 'granted') { showToast('Enable notifications for background reminders'); return; }
     var sub = await reg.pushManager.getSubscription();
@@ -8202,7 +8357,7 @@ async function notifyServerSessionEnd() {
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', async function() {
     try {
-      var reg = await navigator.serviceWorker.register('./sw.js', { scope: './' });
+      var reg = await navigator.serviceWorker.register('/sw.js', { scope: '/app/' });
       if (Notification.permission === 'granted') {
         var sub = await reg.pushManager.getSubscription();
         if (!sub) { sub = await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY) }); }
@@ -8272,6 +8427,8 @@ document.getElementById('loginToggleBtn').addEventListener('click', function(e) 
 document.getElementById('loginSkipBtn').addEventListener('click', function() {
   renderHome();
   showScreen('homeScreen');
+  // Fire tutorial if first visit
+  if (typeof window.__tutBoot === 'function') window.__tutBoot();
 });
 
 // ═══ BARDON GAME JS ═══
@@ -10381,6 +10538,336 @@ function stopPoreBreath(completed){
 
 document.getElementById('startPoreBreathBtn').addEventListener('click',startPoreBreath);
 document.getElementById('stopPoreBreathBtn').addEventListener('click',function(){stopPoreBreath(false);});
+
+/* ─── First-Time Tutorial ──────────────────────────────────────────────── */
+document.addEventListener('DOMContentLoaded',function(){(function(){
+  var VISITED='presence_visited';
+
+  var STEPS=[
+    {mode:'full', sparks:true,
+     text:'Namaste. My name is Omnia, your spiritual guide.'},
+    {mode:'full', eyeTap:true, text:null},
+    {mode:'full', fromEye:true,
+     text:'Allow me to show you your new favorite meditative practice.'},
+    {mode:'full', panel:'concentration', cards:true,
+     text:'These exercises will hone your concentration and imagination skills. Believe it or not, these exercises have been derived from secret societies and practiced for thousands of years!'},
+    {mode:'spot', target:'[data-exercise="clock"]',
+     text:'The Concentration Clock — fix your complete attention on the second hand of a clock. Each second of true focus makes your mind stronger.'},
+    {mode:'spot', target:'[data-exercise="visual"]',
+     text:'Visualization — picture an object in your mind, with eyes open and closed. This trains the inner eye: the seat of imagination and mental power.'},
+    {mode:'spot', target:'[data-exercise="auditory"]',
+     text:'Auditory — listen to a sound, then hear it in your mind\'s ear. Closing the gap between your inner and outer worlds.'},
+    {mode:'spot', target:'[data-exercise="thought"]',
+     text:'Thought Control — hold a single thought, and only that thought. This is mastery over the restless mind.'},
+    {mode:'spot', target:'[data-exercise="asana"]',
+     text:'Asana — hold perfectly still. Not a muscle moves. This builds iron patience and command over the physical body.'},
+    {mode:'spot', target:'[data-exercise="soulmirror"]',
+     text:'Soul Mirror — record your genuine traits, both light and shadow. Honest self-knowledge is the foundation of all real inner work.'},
+    {mode:'full', panel:'awareness',
+     text:'Become aware of the fact that you are aware. Don\'t just take my word for it — do it now. You\'ll find a subtle change of consciousness. This is being in the Now.'},
+    {mode:'full',
+     text:'Described by spiritual masters over the millennia, this is the gateway to Enlightenment.'},
+    {mode:'spot', target:'#nextDuration',
+     text:'Set your session duration here. Start with five minutes and extend as your capacity grows.'},
+    {mode:'spot', target:'#nextInterval',
+     text:'This is your reminder interval — Presence prompts you at this frequency. Are you here? Each return strengthens the muscle of attention.'},
+    {mode:'drawer', target:'#drawerJournal',
+     text:'Your Journal Log lives here. Every session is recorded — your streak, your progress, your notes. This is your proof of growth.'},
+    {mode:'drawer', target:'#drawerGuide', last:true,
+     text:'And finally — I live here, in the Guide tab. Come find me often. I\'m always here to help you walk this path.'}
+  ];
+
+  var ov=document.getElementById('tutOverlay');
+  var cv=document.getElementById('tutSparkCanvas');
+  var sp=document.getElementById('tutSpotlight');
+  var ow=document.getElementById('tutOmniaWrap');
+  var bl=document.getElementById('tutBubble');
+  var bt=document.getElementById('tutBubbleText');
+  var th=document.getElementById('tutTapHint');
+  var sk=document.getElementById('tutSkipBtn');
+  var df=document.getElementById('tutDrawerFloat');
+  var fb=document.getElementById('tutFloatBubble');
+  var ft=document.getElementById('tutFloatText');
+  var db=document.getElementById('tutDoneBtn');
+  var cp=document.getElementById('tutDrawerCapture');
+  if(!ov) return;
+
+  var cur=0, eyeOn=false, rdy=false, pRAF, parts=[];
+
+  /* Particles */
+  function mkP(){
+    var cx=window.innerWidth/2, cy=window.innerHeight*0.45;
+    var a=Math.random()*Math.PI*2, sp2=1+Math.random()*2.6;
+    var cols=['#b8eaff','#7eb8a4','#d4b08e','#c4a8d4','#fff','#8ecce0'];
+    return{x:cx+(Math.random()-.5)*80,y:cy+(Math.random()-.5)*60,
+           vx:Math.cos(a)*sp2,vy:Math.sin(a)*sp2-2,
+           s:1.5+Math.random()*2.8,c:cols[Math.random()*cols.length|0],
+           l:0.7+Math.random()*0.6,d:0.007+Math.random()*0.013};
+  }
+  function startSparks(){
+    cv.width=window.innerWidth; cv.height=window.innerHeight;
+    var ctx=cv.getContext('2d');
+    parts=[];for(var i=0;i<70;i++) parts.push(mkP());
+    function fr(){
+      ctx.clearRect(0,0,cv.width,cv.height);
+      parts.forEach(function(p,i){
+        p.x+=p.vx;p.y+=p.vy;p.vy+=0.05;p.l-=p.d;
+        if(p.l<=0){parts[i]=mkP();return;}
+        ctx.save();ctx.globalAlpha=Math.max(0,p.l);
+        ctx.fillStyle=p.c;ctx.shadowBlur=8;ctx.shadowColor=p.c;
+        ctx.beginPath();ctx.arc(p.x,p.y,p.s,0,Math.PI*2);ctx.fill();
+        ctx.restore();
+      });
+      pRAF=requestAnimationFrame(fr);
+    }
+    fr();
+  }
+  function stopSparks(){
+    if(pRAF){cancelAnimationFrame(pRAF);pRAF=null;}
+    parts=[];
+    var ctx=cv.getContext('2d');
+    if(ctx) ctx.clearRect(0,0,cv.width,cv.height);
+  }
+
+  /* Spotlight */
+  function litSpot(sel){
+    var el=document.querySelector(sel);
+    if(!el){sp.classList.remove('tut-lit');return;}
+    var r=el.getBoundingClientRect(),p=10;
+    sp.style.left=(r.left-p)+'px';sp.style.top=(r.top-p)+'px';
+    sp.style.width=(r.width+p*2)+'px';sp.style.height=(r.height+p*2)+'px';
+    requestAnimationFrame(function(){sp.classList.add('tut-lit');});
+  }
+  function darkSpot(){sp.classList.remove('tut-lit');}
+
+  /* Panel */
+  function goPanel(p){
+    var m={awareness:'modeAwareness',concentration:'modeConcentration'};
+    var btn=document.getElementById(m[p]);if(btn) btn.click();
+  }
+
+  /* Card stagger */
+  function staggerCards(){
+    document.querySelectorAll('#exerciseGrid .exercise-card').forEach(function(c,i){
+      c.style.opacity='0';c.style.transform='translateY(14px)';
+      c.style.transition='opacity 0.4s ease,transform 0.4s ease';
+      setTimeout(function(){c.style.opacity='1';c.style.transform='translateY(0)';},200+i*160);
+    });
+  }
+
+  /* Eye */
+  function toEye(){
+    eyeOn=true;
+    ow.style.transform='scale(0.05)';
+    setTimeout(function(){ow.classList.add('eye-state');ow.style.transform='scale(1)';},340);
+  }
+  function fromEye(){
+    eyeOn=false;
+    ow.style.transform='scale(0.05)';
+    setTimeout(function(){ow.classList.remove('eye-state');ow.style.transform='scale(1)';},340);
+  }
+
+  /* Drawer pulse */
+  function pulseItem(sel){
+    document.querySelectorAll('.drawer-item.tut-pulse').forEach(function(e){e.classList.remove('tut-pulse');});
+    var el=document.querySelector(sel);if(el) el.classList.add('tut-pulse');
+  }
+  function clearPulse(){
+    document.querySelectorAll('.drawer-item.tut-pulse').forEach(function(e){e.classList.remove('tut-pulse');});
+  }
+
+  /* Show step */
+  function go(i){
+    if(i>=STEPS.length){end();return;}
+    cur=i;rdy=false;
+    var s=STEPS[i];
+
+    if(s.mode==='drawer'){
+      ov.style.opacity='0';ov.style.pointerEvents='none';
+      darkSpot();stopSparks();
+      df.classList.remove('tut-float-on');
+      fb.classList.remove('tut-vis');
+      db.style.display='none';
+      cp.classList.add('tut-cap-on');
+      openDrawer();
+      setTimeout(function(){
+        pulseItem(s.target);
+        ft.textContent=s.text;
+        df.classList.add('tut-float-on');
+        setTimeout(function(){fb.classList.add('tut-vis');},60);
+        if(s.last) db.style.display='block';
+        rdy=true;
+      },480);
+      return;
+    }
+
+    ov.style.opacity='1';ov.style.pointerEvents='auto';
+    df.classList.remove('tut-float-on');
+    fb.classList.remove('tut-vis');
+    clearPulse();
+    cp.classList.remove('tut-cap-on');
+    closeDrawer();
+
+    if(s.panel) goPanel(s.panel);
+    if(s.cards) setTimeout(staggerCards,250);
+    if(s.sparks) startSparks();
+    else if(i>0) stopSparks();
+    if(s.fromEye&&eyeOn) fromEye();
+
+    if(s.mode==='full'){
+      ov.classList.remove('tut-spot');
+      ov.style.background='rgba(7,8,13,0.92)';
+      darkSpot();
+    } else {
+      ov.classList.add('tut-spot');
+      ov.style.background='rgba(7,8,13,0.08)';
+      setTimeout(function(){litSpot(s.target);},180);
+    }
+
+    bl.classList.remove('tut-vis');
+    if(s.text){
+      bt.textContent=s.text;
+      setTimeout(function(){bl.classList.add('tut-vis');},120);
+    }
+    th.textContent=s.eyeTap?'Tap Omnia':'Tap to continue';
+    setTimeout(function(){rdy=true;},700);
+  }
+
+  /* End */
+  function end(){
+    localStorage.setItem(VISITED,'1');
+    stopSparks();clearPulse();
+    cp.classList.remove('tut-cap-on');
+    closeDrawer();
+    ov.style.opacity='0';
+    df.classList.remove('tut-float-on');
+    setTimeout(function(){ov.style.display='none';},500);
+    document.querySelectorAll('#exerciseGrid .exercise-card').forEach(function(c){
+      c.style.opacity='';c.style.transform='';c.style.transition='';
+    });
+  }
+
+  /* Tap handlers */
+  ov.addEventListener('click',function(){
+    if(!rdy) return;
+    var s=STEPS[cur];
+    if(s.eyeTap&&!eyeOn){
+      rdy=false;
+      toEye();
+      bl.classList.remove('tut-vis');
+      setTimeout(function(){go(cur+1);},1800);
+    } else {
+      go(cur+1);
+    }
+  });
+  cp.addEventListener('click',function(){
+    var s=STEPS[cur];
+    if(!rdy||!s||s.mode!=='drawer'||s.last) return;
+    go(cur+1);
+  });
+  db.addEventListener('click',function(e){e.stopPropagation();end();});
+  sk.addEventListener('click', function(e){e.stopPropagation();end();});
+
+  /* Boot: wait for home screen */
+  function boot(){
+    if(localStorage.getItem(VISITED)) return;
+    ov.style.display='flex';ov.style.opacity='0';
+    ov.style.transition='opacity 0.7s ease,background 0.4s ease';
+    setTimeout(function(){ov.style.opacity='1';go(0);},120);
+  }
+
+  // Replay tutorial on demand (always available, e.g. drawer Omnia button)
+  window.__tutReplay = function(){
+    cur=0; eyeOn=false; rdy=false;
+    stopSparks(); darkSpot();
+    df.classList.remove('tut-float-on');
+    fb.classList.remove('tut-vis');
+    df.style.display=''; cp.classList.remove('tut-cap-on');
+    clearPulse(); closeDrawer();
+    ov.style.display='flex'; ov.style.opacity='0';
+    ov.style.transition='opacity 0.7s ease';
+    setTimeout(function(){ ov.style.opacity='1'; go(0); }, 120);
+  };
+
+  // First-time auto-boot only (gated by presence_visited)
+  if(!localStorage.getItem(VISITED)){
+    window.__tutBoot = function(){
+      if(localStorage.getItem(VISITED)) return;
+      window.__tutBoot = null;
+      setTimeout(boot, 900);
+    };
+
+    var homeEl=document.getElementById('homeScreen');
+    if(homeEl){
+      var _poller=setInterval(function(){
+        if(homeEl.style.display==='flex'&&!localStorage.getItem(VISITED)){
+          clearInterval(_poller);
+          if(window.__tutBoot) window.__tutBoot();
+        }
+      },300);
+    }
+  }
+})();});
 </script>
+
+<!-- ─── Tutorial HTML ─── -->
+<div id="tutOverlay">
+  <canvas id="tutSparkCanvas"></canvas>
+  <div id="tutSpotlight"></div>
+  <div id="tutContent">
+    <div class="tut-bubble" id="tutBubble"><p id="tutBubbleText"></p></div>
+    <div id="tutOmniaWrap">
+      <svg class="tut-crystal-svg" viewBox="0 0 72 118" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <radialGradient id="tg3" cx="50%" cy="40%" r="60%">
+            <stop offset="0%" stop-color="#e8f8ff" stop-opacity=".55"/>
+            <stop offset="100%" stop-color="#8ecce0" stop-opacity="0"/>
+          </radialGradient>
+          <filter id="tgl"><feGaussianBlur stdDeviation="2.5" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+        </defs>
+        <ellipse cx="36" cy="62" rx="24" ry="42" fill="url(#tg3)" filter="url(#tgl)" opacity=".55"/>
+        <polygon points="36,2 50,14 36,26 22,14" fill="#ceeaff" stroke="#90cce8" stroke-width=".8" opacity=".95"/>
+        <polygon points="36,2 50,14 36,13" fill="#e8f8ff" opacity=".55"/>
+        <polygon points="36,2 22,14 36,13" fill="#b4daf5" opacity=".35"/>
+        <line x1="36" y1="2" x2="36" y2="26" stroke="#b8e0f8" stroke-width=".5" opacity=".4"/>
+        <polygon points="36,26 56,37 60,59 36,70 12,59 16,37" fill="#b8dcf5" stroke="#88c4e0" stroke-width=".7" opacity=".88"/>
+        <polygon points="36,26 56,37 36,45" fill="#d4ecff" opacity=".44"/>
+        <polygon points="36,26 16,37 36,45" fill="#a8d4f0" opacity=".28"/>
+        <line x1="36" y1="26" x2="36" y2="70" stroke="#a8d8f2" stroke-width=".5" opacity=".38"/>
+        <polygon points="36,70 60,59 52,88 36,100 20,88 12,59" fill="#a8d4f0" stroke="#88c4e0" stroke-width=".7" opacity=".82"/>
+        <polygon points="36,100 52,88 36,116" fill="#98c8e8" stroke="#88c4e0" stroke-width=".6" opacity=".7"/>
+        <polygon points="36,100 20,88 36,116" fill="#88c0e0" stroke="#88c4e0" stroke-width=".6" opacity=".52"/>
+        <g opacity=".5"><line x1="62" y1="48" x2="68" y2="48" stroke="#b8eaff" stroke-width="1.1"/><line x1="65" y1="45" x2="65" y2="51" stroke="#b8eaff" stroke-width="1.1"/></g>
+        <g opacity=".38"><line x1="4" y1="22" x2="10" y2="22" stroke="#b8eaff" stroke-width="1"/><line x1="7" y1="19" x2="7" y2="25" stroke="#b8eaff" stroke-width="1"/></g>
+      </svg>
+      <svg class="tut-eye-svg" viewBox="0 0 88 60" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <radialGradient id="teyeg" cx="50%" cy="50%" r="50%">
+            <stop offset="0%" stop-color="#1e5a8a"/>
+            <stop offset="100%" stop-color="#091e38"/>
+          </radialGradient>
+        </defs>
+        <ellipse cx="44" cy="30" rx="40" ry="26" fill="#ddf4ff" stroke="#88c4e0" stroke-width="1.2"/>
+        <circle cx="44" cy="30" r="15" fill="url(#teyeg)"/>
+        <circle cx="44" cy="30" r="7.5" fill="#040d1a"/>
+        <circle cx="49" cy="25" r="4.5" fill="white" opacity=".5"/>
+        <circle cx="37" cy="35" r="2" fill="white" opacity=".22"/>
+        <path d="M4,30 Q44,2 84,30" fill="none" stroke="#88c4e0" stroke-width="1.2" opacity=".5"/>
+        <path d="M4,30 Q44,58 84,30" fill="none" stroke="#88c4e0" stroke-width="1.2" opacity=".5"/>
+      </svg>
+    </div>
+  </div>
+  <div class="tut-tap-hint" id="tutTapHint">Tap to continue</div>
+  <button class="tut-skip-btn" id="tutSkipBtn">Skip</button>
+</div>
+
+<!-- Drawer float (z-index 9500, outside overlay stacking context) -->
+<div id="tutDrawerFloat">
+  <div id="tutFloatBubble"><p id="tutFloatText"></p></div>
+  <button id="tutDoneBtn">Begin your practice →</button>
+</div>
+<!-- Click-capture for drawer steps -->
+<div id="tutDrawerCapture"></div>
+
 </body>
 </html>
