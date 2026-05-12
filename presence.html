@@ -655,9 +655,10 @@
   cursor:pointer; user-select:none; -webkit-user-select:none;
 }
 #tutSparkCanvas { position:absolute; inset:0; pointer-events:none; z-index:0; }
+/* Spotlight lives outside overlay so it works even when overlay is hidden */
 #tutSpotlight {
   position:fixed; border-radius:14px;
-  box-shadow:0 0 0 9999px rgba(7,8,13,0.88);
+  box-shadow:0 0 0 9999px rgba(7,8,13,0.82);
   border:1.5px solid rgba(126,184,164,0.55);
   z-index:9002; pointer-events:none; opacity:0;
   transition:opacity 0.38s ease,
@@ -690,6 +691,7 @@
   font-weight:300; font-style:italic; line-height:1.78;
   color:#ddd8ce; text-align:center; margin:0;
 }
+.tut-bubble.tut-blue p { color:#7dd3f8; }
 #tutOmniaWrap {
   order:1; display:flex; align-items:center; justify-content:center;
   transition:transform 0.36s cubic-bezier(.34,1.26,.64,1);
@@ -710,6 +712,61 @@
 #tutOverlay.tut-spot .tut-eye-svg { width:54px; }
 #tutOmniaWrap.eye-state .tut-crystal-svg { display:none; }
 #tutOmniaWrap.eye-state .tut-eye-svg    { display:block; }
+@keyframes eyeBlink {
+  0%,88%,100% { transform:scaleY(1); }
+  92%          { transform:scaleY(0.06); }
+}
+#tutOmniaWrap.eye-state.tut-blink .tut-eye-svg {
+  animation:omniaFloat 4.5s ease-in-out infinite, eyeBlink 3.5s ease-in-out 0.4s 2;
+}
+/* Clock background overlay (inside tutOverlay, visible in spot mode) */
+#tutClockBg {
+  position:absolute; inset:0; z-index:2; pointer-events:none;
+  display:flex; align-items:center; justify-content:center;
+  opacity:0; transition:opacity 0.8s ease;
+}
+#tutClockBg.tut-bg-on { opacity:1; }
+/* Object flash background */
+#tutObjBg {
+  position:absolute; inset:0; z-index:2; pointer-events:none;
+  display:flex; align-items:center; justify-content:center;
+  flex-wrap:wrap; gap:26px; padding:60px 36px;
+  opacity:0; transition:opacity 0.5s ease;
+}
+#tutObjBg.tut-bg-on { opacity:1; }
+.tut-obj {
+  font-size:46px; opacity:0;
+  animation:tutObjPop 0.7s ease forwards;
+}
+@keyframes tutObjPop {
+  0%   { opacity:0; transform:scale(0.4); }
+  55%  { opacity:0.55; transform:scale(1.08); }
+  100% { opacity:0.18; transform:scale(1); }
+}
+/* Corgi */
+#tutCorgi {
+  display:none; position:fixed; bottom:26%; left:-90px; z-index:9012;
+  font-size:54px; pointer-events:none;
+  transition:left 3s cubic-bezier(.35,.05,.2,1);
+}
+#tutCorgi.tut-corgi-go { left:calc(100vw + 100px); }
+/* Path choice buttons (inside drawer float) */
+#tutPathChoice {
+  display:none; flex-direction:column; gap:10px;
+  width:100%; max-width:min(320px,88vw);
+  pointer-events:auto; position:relative; z-index:9510;
+}
+#tutPathChoice.tut-vis { display:flex; }
+.tut-path-btn {
+  background:rgba(10,15,28,0.95); border:1px solid rgba(126,184,164,0.35);
+  border-radius:12px; padding:14px 20px; cursor:pointer; text-align:center;
+  font-family:'DM Mono',monospace; font-size:9px; letter-spacing:.22em;
+  text-transform:uppercase; color:#7eb8a4;
+  transition:background 0.2s, border-color 0.2s;
+}
+.tut-path-btn:hover { background:rgba(126,184,164,0.12); border-color:rgba(126,184,164,0.6); }
+.tut-path-btn.tut-experienced { border-color:rgba(142,204,224,0.35); color:#8ecce0; }
+.tut-path-btn.tut-experienced:hover { background:rgba(142,204,224,0.1); border-color:rgba(142,204,224,0.6); }
 .tut-tap-hint {
   position:absolute; bottom:28px; left:50%; transform:translateX(-50%);
   font-size:8px; letter-spacing:.28em; text-transform:uppercase;
@@ -761,8 +818,10 @@
 }
 #tutDrawerCapture.tut-cap-on { display:block; }
 body:not(.tut-live) #tutOverlay,
+body:not(.tut-live) #tutSpotlight,
 body:not(.tut-live) #tutDrawerFloat,
-body:not(.tut-live) #tutDrawerCapture {
+body:not(.tut-live) #tutDrawerCapture,
+body:not(.tut-live) #tutCorgi {
   display:none !important;
   pointer-events:none !important;
 }
@@ -12400,37 +12459,66 @@ document.addEventListener('DOMContentLoaded',function(){(function(){
   var VISITED='presence_visited';
 
   var STEPS=[
-    {mode:'full', sparks:true,
-     text:'Namaste. My name is Omnia, your spiritual guide.'},
-    {mode:'full', eyeTap:true, text:null},
-    {mode:'full', fromEye:true,
-     text:'Allow me to show you your new favorite meditative practice.'},
-    {mode:'full', panel:'concentration', cards:true,
-     text:'These exercises will hone your concentration and imagination skills. Believe it or not, these exercises have been derived from secret societies and practiced for thousands of years!'},
-    {mode:'spot', target:'[data-exercise="clock"]',
-     text:'The Concentration Clock — fix your complete attention on the second hand of a clock. Each second of true focus makes your mind stronger.'},
-    {mode:'spot', target:'[data-exercise="visual"]',
-     text:'Visualization — picture an object in your mind, with eyes open and closed. This trains the inner eye: the seat of imagination and mental power.'},
-    {mode:'spot', target:'[data-exercise="auditory"]',
-     text:'Auditory — listen to a sound, then hear it in your mind\'s ear. Closing the gap between your inner and outer worlds.'},
-    {mode:'spot', target:'[data-exercise="thought"]',
-     text:'Thought Control — hold a single thought, and only that thought. This is mastery over the restless mind.'},
-    {mode:'spot', target:'[data-exercise="asana"]',
-     text:'Asana — hold perfectly still. Not a muscle moves. This builds iron patience and command over the physical body.'},
-    {mode:'spot', target:'[data-exercise="soulmirror"]',
-     text:'Soul Mirror — record your genuine traits, both light and shadow. Honest self-knowledge is the foundation of all real inner work.'},
-    {mode:'full', panel:'awareness',
-     text:'Become aware of the fact that you are aware. Don\'t just take my word for it — do it now. You\'ll find a subtle change of consciousness. This is being in the Now.'},
-    {mode:'full',
-     text:'Described by spiritual masters over the millennia, this is the gateway to Enlightenment.'},
-    {mode:'spot', target:'#nextDuration',
-     text:'Set your session duration here. Start with five minutes and extend as your capacity grows.'},
-    {mode:'spot', target:'#nextInterval',
-     text:'This is your reminder interval — Presence prompts you at this frequency. Are you here? Each return strengthens the muscle of attention.'},
-    {mode:'drawer', target:'#drawerJournal',
-     text:'Your Journal Log lives here. Every session is recorded — your streak, your progress, your notes. This is your proof of growth.'},
-    {mode:'drawer', target:'#drawerGuide', last:true,
-     text:'And finally — I live here, in the Guide tab. Come find me often. I\'m always here to help you walk this path.'}
+    /* 0  */ {mode:'full', sparks:true, eyeTap:true, text:null},
+    /* 1  */ {mode:'full', inEye:true, blueText:true,
+               text:'Allow me to show you your new favorite meditation practice.'},
+    /* 2  */ {mode:'full', inEye:true, blueText:true, blink:true,
+               text:'These exercises will hone your concentration and imagination skills. Believe it or not, this practice is derived from secret societies and practiced for thousands of years!'},
+    /* 3  */ {mode:'full', fromEye:true, panel:'concentration', cards:true,
+               text:'This is where the Concentration exercises lay. Master them all to know thyself.'},
+    /* 4  */ {mode:'spot', target:'#concRingBtn',
+               text:'Practice to level up. All of these exercises give XP and come with a title.'},
+    /* 5  */ {mode:'spot', target:'#concRingBtn',
+               text:'Here is your rank — you can click on it to give more information. Go through all the ranks to ascend!'},
+    /* 6  */ {mode:'spot', target:'[data-exercise="clock"]',
+               text:'You\'ll place your complete attention on the seconds hand of a clock. Each second of true focus makes your mind stronger.'},
+    /* 7  */ {mode:'spot', target:'[data-exercise="clock"]', clockBg:true,
+               text:'You must place your complete focus here and only stop once the mind becomes distracted.'},
+    /* 8  */ {mode:'spot', target:'[data-exercise="visual"]',
+               text:'You\'ll learn to see objects as if they were right in front of you, in your mind.'},
+    /* 9  */ {mode:'spot', target:'[data-exercise="visual"]', objFlash:true,
+               text:'You\'ll start with easier objects, like shapes. But then go into objects.'},
+    /* 10 */ {mode:'spot', target:'[data-exercise="visual"]',
+               text:'You\'ll learn to do this with your eyes open as well — a concept that sounds difficult but is rather easy after some perseverance.'},
+    /* 11 */ {mode:'spot', target:'[data-exercise="auditory"]',
+               text:'Just as you did with visualization, you\'ll repeat the same with sounds. You\'ll hear these sounds as if they were actually there.'},
+    /* 12 */ {mode:'spot', target:'[data-exercise="auditory"]', playCreek:true,
+               text:'Here, take a listen:'},
+    /* 13 */ {mode:'spot', target:'[data-exercise="auditory"]', stopCreek:true,
+               text:'Isn\'t that amazing?'},
+    /* 14 */ {mode:'spot', target:'[data-exercise="asana"]',
+               text:'In asana, the type of meditation you\'re most likely familiar with, you\'ll learn how to sit quietly, without fidgeting, while stilling the mind.'},
+    /* 15 */ {mode:'spot', target:'[data-exercise="asana"]',
+               text:'This will do wonders for the average mind which constantly craves stimulation.'},
+    /* 16 */ {mode:'spot', target:'[data-exercise="asana"]',
+               text:'Sit in a chair with your legs completely together, start with five minutes and then go all the way up!'},
+    /* 17 */ {mode:'spot', target:'[data-exercise="soulmirror"]',
+               text:'Here is where the inner transformation part of this practice lies. You\'ll write down all your negative and positive traits here and work on them during the duration of your stay here.'},
+    /* 18 */ {mode:'spot', target:'[data-exercise="soulmirror"]',
+               text:'You can work on them with the pore breathing — the act of \'breathing out\' your bad qualities and purifying your body.'},
+    /* 19 */ {mode:'spot', target:'[data-exercise="soulmirror"]',
+               text:'This is a psychological technique that targets the subconscious. You can also use this portion for any type of controlled breathing, and change the intervals in settings.'},
+    /* 20 */ {mode:'drawer', target:'#drawerJournal',
+               text:'Your Journal Log lives here. Every session is recorded — your streak, your progress, your notes. This is your proof of growth.'},
+    /* 21 */ {mode:'drawer', target:'#drawerGuide', openGuide:true,
+               text:'This is where I live and will give you your daily regiment.'},
+    /* 22 */ {mode:'guide', pathChoice:true},
+    /* 23 */ {mode:'guide',
+               text:'No problem! Here is your agenda for the day, and it will always be here for you to go back to. This is how you\'ll grow.'},
+    /* 24 */ {mode:'guide', nextIdx:26,
+               text:'I\'ll challenge you a bit harder each and every day.'},
+    /* 25 */ {mode:'guide', nextIdx:26,
+               text:'No problem! I\'ll guide you to make you improve even further.'},
+    /* 26 */ {mode:'guide', target:'#guideOmniaTab', clickTarget:true,
+               text:'And here is where I can be upgraded. You and I can grow together!!'},
+    /* 27 */ {mode:'guide',
+               text:'The more exercises you do, the more Akasha we generate for upgrades, cosmetics, and other cool items!'},
+    /* 28 */ {mode:'guide', corgi:true,
+               text:'You can even get me a pet corgi!'},
+    /* 29 */ {mode:'drawer', target:'#drawerOmniaBtn', spotDrawer:true,
+               text:'Feel free to click on me here any time you want to go through this tutorial again.'},
+    /* 30 */ {mode:'drawer', target:'#drawerGuide', spotDrawer:true, last:true,
+               text:'I\'ll be in here. It\'s nice to meet you!'},
   ];
 
   var ov=document.getElementById('tutOverlay');
@@ -12446,11 +12534,16 @@ document.addEventListener('DOMContentLoaded',function(){(function(){
   var ft=document.getElementById('tutFloatText');
   var db=document.getElementById('tutDoneBtn');
   var cp=document.getElementById('tutDrawerCapture');
+  var pc=document.getElementById('tutPathChoice');
+  var cg=document.getElementById('tutCorgi');
+  var clkBg=document.getElementById('tutClockBg');
+  var objBg=document.getElementById('tutObjBg');
   if(!ov) return;
 
   var cur=0, eyeOn=false, rdy=false, pRAF, parts=[];
+  var tutAudCtx=null, tutCreekNodes=[], corgiTimer=null;
 
-  /* Particles */
+  /* ── Particles ── */
   function mkP(){
     var cx=window.innerWidth/2, cy=window.innerHeight*0.45;
     var a=Math.random()*Math.PI*2, sp2=1+Math.random()*2.6;
@@ -12485,7 +12578,7 @@ document.addEventListener('DOMContentLoaded',function(){(function(){
     if(ctx) ctx.clearRect(0,0,cv.width,cv.height);
   }
 
-  /* Spotlight */
+  /* ── Spotlight ── */
   function litSpot(sel){
     var el=document.querySelector(sel);
     if(!el){sp.classList.remove('tut-lit');return;}
@@ -12496,13 +12589,13 @@ document.addEventListener('DOMContentLoaded',function(){(function(){
   }
   function darkSpot(){sp.classList.remove('tut-lit');}
 
-  /* Panel */
+  /* ── Panel ── */
   function goPanel(p){
     var m={awareness:'modeAwareness',concentration:'modeConcentration'};
     var btn=document.getElementById(m[p]);if(btn) btn.click();
   }
 
-  /* Card stagger */
+  /* ── Card stagger ── */
   function staggerCards(){
     document.querySelectorAll('#exerciseGrid .exercise-card').forEach(function(c,i){
       c.style.opacity='0';c.style.transform='translateY(14px)';
@@ -12511,43 +12604,177 @@ document.addEventListener('DOMContentLoaded',function(){(function(){
     });
   }
 
-  /* Eye */
+  /* ── Eye ── */
   function toEye(){
     eyeOn=true;
     ow.style.transform='scale(0.05)';
     setTimeout(function(){ow.classList.add('eye-state');ow.style.transform='scale(1)';},340);
   }
-  function fromEye(){
+  function fromEyeAnim(){
     eyeOn=false;
+    ow.classList.remove('tut-blink');
     ow.style.transform='scale(0.05)';
     setTimeout(function(){ow.classList.remove('eye-state');ow.style.transform='scale(1)';},340);
   }
 
-  /* Drawer pulse */
+  /* ── Blink ── */
+  function triggerBlink(){
+    ow.classList.add('tut-blink');
+    setTimeout(function(){ow.classList.remove('tut-blink');},8000);
+  }
+
+  /* ── Clock background ── */
+  var clockAnimRAF=null, clockSecAngle=0, clockLastTime=0;
+  function showClockBg(){
+    clkBg.classList.add('tut-bg-on');
+    clockLastTime=performance.now();
+    var secHand=document.getElementById('tutClockSecHand');
+    if(!secHand) return;
+    function tick(now){
+      var dt=(now-clockLastTime)/1000; clockLastTime=now;
+      clockSecAngle=(clockSecAngle+dt*6)%360;
+      secHand.style.transform='rotate('+clockSecAngle+'deg)';
+      clockAnimRAF=requestAnimationFrame(tick);
+    }
+    clockAnimRAF=requestAnimationFrame(tick);
+  }
+  function hideClockBg(){
+    clkBg.classList.remove('tut-bg-on');
+    if(clockAnimRAF){cancelAnimationFrame(clockAnimRAF);clockAnimRAF=null;}
+  }
+
+  /* ── Object flash ── */
+  var objFlashTimer=null;
+  var OBJ_SETS=[
+    ['◯','△','□','⬡','★','◇'],
+    ['🍎','🌹','🕯️','🗝️','📚','🌙'],
+    ['🌊','🔥','🌿','🪨','⚡','❄️']
+  ];
+  function showObjFlash(){
+    var setIdx=0;
+    function nextSet(){
+      objBg.innerHTML='';
+      var set=OBJ_SETS[setIdx%OBJ_SETS.length]; setIdx++;
+      set.forEach(function(o,i){
+        var el=document.createElement('span');
+        el.className='tut-obj'; el.textContent=o;
+        el.style.animationDelay=(i*90)+'ms';
+        objBg.appendChild(el);
+      });
+    }
+    nextSet();
+    objBg.classList.add('tut-bg-on');
+    objFlashTimer=setInterval(nextSet,2200);
+  }
+  function hideObjFlash(){
+    objBg.classList.remove('tut-bg-on');
+    if(objFlashTimer){clearInterval(objFlashTimer);objFlashTimer=null;}
+    setTimeout(function(){objBg.innerHTML='';},500);
+  }
+
+  /* ── Creek sound ── */
+  function startTutCreek(){
+    try{
+      tutAudCtx=new(window.AudioContext||window.webkitAudioContext)();
+      var ctx=tutAudCtx, when=ctx.currentTime+0.05, dur=20;
+      var buf=ctx.createBuffer(2,ctx.sampleRate*dur,ctx.sampleRate);
+      for(var ch=0;ch<2;ch++){
+        var data=buf.getChannelData(ch);
+        var b0=0,b1=0,b2=0,b3=0,b4=0,b5=0,b6=0;
+        for(var i=0;i<data.length;i++){
+          var w=Math.random()*2-1;
+          b0=.99886*b0+w*.0555179; b1=.99332*b1+w*.0750759;
+          b2=.96900*b2+w*.1538520; b3=.86650*b3+w*.3104856;
+          b4=.55000*b4+w*.5329522; b5=-.7616*b5-w*.0168980;
+          data[i]=(b0+b1+b2+b3+b4+b5+b6+w*.5362)*0.11; b6=w*0.115926;
+        }
+      }
+      var src=ctx.createBufferSource(); src.buffer=buf; src.loop=true;
+      var filt=ctx.createBiquadFilter(); filt.type='bandpass'; filt.frequency.value=600; filt.Q.value=0.5;
+      var gain=ctx.createGain();
+      gain.gain.setValueAtTime(0,when);
+      gain.gain.linearRampToValueAtTime(0.38,when+1.5);
+      src.connect(filt); filt.connect(gain); gain.connect(ctx.destination);
+      src.start(when);
+      tutCreekNodes=[src,gain];
+    }catch(e){}
+  }
+  function stopTutCreek(){
+    if(!tutCreekNodes.length||!tutAudCtx) return;
+    try{
+      var g=tutCreekNodes[1];
+      g.gain.linearRampToValueAtTime(0,tutAudCtx.currentTime+1.2);
+      var _nodes=tutCreekNodes, _ctx=tutAudCtx;
+      tutCreekNodes=[]; tutAudCtx=null;
+      setTimeout(function(){
+        _nodes.forEach(function(n){try{n.stop&&n.stop();}catch(e){}});
+        try{_ctx.close();}catch(e){}
+      },1400);
+    }catch(e){}
+  }
+
+  /* ── Corgi ── */
+  function launchCorgi(){
+    if(corgiTimer) clearTimeout(corgiTimer);
+    cg.style.display='block';
+    cg.classList.remove('tut-corgi-go');
+    cg.style.left='-90px';
+    cg.style.transition='none';
+    requestAnimationFrame(function(){
+      requestAnimationFrame(function(){
+        cg.style.transition='left 3s cubic-bezier(.35,.05,.2,1)';
+        cg.classList.add('tut-corgi-go');
+        corgiTimer=setTimeout(function(){
+          cg.style.display='none';
+          cg.classList.remove('tut-corgi-go');
+        },3200);
+      });
+    });
+  }
+
+  /* ── Drawer pulse ── */
   function pulseItem(sel){
     document.querySelectorAll('.drawer-item.tut-pulse').forEach(function(e){e.classList.remove('tut-pulse');});
-    var el=document.querySelector(sel);if(el) el.classList.add('tut-pulse');
+    var el=document.querySelector(sel); if(el) el.classList.add('tut-pulse');
   }
   function clearPulse(){
     document.querySelectorAll('.drawer-item.tut-pulse').forEach(function(e){e.classList.remove('tut-pulse');});
   }
 
-  /* Show step */
+  /* ── Path choice ── */
+  function showPathChoice(){
+    ft.textContent='Tell me — is this your first time on this path, or are you a bit more advanced?';
+    df.classList.add('tut-float-on');
+    setTimeout(function(){fb.classList.add('tut-vis'); pc.classList.add('tut-vis');},60);
+  }
+  function hidePathChoice(){
+    pc.classList.remove('tut-vis');
+  }
+
+  /* ── Show step ── */
   function go(i){
     if(i>=STEPS.length){end();return;}
-    cur=i;rdy=false;
+    cur=i; rdy=false;
     var s=STEPS[i];
 
+    if(!s.clockBg) hideClockBg();
+    if(!s.objFlash) hideObjFlash();
+    if(s.stopCreek) stopTutCreek();
+    hidePathChoice();
+
+    /* ── DRAWER mode ── */
     if(s.mode==='drawer'){
-      ov.style.opacity='0';ov.style.pointerEvents='none';
-      darkSpot();stopSparks();
+      ov.style.opacity='0'; ov.style.pointerEvents='none';
+      stopSparks();
       df.classList.remove('tut-float-on');
       fb.classList.remove('tut-vis');
       db.style.display='none';
+      if(!s.spotDrawer) darkSpot();
       cp.classList.add('tut-cap-on');
       openDrawer();
       setTimeout(function(){
-        pulseItem(s.target);
+        if(s.spotDrawer && s.target) litSpot(s.target);
+        else if(s.target) pulseItem(s.target);
         ft.textContent=s.text;
         df.classList.add('tut-float-on');
         setTimeout(function(){fb.classList.add('tut-vis');},60);
@@ -12557,105 +12784,164 @@ document.addEventListener('DOMContentLoaded',function(){(function(){
       return;
     }
 
-    ov.style.opacity='1';ov.style.pointerEvents='auto';
+    /* ── GUIDE mode ── */
+    if(s.mode==='guide'){
+      ov.style.opacity='0'; ov.style.pointerEvents='none';
+      stopSparks();
+      cp.classList.remove('tut-cap-on');
+      clearPulse();
+      if(s.target){
+        setTimeout(function(){
+          litSpot(s.target);
+          if(s.clickTarget){ var el=document.querySelector(s.target); if(el) el.click(); }
+        },220);
+      } else {
+        darkSpot();
+      }
+      if(s.pathChoice){
+        var fresh=loadGuideState();
+        if(fresh._pathLockedV2){ setTimeout(function(){go(26);},120); return; }
+        showPathChoice();
+        return;
+      }
+      if(s.corgi) launchCorgi();
+      df.classList.remove('tut-float-on');
+      fb.classList.remove('tut-vis');
+      db.style.display='none';
+      ft.textContent=s.text;
+      df.classList.add('tut-float-on');
+      setTimeout(function(){fb.classList.add('tut-vis');},60);
+      cp.classList.add('tut-cap-on');
+      setTimeout(function(){rdy=true;},700);
+      return;
+    }
+
+    /* ── FULL / SPOT modes ── */
+    ov.style.display='flex'; ov.style.opacity='1'; ov.style.pointerEvents='auto';
     df.classList.remove('tut-float-on');
     fb.classList.remove('tut-vis');
-    clearPulse();
-    cp.classList.remove('tut-cap-on');
+    darkSpot(); clearPulse(); cp.classList.remove('tut-cap-on');
     closeDrawer();
 
     if(s.panel) goPanel(s.panel);
     if(s.cards) setTimeout(staggerCards,250);
-    if(s.sparks) startSparks();
-    else if(i>0) stopSparks();
-    if(s.fromEye&&eyeOn) fromEye();
+    if(s.sparks) startSparks(); else stopSparks();
+    if(s.fromEye && eyeOn) fromEyeAnim();
+    if(s.blink) setTimeout(triggerBlink,800);
+    if(s.playCreek) setTimeout(startTutCreek,400);
+    if(s.clockBg) setTimeout(showClockBg,300);
+    if(s.objFlash) setTimeout(showObjFlash,300);
 
     if(s.mode==='full'){
       ov.classList.remove('tut-spot');
       ov.style.background='rgba(7,8,13,0.92)';
-      darkSpot();
     } else {
       ov.classList.add('tut-spot');
       ov.style.background='rgba(7,8,13,0.08)';
       setTimeout(function(){litSpot(s.target);},180);
     }
 
+    if(s.blueText) bl.classList.add('tut-blue');
+    else bl.classList.remove('tut-blue');
+
     bl.classList.remove('tut-vis');
     if(s.text){
       bt.textContent=s.text;
       setTimeout(function(){bl.classList.add('tut-vis');},120);
     }
-    th.textContent=s.eyeTap?'Tap Omnia':'Tap to continue';
+    th.textContent=s.eyeTap?'Tap the screen':'Tap to continue';
     setTimeout(function(){rdy=true;},700);
   }
 
-  /* End */
+  /* ── End ── */
   function end(){
     localStorage.setItem(VISITED,'1');
     document.body.classList.remove('tut-live');
-    stopSparks();clearPulse();
+    stopSparks(); clearPulse(); darkSpot();
+    hideClockBg(); hideObjFlash(); stopTutCreek();
+    if(corgiTimer){clearTimeout(corgiTimer); cg.style.display='none';}
     cp.classList.remove('tut-cap-on');
     closeDrawer();
     ov.style.opacity='0';
     df.classList.remove('tut-float-on');
+    hidePathChoice();
     setTimeout(function(){ov.style.display='none';},500);
     document.querySelectorAll('#exerciseGrid .exercise-card').forEach(function(c){
-      c.style.opacity='';c.style.transform='';c.style.transition='';
+      c.style.opacity=''; c.style.transform=''; c.style.transition='';
     });
   }
 
-  /* Tap handlers */
+  /* ── Tap handlers ── */
   ov.addEventListener('click',function(){
     if(!rdy) return;
     var s=STEPS[cur];
-    if(s.eyeTap&&!eyeOn){
-      rdy=false;
-      toEye();
+    if(s.eyeTap && !eyeOn){
+      rdy=false; toEye();
       bl.classList.remove('tut-vis');
       setTimeout(function(){go(cur+1);},1800);
     } else {
       go(cur+1);
     }
   });
+
   cp.addEventListener('click',function(){
     var s=STEPS[cur];
-    if(!rdy||!s||s.mode!=='drawer'||s.last) return;
-    go(cur+1);
+    if(!rdy||!s) return;
+    if(s.mode==='drawer' && s.last) return;
+    if(s.openGuide){
+      rdy=false; cp.classList.remove('tut-cap-on');
+      closeDrawer();
+      setTimeout(function(){ openGuide(); setTimeout(function(){go(22);},350); },300);
+      return;
+    }
+    go(s.nextIdx!=null ? s.nextIdx : cur+1);
   });
-  db.addEventListener('click',function(e){e.stopPropagation();end();});
-  sk.addEventListener('click', function(e){e.stopPropagation();end();});
 
-  /* Boot: wait for home screen */
+  db.addEventListener('click',function(e){e.stopPropagation(); end();});
+  sk.addEventListener('click',function(e){e.stopPropagation(); end();});
+
+  /* ── Path choice buttons ── */
+  document.getElementById('tutPathNew').addEventListener('click',function(e){
+    e.stopPropagation();
+    hidePathChoice();
+    df.classList.remove('tut-float-on'); fb.classList.remove('tut-vis');
+    setTimeout(function(){go(23);},300);
+  });
+  document.getElementById('tutPathExp').addEventListener('click',function(e){
+    e.stopPropagation();
+    hidePathChoice();
+    df.classList.remove('tut-float-on'); fb.classList.remove('tut-vis');
+    setTimeout(function(){go(25);},300);
+  });
+
+  /* ── Boot ── */
   function boot(){
     if(localStorage.getItem(VISITED)) return;
     document.body.classList.add('tut-live');
-    ov.style.display='flex';ov.style.opacity='0';
+    ov.style.display='flex'; ov.style.opacity='0';
     ov.style.transition='opacity 0.7s ease,background 0.4s ease';
-    setTimeout(function(){ov.style.opacity='1';go(0);},120);
+    setTimeout(function(){ov.style.opacity='1'; go(0);},120);
   }
 
-  // Replay tutorial on demand (always available, e.g. drawer Omnia button)
-  window.__tutReplay = function(){
+  window.__tutReplay=function(){
     cur=0; eyeOn=false; rdy=false;
     document.body.classList.add('tut-live');
-    stopSparks(); darkSpot();
-    df.classList.remove('tut-float-on');
-    fb.classList.remove('tut-vis');
-    df.style.display=''; cp.classList.remove('tut-cap-on');
+    stopSparks(); darkSpot(); hideClockBg(); hideObjFlash(); stopTutCreek();
+    if(corgiTimer){clearTimeout(corgiTimer); cg.style.display='none';}
+    df.classList.remove('tut-float-on'); fb.classList.remove('tut-vis');
+    hidePathChoice(); cp.classList.remove('tut-cap-on');
     clearPulse(); closeDrawer();
     ov.style.display='flex'; ov.style.opacity='0';
     ov.style.transition='opacity 0.7s ease';
-    setTimeout(function(){ ov.style.opacity='1'; go(0); }, 120);
+    setTimeout(function(){ov.style.opacity='1'; go(0);},120);
   };
 
-  // First-time auto-boot only (gated by presence_visited)
   if(!localStorage.getItem(VISITED)){
-    window.__tutBoot = function(){
+    window.__tutBoot=function(){
       if(localStorage.getItem(VISITED)) return;
-      window.__tutBoot = null;
-      setTimeout(boot, 900);
+      window.__tutBoot=null;
+      setTimeout(boot,900);
     };
-
     var homeEl=document.getElementById('homeScreen');
     if(homeEl){
       var _poller=setInterval(function(){
@@ -12672,7 +12958,95 @@ document.addEventListener('DOMContentLoaded',function(){(function(){
 <!-- ─── Tutorial HTML ─── -->
 <div id="tutOverlay">
   <canvas id="tutSparkCanvas"></canvas>
-  <div id="tutSpotlight"></div>
+
+  <!-- Animated clock background (spot mode, clock steps) -->
+  <div id="tutClockBg">
+    <svg id="tutClockSvg" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg"
+         style="width:min(280px,72vw);height:min(280px,72vw);opacity:0.28;filter:drop-shadow(0 0 28px rgba(125,211,248,0.25));">
+      <circle cx="100" cy="100" r="96" fill="none" stroke="rgba(142,204,224,0.45)" stroke-width="1.2"/>
+      <circle cx="100" cy="100" r="3.5" fill="rgba(142,204,224,0.8)"/>
+      <!-- 12 hour markers -->
+      <g stroke="rgba(142,204,224,0.6)" stroke-width="2" stroke-linecap="round">
+        <line x1="100" y1="8"   x2="100" y2="20"  transform="rotate(0   100 100)"/>
+        <line x1="100" y1="8"   x2="100" y2="20"  transform="rotate(30  100 100)"/>
+        <line x1="100" y1="8"   x2="100" y2="20"  transform="rotate(60  100 100)"/>
+        <line x1="100" y1="8"   x2="100" y2="20"  transform="rotate(90  100 100)"/>
+        <line x1="100" y1="8"   x2="100" y2="20"  transform="rotate(120 100 100)"/>
+        <line x1="100" y1="8"   x2="100" y2="20"  transform="rotate(150 100 100)"/>
+        <line x1="100" y1="8"   x2="100" y2="20"  transform="rotate(180 100 100)"/>
+        <line x1="100" y1="8"   x2="100" y2="20"  transform="rotate(210 100 100)"/>
+        <line x1="100" y1="8"   x2="100" y2="20"  transform="rotate(240 100 100)"/>
+        <line x1="100" y1="8"   x2="100" y2="20"  transform="rotate(270 100 100)"/>
+        <line x1="100" y1="8"   x2="100" y2="20"  transform="rotate(300 100 100)"/>
+        <line x1="100" y1="8"   x2="100" y2="20"  transform="rotate(330 100 100)"/>
+      </g>
+      <!-- 48 minor ticks (skip hour positions) generated inline -->
+      <g stroke="rgba(142,204,224,0.2)" stroke-width="0.8" stroke-linecap="round">
+        <line x1="100" y1="8" x2="100" y2="14" transform="rotate(6   100 100)"/>
+        <line x1="100" y1="8" x2="100" y2="14" transform="rotate(12  100 100)"/>
+        <line x1="100" y1="8" x2="100" y2="14" transform="rotate(18  100 100)"/>
+        <line x1="100" y1="8" x2="100" y2="14" transform="rotate(24  100 100)"/>
+        <line x1="100" y1="8" x2="100" y2="14" transform="rotate(36  100 100)"/>
+        <line x1="100" y1="8" x2="100" y2="14" transform="rotate(42  100 100)"/>
+        <line x1="100" y1="8" x2="100" y2="14" transform="rotate(48  100 100)"/>
+        <line x1="100" y1="8" x2="100" y2="14" transform="rotate(54  100 100)"/>
+        <line x1="100" y1="8" x2="100" y2="14" transform="rotate(66  100 100)"/>
+        <line x1="100" y1="8" x2="100" y2="14" transform="rotate(72  100 100)"/>
+        <line x1="100" y1="8" x2="100" y2="14" transform="rotate(78  100 100)"/>
+        <line x1="100" y1="8" x2="100" y2="14" transform="rotate(84  100 100)"/>
+        <line x1="100" y1="8" x2="100" y2="14" transform="rotate(96  100 100)"/>
+        <line x1="100" y1="8" x2="100" y2="14" transform="rotate(102 100 100)"/>
+        <line x1="100" y1="8" x2="100" y2="14" transform="rotate(108 100 100)"/>
+        <line x1="100" y1="8" x2="100" y2="14" transform="rotate(114 100 100)"/>
+        <line x1="100" y1="8" x2="100" y2="14" transform="rotate(126 100 100)"/>
+        <line x1="100" y1="8" x2="100" y2="14" transform="rotate(132 100 100)"/>
+        <line x1="100" y1="8" x2="100" y2="14" transform="rotate(138 100 100)"/>
+        <line x1="100" y1="8" x2="100" y2="14" transform="rotate(144 100 100)"/>
+        <line x1="100" y1="8" x2="100" y2="14" transform="rotate(156 100 100)"/>
+        <line x1="100" y1="8" x2="100" y2="14" transform="rotate(162 100 100)"/>
+        <line x1="100" y1="8" x2="100" y2="14" transform="rotate(168 100 100)"/>
+        <line x1="100" y1="8" x2="100" y2="14" transform="rotate(174 100 100)"/>
+        <line x1="100" y1="8" x2="100" y2="14" transform="rotate(186 100 100)"/>
+        <line x1="100" y1="8" x2="100" y2="14" transform="rotate(192 100 100)"/>
+        <line x1="100" y1="8" x2="100" y2="14" transform="rotate(198 100 100)"/>
+        <line x1="100" y1="8" x2="100" y2="14" transform="rotate(204 100 100)"/>
+        <line x1="100" y1="8" x2="100" y2="14" transform="rotate(216 100 100)"/>
+        <line x1="100" y1="8" x2="100" y2="14" transform="rotate(222 100 100)"/>
+        <line x1="100" y1="8" x2="100" y2="14" transform="rotate(228 100 100)"/>
+        <line x1="100" y1="8" x2="100" y2="14" transform="rotate(234 100 100)"/>
+        <line x1="100" y1="8" x2="100" y2="14" transform="rotate(246 100 100)"/>
+        <line x1="100" y1="8" x2="100" y2="14" transform="rotate(252 100 100)"/>
+        <line x1="100" y1="8" x2="100" y2="14" transform="rotate(258 100 100)"/>
+        <line x1="100" y1="8" x2="100" y2="14" transform="rotate(264 100 100)"/>
+        <line x1="100" y1="8" x2="100" y2="14" transform="rotate(276 100 100)"/>
+        <line x1="100" y1="8" x2="100" y2="14" transform="rotate(282 100 100)"/>
+        <line x1="100" y1="8" x2="100" y2="14" transform="rotate(288 100 100)"/>
+        <line x1="100" y1="8" x2="100" y2="14" transform="rotate(294 100 100)"/>
+        <line x1="100" y1="8" x2="100" y2="14" transform="rotate(306 100 100)"/>
+        <line x1="100" y1="8" x2="100" y2="14" transform="rotate(312 100 100)"/>
+        <line x1="100" y1="8" x2="100" y2="14" transform="rotate(318 100 100)"/>
+        <line x1="100" y1="8" x2="100" y2="14" transform="rotate(324 100 100)"/>
+        <line x1="100" y1="8" x2="100" y2="14" transform="rotate(336 100 100)"/>
+        <line x1="100" y1="8" x2="100" y2="14" transform="rotate(342 100 100)"/>
+        <line x1="100" y1="8" x2="100" y2="14" transform="rotate(348 100 100)"/>
+        <line x1="100" y1="8" x2="100" y2="14" transform="rotate(354 100 100)"/>
+      </g>
+      <!-- Hands -->
+      <line x1="100" y1="100" x2="100" y2="55"
+            stroke="rgba(200,225,245,0.65)" stroke-width="3" stroke-linecap="round"
+            style="transform-origin:100px 100px; transform:rotate(330deg);"/>
+      <line x1="100" y1="100" x2="100" y2="38"
+            stroke="rgba(175,210,240,0.55)" stroke-width="2" stroke-linecap="round"
+            style="transform-origin:100px 100px; transform:rotate(0deg);"/>
+      <line id="tutClockSecHand" x1="100" y1="108" x2="100" y2="22"
+            stroke="rgba(125,211,248,0.95)" stroke-width="1.2" stroke-linecap="round"
+            style="transform-origin:100px 100px; filter:drop-shadow(0 0 4px rgba(125,211,248,0.9));"/>
+    </svg>
+  </div>
+
+  <!-- Object flash background (visualization steps) -->
+  <div id="tutObjBg"></div>
+
   <div id="tutContent">
     <div class="tut-bubble" id="tutBubble"><p id="tutBubbleText"></p></div>
     <div id="tutOmniaWrap">
@@ -12720,13 +13094,22 @@ document.addEventListener('DOMContentLoaded',function(){(function(){
   <button class="tut-skip-btn" id="tutSkipBtn">Skip</button>
 </div>
 
-<!-- Drawer float (z-index 9500, outside overlay stacking context) -->
+<!-- Spotlight: lives outside overlay for independent visibility -->
+<div id="tutSpotlight"></div>
+
+<!-- Drawer / guide float (z-index 9500) -->
 <div id="tutDrawerFloat">
   <div id="tutFloatBubble"><p id="tutFloatText"></p></div>
+  <div id="tutPathChoice">
+    <button class="tut-path-btn" id="tutPathNew">I am new to this</button>
+    <button class="tut-path-btn tut-experienced" id="tutPathExp">I have some experience</button>
+  </div>
   <button id="tutDoneBtn">Begin your practice →</button>
 </div>
-<!-- Click-capture for drawer steps -->
+<!-- Click-capture for drawer / guide steps -->
 <div id="tutDrawerCapture"></div>
+<!-- Corgi -->
+<div id="tutCorgi">🐕</div>
 
 </body>
 </html>
