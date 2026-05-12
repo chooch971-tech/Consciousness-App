@@ -647,15 +647,15 @@
 .omnia-response { font-size:10px; letter-spacing:.08em; color:#8ecce0; text-align:center; margin-top:6px; opacity:.7; font-style:normal; }
 
 /* ─── First-Time Tutorial ──────────────────────────────────────────── */
+/* Overlay is background-only; interactive content lives outside it    */
 #tutOverlay {
   display:none; position:fixed; inset:0; z-index:9000;
   background:rgba(7,8,13,0.92);
-  flex-direction:column; align-items:center; justify-content:center;
-  transition:background 0.4s ease; overflow:hidden;
+  overflow:hidden; transition:background 0.4s ease;
   cursor:pointer; user-select:none; -webkit-user-select:none;
 }
 #tutSparkCanvas { position:absolute; inset:0; pointer-events:none; z-index:0; }
-/* Spotlight lives outside overlay so it works even when overlay is hidden */
+/* Spotlight: outside overlay → works regardless of overlay opacity   */
 #tutSpotlight {
   position:fixed; border-radius:14px;
   box-shadow:0 0 0 9999px rgba(7,8,13,0.82);
@@ -666,14 +666,17 @@
              width 0.42s cubic-bezier(.25,.8,.25,1), height 0.42s cubic-bezier(.25,.8,.25,1);
 }
 #tutSpotlight.tut-lit { opacity:1; }
+/* tutContent lives outside overlay at z-index above spotlight (9002)  */
 #tutContent {
-  display:flex; flex-direction:column; align-items:center; gap:18px;
-  position:relative; z-index:9004; padding:0 20px; pointer-events:none;
-  max-width:min(400px,92vw);
+  display:none; position:fixed; z-index:9005;
+  flex-direction:column; align-items:center; gap:18px;
+  top:50%; left:50%; transform:translate(-50%,-50%);
+  padding:0 20px; pointer-events:none;
+  max-width:min(400px,92vw); width:100%;
 }
-#tutOverlay.tut-spot #tutContent {
-  position:fixed; bottom:28px; left:50%; transform:translateX(-50%); width:100%;
-  align-items:center;
+#tutContent.tut-vis { display:flex; }
+#tutContent.tut-content-bottom {
+  top:auto; bottom:34px; transform:translateX(-50%);
 }
 .tut-bubble {
   background:rgba(10,15,28,0.97); border:1px solid rgba(126,184,164,0.35);
@@ -692,26 +695,28 @@
   color:#ddd8ce; text-align:center; margin:0;
 }
 .tut-bubble.tut-blue p { color:#7dd3f8; }
+/* Both SVGs overlaid in a CSS grid — opacity handles seamless morph   */
 #tutOmniaWrap {
-  order:1; display:flex; align-items:center; justify-content:center;
-  transition:transform 0.36s cubic-bezier(.34,1.26,.64,1);
+  order:1; display:grid; place-items:center;
 }
 .tut-crystal-svg {
-  width:84px; display:block;
+  grid-area:1/1; width:84px;
   animation:omniaFloat 4.5s ease-in-out infinite;
   filter:drop-shadow(0 0 12px rgba(142,204,224,.45));
-  transition:width 0.4s ease;
+  opacity:1; transition:opacity 0.65s ease, width 0.4s ease;
 }
 .tut-eye-svg {
-  width:84px; display:none;
+  grid-area:1/1; width:84px;
   animation:omniaFloat 4.5s ease-in-out infinite;
   filter:drop-shadow(0 0 14px rgba(88,180,240,.5));
-  transition:width 0.4s ease;
+  opacity:0; transition:opacity 0.65s ease, width 0.4s ease;
 }
-#tutOverlay.tut-spot .tut-crystal-svg,
-#tutOverlay.tut-spot .tut-eye-svg { width:54px; }
-#tutOmniaWrap.eye-state .tut-crystal-svg { display:none; }
-#tutOmniaWrap.eye-state .tut-eye-svg    { display:block; }
+/* Smaller size when Omnia is at bottom (spot mode) */
+#tutContent.tut-content-bottom .tut-crystal-svg,
+#tutContent.tut-content-bottom .tut-eye-svg { width:54px; }
+/* Eye state: crossfade crystal → eye */
+#tutOmniaWrap.eye-state .tut-crystal-svg { opacity:0; }
+#tutOmniaWrap.eye-state .tut-eye-svg    { opacity:1; }
 @keyframes eyeBlink {
   0%,88%,100% { transform:scaleY(1); }
   92%          { transform:scaleY(0.06); }
@@ -768,14 +773,14 @@
 .tut-path-btn.tut-experienced { border-color:rgba(142,204,224,0.35); color:#8ecce0; }
 .tut-path-btn.tut-experienced:hover { background:rgba(142,204,224,0.1); border-color:rgba(142,204,224,0.6); }
 .tut-tap-hint {
-  position:absolute; bottom:28px; left:50%; transform:translateX(-50%);
+  display:none; position:fixed; bottom:8px; left:50%; transform:translateX(-50%);
   font-size:8px; letter-spacing:.28em; text-transform:uppercase;
   color:rgba(126,184,164,0.4); animation:tutPulse 2.2s ease-in-out infinite;
   white-space:nowrap; pointer-events:none; z-index:9006;
 }
 @keyframes tutPulse { 0%,100%{opacity:.4;} 50%{opacity:.85;} }
 .tut-skip-btn {
-  position:absolute; top:max(env(safe-area-inset-top),20px); right:20px;
+  display:none; position:fixed; top:max(env(safe-area-inset-top),20px); right:20px;
   font-size:8px; letter-spacing:.22em; text-transform:uppercase;
   color:rgba(221,216,206,0.28); background:none; border:none; cursor:pointer;
   z-index:9008; padding:10px; pointer-events:auto; transition:color 0.2s;
@@ -818,6 +823,9 @@
 }
 #tutDrawerCapture.tut-cap-on { display:block; }
 body:not(.tut-live) #tutOverlay,
+body:not(.tut-live) #tutContent,
+body:not(.tut-live) .tut-tap-hint,
+body:not(.tut-live) .tut-skip-btn,
 body:not(.tut-live) #tutSpotlight,
 body:not(.tut-live) #tutDrawerFloat,
 body:not(.tut-live) #tutDrawerCapture,
@@ -12459,69 +12467,73 @@ document.addEventListener('DOMContentLoaded',function(){(function(){
   var VISITED='presence_visited';
 
   var STEPS=[
-    /* 0  */ {mode:'full', sparks:true, eyeTap:true, text:null},
-    /* 1  */ {mode:'full', inEye:true, blueText:true,
+    /* 0  */ {mode:'full', sparks:true,
+               text:'Namaste. My name is Omnia!'},
+    /* 1  */ {mode:'full', sparks:true, eyeTap:true,
+               text:'Welcome to your new favorite meditation practice.'},
+    /* 2  */ {mode:'full', inEye:true, blueText:true,
                text:'Allow me to show you your new favorite meditation practice.'},
-    /* 2  */ {mode:'full', inEye:true, blueText:true, blink:true,
+    /* 3  */ {mode:'full', inEye:true, blueText:true, blink:true,
                text:'These exercises will hone your concentration and imagination skills. Believe it or not, this practice is derived from secret societies and practiced for thousands of years!'},
-    /* 3  */ {mode:'full', fromEye:true, panel:'concentration', cards:true,
+    /* 4  */ {mode:'spot', target:'#modeConcentration', fromEye:true, panel:'concentration', cards:true,
                text:'This is where the Concentration exercises lay. Master them all to know thyself.'},
-    /* 4  */ {mode:'spot', target:'#concRingBtn',
-               text:'Practice to level up. All of these exercises give XP and come with a title.'},
     /* 5  */ {mode:'spot', target:'#concRingBtn',
+               text:'Practice to level up. All of these exercises give XP and come with a title.'},
+    /* 6  */ {mode:'spot', target:'#concRingBtn',
                text:'Here is your rank — you can click on it to give more information. Go through all the ranks to ascend!'},
-    /* 6  */ {mode:'spot', target:'[data-exercise="clock"]',
+    /* 7  */ {mode:'spot', target:'[data-exercise="clock"]',
                text:'You\'ll place your complete attention on the seconds hand of a clock. Each second of true focus makes your mind stronger.'},
-    /* 7  */ {mode:'spot', target:'[data-exercise="clock"]', clockBg:true,
+    /* 8  */ {mode:'full', clockBg:true,
                text:'You must place your complete focus here and only stop once the mind becomes distracted.'},
-    /* 8  */ {mode:'spot', target:'[data-exercise="visual"]',
+    /* 9  */ {mode:'spot', target:'[data-exercise="visual"]',
                text:'You\'ll learn to see objects as if they were right in front of you, in your mind.'},
-    /* 9  */ {mode:'spot', target:'[data-exercise="visual"]', objFlash:true,
+    /* 10 */ {mode:'full', objFlash:true,
                text:'You\'ll start with easier objects, like shapes. But then go into objects.'},
-    /* 10 */ {mode:'spot', target:'[data-exercise="visual"]',
+    /* 11 */ {mode:'spot', target:'[data-exercise="visual"]',
                text:'You\'ll learn to do this with your eyes open as well — a concept that sounds difficult but is rather easy after some perseverance.'},
-    /* 11 */ {mode:'spot', target:'[data-exercise="auditory"]',
+    /* 12 */ {mode:'spot', target:'[data-exercise="auditory"]',
                text:'Just as you did with visualization, you\'ll repeat the same with sounds. You\'ll hear these sounds as if they were actually there.'},
-    /* 12 */ {mode:'spot', target:'[data-exercise="auditory"]', playCreek:true,
+    /* 13 */ {mode:'spot', target:'[data-exercise="auditory"]', playCreek:true,
                text:'Here, take a listen:'},
-    /* 13 */ {mode:'spot', target:'[data-exercise="auditory"]', stopCreek:true,
+    /* 14 */ {mode:'spot', target:'[data-exercise="auditory"]', stopCreek:true,
                text:'Isn\'t that amazing?'},
-    /* 14 */ {mode:'spot', target:'[data-exercise="asana"]',
-               text:'In asana, the type of meditation you\'re most likely familiar with, you\'ll learn how to sit quietly, without fidgeting, while stilling the mind.'},
     /* 15 */ {mode:'spot', target:'[data-exercise="asana"]',
-               text:'This will do wonders for the average mind which constantly craves stimulation.'},
+               text:'In asana, the type of meditation you\'re most likely familiar with, you\'ll learn how to sit quietly, without fidgeting, while stilling the mind.'},
     /* 16 */ {mode:'spot', target:'[data-exercise="asana"]',
+               text:'This will do wonders for the average mind which constantly craves stimulation.'},
+    /* 17 */ {mode:'spot', target:'[data-exercise="asana"]',
                text:'Sit in a chair with your legs completely together, start with five minutes and then go all the way up!'},
-    /* 17 */ {mode:'spot', target:'[data-exercise="soulmirror"]',
-               text:'Here is where the inner transformation part of this practice lies. You\'ll write down all your negative and positive traits here and work on them during the duration of your stay here.'},
     /* 18 */ {mode:'spot', target:'[data-exercise="soulmirror"]',
-               text:'You can work on them with the pore breathing — the act of \'breathing out\' your bad qualities and purifying your body.'},
+               text:'Here is where the inner transformation part of this practice lies. You\'ll write down all your negative and positive traits here and work on them during the duration of your stay here.'},
     /* 19 */ {mode:'spot', target:'[data-exercise="soulmirror"]',
+               text:'You can work on them with the pore breathing — the act of \'breathing out\' your bad qualities and purifying your body.'},
+    /* 20 */ {mode:'spot', target:'[data-exercise="soulmirror"]',
                text:'This is a psychological technique that targets the subconscious. You can also use this portion for any type of controlled breathing, and change the intervals in settings.'},
-    /* 20 */ {mode:'drawer', target:'#drawerJournal',
+    /* 21 */ {mode:'drawer', target:'#drawerJournal',
                text:'Your Journal Log lives here. Every session is recorded — your streak, your progress, your notes. This is your proof of growth.'},
-    /* 21 */ {mode:'drawer', target:'#drawerGuide', openGuide:true,
+    /* 22 */ {mode:'drawer', target:'#drawerGuide', openGuide:true,
                text:'This is where I live and will give you your daily regiment.'},
-    /* 22 */ {mode:'guide', pathChoice:true},
-    /* 23 */ {mode:'guide',
+    /* 23 */ {mode:'guide', pathChoice:true, skipTo:27},
+    /* 24 */ {mode:'guide',
                text:'No problem! Here is your agenda for the day, and it will always be here for you to go back to. This is how you\'ll grow.'},
-    /* 24 */ {mode:'guide', nextIdx:26,
+    /* 25 */ {mode:'guide', nextIdx:27,
                text:'I\'ll challenge you a bit harder each and every day.'},
-    /* 25 */ {mode:'guide', nextIdx:26,
+    /* 26 */ {mode:'guide', nextIdx:27,
                text:'No problem! I\'ll guide you to make you improve even further.'},
-    /* 26 */ {mode:'guide', target:'#guideOmniaTab', clickTarget:true,
+    /* 27 */ {mode:'guide', target:'#guideOmniaTab', clickTarget:true,
                text:'And here is where I can be upgraded. You and I can grow together!!'},
-    /* 27 */ {mode:'guide',
+    /* 28 */ {mode:'guide',
                text:'The more exercises you do, the more Akasha we generate for upgrades, cosmetics, and other cool items!'},
-    /* 28 */ {mode:'guide', corgi:true,
+    /* 29 */ {mode:'guide', corgi:true,
                text:'You can even get me a pet corgi!'},
-    /* 29 */ {mode:'drawer', target:'#drawerOmniaBtn', spotDrawer:true,
+    /* 30 */ {mode:'drawer', target:'#drawerOmniaBtn', spotDrawer:true,
                text:'Feel free to click on me here any time you want to go through this tutorial again.'},
-    /* 30 */ {mode:'drawer', target:'#drawerGuide', spotDrawer:true, last:true,
+    /* 31 */ {mode:'drawer', target:'#drawerGuide', spotDrawer:true, last:true,
                text:'I\'ll be in here. It\'s nice to meet you!'},
   ];
 
   var ov=document.getElementById('tutOverlay');
+  var tc=document.getElementById('tutContent');
   var cv=document.getElementById('tutSparkCanvas');
   var sp=document.getElementById('tutSpotlight');
   var ow=document.getElementById('tutOmniaWrap');
@@ -12607,14 +12619,11 @@ document.addEventListener('DOMContentLoaded',function(){(function(){
   /* ── Eye ── */
   function toEye(){
     eyeOn=true;
-    ow.style.transform='scale(0.05)';
-    setTimeout(function(){ow.classList.add('eye-state');ow.style.transform='scale(1)';},340);
+    ow.classList.add('eye-state');
   }
   function fromEyeAnim(){
     eyeOn=false;
-    ow.classList.remove('tut-blink');
-    ow.style.transform='scale(0.05)';
-    setTimeout(function(){ow.classList.remove('eye-state');ow.style.transform='scale(1)';},340);
+    ow.classList.remove('eye-state','tut-blink');
   }
 
   /* ── Blink ── */
@@ -12764,6 +12773,8 @@ document.addEventListener('DOMContentLoaded',function(){(function(){
 
     /* ── DRAWER mode ── */
     if(s.mode==='drawer'){
+      tc.classList.remove('tut-vis','tut-content-bottom');
+      th.style.display='none'; sk.style.display='none';
       ov.style.opacity='0'; ov.style.pointerEvents='none';
       stopSparks();
       df.classList.remove('tut-float-on');
@@ -12786,6 +12797,8 @@ document.addEventListener('DOMContentLoaded',function(){(function(){
 
     /* ── GUIDE mode ── */
     if(s.mode==='guide'){
+      tc.classList.remove('tut-vis','tut-content-bottom');
+      th.style.display='none'; sk.style.display='none';
       ov.style.opacity='0'; ov.style.pointerEvents='none';
       stopSparks();
       cp.classList.remove('tut-cap-on');
@@ -12800,7 +12813,7 @@ document.addEventListener('DOMContentLoaded',function(){(function(){
       }
       if(s.pathChoice){
         var fresh=loadGuideState();
-        if(fresh._pathLockedV2){ setTimeout(function(){go(26);},120); return; }
+        if(fresh._pathLockedV2){ setTimeout(function(){go(s.skipTo!=null?s.skipTo:cur+4);},120); return; }
         showPathChoice();
         return;
       }
@@ -12817,7 +12830,7 @@ document.addEventListener('DOMContentLoaded',function(){(function(){
     }
 
     /* ── FULL / SPOT modes ── */
-    ov.style.display='flex'; ov.style.opacity='1'; ov.style.pointerEvents='auto';
+    ov.style.display='block'; ov.style.opacity='1'; ov.style.pointerEvents='auto';
     df.classList.remove('tut-float-on');
     fb.classList.remove('tut-vis');
     darkSpot(); clearPulse(); cp.classList.remove('tut-cap-on');
@@ -12826,6 +12839,7 @@ document.addEventListener('DOMContentLoaded',function(){(function(){
     if(s.panel) goPanel(s.panel);
     if(s.cards) setTimeout(staggerCards,250);
     if(s.sparks) startSparks(); else stopSparks();
+    if(s.inEye && !eyeOn) toEye();
     if(s.fromEye && eyeOn) fromEyeAnim();
     if(s.blink) setTimeout(triggerBlink,800);
     if(s.playCreek) setTimeout(startTutCreek,400);
@@ -12835,9 +12849,11 @@ document.addEventListener('DOMContentLoaded',function(){(function(){
     if(s.mode==='full'){
       ov.classList.remove('tut-spot');
       ov.style.background='rgba(7,8,13,0.92)';
+      tc.classList.add('tut-vis'); tc.classList.remove('tut-content-bottom');
     } else {
       ov.classList.add('tut-spot');
       ov.style.background='rgba(7,8,13,0.08)';
+      tc.classList.add('tut-vis','tut-content-bottom');
       setTimeout(function(){litSpot(s.target);},180);
     }
 
@@ -12850,6 +12866,7 @@ document.addEventListener('DOMContentLoaded',function(){(function(){
       setTimeout(function(){bl.classList.add('tut-vis');},120);
     }
     th.textContent=s.eyeTap?'Tap the screen':'Tap to continue';
+    th.style.display='block'; sk.style.display='block';
     setTimeout(function(){rdy=true;},700);
   }
 
@@ -12862,6 +12879,8 @@ document.addEventListener('DOMContentLoaded',function(){(function(){
     if(corgiTimer){clearTimeout(corgiTimer); cg.style.display='none';}
     cp.classList.remove('tut-cap-on');
     closeDrawer();
+    tc.classList.remove('tut-vis','tut-content-bottom');
+    th.style.display='none'; sk.style.display='none';
     ov.style.opacity='0';
     df.classList.remove('tut-float-on');
     hidePathChoice();
@@ -12878,7 +12897,7 @@ document.addEventListener('DOMContentLoaded',function(){(function(){
     if(s.eyeTap && !eyeOn){
       rdy=false; toEye();
       bl.classList.remove('tut-vis');
-      setTimeout(function(){go(cur+1);},1800);
+      setTimeout(function(){go(cur+1);},900);
     } else {
       go(cur+1);
     }
@@ -12890,8 +12909,9 @@ document.addEventListener('DOMContentLoaded',function(){(function(){
     if(s.mode==='drawer' && s.last) return;
     if(s.openGuide){
       rdy=false; cp.classList.remove('tut-cap-on');
+      var nextI=cur+1;
       closeDrawer();
-      setTimeout(function(){ openGuide(); setTimeout(function(){go(22);},350); },300);
+      setTimeout(function(){ openGuide(); setTimeout(function(){go(nextI);},350); },300);
       return;
     }
     go(s.nextIdx!=null ? s.nextIdx : cur+1);
@@ -12905,20 +12925,20 @@ document.addEventListener('DOMContentLoaded',function(){(function(){
     e.stopPropagation();
     hidePathChoice();
     df.classList.remove('tut-float-on'); fb.classList.remove('tut-vis');
-    setTimeout(function(){go(23);},300);
+    setTimeout(function(){go(24);},300);
   });
   document.getElementById('tutPathExp').addEventListener('click',function(e){
     e.stopPropagation();
     hidePathChoice();
     df.classList.remove('tut-float-on'); fb.classList.remove('tut-vis');
-    setTimeout(function(){go(25);},300);
+    setTimeout(function(){go(26);},300);
   });
 
   /* ── Boot ── */
   function boot(){
     if(localStorage.getItem(VISITED)) return;
     document.body.classList.add('tut-live');
-    ov.style.display='flex'; ov.style.opacity='0';
+    ov.style.display='block'; ov.style.opacity='0';
     ov.style.transition='opacity 0.7s ease,background 0.4s ease';
     setTimeout(function(){ov.style.opacity='1'; go(0);},120);
   }
@@ -12928,10 +12948,13 @@ document.addEventListener('DOMContentLoaded',function(){(function(){
     document.body.classList.add('tut-live');
     stopSparks(); darkSpot(); hideClockBg(); hideObjFlash(); stopTutCreek();
     if(corgiTimer){clearTimeout(corgiTimer); cg.style.display='none';}
+    ow.classList.remove('eye-state','tut-blink');
+    tc.classList.remove('tut-vis','tut-content-bottom');
+    th.style.display='none'; sk.style.display='none';
     df.classList.remove('tut-float-on'); fb.classList.remove('tut-vis');
     hidePathChoice(); cp.classList.remove('tut-cap-on');
     clearPulse(); closeDrawer();
-    ov.style.display='flex'; ov.style.opacity='0';
+    ov.style.display='block'; ov.style.opacity='0';
     ov.style.transition='opacity 0.7s ease';
     setTimeout(function(){ov.style.opacity='1'; go(0);},120);
   };
@@ -12959,7 +12982,7 @@ document.addEventListener('DOMContentLoaded',function(){(function(){
 <div id="tutOverlay">
   <canvas id="tutSparkCanvas"></canvas>
 
-  <!-- Animated clock background (spot mode, clock steps) -->
+  <!-- Animated clock background (full mode, clock step) -->
   <div id="tutClockBg">
     <svg id="tutClockSvg" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg"
          style="width:min(280px,72vw);height:min(280px,72vw);opacity:0.28;filter:drop-shadow(0 0 28px rgba(125,211,248,0.25));">
@@ -13044,10 +13067,13 @@ document.addEventListener('DOMContentLoaded',function(){(function(){
     </svg>
   </div>
 
-  <!-- Object flash background (visualization steps) -->
+  <!-- Object flash background (full mode, visualization step) -->
   <div id="tutObjBg"></div>
 
-  <div id="tutContent">
+</div><!-- end #tutOverlay -->
+
+<!-- tutContent: outside overlay so z-index 9005 clears spotlight (9002) -->
+<div id="tutContent">
     <div class="tut-bubble" id="tutBubble"><p id="tutBubbleText"></p></div>
     <div id="tutOmniaWrap">
       <svg class="tut-crystal-svg" viewBox="0 0 72 118" xmlns="http://www.w3.org/2000/svg">
@@ -13090,9 +13116,8 @@ document.addEventListener('DOMContentLoaded',function(){(function(){
       </svg>
     </div>
   </div>
-  <div class="tut-tap-hint" id="tutTapHint">Tap to continue</div>
-  <button class="tut-skip-btn" id="tutSkipBtn">Skip</button>
-</div>
+<div class="tut-tap-hint" id="tutTapHint">Tap to continue</div>
+<button class="tut-skip-btn" id="tutSkipBtn">Skip</button>
 
 <!-- Spotlight: lives outside overlay for independent visibility -->
 <div id="tutSpotlight"></div>
