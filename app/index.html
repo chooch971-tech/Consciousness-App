@@ -8018,17 +8018,21 @@ function renderOmniaEntityPreview(item) {
       + '<polygon points="24,4 38,18 38,40 24,54 10,40 10,18" fill="rgba(255,255,255,.04)" stroke="' + color + '" stroke-width="1.2" opacity=".6"/>'
       + '<line x1="10" y1="18" x2="38" y2="40" stroke="' + color + '" stroke-width=".7" opacity=".3"/>'
       + '<line x1="38" y1="18" x2="10" y2="40" stroke="' + color + '" stroke-width=".7" opacity=".3"/>'
-      + '<polygon points="24,16 32,29 24,42 16,29" fill="' + color + '" opacity=".15" stroke="' + color + '" stroke-width="1.1"/>'
-      + '<circle cx="24" cy="29" r="3.5" fill="rgba(255,255,255,.08)" stroke="' + color + '" stroke-width="1"/>'
-      + '<circle cx="24" cy="29" r="1.4" fill="' + color + '" opacity=".9"/>'
+      + '<polygon points="24,16 32,29 24,42 16,29" fill="' + color + '" opacity=".12" stroke="' + color + '" stroke-width="1.1"/>'
+      + '<path d="M17,29 Q24,22 31,29 Q24,36 17,29 Z" fill="rgba(255,255,255,.07)" stroke="' + color + '" stroke-width=".85" opacity=".85"/>'
+      + '<circle cx="24" cy="29" r="3.8" fill="rgba(0,0,0,.18)" stroke="' + color + '" stroke-width=".8"/>'
+      + '<circle cx="24" cy="29" r="1.6" fill="' + color + '" opacity=".9"/>'
+      + '<circle cx="25.2" cy="28" r=".75" fill="rgba(255,255,255,.6)"/>'
       + '</svg>';
   }
   if (item.id === 'aurel') {
     return '<svg viewBox="0 0 56 56" aria-hidden="true">'
-      + '<path d="M28 3v9M28 44v9M3 28h9M44 28h9M10 10l7 7M39 39l7 7M46 10l-7 7M17 39l-7 7" stroke="' + color + '" stroke-width="1.35" stroke-linecap="round" opacity=".72"/>'
-      + '<path d="M28 10 43 20 39 39 17 39 13 20Z" fill="rgba(255,255,255,.05)" stroke="' + color + '" stroke-width="1.4"/>'
-      + '<path d="M28 14 36 25 28 37 20 25Z" fill="' + color + '" opacity=".26"/>'
-      + '<circle cx="28" cy="26" r="5" fill="' + color + '" opacity=".45"/>'
+      + '<polygon points="28,4 46,34 10,34" fill="rgba(240,211,154,0.06)" stroke="' + color + '" stroke-width="1.3" opacity=".75"/>'
+      + '<polygon points="28,52 10,22 46,22" fill="rgba(240,211,154,0.06)" stroke="' + color + '" stroke-width="1.3" opacity=".75"/>'
+      + '<circle cx="28" cy="29" r="9" fill="rgba(240,211,154,0.12)" stroke="' + color + '" stroke-width="1.1" opacity=".9"/>'
+      + '<circle cx="28" cy="29" r="5.5" stroke="' + color + '" stroke-width=".9" fill="none" opacity=".72"/>'
+      + '<circle cx="28" cy="29" r="2.5" fill="' + color + '" opacity=".7"/>'
+      + '<circle cx="28" cy="29" r=".9" fill="#fffce8" opacity=".95"/>'
       + '</svg>';
   }
   if (item.id === 'elys') {
@@ -8091,44 +8095,100 @@ function getEntityCrystalSVG(id) {
   if (id === 'noema') {
     return '<svg viewBox="0 0 80 130" width="72" height="118" xmlns="http://www.w3.org/2000/svg" style="overflow:visible;">'
       + '<defs>'
-      + '<linearGradient id="ng1" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#c8dff0" stop-opacity="0.85"/><stop offset="100%" stop-color="#7aa8c8" stop-opacity="0.42"/></linearGradient>'
       + '<filter id="nglow" x="-30%" y="-30%" width="160%" height="160%"><feGaussianBlur stdDeviation="2" result="blur"/><feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge></filter>'
       + '</defs>'
-      // Outer hexagonal prism top cap
+      // Top hexagonal cap
       + '<polygon points="40,8 60,19 60,41 40,52 20,41 20,19" fill="rgba(152,180,204,0.07)" stroke="#98b4cc" stroke-width="0.85" opacity="0.65"/>'
+      + '<line x1="20" y1="19" x2="60" y2="41" stroke="#98b4cc" stroke-width="0.5" opacity="0.28"/>'
+      + '<line x1="60" y1="19" x2="20" y2="41" stroke="#98b4cc" stroke-width="0.5" opacity="0.28"/>'
+      // Eye in top cap (center ~40,30)
+      + '<path d="M32,30 Q40,24 48,30 Q40,36 32,30 Z" fill="rgba(152,180,204,0.1)" stroke="#98b4cc" stroke-width="0.75"/>'
+      + '<circle cx="40" cy="30" r="3.5" fill="rgba(152,180,204,0.18)" stroke="#b8cce0" stroke-width="0.7"/>'
+      + '<circle cx="40" cy="30" r="1.4" fill="#d4e8f8" opacity="0.88"/>'
       // Vertical side edges
       + '<line x1="20" y1="41" x2="20" y2="89" stroke="#98b4cc" stroke-width="0.8" opacity="0.5"/>'
       + '<line x1="60" y1="41" x2="60" y2="89" stroke="#98b4cc" stroke-width="0.8" opacity="0.5"/>'
-      // Bottom cap
+      + '<line x1="20" y1="65" x2="60" y2="65" stroke="#98b4cc" stroke-width="0.6" opacity="0.28"/>'
+      + '<line x1="40" y1="8" x2="40" y2="122" stroke="#98b4cc" stroke-width="0.5" opacity="0.22"/>'
+      // Central diamond (the "mind" core)
+      + '<polygon points="40,50 56,65 40,80 24,65" fill="rgba(152,180,204,0.15)" stroke="#b8cce0" stroke-width="1.2" filter="url(#nglow)" opacity="0.95"/>'
+      + '<line x1="24" y1="65" x2="56" y2="65" stroke="#b8cce0" stroke-width="0.5" opacity="0.4"/>'
+      + '<line x1="40" y1="50" x2="40" y2="80" stroke="#b8cce0" stroke-width="0.5" opacity="0.4"/>'
+      // Eye in central diamond (center 40,65)
+      + '<path d="M29,65 Q40,57 51,65 Q40,73 29,65 Z" fill="rgba(152,180,204,0.12)" stroke="#b8cce0" stroke-width="0.9"/>'
+      + '<circle cx="40" cy="65" r="6" fill="rgba(130,170,210,0.2)" stroke="#a8c4e0" stroke-width="0.9"/>'
+      + '<circle cx="40" cy="65" r="3" fill="rgba(80,130,180,0.45)"/>'
+      + '<circle cx="43" cy="63" r="1.6" fill="rgba(255,255,255,0.55)"/>'
+      // Bottom hexagonal cap
       + '<polygon points="40,122 60,111 60,89 40,78 20,89 20,111" fill="rgba(152,180,204,0.07)" stroke="#98b4cc" stroke-width="0.85" opacity="0.65"/>'
-      // Cross-diagonal face lines (top cap)
-      + '<line x1="20" y1="19" x2="60" y2="41" stroke="#98b4cc" stroke-width="0.5" opacity="0.28"/>'
-      + '<line x1="60" y1="19" x2="20" y2="41" stroke="#98b4cc" stroke-width="0.5" opacity="0.28"/>'
-      // Cross-diagonal face lines (bottom cap)
       + '<line x1="20" y1="89" x2="60" y2="111" stroke="#98b4cc" stroke-width="0.5" opacity="0.28"/>'
       + '<line x1="60" y1="89" x2="20" y2="111" stroke="#98b4cc" stroke-width="0.5" opacity="0.28"/>'
-      // Center horizontal band
-      + '<line x1="20" y1="65" x2="60" y2="65" stroke="#98b4cc" stroke-width="0.6" opacity="0.32"/>'
-      // Vertical spine
-      + '<line x1="40" y1="8" x2="40" y2="122" stroke="#98b4cc" stroke-width="0.5" opacity="0.28"/>'
-      // Central diamond (the "mind" core)
-      + '<polygon points="40,50 56,65 40,80 24,65" fill="rgba(152,180,204,0.18)" stroke="#b8cce0" stroke-width="1.1" filter="url(#nglow)" opacity="0.9"/>'
-      // Inner diamond lines
-      + '<line x1="24" y1="65" x2="56" y2="65" stroke="#b8cce0" stroke-width="0.6" opacity="0.5"/>'
-      + '<line x1="40" y1="50" x2="40" y2="80" stroke="#b8cce0" stroke-width="0.6" opacity="0.5"/>'
-      // Center node
-      + '<circle cx="40" cy="65" r="4.5" fill="rgba(184,204,224,0.12)" stroke="#b8d0e8" stroke-width="1.1"/>'
-      + '<circle cx="40" cy="65" r="1.8" fill="#d4e8f8" opacity="0.92"/>'
-      // Sparkle top-left
+      // Eye in bottom cap (center ~40,100)
+      + '<path d="M32,100 Q40,94 48,100 Q40,106 32,100 Z" fill="rgba(152,180,204,0.1)" stroke="#98b4cc" stroke-width="0.75"/>'
+      + '<circle cx="40" cy="100" r="3.5" fill="rgba(152,180,204,0.18)" stroke="#b8cce0" stroke-width="0.7"/>'
+      + '<circle cx="40" cy="100" r="1.4" fill="#d4e8f8" opacity="0.88"/>'
+      // Sparkles
       + '<g opacity=".55" filter="url(#nglow)"><line x1="5" y1="52" x2="11" y2="52" stroke="#b8d0e4" stroke-width="1"/><line x1="8" y1="49" x2="8" y2="55" stroke="#b8d0e4" stroke-width="1"/></g>'
-      // Sparkle bottom-right
-      + '<g opacity=".42"><line x1="69" y1="82" x2="75" y2="82" stroke="#b8d0e4" stroke-width="0.9"/><line x1="72" y1="79" x2="72" y2="85" stroke="#b8d0e4" stroke-width="0.9"/></g>'
-      // Sparkle top-right small
-      + '<g opacity=".35"><line x1="68" y1="25" x2="73" y2="25" stroke="#b8d0e4" stroke-width="0.7"/><line x1="70.5" y1="22.5" x2="70.5" y2="27.5" stroke="#b8d0e4" stroke-width="0.7"/></g>'
+      + '<g opacity=".42"><line x1="69" y1="80" x2="75" y2="80" stroke="#b8d0e4" stroke-width="0.9"/><line x1="72" y1="77" x2="72" y2="83" stroke="#b8d0e4" stroke-width="0.9"/></g>'
       + '</svg>';
   }
-  // Default: return the original Omnia crystal (null = keep existing HTML)
+  if (id === 'aurel') {
+    return '<svg viewBox="0 0 80 130" width="72" height="118" xmlns="http://www.w3.org/2000/svg" style="overflow:visible;">'
+      + '<defs>'
+      + '<radialGradient id="ag1" cx="50%" cy="50%" r="50%"><stop offset="0%" stop-color="#fff8e0" stop-opacity="0.9"/><stop offset="100%" stop-color="#c09040" stop-opacity="0"/></radialGradient>'
+      + '<filter id="aglow" x="-40%" y="-40%" width="180%" height="180%"><feGaussianBlur stdDeviation="2.5" result="blur"/><feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge></filter>'
+      + '</defs>'
+      // Upper triangle (pointing down — top point up, base mid)
+      + '<polygon points="40,6 66,84 14,84" fill="rgba(240,211,154,0.06)" stroke="#f0d39a" stroke-width="0.9" opacity="0.7"/>'
+      // Lower triangle (pointing up — bottom point down, base mid)
+      + '<polygon points="40,124 14,46 66,46" fill="rgba(240,211,154,0.06)" stroke="#f0d39a" stroke-width="0.9" opacity="0.7"/>'
+      // Center hexagon (star intersection zone)
+      + '<polygon points="40,46 58,57 58,73 40,84 22,73 22,57" fill="rgba(240,211,154,0.1)" stroke="#e8c870" stroke-width="0.75" opacity="0.65"/>'
+      // Spoke lines: triangle tips to center
+      + '<line x1="40" y1="6" x2="40" y2="57" stroke="#f0d39a" stroke-width="0.55" opacity="0.38"/>'
+      + '<line x1="40" y1="73" x2="40" y2="124" stroke="#f0d39a" stroke-width="0.55" opacity="0.38"/>'
+      + '<line x1="14" y1="46" x2="28" y2="57" stroke="#f0d39a" stroke-width="0.55" opacity="0.32"/>'
+      + '<line x1="66" y1="46" x2="52" y2="57" stroke="#f0d39a" stroke-width="0.55" opacity="0.32"/>'
+      + '<line x1="14" y1="84" x2="28" y2="73" stroke="#f0d39a" stroke-width="0.55" opacity="0.32"/>'
+      + '<line x1="66" y1="84" x2="52" y2="73" stroke="#f0d39a" stroke-width="0.55" opacity="0.32"/>'
+      // Solar disk outer glow
+      + '<circle cx="40" cy="65" r="18" fill="url(#ag1)" filter="url(#aglow)"/>'
+      // Solar disk rings
+      + '<circle cx="40" cy="65" r="14" fill="rgba(240,200,90,0.1)" stroke="#e8c060" stroke-width="1.1" opacity="0.75"/>'
+      + '<circle cx="40" cy="65" r="9" fill="rgba(255,230,120,0.18)" stroke="#f0d39a" stroke-width="1" opacity="0.85"/>'
+      + '<circle cx="40" cy="65" r="4.5" fill="rgba(255,248,200,0.55)" stroke="#fff5c0" stroke-width="0.8"/>'
+      + '<circle cx="40" cy="65" r="1.8" fill="#fffce8" opacity="0.98"/>'
+      // Sparkles
+      + '<g opacity=".65" filter="url(#aglow)"><line x1="4" y1="65" x2="10" y2="65" stroke="#f0d39a" stroke-width="1.1"/><line x1="7" y1="62" x2="7" y2="68" stroke="#f0d39a" stroke-width="1.1"/></g>'
+      + '<g opacity=".45"><line x1="70" y1="36" x2="76" y2="36" stroke="#e8c870" stroke-width="0.9"/><line x1="73" y1="33" x2="73" y2="39" stroke="#e8c870" stroke-width="0.9"/></g>'
+      + '<g opacity=".38"><line x1="5" y1="94" x2="10" y2="94" stroke="#e8c870" stroke-width="0.8"/><line x1="7.5" y1="91.5" x2="7.5" y2="96.5" stroke="#e8c870" stroke-width="0.8"/></g>'
+      + '</svg>';
+  }
+  // Default: null = keep existing HTML (Omnia crystal)
   return null;
+}
+
+var _drawerOmniaBtnOrigSVG = null;
+function updateDrawerEntityBtn() {
+  var btn = document.getElementById('drawerOmniaBtn');
+  if (!btn) return;
+  // Cache original Omnia crystal HTML on first call
+  if (!_drawerOmniaBtnOrigSVG) _drawerOmniaBtnOrigSVG = btn.innerHTML;
+  var entity = omniaFindCosmetic(OMNIA_ENTITIES, (omniaState && omniaState.cosmetics && omniaState.cosmetics.entity) || 'omnia');
+  var palette = omniaFindCosmetic(OMNIA_PALETTES, (omniaState && omniaState.cosmetics && omniaState.cosmetics.palette) || 'aether');
+  var color = entity.id === 'omnia' ? palette.color : entity.color;
+  if (entity.id === 'omnia') {
+    btn.innerHTML = _drawerOmniaBtnOrigSVG;
+    btn.style.filter = '';
+    btn.title = 'Meet Omnia';
+    btn.setAttribute('aria-label', 'Open guide tutorial');
+  } else {
+    var previewSVG = renderOmniaEntityPreview(entity).replace('<svg ', '<svg width="26" height="38" ');
+    btn.innerHTML = previewSVG;
+    btn.style.filter = 'drop-shadow(0 0 6px ' + color + '99)';
+    btn.title = entity.name;
+    btn.setAttribute('aria-label', 'Open ' + entity.name + ' guide');
+  }
 }
 
 function applyOmniaCosmetics() {
@@ -8165,6 +8225,7 @@ function applyOmniaCosmetics() {
     comp.innerHTML = companion ? renderOmniaCompanionPreview(companion) : '';
     comp.style.display = companion ? 'block' : 'none';
   }
+  updateDrawerEntityBtn();
 }
 
 function renderOmniaCosmeticSection(title, kind, items) {
