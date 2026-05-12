@@ -2986,11 +2986,29 @@ function runLoop() {
   sessionTimerHandle = setTimeout(runLoop, 1000);
 }
 
+function playReminderBell() {
+  try {
+    // Independent AudioContext so the bell never interrupts Concentration audio
+    var ctx = new (window.AudioContext || window.webkitAudioContext)();
+    var when = ctx.currentTime + 0.05;
+    [[528, 0.28, 2.8], [1056, 0.14, 2.2], [1584, 0.08, 1.6]].forEach(function(f) {
+      var osc = ctx.createOscillator(); osc.type = 'sine'; osc.frequency.value = f[0];
+      var gain = ctx.createGain();
+      gain.gain.setValueAtTime(f[1], when);
+      gain.gain.exponentialRampToValueAtTime(0.001, when + f[2]);
+      osc.connect(gain); gain.connect(ctx.destination);
+      osc.start(when); osc.stop(when + f[2]);
+    });
+    setTimeout(function() { try { ctx.close(); } catch(e) {} }, 3500);
+  } catch(e) {}
+}
+
 function fireReminder() {
   var p = randomPrompt(document.getElementById('sessionPrompt').textContent);
   updateSessionPrompt(p);
   sessionReminderCount++;
   document.getElementById('reminderCount').textContent = sessionReminderCount;
+  playReminderBell();
 }
 
 function updateSessionPrompt(text) {
@@ -10149,10 +10167,13 @@ async function getSubscription() {
   catch(e) { return null; }
 }
 
+// Resolve sw.js relative to this page so it works from any sub-path
+var SW_PATH = (location.pathname.includes('/app/') ? '../' : '') + 'sw.js';
+
 async function registerWebPush() {
   if (!('serviceWorker' in navigator) || !('PushManager' in window)) return;
   try {
-    var reg = await navigator.serviceWorker.register('/sw.js', { scope: '/app/' });
+    var reg = await navigator.serviceWorker.register(SW_PATH);
     var permission = await Notification.requestPermission();
     if (permission !== 'granted') { showToast('Enable notifications for background reminders'); return; }
     var sub = await reg.pushManager.getSubscription();
@@ -10188,7 +10209,7 @@ async function notifyServerSessionEnd() {
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', async function() {
     try {
-      var reg = await navigator.serviceWorker.register('/sw.js', { scope: '/app/' });
+      var reg = await navigator.serviceWorker.register(SW_PATH);
       if (Notification.permission === 'granted') {
         var sub = await reg.pushManager.getSubscription();
         if (!sub) { sub = await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY) }); }
