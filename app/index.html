@@ -235,10 +235,102 @@
     .guide-opt-row { display:flex; gap:6px; flex-wrap:wrap; justify-content:flex-end; }
     .guide-opt { font-size:8px; letter-spacing:.1em; text-transform:uppercase; font-family:'DM Mono',monospace; padding:5px 9px; border-radius:4px; border:1px solid var(--border); background:none; color:var(--muted); cursor:pointer; transition:all .15s; white-space:nowrap; }
     .guide-opt.sel { background:rgba(212,149,110,.12); border-color:rgba(212,149,110,.4); color:#d4b08e; }
-    .guide-plan-card { background:var(--surface); border:1px solid var(--border); border-radius:10px; padding:16px 18px; margin-bottom:10px; }
+    .guide-plan-card { background:var(--surface); border:1px solid var(--border); border-radius:10px; padding:16px 18px; margin-bottom:10px; transition:opacity .2s, border-color .2s, background .2s; }
+    .guide-plan-card.done { opacity:.62; border-color:rgba(142,204,224,.24); background:rgba(142,204,224,.035); }
+    .guide-plan-card.done .guide-plan-exname, .guide-plan-card.done .guide-plan-dur { text-decoration:line-through; text-decoration-thickness:1px; text-underline-offset:3px; }
     .guide-plan-exname { font-size:10px; letter-spacing:.15em; text-transform:uppercase; color:var(--text); margin-bottom:4px; }
     .guide-plan-dur { font-size:9px; color:var(--accent); letter-spacing:.1em; margin-bottom:8px; }
     .guide-plan-tip { font-size:11px; color:var(--muted); line-height:1.6; font-style:italic; }
+    .guide-plan-meta { font-size:8px; letter-spacing:.16em; text-transform:uppercase; color:var(--muted); margin-top:10px; opacity:.78; }
+    .guide-plan-action { margin-top:12px; display:flex; justify-content:flex-end; }
+    .guide-plan-start { border:1px solid rgba(142,204,224,.24); background:rgba(142,204,224,.06); color:#8ecce0; border-radius:4px; padding:7px 10px; font-family:'DM Mono',monospace; font-size:8px; letter-spacing:.14em; text-transform:uppercase; cursor:pointer; }
+    .guide-plan-start:disabled { opacity:.45; cursor:default; }
+    .guide-plan-note { border:1px solid rgba(212,149,110,.16); background:rgba(212,149,110,.045); border-radius:8px; padding:12px 14px; margin-top:12px; font-size:10px; color:var(--muted); line-height:1.6; }
+    .guide-route-grid { display:grid; grid-template-columns:1fr; gap:10px; margin-bottom:20px; }
+    .guide-route-card { width:100%; padding:16px 18px; background:rgba(255,255,255,.03); border:1px solid var(--border); border-radius:10px; color:var(--text); font-family:'DM Mono',monospace; text-align:left; cursor:pointer; transition:border-color .2s, background .2s, transform .15s; }
+    .guide-route-card:active { transform:scale(.985); }
+    .guide-route-card.active { border-color:rgba(142,204,224,.38); background:rgba(142,204,224,.07); }
+    .guide-route-card.experienced.active { border-color:rgba(212,149,110,.36); background:rgba(212,149,110,.06); }
+    .guide-route-title { font-size:10px; letter-spacing:.2em; text-transform:uppercase; color:var(--text); margin-bottom:7px; }
+    .guide-route-card.active .guide-route-title { color:#8ecce0; }
+    .guide-route-card.experienced.active .guide-route-title { color:#d4b08e; }
+    .guide-route-text { font-size:10px; color:var(--muted); line-height:1.6; letter-spacing:.03em; }
+    .guide-confirm-panel { display:none; border:1px solid rgba(142,204,224,.18); background:rgba(142,204,224,.045); border-radius:10px; padding:15px 16px; margin-bottom:18px; }
+    .guide-confirm-title { font-size:10px; letter-spacing:.18em; text-transform:uppercase; color:var(--text); margin-bottom:7px; }
+    .guide-confirm-text { font-size:10px; color:var(--muted); line-height:1.6; margin-bottom:12px; }
+    .guide-confirm-actions { display:grid; grid-template-columns:1fr 1.35fr; gap:8px; }
+    .guide-confirm-btn { border:1px solid rgba(142,204,224,.24); background:rgba(142,204,224,.07); color:#8ecce0; border-radius:4px; padding:9px 10px; font-family:'DM Mono',monospace; font-size:8px; letter-spacing:.13em; text-transform:uppercase; cursor:pointer; }
+    .guide-confirm-btn.ghost { color:var(--muted); border-color:var(--border); background:rgba(255,255,255,.02); }
+    .guide-locked-path { display:none; border:1px solid rgba(142,204,224,.18); background:rgba(142,204,224,.045); border-radius:10px; padding:14px 16px; margin-bottom:18px; }
+    .guide-locked-kicker { font-size:8px; letter-spacing:.24em; text-transform:uppercase; color:#8ecce0; margin-bottom:5px; }
+    .guide-locked-title { font-size:10px; letter-spacing:.16em; text-transform:uppercase; color:var(--text); margin-bottom:6px; }
+    .guide-locked-text { font-size:10px; color:var(--muted); line-height:1.6; }
+    .guide-cadence-control { display:none; align-items:center; justify-content:space-between; gap:10px; margin-top:12px; padding-top:12px; border-top:1px solid rgba(142,204,224,.12); }
+    .guide-cadence-label { font-size:8px; letter-spacing:.18em; text-transform:uppercase; color:var(--muted); }
+    .guide-cadence-toggle { border:1px solid rgba(142,204,224,.24); background:rgba(142,204,224,.06); color:#8ecce0; border-radius:4px; padding:7px 9px; font-family:'DM Mono',monospace; font-size:8px; letter-spacing:.14em; text-transform:uppercase; cursor:pointer; white-space:nowrap; }
+    .guide-cadence-toggle.off { color:var(--muted); border-color:var(--border); background:rgba(255,255,255,.02); }
+    .guide-plan-controls { display:none; justify-content:space-between; align-items:center; gap:10px; border:1px solid rgba(142,204,224,.12); background:rgba(255,255,255,.025); border-radius:8px; padding:9px 10px; margin-bottom:12px; }
+    .guide-tabs { display:flex; gap:0; margin:0 0 20px; border-bottom:1px solid var(--border); }
+    .guide-tab { flex:1; padding:10px 0 9px; border:none; border-bottom:2px solid transparent; background:none; color:var(--muted); font-family:'DM Mono',monospace; font-size:9px; letter-spacing:.24em; text-transform:uppercase; cursor:pointer; }
+    .guide-tab.active { color:#8ecce0; border-bottom-color:#8ecce0; }
+    .guide-tab-panel { display:block; }
+    .omnia-engine { margin:0 0 20px; background:rgba(142,204,224,.045); border:1px solid rgba(142,204,224,.16); border-radius:12px; padding:16px; box-shadow:0 0 24px rgba(80,160,190,.04) inset; }
+    .omnia-engine-top { display:flex; justify-content:space-between; align-items:flex-start; gap:14px; margin-bottom:14px; }
+    .omnia-engine-kicker { font-size:8px; letter-spacing:.25em; text-transform:uppercase; color:#8ecce0; margin-bottom:5px; }
+    .omnia-engine-title { font-family:Cormorant Garamond,serif; font-size:24px; font-weight:300; color:var(--text); line-height:1; }
+    .omnia-engine-sub { font-size:9px; color:var(--muted); letter-spacing:.08em; margin-top:5px; line-height:1.5; }
+    .omnia-akasha-bank { text-align:right; min-width:92px; }
+    .omnia-akasha-val { font-family:Cormorant Garamond,serif; font-size:30px; line-height:1; color:#b8eaff; }
+    .omnia-akasha-key { font-size:8px; letter-spacing:.18em; text-transform:uppercase; color:var(--muted); margin-top:4px; }
+    .omnia-reservoir { border:1px solid rgba(142,204,224,.12); border-radius:8px; padding:11px 12px; background:rgba(255,255,255,.025); margin-bottom:14px; }
+    .omnia-reservoir-row { display:flex; justify-content:space-between; align-items:center; gap:10px; margin-bottom:8px; }
+    .omnia-reservoir-label { font-size:9px; letter-spacing:.18em; text-transform:uppercase; color:var(--muted); }
+    .omnia-reservoir-value { font-size:10px; color:#b8eaff; letter-spacing:.08em; }
+    .omnia-bar { height:5px; border-radius:999px; background:rgba(255,255,255,.07); overflow:hidden; }
+    .omnia-bar-fill { height:100%; border-radius:999px; background:linear-gradient(90deg,#6ab8d8,#d4ecff); width:0%; transition:width .4s ease; }
+    .omnia-collect-btn { width:100%; margin-top:10px; padding:10px; border-radius:6px; border:1px solid rgba(142,204,224,.25); background:rgba(142,204,224,.08); color:#b8eaff; font-family:'DM Mono',monospace; font-size:9px; letter-spacing:.18em; text-transform:uppercase; cursor:pointer; }
+    .omnia-collect-btn:disabled { opacity:.42; cursor:default; }
+    .omnia-body-grid { display:grid; grid-template-columns:1fr; gap:9px; margin-bottom:14px; }
+    .omnia-body-card { border:1px solid var(--border); border-radius:8px; padding:11px 12px; background:rgba(255,255,255,.025); }
+    .omnia-body-head { display:flex; justify-content:space-between; align-items:baseline; gap:10px; margin-bottom:8px; }
+    .omnia-body-name { font-size:9px; letter-spacing:.18em; text-transform:uppercase; color:var(--text); }
+    .omnia-body-lvl { font-size:9px; color:var(--muted); }
+    .omnia-body-actions { display:flex; justify-content:space-between; align-items:center; gap:10px; margin-top:8px; }
+    .omnia-body-effect { font-size:9px; color:var(--muted); line-height:1.4; }
+    .omnia-mini-btn { border:1px solid rgba(142,204,224,.22); background:transparent; color:#8ecce0; border-radius:4px; padding:6px 8px; font-family:'DM Mono',monospace; font-size:8px; letter-spacing:.12em; text-transform:uppercase; cursor:pointer; white-space:nowrap; }
+    .omnia-mini-btn:disabled { color:var(--muted); border-color:var(--border); opacity:.45; cursor:default; }
+    .omnia-rec-card { border:1px solid rgba(212,149,110,.18); background:rgba(212,149,110,.045); border-radius:10px; padding:13px 14px; margin-bottom:12px; }
+    .omnia-rec-top { display:flex; justify-content:space-between; gap:12px; align-items:flex-start; margin-bottom:7px; }
+    .omnia-rec-label { font-size:8px; letter-spacing:.22em; text-transform:uppercase; color:#d4b08e; }
+    .omnia-rec-reward { font-size:9px; color:#d4b08e; white-space:nowrap; }
+    .omnia-rec-name { font-size:12px; letter-spacing:.12em; text-transform:uppercase; color:var(--text); margin-bottom:5px; }
+    .omnia-rec-text { font-size:10px; color:var(--muted); line-height:1.6; }
+    .omnia-rec-actions { display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-top:11px; }
+    .omnia-upgrades { display:grid; grid-template-columns:1fr; gap:8px; }
+    .omnia-upgrade-row { display:flex; justify-content:space-between; align-items:center; gap:12px; border-top:1px solid var(--border); padding-top:10px; }
+    .omnia-upgrade-name { font-size:9px; letter-spacing:.14em; text-transform:uppercase; color:var(--text); }
+    .omnia-upgrade-sub { font-size:9px; color:var(--muted); margin-top:3px; line-height:1.4; }
+    .omnia-cosmetics { margin-top:14px; border-top:1px solid rgba(142,204,224,.13); padding-top:12px; display:grid; gap:12px; }
+    .omnia-cosmetic-section { display:grid; gap:8px; }
+    .omnia-cosmetic-title { font-size:8px; letter-spacing:.24em; text-transform:uppercase; color:#8ecce0; }
+    .omnia-cosmetic-card { display:flex; justify-content:space-between; align-items:center; gap:12px; border:1px solid var(--border); border-radius:8px; padding:10px 11px; background:rgba(255,255,255,.025); }
+    .omnia-cosmetic-card.selected { border-color:rgba(142,204,224,.32); background:rgba(142,204,224,.045); }
+    .omnia-cosmetic-main { display:flex; align-items:center; gap:10px; min-width:0; }
+    .omnia-cosmetic-preview { width:42px; height:42px; border-radius:8px; display:flex; align-items:center; justify-content:center; flex-shrink:0; border:1px solid rgba(255,255,255,.12); background:radial-gradient(circle at 50% 38%, rgba(255,255,255,.08), rgba(255,255,255,.02) 58%, rgba(0,0,0,.12)); box-shadow:inset 0 0 14px rgba(255,255,255,.035), 0 0 14px color-mix(in srgb, var(--swatch,#8ecce0) 28%, transparent); }
+    .omnia-cosmetic-preview svg { width:34px; height:34px; overflow:visible; filter:drop-shadow(0 0 7px color-mix(in srgb, var(--swatch,#8ecce0) 62%, transparent)); }
+    .omnia-cosmetic-swatch { width:20px; height:20px; border-radius:50%; border:1px solid rgba(255,255,255,.24); box-shadow:0 0 12px var(--swatch,#8ecce0); background:var(--swatch,#8ecce0); flex-shrink:0; }
+    .omnia-cosmetic-name { font-size:9px; letter-spacing:.14em; text-transform:uppercase; color:var(--text); }
+    .omnia-cosmetic-sub { font-size:9px; color:var(--muted); line-height:1.4; margin-top:3px; }
+    .omnia-step-card { border:1px solid rgba(142,204,224,.18); background:rgba(255,255,255,.025); border-radius:10px; padding:13px 14px; margin-bottom:12px; }
+    .omnia-step-top { display:flex; justify-content:space-between; align-items:flex-start; gap:12px; margin-bottom:10px; }
+    .omnia-step-label { font-size:8px; letter-spacing:.24em; text-transform:uppercase; color:#8ecce0; margin-bottom:4px; }
+    .omnia-step-name { font-family:Cormorant Garamond,serif; font-size:22px; font-weight:300; color:var(--text); line-height:1.1; }
+    .omnia-step-num { font-size:9px; letter-spacing:.18em; text-transform:uppercase; color:var(--muted); white-space:nowrap; }
+    .omnia-step-text { font-size:10px; color:var(--muted); line-height:1.6; margin-bottom:10px; }
+    .omnia-step-reqs { display:grid; gap:7px; margin-bottom:11px; }
+    .omnia-step-req { display:flex; justify-content:space-between; align-items:center; gap:12px; font-size:9px; letter-spacing:.08em; color:var(--muted); }
+    .omnia-step-req.done { color:#8ecce0; }
+    .omnia-action-row { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
     .conc-history-item { background:var(--surface); border:1px solid var(--border); border-radius:8px; padding:16px; margin-bottom:10px; }
     .conc-history-top { display:flex; justify-content:space-between; align-items:center; margin-bottom:4px; }
     .conc-history-date { font-size:10px; letter-spacing:.15em; color:var(--muted); }
@@ -456,51 +548,6 @@
     .levelup-particles { position:absolute; inset:0; pointer-events:none; overflow:hidden; }
     .particle { position:absolute; border-radius:50%; animation:particleFade 2s ease forwards; }
   
-/* ─── Session End Modal ─── */
-#sessionEndModal {
-  display:none; position:fixed; inset:0; z-index:600;
-  background:rgba(7,8,13,0.82); backdrop-filter:blur(6px);
-  flex-direction:column; align-items:center; justify-content:center;
-  padding:32px; opacity:0; transition:opacity 0.22s ease;
-}
-#sessionEndModal.show { display:flex; }
-#sessionEndModal.visible { opacity:1; }
-.sem-card {
-  background:var(--surface); border:1px solid var(--border);
-  border-radius:18px; padding:36px 28px 28px;
-  max-width:300px; width:100%; text-align:center;
-}
-.sem-title {
-  font-family:Cormorant Garamond,serif; font-size:26px;
-  font-weight:300; color:var(--text); margin-bottom:6px;
-}
-.sem-sub {
-  font-size:9px; letter-spacing:.2em; text-transform:uppercase;
-  color:var(--muted); margin-bottom:30px;
-}
-.sem-btn {
-  display:block; width:100%; padding:14px; border-radius:10px;
-  font-family:'DM Mono',monospace; font-size:10px;
-  letter-spacing:.18em; text-transform:uppercase;
-  cursor:pointer; border:none; margin-bottom:10px;
-  transition:background 0.15s, opacity 0.15s;
-}
-.sem-btn-keep {
-  background:rgba(126,184,164,0.12); color:var(--accent);
-  border:1px solid rgba(126,184,164,0.3);
-}
-.sem-btn-keep:hover { background:rgba(126,184,164,0.2); }
-.sem-btn-lose {
-  background:rgba(255,80,80,0.07); color:#d4756e;
-  border:1px solid rgba(212,117,110,0.25);
-}
-.sem-btn-lose:hover { background:rgba(255,80,80,0.13); }
-.sem-btn-back {
-  background:none; color:var(--muted); border:none;
-  font-size:9px; opacity:0.6; margin-bottom:0; padding:10px;
-}
-.sem-btn-back:hover { opacity:1; }
-
 /* ═══ BARDON GAME STYLES ═══ */
 
 
@@ -571,8 +618,28 @@
 /* ─── Omnia — crystalline glass guide character ─── */
 @keyframes omniaFloat { 0%,100%{transform:translateY(0);} 50%{transform:translateY(-7px);} }
 @keyframes omniaFacetPulse { 0%,100%{opacity:.55;} 50%{opacity:.9;} }
+@keyframes omniaAttune { 0%{transform:translateY(0) scale(1); filter:drop-shadow(0 0 8px rgba(160,210,240,.35));} 35%{transform:translateY(-10px) scale(1.08); filter:drop-shadow(0 0 24px rgba(184,234,255,.9));} 70%{transform:translateY(-3px) scale(.98); filter:drop-shadow(0 0 16px rgba(212,149,110,.55));} 100%{transform:translateY(0) scale(1); filter:drop-shadow(0 0 8px rgba(160,210,240,.35));} }
+@keyframes omniaSymbolPulse { 0%{transform:scale(.55) rotate(-18deg); opacity:0; filter:blur(7px);} 38%{transform:scale(1.12) rotate(4deg); opacity:1; filter:blur(0);} 68%{transform:scale(1) rotate(0); opacity:1; filter:blur(0);} 100%{transform:scale(.72) rotate(12deg); opacity:0; filter:blur(8px);} }
+@keyframes omniaCrystalFold { 0%,100%{transform:scale(1) rotate(0); opacity:1; filter:blur(0);} 36%,70%{transform:scale(.42) rotate(24deg); opacity:.18; filter:blur(5px);} }
+@keyframes omniaRingTurn { 0%{transform:rotate(0) scale(.82); opacity:0;} 32%{opacity:.75;} 100%{transform:rotate(180deg) scale(1.16); opacity:0;} }
+.omnia-figure.attune { animation:omniaAttune 1.4s ease both; }
 .omnia-wrap { display:flex; flex-direction:column; align-items:center; padding:8px 0 22px; }
-.omnia-figure { animation:omniaFloat 4.5s ease-in-out infinite; filter:drop-shadow(0 0 8px rgba(160,210,240,.35)); }
+.omnia-figure { position:relative; width:88px; height:128px; display:flex; align-items:center; justify-content:center; animation:omniaFloat 4.5s ease-in-out infinite; filter:drop-shadow(0 0 8px rgba(160,210,240,.35)); cursor:pointer; outline:none; }
+.omnia-figure:focus-visible { filter:drop-shadow(0 0 14px rgba(184,234,255,.75)); }
+.omnia-crystal-layer, .omnia-shard-layer, .omnia-symbol-layer, .omnia-morph-ring { position:absolute; inset:0; display:flex; align-items:center; justify-content:center; transform-origin:center; pointer-events:none; }
+.omnia-crystal-layer { transition:opacity .28s ease, transform .28s ease, filter .3s ease; filter:var(--omnia-filter, none); }
+.omnia-shard-layer { opacity:0; overflow:visible; }
+.omnia-figure.morphing .omnia-shard-layer { opacity:1; }
+.omnia-symbol-layer { opacity:0; color:#b8eaff; }
+.omnia-symbol-layer svg { width:88px; height:88px; overflow:visible; opacity:.55; }
+.omnia-morph-ring { opacity:0; border:1px solid rgba(184,234,255,.45); border-radius:50%; width:82px; height:82px; margin:auto; box-shadow:0 0 18px rgba(142,204,224,.24), inset 0 0 20px rgba(142,204,224,.12); }
+.omnia-companion { position:absolute; right:-1px; top:35px; width:27px; height:27px; opacity:0; pointer-events:none; }
+.omnia-companion svg { width:100%; height:100%; overflow:visible; filter:drop-shadow(0 0 9px var(--omnia-companion-color,#b8eaff)); }
+@keyframes omniaCompanionDrift { 0%,100%{transform:translate(0,0) scale(.9);} 50%{transform:translate(8px,-13px) scale(1.08);} }
+.omnia-figure.has-companion .omnia-companion { opacity:.95; animation:omniaCompanionDrift 3.8s ease-in-out infinite; }
+.omnia-figure.morphing .omnia-crystal-layer { opacity:.12; transform:scale(.82) rotate(10deg); filter:blur(3px); }
+.omnia-figure.morphing .omnia-symbol-layer { opacity:0; }
+.omnia-figure.morphing .omnia-morph-ring { animation:omniaRingTurn 1.9s ease both; }
 .omnia-name { font-family:Cormorant Garamond,serif; font-size:11px; letter-spacing:.42em; text-transform:uppercase; color:#8ecce0; margin-top:10px; opacity:.85; }
 .omnia-speak { font-size:12px; color:var(--muted); line-height:1.85; text-align:center; padding:0 4px; margin-top:10px; font-style:italic; }
 .omnia-speak em { color:#a8d8ec; font-style:normal; }
@@ -693,6 +760,12 @@
   background:transparent; cursor:pointer;
 }
 #tutDrawerCapture.tut-cap-on { display:block; }
+body:not(.tut-live) #tutOverlay,
+body:not(.tut-live) #tutDrawerFloat,
+body:not(.tut-live) #tutDrawerCapture {
+  display:none !important;
+  pointer-events:none !important;
+}
 
 /* Omnia replay button in drawer header */
 .drawer-header { position:relative; }
@@ -808,7 +881,8 @@
 
     <!-- Omnia character -->
     <div class="omnia-wrap">
-      <div class="omnia-figure">
+      <div class="omnia-figure" id="guideOmniaFigure" role="button" tabindex="0" aria-label="Reveal an Omnia symbol">
+        <div class="omnia-crystal-layer">
         <svg viewBox="0 0 80 130" width="72" height="118" xmlns="http://www.w3.org/2000/svg" style="overflow:visible;">
           <defs>
             <linearGradient id="og1" x1="0%" y1="0%" x2="100%" y2="100%">
@@ -861,22 +935,121 @@
             <line x1="11.5" y1="81.5" x2="11.5" y2="86.5" stroke="#b8eaff" stroke-width="0.7"/>
           </g>
         </svg>
+        </div>
+        <svg class="omnia-shard-layer" id="guideOmniaShardSvg" viewBox="0 0 100 130" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"></svg>
+        <div class="omnia-morph-ring"></div>
+        <div class="omnia-symbol-layer" id="guideOmniaSymbolLayer"></div>
+        <div class="omnia-companion" id="guideOmniaCompanion"></div>
       </div>
       <div class="omnia-name">Omnia</div>
       <div class="omnia-speak">I am here to guide your practice today.<br>Tell me — <em>have you walked this path before?</em></div>
     </div>
 
-    <!-- Prior practice toggle — Omnia's question -->
-    <button class="guide-prior-btn" id="guidePriorBtn">
-      <span>I have prior practice with meditation or hermeticism</span>
-      <span id="guidePriorChevron" style="font-size:12px; color:var(--muted); transition:transform .25s;">›</span>
-    </button>
+    <div class="guide-tabs">
+      <button class="guide-tab active" id="guidePathTab">Path</button>
+      <button class="guide-tab" id="guideOmniaTab">Upgrade</button>
+    </div>
+
+    <div class="guide-tab-panel" id="guideOmniaPanel" style="display:none;">
+    <div class="omnia-engine" id="omniaEngine">
+      <div class="omnia-engine-top">
+        <div>
+          <div class="omnia-engine-kicker">Akashic Engine</div>
+          <div class="omnia-engine-title" id="omniaStageName">Vessel</div>
+          <div class="omnia-engine-sub" id="omniaStageSub">Omnia is learning to take form through your practice.</div>
+        </div>
+        <div class="omnia-akasha-bank">
+          <div class="omnia-akasha-val" id="omniaAkashaWallet">0</div>
+          <div class="omnia-akasha-key">akasha</div>
+        </div>
+      </div>
+
+      <div class="omnia-reservoir">
+        <div class="omnia-reservoir-row">
+          <span class="omnia-reservoir-label">reservoir</span>
+          <span class="omnia-reservoir-value" id="omniaReservoirText">0 / 0</span>
+        </div>
+        <div class="omnia-bar"><div class="omnia-bar-fill" id="omniaReservoirFill"></div></div>
+        <button class="omnia-collect-btn" id="omniaCollectBtn">Collect Akasha</button>
+        <div class="omnia-engine-sub" id="omniaRateText" style="text-align:center; margin-top:9px;"></div>
+      </div>
+
+      <div class="omnia-step-card">
+        <div class="omnia-step-top">
+          <div>
+            <div class="omnia-step-label">Bardon Step</div>
+            <div class="omnia-step-name" id="omniaStepName">Step I</div>
+          </div>
+          <div class="omnia-step-num" id="omniaStepNum">I</div>
+        </div>
+        <div class="omnia-step-text" id="omniaStepText"></div>
+        <div class="omnia-step-reqs" id="omniaStepReqs"></div>
+        <div class="omnia-action-row">
+          <button class="omnia-mini-btn" id="omniaActionBtn">Attune Omnia</button>
+          <button class="omnia-mini-btn" id="omniaAdvanceBtn">Advance Step</button>
+        </div>
+      </div>
+
+      <div class="omnia-body-grid" id="omniaBodyGrid"></div>
+
+      <div class="omnia-rec-card">
+        <div class="omnia-rec-top">
+          <div class="omnia-rec-label">Omnia recommends</div>
+          <div class="omnia-rec-reward" id="omniaRecReward"></div>
+        </div>
+        <div class="omnia-rec-name" id="omniaRecName">Clock</div>
+        <div class="omnia-rec-text" id="omniaRecText"></div>
+        <div class="omnia-rec-actions">
+          <button class="omnia-mini-btn" id="omniaBeginRecBtn">Begin</button>
+          <button class="omnia-mini-btn" id="omniaNewRecBtn">New Reading</button>
+        </div>
+      </div>
+
+      <div class="omnia-upgrades" id="omniaUpgradeGrid"></div>
+      <div class="omnia-cosmetics" id="omniaCosmeticGrid"></div>
+    </div>
+    </div>
+
+    <div class="guide-tab-panel" id="guidePathPanel">
+
+    <div class="guide-route-grid" id="guideRouteGrid">
+      <button class="guide-route-card" id="guideBeginnerPathBtn">
+        <div class="guide-route-title">I am new to this</div>
+        <div class="guide-route-text">For newer meditators. Omnia gives you a specific daily sequence so you can practice without guessing.</div>
+      </button>
+      <button class="guide-route-card experienced" id="guideExperiencedPathBtn">
+        <div class="guide-route-title">Tell Omnia where I am</div>
+        <div class="guide-route-text">For experienced meditators. Mark your current capacity and Omnia will recommend the next useful pressure point.</div>
+      </button>
+    </div>
+    <div class="guide-confirm-panel" id="guideConfirmPanel">
+      <div class="guide-locked-kicker">Confirm Path</div>
+      <div class="guide-confirm-title" id="guideConfirmTitle"></div>
+      <div class="guide-confirm-text" id="guideConfirmText"></div>
+      <div class="guide-cadence-control" id="guideConfirmCadenceControl" style="display:flex; margin:0 0 12px; padding:10px 0 0;">
+        <div class="guide-cadence-label">Recommended cadence</div>
+        <button class="guide-cadence-toggle" id="guideConfirmTwoADayBtn">2x/day on</button>
+      </div>
+      <div class="guide-confirm-actions" id="guideConfirmActions">
+        <button class="guide-confirm-btn ghost" id="guideConfirmBackBtn">Back</button>
+        <button class="guide-confirm-btn" id="guideConfirmCommitBtn">Begin Path</button>
+      </div>
+    </div>
+    <div class="guide-locked-path" id="guideLockedPath">
+      <div class="guide-locked-kicker">Path Sealed</div>
+      <div class="guide-locked-title" id="guideLockedTitle"></div>
+      <div class="guide-locked-text" id="guideLockedText"></div>
+      <div class="guide-cadence-control" id="guideCadenceControl">
+        <div class="guide-cadence-label">Daily cadence</div>
+        <button class="guide-cadence-toggle" id="guideTwoADayBtn">2x/day on</button>
+      </div>
+    </div>
 
     <!-- Assessment panel -->
     <div id="guideAssessmentPanel" style="display:none; margin-top:20px;">
       <div class="omnia-speak left" style="margin-bottom:16px;">Good. <em>Tell me where you stand with each discipline.</em> I will remember.</div>
       <div id="guideExRows"></div>
-      <button class="btn primary" id="guideGenerateBtn" style="margin-top:20px; background:rgba(142,204,224,0.1); border-color:rgba(142,204,224,.32); color:#8ecce0;">Show me today's path →</button>
+      <button class="btn primary" id="guideGenerateBtn" style="margin-top:20px; background:rgba(142,204,224,0.1); border-color:rgba(142,204,224,.32); color:#8ecce0;">Ask Omnia for recommendations →</button>
     </div>
 
     <!-- Plan output -->
@@ -886,8 +1059,13 @@
         <div style="font-size:9px; color:var(--muted); opacity:.6;" id="guidePlanDayLabel"></div>
       </div>
       <div style="font-size:9px; letter-spacing:.12em; color:#8ecce0; text-transform:uppercase; margin-bottom:14px;" id="guidePlanFocus"></div>
+      <div class="guide-plan-controls" id="guidePlanControls">
+        <div class="guide-cadence-label">Cadence</div>
+        <button class="guide-cadence-toggle" id="guidePlanTwoADayBtn">2x/day on</button>
+      </div>
       <div id="guidePlanCards"></div>
       <div class="omnia-response" style="margin-top:18px; padding-bottom:8px;">Go well. Return when you are ready.</div>
+    </div>
     </div>
   </div>
 
@@ -1460,6 +1638,7 @@
     <div id="concAdaptWrap"></div>
     <div class="survey-submit">
       <button class="btn primary conc-btn" id="concSaveBtn">Save &amp; Continue</button>
+      <button class="btn ghost conc-btn" id="concSaveRepeatBtn" style="margin-top:10px; display:none;">Save &amp; Repeat</button>
     </div>
   </div>
 
@@ -1720,7 +1899,7 @@
   <!-- SESSION -->
   <div class="screen" id="sessionScreen">
     <div class="session-header">
-      <button class="session-discard-btn" onclick="showSessionEndModal()" title="End session">✕</button>
+      <button class="session-discard-btn" onclick="discardSession('awareness')" title="Discard session">✕</button>
       <span class="session-title">active session</span>
       <button class="session-end-btn" id="endBtn">End Early</button>
     </div>
@@ -1846,17 +2025,6 @@
     <div class="history-list" id="historyList"></div>
   </div>
 </div>
-<!-- ─── Session End Modal ─── -->
-<div id="sessionEndModal">
-  <div class="sem-card">
-    <div class="sem-title">End Session?</div>
-    <div class="sem-sub" id="semSub">Your session is still running</div>
-    <button class="sem-btn sem-btn-keep" id="semKeepBtn">✦ Keep XP</button>
-    <button class="sem-btn sem-btn-lose" id="semLoseBtn">✕ Discard &amp; Lose XP</button>
-    <button class="sem-btn sem-btn-back" id="semBackBtn">← Back to Session</button>
-  </div>
-</div>
-
 <div class="drawer-overlay" id="drawerOverlay">
   <div class="drawer" id="drawer">
     <div class="drawer-header">
@@ -2617,6 +2785,17 @@ function fmtInterval(sec) {
 }
 
 function showToast(msg, dur) { dur = dur || 2400; const t = document.getElementById('toast'); t.textContent = msg; t.classList.add('show'); setTimeout(function() { t.classList.remove('show'); }, dur); }
+function clearStaleInteractionLocks() {
+  var cap = document.getElementById('tutDrawerCapture');
+  var tut = document.getElementById('tutOverlay');
+  var float = document.getElementById('tutDrawerFloat');
+  var drawer = document.getElementById('drawerOverlay');
+  document.body.classList.remove('tut-live');
+  if (cap) cap.classList.remove('tut-cap-on');
+  if (tut) { tut.style.display = 'none'; tut.style.opacity = '0'; tut.style.pointerEvents = 'none'; }
+  if (float) float.classList.remove('tut-float-on');
+  if (drawer) drawer.classList.remove('show');
+}
 function showScreen(id) {
   if (id === 'homeScreen') {
     // Hide all overlay screens, show home base layer
@@ -2631,6 +2810,15 @@ function showScreen(id) {
     el.classList.add('active');
   }
 }
+window.addEventListener('load', function() {
+  if (localStorage.getItem('presence_visited')) clearStaleInteractionLocks();
+});
+document.addEventListener('DOMContentLoaded', function() {
+  if (!localStorage.getItem('presence_visited')) return;
+  clearStaleInteractionLocks();
+  setTimeout(clearStaleInteractionLocks, 250);
+  setTimeout(clearStaleInteractionLocks, 1000);
+});
 function randomPrompt(exclude) { var p; do { p = PROMPTS[Math.floor(Math.random() * PROMPTS.length)]; } while (p === exclude); return p; }
 
 // ═══════════════════════════════════════
@@ -3435,7 +3623,7 @@ document.getElementById('settingsBack').addEventListener('click', function() {
 
 // ── EXPORT ──────────────────────────────────────────────
 document.getElementById('exportBtn').addEventListener('click', function() {
-  var keys = ['presence_v3','presence_conc_v1','presence_prayer_v1','presence_journal_v1','presence_soul_mirror_v1','bardon_rpg_v2','presence_visited'];
+  var keys = ['presence_v3','presence_conc_v1','presence_prayer_v1','presence_journal_v1','presence_soul_mirror_v1','presence_guide_v1','presence_omnia_v1','bardon_rpg_v2','presence_visited'];
   var backup = { version: 1, exportedAt: new Date().toISOString(), data: {} };
   keys.forEach(function(k) {
     var val = localStorage.getItem(k);
@@ -3466,7 +3654,7 @@ document.getElementById('importFile').addEventListener('change', function(e) {
       if (!backup.data || backup.version !== 1) throw new Error('Invalid backup file.');
       // Allowlist: only restore keys that the export writes. Prevents a malicious
       // backup from overwriting auth tokens or injecting unknown localStorage keys.
-      var ALLOWED_KEYS = ['presence_v3','presence_conc_v1','presence_prayer_v1','presence_journal_v1','presence_soul_mirror_v1','bardon_rpg_v2','presence_visited'];
+      var ALLOWED_KEYS = ['presence_v3','presence_conc_v1','presence_prayer_v1','presence_journal_v1','presence_soul_mirror_v1','presence_guide_v1','presence_omnia_v1','bardon_rpg_v2','presence_visited'];
       var count = 0, skipped = 0;
       Object.entries(backup.data).forEach(function([k, v]) {
         if (ALLOWED_KEYS.indexOf(k) === -1) { skipped++; return; }
@@ -3854,6 +4042,7 @@ function renderConcHome() {
 }
 
 var concCountInterval = null; // track countdown so we can cancel it
+var concResultSaved = false; // prevents double-saving from multiple button hooks
 
 function startConcentration() {
   concStartTime = null; // explicitly null until countdown finishes
@@ -3941,13 +4130,26 @@ function showConcResult(seconds) {
   document.getElementById('concResultDuration').textContent = seconds + ' seconds';
   document.getElementById('concNotes').value = '';
   document.getElementById('concAdaptWrap').innerHTML = '';
+  concResultSaved = false;
   var saveBtn = document.getElementById('concSaveBtn');
+  var repeatBtn = document.getElementById('concSaveRepeatBtn');
   saveBtn.textContent = 'Save & Continue';
   saveBtn.onclick = saveConcResult;
+  if (repeatBtn) {
+    repeatBtn.style.display = 'block';
+    repeatBtn.disabled = false;
+    repeatBtn.textContent = 'Save & Repeat';
+    repeatBtn.onclick = function() { saveConcResult(true); };
+  }
   showScreen('concResultScreen');
 }
 
-function saveConcResult() {
+function saveConcResult(repeatAfter) {
+  repeatAfter = repeatAfter === true;
+  if (concResultSaved) {
+    if (repeatAfter) startConcentration();
+    return;
+  }
   var seconds = parseInt(document.getElementById('concResultBig').textContent);
   var notes = document.getElementById('concNotes').value.trim();
 
@@ -3959,13 +4161,15 @@ function saveConcResult() {
       + '</div>';
     return;
   }
+  concResultSaved = true;
 
   // XP = seconds held (simple and clean)
   var xpEarned = seconds;
+  var isNewBest = seconds > concState.bestSeconds;
 
   concState.xp += xpEarned;
   if (isConcNewSession()) concState.totalSessions++;
-  if (seconds > concState.bestSeconds) concState.bestSeconds = seconds;
+  if (isNewBest) concState.bestSeconds = seconds;
 
   // Level up
   var concPrevLevel1 = concState.level;
@@ -3983,15 +4187,28 @@ function saveConcResult() {
   });
   if (concState.history.length > 100) concState.history = concState.history.slice(0, 100);
   saveConcState();
+  awardOmniaForExercise('clock', seconds);
   if (syncEnabled && authToken) syncPushData();
+
+  var repeatBtn = document.getElementById('concSaveRepeatBtn');
+  if (repeatBtn) {
+    repeatBtn.disabled = true;
+    repeatBtn.style.display = 'none';
+  }
 
   var div = document.getElementById('concAdaptWrap');
   div.innerHTML = '<div class="adapt-card" style="border-color:rgba(212,149,110,.2);">'
     + '<div class="adapt-title" style="color:#d4956e;">result</div>'
     + '<div class="adapt-text">+' + xpEarned + ' XP earned</div>'
     + '<div class="adapt-text" style="margin-top:6px;">Rank ' + concState.level + ': ' + getConcRank(concState.level) + '</div>'
-    + (seconds >= concState.bestSeconds ? '<div class="adapt-text" style="margin-top:6px;color:#d4956e;">New personal best!</div>' : '')
+    + (isNewBest ? '<div class="adapt-text" style="margin-top:6px;color:#d4956e;">New personal best!</div>' : '')
     + '</div>';
+
+  if (repeatAfter) {
+    renderConcHome();
+    setTimeout(function() { startConcentration(); }, 260);
+    return;
+  }
 
   var saveBtn = document.getElementById('concSaveBtn');
   saveBtn.textContent = 'Done';
@@ -5210,6 +5427,7 @@ function saveVisSessionResult() {
   });
   if (concState.history.length > 100) concState.history = concState.history.slice(0, 100);
   saveConcState();
+  awardOmniaForExercise('visual', totalXP);
 
   var div = document.getElementById('visAdaptWrap');
   div.innerHTML = '<div class="adapt-card" style="border-color:rgba(212,149,110,.2);">'
@@ -5448,32 +5666,6 @@ document.getElementById('exerciseGrid').addEventListener('click', function(e) {
   } else {
     openExerciseSetup(card.dataset.exercise);
   }
-});
-
-// ── Session end modal (X button on awareness session screen) ──
-function showSessionEndModal() {
-  var modal = document.getElementById('sessionEndModal');
-  var elapsed = sessionStartTime ? Math.max(1, Math.round((Date.now() - sessionStartTime) / 60000)) : 0;
-  document.getElementById('semSub').textContent = elapsed + ' min elapsed';
-  modal.style.display = 'flex';
-  requestAnimationFrame(function() { modal.classList.add('visible'); });
-}
-function hideSessionEndModal() {
-  var modal = document.getElementById('sessionEndModal');
-  modal.classList.remove('visible');
-  setTimeout(function() { modal.style.display = 'none'; }, 220);
-}
-document.getElementById('semBackBtn').addEventListener('click', hideSessionEndModal);
-document.getElementById('semKeepBtn').addEventListener('click', function() {
-  hideSessionEndModal();
-  endSession(); // awards XP and shows survey
-});
-document.getElementById('semLoseBtn').addEventListener('click', function() {
-  hideSessionEndModal();
-  clearTimeout(sessionTimerHandle);
-  sessionStartTime = null;
-  renderHome();
-  showScreen('homeScreen');
 });
 
 // ── Discard session (red X button on all session screens) ─
@@ -6402,6 +6594,7 @@ function saveAudResult() {
   });
   if (concState.history.length > 100) concState.history = concState.history.slice(0, 100);
   saveConcState();
+  awardOmniaForExercise('auditory', totalXP);
 
   var div = document.getElementById('audAdaptWrap');
   div.innerHTML = '<div class="adapt-card" style="border-color:rgba(212,149,110,.2);">'
@@ -6448,7 +6641,7 @@ document.getElementById('audViewHistoryBtn').addEventListener('click', function(
 
 // ── Thought Control modes ────────────────────────────────
 var tcMode = 'observation'; // 'observation' | 'focus' | 'vacancy'
-var tcDuration = 10; // minutes
+var tcDuration = 5; // minutes
 
 var TC_MODE_DEFS = {
   observation: {
@@ -6571,6 +6764,8 @@ var tcIntrusions = [];  // timestamps of each thought tap
 var tcLastTapTime = null;
 var _tcAlarmInterval = null;  // loops the alarm until dismissed
 var _tcCompletedElapsed = 0;  // elapsed seconds saved for dismissal
+var tcResultElapsedSec = 0;
+var tcResultSaved = false;
 
 // Thought duration wired in openExerciseSetup
 
@@ -6746,6 +6941,8 @@ function dismissTCAlarm() {
 }
 
 function showTCResult(elapsedSec, completed) {
+  tcResultElapsedSec = elapsedSec;
+  tcResultSaved = false;
   var totalIntrusions = tcIntrusions.length;
   var minutes = elapsedSec / 60;
   var rate = minutes > 0 ? (totalIntrusions / minutes).toFixed(1) : '0.0';
@@ -6773,12 +6970,14 @@ function showTCResult(elapsedSec, completed) {
 }
 
 function saveTCResult() {
+  if (tcResultSaved) return;
   var notes = document.getElementById('tcNotes').value.trim();
-  var elapsedSec = Math.floor((Date.now() - tcStartTime) / 1000);
+  var elapsedSec = tcResultElapsedSec || Math.floor((Date.now() - tcStartTime) / 1000);
+  tcResultSaved = true;
   // XP = seconds of session — same rate as other concentration exercises
   var xpEarned = Math.floor(elapsedSec * 0.5); // half rate since passive
   var bestGap = 0;
-  var points = [tcStartTime].concat(tcIntrusions).concat([Date.now()]);
+  var points = [tcStartTime].concat(tcIntrusions).concat([tcStartTime + elapsedSec * 1000]);
   for (var i = 0; i < points.length - 1; i++) {
     var g = Math.floor((points[i+1] - points[i]) / 1000);
     if (g > bestGap) bestGap = g;
@@ -6801,10 +7000,12 @@ function saveTCResult() {
     notes: notes,
     type: 'thought',
     tcMode: tcMode,
+    durationSec: elapsedSec,
     object: tcIntrusions.length + ' thoughts in ' + fmtTimer(elapsedSec)
   });
   if (concState.history.length > 100) concState.history = concState.history.slice(0, 100);
   saveConcState();
+  awardOmniaForExercise('thought', elapsedSec);
 
   document.getElementById('tcAdaptWrap').innerHTML = '<div class="adapt-card" style="border-color:rgba(164,126,184,.2);">'
     + '<div class="adapt-title" style="color:#a47eb8;">session results</div>'
@@ -6905,6 +7106,7 @@ function showAsanaResult(seconds) {
   });
   if (concState.history.length > 100) concState.history = concState.history.slice(0, 100);
   saveConcState();
+  awardOmniaForExercise('asana', seconds);
 
   // Display
   document.getElementById('asanaResultTime').textContent = fmtAsanaTime(seconds);
@@ -7665,6 +7867,903 @@ var GUIDE_EXERCISES = [
   { id:'soulmirror', name:'Soul Mirror',     sub:'Trait tracking & pore breathing',      opts:['New to me','Familiar'] }
 ];
 
+// ── Omnia growth system ───────────────────────────────────
+var OMNIA_DEFAULT = {
+  akasha: 600,
+  reservoir: 420,
+  lastTick: Date.now(),
+  bodies: { physical:18, astral:16, mental:20 },
+  upgrades: { current:1, vessel:1, discernment:1 },
+  bardonStep:1,
+  rec: null,
+  recStreak: 0,
+  completedRecommended: 0,
+  totalAkashaEarned: 1020,
+  cosmetics: {
+    palette:'aether',
+    entity:'omnia',
+    companion:null,
+    unlockedPalettes:['aether'],
+    unlockedEntities:['omnia'],
+    unlockedCompanions:[]
+  }
+};
+
+var OMNIA_BODY_META = {
+  physical: { name:'Physical Body', color:'#d49898', desc:'steadiness, posture, vitality' },
+  astral: { name:'Astral Body', color:'#c4a8d4', desc:'feeling, image, symbol' },
+  mental: { name:'Mental Body', color:'#98b4cc', desc:'attention, silence, command' }
+};
+
+var OMNIA_EXERCISE_META = {
+  clock: { name:'Clock', body:'mental', open:'clock', text:'Follow the seconds hand until attention breaks. Omnia wants clean, honest concentration.' },
+  visual: { name:'Visualization', body:'astral', open:'visual', text:'Hold one image until it steadies. This feeds Omnia with form and color.' },
+  auditory: { name:'Auditory', body:'astral', open:'auditory', text:'Listen without leaning forward. The astral body learns through subtle vibration.' },
+  thought: { name:'Thought Control', body:'mental', open:'thought', text:'Observe, focus, or empty the mind. This strengthens Omnia\'s mental body.' },
+  asana: { name:'Asana', body:'physical', open:'asana', text:'Make the body still enough to become a reliable instrument.' },
+  pore_breathing: { name:'Pore Breathing', body:'physical', open:'soulmirror', text:'Draw vitality through the whole body. Omnia needs a living vessel, not only light.' }
+};
+
+var OMNIA_UPGRADES = [
+  { id:'current', name:'Akashic Engine', sub:'Generate akasha more quickly each hour', base:520, step:260 },
+  { id:'vessel', name:'Deep Vessel', sub:'Reservoir capacity before overflow', base:480, step:240 },
+  { id:'discernment', name:'Discernment', sub:'Better recommendations and bonus rewards', base:640, step:320 }
+];
+
+var OMNIA_PALETTES = [
+  { id:'aether', name:'Aether Blue', cost:0, color:'#b8eaff', filter:'none', sub:'Original crystalline guide-light' },
+  { id:'rose', name:'Rose Astral', cost:820, color:'#ffc4d8', filter:'hue-rotate(128deg) saturate(1.28) brightness(1.08)', sub:'A softer astral radiance' },
+  { id:'solar', name:'Solar Gold', cost:1040, color:'#f0d39a', filter:'hue-rotate(182deg) saturate(1.2) brightness(1.1)', sub:'A warm body of will' },
+  { id:'violet', name:'Violet Mind', cost:1280, color:'#c4a8d4', filter:'hue-rotate(74deg) saturate(1.22) brightness(1.04)', sub:'A quiet mental flame' },
+  { id:'verdant', name:'Verdant Vessel', cost:1460, color:'#98d8bd', filter:'hue-rotate(246deg) saturate(1.12) brightness(1.02)', sub:'A healing green current' }
+];
+
+var OMNIA_ENTITIES = [
+  { id:'omnia', name:'Omnia', cost:0, color:'#b8eaff', sub:'The first guide-form' },
+  { id:'noema', name:'Noema', cost:1600, color:'#98b4cc', sub:'A sharper mental entity design' },
+  { id:'aurel', name:'Aurel', cost:2200, color:'#f0d39a', sub:'A solar entity design for disciplined work' },
+  { id:'elys', name:'Elys', cost:2600, color:'#c4a8d4', sub:'An astral entity design for image and symbol' }
+];
+
+var OMNIA_COMPANIONS = [
+  { id:'wisp', name:'Akashic Wisp', cost:700, color:'#b8eaff', sub:'A small orbiting practice companion' },
+  { id:'ember', name:'Solar Ember', cost:980, color:'#f0d39a', sub:'A warm companion for steady effort' },
+  { id:'mote', name:'Violet Mote', cost:1180, color:'#c4a8d4', sub:'A tiny watcher for mental work' },
+  { id:'corgi', name:'Astral Corgi', cost:1500, color:'#d9a069', sub:'A loyal little companion for returning to practice' }
+];
+
+var OMNIA_BARDON_STEPS = [
+  {
+    step:1,
+    roman:'I',
+    name:'Step I · Formation',
+    text:'Build Omnia as a balanced instrument. Physical stillness, astral responsiveness, and mental command must all become real before the next step opens.',
+    req:{ physical:25, astral:25, mental:25, recommended:3 }
+  },
+  {
+    step:2,
+    roman:'II',
+    name:'Step II · Consolidation',
+    text:'Omnia has crossed the first threshold. The work now becomes less about beginning and more about balance, repetition, and refinement.',
+    req:{ physical:55, astral:55, mental:55, recommended:12 }
+  },
+  {
+    step:3,
+    roman:'III',
+    name:'Step III · Integration',
+    text:'The three bodies are becoming one coordinated field. Later steps will unlock as Omnia grows through sustained practice.',
+    req:{ physical:90, astral:90, mental:90, recommended:30 }
+  }
+];
+
+function cloneOmniaDefault() {
+  return JSON.parse(JSON.stringify(OMNIA_DEFAULT));
+}
+
+function loadOmniaState() {
+  try {
+    var s = localStorage.getItem('presence_omnia_v1');
+    if (!s) return cloneOmniaDefault();
+    var parsed = JSON.parse(s);
+    var merged = cloneOmniaDefault();
+    Object.assign(merged, parsed);
+    merged.bodies = Object.assign(cloneOmniaDefault().bodies, parsed.bodies || {});
+    merged.upgrades = Object.assign(cloneOmniaDefault().upgrades, parsed.upgrades || {});
+    merged.cosmetics = Object.assign(cloneOmniaDefault().cosmetics, parsed.cosmetics || {});
+    merged.cosmetics.unlockedPalettes = merged.cosmetics.unlockedPalettes || ['aether'];
+    merged.cosmetics.unlockedEntities = merged.cosmetics.unlockedEntities || ['omnia'];
+    merged.cosmetics.unlockedCompanions = merged.cosmetics.unlockedCompanions || [];
+    if (!merged.lastTick) merged.lastTick = Date.now();
+    return merged;
+  } catch(e) { return cloneOmniaDefault(); }
+}
+
+function saveOmniaState() {
+  try { localStorage.setItem('presence_omnia_v1', JSON.stringify(omniaState)); } catch(e) {}
+}
+
+var omniaState = loadOmniaState();
+
+function omniaFindCosmetic(list, id) {
+  return list.find(function(item) { return item.id === id; }) || list[0];
+}
+
+function omniaCosmeticUnlocked(kind, id) {
+  var c = omniaState.cosmetics || cloneOmniaDefault().cosmetics;
+  if (kind === 'palette') return (c.unlockedPalettes || []).indexOf(id) !== -1;
+  if (kind === 'entity') return (c.unlockedEntities || []).indexOf(id) !== -1;
+  if (kind === 'companion') return (c.unlockedCompanions || []).indexOf(id) !== -1;
+  return false;
+}
+
+function omniaCosmeticSelected(kind, id) {
+  var c = omniaState.cosmetics || {};
+  if (kind === 'palette') return c.palette === id;
+  if (kind === 'entity') return c.entity === id;
+  if (kind === 'companion') return c.companion === id;
+  return false;
+}
+
+function omniaUnlockList(kind) {
+  if (!omniaState.cosmetics) omniaState.cosmetics = cloneOmniaDefault().cosmetics;
+  if (kind === 'palette') return omniaState.cosmetics.unlockedPalettes;
+  if (kind === 'entity') return omniaState.cosmetics.unlockedEntities;
+  return omniaState.cosmetics.unlockedCompanions;
+}
+
+function renderOmniaEntityPreview(item) {
+  var color = item.color || '#b8eaff';
+  if (item.id === 'noema') {
+    return '<svg viewBox="0 0 48 58" aria-hidden="true">'
+      + '<polygon points="24,4 38,18 38,40 24,54 10,40 10,18" fill="rgba(255,255,255,.04)" stroke="' + color + '" stroke-width="1.2" opacity=".6"/>'
+      + '<line x1="10" y1="18" x2="38" y2="40" stroke="' + color + '" stroke-width=".7" opacity=".3"/>'
+      + '<line x1="38" y1="18" x2="10" y2="40" stroke="' + color + '" stroke-width=".7" opacity=".3"/>'
+      + '<polygon points="24,16 32,29 24,42 16,29" fill="' + color + '" opacity=".15" stroke="' + color + '" stroke-width="1.1"/>'
+      + '<circle cx="24" cy="29" r="3.5" fill="rgba(255,255,255,.08)" stroke="' + color + '" stroke-width="1"/>'
+      + '<circle cx="24" cy="29" r="1.4" fill="' + color + '" opacity=".9"/>'
+      + '</svg>';
+  }
+  if (item.id === 'aurel') {
+    return '<svg viewBox="0 0 56 56" aria-hidden="true">'
+      + '<path d="M28 3v9M28 44v9M3 28h9M44 28h9M10 10l7 7M39 39l7 7M46 10l-7 7M17 39l-7 7" stroke="' + color + '" stroke-width="1.35" stroke-linecap="round" opacity=".72"/>'
+      + '<path d="M28 10 43 20 39 39 17 39 13 20Z" fill="rgba(255,255,255,.05)" stroke="' + color + '" stroke-width="1.4"/>'
+      + '<path d="M28 14 36 25 28 37 20 25Z" fill="' + color + '" opacity=".26"/>'
+      + '<circle cx="28" cy="26" r="5" fill="' + color + '" opacity=".45"/>'
+      + '</svg>';
+  }
+  if (item.id === 'elys') {
+    return '<svg viewBox="0 0 56 58" aria-hidden="true">'
+      + '<path d="M28 5C18 12 14 23 16 35c2 11 9 17 12 19 3-2 10-8 12-19 2-12-2-23-12-30Z" fill="rgba(255,255,255,.05)" stroke="' + color + '" stroke-width="1.35"/>'
+      + '<path d="M17 23c-6 3-9 9-9 16 6-1 12-5 16-12M39 23c6 3 9 9 9 16-6-1-12-5-16-12" fill="none" stroke="' + color + '" stroke-width="1.2" opacity=".62"/>'
+      + '<path d="M28 12c-6 9-6 25 0 36 6-11 6-27 0-36Z" fill="' + color + '" opacity=".24"/>'
+      + '<path d="M23 26c4-6 10-8 15-5-3 1-6 4-8 8-2 4-5 6-9 6 0-3 0-6 2-9Z" fill="' + color + '" opacity=".36"/>'
+      + '</svg>';
+  }
+  return '<svg viewBox="0 0 48 58" aria-hidden="true">'
+    + '<path d="M24 4 36 20 30 52H18L12 20Z" fill="rgba(255,255,255,.05)" stroke="' + color + '" stroke-width="1.4"/>'
+    + '<path d="M24 5v47M13 20h22M18 52l6-32 6 32" fill="none" stroke="' + color + '" stroke-width=".85" opacity=".55"/>'
+    + '<path d="M24 12 30 22 24 32 18 22Z" fill="' + color + '" opacity=".28"/>'
+    + '</svg>';
+}
+
+function renderOmniaCompanionPreview(item) {
+  var color = item.color || '#b8eaff';
+  if (item.id === 'ember') {
+    return '<svg viewBox="0 0 46 46" aria-hidden="true">'
+      + '<path d="M24 4c5 8 12 13 12 24 0 8-6 14-13 14S10 36 10 28c0-7 4-11 8-16-1 7 3 10 6 12 4-6 2-12 0-20Z" fill="' + color + '" opacity=".34" stroke="' + color + '" stroke-width="1.2"/>'
+      + '<path d="M24 25c3 4 5 7 5 10 0 4-3 7-6 7s-6-3-6-7c0-3 2-6 7-10Z" fill="#fff2cf" opacity=".5"/>'
+      + '</svg>';
+  }
+  if (item.id === 'mote') {
+    return '<svg viewBox="0 0 46 46" aria-hidden="true">'
+      + '<path d="M23 4l4 14 14 5-14 5-4 14-5-14-13-5 13-5Z" fill="' + color + '" opacity=".42" stroke="' + color + '" stroke-width="1.1"/>'
+      + '<circle cx="23" cy="23" r="4.5" fill="#fff" opacity=".42"/>'
+      + '</svg>';
+  }
+  if (item.id === 'corgi') {
+    return '<svg viewBox="0 0 58 46" aria-hidden="true">'
+      + '<path d="M15 22 10 8l12 8M43 22l5-14-12 8" fill="#c97f44" stroke="' + color + '" stroke-width="1.1" stroke-linejoin="round"/>'
+      + '<path d="M14 24c1-9 9-15 19-13 9 1 15 7 14 16-1 10-10 15-19 14-9-1-15-7-14-17Z" fill="#d9a069" stroke="' + color + '" stroke-width="1.25"/>'
+      + '<path d="M21 16c3-3 12-4 16 0 0 5-3 9-8 9s-8-4-8-9Z" fill="#fff1d5" opacity=".9"/>'
+      + '<circle cx="22" cy="26" r="2" fill="#201510" opacity=".9"/><circle cx="36" cy="26" r="2" fill="#201510" opacity=".9"/>'
+      + '<path d="M28 29h3l-1.5 2.2Z" fill="#201510" opacity=".9"/><path d="M25 34c3 2 7 2 10 0" fill="none" stroke="#201510" stroke-width="1.1" stroke-linecap="round" opacity=".65"/>'
+      + '<path d="M12 32c-5 1-7-2-5-5 3 3 6 3 8 1" fill="none" stroke="' + color + '" stroke-width="1.4" stroke-linecap="round"/>'
+      + '</svg>';
+  }
+  return '<svg viewBox="0 0 46 46" aria-hidden="true">'
+    + '<path d="M26 8c8 3 12 10 10 17-2 8-10 13-19 10 5-2 8-6 8-11 0-6-4-10-9-12 3-4 6-5 10-4Z" fill="' + color + '" opacity=".36" stroke="' + color + '" stroke-width="1.1"/>'
+    + '<circle cx="22" cy="23" r="7" fill="' + color + '" opacity=".35"/>'
+    + '<circle cx="22" cy="23" r="2.6" fill="#fff" opacity=".54"/>'
+    + '</svg>';
+}
+
+function renderOmniaCosmeticPreview(kind, item) {
+  if (kind === 'entity') {
+    return '<div class="omnia-cosmetic-preview" style="--swatch:' + item.color + ';">' + renderOmniaEntityPreview(item) + '</div>';
+  }
+  if (kind === 'companion') {
+    return '<div class="omnia-cosmetic-preview" style="--swatch:' + item.color + ';">' + renderOmniaCompanionPreview(item) + '</div>';
+  }
+  return '<div class="omnia-cosmetic-preview" style="--swatch:' + item.color + ';"><div class="omnia-cosmetic-swatch" style="--swatch:' + item.color + ';"></div></div>';
+}
+
+function getEntityCrystalSVG(id) {
+  if (id === 'noema') {
+    return '<svg viewBox="0 0 80 130" width="72" height="118" xmlns="http://www.w3.org/2000/svg" style="overflow:visible;">'
+      + '<defs>'
+      + '<linearGradient id="ng1" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#c8dff0" stop-opacity="0.85"/><stop offset="100%" stop-color="#7aa8c8" stop-opacity="0.42"/></linearGradient>'
+      + '<filter id="nglow" x="-30%" y="-30%" width="160%" height="160%"><feGaussianBlur stdDeviation="2" result="blur"/><feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge></filter>'
+      + '</defs>'
+      // Outer hexagonal prism top cap
+      + '<polygon points="40,8 60,19 60,41 40,52 20,41 20,19" fill="rgba(152,180,204,0.07)" stroke="#98b4cc" stroke-width="0.85" opacity="0.65"/>'
+      // Vertical side edges
+      + '<line x1="20" y1="41" x2="20" y2="89" stroke="#98b4cc" stroke-width="0.8" opacity="0.5"/>'
+      + '<line x1="60" y1="41" x2="60" y2="89" stroke="#98b4cc" stroke-width="0.8" opacity="0.5"/>'
+      // Bottom cap
+      + '<polygon points="40,122 60,111 60,89 40,78 20,89 20,111" fill="rgba(152,180,204,0.07)" stroke="#98b4cc" stroke-width="0.85" opacity="0.65"/>'
+      // Cross-diagonal face lines (top cap)
+      + '<line x1="20" y1="19" x2="60" y2="41" stroke="#98b4cc" stroke-width="0.5" opacity="0.28"/>'
+      + '<line x1="60" y1="19" x2="20" y2="41" stroke="#98b4cc" stroke-width="0.5" opacity="0.28"/>'
+      // Cross-diagonal face lines (bottom cap)
+      + '<line x1="20" y1="89" x2="60" y2="111" stroke="#98b4cc" stroke-width="0.5" opacity="0.28"/>'
+      + '<line x1="60" y1="89" x2="20" y2="111" stroke="#98b4cc" stroke-width="0.5" opacity="0.28"/>'
+      // Center horizontal band
+      + '<line x1="20" y1="65" x2="60" y2="65" stroke="#98b4cc" stroke-width="0.6" opacity="0.32"/>'
+      // Vertical spine
+      + '<line x1="40" y1="8" x2="40" y2="122" stroke="#98b4cc" stroke-width="0.5" opacity="0.28"/>'
+      // Central diamond (the "mind" core)
+      + '<polygon points="40,50 56,65 40,80 24,65" fill="rgba(152,180,204,0.18)" stroke="#b8cce0" stroke-width="1.1" filter="url(#nglow)" opacity="0.9"/>'
+      // Inner diamond lines
+      + '<line x1="24" y1="65" x2="56" y2="65" stroke="#b8cce0" stroke-width="0.6" opacity="0.5"/>'
+      + '<line x1="40" y1="50" x2="40" y2="80" stroke="#b8cce0" stroke-width="0.6" opacity="0.5"/>'
+      // Center node
+      + '<circle cx="40" cy="65" r="4.5" fill="rgba(184,204,224,0.12)" stroke="#b8d0e8" stroke-width="1.1"/>'
+      + '<circle cx="40" cy="65" r="1.8" fill="#d4e8f8" opacity="0.92"/>'
+      // Sparkle top-left
+      + '<g opacity=".55" filter="url(#nglow)"><line x1="5" y1="52" x2="11" y2="52" stroke="#b8d0e4" stroke-width="1"/><line x1="8" y1="49" x2="8" y2="55" stroke="#b8d0e4" stroke-width="1"/></g>'
+      // Sparkle bottom-right
+      + '<g opacity=".42"><line x1="69" y1="82" x2="75" y2="82" stroke="#b8d0e4" stroke-width="0.9"/><line x1="72" y1="79" x2="72" y2="85" stroke="#b8d0e4" stroke-width="0.9"/></g>'
+      // Sparkle top-right small
+      + '<g opacity=".35"><line x1="68" y1="25" x2="73" y2="25" stroke="#b8d0e4" stroke-width="0.7"/><line x1="70.5" y1="22.5" x2="70.5" y2="27.5" stroke="#b8d0e4" stroke-width="0.7"/></g>'
+      + '</svg>';
+  }
+  // Default: return the original Omnia crystal (null = keep existing HTML)
+  return null;
+}
+
+function applyOmniaCosmetics() {
+  if (!omniaState.cosmetics) omniaState.cosmetics = cloneOmniaDefault().cosmetics;
+  var palette = omniaFindCosmetic(OMNIA_PALETTES, omniaState.cosmetics.palette || 'aether');
+  var entity = omniaFindCosmetic(OMNIA_ENTITIES, omniaState.cosmetics.entity || 'omnia');
+  var companion = omniaState.cosmetics.companion ? omniaFindCosmetic(OMNIA_COMPANIONS, omniaState.cosmetics.companion) : null;
+  var fig = document.getElementById('guideOmniaFigure');
+  var name = document.querySelector('.omnia-name');
+  var comp = document.getElementById('guideOmniaCompanion');
+  if (fig) {
+    fig.style.setProperty('--omnia-filter', palette.filter || 'none');
+    fig.style.setProperty('--omnia-companion-color', companion ? companion.color : palette.color);
+    fig.dataset.entity = entity.id;
+    fig.classList.toggle('has-companion', !!companion);
+    // Swap crystal layer SVG for non-default entities
+    var crystalLayer = fig.querySelector('.omnia-crystal-layer');
+    if (crystalLayer) {
+      var entitySVG = getEntityCrystalSVG(entity.id);
+      if (entitySVG) {
+        crystalLayer.innerHTML = entitySVG;
+        fig.style.filter = 'drop-shadow(0 0 10px ' + entity.color + '88)';
+      } else {
+        // Restore Omnia default — re-apply palette filter only
+        fig.style.filter = '';
+      }
+    }
+  }
+  if (name) {
+    name.textContent = entity.name;
+    name.style.color = entity.id === 'omnia' ? palette.color : entity.color;
+  }
+  if (comp) {
+    comp.innerHTML = companion ? renderOmniaCompanionPreview(companion) : '';
+    comp.style.display = companion ? 'block' : 'none';
+  }
+}
+
+function renderOmniaCosmeticSection(title, kind, items) {
+  var c = omniaState.cosmetics || cloneOmniaDefault().cosmetics;
+  return '<div class="omnia-cosmetic-section">'
+    + '<div class="omnia-cosmetic-title">' + title + '</div>'
+    + items.map(function(item) {
+      var unlocked = omniaCosmeticUnlocked(kind, item.id);
+      var selected = omniaCosmeticSelected(kind, item.id);
+      var label = selected ? 'Selected' : unlocked ? 'Select' : 'Unlock ' + item.cost;
+      var disabled = !unlocked && (omniaState.akasha || 0) < item.cost;
+      var sub = item.sub + (!unlocked && item.cost ? ' · ' + item.cost + ' akasha' : '');
+      return '<div class="omnia-cosmetic-card' + (selected ? ' selected' : '') + '">'
+        + '<div class="omnia-cosmetic-main">'
+        + renderOmniaCosmeticPreview(kind, item)
+        + '<div><div class="omnia-cosmetic-name">' + item.name + '</div><div class="omnia-cosmetic-sub">' + sub + '</div></div>'
+        + '</div>'
+        + '<button class="omnia-mini-btn" data-omnia-cosmetic-kind="' + kind + '" data-omnia-cosmetic-id="' + item.id + '"' + (selected || disabled ? ' disabled' : '') + '>' + label + '</button>'
+        + '</div>';
+    }).join('')
+    + (kind === 'companion' && c.companion ? '<button class="omnia-mini-btn" data-omnia-cosmetic-kind="companion" data-omnia-cosmetic-id="none">Dismiss Companion</button>' : '')
+    + '</div>';
+}
+
+function unlockOrSelectOmniaCosmetic(kind, id) {
+  if (!omniaState.cosmetics) omniaState.cosmetics = cloneOmniaDefault().cosmetics;
+  if (kind === 'companion' && id === 'none') {
+    omniaState.cosmetics.companion = null;
+    saveOmniaState();
+    renderOmniaEngine();
+    return;
+  }
+  var list = kind === 'palette' ? OMNIA_PALETTES : kind === 'entity' ? OMNIA_ENTITIES : OMNIA_COMPANIONS;
+  var item = omniaFindCosmetic(list, id);
+  var unlocked = omniaCosmeticUnlocked(kind, id);
+  if (!unlocked) {
+    if ((omniaState.akasha || 0) < item.cost) return;
+    omniaState.akasha -= item.cost;
+    omniaUnlockList(kind).push(id);
+  }
+  if (kind === 'palette') omniaState.cosmetics.palette = id;
+  if (kind === 'entity') omniaState.cosmetics.entity = id;
+  if (kind === 'companion') omniaState.cosmetics.companion = id;
+  saveOmniaState();
+  renderOmniaEngine();
+  showToast(item.name + (unlocked ? ' selected' : ' unlocked'));
+}
+
+function omniaBodyTotal() {
+  return (omniaState.bodies.physical || 0) + (omniaState.bodies.astral || 0) + (omniaState.bodies.mental || 0);
+}
+
+function omniaRatePerHour() {
+  var bodyBonus = Math.floor(omniaBodyTotal() * 0.9);
+  return Math.floor(90 + (omniaState.upgrades.current || 1) * 55 + bodyBonus);
+}
+
+function omniaReservoirCap() {
+  return Math.floor(1800 + (omniaState.upgrades.vessel || 1) * 520 + omniaBodyTotal() * 12);
+}
+
+function omniaAccrue() {
+  var now = Date.now();
+  var elapsedHours = Math.max(0, (now - (omniaState.lastTick || now)) / 3600000);
+  if (elapsedHours > 0) {
+    var gain = Math.floor(elapsedHours * omniaRatePerHour());
+    if (gain > 0) {
+      omniaState.reservoir = Math.min(omniaReservoirCap(), (omniaState.reservoir || 0) + gain);
+      omniaState.totalAkashaEarned = (omniaState.totalAkashaEarned || 0) + gain;
+    }
+  }
+  omniaState.lastTick = now;
+  saveOmniaState();
+}
+
+function omniaStage() {
+  var total = omniaBodyTotal();
+  if (total >= 210) return { name:'Gate', sub:'Omnia can hold a complete triadic current.' };
+  if (total >= 150) return { name:'Star', sub:'The three bodies are beginning to harmonize.' };
+  if (total >= 105) return { name:'Voice', sub:'Omnia speaks more clearly through repeated practice.' };
+  if (total >= 75) return { name:'Mirror', sub:'The astral and mental forms are becoming distinct.' };
+  if (total >= 54) return { name:'Vessel', sub:'Omnia is learning to take form through your practice.' };
+  return { name:'Seed', sub:'A small center of light waits for nourishment.' };
+}
+
+function omniaBodyCost(body) {
+  return 180 + Math.floor((omniaState.bodies[body] || 0) * 38);
+}
+
+function omniaUpgradeCost(upg) {
+  var lvl = omniaState.upgrades[upg.id] || 1;
+  return upg.base + (lvl - 1) * upg.step;
+}
+
+function omniaCurrentStep() {
+  var stepNum = omniaState.bardonStep || 1;
+  return OMNIA_BARDON_STEPS.find(function(s) { return s.step === stepNum; }) || OMNIA_BARDON_STEPS[0];
+}
+
+function omniaStepReady(step) {
+  var req = step.req || {};
+  return (omniaState.bodies.physical || 0) >= req.physical
+    && (omniaState.bodies.astral || 0) >= req.astral
+    && (omniaState.bodies.mental || 0) >= req.mental
+    && (omniaState.completedRecommended || 0) >= req.recommended;
+}
+
+function renderOmniaStepReq(label, current, target) {
+  var done = current >= target;
+  return '<div class="omnia-step-req' + (done ? ' done' : '') + '"><span>' + label + '</span><span>' + Math.min(current, target) + ' / ' + target + '</span></div>';
+}
+
+function omniaPickRecommendation(forceNew) {
+  var guided = omniaPickGuidedPathRecommendation(forceNew);
+  if (guided) return guided;
+  if (!forceNew && omniaState.rec && OMNIA_EXERCISE_META[omniaState.rec.id]) return omniaState.rec;
+  var bodies = omniaState.bodies;
+  var weakest = Object.keys(bodies).sort(function(a,b) { return bodies[a] - bodies[b]; })[0];
+  var pool = Object.keys(OMNIA_EXERCISE_META).filter(function(id) {
+    return OMNIA_EXERCISE_META[id].body === weakest;
+  });
+  var history = (typeof concState !== 'undefined' && concState.history) ? concState.history : [];
+  pool.sort(function(a,b) {
+    return omniaLastDoneIndex(b, history) - omniaLastDoneIndex(a, history);
+  });
+  var dayOffset = Math.floor(Date.now() / 86400000) + (omniaState.upgrades.discernment || 1);
+  var id = pool[Math.abs(dayOffset) % pool.length] || 'clock';
+  omniaState.rec = { id:id, setAt:Date.now() };
+  saveOmniaState();
+  return omniaState.rec;
+}
+
+function omniaPickGuidedPathRecommendation(forceNew) {
+  if (typeof guideState === 'undefined' || typeof buildFoundationalGuideItems !== 'function') return null;
+  if (!guideState._pathLockedV2 || guideState._pathModeV2 !== 'beginner') return null;
+  var items = buildFoundationalGuideItems().filter(function(item) {
+    return item && OMNIA_EXERCISE_META[item.id];
+  });
+  if (!items.length) return null;
+  var choice = items.find(function(item) { return !item.done; }) || items[0];
+  if (!forceNew && omniaState.rec && omniaState.rec.guidedPath && omniaState.rec.id === choice.id) return omniaState.rec;
+  omniaState.rec = { id:choice.id, setAt:Date.now(), guidedPath:true };
+  saveOmniaState();
+  return omniaState.rec;
+}
+
+function omniaExerciseIsGuidedAgenda(exId) {
+  if (typeof guideState === 'undefined' || typeof buildFoundationalGuideItems !== 'function') return false;
+  if (!guideState._pathLockedV2 || guideState._pathModeV2 !== 'beginner') return false;
+  return buildFoundationalGuideItems().some(function(item) { return item.id === exId; });
+}
+
+function omniaLastDoneIndex(id, history) {
+  for (var i = 0; i < history.length; i++) {
+    if (omniaHistoryMatches(id, history[i])) return i;
+  }
+  return 999;
+}
+
+function omniaHistoryMatches(id, h) {
+  if (!h) return false;
+  if (id === 'clock') return !h.type && !h.exercise;
+  if (id === 'visual') return h.type === 'visualization';
+  if (id === 'auditory') return h.type === 'auditory';
+  if (id === 'thought') return h.type === 'thought';
+  if (id === 'asana') return h.exercise === 'asana';
+  if (id === 'pore_breathing') return h.exercise === 'pore_breathing';
+  return false;
+}
+
+function omniaExerciseReward(exId, seconds, recommended) {
+  var base = Math.max(120, Math.min(900, Math.floor((seconds || 0) * 0.45) + 140));
+  var discernment = omniaState.upgrades.discernment || 1;
+  var streakMult = 1 + Math.min(0.45, (omniaState.recStreak || 0) * 0.08);
+  var recMult = recommended ? 1.75 + discernment * 0.08 : 1;
+  return Math.floor(base * streakMult * recMult);
+}
+
+function awardOmniaForExercise(exId, seconds) {
+  omniaAccrue();
+  var rec = omniaPickRecommendation(false);
+  var recommended = rec && rec.id === exId;
+  if (!recommended && omniaExerciseIsGuidedAgenda(exId)) recommended = true;
+  var meta = OMNIA_EXERCISE_META[exId] || OMNIA_EXERCISE_META.clock;
+  var gain = omniaExerciseReward(exId, seconds || 0, recommended);
+  omniaState.akasha = (omniaState.akasha || 0) + gain;
+  omniaState.totalAkashaEarned = (omniaState.totalAkashaEarned || 0) + gain;
+  if (recommended) {
+    omniaState.recStreak = (omniaState.recStreak || 0) + 1;
+    omniaState.completedRecommended = (omniaState.completedRecommended || 0) + 1;
+    omniaState.bodies[meta.body] = (omniaState.bodies[meta.body] || 0) + 1;
+    omniaPickRecommendation(true);
+  } else {
+    omniaState.recStreak = Math.max(0, (omniaState.recStreak || 0) - 1);
+  }
+  saveOmniaState();
+  var bodyName = OMNIA_BODY_META[meta.body] ? OMNIA_BODY_META[meta.body].name.replace(' Body','') : 'Omnia';
+  showToast('Omnia gained +' + gain + ' akasha' + (recommended ? ' · ' + bodyName + ' +1' : ''), 3000);
+}
+
+function renderOmniaEngine() {
+  omniaAccrue();
+  applyOmniaCosmetics();
+  var stage = omniaStage();
+  var step = omniaCurrentStep();
+  var canAdvance = omniaStepReady(step);
+  var cap = omniaReservoirCap();
+  var reservoir = Math.min(cap, omniaState.reservoir || 0);
+  var rec = omniaPickRecommendation(false);
+  var recMeta = OMNIA_EXERCISE_META[rec.id] || OMNIA_EXERCISE_META.clock;
+
+  var stageName = document.getElementById('omniaStageName');
+  var stageSub = document.getElementById('omniaStageSub');
+  var wallet = document.getElementById('omniaAkashaWallet');
+  var resText = document.getElementById('omniaReservoirText');
+  var resFill = document.getElementById('omniaReservoirFill');
+  var rateText = document.getElementById('omniaRateText');
+  if (stageName) stageName.textContent = stage.name;
+  if (stageSub) stageSub.textContent = stage.sub;
+  if (wallet) wallet.textContent = Math.floor(omniaState.akasha || 0);
+  if (resText) resText.textContent = Math.floor(reservoir) + ' / ' + cap;
+  if (resFill) resFill.style.width = Math.min(100, reservoir / cap * 100) + '%';
+  if (rateText) rateText.textContent = omniaRatePerHour() + ' akasha per hour · resonance ' + (omniaState.recStreak || 0);
+
+  var stepName = document.getElementById('omniaStepName');
+  var stepNum = document.getElementById('omniaStepNum');
+  var stepText = document.getElementById('omniaStepText');
+  var stepReqs = document.getElementById('omniaStepReqs');
+  var advanceBtn = document.getElementById('omniaAdvanceBtn');
+  if (stepName) stepName.textContent = step.name;
+  if (stepNum) stepNum.textContent = step.roman;
+  if (stepText) stepText.textContent = step.text;
+  if (stepReqs) {
+    stepReqs.innerHTML = [
+      renderOmniaStepReq('Physical body', omniaState.bodies.physical || 0, step.req.physical),
+      renderOmniaStepReq('Astral body', omniaState.bodies.astral || 0, step.req.astral),
+      renderOmniaStepReq('Mental body', omniaState.bodies.mental || 0, step.req.mental),
+      renderOmniaStepReq('Recommended sessions', omniaState.completedRecommended || 0, step.req.recommended)
+    ].join('');
+  }
+  if (advanceBtn) {
+    var next = OMNIA_BARDON_STEPS.find(function(s) { return s.step === (omniaState.bardonStep || 1) + 1; });
+    advanceBtn.disabled = !canAdvance || !next;
+    advanceBtn.textContent = next ? ('Advance to Step ' + next.roman) : 'Current Step Complete';
+  }
+
+  var collectBtn = document.getElementById('omniaCollectBtn');
+  if (collectBtn) {
+    collectBtn.disabled = reservoir < 1;
+    collectBtn.textContent = reservoir >= 1 ? 'Collect ' + Math.floor(reservoir) + ' Akasha' : 'Reservoir Empty';
+  }
+
+  var bodyGrid = document.getElementById('omniaBodyGrid');
+  if (bodyGrid) {
+    bodyGrid.innerHTML = Object.keys(OMNIA_BODY_META).map(function(body) {
+      var meta = OMNIA_BODY_META[body];
+      var lvl = omniaState.bodies[body] || 0;
+      var cost = omniaBodyCost(body);
+      var pct = Math.min(100, lvl % 25 * 4);
+      return '<div class="omnia-body-card">'
+        + '<div class="omnia-body-head"><div class="omnia-body-name" style="color:' + meta.color + ';">' + meta.name + '</div><div class="omnia-body-lvl">' + lvl + '</div></div>'
+        + '<div class="omnia-bar"><div class="omnia-bar-fill" style="width:' + pct + '%; background:' + meta.color + ';"></div></div>'
+        + '<div class="omnia-body-actions"><div class="omnia-body-effect">' + meta.desc + '</div><button class="omnia-mini-btn" data-omnia-body="' + body + '"' + ((omniaState.akasha || 0) < cost ? ' disabled' : '') + '>Build ' + cost + '</button></div>'
+        + '</div>';
+    }).join('');
+  }
+
+  var recName = document.getElementById('omniaRecName');
+  var recText = document.getElementById('omniaRecText');
+  var recReward = document.getElementById('omniaRecReward');
+  if (recName) recName.textContent = recMeta.name;
+  if (recText) recText.textContent = recMeta.text;
+  if (recReward) recReward.textContent = 'bonus +' + OMNIA_BODY_META[recMeta.body].name.replace(' Body','').toLowerCase();
+
+  var upGrid = document.getElementById('omniaUpgradeGrid');
+  if (upGrid) {
+    upGrid.innerHTML = OMNIA_UPGRADES.map(function(upg) {
+      var lvl = omniaState.upgrades[upg.id] || 1;
+      var cost = omniaUpgradeCost(upg);
+      var sub = upg.sub;
+      if (upg.id === 'current') sub += ' · next +' + 55 + '/hr';
+      return '<div class="omnia-upgrade-row">'
+        + '<div><div class="omnia-upgrade-name">' + upg.name + ' ' + lvl + '</div><div class="omnia-upgrade-sub">' + sub + '</div></div>'
+        + '<button class="omnia-mini-btn" data-omnia-upgrade="' + upg.id + '"' + ((omniaState.akasha || 0) < cost ? ' disabled' : '') + '>Upgrade ' + cost + '</button>'
+        + '</div>';
+    }).join('');
+  }
+
+  var cosmeticGrid = document.getElementById('omniaCosmeticGrid');
+  if (cosmeticGrid) {
+    cosmeticGrid.innerHTML =
+      renderOmniaCosmeticSection('Omnia Colors', 'palette', OMNIA_PALETTES)
+      + renderOmniaCosmeticSection('Entity Forms', 'entity', OMNIA_ENTITIES)
+      + renderOmniaCosmeticSection('Companions', 'companion', OMNIA_COMPANIONS);
+  }
+}
+
+function collectOmniaAkasha() {
+  omniaAccrue();
+  var amount = Math.floor(omniaState.reservoir || 0);
+  if (amount < 1) return;
+  omniaState.akasha = (omniaState.akasha || 0) + amount;
+  omniaState.reservoir = 0;
+  saveOmniaState();
+  renderOmniaEngine();
+  showToast('Collected ' + amount + ' akasha');
+}
+
+function buildOmniaBody(body) {
+  var cost = omniaBodyCost(body);
+  if ((omniaState.akasha || 0) < cost) return;
+  omniaState.akasha -= cost;
+  omniaState.bodies[body] = (omniaState.bodies[body] || 0) + 1;
+  saveOmniaState();
+  renderOmniaEngine();
+}
+
+function buyOmniaUpgrade(id) {
+  var upg = OMNIA_UPGRADES.find(function(u) { return u.id === id; });
+  if (!upg) return;
+  var cost = omniaUpgradeCost(upg);
+  if ((omniaState.akasha || 0) < cost) return;
+  omniaState.akasha -= cost;
+  omniaState.upgrades[id] = (omniaState.upgrades[id] || 1) + 1;
+  saveOmniaState();
+  renderOmniaEngine();
+}
+
+function performOmniaAction(kind) {
+  var fig = document.querySelector('.omnia-figure');
+  if (fig) {
+    fig.classList.remove('attune');
+    void fig.offsetWidth;
+    fig.classList.add('attune');
+    setTimeout(function() { fig.classList.remove('attune'); }, 1500);
+  }
+  if (kind === 'advance') showToast('Omnia crossed the threshold');
+  else showToast('Omnia attunes to the current');
+}
+
+function advanceOmniaStep() {
+  var step = omniaCurrentStep();
+  var next = OMNIA_BARDON_STEPS.find(function(s) { return s.step === (omniaState.bardonStep || 1) + 1; });
+  if (!next || !omniaStepReady(step)) return;
+  omniaState.bardonStep = next.step;
+  saveOmniaState();
+  performOmniaAction('advance');
+  renderOmniaEngine();
+}
+
+function beginOmniaRecommendation() {
+  var rec = omniaPickRecommendation(false);
+  var meta = OMNIA_EXERCISE_META[rec.id] || OMNIA_EXERCISE_META.clock;
+  if (meta.open === 'soulmirror') {
+    switchMode('concentration');
+    renderSoulMirrorTraits();
+    showScreen('soulMirrorScreen');
+    var breathTab = document.querySelector('.soul-tab[data-tab="breathing"]');
+    if (breathTab) breathTab.click();
+    return;
+  }
+  openExerciseSetup(meta.open);
+}
+
+var OMNIA_MORPH_SYMBOLS = [
+  { id:'eye', label:'Inner Eye', color:'#b8eaff' },
+  { id:'triangle', label:'Triad', color:'#d4b08e' },
+  { id:'sun', label:'Solar Center', color:'#f0d39a' },
+  { id:'moon', label:'Lunar Vessel', color:'#c4a8d4' }
+];
+var omniaMorphIndex = 0;
+var omniaMorphTimer = null;
+var omniaMorphRaf = null;
+
+var OMNIA_CRYSTAL_MORPH_SHARDS = [
+  [[50,4],[66,18],[50,32],[34,18]],
+  [[50,32],[74,45],[80,70],[50,84]],
+  [[50,32],[50,84],[20,70],[26,45]],
+  [[20,70],[50,84],[50,116],[32,99]],
+  [[80,70],[68,99],[50,116],[50,84]],
+  [[20,70],[80,70],[68,99],[32,99]],
+  [[50,84],[68,99],[50,116],[32,99]],
+  [[34,18],[50,32],[26,45],[20,70]],
+  [[66,18],[80,70],[74,45],[50,32]]
+];
+
+var OMNIA_MORPH_TARGETS = {
+  eye: [
+    [[50,34],[64,50],[50,66],[36,50]],
+    [[50,64],[64,78],[50,94],[36,78]],
+    [[8,65],[28,46],[40,54],[26,76]],
+    [[92,65],[72,46],[60,54],[74,76]],
+    [[8,65],[28,46],[72,46],[92,65]],
+    [[8,65],[28,84],[72,84],[92,65]],
+    [[43,58],[57,58],[57,72],[43,72]],
+    [[22,43],[50,25],[78,43],[70,49]],
+    [[24,87],[50,105],[76,87],[68,82]]
+  ],
+  triangle: [
+    [[50,8],[61,31],[39,31],[50,8]],
+    [[61,31],[89,88],[73,88],[49,31]],
+    [[39,31],[27,88],[11,88],[51,31]],
+    [[11,88],[89,88],[80,100],[20,100]],
+    [[50,33],[62,61],[38,61],[50,33]],
+    [[38,61],[31,82],[50,73],[62,61]],
+    [[62,61],[69,82],[50,73],[38,61]],
+    [[20,100],[50,73],[80,100],[50,112]],
+    [[50,8],[50,33],[39,31],[61,31]]
+  ],
+  sun: [
+    [[47,8],[53,8],[55,27],[45,27]],
+    [[47,103],[53,103],[55,122],[45,122]],
+    [[7,62],[26,60],[26,70],[7,68]],
+    [[74,60],[93,62],[93,68],[74,70]],
+    [[24,23],[32,16],[42,34],[35,41]],
+    [[68,16],[76,23],[65,41],[58,34]],
+    [[24,107],[35,89],[42,96],[32,114]],
+    [[58,96],[65,89],[76,107],[68,114]],
+    [[50,38],[70,65],[50,92],[30,65]]
+  ],
+  moon: [
+    [[63,13],[78,17],[66,28],[52,31]],
+    [[52,31],[66,28],[59,45],[43,50]],
+    [[43,50],[59,45],[58,62],[39,68]],
+    [[39,68],[58,62],[66,78],[45,88]],
+    [[45,88],[66,78],[80,85],[61,99]],
+    [[61,99],[38,91],[29,72],[39,68]],
+    [[39,68],[29,72],[27,49],[43,50]],
+    [[43,50],[27,49],[37,27],[52,31]],
+    [[52,31],[37,27],[63,13],[63,13]]
+  ]
+};
+
+function omniaPointString(poly) {
+  return poly.map(function(p) { return p[0].toFixed(2) + ',' + p[1].toFixed(2); }).join(' ');
+}
+
+function omniaLerpPoly(a, b, t) {
+  return a.map(function(p, i) {
+    return [
+      p[0] + (b[i][0] - p[0]) * t,
+      p[1] + (b[i][1] - p[1]) * t
+    ];
+  });
+}
+
+function omniaEaseMorph(t) {
+  return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+}
+
+function omniaMorphOutline(sym, color) {
+  if (sym.id === 'triangle') {
+    return '<g id="omniaShardOutline" opacity="0" fill="none" stroke="' + color + '" stroke-linecap="round" stroke-linejoin="round">'
+      + '<path d="M50 8 L89 88 L11 88 Z" stroke-width="2.25"/>'
+      + '<path d="M50 33 L69 82 L31 82 Z" stroke-width="1.15" opacity=".72"/>'
+      + '<circle cx="50" cy="67" r="10" stroke-width="1" opacity=".62"/>'
+      + '</g>';
+  }
+  if (sym.id === 'sun') {
+    return '<g id="omniaShardOutline" opacity="0" fill="none" stroke="' + color + '" stroke-linecap="round" stroke-linejoin="round">'
+      + '<circle cx="50" cy="65" r="25" stroke-width="2.2"/>'
+      + '<circle cx="50" cy="65" r="9" stroke-width="1.1" opacity=".78"/>'
+      + '<path d="M50 8 V27 M50 103 V122 M7 65 H26 M74 65 H93 M24 23 L38 37 M76 23 L62 37 M24 107 L38 93 M76 107 L62 93" stroke-width="1.55"/>'
+      + '</g>';
+  }
+  if (sym.id === 'moon') {
+    return '<g id="omniaShardOutline" opacity="0" fill="none" stroke="' + color + '" stroke-linecap="round" stroke-linejoin="round">'
+      + '<path d="M63 13 C40 19 27 37 30 58 C34 80 54 91 76 82 C61 77 51 63 53 47 C55 31 65 20 80 15 C74 12 68 11 63 13 Z" stroke-width="2.25"/>'
+      + '<path d="M38 27 C29 44 31 72 45 88" stroke-width="1" opacity=".48"/>'
+      + '<path d="M36 24 L35 29 M24 50 L29 50 M43 82 L47 86" stroke-width="1" opacity=".58"/>'
+      + '</g>';
+  }
+  return '<g id="omniaShardOutline" opacity="0" fill="none" stroke="' + color + '" stroke-linecap="round" stroke-linejoin="round">'
+    + '<path d="M8 65 C22 39 39 31 50 31 C61 31 78 39 92 65 C78 91 61 99 50 99 C39 99 22 91 8 65 Z" stroke-width="2.15"/>'
+    + '<circle cx="50" cy="65" r="18" stroke-width="1.6"/>'
+    + '<circle cx="50" cy="65" r="7" stroke-width="1.2" fill="#06131f" fill-opacity=".75"/>'
+    + '<path d="M20 47 C35 36 65 36 80 47 M20 83 C35 94 65 94 80 83" stroke-width=".85" opacity=".44"/>'
+    + '</g>';
+}
+
+function animateOmniaShardMorph(sym) {
+  var fig = document.getElementById('guideOmniaFigure');
+  var svg = document.getElementById('guideOmniaShardSvg');
+  if (!fig || !svg) return;
+  if (omniaMorphRaf) cancelAnimationFrame(omniaMorphRaf);
+  var from = OMNIA_CRYSTAL_MORPH_SHARDS;
+  var to = OMNIA_MORPH_TARGETS[sym.id] || OMNIA_MORPH_TARGETS.eye;
+  var color = sym.color || '#b8eaff';
+  svg.innerHTML = '<defs><filter id="omniaShardGlow" x="-40%" y="-40%" width="180%" height="180%"><feGaussianBlur stdDeviation="2.2" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter></defs>';
+  var polys = from.map(function(poly, idx) {
+    var el = document.createElementNS('http://www.w3.org/2000/svg', 'polygon');
+    el.setAttribute('points', omniaPointString(poly));
+    el.setAttribute('fill', color);
+    el.setAttribute('fill-opacity', idx === 8 ? '.18' : '.26');
+    el.setAttribute('stroke', color);
+    el.setAttribute('stroke-width', idx === 8 ? '1.1' : '1.35');
+    el.setAttribute('stroke-opacity', '.86');
+    el.setAttribute('filter', 'url(#omniaShardGlow)');
+    svg.appendChild(el);
+    return el;
+  });
+  svg.insertAdjacentHTML('beforeend', omniaMorphOutline(sym, color));
+  var outline = svg.querySelector('#omniaShardOutline');
+  fig.classList.remove('morphing');
+  void fig.offsetWidth;
+  fig.classList.add('morphing');
+  var start = performance.now();
+  var inwardMs = 760;
+  var holdMs = 650;
+  var outwardMs = 640;
+  var totalMs = inwardMs + holdMs + outwardMs;
+  function frame(now) {
+    var elapsed = now - start;
+    var t;
+    if (elapsed <= inwardMs) {
+      t = omniaEaseMorph(elapsed / inwardMs);
+      svg.style.opacity = String(0.3 + t * 0.7);
+      if (outline) outline.setAttribute('opacity', String(Math.max(0, (t - 0.58) / 0.42)));
+      polys.forEach(function(poly, idx) {
+        poly.setAttribute('points', omniaPointString(omniaLerpPoly(from[idx], to[idx], t)));
+      });
+    } else if (elapsed <= inwardMs + holdMs) {
+      svg.style.opacity = '1';
+      if (outline) outline.setAttribute('opacity', '1');
+      polys.forEach(function(poly, idx) { poly.setAttribute('points', omniaPointString(to[idx])); });
+    } else if (elapsed <= totalMs) {
+      t = omniaEaseMorph((elapsed - inwardMs - holdMs) / outwardMs);
+      svg.style.opacity = String(1 - t * 0.75);
+      if (outline) outline.setAttribute('opacity', String(1 - t));
+      polys.forEach(function(poly, idx) {
+        poly.setAttribute('points', omniaPointString(omniaLerpPoly(to[idx], from[idx], t)));
+      });
+    } else {
+      fig.classList.remove('morphing');
+      svg.innerHTML = '';
+      svg.style.opacity = '0';
+      omniaMorphRaf = null;
+      return;
+    }
+    omniaMorphRaf = requestAnimationFrame(frame);
+  }
+  omniaMorphRaf = requestAnimationFrame(frame);
+}
+
+function renderOmniaMorphSymbol(sym) {
+  var color = sym.color || '#b8eaff';
+  if (sym.id === 'triangle') {
+    return '<svg viewBox="0 0 100 100" aria-hidden="true" xmlns="http://www.w3.org/2000/svg">'
+      + '<defs><filter id="omTriGlow"><feGaussianBlur stdDeviation="2.4" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter></defs>'
+      + '<path d="M50 9 L88 80 L12 80 Z" fill="none" stroke="' + color + '" stroke-width="2.2" filter="url(#omTriGlow)"/>'
+      + '<path d="M50 25 L73 72 L27 72 Z" fill="rgba(212,176,142,.08)" stroke="' + color + '" stroke-width="1" opacity=".72"/>'
+      + '<circle cx="50" cy="58" r="12" fill="none" stroke="' + color + '" stroke-width="1.4" opacity=".72"/>'
+      + '<line x1="50" y1="9" x2="50" y2="80" stroke="' + color + '" stroke-width=".8" opacity=".45"/>'
+      + '</svg>';
+  }
+  if (sym.id === 'sun') {
+    return '<svg viewBox="0 0 100 100" aria-hidden="true" xmlns="http://www.w3.org/2000/svg">'
+      + '<defs><filter id="omSunGlow"><feGaussianBlur stdDeviation="2.6" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter></defs>'
+      + '<g stroke="' + color + '" stroke-width="1.6" stroke-linecap="round" filter="url(#omSunGlow)">'
+      + '<line x1="50" y1="7" x2="50" y2="21"/><line x1="50" y1="79" x2="50" y2="93"/><line x1="7" y1="50" x2="21" y2="50"/><line x1="79" y1="50" x2="93" y2="50"/>'
+      + '<line x1="20" y1="20" x2="30" y2="30"/><line x1="70" y1="70" x2="80" y2="80"/><line x1="20" y1="80" x2="30" y2="70"/><line x1="70" y1="30" x2="80" y2="20"/>'
+      + '</g><circle cx="50" cy="50" r="23" fill="rgba(240,211,154,.08)" stroke="' + color + '" stroke-width="2.2"/>'
+      + '<circle cx="50" cy="50" r="9" fill="none" stroke="' + color + '" stroke-width="1.2" opacity=".75"/>'
+      + '</svg>';
+  }
+  if (sym.id === 'moon') {
+    return '<svg viewBox="0 0 100 100" aria-hidden="true" xmlns="http://www.w3.org/2000/svg">'
+      + '<defs><filter id="omMoonGlow"><feGaussianBlur stdDeviation="2.4" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter></defs>'
+      + '<path d="M63 13 C40 19 27 37 30 58 C34 80 54 91 76 82 C61 77 51 63 53 47 C55 31 65 20 80 15 C74 12 68 11 63 13 Z" fill="rgba(196,168,212,.11)" stroke="' + color + '" stroke-width="2.2" filter="url(#omMoonGlow)"/>'
+      + '<circle cx="35" cy="25" r="2" fill="' + color + '" opacity=".72"/><circle cx="24" cy="50" r="1.6" fill="' + color + '" opacity=".5"/><circle cx="43" cy="82" r="1.8" fill="' + color + '" opacity=".58"/>'
+      + '</svg>';
+  }
+  return '<svg viewBox="0 0 100 100" aria-hidden="true" xmlns="http://www.w3.org/2000/svg">'
+    + '<defs><radialGradient id="omEyeIris" cx="50%" cy="50%" r="50%"><stop offset="0%" stop-color="#dff8ff"/><stop offset="58%" stop-color="#6ab8d8"/><stop offset="100%" stop-color="#174a64"/></radialGradient><filter id="omEyeGlow"><feGaussianBlur stdDeviation="2.5" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter></defs>'
+    + '<path d="M9 50 C22 25 39 17 50 17 C61 17 78 25 91 50 C78 75 61 83 50 83 C39 83 22 75 9 50 Z" fill="rgba(184,234,255,.08)" stroke="' + color + '" stroke-width="2" filter="url(#omEyeGlow)"/>'
+    + '<circle cx="50" cy="50" r="19" fill="url(#omEyeIris)" opacity=".92"/><circle cx="50" cy="50" r="8" fill="#06131f"/>'
+    + '<circle cx="57" cy="43" r="4.2" fill="#fff" opacity=".66"/>'
+    + '<path d="M15 50 C29 38 39 34 50 34 C61 34 71 38 85 50" fill="none" stroke="#fff" stroke-width=".8" opacity=".26"/>'
+    + '</svg>';
+}
+
+function morphGuideOmnia() {
+  var fig = document.getElementById('guideOmniaFigure');
+  var layer = document.getElementById('guideOmniaSymbolLayer');
+  if (!fig || !layer) return;
+  var baseSym = OMNIA_MORPH_SYMBOLS[omniaMorphIndex % OMNIA_MORPH_SYMBOLS.length];
+  var palette = omniaFindCosmetic(OMNIA_PALETTES, (omniaState.cosmetics && omniaState.cosmetics.palette) || 'aether');
+  var sym = Object.assign({}, baseSym, { color: palette.color || baseSym.color });
+  omniaMorphIndex++;
+  if (omniaMorphTimer) clearTimeout(omniaMorphTimer);
+  layer.innerHTML = renderOmniaMorphSymbol(sym);
+  layer.style.color = sym.color;
+  fig.setAttribute('aria-label', 'Omnia reveals ' + sym.label);
+  animateOmniaShardMorph(sym);
+  omniaMorphTimer = setTimeout(function() {
+    fig.setAttribute('aria-label', 'Reveal an Omnia symbol');
+  }, 2200);
+}
+
 // ── Persistent selections ──────────────────────────────────
 function loadGuideState() {
   try { var s = localStorage.getItem('presence_guide_v1'); return s ? JSON.parse(s) : {}; } catch(e) { return {}; }
@@ -7674,7 +8773,34 @@ function saveGuideState(st) {
 }
 
 var guideState = loadGuideState(); // {[exerciseId]: selectedOption string}
-var guidePriorOpen = false;
+var guidePathMode = guideState._pathModeV2 || null;
+var guideActiveTab = 'path';
+var guidePendingPathMode = null;
+
+var GUIDE_FOUNDATION_THOUGHT_ORDER = ['observation','focus','vacancy'];
+var GUIDE_FOUNDATION_THOUGHT_LABELS = {
+  observation:'Thought Observation',
+  focus:'Thought Focus',
+  vacancy:'Vacancy of Mind'
+};
+var GUIDE_FOUNDATION_THOUGHT_TIPS = {
+  observation:'Watch thoughts arise and pass without entering them.',
+  focus:'Choose one thought, word, or simple idea and hold only that.',
+  vacancy:'Let the mind stay empty; tap at the first sign of content.'
+};
+
+function switchGuideTab(tab) {
+  guideActiveTab = tab;
+  var pathPanel = document.getElementById('guidePathPanel');
+  var omniaPanel = document.getElementById('guideOmniaPanel');
+  var pathTab = document.getElementById('guidePathTab');
+  var omniaTab = document.getElementById('guideOmniaTab');
+  if (pathPanel) pathPanel.style.display = tab === 'path' ? 'block' : 'none';
+  if (omniaPanel) omniaPanel.style.display = tab === 'omnia' ? 'block' : 'none';
+  if (pathTab) pathTab.classList.toggle('active', tab === 'path');
+  if (omniaTab) omniaTab.classList.toggle('active', tab === 'omnia');
+  if (tab === 'omnia') renderOmniaEngine();
+}
 
 // ── Render exercise assessment rows ───────────────────────
 function renderGuideExRows() {
@@ -7704,6 +8830,251 @@ function renderGuideExRows() {
   }, { once: false });
 }
 
+function setGuidePathMode(mode, lockChoice) {
+  guidePathMode = mode;
+  if (mode) guideState._pathModeV2 = mode;
+  if (lockChoice) guideState._pathLockedV2 = true;
+  saveGuideState(guideState);
+  guidePendingPathMode = null;
+  var beginnerBtn = document.getElementById('guideBeginnerPathBtn');
+  var experiencedBtn = document.getElementById('guideExperiencedPathBtn');
+  var routeGrid = document.getElementById('guideRouteGrid');
+  var confirmPanel = document.getElementById('guideConfirmPanel');
+  var locked = document.getElementById('guideLockedPath');
+  var lockedTitle = document.getElementById('guideLockedTitle');
+  var lockedText = document.getElementById('guideLockedText');
+  var cadence = document.getElementById('guideCadenceControl');
+  var panel = document.getElementById('guideAssessmentPanel');
+  var isLocked = !!guideState._pathLockedV2 && !!mode;
+  if (routeGrid) routeGrid.style.display = isLocked ? 'none' : 'grid';
+  if (confirmPanel) confirmPanel.style.display = 'none';
+  if (locked) locked.style.display = 'none';
+  if (cadence) cadence.style.display = 'none';
+  if (lockedTitle) lockedTitle.textContent = mode === 'experienced' ? 'Tell Omnia where I am' : 'Foundational Path';
+  if (lockedText) lockedText.textContent = mode === 'experienced'
+    ? 'Omnia will keep watching your completed exercises and refine recommendations from your current capacities.'
+    : 'Omnia will keep you on the foundation sequence and adjust the next session from your completed practice.';
+  if (beginnerBtn) beginnerBtn.classList.toggle('active', mode === 'beginner');
+  if (experiencedBtn) experiencedBtn.classList.toggle('active', mode === 'experienced');
+  if (panel) panel.style.display = 'none';
+  renderGuideCadenceControl();
+  if (!isLocked) {
+    if (beginnerBtn) beginnerBtn.classList.remove('active');
+    if (experiencedBtn) experiencedBtn.classList.remove('active');
+  }
+  if (isLocked && mode === 'experienced') renderGuideExRows();
+}
+
+function showGuideRouteChoice() {
+  guidePendingPathMode = null;
+  var routeGrid = document.getElementById('guideRouteGrid');
+  var confirmPanel = document.getElementById('guideConfirmPanel');
+  var locked = document.getElementById('guideLockedPath');
+  var panel = document.getElementById('guideAssessmentPanel');
+  var plan = document.getElementById('guidePlanOutput');
+  if (routeGrid) routeGrid.style.display = 'grid';
+  if (confirmPanel) confirmPanel.style.display = 'none';
+  if (locked) locked.style.display = 'none';
+  if (panel) panel.style.display = 'none';
+  if (plan) plan.style.display = 'none';
+  document.getElementById('guideBeginnerPathBtn').classList.remove('active');
+  document.getElementById('guideExperiencedPathBtn').classList.remove('active');
+}
+
+function showGuidePathConfirmation(mode) {
+  guidePendingPathMode = mode;
+  guidePathMode = mode;
+  var routeGrid = document.getElementById('guideRouteGrid');
+  var confirmPanel = document.getElementById('guideConfirmPanel');
+  var confirmTitle = document.getElementById('guideConfirmTitle');
+  var confirmText = document.getElementById('guideConfirmText');
+  var confirmBtn = document.getElementById('guideConfirmCommitBtn');
+  var confirmActions = document.getElementById('guideConfirmActions');
+  var confirmCadence = document.getElementById('guideConfirmCadenceControl');
+  var panel = document.getElementById('guideAssessmentPanel');
+  var generateBtn = document.getElementById('guideGenerateBtn');
+  var plan = document.getElementById('guidePlanOutput');
+  if (routeGrid) routeGrid.style.display = 'none';
+  if (confirmPanel) confirmPanel.style.display = 'block';
+  if (plan) plan.style.display = 'none';
+  if (confirmTitle) confirmTitle.textContent = mode === 'experienced' ? 'Tell Omnia where I am' : 'I am new to this';
+  if (confirmText) confirmText.textContent = mode === 'experienced'
+    ? 'Set your current capacity below. When you confirm, Omnia will use your answers and your completed sessions to make today\'s agenda.'
+    : 'Omnia will start you with Clock and Thought Control only, then open new exercises after your practice earns them.';
+  if (confirmBtn) confirmBtn.textContent = mode === 'experienced' ? 'Create Agenda' : 'Begin Path';
+  if (confirmBtn) confirmBtn.style.display = mode === 'experienced' ? 'none' : '';
+  if (confirmActions) confirmActions.style.gridTemplateColumns = mode === 'experienced' ? '1fr' : '1fr 1.35fr';
+  if (confirmCadence) confirmCadence.style.display = mode === 'beginner' ? 'flex' : 'none';
+  if (panel) panel.style.display = mode === 'experienced' ? 'block' : 'none';
+  if (generateBtn) generateBtn.textContent = mode === 'experienced' ? 'Confirm & Create Agenda' : 'Ask Omnia for recommendations →';
+  document.getElementById('guideBeginnerPathBtn').classList.toggle('active', mode === 'beginner');
+  document.getElementById('guideExperiencedPathBtn').classList.toggle('active', mode === 'experienced');
+  if (mode === 'experienced') renderGuideExRows();
+  renderGuideCadenceControl();
+}
+
+function commitGuidePath(mode) {
+  if (!mode) return;
+  setGuidePathMode(mode, true);
+  renderGuidePlan(mode);
+}
+
+function guideClamp(n, min, max) {
+  return Math.max(min, Math.min(max, n));
+}
+
+function guideLocalDayKey(value) {
+  var d = value ? new Date(value) : new Date();
+  if (isNaN(d.getTime())) return '';
+  var m = String(d.getMonth() + 1).padStart(2, '0');
+  var day = String(d.getDate()).padStart(2, '0');
+  return d.getFullYear() + '-' + m + '-' + day;
+}
+
+function guideIsToday(value) {
+  return guideLocalDayKey(value) === guideLocalDayKey();
+}
+
+function guideFmtTime(sec) {
+  sec = Math.max(0, Math.round(sec || 0));
+  var m = Math.floor(sec / 60);
+  var s = sec % 60;
+  if (m && s) return m + 'm ' + s + 's';
+  if (m) return m + 'm';
+  return s + 's';
+}
+
+function guideTwoADayEnabled() {
+  return guideState._twoADayV1 !== false;
+}
+
+function renderGuideCadenceControl() {
+  var on = guideTwoADayEnabled();
+  ['guideTwoADayBtn','guideConfirmTwoADayBtn','guidePlanTwoADayBtn'].forEach(function(id) {
+    var btn = document.getElementById(id);
+    if (!btn) return;
+    btn.textContent = on ? '2x/day on' : '2x/day off';
+    btn.classList.toggle('off', !on);
+  });
+}
+
+function guideIsClockHistory(h) {
+  return !!h && !h.type && !h.exercise;
+}
+
+function guideHistorySeconds(h) {
+  return Math.max(0, parseInt(h && h.seconds, 10) || 0);
+}
+
+function guideThoughtDurationFromObject(text) {
+  var m = String(text || '').match(/in\s+(\d+):(\d{2})/);
+  if (!m) return 0;
+  return parseInt(m[1], 10) * 60 + parseInt(m[2], 10);
+}
+
+function guideThoughtDuration(h) {
+  if (!h) return 0;
+  return Math.max(0,
+    parseInt(h.durationSec, 10)
+    || parseInt(h.elapsedSec, 10)
+    || guideThoughtDurationFromObject(h.object)
+    || guideHistorySeconds(h)
+  );
+}
+
+function guideClockStats() {
+  var out = { count:0, totalSec:0, bestSec:0, todaySec:0, todayBestSec:0, todayCount:0, firstMs:0, lastMs:0 };
+  var history = (typeof concState !== 'undefined' && concState.history) ? concState.history : [];
+  history.forEach(function(h) {
+    if (!guideIsClockHistory(h)) return;
+    var sec = guideHistorySeconds(h);
+    var ms = h.date ? new Date(h.date).getTime() : 0;
+    out.count++;
+    out.totalSec += sec;
+    if (sec > out.bestSec) out.bestSec = sec;
+    if (ms && (!out.firstMs || ms < out.firstMs)) out.firstMs = ms;
+    if (ms && ms > out.lastMs) out.lastMs = ms;
+    if (guideIsToday(h.date)) {
+      out.todayCount++;
+      out.todaySec += sec;
+      if (sec > out.todayBestSec) out.todayBestSec = sec;
+    }
+  });
+  return out;
+}
+
+function guideThoughtStats() {
+  var out = {};
+  GUIDE_FOUNDATION_THOUGHT_ORDER.forEach(function(mode) {
+    out[mode] = { count:0, totalSec:0, bestSec:0, todaySec:0, todayCount:0, lastMs:0 };
+  });
+  var history = (typeof concState !== 'undefined' && concState.history) ? concState.history : [];
+  history.forEach(function(h) {
+    if (!h || h.type !== 'thought') return;
+    var mode = h.tcMode || 'observation';
+    if (!out[mode]) out[mode] = { count:0, totalSec:0, bestSec:0, todaySec:0, todayCount:0, lastMs:0 };
+    var dur = guideThoughtDuration(h);
+    var best = guideHistorySeconds(h);
+    var ms = h.date ? new Date(h.date).getTime() : 0;
+    out[mode].count++;
+    out[mode].totalSec += dur;
+    if (best > out[mode].bestSec) out[mode].bestSec = best;
+    if (ms > out[mode].lastMs) out[mode].lastMs = ms;
+    if (guideIsToday(h.date)) {
+      out[mode].todayCount++;
+      out[mode].todaySec += dur;
+    }
+  });
+  return out;
+}
+
+function guideAllThoughtModesMastered(thoughtStats) {
+  return GUIDE_FOUNDATION_THOUGHT_ORDER.every(function(mode) {
+    return (thoughtStats[mode] && thoughtStats[mode].bestSec >= 600);
+  });
+}
+
+function guideLeastRecentThoughtMode(thoughtStats) {
+  return GUIDE_FOUNDATION_THOUGHT_ORDER.slice().sort(function(a, b) {
+    var aa = thoughtStats[a] || { lastMs:0, count:0 };
+    var bb = thoughtStats[b] || { lastMs:0, count:0 };
+    if (aa.todayCount !== bb.todayCount) return aa.todayCount - bb.todayCount;
+    if (aa.lastMs !== bb.lastMs) return aa.lastMs - bb.lastMs;
+    return aa.count - bb.count;
+  })[0];
+}
+
+function guideCurrentThoughtMode(thoughtStats) {
+  for (var i = 0; i < GUIDE_FOUNDATION_THOUGHT_ORDER.length; i++) {
+    var mode = GUIDE_FOUNDATION_THOUGHT_ORDER[i];
+    if (!thoughtStats[mode] || thoughtStats[mode].bestSec < 600) return mode;
+  }
+  return guideLeastRecentThoughtMode(thoughtStats);
+}
+
+function guideThoughtTargetMinutes(mode, thoughtStats) {
+  var st = thoughtStats[mode] || { count:0 };
+  if (guideAllThoughtModesMastered(thoughtStats)) return guideClamp(10 + Math.floor(st.count / 6), 10, 15);
+  return guideClamp(5 + Math.floor(st.count / 2), 5, 10);
+}
+
+function guideClockTargetMinutes(clockStats) {
+  return guideClamp(5 + Math.floor((clockStats.totalSec || 0) / 300), 5, 20);
+}
+
+function guideClockAttentionTargetSec(clockStats) {
+  if (!clockStats.bestSec) return 0;
+  var days = clockStats.firstMs ? Math.floor((Date.now() - clockStats.firstMs) / 86400000) + 1 : 1;
+  if (days <= 21) return guideClamp(Math.ceil(clockStats.bestSec * 3 / 15) * 15, 120, 600);
+  return guideClamp(Math.ceil((clockStats.bestSec + 60) / 60) * 60, 600, 900);
+}
+
+function guideExerciseBreadth(stats) {
+  return ['clock','visual','auditory','thought','asana'].reduce(function(sum, id) {
+    return sum + ((stats[id] && stats[id].count > 0) ? 1 : 0);
+  }, 0);
+}
+
 // ── Determine if user counts as "experienced" for an exercise ─
 function guideIsExperienced(exId) {
   var sel = guideState[exId];
@@ -7711,34 +9082,269 @@ function guideIsExperienced(exId) {
   return true;
 }
 
+function guideExperienceScore(exId) {
+  var sel = guideState[exId];
+  if (!sel || sel === 'New to me') return 0;
+  if (sel === 'Familiar') return 2;
+  if (sel.indexOf('15') === 0) return 3;
+  if (sel.indexOf('10') === 0) return 2;
+  if (sel.indexOf('5') === 0) return 1;
+  return 0;
+}
+
+function guideHistoryExerciseId(h) {
+  if (!h) return 'clock';
+  if (h.exercise === 'asana') return 'asana';
+  if (h.exercise === 'pore_breathing') return 'soulmirror';
+  if (h.type === 'visualization') return 'visual';
+  if (h.type === 'auditory') return 'auditory';
+  if (h.type === 'thought') return 'thought';
+  return 'clock';
+}
+
+function guideExerciseStats() {
+  var stats = {};
+  GUIDE_EXERCISES.forEach(function(ex) {
+    stats[ex.id] = { count:0, bestSec:0, totalSec:0, todaySec:0, todayCount:0, lastMs:0 };
+  });
+  var history = (typeof concState !== 'undefined' && concState.history) ? concState.history : [];
+  history.forEach(function(h) {
+    var id = guideHistoryExerciseId(h);
+    if (!stats[id]) return;
+    var sec = id === 'thought' ? guideThoughtDuration(h) : (h.seconds || 0);
+    var bestSec = h.seconds || sec;
+    var ms = h.date ? new Date(h.date).getTime() : 0;
+    stats[id].count++;
+    stats[id].totalSec += sec;
+    if (bestSec > stats[id].bestSec) stats[id].bestSec = bestSec;
+    if (guideIsToday(h.date)) {
+      stats[id].todayCount++;
+      stats[id].todaySec += sec;
+    }
+    if (ms > stats[id].lastMs) stats[id].lastMs = ms;
+  });
+  return stats;
+}
+
+function guideMonitoredScore(exId, stats) {
+  var score = guideExperienceScore(exId);
+  var st = stats[exId] || { count:0, bestSec:0, lastMs:0 };
+  if (st.count >= 3) score = Math.max(score, 1);
+  if (st.bestSec >= 600) score = Math.max(score, 2);
+  if (st.bestSec >= 900 || st.count >= 10) score = Math.max(score, 3);
+  return score;
+}
+
+function guideDurationForScore(score) {
+  if (score <= 0) return 5;
+  if (score === 1) return 10;
+  if (score === 2) return 15;
+  return 20;
+}
+
+function guideExerciseById(id) {
+  return GUIDE_EXERCISES.find(function(ex) { return ex.id === id; }) || GUIDE_EXERCISES[0];
+}
+
+function buildExperiencedGuideItems() {
+  var stats = guideExerciseStats();
+  var now = Date.now();
+  var candidates = GUIDE_EXERCISES.map(function(ex) {
+    var st = stats[ex.id] || { count:0, bestSec:0, lastMs:0 };
+    var score = guideMonitoredScore(ex.id, stats);
+    var daysSince = st.lastMs ? (now - st.lastMs) / 86400000 : 999;
+    var priority = score * 10 + Math.min(st.count, 8) - Math.min(daysSince, 14) * 0.35;
+    return { ex:ex, score:score, count:st.count, daysSince:daysSince, priority:priority };
+  }).sort(function(a,b) {
+    if (a.priority !== b.priority) return a.priority - b.priority;
+    return a.ex.id.localeCompare(b.ex.id);
+  });
+  var chosen = candidates.slice(0, 2);
+  var hasBody = chosen.some(function(c) { return c.ex.id === 'asana'; });
+  if (!hasBody) chosen.push({ ex:guideExerciseById('asana'), score:guideExperienceScore('asana') });
+  return chosen.slice(0, 3).map(function(c) {
+    var id = c.ex.id;
+    var score = c.score;
+    var dur = id === 'soulmirror' ? null : guideDurationForScore(score);
+    var tip;
+    if (score === 0) {
+      tip = 'This is the neglected gate. Begin modestly and let accuracy matter more than duration.';
+    } else if (score === 1) {
+      tip = 'You have the beginning. Add a little pressure without making the practice theatrical.';
+    } else if (score === 2) {
+      tip = 'You are ready for a clean consolidation session. Hold form, reduce drift, record honestly.';
+    } else {
+      tip = 'This is already strong. Use it as a stabilizing pillar, then notice what remains undeveloped.';
+    }
+    if (id === 'soulmirror') {
+      tip = score === 0
+        ? 'Create the mirror: one honest weakness, one genuine strength. Do not decorate either one.'
+        : 'Review the mirror and revise what no longer feels exact. Then complete pore breathing if the body is dull.';
+    }
+    return {
+      id:id,
+      name:c.ex.name,
+      mode:id === 'thought' ? guideCurrentThoughtMode(guideThoughtStats()) : undefined,
+      duration:dur,
+      progress:c.count ? c.count + ' recorded' : 'no completed sessions recorded',
+      tip:tip + (c.count ? ' Omnia has recorded ' + c.count + ' completed session' + (c.count === 1 ? '' : 's') + ' here.' : ' Omnia has no completed sessions recorded here yet.'),
+      open:id === 'soulmirror' ? 'soulmirror' : id
+    };
+  });
+}
+
+function buildFoundationalGuideItems() {
+  var rounds = guideTwoADayEnabled() ? 2 : 1;
+  var clock = guideClockStats();
+  var thought = guideThoughtStats();
+  var mode = guideCurrentThoughtMode(thought);
+  var modeStats = thought[mode] || { count:0, bestSec:0, todaySec:0 };
+  var clockMinutes = guideClockTargetMinutes(clock);
+  var clockDailyTarget = clockMinutes * 60 * rounds;
+  var thoughtMinutes = guideThoughtTargetMinutes(mode, thought);
+  var thoughtDailyTarget = thoughtMinutes * 60 * rounds;
+  var attentionTarget = guideClockAttentionTargetSec(clock);
+  var attentionText = attentionTarget
+    ? ' Your concentration target is ' + guideFmtTime(attentionTarget) + ', based on the first-weeks rule of three times your best recorded hold.'
+    : ' First establish a clean baseline; after that Omnia sets the clock target at three times your best hold.';
+  var nextThought = mode === 'observation'
+    ? 'When observation reaches a ten-minute gap, Omnia will move you to Thought Focus at five minutes.'
+    : mode === 'focus'
+      ? 'When focus reaches a ten-minute gap, Omnia will move you to Vacancy at five minutes.'
+      : 'When vacancy reaches a ten-minute gap, Omnia will cycle all three forms instead of adding more volume.';
+
+  var items = [
+    {
+      id:'clock',
+      name:'Clock',
+      duration:clockMinutes,
+      durationLabel:clockMinutes + ' min' + (rounds > 1 ? ' x2' : ''),
+      done:clock.todaySec >= clockDailyTarget,
+      progress:'today ' + guideFmtTime(clock.todaySec) + ' / ' + guideFmtTime(clockDailyTarget),
+      tip:'Accumulate the time across one or more reps. Every five minutes of total Clock work raises this agenda by one minute.' + attentionText,
+      open:'clock'
+    },
+    {
+      id:'thought',
+      name:'Thought Control',
+      mode:mode,
+      duration:thoughtMinutes,
+      durationLabel:thoughtMinutes + ' min' + (rounds > 1 ? ' x2' : ''),
+      done:modeStats.todaySec >= thoughtDailyTarget,
+      progress:'today ' + guideFmtTime(modeStats.todaySec) + ' / ' + guideFmtTime(thoughtDailyTarget) + ' · best gap ' + guideFmtTime(modeStats.bestSec || 0),
+      tip:GUIDE_FOUNDATION_THOUGHT_TIPS[mode] + ' Omnia adds one minute after every two completed sessions in this form, up to ten minutes. ' + nextThought,
+      open:'thought'
+    }
+  ];
+
+  var gate = guideFoundationNewGate(guideExerciseStats(), thought, rounds);
+  if (gate) items.push(gate);
+  return items;
+}
+
+function guideFoundationNewGate(stats, thoughtStats, rounds) {
+  var visual = stats.visual || { count:0, todaySec:0 };
+  var asana = stats.asana || { count:0, todaySec:0 };
+  var auditory = stats.auditory || { count:0, todaySec:0 };
+  var clock = guideClockStats();
+  var obs = thoughtStats.observation || { bestSec:0 };
+  var focus = thoughtStats.focus || { bestSec:0 };
+  var vacancy = thoughtStats.vacancy || { bestSec:0 };
+  var dailyTarget = 5 * 60 * rounds;
+  if (guideExerciseBreadth(stats) >= 5) return null;
+  if (visual.count < 3 && clock.totalSec >= 1800 && obs.bestSec >= 600) {
+    return {
+      id:'visual',
+      name:'Visualization',
+      duration:5,
+      durationLabel:'5 min' + (rounds > 1 ? ' x2' : ''),
+      done:visual.todaySec >= dailyTarget,
+      progress:'new gate · ' + visual.count + ' recorded',
+      tip:'Now that attention and observation have some weight, Omnia permits a small image practice. Keep it simple; clarity matters more than ambition.',
+      open:'visual'
+    };
+  }
+  if (asana.count < 3 && clock.bestSec >= 300 && focus.bestSec >= 300) {
+    return {
+      id:'asana',
+      name:'Asana',
+      duration:5,
+      durationLabel:'5 min',
+      done:asana.todaySec >= 300,
+      progress:'physical body gate · ' + asana.count + ' recorded',
+      tip:'Begin building Omnia\'s physical body through stillness. Sit upright and complete the whole period without negotiating with each impulse.',
+      open:'asana'
+    };
+  }
+  if (auditory.count < 3 && visual.count >= 3 && focus.bestSec >= 600 && vacancy.bestSec >= 300) {
+    return {
+      id:'auditory',
+      name:'Auditory',
+      duration:5,
+      durationLabel:'5 min',
+      done:auditory.todaySec >= 300,
+      progress:'astral refinement gate · ' + auditory.count + ' recorded',
+      tip:'Add sound only after the earlier gates are stable. This broadens the astral body without turning the agenda into a checklist.',
+      open:'auditory'
+    };
+  }
+  return null;
+}
+
+function guideFoundationalNote() {
+  var stats = guideExerciseStats();
+  var clock = guideClockStats();
+  var thought = guideThoughtStats();
+  var obs = thought.observation || { bestSec:0 };
+  if (guideExerciseBreadth(stats) >= 5) {
+    return 'Omnia is keeping the agenda narrow now because you have touched the main disciplines. The work becomes steadiness, not collecting more exercises.';
+  }
+  if (clock.totalSec < 1800 || obs.bestSec < 600) {
+    return 'Visualization remains available in Concentration, but Omnia is not placing it on the agenda yet. Build enough attention first so the image work has a real base.';
+  }
+  return '';
+}
+
 // ── Render the daily plan output ──────────────────────────
-function renderGuidePlan() {
+function renderGuidePlan(mode) {
+  mode = mode || guidePathMode || 'beginner';
   var dayIdx = new Date().getDay(); // 0–6
-  var plan = GUIDE_DAILY_PLANS[dayIdx];
 
-  // Pick experienced path if user has marked any exercise as not-new
-  var anyExp = GUIDE_EXERCISES.some(function(ex) { return guideIsExperienced(ex.id); });
-  var items = anyExp ? plan.experienced : plan.beginner;
+  var items = mode === 'experienced' ? buildExperiencedGuideItems() : buildFoundationalGuideItems();
+  var focus = mode === 'experienced' ? 'Personal Recommendations' : 'Foundational Path' + (guideTwoADayEnabled() ? ' · 2x/day' : '');
 
-  document.getElementById('guidePlanFocus').textContent = plan.focus;
+  document.getElementById('guidePlanFocus').textContent = focus;
   var dayNames = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
-  document.getElementById('guidePlanDayLabel').textContent = dayNames[dayIdx];
+  document.getElementById('guidePlanDayLabel').textContent = mode === 'experienced' ? 'Custom' : 'Adaptive · ' + dayNames[dayIdx];
+  var planControls = document.getElementById('guidePlanControls');
+  if (planControls) planControls.style.display = mode === 'beginner' ? 'flex' : 'none';
+  renderGuideCadenceControl();
 
-  document.getElementById('guidePlanCards').innerHTML = items.map(function(item) {
-    var durLabel = item.duration ? item.duration + ' min' : 'Open-ended';
-    var modeLabel = item.mode ? ' · ' + item.mode : '';
+  var cardsHTML = items.map(function(item) {
+    var durLabel = item.durationLabel || (item.duration ? item.duration + ' min' : 'Open-ended');
+    var modeLabel = item.mode ? ' · ' + (GUIDE_FOUNDATION_THOUGHT_LABELS[item.mode] || item.mode) : '';
     var accentColor = item.id === 'clock' ? '#d4b08e'
       : item.id === 'visual'   ? '#8ab8e0'
       : item.id === 'auditory' ? '#8eccc0'
       : item.id === 'thought'  ? '#98b4cc'
       : item.id === 'asana'    ? '#d49898'
       : '#c4a8d4'; // soulmirror
-    return '<div class="guide-plan-card">'
+    var startAttrs = item.open
+      ? ' data-guide-start="' + item.open + '"'
+        + (item.mode ? ' data-guide-mode="' + item.mode + '"' : '')
+        + (item.duration ? ' data-guide-duration="' + item.duration + '"' : '')
+      : '';
+    return '<div class="guide-plan-card' + (item.done ? ' done' : '') + '">'
       + '<div class="guide-plan-exname" style="color:' + accentColor + ';">' + item.name + modeLabel + '</div>'
       + '<div class="guide-plan-dur">' + durLabel + '</div>'
       + '<div class="guide-plan-tip">' + item.tip + '</div>'
+      + (item.progress ? '<div class="guide-plan-meta">' + (item.done ? 'complete today · ' : '') + item.progress + '</div>' : '')
+      + (item.open ? '<div class="guide-plan-action"><button class="guide-plan-start"' + startAttrs + (item.done ? ' disabled' : '') + '>' + (item.done ? 'Complete' : 'Begin') + '</button></div>' : '')
       + '</div>';
   }).join('');
+  var note = mode === 'beginner' ? guideFoundationalNote() : '';
+  document.getElementById('guidePlanCards').innerHTML = cardsHTML
+    + (note ? '<div class="guide-plan-note">' + note + '</div>' : '');
 
   document.getElementById('guidePlanOutput').style.display = 'block';
   // Scroll to plan
@@ -7748,18 +9354,40 @@ function renderGuidePlan() {
   }, 120);
 }
 
+function beginGuidePlanItem(btn) {
+  if (!btn || btn.disabled) return;
+  var ex = btn.dataset.guideStart;
+  var duration = parseInt(btn.dataset.guideDuration, 10);
+  var mode = btn.dataset.guideMode;
+  if (ex === 'thought') {
+    if (mode && TC_MODE_DEFS[mode]) tcMode = mode;
+    if (duration) tcDuration = duration;
+  }
+  if (ex === 'soulmirror') {
+    switchMode('concentration');
+    renderSoulMirrorTraits();
+    showScreen('soulMirrorScreen');
+    return;
+  }
+  openExerciseSetup(ex);
+}
+
 // ── Open / init guide screen ──────────────────────────────
 function openGuide() {
   guideState = loadGuideState();
-  guidePriorOpen = false;
+  guidePathMode = guideState._pathModeV2 || null;
   var panel = document.getElementById('guideAssessmentPanel');
-  var chevron = document.getElementById('guidePriorChevron');
-  var btn = document.getElementById('guidePriorBtn');
   if (panel) panel.style.display = 'none';
-  if (chevron) { chevron.style.transform = ''; }
-  if (btn) btn.classList.remove('open');
   document.getElementById('guidePlanOutput').style.display = 'none';
   renderGuideExRows();
+  renderOmniaEngine();
+  if (guideState._pathLockedV2 && guidePathMode) {
+    setGuidePathMode(guidePathMode);
+    renderGuidePlan(guidePathMode);
+  } else {
+    showGuideRouteChoice();
+  }
+  switchGuideTab('path');
   showScreen('guideScreen');
 }
 
@@ -7768,18 +9396,71 @@ document.getElementById('guideBack').addEventListener('click', function() {
   showScreen('homeScreen');
 });
 
-document.getElementById('guidePriorBtn').addEventListener('click', function() {
-  guidePriorOpen = !guidePriorOpen;
-  var panel = document.getElementById('guideAssessmentPanel');
-  var chevron = document.getElementById('guidePriorChevron');
-  panel.style.display = guidePriorOpen ? 'block' : 'none';
-  chevron.style.transform = guidePriorOpen ? 'rotate(90deg)' : '';
-  this.classList.toggle('open', guidePriorOpen);
-  if (guidePriorOpen) renderGuideExRows();
+document.getElementById('guideBeginnerPathBtn').addEventListener('click', function() {
+  showGuidePathConfirmation('beginner');
+});
+
+document.getElementById('guideExperiencedPathBtn').addEventListener('click', function() {
+  showGuidePathConfirmation('experienced');
 });
 
 document.getElementById('guideGenerateBtn').addEventListener('click', function() {
-  renderGuidePlan();
+  commitGuidePath('experienced');
+});
+
+function toggleGuideTwoADay() {
+  guideState._twoADayV1 = !guideTwoADayEnabled();
+  saveGuideState(guideState);
+  renderGuideCadenceControl();
+  if (guideState._pathLockedV2 && guidePathMode === 'beginner') renderGuidePlan('beginner');
+}
+
+document.getElementById('guideTwoADayBtn').addEventListener('click', toggleGuideTwoADay);
+document.getElementById('guideConfirmTwoADayBtn').addEventListener('click', toggleGuideTwoADay);
+document.getElementById('guidePlanTwoADayBtn').addEventListener('click', toggleGuideTwoADay);
+document.getElementById('guideConfirmBackBtn').addEventListener('click', showGuideRouteChoice);
+document.getElementById('guideConfirmCommitBtn').addEventListener('click', function() {
+  commitGuidePath(guidePendingPathMode || guidePathMode || 'beginner');
+});
+
+document.getElementById('guidePlanCards').addEventListener('click', function(e) {
+  var btn = e.target.closest('.guide-plan-start');
+  if (btn) beginGuidePlanItem(btn);
+});
+
+document.getElementById('guidePathTab').addEventListener('click', function() {
+  switchGuideTab('path');
+});
+document.getElementById('guideOmniaTab').addEventListener('click', function() {
+  switchGuideTab('omnia');
+});
+document.getElementById('omniaCollectBtn').addEventListener('click', collectOmniaAkasha);
+document.getElementById('omniaActionBtn').addEventListener('click', function() {
+  performOmniaAction('attune');
+});
+document.getElementById('guideOmniaFigure').addEventListener('click', morphGuideOmnia);
+document.getElementById('guideOmniaFigure').addEventListener('keydown', function(e) {
+  if (e.key === 'Enter' || e.key === ' ') {
+    e.preventDefault();
+    morphGuideOmnia();
+  }
+});
+document.getElementById('omniaAdvanceBtn').addEventListener('click', advanceOmniaStep);
+document.getElementById('omniaBeginRecBtn').addEventListener('click', beginOmniaRecommendation);
+document.getElementById('omniaNewRecBtn').addEventListener('click', function() {
+  omniaPickRecommendation(true);
+  renderOmniaEngine();
+});
+document.getElementById('omniaEngine').addEventListener('click', function(e) {
+  var cosmeticBtn = e.target.closest('[data-omnia-cosmetic-kind]');
+  if (cosmeticBtn) {
+    unlockOrSelectOmniaCosmetic(cosmeticBtn.dataset.omniaCosmeticKind, cosmeticBtn.dataset.omniaCosmeticId);
+    return;
+  }
+  var bodyBtn = e.target.closest('[data-omnia-body]');
+  if (bodyBtn) { buildOmniaBody(bodyBtn.dataset.omniaBody); return; }
+  var upgBtn = e.target.closest('[data-omnia-upgrade]');
+  if (upgBtn) buyOmniaUpgrade(upgBtn.dataset.omniaUpgrade);
 });
 
 // Settings toggle (inline accordion)
@@ -8287,6 +9968,8 @@ async function syncPushData() {
       presence_prayer_v1: localStorage.getItem('presence_prayer_v1'),
       presence_journal_v1: localStorage.getItem('presence_journal_v1'),
       presence_soul_mirror_v1: localStorage.getItem('presence_soul_mirror_v1'),
+      presence_guide_v1: localStorage.getItem('presence_guide_v1'),
+      presence_omnia_v1: localStorage.getItem('presence_omnia_v1'),
       bardon_rpg_v2: localStorage.getItem('bardon_rpg_v2'),
       presence_visited: localStorage.getItem('presence_visited'),
     };
@@ -10618,6 +12301,7 @@ function stopPoreBreath(completed){
     });
     if(concState.history.length > 100) concState.history = concState.history.slice(0,100);
     saveConcState();
+    awardOmniaForExercise('pore_breathing', secondsElapsed || breathsDone * 10);
     if(syncEnabled && authToken) syncPushData();
 
     showToast('Pore breathing complete · +' + xpEarned + ' XP');
@@ -10826,6 +12510,7 @@ document.addEventListener('DOMContentLoaded',function(){(function(){
   /* End */
   function end(){
     localStorage.setItem(VISITED,'1');
+    document.body.classList.remove('tut-live');
     stopSparks();clearPulse();
     cp.classList.remove('tut-cap-on');
     closeDrawer();
@@ -10861,6 +12546,7 @@ document.addEventListener('DOMContentLoaded',function(){(function(){
   /* Boot: wait for home screen */
   function boot(){
     if(localStorage.getItem(VISITED)) return;
+    document.body.classList.add('tut-live');
     ov.style.display='flex';ov.style.opacity='0';
     ov.style.transition='opacity 0.7s ease,background 0.4s ease';
     setTimeout(function(){ov.style.opacity='1';go(0);},120);
@@ -10869,6 +12555,7 @@ document.addEventListener('DOMContentLoaded',function(){(function(){
   // Replay tutorial on demand (always available, e.g. drawer Omnia button)
   window.__tutReplay = function(){
     cur=0; eyeOn=false; rdy=false;
+    document.body.classList.add('tut-live');
     stopSparks(); darkSpot();
     df.classList.remove('tut-float-on');
     fb.classList.remove('tut-vis');
