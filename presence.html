@@ -310,6 +310,15 @@
     .omnia-upgrade-row { display:flex; justify-content:space-between; align-items:center; gap:12px; border-top:1px solid var(--border); padding-top:10px; }
     .omnia-upgrade-name { font-size:9px; letter-spacing:.14em; text-transform:uppercase; color:var(--text); }
     .omnia-upgrade-sub { font-size:9px; color:var(--muted); margin-top:3px; line-height:1.4; }
+    .omnia-cosmetics { margin-top:14px; border-top:1px solid rgba(142,204,224,.13); padding-top:12px; display:grid; gap:12px; }
+    .omnia-cosmetic-section { display:grid; gap:8px; }
+    .omnia-cosmetic-title { font-size:8px; letter-spacing:.24em; text-transform:uppercase; color:#8ecce0; }
+    .omnia-cosmetic-card { display:flex; justify-content:space-between; align-items:center; gap:12px; border:1px solid var(--border); border-radius:8px; padding:10px 11px; background:rgba(255,255,255,.025); }
+    .omnia-cosmetic-card.selected { border-color:rgba(142,204,224,.32); background:rgba(142,204,224,.045); }
+    .omnia-cosmetic-main { display:flex; align-items:center; gap:10px; min-width:0; }
+    .omnia-cosmetic-swatch { width:20px; height:20px; border-radius:50%; border:1px solid rgba(255,255,255,.24); box-shadow:0 0 12px var(--swatch,#8ecce0); background:var(--swatch,#8ecce0); flex-shrink:0; }
+    .omnia-cosmetic-name { font-size:9px; letter-spacing:.14em; text-transform:uppercase; color:var(--text); }
+    .omnia-cosmetic-sub { font-size:9px; color:var(--muted); line-height:1.4; margin-top:3px; }
     .omnia-step-card { border:1px solid rgba(142,204,224,.18); background:rgba(255,255,255,.025); border-radius:10px; padding:13px 14px; margin-bottom:12px; }
     .omnia-step-top { display:flex; justify-content:space-between; align-items:flex-start; gap:12px; margin-bottom:10px; }
     .omnia-step-label { font-size:8px; letter-spacing:.24em; text-transform:uppercase; color:#8ecce0; margin-bottom:4px; }
@@ -608,9 +617,26 @@
 @keyframes omniaFloat { 0%,100%{transform:translateY(0);} 50%{transform:translateY(-7px);} }
 @keyframes omniaFacetPulse { 0%,100%{opacity:.55;} 50%{opacity:.9;} }
 @keyframes omniaAttune { 0%{transform:translateY(0) scale(1); filter:drop-shadow(0 0 8px rgba(160,210,240,.35));} 35%{transform:translateY(-10px) scale(1.08); filter:drop-shadow(0 0 24px rgba(184,234,255,.9));} 70%{transform:translateY(-3px) scale(.98); filter:drop-shadow(0 0 16px rgba(212,149,110,.55));} 100%{transform:translateY(0) scale(1); filter:drop-shadow(0 0 8px rgba(160,210,240,.35));} }
+@keyframes omniaSymbolPulse { 0%{transform:scale(.55) rotate(-18deg); opacity:0; filter:blur(7px);} 38%{transform:scale(1.12) rotate(4deg); opacity:1; filter:blur(0);} 68%{transform:scale(1) rotate(0); opacity:1; filter:blur(0);} 100%{transform:scale(.72) rotate(12deg); opacity:0; filter:blur(8px);} }
+@keyframes omniaCrystalFold { 0%,100%{transform:scale(1) rotate(0); opacity:1; filter:blur(0);} 36%,70%{transform:scale(.42) rotate(24deg); opacity:.18; filter:blur(5px);} }
+@keyframes omniaRingTurn { 0%{transform:rotate(0) scale(.82); opacity:0;} 32%{opacity:.75;} 100%{transform:rotate(180deg) scale(1.16); opacity:0;} }
 .omnia-figure.attune { animation:omniaAttune 1.4s ease both; }
 .omnia-wrap { display:flex; flex-direction:column; align-items:center; padding:8px 0 22px; }
-.omnia-figure { animation:omniaFloat 4.5s ease-in-out infinite; filter:drop-shadow(0 0 8px rgba(160,210,240,.35)); }
+.omnia-figure { position:relative; width:88px; height:128px; display:flex; align-items:center; justify-content:center; animation:omniaFloat 4.5s ease-in-out infinite; filter:drop-shadow(0 0 8px rgba(160,210,240,.35)); cursor:pointer; outline:none; }
+.omnia-figure:focus-visible { filter:drop-shadow(0 0 14px rgba(184,234,255,.75)); }
+.omnia-crystal-layer, .omnia-shard-layer, .omnia-symbol-layer, .omnia-morph-ring { position:absolute; inset:0; display:flex; align-items:center; justify-content:center; transform-origin:center; pointer-events:none; }
+.omnia-crystal-layer { transition:opacity .28s ease, transform .28s ease, filter .3s ease; filter:var(--omnia-filter, none); }
+.omnia-shard-layer { opacity:0; overflow:visible; }
+.omnia-figure.morphing .omnia-shard-layer { opacity:1; }
+.omnia-symbol-layer { opacity:0; color:#b8eaff; }
+.omnia-symbol-layer svg { width:88px; height:88px; overflow:visible; opacity:.55; }
+.omnia-morph-ring { opacity:0; border:1px solid rgba(184,234,255,.45); border-radius:50%; width:82px; height:82px; margin:auto; box-shadow:0 0 18px rgba(142,204,224,.24), inset 0 0 20px rgba(142,204,224,.12); }
+.omnia-companion { position:absolute; right:4px; top:38px; width:15px; height:15px; border-radius:50%; opacity:0; background:var(--omnia-companion-color,#b8eaff); border:1px solid rgba(255,255,255,.38); box-shadow:0 0 12px var(--omnia-companion-color,#b8eaff); pointer-events:none; }
+@keyframes omniaCompanionDrift { 0%,100%{transform:translate(0,0) scale(.9);} 50%{transform:translate(8px,-13px) scale(1.08);} }
+.omnia-figure.has-companion .omnia-companion { opacity:.95; animation:omniaCompanionDrift 3.8s ease-in-out infinite; }
+.omnia-figure.morphing .omnia-crystal-layer { opacity:.12; transform:scale(.82) rotate(10deg); filter:blur(3px); }
+.omnia-figure.morphing .omnia-symbol-layer { opacity:0; }
+.omnia-figure.morphing .omnia-morph-ring { animation:omniaRingTurn 1.9s ease both; }
 .omnia-name { font-family:Cormorant Garamond,serif; font-size:11px; letter-spacing:.42em; text-transform:uppercase; color:#8ecce0; margin-top:10px; opacity:.85; }
 .omnia-speak { font-size:12px; color:var(--muted); line-height:1.85; text-align:center; padding:0 4px; margin-top:10px; font-style:italic; }
 .omnia-speak em { color:#a8d8ec; font-style:normal; }
@@ -852,7 +878,8 @@ body:not(.tut-live) #tutDrawerCapture {
 
     <!-- Omnia character -->
     <div class="omnia-wrap">
-      <div class="omnia-figure">
+      <div class="omnia-figure" id="guideOmniaFigure" role="button" tabindex="0" aria-label="Reveal an Omnia symbol">
+        <div class="omnia-crystal-layer">
         <svg viewBox="0 0 80 130" width="72" height="118" xmlns="http://www.w3.org/2000/svg" style="overflow:visible;">
           <defs>
             <linearGradient id="og1" x1="0%" y1="0%" x2="100%" y2="100%">
@@ -905,6 +932,11 @@ body:not(.tut-live) #tutDrawerCapture {
             <line x1="11.5" y1="81.5" x2="11.5" y2="86.5" stroke="#b8eaff" stroke-width="0.7"/>
           </g>
         </svg>
+        </div>
+        <svg class="omnia-shard-layer" id="guideOmniaShardSvg" viewBox="0 0 100 130" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"></svg>
+        <div class="omnia-morph-ring"></div>
+        <div class="omnia-symbol-layer" id="guideOmniaSymbolLayer"></div>
+        <div class="omnia-companion" id="guideOmniaCompanion"></div>
       </div>
       <div class="omnia-name">Omnia</div>
       <div class="omnia-speak">I am here to guide your practice today.<br>Tell me — <em>have you walked this path before?</em></div>
@@ -912,7 +944,7 @@ body:not(.tut-live) #tutDrawerCapture {
 
     <div class="guide-tabs">
       <button class="guide-tab active" id="guidePathTab">Path</button>
-      <button class="guide-tab" id="guideOmniaTab">Omnia</button>
+      <button class="guide-tab" id="guideOmniaTab">Upgrade</button>
     </div>
 
     <div class="guide-tab-panel" id="guideOmniaPanel" style="display:none;">
@@ -971,6 +1003,7 @@ body:not(.tut-live) #tutDrawerCapture {
       </div>
 
       <div class="omnia-upgrades" id="omniaUpgradeGrid"></div>
+      <div class="omnia-cosmetics" id="omniaCosmeticGrid"></div>
     </div>
     </div>
 
@@ -7842,7 +7875,15 @@ var OMNIA_DEFAULT = {
   rec: null,
   recStreak: 0,
   completedRecommended: 0,
-  totalAkashaEarned: 1020
+  totalAkashaEarned: 1020,
+  cosmetics: {
+    palette:'aether',
+    entity:'omnia',
+    companion:null,
+    unlockedPalettes:['aether'],
+    unlockedEntities:['omnia'],
+    unlockedCompanions:[]
+  }
 };
 
 var OMNIA_BODY_META = {
@@ -7864,6 +7905,27 @@ var OMNIA_UPGRADES = [
   { id:'current', name:'Akashic Engine', sub:'Generate akasha more quickly each hour', base:520, step:260 },
   { id:'vessel', name:'Deep Vessel', sub:'Reservoir capacity before overflow', base:480, step:240 },
   { id:'discernment', name:'Discernment', sub:'Better recommendations and bonus rewards', base:640, step:320 }
+];
+
+var OMNIA_PALETTES = [
+  { id:'aether', name:'Aether Blue', cost:0, color:'#b8eaff', filter:'none', sub:'Original crystalline guide-light' },
+  { id:'rose', name:'Rose Astral', cost:820, color:'#ffc4d8', filter:'hue-rotate(128deg) saturate(1.28) brightness(1.08)', sub:'A softer astral radiance' },
+  { id:'solar', name:'Solar Gold', cost:1040, color:'#f0d39a', filter:'hue-rotate(182deg) saturate(1.2) brightness(1.1)', sub:'A warm body of will' },
+  { id:'violet', name:'Violet Mind', cost:1280, color:'#c4a8d4', filter:'hue-rotate(74deg) saturate(1.22) brightness(1.04)', sub:'A quiet mental flame' },
+  { id:'verdant', name:'Verdant Vessel', cost:1460, color:'#98d8bd', filter:'hue-rotate(246deg) saturate(1.12) brightness(1.02)', sub:'A healing green current' }
+];
+
+var OMNIA_ENTITIES = [
+  { id:'omnia', name:'Omnia', cost:0, color:'#b8eaff', sub:'The first guide-form' },
+  { id:'noema', name:'Noema', cost:1600, color:'#98b4cc', sub:'A sharper mental entity design' },
+  { id:'aurel', name:'Aurel', cost:2200, color:'#f0d39a', sub:'A solar entity design for disciplined work' },
+  { id:'elys', name:'Elys', cost:2600, color:'#c4a8d4', sub:'An astral entity design for image and symbol' }
+];
+
+var OMNIA_COMPANIONS = [
+  { id:'wisp', name:'Akashic Wisp', cost:700, color:'#b8eaff', sub:'A small orbiting practice companion' },
+  { id:'ember', name:'Solar Ember', cost:980, color:'#f0d39a', sub:'A warm companion for steady effort' },
+  { id:'mote', name:'Violet Mote', cost:1180, color:'#c4a8d4', sub:'A tiny watcher for mental work' }
 ];
 
 var OMNIA_BARDON_STEPS = [
@@ -7903,6 +7965,10 @@ function loadOmniaState() {
     Object.assign(merged, parsed);
     merged.bodies = Object.assign(cloneOmniaDefault().bodies, parsed.bodies || {});
     merged.upgrades = Object.assign(cloneOmniaDefault().upgrades, parsed.upgrades || {});
+    merged.cosmetics = Object.assign(cloneOmniaDefault().cosmetics, parsed.cosmetics || {});
+    merged.cosmetics.unlockedPalettes = merged.cosmetics.unlockedPalettes || ['aether'];
+    merged.cosmetics.unlockedEntities = merged.cosmetics.unlockedEntities || ['omnia'];
+    merged.cosmetics.unlockedCompanions = merged.cosmetics.unlockedCompanions || [];
     if (!merged.lastTick) merged.lastTick = Date.now();
     return merged;
   } catch(e) { return cloneOmniaDefault(); }
@@ -7913,6 +7979,100 @@ function saveOmniaState() {
 }
 
 var omniaState = loadOmniaState();
+
+function omniaFindCosmetic(list, id) {
+  return list.find(function(item) { return item.id === id; }) || list[0];
+}
+
+function omniaCosmeticUnlocked(kind, id) {
+  var c = omniaState.cosmetics || cloneOmniaDefault().cosmetics;
+  if (kind === 'palette') return (c.unlockedPalettes || []).indexOf(id) !== -1;
+  if (kind === 'entity') return (c.unlockedEntities || []).indexOf(id) !== -1;
+  if (kind === 'companion') return (c.unlockedCompanions || []).indexOf(id) !== -1;
+  return false;
+}
+
+function omniaCosmeticSelected(kind, id) {
+  var c = omniaState.cosmetics || {};
+  if (kind === 'palette') return c.palette === id;
+  if (kind === 'entity') return c.entity === id;
+  if (kind === 'companion') return c.companion === id;
+  return false;
+}
+
+function omniaUnlockList(kind) {
+  if (!omniaState.cosmetics) omniaState.cosmetics = cloneOmniaDefault().cosmetics;
+  if (kind === 'palette') return omniaState.cosmetics.unlockedPalettes;
+  if (kind === 'entity') return omniaState.cosmetics.unlockedEntities;
+  return omniaState.cosmetics.unlockedCompanions;
+}
+
+function applyOmniaCosmetics() {
+  if (!omniaState.cosmetics) omniaState.cosmetics = cloneOmniaDefault().cosmetics;
+  var palette = omniaFindCosmetic(OMNIA_PALETTES, omniaState.cosmetics.palette || 'aether');
+  var entity = omniaFindCosmetic(OMNIA_ENTITIES, omniaState.cosmetics.entity || 'omnia');
+  var companion = omniaState.cosmetics.companion ? omniaFindCosmetic(OMNIA_COMPANIONS, omniaState.cosmetics.companion) : null;
+  var fig = document.getElementById('guideOmniaFigure');
+  var name = document.querySelector('.omnia-name');
+  var comp = document.getElementById('guideOmniaCompanion');
+  if (fig) {
+    fig.style.setProperty('--omnia-filter', palette.filter || 'none');
+    fig.style.setProperty('--omnia-companion-color', companion ? companion.color : palette.color);
+    fig.dataset.entity = entity.id;
+    fig.classList.toggle('has-companion', !!companion);
+  }
+  if (name) {
+    name.textContent = entity.name;
+    name.style.color = palette.color;
+  }
+  if (comp) comp.style.display = companion ? 'block' : 'none';
+}
+
+function renderOmniaCosmeticSection(title, kind, items) {
+  var c = omniaState.cosmetics || cloneOmniaDefault().cosmetics;
+  return '<div class="omnia-cosmetic-section">'
+    + '<div class="omnia-cosmetic-title">' + title + '</div>'
+    + items.map(function(item) {
+      var unlocked = omniaCosmeticUnlocked(kind, item.id);
+      var selected = omniaCosmeticSelected(kind, item.id);
+      var label = selected ? 'Selected' : unlocked ? 'Select' : 'Unlock ' + item.cost;
+      var disabled = !unlocked && (omniaState.akasha || 0) < item.cost;
+      var sub = item.sub + (!unlocked && item.cost ? ' · ' + item.cost + ' akasha' : '');
+      return '<div class="omnia-cosmetic-card' + (selected ? ' selected' : '') + '">'
+        + '<div class="omnia-cosmetic-main">'
+        + '<div class="omnia-cosmetic-swatch" style="--swatch:' + item.color + ';"></div>'
+        + '<div><div class="omnia-cosmetic-name">' + item.name + '</div><div class="omnia-cosmetic-sub">' + sub + '</div></div>'
+        + '</div>'
+        + '<button class="omnia-mini-btn" data-omnia-cosmetic-kind="' + kind + '" data-omnia-cosmetic-id="' + item.id + '"' + (selected || disabled ? ' disabled' : '') + '>' + label + '</button>'
+        + '</div>';
+    }).join('')
+    + (kind === 'companion' && c.companion ? '<button class="omnia-mini-btn" data-omnia-cosmetic-kind="companion" data-omnia-cosmetic-id="none">Dismiss Companion</button>' : '')
+    + '</div>';
+}
+
+function unlockOrSelectOmniaCosmetic(kind, id) {
+  if (!omniaState.cosmetics) omniaState.cosmetics = cloneOmniaDefault().cosmetics;
+  if (kind === 'companion' && id === 'none') {
+    omniaState.cosmetics.companion = null;
+    saveOmniaState();
+    renderOmniaEngine();
+    return;
+  }
+  var list = kind === 'palette' ? OMNIA_PALETTES : kind === 'entity' ? OMNIA_ENTITIES : OMNIA_COMPANIONS;
+  var item = omniaFindCosmetic(list, id);
+  var unlocked = omniaCosmeticUnlocked(kind, id);
+  if (!unlocked) {
+    if ((omniaState.akasha || 0) < item.cost) return;
+    omniaState.akasha -= item.cost;
+    omniaUnlockList(kind).push(id);
+  }
+  if (kind === 'palette') omniaState.cosmetics.palette = id;
+  if (kind === 'entity') omniaState.cosmetics.entity = id;
+  if (kind === 'companion') omniaState.cosmetics.companion = id;
+  saveOmniaState();
+  renderOmniaEngine();
+  showToast(item.name + (unlocked ? ' selected' : ' unlocked'));
+}
 
 function omniaBodyTotal() {
   return (omniaState.bodies.physical || 0) + (omniaState.bodies.astral || 0) + (omniaState.bodies.mental || 0);
@@ -8068,6 +8228,7 @@ function awardOmniaForExercise(exId, seconds) {
 
 function renderOmniaEngine() {
   omniaAccrue();
+  applyOmniaCosmetics();
   var stage = omniaStage();
   var step = omniaCurrentStep();
   var canAdvance = omniaStepReady(step);
@@ -8152,6 +8313,14 @@ function renderOmniaEngine() {
         + '</div>';
     }).join('');
   }
+
+  var cosmeticGrid = document.getElementById('omniaCosmeticGrid');
+  if (cosmeticGrid) {
+    cosmeticGrid.innerHTML =
+      renderOmniaCosmeticSection('Omnia Colors', 'palette', OMNIA_PALETTES)
+      + renderOmniaCosmeticSection('Entity Forms', 'entity', OMNIA_ENTITIES)
+      + renderOmniaCosmeticSection('Companions', 'companion', OMNIA_COMPANIONS);
+  }
 }
 
 function collectOmniaAkasha() {
@@ -8219,6 +8388,241 @@ function beginOmniaRecommendation() {
     return;
   }
   openExerciseSetup(meta.open);
+}
+
+var OMNIA_MORPH_SYMBOLS = [
+  { id:'eye', label:'Inner Eye', color:'#b8eaff' },
+  { id:'triangle', label:'Triad', color:'#d4b08e' },
+  { id:'sun', label:'Solar Center', color:'#f0d39a' },
+  { id:'moon', label:'Lunar Vessel', color:'#c4a8d4' }
+];
+var omniaMorphIndex = 0;
+var omniaMorphTimer = null;
+var omniaMorphRaf = null;
+
+var OMNIA_CRYSTAL_MORPH_SHARDS = [
+  [[50,4],[66,18],[50,32],[34,18]],
+  [[50,32],[74,45],[80,70],[50,84]],
+  [[50,32],[50,84],[20,70],[26,45]],
+  [[20,70],[50,84],[50,116],[32,99]],
+  [[80,70],[68,99],[50,116],[50,84]],
+  [[20,70],[80,70],[68,99],[32,99]],
+  [[50,84],[68,99],[50,116],[32,99]],
+  [[34,18],[50,32],[26,45],[20,70]],
+  [[66,18],[80,70],[74,45],[50,32]]
+];
+
+var OMNIA_MORPH_TARGETS = {
+  eye: [
+    [[50,34],[64,50],[50,66],[36,50]],
+    [[50,64],[64,78],[50,94],[36,78]],
+    [[8,65],[28,46],[40,54],[26,76]],
+    [[92,65],[72,46],[60,54],[74,76]],
+    [[8,65],[28,46],[72,46],[92,65]],
+    [[8,65],[28,84],[72,84],[92,65]],
+    [[43,58],[57,58],[57,72],[43,72]],
+    [[22,43],[50,25],[78,43],[70,49]],
+    [[24,87],[50,105],[76,87],[68,82]]
+  ],
+  triangle: [
+    [[50,8],[61,31],[39,31],[50,8]],
+    [[61,31],[89,88],[73,88],[49,31]],
+    [[39,31],[27,88],[11,88],[51,31]],
+    [[11,88],[89,88],[80,100],[20,100]],
+    [[50,33],[62,61],[38,61],[50,33]],
+    [[38,61],[31,82],[50,73],[62,61]],
+    [[62,61],[69,82],[50,73],[38,61]],
+    [[20,100],[50,73],[80,100],[50,112]],
+    [[50,8],[50,33],[39,31],[61,31]]
+  ],
+  sun: [
+    [[47,8],[53,8],[55,27],[45,27]],
+    [[47,103],[53,103],[55,122],[45,122]],
+    [[7,62],[26,60],[26,70],[7,68]],
+    [[74,60],[93,62],[93,68],[74,70]],
+    [[24,23],[32,16],[42,34],[35,41]],
+    [[68,16],[76,23],[65,41],[58,34]],
+    [[24,107],[35,89],[42,96],[32,114]],
+    [[58,96],[65,89],[76,107],[68,114]],
+    [[50,38],[70,65],[50,92],[30,65]]
+  ],
+  moon: [
+    [[63,13],[78,17],[66,28],[52,31]],
+    [[52,31],[66,28],[59,45],[43,50]],
+    [[43,50],[59,45],[58,62],[39,68]],
+    [[39,68],[58,62],[66,78],[45,88]],
+    [[45,88],[66,78],[80,85],[61,99]],
+    [[61,99],[38,91],[29,72],[39,68]],
+    [[39,68],[29,72],[27,49],[43,50]],
+    [[43,50],[27,49],[37,27],[52,31]],
+    [[52,31],[37,27],[63,13],[63,13]]
+  ]
+};
+
+function omniaPointString(poly) {
+  return poly.map(function(p) { return p[0].toFixed(2) + ',' + p[1].toFixed(2); }).join(' ');
+}
+
+function omniaLerpPoly(a, b, t) {
+  return a.map(function(p, i) {
+    return [
+      p[0] + (b[i][0] - p[0]) * t,
+      p[1] + (b[i][1] - p[1]) * t
+    ];
+  });
+}
+
+function omniaEaseMorph(t) {
+  return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+}
+
+function omniaMorphOutline(sym, color) {
+  if (sym.id === 'triangle') {
+    return '<g id="omniaShardOutline" opacity="0" fill="none" stroke="' + color + '" stroke-linecap="round" stroke-linejoin="round">'
+      + '<path d="M50 8 L89 88 L11 88 Z" stroke-width="2.25"/>'
+      + '<path d="M50 33 L69 82 L31 82 Z" stroke-width="1.15" opacity=".72"/>'
+      + '<circle cx="50" cy="67" r="10" stroke-width="1" opacity=".62"/>'
+      + '</g>';
+  }
+  if (sym.id === 'sun') {
+    return '<g id="omniaShardOutline" opacity="0" fill="none" stroke="' + color + '" stroke-linecap="round" stroke-linejoin="round">'
+      + '<circle cx="50" cy="65" r="25" stroke-width="2.2"/>'
+      + '<circle cx="50" cy="65" r="9" stroke-width="1.1" opacity=".78"/>'
+      + '<path d="M50 8 V27 M50 103 V122 M7 65 H26 M74 65 H93 M24 23 L38 37 M76 23 L62 37 M24 107 L38 93 M76 107 L62 93" stroke-width="1.55"/>'
+      + '</g>';
+  }
+  if (sym.id === 'moon') {
+    return '<g id="omniaShardOutline" opacity="0" fill="none" stroke="' + color + '" stroke-linecap="round" stroke-linejoin="round">'
+      + '<path d="M63 13 C40 19 27 37 30 58 C34 80 54 91 76 82 C61 77 51 63 53 47 C55 31 65 20 80 15 C74 12 68 11 63 13 Z" stroke-width="2.25"/>'
+      + '<path d="M38 27 C29 44 31 72 45 88" stroke-width="1" opacity=".48"/>'
+      + '<path d="M36 24 L35 29 M24 50 L29 50 M43 82 L47 86" stroke-width="1" opacity=".58"/>'
+      + '</g>';
+  }
+  return '<g id="omniaShardOutline" opacity="0" fill="none" stroke="' + color + '" stroke-linecap="round" stroke-linejoin="round">'
+    + '<path d="M8 65 C22 39 39 31 50 31 C61 31 78 39 92 65 C78 91 61 99 50 99 C39 99 22 91 8 65 Z" stroke-width="2.15"/>'
+    + '<circle cx="50" cy="65" r="18" stroke-width="1.6"/>'
+    + '<circle cx="50" cy="65" r="7" stroke-width="1.2" fill="#06131f" fill-opacity=".75"/>'
+    + '<path d="M20 47 C35 36 65 36 80 47 M20 83 C35 94 65 94 80 83" stroke-width=".85" opacity=".44"/>'
+    + '</g>';
+}
+
+function animateOmniaShardMorph(sym) {
+  var fig = document.getElementById('guideOmniaFigure');
+  var svg = document.getElementById('guideOmniaShardSvg');
+  if (!fig || !svg) return;
+  if (omniaMorphRaf) cancelAnimationFrame(omniaMorphRaf);
+  var from = OMNIA_CRYSTAL_MORPH_SHARDS;
+  var to = OMNIA_MORPH_TARGETS[sym.id] || OMNIA_MORPH_TARGETS.eye;
+  var color = sym.color || '#b8eaff';
+  svg.innerHTML = '<defs><filter id="omniaShardGlow" x="-40%" y="-40%" width="180%" height="180%"><feGaussianBlur stdDeviation="2.2" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter></defs>';
+  var polys = from.map(function(poly, idx) {
+    var el = document.createElementNS('http://www.w3.org/2000/svg', 'polygon');
+    el.setAttribute('points', omniaPointString(poly));
+    el.setAttribute('fill', color);
+    el.setAttribute('fill-opacity', idx === 8 ? '.18' : '.26');
+    el.setAttribute('stroke', color);
+    el.setAttribute('stroke-width', idx === 8 ? '1.1' : '1.35');
+    el.setAttribute('stroke-opacity', '.86');
+    el.setAttribute('filter', 'url(#omniaShardGlow)');
+    svg.appendChild(el);
+    return el;
+  });
+  svg.insertAdjacentHTML('beforeend', omniaMorphOutline(sym, color));
+  var outline = svg.querySelector('#omniaShardOutline');
+  fig.classList.remove('morphing');
+  void fig.offsetWidth;
+  fig.classList.add('morphing');
+  var start = performance.now();
+  var inwardMs = 760;
+  var holdMs = 650;
+  var outwardMs = 640;
+  var totalMs = inwardMs + holdMs + outwardMs;
+  function frame(now) {
+    var elapsed = now - start;
+    var t;
+    if (elapsed <= inwardMs) {
+      t = omniaEaseMorph(elapsed / inwardMs);
+      svg.style.opacity = String(0.3 + t * 0.7);
+      if (outline) outline.setAttribute('opacity', String(Math.max(0, (t - 0.58) / 0.42)));
+      polys.forEach(function(poly, idx) {
+        poly.setAttribute('points', omniaPointString(omniaLerpPoly(from[idx], to[idx], t)));
+      });
+    } else if (elapsed <= inwardMs + holdMs) {
+      svg.style.opacity = '1';
+      if (outline) outline.setAttribute('opacity', '1');
+      polys.forEach(function(poly, idx) { poly.setAttribute('points', omniaPointString(to[idx])); });
+    } else if (elapsed <= totalMs) {
+      t = omniaEaseMorph((elapsed - inwardMs - holdMs) / outwardMs);
+      svg.style.opacity = String(1 - t * 0.75);
+      if (outline) outline.setAttribute('opacity', String(1 - t));
+      polys.forEach(function(poly, idx) {
+        poly.setAttribute('points', omniaPointString(omniaLerpPoly(to[idx], from[idx], t)));
+      });
+    } else {
+      fig.classList.remove('morphing');
+      svg.innerHTML = '';
+      svg.style.opacity = '0';
+      omniaMorphRaf = null;
+      return;
+    }
+    omniaMorphRaf = requestAnimationFrame(frame);
+  }
+  omniaMorphRaf = requestAnimationFrame(frame);
+}
+
+function renderOmniaMorphSymbol(sym) {
+  var color = sym.color || '#b8eaff';
+  if (sym.id === 'triangle') {
+    return '<svg viewBox="0 0 100 100" aria-hidden="true" xmlns="http://www.w3.org/2000/svg">'
+      + '<defs><filter id="omTriGlow"><feGaussianBlur stdDeviation="2.4" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter></defs>'
+      + '<path d="M50 9 L88 80 L12 80 Z" fill="none" stroke="' + color + '" stroke-width="2.2" filter="url(#omTriGlow)"/>'
+      + '<path d="M50 25 L73 72 L27 72 Z" fill="rgba(212,176,142,.08)" stroke="' + color + '" stroke-width="1" opacity=".72"/>'
+      + '<circle cx="50" cy="58" r="12" fill="none" stroke="' + color + '" stroke-width="1.4" opacity=".72"/>'
+      + '<line x1="50" y1="9" x2="50" y2="80" stroke="' + color + '" stroke-width=".8" opacity=".45"/>'
+      + '</svg>';
+  }
+  if (sym.id === 'sun') {
+    return '<svg viewBox="0 0 100 100" aria-hidden="true" xmlns="http://www.w3.org/2000/svg">'
+      + '<defs><filter id="omSunGlow"><feGaussianBlur stdDeviation="2.6" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter></defs>'
+      + '<g stroke="' + color + '" stroke-width="1.6" stroke-linecap="round" filter="url(#omSunGlow)">'
+      + '<line x1="50" y1="7" x2="50" y2="21"/><line x1="50" y1="79" x2="50" y2="93"/><line x1="7" y1="50" x2="21" y2="50"/><line x1="79" y1="50" x2="93" y2="50"/>'
+      + '<line x1="20" y1="20" x2="30" y2="30"/><line x1="70" y1="70" x2="80" y2="80"/><line x1="20" y1="80" x2="30" y2="70"/><line x1="70" y1="30" x2="80" y2="20"/>'
+      + '</g><circle cx="50" cy="50" r="23" fill="rgba(240,211,154,.08)" stroke="' + color + '" stroke-width="2.2"/>'
+      + '<circle cx="50" cy="50" r="9" fill="none" stroke="' + color + '" stroke-width="1.2" opacity=".75"/>'
+      + '</svg>';
+  }
+  if (sym.id === 'moon') {
+    return '<svg viewBox="0 0 100 100" aria-hidden="true" xmlns="http://www.w3.org/2000/svg">'
+      + '<defs><filter id="omMoonGlow"><feGaussianBlur stdDeviation="2.4" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter></defs>'
+      + '<path d="M63 13 C40 19 27 37 30 58 C34 80 54 91 76 82 C61 77 51 63 53 47 C55 31 65 20 80 15 C74 12 68 11 63 13 Z" fill="rgba(196,168,212,.11)" stroke="' + color + '" stroke-width="2.2" filter="url(#omMoonGlow)"/>'
+      + '<circle cx="35" cy="25" r="2" fill="' + color + '" opacity=".72"/><circle cx="24" cy="50" r="1.6" fill="' + color + '" opacity=".5"/><circle cx="43" cy="82" r="1.8" fill="' + color + '" opacity=".58"/>'
+      + '</svg>';
+  }
+  return '<svg viewBox="0 0 100 100" aria-hidden="true" xmlns="http://www.w3.org/2000/svg">'
+    + '<defs><radialGradient id="omEyeIris" cx="50%" cy="50%" r="50%"><stop offset="0%" stop-color="#dff8ff"/><stop offset="58%" stop-color="#6ab8d8"/><stop offset="100%" stop-color="#174a64"/></radialGradient><filter id="omEyeGlow"><feGaussianBlur stdDeviation="2.5" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter></defs>'
+    + '<path d="M9 50 C22 25 39 17 50 17 C61 17 78 25 91 50 C78 75 61 83 50 83 C39 83 22 75 9 50 Z" fill="rgba(184,234,255,.08)" stroke="' + color + '" stroke-width="2" filter="url(#omEyeGlow)"/>'
+    + '<circle cx="50" cy="50" r="19" fill="url(#omEyeIris)" opacity=".92"/><circle cx="50" cy="50" r="8" fill="#06131f"/>'
+    + '<circle cx="57" cy="43" r="4.2" fill="#fff" opacity=".66"/>'
+    + '<path d="M15 50 C29 38 39 34 50 34 C61 34 71 38 85 50" fill="none" stroke="#fff" stroke-width=".8" opacity=".26"/>'
+    + '</svg>';
+}
+
+function morphGuideOmnia() {
+  var fig = document.getElementById('guideOmniaFigure');
+  var layer = document.getElementById('guideOmniaSymbolLayer');
+  if (!fig || !layer) return;
+  var baseSym = OMNIA_MORPH_SYMBOLS[omniaMorphIndex % OMNIA_MORPH_SYMBOLS.length];
+  var palette = omniaFindCosmetic(OMNIA_PALETTES, (omniaState.cosmetics && omniaState.cosmetics.palette) || 'aether');
+  var sym = Object.assign({}, baseSym, { color: palette.color || baseSym.color });
+  omniaMorphIndex++;
+  if (omniaMorphTimer) clearTimeout(omniaMorphTimer);
+  layer.innerHTML = renderOmniaMorphSymbol(sym);
+  layer.style.color = sym.color;
+  fig.setAttribute('aria-label', 'Omnia reveals ' + sym.label);
+  animateOmniaShardMorph(sym);
+  omniaMorphTimer = setTimeout(function() {
+    fig.setAttribute('aria-label', 'Reveal an Omnia symbol');
+  }, 2200);
 }
 
 // ── Persistent selections ──────────────────────────────────
@@ -8895,6 +9299,13 @@ document.getElementById('omniaCollectBtn').addEventListener('click', collectOmni
 document.getElementById('omniaActionBtn').addEventListener('click', function() {
   performOmniaAction('attune');
 });
+document.getElementById('guideOmniaFigure').addEventListener('click', morphGuideOmnia);
+document.getElementById('guideOmniaFigure').addEventListener('keydown', function(e) {
+  if (e.key === 'Enter' || e.key === ' ') {
+    e.preventDefault();
+    morphGuideOmnia();
+  }
+});
 document.getElementById('omniaAdvanceBtn').addEventListener('click', advanceOmniaStep);
 document.getElementById('omniaBeginRecBtn').addEventListener('click', beginOmniaRecommendation);
 document.getElementById('omniaNewRecBtn').addEventListener('click', function() {
@@ -8902,6 +9313,11 @@ document.getElementById('omniaNewRecBtn').addEventListener('click', function() {
   renderOmniaEngine();
 });
 document.getElementById('omniaEngine').addEventListener('click', function(e) {
+  var cosmeticBtn = e.target.closest('[data-omnia-cosmetic-kind]');
+  if (cosmeticBtn) {
+    unlockOrSelectOmniaCosmetic(cosmeticBtn.dataset.omniaCosmeticKind, cosmeticBtn.dataset.omniaCosmeticId);
+    return;
+  }
   var bodyBtn = e.target.closest('[data-omnia-body]');
   if (bodyBtn) { buildOmniaBody(bodyBtn.dataset.omniaBody); return; }
   var upgBtn = e.target.closest('[data-omnia-upgrade]');
