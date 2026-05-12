@@ -644,6 +644,12 @@
 .omnia-speak { font-size:12px; color:var(--muted); line-height:1.85; text-align:center; padding:0 4px; margin-top:10px; font-style:italic; }
 .omnia-speak em { color:#a8d8ec; font-style:normal; }
 .omnia-speak.left { text-align:left; padding:0; }
+.entity-preview-card { margin:18px auto 24px; width:100%; max-width:340px; border:1px solid rgba(212,149,110,.28); background:rgba(212,149,110,.06); border-radius:12px; padding:14px 16px; }
+.entity-preview-kicker { font-size:8px; letter-spacing:.22em; text-transform:uppercase; color:#d4b08e; margin-bottom:8px; }
+.entity-preview-title { font-family:Cormorant Garamond,serif; font-size:24px; color:#f0d8c2; margin-bottom:8px; }
+.entity-preview-text { font-size:10px; line-height:1.7; color:var(--muted); margin-bottom:12px; }
+.elys-figure { display:flex; justify-content:center; margin:2px 0 8px; }
+.elys-prompt { font-size:9px; letter-spacing:.12em; color:#d4b08e; text-align:center; opacity:.85; }
 .omnia-response { font-size:10px; letter-spacing:.08em; color:#8ecce0; text-align:center; margin-top:6px; opacity:.7; font-style:normal; }
 
 /* ─── First-Time Tutorial ──────────────────────────────────────────── */
@@ -1003,6 +1009,29 @@ body:not(.tut-live) #tutCorgi {
       <div class="omnia-name">Omnia</div>
       <div class="omnia-speak">I am here to guide your practice today.<br>Tell me — <em>have you walked this path before?</em></div>
     </div>
+    <div class="entity-preview-card" id="elysPreviewCard">
+      <div class="entity-preview-kicker">Entity preview</div>
+      <div class="entity-preview-title">Elys</div>
+      <div class="elys-figure" aria-hidden="true">
+        <svg viewBox="0 0 120 120" width="86" height="86" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <radialGradient id="elysAura" cx="50%" cy="50%" r="52%">
+              <stop offset="0%" stop-color="#ffe4c5" stop-opacity="0.45"/>
+              <stop offset="100%" stop-color="#d4956e" stop-opacity="0"/>
+            </radialGradient>
+            <linearGradient id="elysCore" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stop-color="#ffe7d2" stop-opacity="0.95"/>
+              <stop offset="100%" stop-color="#d4956e" stop-opacity="0.55"/>
+            </linearGradient>
+          </defs>
+          <circle cx="60" cy="60" r="44" fill="url(#elysAura)"/>
+          <polygon points="60,12 76,42 108,48 84,70 90,102 60,86 30,102 36,70 12,48 44,42" fill="url(#elysCore)" stroke="#e5b995" stroke-width="1.2"/>
+          <circle cx="60" cy="60" r="11" fill="rgba(255,245,232,0.85)" stroke="#f3ceb1" stroke-width="1"/>
+        </svg>
+      </div>
+      <div class="entity-preview-text">A warm, solar counterpart to Omnia: less crystalline, more ember-light. Elys is tuned toward steadiness, courage, and embodied momentum.</div>
+      <div class="elys-prompt">If you want, I can wire Elys into the guide flow next.</div>
+    </div>
 
     <div class="guide-tabs">
       <button class="guide-tab active" id="guidePathTab">Path</button>
@@ -1044,7 +1073,6 @@ body:not(.tut-live) #tutCorgi {
         <div class="omnia-step-text" id="omniaStepText"></div>
         <div class="omnia-step-reqs" id="omniaStepReqs"></div>
         <div class="omnia-action-row">
-          <button class="omnia-mini-btn" id="omniaActionBtn">Attune Omnia</button>
           <button class="omnia-mini-btn" id="omniaAdvanceBtn">Advance Step</button>
         </div>
       </div>
@@ -7946,16 +7974,16 @@ var GUIDE_EXERCISES = [
 
 // ── Omnia growth system ───────────────────────────────────
 var OMNIA_DEFAULT = {
-  akasha: 600,
-  reservoir: 420,
+  akasha: 0,
+  reservoir: 0,
   lastTick: Date.now(),
-  bodies: { physical:18, astral:16, mental:20 },
+  bodies: { physical:0, astral:0, mental:0 },
   upgrades: { current:1, vessel:1, discernment:1 },
   bardonStep:1,
   rec: null,
   recStreak: 0,
   completedRecommended: 0,
-  totalAkashaEarned: 1020,
+  totalAkashaEarned: 0,
   cosmetics: {
     palette:'aether',
     entity:'omnia',
@@ -7989,24 +8017,24 @@ var OMNIA_UPGRADES = [
 
 var OMNIA_PALETTES = [
   { id:'aether', name:'Aether Blue', cost:0, color:'#b8eaff', filter:'none', sub:'Original crystalline guide-light' },
-  { id:'rose', name:'Rose Astral', cost:820, color:'#ffc4d8', filter:'hue-rotate(128deg) saturate(1.28) brightness(1.08)', sub:'A softer astral radiance' },
-  { id:'solar', name:'Solar Gold', cost:1040, color:'#f0d39a', filter:'hue-rotate(182deg) saturate(1.2) brightness(1.1)', sub:'A warm body of will' },
-  { id:'violet', name:'Violet Mind', cost:1280, color:'#c4a8d4', filter:'hue-rotate(74deg) saturate(1.22) brightness(1.04)', sub:'A quiet mental flame' },
-  { id:'verdant', name:'Verdant Vessel', cost:1460, color:'#98d8bd', filter:'hue-rotate(246deg) saturate(1.12) brightness(1.02)', sub:'A healing green current' }
+  { id:'rose', name:'Rose Astral', cost:6800, color:'#ffc4d8', filter:'hue-rotate(128deg) saturate(1.28) brightness(1.08)', sub:'A softer astral radiance' },
+  { id:'solar', name:'Solar Gold', cost:9200, color:'#f0d39a', filter:'hue-rotate(182deg) saturate(1.2) brightness(1.1)', sub:'A warm body of will' },
+  { id:'violet', name:'Violet Mind', cost:11800, color:'#c4a8d4', filter:'hue-rotate(74deg) saturate(1.22) brightness(1.04)', sub:'A quiet mental flame' },
+  { id:'verdant', name:'Verdant Vessel', cost:14500, color:'#98d8bd', filter:'hue-rotate(246deg) saturate(1.12) brightness(1.02)', sub:'A healing green current' }
 ];
 
 var OMNIA_ENTITIES = [
   { id:'omnia', name:'Omnia', cost:0, color:'#b8eaff', sub:'The first guide-form' },
-  { id:'noema', name:'Noema', cost:1600, color:'#98b4cc', sub:'A sharper mental entity design' },
-  { id:'aurel', name:'Aurel', cost:2200, color:'#f0d39a', sub:'A solar entity design for disciplined work' },
-  { id:'elys', name:'Elys', cost:2600, color:'#c4a8d4', sub:'An astral entity design for image and symbol' }
+  { id:'noema', name:'Noema', cost:12000, color:'#98b4cc', sub:'A sharper mental entity design' },
+  { id:'aurel', name:'Aurel', cost:18000, color:'#f0d39a', sub:'A solar entity design for disciplined work' },
+  { id:'elys', name:'Elys', cost:26000, color:'#c4a8d4', sub:'An astral entity design for image and symbol' }
 ];
 
 var OMNIA_COMPANIONS = [
-  { id:'wisp', name:'Akashic Wisp', cost:700, color:'#b8eaff', sub:'A small orbiting practice companion' },
-  { id:'ember', name:'Solar Ember', cost:980, color:'#f0d39a', sub:'A warm companion for steady effort' },
-  { id:'mote', name:'Violet Mote', cost:1180, color:'#c4a8d4', sub:'A tiny watcher for mental work' },
-  { id:'corgi', name:'Astral Corgi', cost:1500, color:'#d9a069', sub:'A loyal little companion for returning to practice' }
+  { id:'wisp', name:'Akashic Wisp', cost:5400, color:'#b8eaff', sub:'A small orbiting practice companion' },
+  { id:'ember', name:'Solar Ember', cost:7600, color:'#f0d39a', sub:'A warm companion for steady effort' },
+  { id:'mote', name:'Violet Mote', cost:9800, color:'#c4a8d4', sub:'A tiny watcher for mental work' },
+  { id:'corgi', name:'Astral Corgi', cost:14500, color:'#d9a069', sub:'A loyal little companion for returning to practice' }
 ];
 
 var OMNIA_BARDON_STEPS = [
@@ -8015,7 +8043,7 @@ var OMNIA_BARDON_STEPS = [
     roman:'I',
     name:'Step I · Formation',
     text:'Build Omnia as a balanced instrument. Physical stillness, astral responsiveness, and mental command must all become real before the next step opens.',
-    req:{ physical:25, astral:25, mental:25, recommended:3 }
+    req:{ physical:12, astral:12, mental:12, recommended:6 }
   },
   {
     step:2,
@@ -8293,6 +8321,7 @@ function applyOmniaCosmetics() {
         fig.style.filter = '';
       }
     }
+    fig.setAttribute('aria-label', 'Reveal a ' + entity.name + ' symbol');
   }
   if (name) {
     name.textContent = entity.name;
@@ -8356,8 +8385,13 @@ function omniaBodyTotal() {
 }
 
 function omniaRatePerHour() {
-  var bodyBonus = Math.floor(omniaBodyTotal() * 0.9);
-  return Math.floor(90 + (omniaState.upgrades.current || 1) * 55 + bodyBonus);
+  var total = omniaBodyTotal();
+  var currentLvl = omniaState.upgrades.current || 1;
+  var stepNum = omniaState.bardonStep || 1;
+  var earlyBoost = total < 48 ? Math.floor((48 - total) * 1.5) : 0;
+  var stepTax = Math.max(0, stepNum - 1) * 16;
+  var bodyBonus = Math.floor(Math.sqrt(Math.max(0, total)) * 9);
+  return Math.max(10, Math.floor(10 + currentLvl * 12 + Math.floor(bodyBonus * 0.5) + Math.floor(earlyBoost * 0.3) - stepTax));
 }
 
 function omniaReservoirCap() {
@@ -8389,12 +8423,16 @@ function omniaStage() {
 }
 
 function omniaBodyCost(body) {
-  return 180 + Math.floor((omniaState.bodies[body] || 0) * 38);
+  var lvl = omniaState.bodies[body] || 0;
+  var stepNum = omniaState.bardonStep || 1;
+  var base = 78 + lvl * 15 + Math.floor(Math.pow(lvl, 1.55) * 3.2);
+  var stepMult = 1 + Math.max(0, stepNum - 1) * 0.16;
+  return Math.floor(base * stepMult);
 }
 
 function omniaUpgradeCost(upg) {
   var lvl = omniaState.upgrades[upg.id] || 1;
-  return upg.base + (lvl - 1) * upg.step;
+  return Math.floor((upg.base + (lvl - 1) * upg.step) * Math.pow(1.14, Math.max(0, lvl - 1)));
 }
 
 function omniaCurrentStep() {
@@ -8474,11 +8512,16 @@ function omniaHistoryMatches(id, h) {
 }
 
 function omniaExerciseReward(exId, seconds, recommended) {
-  var base = Math.max(120, Math.min(900, Math.floor((seconds || 0) * 0.45) + 140));
+  var total = omniaBodyTotal();
+  var stepNum = omniaState.bardonStep || 1;
+  var base = Math.max(95, Math.min(760, Math.floor((seconds || 0) * 0.4) + 120));
+  var progressionSoftCap = 1 / (1 + Math.max(0, total - 36) / 95);
+  var stepPenalty = 1 - Math.min(0.24, Math.max(0, stepNum - 1) * 0.07);
+  var catchup = total < 42 ? 1 + (42 - total) / 120 : 1;
   var discernment = omniaState.upgrades.discernment || 1;
   var streakMult = 1 + Math.min(0.45, (omniaState.recStreak || 0) * 0.08);
   var recMult = recommended ? 1.75 + discernment * 0.08 : 1;
-  return Math.floor(base * streakMult * recMult);
+  return Math.max(42, Math.floor(base * progressionSoftCap * stepPenalty * catchup * streakMult * recMult));
 }
 
 function awardOmniaForExercise(exId, seconds) {
@@ -8500,7 +8543,8 @@ function awardOmniaForExercise(exId, seconds) {
   }
   saveOmniaState();
   var bodyName = OMNIA_BODY_META[meta.body] ? OMNIA_BODY_META[meta.body].name.replace(' Body','') : 'Omnia';
-  showToast('Omnia gained +' + gain + ' akasha' + (recommended ? ' · ' + bodyName + ' +1' : ''), 3000);
+  var activityName = meta && meta.name ? meta.name : 'Exercise';
+  showToast(activityName + ' complete · +' + gain + ' akasha' + (recommended ? ' · ' + bodyName + ' +1' : ''), 3200);
 }
 
 function renderOmniaEngine() {
@@ -8667,13 +8711,30 @@ function beginOmniaRecommendation() {
   openExerciseSetup(meta.open);
 }
 
-var OMNIA_MORPH_SYMBOLS = [
-  { id:'eye', label:'Inner Eye', color:'#b8eaff' },
-  { id:'triangle', label:'Triad', color:'#d4b08e' },
-  { id:'sun', label:'Solar Center', color:'#f0d39a' },
-  { id:'moon', label:'Lunar Vessel', color:'#c4a8d4' }
-];
-var omniaMorphIndex = 0;
+var OMNIA_ENTITY_MORPH_SYMBOLS = {
+  omnia: [
+    { id:'eye', label:'Inner Eye', color:'#b8eaff' },
+    { id:'triangle', label:'Triad', color:'#d4b08e' },
+    { id:'sun', label:'Solar Center', color:'#f0d39a' },
+    { id:'moon', label:'Lunar Vessel', color:'#c4a8d4' }
+  ],
+  noema: [
+    { id:'eye', label:'Noema Lens', color:'#98b4cc' },
+    { id:'triangle', label:'Noetic Prism', color:'#9fbfd8' },
+    { id:'sun', label:'Cognitive Core', color:'#b7cee0' }
+  ],
+  aurel: [
+    { id:'sun', label:'Solar Forge', color:'#f0d39a' },
+    { id:'triangle', label:'Will Sigil', color:'#e3b97f' },
+    { id:'eye', label:'Golden Watch', color:'#f2d8a8' }
+  ],
+  elys: [
+    { id:'moon', label:'Astral Bloom', color:'#c4a8d4' },
+    { id:'sun', label:'Ember Halo', color:'#d8b7e6' },
+    { id:'triangle', label:'Veil Prism', color:'#b995ca' }
+  ]
+};
+var omniaMorphIndexes = { omnia:0, noema:0, aurel:0, elys:0 };
 var omniaMorphTimer = null;
 var omniaMorphRaf = null;
 
@@ -8888,17 +8949,22 @@ function morphGuideOmnia() {
   var fig = document.getElementById('guideOmniaFigure');
   var layer = document.getElementById('guideOmniaSymbolLayer');
   if (!fig || !layer) return;
-  var baseSym = OMNIA_MORPH_SYMBOLS[omniaMorphIndex % OMNIA_MORPH_SYMBOLS.length];
+  var entityId = (omniaState && omniaState.cosmetics && omniaState.cosmetics.entity) || 'omnia';
+  var entity = omniaFindCosmetic(OMNIA_ENTITIES, entityId) || OMNIA_ENTITIES[0];
+  var symbols = OMNIA_ENTITY_MORPH_SYMBOLS[entityId] || OMNIA_ENTITY_MORPH_SYMBOLS.omnia;
+  if (!symbols || !symbols.length) symbols = OMNIA_ENTITY_MORPH_SYMBOLS.omnia;
+  if (typeof omniaMorphIndexes[entityId] !== 'number') omniaMorphIndexes[entityId] = 0;
+  var baseSym = symbols[omniaMorphIndexes[entityId] % symbols.length];
   var palette = omniaFindCosmetic(OMNIA_PALETTES, (omniaState.cosmetics && omniaState.cosmetics.palette) || 'aether');
   var sym = Object.assign({}, baseSym, { color: palette.color || baseSym.color });
-  omniaMorphIndex++;
+  omniaMorphIndexes[entityId]++;
   if (omniaMorphTimer) clearTimeout(omniaMorphTimer);
   layer.innerHTML = renderOmniaMorphSymbol(sym);
   layer.style.color = sym.color;
-  fig.setAttribute('aria-label', 'Omnia reveals ' + sym.label);
+  fig.setAttribute('aria-label', entity.name + ' reveals ' + sym.label);
   animateOmniaShardMorph(sym);
   omniaMorphTimer = setTimeout(function() {
-    fig.setAttribute('aria-label', 'Reveal an Omnia symbol');
+    fig.setAttribute('aria-label', 'Reveal a ' + entity.name + ' symbol');
   }, 2200);
 }
 
@@ -9324,6 +9390,7 @@ function buildExperiencedGuideItems() {
       name:c.ex.name,
       mode:id === 'thought' ? guideCurrentThoughtMode(guideThoughtStats()) : undefined,
       duration:dur,
+      done:(stats[id] && stats[id].todayCount > 0) || false,
       progress:c.count ? c.count + ' recorded' : 'no completed sessions recorded',
       tip:tip + (c.count ? ' Omnia has recorded ' + c.count + ' completed session' + (c.count === 1 ? '' : 's') + ' here.' : ' Omnia has no completed sessions recorded here yet.'),
       open:id === 'soulmirror' ? 'soulmirror' : id
@@ -9455,7 +9522,7 @@ function renderGuidePlan(mode) {
   var dayNames = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
   document.getElementById('guidePlanDayLabel').textContent = mode === 'experienced' ? 'Custom' : 'Adaptive · ' + dayNames[dayIdx];
   var planControls = document.getElementById('guidePlanControls');
-  if (planControls) planControls.style.display = mode === 'beginner' ? 'flex' : 'none';
+  if (planControls) planControls.style.display = 'flex';
   renderGuideCadenceControl();
 
   var cardsHTML = items.map(function(item) {
@@ -9550,7 +9617,7 @@ function toggleGuideTwoADay() {
   guideState._twoADayV1 = !guideTwoADayEnabled();
   saveGuideState(guideState);
   renderGuideCadenceControl();
-  if (guideState._pathLockedV2 && guidePathMode === 'beginner') renderGuidePlan('beginner');
+  if (guideState._pathLockedV2 && guidePathMode) renderGuidePlan(guidePathMode);
 }
 
 document.getElementById('guideTwoADayBtn').addEventListener('click', toggleGuideTwoADay);
@@ -9573,9 +9640,6 @@ document.getElementById('guideOmniaTab').addEventListener('click', function() {
   switchGuideTab('omnia');
 });
 document.getElementById('omniaCollectBtn').addEventListener('click', collectOmniaAkasha);
-document.getElementById('omniaActionBtn').addEventListener('click', function() {
-  performOmniaAction('attune');
-});
 document.getElementById('guideOmniaFigure').addEventListener('click', morphGuideOmnia);
 document.getElementById('guideOmniaFigure').addEventListener('keydown', function(e) {
   if (e.key === 'Enter' || e.key === ' ') {
