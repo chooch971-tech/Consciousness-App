@@ -786,6 +786,44 @@
   z-index:9008; padding:10px; pointer-events:auto; transition:color 0.2s;
 }
 .tut-skip-btn:hover { color:rgba(221,216,206,0.6); }
+
+/* Morph animation SVG overlay (grid-stacked with crystal/eye) */
+.tut-morph-svg {
+  grid-area:1/1; width:84px; height:112px;
+  pointer-events:none; opacity:0;
+}
+#tutContent.tut-content-bottom .tut-morph-svg { width:54px; height:72px; }
+
+/* Thought word animation (inside #tutOverlay) */
+#tutThoughtBg {
+  position:absolute; inset:0; z-index:2; pointer-events:none;
+  overflow:hidden; opacity:0; transition:opacity 0.5s ease;
+}
+#tutThoughtBg.tut-bg-on { opacity:1; }
+.tut-thought-word {
+  position:absolute; font-family:'Cormorant Garamond',Georgia,serif;
+  font-style:italic; font-weight:300; pointer-events:none;
+  animation:tutWordRise var(--dur,3s) ease-out forwards;
+}
+@keyframes tutWordRise {
+  0%   { opacity:0; transform:translateY(0) scale(0.85); }
+  15%  { opacity:var(--peak,0.65); }
+  75%  { opacity:var(--fade,0.18); }
+  100% { opacity:0; transform:translateY(-55vh) scale(0.6); }
+}
+
+/* Asana meditation posture SVG */
+.tut-asana-svg {
+  grid-area:1/1; width:84px;
+  animation:omniaFloat 4.5s ease-in-out infinite;
+  filter:drop-shadow(0 0 12px rgba(196,120,120,.4));
+  opacity:0; transition:opacity 0.65s ease;
+}
+#tutContent.tut-content-bottom .tut-asana-svg { width:54px; }
+#tutOmniaWrap.asana-state .tut-crystal-svg { opacity:0; }
+#tutOmniaWrap.asana-state .tut-eye-svg    { opacity:0; }
+#tutOmniaWrap.asana-state .tut-asana-svg  { opacity:1; }
+
 /* Drawer float (outside overlay stacking context, always highest) */
 #tutDrawerFloat {
   display:none; position:fixed; bottom:0; left:0; right:0; z-index:9500;
@@ -13069,6 +13107,8 @@ document.addEventListener('DOMContentLoaded',function(){(function(){
 
   <!-- Object flash background (full mode, visualization step) -->
   <div id="tutObjBg"></div>
+  <!-- Thought word animation (full mode, thought control step) -->
+  <div id="tutThoughtBg"></div>
 
 </div><!-- end #tutOverlay -->
 
@@ -13076,6 +13116,7 @@ document.addEventListener('DOMContentLoaded',function(){(function(){
 <div id="tutContent">
     <div class="tut-bubble" id="tutBubble"><p id="tutBubbleText"></p></div>
     <div id="tutOmniaWrap">
+      <svg id="tutOmniaMorphSvg" class="tut-morph-svg" viewBox="0 0 100 130" xmlns="http://www.w3.org/2000/svg"></svg>
       <svg class="tut-crystal-svg" viewBox="0 0 72 118" xmlns="http://www.w3.org/2000/svg">
         <defs>
           <radialGradient id="tg3" cx="50%" cy="40%" r="60%">
@@ -13113,6 +13154,36 @@ document.addEventListener('DOMContentLoaded',function(){(function(){
         <circle cx="37" cy="35" r="2" fill="white" opacity=".22"/>
         <path d="M4,30 Q44,2 84,30" fill="none" stroke="#88c4e0" stroke-width="1.2" opacity=".5"/>
         <path d="M4,30 Q44,58 84,30" fill="none" stroke="#88c4e0" stroke-width="1.2" opacity=".5"/>
+      </svg>
+      <svg class="tut-asana-svg" viewBox="0 0 88 90" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <radialGradient id="tasg" cx="50%" cy="35%" r="60%">
+            <stop offset="0%" stop-color="#e8c8a8" stop-opacity=".6"/>
+            <stop offset="100%" stop-color="#c47878" stop-opacity="0"/>
+          </radialGradient>
+          <filter id="tagl2"><feGaussianBlur stdDeviation="2" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+        </defs>
+        <!-- Head crystal -->
+        <polygon points="44,4 52,14 44,22 36,14" fill="#d4b08e" stroke="#c47878" stroke-width=".8" opacity=".92" filter="url(#tagl2)"/>
+        <!-- Glow halo -->
+        <ellipse cx="44" cy="48" rx="28" ry="32" fill="url(#tasg)" opacity=".4"/>
+        <!-- Body -->
+        <polygon points="44,22 62,40 44,56 26,40" fill="#c4a080" stroke="#c47878" stroke-width=".7" opacity=".88"/>
+        <!-- Left leg -->
+        <polygon points="26,40 8,68 26,74 44,56" fill="#b89070" stroke="#c47878" stroke-width=".6" opacity=".8"/>
+        <!-- Right leg -->
+        <polygon points="62,40 80,68 62,74 44,56" fill="#b89070" stroke="#c47878" stroke-width=".6" opacity=".8"/>
+        <!-- Foot left -->
+        <ellipse cx="18" cy="74" rx="10" ry="4" fill="#a07860" stroke="#c47878" stroke-width=".5" opacity=".6"/>
+        <!-- Foot right -->
+        <ellipse cx="70" cy="74" rx="10" ry="4" fill="#a07860" stroke="#c47878" stroke-width=".5" opacity=".6"/>
+        <!-- Sparkles -->
+        <g opacity=".38">
+          <line x1="4" y1="30" x2="10" y2="30" stroke="#d4b08e" stroke-width="1"/>
+          <line x1="7" y1="27" x2="7" y2="33" stroke="#d4b08e" stroke-width="1"/>
+          <line x1="78" y1="30" x2="84" y2="30" stroke="#d4b08e" stroke-width="1"/>
+          <line x1="81" y1="27" x2="81" y2="33" stroke="#d4b08e" stroke-width="1"/>
+        </g>
       </svg>
     </div>
   </div>
