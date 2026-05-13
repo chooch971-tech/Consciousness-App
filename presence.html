@@ -644,120 +644,27 @@
 .omnia-speak { font-size:12px; color:var(--muted); line-height:1.85; text-align:center; padding:0 4px; margin-top:10px; font-style:italic; }
 .omnia-speak em { color:#a8d8ec; font-style:normal; }
 .omnia-speak.left { text-align:left; padding:0; }
+.entity-preview-card { margin:18px auto 24px; width:100%; max-width:340px; border:1px solid rgba(212,149,110,.28); background:rgba(212,149,110,.06); border-radius:12px; padding:14px 16px; }
+.entity-preview-kicker { font-size:8px; letter-spacing:.22em; text-transform:uppercase; color:#d4b08e; margin-bottom:8px; }
+.entity-preview-title { font-family:Cormorant Garamond,serif; font-size:24px; color:#f0d8c2; margin-bottom:8px; }
+.entity-preview-text { font-size:10px; line-height:1.7; color:var(--muted); margin-bottom:12px; }
+.elys-figure { display:flex; justify-content:center; margin:2px 0 8px; }
+.elys-prompt { font-size:9px; letter-spacing:.12em; color:#d4b08e; text-align:center; opacity:.85; }
 .omnia-response { font-size:10px; letter-spacing:.08em; color:#8ecce0; text-align:center; margin-top:6px; opacity:.7; font-style:normal; }
 
 /* ─── First-Time Tutorial ──────────────────────────────────────────── */
+/* Overlay is background-only; interactive content lives outside it    */
 #tutOverlay {
   display:none; position:fixed; inset:0; z-index:9000;
   background:rgba(7,8,13,0.92);
-  flex-direction:column; align-items:center; justify-content:center;
-  transition:background 0.4s ease; overflow:hidden;
+  overflow:hidden; transition:background 0.4s ease;
   cursor:pointer; user-select:none; -webkit-user-select:none;
 }
-#tutOverlay.tut-blackout { background:#000; }
 #tutSparkCanvas { position:absolute; inset:0; pointer-events:none; z-index:0; }
-#tutSceneLayer {
-  position:fixed; inset:0; z-index:9001; pointer-events:none; opacity:0;
-  transition:opacity .52s ease;
-}
-#tutSceneLayer.tut-scene-on { opacity:1; }
-.tut-clock-scene,
-.tut-visual-scene,
-.tut-audio-scene,
-.tut-corgi-scene {
-  position:absolute; inset:0; overflow:hidden;
-}
-.tut-clock-face {
-  position:absolute; left:50%; top:46%; width:min(64vw,330px); aspect-ratio:1;
-  transform:translate(-50%,-50%);
-  border-radius:50%;
-  border:1px solid rgba(184,234,255,.26);
-  background:
-    radial-gradient(circle at center, rgba(184,234,255,.12) 0 3px, transparent 4px),
-    repeating-conic-gradient(from -90deg, rgba(184,234,255,.18) 0deg 1deg, transparent 1deg 6deg),
-    radial-gradient(circle at center, rgba(9,17,28,.52), rgba(7,8,13,.08) 68%, transparent 69%);
-  box-shadow:0 0 48px rgba(110,159,212,.15), inset 0 0 28px rgba(184,234,255,.08);
-}
-.tut-clock-hand {
-  position:absolute; left:50%; top:50%; width:3px; height:42%;
-  border-radius:999px;
-  background:linear-gradient(to top, rgba(184,234,255,.2), #b8eaff);
-  transform-origin:50% 100%;
-  transform:translate(-50%,-100%) rotate(0deg);
-  box-shadow:0 0 18px rgba(184,234,255,.82);
-  animation:tutClockSweep 2.8s linear infinite;
-}
-.tut-clock-hand::after {
-  content:''; position:absolute; left:50%; bottom:-16px; width:2px; height:18px;
-  transform:translateX(-50%);
-  background:rgba(184,234,255,.42);
-  border-radius:999px;
-}
-@keyframes tutClockSweep {
-  from { transform:translate(-50%,-100%) rotate(0deg); }
-  to   { transform:translate(-50%,-100%) rotate(360deg); }
-}
-.tut-visual-orb {
-  position:absolute; width:62px; height:62px; left:50%; top:48%;
-  margin:-31px 0 0 -31px;
-  border:1px solid rgba(184,234,255,.42);
-  background:rgba(184,234,255,.08);
-  filter:drop-shadow(0 0 16px rgba(142,204,224,.32));
-  animation:tutVisualFlash 3.4s ease-in-out infinite;
-}
-.tut-visual-orb.shape-circle { border-radius:50%; transform:translate(-122px,-74px); }
-.tut-visual-orb.shape-square { transform:translate(92px,-48px) rotate(18deg); animation-delay:.52s; }
-.tut-visual-orb.shape-diamond { transform:translate(-18px,92px) rotate(45deg); animation-delay:1.04s; }
-.tut-visual-orb.shape-triangle {
-  width:0; height:0; border:none; background:none; margin:0;
-  border-left:34px solid transparent; border-right:34px solid transparent;
-  border-bottom:64px solid rgba(184,234,255,.18);
-  transform:translate(122px,88px);
-  filter:drop-shadow(0 0 16px rgba(142,204,224,.42));
-  animation-delay:1.56s;
-}
-.tut-visual-orb.shape-ring {
-  width:76px; height:76px; margin:-38px 0 0 -38px; border-radius:50%;
-  border:2px solid rgba(196,168,212,.42); background:transparent;
-  transform:translate(-144px,104px); animation-delay:2.08s;
-}
-@keyframes tutVisualFlash {
-  0%,100% { opacity:.16; transform:translate(var(--tx,0),var(--ty,0)) scale(.86); }
-  28%,64% { opacity:.96; }
-  48% { transform:translate(var(--tx,0),var(--ty,0)) scale(1.08); }
-}
-.tut-visual-orb.shape-circle { --tx:-122px; --ty:-74px; transform:translate(var(--tx),var(--ty)); }
-.tut-visual-orb.shape-square { --tx:92px; --ty:-48px; }
-.tut-visual-orb.shape-diamond { --tx:-18px; --ty:92px; }
-.tut-visual-orb.shape-triangle { --tx:122px; --ty:88px; }
-.tut-visual-orb.shape-ring { --tx:-144px; --ty:104px; }
-.tut-audio-ripple {
-  position:absolute; left:50%; top:48%; width:160px; height:160px;
-  margin:-80px 0 0 -80px; border-radius:50%;
-  border:1px solid rgba(110,184,164,.42);
-  animation:tutAudioRipple 2.2s ease-out infinite;
-}
-.tut-audio-ripple:nth-child(2) { animation-delay:.72s; }
-.tut-audio-ripple:nth-child(3) { animation-delay:1.44s; }
-@keyframes tutAudioRipple {
-  0% { transform:scale(.34); opacity:0; }
-  24% { opacity:.72; }
-  100% { transform:scale(1.34); opacity:0; }
-}
-.tut-corgi-roll {
-  position:absolute; top:58%; right:-210px; width:150px; height:102px;
-  filter:drop-shadow(0 0 18px rgba(212,176,142,.25));
-  animation:tutCorgiBowl 3.7s cubic-bezier(.18,.78,.24,1) both;
-}
-.tut-corgi-roll svg { width:100%; height:100%; display:block; }
-@keyframes tutCorgiBowl {
-  0% { transform:translateX(0) rotate(0deg); }
-  68% { transform:translateX(calc(-100vw - 120px)) rotate(-620deg); }
-  100% { transform:translateX(calc(-100vw - 180px)) rotate(-740deg); }
-}
+/* Spotlight: outside overlay → works regardless of overlay opacity   */
 #tutSpotlight {
   position:fixed; border-radius:14px;
-  box-shadow:0 0 0 9999px rgba(7,8,13,0.88);
+  box-shadow:0 0 0 9999px rgba(7,8,13,0.82);
   border:1.5px solid rgba(126,184,164,0.55);
   z-index:9002; pointer-events:none; opacity:0;
   transition:opacity 0.38s ease,
@@ -765,36 +672,24 @@
              width 0.42s cubic-bezier(.25,.8,.25,1), height 0.42s cubic-bezier(.25,.8,.25,1);
 }
 #tutSpotlight.tut-lit { opacity:1; }
+/* tutContent lives outside overlay at z-index above spotlight (9002)  */
 #tutContent {
-  display:flex; flex-direction:column; align-items:center; gap:18px;
-  position:relative; z-index:9004; padding:0 20px; pointer-events:none;
-  max-width:min(400px,92vw);
-  transition:transform .92s cubic-bezier(.22,.8,.22,1);
+  display:none; position:fixed; z-index:9005;
+  flex-direction:column; align-items:center; gap:18px;
+  top:50%; left:50%; transform:translate(-50%,-50%);
+  padding:0 20px; pointer-events:none;
+  max-width:min(400px,92vw); width:100%;
 }
-#tutOverlay.tut-tour-stage #tutContent { transform:translateY(132px); }
-#tutOverlay.tut-spot #tutContent {
-  position:fixed; bottom:28px; left:50%; transform:translateX(-50%); width:100%;
-  align-items:center;
+#tutContent.tut-vis { display:flex; }
+#tutContent.tut-content-bottom {
+  top:auto; bottom:34px; transform:translateX(-50%);
 }
-#tutOverlay.tut-spot.tut-dock-upper #tutContent {
-  top:max(env(safe-area-inset-top),22px); bottom:auto;
-}
-#tutOverlay.tut-guide-choice #tutContent {
-  position:fixed; top:210px; left:50%; width:100%;
-  transform:translateX(-50%);
-}
-#tutOverlay.tut-guide-choice #tutOmniaWrap { display:none; }
 .tut-bubble {
   background:rgba(10,15,28,0.97); border:1px solid rgba(126,184,164,0.35);
   border-radius:16px; padding:18px 22px; max-width:min(340px,88vw);
   position:relative; opacity:0; transition:opacity 0.4s ease 0.12s; order:0;
 }
 .tut-bubble.tut-vis { opacity:1; }
-.tut-bubble.tut-exercise-intro { transform:translateY(8px); }
-.tut-bubble.tut-exercise-intro.tut-vis {
-  opacity:1; transform:translateY(0);
-  transition:opacity .82s ease, transform .82s ease;
-}
 .tut-bubble::after {
   content:''; position:absolute; bottom:-8px; left:50%; transform:translateX(-50%);
   border-left:8px solid transparent; border-right:8px solid transparent;
@@ -803,68 +698,141 @@
 .tut-bubble p {
   font-family:'Cormorant Garamond',Georgia,serif; font-size:15px;
   font-weight:300; font-style:italic; line-height:1.78;
-  color:#ddd8ce; text-align:center; margin:0;
+  color:#7dd3f8; text-align:center; margin:0;
 }
-.tut-bubble p em { color:#d8f6ff; font-style:italic; }
-.tut-bubble.tut-aether-copy p { color:#b8eaff; }
+.tut-bubble.tut-blue p { color:#7dd3f8; }
 #tutOmniaWrap {
-  order:1; position:relative; min-width:112px; min-height:122px;
-  display:flex; align-items:center; justify-content:center;
-  transition:transform 0.36s cubic-bezier(.34,1.26,.64,1);
+  order:1; position:relative;
+  width:124px; height:146px; flex:0 0 146px;
+  display:grid; place-items:center; margin:0 auto;
 }
 .tut-crystal-svg {
+  grid-area:1/1;
   width:84px; display:block;
   animation:omniaFloat 4.5s ease-in-out infinite;
   filter:drop-shadow(0 0 12px rgba(142,204,224,.45));
   transition:width 0.4s ease, opacity .28s ease, filter .28s ease;
-}
-.tut-eye-svg {
-  width:84px; display:none;
-  animation:omniaFloat 4.5s ease-in-out infinite;
-  filter:drop-shadow(0 0 14px rgba(88,180,240,.5));
-  transition:width 0.4s ease;
 }
 .tut-shard-svg {
   position:absolute; left:50%; top:50%; width:124px; height:152px;
   transform:translate(-50%,-50%); opacity:0; overflow:visible;
   pointer-events:none; z-index:2;
 }
+#tutOverlay.tut-spot #tutOmniaWrap,
+#tutContent.tut-content-bottom #tutOmniaWrap {
+  width:76px; height:92px; flex-basis:92px;
+}
+#tutOverlay.tut-spot .tut-shard-svg,
+#tutContent.tut-content-bottom .tut-shard-svg {
+  width:78px; height:96px;
+}
 #tutOmniaWrap.tut-morphing .tut-shard-svg { opacity:1; }
 #tutOmniaWrap.tut-morphing .tut-crystal-svg { opacity:.12; filter:blur(3px) drop-shadow(0 0 10px rgba(142,204,224,.35)); }
-#tutOverlay.tut-spot .tut-crystal-svg,
-#tutOverlay.tut-spot .tut-eye-svg { width:54px; }
-#tutOmniaWrap.eye-state .tut-crystal-svg,
-#tutOmniaWrap.eye-state .tut-eye-svg { display:none; }
-#tutOmniaWrap.eye-state.tut-returning .tut-crystal-svg {
-  display:block; opacity:0;
-}
-#tutOmniaWrap.eye-state.tut-returning.tut-crystal-return .tut-crystal-svg {
-  opacity:1;
-}
-#tutOmniaWrap.eye-state .tut-shard-svg {
-  opacity:1;
-  animation:omniaFloat 4.5s ease-in-out infinite;
-}
-#tutOmniaWrap.eye-state { min-height:86px; margin-top:-74px; }
+/* Smaller size in spot mode */
+#tutOverlay.tut-spot .tut-crystal-svg { width:54px; }
+/* Eye state: hide crystal, shard-svg holds the eye form */
+#tutOmniaWrap.eye-state .tut-crystal-svg { display:none; }
+#tutOmniaWrap.eye-state.tut-returning .tut-crystal-svg { display:block; opacity:0; }
+#tutOmniaWrap.eye-state.tut-returning.tut-crystal-return .tut-crystal-svg { opacity:1; }
+#tutOmniaWrap.eye-state .tut-shard-svg { opacity:1; animation:omniaFloat 4.5s ease-in-out infinite; }
 @keyframes tutCrystalEyeBlink {
   0%,100% { transform:translate(-50%,-50%) scaleY(1); opacity:1; }
   44%,58% { transform:translate(-50%,-50%) scaleY(.12); opacity:.78; }
 }
 #tutOmniaWrap.eye-blink .tut-shard-svg { animation:tutCrystalEyeBlink .68s ease-in-out both; }
+/* Clock background overlay (inside tutOverlay, visible in spot mode) */
+#tutClockBg {
+  position:absolute; inset:0; z-index:2; pointer-events:none;
+  display:flex; align-items:center; justify-content:center;
+  opacity:0; transition:opacity 0.8s ease;
+}
+#tutClockBg.tut-bg-on { opacity:1; }
+/* Object flash background */
+#tutObjBg {
+  position:absolute; inset:0; z-index:2; pointer-events:none;
+  display:flex; align-items:center; justify-content:center;
+  flex-wrap:wrap; gap:26px; padding:60px 36px;
+  opacity:0; transition:opacity 0.5s ease;
+}
+#tutObjBg.tut-bg-on { opacity:1; }
+.tut-obj {
+  font-size:46px; opacity:0;
+  animation:tutObjPop 0.7s ease forwards;
+}
+@keyframes tutObjPop {
+  0%   { opacity:0; transform:scale(0.4); }
+  55%  { opacity:0.55; transform:scale(1.08); }
+  100% { opacity:0.18; transform:scale(1); }
+}
+/* Corgi */
+#tutCorgi {
+  display:none; position:fixed; bottom:26%; left:-90px; z-index:9012;
+  font-size:54px; pointer-events:none;
+  transition:left 3s cubic-bezier(.35,.05,.2,1);
+}
+#tutCorgi.tut-corgi-go { left:calc(100vw + 100px); }
+/* Path choice buttons (inside drawer float) */
+#tutPathChoice {
+  display:none; flex-direction:column; gap:10px;
+  width:100%; max-width:min(320px,88vw);
+  pointer-events:auto; position:relative; z-index:9510;
+}
+#tutPathChoice.tut-vis { display:flex; }
+.tut-path-btn {
+  background:rgba(10,15,28,0.95); border:1px solid rgba(126,184,164,0.35);
+  border-radius:12px; padding:14px 20px; cursor:pointer; text-align:center;
+  font-family:'DM Mono',monospace; font-size:9px; letter-spacing:.22em;
+  text-transform:uppercase; color:#7eb8a4;
+  transition:background 0.2s, border-color 0.2s;
+}
+.tut-path-btn:hover { background:rgba(126,184,164,0.12); border-color:rgba(126,184,164,0.6); }
+.tut-path-btn.tut-experienced { border-color:rgba(142,204,224,0.35); color:#8ecce0; }
+.tut-path-btn.tut-experienced:hover { background:rgba(142,204,224,0.1); border-color:rgba(142,204,224,0.6); }
 .tut-tap-hint {
-  position:absolute; bottom:28px; left:50%; transform:translateX(-50%);
+  display:none; position:fixed; bottom:8px; left:50%; transform:translateX(-50%);
   font-size:8px; letter-spacing:.28em; text-transform:uppercase;
   color:rgba(126,184,164,0.4); animation:tutPulse 2.2s ease-in-out infinite;
   white-space:nowrap; pointer-events:none; z-index:9006;
 }
 @keyframes tutPulse { 0%,100%{opacity:.4;} 50%{opacity:.85;} }
 .tut-skip-btn {
-  position:absolute; top:max(env(safe-area-inset-top),20px); right:20px;
+  display:none; position:fixed; top:max(env(safe-area-inset-top),20px); right:20px;
   font-size:8px; letter-spacing:.22em; text-transform:uppercase;
   color:rgba(221,216,206,0.28); background:none; border:none; cursor:pointer;
   z-index:9008; padding:10px; pointer-events:auto; transition:color 0.2s;
 }
 .tut-skip-btn:hover { color:rgba(221,216,206,0.6); }
+
+
+/* Thought word animation (inside #tutOverlay) */
+#tutThoughtBg {
+  position:absolute; inset:0; z-index:2; pointer-events:none;
+  overflow:hidden; opacity:0; transition:opacity 0.5s ease;
+}
+#tutThoughtBg.tut-bg-on { opacity:1; }
+.tut-thought-word {
+  position:absolute; font-family:'Cormorant Garamond',Georgia,serif;
+  font-style:italic; font-weight:300; pointer-events:none;
+  animation:tutWordRise var(--dur,3s) ease-out forwards;
+}
+@keyframes tutWordRise {
+  0%   { opacity:0; transform:translateY(0) scale(0.85); }
+  15%  { opacity:var(--peak,0.65); }
+  75%  { opacity:var(--fade,0.18); }
+  100% { opacity:0; transform:translateY(-55vh) scale(0.6); }
+}
+
+/* Asana meditation posture SVG */
+.tut-asana-svg {
+  grid-area:1/1; width:84px;
+  animation:omniaFloat 4.5s ease-in-out infinite;
+  filter:drop-shadow(0 0 12px rgba(196,120,120,.4));
+  opacity:0; transition:opacity 0.65s ease;
+}
+#tutContent.tut-content-bottom .tut-asana-svg { width:54px; }
+#tutOmniaWrap.asana-state .tut-crystal-svg { opacity:0; }
+#tutOmniaWrap.asana-state .tut-asana-svg  { opacity:1; }
+
 /* Drawer float (outside overlay stacking context, always highest) */
 #tutDrawerFloat {
   display:none; position:fixed; bottom:0; left:0; right:0; z-index:9500;
@@ -881,7 +849,19 @@
 #tutFloatBubble p {
   font-family:'Cormorant Garamond',Georgia,serif; font-size:14.5px;
   font-weight:300; font-style:italic; line-height:1.78;
-  color:#ddd8ce; text-align:center; margin:0;
+  color:#7dd3f8; text-align:center; margin:0;
+}
+/* Direct element highlight — works regardless of overlay opacity */
+.tut-elem-glow {
+  outline:2.5px solid rgba(214,149,110,1) !important;
+  box-shadow:0 0 0 5px rgba(214,149,110,0.35), 0 0 28px rgba(214,149,110,0.9) !important;
+  animation:tutElemPulse 0.9s ease-in-out infinite !important;
+  border-radius:6px !important; z-index:9010 !important; position:relative !important;
+  color:#f5c89a !important;
+}
+@keyframes tutElemPulse {
+  0%,100% { box-shadow:0 0 0 5px rgba(214,149,110,0.35), 0 0 28px rgba(214,149,110,0.9); outline-color:rgba(214,149,110,1); }
+  50%      { box-shadow:0 0 0 9px rgba(214,149,110,0.55), 0 0 48px rgba(245,180,100,1); outline-color:rgba(245,190,120,1); }
 }
 #tutDoneBtn {
   display:none; pointer-events:auto;
@@ -891,8 +871,7 @@
   transition:background 0.2s;
 }
 #tutDoneBtn:hover { background:rgba(126,184,164,0.22); }
-.drawer-item.tut-pulse,
-#drawerOmniaBtn.tut-pulse { animation:drawerPulse 1.5s ease-in-out infinite; border-radius:8px; }
+.drawer-item.tut-pulse { animation:drawerPulse 1.5s ease-in-out infinite; border-radius:8px; }
 @keyframes drawerPulse {
   0%,100% { background:transparent; }
   50%      { background:rgba(126,184,164,0.14); box-shadow:inset 0 0 0 1px rgba(126,184,164,0.28); }
@@ -903,8 +882,13 @@
 }
 #tutDrawerCapture.tut-cap-on { display:block; }
 body:not(.tut-live) #tutOverlay,
+body:not(.tut-live) #tutContent,
+body:not(.tut-live) .tut-tap-hint,
+body:not(.tut-live) .tut-skip-btn,
+body:not(.tut-live) #tutSpotlight,
 body:not(.tut-live) #tutDrawerFloat,
-body:not(.tut-live) #tutDrawerCapture {
+body:not(.tut-live) #tutDrawerCapture,
+body:not(.tut-live) #tutCorgi {
   display:none !important;
   pointer-events:none !important;
 }
@@ -1086,6 +1070,29 @@ body:not(.tut-live) #tutDrawerCapture {
       <div class="omnia-name">Omnia</div>
       <div class="omnia-speak">I am here to guide your practice today.<br>Tell me — <em>have you walked this path before?</em></div>
     </div>
+    <div class="entity-preview-card" id="elysPreviewCard">
+      <div class="entity-preview-kicker">Entity preview</div>
+      <div class="entity-preview-title">Elys</div>
+      <div class="elys-figure" aria-hidden="true">
+        <svg viewBox="0 0 120 120" width="86" height="86" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <radialGradient id="elysAura" cx="50%" cy="50%" r="52%">
+              <stop offset="0%" stop-color="#ffe4c5" stop-opacity="0.45"/>
+              <stop offset="100%" stop-color="#d4956e" stop-opacity="0"/>
+            </radialGradient>
+            <linearGradient id="elysCore" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stop-color="#ffe7d2" stop-opacity="0.95"/>
+              <stop offset="100%" stop-color="#d4956e" stop-opacity="0.55"/>
+            </linearGradient>
+          </defs>
+          <circle cx="60" cy="60" r="44" fill="url(#elysAura)"/>
+          <polygon points="60,12 76,42 108,48 84,70 90,102 60,86 30,102 36,70 12,48 44,42" fill="url(#elysCore)" stroke="#e5b995" stroke-width="1.2"/>
+          <circle cx="60" cy="60" r="11" fill="rgba(255,245,232,0.85)" stroke="#f3ceb1" stroke-width="1"/>
+        </svg>
+      </div>
+      <div class="entity-preview-text">A warm, solar counterpart to Omnia: less crystalline, more ember-light. Elys is tuned toward steadiness, courage, and embodied momentum.</div>
+      <div class="elys-prompt">If you want, I can wire Elys into the guide flow next.</div>
+    </div>
 
     <div class="guide-tabs">
       <button class="guide-tab active" id="guidePathTab">Path</button>
@@ -1127,7 +1134,6 @@ body:not(.tut-live) #tutDrawerCapture {
         <div class="omnia-step-text" id="omniaStepText"></div>
         <div class="omnia-step-reqs" id="omniaStepReqs"></div>
         <div class="omnia-action-row">
-          <button class="omnia-mini-btn" id="omniaActionBtn">Attune Omnia</button>
           <button class="omnia-mini-btn" id="omniaAdvanceBtn">Advance Step</button>
         </div>
       </div>
@@ -3128,11 +3134,29 @@ function runLoop() {
   sessionTimerHandle = setTimeout(runLoop, 1000);
 }
 
+function playReminderBell() {
+  try {
+    // Independent AudioContext so the bell never interrupts Concentration audio
+    var ctx = new (window.AudioContext || window.webkitAudioContext)();
+    var when = ctx.currentTime + 0.05;
+    [[528, 0.28, 2.8], [1056, 0.14, 2.2], [1584, 0.08, 1.6]].forEach(function(f) {
+      var osc = ctx.createOscillator(); osc.type = 'sine'; osc.frequency.value = f[0];
+      var gain = ctx.createGain();
+      gain.gain.setValueAtTime(f[1], when);
+      gain.gain.exponentialRampToValueAtTime(0.001, when + f[2]);
+      osc.connect(gain); gain.connect(ctx.destination);
+      osc.start(when); osc.stop(when + f[2]);
+    });
+    setTimeout(function() { try { ctx.close(); } catch(e) {} }, 3500);
+  } catch(e) {}
+}
+
 function fireReminder() {
   var p = randomPrompt(document.getElementById('sessionPrompt').textContent);
   updateSessionPrompt(p);
   sessionReminderCount++;
   document.getElementById('reminderCount').textContent = sessionReminderCount;
+  playReminderBell();
 }
 
 function updateSessionPrompt(text) {
@@ -8011,16 +8035,16 @@ var GUIDE_EXERCISES = [
 
 // ── Omnia growth system ───────────────────────────────────
 var OMNIA_DEFAULT = {
-  akasha: 600,
-  reservoir: 420,
+  akasha: 0,
+  reservoir: 0,
   lastTick: Date.now(),
-  bodies: { physical:18, astral:16, mental:20 },
+  bodies: { physical:0, astral:0, mental:0 },
   upgrades: { current:1, vessel:1, discernment:1 },
   bardonStep:1,
   rec: null,
   recStreak: 0,
   completedRecommended: 0,
-  totalAkashaEarned: 1020,
+  totalAkashaEarned: 0,
   cosmetics: {
     palette:'aether',
     entity:'omnia',
@@ -8054,24 +8078,24 @@ var OMNIA_UPGRADES = [
 
 var OMNIA_PALETTES = [
   { id:'aether', name:'Aether Blue', cost:0, color:'#b8eaff', filter:'none', sub:'Original crystalline guide-light' },
-  { id:'rose', name:'Rose Astral', cost:820, color:'#ffc4d8', filter:'hue-rotate(128deg) saturate(1.28) brightness(1.08)', sub:'A softer astral radiance' },
-  { id:'solar', name:'Solar Gold', cost:1040, color:'#f0d39a', filter:'hue-rotate(182deg) saturate(1.2) brightness(1.1)', sub:'A warm body of will' },
-  { id:'violet', name:'Violet Mind', cost:1280, color:'#c4a8d4', filter:'hue-rotate(74deg) saturate(1.22) brightness(1.04)', sub:'A quiet mental flame' },
-  { id:'verdant', name:'Verdant Vessel', cost:1460, color:'#98d8bd', filter:'hue-rotate(246deg) saturate(1.12) brightness(1.02)', sub:'A healing green current' }
+  { id:'rose', name:'Rose Astral', cost:6800, color:'#ffc4d8', filter:'hue-rotate(128deg) saturate(1.28) brightness(1.08)', sub:'A softer astral radiance' },
+  { id:'solar', name:'Solar Gold', cost:9200, color:'#f0d39a', filter:'hue-rotate(182deg) saturate(1.2) brightness(1.1)', sub:'A warm body of will' },
+  { id:'violet', name:'Violet Mind', cost:11800, color:'#c4a8d4', filter:'hue-rotate(74deg) saturate(1.22) brightness(1.04)', sub:'A quiet mental flame' },
+  { id:'verdant', name:'Verdant Vessel', cost:14500, color:'#98d8bd', filter:'hue-rotate(246deg) saturate(1.12) brightness(1.02)', sub:'A healing green current' }
 ];
 
 var OMNIA_ENTITIES = [
   { id:'omnia', name:'Omnia', cost:0, color:'#b8eaff', sub:'The first guide-form' },
-  { id:'noema', name:'Noema', cost:1600, color:'#98b4cc', sub:'A sharper mental entity design' },
-  { id:'aurel', name:'Aurel', cost:2200, color:'#f0d39a', sub:'A solar entity design for disciplined work' },
-  { id:'elys', name:'Elys', cost:2600, color:'#c4a8d4', sub:'An astral entity design for image and symbol' }
+  { id:'noema', name:'Noema', cost:12000, color:'#98b4cc', sub:'A sharper mental entity design' },
+  { id:'aurel', name:'Aurel', cost:18000, color:'#f0d39a', sub:'A solar entity design for disciplined work' },
+  { id:'elys', name:'Elys', cost:26000, color:'#c4a8d4', sub:'An astral entity design for image and symbol' }
 ];
 
 var OMNIA_COMPANIONS = [
-  { id:'wisp', name:'Akashic Wisp', cost:700, color:'#b8eaff', sub:'A small orbiting practice companion' },
-  { id:'ember', name:'Solar Ember', cost:980, color:'#f0d39a', sub:'A warm companion for steady effort' },
-  { id:'mote', name:'Violet Mote', cost:1180, color:'#c4a8d4', sub:'A tiny watcher for mental work' },
-  { id:'corgi', name:'Astral Corgi', cost:1500, color:'#d9a069', sub:'A loyal little companion for returning to practice' }
+  { id:'wisp', name:'Akashic Wisp', cost:5400, color:'#b8eaff', sub:'A small orbiting practice companion' },
+  { id:'ember', name:'Solar Ember', cost:7600, color:'#f0d39a', sub:'A warm companion for steady effort' },
+  { id:'mote', name:'Violet Mote', cost:9800, color:'#c4a8d4', sub:'A tiny watcher for mental work' },
+  { id:'corgi', name:'Astral Corgi', cost:14500, color:'#d9a069', sub:'A loyal little companion for returning to practice' }
 ];
 
 var OMNIA_BARDON_STEPS = [
@@ -8080,7 +8104,7 @@ var OMNIA_BARDON_STEPS = [
     roman:'I',
     name:'Step I · Formation',
     text:'Build Omnia as a balanced instrument. Physical stillness, astral responsiveness, and mental command must all become real before the next step opens.',
-    req:{ physical:25, astral:25, mental:25, recommended:3 }
+    req:{ physical:12, astral:12, mental:12, recommended:6 }
   },
   {
     step:2,
@@ -8157,18 +8181,24 @@ function renderOmniaEntityPreview(item) {
   var color = item.color || '#b8eaff';
   if (item.id === 'noema') {
     return '<svg viewBox="0 0 48 58" aria-hidden="true">'
-      + '<path d="M24 4 38 22 31 53 17 53 10 22Z" fill="rgba(255,255,255,.05)" stroke="' + color + '" stroke-width="1.4"/>'
-      + '<path d="M24 7v46M11 22h26M18 52l6-30 7 30" fill="none" stroke="' + color + '" stroke-width=".85" opacity=".55"/>'
-      + '<path d="M24 13 31 23 24 31 17 23Z" fill="' + color + '" opacity=".24"/>'
-      + '<circle cx="24" cy="23" r="3.5" fill="' + color + '" opacity=".58"/>'
+      + '<polygon points="24,4 38,18 38,40 24,54 10,40 10,18" fill="rgba(255,255,255,.04)" stroke="' + color + '" stroke-width="1.2" opacity=".6"/>'
+      + '<line x1="10" y1="18" x2="38" y2="40" stroke="' + color + '" stroke-width=".7" opacity=".3"/>'
+      + '<line x1="38" y1="18" x2="10" y2="40" stroke="' + color + '" stroke-width=".7" opacity=".3"/>'
+      + '<polygon points="24,16 32,29 24,42 16,29" fill="' + color + '" opacity=".12" stroke="' + color + '" stroke-width="1.1"/>'
+      + '<path d="M17,29 Q24,22 31,29 Q24,36 17,29 Z" fill="rgba(255,255,255,.07)" stroke="' + color + '" stroke-width=".85" opacity=".85"/>'
+      + '<circle cx="24" cy="29" r="3.8" fill="rgba(0,0,0,.18)" stroke="' + color + '" stroke-width=".8"/>'
+      + '<circle cx="24" cy="29" r="1.6" fill="' + color + '" opacity=".9"/>'
+      + '<circle cx="25.2" cy="28" r=".75" fill="rgba(255,255,255,.6)"/>'
       + '</svg>';
   }
   if (item.id === 'aurel') {
     return '<svg viewBox="0 0 56 56" aria-hidden="true">'
-      + '<path d="M28 3v9M28 44v9M3 28h9M44 28h9M10 10l7 7M39 39l7 7M46 10l-7 7M17 39l-7 7" stroke="' + color + '" stroke-width="1.35" stroke-linecap="round" opacity=".72"/>'
-      + '<path d="M28 10 43 20 39 39 17 39 13 20Z" fill="rgba(255,255,255,.05)" stroke="' + color + '" stroke-width="1.4"/>'
-      + '<path d="M28 14 36 25 28 37 20 25Z" fill="' + color + '" opacity=".26"/>'
-      + '<circle cx="28" cy="26" r="5" fill="' + color + '" opacity=".45"/>'
+      + '<polygon points="28,4 46,34 10,34" fill="rgba(240,211,154,0.06)" stroke="' + color + '" stroke-width="1.3" opacity=".75"/>'
+      + '<polygon points="28,52 10,22 46,22" fill="rgba(240,211,154,0.06)" stroke="' + color + '" stroke-width="1.3" opacity=".75"/>'
+      + '<circle cx="28" cy="29" r="9" fill="rgba(240,211,154,0.12)" stroke="' + color + '" stroke-width="1.1" opacity=".9"/>'
+      + '<circle cx="28" cy="29" r="5.5" stroke="' + color + '" stroke-width=".9" fill="none" opacity=".72"/>'
+      + '<circle cx="28" cy="29" r="2.5" fill="' + color + '" opacity=".7"/>'
+      + '<circle cx="28" cy="29" r=".9" fill="#fffce8" opacity=".95"/>'
       + '</svg>';
   }
   if (item.id === 'elys') {
@@ -8227,6 +8257,106 @@ function renderOmniaCosmeticPreview(kind, item) {
   return '<div class="omnia-cosmetic-preview" style="--swatch:' + item.color + ';"><div class="omnia-cosmetic-swatch" style="--swatch:' + item.color + ';"></div></div>';
 }
 
+function getEntityCrystalSVG(id) {
+  if (id === 'noema') {
+    return '<svg viewBox="0 0 80 130" width="72" height="118" xmlns="http://www.w3.org/2000/svg" style="overflow:visible;">'
+      + '<defs>'
+      + '<filter id="nglow" x="-30%" y="-30%" width="160%" height="160%"><feGaussianBlur stdDeviation="2" result="blur"/><feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge></filter>'
+      + '</defs>'
+      // Top hexagonal cap
+      + '<polygon points="40,8 60,19 60,41 40,52 20,41 20,19" fill="rgba(152,180,204,0.07)" stroke="#98b4cc" stroke-width="0.85" opacity="0.65"/>'
+      + '<line x1="20" y1="19" x2="60" y2="41" stroke="#98b4cc" stroke-width="0.5" opacity="0.28"/>'
+      + '<line x1="60" y1="19" x2="20" y2="41" stroke="#98b4cc" stroke-width="0.5" opacity="0.28"/>'
+      // Eye in top cap (center ~40,30)
+      + '<path d="M32,30 Q40,24 48,30 Q40,36 32,30 Z" fill="rgba(152,180,204,0.1)" stroke="#98b4cc" stroke-width="0.75"/>'
+      + '<circle cx="40" cy="30" r="3.5" fill="rgba(152,180,204,0.18)" stroke="#b8cce0" stroke-width="0.7"/>'
+      + '<circle cx="40" cy="30" r="1.4" fill="#d4e8f8" opacity="0.88"/>'
+      // Vertical side edges
+      + '<line x1="20" y1="41" x2="20" y2="89" stroke="#98b4cc" stroke-width="0.8" opacity="0.5"/>'
+      + '<line x1="60" y1="41" x2="60" y2="89" stroke="#98b4cc" stroke-width="0.8" opacity="0.5"/>'
+      + '<line x1="20" y1="65" x2="60" y2="65" stroke="#98b4cc" stroke-width="0.6" opacity="0.28"/>'
+      + '<line x1="40" y1="8" x2="40" y2="122" stroke="#98b4cc" stroke-width="0.5" opacity="0.22"/>'
+      // Central diamond (the "mind" core)
+      + '<polygon points="40,50 56,65 40,80 24,65" fill="rgba(152,180,204,0.15)" stroke="#b8cce0" stroke-width="1.2" filter="url(#nglow)" opacity="0.95"/>'
+      + '<line x1="24" y1="65" x2="56" y2="65" stroke="#b8cce0" stroke-width="0.5" opacity="0.4"/>'
+      + '<line x1="40" y1="50" x2="40" y2="80" stroke="#b8cce0" stroke-width="0.5" opacity="0.4"/>'
+      // Eye in central diamond (center 40,65)
+      + '<path d="M29,65 Q40,57 51,65 Q40,73 29,65 Z" fill="rgba(152,180,204,0.12)" stroke="#b8cce0" stroke-width="0.9"/>'
+      + '<circle cx="40" cy="65" r="6" fill="rgba(130,170,210,0.2)" stroke="#a8c4e0" stroke-width="0.9"/>'
+      + '<circle cx="40" cy="65" r="3" fill="rgba(80,130,180,0.45)"/>'
+      + '<circle cx="43" cy="63" r="1.6" fill="rgba(255,255,255,0.55)"/>'
+      // Bottom hexagonal cap
+      + '<polygon points="40,122 60,111 60,89 40,78 20,89 20,111" fill="rgba(152,180,204,0.07)" stroke="#98b4cc" stroke-width="0.85" opacity="0.65"/>'
+      + '<line x1="20" y1="89" x2="60" y2="111" stroke="#98b4cc" stroke-width="0.5" opacity="0.28"/>'
+      + '<line x1="60" y1="89" x2="20" y2="111" stroke="#98b4cc" stroke-width="0.5" opacity="0.28"/>'
+      // Eye in bottom cap (center ~40,100)
+      + '<path d="M32,100 Q40,94 48,100 Q40,106 32,100 Z" fill="rgba(152,180,204,0.1)" stroke="#98b4cc" stroke-width="0.75"/>'
+      + '<circle cx="40" cy="100" r="3.5" fill="rgba(152,180,204,0.18)" stroke="#b8cce0" stroke-width="0.7"/>'
+      + '<circle cx="40" cy="100" r="1.4" fill="#d4e8f8" opacity="0.88"/>'
+      // Sparkles
+      + '<g opacity=".55" filter="url(#nglow)"><line x1="5" y1="52" x2="11" y2="52" stroke="#b8d0e4" stroke-width="1"/><line x1="8" y1="49" x2="8" y2="55" stroke="#b8d0e4" stroke-width="1"/></g>'
+      + '<g opacity=".42"><line x1="69" y1="80" x2="75" y2="80" stroke="#b8d0e4" stroke-width="0.9"/><line x1="72" y1="77" x2="72" y2="83" stroke="#b8d0e4" stroke-width="0.9"/></g>'
+      + '</svg>';
+  }
+  if (id === 'aurel') {
+    return '<svg viewBox="0 0 80 130" width="72" height="118" xmlns="http://www.w3.org/2000/svg" style="overflow:visible;">'
+      + '<defs>'
+      + '<radialGradient id="ag1" cx="50%" cy="50%" r="50%"><stop offset="0%" stop-color="#fff8e0" stop-opacity="0.9"/><stop offset="100%" stop-color="#c09040" stop-opacity="0"/></radialGradient>'
+      + '<filter id="aglow" x="-40%" y="-40%" width="180%" height="180%"><feGaussianBlur stdDeviation="2.5" result="blur"/><feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge></filter>'
+      + '</defs>'
+      // Upper triangle (pointing down — top point up, base mid)
+      + '<polygon points="40,6 66,84 14,84" fill="rgba(240,211,154,0.06)" stroke="#f0d39a" stroke-width="0.9" opacity="0.7"/>'
+      // Lower triangle (pointing up — bottom point down, base mid)
+      + '<polygon points="40,124 14,46 66,46" fill="rgba(240,211,154,0.06)" stroke="#f0d39a" stroke-width="0.9" opacity="0.7"/>'
+      // Center hexagon (star intersection zone)
+      + '<polygon points="40,46 58,57 58,73 40,84 22,73 22,57" fill="rgba(240,211,154,0.1)" stroke="#e8c870" stroke-width="0.75" opacity="0.65"/>'
+      // Spoke lines: triangle tips to center
+      + '<line x1="40" y1="6" x2="40" y2="57" stroke="#f0d39a" stroke-width="0.55" opacity="0.38"/>'
+      + '<line x1="40" y1="73" x2="40" y2="124" stroke="#f0d39a" stroke-width="0.55" opacity="0.38"/>'
+      + '<line x1="14" y1="46" x2="28" y2="57" stroke="#f0d39a" stroke-width="0.55" opacity="0.32"/>'
+      + '<line x1="66" y1="46" x2="52" y2="57" stroke="#f0d39a" stroke-width="0.55" opacity="0.32"/>'
+      + '<line x1="14" y1="84" x2="28" y2="73" stroke="#f0d39a" stroke-width="0.55" opacity="0.32"/>'
+      + '<line x1="66" y1="84" x2="52" y2="73" stroke="#f0d39a" stroke-width="0.55" opacity="0.32"/>'
+      // Solar disk outer glow
+      + '<circle cx="40" cy="65" r="18" fill="url(#ag1)" filter="url(#aglow)"/>'
+      // Solar disk rings
+      + '<circle cx="40" cy="65" r="14" fill="rgba(240,200,90,0.1)" stroke="#e8c060" stroke-width="1.1" opacity="0.75"/>'
+      + '<circle cx="40" cy="65" r="9" fill="rgba(255,230,120,0.18)" stroke="#f0d39a" stroke-width="1" opacity="0.85"/>'
+      + '<circle cx="40" cy="65" r="4.5" fill="rgba(255,248,200,0.55)" stroke="#fff5c0" stroke-width="0.8"/>'
+      + '<circle cx="40" cy="65" r="1.8" fill="#fffce8" opacity="0.98"/>'
+      // Sparkles
+      + '<g opacity=".65" filter="url(#aglow)"><line x1="4" y1="65" x2="10" y2="65" stroke="#f0d39a" stroke-width="1.1"/><line x1="7" y1="62" x2="7" y2="68" stroke="#f0d39a" stroke-width="1.1"/></g>'
+      + '<g opacity=".45"><line x1="70" y1="36" x2="76" y2="36" stroke="#e8c870" stroke-width="0.9"/><line x1="73" y1="33" x2="73" y2="39" stroke="#e8c870" stroke-width="0.9"/></g>'
+      + '<g opacity=".38"><line x1="5" y1="94" x2="10" y2="94" stroke="#e8c870" stroke-width="0.8"/><line x1="7.5" y1="91.5" x2="7.5" y2="96.5" stroke="#e8c870" stroke-width="0.8"/></g>'
+      + '</svg>';
+  }
+  // Default: null = keep existing HTML (Omnia crystal)
+  return null;
+}
+
+var _drawerOmniaBtnOrigSVG = null;
+function updateDrawerEntityBtn() {
+  var btn = document.getElementById('drawerOmniaBtn');
+  if (!btn) return;
+  // Cache original Omnia crystal HTML on first call
+  if (!_drawerOmniaBtnOrigSVG) _drawerOmniaBtnOrigSVG = btn.innerHTML;
+  var entity = omniaFindCosmetic(OMNIA_ENTITIES, (omniaState && omniaState.cosmetics && omniaState.cosmetics.entity) || 'omnia');
+  var palette = omniaFindCosmetic(OMNIA_PALETTES, (omniaState && omniaState.cosmetics && omniaState.cosmetics.palette) || 'aether');
+  var color = entity.id === 'omnia' ? palette.color : entity.color;
+  if (entity.id === 'omnia') {
+    btn.innerHTML = _drawerOmniaBtnOrigSVG;
+    btn.style.filter = '';
+    btn.title = 'Meet Omnia';
+    btn.setAttribute('aria-label', 'Open guide tutorial');
+  } else {
+    var previewSVG = renderOmniaEntityPreview(entity).replace('<svg ', '<svg width="26" height="38" ');
+    btn.innerHTML = previewSVG;
+    btn.style.filter = 'drop-shadow(0 0 6px ' + color + '99)';
+    btn.title = entity.name;
+    btn.setAttribute('aria-label', 'Open ' + entity.name + ' guide');
+  }
+}
+
 function applyOmniaCosmetics() {
   if (!omniaState.cosmetics) omniaState.cosmetics = cloneOmniaDefault().cosmetics;
   var palette = omniaFindCosmetic(OMNIA_PALETTES, omniaState.cosmetics.palette || 'aether');
@@ -8240,15 +8370,29 @@ function applyOmniaCosmetics() {
     fig.style.setProperty('--omnia-companion-color', companion ? companion.color : palette.color);
     fig.dataset.entity = entity.id;
     fig.classList.toggle('has-companion', !!companion);
+    // Swap crystal layer SVG for non-default entities
+    var crystalLayer = fig.querySelector('.omnia-crystal-layer');
+    if (crystalLayer) {
+      var entitySVG = getEntityCrystalSVG(entity.id);
+      if (entitySVG) {
+        crystalLayer.innerHTML = entitySVG;
+        fig.style.filter = 'drop-shadow(0 0 10px ' + entity.color + '88)';
+      } else {
+        // Restore Omnia default — re-apply palette filter only
+        fig.style.filter = '';
+      }
+    }
+    fig.setAttribute('aria-label', 'Reveal a ' + entity.name + ' symbol');
   }
   if (name) {
     name.textContent = entity.name;
-    name.style.color = palette.color;
+    name.style.color = entity.id === 'omnia' ? palette.color : entity.color;
   }
   if (comp) {
     comp.innerHTML = companion ? renderOmniaCompanionPreview(companion) : '';
     comp.style.display = companion ? 'block' : 'none';
   }
+  updateDrawerEntityBtn();
 }
 
 function renderOmniaCosmeticSection(title, kind, items) {
@@ -8302,8 +8446,13 @@ function omniaBodyTotal() {
 }
 
 function omniaRatePerHour() {
-  var bodyBonus = Math.floor(omniaBodyTotal() * 0.9);
-  return Math.floor(90 + (omniaState.upgrades.current || 1) * 55 + bodyBonus);
+  var total = omniaBodyTotal();
+  var currentLvl = omniaState.upgrades.current || 1;
+  var stepNum = omniaState.bardonStep || 1;
+  var earlyBoost = total < 48 ? Math.floor((48 - total) * 1.5) : 0;
+  var stepTax = Math.max(0, stepNum - 1) * 16;
+  var bodyBonus = Math.floor(Math.sqrt(Math.max(0, total)) * 9);
+  return Math.max(10, Math.floor(10 + currentLvl * 12 + Math.floor(bodyBonus * 0.5) + Math.floor(earlyBoost * 0.3) - stepTax));
 }
 
 function omniaReservoirCap() {
@@ -8335,12 +8484,16 @@ function omniaStage() {
 }
 
 function omniaBodyCost(body) {
-  return 180 + Math.floor((omniaState.bodies[body] || 0) * 38);
+  var lvl = omniaState.bodies[body] || 0;
+  var stepNum = omniaState.bardonStep || 1;
+  var base = 78 + lvl * 15 + Math.floor(Math.pow(lvl, 1.55) * 3.2);
+  var stepMult = 1 + Math.max(0, stepNum - 1) * 0.16;
+  return Math.floor(base * stepMult);
 }
 
 function omniaUpgradeCost(upg) {
   var lvl = omniaState.upgrades[upg.id] || 1;
-  return upg.base + (lvl - 1) * upg.step;
+  return Math.floor((upg.base + (lvl - 1) * upg.step) * Math.pow(1.14, Math.max(0, lvl - 1)));
 }
 
 function omniaCurrentStep() {
@@ -8420,11 +8573,16 @@ function omniaHistoryMatches(id, h) {
 }
 
 function omniaExerciseReward(exId, seconds, recommended) {
-  var base = Math.max(120, Math.min(900, Math.floor((seconds || 0) * 0.45) + 140));
+  var total = omniaBodyTotal();
+  var stepNum = omniaState.bardonStep || 1;
+  var base = Math.max(95, Math.min(760, Math.floor((seconds || 0) * 0.4) + 120));
+  var progressionSoftCap = 1 / (1 + Math.max(0, total - 36) / 95);
+  var stepPenalty = 1 - Math.min(0.24, Math.max(0, stepNum - 1) * 0.07);
+  var catchup = total < 42 ? 1 + (42 - total) / 120 : 1;
   var discernment = omniaState.upgrades.discernment || 1;
   var streakMult = 1 + Math.min(0.45, (omniaState.recStreak || 0) * 0.08);
   var recMult = recommended ? 1.75 + discernment * 0.08 : 1;
-  return Math.floor(base * streakMult * recMult);
+  return Math.max(42, Math.floor(base * progressionSoftCap * stepPenalty * catchup * streakMult * recMult));
 }
 
 function awardOmniaForExercise(exId, seconds) {
@@ -8446,7 +8604,8 @@ function awardOmniaForExercise(exId, seconds) {
   }
   saveOmniaState();
   var bodyName = OMNIA_BODY_META[meta.body] ? OMNIA_BODY_META[meta.body].name.replace(' Body','') : 'Omnia';
-  showToast('Omnia gained +' + gain + ' akasha' + (recommended ? ' · ' + bodyName + ' +1' : ''), 3000);
+  var activityName = meta && meta.name ? meta.name : 'Exercise';
+  showToast(activityName + ' complete · +' + gain + ' akasha' + (recommended ? ' · ' + bodyName + ' +1' : ''), 3200);
 }
 
 function renderOmniaEngine() {
@@ -8613,13 +8772,30 @@ function beginOmniaRecommendation() {
   openExerciseSetup(meta.open);
 }
 
-var OMNIA_MORPH_SYMBOLS = [
-  { id:'eye', label:'Inner Eye', color:'#b8eaff' },
-  { id:'triangle', label:'Triad', color:'#d4b08e' },
-  { id:'sun', label:'Solar Center', color:'#f0d39a' },
-  { id:'moon', label:'Lunar Vessel', color:'#c4a8d4' }
-];
-var omniaMorphIndex = 0;
+var OMNIA_ENTITY_MORPH_SYMBOLS = {
+  omnia: [
+    { id:'eye', label:'Inner Eye', color:'#b8eaff' },
+    { id:'triangle', label:'Triad', color:'#d4b08e' },
+    { id:'sun', label:'Solar Center', color:'#f0d39a' },
+    { id:'moon', label:'Lunar Vessel', color:'#c4a8d4' }
+  ],
+  noema: [
+    { id:'eye', label:'Noema Lens', color:'#98b4cc' },
+    { id:'triangle', label:'Noetic Prism', color:'#9fbfd8' },
+    { id:'sun', label:'Cognitive Core', color:'#b7cee0' }
+  ],
+  aurel: [
+    { id:'sun', label:'Solar Forge', color:'#f0d39a' },
+    { id:'triangle', label:'Will Sigil', color:'#e3b97f' },
+    { id:'eye', label:'Golden Watch', color:'#f2d8a8' }
+  ],
+  elys: [
+    { id:'moon', label:'Astral Bloom', color:'#c4a8d4' },
+    { id:'sun', label:'Ember Halo', color:'#d8b7e6' },
+    { id:'triangle', label:'Veil Prism', color:'#b995ca' }
+  ]
+};
+var omniaMorphIndexes = { omnia:0, noema:0, aurel:0, elys:0 };
 var omniaMorphTimer = null;
 var omniaMorphRaf = null;
 
@@ -8834,17 +9010,22 @@ function morphGuideOmnia() {
   var fig = document.getElementById('guideOmniaFigure');
   var layer = document.getElementById('guideOmniaSymbolLayer');
   if (!fig || !layer) return;
-  var baseSym = OMNIA_MORPH_SYMBOLS[omniaMorphIndex % OMNIA_MORPH_SYMBOLS.length];
+  var entityId = (omniaState && omniaState.cosmetics && omniaState.cosmetics.entity) || 'omnia';
+  var entity = omniaFindCosmetic(OMNIA_ENTITIES, entityId) || OMNIA_ENTITIES[0];
+  var symbols = OMNIA_ENTITY_MORPH_SYMBOLS[entityId] || OMNIA_ENTITY_MORPH_SYMBOLS.omnia;
+  if (!symbols || !symbols.length) symbols = OMNIA_ENTITY_MORPH_SYMBOLS.omnia;
+  if (typeof omniaMorphIndexes[entityId] !== 'number') omniaMorphIndexes[entityId] = 0;
+  var baseSym = symbols[omniaMorphIndexes[entityId] % symbols.length];
   var palette = omniaFindCosmetic(OMNIA_PALETTES, (omniaState.cosmetics && omniaState.cosmetics.palette) || 'aether');
   var sym = Object.assign({}, baseSym, { color: palette.color || baseSym.color });
-  omniaMorphIndex++;
+  omniaMorphIndexes[entityId]++;
   if (omniaMorphTimer) clearTimeout(omniaMorphTimer);
   layer.innerHTML = renderOmniaMorphSymbol(sym);
   layer.style.color = sym.color;
-  fig.setAttribute('aria-label', 'Omnia reveals ' + sym.label);
+  fig.setAttribute('aria-label', entity.name + ' reveals ' + sym.label);
   animateOmniaShardMorph(sym);
   omniaMorphTimer = setTimeout(function() {
-    fig.setAttribute('aria-label', 'Reveal an Omnia symbol');
+    fig.setAttribute('aria-label', 'Reveal a ' + entity.name + ' symbol');
   }, 2200);
 }
 
@@ -9001,9 +9182,6 @@ function commitGuidePath(mode) {
   if (!mode) return;
   setGuidePathMode(mode, true);
   renderGuidePlan(mode);
-  try {
-    window.dispatchEvent(new CustomEvent('presence:guide-path-committed', { detail:{ mode:mode } }));
-  } catch(e) {}
 }
 
 function guideClamp(n, min, max) {
@@ -9273,6 +9451,7 @@ function buildExperiencedGuideItems() {
       name:c.ex.name,
       mode:id === 'thought' ? guideCurrentThoughtMode(guideThoughtStats()) : undefined,
       duration:dur,
+      done:(stats[id] && stats[id].todayCount > 0) || false,
       progress:c.count ? c.count + ' recorded' : 'no completed sessions recorded',
       tip:tip + (c.count ? ' Omnia has recorded ' + c.count + ' completed session' + (c.count === 1 ? '' : 's') + ' here.' : ' Omnia has no completed sessions recorded here yet.'),
       open:id === 'soulmirror' ? 'soulmirror' : id
@@ -9404,7 +9583,7 @@ function renderGuidePlan(mode) {
   var dayNames = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
   document.getElementById('guidePlanDayLabel').textContent = mode === 'experienced' ? 'Custom' : 'Adaptive · ' + dayNames[dayIdx];
   var planControls = document.getElementById('guidePlanControls');
-  if (planControls) planControls.style.display = mode === 'beginner' ? 'flex' : 'none';
+  if (planControls) planControls.style.display = 'flex';
   renderGuideCadenceControl();
 
   var cardsHTML = items.map(function(item) {
@@ -9499,7 +9678,7 @@ function toggleGuideTwoADay() {
   guideState._twoADayV1 = !guideTwoADayEnabled();
   saveGuideState(guideState);
   renderGuideCadenceControl();
-  if (guideState._pathLockedV2 && guidePathMode === 'beginner') renderGuidePlan('beginner');
+  if (guideState._pathLockedV2 && guidePathMode) renderGuidePlan(guidePathMode);
 }
 
 document.getElementById('guideTwoADayBtn').addEventListener('click', toggleGuideTwoADay);
@@ -9522,9 +9701,6 @@ document.getElementById('guideOmniaTab').addEventListener('click', function() {
   switchGuideTab('omnia');
 });
 document.getElementById('omniaCollectBtn').addEventListener('click', collectOmniaAkasha);
-document.getElementById('omniaActionBtn').addEventListener('click', function() {
-  performOmniaAction('attune');
-});
 document.getElementById('guideOmniaFigure').addEventListener('click', morphGuideOmnia);
 document.getElementById('guideOmniaFigure').addEventListener('keydown', function(e) {
   if (e.key === 'Enter' || e.key === ' ') {
@@ -10175,10 +10351,13 @@ async function getSubscription() {
   catch(e) { return null; }
 }
 
+// Resolve sw.js relative to this page so it works from any sub-path
+var SW_PATH = (location.pathname.includes('/app/') ? '../' : '') + 'sw.js';
+
 async function registerWebPush() {
   if (!('serviceWorker' in navigator) || !('PushManager' in window)) return;
   try {
-    var reg = await navigator.serviceWorker.register('/sw.js', { scope: '/app/' });
+    var reg = await navigator.serviceWorker.register(SW_PATH);
     var permission = await Notification.requestPermission();
     if (permission !== 'granted') { showToast('Enable notifications for background reminders'); return; }
     var sub = await reg.pushManager.getSubscription();
@@ -10214,7 +10393,7 @@ async function notifyServerSessionEnd() {
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', async function() {
     try {
-      var reg = await navigator.serviceWorker.register('/sw.js', { scope: '/app/' });
+      var reg = await navigator.serviceWorker.register(SW_PATH);
       if (Notification.permission === 'granted') {
         var sub = await reg.pushManager.getSubscription();
         if (!sub) { sub = await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY) }); }
@@ -12405,77 +12584,71 @@ document.addEventListener('DOMContentLoaded',function(){(function(){
   var VISITED='presence_visited';
 
   var STEPS=[
-    {mode:'full', sparks:true, aetherText:true, blackout:true,
-     eyeTap:true, text:'Namaste! My name is Omnia. Welcome to your new favorite meditation practice.'},
-    {mode:'full', aetherText:true, blackout:true, returnToOmnia:true,
-     text:'Allow me to show you around.'},
-    {mode:'full', panel:'concentration', cards:true, aetherText:true, blackout:true,
-     exerciseIntro:true, tourStage:true, revealBlackout:true,
-     text:'These exercises will hone your concentration and imagination skills. Believe it or not, these exercises have been derived from secret societies and practiced for thousands of years!'},
-    {mode:'spot', target:'#modeConcentration',
-     text:'This is where the Concentration exercises lay. Master them all to know thyself.'},
-    {mode:'spot', target:'#concRingBtn',
-     text:'Practice to level up. All of these exercises give XP and come with a title.'},
-    {mode:'spot', target:'#concHomeSymbolFill',
-     text:'Here is your rank — you can click on it to give more information. Go through all the ranks to ascend!'},
-    {mode:'spot', target:'[data-exercise="clock"]',
-     text:'You\'ll place your complete attention on the seconds hand of a clock. Each second of true focus makes your mind stronger.'},
-    {mode:'spot', target:'[data-exercise="clock"]', scene:'clock',
-     html:'You must place your <em>complete</em> focus here and only stop once the mind becomes distracted.'},
-    {mode:'spot', target:'[data-exercise="visual"]', scene:'visual',
-     text:'You\'ll learn to see objects as if they were right in front of you, in your mind.'},
-    {mode:'spot', target:'[data-exercise="visual"]', scene:'visual',
-     text:'You\'ll start with easier objects, like shapes. But then go into objects.'},
-    {mode:'spot', target:'[data-exercise="visual"]', scene:'visual',
-     text:'You\'ll learn to do this with your eyes open as well — a concept that sounds difficult but is rather easy after some perseverance.'},
-    {mode:'spot', target:'[data-exercise="auditory"]', scene:'auditory', dock:'upper',
-     text:'Just as you did with visualization, you\'ll repeat the same with sounds. You\'ll hear these sounds as if they were actually there.'},
-    {mode:'spot', target:'[data-exercise="auditory"]', scene:'auditory', dock:'upper', audio:'creek',
-     text:'Here, take a listen:'},
-    {mode:'spot', target:'[data-exercise="auditory"]', scene:'auditory', dock:'upper',
-     text:'Isn\'t that amazing?'},
-    {mode:'spot', target:'[data-exercise="asana"]',
-     text:'In asana, the type of meditation you\'re most likely familiar with, you\'ll learn how to sit quietly, without fidgeting, while stilling the mind.'},
-    {mode:'spot', target:'[data-exercise="asana"]',
-     text:'This will do wonders for the average mind which constantly craves stimulation.'},
-    {mode:'spot', target:'[data-exercise="asana"]',
-     text:'Sit in a chair with your legs completely together, start with five minutes and then go all the way up!'},
-    {mode:'spot', target:'[data-exercise="soulmirror"]', dock:'upper',
-     text:'Here is where the inner transformation part of this practice lies. You\'ll write down all your negative and positive traits here and work on them during the duration of your stay here.'},
-    {mode:'spot', target:'[data-exercise="soulmirror"]', dock:'upper',
-     text:'You can work on them with the pore breathing — the act of “breathing out” your bad qualities and purifying your body.'},
-    {mode:'spot', target:'[data-exercise="soulmirror"]', dock:'upper',
-     text:'This is a psychological technique that targets the subconscious. You can also use this portion for any type of controlled breathing, and change the intervals in settings.'},
-    {mode:'drawer', target:'#drawerJournal',
-     text:'Your Journal Log lives here. Every session is recorded — your streak, your progress, your notes. This is your proof of growth.'},
-    {mode:'drawer', target:'#drawerGuide',
-     text:'This is where I live and will give you your daily regiment.'},
-    {mode:'guide-choice', requiresGuideChoice:true,
-     text:'Tell me — is this your first time on this path, or are you a bit more advanced?'},
-    {mode:'spot', target:'#guidePlanOutput', requiresTutorialPath:true, onlyPath:'beginner',
-     text:'No problem! Here is your agenda for the day, and it will always be here for you to go back to. This is how you\'ll grow.'},
-    {mode:'spot', target:'#guidePlanOutput', requiresTutorialPath:true, onlyPath:'beginner',
-     text:'I\'ll challenge you a bit harder each and every day.'},
-    {mode:'spot', target:'#guidePlanOutput', requiresTutorialPath:true, onlyPath:'experienced',
-     text:'No problem! I\'ll guide you to make you improve even further.'},
-    {mode:'spot', guideOpen:true, guideTab:'omnia', target:'#guideOmniaTab',
-     text:'And here is where I can be upgraded. You and I can grow together!!'},
-    {mode:'spot', guideOpen:true, guideTab:'omnia', target:'#omniaEngine',
-     text:'The more exercises you do, the more Akasha we generate for upgrades, cosmetics, and other cool items!'},
-    {mode:'spot', guideOpen:true, guideTab:'omnia', target:'#omniaCosmeticGrid', scene:'corgi',
-     text:'You can even get me a pet corgi!'},
-    {mode:'drawer', target:'#drawerOmniaBtn',
-     text:'Feel free to click on me here any time you want to go through this tutorial again.'},
-    {mode:'drawer', target:'#drawerGuide',
-     text:'I\'ll be in here.'},
-    {mode:'drawer', target:'#drawerGuide', last:true,
-     text:'It\'s nice to meet you!'}
+    /* 0  */ {mode:'full', sparks:true, eyeTap:true, darkFull:true,
+               text:'Namaste! My name is Omnia. Welcome to your new favorite meditation practice.'},
+    /* 1  */ {mode:'full', inEye:true, blueText:true,
+               text:'Allow me to show you around.'},
+    /* 2  */ {mode:'full', inEye:true, blueText:true, blink:true,
+               text:'These exercises will hone your concentration and imagination skills. Believe it or not, these exercises have been derived from secret societies and practiced for thousands of years!'},
+    /* 3  */ {mode:'full', morphCrystal:true, panel:'concentration', cards:true, spotPanel:'#modeConcentration',
+               text:'This is where the Concentration exercises lay. Master them to know thyself.'},
+    /* 4  */ {mode:'spot', target:'#concRingBtn', omniaMid:true,
+               text:'Practice to level up. All of these exercises go towards your XP bubble and come with a unique title.'},
+    /* 5  */ {mode:'spot', targets:['#concHomeSymbol','#concHomeSymbolFill'], omniaMid:true,
+               text:'Here is your rank — you can click on it for more information. Go through all the ranks to ascend!'},
+    /* 6  */ {mode:'spot', target:'[data-exercise="clock"]', omniaLeft:true,
+               text:'You\'ll place your complete attention on the seconds hand of a clock. Each second of true focus makes your mind stronger.'},
+    /* 7  */ {mode:'full', clockBg:true, omniaBelow:true,
+               text:'You must place your complete focus here and only stop once the mind becomes distracted.'},
+    /* 8  */ {mode:'spot', target:'[data-exercise="visual"]', omniaLeft:true,
+               text:'You\'ll learn to see objects as if they were right in front of you, in your mind.'},
+    /* 9  */ {mode:'full', objFlash:true, omniaBelow:true,
+               text:'You\'ll start with easier objects, like shapes. But then go into objects.'},
+    /* 10 */ {mode:'spot', target:'[data-exercise="visual"]', omniaLeft:true,
+               text:'You\'ll learn to do this with your eyes open as well — a concept that sounds difficult but is rather easy after some perseverance.'},
+    /* 11 */ {mode:'spot', target:'[data-exercise="auditory"]', omniaLeft:true, scrollTo:'[data-exercise="auditory"]',
+               text:'Just as you did with visualization, you\'ll repeat the same with sounds. You\'ll hear these sounds as if they were actually there.'},
+    /* 12 */ {mode:'spot', target:'[data-exercise="auditory"]', omniaLeft:true, playCreek:true,
+               text:'Here, take a listen:'},
+    /* 13 */ {mode:'spot', target:'[data-exercise="auditory"]', omniaLeft:true, stopCreek:true,
+               text:'Isn\'t that amazing?'},
+    /* 14 */ {mode:'spot', target:'[data-exercise="thought"]', omniaLeft:true, scrollTo:'[data-exercise="thought"]',
+               text:'Thought Control is where you attempt to hold the mind in complete emptiness — no thoughts, no images, no inner speech. Tap when any thought arises.'},
+    /* 15 */ {mode:'full', thoughtBg:true, omniaBelow:true,
+               text:'Here, thoughts are symbolized rising from the mind. The goal is complete inner silence until even they fade.'},
+    /* 16 */ {mode:'spot', target:'[data-exercise="asana"]', omniaLeft:true, scrollTo:'[data-exercise="asana"]', asana:true,
+               text:'In asana you\'ll learn to sit completely motionless — stilling the body as the foundation for stilling the mind.'},
+    /* 17 */ {mode:'spot', target:'[data-exercise="asana"]', omniaLeft:true, asana:true,
+               text:'Sit in a chair with your legs completely together. Start with five minutes and work your way up!'},
+    /* 18 */ {mode:'spot', target:'[data-exercise="soulmirror"]', omniaLeft:true,
+               text:'Soul Mirror is where inner transformation lies. You\'ll track your negative and positive traits and work on them.'},
+    /* 19 */ {mode:'spot', target:'[data-exercise="soulmirror"]', omniaLeft:true,
+               text:'You can work on traits with pore breathing — breathing out bad qualities and purifying yourself.'},
+    /* 20 */ {mode:'drawer', target:'#drawerJournal', omniaRight:true,
+               text:'Your Journal Log lives here. Every session is recorded — your streak, your progress, your notes.'},
+    /* 21 */ {mode:'drawer', target:'#drawerGuide', openGuide:true,
+               text:'This is where I live and will give you your daily regiment.'},
+    /* 22 */ {mode:'guide', pathChoice:true, skipTo:25},
+    /* 23 */ {mode:'guide', nextIdx:25,
+               text:'No problem! Here is your agenda for the day, and it will always be here for you to go back to. This is how you\'ll grow.'},
+    /* 24 */ {mode:'guide', nextIdx:25,
+               text:'I\'ll challenge you a bit harder each and every day.'},
+    /* 25 */ {mode:'guide', target:'#guideOmniaTab', clickTarget:true,
+               text:'And here is where I can be upgraded. You and I can grow together!!'},
+    /* 26 */ {mode:'guide',
+               text:'The more exercises you do, the more Akasha we generate for upgrades, cosmetics, and other cool items!'},
+    /* 27 */ {mode:'guide', corgi:true,
+               text:'You can even get me a pet corgi!'},
+    /* 28 */ {mode:'drawer', target:'#drawerOmniaBtn', spotDrawer:true,
+               text:'Feel free to click on me here any time you want to go through this tutorial again.'},
+    /* 29 */ {mode:'drawer', target:'#drawerGuide', spotDrawer:true, last:true,
+               text:'I\'ll be in here. It\'s nice to meet you!'},
   ];
 
   var ov=document.getElementById('tutOverlay');
+  var tc=document.getElementById('tutContent');
   var cv=document.getElementById('tutSparkCanvas');
   var sp=document.getElementById('tutSpotlight');
-  var sc=document.getElementById('tutSceneLayer');
   var ow=document.getElementById('tutOmniaWrap');
   var bl=document.getElementById('tutBubble');
   var bt=document.getElementById('tutBubbleText');
@@ -12486,13 +12659,17 @@ document.addEventListener('DOMContentLoaded',function(){(function(){
   var ft=document.getElementById('tutFloatText');
   var db=document.getElementById('tutDoneBtn');
   var cp=document.getElementById('tutDrawerCapture');
+  var pc=document.getElementById('tutPathChoice');
+  var cg=document.getElementById('tutCorgi');
+  var clkBg=document.getElementById('tutClockBg');
+  var objBg=document.getElementById('tutObjBg');
   if(!ov) return;
 
-  var cur=0, eyeOn=false, rdy=false, pRAF, parts=[], tutorialEyeMorphRaf=null;
-  var tutorialPathChosenThisRun=false, tutorialSelectedPath=null, tutorialWaitingForGuideChoice=false;
-  var tutorialAudioCtx=null, tutorialCreekNodes=[];
+  var cur=0, eyeOn=false, rdy=false, pRAF, parts=[];
+  var tutAudCtx=null, tutCreekNodes=[], corgiTimer=null;
+  var tutorialEyeMorphRaf=null;
 
-  /* Particles */
+  /* ── Particles ── */
   function mkP(){
     var cx=window.innerWidth/2, cy=window.innerHeight*0.45;
     var a=Math.random()*Math.PI*2, sp2=1+Math.random()*2.6;
@@ -12527,90 +12704,7 @@ document.addEventListener('DOMContentLoaded',function(){(function(){
     if(ctx) ctx.clearRect(0,0,cv.width,cv.height);
   }
 
-  /* Tutorial scenes */
-  function tutorialCorgiMarkup(){
-    return '<div class="tut-corgi-scene"><div class="tut-corgi-roll">'
-      + '<svg viewBox="0 0 180 120" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">'
-      + '<g fill="none" stroke="#f0c38f" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">'
-      + '<ellipse cx="88" cy="69" rx="52" ry="28" fill="rgba(212,149,110,.92)"/>'
-      + '<path d="M43 68 C26 62 22 50 31 42 C41 33 54 39 58 51" fill="rgba(244,211,172,.92)"/>'
-      + '<path d="M130 60 C142 50 152 49 160 58 C168 67 163 79 150 83" fill="rgba(212,149,110,.92)"/>'
-      + '<path d="M50 45 L44 24 L64 38 Z M72 40 L79 19 L92 40 Z" fill="rgba(212,149,110,.96)"/>'
-      + '<ellipse cx="61" cy="58" rx="26" ry="21" fill="rgba(250,229,201,.95)"/>'
-      + '<circle cx="53" cy="55" r="3.8" fill="#16202a" stroke="none"/>'
-      + '<circle cx="73" cy="55" r="3.8" fill="#16202a" stroke="none"/>'
-      + '<ellipse cx="63" cy="66" rx="6" ry="4.5" fill="#16202a" stroke="none"/>'
-      + '<path d="M59 71 C62 75 66 75 69 71" stroke="#16202a" stroke-width="2.3"/>'
-      + '<path d="M66 84 L61 101 M93 86 L89 103 M119 82 L121 99" stroke="#f6dec1" stroke-width="6"/>'
-      + '<path d="M139 64 C150 60 157 54 162 45" stroke="#f6dec1" stroke-width="5"/>'
-      + '</g></svg></div></div>';
-  }
-  function setTutorialScene(scene){
-    if(!sc) return;
-    sc.className='';
-    sc.id='tutSceneLayer';
-    sc.innerHTML='';
-    if(!scene) return;
-    if(scene==='clock'){
-      sc.innerHTML='<div class="tut-clock-scene"><div class="tut-clock-face"><div class="tut-clock-hand"></div></div></div>';
-    } else if(scene==='visual'){
-      sc.innerHTML='<div class="tut-visual-scene">'
-        + '<div class="tut-visual-orb shape-circle"></div>'
-        + '<div class="tut-visual-orb shape-square"></div>'
-        + '<div class="tut-visual-orb shape-diamond"></div>'
-        + '<div class="tut-visual-orb shape-triangle"></div>'
-        + '<div class="tut-visual-orb shape-ring"></div>'
-        + '</div>';
-    } else if(scene==='auditory'){
-      sc.innerHTML='<div class="tut-audio-scene"><div class="tut-audio-ripple"></div><div class="tut-audio-ripple"></div><div class="tut-audio-ripple"></div></div>';
-    } else if(scene==='corgi'){
-      sc.innerHTML=tutorialCorgiMarkup();
-    }
-    requestAnimationFrame(function(){sc.classList.add('tut-scene-on');});
-  }
-  function stopTutorialCreek(){
-    tutorialCreekNodes.forEach(function(node){
-      try { if(node.stop) node.stop(); } catch(e) {}
-      try { if(node.disconnect) node.disconnect(); } catch(e) {}
-    });
-    tutorialCreekNodes=[];
-  }
-  function playTutorialCreek(){
-    try {
-      stopTutorialCreek();
-      var AudioCtx=window.AudioContext||window.webkitAudioContext;
-      if(!AudioCtx) return;
-      tutorialAudioCtx=tutorialAudioCtx||new AudioCtx();
-      if(tutorialAudioCtx.state==='suspended') tutorialAudioCtx.resume();
-      var ctx=tutorialAudioCtx;
-      var dur=3.35, frames=Math.floor(ctx.sampleRate*dur);
-      var buf=ctx.createBuffer(1,frames,ctx.sampleRate);
-      var out=buf.getChannelData(0);
-      var smooth=0;
-      for(var i=0;i<frames;i++){
-        smooth=smooth*.88+(Math.random()*2-1)*.12;
-        var swell=.34+.22*Math.sin(i/2900)+.16*Math.sin(i/970);
-        out[i]=smooth*swell;
-      }
-      var src=ctx.createBufferSource();
-      src.buffer=buf;
-      var low=ctx.createBiquadFilter();
-      low.type='lowpass'; low.frequency.value=1150; low.Q.value=.45;
-      var band=ctx.createBiquadFilter();
-      band.type='bandpass'; band.frequency.value=520; band.Q.value=.72;
-      var gain=ctx.createGain();
-      gain.gain.setValueAtTime(0,ctx.currentTime);
-      gain.gain.linearRampToValueAtTime(.11,ctx.currentTime+.24);
-      gain.gain.linearRampToValueAtTime(.085,ctx.currentTime+dur-.42);
-      gain.gain.linearRampToValueAtTime(0,ctx.currentTime+dur);
-      src.connect(low); low.connect(band); band.connect(gain); gain.connect(ctx.destination);
-      src.start();
-      tutorialCreekNodes=[src,low,band,gain];
-      setTimeout(stopTutorialCreek,Math.ceil(dur*1000)+80);
-    } catch(e) {}
-  }
-
-  /* Spotlight */
+  /* ── Spotlight ── */
   function litSpot(sel){
     var el=document.querySelector(sel);
     if(!el){sp.classList.remove('tut-lit');return;}
@@ -12619,20 +12713,54 @@ document.addEventListener('DOMContentLoaded',function(){(function(){
     sp.style.width=(r.width+p*2)+'px';sp.style.height=(r.height+p*2)+'px';
     requestAnimationFrame(function(){sp.classList.add('tut-lit');});
   }
+  function litSpotMulti(sels){
+    var els=sels.map(function(s){return document.querySelector(s);}).filter(Boolean);
+    if(!els.length){sp.classList.remove('tut-lit');return;}
+    var p=10,rects=els.map(function(e){return e.getBoundingClientRect();});
+    var left=Math.min.apply(null,rects.map(function(r){return r.left;}))-p;
+    var top=Math.min.apply(null,rects.map(function(r){return r.top;}))-p;
+    var right=Math.max.apply(null,rects.map(function(r){return r.right;}))+p;
+    var bottom=Math.max.apply(null,rects.map(function(r){return r.bottom;}))+p;
+    sp.style.left=left+'px';sp.style.top=top+'px';
+    sp.style.width=(right-left)+'px';sp.style.height=(bottom-top)+'px';
+    requestAnimationFrame(function(){sp.classList.add('tut-lit');});
+  }
   function darkSpot(){sp.classList.remove('tut-lit');}
-  function ensureStepTargetVisible(sel){
-    var el=document.querySelector(sel);
-    if(!el || !el.scrollIntoView) return;
-    try { el.scrollIntoView({behavior:'smooth',block:'center',inline:'nearest'}); } catch(e) { el.scrollIntoView(); }
+
+  /* ── tc positioning ── */
+  function positionTcBeside(targetSel,side){
+    var el=document.querySelector(targetSel);
+    if(!el) return;
+    var r=el.getBoundingClientRect();
+    var midY=r.top+r.height/2;
+    tc.style.bottom='auto';
+    tc.style.transform='translateY(-50%)';
+    tc.style.top=Math.max(80,Math.min(window.innerHeight-200,midY))+'px';
+    if(side==='left'){tc.style.left='12px';tc.style.right='auto';}
+    else{tc.style.right='12px';tc.style.left='auto';}
+  }
+  function resetTcPosition(){
+    tc.style.top='';tc.style.bottom='';tc.style.left='';tc.style.right='';tc.style.transform='';
   }
 
-  /* Panel */
+  /* ── Scroll exercise card into view ── */
+  function scrollToCard(sel,cb){
+    var scrollEl=document.getElementById('concScrollArea');
+    var card=document.querySelector(sel);
+    if(!scrollEl||!card){if(cb)cb();return;}
+    var r=card.getBoundingClientRect(),cr=scrollEl.getBoundingClientRect();
+    if(r.top>=cr.top&&r.bottom<=cr.bottom){if(cb)cb();return;}
+    scrollEl.scrollTo({top:Math.max(0,scrollEl.scrollTop+(r.top-cr.top)-40),behavior:'smooth'});
+    setTimeout(cb||function(){},620);
+  }
+
+  /* ── Panel ── */
   function goPanel(p){
     var m={awareness:'modeAwareness',concentration:'modeConcentration'};
     var btn=document.getElementById(m[p]);if(btn) btn.click();
   }
 
-  /* Card stagger */
+  /* ── Card stagger ── */
   function staggerCards(){
     document.querySelectorAll('#exerciseGrid .exercise-card').forEach(function(c,i){
       c.style.opacity='0';c.style.transform='translateY(14px)';
@@ -12641,7 +12769,7 @@ document.addEventListener('DOMContentLoaded',function(){(function(){
     });
   }
 
-  /* Eye */
+  /* ── Eye morph (ported from codex/omnia-path-guide) ── */
   function clearTutorialEyeMorph(){
     var svg=document.getElementById('tutOmniaShardSvg');
     if(tutorialEyeMorphRaf){cancelAnimationFrame(tutorialEyeMorphRaf);tutorialEyeMorphRaf=null;}
@@ -12649,68 +12777,56 @@ document.addEventListener('DOMContentLoaded',function(){(function(){
     ow.classList.remove('tut-morphing');
   }
   function tutorialEyeOutline(color){
-    return '<g id="tutShardOutline" opacity="0" stroke="' + color + '" stroke-linecap="round" stroke-linejoin="round">'
-      + '<path d="M7 65 C21 37 39 28 50 28 C61 28 79 37 93 65 C79 93 61 102 50 102 C39 102 21 93 7 65 Z" fill="rgba(184,234,255,.055)" stroke-width="2.45"/>'
-      + '<path d="M17 65 C31 46 40 41 50 41 C60 41 69 46 83 65 C69 84 60 89 50 89 C40 89 31 84 17 65 Z" fill="none" stroke-width="1.1" opacity=".66"/>'
-      + '<circle cx="50" cy="65" r="18.5" fill="rgba(14,43,62,.42)" stroke-width="1.65"/>'
-      + '<circle cx="50" cy="65" r="7.6" fill="#06131f" stroke-width="1.1"/>'
-      + '<circle cx="57" cy="57" r="3.4" fill="#eefbff" stroke="none" opacity=".82"/>'
-      + '<path d="M24 48 L50 65 L76 48 M24 82 L50 65 L76 82" fill="none" stroke-width=".82" opacity=".46"/>'
-      + '</g>';
+    return '<g id="tutShardOutline" opacity="0" stroke="'+color+'" stroke-linecap="round" stroke-linejoin="round">'
+      +'<path d="M7 65 C21 37 39 28 50 28 C61 28 79 37 93 65 C79 93 61 102 50 102 C39 102 21 93 7 65 Z" fill="rgba(184,234,255,.055)" stroke-width="2.45"/>'
+      +'<path d="M17 65 C31 46 40 41 50 41 C60 41 69 46 83 65 C69 84 60 89 50 89 C40 89 31 84 17 65 Z" fill="none" stroke-width="1.1" opacity=".66"/>'
+      +'<circle cx="50" cy="65" r="18.5" fill="rgba(14,43,62,.42)" stroke-width="1.65"/>'
+      +'<circle cx="50" cy="65" r="7.6" fill="#06131f" stroke-width="1.1"/>'
+      +'<circle cx="57" cy="57" r="3.4" fill="#eefbff" stroke="none" opacity=".82"/>'
+      +'<path d="M24 48 L50 65 L76 48 M24 82 L50 65 L76 82" fill="none" stroke-width=".82" opacity=".46"/>'
+      +'</g>';
   }
   function toEye(done){
     var svg=document.getElementById('tutOmniaShardSvg');
-    if(!svg || typeof OMNIA_CRYSTAL_MORPH_SHARDS==='undefined' || typeof OMNIA_MORPH_TARGETS==='undefined'){
+    if(!svg||typeof OMNIA_CRYSTAL_MORPH_SHARDS==='undefined'||typeof OMNIA_MORPH_TARGETS==='undefined'){
       eyeOn=true;ow.classList.add('eye-state');if(done)done();return;
     }
     clearTutorialEyeMorph();
-    var from=OMNIA_CRYSTAL_MORPH_SHARDS;
-    var to=OMNIA_MORPH_TARGETS.eye;
-    var color='#b8eaff';
-    var revealed=false;
+    var from=OMNIA_CRYSTAL_MORPH_SHARDS,to=OMNIA_MORPH_TARGETS.eye,color='#b8eaff',revealed=false;
     svg.innerHTML='<defs><filter id="tutShardGlow" x="-40%" y="-40%" width="180%" height="180%"><feGaussianBlur stdDeviation="2.4" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter></defs>';
     var polys=from.map(function(poly,idx){
       var el=document.createElementNS('http://www.w3.org/2000/svg','polygon');
       el.setAttribute('points',omniaPointString(poly));
-      el.setAttribute('fill',color);
-      el.setAttribute('fill-opacity',idx===8?'.18':'.26');
-      el.setAttribute('stroke',color);
-      el.setAttribute('stroke-width',idx===8?'1.1':'1.35');
-      el.setAttribute('stroke-opacity','.86');
-      el.setAttribute('filter','url(#tutShardGlow)');
-      svg.appendChild(el);
-      return el;
+      el.setAttribute('fill',color);el.setAttribute('fill-opacity',idx===8?'.18':'.26');
+      el.setAttribute('stroke',color);el.setAttribute('stroke-width',idx===8?'1.1':'1.35');
+      el.setAttribute('stroke-opacity','.86');el.setAttribute('filter','url(#tutShardGlow)');
+      svg.appendChild(el);return el;
     });
     svg.insertAdjacentHTML('beforeend',tutorialEyeOutline(color));
     var outline=svg.querySelector('#tutShardOutline');
     ow.classList.add('tut-morphing');
     svg.style.opacity='.3';
-    var start=performance.now();
-    var inwardMs=820;
-    var holdMs=460;
-    var totalMs=inwardMs+holdMs;
+    var start=performance.now(),inwardMs=820,holdMs=460,totalMs=inwardMs+holdMs;
     function frame(now){
-      var elapsed=now-start;
-      var t;
+      var elapsed=now-start,t;
       if(elapsed<=inwardMs){
         t=omniaEaseMorph(elapsed/inwardMs);
         svg.style.opacity=String(.3+t*.7);
         if(outline) outline.setAttribute('opacity',String(Math.max(0,(t-.56)/.44)));
         polys.forEach(function(poly,idx){poly.setAttribute('points',omniaPointString(omniaLerpPoly(from[idx],to[idx],t)));});
         if(!revealed&&elapsed>=inwardMs*.82){revealed=true;eyeOn=true;ow.classList.add('eye-state');}
-      } else if(elapsed<=totalMs){
+      }else if(elapsed<=totalMs){
         svg.style.opacity='1';
         if(outline) outline.setAttribute('opacity','1');
         polys.forEach(function(poly,idx){poly.setAttribute('points',omniaPointString(to[idx]));});
         if(!revealed){revealed=true;eyeOn=true;ow.classList.add('eye-state');}
-      } else {
+      }else{
         tutorialEyeMorphRaf=null;
         ow.classList.remove('tut-morphing');
         svg.style.opacity='1';
         if(outline) outline.setAttribute('opacity','1');
         polys.forEach(function(poly,idx){poly.setAttribute('points',omniaPointString(to[idx]));});
-        if(done)done();
-        return;
+        if(done)done();return;
       }
       tutorialEyeMorphRaf=requestAnimationFrame(frame);
     }
@@ -12720,42 +12836,32 @@ document.addEventListener('DOMContentLoaded',function(){(function(){
     ow.classList.remove('eye-blink');
     void ow.offsetWidth;
     ow.classList.add('eye-blink');
-    setTimeout(function(){
-      ow.classList.remove('eye-blink');
-      if(done)done();
-    },720);
+    setTimeout(function(){ow.classList.remove('eye-blink');if(done)done();},720);
   }
   function fromEyeToOmnia(done){
     var svg=document.getElementById('tutOmniaShardSvg');
-    if(!svg || typeof OMNIA_CRYSTAL_MORPH_SHARDS==='undefined' || typeof OMNIA_MORPH_TARGETS==='undefined'){
+    if(!svg||typeof OMNIA_CRYSTAL_MORPH_SHARDS==='undefined'||typeof OMNIA_MORPH_TARGETS==='undefined'){
       resetTutorialEye();if(done)done();return;
     }
     if(tutorialEyeMorphRaf){cancelAnimationFrame(tutorialEyeMorphRaf);tutorialEyeMorphRaf=null;}
-    var from=OMNIA_MORPH_TARGETS.eye;
-    var to=OMNIA_CRYSTAL_MORPH_SHARDS;
-    var color='#b8eaff';
+    var from=OMNIA_MORPH_TARGETS.eye,to=OMNIA_CRYSTAL_MORPH_SHARDS,color='#b8eaff';
     var polys=[].slice.call(svg.querySelectorAll('polygon'));
     if(polys.length!==from.length){
       svg.innerHTML='<defs><filter id="tutShardGlow" x="-40%" y="-40%" width="180%" height="180%"><feGaussianBlur stdDeviation="2.4" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter></defs>';
       polys=from.map(function(poly,idx){
         var el=document.createElementNS('http://www.w3.org/2000/svg','polygon');
         el.setAttribute('points',omniaPointString(poly));
-        el.setAttribute('fill',color);
-        el.setAttribute('fill-opacity',idx===8?'.18':'.26');
-        el.setAttribute('stroke',color);
-        el.setAttribute('stroke-width',idx===8?'1.1':'1.35');
-        el.setAttribute('stroke-opacity','.86');
-        el.setAttribute('filter','url(#tutShardGlow)');
-        svg.appendChild(el);
-        return el;
+        el.setAttribute('fill',color);el.setAttribute('fill-opacity',idx===8?'.18':'.26');
+        el.setAttribute('stroke',color);el.setAttribute('stroke-width',idx===8?'1.1':'1.35');
+        el.setAttribute('stroke-opacity','.86');el.setAttribute('filter','url(#tutShardGlow)');
+        svg.appendChild(el);return el;
       });
       svg.insertAdjacentHTML('beforeend',tutorialEyeOutline(color));
     }
     var outline=svg.querySelector('#tutShardOutline');
     ow.classList.add('tut-morphing','tut-returning');
     svg.style.opacity='1';
-    var start=performance.now();
-    var returnMs=920;
+    var start=performance.now(),returnMs=920;
     function frame(now){
       var elapsed=now-start;
       var t=omniaEaseMorph(Math.min(1,elapsed/returnMs));
@@ -12765,243 +12871,446 @@ document.addEventListener('DOMContentLoaded',function(){(function(){
       if(elapsed>=returnMs){
         clearTutorialEyeMorph();
         ow.classList.remove('eye-state','tut-returning','tut-crystal-return');
-        eyeOn=false;
-        if(done)done();
-        return;
+        eyeOn=false;if(done)done();return;
       }
       tutorialEyeMorphRaf=requestAnimationFrame(frame);
     }
     tutorialEyeMorphRaf=requestAnimationFrame(frame);
   }
-  function stageConcentrationIntro(done){
-    bl.classList.remove('tut-vis');
-    goPanel('concentration');
-    ov.classList.add('tut-blackout');
-    ov.classList.add('tut-tour-stage');
-    ov.style.background='#000';
-    setTimeout(function(){if(done)done();},920);
-  }
-  function revealConcentrationTour(done){
-    ov.classList.remove('tut-blackout');
-    ov.style.background='rgba(7,8,13,0.92)';
-    setTimeout(function(){if(done)done();},460);
-  }
   function resetTutorialEye(){
-    eyeOn=false;
-    clearTutorialEyeMorph();
+    eyeOn=false;clearTutorialEyeMorph();
     ow.classList.remove('eye-state','eye-blink','tut-returning','tut-crystal-return');
     ow.style.transform='';
   }
 
-  /* Drawer pulse */
+  /* ── Clock background ── */
+  var clockAnimRAF=null, clockSecAngle=0, clockLastTime=0;
+  function showClockBg(){
+    clkBg.classList.add('tut-bg-on');
+    clockLastTime=performance.now();
+    var secHand=document.getElementById('tutClockSecHand');
+    if(!secHand) return;
+    function tick(now){
+      var dt=(now-clockLastTime)/1000; clockLastTime=now;
+      clockSecAngle=(clockSecAngle+dt*6)%360;
+      secHand.style.transform='rotate('+clockSecAngle+'deg)';
+      clockAnimRAF=requestAnimationFrame(tick);
+    }
+    clockAnimRAF=requestAnimationFrame(tick);
+  }
+  function hideClockBg(){
+    clkBg.classList.remove('tut-bg-on');
+    if(clockAnimRAF){cancelAnimationFrame(clockAnimRAF);clockAnimRAF=null;}
+  }
+
+  /* ── Object flash ── */
+  var objFlashTimer=null;
+  var OBJ_SETS=[
+    ['◯','△','□','⬡','★','◇'],
+    ['🍎','🌹','🕯️','🗝️','📚','🌙'],
+    ['🌊','🔥','🌿','🪨','⚡','❄️']
+  ];
+  function showObjFlash(){
+    var setIdx=0;
+    function nextSet(){
+      objBg.innerHTML='';
+      var set=OBJ_SETS[setIdx%OBJ_SETS.length]; setIdx++;
+      set.forEach(function(o,i){
+        var el=document.createElement('span');
+        el.className='tut-obj'; el.textContent=o;
+        el.style.animationDelay=(i*90)+'ms';
+        objBg.appendChild(el);
+      });
+    }
+    nextSet();
+    objBg.classList.add('tut-bg-on');
+    objFlashTimer=setInterval(nextSet,2200);
+  }
+  function hideObjFlash(){
+    objBg.classList.remove('tut-bg-on');
+    if(objFlashTimer){clearInterval(objFlashTimer);objFlashTimer=null;}
+    setTimeout(function(){objBg.innerHTML='';},500);
+  }
+
+  /* ── Creek sound ── */
+  function startTutCreek(){
+    try{
+      tutAudCtx=new(window.AudioContext||window.webkitAudioContext)();
+      var ctx=tutAudCtx, when=ctx.currentTime+0.05, dur=20;
+      var buf=ctx.createBuffer(2,ctx.sampleRate*dur,ctx.sampleRate);
+      for(var ch=0;ch<2;ch++){
+        var data=buf.getChannelData(ch);
+        var b0=0,b1=0,b2=0,b3=0,b4=0,b5=0,b6=0;
+        for(var i=0;i<data.length;i++){
+          var w=Math.random()*2-1;
+          b0=.99886*b0+w*.0555179; b1=.99332*b1+w*.0750759;
+          b2=.96900*b2+w*.1538520; b3=.86650*b3+w*.3104856;
+          b4=.55000*b4+w*.5329522; b5=-.7616*b5-w*.0168980;
+          data[i]=(b0+b1+b2+b3+b4+b5+b6+w*.5362)*0.11; b6=w*0.115926;
+        }
+      }
+      var src=ctx.createBufferSource(); src.buffer=buf; src.loop=true;
+      var filt=ctx.createBiquadFilter(); filt.type='bandpass'; filt.frequency.value=600; filt.Q.value=0.5;
+      var gain=ctx.createGain();
+      gain.gain.setValueAtTime(0,when);
+      gain.gain.linearRampToValueAtTime(0.38,when+1.5);
+      src.connect(filt); filt.connect(gain); gain.connect(ctx.destination);
+      src.start(when);
+      tutCreekNodes=[src,gain];
+    }catch(e){}
+  }
+  function stopTutCreek(){
+    if(!tutCreekNodes.length||!tutAudCtx) return;
+    try{
+      var g=tutCreekNodes[1];
+      g.gain.linearRampToValueAtTime(0,tutAudCtx.currentTime+1.2);
+      var _nodes=tutCreekNodes, _ctx=tutAudCtx;
+      tutCreekNodes=[]; tutAudCtx=null;
+      setTimeout(function(){
+        _nodes.forEach(function(n){try{n.stop&&n.stop();}catch(e){}});
+        try{_ctx.close();}catch(e){}
+      },1400);
+    }catch(e){}
+  }
+
+  /* ── Thought word animation ── */
+  var thoughtAnimTimer=null;
+  var THOUGHT_WORDS=['think','remember','worry','what if','later','yesterday','maybe','should','could','want','need','when','how','why','if only','a thought','a memory','distraction'];
+  var thoughtBgEl=null;
+  function showThoughtAnim(){
+    if(!thoughtBgEl) thoughtBgEl=document.getElementById('tutThoughtBg');
+    if(!thoughtBgEl) return;
+    thoughtBgEl.innerHTML='';thoughtBgEl.classList.add('tut-bg-on');
+    var count=0,maxCount=28;
+    function spawn(){
+      if(count>=maxCount) return;
+      count++;
+      var ratio=count/maxCount;
+      var numW=Math.max(1,Math.round(5*(1-ratio*0.85)));
+      for(var i=0;i<numW;i++){
+        var w=document.createElement('span');
+        w.className='tut-thought-word';
+        w.textContent=THOUGHT_WORDS[Math.floor(Math.random()*THOUGHT_WORDS.length)];
+        var dur=2.2+Math.random()*2;
+        var peak=Math.max(0.08,(0.5+Math.random()*0.35)*(1-ratio*0.8));
+        w.style.left=(15+Math.random()*70)+'%';
+        w.style.bottom=(15+Math.random()*20)+'%';
+        w.style.fontSize=(10+Math.random()*7)+'px';
+        w.style.setProperty('--dur',dur+'s');
+        w.style.setProperty('--peak',String(peak));
+        w.style.setProperty('--fade',String(peak*0.25));
+        thoughtBgEl.appendChild(w);
+        (function(el2,d){setTimeout(function(){if(el2.parentNode)el2.parentNode.removeChild(el2);},d*1000+200);})(w,dur);
+      }
+      thoughtAnimTimer=setTimeout(spawn,400+ratio*1400);
+    }
+    spawn();
+  }
+  function hideThoughtAnim(){
+    if(thoughtBgEl) thoughtBgEl.classList.remove('tut-bg-on');
+    if(thoughtAnimTimer){clearTimeout(thoughtAnimTimer);thoughtAnimTimer=null;}
+    if(thoughtBgEl) setTimeout(function(){thoughtBgEl.innerHTML='';},500);
+  }
+
+  /* ── Corgi (fixed: use inline left for both positions) ── */
+  function launchCorgi(){
+    if(corgiTimer) clearTimeout(corgiTimer);
+    cg.style.display='block';
+    cg.style.transition='none';
+    cg.style.left='-90px';
+    requestAnimationFrame(function(){
+      requestAnimationFrame(function(){
+        cg.style.transition='left 3s cubic-bezier(.35,.05,.2,1)';
+        cg.style.left='calc(100vw + 100px)';
+        corgiTimer=setTimeout(function(){
+          cg.style.display='none';
+          cg.style.left='-90px';
+          cg.style.transition='none';
+        },3200);
+      });
+    });
+  }
+
+  /* ── Drawer pulse ── */
   function pulseItem(sel){
-    document.querySelectorAll('.tut-pulse').forEach(function(e){e.classList.remove('tut-pulse');});
-    var el=document.querySelector(sel);if(el) el.classList.add('tut-pulse');
+    document.querySelectorAll('.drawer-item.tut-pulse').forEach(function(e){e.classList.remove('tut-pulse');});
+    var el=document.querySelector(sel); if(el) el.classList.add('tut-pulse');
   }
   function clearPulse(){
-    document.querySelectorAll('.tut-pulse').forEach(function(e){e.classList.remove('tut-pulse');});
-  }
-  function tutorialGuideChoiceNeeded(){
-    return !(typeof guideState!=='undefined' && guideState && guideState._pathLockedV2);
-  }
-  function tutorialShouldSkipStep(s){
-    if(!s) return false;
-    if(s.requiresGuideChoice && !tutorialGuideChoiceNeeded()) return true;
-    if(s.requiresTutorialPath && !tutorialPathChosenThisRun) return true;
-    if(s.onlyPath && tutorialSelectedPath!==s.onlyPath) return true;
-    return false;
-  }
-  function showTutorialCopy(s, delay){
-    bl.classList.remove('tut-vis');
-    bl.classList.toggle('tut-aether-copy', !!s.aetherText);
-    bl.classList.toggle('tut-exercise-intro', !!s.exerciseIntro);
-    if(s.html) bt.innerHTML=s.html;
-    else bt.textContent=s.text||'';
-    if(s.text||s.html) setTimeout(function(){bl.classList.add('tut-vis');},delay||120);
+    document.querySelectorAll('.drawer-item.tut-pulse').forEach(function(e){e.classList.remove('tut-pulse');});
   }
 
-  /* Show step */
+  /* ── Path choice ── */
+  function showPathChoice(){
+    ft.textContent='Tell me — is this your first time on this path, or are you a bit more advanced?';
+    df.classList.add('tut-float-on');
+    setTimeout(function(){fb.classList.add('tut-vis'); pc.classList.add('tut-vis');},60);
+  }
+  function hidePathChoice(){
+    pc.classList.remove('tut-vis');
+  }
+
+  /* ── Finish step: show bubble + set rdy ── */
+  function finishStep(s,delay){
+    bl.classList.remove('tut-vis');
+    if(s.blueText) bl.classList.add('tut-blue'); else bl.classList.remove('tut-blue');
+    if(s.text){bt.textContent=s.text;setTimeout(function(){bl.classList.add('tut-vis');},120);}
+    th.textContent=s.eyeTap?'Tap the screen':'Tap to continue';
+    th.style.display='block'; sk.style.display='block';
+    setTimeout(function(){rdy=true;},delay||700);
+  }
+
+  /* ── Show step ── */
   function go(i){
-    while(i<STEPS.length && tutorialShouldSkipStep(STEPS[i])) i++;
     if(i>=STEPS.length){end();return;}
-    cur=i;rdy=false;
+    cur=i; rdy=false;
     var s=STEPS[i];
 
+    if(!s.clockBg) hideClockBg();
+    if(!s.objFlash) hideObjFlash();
+    if(!s.thoughtBg) hideThoughtAnim();
+    if(s.stopCreek) stopTutCreek();
+    if(!s.asana) ow.classList.remove('asana-state');
+    document.querySelectorAll('.tut-elem-glow').forEach(function(e){e.classList.remove('tut-elem-glow');});
+    hidePathChoice();
+    resetTcPosition();
+
+    /* ── DRAWER mode ── */
     if(s.mode==='drawer'){
-      ov.style.opacity='0';ov.style.pointerEvents='none';
-      darkSpot();stopSparks();stopTutorialCreek();setTutorialScene(null);
-      ov.classList.remove('tut-tour-stage','tut-dock-upper','tut-guide-choice');
+      th.style.display='none'; sk.style.display='none';
+      ov.style.opacity='0'; ov.style.pointerEvents='none';
+      stopSparks();
       df.classList.remove('tut-float-on');
       fb.classList.remove('tut-vis');
       db.style.display='none';
+      if(!s.spotDrawer) darkSpot();
       cp.classList.add('tut-cap-on');
       openDrawer();
       setTimeout(function(){
-        pulseItem(s.target);
-        ft.textContent=s.text;
-        df.classList.add('tut-float-on');
-        setTimeout(function(){fb.classList.add('tut-vis');},60);
+        if(s.spotDrawer&&s.target) litSpot(s.target);
+        else if(s.target) pulseItem(s.target);
+        if(s.omniaRight||s.omniaLeft){
+          tc.classList.add('tut-vis'); tc.classList.remove('tut-content-bottom');
+          if(s.target) positionTcBeside(s.target,s.omniaRight?'right':'left');
+          bl.classList.remove('tut-vis');
+          if(s.blueText) bl.classList.add('tut-blue'); else bl.classList.remove('tut-blue');
+          if(s.text){bt.textContent=s.text;setTimeout(function(){bl.classList.add('tut-vis');},80);}
+        } else {
+          tc.classList.remove('tut-vis','tut-content-bottom');
+          ft.textContent=s.text||'';
+          df.classList.add('tut-float-on');
+          setTimeout(function(){fb.classList.add('tut-vis');},60);
+        }
         if(s.last) db.style.display='block';
         rdy=true;
       },480);
       return;
     }
-    if(s.mode==='guide-choice'){
-      tutorialWaitingForGuideChoice=true;
-      rdy=false;
-      sk.style.display='none';
-      stopTutorialCreek();setTutorialScene(null);stopSparks();
+
+    /* ── GUIDE mode ── */
+    if(s.mode==='guide'){
+      tc.classList.remove('tut-vis','tut-content-bottom');
+      th.style.display='none'; sk.style.display='none';
+      ov.style.opacity='0'; ov.style.pointerEvents='none';
+      stopSparks();
       cp.classList.remove('tut-cap-on');
-      clearPulse();closeDrawer();openGuide();switchGuideTab('path');
-      ov.style.opacity='1';ov.style.pointerEvents='none';
-      ov.classList.remove('tut-spot','tut-blackout','tut-tour-stage','tut-dock-upper');
-      ov.classList.add('tut-guide-choice');
-      ov.style.background='rgba(7,8,13,0.26)';
-      darkSpot();
+      clearPulse();
+      if(s.target){
+        setTimeout(function(){
+          litSpot(s.target);
+          if(s.clickTarget){var el=document.querySelector(s.target);if(el)el.click();}
+        },220);
+      } else {
+        darkSpot();
+      }
+      if(s.pathChoice){
+        var fresh=loadGuideState();
+        if(fresh._pathLockedV2){setTimeout(function(){go(s.skipTo!=null?s.skipTo:cur+3);},120);return;}
+        showPathChoice();
+        return;
+      }
+      if(s.corgi) launchCorgi();
       df.classList.remove('tut-float-on');
       fb.classList.remove('tut-vis');
-      showTutorialCopy(s,120);
-      th.textContent='Choose and confirm to continue';
+      db.style.display='none';
+      ft.textContent=s.text||'';
+      df.classList.add('tut-float-on');
+      setTimeout(function(){fb.classList.add('tut-vis');},60);
+      cp.classList.add('tut-cap-on');
+      setTimeout(function(){rdy=true;},700);
       return;
     }
 
-    ov.style.opacity='1';ov.style.pointerEvents='auto';
-    ov.classList.remove('tut-guide-choice');
-    sk.style.display=tutorialPathChosenThisRun ? 'none' : '';
+    /* ── FULL / SPOT modes ── */
+    ov.style.display='block'; ov.style.opacity='1'; ov.style.pointerEvents='auto';
     df.classList.remove('tut-float-on');
     fb.classList.remove('tut-vis');
-    clearPulse();
-    cp.classList.remove('tut-cap-on');
+    darkSpot(); clearPulse(); cp.classList.remove('tut-cap-on');
     closeDrawer();
-    tutorialWaitingForGuideChoice=false;
 
-    if(s.guideOpen) openGuide();
-    if(s.guideTab) switchGuideTab(s.guideTab);
     if(s.panel) goPanel(s.panel);
     if(s.cards) setTimeout(staggerCards,250);
-    if(s.sparks) startSparks();
-    else if(i>0) stopSparks();
-    if(s.audio==='creek') playTutorialCreek();
-    else stopTutorialCreek();
-    setTutorialScene(s.scene||null);
-    ov.classList.toggle('tut-dock-upper',s.dock==='upper');
+    if(s.sparks) startSparks(); else stopSparks();
+    if((s.inEye||s.morphEye)&&!eyeOn){eyeOn=true;ow.classList.add('eye-state');}
+    if(s.blink) setTimeout(function(){blinkCrystalEye();},800);
+    if(s.playCreek) setTimeout(startTutCreek,400);
+    if(s.clockBg) setTimeout(showClockBg,300);
+    if(s.objFlash) setTimeout(showObjFlash,300);
+    if(s.thoughtBg) setTimeout(showThoughtAnim,300);
+    if(s.asana) ow.classList.add('asana-state');
 
     if(s.mode==='full'){
       ov.classList.remove('tut-spot');
-      ov.classList.toggle('tut-blackout', !!s.blackout);
-      ov.classList.toggle('tut-tour-stage', !!s.tourStage);
-      ov.style.background=s.blackout ? '#000' : 'rgba(7,8,13,0.92)';
-      darkSpot();
+      ov.style.background=s.darkFull?'rgba(7,8,13,1)':'rgba(7,8,13,0.92)';
+      if(s.omniaBelow){
+        tc.classList.add('tut-vis','tut-content-bottom');
+      } else {
+        tc.classList.add('tut-vis'); tc.classList.remove('tut-content-bottom');
+      }
+      if(s.morphCrystal&&eyeOn){
+        fromEyeToOmnia(function(){
+          if(s.spotPanel){
+            var glowEl=document.querySelector(s.spotPanel);
+            if(glowEl) glowEl.classList.add('tut-elem-glow');
+          }
+          finishStep(s,400);
+        });
+        th.textContent='Tap to continue'; th.style.display='block'; sk.style.display='block';
+        return;
+      }
     } else {
       ov.classList.add('tut-spot');
-      ov.classList.remove('tut-blackout','tut-tour-stage');
       ov.style.background='rgba(7,8,13,0.08)';
-      ensureStepTargetVisible(s.target);
-      setTimeout(function(){litSpot(s.target);},420);
+      tc.classList.add('tut-vis');
+      if(s.omniaLeft||s.omniaRight){
+        tc.classList.remove('tut-content-bottom');
+        var doSpot=function(){
+          if(s.targets) litSpotMulti(s.targets); else litSpot(s.target);
+          positionTcBeside(s.targets?s.targets[0]:s.target,s.omniaLeft?'left':'right');
+          finishStep(s);
+        };
+        if(s.scrollTo){scrollToCard(s.scrollTo,doSpot);return;}
+        setTimeout(doSpot,200); return;
+      } else if(s.omniaMid){
+        tc.classList.remove('tut-content-bottom');
+        var doSpotMid=function(){
+          if(s.targets) litSpotMulti(s.targets); else litSpot(s.target);
+          finishStep(s);
+        };
+        setTimeout(doSpotMid,200); return;
+      } else {
+        tc.classList.add('tut-content-bottom');
+        var doSpot2=function(){if(s.targets) litSpotMulti(s.targets); else litSpot(s.target);};
+        if(s.scrollTo){scrollToCard(s.scrollTo,function(){doSpot2();finishStep(s);});return;}
+        setTimeout(doSpot2,180);
+      }
     }
 
-    showTutorialCopy(s,s.exerciseIntro?220:120);
-    th.textContent='Tap to continue';
-    setTimeout(function(){rdy=true;},700);
+    finishStep(s);
   }
 
-  /* End */
+  /* ── End ── */
   function end(){
     localStorage.setItem(VISITED,'1');
     document.body.classList.remove('tut-live');
-    stopSparks();stopTutorialCreek();setTutorialScene(null);clearPulse();resetTutorialEye();
-    ov.classList.remove('tut-tour-stage','tut-dock-upper','tut-guide-choice');
+    document.querySelectorAll('.tut-elem-glow').forEach(function(e){e.classList.remove('tut-elem-glow');});
+    stopSparks(); clearPulse(); darkSpot();
+    hideClockBg(); hideObjFlash(); stopTutCreek(); hideThoughtAnim();
+    if(corgiTimer){clearTimeout(corgiTimer); cg.style.display='none';}
+    resetTutorialEye();
+    ow.classList.remove('asana-state');
     cp.classList.remove('tut-cap-on');
-    tutorialWaitingForGuideChoice=false;
-    sk.style.display='';
     closeDrawer();
+    tc.classList.remove('tut-vis','tut-content-bottom');
+    resetTcPosition();
+    th.style.display='none'; sk.style.display='none';
     ov.style.opacity='0';
     df.classList.remove('tut-float-on');
+    hidePathChoice();
     setTimeout(function(){ov.style.display='none';},500);
     document.querySelectorAll('#exerciseGrid .exercise-card').forEach(function(c){
-      c.style.opacity='';c.style.transform='';c.style.transition='';
+      c.style.opacity=''; c.style.transform=''; c.style.transition='';
     });
   }
 
-  /* Tap handlers */
-  ov.addEventListener('click',function(e){
+  /* ── Tap handlers ── */
+  ov.addEventListener('click',function(){
     if(!rdy) return;
     var s=STEPS[cur];
     if(s.eyeTap&&!eyeOn){
       rdy=false;
       bl.classList.remove('tut-vis');
+      th.style.display='none';
       toEye(function(){go(cur+1);});
-    } else if(s.returnToOmnia&&eyeOn){
-      rdy=false;
-      bl.classList.remove('tut-vis');
-      blinkCrystalEye(function(){
-        fromEyeToOmnia(function(){
-          stageConcentrationIntro(function(){go(cur+1);});
-        });
-      });
-    } else if(s.revealBlackout){
-      rdy=false;
-      bl.classList.remove('tut-vis');
-      revealConcentrationTour(function(){go(cur+1);});
     } else {
       go(cur+1);
     }
   });
+
   cp.addEventListener('click',function(){
     var s=STEPS[cur];
-    if(!rdy||!s||s.mode!=='drawer'||s.last) return;
-    go(cur+1);
-  });
-  db.addEventListener('click',function(e){e.stopPropagation();end();});
-  sk.addEventListener('click', function(e){e.stopPropagation();end();});
-  window.addEventListener('presence:guide-path-committed',function(e){
-    if(!tutorialWaitingForGuideChoice) return;
-    tutorialWaitingForGuideChoice=false;
-    tutorialPathChosenThisRun=true;
-    tutorialSelectedPath=(e.detail&&e.detail.mode)||guidePathMode||'beginner';
-    ov.style.pointerEvents='auto';
-    setTimeout(function(){go(cur+1);},260);
+    if(!rdy||!s) return;
+    if(s.mode==='drawer'&&s.last) return;
+    if(s.openGuide){
+      rdy=false; cp.classList.remove('tut-cap-on');
+      var nextI=cur+1;
+      closeDrawer();
+      setTimeout(function(){openGuide();setTimeout(function(){go(nextI);},350);},300);
+      return;
+    }
+    go(s.nextIdx!=null?s.nextIdx:cur+1);
   });
 
-  /* Boot: wait for home screen */
+  db.addEventListener('click',function(e){e.stopPropagation();end();});
+  sk.addEventListener('click',function(e){e.stopPropagation();end();});
+
+  /* ── Path choice buttons ── */
+  document.getElementById('tutPathNew').addEventListener('click',function(e){
+    e.stopPropagation();
+    hidePathChoice();
+    df.classList.remove('tut-float-on'); fb.classList.remove('tut-vis');
+    setTimeout(function(){go(23);},300);
+  });
+  document.getElementById('tutPathExp').addEventListener('click',function(e){
+    e.stopPropagation();
+    hidePathChoice();
+    df.classList.remove('tut-float-on'); fb.classList.remove('tut-vis');
+    setTimeout(function(){go(24);},300);
+  });
+
+  /* ── Boot ── */
   function boot(){
     if(localStorage.getItem(VISITED)) return;
-    tutorialPathChosenThisRun=false;
-    tutorialSelectedPath=null;
-    tutorialWaitingForGuideChoice=false;
-    sk.style.display='';
     document.body.classList.add('tut-live');
-    ov.style.display='flex';ov.style.opacity='0';
+    ov.style.display='block'; ov.style.opacity='0';
     ov.style.transition='opacity 0.7s ease,background 0.4s ease';
     setTimeout(function(){ov.style.opacity='1';go(0);},120);
   }
 
-  // Replay tutorial on demand (always available, e.g. drawer Omnia button)
-  window.__tutReplay = function(){
+  window.__tutReplay=function(){
     cur=0; eyeOn=false; rdy=false;
-    tutorialPathChosenThisRun=false;
-    tutorialSelectedPath=null;
-    tutorialWaitingForGuideChoice=false;
-    sk.style.display='';
     document.body.classList.add('tut-live');
-    stopSparks(); stopTutorialCreek(); setTutorialScene(null); darkSpot(); resetTutorialEye(); ov.classList.remove('tut-tour-stage','tut-dock-upper','tut-guide-choice');
-    df.classList.remove('tut-float-on');
-    fb.classList.remove('tut-vis');
-    df.style.display=''; cp.classList.remove('tut-cap-on');
+    stopSparks(); darkSpot(); hideClockBg(); hideObjFlash(); stopTutCreek(); hideThoughtAnim();
+    if(corgiTimer){clearTimeout(corgiTimer);cg.style.display='none';}
+    resetTutorialEye();
+    ow.classList.remove('asana-state');
+    tc.classList.remove('tut-vis','tut-content-bottom');
+    resetTcPosition();
+    th.style.display='none'; sk.style.display='none';
+    df.classList.remove('tut-float-on'); fb.classList.remove('tut-vis');
+    hidePathChoice(); cp.classList.remove('tut-cap-on');
     clearPulse(); closeDrawer();
-    ov.style.display='flex'; ov.style.opacity='0';
+    ov.style.display='block'; ov.style.opacity='0';
     ov.style.transition='opacity 0.7s ease';
-    setTimeout(function(){ ov.style.opacity='1'; go(0); }, 120);
+    setTimeout(function(){ov.style.opacity='1';go(0);},120);
   };
 
-  // First-time auto-boot only (gated by presence_visited)
   if(!localStorage.getItem(VISITED)){
-    window.__tutBoot = function(){
+    window.__tutBoot=function(){
       if(localStorage.getItem(VISITED)) return;
-      window.__tutBoot = null;
-      setTimeout(boot, 900);
+      window.__tutBoot=null;
+      setTimeout(boot,900);
     };
-
     var homeEl=document.getElementById('homeScreen');
     if(homeEl){
       var _poller=setInterval(function(){
@@ -13018,9 +13327,101 @@ document.addEventListener('DOMContentLoaded',function(){(function(){
 <!-- ─── Tutorial HTML ─── -->
 <div id="tutOverlay">
   <canvas id="tutSparkCanvas"></canvas>
-  <div id="tutSpotlight"></div>
-  <div id="tutSceneLayer"></div>
-  <div id="tutContent">
+
+  <!-- Animated clock background (full mode, clock step) -->
+  <div id="tutClockBg">
+    <svg id="tutClockSvg" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg"
+         style="width:min(280px,72vw);height:min(280px,72vw);opacity:0.28;filter:drop-shadow(0 0 28px rgba(125,211,248,0.25));">
+      <circle cx="100" cy="100" r="96" fill="none" stroke="rgba(142,204,224,0.45)" stroke-width="1.2"/>
+      <circle cx="100" cy="100" r="3.5" fill="rgba(142,204,224,0.8)"/>
+      <!-- 12 hour markers -->
+      <g stroke="rgba(142,204,224,0.6)" stroke-width="2" stroke-linecap="round">
+        <line x1="100" y1="8"   x2="100" y2="20"  transform="rotate(0   100 100)"/>
+        <line x1="100" y1="8"   x2="100" y2="20"  transform="rotate(30  100 100)"/>
+        <line x1="100" y1="8"   x2="100" y2="20"  transform="rotate(60  100 100)"/>
+        <line x1="100" y1="8"   x2="100" y2="20"  transform="rotate(90  100 100)"/>
+        <line x1="100" y1="8"   x2="100" y2="20"  transform="rotate(120 100 100)"/>
+        <line x1="100" y1="8"   x2="100" y2="20"  transform="rotate(150 100 100)"/>
+        <line x1="100" y1="8"   x2="100" y2="20"  transform="rotate(180 100 100)"/>
+        <line x1="100" y1="8"   x2="100" y2="20"  transform="rotate(210 100 100)"/>
+        <line x1="100" y1="8"   x2="100" y2="20"  transform="rotate(240 100 100)"/>
+        <line x1="100" y1="8"   x2="100" y2="20"  transform="rotate(270 100 100)"/>
+        <line x1="100" y1="8"   x2="100" y2="20"  transform="rotate(300 100 100)"/>
+        <line x1="100" y1="8"   x2="100" y2="20"  transform="rotate(330 100 100)"/>
+      </g>
+      <!-- 48 minor ticks (skip hour positions) generated inline -->
+      <g stroke="rgba(142,204,224,0.2)" stroke-width="0.8" stroke-linecap="round">
+        <line x1="100" y1="8" x2="100" y2="14" transform="rotate(6   100 100)"/>
+        <line x1="100" y1="8" x2="100" y2="14" transform="rotate(12  100 100)"/>
+        <line x1="100" y1="8" x2="100" y2="14" transform="rotate(18  100 100)"/>
+        <line x1="100" y1="8" x2="100" y2="14" transform="rotate(24  100 100)"/>
+        <line x1="100" y1="8" x2="100" y2="14" transform="rotate(36  100 100)"/>
+        <line x1="100" y1="8" x2="100" y2="14" transform="rotate(42  100 100)"/>
+        <line x1="100" y1="8" x2="100" y2="14" transform="rotate(48  100 100)"/>
+        <line x1="100" y1="8" x2="100" y2="14" transform="rotate(54  100 100)"/>
+        <line x1="100" y1="8" x2="100" y2="14" transform="rotate(66  100 100)"/>
+        <line x1="100" y1="8" x2="100" y2="14" transform="rotate(72  100 100)"/>
+        <line x1="100" y1="8" x2="100" y2="14" transform="rotate(78  100 100)"/>
+        <line x1="100" y1="8" x2="100" y2="14" transform="rotate(84  100 100)"/>
+        <line x1="100" y1="8" x2="100" y2="14" transform="rotate(96  100 100)"/>
+        <line x1="100" y1="8" x2="100" y2="14" transform="rotate(102 100 100)"/>
+        <line x1="100" y1="8" x2="100" y2="14" transform="rotate(108 100 100)"/>
+        <line x1="100" y1="8" x2="100" y2="14" transform="rotate(114 100 100)"/>
+        <line x1="100" y1="8" x2="100" y2="14" transform="rotate(126 100 100)"/>
+        <line x1="100" y1="8" x2="100" y2="14" transform="rotate(132 100 100)"/>
+        <line x1="100" y1="8" x2="100" y2="14" transform="rotate(138 100 100)"/>
+        <line x1="100" y1="8" x2="100" y2="14" transform="rotate(144 100 100)"/>
+        <line x1="100" y1="8" x2="100" y2="14" transform="rotate(156 100 100)"/>
+        <line x1="100" y1="8" x2="100" y2="14" transform="rotate(162 100 100)"/>
+        <line x1="100" y1="8" x2="100" y2="14" transform="rotate(168 100 100)"/>
+        <line x1="100" y1="8" x2="100" y2="14" transform="rotate(174 100 100)"/>
+        <line x1="100" y1="8" x2="100" y2="14" transform="rotate(186 100 100)"/>
+        <line x1="100" y1="8" x2="100" y2="14" transform="rotate(192 100 100)"/>
+        <line x1="100" y1="8" x2="100" y2="14" transform="rotate(198 100 100)"/>
+        <line x1="100" y1="8" x2="100" y2="14" transform="rotate(204 100 100)"/>
+        <line x1="100" y1="8" x2="100" y2="14" transform="rotate(216 100 100)"/>
+        <line x1="100" y1="8" x2="100" y2="14" transform="rotate(222 100 100)"/>
+        <line x1="100" y1="8" x2="100" y2="14" transform="rotate(228 100 100)"/>
+        <line x1="100" y1="8" x2="100" y2="14" transform="rotate(234 100 100)"/>
+        <line x1="100" y1="8" x2="100" y2="14" transform="rotate(246 100 100)"/>
+        <line x1="100" y1="8" x2="100" y2="14" transform="rotate(252 100 100)"/>
+        <line x1="100" y1="8" x2="100" y2="14" transform="rotate(258 100 100)"/>
+        <line x1="100" y1="8" x2="100" y2="14" transform="rotate(264 100 100)"/>
+        <line x1="100" y1="8" x2="100" y2="14" transform="rotate(276 100 100)"/>
+        <line x1="100" y1="8" x2="100" y2="14" transform="rotate(282 100 100)"/>
+        <line x1="100" y1="8" x2="100" y2="14" transform="rotate(288 100 100)"/>
+        <line x1="100" y1="8" x2="100" y2="14" transform="rotate(294 100 100)"/>
+        <line x1="100" y1="8" x2="100" y2="14" transform="rotate(306 100 100)"/>
+        <line x1="100" y1="8" x2="100" y2="14" transform="rotate(312 100 100)"/>
+        <line x1="100" y1="8" x2="100" y2="14" transform="rotate(318 100 100)"/>
+        <line x1="100" y1="8" x2="100" y2="14" transform="rotate(324 100 100)"/>
+        <line x1="100" y1="8" x2="100" y2="14" transform="rotate(336 100 100)"/>
+        <line x1="100" y1="8" x2="100" y2="14" transform="rotate(342 100 100)"/>
+        <line x1="100" y1="8" x2="100" y2="14" transform="rotate(348 100 100)"/>
+        <line x1="100" y1="8" x2="100" y2="14" transform="rotate(354 100 100)"/>
+      </g>
+      <!-- Hands -->
+      <line x1="100" y1="100" x2="100" y2="55"
+            stroke="rgba(200,225,245,0.65)" stroke-width="3" stroke-linecap="round"
+            style="transform-origin:100px 100px; transform:rotate(330deg);"/>
+      <line x1="100" y1="100" x2="100" y2="38"
+            stroke="rgba(175,210,240,0.55)" stroke-width="2" stroke-linecap="round"
+            style="transform-origin:100px 100px; transform:rotate(0deg);"/>
+      <line id="tutClockSecHand" x1="100" y1="108" x2="100" y2="22"
+            stroke="rgba(125,211,248,0.95)" stroke-width="1.2" stroke-linecap="round"
+            style="transform-origin:100px 100px; filter:drop-shadow(0 0 4px rgba(125,211,248,0.9));"/>
+    </svg>
+  </div>
+
+  <!-- Object flash background (full mode, visualization step) -->
+  <div id="tutObjBg"></div>
+  <!-- Thought word animation (full mode, thought control step) -->
+  <div id="tutThoughtBg"></div>
+
+</div><!-- end #tutOverlay -->
+
+<!-- tutContent: outside overlay so z-index 9005 clears spotlight (9002) -->
+<div id="tutContent">
     <div class="tut-bubble" id="tutBubble"><p id="tutBubbleText"></p></div>
     <div id="tutOmniaWrap">
       <svg class="tut-shard-svg" id="tutOmniaShardSvg" viewBox="0 0 100 130" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"></svg>
@@ -13047,34 +13448,57 @@ document.addEventListener('DOMContentLoaded',function(){(function(){
         <g opacity=".5"><line x1="62" y1="48" x2="68" y2="48" stroke="#b8eaff" stroke-width="1.1"/><line x1="65" y1="45" x2="65" y2="51" stroke="#b8eaff" stroke-width="1.1"/></g>
         <g opacity=".38"><line x1="4" y1="22" x2="10" y2="22" stroke="#b8eaff" stroke-width="1"/><line x1="7" y1="19" x2="7" y2="25" stroke="#b8eaff" stroke-width="1"/></g>
       </svg>
-      <svg class="tut-eye-svg" viewBox="0 0 88 60" xmlns="http://www.w3.org/2000/svg">
+      <svg class="tut-asana-svg" viewBox="0 0 88 90" xmlns="http://www.w3.org/2000/svg">
         <defs>
-          <radialGradient id="teyeg" cx="50%" cy="50%" r="50%">
-            <stop offset="0%" stop-color="#1e5a8a"/>
-            <stop offset="100%" stop-color="#091e38"/>
+          <radialGradient id="tasg" cx="50%" cy="35%" r="60%">
+            <stop offset="0%" stop-color="#e8c8a8" stop-opacity=".6"/>
+            <stop offset="100%" stop-color="#c47878" stop-opacity="0"/>
           </radialGradient>
+          <filter id="tagl2"><feGaussianBlur stdDeviation="2" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
         </defs>
-        <ellipse cx="44" cy="30" rx="40" ry="26" fill="#ddf4ff" stroke="#88c4e0" stroke-width="1.2"/>
-        <circle cx="44" cy="30" r="15" fill="url(#teyeg)"/>
-        <circle cx="44" cy="30" r="7.5" fill="#040d1a"/>
-        <circle cx="49" cy="25" r="4.5" fill="white" opacity=".5"/>
-        <circle cx="37" cy="35" r="2" fill="white" opacity=".22"/>
-        <path d="M4,30 Q44,2 84,30" fill="none" stroke="#88c4e0" stroke-width="1.2" opacity=".5"/>
-        <path d="M4,30 Q44,58 84,30" fill="none" stroke="#88c4e0" stroke-width="1.2" opacity=".5"/>
+        <!-- Head crystal -->
+        <polygon points="44,4 52,14 44,22 36,14" fill="#d4b08e" stroke="#c47878" stroke-width=".8" opacity=".92" filter="url(#tagl2)"/>
+        <!-- Glow halo -->
+        <ellipse cx="44" cy="48" rx="28" ry="32" fill="url(#tasg)" opacity=".4"/>
+        <!-- Body -->
+        <polygon points="44,22 62,40 44,56 26,40" fill="#c4a080" stroke="#c47878" stroke-width=".7" opacity=".88"/>
+        <!-- Left leg -->
+        <polygon points="26,40 8,68 26,74 44,56" fill="#b89070" stroke="#c47878" stroke-width=".6" opacity=".8"/>
+        <!-- Right leg -->
+        <polygon points="62,40 80,68 62,74 44,56" fill="#b89070" stroke="#c47878" stroke-width=".6" opacity=".8"/>
+        <!-- Foot left -->
+        <ellipse cx="18" cy="74" rx="10" ry="4" fill="#a07860" stroke="#c47878" stroke-width=".5" opacity=".6"/>
+        <!-- Foot right -->
+        <ellipse cx="70" cy="74" rx="10" ry="4" fill="#a07860" stroke="#c47878" stroke-width=".5" opacity=".6"/>
+        <!-- Sparkles -->
+        <g opacity=".38">
+          <line x1="4" y1="30" x2="10" y2="30" stroke="#d4b08e" stroke-width="1"/>
+          <line x1="7" y1="27" x2="7" y2="33" stroke="#d4b08e" stroke-width="1"/>
+          <line x1="78" y1="30" x2="84" y2="30" stroke="#d4b08e" stroke-width="1"/>
+          <line x1="81" y1="27" x2="81" y2="33" stroke="#d4b08e" stroke-width="1"/>
+        </g>
       </svg>
     </div>
   </div>
-  <div class="tut-tap-hint" id="tutTapHint">Tap to continue</div>
-  <button class="tut-skip-btn" id="tutSkipBtn">Skip</button>
-</div>
+<div class="tut-tap-hint" id="tutTapHint">Tap to continue</div>
+<button class="tut-skip-btn" id="tutSkipBtn">Skip</button>
 
-<!-- Drawer float (z-index 9500, outside overlay stacking context) -->
+<!-- Spotlight: lives outside overlay for independent visibility -->
+<div id="tutSpotlight"></div>
+
+<!-- Drawer / guide float (z-index 9500) -->
 <div id="tutDrawerFloat">
   <div id="tutFloatBubble"><p id="tutFloatText"></p></div>
+  <div id="tutPathChoice">
+    <button class="tut-path-btn" id="tutPathNew">I am new to this</button>
+    <button class="tut-path-btn tut-experienced" id="tutPathExp">I have some experience</button>
+  </div>
   <button id="tutDoneBtn">Begin your practice →</button>
 </div>
-<!-- Click-capture for drawer steps -->
+<!-- Click-capture for drawer / guide steps -->
 <div id="tutDrawerCapture"></div>
+<!-- Corgi -->
+<div id="tutCorgi">🐕</div>
 
 </body>
 </html>
