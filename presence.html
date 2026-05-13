@@ -712,12 +712,6 @@
   filter:drop-shadow(0 0 12px rgba(142,204,224,.45));
   transition:width 0.4s ease, opacity .28s ease, filter .28s ease;
 }
-.tut-eye-svg {
-  width:84px; display:none;
-  animation:omniaFloat 4.5s ease-in-out infinite;
-  filter:drop-shadow(0 0 14px rgba(88,180,240,.5));
-  transition:width 0.4s ease;
-}
 .tut-shard-svg {
   position:absolute; left:50%; top:50%; width:124px; height:152px;
   transform:translate(-50%,-50%); opacity:0; overflow:visible;
@@ -726,11 +720,9 @@
 #tutOmniaWrap.tut-morphing .tut-shard-svg { opacity:1; }
 #tutOmniaWrap.tut-morphing .tut-crystal-svg { opacity:.12; filter:blur(3px) drop-shadow(0 0 10px rgba(142,204,224,.35)); }
 /* Smaller size in spot mode */
-#tutOverlay.tut-spot .tut-crystal-svg,
-#tutOverlay.tut-spot .tut-eye-svg { width:54px; }
-/* Eye state: hide both SVGs, shard-svg holds the eye form */
-#tutOmniaWrap.eye-state .tut-crystal-svg,
-#tutOmniaWrap.eye-state .tut-eye-svg { display:none; }
+#tutOverlay.tut-spot .tut-crystal-svg { width:54px; }
+/* Eye state: hide crystal, shard-svg holds the eye form */
+#tutOmniaWrap.eye-state .tut-crystal-svg { display:none; }
 #tutOmniaWrap.eye-state.tut-returning .tut-crystal-svg { display:block; opacity:0; }
 #tutOmniaWrap.eye-state.tut-returning.tut-crystal-return .tut-crystal-svg { opacity:1; }
 #tutOmniaWrap.eye-state .tut-shard-svg { opacity:1; animation:omniaFloat 4.5s ease-in-out infinite; }
@@ -831,7 +823,6 @@
 }
 #tutContent.tut-content-bottom .tut-asana-svg { width:54px; }
 #tutOmniaWrap.asana-state .tut-crystal-svg { opacity:0; }
-#tutOmniaWrap.asana-state .tut-eye-svg    { opacity:0; }
 #tutOmniaWrap.asana-state .tut-asana-svg  { opacity:1; }
 
 /* Drawer float (outside overlay stacking context, always highest) */
@@ -13447,21 +13438,6 @@ document.addEventListener('DOMContentLoaded',function(){(function(){
         <polygon points="36,100 20,88 36,116" fill="#88c0e0" stroke="#88c4e0" stroke-width=".6" opacity=".52"/>
         <g opacity=".5"><line x1="62" y1="48" x2="68" y2="48" stroke="#b8eaff" stroke-width="1.1"/><line x1="65" y1="45" x2="65" y2="51" stroke="#b8eaff" stroke-width="1.1"/></g>
         <g opacity=".38"><line x1="4" y1="22" x2="10" y2="22" stroke="#b8eaff" stroke-width="1"/><line x1="7" y1="19" x2="7" y2="25" stroke="#b8eaff" stroke-width="1"/></g>
-      </svg>
-      <svg class="tut-eye-svg" viewBox="0 0 88 60" xmlns="http://www.w3.org/2000/svg">
-        <defs>
-          <radialGradient id="teyeg" cx="50%" cy="50%" r="50%">
-            <stop offset="0%" stop-color="#1e5a8a"/>
-            <stop offset="100%" stop-color="#091e38"/>
-          </radialGradient>
-        </defs>
-        <ellipse cx="44" cy="30" rx="40" ry="26" fill="#ddf4ff" stroke="#88c4e0" stroke-width="1.2"/>
-        <circle cx="44" cy="30" r="15" fill="url(#teyeg)"/>
-        <circle cx="44" cy="30" r="7.5" fill="#040d1a"/>
-        <circle cx="49" cy="25" r="4.5" fill="white" opacity=".5"/>
-        <circle cx="37" cy="35" r="2" fill="white" opacity=".22"/>
-        <path d="M4,30 Q44,2 84,30" fill="none" stroke="#88c4e0" stroke-width="1.2" opacity=".5"/>
-        <path d="M4,30 Q44,58 84,30" fill="none" stroke="#88c4e0" stroke-width="1.2" opacity=".5"/>
       </svg>
       <svg class="tut-asana-svg" viewBox="0 0 88 90" xmlns="http://www.w3.org/2000/svg">
         <defs>
