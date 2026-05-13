@@ -679,10 +679,19 @@
   top:50%; left:50%; transform:translate(-50%,-50%);
   padding:0 20px; pointer-events:none;
   max-width:min(400px,92vw); width:100%;
+  transition:top .58s cubic-bezier(.22,.9,.23,1),
+             bottom .58s cubic-bezier(.22,.9,.23,1),
+             transform .58s cubic-bezier(.22,.9,.23,1);
 }
 #tutContent.tut-vis { display:flex; }
 #tutContent.tut-content-bottom {
   top:auto; bottom:34px; transform:translateX(-50%);
+}
+#tutContent.tut-content-low {
+  top:clamp(390px,74vh,calc(100vh - 118px));
+  bottom:auto;
+  transform:translate(-50%,-50%);
+  gap:14px;
 }
 .tut-bubble {
   background:rgba(10,15,28,0.97); border:1px solid rgba(126,184,164,0.35);
@@ -721,8 +730,17 @@
 #tutContent.tut-content-bottom #tutOmniaWrap {
   width:76px; height:92px; flex-basis:92px;
 }
+#tutContent.tut-content-low #tutOmniaWrap {
+  width:92px; height:108px; flex-basis:108px;
+}
+#tutContent.tut-content-low .tut-crystal-svg {
+  width:66px;
+}
 #tutContent.tut-content-bottom .tut-shard-svg {
   width:78px; height:96px;
+}
+#tutContent.tut-content-low .tut-shard-svg {
+  width:96px; height:118px;
 }
 #tutOmniaWrap.tut-morphing .tut-shard-svg { opacity:1; }
 #tutOmniaWrap.tut-morphing .tut-crystal-svg { opacity:.12; filter:blur(3px) drop-shadow(0 0 10px rgba(142,204,224,.35)); }
@@ -12595,9 +12613,9 @@ document.addEventListener('DOMContentLoaded',function(){(function(){
                text:'These exercises will hone your concentration and imagination skills. Believe it or not, these exercises have been derived from secret societies and practiced for thousands of years!'},
     /* 3  */ {mode:'full', morphCrystal:true, panel:'concentration', cards:true, spotPanel:'#modeConcentration',
                text:'This is where the Concentration exercises lay. Master them to know thyself.'},
-    /* 4  */ {mode:'spot', target:'#concRingBtn', omniaMid:true,
+    /* 4  */ {mode:'spot', target:'#concRingBtn', omniaLow:true,
                text:'Practice to level up. All of these exercises go towards your XP bubble and come with a unique title.'},
-    /* 5  */ {mode:'spot', targets:['#concHomeSymbol','#concHomeSymbolFill'], omniaMid:true,
+    /* 5  */ {mode:'spot', targets:['#concHomeSymbol','#concHomeSymbolFill'], omniaLow:true,
                text:'Here is your rank — you can click on it for more information. Go through all the ranks to ascend!'},
     /* 6  */ {mode:'spot', target:'[data-exercise="clock"]', omniaLeft:true,
                text:'You\'ll place your complete attention on the seconds hand of a clock. Each second of true focus makes your mind stronger.'},
@@ -12745,6 +12763,7 @@ document.addEventListener('DOMContentLoaded',function(){(function(){
   }
   function resetTcPosition(){
     tc.style.top='';tc.style.bottom='';tc.style.left='';tc.style.right='';tc.style.transform='';
+    tc.classList.remove('tut-content-low');
   }
   function captureTutorialEyeAnchor(){
     var r=ow.getBoundingClientRect();
@@ -13229,8 +13248,9 @@ document.addEventListener('DOMContentLoaded',function(){(function(){
         };
         if(s.scrollTo){scrollToCard(s.scrollTo,doSpot);return;}
         setTimeout(doSpot,200); return;
-      } else if(s.omniaMid){
+      } else if(s.omniaMid||s.omniaLow){
         tc.classList.remove('tut-content-bottom');
+        if(s.omniaLow) tc.classList.add('tut-content-low');
         var doSpotMid=function(){
           if(s.targets) litSpotMulti(s.targets); else litSpot(s.target);
           finishStep(s);
