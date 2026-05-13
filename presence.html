@@ -752,6 +752,11 @@
 #tutOmniaWrap.eye-state.tut-returning.tut-crystal-return .tut-crystal-svg { opacity:1; }
 #tutOmniaWrap.eye-state .tut-shard-svg { opacity:1; animation:tutShardFloat 4.5s ease-in-out infinite; }
 #tutOmniaWrap.eye-state.tut-morphing .tut-shard-svg { animation:none; transform:translate(-50%,-50%); }
+#tutContent.tut-eye-stage .tut-crystal-svg { animation:none; }
+#tutContent.tut-eye-stage #tutOmniaWrap.eye-state:not(.eye-blink) .tut-shard-svg {
+  animation:none;
+  transform:translate(-50%,-50%);
+}
 @keyframes tutShardFloat {
   0%,100% { transform:translate(-50%,-50%) translateY(0); }
   50%     { transform:translate(-50%,-50%) translateY(-6px); }
@@ -12761,9 +12766,18 @@ document.addEventListener('DOMContentLoaded',function(){(function(){
     if(side==='left'){tc.style.left='12px';tc.style.right='auto';}
     else{tc.style.right='12px';tc.style.left='auto';}
   }
+  function withoutTcTransition(fn){
+    var prev=tc.style.transition;
+    tc.style.transition='none';
+    fn();
+    void tc.offsetHeight;
+    tc.style.transition=prev;
+  }
   function resetTcPosition(){
-    tc.style.top='';tc.style.bottom='';tc.style.left='';tc.style.right='';tc.style.transform='';
-    tc.classList.remove('tut-content-low');
+    withoutTcTransition(function(){
+      tc.style.top='';tc.style.bottom='';tc.style.left='';tc.style.right='';tc.style.transform='';
+      tc.classList.remove('tut-content-low','tut-eye-stage');
+    });
   }
   function captureTutorialEyeAnchor(){
     var r=ow.getBoundingClientRect();
@@ -12776,7 +12790,9 @@ document.addEventListener('DOMContentLoaded',function(){(function(){
     var delta=tutorialEyeAnchorY-currentY;
     if(Math.abs(delta)<0.5) return;
     var top=parseFloat(window.getComputedStyle(tc).top);
-    tc.style.top=((isNaN(top)?window.innerHeight/2:top)+delta)+'px';
+    withoutTcTransition(function(){
+      tc.style.top=((isNaN(top)?window.innerHeight/2:top)+delta)+'px';
+    });
   }
 
   /* ── Scroll exercise card into view ── */
@@ -13124,6 +13140,7 @@ document.addEventListener('DOMContentLoaded',function(){(function(){
     document.querySelectorAll('.tut-elem-glow').forEach(function(e){e.classList.remove('tut-elem-glow');});
     hidePathChoice();
     resetTcPosition();
+    tc.classList.toggle('tut-eye-stage',!!(s.eyeTap||s.inEye||s.morphCrystal));
 
     /* ── DRAWER mode ── */
     if(s.mode==='drawer'){
