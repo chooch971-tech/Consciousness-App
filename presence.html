@@ -13353,7 +13353,7 @@ document.addEventListener('DOMContentLoaded',function(){(function(){
 
     if(s.mode==='full'){
       ov.classList.remove('tut-spot');
-      ov.style.background=s.darkFull
+      ov.style.background=s.darkFull||(s.morphCrystal&&eyeOn)
         ? 'rgba(7,8,13,1)'
         : s.spotPanel
           ? 'rgba(7,8,13,0.42)'
@@ -13371,6 +13371,7 @@ document.addEventListener('DOMContentLoaded',function(){(function(){
         applyTutorialEyeAnchor();
         fromEyeToOmnia(function(){
           if(s.spotPanel){
+            ov.style.background='rgba(7,8,13,0.42)';
             var glowEl=document.querySelector(s.spotPanel);
             if(glowEl) glowEl.classList.add('tut-elem-glow');
             litSpot(s.spotPanel);
