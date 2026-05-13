@@ -998,12 +998,11 @@ body:not(.tut-live) #tutCorgi {
 }
 
 /* Omnia replay button in drawer header */
-.drawer-header { position:relative; }
+.drawer-header { position:relative; display:flex; flex-direction:column; align-items:center; text-align:center; }
 #drawerOmniaBtn {
-  position:absolute; top:2px; right:0;
   background:none; border:none; cursor:pointer; padding:4px;
-  opacity:0.55; transition:opacity 0.2s ease, filter 0.2s ease;
-  line-height:0;
+  opacity:0.65; transition:opacity 0.2s ease, filter 0.2s ease;
+  line-height:0; margin-bottom:10px;
 }
 #drawerOmniaBtn:hover {
   opacity:1;
@@ -2280,10 +2279,8 @@ body:not(.tut-live) #tutCorgi {
 <div class="drawer-overlay" id="drawerOverlay">
   <div class="drawer" id="drawer">
     <div class="drawer-header">
-      <div class="drawer-wordmark">Presence</div>
-      <div class="drawer-level" id="drawerLevel">Level 1 · Initiate</div>
       <button id="drawerOmniaBtn" title="Meet Omnia" aria-label="Open guide tutorial">
-        <svg width="26" height="42" viewBox="0 0 72 118" xmlns="http://www.w3.org/2000/svg">
+        <svg width="36" height="58" viewBox="0 0 72 118" xmlns="http://www.w3.org/2000/svg">
           <polygon points="36,2 50,14 36,26 22,14" fill="#ceeaff" stroke="#90cce8" stroke-width=".8" opacity=".95"/>
           <polygon points="36,2 50,14 36,13" fill="#e8f8ff" opacity=".55"/>
           <polygon points="36,2 22,14 36,13" fill="#b4daf5" opacity=".35"/>
@@ -2295,6 +2292,8 @@ body:not(.tut-live) #tutCorgi {
           <polygon points="36,100 20,88 36,116" fill="#88c0e0" stroke="#88c4e0" stroke-width=".6" opacity=".52"/>
         </svg>
       </button>
+      <div class="drawer-wordmark">Presence</div>
+      <div class="drawer-level" id="drawerLevel">Level 1 · Initiate</div>
     </div>
     <div class="drawer-items">
       <button class="drawer-item" id="drawerGuide">
