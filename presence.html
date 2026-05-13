@@ -792,6 +792,44 @@
   z-index:9008; padding:10px; pointer-events:auto; transition:color 0.2s;
 }
 .tut-skip-btn:hover { color:rgba(221,216,206,0.6); }
+
+/* Morph animation SVG overlay (grid-stacked with crystal/eye) */
+.tut-morph-svg {
+  grid-area:1/1; width:84px; height:112px;
+  pointer-events:none; opacity:0;
+}
+#tutContent.tut-content-bottom .tut-morph-svg { width:54px; height:72px; }
+
+/* Thought word animation (inside #tutOverlay) */
+#tutThoughtBg {
+  position:absolute; inset:0; z-index:2; pointer-events:none;
+  overflow:hidden; opacity:0; transition:opacity 0.5s ease;
+}
+#tutThoughtBg.tut-bg-on { opacity:1; }
+.tut-thought-word {
+  position:absolute; font-family:'Cormorant Garamond',Georgia,serif;
+  font-style:italic; font-weight:300; pointer-events:none;
+  animation:tutWordRise var(--dur,3s) ease-out forwards;
+}
+@keyframes tutWordRise {
+  0%   { opacity:0; transform:translateY(0) scale(0.85); }
+  15%  { opacity:var(--peak,0.65); }
+  75%  { opacity:var(--fade,0.18); }
+  100% { opacity:0; transform:translateY(-55vh) scale(0.6); }
+}
+
+/* Asana meditation posture SVG */
+.tut-asana-svg {
+  grid-area:1/1; width:84px;
+  animation:omniaFloat 4.5s ease-in-out infinite;
+  filter:drop-shadow(0 0 12px rgba(196,120,120,.4));
+  opacity:0; transition:opacity 0.65s ease;
+}
+#tutContent.tut-content-bottom .tut-asana-svg { width:54px; }
+#tutOmniaWrap.asana-state .tut-crystal-svg { opacity:0; }
+#tutOmniaWrap.asana-state .tut-eye-svg    { opacity:0; }
+#tutOmniaWrap.asana-state .tut-asana-svg  { opacity:1; }
+
 /* Drawer float (outside overlay stacking context, always highest) */
 #tutDrawerFloat {
   display:none; position:fixed; bottom:0; left:0; right:0; z-index:9500;
@@ -12531,68 +12569,64 @@ document.addEventListener('DOMContentLoaded',function(){(function(){
   var VISITED='presence_visited';
 
   var STEPS=[
-    /* 0  */ {mode:'full', sparks:true,
-               text:'Namaste. My name is Omnia!'},
-    /* 1  */ {mode:'full', sparks:true, eyeTap:true,
-               text:'Welcome to your new favorite meditation practice.'},
-    /* 2  */ {mode:'full', inEye:true, blueText:true,
-               text:'Allow me to show you your new favorite meditation practice.'},
-    /* 3  */ {mode:'full', inEye:true, blueText:true, blink:true,
-               text:'These exercises will hone your concentration and imagination skills. Believe it or not, this practice is derived from secret societies and practiced for thousands of years!'},
-    /* 4  */ {mode:'spot', target:'#modeConcentration', fromEye:true, panel:'concentration', cards:true,
-               text:'This is where the Concentration exercises lay. Master them all to know thyself.'},
-    /* 5  */ {mode:'spot', target:'#concRingBtn',
-               text:'Practice to level up. All of these exercises give XP and come with a title.'},
-    /* 6  */ {mode:'spot', target:'#concRingBtn',
-               text:'Here is your rank — you can click on it to give more information. Go through all the ranks to ascend!'},
-    /* 7  */ {mode:'spot', target:'[data-exercise="clock"]',
+    /* 0  */ {mode:'full', sparks:true, eyeTap:true,
+               text:'Namaste! My name is Omnia. Welcome to your new favorite meditation practice.'},
+    /* 1  */ {mode:'full', inEye:true, blueText:true,
+               text:'Allow me to show you around.'},
+    /* 2  */ {mode:'full', inEye:true, blueText:true, blink:true,
+               text:'These exercises will hone your concentration and imagination skills. Believe it or not, these exercises have been derived from secret societies and practiced for thousands of years!'},
+    /* 3  */ {mode:'full', morphCrystal:true, panel:'concentration', cards:true,
+               text:'This is where the Concentration exercises lay. Master them to know thyself.'},
+    /* 4  */ {mode:'spot', target:'#concRingBtn', omniaBelow:true,
+               text:'Practice to level up. All of these exercises go towards your XP bubble and come with a unique title.'},
+    /* 5  */ {mode:'spot', targets:['#concRingBtn','#concHomeSymbol','#concHomeSymbolFill'], omniaBelow:true,
+               text:'Here is your rank — you can click on it for more information. Go through all the ranks to ascend!'},
+    /* 6  */ {mode:'spot', target:'[data-exercise="clock"]', omniaLeft:true,
                text:'You\'ll place your complete attention on the seconds hand of a clock. Each second of true focus makes your mind stronger.'},
-    /* 8  */ {mode:'full', clockBg:true,
+    /* 7  */ {mode:'full', clockBg:true, omniaBelow:true,
                text:'You must place your complete focus here and only stop once the mind becomes distracted.'},
-    /* 9  */ {mode:'spot', target:'[data-exercise="visual"]',
+    /* 8  */ {mode:'spot', target:'[data-exercise="visual"]', omniaLeft:true,
                text:'You\'ll learn to see objects as if they were right in front of you, in your mind.'},
-    /* 10 */ {mode:'full', objFlash:true,
+    /* 9  */ {mode:'full', objFlash:true, omniaBelow:true,
                text:'You\'ll start with easier objects, like shapes. But then go into objects.'},
-    /* 11 */ {mode:'spot', target:'[data-exercise="visual"]',
+    /* 10 */ {mode:'spot', target:'[data-exercise="visual"]', omniaLeft:true,
                text:'You\'ll learn to do this with your eyes open as well — a concept that sounds difficult but is rather easy after some perseverance.'},
-    /* 12 */ {mode:'spot', target:'[data-exercise="auditory"]',
+    /* 11 */ {mode:'spot', target:'[data-exercise="auditory"]', omniaLeft:true, scrollTo:'[data-exercise="auditory"]',
                text:'Just as you did with visualization, you\'ll repeat the same with sounds. You\'ll hear these sounds as if they were actually there.'},
-    /* 13 */ {mode:'spot', target:'[data-exercise="auditory"]', playCreek:true,
+    /* 12 */ {mode:'spot', target:'[data-exercise="auditory"]', omniaLeft:true, playCreek:true,
                text:'Here, take a listen:'},
-    /* 14 */ {mode:'spot', target:'[data-exercise="auditory"]', stopCreek:true,
+    /* 13 */ {mode:'spot', target:'[data-exercise="auditory"]', omniaLeft:true, stopCreek:true,
                text:'Isn\'t that amazing?'},
-    /* 15 */ {mode:'spot', target:'[data-exercise="asana"]',
-               text:'In asana, the type of meditation you\'re most likely familiar with, you\'ll learn how to sit quietly, without fidgeting, while stilling the mind.'},
-    /* 16 */ {mode:'spot', target:'[data-exercise="asana"]',
-               text:'This will do wonders for the average mind which constantly craves stimulation.'},
-    /* 17 */ {mode:'spot', target:'[data-exercise="asana"]',
-               text:'Sit in a chair with your legs completely together, start with five minutes and then go all the way up!'},
-    /* 18 */ {mode:'spot', target:'[data-exercise="soulmirror"]',
-               text:'Here is where the inner transformation part of this practice lies. You\'ll write down all your negative and positive traits here and work on them during the duration of your stay here.'},
-    /* 19 */ {mode:'spot', target:'[data-exercise="soulmirror"]',
-               text:'You can work on them with the pore breathing — the act of \'breathing out\' your bad qualities and purifying your body.'},
-    /* 20 */ {mode:'spot', target:'[data-exercise="soulmirror"]',
-               text:'This is a psychological technique that targets the subconscious. You can also use this portion for any type of controlled breathing, and change the intervals in settings.'},
-    /* 21 */ {mode:'drawer', target:'#drawerJournal',
-               text:'Your Journal Log lives here. Every session is recorded — your streak, your progress, your notes. This is your proof of growth.'},
-    /* 22 */ {mode:'drawer', target:'#drawerGuide', openGuide:true,
+    /* 14 */ {mode:'spot', target:'[data-exercise="thought"]', omniaLeft:true, scrollTo:'[data-exercise="thought"]',
+               text:'Thought Control is where you attempt to hold the mind in complete emptiness — no thoughts, no images, no inner speech. Tap when any thought arises.'},
+    /* 15 */ {mode:'full', thoughtBg:true, omniaBelow:true,
+               text:'Here, thoughts are symbolized rising from the mind. The goal is complete inner silence until even they fade.'},
+    /* 16 */ {mode:'spot', target:'[data-exercise="asana"]', omniaLeft:true, scrollTo:'[data-exercise="asana"]', asana:true,
+               text:'In asana you\'ll learn to sit completely motionless — stilling the body as the foundation for stilling the mind.'},
+    /* 17 */ {mode:'spot', target:'[data-exercise="asana"]', omniaLeft:true, asana:true,
+               text:'Sit in a chair with your legs completely together. Start with five minutes and work your way up!'},
+    /* 18 */ {mode:'spot', target:'[data-exercise="soulmirror"]', omniaLeft:true,
+               text:'Soul Mirror is where inner transformation lies. You\'ll track your negative and positive traits and work on them.'},
+    /* 19 */ {mode:'spot', target:'[data-exercise="soulmirror"]', omniaLeft:true,
+               text:'You can work on traits with pore breathing — breathing out bad qualities and purifying yourself.'},
+    /* 20 */ {mode:'drawer', target:'#drawerJournal', omniaRight:true,
+               text:'Your Journal Log lives here. Every session is recorded — your streak, your progress, your notes.'},
+    /* 21 */ {mode:'drawer', target:'#drawerGuide', openGuide:true,
                text:'This is where I live and will give you your daily regiment.'},
-    /* 23 */ {mode:'guide', pathChoice:true, skipTo:27},
-    /* 24 */ {mode:'guide',
+    /* 22 */ {mode:'guide', pathChoice:true, skipTo:25},
+    /* 23 */ {mode:'guide', nextIdx:25,
                text:'No problem! Here is your agenda for the day, and it will always be here for you to go back to. This is how you\'ll grow.'},
-    /* 25 */ {mode:'guide', nextIdx:27,
+    /* 24 */ {mode:'guide', nextIdx:25,
                text:'I\'ll challenge you a bit harder each and every day.'},
-    /* 26 */ {mode:'guide', nextIdx:27,
-               text:'No problem! I\'ll guide you to make you improve even further.'},
-    /* 27 */ {mode:'guide', target:'#guideOmniaTab', clickTarget:true,
+    /* 25 */ {mode:'guide', target:'#guideOmniaTab', clickTarget:true,
                text:'And here is where I can be upgraded. You and I can grow together!!'},
-    /* 28 */ {mode:'guide',
+    /* 26 */ {mode:'guide',
                text:'The more exercises you do, the more Akasha we generate for upgrades, cosmetics, and other cool items!'},
-    /* 29 */ {mode:'guide', corgi:true,
+    /* 27 */ {mode:'guide', corgi:true,
                text:'You can even get me a pet corgi!'},
-    /* 30 */ {mode:'drawer', target:'#drawerOmniaBtn', spotDrawer:true,
+    /* 28 */ {mode:'drawer', target:'#drawerOmniaBtn', spotDrawer:true,
                text:'Feel free to click on me here any time you want to go through this tutorial again.'},
-    /* 31 */ {mode:'drawer', target:'#drawerGuide', spotDrawer:true, last:true,
+    /* 29 */ {mode:'drawer', target:'#drawerGuide', spotDrawer:true, last:true,
                text:'I\'ll be in here. It\'s nice to meet you!'},
   ];
 
@@ -12618,6 +12652,7 @@ document.addEventListener('DOMContentLoaded',function(){(function(){
 
   var cur=0, eyeOn=false, rdy=false, pRAF, parts=[];
   var tutAudCtx=null, tutCreekNodes=[], corgiTimer=null;
+  var tutMorphRaf=null;
 
   /* ── Particles ── */
   function mkP(){
@@ -12663,7 +12698,46 @@ document.addEventListener('DOMContentLoaded',function(){(function(){
     sp.style.width=(r.width+p*2)+'px';sp.style.height=(r.height+p*2)+'px';
     requestAnimationFrame(function(){sp.classList.add('tut-lit');});
   }
+  function litSpotMulti(sels){
+    var els=sels.map(function(s){return document.querySelector(s);}).filter(Boolean);
+    if(!els.length){sp.classList.remove('tut-lit');return;}
+    var p=10,rects=els.map(function(e){return e.getBoundingClientRect();});
+    var left=Math.min.apply(null,rects.map(function(r){return r.left;}))-p;
+    var top=Math.min.apply(null,rects.map(function(r){return r.top;}))-p;
+    var right=Math.max.apply(null,rects.map(function(r){return r.right;}))+p;
+    var bottom=Math.max.apply(null,rects.map(function(r){return r.bottom;}))+p;
+    sp.style.left=left+'px';sp.style.top=top+'px';
+    sp.style.width=(right-left)+'px';sp.style.height=(bottom-top)+'px';
+    requestAnimationFrame(function(){sp.classList.add('tut-lit');});
+  }
   function darkSpot(){sp.classList.remove('tut-lit');}
+
+  /* ── tc positioning ── */
+  function positionTcBeside(targetSel,side){
+    var el=document.querySelector(targetSel);
+    if(!el) return;
+    var r=el.getBoundingClientRect();
+    var midY=r.top+r.height/2;
+    tc.style.bottom='auto';
+    tc.style.transform='translateY(-50%)';
+    tc.style.top=Math.max(80,Math.min(window.innerHeight-200,midY))+'px';
+    if(side==='left'){tc.style.left='12px';tc.style.right='auto';}
+    else{tc.style.right='12px';tc.style.left='auto';}
+  }
+  function resetTcPosition(){
+    tc.style.top='';tc.style.bottom='';tc.style.left='';tc.style.right='';tc.style.transform='';
+  }
+
+  /* ── Scroll exercise card into view ── */
+  function scrollToCard(sel,cb){
+    var scrollEl=document.getElementById('concScrollArea');
+    var card=document.querySelector(sel);
+    if(!scrollEl||!card){if(cb)cb();return;}
+    var r=card.getBoundingClientRect(),cr=scrollEl.getBoundingClientRect();
+    if(r.top>=cr.top&&r.bottom<=cr.bottom){if(cb)cb();return;}
+    scrollEl.scrollTo({top:Math.max(0,scrollEl.scrollTop+(r.top-cr.top)-40),behavior:'smooth'});
+    setTimeout(cb||function(){},620);
+  }
 
   /* ── Panel ── */
   function goPanel(p){
@@ -12680,15 +12754,58 @@ document.addEventListener('DOMContentLoaded',function(){(function(){
     });
   }
 
+  /* ── Morph animation (uses global polygon data from guide screen) ── */
+  function tutMorphTo(toKey,onDone){
+    var morphSvg=document.getElementById('tutOmniaMorphSvg');
+    if(!morphSvg||typeof OMNIA_CRYSTAL_MORPH_SHARDS==='undefined'){
+      if(toKey==='eye'){eyeOn=true;ow.classList.add('eye-state');}
+      else{eyeOn=false;ow.classList.remove('eye-state','tut-blink');}
+      if(onDone)onDone();return;
+    }
+    if(tutMorphRaf){cancelAnimationFrame(tutMorphRaf);tutMorphRaf=null;}
+    var from,to,color;
+    if(toKey==='eye'){from=OMNIA_CRYSTAL_MORPH_SHARDS;to=OMNIA_MORPH_TARGETS.eye;color='#88c4e0';}
+    else{from=OMNIA_MORPH_TARGETS.eye;to=OMNIA_CRYSTAL_MORPH_SHARDS;color='#b8eaff';}
+    morphSvg.innerHTML='<defs><filter id="tmGlow" x="-40%" y="-40%" width="180%" height="180%"><feGaussianBlur stdDeviation="2.2" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter></defs>';
+    var polys=from.map(function(poly,idx){
+      var el=document.createElementNS('http://www.w3.org/2000/svg','polygon');
+      el.setAttribute('points',omniaPointString(poly));
+      el.setAttribute('fill',color);el.setAttribute('fill-opacity',idx===8?'.18':'.28');
+      el.setAttribute('stroke',color);el.setAttribute('stroke-width',idx===8?'1.1':'1.4');
+      el.setAttribute('stroke-opacity','.88');el.setAttribute('filter','url(#tmGlow)');
+      morphSvg.appendChild(el);return el;
+    });
+    morphSvg.style.opacity='0.3';
+    var inMs=760,holdMs=650,outMs=640,total=inMs+holdMs+outMs;
+    var midAt=inMs+holdMs*0.5,midDone=false,start=performance.now();
+    function frame(now){
+      var el2=now-start,t;
+      if(!midDone&&el2>=midAt){
+        midDone=true;
+        if(toKey==='eye'){eyeOn=true;ow.classList.add('eye-state');}
+        else{eyeOn=false;ow.classList.remove('eye-state','tut-blink');}
+      }
+      if(el2<=inMs){
+        t=omniaEaseMorph(el2/inMs);morphSvg.style.opacity=String(0.3+t*0.7);
+        polys.forEach(function(p,i){p.setAttribute('points',omniaPointString(omniaLerpPoly(from[i],to[i],t)));});
+      }else if(el2<=inMs+holdMs){
+        morphSvg.style.opacity='1';
+        polys.forEach(function(p,i){p.setAttribute('points',omniaPointString(to[i]));});
+      }else if(el2<=total){
+        t=omniaEaseMorph((el2-inMs-holdMs)/outMs);morphSvg.style.opacity=String(1-t*0.75);
+        polys.forEach(function(p,i){p.setAttribute('points',omniaPointString(omniaLerpPoly(to[i],from[i],t)));});
+      }else{
+        morphSvg.style.opacity='0';morphSvg.innerHTML='';tutMorphRaf=null;
+        if(onDone)onDone();return;
+      }
+      tutMorphRaf=requestAnimationFrame(frame);
+    }
+    tutMorphRaf=requestAnimationFrame(frame);
+  }
+
   /* ── Eye ── */
-  function toEye(){
-    eyeOn=true;
-    ow.classList.add('eye-state');
-  }
-  function fromEyeAnim(){
-    eyeOn=false;
-    ow.classList.remove('eye-state','tut-blink');
-  }
+  function toEye(cb){ tutMorphTo('eye',cb); }
+  function fromEyeAnim(cb){ tutMorphTo('crystal',cb); }
 
   /* ── Blink ── */
   function triggerBlink(){
@@ -12786,20 +12903,59 @@ document.addEventListener('DOMContentLoaded',function(){(function(){
     }catch(e){}
   }
 
-  /* ── Corgi ── */
+  /* ── Thought word animation ── */
+  var thoughtAnimTimer=null;
+  var THOUGHT_WORDS=['think','remember','worry','what if','later','yesterday','maybe','should','could','want','need','when','how','why','if only','a thought','a memory','distraction'];
+  var thoughtBgEl=null;
+  function showThoughtAnim(){
+    if(!thoughtBgEl) thoughtBgEl=document.getElementById('tutThoughtBg');
+    if(!thoughtBgEl) return;
+    thoughtBgEl.innerHTML='';thoughtBgEl.classList.add('tut-bg-on');
+    var count=0,maxCount=28;
+    function spawn(){
+      if(count>=maxCount) return;
+      count++;
+      var ratio=count/maxCount;
+      var numW=Math.max(1,Math.round(5*(1-ratio*0.85)));
+      for(var i=0;i<numW;i++){
+        var w=document.createElement('span');
+        w.className='tut-thought-word';
+        w.textContent=THOUGHT_WORDS[Math.floor(Math.random()*THOUGHT_WORDS.length)];
+        var dur=2.2+Math.random()*2;
+        var peak=Math.max(0.08,(0.5+Math.random()*0.35)*(1-ratio*0.8));
+        w.style.left=(15+Math.random()*70)+'%';
+        w.style.bottom=(15+Math.random()*20)+'%';
+        w.style.fontSize=(10+Math.random()*7)+'px';
+        w.style.setProperty('--dur',dur+'s');
+        w.style.setProperty('--peak',String(peak));
+        w.style.setProperty('--fade',String(peak*0.25));
+        thoughtBgEl.appendChild(w);
+        (function(el2,d){setTimeout(function(){if(el2.parentNode)el2.parentNode.removeChild(el2);},d*1000+200);})(w,dur);
+      }
+      thoughtAnimTimer=setTimeout(spawn,400+ratio*1400);
+    }
+    spawn();
+  }
+  function hideThoughtAnim(){
+    if(thoughtBgEl) thoughtBgEl.classList.remove('tut-bg-on');
+    if(thoughtAnimTimer){clearTimeout(thoughtAnimTimer);thoughtAnimTimer=null;}
+    if(thoughtBgEl) setTimeout(function(){thoughtBgEl.innerHTML='';},500);
+  }
+
+  /* ── Corgi (fixed: use inline left for both positions) ── */
   function launchCorgi(){
     if(corgiTimer) clearTimeout(corgiTimer);
     cg.style.display='block';
-    cg.classList.remove('tut-corgi-go');
-    cg.style.left='-90px';
     cg.style.transition='none';
+    cg.style.left='-90px';
     requestAnimationFrame(function(){
       requestAnimationFrame(function(){
         cg.style.transition='left 3s cubic-bezier(.35,.05,.2,1)';
-        cg.classList.add('tut-corgi-go');
+        cg.style.left='calc(100vw + 100px)';
         corgiTimer=setTimeout(function(){
           cg.style.display='none';
-          cg.classList.remove('tut-corgi-go');
+          cg.style.left='-90px';
+          cg.style.transition='none';
         },3200);
       });
     });
@@ -12824,6 +12980,16 @@ document.addEventListener('DOMContentLoaded',function(){(function(){
     pc.classList.remove('tut-vis');
   }
 
+  /* ── Finish step: show bubble + set rdy ── */
+  function finishStep(s,delay){
+    bl.classList.remove('tut-vis');
+    if(s.blueText) bl.classList.add('tut-blue'); else bl.classList.remove('tut-blue');
+    if(s.text){bt.textContent=s.text;setTimeout(function(){bl.classList.add('tut-vis');},120);}
+    th.textContent=s.eyeTap?'Tap the screen':'Tap to continue';
+    th.style.display='block'; sk.style.display='block';
+    setTimeout(function(){rdy=true;},delay||700);
+  }
+
   /* ── Show step ── */
   function go(i){
     if(i>=STEPS.length){end();return;}
@@ -12832,12 +12998,14 @@ document.addEventListener('DOMContentLoaded',function(){(function(){
 
     if(!s.clockBg) hideClockBg();
     if(!s.objFlash) hideObjFlash();
+    if(!s.thoughtBg) hideThoughtAnim();
     if(s.stopCreek) stopTutCreek();
+    if(!s.asana) ow.classList.remove('asana-state');
     hidePathChoice();
+    resetTcPosition();
 
     /* ── DRAWER mode ── */
     if(s.mode==='drawer'){
-      tc.classList.remove('tut-vis','tut-content-bottom');
       th.style.display='none'; sk.style.display='none';
       ov.style.opacity='0'; ov.style.pointerEvents='none';
       stopSparks();
@@ -12848,11 +13016,20 @@ document.addEventListener('DOMContentLoaded',function(){(function(){
       cp.classList.add('tut-cap-on');
       openDrawer();
       setTimeout(function(){
-        if(s.spotDrawer && s.target) litSpot(s.target);
+        if(s.spotDrawer&&s.target) litSpot(s.target);
         else if(s.target) pulseItem(s.target);
-        ft.textContent=s.text;
-        df.classList.add('tut-float-on');
-        setTimeout(function(){fb.classList.add('tut-vis');},60);
+        if(s.omniaRight||s.omniaLeft){
+          tc.classList.add('tut-vis'); tc.classList.remove('tut-content-bottom');
+          if(s.target) positionTcBeside(s.target,s.omniaRight?'right':'left');
+          bl.classList.remove('tut-vis');
+          if(s.blueText) bl.classList.add('tut-blue'); else bl.classList.remove('tut-blue');
+          if(s.text){bt.textContent=s.text;setTimeout(function(){bl.classList.add('tut-vis');},80);}
+        } else {
+          tc.classList.remove('tut-vis','tut-content-bottom');
+          ft.textContent=s.text||'';
+          df.classList.add('tut-float-on');
+          setTimeout(function(){fb.classList.add('tut-vis');},60);
+        }
         if(s.last) db.style.display='block';
         rdy=true;
       },480);
@@ -12870,14 +13047,14 @@ document.addEventListener('DOMContentLoaded',function(){(function(){
       if(s.target){
         setTimeout(function(){
           litSpot(s.target);
-          if(s.clickTarget){ var el=document.querySelector(s.target); if(el) el.click(); }
+          if(s.clickTarget){var el=document.querySelector(s.target);if(el)el.click();}
         },220);
       } else {
         darkSpot();
       }
       if(s.pathChoice){
         var fresh=loadGuideState();
-        if(fresh._pathLockedV2){ setTimeout(function(){go(s.skipTo!=null?s.skipTo:cur+4);},120); return; }
+        if(fresh._pathLockedV2){setTimeout(function(){go(s.skipTo!=null?s.skipTo:cur+3);},120);return;}
         showPathChoice();
         return;
       }
@@ -12885,7 +13062,7 @@ document.addEventListener('DOMContentLoaded',function(){(function(){
       df.classList.remove('tut-float-on');
       fb.classList.remove('tut-vis');
       db.style.display='none';
-      ft.textContent=s.text;
+      ft.textContent=s.text||'';
       df.classList.add('tut-float-on');
       setTimeout(function(){fb.classList.add('tut-vis');},60);
       cp.classList.add('tut-cap-on');
@@ -12903,35 +13080,49 @@ document.addEventListener('DOMContentLoaded',function(){(function(){
     if(s.panel) goPanel(s.panel);
     if(s.cards) setTimeout(staggerCards,250);
     if(s.sparks) startSparks(); else stopSparks();
-    if(s.inEye && !eyeOn) toEye();
-    if(s.fromEye && eyeOn) fromEyeAnim();
+    if((s.inEye||s.morphEye)&&!eyeOn){eyeOn=true;ow.classList.add('eye-state');}
     if(s.blink) setTimeout(triggerBlink,800);
     if(s.playCreek) setTimeout(startTutCreek,400);
     if(s.clockBg) setTimeout(showClockBg,300);
     if(s.objFlash) setTimeout(showObjFlash,300);
+    if(s.thoughtBg) setTimeout(showThoughtAnim,300);
+    if(s.asana) ow.classList.add('asana-state');
 
     if(s.mode==='full'){
       ov.classList.remove('tut-spot');
       ov.style.background='rgba(7,8,13,0.92)';
-      tc.classList.add('tut-vis'); tc.classList.remove('tut-content-bottom');
+      if(s.omniaBelow){
+        tc.classList.add('tut-vis','tut-content-bottom');
+      } else {
+        tc.classList.add('tut-vis'); tc.classList.remove('tut-content-bottom');
+      }
+      if(s.morphCrystal&&eyeOn){
+        fromEyeAnim(function(){finishStep(s,400);});
+        th.textContent='Tap to continue'; th.style.display='block'; sk.style.display='block';
+        return;
+      }
     } else {
       ov.classList.add('tut-spot');
       ov.style.background='rgba(7,8,13,0.08)';
-      tc.classList.add('tut-vis','tut-content-bottom');
-      setTimeout(function(){litSpot(s.target);},180);
+      tc.classList.add('tut-vis');
+      if(s.omniaLeft||s.omniaRight){
+        tc.classList.remove('tut-content-bottom');
+        var doSpot=function(){
+          if(s.targets) litSpotMulti(s.targets); else litSpot(s.target);
+          positionTcBeside(s.targets?s.targets[0]:s.target,s.omniaLeft?'left':'right');
+          finishStep(s);
+        };
+        if(s.scrollTo){scrollToCard(s.scrollTo,doSpot);return;}
+        setTimeout(doSpot,200); return;
+      } else {
+        tc.classList.add('tut-content-bottom');
+        var doSpot2=function(){if(s.targets) litSpotMulti(s.targets); else litSpot(s.target);};
+        if(s.scrollTo){scrollToCard(s.scrollTo,function(){doSpot2();finishStep(s);});return;}
+        setTimeout(doSpot2,180);
+      }
     }
 
-    if(s.blueText) bl.classList.add('tut-blue');
-    else bl.classList.remove('tut-blue');
-
-    bl.classList.remove('tut-vis');
-    if(s.text){
-      bt.textContent=s.text;
-      setTimeout(function(){bl.classList.add('tut-vis');},120);
-    }
-    th.textContent=s.eyeTap?'Tap the screen':'Tap to continue';
-    th.style.display='block'; sk.style.display='block';
-    setTimeout(function(){rdy=true;},700);
+    finishStep(s);
   }
 
   /* ── End ── */
@@ -12939,11 +13130,17 @@ document.addEventListener('DOMContentLoaded',function(){(function(){
     localStorage.setItem(VISITED,'1');
     document.body.classList.remove('tut-live');
     stopSparks(); clearPulse(); darkSpot();
-    hideClockBg(); hideObjFlash(); stopTutCreek();
+    hideClockBg(); hideObjFlash(); stopTutCreek(); hideThoughtAnim();
     if(corgiTimer){clearTimeout(corgiTimer); cg.style.display='none';}
+    if(tutMorphRaf){cancelAnimationFrame(tutMorphRaf);tutMorphRaf=null;}
+    var morphSvg=document.getElementById('tutOmniaMorphSvg');
+    if(morphSvg){morphSvg.innerHTML='';morphSvg.style.opacity='0';}
+    ow.classList.remove('eye-state','tut-blink','asana-state');
+    eyeOn=false;
     cp.classList.remove('tut-cap-on');
     closeDrawer();
     tc.classList.remove('tut-vis','tut-content-bottom');
+    resetTcPosition();
     th.style.display='none'; sk.style.display='none';
     ov.style.opacity='0';
     df.classList.remove('tut-float-on');
@@ -12958,10 +13155,11 @@ document.addEventListener('DOMContentLoaded',function(){(function(){
   ov.addEventListener('click',function(){
     if(!rdy) return;
     var s=STEPS[cur];
-    if(s.eyeTap && !eyeOn){
-      rdy=false; toEye();
+    if(s.eyeTap&&!eyeOn){
+      rdy=false;
       bl.classList.remove('tut-vis');
-      setTimeout(function(){go(cur+1);},900);
+      th.style.display='none';
+      toEye(function(){go(cur+1);});
     } else {
       go(cur+1);
     }
@@ -12970,32 +13168,32 @@ document.addEventListener('DOMContentLoaded',function(){(function(){
   cp.addEventListener('click',function(){
     var s=STEPS[cur];
     if(!rdy||!s) return;
-    if(s.mode==='drawer' && s.last) return;
+    if(s.mode==='drawer'&&s.last) return;
     if(s.openGuide){
       rdy=false; cp.classList.remove('tut-cap-on');
       var nextI=cur+1;
       closeDrawer();
-      setTimeout(function(){ openGuide(); setTimeout(function(){go(nextI);},350); },300);
+      setTimeout(function(){openGuide();setTimeout(function(){go(nextI);},350);},300);
       return;
     }
-    go(s.nextIdx!=null ? s.nextIdx : cur+1);
+    go(s.nextIdx!=null?s.nextIdx:cur+1);
   });
 
-  db.addEventListener('click',function(e){e.stopPropagation(); end();});
-  sk.addEventListener('click',function(e){e.stopPropagation(); end();});
+  db.addEventListener('click',function(e){e.stopPropagation();end();});
+  sk.addEventListener('click',function(e){e.stopPropagation();end();});
 
   /* ── Path choice buttons ── */
   document.getElementById('tutPathNew').addEventListener('click',function(e){
     e.stopPropagation();
     hidePathChoice();
     df.classList.remove('tut-float-on'); fb.classList.remove('tut-vis');
-    setTimeout(function(){go(24);},300);
+    setTimeout(function(){go(23);},300);
   });
   document.getElementById('tutPathExp').addEventListener('click',function(e){
     e.stopPropagation();
     hidePathChoice();
     df.classList.remove('tut-float-on'); fb.classList.remove('tut-vis');
-    setTimeout(function(){go(26);},300);
+    setTimeout(function(){go(24);},300);
   });
 
   /* ── Boot ── */
@@ -13004,23 +13202,27 @@ document.addEventListener('DOMContentLoaded',function(){(function(){
     document.body.classList.add('tut-live');
     ov.style.display='block'; ov.style.opacity='0';
     ov.style.transition='opacity 0.7s ease,background 0.4s ease';
-    setTimeout(function(){ov.style.opacity='1'; go(0);},120);
+    setTimeout(function(){ov.style.opacity='1';go(0);},120);
   }
 
   window.__tutReplay=function(){
     cur=0; eyeOn=false; rdy=false;
     document.body.classList.add('tut-live');
-    stopSparks(); darkSpot(); hideClockBg(); hideObjFlash(); stopTutCreek();
-    if(corgiTimer){clearTimeout(corgiTimer); cg.style.display='none';}
-    ow.classList.remove('eye-state','tut-blink');
+    stopSparks(); darkSpot(); hideClockBg(); hideObjFlash(); stopTutCreek(); hideThoughtAnim();
+    if(corgiTimer){clearTimeout(corgiTimer);cg.style.display='none';}
+    if(tutMorphRaf){cancelAnimationFrame(tutMorphRaf);tutMorphRaf=null;}
+    var morphSvg=document.getElementById('tutOmniaMorphSvg');
+    if(morphSvg){morphSvg.innerHTML='';morphSvg.style.opacity='0';}
+    ow.classList.remove('eye-state','tut-blink','asana-state');
     tc.classList.remove('tut-vis','tut-content-bottom');
+    resetTcPosition();
     th.style.display='none'; sk.style.display='none';
     df.classList.remove('tut-float-on'); fb.classList.remove('tut-vis');
     hidePathChoice(); cp.classList.remove('tut-cap-on');
     clearPulse(); closeDrawer();
     ov.style.display='block'; ov.style.opacity='0';
     ov.style.transition='opacity 0.7s ease';
-    setTimeout(function(){ov.style.opacity='1'; go(0);},120);
+    setTimeout(function(){ov.style.opacity='1';go(0);},120);
   };
 
   if(!localStorage.getItem(VISITED)){
@@ -13133,6 +13335,8 @@ document.addEventListener('DOMContentLoaded',function(){(function(){
 
   <!-- Object flash background (full mode, visualization step) -->
   <div id="tutObjBg"></div>
+  <!-- Thought word animation (full mode, thought control step) -->
+  <div id="tutThoughtBg"></div>
 
 </div><!-- end #tutOverlay -->
 
@@ -13140,6 +13344,7 @@ document.addEventListener('DOMContentLoaded',function(){(function(){
 <div id="tutContent">
     <div class="tut-bubble" id="tutBubble"><p id="tutBubbleText"></p></div>
     <div id="tutOmniaWrap">
+      <svg id="tutOmniaMorphSvg" class="tut-morph-svg" viewBox="0 0 100 130" xmlns="http://www.w3.org/2000/svg"></svg>
       <svg class="tut-crystal-svg" viewBox="0 0 72 118" xmlns="http://www.w3.org/2000/svg">
         <defs>
           <radialGradient id="tg3" cx="50%" cy="40%" r="60%">
@@ -13177,6 +13382,36 @@ document.addEventListener('DOMContentLoaded',function(){(function(){
         <circle cx="37" cy="35" r="2" fill="white" opacity=".22"/>
         <path d="M4,30 Q44,2 84,30" fill="none" stroke="#88c4e0" stroke-width="1.2" opacity=".5"/>
         <path d="M4,30 Q44,58 84,30" fill="none" stroke="#88c4e0" stroke-width="1.2" opacity=".5"/>
+      </svg>
+      <svg class="tut-asana-svg" viewBox="0 0 88 90" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <radialGradient id="tasg" cx="50%" cy="35%" r="60%">
+            <stop offset="0%" stop-color="#e8c8a8" stop-opacity=".6"/>
+            <stop offset="100%" stop-color="#c47878" stop-opacity="0"/>
+          </radialGradient>
+          <filter id="tagl2"><feGaussianBlur stdDeviation="2" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+        </defs>
+        <!-- Head crystal -->
+        <polygon points="44,4 52,14 44,22 36,14" fill="#d4b08e" stroke="#c47878" stroke-width=".8" opacity=".92" filter="url(#tagl2)"/>
+        <!-- Glow halo -->
+        <ellipse cx="44" cy="48" rx="28" ry="32" fill="url(#tasg)" opacity=".4"/>
+        <!-- Body -->
+        <polygon points="44,22 62,40 44,56 26,40" fill="#c4a080" stroke="#c47878" stroke-width=".7" opacity=".88"/>
+        <!-- Left leg -->
+        <polygon points="26,40 8,68 26,74 44,56" fill="#b89070" stroke="#c47878" stroke-width=".6" opacity=".8"/>
+        <!-- Right leg -->
+        <polygon points="62,40 80,68 62,74 44,56" fill="#b89070" stroke="#c47878" stroke-width=".6" opacity=".8"/>
+        <!-- Foot left -->
+        <ellipse cx="18" cy="74" rx="10" ry="4" fill="#a07860" stroke="#c47878" stroke-width=".5" opacity=".6"/>
+        <!-- Foot right -->
+        <ellipse cx="70" cy="74" rx="10" ry="4" fill="#a07860" stroke="#c47878" stroke-width=".5" opacity=".6"/>
+        <!-- Sparkles -->
+        <g opacity=".38">
+          <line x1="4" y1="30" x2="10" y2="30" stroke="#d4b08e" stroke-width="1"/>
+          <line x1="7" y1="27" x2="7" y2="33" stroke="#d4b08e" stroke-width="1"/>
+          <line x1="78" y1="30" x2="84" y2="30" stroke="#d4b08e" stroke-width="1"/>
+          <line x1="81" y1="27" x2="81" y2="33" stroke="#d4b08e" stroke-width="1"/>
+        </g>
       </svg>
     </div>
   </div>
