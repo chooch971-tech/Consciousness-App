@@ -810,42 +810,32 @@
   height:min(470px,72vw);
   overflow:visible;
   transform:translate(-9vw,-5vh);
-  filter:drop-shadow(0 0 28px rgba(125,211,248,.55));
+  filter:drop-shadow(0 0 28px rgba(212,149,110,.45));
 }
 .tut-clock-hand-group { transform-origin:100px 100px; }
 .tut-clock-hand-main {
-  stroke:#7dd3f8;
-  stroke-width:2.9;
+  stroke:#d4956e;
+  stroke-width:2;
   stroke-linecap:round;
-  filter:drop-shadow(0 0 7px rgba(125,211,248,.95));
+  filter:drop-shadow(0 0 7px rgba(212,149,110,.9));
 }
 .tut-clock-hand-tail {
-  stroke:#d4b08e;
-  stroke-width:2.1;
-  stroke-linecap:round;
-  opacity:.72;
-  filter:drop-shadow(0 0 6px rgba(212,176,142,.7));
-}
-.tut-clock-tip {
-  fill:#f7fbff;
-  stroke:#7dd3f8;
+  stroke:#d4956e;
   stroke-width:1.5;
-  filter:drop-shadow(0 0 10px rgba(125,211,248,1));
+  stroke-linecap:round;
+  opacity:.4;
 }
 .tut-clock-center {
-  fill:#d4b08e;
-  stroke:#fff7ea;
-  stroke-width:1.2;
-  filter:drop-shadow(0 0 10px rgba(212,176,142,.95));
+  fill:#d4956e;
 }
 .tut-clock-tick {
-  stroke:rgba(125,211,248,0.45);
+  stroke:rgba(221,216,206,0.38);
   stroke-width:1;
   stroke-linecap:round;
 }
 .tut-clock-tick-major {
-  stroke:rgba(125,211,248,0.75);
-  stroke-width:1.8;
+  stroke:#ddd8ce;
+  stroke-width:1.5;
   stroke-linecap:round;
 }
 @media (max-width:640px) {
@@ -13042,7 +13032,7 @@ document.addEventListener('DOMContentLoaded',function(){(function(){
   function showClockBg(){
     var svg=document.getElementById('tutClockSvg');
     if(svg){
-      var h='<circle cx="100" cy="100" r="90" fill="none" stroke="rgba(125,211,248,0.25)" stroke-width="1"/>';
+      var h='<circle cx="100" cy="100" r="90" fill="none" stroke="rgba(255,255,255,0.12)" stroke-width="1"/>';
       for(var i=0;i<60;i++){
         var angle=(i*6-90)*Math.PI/180;
         var isMajor=i%5===0;
