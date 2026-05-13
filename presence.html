@@ -693,6 +693,25 @@
   transform:translate(-50%,-50%);
   gap:14px;
 }
+#tutContent.tut-clock-callout {
+  top:auto;
+  left:auto;
+  right:clamp(12px,4vw,46px);
+  bottom:34px;
+  width:min(262px,44vw);
+  max-width:min(262px,44vw);
+  padding:0;
+  transform:none;
+  gap:10px;
+}
+#tutContent.tut-clock-callout .tut-bubble {
+  max-width:100%;
+  padding:14px 16px;
+}
+#tutContent.tut-clock-callout .tut-bubble p {
+  font-size:13.5px;
+  line-height:1.62;
+}
 .tut-bubble {
   background:rgba(10,15,28,0.97); border:1px solid rgba(126,184,164,0.35);
   border-radius:16px; padding:18px 22px; max-width:min(340px,88vw);
@@ -737,14 +756,23 @@
 #tutContent.tut-content-low #tutOmniaWrap {
   width:92px; height:108px; flex-basis:108px;
 }
+#tutContent.tut-clock-callout #tutOmniaWrap {
+  width:74px; height:88px; flex-basis:88px;
+}
 #tutContent.tut-content-low .tut-crystal-svg {
   width:66px;
+}
+#tutContent.tut-clock-callout .tut-crystal-svg {
+  width:56px;
 }
 #tutContent.tut-content-bottom .tut-shard-svg {
   width:78px; height:96px;
 }
 #tutContent.tut-content-low .tut-shard-svg {
   width:96px; height:118px;
+}
+#tutContent.tut-clock-callout .tut-shard-svg {
+  width:78px; height:96px;
 }
 #tutOmniaWrap.tut-morphing .tut-shard-svg { opacity:1; }
 #tutOmniaWrap.tut-morphing .tut-crystal-svg { opacity:.12; filter:blur(3px) drop-shadow(0 0 10px rgba(142,204,224,.35)); }
@@ -777,6 +805,52 @@
   opacity:0; transition:opacity 0.8s ease;
 }
 #tutClockBg.tut-bg-on { opacity:1; }
+#tutClockSvg {
+  width:min(470px,72vw);
+  height:min(470px,72vw);
+  overflow:visible;
+  transform:translate(-9vw,-5vh);
+  filter:drop-shadow(0 0 28px rgba(125,211,248,.55));
+}
+.tut-clock-hand-group { transform-origin:100px 100px; }
+.tut-clock-hand-main {
+  stroke:#7dd3f8;
+  stroke-width:2.9;
+  stroke-linecap:round;
+  filter:drop-shadow(0 0 7px rgba(125,211,248,.95));
+}
+.tut-clock-hand-tail {
+  stroke:#d4b08e;
+  stroke-width:2.1;
+  stroke-linecap:round;
+  opacity:.72;
+  filter:drop-shadow(0 0 6px rgba(212,176,142,.7));
+}
+.tut-clock-tip {
+  fill:#f7fbff;
+  stroke:#7dd3f8;
+  stroke-width:1.5;
+  filter:drop-shadow(0 0 10px rgba(125,211,248,1));
+}
+.tut-clock-center {
+  fill:#d4b08e;
+  stroke:#fff7ea;
+  stroke-width:1.2;
+  filter:drop-shadow(0 0 10px rgba(212,176,142,.95));
+}
+@media (max-width:640px) {
+  #tutClockSvg {
+    width:min(360px,82vw);
+    height:min(360px,82vw);
+    transform:translateY(-12vh);
+  }
+  #tutContent.tut-clock-callout {
+    right:14px;
+    bottom:30px;
+    width:min(238px,58vw);
+    max-width:min(238px,58vw);
+  }
+}
 /* Object flash background */
 #tutObjBg {
   position:absolute; inset:0; z-index:2; pointer-events:none;
@@ -12628,7 +12702,7 @@ document.addEventListener('DOMContentLoaded',function(){(function(){
                text:'Here is your rank — you can click on it for more information. Go through all the ranks to ascend!'},
     /* 6  */ {mode:'spot', target:'[data-exercise="clock"]', omniaLeft:true,
                text:'You\'ll place your complete attention on the seconds hand of a clock. Each second of true focus makes your mind stronger.'},
-    /* 7  */ {mode:'full', clockBg:true, omniaBelow:true,
+    /* 7  */ {mode:'full', clockBg:true, omniaClock:true,
                text:'You must place your complete focus here and only stop once the mind becomes distracted.'},
     /* 8  */ {mode:'spot', target:'[data-exercise="visual"]', omniaLeft:true,
                text:'You\'ll learn to see objects as if they were right in front of you, in your mind.'},
@@ -12781,6 +12855,7 @@ document.addEventListener('DOMContentLoaded',function(){(function(){
     withoutTcTransition(function(){
       tc.style.top='';tc.style.bottom='';tc.style.left='';tc.style.right='';tc.style.transform='';
       if(!preserveLow) tc.classList.remove('tut-content-low');
+      tc.classList.remove('tut-clock-callout');
       tc.classList.remove('tut-eye-stage');
     });
   }
@@ -13265,7 +13340,10 @@ document.addEventListener('DOMContentLoaded',function(){(function(){
         : s.spotPanel
           ? 'rgba(7,8,13,0.42)'
           : 'rgba(7,8,13,0.92)';
-      if(s.omniaBelow){
+      if(s.omniaClock){
+        tc.classList.add('tut-vis','tut-clock-callout');
+        tc.classList.remove('tut-content-bottom');
+      } else if(s.omniaBelow){
         tc.classList.add('tut-vis','tut-content-bottom');
       } else {
         tc.classList.add('tut-vis'); tc.classList.remove('tut-content-bottom');
@@ -13447,86 +13525,13 @@ document.addEventListener('DOMContentLoaded',function(){(function(){
 
   <!-- Animated clock background (full mode, clock step) -->
   <div id="tutClockBg">
-    <svg id="tutClockSvg" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg"
-         style="width:min(280px,72vw);height:min(280px,72vw);opacity:0.28;filter:drop-shadow(0 0 28px rgba(125,211,248,0.25));">
-      <circle cx="100" cy="100" r="96" fill="none" stroke="rgba(142,204,224,0.45)" stroke-width="1.2"/>
-      <circle cx="100" cy="100" r="3.5" fill="rgba(142,204,224,0.8)"/>
-      <!-- 12 hour markers -->
-      <g stroke="rgba(142,204,224,0.6)" stroke-width="2" stroke-linecap="round">
-        <line x1="100" y1="8"   x2="100" y2="20"  transform="rotate(0   100 100)"/>
-        <line x1="100" y1="8"   x2="100" y2="20"  transform="rotate(30  100 100)"/>
-        <line x1="100" y1="8"   x2="100" y2="20"  transform="rotate(60  100 100)"/>
-        <line x1="100" y1="8"   x2="100" y2="20"  transform="rotate(90  100 100)"/>
-        <line x1="100" y1="8"   x2="100" y2="20"  transform="rotate(120 100 100)"/>
-        <line x1="100" y1="8"   x2="100" y2="20"  transform="rotate(150 100 100)"/>
-        <line x1="100" y1="8"   x2="100" y2="20"  transform="rotate(180 100 100)"/>
-        <line x1="100" y1="8"   x2="100" y2="20"  transform="rotate(210 100 100)"/>
-        <line x1="100" y1="8"   x2="100" y2="20"  transform="rotate(240 100 100)"/>
-        <line x1="100" y1="8"   x2="100" y2="20"  transform="rotate(270 100 100)"/>
-        <line x1="100" y1="8"   x2="100" y2="20"  transform="rotate(300 100 100)"/>
-        <line x1="100" y1="8"   x2="100" y2="20"  transform="rotate(330 100 100)"/>
+    <svg id="tutClockSvg" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+      <g id="tutClockSecHand" class="tut-clock-hand-group">
+        <line x1="100" y1="100" x2="100" y2="20" class="tut-clock-hand-main"/>
+        <line x1="100" y1="100" x2="100" y2="118" class="tut-clock-hand-tail"/>
+        <circle cx="100" cy="20" r="4" class="tut-clock-tip"/>
       </g>
-      <!-- 48 minor ticks (skip hour positions) generated inline -->
-      <g stroke="rgba(142,204,224,0.2)" stroke-width="0.8" stroke-linecap="round">
-        <line x1="100" y1="8" x2="100" y2="14" transform="rotate(6   100 100)"/>
-        <line x1="100" y1="8" x2="100" y2="14" transform="rotate(12  100 100)"/>
-        <line x1="100" y1="8" x2="100" y2="14" transform="rotate(18  100 100)"/>
-        <line x1="100" y1="8" x2="100" y2="14" transform="rotate(24  100 100)"/>
-        <line x1="100" y1="8" x2="100" y2="14" transform="rotate(36  100 100)"/>
-        <line x1="100" y1="8" x2="100" y2="14" transform="rotate(42  100 100)"/>
-        <line x1="100" y1="8" x2="100" y2="14" transform="rotate(48  100 100)"/>
-        <line x1="100" y1="8" x2="100" y2="14" transform="rotate(54  100 100)"/>
-        <line x1="100" y1="8" x2="100" y2="14" transform="rotate(66  100 100)"/>
-        <line x1="100" y1="8" x2="100" y2="14" transform="rotate(72  100 100)"/>
-        <line x1="100" y1="8" x2="100" y2="14" transform="rotate(78  100 100)"/>
-        <line x1="100" y1="8" x2="100" y2="14" transform="rotate(84  100 100)"/>
-        <line x1="100" y1="8" x2="100" y2="14" transform="rotate(96  100 100)"/>
-        <line x1="100" y1="8" x2="100" y2="14" transform="rotate(102 100 100)"/>
-        <line x1="100" y1="8" x2="100" y2="14" transform="rotate(108 100 100)"/>
-        <line x1="100" y1="8" x2="100" y2="14" transform="rotate(114 100 100)"/>
-        <line x1="100" y1="8" x2="100" y2="14" transform="rotate(126 100 100)"/>
-        <line x1="100" y1="8" x2="100" y2="14" transform="rotate(132 100 100)"/>
-        <line x1="100" y1="8" x2="100" y2="14" transform="rotate(138 100 100)"/>
-        <line x1="100" y1="8" x2="100" y2="14" transform="rotate(144 100 100)"/>
-        <line x1="100" y1="8" x2="100" y2="14" transform="rotate(156 100 100)"/>
-        <line x1="100" y1="8" x2="100" y2="14" transform="rotate(162 100 100)"/>
-        <line x1="100" y1="8" x2="100" y2="14" transform="rotate(168 100 100)"/>
-        <line x1="100" y1="8" x2="100" y2="14" transform="rotate(174 100 100)"/>
-        <line x1="100" y1="8" x2="100" y2="14" transform="rotate(186 100 100)"/>
-        <line x1="100" y1="8" x2="100" y2="14" transform="rotate(192 100 100)"/>
-        <line x1="100" y1="8" x2="100" y2="14" transform="rotate(198 100 100)"/>
-        <line x1="100" y1="8" x2="100" y2="14" transform="rotate(204 100 100)"/>
-        <line x1="100" y1="8" x2="100" y2="14" transform="rotate(216 100 100)"/>
-        <line x1="100" y1="8" x2="100" y2="14" transform="rotate(222 100 100)"/>
-        <line x1="100" y1="8" x2="100" y2="14" transform="rotate(228 100 100)"/>
-        <line x1="100" y1="8" x2="100" y2="14" transform="rotate(234 100 100)"/>
-        <line x1="100" y1="8" x2="100" y2="14" transform="rotate(246 100 100)"/>
-        <line x1="100" y1="8" x2="100" y2="14" transform="rotate(252 100 100)"/>
-        <line x1="100" y1="8" x2="100" y2="14" transform="rotate(258 100 100)"/>
-        <line x1="100" y1="8" x2="100" y2="14" transform="rotate(264 100 100)"/>
-        <line x1="100" y1="8" x2="100" y2="14" transform="rotate(276 100 100)"/>
-        <line x1="100" y1="8" x2="100" y2="14" transform="rotate(282 100 100)"/>
-        <line x1="100" y1="8" x2="100" y2="14" transform="rotate(288 100 100)"/>
-        <line x1="100" y1="8" x2="100" y2="14" transform="rotate(294 100 100)"/>
-        <line x1="100" y1="8" x2="100" y2="14" transform="rotate(306 100 100)"/>
-        <line x1="100" y1="8" x2="100" y2="14" transform="rotate(312 100 100)"/>
-        <line x1="100" y1="8" x2="100" y2="14" transform="rotate(318 100 100)"/>
-        <line x1="100" y1="8" x2="100" y2="14" transform="rotate(324 100 100)"/>
-        <line x1="100" y1="8" x2="100" y2="14" transform="rotate(336 100 100)"/>
-        <line x1="100" y1="8" x2="100" y2="14" transform="rotate(342 100 100)"/>
-        <line x1="100" y1="8" x2="100" y2="14" transform="rotate(348 100 100)"/>
-        <line x1="100" y1="8" x2="100" y2="14" transform="rotate(354 100 100)"/>
-      </g>
-      <!-- Hands -->
-      <line x1="100" y1="100" x2="100" y2="55"
-            stroke="rgba(200,225,245,0.65)" stroke-width="3" stroke-linecap="round"
-            style="transform-origin:100px 100px; transform:rotate(330deg);"/>
-      <line x1="100" y1="100" x2="100" y2="38"
-            stroke="rgba(175,210,240,0.55)" stroke-width="2" stroke-linecap="round"
-            style="transform-origin:100px 100px; transform:rotate(0deg);"/>
-      <line id="tutClockSecHand" x1="100" y1="108" x2="100" y2="22"
-            stroke="rgba(125,211,248,0.95)" stroke-width="1.2" stroke-linecap="round"
-            style="transform-origin:100px 100px; filter:drop-shadow(0 0 4px rgba(125,211,248,0.9));"/>
+      <circle cx="100" cy="100" r="5" class="tut-clock-center"/>
     </svg>
   </div>
 
