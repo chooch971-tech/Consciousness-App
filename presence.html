@@ -838,6 +838,16 @@
   stroke-width:1.2;
   filter:drop-shadow(0 0 10px rgba(212,176,142,.95));
 }
+.tut-clock-tick {
+  stroke:rgba(125,211,248,0.45);
+  stroke-width:1;
+  stroke-linecap:round;
+}
+.tut-clock-tick-major {
+  stroke:rgba(125,211,248,0.75);
+  stroke-width:1.8;
+  stroke-linecap:round;
+}
 @media (max-width:640px) {
   #tutClockSvg {
     width:min(360px,82vw);
@@ -12700,7 +12710,7 @@ document.addEventListener('DOMContentLoaded',function(){(function(){
                text:'Practice to level up. All of these exercises go towards your XP bubble and come with a unique title.'},
     /* 5  */ {mode:'spot', targets:['#concHomeSymbol','#concHomeSymbolFill'], omniaLow:true,
                text:'Here is your rank — you can click on it for more information. Go through all the ranks to ascend!'},
-    /* 6  */ {mode:'spot', target:'[data-exercise="clock"]', omniaLeft:true,
+    /* 6  */ {mode:'spot', target:'[data-exercise="clock"]', omniaRight:true,
                text:'You\'ll place your complete attention on the seconds hand of a clock. Each second of true focus makes your mind stronger.'},
     /* 7  */ {mode:'full', clockBg:true, omniaClock:true,
                text:'You must place your complete focus here and only stop once the mind becomes distracted.'},
@@ -13030,6 +13040,24 @@ document.addEventListener('DOMContentLoaded',function(){(function(){
   /* ── Clock background ── */
   var clockAnimRAF=null, clockSecAngle=0, clockLastTime=0;
   function showClockBg(){
+    var svg=document.getElementById('tutClockSvg');
+    if(svg){
+      var h='<circle cx="100" cy="100" r="90" fill="none" stroke="rgba(125,211,248,0.25)" stroke-width="1"/>';
+      for(var i=0;i<60;i++){
+        var angle=(i*6-90)*Math.PI/180;
+        var isMajor=i%5===0;
+        var r1=isMajor?78:83; var r2=88;
+        var x1=100+r1*Math.cos(angle); var y1=100+r1*Math.sin(angle);
+        var x2=100+r2*Math.cos(angle); var y2=100+r2*Math.sin(angle);
+        h+='<line x1="'+x1+'" y1="'+y1+'" x2="'+x2+'" y2="'+y2+'" class="'+(isMajor?'tut-clock-tick-major':'tut-clock-tick')+'"/>';
+      }
+      h+='<g id="tutClockSecHand" class="tut-clock-hand-group">';
+      h+='<line x1="100" y1="100" x2="100" y2="20" class="tut-clock-hand-main"/>';
+      h+='<line x1="100" y1="100" x2="100" y2="118" class="tut-clock-hand-tail"/>';
+      h+='</g>';
+      h+='<circle cx="100" cy="100" r="5" class="tut-clock-center"/>';
+      svg.innerHTML=h;
+    }
     clkBg.classList.add('tut-bg-on');
     clockLastTime=performance.now();
     var secHand=document.getElementById('tutClockSecHand');
@@ -13525,14 +13553,7 @@ document.addEventListener('DOMContentLoaded',function(){(function(){
 
   <!-- Animated clock background (full mode, clock step) -->
   <div id="tutClockBg">
-    <svg id="tutClockSvg" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
-      <g id="tutClockSecHand" class="tut-clock-hand-group">
-        <line x1="100" y1="100" x2="100" y2="20" class="tut-clock-hand-main"/>
-        <line x1="100" y1="100" x2="100" y2="118" class="tut-clock-hand-tail"/>
-        <circle cx="100" cy="20" r="4" class="tut-clock-tip"/>
-      </g>
-      <circle cx="100" cy="100" r="5" class="tut-clock-center"/>
-    </svg>
+    <svg id="tutClockSvg" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg"></svg>
   </div>
 
   <!-- Object flash background (full mode, visualization step) -->
