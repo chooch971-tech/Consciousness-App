@@ -1094,6 +1094,22 @@ body:not(.tut-live) #tutCorgi {
         </div>
       </div>
 
+      <!-- Reset Progress -->
+      <div style="margin-bottom:32px;">
+        <div style="font-size:9px; letter-spacing:.25em; text-transform:uppercase; color:var(--muted); margin-bottom:16px;">Reset Progress</div>
+        <div style="background:rgba(255,255,255,.03); border:1px solid var(--border); border-radius:10px; overflow:hidden;">
+          <button id="settingsResetAwareness" style="width:100%; display:flex; align-items:center; gap:10px; padding:14px 18px; background:none; border:none; border-bottom:1px solid var(--border); color:#c47a7a; font-family:'DM Mono',monospace; font-size:10px; letter-spacing:.12em; cursor:pointer; text-align:left;">
+            <span style="opacity:.7;">↺</span> Reset Awareness Progress
+          </button>
+          <button id="settingsResetConc" style="width:100%; display:flex; align-items:center; gap:10px; padding:14px 18px; background:none; border:none; border-bottom:1px solid var(--border); color:#c47a7a; font-family:'DM Mono',monospace; font-size:10px; letter-spacing:.12em; cursor:pointer; text-align:left;">
+            <span style="opacity:.7;">↺</span> Reset Concentration Progress
+          </button>
+          <button id="settingsResetPrayer" style="width:100%; display:flex; align-items:center; gap:10px; padding:14px 18px; background:none; border:none; color:#c47a7a; font-family:'DM Mono',monospace; font-size:10px; letter-spacing:.12em; cursor:pointer; text-align:left;">
+            <span style="opacity:.7;">↺</span> Reset Prayer Progress
+          </button>
+        </div>
+      </div>
+
       <div style="font-size:9px; color:var(--muted); opacity:.5; text-align:center; line-height:1.8; padding:0 8px;">
         Backups contain all your data in a single JSON file.<br>To move to a new device: export here, transfer the file, import there.
       </div>
@@ -2321,14 +2337,8 @@ body:not(.tut-live) #tutCorgi {
         <span class="drawer-item-icon">☕</span>Donate
       </button>
       <div class="drawer-divider"></div>
-      <button class="drawer-item danger" id="drawerReset">
-        <span class="drawer-item-icon">↺</span>Reset Awareness Progress
-      </button>
-      <button class="drawer-item danger" id="drawerResetConc">
-        <span class="drawer-item-icon">↺</span>Reset Concentration Progress
-      </button>
-      <button class="drawer-item danger" id="drawerResetPrayer">
-        <span class="drawer-item-icon">↺</span>Reset Prayer Progress
+      <button class="drawer-item danger" id="drawerResetAll">
+        <span class="drawer-item-icon">↺</span>Reset All Progress
       </button>
     </div>
     <div class="drawer-footer">
@@ -3989,16 +3999,38 @@ function showConfirm(title, text, onConfirm) {
   document.getElementById('confirmModal').classList.add('show');
 }
 
-document.getElementById('drawerReset').addEventListener('click', function() {
+document.getElementById('drawerResetAll').addEventListener('click', function() {
   closeDrawer();
+  showConfirm(
+    'Reset All Progress',
+    'This will permanently erase all Awareness, Concentration, and Prayer progress, history, and streaks.',
+    function() {
+      showConfirm(
+        'Are you absolutely sure?',
+        'There is no going back. Every level, session, and record will be gone forever.',
+        function() {
+          resetAllProgress();
+          concState = Object.assign({}, CONC_DEFAULT);
+          saveConcState();
+          renderConcHome();
+          localStorage.removeItem('presence_prayer_v1');
+          prayerState = loadPrayerState();
+          renderPrayer();
+          showToast('All progress reset');
+        }
+      );
+    }
+  );
+});
+
+document.getElementById('settingsResetAwareness').addEventListener('click', function() {
   showConfirm(
     'Reset Awareness Progress',
     'This will erase your level, XP, history, streak, and all session data. This cannot be undone.',
     resetAllProgress
   );
 });
-document.getElementById('drawerResetConc').addEventListener('click', function() {
-  closeDrawer();
+document.getElementById('settingsResetConc').addEventListener('click', function() {
   showConfirm(
     'Reset Concentration Progress',
     'This will erase your concentration level, history, and all rep data. This cannot be undone.',
@@ -4010,8 +4042,7 @@ document.getElementById('drawerResetConc').addEventListener('click', function() 
     }
   );
 });
-document.getElementById('drawerResetPrayer').addEventListener('click', function() {
-  closeDrawer();
+document.getElementById('settingsResetPrayer').addEventListener('click', function() {
   showConfirm(
     'Reset Prayer Progress',
     'This will erase your prayer schedule, history, and streak. This cannot be undone.',
