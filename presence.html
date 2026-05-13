@@ -12730,11 +12730,11 @@ document.addEventListener('DOMContentLoaded',function(){(function(){
                text:'Practice to level up. All of these exercises go towards your XP bubble and come with a unique title.'},
     /* 5  */ {mode:'spot', targets:['#concHomeSymbol','#concHomeSymbolFill'], omniaLow:true,
                text:'Here is your rank — you can click on it for more information. Go through all the ranks to ascend!'},
-    /* 6  */ {mode:'spot', target:'[data-exercise="clock"]', omniaRight:true,
+    /* 6  */ {mode:'spot', target:'[data-exercise="clock"]', omniaRight:true, scrollTo:'[data-exercise="clock"]',
                text:'You\'ll place your complete attention on the seconds hand of a clock. Each second of true focus makes your mind stronger.'},
     /* 7  */ {mode:'full', clockBg:true, omniaClock:true,
                text:'You must place your complete focus here and only stop once the mind becomes distracted.'},
-    /* 8  */ {mode:'spot', target:'[data-exercise="visual"]', omniaLeft:true,
+    /* 8  */ {mode:'spot', target:'[data-exercise="visual"]', omniaLeft:true, scrollTo:'[data-exercise="visual"]',
                text:'You\'ll learn to see objects as if they were right in front of you, in your mind.'},
     /* 9  */ {mode:'full', objFlash:true, omniaBelow:true,
                text:'You\'ll start with easier objects, like shapes. But then go into objects.'},
@@ -13399,6 +13399,10 @@ document.addEventListener('DOMContentLoaded',function(){(function(){
         applyTutorialEyeAnchor();
         fromEyeToOmnia(function(){
           if(s.spotPanel){
+            ov.style.transition='none';
+            ov.style.background='rgba(7,8,13,0)';
+            void ov.offsetWidth;
+            ov.style.transition='';
             var glowEl=document.querySelector(s.spotPanel);
             if(glowEl) glowEl.classList.add('tut-elem-glow');
             litSpot(s.spotPanel);
@@ -13421,7 +13425,12 @@ document.addEventListener('DOMContentLoaded',function(){(function(){
           finishStep(s);
         };
         if(s.scrollTo){scrollToCard(s.scrollTo,doSpot);return;}
-        setTimeout(doSpot,200); return;
+        // Fire spotlight immediately so it fades in alongside the overlay fade (prevents flash)
+        if(s.targets) litSpotMulti(s.targets); else if(s.target) litSpot(s.target);
+        setTimeout(function(){
+          positionTcBeside(s.targets?s.targets[0]:s.target,s.omniaLeft?'left':'right');
+          finishStep(s);
+        },200); return;
       } else if(s.omniaMid||s.omniaLow){
         tc.classList.remove('tut-content-bottom');
         if(s.omniaLow) tc.classList.add('tut-content-low');
