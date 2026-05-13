@@ -707,9 +707,13 @@
 .tut-bubble p {
   font-family:'Cormorant Garamond',Georgia,serif; font-size:15px;
   font-weight:300; font-style:italic; line-height:1.78;
-  color:#7dd3f8; text-align:center; margin:0;
+  color:#f7fbff; text-align:center; margin:0;
 }
-.tut-bubble.tut-blue p { color:#7dd3f8; }
+.tut-bubble.tut-blue p { color:#f7fbff; }
+.tut-key {
+  color:#7dd3f8;
+  text-shadow:0 0 10px rgba(125,211,248,.22);
+}
 #tutOmniaWrap {
   order:1; position:relative;
   width:124px; height:146px; flex:0 0 146px;
@@ -875,7 +879,7 @@
 #tutFloatBubble p {
   font-family:'Cormorant Garamond',Georgia,serif; font-size:14.5px;
   font-weight:300; font-style:italic; line-height:1.78;
-  color:#7dd3f8; text-align:center; margin:0;
+  color:#f7fbff; text-align:center; margin:0;
 }
 /* Direct element highlight — works regardless of overlay opacity */
 .tut-elem-glow {
@@ -12773,10 +12777,11 @@ document.addEventListener('DOMContentLoaded',function(){(function(){
     void tc.offsetHeight;
     tc.style.transition=prev;
   }
-  function resetTcPosition(){
+  function resetTcPosition(preserveLow){
     withoutTcTransition(function(){
       tc.style.top='';tc.style.bottom='';tc.style.left='';tc.style.right='';tc.style.transform='';
-      tc.classList.remove('tut-content-low','tut-eye-stage');
+      if(!preserveLow) tc.classList.remove('tut-content-low');
+      tc.classList.remove('tut-eye-stage');
     });
   }
   function captureTutorialEyeAnchor(){
@@ -13106,7 +13111,7 @@ document.addEventListener('DOMContentLoaded',function(){(function(){
 
   /* ── Path choice ── */
   function showPathChoice(){
-    ft.textContent='Tell me — is this your first time on this path, or are you a bit more advanced?';
+    setTutorialText(ft,'Tell me — is this your first time on this path, or are you a bit more advanced?');
     df.classList.add('tut-float-on');
     setTimeout(function(){fb.classList.add('tut-vis'); pc.classList.add('tut-vis');},60);
   }
@@ -13114,11 +13119,36 @@ document.addEventListener('DOMContentLoaded',function(){(function(){
     pc.classList.remove('tut-vis');
   }
 
+  /* ── Tutorial copy ── */
+  var TUT_KEYWORDS=[
+    'secret societies','complete attention','seconds hand','Thought Control','Soul Mirror',
+    'Journal Log','pore breathing','daily regiment','know thyself','inner transformation',
+    'Namaste','Omnia','meditation','Concentration','concentration','imagination','Master',
+    'Practice','level up','XP','title','rank','ranks','ascend','clock','focus','mind',
+    'Visualization','visualization','objects','eyes open','perseverance','sounds','asana',
+    'motionless','traits','purifying','streak','progress','Guide','agenda','Akasha',
+    'upgrades','cosmetics','corgi','tutorial','path','advanced'
+  ].sort(function(a,b){return b.length-a.length;});
+  var tutKeywordPattern=new RegExp('('+TUT_KEYWORDS.map(function(k){
+    return k.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');
+  }).join('|')+')','gi');
+  function escapeTutorialText(text){
+    return String(text||'').replace(/[&<>"']/g,function(ch){
+      return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch];
+    });
+  }
+  function highlightTutorialText(text){
+    return escapeTutorialText(text).replace(tutKeywordPattern,'<span class="tut-key">$1</span>');
+  }
+  function setTutorialText(el,text){
+    if(el) el.innerHTML=highlightTutorialText(text||'');
+  }
+
   /* ── Finish step: show bubble + set rdy ── */
   function finishStep(s,delay){
     bl.classList.remove('tut-vis');
     if(s.blueText) bl.classList.add('tut-blue'); else bl.classList.remove('tut-blue');
-    if(s.text){bt.textContent=s.text;setTimeout(function(){bl.classList.add('tut-vis');},120);}
+    if(s.text){setTutorialText(bt,s.text);setTimeout(function(){bl.classList.add('tut-vis');},120);}
     th.textContent=s.eyeTap?'Tap the screen':'Tap to continue';
     th.style.display='block'; sk.style.display='block';
     setTimeout(function(){rdy=true;},delay||700);
@@ -13127,10 +13157,13 @@ document.addEventListener('DOMContentLoaded',function(){(function(){
   /* ── Show step ── */
   function go(i){
     if(i>=STEPS.length){end();return;}
-    cur=i; rdy=false;
     var s=STEPS[i];
+    var keepLowAnchor=tc.classList.contains('tut-content-low')&&!!s.omniaLow;
+    if(keepLowAnchor) captureTutorialEyeAnchor();
+    cur=i; rdy=false;
     var keepEyeAnchor=!!(tutorialEyeAnchorY!=null&&((s.inEye&&(i===1||i===2))||s.morphCrystal));
-    if(!keepEyeAnchor) tutorialEyeAnchorY=null;
+    var keepFigureAnchor=keepEyeAnchor||keepLowAnchor;
+    if(!keepFigureAnchor) tutorialEyeAnchorY=null;
 
     if(!s.clockBg) hideClockBg();
     if(!s.objFlash) hideObjFlash();
@@ -13139,7 +13172,7 @@ document.addEventListener('DOMContentLoaded',function(){(function(){
     if(!s.asana) ow.classList.remove('asana-state');
     document.querySelectorAll('.tut-elem-glow').forEach(function(e){e.classList.remove('tut-elem-glow');});
     hidePathChoice();
-    resetTcPosition();
+    resetTcPosition(keepLowAnchor);
     tc.classList.toggle('tut-eye-stage',!!(s.eyeTap||s.inEye||s.morphCrystal));
 
     /* ── DRAWER mode ── */
@@ -13161,10 +13194,10 @@ document.addEventListener('DOMContentLoaded',function(){(function(){
           if(s.target) positionTcBeside(s.target,s.omniaRight?'right':'left');
           bl.classList.remove('tut-vis');
           if(s.blueText) bl.classList.add('tut-blue'); else bl.classList.remove('tut-blue');
-          if(s.text){bt.textContent=s.text;setTimeout(function(){bl.classList.add('tut-vis');},80);}
+          if(s.text){setTutorialText(bt,s.text);setTimeout(function(){bl.classList.add('tut-vis');},80);}
         } else {
           tc.classList.remove('tut-vis','tut-content-bottom');
-          ft.textContent=s.text||'';
+          setTutorialText(ft,s.text||'');
           df.classList.add('tut-float-on');
           setTimeout(function(){fb.classList.add('tut-vis');},60);
         }
@@ -13200,7 +13233,7 @@ document.addEventListener('DOMContentLoaded',function(){(function(){
       df.classList.remove('tut-float-on');
       fb.classList.remove('tut-vis');
       db.style.display='none';
-      ft.textContent=s.text||'';
+      setTutorialText(ft,s.text||'');
       df.classList.add('tut-float-on');
       setTimeout(function(){fb.classList.add('tut-vis');},60);
       cp.classList.add('tut-cap-on');
@@ -13271,6 +13304,7 @@ document.addEventListener('DOMContentLoaded',function(){(function(){
         var doSpotMid=function(){
           if(s.targets) litSpotMulti(s.targets); else litSpot(s.target);
           finishStep(s);
+          if(keepLowAnchor) applyTutorialEyeAnchor();
         };
         setTimeout(doSpotMid,200); return;
       } else {
@@ -13282,7 +13316,7 @@ document.addEventListener('DOMContentLoaded',function(){(function(){
     }
 
     finishStep(s);
-    if(keepEyeAnchor) applyTutorialEyeAnchor();
+    if(keepFigureAnchor) applyTutorialEyeAnchor();
   }
 
   /* ── End ── */
