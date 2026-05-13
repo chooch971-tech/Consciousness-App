@@ -698,7 +698,7 @@
 .tut-bubble p {
   font-family:'Cormorant Garamond',Georgia,serif; font-size:15px;
   font-weight:300; font-style:italic; line-height:1.78;
-  color:#ddd8ce; text-align:center; margin:0;
+  color:#7dd3f8; text-align:center; margin:0;
 }
 .tut-bubble.tut-blue p { color:#7dd3f8; }
 /* Both SVGs overlaid in a CSS grid — opacity handles seamless morph   */
@@ -797,6 +797,7 @@
 .tut-morph-svg {
   grid-area:1/1; width:84px; height:112px;
   pointer-events:none; opacity:0;
+  position:relative; z-index:5;
 }
 #tutContent.tut-content-bottom .tut-morph-svg { width:54px; height:72px; }
 
@@ -846,7 +847,7 @@
 #tutFloatBubble p {
   font-family:'Cormorant Garamond',Georgia,serif; font-size:14.5px;
   font-weight:300; font-style:italic; line-height:1.78;
-  color:#ddd8ce; text-align:center; margin:0;
+  color:#7dd3f8; text-align:center; margin:0;
 }
 #tutDoneBtn {
   display:none; pointer-events:auto;
@@ -12569,17 +12570,17 @@ document.addEventListener('DOMContentLoaded',function(){(function(){
   var VISITED='presence_visited';
 
   var STEPS=[
-    /* 0  */ {mode:'full', sparks:true, eyeTap:true,
+    /* 0  */ {mode:'full', sparks:true, eyeTap:true, darkFull:true,
                text:'Namaste! My name is Omnia. Welcome to your new favorite meditation practice.'},
     /* 1  */ {mode:'full', inEye:true, blueText:true,
                text:'Allow me to show you around.'},
     /* 2  */ {mode:'full', inEye:true, blueText:true, blink:true,
                text:'These exercises will hone your concentration and imagination skills. Believe it or not, these exercises have been derived from secret societies and practiced for thousands of years!'},
-    /* 3  */ {mode:'full', morphCrystal:true, panel:'concentration', cards:true,
+    /* 3  */ {mode:'full', morphCrystal:true, panel:'concentration', cards:true, spotPanel:'#modeConcentration',
                text:'This is where the Concentration exercises lay. Master them to know thyself.'},
-    /* 4  */ {mode:'spot', target:'#concRingBtn', omniaBelow:true,
+    /* 4  */ {mode:'spot', target:'#concRingBtn', omniaMid:true,
                text:'Practice to level up. All of these exercises go towards your XP bubble and come with a unique title.'},
-    /* 5  */ {mode:'spot', targets:['#concRingBtn','#concHomeSymbol','#concHomeSymbolFill'], omniaBelow:true,
+    /* 5  */ {mode:'spot', targets:['#concHomeSymbol','#concHomeSymbolFill'], omniaMid:true,
                text:'Here is your rank — you can click on it for more information. Go through all the ranks to ascend!'},
     /* 6  */ {mode:'spot', target:'[data-exercise="clock"]', omniaLeft:true,
                text:'You\'ll place your complete attention on the seconds hand of a clock. Each second of true focus makes your mind stronger.'},
@@ -12775,7 +12776,7 @@ document.addEventListener('DOMContentLoaded',function(){(function(){
       el.setAttribute('stroke-opacity','.88');el.setAttribute('filter','url(#tmGlow)');
       morphSvg.appendChild(el);return el;
     });
-    morphSvg.style.opacity='0.3';
+    morphSvg.style.opacity='0';
     var inMs=760,holdMs=650,outMs=640,total=inMs+holdMs+outMs;
     var midAt=inMs+holdMs*0.5,midDone=false,start=performance.now();
     function frame(now){
@@ -12786,7 +12787,7 @@ document.addEventListener('DOMContentLoaded',function(){(function(){
         else{eyeOn=false;ow.classList.remove('eye-state','tut-blink');}
       }
       if(el2<=inMs){
-        t=omniaEaseMorph(el2/inMs);morphSvg.style.opacity=String(0.3+t*0.7);
+        t=omniaEaseMorph(el2/inMs);morphSvg.style.opacity=String(t);
         polys.forEach(function(p,i){p.setAttribute('points',omniaPointString(omniaLerpPoly(from[i],to[i],t)));});
       }else if(el2<=inMs+holdMs){
         morphSvg.style.opacity='1';
@@ -13090,14 +13091,17 @@ document.addEventListener('DOMContentLoaded',function(){(function(){
 
     if(s.mode==='full'){
       ov.classList.remove('tut-spot');
-      ov.style.background='rgba(7,8,13,0.92)';
+      ov.style.background=s.darkFull?'rgba(7,8,13,1)':'rgba(7,8,13,0.92)';
       if(s.omniaBelow){
         tc.classList.add('tut-vis','tut-content-bottom');
       } else {
         tc.classList.add('tut-vis'); tc.classList.remove('tut-content-bottom');
       }
       if(s.morphCrystal&&eyeOn){
-        fromEyeAnim(function(){finishStep(s,400);});
+        fromEyeAnim(function(){
+          if(s.spotPanel) setTimeout(function(){litSpot(s.spotPanel);},200);
+          finishStep(s,400);
+        });
         th.textContent='Tap to continue'; th.style.display='block'; sk.style.display='block';
         return;
       }
@@ -13114,6 +13118,13 @@ document.addEventListener('DOMContentLoaded',function(){(function(){
         };
         if(s.scrollTo){scrollToCard(s.scrollTo,doSpot);return;}
         setTimeout(doSpot,200); return;
+      } else if(s.omniaMid){
+        tc.classList.remove('tut-content-bottom');
+        var doSpotMid=function(){
+          if(s.targets) litSpotMulti(s.targets); else litSpot(s.target);
+          finishStep(s);
+        };
+        setTimeout(doSpotMid,200); return;
       } else {
         tc.classList.add('tut-content-bottom');
         var doSpot2=function(){if(s.targets) litSpotMulti(s.targets); else litSpot(s.target);};
