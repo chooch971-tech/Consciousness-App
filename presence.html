@@ -723,6 +723,14 @@
 /* Eye state: crossfade crystal → eye */
 #tutOmniaWrap.eye-state .tut-crystal-svg { opacity:0; }
 #tutOmniaWrap.eye-state .tut-eye-svg    { opacity:1; }
+/* Morphing: hide both crystal/eye so only shards are visible (mirrors Guide screen) */
+#tutOmniaWrap.tut-morphing .tut-crystal-svg,
+#tutOmniaWrap.tut-morphing .tut-eye-svg {
+  opacity:.12 !important;
+  transform:scale(.82) rotate(10deg);
+  filter:blur(3px);
+  transition:opacity .28s ease, transform .28s ease, filter .3s ease;
+}
 @keyframes eyeBlink {
   0%,88%,100% { transform:scaleY(1); }
   92%          { transform:scaleY(0.06); }
@@ -12776,7 +12784,8 @@ document.addEventListener('DOMContentLoaded',function(){(function(){
       el.setAttribute('stroke-opacity','.88');el.setAttribute('filter','url(#tmGlow)');
       morphSvg.appendChild(el);return el;
     });
-    morphSvg.style.opacity='0';
+    morphSvg.style.opacity='0.3';
+    ow.classList.add('tut-morphing');
     var inMs=760,holdMs=650,outMs=640,total=inMs+holdMs+outMs;
     var midAt=inMs+holdMs*0.5,midDone=false,start=performance.now();
     function frame(now){
@@ -12787,16 +12796,20 @@ document.addEventListener('DOMContentLoaded',function(){(function(){
         else{eyeOn=false;ow.classList.remove('eye-state','tut-blink');}
       }
       if(el2<=inMs){
-        t=omniaEaseMorph(el2/inMs);morphSvg.style.opacity=String(t);
+        t=omniaEaseMorph(el2/inMs);morphSvg.style.opacity=String(0.3+t*0.7);
         polys.forEach(function(p,i){p.setAttribute('points',omniaPointString(omniaLerpPoly(from[i],to[i],t)));});
       }else if(el2<=inMs+holdMs){
         morphSvg.style.opacity='1';
         polys.forEach(function(p,i){p.setAttribute('points',omniaPointString(to[i]));});
       }else if(el2<=total){
-        t=omniaEaseMorph((el2-inMs-holdMs)/outMs);morphSvg.style.opacity=String(1-t*0.75);
-        polys.forEach(function(p,i){p.setAttribute('points',omniaPointString(omniaLerpPoly(to[i],from[i],t)));});
+        t=omniaEaseMorph((el2-inMs-holdMs)/outMs);morphSvg.style.opacity=String(1-t*0.85);
+        // Keep shards at the target shape while fading out — don't revert,
+        // since we want Omnia to remain in the new state (eye/crystal).
+        polys.forEach(function(p,i){p.setAttribute('points',omniaPointString(to[i]));});
       }else{
-        morphSvg.style.opacity='0';morphSvg.innerHTML='';tutMorphRaf=null;
+        morphSvg.style.opacity='0';morphSvg.innerHTML='';
+        ow.classList.remove('tut-morphing');
+        tutMorphRaf=null;
         if(onDone)onDone();return;
       }
       tutMorphRaf=requestAnimationFrame(frame);
@@ -13146,7 +13159,7 @@ document.addEventListener('DOMContentLoaded',function(){(function(){
     if(tutMorphRaf){cancelAnimationFrame(tutMorphRaf);tutMorphRaf=null;}
     var morphSvg=document.getElementById('tutOmniaMorphSvg');
     if(morphSvg){morphSvg.innerHTML='';morphSvg.style.opacity='0';}
-    ow.classList.remove('eye-state','tut-blink','asana-state');
+    ow.classList.remove('eye-state','tut-blink','asana-state','tut-morphing');
     eyeOn=false;
     cp.classList.remove('tut-cap-on');
     closeDrawer();
@@ -13224,7 +13237,7 @@ document.addEventListener('DOMContentLoaded',function(){(function(){
     if(tutMorphRaf){cancelAnimationFrame(tutMorphRaf);tutMorphRaf=null;}
     var morphSvg=document.getElementById('tutOmniaMorphSvg');
     if(morphSvg){morphSvg.innerHTML='';morphSvg.style.opacity='0';}
-    ow.classList.remove('eye-state','tut-blink','asana-state');
+    ow.classList.remove('eye-state','tut-blink','asana-state','tut-morphing');
     tc.classList.remove('tut-vis','tut-content-bottom');
     resetTcPosition();
     th.style.display='none'; sk.style.display='none';
