@@ -757,13 +757,13 @@
   width:92px; height:108px; flex-basis:108px;
 }
 #tutContent.tut-clock-callout #tutOmniaWrap {
-  width:74px; height:88px; flex-basis:88px;
+  width:100px; height:118px; flex-basis:118px;
 }
 #tutContent.tut-content-low .tut-crystal-svg {
   width:66px;
 }
 #tutContent.tut-clock-callout .tut-crystal-svg {
-  width:56px;
+  width:76px;
 }
 #tutContent.tut-content-bottom .tut-shard-svg {
   width:78px; height:96px;
@@ -772,7 +772,7 @@
   width:96px; height:118px;
 }
 #tutContent.tut-clock-callout .tut-shard-svg {
-  width:78px; height:96px;
+  width:100px; height:122px;
 }
 #tutOmniaWrap.tut-morphing .tut-shard-svg { opacity:1; }
 #tutOmniaWrap.tut-morphing .tut-crystal-svg { opacity:.12; filter:blur(3px) drop-shadow(0 0 10px rgba(142,204,224,.35)); }
@@ -12842,7 +12842,7 @@ document.addEventListener('DOMContentLoaded',function(){(function(){
     tc.style.transform='translateY(-50%)';
     tc.style.top=Math.max(80,Math.min(window.innerHeight-200,midY))+'px';
     if(side==='left'){tc.style.left='12px';tc.style.right='auto';}
-    else{tc.style.right='12px';tc.style.left='auto';}
+    else{tc.style.left=Math.min(r.right+10,window.innerWidth-168)+'px';tc.style.right='auto';}
   }
   function withoutTcTransition(fn){
     var prev=tc.style.transition;
@@ -13080,13 +13080,13 @@ document.addEventListener('DOMContentLoaded',function(){(function(){
       set.forEach(function(o,i){
         var el=document.createElement('span');
         el.className='tut-obj'; el.textContent=o;
-        el.style.animationDelay=(i*90)+'ms';
+        el.style.animationDelay=(i*55)+'ms';
         objBg.appendChild(el);
       });
     }
     nextSet();
     objBg.classList.add('tut-bg-on');
-    objFlashTimer=setInterval(nextSet,2200);
+    objFlashTimer=setInterval(nextSet,1400);
   }
   function hideObjFlash(){
     objBg.classList.remove('tut-bg-on');
@@ -13355,9 +13355,7 @@ document.addEventListener('DOMContentLoaded',function(){(function(){
       ov.classList.remove('tut-spot');
       ov.style.background=s.darkFull||(s.morphCrystal&&eyeOn)
         ? 'rgba(7,8,13,1)'
-        : s.spotPanel
-          ? 'rgba(7,8,13,0.42)'
-          : 'rgba(7,8,13,0.92)';
+        : 'rgba(7,8,13,0.92)';
       if(s.omniaClock){
         tc.classList.add('tut-vis','tut-clock-callout');
         tc.classList.remove('tut-content-bottom');
@@ -13371,7 +13369,6 @@ document.addEventListener('DOMContentLoaded',function(){(function(){
         applyTutorialEyeAnchor();
         fromEyeToOmnia(function(){
           if(s.spotPanel){
-            ov.style.background='rgba(7,8,13,0.42)';
             var glowEl=document.querySelector(s.spotPanel);
             if(glowEl) glowEl.classList.add('tut-elem-glow');
             litSpot(s.spotPanel);
