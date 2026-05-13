@@ -730,9 +730,10 @@
 #tutOverlay.tut-spot .tut-crystal-svg { width:54px; }
 /* Eye state: hide crystal, shard-svg holds the eye form */
 #tutOmniaWrap.eye-state .tut-crystal-svg { display:none; }
-#tutOmniaWrap.eye-state.tut-returning .tut-crystal-svg { display:block; opacity:0; }
+#tutOmniaWrap.eye-state.tut-returning .tut-crystal-svg { display:block; opacity:0; animation:none; }
 #tutOmniaWrap.eye-state.tut-returning.tut-crystal-return .tut-crystal-svg { opacity:1; }
 #tutOmniaWrap.eye-state .tut-shard-svg { opacity:1; animation:tutShardFloat 4.5s ease-in-out infinite; }
+#tutOmniaWrap.eye-state.tut-morphing .tut-shard-svg { animation:none; transform:translate(-50%,-50%); }
 @keyframes tutShardFloat {
   0%,100% { transform:translate(-50%,-50%) translateY(0); }
   50%     { transform:translate(-50%,-50%) translateY(-6px); }
@@ -12875,18 +12876,30 @@ document.addEventListener('DOMContentLoaded',function(){(function(){
       svg.insertAdjacentHTML('beforeend',tutorialEyeOutline(color));
     }
     var outline=svg.querySelector('#tutShardOutline');
+    var crystal=ow.querySelector('.tut-crystal-svg');
     ow.classList.add('tut-morphing','tut-returning');
     svg.style.opacity='1';
-    var start=performance.now(),returnMs=920;
+    if(crystal){
+      crystal.style.opacity='0';
+      crystal.style.filter='blur(8px) drop-shadow(0 0 14px rgba(142,204,224,.18))';
+    }
+    var start=performance.now(),returnMs=1080;
     function frame(now){
       var elapsed=now-start;
       var t=omniaEaseMorph(Math.min(1,elapsed/returnMs));
       polys.forEach(function(poly,idx){poly.setAttribute('points',omniaPointString(omniaLerpPoly(from[idx],to[idx],t)));});
-      if(outline) outline.setAttribute('opacity',String(Math.max(0,1-t)));
-      if(t>.68) ow.classList.add('tut-crystal-return');
+      if(outline) outline.setAttribute('opacity',String(Math.max(0,1-t*1.35)));
+      var crystalT=omniaEaseMorph(Math.max(0,Math.min(1,(t-.34)/.66)));
+      var shardFade=Math.max(.18,1-Math.max(0,(t-.72)/.28)*.82);
+      svg.style.opacity=String(shardFade);
+      if(crystal){
+        crystal.style.opacity=String(crystalT);
+        crystal.style.filter='blur('+((1-crystalT)*8).toFixed(2)+'px) drop-shadow(0 0 '+(14+crystalT*5).toFixed(1)+'px rgba(142,204,224,'+(.18+crystalT*.32).toFixed(2)+'))';
+      }
       if(elapsed>=returnMs){
         clearTutorialEyeMorph();
         ow.classList.remove('eye-state','tut-returning','tut-crystal-return');
+        if(crystal){crystal.style.opacity='';crystal.style.filter='';}
         eyeOn=false;if(done)done();return;
       }
       tutorialEyeMorphRaf=requestAnimationFrame(frame);
@@ -13081,7 +13094,8 @@ document.addEventListener('DOMContentLoaded',function(){(function(){
     if(i>=STEPS.length){end();return;}
     cur=i; rdy=false;
     var s=STEPS[i];
-    if(!(i===1&&s.inEye)) tutorialEyeAnchorY=null;
+    var keepEyeAnchor=!!(tutorialEyeAnchorY!=null&&((s.inEye&&(i===1||i===2))||s.morphCrystal));
+    if(!keepEyeAnchor) tutorialEyeAnchorY=null;
 
     if(!s.clockBg) hideClockBg();
     if(!s.objFlash) hideObjFlash();
@@ -13189,6 +13203,8 @@ document.addEventListener('DOMContentLoaded',function(){(function(){
         tc.classList.add('tut-vis'); tc.classList.remove('tut-content-bottom');
       }
       if(s.morphCrystal&&eyeOn){
+        bl.classList.remove('tut-vis');
+        applyTutorialEyeAnchor();
         fromEyeToOmnia(function(){
           if(s.spotPanel){
             var glowEl=document.querySelector(s.spotPanel);
@@ -13196,6 +13212,7 @@ document.addEventListener('DOMContentLoaded',function(){(function(){
             litSpot(s.spotPanel);
           }
           finishStep(s,400);
+          applyTutorialEyeAnchor();
         });
         th.textContent='Tap to continue'; th.style.display='block'; sk.style.display='block';
         return;
@@ -13229,7 +13246,7 @@ document.addEventListener('DOMContentLoaded',function(){(function(){
     }
 
     finishStep(s);
-    if(i===1&&s.inEye) applyTutorialEyeAnchor();
+    if(keepEyeAnchor) applyTutorialEyeAnchor();
   }
 
   /* ── End ── */
@@ -13241,6 +13258,7 @@ document.addEventListener('DOMContentLoaded',function(){(function(){
     hideClockBg(); hideObjFlash(); stopTutCreek(); hideThoughtAnim();
     if(corgiTimer){clearTimeout(corgiTimer); cg.style.display='none';}
     resetTutorialEye();
+    tutorialEyeAnchorY=null;
     ow.classList.remove('asana-state');
     cp.classList.remove('tut-cap-on');
     closeDrawer();
