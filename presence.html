@@ -701,43 +701,45 @@
   color:#7dd3f8; text-align:center; margin:0;
 }
 .tut-bubble.tut-blue p { color:#7dd3f8; }
-/* Both SVGs overlaid in a CSS grid — opacity handles seamless morph   */
 #tutOmniaWrap {
-  order:1; display:grid; place-items:center;
+  order:1; position:relative; min-width:112px; min-height:122px;
+  display:flex; align-items:center; justify-content:center;
+  transition:transform 0.36s cubic-bezier(.34,1.26,.64,1);
 }
 .tut-crystal-svg {
-  grid-area:1/1; width:84px;
+  width:84px; display:block;
   animation:omniaFloat 4.5s ease-in-out infinite;
   filter:drop-shadow(0 0 12px rgba(142,204,224,.45));
-  opacity:1; transition:opacity 0.65s ease, width 0.4s ease, transform 0.3s ease, filter 0.3s ease;
+  transition:width 0.4s ease, opacity .28s ease, filter .28s ease;
 }
 .tut-eye-svg {
-  grid-area:1/1; width:84px;
+  width:84px; display:none;
   animation:omniaFloat 4.5s ease-in-out infinite;
   filter:drop-shadow(0 0 14px rgba(88,180,240,.5));
-  opacity:0; transition:opacity 0.65s ease, width 0.4s ease, transform 0.3s ease, filter 0.3s ease;
+  transition:width 0.4s ease;
 }
-/* Smaller size when Omnia is at bottom (spot mode) */
-#tutContent.tut-content-bottom .tut-crystal-svg,
-#tutContent.tut-content-bottom .tut-eye-svg { width:54px; }
-/* Eye state: crossfade crystal → eye */
-#tutOmniaWrap.eye-state .tut-crystal-svg { opacity:0; }
-#tutOmniaWrap.eye-state .tut-eye-svg    { opacity:1; }
-/* Morphing: hide both crystal/eye so only shards are visible (mirrors Guide screen) */
-#tutOmniaWrap.tut-morphing .tut-crystal-svg,
-#tutOmniaWrap.tut-morphing .tut-eye-svg {
-  opacity:.12 !important;
-  transform:scale(.82) rotate(10deg);
-  filter:blur(3px);
-  transition:opacity .28s ease, transform .28s ease, filter .3s ease;
+.tut-shard-svg {
+  position:absolute; left:50%; top:50%; width:124px; height:152px;
+  transform:translate(-50%,-50%); opacity:0; overflow:visible;
+  pointer-events:none; z-index:2;
 }
-@keyframes eyeBlink {
-  0%,88%,100% { transform:scaleY(1); }
-  92%          { transform:scaleY(0.06); }
+#tutOmniaWrap.tut-morphing .tut-shard-svg { opacity:1; }
+#tutOmniaWrap.tut-morphing .tut-crystal-svg { opacity:.12; filter:blur(3px) drop-shadow(0 0 10px rgba(142,204,224,.35)); }
+/* Smaller size in spot mode */
+#tutOverlay.tut-spot .tut-crystal-svg,
+#tutOverlay.tut-spot .tut-eye-svg { width:54px; }
+/* Eye state: hide both SVGs, shard-svg holds the eye form */
+#tutOmniaWrap.eye-state .tut-crystal-svg,
+#tutOmniaWrap.eye-state .tut-eye-svg { display:none; }
+#tutOmniaWrap.eye-state.tut-returning .tut-crystal-svg { display:block; opacity:0; }
+#tutOmniaWrap.eye-state.tut-returning.tut-crystal-return .tut-crystal-svg { opacity:1; }
+#tutOmniaWrap.eye-state .tut-shard-svg { opacity:1; animation:omniaFloat 4.5s ease-in-out infinite; }
+#tutOmniaWrap.eye-state { min-height:86px; margin-top:-74px; }
+@keyframes tutCrystalEyeBlink {
+  0%,100% { transform:translate(-50%,-50%) scaleY(1); opacity:1; }
+  44%,58% { transform:translate(-50%,-50%) scaleY(.12); opacity:.78; }
 }
-#tutOmniaWrap.eye-state.tut-blink .tut-eye-svg {
-  animation:omniaFloat 4.5s ease-in-out infinite, eyeBlink 3.5s ease-in-out 0.4s 2;
-}
+#tutOmniaWrap.eye-blink .tut-shard-svg { animation:tutCrystalEyeBlink .68s ease-in-out both; }
 /* Clock background overlay (inside tutOverlay, visible in spot mode) */
 #tutClockBg {
   position:absolute; inset:0; z-index:2; pointer-events:none;
@@ -801,13 +803,6 @@
 }
 .tut-skip-btn:hover { color:rgba(221,216,206,0.6); }
 
-/* Morph animation SVG overlay (grid-stacked with crystal/eye) */
-.tut-morph-svg {
-  grid-area:1/1; width:84px; height:112px;
-  pointer-events:none; opacity:0;
-  position:relative; z-index:5;
-}
-#tutContent.tut-content-bottom .tut-morph-svg { width:54px; height:72px; }
 
 /* Thought word animation (inside #tutOverlay) */
 #tutThoughtBg {
@@ -12672,7 +12667,7 @@ document.addEventListener('DOMContentLoaded',function(){(function(){
 
   var cur=0, eyeOn=false, rdy=false, pRAF, parts=[];
   var tutAudCtx=null, tutCreekNodes=[], corgiTimer=null;
-  var tutMorphRaf=null;
+  var tutorialEyeMorphRaf=null;
 
   /* ── Particles ── */
   function mkP(){
@@ -12774,69 +12769,118 @@ document.addEventListener('DOMContentLoaded',function(){(function(){
     });
   }
 
-  /* ── Morph animation (uses global polygon data from guide screen) ── */
-  function tutMorphTo(toKey,onDone){
-    var morphSvg=document.getElementById('tutOmniaMorphSvg');
-    if(!morphSvg||typeof OMNIA_CRYSTAL_MORPH_SHARDS==='undefined'){
-      if(toKey==='eye'){eyeOn=true;ow.classList.add('eye-state');}
-      else{eyeOn=false;ow.classList.remove('eye-state','tut-blink');}
-      if(onDone)onDone();return;
+  /* ── Eye morph (ported from codex/omnia-path-guide) ── */
+  function clearTutorialEyeMorph(){
+    var svg=document.getElementById('tutOmniaShardSvg');
+    if(tutorialEyeMorphRaf){cancelAnimationFrame(tutorialEyeMorphRaf);tutorialEyeMorphRaf=null;}
+    if(svg){svg.innerHTML='';svg.style.opacity='0';}
+    ow.classList.remove('tut-morphing');
+  }
+  function tutorialEyeOutline(color){
+    return '<g id="tutShardOutline" opacity="0" stroke="'+color+'" stroke-linecap="round" stroke-linejoin="round">'
+      +'<path d="M7 65 C21 37 39 28 50 28 C61 28 79 37 93 65 C79 93 61 102 50 102 C39 102 21 93 7 65 Z" fill="rgba(184,234,255,.055)" stroke-width="2.45"/>'
+      +'<path d="M17 65 C31 46 40 41 50 41 C60 41 69 46 83 65 C69 84 60 89 50 89 C40 89 31 84 17 65 Z" fill="none" stroke-width="1.1" opacity=".66"/>'
+      +'<circle cx="50" cy="65" r="18.5" fill="rgba(14,43,62,.42)" stroke-width="1.65"/>'
+      +'<circle cx="50" cy="65" r="7.6" fill="#06131f" stroke-width="1.1"/>'
+      +'<circle cx="57" cy="57" r="3.4" fill="#eefbff" stroke="none" opacity=".82"/>'
+      +'<path d="M24 48 L50 65 L76 48 M24 82 L50 65 L76 82" fill="none" stroke-width=".82" opacity=".46"/>'
+      +'</g>';
+  }
+  function toEye(done){
+    var svg=document.getElementById('tutOmniaShardSvg');
+    if(!svg||typeof OMNIA_CRYSTAL_MORPH_SHARDS==='undefined'||typeof OMNIA_MORPH_TARGETS==='undefined'){
+      eyeOn=true;ow.classList.add('eye-state');if(done)done();return;
     }
-    if(tutMorphRaf){cancelAnimationFrame(tutMorphRaf);tutMorphRaf=null;}
-    var from,to,color;
-    if(toKey==='eye'){from=OMNIA_CRYSTAL_MORPH_SHARDS;to=OMNIA_MORPH_TARGETS.eye;color='#88c4e0';}
-    else{from=OMNIA_MORPH_TARGETS.eye;to=OMNIA_CRYSTAL_MORPH_SHARDS;color='#b8eaff';}
-    morphSvg.innerHTML='<defs><filter id="tmGlow" x="-40%" y="-40%" width="180%" height="180%"><feGaussianBlur stdDeviation="2.2" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter></defs>';
+    clearTutorialEyeMorph();
+    var from=OMNIA_CRYSTAL_MORPH_SHARDS,to=OMNIA_MORPH_TARGETS.eye,color='#b8eaff',revealed=false;
+    svg.innerHTML='<defs><filter id="tutShardGlow" x="-40%" y="-40%" width="180%" height="180%"><feGaussianBlur stdDeviation="2.4" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter></defs>';
     var polys=from.map(function(poly,idx){
       var el=document.createElementNS('http://www.w3.org/2000/svg','polygon');
       el.setAttribute('points',omniaPointString(poly));
-      el.setAttribute('fill',color);el.setAttribute('fill-opacity',idx===8?'.18':'.28');
-      el.setAttribute('stroke',color);el.setAttribute('stroke-width',idx===8?'1.1':'1.4');
-      el.setAttribute('stroke-opacity','.88');el.setAttribute('filter','url(#tmGlow)');
-      morphSvg.appendChild(el);return el;
+      el.setAttribute('fill',color);el.setAttribute('fill-opacity',idx===8?'.18':'.26');
+      el.setAttribute('stroke',color);el.setAttribute('stroke-width',idx===8?'1.1':'1.35');
+      el.setAttribute('stroke-opacity','.86');el.setAttribute('filter','url(#tutShardGlow)');
+      svg.appendChild(el);return el;
     });
-    morphSvg.style.opacity='0.3';
+    svg.insertAdjacentHTML('beforeend',tutorialEyeOutline(color));
+    var outline=svg.querySelector('#tutShardOutline');
     ow.classList.add('tut-morphing');
-    var inMs=760,holdMs=650,outMs=640,total=inMs+holdMs+outMs;
-    var midAt=inMs+holdMs*0.5,midDone=false,start=performance.now();
+    svg.style.opacity='.3';
+    var start=performance.now(),inwardMs=820,holdMs=460,totalMs=inwardMs+holdMs;
     function frame(now){
-      var el2=now-start,t;
-      if(!midDone&&el2>=midAt){
-        midDone=true;
-        if(toKey==='eye'){eyeOn=true;ow.classList.add('eye-state');}
-        else{eyeOn=false;ow.classList.remove('eye-state','tut-blink');}
-      }
-      if(el2<=inMs){
-        t=omniaEaseMorph(el2/inMs);morphSvg.style.opacity=String(0.3+t*0.7);
-        polys.forEach(function(p,i){p.setAttribute('points',omniaPointString(omniaLerpPoly(from[i],to[i],t)));});
-      }else if(el2<=inMs+holdMs){
-        morphSvg.style.opacity='1';
-        polys.forEach(function(p,i){p.setAttribute('points',omniaPointString(to[i]));});
-      }else if(el2<=total){
-        // Crossfade: at start of outMs, drop tut-morphing so the real eye/crystal
-        // SVG underneath transitions back to full opacity (.28s) while shards fade.
-        if(ow.classList.contains('tut-morphing')) ow.classList.remove('tut-morphing');
-        t=omniaEaseMorph((el2-inMs-holdMs)/outMs);morphSvg.style.opacity=String(1-t);
-        polys.forEach(function(p,i){p.setAttribute('points',omniaPointString(to[i]));});
+      var elapsed=now-start,t;
+      if(elapsed<=inwardMs){
+        t=omniaEaseMorph(elapsed/inwardMs);
+        svg.style.opacity=String(.3+t*.7);
+        if(outline) outline.setAttribute('opacity',String(Math.max(0,(t-.56)/.44)));
+        polys.forEach(function(poly,idx){poly.setAttribute('points',omniaPointString(omniaLerpPoly(from[idx],to[idx],t)));});
+        if(!revealed&&elapsed>=inwardMs*.82){revealed=true;eyeOn=true;ow.classList.add('eye-state');}
+      }else if(elapsed<=totalMs){
+        svg.style.opacity='1';
+        if(outline) outline.setAttribute('opacity','1');
+        polys.forEach(function(poly,idx){poly.setAttribute('points',omniaPointString(to[idx]));});
+        if(!revealed){revealed=true;eyeOn=true;ow.classList.add('eye-state');}
       }else{
-        morphSvg.style.opacity='0';morphSvg.innerHTML='';
+        tutorialEyeMorphRaf=null;
         ow.classList.remove('tut-morphing');
-        tutMorphRaf=null;
-        if(onDone)onDone();return;
+        svg.style.opacity='1';
+        if(outline) outline.setAttribute('opacity','1');
+        polys.forEach(function(poly,idx){poly.setAttribute('points',omniaPointString(to[idx]));});
+        if(done)done();return;
       }
-      tutMorphRaf=requestAnimationFrame(frame);
+      tutorialEyeMorphRaf=requestAnimationFrame(frame);
     }
-    tutMorphRaf=requestAnimationFrame(frame);
+    tutorialEyeMorphRaf=requestAnimationFrame(frame);
   }
-
-  /* ── Eye ── */
-  function toEye(cb){ tutMorphTo('eye',cb); }
-  function fromEyeAnim(cb){ tutMorphTo('crystal',cb); }
-
-  /* ── Blink ── */
-  function triggerBlink(){
-    ow.classList.add('tut-blink');
-    setTimeout(function(){ow.classList.remove('tut-blink');},8000);
+  function blinkCrystalEye(done){
+    ow.classList.remove('eye-blink');
+    void ow.offsetWidth;
+    ow.classList.add('eye-blink');
+    setTimeout(function(){ow.classList.remove('eye-blink');if(done)done();},720);
+  }
+  function fromEyeToOmnia(done){
+    var svg=document.getElementById('tutOmniaShardSvg');
+    if(!svg||typeof OMNIA_CRYSTAL_MORPH_SHARDS==='undefined'||typeof OMNIA_MORPH_TARGETS==='undefined'){
+      resetTutorialEye();if(done)done();return;
+    }
+    if(tutorialEyeMorphRaf){cancelAnimationFrame(tutorialEyeMorphRaf);tutorialEyeMorphRaf=null;}
+    var from=OMNIA_MORPH_TARGETS.eye,to=OMNIA_CRYSTAL_MORPH_SHARDS,color='#b8eaff';
+    var polys=[].slice.call(svg.querySelectorAll('polygon'));
+    if(polys.length!==from.length){
+      svg.innerHTML='<defs><filter id="tutShardGlow" x="-40%" y="-40%" width="180%" height="180%"><feGaussianBlur stdDeviation="2.4" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter></defs>';
+      polys=from.map(function(poly,idx){
+        var el=document.createElementNS('http://www.w3.org/2000/svg','polygon');
+        el.setAttribute('points',omniaPointString(poly));
+        el.setAttribute('fill',color);el.setAttribute('fill-opacity',idx===8?'.18':'.26');
+        el.setAttribute('stroke',color);el.setAttribute('stroke-width',idx===8?'1.1':'1.35');
+        el.setAttribute('stroke-opacity','.86');el.setAttribute('filter','url(#tutShardGlow)');
+        svg.appendChild(el);return el;
+      });
+      svg.insertAdjacentHTML('beforeend',tutorialEyeOutline(color));
+    }
+    var outline=svg.querySelector('#tutShardOutline');
+    ow.classList.add('tut-morphing','tut-returning');
+    svg.style.opacity='1';
+    var start=performance.now(),returnMs=920;
+    function frame(now){
+      var elapsed=now-start;
+      var t=omniaEaseMorph(Math.min(1,elapsed/returnMs));
+      polys.forEach(function(poly,idx){poly.setAttribute('points',omniaPointString(omniaLerpPoly(from[idx],to[idx],t)));});
+      if(outline) outline.setAttribute('opacity',String(Math.max(0,1-t)));
+      if(t>.68) ow.classList.add('tut-crystal-return');
+      if(elapsed>=returnMs){
+        clearTutorialEyeMorph();
+        ow.classList.remove('eye-state','tut-returning','tut-crystal-return');
+        eyeOn=false;if(done)done();return;
+      }
+      tutorialEyeMorphRaf=requestAnimationFrame(frame);
+    }
+    tutorialEyeMorphRaf=requestAnimationFrame(frame);
+  }
+  function resetTutorialEye(){
+    eyeOn=false;clearTutorialEyeMorph();
+    ow.classList.remove('eye-state','eye-blink','tut-returning','tut-crystal-return');
+    ow.style.transform='';
   }
 
   /* ── Clock background ── */
@@ -13108,7 +13152,7 @@ document.addEventListener('DOMContentLoaded',function(){(function(){
     if(s.cards) setTimeout(staggerCards,250);
     if(s.sparks) startSparks(); else stopSparks();
     if((s.inEye||s.morphEye)&&!eyeOn){eyeOn=true;ow.classList.add('eye-state');}
-    if(s.blink) setTimeout(triggerBlink,800);
+    if(s.blink) setTimeout(function(){blinkCrystalEye();},800);
     if(s.playCreek) setTimeout(startTutCreek,400);
     if(s.clockBg) setTimeout(showClockBg,300);
     if(s.objFlash) setTimeout(showObjFlash,300);
@@ -13124,7 +13168,7 @@ document.addEventListener('DOMContentLoaded',function(){(function(){
         tc.classList.add('tut-vis'); tc.classList.remove('tut-content-bottom');
       }
       if(s.morphCrystal&&eyeOn){
-        fromEyeAnim(function(){
+        fromEyeToOmnia(function(){
           if(s.spotPanel){
             var glowEl=document.querySelector(s.spotPanel);
             if(glowEl) glowEl.classList.add('tut-elem-glow');
@@ -13173,11 +13217,8 @@ document.addEventListener('DOMContentLoaded',function(){(function(){
     stopSparks(); clearPulse(); darkSpot();
     hideClockBg(); hideObjFlash(); stopTutCreek(); hideThoughtAnim();
     if(corgiTimer){clearTimeout(corgiTimer); cg.style.display='none';}
-    if(tutMorphRaf){cancelAnimationFrame(tutMorphRaf);tutMorphRaf=null;}
-    var morphSvg=document.getElementById('tutOmniaMorphSvg');
-    if(morphSvg){morphSvg.innerHTML='';morphSvg.style.opacity='0';}
-    ow.classList.remove('eye-state','tut-blink','asana-state','tut-morphing');
-    eyeOn=false;
+    resetTutorialEye();
+    ow.classList.remove('asana-state');
     cp.classList.remove('tut-cap-on');
     closeDrawer();
     tc.classList.remove('tut-vis','tut-content-bottom');
@@ -13251,10 +13292,8 @@ document.addEventListener('DOMContentLoaded',function(){(function(){
     document.body.classList.add('tut-live');
     stopSparks(); darkSpot(); hideClockBg(); hideObjFlash(); stopTutCreek(); hideThoughtAnim();
     if(corgiTimer){clearTimeout(corgiTimer);cg.style.display='none';}
-    if(tutMorphRaf){cancelAnimationFrame(tutMorphRaf);tutMorphRaf=null;}
-    var morphSvg=document.getElementById('tutOmniaMorphSvg');
-    if(morphSvg){morphSvg.innerHTML='';morphSvg.style.opacity='0';}
-    ow.classList.remove('eye-state','tut-blink','asana-state','tut-morphing');
+    resetTutorialEye();
+    ow.classList.remove('asana-state');
     tc.classList.remove('tut-vis','tut-content-bottom');
     resetTcPosition();
     th.style.display='none'; sk.style.display='none';
@@ -13385,7 +13424,7 @@ document.addEventListener('DOMContentLoaded',function(){(function(){
 <div id="tutContent">
     <div class="tut-bubble" id="tutBubble"><p id="tutBubbleText"></p></div>
     <div id="tutOmniaWrap">
-      <svg id="tutOmniaMorphSvg" class="tut-morph-svg" viewBox="0 0 100 130" xmlns="http://www.w3.org/2000/svg"></svg>
+      <svg class="tut-shard-svg" id="tutOmniaShardSvg" viewBox="0 0 100 130" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"></svg>
       <svg class="tut-crystal-svg" viewBox="0 0 72 118" xmlns="http://www.w3.org/2000/svg">
         <defs>
           <radialGradient id="tg3" cx="50%" cy="40%" r="60%">
