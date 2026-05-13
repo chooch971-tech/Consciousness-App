@@ -732,7 +732,11 @@
 #tutOmniaWrap.eye-state .tut-crystal-svg { display:none; }
 #tutOmniaWrap.eye-state.tut-returning .tut-crystal-svg { display:block; opacity:0; }
 #tutOmniaWrap.eye-state.tut-returning.tut-crystal-return .tut-crystal-svg { opacity:1; }
-#tutOmniaWrap.eye-state .tut-shard-svg { opacity:1; animation:omniaFloat 4.5s ease-in-out infinite; }
+#tutOmniaWrap.eye-state .tut-shard-svg { opacity:1; animation:tutShardFloat 4.5s ease-in-out infinite; }
+@keyframes tutShardFloat {
+  0%,100% { transform:translate(-50%,-50%) translateY(0); }
+  50%     { transform:translate(-50%,-50%) translateY(-6px); }
+}
 @keyframes tutCrystalEyeBlink {
   0%,100% { transform:translate(-50%,-50%) scaleY(1); opacity:1; }
   44%,58% { transform:translate(-50%,-50%) scaleY(.12); opacity:.78; }
@@ -13159,7 +13163,11 @@ document.addEventListener('DOMContentLoaded',function(){(function(){
 
     if(s.mode==='full'){
       ov.classList.remove('tut-spot');
-      ov.style.background=s.darkFull?'rgba(7,8,13,1)':'rgba(7,8,13,0.92)';
+      ov.style.background=s.darkFull
+        ? 'rgba(7,8,13,1)'
+        : s.spotPanel
+          ? 'rgba(7,8,13,0.42)'
+          : 'rgba(7,8,13,0.92)';
       if(s.omniaBelow){
         tc.classList.add('tut-vis','tut-content-bottom');
       } else {
@@ -13170,6 +13178,7 @@ document.addEventListener('DOMContentLoaded',function(){(function(){
           if(s.spotPanel){
             var glowEl=document.querySelector(s.spotPanel);
             if(glowEl) glowEl.classList.add('tut-elem-glow');
+            litSpot(s.spotPanel);
           }
           finishStep(s,400);
         });
