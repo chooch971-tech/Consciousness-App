@@ -12802,9 +12802,10 @@ document.addEventListener('DOMContentLoaded',function(){(function(){
         morphSvg.style.opacity='1';
         polys.forEach(function(p,i){p.setAttribute('points',omniaPointString(to[i]));});
       }else if(el2<=total){
-        t=omniaEaseMorph((el2-inMs-holdMs)/outMs);morphSvg.style.opacity=String(1-t*0.85);
-        // Keep shards at the target shape while fading out — don't revert,
-        // since we want Omnia to remain in the new state (eye/crystal).
+        // Crossfade: at start of outMs, drop tut-morphing so the real eye/crystal
+        // SVG underneath transitions back to full opacity (.28s) while shards fade.
+        if(ow.classList.contains('tut-morphing')) ow.classList.remove('tut-morphing');
+        t=omniaEaseMorph((el2-inMs-holdMs)/outMs);morphSvg.style.opacity=String(1-t);
         polys.forEach(function(p,i){p.setAttribute('points',omniaPointString(to[i]));});
       }else{
         morphSvg.style.opacity='0';morphSvg.innerHTML='';
@@ -13112,7 +13113,11 @@ document.addEventListener('DOMContentLoaded',function(){(function(){
       }
       if(s.morphCrystal&&eyeOn){
         fromEyeAnim(function(){
-          if(s.spotPanel) setTimeout(function(){litSpot(s.spotPanel);},200);
+          if(s.spotPanel) setTimeout(function(){
+            ov.classList.add('tut-spot');
+            ov.style.background='rgba(7,8,13,0.08)';
+            litSpot(s.spotPanel);
+          },200);
           finishStep(s,400);
         });
         th.textContent='Tap to continue'; th.style.display='block'; sk.style.display='block';
