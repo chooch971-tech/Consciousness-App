@@ -1,7 +1,8 @@
 // Service Worker for Presence app
 // Handles background push notifications
 
-const APP_URL = '/Consciousness-App/presence.html';
+// Derive app URL from service worker's own scope (works from any repo path)
+const APP_URL = self.registration ? self.registration.scope + 'presence.html' : '/Consciousness-App/presence.html';
 
 self.addEventListener('push', event => {
   let data = {};
