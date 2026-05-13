@@ -10396,16 +10396,16 @@ async function syncPullData() {
         // Nothing local — always take cloud
         localStorage.setItem(k, v);
       } else {
-        // Compare session counts — take whichever has more data
+        // Compare XP (primary) or session counts — take whichever has more progress
         try {
           var localObj = JSON.parse(local);
           var cloudObj = JSON.parse(v);
-          var localSessions = localObj.totalSessions || 0;
-          var cloudSessions = cloudObj.totalSessions || 0;
-          if (cloudSessions >= localSessions) {
+          var localScore = localObj.xp != null ? localObj.xp : (localObj.totalSessions || 0);
+          var cloudScore = cloudObj.xp != null ? cloudObj.xp : (cloudObj.totalSessions || 0);
+          if (cloudScore >= localScore) {
             localStorage.setItem(k, v);
           }
-          // else keep local (it has more sessions)
+          // else keep local (it has more progress)
         } catch(e) {
           localStorage.setItem(k, v); // not JSON, just overwrite
         }
