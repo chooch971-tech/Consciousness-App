@@ -654,7 +654,107 @@
   transition:background 0.4s ease; overflow:hidden;
   cursor:pointer; user-select:none; -webkit-user-select:none;
 }
+#tutOverlay.tut-blackout { background:#000; }
 #tutSparkCanvas { position:absolute; inset:0; pointer-events:none; z-index:0; }
+#tutSceneLayer {
+  position:fixed; inset:0; z-index:9001; pointer-events:none; opacity:0;
+  transition:opacity .52s ease;
+}
+#tutSceneLayer.tut-scene-on { opacity:1; }
+.tut-clock-scene,
+.tut-visual-scene,
+.tut-audio-scene,
+.tut-corgi-scene {
+  position:absolute; inset:0; overflow:hidden;
+}
+.tut-clock-face {
+  position:absolute; left:50%; top:46%; width:min(64vw,330px); aspect-ratio:1;
+  transform:translate(-50%,-50%);
+  border-radius:50%;
+  border:1px solid rgba(184,234,255,.26);
+  background:
+    radial-gradient(circle at center, rgba(184,234,255,.12) 0 3px, transparent 4px),
+    repeating-conic-gradient(from -90deg, rgba(184,234,255,.18) 0deg 1deg, transparent 1deg 6deg),
+    radial-gradient(circle at center, rgba(9,17,28,.52), rgba(7,8,13,.08) 68%, transparent 69%);
+  box-shadow:0 0 48px rgba(110,159,212,.15), inset 0 0 28px rgba(184,234,255,.08);
+}
+.tut-clock-hand {
+  position:absolute; left:50%; top:50%; width:3px; height:42%;
+  border-radius:999px;
+  background:linear-gradient(to top, rgba(184,234,255,.2), #b8eaff);
+  transform-origin:50% 100%;
+  transform:translate(-50%,-100%) rotate(0deg);
+  box-shadow:0 0 18px rgba(184,234,255,.82);
+  animation:tutClockSweep 2.8s linear infinite;
+}
+.tut-clock-hand::after {
+  content:''; position:absolute; left:50%; bottom:-16px; width:2px; height:18px;
+  transform:translateX(-50%);
+  background:rgba(184,234,255,.42);
+  border-radius:999px;
+}
+@keyframes tutClockSweep {
+  from { transform:translate(-50%,-100%) rotate(0deg); }
+  to   { transform:translate(-50%,-100%) rotate(360deg); }
+}
+.tut-visual-orb {
+  position:absolute; width:62px; height:62px; left:50%; top:48%;
+  margin:-31px 0 0 -31px;
+  border:1px solid rgba(184,234,255,.42);
+  background:rgba(184,234,255,.08);
+  filter:drop-shadow(0 0 16px rgba(142,204,224,.32));
+  animation:tutVisualFlash 3.4s ease-in-out infinite;
+}
+.tut-visual-orb.shape-circle { border-radius:50%; transform:translate(-122px,-74px); }
+.tut-visual-orb.shape-square { transform:translate(92px,-48px) rotate(18deg); animation-delay:.52s; }
+.tut-visual-orb.shape-diamond { transform:translate(-18px,92px) rotate(45deg); animation-delay:1.04s; }
+.tut-visual-orb.shape-triangle {
+  width:0; height:0; border:none; background:none; margin:0;
+  border-left:34px solid transparent; border-right:34px solid transparent;
+  border-bottom:64px solid rgba(184,234,255,.18);
+  transform:translate(122px,88px);
+  filter:drop-shadow(0 0 16px rgba(142,204,224,.42));
+  animation-delay:1.56s;
+}
+.tut-visual-orb.shape-ring {
+  width:76px; height:76px; margin:-38px 0 0 -38px; border-radius:50%;
+  border:2px solid rgba(196,168,212,.42); background:transparent;
+  transform:translate(-144px,104px); animation-delay:2.08s;
+}
+@keyframes tutVisualFlash {
+  0%,100% { opacity:.16; transform:translate(var(--tx,0),var(--ty,0)) scale(.86); }
+  28%,64% { opacity:.96; }
+  48% { transform:translate(var(--tx,0),var(--ty,0)) scale(1.08); }
+}
+.tut-visual-orb.shape-circle { --tx:-122px; --ty:-74px; transform:translate(var(--tx),var(--ty)); }
+.tut-visual-orb.shape-square { --tx:92px; --ty:-48px; }
+.tut-visual-orb.shape-diamond { --tx:-18px; --ty:92px; }
+.tut-visual-orb.shape-triangle { --tx:122px; --ty:88px; }
+.tut-visual-orb.shape-ring { --tx:-144px; --ty:104px; }
+.tut-audio-ripple {
+  position:absolute; left:50%; top:48%; width:160px; height:160px;
+  margin:-80px 0 0 -80px; border-radius:50%;
+  border:1px solid rgba(110,184,164,.42);
+  animation:tutAudioRipple 2.2s ease-out infinite;
+}
+.tut-audio-ripple:nth-child(2) { animation-delay:.72s; }
+.tut-audio-ripple:nth-child(3) { animation-delay:1.44s; }
+@keyframes tutAudioRipple {
+  0% { transform:scale(.34); opacity:0; }
+  24% { opacity:.72; }
+  100% { transform:scale(1.34); opacity:0; }
+}
+.tut-corgi-roll {
+  position:absolute; top:58%; right:-210px; width:150px; height:102px;
+  filter:drop-shadow(0 0 18px rgba(212,176,142,.25));
+  animation:tutCorgiBowl 3.7s cubic-bezier(.18,.78,.24,1) both;
+}
+.tut-corgi-roll svg { width:100%; height:100%; display:block; }
+@keyframes tutCorgiBowl {
+  0% { transform:translateX(0) rotate(0deg); }
+  68% { transform:translateX(calc(-100vw - 120px)) rotate(-620deg); }
+  100% { transform:translateX(calc(-100vw - 180px)) rotate(-740deg); }
+}
 #tutSpotlight {
   position:fixed; border-radius:14px;
   box-shadow:0 0 0 9999px rgba(7,8,13,0.88);
@@ -669,17 +769,32 @@
   display:flex; flex-direction:column; align-items:center; gap:18px;
   position:relative; z-index:9004; padding:0 20px; pointer-events:none;
   max-width:min(400px,92vw);
+  transition:transform .92s cubic-bezier(.22,.8,.22,1);
 }
+#tutOverlay.tut-tour-stage #tutContent { transform:translateY(132px); }
 #tutOverlay.tut-spot #tutContent {
   position:fixed; bottom:28px; left:50%; transform:translateX(-50%); width:100%;
   align-items:center;
 }
+#tutOverlay.tut-spot.tut-dock-upper #tutContent {
+  top:max(env(safe-area-inset-top),22px); bottom:auto;
+}
+#tutOverlay.tut-guide-choice #tutContent {
+  position:fixed; top:210px; left:50%; width:100%;
+  transform:translateX(-50%);
+}
+#tutOverlay.tut-guide-choice #tutOmniaWrap { display:none; }
 .tut-bubble {
   background:rgba(10,15,28,0.97); border:1px solid rgba(126,184,164,0.35);
   border-radius:16px; padding:18px 22px; max-width:min(340px,88vw);
   position:relative; opacity:0; transition:opacity 0.4s ease 0.12s; order:0;
 }
 .tut-bubble.tut-vis { opacity:1; }
+.tut-bubble.tut-exercise-intro { transform:translateY(8px); }
+.tut-bubble.tut-exercise-intro.tut-vis {
+  opacity:1; transform:translateY(0);
+  transition:opacity .82s ease, transform .82s ease;
+}
 .tut-bubble::after {
   content:''; position:absolute; bottom:-8px; left:50%; transform:translateX(-50%);
   border-left:8px solid transparent; border-right:8px solid transparent;
@@ -690,15 +805,18 @@
   font-weight:300; font-style:italic; line-height:1.78;
   color:#ddd8ce; text-align:center; margin:0;
 }
+.tut-bubble p em { color:#d8f6ff; font-style:italic; }
+.tut-bubble.tut-aether-copy p { color:#b8eaff; }
 #tutOmniaWrap {
-  order:1; display:flex; align-items:center; justify-content:center;
+  order:1; position:relative; min-width:112px; min-height:122px;
+  display:flex; align-items:center; justify-content:center;
   transition:transform 0.36s cubic-bezier(.34,1.26,.64,1);
 }
 .tut-crystal-svg {
   width:84px; display:block;
   animation:omniaFloat 4.5s ease-in-out infinite;
   filter:drop-shadow(0 0 12px rgba(142,204,224,.45));
-  transition:width 0.4s ease;
+  transition:width 0.4s ease, opacity .28s ease, filter .28s ease;
 }
 .tut-eye-svg {
   width:84px; display:none;
@@ -706,10 +824,33 @@
   filter:drop-shadow(0 0 14px rgba(88,180,240,.5));
   transition:width 0.4s ease;
 }
+.tut-shard-svg {
+  position:absolute; left:50%; top:50%; width:124px; height:152px;
+  transform:translate(-50%,-50%); opacity:0; overflow:visible;
+  pointer-events:none; z-index:2;
+}
+#tutOmniaWrap.tut-morphing .tut-shard-svg { opacity:1; }
+#tutOmniaWrap.tut-morphing .tut-crystal-svg { opacity:.12; filter:blur(3px) drop-shadow(0 0 10px rgba(142,204,224,.35)); }
 #tutOverlay.tut-spot .tut-crystal-svg,
 #tutOverlay.tut-spot .tut-eye-svg { width:54px; }
-#tutOmniaWrap.eye-state .tut-crystal-svg { display:none; }
-#tutOmniaWrap.eye-state .tut-eye-svg    { display:block; }
+#tutOmniaWrap.eye-state .tut-crystal-svg,
+#tutOmniaWrap.eye-state .tut-eye-svg { display:none; }
+#tutOmniaWrap.eye-state.tut-returning .tut-crystal-svg {
+  display:block; opacity:0;
+}
+#tutOmniaWrap.eye-state.tut-returning.tut-crystal-return .tut-crystal-svg {
+  opacity:1;
+}
+#tutOmniaWrap.eye-state .tut-shard-svg {
+  opacity:1;
+  animation:omniaFloat 4.5s ease-in-out infinite;
+}
+#tutOmniaWrap.eye-state { min-height:86px; margin-top:-74px; }
+@keyframes tutCrystalEyeBlink {
+  0%,100% { transform:translate(-50%,-50%) scaleY(1); opacity:1; }
+  44%,58% { transform:translate(-50%,-50%) scaleY(.12); opacity:.78; }
+}
+#tutOmniaWrap.eye-blink .tut-shard-svg { animation:tutCrystalEyeBlink .68s ease-in-out both; }
 .tut-tap-hint {
   position:absolute; bottom:28px; left:50%; transform:translateX(-50%);
   font-size:8px; letter-spacing:.28em; text-transform:uppercase;
@@ -750,7 +891,8 @@
   transition:background 0.2s;
 }
 #tutDoneBtn:hover { background:rgba(126,184,164,0.22); }
-.drawer-item.tut-pulse { animation:drawerPulse 1.5s ease-in-out infinite; border-radius:8px; }
+.drawer-item.tut-pulse,
+#drawerOmniaBtn.tut-pulse { animation:drawerPulse 1.5s ease-in-out infinite; border-radius:8px; }
 @keyframes drawerPulse {
   0%,100% { background:transparent; }
   50%      { background:rgba(126,184,164,0.14); box-shadow:inset 0 0 0 1px rgba(126,184,164,0.28); }
@@ -8859,6 +9001,9 @@ function commitGuidePath(mode) {
   if (!mode) return;
   setGuidePathMode(mode, true);
   renderGuidePlan(mode);
+  try {
+    window.dispatchEvent(new CustomEvent('presence:guide-path-committed', { detail:{ mode:mode } }));
+  } catch(e) {}
 }
 
 function guideClamp(n, min, max) {
@@ -12260,42 +12405,77 @@ document.addEventListener('DOMContentLoaded',function(){(function(){
   var VISITED='presence_visited';
 
   var STEPS=[
-    {mode:'full', sparks:true,
-     text:'Namaste. My name is Omnia, your spiritual guide.'},
-    {mode:'full', eyeTap:true, text:null},
-    {mode:'full', fromEye:true,
-     text:'Allow me to show you your new favorite meditative practice.'},
-    {mode:'full', panel:'concentration', cards:true,
+    {mode:'full', sparks:true, aetherText:true, blackout:true,
+     eyeTap:true, text:'Namaste! My name is Omnia. Welcome to your new favorite meditation practice.'},
+    {mode:'full', aetherText:true, blackout:true, returnToOmnia:true,
+     text:'Allow me to show you around.'},
+    {mode:'full', panel:'concentration', cards:true, aetherText:true, blackout:true,
+     exerciseIntro:true, tourStage:true, revealBlackout:true,
      text:'These exercises will hone your concentration and imagination skills. Believe it or not, these exercises have been derived from secret societies and practiced for thousands of years!'},
+    {mode:'spot', target:'#modeConcentration',
+     text:'This is where the Concentration exercises lay. Master them all to know thyself.'},
+    {mode:'spot', target:'#concRingBtn',
+     text:'Practice to level up. All of these exercises give XP and come with a title.'},
+    {mode:'spot', target:'#concHomeSymbolFill',
+     text:'Here is your rank — you can click on it to give more information. Go through all the ranks to ascend!'},
     {mode:'spot', target:'[data-exercise="clock"]',
-     text:'The Concentration Clock — fix your complete attention on the second hand of a clock. Each second of true focus makes your mind stronger.'},
-    {mode:'spot', target:'[data-exercise="visual"]',
-     text:'Visualization — picture an object in your mind, with eyes open and closed. This trains the inner eye: the seat of imagination and mental power.'},
-    {mode:'spot', target:'[data-exercise="auditory"]',
-     text:'Auditory — listen to a sound, then hear it in your mind\'s ear. Closing the gap between your inner and outer worlds.'},
-    {mode:'spot', target:'[data-exercise="thought"]',
-     text:'Thought Control — hold a single thought, and only that thought. This is mastery over the restless mind.'},
+     text:'You\'ll place your complete attention on the seconds hand of a clock. Each second of true focus makes your mind stronger.'},
+    {mode:'spot', target:'[data-exercise="clock"]', scene:'clock',
+     html:'You must place your <em>complete</em> focus here and only stop once the mind becomes distracted.'},
+    {mode:'spot', target:'[data-exercise="visual"]', scene:'visual',
+     text:'You\'ll learn to see objects as if they were right in front of you, in your mind.'},
+    {mode:'spot', target:'[data-exercise="visual"]', scene:'visual',
+     text:'You\'ll start with easier objects, like shapes. But then go into objects.'},
+    {mode:'spot', target:'[data-exercise="visual"]', scene:'visual',
+     text:'You\'ll learn to do this with your eyes open as well — a concept that sounds difficult but is rather easy after some perseverance.'},
+    {mode:'spot', target:'[data-exercise="auditory"]', scene:'auditory', dock:'upper',
+     text:'Just as you did with visualization, you\'ll repeat the same with sounds. You\'ll hear these sounds as if they were actually there.'},
+    {mode:'spot', target:'[data-exercise="auditory"]', scene:'auditory', dock:'upper', audio:'creek',
+     text:'Here, take a listen:'},
+    {mode:'spot', target:'[data-exercise="auditory"]', scene:'auditory', dock:'upper',
+     text:'Isn\'t that amazing?'},
     {mode:'spot', target:'[data-exercise="asana"]',
-     text:'Asana — hold perfectly still. Not a muscle moves. This builds iron patience and command over the physical body.'},
-    {mode:'spot', target:'[data-exercise="soulmirror"]',
-     text:'Soul Mirror — record your genuine traits, both light and shadow. Honest self-knowledge is the foundation of all real inner work.'},
-    {mode:'full', panel:'awareness',
-     text:'Become aware of the fact that you are aware. Don\'t just take my word for it — do it now. You\'ll find a subtle change of consciousness. This is being in the Now.'},
-    {mode:'full',
-     text:'Described by spiritual masters over the millennia, this is the gateway to Enlightenment.'},
-    {mode:'spot', target:'#nextDuration',
-     text:'Set your session duration here. Start with five minutes and extend as your capacity grows.'},
-    {mode:'spot', target:'#nextInterval',
-     text:'This is your reminder interval — Presence prompts you at this frequency. Are you here? Each return strengthens the muscle of attention.'},
+     text:'In asana, the type of meditation you\'re most likely familiar with, you\'ll learn how to sit quietly, without fidgeting, while stilling the mind.'},
+    {mode:'spot', target:'[data-exercise="asana"]',
+     text:'This will do wonders for the average mind which constantly craves stimulation.'},
+    {mode:'spot', target:'[data-exercise="asana"]',
+     text:'Sit in a chair with your legs completely together, start with five minutes and then go all the way up!'},
+    {mode:'spot', target:'[data-exercise="soulmirror"]', dock:'upper',
+     text:'Here is where the inner transformation part of this practice lies. You\'ll write down all your negative and positive traits here and work on them during the duration of your stay here.'},
+    {mode:'spot', target:'[data-exercise="soulmirror"]', dock:'upper',
+     text:'You can work on them with the pore breathing — the act of “breathing out” your bad qualities and purifying your body.'},
+    {mode:'spot', target:'[data-exercise="soulmirror"]', dock:'upper',
+     text:'This is a psychological technique that targets the subconscious. You can also use this portion for any type of controlled breathing, and change the intervals in settings.'},
     {mode:'drawer', target:'#drawerJournal',
      text:'Your Journal Log lives here. Every session is recorded — your streak, your progress, your notes. This is your proof of growth.'},
+    {mode:'drawer', target:'#drawerGuide',
+     text:'This is where I live and will give you your daily regiment.'},
+    {mode:'guide-choice', requiresGuideChoice:true,
+     text:'Tell me — is this your first time on this path, or are you a bit more advanced?'},
+    {mode:'spot', target:'#guidePlanOutput', requiresTutorialPath:true, onlyPath:'beginner',
+     text:'No problem! Here is your agenda for the day, and it will always be here for you to go back to. This is how you\'ll grow.'},
+    {mode:'spot', target:'#guidePlanOutput', requiresTutorialPath:true, onlyPath:'beginner',
+     text:'I\'ll challenge you a bit harder each and every day.'},
+    {mode:'spot', target:'#guidePlanOutput', requiresTutorialPath:true, onlyPath:'experienced',
+     text:'No problem! I\'ll guide you to make you improve even further.'},
+    {mode:'spot', guideOpen:true, guideTab:'omnia', target:'#guideOmniaTab',
+     text:'And here is where I can be upgraded. You and I can grow together!!'},
+    {mode:'spot', guideOpen:true, guideTab:'omnia', target:'#omniaEngine',
+     text:'The more exercises you do, the more Akasha we generate for upgrades, cosmetics, and other cool items!'},
+    {mode:'spot', guideOpen:true, guideTab:'omnia', target:'#omniaCosmeticGrid', scene:'corgi',
+     text:'You can even get me a pet corgi!'},
+    {mode:'drawer', target:'#drawerOmniaBtn',
+     text:'Feel free to click on me here any time you want to go through this tutorial again.'},
+    {mode:'drawer', target:'#drawerGuide',
+     text:'I\'ll be in here.'},
     {mode:'drawer', target:'#drawerGuide', last:true,
-     text:'And finally — I live here, in the Guide tab. Come find me often. I\'m always here to help you walk this path.'}
+     text:'It\'s nice to meet you!'}
   ];
 
   var ov=document.getElementById('tutOverlay');
   var cv=document.getElementById('tutSparkCanvas');
   var sp=document.getElementById('tutSpotlight');
+  var sc=document.getElementById('tutSceneLayer');
   var ow=document.getElementById('tutOmniaWrap');
   var bl=document.getElementById('tutBubble');
   var bt=document.getElementById('tutBubbleText');
@@ -12308,7 +12488,9 @@ document.addEventListener('DOMContentLoaded',function(){(function(){
   var cp=document.getElementById('tutDrawerCapture');
   if(!ov) return;
 
-  var cur=0, eyeOn=false, rdy=false, pRAF, parts=[];
+  var cur=0, eyeOn=false, rdy=false, pRAF, parts=[], tutorialEyeMorphRaf=null;
+  var tutorialPathChosenThisRun=false, tutorialSelectedPath=null, tutorialWaitingForGuideChoice=false;
+  var tutorialAudioCtx=null, tutorialCreekNodes=[];
 
   /* Particles */
   function mkP(){
@@ -12345,6 +12527,89 @@ document.addEventListener('DOMContentLoaded',function(){(function(){
     if(ctx) ctx.clearRect(0,0,cv.width,cv.height);
   }
 
+  /* Tutorial scenes */
+  function tutorialCorgiMarkup(){
+    return '<div class="tut-corgi-scene"><div class="tut-corgi-roll">'
+      + '<svg viewBox="0 0 180 120" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">'
+      + '<g fill="none" stroke="#f0c38f" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">'
+      + '<ellipse cx="88" cy="69" rx="52" ry="28" fill="rgba(212,149,110,.92)"/>'
+      + '<path d="M43 68 C26 62 22 50 31 42 C41 33 54 39 58 51" fill="rgba(244,211,172,.92)"/>'
+      + '<path d="M130 60 C142 50 152 49 160 58 C168 67 163 79 150 83" fill="rgba(212,149,110,.92)"/>'
+      + '<path d="M50 45 L44 24 L64 38 Z M72 40 L79 19 L92 40 Z" fill="rgba(212,149,110,.96)"/>'
+      + '<ellipse cx="61" cy="58" rx="26" ry="21" fill="rgba(250,229,201,.95)"/>'
+      + '<circle cx="53" cy="55" r="3.8" fill="#16202a" stroke="none"/>'
+      + '<circle cx="73" cy="55" r="3.8" fill="#16202a" stroke="none"/>'
+      + '<ellipse cx="63" cy="66" rx="6" ry="4.5" fill="#16202a" stroke="none"/>'
+      + '<path d="M59 71 C62 75 66 75 69 71" stroke="#16202a" stroke-width="2.3"/>'
+      + '<path d="M66 84 L61 101 M93 86 L89 103 M119 82 L121 99" stroke="#f6dec1" stroke-width="6"/>'
+      + '<path d="M139 64 C150 60 157 54 162 45" stroke="#f6dec1" stroke-width="5"/>'
+      + '</g></svg></div></div>';
+  }
+  function setTutorialScene(scene){
+    if(!sc) return;
+    sc.className='';
+    sc.id='tutSceneLayer';
+    sc.innerHTML='';
+    if(!scene) return;
+    if(scene==='clock'){
+      sc.innerHTML='<div class="tut-clock-scene"><div class="tut-clock-face"><div class="tut-clock-hand"></div></div></div>';
+    } else if(scene==='visual'){
+      sc.innerHTML='<div class="tut-visual-scene">'
+        + '<div class="tut-visual-orb shape-circle"></div>'
+        + '<div class="tut-visual-orb shape-square"></div>'
+        + '<div class="tut-visual-orb shape-diamond"></div>'
+        + '<div class="tut-visual-orb shape-triangle"></div>'
+        + '<div class="tut-visual-orb shape-ring"></div>'
+        + '</div>';
+    } else if(scene==='auditory'){
+      sc.innerHTML='<div class="tut-audio-scene"><div class="tut-audio-ripple"></div><div class="tut-audio-ripple"></div><div class="tut-audio-ripple"></div></div>';
+    } else if(scene==='corgi'){
+      sc.innerHTML=tutorialCorgiMarkup();
+    }
+    requestAnimationFrame(function(){sc.classList.add('tut-scene-on');});
+  }
+  function stopTutorialCreek(){
+    tutorialCreekNodes.forEach(function(node){
+      try { if(node.stop) node.stop(); } catch(e) {}
+      try { if(node.disconnect) node.disconnect(); } catch(e) {}
+    });
+    tutorialCreekNodes=[];
+  }
+  function playTutorialCreek(){
+    try {
+      stopTutorialCreek();
+      var AudioCtx=window.AudioContext||window.webkitAudioContext;
+      if(!AudioCtx) return;
+      tutorialAudioCtx=tutorialAudioCtx||new AudioCtx();
+      if(tutorialAudioCtx.state==='suspended') tutorialAudioCtx.resume();
+      var ctx=tutorialAudioCtx;
+      var dur=3.35, frames=Math.floor(ctx.sampleRate*dur);
+      var buf=ctx.createBuffer(1,frames,ctx.sampleRate);
+      var out=buf.getChannelData(0);
+      var smooth=0;
+      for(var i=0;i<frames;i++){
+        smooth=smooth*.88+(Math.random()*2-1)*.12;
+        var swell=.34+.22*Math.sin(i/2900)+.16*Math.sin(i/970);
+        out[i]=smooth*swell;
+      }
+      var src=ctx.createBufferSource();
+      src.buffer=buf;
+      var low=ctx.createBiquadFilter();
+      low.type='lowpass'; low.frequency.value=1150; low.Q.value=.45;
+      var band=ctx.createBiquadFilter();
+      band.type='bandpass'; band.frequency.value=520; band.Q.value=.72;
+      var gain=ctx.createGain();
+      gain.gain.setValueAtTime(0,ctx.currentTime);
+      gain.gain.linearRampToValueAtTime(.11,ctx.currentTime+.24);
+      gain.gain.linearRampToValueAtTime(.085,ctx.currentTime+dur-.42);
+      gain.gain.linearRampToValueAtTime(0,ctx.currentTime+dur);
+      src.connect(low); low.connect(band); band.connect(gain); gain.connect(ctx.destination);
+      src.start();
+      tutorialCreekNodes=[src,low,band,gain];
+      setTimeout(stopTutorialCreek,Math.ceil(dur*1000)+80);
+    } catch(e) {}
+  }
+
   /* Spotlight */
   function litSpot(sel){
     var el=document.querySelector(sel);
@@ -12355,6 +12620,11 @@ document.addEventListener('DOMContentLoaded',function(){(function(){
     requestAnimationFrame(function(){sp.classList.add('tut-lit');});
   }
   function darkSpot(){sp.classList.remove('tut-lit');}
+  function ensureStepTargetVisible(sel){
+    var el=document.querySelector(sel);
+    if(!el || !el.scrollIntoView) return;
+    try { el.scrollIntoView({behavior:'smooth',block:'center',inline:'nearest'}); } catch(e) { el.scrollIntoView(); }
+  }
 
   /* Panel */
   function goPanel(p){
@@ -12372,35 +12642,195 @@ document.addEventListener('DOMContentLoaded',function(){(function(){
   }
 
   /* Eye */
-  function toEye(){
-    eyeOn=true;
-    ow.style.transform='scale(0.05)';
-    setTimeout(function(){ow.classList.add('eye-state');ow.style.transform='scale(1)';},340);
+  function clearTutorialEyeMorph(){
+    var svg=document.getElementById('tutOmniaShardSvg');
+    if(tutorialEyeMorphRaf){cancelAnimationFrame(tutorialEyeMorphRaf);tutorialEyeMorphRaf=null;}
+    if(svg){svg.innerHTML='';svg.style.opacity='0';}
+    ow.classList.remove('tut-morphing');
   }
-  function fromEye(){
+  function tutorialEyeOutline(color){
+    return '<g id="tutShardOutline" opacity="0" stroke="' + color + '" stroke-linecap="round" stroke-linejoin="round">'
+      + '<path d="M7 65 C21 37 39 28 50 28 C61 28 79 37 93 65 C79 93 61 102 50 102 C39 102 21 93 7 65 Z" fill="rgba(184,234,255,.055)" stroke-width="2.45"/>'
+      + '<path d="M17 65 C31 46 40 41 50 41 C60 41 69 46 83 65 C69 84 60 89 50 89 C40 89 31 84 17 65 Z" fill="none" stroke-width="1.1" opacity=".66"/>'
+      + '<circle cx="50" cy="65" r="18.5" fill="rgba(14,43,62,.42)" stroke-width="1.65"/>'
+      + '<circle cx="50" cy="65" r="7.6" fill="#06131f" stroke-width="1.1"/>'
+      + '<circle cx="57" cy="57" r="3.4" fill="#eefbff" stroke="none" opacity=".82"/>'
+      + '<path d="M24 48 L50 65 L76 48 M24 82 L50 65 L76 82" fill="none" stroke-width=".82" opacity=".46"/>'
+      + '</g>';
+  }
+  function toEye(done){
+    var svg=document.getElementById('tutOmniaShardSvg');
+    if(!svg || typeof OMNIA_CRYSTAL_MORPH_SHARDS==='undefined' || typeof OMNIA_MORPH_TARGETS==='undefined'){
+      eyeOn=true;ow.classList.add('eye-state');if(done)done();return;
+    }
+    clearTutorialEyeMorph();
+    var from=OMNIA_CRYSTAL_MORPH_SHARDS;
+    var to=OMNIA_MORPH_TARGETS.eye;
+    var color='#b8eaff';
+    var revealed=false;
+    svg.innerHTML='<defs><filter id="tutShardGlow" x="-40%" y="-40%" width="180%" height="180%"><feGaussianBlur stdDeviation="2.4" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter></defs>';
+    var polys=from.map(function(poly,idx){
+      var el=document.createElementNS('http://www.w3.org/2000/svg','polygon');
+      el.setAttribute('points',omniaPointString(poly));
+      el.setAttribute('fill',color);
+      el.setAttribute('fill-opacity',idx===8?'.18':'.26');
+      el.setAttribute('stroke',color);
+      el.setAttribute('stroke-width',idx===8?'1.1':'1.35');
+      el.setAttribute('stroke-opacity','.86');
+      el.setAttribute('filter','url(#tutShardGlow)');
+      svg.appendChild(el);
+      return el;
+    });
+    svg.insertAdjacentHTML('beforeend',tutorialEyeOutline(color));
+    var outline=svg.querySelector('#tutShardOutline');
+    ow.classList.add('tut-morphing');
+    svg.style.opacity='.3';
+    var start=performance.now();
+    var inwardMs=820;
+    var holdMs=460;
+    var totalMs=inwardMs+holdMs;
+    function frame(now){
+      var elapsed=now-start;
+      var t;
+      if(elapsed<=inwardMs){
+        t=omniaEaseMorph(elapsed/inwardMs);
+        svg.style.opacity=String(.3+t*.7);
+        if(outline) outline.setAttribute('opacity',String(Math.max(0,(t-.56)/.44)));
+        polys.forEach(function(poly,idx){poly.setAttribute('points',omniaPointString(omniaLerpPoly(from[idx],to[idx],t)));});
+        if(!revealed&&elapsed>=inwardMs*.82){revealed=true;eyeOn=true;ow.classList.add('eye-state');}
+      } else if(elapsed<=totalMs){
+        svg.style.opacity='1';
+        if(outline) outline.setAttribute('opacity','1');
+        polys.forEach(function(poly,idx){poly.setAttribute('points',omniaPointString(to[idx]));});
+        if(!revealed){revealed=true;eyeOn=true;ow.classList.add('eye-state');}
+      } else {
+        tutorialEyeMorphRaf=null;
+        ow.classList.remove('tut-morphing');
+        svg.style.opacity='1';
+        if(outline) outline.setAttribute('opacity','1');
+        polys.forEach(function(poly,idx){poly.setAttribute('points',omniaPointString(to[idx]));});
+        if(done)done();
+        return;
+      }
+      tutorialEyeMorphRaf=requestAnimationFrame(frame);
+    }
+    tutorialEyeMorphRaf=requestAnimationFrame(frame);
+  }
+  function blinkCrystalEye(done){
+    ow.classList.remove('eye-blink');
+    void ow.offsetWidth;
+    ow.classList.add('eye-blink');
+    setTimeout(function(){
+      ow.classList.remove('eye-blink');
+      if(done)done();
+    },720);
+  }
+  function fromEyeToOmnia(done){
+    var svg=document.getElementById('tutOmniaShardSvg');
+    if(!svg || typeof OMNIA_CRYSTAL_MORPH_SHARDS==='undefined' || typeof OMNIA_MORPH_TARGETS==='undefined'){
+      resetTutorialEye();if(done)done();return;
+    }
+    if(tutorialEyeMorphRaf){cancelAnimationFrame(tutorialEyeMorphRaf);tutorialEyeMorphRaf=null;}
+    var from=OMNIA_MORPH_TARGETS.eye;
+    var to=OMNIA_CRYSTAL_MORPH_SHARDS;
+    var color='#b8eaff';
+    var polys=[].slice.call(svg.querySelectorAll('polygon'));
+    if(polys.length!==from.length){
+      svg.innerHTML='<defs><filter id="tutShardGlow" x="-40%" y="-40%" width="180%" height="180%"><feGaussianBlur stdDeviation="2.4" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter></defs>';
+      polys=from.map(function(poly,idx){
+        var el=document.createElementNS('http://www.w3.org/2000/svg','polygon');
+        el.setAttribute('points',omniaPointString(poly));
+        el.setAttribute('fill',color);
+        el.setAttribute('fill-opacity',idx===8?'.18':'.26');
+        el.setAttribute('stroke',color);
+        el.setAttribute('stroke-width',idx===8?'1.1':'1.35');
+        el.setAttribute('stroke-opacity','.86');
+        el.setAttribute('filter','url(#tutShardGlow)');
+        svg.appendChild(el);
+        return el;
+      });
+      svg.insertAdjacentHTML('beforeend',tutorialEyeOutline(color));
+    }
+    var outline=svg.querySelector('#tutShardOutline');
+    ow.classList.add('tut-morphing','tut-returning');
+    svg.style.opacity='1';
+    var start=performance.now();
+    var returnMs=920;
+    function frame(now){
+      var elapsed=now-start;
+      var t=omniaEaseMorph(Math.min(1,elapsed/returnMs));
+      polys.forEach(function(poly,idx){poly.setAttribute('points',omniaPointString(omniaLerpPoly(from[idx],to[idx],t)));});
+      if(outline) outline.setAttribute('opacity',String(Math.max(0,1-t)));
+      if(t>.68) ow.classList.add('tut-crystal-return');
+      if(elapsed>=returnMs){
+        clearTutorialEyeMorph();
+        ow.classList.remove('eye-state','tut-returning','tut-crystal-return');
+        eyeOn=false;
+        if(done)done();
+        return;
+      }
+      tutorialEyeMorphRaf=requestAnimationFrame(frame);
+    }
+    tutorialEyeMorphRaf=requestAnimationFrame(frame);
+  }
+  function stageConcentrationIntro(done){
+    bl.classList.remove('tut-vis');
+    goPanel('concentration');
+    ov.classList.add('tut-blackout');
+    ov.classList.add('tut-tour-stage');
+    ov.style.background='#000';
+    setTimeout(function(){if(done)done();},920);
+  }
+  function revealConcentrationTour(done){
+    ov.classList.remove('tut-blackout');
+    ov.style.background='rgba(7,8,13,0.92)';
+    setTimeout(function(){if(done)done();},460);
+  }
+  function resetTutorialEye(){
     eyeOn=false;
-    ow.style.transform='scale(0.05)';
-    setTimeout(function(){ow.classList.remove('eye-state');ow.style.transform='scale(1)';},340);
+    clearTutorialEyeMorph();
+    ow.classList.remove('eye-state','eye-blink','tut-returning','tut-crystal-return');
+    ow.style.transform='';
   }
 
   /* Drawer pulse */
   function pulseItem(sel){
-    document.querySelectorAll('.drawer-item.tut-pulse').forEach(function(e){e.classList.remove('tut-pulse');});
+    document.querySelectorAll('.tut-pulse').forEach(function(e){e.classList.remove('tut-pulse');});
     var el=document.querySelector(sel);if(el) el.classList.add('tut-pulse');
   }
   function clearPulse(){
-    document.querySelectorAll('.drawer-item.tut-pulse').forEach(function(e){e.classList.remove('tut-pulse');});
+    document.querySelectorAll('.tut-pulse').forEach(function(e){e.classList.remove('tut-pulse');});
+  }
+  function tutorialGuideChoiceNeeded(){
+    return !(typeof guideState!=='undefined' && guideState && guideState._pathLockedV2);
+  }
+  function tutorialShouldSkipStep(s){
+    if(!s) return false;
+    if(s.requiresGuideChoice && !tutorialGuideChoiceNeeded()) return true;
+    if(s.requiresTutorialPath && !tutorialPathChosenThisRun) return true;
+    if(s.onlyPath && tutorialSelectedPath!==s.onlyPath) return true;
+    return false;
+  }
+  function showTutorialCopy(s, delay){
+    bl.classList.remove('tut-vis');
+    bl.classList.toggle('tut-aether-copy', !!s.aetherText);
+    bl.classList.toggle('tut-exercise-intro', !!s.exerciseIntro);
+    if(s.html) bt.innerHTML=s.html;
+    else bt.textContent=s.text||'';
+    if(s.text||s.html) setTimeout(function(){bl.classList.add('tut-vis');},delay||120);
   }
 
   /* Show step */
   function go(i){
+    while(i<STEPS.length && tutorialShouldSkipStep(STEPS[i])) i++;
     if(i>=STEPS.length){end();return;}
     cur=i;rdy=false;
     var s=STEPS[i];
 
     if(s.mode==='drawer'){
       ov.style.opacity='0';ov.style.pointerEvents='none';
-      darkSpot();stopSparks();
+      darkSpot();stopSparks();stopTutorialCreek();setTutorialScene(null);
+      ov.classList.remove('tut-tour-stage','tut-dock-upper','tut-guide-choice');
       df.classList.remove('tut-float-on');
       fb.classList.remove('tut-vis');
       db.style.display='none';
@@ -12416,36 +12846,62 @@ document.addEventListener('DOMContentLoaded',function(){(function(){
       },480);
       return;
     }
+    if(s.mode==='guide-choice'){
+      tutorialWaitingForGuideChoice=true;
+      rdy=false;
+      sk.style.display='none';
+      stopTutorialCreek();setTutorialScene(null);stopSparks();
+      cp.classList.remove('tut-cap-on');
+      clearPulse();closeDrawer();openGuide();switchGuideTab('path');
+      ov.style.opacity='1';ov.style.pointerEvents='none';
+      ov.classList.remove('tut-spot','tut-blackout','tut-tour-stage','tut-dock-upper');
+      ov.classList.add('tut-guide-choice');
+      ov.style.background='rgba(7,8,13,0.26)';
+      darkSpot();
+      df.classList.remove('tut-float-on');
+      fb.classList.remove('tut-vis');
+      showTutorialCopy(s,120);
+      th.textContent='Choose and confirm to continue';
+      return;
+    }
 
     ov.style.opacity='1';ov.style.pointerEvents='auto';
+    ov.classList.remove('tut-guide-choice');
+    sk.style.display=tutorialPathChosenThisRun ? 'none' : '';
     df.classList.remove('tut-float-on');
     fb.classList.remove('tut-vis');
     clearPulse();
     cp.classList.remove('tut-cap-on');
     closeDrawer();
+    tutorialWaitingForGuideChoice=false;
 
+    if(s.guideOpen) openGuide();
+    if(s.guideTab) switchGuideTab(s.guideTab);
     if(s.panel) goPanel(s.panel);
     if(s.cards) setTimeout(staggerCards,250);
     if(s.sparks) startSparks();
     else if(i>0) stopSparks();
-    if(s.fromEye&&eyeOn) fromEye();
+    if(s.audio==='creek') playTutorialCreek();
+    else stopTutorialCreek();
+    setTutorialScene(s.scene||null);
+    ov.classList.toggle('tut-dock-upper',s.dock==='upper');
 
     if(s.mode==='full'){
       ov.classList.remove('tut-spot');
-      ov.style.background='rgba(7,8,13,0.92)';
+      ov.classList.toggle('tut-blackout', !!s.blackout);
+      ov.classList.toggle('tut-tour-stage', !!s.tourStage);
+      ov.style.background=s.blackout ? '#000' : 'rgba(7,8,13,0.92)';
       darkSpot();
     } else {
       ov.classList.add('tut-spot');
+      ov.classList.remove('tut-blackout','tut-tour-stage');
       ov.style.background='rgba(7,8,13,0.08)';
-      setTimeout(function(){litSpot(s.target);},180);
+      ensureStepTargetVisible(s.target);
+      setTimeout(function(){litSpot(s.target);},420);
     }
 
-    bl.classList.remove('tut-vis');
-    if(s.text){
-      bt.textContent=s.text;
-      setTimeout(function(){bl.classList.add('tut-vis');},120);
-    }
-    th.textContent=s.eyeTap?'Tap Omnia':'Tap to continue';
+    showTutorialCopy(s,s.exerciseIntro?220:120);
+    th.textContent='Tap to continue';
     setTimeout(function(){rdy=true;},700);
   }
 
@@ -12453,8 +12909,11 @@ document.addEventListener('DOMContentLoaded',function(){(function(){
   function end(){
     localStorage.setItem(VISITED,'1');
     document.body.classList.remove('tut-live');
-    stopSparks();clearPulse();
+    stopSparks();stopTutorialCreek();setTutorialScene(null);clearPulse();resetTutorialEye();
+    ov.classList.remove('tut-tour-stage','tut-dock-upper','tut-guide-choice');
     cp.classList.remove('tut-cap-on');
+    tutorialWaitingForGuideChoice=false;
+    sk.style.display='';
     closeDrawer();
     ov.style.opacity='0';
     df.classList.remove('tut-float-on');
@@ -12465,14 +12924,25 @@ document.addEventListener('DOMContentLoaded',function(){(function(){
   }
 
   /* Tap handlers */
-  ov.addEventListener('click',function(){
+  ov.addEventListener('click',function(e){
     if(!rdy) return;
     var s=STEPS[cur];
     if(s.eyeTap&&!eyeOn){
       rdy=false;
-      toEye();
       bl.classList.remove('tut-vis');
-      setTimeout(function(){go(cur+1);},1800);
+      toEye(function(){go(cur+1);});
+    } else if(s.returnToOmnia&&eyeOn){
+      rdy=false;
+      bl.classList.remove('tut-vis');
+      blinkCrystalEye(function(){
+        fromEyeToOmnia(function(){
+          stageConcentrationIntro(function(){go(cur+1);});
+        });
+      });
+    } else if(s.revealBlackout){
+      rdy=false;
+      bl.classList.remove('tut-vis');
+      revealConcentrationTour(function(){go(cur+1);});
     } else {
       go(cur+1);
     }
@@ -12484,10 +12954,22 @@ document.addEventListener('DOMContentLoaded',function(){(function(){
   });
   db.addEventListener('click',function(e){e.stopPropagation();end();});
   sk.addEventListener('click', function(e){e.stopPropagation();end();});
+  window.addEventListener('presence:guide-path-committed',function(e){
+    if(!tutorialWaitingForGuideChoice) return;
+    tutorialWaitingForGuideChoice=false;
+    tutorialPathChosenThisRun=true;
+    tutorialSelectedPath=(e.detail&&e.detail.mode)||guidePathMode||'beginner';
+    ov.style.pointerEvents='auto';
+    setTimeout(function(){go(cur+1);},260);
+  });
 
   /* Boot: wait for home screen */
   function boot(){
     if(localStorage.getItem(VISITED)) return;
+    tutorialPathChosenThisRun=false;
+    tutorialSelectedPath=null;
+    tutorialWaitingForGuideChoice=false;
+    sk.style.display='';
     document.body.classList.add('tut-live');
     ov.style.display='flex';ov.style.opacity='0';
     ov.style.transition='opacity 0.7s ease,background 0.4s ease';
@@ -12497,8 +12979,12 @@ document.addEventListener('DOMContentLoaded',function(){(function(){
   // Replay tutorial on demand (always available, e.g. drawer Omnia button)
   window.__tutReplay = function(){
     cur=0; eyeOn=false; rdy=false;
+    tutorialPathChosenThisRun=false;
+    tutorialSelectedPath=null;
+    tutorialWaitingForGuideChoice=false;
+    sk.style.display='';
     document.body.classList.add('tut-live');
-    stopSparks(); darkSpot();
+    stopSparks(); stopTutorialCreek(); setTutorialScene(null); darkSpot(); resetTutorialEye(); ov.classList.remove('tut-tour-stage','tut-dock-upper','tut-guide-choice');
     df.classList.remove('tut-float-on');
     fb.classList.remove('tut-vis');
     df.style.display=''; cp.classList.remove('tut-cap-on');
@@ -12533,9 +13019,11 @@ document.addEventListener('DOMContentLoaded',function(){(function(){
 <div id="tutOverlay">
   <canvas id="tutSparkCanvas"></canvas>
   <div id="tutSpotlight"></div>
+  <div id="tutSceneLayer"></div>
   <div id="tutContent">
     <div class="tut-bubble" id="tutBubble"><p id="tutBubbleText"></p></div>
     <div id="tutOmniaWrap">
+      <svg class="tut-shard-svg" id="tutOmniaShardSvg" viewBox="0 0 100 130" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"></svg>
       <svg class="tut-crystal-svg" viewBox="0 0 72 118" xmlns="http://www.w3.org/2000/svg">
         <defs>
           <radialGradient id="tg3" cx="50%" cy="40%" r="60%">
