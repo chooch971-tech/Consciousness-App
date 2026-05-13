@@ -703,8 +703,7 @@
 .tut-bubble.tut-blue p { color:#7dd3f8; }
 #tutOmniaWrap {
   order:1; position:relative;
-  width:124px; height:146px; flex:0 0 146px;
-  display:grid; place-items:center; margin:0 auto;
+  display:flex; align-items:center; justify-content:center;
 }
 .tut-crystal-svg {
   grid-area:1/1;
@@ -717,14 +716,6 @@
   position:absolute; left:50%; top:50%; width:124px; height:152px;
   transform:translate(-50%,-50%); opacity:0; overflow:visible;
   pointer-events:none; z-index:2;
-}
-#tutOverlay.tut-spot #tutOmniaWrap,
-#tutContent.tut-content-bottom #tutOmniaWrap {
-  width:76px; height:92px; flex-basis:92px;
-}
-#tutOverlay.tut-spot .tut-shard-svg,
-#tutContent.tut-content-bottom .tut-shard-svg {
-  width:78px; height:96px;
 }
 #tutOmniaWrap.tut-morphing .tut-shard-svg { opacity:1; }
 #tutOmniaWrap.tut-morphing .tut-crystal-svg { opacity:.12; filter:blur(3px) drop-shadow(0 0 10px rgba(142,204,224,.35)); }
