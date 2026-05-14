@@ -12871,8 +12871,13 @@ document.addEventListener('DOMContentLoaded',function(){(function(){
     tc.style.bottom='auto';
     tc.style.transform='translateY(-50%)';
     tc.style.top=Math.max(80,Math.min(window.innerHeight-200,midY))+'px';
-    if(side==='left'){tc.style.left='12px';tc.style.right='auto';}
-    else{tc.style.left=Math.min(r.right+10,window.innerWidth-168)+'px';tc.style.right='auto';}
+    if(side==='left'){tc.style.left='12px';tc.style.right='auto';tc.style.maxWidth='';}
+    else{
+      var availW=window.innerWidth-r.right-20;
+      var contentW=Math.max(156,Math.min(availW,280));
+      tc.style.right='12px';tc.style.left='auto';
+      tc.style.maxWidth=contentW+'px';
+    }
   }
   function withoutTcTransition(fn){
     var prev=tc.style.transition;
@@ -12883,7 +12888,7 @@ document.addEventListener('DOMContentLoaded',function(){(function(){
   }
   function resetTcPosition(preserveLow){
     withoutTcTransition(function(){
-      tc.style.top='';tc.style.bottom='';tc.style.left='';tc.style.right='';tc.style.transform='';
+      tc.style.top='';tc.style.bottom='';tc.style.left='';tc.style.right='';tc.style.transform='';tc.style.maxWidth='';
       if(!preserveLow) tc.classList.remove('tut-content-low');
       tc.classList.remove('tut-clock-callout');
       tc.classList.remove('tut-eye-stage');
