@@ -956,16 +956,12 @@ body.tut-live #omniaTabPeek { display:none !important; }
 .omnia-hp-bobber.bobbing  { animation:hpBob 1.08s ease-in-out infinite; }
 .omnia-hp-svg { overflow:visible; transition:filter .4s ease; }
 .omnia-hp-bobber.morphing .omnia-hp-svg {
-  animation:hpMorphGlow 1.2s ease-in-out both;
+  animation:hpMorphGlow 1.3s ease-in-out both;
 }
-.hp-headphones {
-  transform-box:fill-box;
-  transform-origin:center 60%;
-  transition:opacity .5s ease, transform .5s ease;
-}
-.omnia-hp-bobber.morphing .hp-headphones {
-  opacity:0; transform:translateY(-6px) scale(0.6);
-}
+.hp-aura { transition:opacity .55s ease; }
+.hp-crystal-detail { transition:opacity .35s ease; }
+.omnia-hp-bobber.morphing .hp-aura { opacity:0; }
+.omnia-hp-bobber.morphing .hp-crystal-detail { opacity:0; }
 @keyframes hpBob {
   0%,100% { transform:translateY(0) rotate(-1deg) scale(1); }
   50%     { transform:translateY(-12px) rotate(1.25deg) scale(1.045); }
@@ -7853,14 +7849,28 @@ function initOmniaAnims(){
   });
 
   // ─── Animation 2: headphones + music notes → shard morph to a music note (Awareness only) ───
+  // Detailed crystal (matches Omnia's normal appearance — gradient aura + layered facets);
+  // sits ABOVE the morph polygon group and fades out when the morph starts.
   var HP_SVG='<svg class="omnia-hp-svg" width="64" height="91" viewBox="0 0 100 130" overflow="visible" xmlns="http://www.w3.org/2000/svg">'+
     '<defs>'+
-      '<filter id="hpShardGlow" x="-40%" y="-40%" width="180%" height="180%">'+
-        '<feGaussianBlur stdDeviation="2.4" result="b"/>'+
-        '<feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>'+
-      '</filter>'+
+      '<radialGradient id="hpAuraGrad" cx="50%" cy="42%" r="62%">'+
+        '<stop offset="0%" stop-color="#e8f8ff" stop-opacity=".55"/>'+
+        '<stop offset="100%" stop-color="#8ecce0" stop-opacity="0"/>'+
+      '</radialGradient>'+
     '</defs>'+
+    '<ellipse class="hp-aura" cx="50" cy="60" rx="40" ry="56" fill="url(#hpAuraGrad)" opacity=".55"/>'+
     '<g class="hp-shards" id="hpShardGroup"></g>'+
+    '<g class="hp-crystal-detail">'+
+      '<polygon points="50,4 70,18 50,32 30,18" fill="#ceeaff" stroke="#90cce8" stroke-width="1" opacity=".95"/>'+
+      '<polygon points="50,4 70,18 50,17" fill="#e8f8ff" opacity=".55"/>'+
+      '<polygon points="50,4 30,18 50,17" fill="#b4daf5" opacity=".35"/>'+
+      '<polygon points="50,32 78,46 84,68 50,82 16,68 22,46" fill="#b8dcf5" stroke="#88c4e0" stroke-width=".85" opacity=".88"/>'+
+      '<polygon points="50,32 78,46 50,58" fill="#d4ecff" opacity=".44"/>'+
+      '<polygon points="50,32 22,46 50,58" fill="#a8d4f0" opacity=".28"/>'+
+      '<polygon points="50,82 84,68 72,100 50,116 28,100 16,68" fill="#a8d4f0" stroke="#88c4e0" stroke-width=".85" opacity=".82"/>'+
+      '<polygon points="50,116 72,100 50,132" fill="#98c8e8" stroke="#88c4e0" stroke-width=".7" opacity=".7"/>'+
+      '<polygon points="50,116 28,100 50,132" fill="#88c0e0" stroke="#88c4e0" stroke-width=".7" opacity=".52"/>'+
+    '</g>'+
     '<g class="hp-headphones">'+
       '<path d="M 26 16 C 26 -8 74 -8 74 16" fill="none" stroke="#a8cfe0" stroke-width="4.6" stroke-linecap="round"/>'+
       '<path d="M 24 18 C 19 28 19 38 24 48" fill="none" stroke="#8ecce0" stroke-width="2.8" stroke-linecap="round" opacity=".55"/>'+
@@ -7904,17 +7914,19 @@ function initOmniaAnims(){
       var morphTimer=null;
       var morphRaf=null;
 
-      // Build the crystal shards as morphable polygons (same style as the tutorial eye morph)
-      var color='#b8eaff';
+      // Morph polygons: hidden behind the detailed crystal, revealed when the morph kicks off
+      var CRYSTAL_FILLS=['#ceeaff','#b8dcf5','#a8d4f0','#98c8e8','#a8d4f0','#88c0e0','#98c8e8','#c0e0f5','#b8dcf5'];
+      shardGroup.setAttribute('opacity','0');
+      shardGroup.style.transition='opacity .35s ease';
       var polys=OMNIA_CRYSTAL_MORPH_SHARDS.map(function(poly,idx){
         var el=document.createElementNS('http://www.w3.org/2000/svg','polygon');
         el.setAttribute('points',omniaPointString(poly));
-        el.setAttribute('fill',color);
-        el.setAttribute('fill-opacity',idx===8?'.18':'.26');
-        el.setAttribute('stroke',color);
-        el.setAttribute('stroke-width',idx===8?'1.1':'1.35');
-        el.setAttribute('stroke-opacity','.86');
-        el.setAttribute('filter','url(#hpShardGlow)');
+        el.setAttribute('fill',CRYSTAL_FILLS[idx]);
+        el.setAttribute('fill-opacity','.88');
+        el.setAttribute('stroke','#88c4e0');
+        el.setAttribute('stroke-width','0.85');
+        el.setAttribute('stroke-opacity','.7');
+        el.setAttribute('stroke-linejoin','round');
         shardGroup.appendChild(el);
         return el;
       });
@@ -7955,6 +7967,9 @@ function initOmniaAnims(){
         if(dismissed) return;
         bobber.classList.remove('bobbing');
         bobber.classList.add('morphing');
+        // Reveal the morph polygons (which sit at crystal positions) as the detailed
+        // crystal fades out — this gives a near-seamless handoff visually.
+        shardGroup.setAttribute('opacity','1');
         // Stop the steady note stream; burst a louder one as the morph kicks off
         clearInterval(noteTimer); noteTimer=null;
         spawnNoteBurst(8);
@@ -7972,17 +7987,30 @@ function initOmniaAnims(){
             morphRaf=requestAnimationFrame(frame);
           } else {
             morphRaf=null;
-            // Hold as a glowing music note, sprinkle one more burst, then fade out
-            morphTimer=setTimeout(function(){ if(!dismissed) spawnNoteBurst(5); },120);
-            morphTimer=setTimeout(function(){
-              if(dismissed) return;
-              hp.classList.remove('in');
-              hp.classList.add('out');
-              setTimeout(function(){ if(!dismissed){ hp.remove(); done(false); } },600);
-            },850);
+            // Hold briefly as a glowing music note, then slide off-screen to the left
+            morphTimer=setTimeout(function(){ if(!dismissed) spawnNoteBurst(4); },150);
+            morphTimer=setTimeout(slideOff,420);
           }
         }
         morphRaf=requestAnimationFrame(frame);
+      }
+
+      function slideOff(){
+        if(dismissed) return;
+        bounce.style.transition='transform 1.5s cubic-bezier(.4,0,.2,1)';
+        bounce.style.transform='translateX(calc(-100% - 200px))';
+        // Trail of notes as the music-note Omnia drifts across the screen
+        var trailTimer=setInterval(function(){
+          if(dismissed){ clearInterval(trailTimer); return; }
+          spawnNote(false);
+        },140);
+        setTimeout(function(){
+          clearInterval(trailTimer);
+          if(dismissed) return;
+          hp.style.transition='opacity 0.35s ease';
+          hp.style.opacity='0';
+          setTimeout(function(){ if(!dismissed){ hp.remove(); done(false); } },400);
+        },1500);
       }
 
       function dismiss(clicked){
