@@ -809,7 +809,6 @@
   width:min(470px,72vw);
   height:min(470px,72vw);
   overflow:visible;
-  transform:translate(-9vw,-5vh);
   filter:drop-shadow(0 0 28px rgba(212,149,110,.45));
 }
 .tut-clock-hand-group { transform-origin:100px 100px; }
@@ -842,7 +841,6 @@
   #tutClockSvg {
     width:min(360px,82vw);
     height:min(360px,82vw);
-    transform:translateY(-12vh);
   }
   #tutContent.tut-clock-callout {
     right:14px;
@@ -13414,8 +13412,8 @@ document.addEventListener('DOMContentLoaded',function(){(function(){
                text:'You\'ll place your complete attention on the seconds hand of a clock. Each second of true focus makes your mind stronger.'},
     /* 7  */ {mode:'full', clockBg:true, omniaClock:true,
                text:'You must place your complete focus here and only stop once the mind becomes distracted.'},
-    /* 8  */ {mode:'spot', target:'[data-exercise="visual"]', omniaLeft:true, scrollTo:'[data-exercise="visual"]',
-               text:'You\'ll learn to see objects as if they were right in front of you, in your mind.'},
+    /* 8  */ {mode:'spot', target:'[data-exercise="visual"]', omniaLeft:true, omniaNarrowLeft:true, scrollTo:'[data-exercise="visual"]',
+               text:'For the Visualization exercise, you\'ll learn to see objects as if they were right in front of you.'},
     /* 9  */ {mode:'full', objFlash:true, omniaBelow:true,
                text:'You\'ll start with easier objects, like shapes. But then go into objects.'},
     /* 10 */ {mode:'spot', target:'[data-exercise="visual"]', omniaLeft:true,
@@ -14110,14 +14108,11 @@ document.addEventListener('DOMContentLoaded',function(){(function(){
               sp.style.transition='';
               sp.classList.add('tut-lit');
             }
-            // Fade the app in while Omnia is still finishing the return morph.
             ov.style.background='rgba(7,8,13,0)';
             if(glowEl) setTimeout(function(){ glowEl.classList.add('tut-elem-glow'); }, 420);
           }
         };
-        var revealConcentrationTimer=setTimeout(revealConcentrationScene,620);
         fromEyeToOmnia(function(){
-          clearTimeout(revealConcentrationTimer);
           revealConcentrationScene();
           captureTutorialEyeAnchor();
           finishStep(s,400);
@@ -14136,6 +14131,7 @@ document.addEventListener('DOMContentLoaded',function(){(function(){
         var doSpot=function(){
           if(s.targets) litSpotMulti(s.targets); else litSpot(s.target);
           positionTcBeside(s.targets?s.targets[0]:s.target,s.omniaLeft?'left':'right');
+          if(s.omniaNarrowLeft){tc.style.maxWidth='min(220px,46vw)';}
           finishStep(s);
         };
         if(s.scrollTo){scrollToCard(s.scrollTo,doSpot);return;}
@@ -14143,6 +14139,7 @@ document.addEventListener('DOMContentLoaded',function(){(function(){
         if(s.targets) litSpotMulti(s.targets); else if(s.target) litSpot(s.target);
         setTimeout(function(){
           positionTcBeside(s.targets?s.targets[0]:s.target,s.omniaLeft?'left':'right');
+          if(s.omniaNarrowLeft){tc.style.maxWidth='min(220px,46vw)';}
           finishStep(s);
         },200); return;
       } else if(s.omniaMid||s.omniaLow){
