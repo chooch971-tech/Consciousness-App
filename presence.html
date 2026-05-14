@@ -1111,9 +1111,13 @@ body.tut-live #omniaTabPeek { display:none !important; }
 .tut-elem-glow {
   outline:2.5px solid rgba(214,149,110,1) !important;
   box-shadow:0 0 0 5px rgba(214,149,110,0.35), 0 0 28px rgba(214,149,110,0.9) !important;
-  animation:tutElemPulse 0.9s ease-in-out infinite !important;
+  animation:tutElemGlowIn 0.45s ease-out both, tutElemPulse 0.9s ease-in-out 0.45s infinite !important;
   border-radius:6px !important; z-index:9010 !important; position:relative !important;
   color:#f5c89a !important;
+}
+@keyframes tutElemGlowIn {
+  0%   { outline-color:rgba(214,149,110,0); box-shadow:0 0 0 0 rgba(214,149,110,0), 0 0 0 rgba(214,149,110,0); }
+  100% { outline-color:rgba(214,149,110,1); box-shadow:0 0 0 5px rgba(214,149,110,0.35), 0 0 28px rgba(214,149,110,0.9); }
 }
 @keyframes tutElemPulse {
   0%,100% { box-shadow:0 0 0 5px rgba(214,149,110,0.35), 0 0 28px rgba(214,149,110,0.9); outline-color:rgba(214,149,110,1); }
