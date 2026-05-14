@@ -13611,18 +13611,25 @@ document.addEventListener('DOMContentLoaded',function(){(function(){
       polys.forEach(function(poly,idx){poly.setAttribute('points',omniaPointString(omniaLerpPoly(from[idx],to[idx],t)));});
       if(outline) outline.setAttribute('opacity',String(Math.max(0,1-t*1.35)));
       var crystalT=omniaEaseMorph(Math.max(0,Math.min(1,(t-.34)/.66)));
-      var shardFade=Math.max(.18,1-Math.max(0,(t-.72)/.28)*.82);
+      var shardFade=Math.max(0,1-Math.max(0,(t-.6)/.4));
       svg.style.opacity=String(shardFade);
       if(crystal){
         crystal.style.opacity=String(crystalT);
         crystal.style.filter='blur('+((1-crystalT)*8).toFixed(2)+'px) drop-shadow(0 0 '+(14+crystalT*5).toFixed(1)+'px rgba(142,204,224,'+(.18+crystalT*.32).toFixed(2)+'))';
       }
       if(elapsed>=returnMs){
-        // Set crystal visible before removing eye-state so there's no frame where both are hidden
-        if(crystal){crystal.style.opacity='1';crystal.style.filter='';}
+        // Disable crystal transition so the filter/opacity cleanup doesn't trigger a snap
+        // (morph leaves filter as blur()+drop-shadow() which can't smoothly transition to drop-shadow())
+        if(crystal) crystal.style.transition='none';
+        crystal.style.opacity='1';
+        crystal.style.filter='drop-shadow(0 0 12px rgba(142,204,224,.45))';
         ow.classList.remove('eye-state','tut-returning','tut-crystal-return');
         clearTutorialEyeMorph();
-        if(crystal){crystal.style.opacity='';}
+        // Force reflow to commit final state, then clear inline overrides and restore transitions
+        void crystal.offsetWidth;
+        crystal.style.opacity='';
+        crystal.style.filter='';
+        crystal.style.transition='';
         eyeOn=false;if(done)done();return;
       }
       tutorialEyeMorphRaf=requestAnimationFrame(frame);
