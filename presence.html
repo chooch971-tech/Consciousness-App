@@ -742,7 +742,7 @@
   grid-area:1/1;
   width:84px; display:block;
   animation:omniaFloat 4.5s ease-in-out infinite;
-  filter:drop-shadow(0 0 12px rgba(142,204,224,.45));
+  filter:blur(0px) drop-shadow(0 0 12px rgba(142,204,224,.45));
   transition:width 0.4s ease, opacity .28s ease, filter .28s ease;
 }
 .tut-shard-svg {
@@ -13622,16 +13622,14 @@ document.addEventListener('DOMContentLoaded',function(){(function(){
         // (morph leaves filter as blur()+drop-shadow() which can't smoothly transition to drop-shadow())
         if(crystal) crystal.style.transition='none';
         crystal.style.opacity='1';
-        // Set drop-shadow only (no blur prefix) at morph-end glow intensity so list length matches CSS default.
-        // This lets the subsequent transition go from drop-shadow(19px) → drop-shadow(12px) smoothly.
-        crystal.style.filter='drop-shadow(0 0 19px rgba(142,204,224,0.50))';
         ow.classList.remove('eye-state','tut-returning','tut-crystal-return');
         clearTutorialEyeMorph();
-        // Commit the drop-shadow-only state as the transition baseline before restoring transitions.
+        // Commit the morph-end state (blur(0.00px) drop-shadow(19px)) as transition baseline.
+        // CSS default is blur(0px) drop-shadow(12px) — same list length → smooth 0.28s interpolation.
         void crystal.offsetWidth;
         crystal.style.transition='';
         crystal.style.opacity='';
-        crystal.style.filter=''; // 19px → 12px, same list length → smooth 0.28s fade
+        crystal.style.filter='';
         eyeOn=false;if(done)done();return;
       }
       tutorialEyeMorphRaf=requestAnimationFrame(frame);
