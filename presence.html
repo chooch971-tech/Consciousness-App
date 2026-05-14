@@ -13608,14 +13608,14 @@ document.addEventListener('DOMContentLoaded',function(){(function(){
       crystal.style.opacity='0';
       crystal.style.filter='blur(8px) drop-shadow(0 0 14px rgba(142,204,224,.18))';
     }
-    var start=performance.now(),returnMs=1080;
+    var start=performance.now(),returnMs=1240;
     function frame(now){
       var elapsed=now-start;
       var t=omniaEaseMorph(Math.min(1,elapsed/returnMs));
       polys.forEach(function(poly,idx){poly.setAttribute('points',omniaPointString(omniaLerpPoly(from[idx],to[idx],t)));});
       if(outline) outline.setAttribute('opacity',String(Math.max(0,1-t*1.35)));
-      var crystalT=omniaEaseMorph(Math.max(0,Math.min(1,(t-.34)/.66)));
-      var shardFade=Math.max(0,1-Math.max(0,(t-.6)/.4));
+      var crystalT=omniaEaseMorph(Math.max(0,Math.min(1,(t-.46)/.54)));
+      var shardFade=Math.max(0,1-Math.max(0,(t-.68)/.32));
       svg.style.opacity=String(shardFade);
       if(crystal){
         crystal.style.opacity=String(crystalT);
@@ -13986,7 +13986,10 @@ document.addEventListener('DOMContentLoaded',function(){(function(){
       if(s.morphCrystal&&eyeOn){
         bl.classList.remove('tut-vis');
         applyTutorialEyeAnchor();
-        fromEyeToOmnia(function(){
+        var concentrationSceneRevealed=false;
+        var revealConcentrationScene=function(){
+          if(concentrationSceneRevealed) return;
+          concentrationSceneRevealed=true;
           if(s.spotPanel){
             var glowEl=document.querySelector(s.spotPanel);
             var el=document.querySelector(s.spotPanel);
@@ -14001,15 +14004,16 @@ document.addEventListener('DOMContentLoaded',function(){(function(){
               void sp.offsetWidth;
               sp.style.transition='';
               sp.classList.add('tut-lit');
-              // Leave tc at its current (eye-anchor/center) position so Omnia
-              // appears where he was during the morph — repositioning here caused
-              // a visible jump when the overlay faded.
             }
-            // Spotlight is fully lit — let the overlay fade smoothly (no snap)
+            // Fade the app in while Omnia is still finishing the return morph.
             ov.style.background='rgba(7,8,13,0)';
-            // Delay glow until after overlay fade so z-index:9010 doesn't flash through
             if(glowEl) setTimeout(function(){ glowEl.classList.add('tut-elem-glow'); }, 420);
           }
+        };
+        var revealConcentrationTimer=setTimeout(revealConcentrationScene,620);
+        fromEyeToOmnia(function(){
+          clearTimeout(revealConcentrationTimer);
+          revealConcentrationScene();
           captureTutorialEyeAnchor();
           finishStep(s,400);
           applyTutorialEyeAnchor();
