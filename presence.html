@@ -932,6 +932,40 @@ body.tut-live #omniaTabPeek { display:none !important; }
   0%   { opacity:1; transform:translate(0,0) scale(1); }
   100% { opacity:0; transform:translate(var(--dx,0), var(--dy,0)) scale(0.2); }
 }
+/* Omnia headphones easter-egg */
+.omnia-headphones-anim {
+  position:fixed; right:14px;
+  bottom:calc(max(env(safe-area-inset-bottom), 16px) + 16px);
+  z-index:8500; cursor:pointer;
+  user-select:none; -webkit-user-select:none;
+  opacity:0; transform:translateY(20px) scale(0.5);
+  transition:opacity 0.5s ease, transform 0.55s cubic-bezier(.34,1.45,.64,1);
+  filter:drop-shadow(0 0 14px rgba(142,204,224,.55));
+}
+.omnia-headphones-anim.in { opacity:1; transform:translateY(0) scale(1); }
+.omnia-headphones-anim.out { opacity:0; transform:translateY(20px) scale(0.5); }
+.omnia-hp-inner {
+  display:block;
+  animation:omniaHpBob 3.2s ease-in-out infinite;
+  transform-origin:center bottom;
+}
+@keyframes omniaHpBob {
+  0%,100% { transform:translateY(0) rotate(-3deg); }
+  50%     { transform:translateY(-5px) rotate(3deg); }
+}
+.omnia-music-note {
+  position:fixed; z-index:8499; pointer-events:none;
+  font-family:'DM Mono',monospace; font-size:18px; font-weight:300;
+  color:rgba(180,220,240,0.95);
+  text-shadow:0 0 8px rgba(142,204,224,0.7);
+  opacity:0; will-change:transform,opacity;
+  animation:omniaNoteFloat 2.6s ease-out forwards;
+}
+@keyframes omniaNoteFloat {
+  0%   { opacity:0; transform:translate(0,0) scale(0.6) rotate(-8deg); }
+  20%  { opacity:1; transform:translate(calc(var(--dx,0) * 0.3), -16px) scale(1) rotate(-4deg); }
+  100% { opacity:0; transform:translate(var(--dx,0), -90px) scale(1.1) rotate(8deg); }
+}
 /* Path choice buttons (inside drawer float) */
 #tutPathChoice {
   display:none; flex-direction:column; gap:10px;
@@ -7566,35 +7600,66 @@ document.getElementById('concHomeSymbolFill').addEventListener('click', function
 document.getElementById('modeConcentration').addEventListener('click', function() { switchMode('concentration'); });
 document.getElementById('modePrayer').addEventListener('click', function() { switchMode('prayer'); });
 
-/* ── Omnia tab peek ── */
-function initOmniaTabPeek(){
+/* ── Omnia animations: scheduler + registered animations ── */
+function initOmniaAnims(){
   var peek=document.getElementById('omniaTabPeek');
   if(!peek) return;
-  var hideTimer=null, peekTimer=null, visible=false, shooting=false, currentSide='right';
 
-  function setSide(side){
+  // ─── Scheduler ───
+  var registry=[];
+  var current=null;
+  var ambientTimer=null;
+
+  function register(anim){
+    registry.push(Object.assign({lastShown:0, lastClicked:0}, anim));
+  }
+  function pickNext(){
+    var now=Date.now();
+    var pool=registry.filter(function(a){
+      if(current===a) return false;
+      if(a.tabs && a.tabs.indexOf(currentMode)<0) return false;
+      var cd=(a.lastClicked>a.lastShown) ? a.cooldownClicked : a.cooldownShown;
+      var since=now - Math.max(a.lastShown, a.lastClicked);
+      return since > cd;
+    });
+    if(!pool.length) return null;
+    pool.sort(function(a,b){
+      return Math.max(a.lastShown,a.lastClicked) - Math.max(b.lastShown,b.lastClicked);
+    });
+    return pool[0];
+  }
+  function trigger(){
+    if(current) return;
+    if(document.body.classList.contains('tut-live')) return;
+    var anim=pickNext();
+    if(!anim) return;
+    anim.lastShown=Date.now();
+    current=anim;
+    anim.show(function(clicked){
+      if(clicked) anim.lastClicked=Date.now();
+      current=null;
+    });
+  }
+  function scheduleAmbient(){
+    clearTimeout(ambientTimer);
+    var delay=60000 + Math.random()*60000; // 60-120s
+    ambientTimer=setTimeout(function(){
+      trigger();
+      scheduleAmbient();
+    }, delay);
+  }
+
+  // ─── Animation 1: side peek ───
+  var peekHideTimer=null, peekVisible=false, peekShooting=false, peekSide='right', peekDone=null;
+
+  function setPeekSide(side){
     peek.style.transition='none';
     peek.classList.remove('side-right','side-left');
     peek.classList.add(side==='left' ? 'side-left' : 'side-right');
     void peek.offsetWidth;
     peek.style.transition='';
-    currentSide=side;
+    peekSide=side;
   }
-
-  function showPeek(side){
-    if(shooting||document.body.classList.contains('tut-live')) return;
-    clearTimeout(hideTimer);
-    if(!visible) setSide(side);
-    peek.classList.add('peek-in');
-    visible=true;
-    hideTimer=setTimeout(hidePeek,5000);
-  }
-  function hidePeek(){
-    clearTimeout(hideTimer);
-    peek.classList.remove('peek-in');
-    visible=false;
-  }
-
   function spawnTrail(direction){
     var rect=peek.getBoundingClientRect();
     var cx=rect.left+rect.width/2;
@@ -7603,8 +7668,8 @@ function initOmniaTabPeek(){
     for(var i=0;i<5;i++){
       var s=document.createElement('div');
       s.className='omnia-streak '+streakClass;
-      var offsetX=direction==='left'?-30:30;
-      s.style.left=(cx+offsetX-60)+'px';
+      var offX=direction==='left'?-30:30;
+      s.style.left=(cx+offX-60)+'px';
       s.style.top=(cy+(Math.random()*70-35))+'px';
       s.style.animationDelay=(i*45)+'ms';
       document.body.appendChild(s);
@@ -7624,14 +7689,13 @@ function initOmniaTabPeek(){
       setTimeout(function(el){return function(){el.remove();};}(sp),900);
     }
   }
-
   peek.addEventListener('click',function(){
-    if(shooting) return;
-    shooting=true;
-    clearTimeout(hideTimer);
-    spawnTrail(currentSide==='left'?'right':'left');
+    if(peekShooting||!peekVisible) return;
+    peekShooting=true;
+    clearTimeout(peekHideTimer);
+    spawnTrail(peekSide==='left'?'right':'left');
     peek.style.transition='transform 0.4s cubic-bezier(.6,0,.2,1)';
-    if(currentSide==='left'){
+    if(peekSide==='left'){
       peek.style.transform='translateX(calc(100vw + 200px)) rotate(45deg)';
     } else {
       peek.style.transform='translateX(calc(-100vw - 200px)) rotate(-45deg)';
@@ -7642,31 +7706,106 @@ function initOmniaTabPeek(){
       peek.style.transform='';
       void peek.offsetWidth;
       peek.style.transition='';
-      visible=false; shooting=false;
+      peekVisible=false; peekShooting=false;
+      var d=peekDone; peekDone=null;
+      if(d) d(true);
     },440);
   });
+  register({
+    id:'peek',
+    cooldownShown:25000,
+    cooldownClicked:90000,
+    show:function(done){
+      var side=(currentMode==='concentration')?'left':'right';
+      setPeekSide(side);
+      peek.classList.add('peek-in');
+      peekVisible=true;
+      peekDone=done;
+      clearTimeout(peekHideTimer);
+      peekHideTimer=setTimeout(function(){
+        if(!peekVisible || peekShooting) return;
+        peek.classList.remove('peek-in');
+        peekVisible=false;
+        var d=peekDone; peekDone=null;
+        if(d) d(false);
+      },5500);
+    }
+  });
 
-  function schedulePeek(side){
-    if(document.body.classList.contains('tut-live')) return;
-    clearTimeout(peekTimer);
-    var delay=visible?700:550;
-    if(visible) hidePeek();
-    peekTimer=setTimeout(function(){ showPeek(side); }, delay);
-  }
+  // ─── Animation 2: headphones + music notes (Awareness only) ───
+  var HP_SVG='<svg width="70" height="115" viewBox="0 0 72 118" xmlns="http://www.w3.org/2000/svg">'+
+    '<polygon points="36,2 50,14 36,26 22,14" fill="#ceeaff" stroke="#90cce8" stroke-width=".8" opacity=".95"/>'+
+    '<polygon points="36,2 50,14 36,13" fill="#e8f8ff" opacity=".55"/>'+
+    '<polygon points="36,2 22,14 36,13" fill="#b4daf5" opacity=".35"/>'+
+    '<polygon points="36,26 56,37 60,59 36,70 12,59 16,37" fill="#b8dcf5" stroke="#88c4e0" stroke-width=".7" opacity=".88"/>'+
+    '<polygon points="36,26 56,37 36,45" fill="#d4ecff" opacity=".44"/>'+
+    '<polygon points="36,26 16,37 36,45" fill="#a8d4f0" opacity=".28"/>'+
+    '<polygon points="36,70 60,59 52,88 36,100 20,88 12,59" fill="#a8d4f0" stroke="#88c4e0" stroke-width=".7" opacity=".82"/>'+
+    '<polygon points="36,100 52,88 36,116" fill="#98c8e8" stroke="#88c4e0" stroke-width=".6" opacity=".7"/>'+
+    '<polygon points="36,100 20,88 36,116" fill="#88c0e0" stroke="#88c4e0" stroke-width=".6" opacity=".52"/>'+
+    '<path d="M 10 16 Q 36 2 62 16" fill="none" stroke="#3a3a3a" stroke-width="2.5" stroke-linecap="round"/>'+
+    '<ellipse cx="10" cy="18" rx="5" ry="6.5" fill="#1a1a1a"/>'+
+    '<ellipse cx="62" cy="18" rx="5" ry="6.5" fill="#1a1a1a"/>'+
+    '<ellipse cx="10" cy="18" rx="2.5" ry="4" fill="#3a3a3a"/>'+
+    '<ellipse cx="62" cy="18" rx="2.5" ry="4" fill="#3a3a3a"/>'+
+    '</svg>';
+  var NOTES=['♪','♫','♩','♬'];
+  register({
+    id:'headphones',
+    tabs:['awareness'],
+    cooldownShown:60000,
+    cooldownClicked:180000,
+    show:function(done){
+      var hp=document.createElement('div');
+      hp.className='omnia-headphones-anim';
+      hp.innerHTML='<div class="omnia-hp-inner">'+HP_SVG+'</div>';
+      document.body.appendChild(hp);
+      void hp.offsetWidth;
+      hp.classList.add('in');
 
-  var modeSides={modeAwareness:'right', modeConcentration:'left', modePrayer:'right'};
-  Object.keys(modeSides).forEach(function(id){
+      function spawnNote(){
+        var rect=hp.getBoundingClientRect();
+        var note=document.createElement('div');
+        note.className='omnia-music-note';
+        note.textContent=NOTES[Math.floor(Math.random()*NOTES.length)];
+        note.style.left=(rect.left+rect.width/2+(Math.random()*22-11)-9)+'px';
+        note.style.top=(rect.top+8)+'px';
+        note.style.setProperty('--dx',(Math.random()*50-25)+'px');
+        document.body.appendChild(note);
+        setTimeout(function(){ note.remove(); },2700);
+      }
+      setTimeout(spawnNote,350);
+      var noteTimer=setInterval(spawnNote,750);
+
+      var dismissed=false;
+      function dismiss(clicked){
+        if(dismissed) return;
+        dismissed=true;
+        clearInterval(noteTimer);
+        clearTimeout(autoTimer);
+        hp.classList.remove('in');
+        hp.classList.add('out');
+        setTimeout(function(){ hp.remove(); done(clicked); },520);
+      }
+      hp.addEventListener('click',function(){ dismiss(true); });
+      var autoTimer=setTimeout(function(){ dismiss(false); },12000);
+    }
+  });
+
+  // ─── Triggers ───
+  ['modeAwareness','modeConcentration','modePrayer'].forEach(function(id){
     var btn=document.getElementById(id);
     if(!btn) return;
     btn.addEventListener('click',function(){
-      schedulePeek(modeSides[id]);
+      setTimeout(trigger, 600);
     });
   });
+  scheduleAmbient();
 }
 if(document.readyState==='loading'){
-  document.addEventListener('DOMContentLoaded',initOmniaTabPeek);
+  document.addEventListener('DOMContentLoaded',initOmniaAnims);
 } else {
-  initOmniaTabPeek();
+  initOmniaAnims();
 }
 document.getElementById('concStopBtn').addEventListener('click', function() { stopConcentration(); });
 document.getElementById('concStopBtn2').addEventListener('click', function() { stopConcentration(); });
