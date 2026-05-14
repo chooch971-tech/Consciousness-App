@@ -977,6 +977,55 @@ body.tut-live #omniaTabPeek { display:none !important; }
   20%  { opacity:1; transform:translate(calc(var(--dx,0) * 0.3), -16px) scale(1) rotate(-4deg); }
   100% { opacity:0; transform:translate(var(--dx,0), -90px) scale(1.1) rotate(8deg); }
 }
+/* Omnia sleeping easter-egg (Animation 3) */
+.omnia-sleep-wrap {
+  position:fixed; z-index:8500; pointer-events:none;
+  display:flex; flex-direction:column; align-items:center;
+  opacity:0; transition:opacity 0.55s ease;
+  user-select:none; -webkit-user-select:none;
+}
+.omnia-sleep-wrap.in  { opacity:1; }
+.omnia-sleep-wrap.out { opacity:0; }
+.omnia-sleep-scene {
+  position:relative; display:flex; align-items:flex-end; gap:0;
+  cursor:pointer; pointer-events:auto;
+}
+.omnia-sleep-pillow {
+  width:40px; height:22px; border-radius:50%;
+  background:radial-gradient(ellipse at 40% 35%, #c8e8f8 0%, #8abcd8 55%, #5a90b4 100%);
+  box-shadow:0 2px 8px rgba(90,160,200,.4), inset 0 1px 3px rgba(255,255,255,.3);
+  flex-shrink:0; margin-bottom:2px;
+}
+.omnia-sleep-crystal {
+  display:block; flex-shrink:0;
+  transform:rotate(-90deg);
+  transform-origin:center center;
+  filter:drop-shadow(0 0 10px rgba(142,204,224,.6));
+  animation:omniaSlBreathe 4s ease-in-out infinite;
+}
+.omnia-sleep-crystal.waking { animation:omniaSlWake 0.5s ease-out forwards; }
+@keyframes omniaSlBreathe {
+  0%,100% { transform:rotate(-90deg) translateX(0) scaleX(1); }
+  50%     { transform:rotate(-90deg) translateX(-2px) scaleX(0.97); }
+}
+@keyframes omniaSlWake {
+  0%   { transform:rotate(-90deg) scale(1); }
+  40%  { transform:rotate(-45deg) scale(1.15) translateY(-8px); }
+  100% { transform:rotate(0deg) scale(1) translateY(0); }
+}
+.omnia-zzz {
+  position:fixed; pointer-events:none; z-index:8499;
+  font-family:'DM Mono',monospace; font-weight:300;
+  color:rgba(170,215,240,0.9);
+  text-shadow:0 0 6px rgba(142,204,224,0.65);
+  opacity:0;
+  animation:omniaZzzFloat var(--dur,2.8s) ease-out forwards;
+}
+@keyframes omniaZzzFloat {
+  0%   { opacity:0; transform:translate(0,0) scale(0.5); }
+  18%  { opacity:1; transform:translate(var(--dx,4px),-14px) scale(1); }
+  100% { opacity:0; transform:translate(var(--dx,4px),-72px) scale(1.15); }
+}
 /* Path choice buttons (inside drawer float) */
 #tutPathChoice {
   display:none; flex-direction:column; gap:10px;
@@ -7909,6 +7958,108 @@ function initOmniaAnims(){
     }
   });
 
+  // ─── Animation 3: sleeping on Begin Session button (Awareness only) ───
+  var SLEEP_SVG='<svg width="32" height="52" viewBox="0 0 72 118" overflow="visible" xmlns="http://www.w3.org/2000/svg">'+
+    '<polygon points="36,2 50,14 36,26 22,14" fill="#ceeaff" stroke="#90cce8" stroke-width=".8" opacity=".95"/>'+
+    '<polygon points="36,2 50,14 36,13" fill="#e8f8ff" opacity=".55"/>'+
+    '<polygon points="36,2 22,14 36,13" fill="#b4daf5" opacity=".35"/>'+
+    '<polygon points="36,26 56,37 60,59 36,70 12,59 16,37" fill="#b8dcf5" stroke="#88c4e0" stroke-width=".7" opacity=".88"/>'+
+    '<polygon points="36,26 56,37 36,45" fill="#d4ecff" opacity=".44"/>'+
+    '<polygon points="36,26 16,37 36,45" fill="#a8d4f0" opacity=".28"/>'+
+    '<polygon points="36,70 60,59 52,88 36,100 20,88 12,59" fill="#a8d4f0" stroke="#88c4e0" stroke-width=".7" opacity=".82"/>'+
+    '<polygon points="36,100 52,88 36,116" fill="#98c8e8" stroke="#88c4e0" stroke-width=".6" opacity=".7"/>'+
+    '<polygon points="36,100 20,88 36,116" fill="#88c0e0" stroke="#88c4e0" stroke-width=".6" opacity=".52"/>'+
+    '</svg>';
+  register({
+    id:'sleeping',
+    tabs:['awareness'],
+    cooldownShown:90000,
+    cooldownClicked:240000,
+    show:function(done){
+      var btn=document.getElementById('startBtn');
+      if(!btn){ done(false); return; }
+      var r=btn.getBoundingClientRect();
+      if(r.width===0){ done(false); return; }
+
+      var wrap=document.createElement('div');
+      wrap.className='omnia-sleep-wrap';
+      var scene=document.createElement('div');
+      scene.className='omnia-sleep-scene';
+      scene.innerHTML='<div class="omnia-sleep-pillow"></div><div class="omnia-sleep-crystal">'+SLEEP_SVG+'</div>';
+      wrap.appendChild(scene);
+      document.body.appendChild(wrap);
+
+      var crystal=scene.querySelector('.omnia-sleep-crystal');
+      var sceneW=72; // approximate scene width after rotation
+      // Position: Omnia lies across the button, slightly above it
+      wrap.style.left=(r.left+r.width/2-55)+'px';
+      wrap.style.top=(r.top-36)+'px';
+
+      var dismissed=false;
+      var zzzTimer=null;
+      var autoTimer=null;
+
+      void wrap.offsetWidth;
+      wrap.classList.add('in');
+
+      function spawnZzz(){
+        if(dismissed) return;
+        var pos=scene.getBoundingClientRect();
+        var z=document.createElement('div');
+        z.className='omnia-zzz';
+        var sizes=[10,13,16];
+        var sz=sizes[Math.floor(Math.random()*sizes.length)];
+        z.style.fontSize=sz+'px';
+        z.textContent='z';
+        var dx=(Math.random()*18-4);
+        z.style.setProperty('--dx',dx+'px');
+        var dur=2.2+Math.random()*1.2;
+        z.style.setProperty('--dur',dur+'s');
+        z.style.left=(pos.left+pos.width*0.65+Math.random()*8-4)+'px';
+        z.style.top=(pos.top+2)+'px';
+        document.body.appendChild(z);
+        setTimeout(function(){ z.remove(); },(dur+0.1)*1000);
+      }
+
+      spawnZzz();
+      zzzTimer=setInterval(spawnZzz,1100);
+      // Auto-dismiss after 9 seconds
+      autoTimer=setTimeout(function(){ dismiss(false); },9000);
+
+      function dismiss(clicked){
+        if(dismissed) return;
+        dismissed=true;
+        clearInterval(zzzTimer);
+        clearTimeout(autoTimer);
+        if(clicked){
+          crystal.classList.remove('omnia-sleep-crystal');
+          crystal.style.animation='none';
+          crystal.classList.add('omnia-sleep-crystal','waking');
+          setTimeout(function(){
+            // fly up and fade
+            wrap.style.transition='transform 0.5s ease-in, opacity 0.4s ease';
+            wrap.style.transform='translateY(-120px)';
+            wrap.style.opacity='0';
+            setTimeout(function(){ wrap.remove(); done(true); },520);
+          },480);
+        } else {
+          wrap.classList.remove('in');
+          wrap.classList.add('out');
+          setTimeout(function(){ wrap.remove(); done(false); },600);
+        }
+      }
+
+      wrap._dismiss=dismiss;
+      scene.addEventListener('click',function(){ dismiss(true); });
+
+      // Dismiss if user leaves Awareness tab
+      ['modeConcentration','modePrayer'].forEach(function(id){
+        var tb=document.getElementById(id);
+        if(tb) tb.addEventListener('click',function(){ dismiss(false); },{once:true});
+      });
+    }
+  });
+
   // ─── Triggers ───
   ['modeAwareness','modeConcentration','modePrayer'].forEach(function(id){
     var btn=document.getElementById(id);
@@ -13824,7 +13975,6 @@ document.addEventListener('DOMContentLoaded',function(){(function(){
         fromEyeToOmnia(function(){
           if(s.spotPanel){
             var glowEl=document.querySelector(s.spotPanel);
-            if(glowEl) glowEl.classList.add('tut-elem-glow');
             var el=document.querySelector(s.spotPanel);
             if(el){
               var r=el.getBoundingClientRect(),p=10;
@@ -13846,6 +13996,8 @@ document.addEventListener('DOMContentLoaded',function(){(function(){
             }
             // Spotlight is fully lit — let the overlay fade smoothly (no snap)
             ov.style.background='rgba(7,8,13,0)';
+            // Delay glow until after overlay fade completes so z-index:9010 doesn't flash through
+            if(glowEl) setTimeout(function(){ glowEl.classList.add('tut-elem-glow'); }, 420);
           }
           finishStep(s,400);
         });
