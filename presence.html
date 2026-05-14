@@ -13988,18 +13988,15 @@ document.addEventListener('DOMContentLoaded',function(){(function(){
               sp.classList.add('tut-lit');
               void sp.offsetWidth;
               sp.style.transition='';
-              // Position tutContent centered below the spotlit element
-              withoutTcTransition(function(){
-                tc.style.top=(r.bottom+28)+'px';
-                tc.style.left='50%';
-                tc.style.right='auto';
-                tc.style.transform='translateX(-50%)';
-              });
-              tutorialEyeAnchorY=null; // prevent eye anchor from overriding this position
+              tutorialEyeAnchorY=null;
+              // Leave tc at its current (eye-anchor/center) position so Omnia
+              // appears where he was during the morph — repositioning here caused
+              // a visible jump when the overlay faded.
             }
+            tc.classList.remove('tut-eye-stage'); // let crystal float naturally
             // Spotlight is fully lit — let the overlay fade smoothly (no snap)
             ov.style.background='rgba(7,8,13,0)';
-            // Delay glow until after overlay fade completes so z-index:9010 doesn't flash through
+            // Delay glow until after overlay fade so z-index:9010 doesn't flash through
             if(glowEl) setTimeout(function(){ glowEl.classList.add('tut-elem-glow'); }, 420);
           }
           finishStep(s,400);
