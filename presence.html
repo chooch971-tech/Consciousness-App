@@ -934,35 +934,21 @@ body.tut-live #omniaTabPeek { display:none !important; }
 }
 /* Omnia headphones easter-egg */
 .omnia-headphones-anim {
-  position:fixed; right:14px;
+  position:fixed; left:0;
   bottom:calc(max(env(safe-area-inset-bottom), 16px) + 16px);
-  z-index:8500; cursor:pointer;
+  z-index:8500; pointer-events:none;
   user-select:none; -webkit-user-select:none;
-  opacity:0; transform:translateY(20px) scale(0.5);
-  transition:opacity 0.5s ease, transform 0.55s cubic-bezier(.34,1.45,.64,1);
+  opacity:0; transition:opacity 0.45s ease;
   filter:drop-shadow(0 0 14px rgba(142,204,224,.55));
 }
-.omnia-headphones-anim.in { opacity:1; transform:translateY(0) scale(1); }
-.omnia-headphones-anim.out { opacity:0; transform:translateY(20px) scale(0.5); }
-.omnia-hp-inner {
-  display:block;
-  animation:omniaHpDance 4.8s ease-in-out infinite;
-  transform-origin:center 60%;
-}
-@keyframes omniaHpDance {
-  0%   { transform:translateY(0)    rotate(0deg)   scale(1); }
-  8%   { transform:translateY(-8px) rotate(-14deg) scale(1.05); }
-  18%  { transform:translateY(-2px) rotate(10deg)  scale(1); }
-  28%  { transform:translateY(-7px) rotate(-10deg) scale(1.03); }
-  38%  { transform:translateY(0)    rotate(0deg)   scale(1); }
-  43%  { transform:translateY(-5px) rotate(-4deg)  scale(1.1); }
-  53%  { transform:translateY(-18px) rotate(360deg) scale(0.85); }
-  60%  { transform:translateY(0)    rotate(360deg) scale(1.05); }
-  63%  { transform:translateY(0)    rotate(0deg)   scale(1); }
-  72%  { transform:translateY(-6px) rotate(12deg)  scale(1.04); }
-  82%  { transform:translateY(-2px) rotate(-9deg)  scale(1); }
-  91%  { transform:translateY(-5px) rotate(8deg)   scale(1.02); }
-  100% { transform:translateY(0)    rotate(0deg)   scale(1); }
+.omnia-headphones-anim.in  { opacity:1; }
+.omnia-headphones-anim.out { opacity:0; }
+.omnia-hp-bounce {
+  display:block; width:fit-content; cursor:pointer;
+  pointer-events:auto;
+  transform:translateX(calc(100vw - 100% - 14px));
+  transition:transform 0.52s ease-in-out;
+  transform-origin:center center;
 }
 .omnia-music-note {
   position:fixed; z-index:8499; pointer-events:none;
@@ -7802,13 +7788,35 @@ function initOmniaAnims(){
     show:function(done){
       var hp=document.createElement('div');
       hp.className='omnia-headphones-anim';
-      hp.innerHTML='<div class="omnia-hp-inner">'+HP_SVG+'</div>';
+      hp.innerHTML='<div class="omnia-hp-bounce">'+HP_SVG+'</div>';
       document.body.appendChild(hp);
       void hp.offsetWidth;
       hp.classList.add('in');
 
+      var bounce=hp.querySelector('.omnia-hp-bounce');
+      var currentSide='right'; // starts on right
+      var bounceRot=0;
+      var bouncing=true;
+      var dismissed=false;
+
+      function doFlip(){
+        if(!bouncing||dismissed) return;
+        currentSide=currentSide==='right'?'left':'right';
+        bounceRot+=360;
+        var xPos=currentSide==='left'?'14px':'calc(100vw - 100% - 14px)';
+        bounce.style.transform='translateX('+xPos+') rotate('+bounceRot+'deg)';
+      }
+
+      bounce.addEventListener('transitionend',function(){
+        if(!dismissed&&bouncing) setTimeout(doFlip,280);
+      });
+
+      // First flip after fade-in
+      setTimeout(doFlip,550);
+
       function spawnNote(){
-        var rect=hp.getBoundingClientRect();
+        if(dismissed) return;
+        var rect=bounce.getBoundingClientRect();
         var note=document.createElement('div');
         note.className='omnia-music-note';
         note.textContent=NOTES[Math.floor(Math.random()*NOTES.length)];
@@ -7818,23 +7826,22 @@ function initOmniaAnims(){
         document.body.appendChild(note);
         setTimeout(function(){ note.remove(); },2700);
       }
-      setTimeout(spawnNote,350);
-      var noteTimer=setInterval(spawnNote,750);
+      setTimeout(spawnNote,400);
+      var noteTimer=setInterval(spawnNote,900);
 
-      var dismissed=false;
       function dismiss(clicked){
         if(dismissed) return;
         dismissed=true;
+        bouncing=false;
         clearInterval(noteTimer);
-        clearTimeout(autoTimer);
         if(clicked){
-          // Spin-fly off to a random side
-          var dir=Math.random()<0.5?-1:1;
-          hp.querySelector('.omnia-hp-inner').style.animation='none';
-          hp.style.transition='transform 0.5s cubic-bezier(.6,0,.2,1), opacity 0.45s ease';
-          hp.style.transform='translateX('+(dir*(window.innerWidth+200))+'px) rotate('+(dir*540)+'deg) scale(0.4)';
+          var flyX=currentSide==='right'?'calc(100vw + 200px)':'calc(-100% - 200px)';
+          var flyRot=bounceRot+(currentSide==='right'?540:-540);
+          bounce.style.transition='transform 0.45s cubic-bezier(.6,0,.2,1)';
+          bounce.style.transform='translateX('+flyX+') rotate('+flyRot+'deg)';
+          hp.style.transition='opacity 0.4s ease';
           hp.style.opacity='0';
-          setTimeout(function(){ hp.remove(); done(true); },520);
+          setTimeout(function(){ hp.remove(); done(true); },480);
         } else {
           hp.classList.remove('in');
           hp.classList.add('out');
@@ -7842,8 +7849,7 @@ function initOmniaAnims(){
         }
       }
       hp._dismiss=dismiss;
-      hp.addEventListener('click',function(){ dismiss(true); });
-      var autoTimer=setTimeout(function(){ dismiss(false); },12000);
+      bounce.addEventListener('click',function(){ dismiss(true); });
     }
   });
 
