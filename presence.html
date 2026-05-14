@@ -940,6 +940,7 @@ body.tut-live #omniaTabPeek { display:none !important; }
   user-select:none; -webkit-user-select:none;
   opacity:0; transition:opacity 0.45s ease;
   filter:drop-shadow(0 0 14px rgba(142,204,224,.55));
+  will-change:opacity,filter;
 }
 .omnia-headphones-anim.in  { opacity:1; }
 .omnia-headphones-anim.out { opacity:0; }
@@ -947,22 +948,55 @@ body.tut-live #omniaTabPeek { display:none !important; }
   display:block; width:fit-content; cursor:pointer;
   pointer-events:auto;
   transform:translateX(calc(100vw - 100% - 14px));
-  transition:transform 1.0s cubic-bezier(0.4,0,0.6,1);
+  transition:transform 1.08s cubic-bezier(.2,.88,.22,1);
+  transform-origin:center center;
+  will-change:transform;
+}
+.omnia-hp-bobber { display:block; transform-origin:center 58%; will-change:transform; }
+.omnia-hp-bobber.bobbing  { animation:hpBob 1.08s ease-in-out infinite; }
+.omnia-hp-bobber.flipping { animation:hpFlip 1.28s cubic-bezier(.22,.92,.24,1) both; }
+.omnia-hp-svg { overflow:visible; }
+.hp-crystal-shards,
+.hp-note-shards,
+.hp-headphones {
+  transform-box:fill-box;
   transform-origin:center center;
 }
-.omnia-hp-bobber { display:block; transform-origin:center bottom; }
-.omnia-hp-bobber.bobbing  { animation:hpBob 0.48s ease-in-out infinite; }
-.omnia-hp-bobber.flipping { animation:hpFlip 0.82s cubic-bezier(.4,0,.6,1) forwards; }
+.hp-note-shards { opacity:0; filter:drop-shadow(0 0 9px rgba(125,211,248,.7)); }
+.omnia-hp-bobber.flipping .hp-crystal-shards {
+  animation:hpCrystalToNote 1.28s cubic-bezier(.22,.92,.24,1) both;
+}
+.omnia-hp-bobber.flipping .hp-note-shards {
+  animation:hpNoteShards 1.28s cubic-bezier(.22,.92,.24,1) both;
+}
+.omnia-hp-bobber.flipping .hp-headphones {
+  animation:hpHeadphonesGroove 1.28s ease-in-out both;
+}
 @keyframes hpBob {
-  0%,100% { transform:translateY(0) scale(1); }
-  50%     { transform:translateY(-16px) scale(1.06); }
+  0%,100% { transform:translateY(0) rotate(-1deg) scale(1); }
+  50%     { transform:translateY(-12px) rotate(1.25deg) scale(1.045); }
 }
 @keyframes hpFlip {
   0%   { transform:translateY(0) rotate(0deg) scale(1); }
-  25%  { transform:translateY(-22px) rotate(90deg) scale(0.95); }
-  55%  { transform:translateY(-30px) rotate(270deg) scale(0.85); }
-  80%  { transform:translateY(-8px) rotate(340deg) scale(1.08); }
-  100% { transform:translateY(0) rotate(360deg) scale(1); }
+  18%  { transform:translateY(-22px) rotate(150deg) scale(.98); }
+  39%  { transform:translateY(-34px) rotate(360deg) scale(.88); }
+  61%  { transform:translateY(-28px) rotate(540deg) scale(.96); }
+  82%  { transform:translateY(-8px) rotate(700deg) scale(1.07); }
+  100% { transform:translateY(0) rotate(720deg) scale(1); }
+}
+@keyframes hpCrystalToNote {
+  0%,18%   { opacity:1; transform:scale(1) rotate(0deg); }
+  38%,58%  { opacity:.24; transform:scale(.58) rotate(-10deg); }
+  78%,100% { opacity:1; transform:scale(1) rotate(0deg); }
+}
+@keyframes hpNoteShards {
+  0%,22%   { opacity:0; transform:translateY(8px) scale(.45) rotate(-18deg); }
+  40%,58%  { opacity:1; transform:translateY(-2px) scale(1.08) rotate(4deg); }
+  76%,100% { opacity:0; transform:translateY(-12px) scale(.72) rotate(16deg); }
+}
+@keyframes hpHeadphonesGroove {
+  0%,100% { transform:translateY(0) scale(1); opacity:1; }
+  42%,58% { transform:translateY(-2px) scale(1.08); opacity:.96; }
 }
 .omnia-music-note {
   position:fixed; z-index:8499; pointer-events:none;
@@ -972,10 +1006,21 @@ body.tut-live #omniaTabPeek { display:none !important; }
   opacity:0; will-change:transform,opacity;
   animation:omniaNoteFloat 2.6s ease-out forwards;
 }
+.omnia-music-note.burst {
+  font-size:22px;
+  color:#f7fbff;
+  text-shadow:0 0 12px rgba(125,211,248,1), 0 0 22px rgba(212,176,142,.55);
+  animation:omniaNoteBurst 1.15s cubic-bezier(.15,.9,.28,1) forwards;
+}
 @keyframes omniaNoteFloat {
   0%   { opacity:0; transform:translate(0,0) scale(0.6) rotate(-8deg); }
   20%  { opacity:1; transform:translate(calc(var(--dx,0) * 0.3), -16px) scale(1) rotate(-4deg); }
   100% { opacity:0; transform:translate(var(--dx,0), -90px) scale(1.1) rotate(8deg); }
+}
+@keyframes omniaNoteBurst {
+  0%   { opacity:0; transform:translate(0,0) scale(.45) rotate(-18deg); }
+  18%  { opacity:1; transform:translate(calc(var(--dx,0) * .18), -18px) scale(1.12) rotate(-4deg); }
+  100% { opacity:0; transform:translate(var(--dx,0), -118px) scale(.9) rotate(20deg); }
 }
 /* Omnia sleeping easter-egg (Animation 3) */
 .omnia-sleep-wrap {
@@ -7831,21 +7876,34 @@ function initOmniaAnims(){
   });
 
   // ─── Animation 2: headphones + music notes (Awareness only) ───
-  var HP_SVG='<svg width="50" height="82" viewBox="0 0 72 118" overflow="visible" xmlns="http://www.w3.org/2000/svg">'+
-    '<polygon points="36,2 50,14 36,26 22,14" fill="#ceeaff" stroke="#90cce8" stroke-width=".8" opacity=".95"/>'+
-    '<polygon points="36,2 50,14 36,13" fill="#e8f8ff" opacity=".55"/>'+
-    '<polygon points="36,2 22,14 36,13" fill="#b4daf5" opacity=".35"/>'+
-    '<polygon points="36,26 56,37 60,59 36,70 12,59 16,37" fill="#b8dcf5" stroke="#88c4e0" stroke-width=".7" opacity=".88"/>'+
-    '<polygon points="36,26 56,37 36,45" fill="#d4ecff" opacity=".44"/>'+
-    '<polygon points="36,26 16,37 36,45" fill="#a8d4f0" opacity=".28"/>'+
-    '<polygon points="36,70 60,59 52,88 36,100 20,88 12,59" fill="#a8d4f0" stroke="#88c4e0" stroke-width=".7" opacity=".82"/>'+
-    '<polygon points="36,100 52,88 36,116" fill="#98c8e8" stroke="#88c4e0" stroke-width=".6" opacity=".7"/>'+
-    '<polygon points="36,100 20,88 36,116" fill="#88c0e0" stroke="#88c4e0" stroke-width=".6" opacity=".52"/>'+
-    '<path d="M 20 14 C 20 0 52 0 52 14" fill="none" stroke="#a8cfe0" stroke-width="3.5" stroke-linecap="round"/>'+
-    '<rect x="12" y="10" width="11" height="14" rx="5" fill="#5a9ab8"/>'+
-    '<rect x="49" y="10" width="11" height="14" rx="5" fill="#5a9ab8"/>'+
-    '<rect x="14" y="12" width="7" height="10" rx="3" fill="#8ecce0"/>'+
-    '<rect x="51" y="12" width="7" height="10" rx="3" fill="#8ecce0"/>'+
+  var HP_SVG='<svg class="omnia-hp-svg" width="56" height="88" viewBox="0 0 72 126" overflow="visible" xmlns="http://www.w3.org/2000/svg">'+
+    '<g class="hp-crystal-shards">'+
+      '<polygon points="36,2 50,14 36,26 22,14" fill="#ceeaff" stroke="#90cce8" stroke-width=".8" opacity=".95"/>'+
+      '<polygon points="36,2 50,14 36,13" fill="#e8f8ff" opacity=".55"/>'+
+      '<polygon points="36,2 22,14 36,13" fill="#b4daf5" opacity=".35"/>'+
+      '<polygon points="36,26 56,37 60,59 36,70 12,59 16,37" fill="#b8dcf5" stroke="#88c4e0" stroke-width=".7" opacity=".88"/>'+
+      '<polygon points="36,26 56,37 36,45" fill="#d4ecff" opacity=".44"/>'+
+      '<polygon points="36,26 16,37 36,45" fill="#a8d4f0" opacity=".28"/>'+
+      '<polygon points="36,70 60,59 52,88 36,100 20,88 12,59" fill="#a8d4f0" stroke="#88c4e0" stroke-width=".7" opacity=".82"/>'+
+      '<polygon points="36,100 52,88 36,116" fill="#98c8e8" stroke="#88c4e0" stroke-width=".6" opacity=".7"/>'+
+      '<polygon points="36,100 20,88 36,116" fill="#88c0e0" stroke="#88c4e0" stroke-width=".6" opacity=".52"/>'+
+    '</g>'+
+    '<g class="hp-note-shards">'+
+      '<polygon points="44,30 53,33 51,78 42,75" fill="#d8f4ff" stroke="#8ecce0" stroke-width=".8" opacity=".95"/>'+
+      '<polygon points="52,33 68,43 64,52 51,45" fill="#b8eaff" stroke="#8ecce0" stroke-width=".8" opacity=".9"/>'+
+      '<polygon points="31,76 43,68 56,76 51,91 34,94" fill="#f7fbff" stroke="#8ecce0" stroke-width=".9" opacity=".95"/>'+
+      '<polygon points="34,80 45,75 52,79 42,86" fill="#8ecce0" opacity=".5"/>'+
+      '<polygon points="55,37 64,43 61,48 54,44" fill="#d4b08e" opacity=".72"/>'+
+    '</g>'+
+    '<g class="hp-headphones">'+
+      '<path d="M 20 14 C 20 -1 52 -1 52 14" fill="none" stroke="#a8cfe0" stroke-width="3.7" stroke-linecap="round"/>'+
+      '<path d="M 18 18 C 14 27 14 37 18 46" fill="none" stroke="#8ecce0" stroke-width="2.2" stroke-linecap="round" opacity=".55"/>'+
+      '<path d="M 54 18 C 58 27 58 37 54 46" fill="none" stroke="#8ecce0" stroke-width="2.2" stroke-linecap="round" opacity=".55"/>'+
+      '<rect x="12" y="10" width="11" height="16" rx="5" fill="#5a9ab8"/>'+
+      '<rect x="49" y="10" width="11" height="16" rx="5" fill="#5a9ab8"/>'+
+      '<rect x="14" y="12" width="7" height="12" rx="3" fill="#8ecce0"/>'+
+      '<rect x="51" y="12" width="7" height="12" rx="3" fill="#8ecce0"/>'+
+    '</g>'+
     '</svg>';
   var NOTES=['♪','♫','♩','♬'];
   register({
@@ -7863,24 +7921,29 @@ function initOmniaAnims(){
       var bobber=hp.querySelector('.omnia-hp-bobber');
       var currentSide='right';
       var flipsDone=0;
-      var MAX_FLIPS=4; // right→left→right→left→exit
+      var MAX_FLIPS=3; // right→left→right→exit, with a double flip each hop
       var dismissed=false;
       var bobTimer=null;
 
       void hp.offsetWidth;
       hp.classList.add('in');
 
-      function spawnNote(){
+      function spawnNote(burst){
         if(dismissed) return;
-        var rect=bounce.getBoundingClientRect();
+        var rect=bobber.getBoundingClientRect();
         var note=document.createElement('div');
-        note.className='omnia-music-note';
+        note.className='omnia-music-note'+(burst?' burst':'');
         note.textContent=NOTES[Math.floor(Math.random()*NOTES.length)];
-        note.style.left=(rect.left+rect.width/2+(Math.random()*22-11)-9)+'px';
-        note.style.top=(rect.top+8)+'px';
-        note.style.setProperty('--dx',(Math.random()*50-25)+'px');
+        note.style.left=(rect.left+rect.width/2+(Math.random()*24-12)-9)+'px';
+        note.style.top=(rect.top+(burst?18:8))+'px';
+        note.style.setProperty('--dx',(Math.random()*(burst?96:52)-(burst?48:26))+'px');
         document.body.appendChild(note);
-        setTimeout(function(){ note.remove(); },2700);
+        setTimeout(function(){ note.remove(); },burst?1300:2700);
+      }
+      function spawnNoteBurst(){
+        for(var i=0;i<7;i++){
+          setTimeout(function(){ spawnNote(true); },i*55);
+        }
       }
       setTimeout(spawnNote,500);
       var noteTimer=setInterval(spawnNote,900);
@@ -7899,6 +7962,7 @@ function initOmniaAnims(){
         if(dismissed) return;
         bobber.classList.remove('bobbing');
         void bobber.offsetWidth;
+        spawnNoteBurst();
         bobber.classList.add('flipping');
       }
 
