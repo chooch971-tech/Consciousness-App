@@ -13425,10 +13425,8 @@ document.addEventListener('DOMContentLoaded',function(){(function(){
               });
               tutorialEyeAnchorY=null; // prevent eye anchor from overriding this position
             }
-            ov.style.transition='none';
+            // Spotlight is fully lit — let the overlay fade smoothly (no snap)
             ov.style.background='rgba(7,8,13,0)';
-            void ov.offsetWidth;
-            ov.style.transition='';
           }
           finishStep(s,400);
         });
