@@ -7532,8 +7532,9 @@ document.getElementById('modeConcentration').addEventListener('click', function(
 document.getElementById('modePrayer').addEventListener('click', function() { switchMode('prayer'); });
 
 /* ── Omnia tab peek ── */
-(function(){
+function initOmniaTabPeek(){
   var peek=document.getElementById('omniaTabPeek');
+  if(!peek) return;
   var hideTimer=null, peekTimer=null, visible=false, shooting=false;
 
   function showPeek(){
@@ -7575,7 +7576,12 @@ document.getElementById('modePrayer').addEventListener('click', function() { swi
       else { peekTimer=setTimeout(showPeek,550); }
     });
   });
-})();
+}
+if(document.readyState==='loading'){
+  document.addEventListener('DOMContentLoaded',initOmniaTabPeek);
+} else {
+  initOmniaTabPeek();
+}
 document.getElementById('concStopBtn').addEventListener('click', function() { stopConcentration(); });
 document.getElementById('concStopBtn2').addEventListener('click', function() { stopConcentration(); });
 document.getElementById('concHistoryBtn').addEventListener('click', function() { concHistoryFrom='home'; concHistoryFilter='all'; renderConcHistory(); showScreen('concHistoryScreen'); });
