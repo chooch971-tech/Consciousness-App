@@ -946,12 +946,23 @@ body.tut-live #omniaTabPeek { display:none !important; }
 .omnia-headphones-anim.out { opacity:0; transform:translateY(20px) scale(0.5); }
 .omnia-hp-inner {
   display:block;
-  animation:omniaHpBob 3.2s ease-in-out infinite;
-  transform-origin:center bottom;
+  animation:omniaHpDance 4.8s ease-in-out infinite;
+  transform-origin:center 60%;
 }
-@keyframes omniaHpBob {
-  0%,100% { transform:translateY(0) rotate(-3deg); }
-  50%     { transform:translateY(-5px) rotate(3deg); }
+@keyframes omniaHpDance {
+  0%   { transform:translateY(0)    rotate(0deg)   scale(1); }
+  8%   { transform:translateY(-8px) rotate(-14deg) scale(1.05); }
+  18%  { transform:translateY(-2px) rotate(10deg)  scale(1); }
+  28%  { transform:translateY(-7px) rotate(-10deg) scale(1.03); }
+  38%  { transform:translateY(0)    rotate(0deg)   scale(1); }
+  43%  { transform:translateY(-5px) rotate(-4deg)  scale(1.1); }
+  53%  { transform:translateY(-18px) rotate(360deg) scale(0.85); }
+  60%  { transform:translateY(0)    rotate(360deg) scale(1.05); }
+  63%  { transform:translateY(0)    rotate(0deg)   scale(1); }
+  72%  { transform:translateY(-6px) rotate(12deg)  scale(1.04); }
+  82%  { transform:translateY(-2px) rotate(-9deg)  scale(1); }
+  91%  { transform:translateY(-5px) rotate(8deg)   scale(1.02); }
+  100% { transform:translateY(0)    rotate(0deg)   scale(1); }
 }
 .omnia-music-note {
   position:fixed; z-index:8499; pointer-events:none;
@@ -7629,7 +7640,10 @@ function initOmniaAnims(){
     return pool[0];
   }
   function trigger(){
-    if(current) return;
+    if(current){
+      if(current.update) current.update();
+      return;
+    }
     if(document.body.classList.contains('tut-live')) return;
     var anim=pickNext();
     if(!anim) return;
@@ -7715,6 +7729,15 @@ function initOmniaAnims(){
     id:'peek',
     cooldownShown:25000,
     cooldownClicked:90000,
+    update:function(){
+      if(!peekVisible || peekShooting) return;
+      var shouldBe=(currentMode==='concentration')?'left':'right';
+      if(peekSide!==shouldBe){
+        peek.classList.remove('side-right','side-left');
+        peek.classList.add(shouldBe==='left'?'side-left':'side-right');
+        peekSide=shouldBe;
+      }
+    },
     show:function(done){
       var side=(currentMode==='concentration')?'left':'right';
       setPeekSide(side);
@@ -7733,7 +7756,7 @@ function initOmniaAnims(){
   });
 
   // ─── Animation 2: headphones + music notes (Awareness only) ───
-  var HP_SVG='<svg width="70" height="115" viewBox="0 0 72 118" xmlns="http://www.w3.org/2000/svg">'+
+  var HP_SVG='<svg width="78" height="122" viewBox="-4 -8 80 126" overflow="visible" xmlns="http://www.w3.org/2000/svg">'+
     '<polygon points="36,2 50,14 36,26 22,14" fill="#ceeaff" stroke="#90cce8" stroke-width=".8" opacity=".95"/>'+
     '<polygon points="36,2 50,14 36,13" fill="#e8f8ff" opacity=".55"/>'+
     '<polygon points="36,2 22,14 36,13" fill="#b4daf5" opacity=".35"/>'+
@@ -7743,11 +7766,11 @@ function initOmniaAnims(){
     '<polygon points="36,70 60,59 52,88 36,100 20,88 12,59" fill="#a8d4f0" stroke="#88c4e0" stroke-width=".7" opacity=".82"/>'+
     '<polygon points="36,100 52,88 36,116" fill="#98c8e8" stroke="#88c4e0" stroke-width=".6" opacity=".7"/>'+
     '<polygon points="36,100 20,88 36,116" fill="#88c0e0" stroke="#88c4e0" stroke-width=".6" opacity=".52"/>'+
-    '<path d="M 10 16 Q 36 2 62 16" fill="none" stroke="#3a3a3a" stroke-width="2.5" stroke-linecap="round"/>'+
-    '<ellipse cx="10" cy="18" rx="5" ry="6.5" fill="#1a1a1a"/>'+
-    '<ellipse cx="62" cy="18" rx="5" ry="6.5" fill="#1a1a1a"/>'+
-    '<ellipse cx="10" cy="18" rx="2.5" ry="4" fill="#3a3a3a"/>'+
-    '<ellipse cx="62" cy="18" rx="2.5" ry="4" fill="#3a3a3a"/>'+
+    '<path d="M 6 20 C 6 -4 66 -4 66 20" fill="none" stroke="#333" stroke-width="3" stroke-linecap="round"/>'+
+    '<rect x="1" y="16" width="12" height="16" rx="5" fill="#1e1e1e" stroke="#2a2a2a" stroke-width="0.5"/>'+
+    '<rect x="59" y="16" width="12" height="16" rx="5" fill="#1e1e1e" stroke="#2a2a2a" stroke-width="0.5"/>'+
+    '<rect x="3.5" y="19" width="7" height="10" rx="3" fill="#303030"/>'+
+    '<rect x="61.5" y="19" width="7" height="10" rx="3" fill="#303030"/>'+
     '</svg>';
   var NOTES=['♪','♫','♩','♬'];
   register({
