@@ -972,7 +972,7 @@ body.tut-live #omniaTabPeek { display:none !important; }
   100% { filter:drop-shadow(0 0 16px rgba(125,211,248,.85)); }
 }
 .omnia-hp-bobber.dancing {
-  animation:hpDance 1.1s ease-in-out infinite;
+  animation:hpBob 1.08s ease-in-out infinite;
   transform-origin:center 60%; will-change:transform;
 }
 @keyframes hpDance {
@@ -8019,7 +8019,7 @@ function initOmniaAnims(){
         if(dismissed) return;
         if(noteTimer){ clearInterval(noteTimer); noteTimer=null; }
         bounce.style.transition='transform 1.5s cubic-bezier(.4,0,.2,1)';
-        bounce.style.transform='translateX(calc(-100% - 200px))';
+        bounce.style.transform='translateX(calc(100vw + 200px))';
         // Keep dancing while sliding, and trail more notes behind him
         var trailTimer=setInterval(function(){
           if(dismissed){ clearInterval(trailTimer); return; }
