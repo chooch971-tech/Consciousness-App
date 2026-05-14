@@ -877,24 +877,23 @@
 #tutCorgi.tut-corgi-go { left:calc(100vw + 100px); }
 /* Omnia tab peek */
 #omniaTabPeek {
-  position:fixed; right:0; bottom:28%; z-index:8500;
-  transform:translateX(82%);
-  transition:transform 0.55s cubic-bezier(.34,1.45,.64,1);
+  position:fixed; right:-140px; bottom:25%; z-index:8500;
+  transition:right 0.55s cubic-bezier(.34,1.45,.64,1);
   pointer-events:none; cursor:default; user-select:none; -webkit-user-select:none;
 }
 #omniaTabPeek.peek-in {
-  transform:translateX(36%);
+  right:-10px;
   pointer-events:auto; cursor:pointer;
 }
 #omniaTabPeekInner {
-  filter:drop-shadow(0 0 16px rgba(142,204,224,.6));
+  filter:drop-shadow(0 0 20px rgba(142,204,224,.7));
 }
 #omniaTabPeek.peek-in #omniaTabPeekInner {
   animation:omniaTabBob 2.8s ease-in-out infinite;
 }
 @keyframes omniaTabBob {
   0%,100% { transform:translateY(0); }
-  50%     { transform:translateY(-11px); }
+  50%     { transform:translateY(-12px); }
 }
 body.tut-live #omniaTabPeek { display:none !important; }
 /* Path choice buttons (inside drawer float) */
@@ -7553,9 +7552,9 @@ document.getElementById('modePrayer').addEventListener('click', function() { swi
     if(shooting) return;
     shooting=true;
     clearTimeout(hideTimer);
-    // Shoot across screen to the left
-    peek.style.transition='transform 0.42s cubic-bezier(.6,0,.3,1)';
-    peek.style.transform='translateX(calc(-100vw - 120px))';
+    // Shoot across screen to the left using transform (overrides right positioning)
+    peek.style.transition='transform 0.4s cubic-bezier(.6,0,.2,1)';
+    peek.style.transform='translateX(calc(-100vw - 200px))';
     setTimeout(function(){
       peek.classList.remove('peek-in');
       peek.style.transition='none';
@@ -7563,7 +7562,7 @@ document.getElementById('modePrayer').addEventListener('click', function() { swi
       void peek.offsetWidth;
       peek.style.transition='';
       visible=false; shooting=false;
-    },460);
+    },440);
   });
 
   ['modeAwareness','modeConcentration','modePrayer'].forEach(function(id){
@@ -13746,7 +13745,7 @@ document.addEventListener('DOMContentLoaded',function(){(function(){
 <!-- Omnia tab peek -->
 <div id="omniaTabPeek">
   <div id="omniaTabPeekInner">
-    <svg width="66" height="106" viewBox="0 0 72 118" xmlns="http://www.w3.org/2000/svg">
+    <svg width="110" height="178" viewBox="0 0 72 118" xmlns="http://www.w3.org/2000/svg">
       <polygon points="36,2 50,14 36,26 22,14" fill="#ceeaff" stroke="#90cce8" stroke-width=".8" opacity=".95"/>
       <polygon points="36,2 50,14 36,13" fill="#e8f8ff" opacity=".55"/>
       <polygon points="36,2 22,14 36,13" fill="#b4daf5" opacity=".35"/>
