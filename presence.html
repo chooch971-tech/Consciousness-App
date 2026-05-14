@@ -13494,8 +13494,8 @@ document.addEventListener('DOMContentLoaded',function(){(function(){
 
   /* ── Panel ── */
   function goPanel(p){
-    var m={awareness:'modeAwareness',concentration:'modeConcentration'};
-    var btn=document.getElementById(m[p]);if(btn) btn.click();
+    if(p==='concentration') switchMode('concentration');
+    else if(p==='awareness') switchMode('awareness');
   }
 
   /* ── Card stagger ── */
@@ -13618,9 +13618,11 @@ document.addEventListener('DOMContentLoaded',function(){(function(){
         crystal.style.filter='blur('+((1-crystalT)*8).toFixed(2)+'px) drop-shadow(0 0 '+(14+crystalT*5).toFixed(1)+'px rgba(142,204,224,'+(.18+crystalT*.32).toFixed(2)+'))';
       }
       if(elapsed>=returnMs){
-        clearTutorialEyeMorph();
+        // Set crystal visible before removing eye-state so there's no frame where both are hidden
+        if(crystal){crystal.style.opacity='1';crystal.style.filter='';}
         ow.classList.remove('eye-state','tut-returning','tut-crystal-return');
-        if(crystal){crystal.style.opacity='';crystal.style.filter='';}
+        clearTutorialEyeMorph();
+        if(crystal){crystal.style.opacity='';}
         eyeOn=false;if(done)done();return;
       }
       tutorialEyeMorphRaf=requestAnimationFrame(frame);
