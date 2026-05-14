@@ -13406,17 +13406,24 @@ document.addEventListener('DOMContentLoaded',function(){(function(){
           if(s.spotPanel){
             var glowEl=document.querySelector(s.spotPanel);
             if(glowEl) glowEl.classList.add('tut-elem-glow');
-            // Snap spotlight into position at full opacity BEFORE revealing overlay,
-            // so there is no gap where the app shows through unguarded.
             var el=document.querySelector(s.spotPanel);
             if(el){
               var r=el.getBoundingClientRect(),p=10;
+              // Snap spotlight instantly so no flash when overlay goes transparent
               sp.style.transition='none';
               sp.style.left=(r.left-p)+'px'; sp.style.top=(r.top-p)+'px';
               sp.style.width=(r.width+p*2)+'px'; sp.style.height=(r.height+p*2)+'px';
               sp.classList.add('tut-lit');
               void sp.offsetWidth;
               sp.style.transition='';
+              // Position tutContent centered below the spotlit element
+              withoutTcTransition(function(){
+                tc.style.top=(r.bottom+28)+'px';
+                tc.style.left='50%';
+                tc.style.right='auto';
+                tc.style.transform='translateX(-50%)';
+              });
+              tutorialEyeAnchorY=null; // prevent eye anchor from overriding this position
             }
             ov.style.transition='none';
             ov.style.background='rgba(7,8,13,0)';
@@ -13424,7 +13431,6 @@ document.addEventListener('DOMContentLoaded',function(){(function(){
             ov.style.transition='';
           }
           finishStep(s,400);
-          applyTutorialEyeAnchor();
         });
         th.textContent='Tap to continue'; th.style.display='block'; sk.style.display='block';
         return;
