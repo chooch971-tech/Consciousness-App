@@ -954,8 +954,11 @@ body.tut-live #omniaTabPeek { display:none !important; }
 }
 .omnia-hp-bobber { display:block; transform-origin:center 58%; will-change:transform; }
 .omnia-hp-bobber.bobbing  { animation:hpBob 1.08s ease-in-out infinite; }
-.omnia-hp-bobber.flipping { animation:hpFlip 1.28s cubic-bezier(.22,.92,.24,1) both; }
-.omnia-hp-svg { overflow:visible; }
+.omnia-hp-bobber.flipping { animation:hpFlip 1.85s cubic-bezier(.34,.86,.32,1) both; }
+.omnia-hp-svg { overflow:visible; transition:filter .35s ease; }
+.omnia-hp-bobber.flipping .omnia-hp-svg {
+  animation:hpGlowPulse 1.85s ease-in-out both;
+}
 .hp-crystal-shards,
 .hp-note-shards,
 .hp-headphones {
@@ -964,39 +967,55 @@ body.tut-live #omniaTabPeek { display:none !important; }
 }
 .hp-note-shards { opacity:0; filter:drop-shadow(0 0 9px rgba(125,211,248,.7)); }
 .omnia-hp-bobber.flipping .hp-crystal-shards {
-  animation:hpCrystalToNote 1.28s cubic-bezier(.22,.92,.24,1) both;
+  animation:hpCrystalToNote 1.85s cubic-bezier(.34,.86,.32,1) both;
 }
 .omnia-hp-bobber.flipping .hp-note-shards {
-  animation:hpNoteShards 1.28s cubic-bezier(.22,.92,.24,1) both;
+  animation:hpNoteShards 1.85s cubic-bezier(.34,.86,.32,1) both;
 }
 .omnia-hp-bobber.flipping .hp-headphones {
-  animation:hpHeadphonesGroove 1.28s ease-in-out both;
+  animation:hpHeadphonesGroove 1.85s ease-in-out both;
 }
 @keyframes hpBob {
   0%,100% { transform:translateY(0) rotate(-1deg) scale(1); }
   50%     { transform:translateY(-12px) rotate(1.25deg) scale(1.045); }
 }
 @keyframes hpFlip {
-  0%   { transform:translateY(0) rotate(0deg) scale(1); }
-  18%  { transform:translateY(-22px) rotate(150deg) scale(.98); }
-  39%  { transform:translateY(-34px) rotate(360deg) scale(.88); }
-  61%  { transform:translateY(-28px) rotate(540deg) scale(.96); }
-  82%  { transform:translateY(-8px) rotate(700deg) scale(1.07); }
-  100% { transform:translateY(0) rotate(720deg) scale(1); }
+  /* First spin: 0 → 360 over the rising arc */
+  0%   { transform:translateY(0)    rotate(0deg)   scale(1); }
+  12%  { transform:translateY(-20px) rotate(160deg) scale(.94); }
+  28%  { transform:translateY(-34px) rotate(330deg) scale(.86); }
+  36%  { transform:translateY(-38px) rotate(360deg) scale(.85); }
+  /* Held "note" moment at the apex */
+  46%  { transform:translateY(-42px) rotate(360deg) scale(.9); }
+  54%  { transform:translateY(-42px) rotate(360deg) scale(.9); }
+  /* Second spin: 360 → 720 on the way down */
+  64%  { transform:translateY(-36px) rotate(390deg) scale(.86); }
+  78%  { transform:translateY(-22px) rotate(560deg) scale(.93); }
+  92%  { transform:translateY(-6px)  rotate(690deg) scale(1.04); }
+  100% { transform:translateY(0)    rotate(720deg) scale(1); }
 }
 @keyframes hpCrystalToNote {
-  0%,18%   { opacity:1; transform:scale(1) rotate(0deg); }
-  38%,58%  { opacity:.24; transform:scale(.58) rotate(-10deg); }
-  78%,100% { opacity:1; transform:scale(1) rotate(0deg); }
+  0%,14%   { opacity:1; transform:scale(1)   rotate(0deg); filter:blur(0px); }
+  28%      { opacity:.35; transform:scale(.7) rotate(-14deg); filter:blur(1.4px); }
+  44%,56%  { opacity:0; transform:scale(.42) rotate(0deg); filter:blur(2.5px); }
+  72%      { opacity:.35; transform:scale(.7) rotate(14deg); filter:blur(1.4px); }
+  88%,100% { opacity:1; transform:scale(1)   rotate(0deg); filter:blur(0px); }
 }
 @keyframes hpNoteShards {
-  0%,22%   { opacity:0; transform:translateY(8px) scale(.45) rotate(-18deg); }
-  40%,58%  { opacity:1; transform:translateY(-2px) scale(1.08) rotate(4deg); }
-  76%,100% { opacity:0; transform:translateY(-12px) scale(.72) rotate(16deg); }
+  0%,18%   { opacity:0; transform:translateY(10px) scale(.4)  rotate(-22deg); filter:blur(2.5px); }
+  34%      { opacity:.75; transform:translateY(2px) scale(.92) rotate(-4deg); filter:blur(.6px); }
+  46%,54%  { opacity:1; transform:translateY(-3px) scale(1.18) rotate(0deg);  filter:blur(0px); }
+  66%      { opacity:.75; transform:translateY(2px) scale(.92) rotate(4deg);  filter:blur(.6px); }
+  82%,100% { opacity:0; transform:translateY(-10px) scale(.5)  rotate(22deg); filter:blur(2.5px); }
 }
 @keyframes hpHeadphonesGroove {
-  0%,100% { transform:translateY(0) scale(1); opacity:1; }
-  42%,58% { transform:translateY(-2px) scale(1.08); opacity:.96; }
+  0%,100% { transform:translateY(0) scale(1) rotate(0deg); opacity:1; }
+  36%,64% { transform:translateY(-2px) scale(1.06) rotate(-2deg); opacity:.96; }
+  50%     { transform:translateY(-3px) scale(1.1) rotate(0deg); opacity:.98; }
+}
+@keyframes hpGlowPulse {
+  0%,100% { filter:drop-shadow(0 0 6px rgba(142,204,224,.55)); }
+  46%,54% { filter:drop-shadow(0 0 22px rgba(125,211,248,1)) drop-shadow(0 0 38px rgba(212,176,142,.55)); }
 }
 .omnia-music-note {
   position:fixed; z-index:8499; pointer-events:none;
@@ -7962,8 +7981,9 @@ function initOmniaAnims(){
         if(dismissed) return;
         bobber.classList.remove('bobbing');
         void bobber.offsetWidth;
-        spawnNoteBurst();
         bobber.classList.add('flipping');
+        // Burst at the apex (~50% of 1.85s) when the music note is fully formed
+        setTimeout(function(){ if(!dismissed) spawnNoteBurst(); }, 820);
       }
 
       bobber.addEventListener('animationend',function(e){
