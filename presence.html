@@ -13622,14 +13622,16 @@ document.addEventListener('DOMContentLoaded',function(){(function(){
         // (morph leaves filter as blur()+drop-shadow() which can't smoothly transition to drop-shadow())
         if(crystal) crystal.style.transition='none';
         crystal.style.opacity='1';
-        crystal.style.filter='drop-shadow(0 0 12px rgba(142,204,224,.45))';
+        // Set drop-shadow only (no blur prefix) at morph-end glow intensity so list length matches CSS default.
+        // This lets the subsequent transition go from drop-shadow(19px) → drop-shadow(12px) smoothly.
+        crystal.style.filter='drop-shadow(0 0 19px rgba(142,204,224,0.50))';
         ow.classList.remove('eye-state','tut-returning','tut-crystal-return');
         clearTutorialEyeMorph();
-        // Force reflow to commit final state, then clear inline overrides and restore transitions
+        // Commit the drop-shadow-only state as the transition baseline before restoring transitions.
         void crystal.offsetWidth;
-        crystal.style.opacity='';
-        crystal.style.filter='';
         crystal.style.transition='';
+        crystal.style.opacity='';
+        crystal.style.filter=''; // 19px → 12px, same list length → smooth 0.28s fade
         eyeOn=false;if(done)done();return;
       }
       tutorialEyeMorphRaf=requestAnimationFrame(frame);
