@@ -7858,7 +7858,10 @@ function initOmniaAnims(){
     var btn=document.getElementById(id);
     if(!btn) return;
     btn.addEventListener('click',function(){
-      setTimeout(trigger, 600);
+      // Snap immediately if peek is showing on wrong side,
+      // then allow a small delay before triggering a fresh animation.
+      trigger();
+      setTimeout(trigger, 80);
     });
   });
   scheduleAmbient();
