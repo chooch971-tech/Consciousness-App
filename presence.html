@@ -877,12 +877,14 @@
 #tutCorgi.tut-corgi-go { left:calc(100vw + 100px); }
 /* Omnia tab peek */
 #omniaTabPeek {
-  position:fixed; right:-140px; bottom:25%; z-index:8500;
-  transition:right 0.55s cubic-bezier(.34,1.45,.64,1);
+  position:fixed; right:-160px; bottom:25%; z-index:8500;
+  opacity:0;
+  transition:right 0.55s cubic-bezier(.34,1.45,.64,1), opacity 0.3s ease;
   pointer-events:none; cursor:default; user-select:none; -webkit-user-select:none;
 }
 #omniaTabPeek.peek-in {
   right:-10px;
+  opacity:1;
   pointer-events:auto; cursor:pointer;
 }
 #omniaTabPeekInner {
