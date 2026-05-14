@@ -13988,13 +13988,15 @@ document.addEventListener('DOMContentLoaded',function(){(function(){
             var el=document.querySelector(s.spotPanel);
             if(el){
               var r=el.getBoundingClientRect(),p=10;
-              // Snap spotlight instantly so no flash when overlay goes transparent
+              // Snap position with transition disabled so spotlight doesn't slide in from old pos.
+              // Restore transition BEFORE adding tut-lit so the border/box-shadow fade in
+              // alongside the overlay fade — prevents a sudden green outline in the dark.
               sp.style.transition='none';
               sp.style.left=(r.left-p)+'px'; sp.style.top=(r.top-p)+'px';
               sp.style.width=(r.width+p*2)+'px'; sp.style.height=(r.height+p*2)+'px';
-              sp.classList.add('tut-lit');
               void sp.offsetWidth;
               sp.style.transition='';
+              sp.classList.add('tut-lit');
               tutorialEyeAnchorY=null;
               // Leave tc at its current (eye-anchor/center) position so Omnia
               // appears where he was during the morph — repositioning here caused
