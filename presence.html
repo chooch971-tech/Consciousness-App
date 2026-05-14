@@ -992,26 +992,28 @@ body.tut-live #omniaTabPeek { display:none !important; }
 }
 .omnia-sleep-pillow {
   width:40px; height:22px; border-radius:50%;
-  background:radial-gradient(ellipse at 40% 35%, #c8e8f8 0%, #8abcd8 55%, #5a90b4 100%);
-  box-shadow:0 2px 8px rgba(90,160,200,.4), inset 0 1px 3px rgba(255,255,255,.3);
-  flex-shrink:0; margin-bottom:2px;
+  background:radial-gradient(ellipse at 40% 35%, #ffd6e8 0%, #f09abe 55%, #d4709a 100%);
+  box-shadow:0 2px 8px rgba(220,100,150,.35), inset 0 1px 3px rgba(255,255,255,.35);
+  flex-shrink:0; margin-bottom:2px; align-self:center;
 }
-.omnia-sleep-crystal {
-  display:block; flex-shrink:0;
-  transform:rotate(-90deg);
-  transform-origin:center center;
+.omnia-sleep-rot-box {
+  width:52px; height:32px; overflow:visible; position:relative; flex-shrink:0;
   filter:drop-shadow(0 0 10px rgba(142,204,224,.6));
   animation:omniaSlBreathe 4s ease-in-out infinite;
 }
-.omnia-sleep-crystal.waking { animation:omniaSlWake 0.5s ease-out forwards; }
+.omnia-sleep-rot-box.waking { animation:omniaSlWake 0.5s ease-out forwards; }
+.omnia-sleep-crystal {
+  position:absolute; left:50%; top:50%;
+  transform:translate(-50%,-50%) rotate(-90deg);
+}
 @keyframes omniaSlBreathe {
-  0%,100% { transform:rotate(-90deg) translateX(0) scaleX(1); }
-  50%     { transform:rotate(-90deg) translateX(-2px) scaleX(0.97); }
+  0%,100% { transform:scaleX(1) translateX(0); }
+  50%     { transform:scaleX(0.97) translateX(-1px); }
 }
 @keyframes omniaSlWake {
-  0%   { transform:rotate(-90deg) scale(1); }
-  40%  { transform:rotate(-45deg) scale(1.15) translateY(-8px); }
-  100% { transform:rotate(0deg) scale(1) translateY(0); }
+  0%   { transform:scaleX(1); }
+  50%  { transform:scale(1.1) translateY(-6px); }
+  100% { transform:scale(1); }
 }
 .omnia-zzz {
   position:fixed; pointer-events:none; z-index:8499;
@@ -7985,15 +7987,17 @@ function initOmniaAnims(){
       wrap.className='omnia-sleep-wrap';
       var scene=document.createElement('div');
       scene.className='omnia-sleep-scene';
-      scene.innerHTML='<div class="omnia-sleep-pillow"></div><div class="omnia-sleep-crystal">'+SLEEP_SVG+'</div>';
+      // rot-box: 52×32 layout box that visually matches the rotated 32×52 crystal
+      scene.innerHTML='<div class="omnia-sleep-pillow"></div>'+
+        '<div class="omnia-sleep-rot-box"><div class="omnia-sleep-crystal">'+SLEEP_SVG+'</div></div>';
       wrap.appendChild(scene);
       document.body.appendChild(wrap);
 
-      var crystal=scene.querySelector('.omnia-sleep-crystal');
-      var sceneW=72; // approximate scene width after rotation
-      // Position: Omnia lies across the button, slightly above it
-      wrap.style.left=(r.left+r.width/2-55)+'px';
-      wrap.style.top=(r.top-36)+'px';
+      var rotBox=scene.querySelector('.omnia-sleep-rot-box');
+      // Scene visual width ≈ pillow(40) + crystal(52) = 92px; center on button
+      wrap.style.left=(r.left+r.width/2-46)+'px';
+      // Scene height = 32px; place so bottom rests on button top with 4px overlap
+      wrap.style.top=(r.top-28)+'px';
 
       var dismissed=false;
       var zzzTimer=null;
@@ -8032,9 +8036,7 @@ function initOmniaAnims(){
         clearInterval(zzzTimer);
         clearTimeout(autoTimer);
         if(clicked){
-          crystal.classList.remove('omnia-sleep-crystal');
-          crystal.style.animation='none';
-          crystal.classList.add('omnia-sleep-crystal','waking');
+          rotBox.classList.add('waking');
           setTimeout(function(){
             // fly up and fade
             wrap.style.transition='transform 0.5s ease-in, opacity 0.4s ease';
