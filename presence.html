@@ -899,6 +899,39 @@
   50%     { transform:translateY(-10px); }
 }
 body.tut-live #omniaTabPeek { display:none !important; }
+/* Speed streaks + sparks when Omnia flies across */
+.omnia-streak {
+  position:fixed; height:3px; width:120px; border-radius:2px;
+  pointer-events:none; z-index:8499; opacity:0;
+}
+.omnia-streak.streak-l {
+  background:linear-gradient(90deg, rgba(142,204,224,0) 0%, rgba(142,204,224,0.85) 55%, rgba(255,255,255,1) 100%);
+  animation:omniaStreakLeft 0.55s cubic-bezier(.4,0,.2,1) forwards;
+}
+.omnia-streak.streak-r {
+  background:linear-gradient(270deg, rgba(142,204,224,0) 0%, rgba(142,204,224,0.85) 55%, rgba(255,255,255,1) 100%);
+  animation:omniaStreakRight 0.55s cubic-bezier(.4,0,.2,1) forwards;
+}
+@keyframes omniaStreakLeft {
+  0%   { opacity:0; transform:translateX(60px) scaleX(0.4); }
+  25%  { opacity:1; transform:translateX(0) scaleX(1); }
+  100% { opacity:0; transform:translateX(-260px) scaleX(0.3); }
+}
+@keyframes omniaStreakRight {
+  0%   { opacity:0; transform:translateX(-60px) scaleX(0.4); }
+  25%  { opacity:1; transform:translateX(0) scaleX(1); }
+  100% { opacity:0; transform:translateX(260px) scaleX(0.3); }
+}
+.omnia-spark {
+  position:fixed; width:6px; height:6px; border-radius:50%;
+  background:radial-gradient(circle, rgba(255,255,255,1) 0%, rgba(180,220,240,0.9) 40%, rgba(142,204,224,0) 100%);
+  pointer-events:none; z-index:8499;
+  animation:omniaSparkFade 0.65s ease-out forwards;
+}
+@keyframes omniaSparkFade {
+  0%   { opacity:1; transform:translate(0,0) scale(1); }
+  100% { opacity:0; transform:translate(var(--dx,0), var(--dy,0)) scale(0.2); }
+}
 /* Path choice buttons (inside drawer float) */
 #tutPathChoice {
   display:none; flex-direction:column; gap:10px;
@@ -7562,10 +7595,41 @@ function initOmniaTabPeek(){
     visible=false;
   }
 
+  function spawnTrail(direction){
+    var rect=peek.getBoundingClientRect();
+    var cx=rect.left+rect.width/2;
+    var cy=rect.top+rect.height/2;
+    var streakClass=direction==='left'?'streak-l':'streak-r';
+    for(var i=0;i<5;i++){
+      var s=document.createElement('div');
+      s.className='omnia-streak '+streakClass;
+      var offsetX=direction==='left'?-30:30;
+      s.style.left=(cx+offsetX-60)+'px';
+      s.style.top=(cy+(Math.random()*70-35))+'px';
+      s.style.animationDelay=(i*45)+'ms';
+      document.body.appendChild(s);
+      setTimeout(function(el){return function(){el.remove();};}(s),700+i*45);
+    }
+    for(var j=0;j<10;j++){
+      var sp=document.createElement('div');
+      sp.className='omnia-spark';
+      var a=Math.random()*Math.PI*2;
+      var d=25+Math.random()*55;
+      sp.style.left=(cx-3)+'px';
+      sp.style.top=(cy-3)+'px';
+      sp.style.setProperty('--dx',Math.cos(a)*d+'px');
+      sp.style.setProperty('--dy',Math.sin(a)*d+'px');
+      sp.style.animationDelay=(Math.random()*120)+'ms';
+      document.body.appendChild(sp);
+      setTimeout(function(el){return function(){el.remove();};}(sp),900);
+    }
+  }
+
   peek.addEventListener('click',function(){
     if(shooting) return;
     shooting=true;
     clearTimeout(hideTimer);
+    spawnTrail(currentSide==='left'?'right':'left');
     peek.style.transition='transform 0.4s cubic-bezier(.6,0,.2,1)';
     if(currentSide==='left'){
       peek.style.transform='translateX(calc(100vw + 200px)) rotate(45deg)';
@@ -13771,7 +13835,7 @@ document.addEventListener('DOMContentLoaded',function(){(function(){
 
 <!-- Spotlight: lives outside overlay for independent visibility -->
 <!-- Omnia tab peek -->
-<div id="omniaTabPeek">
+<div id="omniaTabPeek" class="side-right">
   <div id="omniaTabPeekInner">
     <svg width="110" height="178" viewBox="0 0 72 118" xmlns="http://www.w3.org/2000/svg">
       <polygon points="36,2 50,14 36,26 22,14" fill="#ceeaff" stroke="#90cce8" stroke-width=".8" opacity=".95"/>
