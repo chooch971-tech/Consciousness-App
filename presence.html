@@ -884,10 +884,10 @@
   transition:transform 0.55s cubic-bezier(.34,1.45,.64,1);
   transform-origin:center center;
 }
-#omniaTabPeek.side-right { right:0; left:auto; transform:translateX(180px) rotate(-90deg); }
-#omniaTabPeek.side-right.peek-in { transform:translateX(70px) rotate(-90deg); pointer-events:auto; cursor:pointer; }
-#omniaTabPeek.side-left { left:0; right:auto; transform:translateX(-180px) rotate(90deg); }
-#omniaTabPeek.side-left.peek-in { transform:translateX(-70px) rotate(90deg); pointer-events:auto; cursor:pointer; }
+#omniaTabPeek.side-right { right:0; left:auto; transform:translateX(200px) rotate(-45deg); }
+#omniaTabPeek.side-right.peek-in { transform:translateX(60px) rotate(-45deg); pointer-events:auto; cursor:pointer; }
+#omniaTabPeek.side-left { left:0; right:auto; transform:translateX(-200px) rotate(45deg); }
+#omniaTabPeek.side-left.peek-in { transform:translateX(-60px) rotate(45deg); pointer-events:auto; cursor:pointer; }
 #omniaTabPeekInner {
   filter:drop-shadow(0 0 20px rgba(142,204,224,.7));
 }
@@ -7568,9 +7568,9 @@ function initOmniaTabPeek(){
     clearTimeout(hideTimer);
     peek.style.transition='transform 0.4s cubic-bezier(.6,0,.2,1)';
     if(currentSide==='left'){
-      peek.style.transform='translateX(calc(100vw + 200px)) rotate(90deg)';
+      peek.style.transform='translateX(calc(100vw + 200px)) rotate(45deg)';
     } else {
-      peek.style.transform='translateX(calc(-100vw - 200px)) rotate(-90deg)';
+      peek.style.transform='translateX(calc(-100vw - 200px)) rotate(-45deg)';
     }
     setTimeout(function(){
       peek.classList.remove('peek-in');
