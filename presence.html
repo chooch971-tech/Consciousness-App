@@ -947,8 +947,22 @@ body.tut-live #omniaTabPeek { display:none !important; }
   display:block; width:fit-content; cursor:pointer;
   pointer-events:auto;
   transform:translateX(calc(100vw - 100% - 14px));
-  transition:transform 0.52s ease-in-out;
+  transition:transform 1.0s cubic-bezier(0.4,0,0.6,1);
   transform-origin:center center;
+}
+.omnia-hp-bobber { display:block; transform-origin:center bottom; }
+.omnia-hp-bobber.bobbing  { animation:hpBob 0.48s ease-in-out infinite; }
+.omnia-hp-bobber.flipping { animation:hpFlip 0.82s cubic-bezier(.4,0,.6,1) forwards; }
+@keyframes hpBob {
+  0%,100% { transform:translateY(0) scale(1); }
+  50%     { transform:translateY(-16px) scale(1.06); }
+}
+@keyframes hpFlip {
+  0%   { transform:translateY(0) rotate(0deg) scale(1); }
+  25%  { transform:translateY(-22px) rotate(90deg) scale(0.95); }
+  55%  { transform:translateY(-30px) rotate(270deg) scale(0.85); }
+  80%  { transform:translateY(-8px) rotate(340deg) scale(1.08); }
+  100% { transform:translateY(0) rotate(360deg) scale(1); }
 }
 .omnia-music-note {
   position:fixed; z-index:8499; pointer-events:none;
@@ -7788,31 +7802,19 @@ function initOmniaAnims(){
     show:function(done){
       var hp=document.createElement('div');
       hp.className='omnia-headphones-anim';
-      hp.innerHTML='<div class="omnia-hp-bounce">'+HP_SVG+'</div>';
+      hp.innerHTML='<div class="omnia-hp-bounce"><div class="omnia-hp-bobber">'+HP_SVG+'</div></div>';
       document.body.appendChild(hp);
-      void hp.offsetWidth;
-      hp.classList.add('in');
 
       var bounce=hp.querySelector('.omnia-hp-bounce');
-      var currentSide='right'; // starts on right
-      var bounceRot=0;
-      var bouncing=true;
+      var bobber=hp.querySelector('.omnia-hp-bobber');
+      var currentSide='right';
+      var flipsDone=0;
+      var MAX_FLIPS=4; // right→left→right→left→exit
       var dismissed=false;
+      var bobTimer=null;
 
-      function doFlip(){
-        if(!bouncing||dismissed) return;
-        currentSide=currentSide==='right'?'left':'right';
-        bounceRot+=360;
-        var xPos=currentSide==='left'?'14px':'calc(100vw - 100% - 14px)';
-        bounce.style.transform='translateX('+xPos+') rotate('+bounceRot+'deg)';
-      }
-
-      bounce.addEventListener('transitionend',function(){
-        if(!dismissed&&bouncing) setTimeout(doFlip,280);
-      });
-
-      // First flip after fade-in
-      setTimeout(doFlip,550);
+      void hp.offsetWidth;
+      hp.classList.add('in');
 
       function spawnNote(){
         if(dismissed) return;
@@ -7826,17 +7828,62 @@ function initOmniaAnims(){
         document.body.appendChild(note);
         setTimeout(function(){ note.remove(); },2700);
       }
-      setTimeout(spawnNote,400);
+      setTimeout(spawnNote,500);
       var noteTimer=setInterval(spawnNote,900);
+
+      function startBob(){
+        if(dismissed) return;
+        if(currentMode!=='awareness'){ dismiss(false); return; }
+        bobber.style.transform='';
+        bobber.classList.remove('flipping');
+        void bobber.offsetWidth;
+        bobber.classList.add('bobbing');
+        bobTimer=setTimeout(startFlip,2500);
+      }
+
+      function startFlip(){
+        if(dismissed) return;
+        bobber.classList.remove('bobbing');
+        void bobber.offsetWidth;
+        bobber.classList.add('flipping');
+      }
+
+      bobber.addEventListener('animationend',function(e){
+        if(e.animationName!=='hpFlip'||dismissed) return;
+        bobber.classList.remove('flipping');
+        bobber.style.transform='';
+        flipsDone++;
+        if(flipsDone>=MAX_FLIPS){
+          // Exit off the next side
+          var nextSide=currentSide==='right'?'left':'right';
+          var flyX=nextSide==='left'?'calc(-100% - 200px)':'calc(100vw + 200px)';
+          bounce.style.transition='transform 0.85s ease-in';
+          bounce.style.transform='translateX('+flyX+')';
+          hp.style.transition='opacity 0.7s ease';
+          hp.style.opacity='0';
+          setTimeout(function(){ hp.remove(); done(false); },900);
+        } else {
+          // Slide to other side
+          currentSide=currentSide==='right'?'left':'right';
+          var xPos=currentSide==='left'?'14px':'calc(100vw - 100% - 14px)';
+          bounce.style.transform='translateX('+xPos+')';
+          function onSlide(){
+            bounce.removeEventListener('transitionend',onSlide);
+            startBob();
+          }
+          bounce.addEventListener('transitionend',onSlide);
+        }
+      });
 
       function dismiss(clicked){
         if(dismissed) return;
         dismissed=true;
-        bouncing=false;
         clearInterval(noteTimer);
+        clearTimeout(bobTimer);
+        bobber.classList.remove('bobbing','flipping');
         if(clicked){
           var flyX=currentSide==='right'?'calc(100vw + 200px)':'calc(-100% - 200px)';
-          var flyRot=bounceRot+(currentSide==='right'?540:-540);
+          var flyRot=currentSide==='right'?540:-540;
           bounce.style.transition='transform 0.45s cubic-bezier(.6,0,.2,1)';
           bounce.style.transform='translateX('+flyX+') rotate('+flyRot+'deg)';
           hp.style.transition='opacity 0.4s ease';
@@ -7850,6 +7897,15 @@ function initOmniaAnims(){
       }
       hp._dismiss=dismiss;
       bounce.addEventListener('click',function(){ dismiss(true); });
+
+      // Dismiss if user switches away from Awareness
+      ['modeConcentration','modePrayer'].forEach(function(id){
+        var btn=document.getElementById(id);
+        if(btn) btn.addEventListener('click',function(){ dismiss(false); },{once:true});
+      });
+
+      // Start
+      setTimeout(startBob, 400);
     }
   });
 
