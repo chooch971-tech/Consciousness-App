@@ -753,6 +753,17 @@
 #tutContent.tut-content-bottom #tutOmniaWrap {
   width:76px; height:92px; flex-basis:92px;
 }
+#tutContent.tut-obj-callout #tutOmniaWrap {
+  align-self:flex-end;
+  margin-right:clamp(4px,8vw,44px);
+  transform:translateY(8px);
+}
+#tutContent.tut-obj-callout .tut-crystal-svg {
+  width:58px;
+}
+#tutContent.tut-obj-callout .tut-shard-svg {
+  width:68px; height:84px;
+}
 #tutContent.tut-content-low #tutOmniaWrap {
   width:92px; height:108px; flex-basis:108px;
 }
@@ -13414,7 +13425,7 @@ document.addEventListener('DOMContentLoaded',function(){(function(){
                text:'You must place your complete focus here and only stop once the mind becomes distracted.'},
     /* 8  */ {mode:'spot', target:'[data-exercise="visual"]', omniaLeft:true, omniaNarrowLeft:true, scrollTo:'[data-exercise="visual"]',
                text:'For the Visualization exercise, you\'ll learn to see objects as if they were right in front of you.'},
-    /* 9  */ {mode:'full', objFlash:true, omniaBelow:true,
+    /* 9  */ {mode:'full', objFlash:true, omniaBelow:true, omniaObjCallout:true,
                text:'You\'ll start with easier objects, like shapes. But then go into objects.'},
     /* 10 */ {mode:'spot', target:'[data-exercise="visual"]', omniaLeft:true,
                text:'You\'ll learn to do this with your eyes open as well — a concept that sounds difficult but is rather easy after some perseverance.'},
@@ -13569,6 +13580,7 @@ document.addEventListener('DOMContentLoaded',function(){(function(){
       tc.style.top='';tc.style.bottom='';tc.style.left='';tc.style.right='';tc.style.transform='';tc.style.maxWidth='';
       if(!preserveLow) tc.classList.remove('tut-content-low');
       tc.classList.remove('tut-clock-callout');
+      tc.classList.remove('tut-obj-callout');
       tc.classList.remove('tut-eye-stage');
     });
   }
@@ -14083,6 +14095,7 @@ document.addEventListener('DOMContentLoaded',function(){(function(){
         tc.classList.remove('tut-content-bottom');
       } else if(s.omniaBelow){
         tc.classList.add('tut-vis','tut-content-bottom');
+        if(s.omniaObjCallout) tc.classList.add('tut-obj-callout');
       } else {
         tc.classList.add('tut-vis'); tc.classList.remove('tut-content-bottom');
       }
@@ -14098,17 +14111,16 @@ document.addEventListener('DOMContentLoaded',function(){(function(){
             var el=document.querySelector(s.spotPanel);
             if(el){
               var r=el.getBoundingClientRect(),p=10;
-              // Snap position with transition disabled so spotlight doesn't slide in from old pos.
-              // Restore transition BEFORE adding tut-lit so the border/box-shadow fade in
-              // alongside the overlay fade — prevents a sudden green outline in the dark.
+              // Snap and show the spotlight before fading the overlay so the app never
+              // flashes in unframed between the dark intro and the highlighted tab.
               sp.style.transition='none';
               sp.style.left=(r.left-p)+'px'; sp.style.top=(r.top-p)+'px';
               sp.style.width=(r.width+p*2)+'px'; sp.style.height=(r.height+p*2)+'px';
               void sp.offsetWidth;
-              sp.style.transition='';
               sp.classList.add('tut-lit');
+              requestAnimationFrame(function(){ sp.style.transition=''; });
             }
-            ov.style.background='rgba(7,8,13,0)';
+            setTimeout(function(){ ov.style.background='rgba(7,8,13,0)'; },220);
             if(glowEl) setTimeout(function(){ glowEl.classList.add('tut-elem-glow'); }, 420);
           }
         };
@@ -14125,13 +14137,13 @@ document.addEventListener('DOMContentLoaded',function(){(function(){
     } else {
       ov.classList.add('tut-spot');
       ov.style.background='rgba(7,8,13,0.08)';
-      tc.classList.add('tut-vis');
       if(s.omniaLeft||s.omniaRight){
-        tc.classList.remove('tut-content-bottom');
+        tc.classList.remove('tut-vis','tut-content-bottom');
         var doSpot=function(){
           if(s.targets) litSpotMulti(s.targets); else litSpot(s.target);
           positionTcBeside(s.targets?s.targets[0]:s.target,s.omniaLeft?'left':'right');
           if(s.omniaNarrowLeft){tc.style.maxWidth='min(220px,46vw)';}
+          tc.classList.add('tut-vis');
           finishStep(s);
         };
         if(s.scrollTo){scrollToCard(s.scrollTo,doSpot);return;}
@@ -14140,9 +14152,11 @@ document.addEventListener('DOMContentLoaded',function(){(function(){
         setTimeout(function(){
           positionTcBeside(s.targets?s.targets[0]:s.target,s.omniaLeft?'left':'right');
           if(s.omniaNarrowLeft){tc.style.maxWidth='min(220px,46vw)';}
+          tc.classList.add('tut-vis');
           finishStep(s);
         },200); return;
       } else if(s.omniaMid||s.omniaLow){
+        tc.classList.add('tut-vis');
         tc.classList.remove('tut-content-bottom');
         if(s.omniaLow) tc.classList.add('tut-content-low');
         var doSpotMid=function(){
@@ -14152,6 +14166,7 @@ document.addEventListener('DOMContentLoaded',function(){(function(){
         };
         setTimeout(doSpotMid,200); return;
       } else {
+        tc.classList.add('tut-vis');
         tc.classList.add('tut-content-bottom');
         var doSpot2=function(){if(s.targets) litSpotMulti(s.targets); else litSpot(s.target);};
         if(s.scrollTo){scrollToCard(s.scrollTo,function(){doSpot2();finishStep(s);});return;}
