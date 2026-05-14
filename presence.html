@@ -877,12 +877,13 @@
 #tutCorgi.tut-corgi-go { left:calc(100vw + 100px); }
 /* Omnia tab peek */
 #omniaTabPeek {
-  position:fixed; right:-160px; bottom:25%; z-index:8500;
-  transition:right 0.55s cubic-bezier(.34,1.45,.64,1);
+  position:fixed; right:0; bottom:25%; z-index:8500;
+  transform:translateX(calc(100% + 20px));
+  transition:transform 0.55s cubic-bezier(.34,1.45,.64,1);
   pointer-events:none; cursor:default; user-select:none; -webkit-user-select:none;
 }
 #omniaTabPeek.peek-in {
-  right:-10px;
+  transform:translateX(10px);
   pointer-events:auto; cursor:pointer;
 }
 #omniaTabPeekInner {
@@ -1019,7 +1020,7 @@ body:not(.tut-live) #tutCorgi {
 }
 
 /* Omnia replay button in drawer header */
-.drawer-header { position:relative; display:flex; flex-direction:column; align-items:center; text-align:center; }
+.drawer-header { display:flex; flex-direction:column; align-items:center; text-align:center; }
 #drawerOmniaBtn {
   background:none; border:none; cursor:pointer; padding:4px;
   opacity:0.65; transition:opacity 0.2s ease, filter 0.2s ease;
@@ -7552,7 +7553,6 @@ document.getElementById('modePrayer').addEventListener('click', function() { swi
     if(shooting) return;
     shooting=true;
     clearTimeout(hideTimer);
-    // Shoot across screen to the left using transform (overrides right positioning)
     peek.style.transition='transform 0.4s cubic-bezier(.6,0,.2,1)';
     peek.style.transform='translateX(calc(-100vw - 200px))';
     setTimeout(function(){
