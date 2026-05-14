@@ -875,6 +875,28 @@
   transition:left 3s cubic-bezier(.35,.05,.2,1);
 }
 #tutCorgi.tut-corgi-go { left:calc(100vw + 100px); }
+/* Omnia tab peek */
+#omniaTabPeek {
+  position:fixed; right:0; bottom:28%; z-index:8500;
+  transform:translateX(82%);
+  transition:transform 0.55s cubic-bezier(.34,1.45,.64,1);
+  pointer-events:none; cursor:default; user-select:none; -webkit-user-select:none;
+}
+#omniaTabPeek.peek-in {
+  transform:translateX(36%);
+  pointer-events:auto; cursor:pointer;
+}
+#omniaTabPeekInner {
+  filter:drop-shadow(0 0 16px rgba(142,204,224,.6));
+}
+#omniaTabPeek.peek-in #omniaTabPeekInner {
+  animation:omniaTabBob 2.8s ease-in-out infinite;
+}
+@keyframes omniaTabBob {
+  0%,100% { transform:translateY(0); }
+  50%     { transform:translateY(-11px); }
+}
+body.tut-live #omniaTabPeek { display:none !important; }
 /* Path choice buttons (inside drawer float) */
 #tutPathChoice {
   display:none; flex-direction:column; gap:10px;
@@ -7508,6 +7530,53 @@ document.getElementById('concHomeSymbolFill').addEventListener('click', function
 });
 document.getElementById('modeConcentration').addEventListener('click', function() { switchMode('concentration'); });
 document.getElementById('modePrayer').addEventListener('click', function() { switchMode('prayer'); });
+
+/* ── Omnia tab peek ── */
+(function(){
+  var peek=document.getElementById('omniaTabPeek');
+  var hideTimer=null, peekTimer=null, visible=false, shooting=false;
+
+  function showPeek(){
+    if(shooting||document.body.classList.contains('tut-live')) return;
+    clearTimeout(hideTimer);
+    peek.classList.add('peek-in');
+    visible=true;
+    hideTimer=setTimeout(hidePeek,5000);
+  }
+  function hidePeek(){
+    clearTimeout(hideTimer);
+    peek.classList.remove('peek-in');
+    visible=false;
+  }
+
+  peek.addEventListener('click',function(){
+    if(shooting) return;
+    shooting=true;
+    clearTimeout(hideTimer);
+    // Shoot across screen to the left
+    peek.style.transition='transform 0.42s cubic-bezier(.6,0,.3,1)';
+    peek.style.transform='translateX(calc(-100vw - 120px))';
+    setTimeout(function(){
+      peek.classList.remove('peek-in');
+      peek.style.transition='none';
+      peek.style.transform='';
+      void peek.offsetWidth;
+      peek.style.transition='';
+      visible=false; shooting=false;
+    },460);
+  });
+
+  ['modeAwareness','modeConcentration','modePrayer'].forEach(function(id){
+    var btn=document.getElementById(id);
+    if(!btn) return;
+    btn.addEventListener('click',function(){
+      if(document.body.classList.contains('tut-live')) return;
+      clearTimeout(peekTimer);
+      if(visible){ hidePeek(); peekTimer=setTimeout(showPeek,700); }
+      else { peekTimer=setTimeout(showPeek,550); }
+    });
+  });
+})();
 document.getElementById('concStopBtn').addEventListener('click', function() { stopConcentration(); });
 document.getElementById('concStopBtn2').addEventListener('click', function() { stopConcentration(); });
 document.getElementById('concHistoryBtn').addEventListener('click', function() { concHistoryFrom='home'; concHistoryFilter='all'; renderConcHistory(); showScreen('concHistoryScreen'); });
@@ -13674,6 +13743,23 @@ document.addEventListener('DOMContentLoaded',function(){(function(){
 <button class="tut-skip-btn" id="tutSkipBtn">Skip</button>
 
 <!-- Spotlight: lives outside overlay for independent visibility -->
+<!-- Omnia tab peek -->
+<div id="omniaTabPeek">
+  <div id="omniaTabPeekInner">
+    <svg width="66" height="106" viewBox="0 0 72 118" xmlns="http://www.w3.org/2000/svg">
+      <polygon points="36,2 50,14 36,26 22,14" fill="#ceeaff" stroke="#90cce8" stroke-width=".8" opacity=".95"/>
+      <polygon points="36,2 50,14 36,13" fill="#e8f8ff" opacity=".55"/>
+      <polygon points="36,2 22,14 36,13" fill="#b4daf5" opacity=".35"/>
+      <polygon points="36,26 56,37 60,59 36,70 12,59 16,37" fill="#b8dcf5" stroke="#88c4e0" stroke-width=".7" opacity=".88"/>
+      <polygon points="36,26 56,37 36,45" fill="#d4ecff" opacity=".44"/>
+      <polygon points="36,26 16,37 36,45" fill="#a8d4f0" opacity=".28"/>
+      <polygon points="36,70 60,59 52,88 36,100 20,88 12,59" fill="#a8d4f0" stroke="#88c4e0" stroke-width=".7" opacity=".82"/>
+      <polygon points="36,100 52,88 36,116" fill="#98c8e8" stroke="#88c4e0" stroke-width=".6" opacity=".7"/>
+      <polygon points="36,100 20,88 36,116" fill="#88c0e0" stroke="#88c4e0" stroke-width=".6" opacity=".52"/>
+    </svg>
+  </div>
+</div>
+
 <div id="tutSpotlight"></div>
 
 <!-- Drawer / guide float (z-index 9500) -->
