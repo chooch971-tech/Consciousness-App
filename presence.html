@@ -7639,9 +7639,31 @@ function initOmniaAnims(){
     return pool[0];
   }
   function trigger(){
-    if(current) return;
     if(document.body.classList.contains('tut-live')) return;
     if(document.getElementById('homeScreen').style.display==='none') return;
+    // If peek is already showing on the wrong side, snap it to the correct side
+    if(current && current.id==='peek' && peekVisible && !peekShooting){
+      var shouldBe=(currentMode==='concentration')?'left':'right';
+      if(peekSide!==shouldBe){
+        clearTimeout(peekHideTimer);
+        peek.style.transition='none';
+        peek.classList.remove('peek-in','side-right','side-left');
+        peek.classList.add(shouldBe==='left'?'side-left':'side-right');
+        peekSide=shouldBe;
+        void peek.offsetWidth;
+        peek.style.transition='';
+        peek.classList.add('peek-in');
+        peekHideTimer=setTimeout(function(){
+          if(!peekVisible||peekShooting) return;
+          peek.classList.remove('peek-in');
+          peekVisible=false;
+          var d=peekDone; peekDone=null;
+          if(d) d(false);
+        },5500);
+      }
+      return;
+    }
+    if(current) return;
     var anim=pickNext();
     if(!anim) return;
     anim.lastShown=Date.now();
@@ -7735,7 +7757,7 @@ function initOmniaAnims(){
   });
   register({
     id:'peek',
-    cooldownShown:25000,
+    cooldownShown:2000,
     cooldownClicked:90000,
     show:function(done){
       var side=(currentMode==='concentration')?'left':'right';
