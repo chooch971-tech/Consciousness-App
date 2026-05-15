@@ -14130,8 +14130,12 @@ document.addEventListener('DOMContentLoaded',function(){(function(){
           th.textContent='Tap to continue';
           th.style.display='block'; sk.style.display='block';
           withoutTcTransition(function(){
+            // Clear prior step's inline anchor (positionTcBeside leftovers) so tut-clock-callout
+            // CSS can settle tc into its corner before we measure the FLIP destination.
+            tc.style.top='';tc.style.bottom='';tc.style.left='';tc.style.right='';
+            tc.style.transform='';tc.style.maxWidth='';
             tc.classList.add('tut-vis','tut-clock-callout');
-            tc.classList.remove('tut-content-bottom','tut-obj-callout');
+            tc.classList.remove('tut-content-bottom','tut-obj-callout','tut-content-low');
           });
           var clockOwTo=ow.getBoundingClientRect();
           var clockDX=clockOwFrom.left-clockOwTo.left, clockDY=clockOwFrom.top-clockOwTo.top;
