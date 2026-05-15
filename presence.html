@@ -14114,10 +14114,12 @@ document.addEventListener('DOMContentLoaded',function(){(function(){
       }
       if(s.morphCrystal&&eyeOn){
         bl.classList.remove('tut-vis');
-        if(s.blueText) bl.classList.add('tut-blue'); else bl.classList.remove('tut-blue');
         if(s.text){
-          setTutorialText(bt,s.text);
-          setTimeout(function(){bl.classList.add('tut-vis');},90);
+          setTimeout(function(){
+            if(s.blueText) bl.classList.add('tut-blue'); else bl.classList.remove('tut-blue');
+            setTutorialText(bt,s.text);
+            bl.classList.add('tut-vis');
+          },460);
         }
         applyTutorialEyeAnchor();
         var concentrationSceneRevealed=false;
