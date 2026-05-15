@@ -223,8 +223,8 @@
     #settingsScrollBody::-webkit-scrollbar { display:none; }
     #prayerResultScreen, #prayerHistoryScreen { scrollbar-width:none; -ms-overflow-style:none; }
     #prayerResultScreen::-webkit-scrollbar, #prayerHistoryScreen::-webkit-scrollbar { display:none; }
-    #guideScreen { scrollbar-width:none; -ms-overflow-style:none; }
-    #guideScreen::-webkit-scrollbar { display:none; }
+    #guidePanel { scrollbar-width:none; -ms-overflow-style:none; }
+    #guidePanel::-webkit-scrollbar { display:none; }
     .guide-prior-btn { width:100%; padding:14px 18px; background:rgba(255,255,255,.03); border:1px solid var(--border); border-radius:10px; color:var(--text); font-family:'DM Mono',monospace; font-size:10px; letter-spacing:.1em; text-align:left; cursor:pointer; transition:border-color .2s, background .2s; display:flex; justify-content:space-between; align-items:center; }
     .guide-prior-btn:active { background:rgba(255,255,255,.06); }
     .guide-prior-btn.open { border-color:rgba(212,149,110,.3); }
@@ -1315,224 +1315,6 @@ body:not(.tut-live) #tutCorgi {
   </div>
 
   <!-- GUIDE -->
-  <div class="screen" id="guideScreen" style="overflow-y:auto; -webkit-overflow-scrolling:touch; padding-bottom:60px;">
-    <div class="history-header">
-      <div class="history-title">Guide</div>
-      <button class="history-back" id="guideBack">← back</button>
-    </div>
-
-    <!-- Omnia character -->
-    <div class="omnia-wrap">
-      <div class="omnia-figure" id="guideOmniaFigure" role="button" tabindex="0" aria-label="Reveal an Omnia symbol">
-        <div class="omnia-crystal-layer">
-        <svg viewBox="0 0 80 130" width="72" height="118" xmlns="http://www.w3.org/2000/svg" style="overflow:visible;">
-          <defs>
-            <linearGradient id="og1" x1="0%" y1="0%" x2="100%" y2="100%">
-              <stop offset="0%" stop-color="#ddf0ff" stop-opacity="0.92"/>
-              <stop offset="100%" stop-color="#6ab8d8" stop-opacity="0.48"/>
-            </linearGradient>
-            <linearGradient id="og2" x1="100%" y1="0%" x2="0%" y2="100%">
-              <stop offset="0%" stop-color="#ffffff" stop-opacity="0.78"/>
-              <stop offset="100%" stop-color="#4a9ec0" stop-opacity="0.22"/>
-            </linearGradient>
-            <radialGradient id="og3" cx="50%" cy="38%" r="58%">
-              <stop offset="0%" stop-color="#b8eaff" stop-opacity="0.38"/>
-              <stop offset="100%" stop-color="#2878a0" stop-opacity="0"/>
-            </radialGradient>
-            <filter id="oglow" x="-30%" y="-30%" width="160%" height="160%">
-              <feGaussianBlur stdDeviation="2.5" result="blur"/>
-              <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
-            </filter>
-          </defs>
-          <!-- Ambient glow -->
-          <ellipse cx="40" cy="68" rx="28" ry="48" fill="url(#og3)" opacity="0.55"/>
-          <!-- Head gem -->
-          <polygon points="40,3 54,14 40,25 26,14" fill="url(#og1)" stroke="#90cce8" stroke-width="0.55" filter="url(#oglow)"/>
-          <polygon points="40,3 54,14 40,13" fill="#ceeaff" opacity="0.72"/>
-          <polygon points="40,3 26,14 40,13" fill="#b0dcf5" opacity="0.42"/>
-          <line x1="40" y1="3" x2="40" y2="25" stroke="#b8e0f8" stroke-width="0.4" opacity="0.55"/>
-          <line x1="26" y1="14" x2="54" y2="14" stroke="#b8e0f8" stroke-width="0.4" opacity="0.35"/>
-          <!-- Upper body crystal -->
-          <polygon points="40,25 60,36 64,58 40,70 16,58 20,36" fill="url(#og1)" stroke="#88c4e0" stroke-width="0.55"/>
-          <polygon points="40,25 60,36 40,44" fill="#d4ecff" opacity="0.52"/>
-          <polygon points="40,25 20,36 40,44" fill="#bce0f8" opacity="0.32"/>
-          <line x1="40" y1="25" x2="40" y2="70" stroke="#a8d8f2" stroke-width="0.38" opacity="0.48"/>
-          <polygon points="16,58 64,58 40,70" fill="url(#og2)" opacity="0.38"/>
-          <!-- Lower body gem -->
-          <polygon points="40,70 64,58 56,88 40,100 24,88 16,58" fill="url(#og1)" stroke="#88c4e0" stroke-width="0.55" opacity="0.88"/>
-          <!-- Terminus facets -->
-          <polygon points="40,100 56,88 40,114" fill="url(#og2)" stroke="#88c4e0" stroke-width="0.48" opacity="0.72"/>
-          <polygon points="40,100 24,88 40,114" fill="#b4dcf4" stroke="#88c4e0" stroke-width="0.48" opacity="0.52"/>
-          <!-- Sparkle accents -->
-          <g opacity="0.65" filter="url(#oglow)">
-            <line x1="6" y1="22" x2="12" y2="22" stroke="#b8eaff" stroke-width="1"/>
-            <line x1="9" y1="19" x2="9" y2="25" stroke="#b8eaff" stroke-width="1"/>
-          </g>
-          <g opacity="0.48">
-            <line x1="68" y1="48" x2="74" y2="48" stroke="#b8eaff" stroke-width="0.9"/>
-            <line x1="71" y1="45" x2="71" y2="51" stroke="#b8eaff" stroke-width="0.9"/>
-          </g>
-          <g opacity="0.38">
-            <line x1="9" y1="84" x2="14" y2="84" stroke="#b8eaff" stroke-width="0.7"/>
-            <line x1="11.5" y1="81.5" x2="11.5" y2="86.5" stroke="#b8eaff" stroke-width="0.7"/>
-          </g>
-        </svg>
-        </div>
-        <svg class="omnia-shard-layer" id="guideOmniaShardSvg" viewBox="0 0 100 130" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"></svg>
-        <div class="omnia-morph-ring"></div>
-        <div class="omnia-symbol-layer" id="guideOmniaSymbolLayer"></div>
-        <div class="omnia-companion" id="guideOmniaCompanion"></div>
-      </div>
-      <div class="omnia-name">Omnia</div>
-      <div class="omnia-speak">I am here to guide your practice today.<br>Tell me — <em>have you walked this path before?</em></div>
-    </div>
-    <div class="entity-preview-card" id="elysPreviewCard">
-      <div class="entity-preview-kicker">Entity preview</div>
-      <div class="entity-preview-title">Elys</div>
-      <div class="elys-figure" aria-hidden="true">
-        <svg viewBox="0 0 120 120" width="86" height="86" xmlns="http://www.w3.org/2000/svg">
-          <defs>
-            <radialGradient id="elysAura" cx="50%" cy="50%" r="52%">
-              <stop offset="0%" stop-color="#ffe4c5" stop-opacity="0.45"/>
-              <stop offset="100%" stop-color="#d4956e" stop-opacity="0"/>
-            </radialGradient>
-            <linearGradient id="elysCore" x1="0%" y1="0%" x2="100%" y2="100%">
-              <stop offset="0%" stop-color="#ffe7d2" stop-opacity="0.95"/>
-              <stop offset="100%" stop-color="#d4956e" stop-opacity="0.55"/>
-            </linearGradient>
-          </defs>
-          <circle cx="60" cy="60" r="44" fill="url(#elysAura)"/>
-          <polygon points="60,12 76,42 108,48 84,70 90,102 60,86 30,102 36,70 12,48 44,42" fill="url(#elysCore)" stroke="#e5b995" stroke-width="1.2"/>
-          <circle cx="60" cy="60" r="11" fill="rgba(255,245,232,0.85)" stroke="#f3ceb1" stroke-width="1"/>
-        </svg>
-      </div>
-      <div class="entity-preview-text">A warm, solar counterpart to Omnia: less crystalline, more ember-light. Elys is tuned toward steadiness, courage, and embodied momentum.</div>
-      <div class="elys-prompt">If you want, I can wire Elys into the guide flow next.</div>
-    </div>
-
-    <div class="guide-tabs">
-      <button class="guide-tab active" id="guidePathTab">Path</button>
-      <button class="guide-tab" id="guideOmniaTab">Upgrade</button>
-    </div>
-
-    <div class="guide-tab-panel" id="guideOmniaPanel" style="display:none;">
-    <div class="omnia-engine" id="omniaEngine">
-      <div class="omnia-engine-top">
-        <div>
-          <div class="omnia-engine-kicker">Akashic Engine</div>
-          <div class="omnia-engine-title" id="omniaStageName">Vessel</div>
-          <div class="omnia-engine-sub" id="omniaStageSub">Omnia is learning to take form through your practice.</div>
-        </div>
-        <div class="omnia-akasha-bank">
-          <div class="omnia-akasha-val" id="omniaAkashaWallet">0</div>
-          <div class="omnia-akasha-key">akasha</div>
-        </div>
-      </div>
-
-      <div class="omnia-reservoir">
-        <div class="omnia-reservoir-row">
-          <span class="omnia-reservoir-label">reservoir</span>
-          <span class="omnia-reservoir-value" id="omniaReservoirText">0 / 0</span>
-        </div>
-        <div class="omnia-bar"><div class="omnia-bar-fill" id="omniaReservoirFill"></div></div>
-        <button class="omnia-collect-btn" id="omniaCollectBtn">Collect Akasha</button>
-        <div class="omnia-engine-sub" id="omniaRateText" style="text-align:center; margin-top:9px;"></div>
-      </div>
-
-      <div class="omnia-step-card">
-        <div class="omnia-step-top">
-          <div>
-            <div class="omnia-step-label">Bardon Step</div>
-            <div class="omnia-step-name" id="omniaStepName">Step I</div>
-          </div>
-          <div class="omnia-step-num" id="omniaStepNum">I</div>
-        </div>
-        <div class="omnia-step-text" id="omniaStepText"></div>
-        <div class="omnia-step-reqs" id="omniaStepReqs"></div>
-        <div class="omnia-action-row">
-          <button class="omnia-mini-btn" id="omniaAdvanceBtn">Advance Step</button>
-        </div>
-      </div>
-
-      <div class="omnia-body-grid" id="omniaBodyGrid"></div>
-
-      <div class="omnia-rec-card">
-        <div class="omnia-rec-top">
-          <div class="omnia-rec-label">Omnia recommends</div>
-          <div class="omnia-rec-reward" id="omniaRecReward"></div>
-        </div>
-        <div class="omnia-rec-name" id="omniaRecName">Clock</div>
-        <div class="omnia-rec-text" id="omniaRecText"></div>
-        <div class="omnia-rec-actions">
-          <button class="omnia-mini-btn" id="omniaBeginRecBtn">Begin</button>
-          <button class="omnia-mini-btn" id="omniaNewRecBtn">New Reading</button>
-        </div>
-      </div>
-
-      <div class="omnia-upgrades" id="omniaUpgradeGrid"></div>
-      <div class="omnia-cosmetics" id="omniaCosmeticGrid"></div>
-    </div>
-    </div>
-
-    <div class="guide-tab-panel" id="guidePathPanel">
-
-    <div class="guide-route-grid" id="guideRouteGrid">
-      <button class="guide-route-card" id="guideBeginnerPathBtn">
-        <div class="guide-route-title">I am new to this</div>
-        <div class="guide-route-text">For newer meditators. Omnia gives you a specific daily sequence so you can practice without guessing.</div>
-      </button>
-      <button class="guide-route-card experienced" id="guideExperiencedPathBtn">
-        <div class="guide-route-title">Tell Omnia where I am</div>
-        <div class="guide-route-text">For experienced meditators. Mark your current capacity and Omnia will recommend the next useful pressure point.</div>
-      </button>
-    </div>
-    <div class="guide-confirm-panel" id="guideConfirmPanel">
-      <div class="guide-locked-kicker">Confirm Path</div>
-      <div class="guide-confirm-title" id="guideConfirmTitle"></div>
-      <div class="guide-confirm-text" id="guideConfirmText"></div>
-      <div class="guide-cadence-control" id="guideConfirmCadenceControl" style="display:flex; margin:0 0 12px; padding:10px 0 0;">
-        <div class="guide-cadence-label">Recommended cadence</div>
-        <button class="guide-cadence-toggle" id="guideConfirmTwoADayBtn">2x/day on</button>
-      </div>
-      <div class="guide-confirm-actions" id="guideConfirmActions">
-        <button class="guide-confirm-btn ghost" id="guideConfirmBackBtn">Back</button>
-        <button class="guide-confirm-btn" id="guideConfirmCommitBtn">Begin Path</button>
-      </div>
-    </div>
-    <div class="guide-locked-path" id="guideLockedPath">
-      <div class="guide-locked-kicker">Path Sealed</div>
-      <div class="guide-locked-title" id="guideLockedTitle"></div>
-      <div class="guide-locked-text" id="guideLockedText"></div>
-      <div class="guide-cadence-control" id="guideCadenceControl">
-        <div class="guide-cadence-label">Daily cadence</div>
-        <button class="guide-cadence-toggle" id="guideTwoADayBtn">2x/day on</button>
-      </div>
-    </div>
-
-    <!-- Assessment panel -->
-    <div id="guideAssessmentPanel" style="display:none; margin-top:20px;">
-      <div class="omnia-speak left" style="margin-bottom:16px;">Good. <em>Tell me where you stand with each discipline.</em> I will remember.</div>
-      <div id="guideExRows"></div>
-      <button class="btn primary" id="guideGenerateBtn" style="margin-top:20px; background:rgba(142,204,224,0.1); border-color:rgba(142,204,224,.32); color:#8ecce0;">Ask Omnia for recommendations →</button>
-    </div>
-
-    <!-- Plan output -->
-    <div id="guidePlanOutput" style="display:none; margin-top:28px;">
-      <div style="display:flex; justify-content:space-between; align-items:baseline; margin-bottom:4px;">
-        <div style="font-size:9px; letter-spacing:.22em; text-transform:uppercase; color:var(--muted);">Today's Practice</div>
-        <div style="font-size:9px; color:var(--muted); opacity:.6;" id="guidePlanDayLabel"></div>
-      </div>
-      <div style="font-size:9px; letter-spacing:.12em; color:#8ecce0; text-transform:uppercase; margin-bottom:14px;" id="guidePlanFocus"></div>
-      <div class="guide-plan-controls" id="guidePlanControls">
-        <div class="guide-cadence-label">Cadence</div>
-        <button class="guide-cadence-toggle" id="guidePlanTwoADayBtn">2x/day on</button>
-      </div>
-      <div id="guidePlanCards"></div>
-      <div class="omnia-response" style="margin-top:18px; padding-bottom:8px;">Go well. Return when you are ready.</div>
-    </div>
-    </div>
-  </div>
-
   <!-- PLAYGROUND -->
   <div class="screen" id="playgroundScreen" style="flex-direction:column;">
     <div class="history-header">
@@ -1842,6 +1624,219 @@ body:not(.tut-live) #tutCorgi {
         <button id="sessionPrayerReturnBtn" onclick="returnToSessionFromPrayer()" style="display:none; width:100%; padding:10px; background:none; border:1px solid rgba(126,184,164,.2); border-radius:6px; color:var(--accent); font-family:'DM Mono',monospace; font-size:9px; letter-spacing:.2em; text-transform:uppercase; cursor:pointer;">← Return to Session</button>
       </div>
     </div>
+    <!-- GUIDE PANEL (inside homeScreen) -->
+    <div id="guidePanel" style="display:none; flex:1; flex-direction:column; overflow-y:auto; -webkit-overflow-scrolling:touch; min-height:0; padding-bottom:60px;">
+    <!-- Omnia character -->
+    <div class="omnia-wrap">
+      <div class="omnia-figure" id="guideOmniaFigure" role="button" tabindex="0" aria-label="Reveal an Omnia symbol">
+        <div class="omnia-crystal-layer">
+        <svg viewBox="0 0 80 130" width="72" height="118" xmlns="http://www.w3.org/2000/svg" style="overflow:visible;">
+          <defs>
+            <linearGradient id="og1" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stop-color="#ddf0ff" stop-opacity="0.92"/>
+              <stop offset="100%" stop-color="#6ab8d8" stop-opacity="0.48"/>
+            </linearGradient>
+            <linearGradient id="og2" x1="100%" y1="0%" x2="0%" y2="100%">
+              <stop offset="0%" stop-color="#ffffff" stop-opacity="0.78"/>
+              <stop offset="100%" stop-color="#4a9ec0" stop-opacity="0.22"/>
+            </linearGradient>
+            <radialGradient id="og3" cx="50%" cy="38%" r="58%">
+              <stop offset="0%" stop-color="#b8eaff" stop-opacity="0.38"/>
+              <stop offset="100%" stop-color="#2878a0" stop-opacity="0"/>
+            </radialGradient>
+            <filter id="oglow" x="-30%" y="-30%" width="160%" height="160%">
+              <feGaussianBlur stdDeviation="2.5" result="blur"/>
+              <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+            </filter>
+          </defs>
+          <!-- Ambient glow -->
+          <ellipse cx="40" cy="68" rx="28" ry="48" fill="url(#og3)" opacity="0.55"/>
+          <!-- Head gem -->
+          <polygon points="40,3 54,14 40,25 26,14" fill="url(#og1)" stroke="#90cce8" stroke-width="0.55" filter="url(#oglow)"/>
+          <polygon points="40,3 54,14 40,13" fill="#ceeaff" opacity="0.72"/>
+          <polygon points="40,3 26,14 40,13" fill="#b0dcf5" opacity="0.42"/>
+          <line x1="40" y1="3" x2="40" y2="25" stroke="#b8e0f8" stroke-width="0.4" opacity="0.55"/>
+          <line x1="26" y1="14" x2="54" y2="14" stroke="#b8e0f8" stroke-width="0.4" opacity="0.35"/>
+          <!-- Upper body crystal -->
+          <polygon points="40,25 60,36 64,58 40,70 16,58 20,36" fill="url(#og1)" stroke="#88c4e0" stroke-width="0.55"/>
+          <polygon points="40,25 60,36 40,44" fill="#d4ecff" opacity="0.52"/>
+          <polygon points="40,25 20,36 40,44" fill="#bce0f8" opacity="0.32"/>
+          <line x1="40" y1="25" x2="40" y2="70" stroke="#a8d8f2" stroke-width="0.38" opacity="0.48"/>
+          <polygon points="16,58 64,58 40,70" fill="url(#og2)" opacity="0.38"/>
+          <!-- Lower body gem -->
+          <polygon points="40,70 64,58 56,88 40,100 24,88 16,58" fill="url(#og1)" stroke="#88c4e0" stroke-width="0.55" opacity="0.88"/>
+          <!-- Terminus facets -->
+          <polygon points="40,100 56,88 40,114" fill="url(#og2)" stroke="#88c4e0" stroke-width="0.48" opacity="0.72"/>
+          <polygon points="40,100 24,88 40,114" fill="#b4dcf4" stroke="#88c4e0" stroke-width="0.48" opacity="0.52"/>
+          <!-- Sparkle accents -->
+          <g opacity="0.65" filter="url(#oglow)">
+            <line x1="6" y1="22" x2="12" y2="22" stroke="#b8eaff" stroke-width="1"/>
+            <line x1="9" y1="19" x2="9" y2="25" stroke="#b8eaff" stroke-width="1"/>
+          </g>
+          <g opacity="0.48">
+            <line x1="68" y1="48" x2="74" y2="48" stroke="#b8eaff" stroke-width="0.9"/>
+            <line x1="71" y1="45" x2="71" y2="51" stroke="#b8eaff" stroke-width="0.9"/>
+          </g>
+          <g opacity="0.38">
+            <line x1="9" y1="84" x2="14" y2="84" stroke="#b8eaff" stroke-width="0.7"/>
+            <line x1="11.5" y1="81.5" x2="11.5" y2="86.5" stroke="#b8eaff" stroke-width="0.7"/>
+          </g>
+        </svg>
+        </div>
+        <svg class="omnia-shard-layer" id="guideOmniaShardSvg" viewBox="0 0 100 130" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"></svg>
+        <div class="omnia-morph-ring"></div>
+        <div class="omnia-symbol-layer" id="guideOmniaSymbolLayer"></div>
+        <div class="omnia-companion" id="guideOmniaCompanion"></div>
+      </div>
+      <div class="omnia-name">Omnia</div>
+      <div class="omnia-speak">I am here to guide your practice today.<br>Tell me — <em>have you walked this path before?</em></div>
+    </div>
+    <div class="entity-preview-card" id="elysPreviewCard">
+      <div class="entity-preview-kicker">Entity preview</div>
+      <div class="entity-preview-title">Elys</div>
+      <div class="elys-figure" aria-hidden="true">
+        <svg viewBox="0 0 120 120" width="86" height="86" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <radialGradient id="elysAura" cx="50%" cy="50%" r="52%">
+              <stop offset="0%" stop-color="#ffe4c5" stop-opacity="0.45"/>
+              <stop offset="100%" stop-color="#d4956e" stop-opacity="0"/>
+            </radialGradient>
+            <linearGradient id="elysCore" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stop-color="#ffe7d2" stop-opacity="0.95"/>
+              <stop offset="100%" stop-color="#d4956e" stop-opacity="0.55"/>
+            </linearGradient>
+          </defs>
+          <circle cx="60" cy="60" r="44" fill="url(#elysAura)"/>
+          <polygon points="60,12 76,42 108,48 84,70 90,102 60,86 30,102 36,70 12,48 44,42" fill="url(#elysCore)" stroke="#e5b995" stroke-width="1.2"/>
+          <circle cx="60" cy="60" r="11" fill="rgba(255,245,232,0.85)" stroke="#f3ceb1" stroke-width="1"/>
+        </svg>
+      </div>
+      <div class="entity-preview-text">A warm, solar counterpart to Omnia: less crystalline, more ember-light. Elys is tuned toward steadiness, courage, and embodied momentum.</div>
+      <div class="elys-prompt">If you want, I can wire Elys into the guide flow next.</div>
+    </div>
+
+    <div class="guide-tabs">
+      <button class="guide-tab active" id="guidePathTab">Path</button>
+      <button class="guide-tab" id="guideOmniaTab">Upgrade</button>
+    </div>
+
+    <div class="guide-tab-panel" id="guideOmniaPanel" style="display:none;">
+    <div class="omnia-engine" id="omniaEngine">
+      <div class="omnia-engine-top">
+        <div>
+          <div class="omnia-engine-kicker">Akashic Engine</div>
+          <div class="omnia-engine-title" id="omniaStageName">Vessel</div>
+          <div class="omnia-engine-sub" id="omniaStageSub">Omnia is learning to take form through your practice.</div>
+        </div>
+        <div class="omnia-akasha-bank">
+          <div class="omnia-akasha-val" id="omniaAkashaWallet">0</div>
+          <div class="omnia-akasha-key">akasha</div>
+        </div>
+      </div>
+
+      <div class="omnia-reservoir">
+        <div class="omnia-reservoir-row">
+          <span class="omnia-reservoir-label">reservoir</span>
+          <span class="omnia-reservoir-value" id="omniaReservoirText">0 / 0</span>
+        </div>
+        <div class="omnia-bar"><div class="omnia-bar-fill" id="omniaReservoirFill"></div></div>
+        <button class="omnia-collect-btn" id="omniaCollectBtn">Collect Akasha</button>
+        <div class="omnia-engine-sub" id="omniaRateText" style="text-align:center; margin-top:9px;"></div>
+      </div>
+
+      <div class="omnia-step-card">
+        <div class="omnia-step-top">
+          <div>
+            <div class="omnia-step-label">Bardon Step</div>
+            <div class="omnia-step-name" id="omniaStepName">Step I</div>
+          </div>
+          <div class="omnia-step-num" id="omniaStepNum">I</div>
+        </div>
+        <div class="omnia-step-text" id="omniaStepText"></div>
+        <div class="omnia-step-reqs" id="omniaStepReqs"></div>
+        <div class="omnia-action-row">
+          <button class="omnia-mini-btn" id="omniaAdvanceBtn">Advance Step</button>
+        </div>
+      </div>
+
+      <div class="omnia-body-grid" id="omniaBodyGrid"></div>
+
+      <div class="omnia-rec-card">
+        <div class="omnia-rec-top">
+          <div class="omnia-rec-label">Omnia recommends</div>
+          <div class="omnia-rec-reward" id="omniaRecReward"></div>
+        </div>
+        <div class="omnia-rec-name" id="omniaRecName">Clock</div>
+        <div class="omnia-rec-text" id="omniaRecText"></div>
+        <div class="omnia-rec-actions">
+          <button class="omnia-mini-btn" id="omniaBeginRecBtn">Begin</button>
+          <button class="omnia-mini-btn" id="omniaNewRecBtn">New Reading</button>
+        </div>
+      </div>
+
+      <div class="omnia-upgrades" id="omniaUpgradeGrid"></div>
+      <div class="omnia-cosmetics" id="omniaCosmeticGrid"></div>
+    </div>
+    </div>
+
+    <div class="guide-tab-panel" id="guidePathPanel">
+
+    <div class="guide-route-grid" id="guideRouteGrid">
+      <button class="guide-route-card" id="guideBeginnerPathBtn">
+        <div class="guide-route-title">I am new to this</div>
+        <div class="guide-route-text">For newer meditators. Omnia gives you a specific daily sequence so you can practice without guessing.</div>
+      </button>
+      <button class="guide-route-card experienced" id="guideExperiencedPathBtn">
+        <div class="guide-route-title">Tell Omnia where I am</div>
+        <div class="guide-route-text">For experienced meditators. Mark your current capacity and Omnia will recommend the next useful pressure point.</div>
+      </button>
+    </div>
+    <div class="guide-confirm-panel" id="guideConfirmPanel">
+      <div class="guide-locked-kicker">Confirm Path</div>
+      <div class="guide-confirm-title" id="guideConfirmTitle"></div>
+      <div class="guide-confirm-text" id="guideConfirmText"></div>
+      <div class="guide-cadence-control" id="guideConfirmCadenceControl" style="display:flex; margin:0 0 12px; padding:10px 0 0;">
+        <div class="guide-cadence-label">Recommended cadence</div>
+        <button class="guide-cadence-toggle" id="guideConfirmTwoADayBtn">2x/day on</button>
+      </div>
+      <div class="guide-confirm-actions" id="guideConfirmActions">
+        <button class="guide-confirm-btn ghost" id="guideConfirmBackBtn">Back</button>
+        <button class="guide-confirm-btn" id="guideConfirmCommitBtn">Begin Path</button>
+      </div>
+    </div>
+    <div class="guide-locked-path" id="guideLockedPath">
+      <div class="guide-locked-kicker">Path Sealed</div>
+      <div class="guide-locked-title" id="guideLockedTitle"></div>
+      <div class="guide-locked-text" id="guideLockedText"></div>
+      <div class="guide-cadence-control" id="guideCadenceControl">
+        <div class="guide-cadence-label">Daily cadence</div>
+        <button class="guide-cadence-toggle" id="guideTwoADayBtn">2x/day on</button>
+      </div>
+    </div>
+
+    <!-- Assessment panel -->
+    <div id="guideAssessmentPanel" style="display:none; margin-top:20px;">
+      <div class="omnia-speak left" style="margin-bottom:16px;">Good. <em>Tell me where you stand with each discipline.</em> I will remember.</div>
+      <div id="guideExRows"></div>
+      <button class="btn primary" id="guideGenerateBtn" style="margin-top:20px; background:rgba(142,204,224,0.1); border-color:rgba(142,204,224,.32); color:#8ecce0;">Ask Omnia for recommendations →</button>
+    </div>
+
+    <!-- Plan output -->
+    <div id="guidePlanOutput" style="display:none; margin-top:28px;">
+      <div style="display:flex; justify-content:space-between; align-items:baseline; margin-bottom:4px;">
+        <div style="font-size:9px; letter-spacing:.22em; text-transform:uppercase; color:var(--muted);">Today's Practice</div>
+        <div style="font-size:9px; color:var(--muted); opacity:.6;" id="guidePlanDayLabel"></div>
+      </div>
+      <div style="font-size:9px; letter-spacing:.12em; color:#8ecce0; text-transform:uppercase; margin-bottom:14px;" id="guidePlanFocus"></div>
+      <div class="guide-plan-controls" id="guidePlanControls">
+        <div class="guide-cadence-label">Cadence</div>
+        <button class="guide-cadence-toggle" id="guidePlanTwoADayBtn">2x/day on</button>
+      </div>
+      <div id="guidePlanCards"></div>
+      <div class="omnia-response" style="margin-top:18px; padding-bottom:8px;">Go well. Return when you are ready.</div>
+    </div>
+    </div>
+    </div><!-- end guidePanel -->
   </div><!-- end homeScreen -->
 
   <!-- SOUL MIRROR SCREEN -->
@@ -7658,6 +7653,7 @@ function switchMode(mode) {
   var awPanel = document.getElementById('awarenessPanel');
   var coPanel = document.getElementById('concentrationPanel');
   var prPanel = document.getElementById('prayerPanel');
+  var guPanel = document.getElementById('guidePanel');
 
   awTab.classList.remove('active','conc-mode');
   coTab.classList.remove('active','conc-mode');
@@ -7665,6 +7661,7 @@ function switchMode(mode) {
   awPanel.style.display = 'none';
   coPanel.style.display = 'none';
   prPanel.style.display = 'none';
+  if (guPanel) guPanel.style.display = 'none';
 
   if (mode === 'awareness') {
     awTab.classList.add('active');
@@ -7674,6 +7671,10 @@ function switchMode(mode) {
     coTab.classList.add('active','conc-mode');
     coPanel.style.display = 'flex';
     renderConcHome();
+  } else if (mode === 'guide') {
+    prTab.classList.add('active');
+    if (guPanel) guPanel.style.display = 'flex';
+    openGuide();
   } else {
     // Prayer is now a drawer item — show its panel without highlighting any home tab
     prPanel.style.display = 'flex';
@@ -7707,7 +7708,7 @@ document.getElementById('concHomeSymbolFill').addEventListener('click', function
   showRankModal(concState.level, concState.xp, 'concentration');
 });
 document.getElementById('modeConcentration').addEventListener('click', function() { switchMode('concentration'); });
-document.getElementById('modePrayer').addEventListener('click', function() { openGuide(); });
+document.getElementById('modePrayer').addEventListener('click', function() { switchMode('guide'); });
 
 /* ── Omnia animations: scheduler + registered animations ── */
 function initOmniaAnims(){
@@ -10483,13 +10484,9 @@ function openGuide() {
     showGuideRouteChoice();
   }
   switchGuideTab('path');
-  showScreen('guideScreen');
 }
 
 // ── Event wiring ──────────────────────────────────────────
-document.getElementById('guideBack').addEventListener('click', function() {
-  showScreen('homeScreen');
-});
 
 document.getElementById('guideBeginnerPathBtn').addEventListener('click', function() {
   showGuidePathConfirmation('beginner');
@@ -14257,7 +14254,7 @@ document.addEventListener('DOMContentLoaded',function(){(function(){
       rdy=false; cp.classList.remove('tut-cap-on');
       var nextI=cur+1;
       closeDrawer();
-      setTimeout(function(){openGuide();setTimeout(function(){go(nextI);},350);},300);
+      setTimeout(function(){switchMode('guide');setTimeout(function(){go(nextI);},350);},300);
       return;
     }
     go(s.nextIdx!=null?s.nextIdx:cur+1);
