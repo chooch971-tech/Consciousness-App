@@ -754,9 +754,11 @@
   width:76px; height:92px; flex-basis:92px;
 }
 #tutContent.tut-obj-callout #tutOmniaWrap {
-  align-self:flex-end;
-  margin-right:clamp(4px,8vw,44px);
-  transform:translateY(8px);
+  position:fixed;
+  right:clamp(14px,5vw,34px);
+  bottom:72px;
+  margin:0;
+  transform:none;
 }
 #tutContent.tut-obj-callout .tut-crystal-svg {
   width:58px;
@@ -13427,13 +13429,13 @@ document.addEventListener('DOMContentLoaded',function(){(function(){
                text:'For the Visualization exercise, you\'ll learn to see objects as if they were right in front of you.'},
     /* 9  */ {mode:'full', objFlash:true, omniaBelow:true, omniaObjCallout:true,
                text:'You\'ll start with easier objects, like shapes. But then go into objects.'},
-    /* 10 */ {mode:'spot', target:'[data-exercise="visual"]', omniaLeft:true,
+    /* 10 */ {mode:'spot', target:'[data-exercise="visual"]', omniaLeft:true, omniaNarrowLeft:true,
                text:'You\'ll learn to do this with your eyes open as well — a concept that sounds difficult but is rather easy after some perseverance.'},
-    /* 11 */ {mode:'spot', target:'[data-exercise="auditory"]', omniaLeft:true, scrollTo:'[data-exercise="auditory"]',
+    /* 11 */ {mode:'spot', target:'[data-exercise="auditory"]', omniaRight:true, scrollTo:'[data-exercise="auditory"]',
                text:'Just as you did with visualization, you\'ll repeat the same with sounds. You\'ll hear these sounds as if they were actually there.'},
-    /* 12 */ {mode:'spot', target:'[data-exercise="auditory"]', omniaLeft:true, playCreek:true,
+    /* 12 */ {mode:'spot', target:'[data-exercise="auditory"]', omniaRight:true, playCreek:true,
                text:'Here, take a listen:'},
-    /* 13 */ {mode:'spot', target:'[data-exercise="auditory"]', omniaLeft:true, stopCreek:true,
+    /* 13 */ {mode:'spot', target:'[data-exercise="auditory"]', omniaRight:true, stopCreek:true,
                text:'Isn\'t that amazing?'},
     /* 14 */ {mode:'spot', target:'[data-exercise="thought"]', omniaLeft:true, scrollTo:'[data-exercise="thought"]',
                text:'Thought Control is where you attempt to hold the mind in complete emptiness — no thoughts, no images, no inner speech. Tap when any thought arises.'},
@@ -13557,12 +13559,18 @@ document.addEventListener('DOMContentLoaded',function(){(function(){
     if(!el) return;
     var r=el.getBoundingClientRect();
     var midY=r.top+r.height/2;
+    var gap=18;
     tc.style.bottom='auto';
     tc.style.transform='translateY(-50%)';
     tc.style.top=Math.max(80,Math.min(window.innerHeight-200,midY))+'px';
-    if(side==='left'){tc.style.left='12px';tc.style.right='auto';tc.style.maxWidth='';}
+    if(side==='left'){
+      var leftAvail=Math.max(148,r.left-gap-12);
+      var leftW=Math.max(148,Math.min(leftAvail,260));
+      tc.style.left='12px';tc.style.right='auto';
+      tc.style.maxWidth=leftW+'px';
+    }
     else{
-      var availW=window.innerWidth-r.right-20;
+      var availW=window.innerWidth-r.right-gap-12;
       var contentW=Math.max(156,Math.min(availW,280));
       tc.style.right='12px';tc.style.left='auto';
       tc.style.maxWidth=contentW+'px';
@@ -13985,6 +13993,11 @@ document.addEventListener('DOMContentLoaded',function(){(function(){
   function go(i){
     if(i>=STEPS.length){end();return;}
     var s=STEPS[i];
+    var prev=STEPS[cur];
+    var sideStep=!!(s.mode==='spot'&&(s.omniaLeft||s.omniaRight));
+    var prevSideStep=!!(prev&&prev.mode==='spot'&&(prev.omniaLeft||prev.omniaRight));
+    var keepSidePosition=!!(sideStep&&prevSideStep&&s.target&&s.target===prev.target&&
+      !!s.omniaLeft===!!prev.omniaLeft&&!!s.omniaRight===!!prev.omniaRight);
     var keepLowAnchor=tc.classList.contains('tut-content-low')&&!!s.omniaLow;
     if(keepLowAnchor) captureTutorialEyeAnchor();
     cur=i; rdy=false;
@@ -13999,7 +14012,7 @@ document.addEventListener('DOMContentLoaded',function(){(function(){
     if(!s.asana) ow.classList.remove('asana-state');
     document.querySelectorAll('.tut-elem-glow').forEach(function(e){e.classList.remove('tut-elem-glow');});
     hidePathChoice();
-    resetTcPosition(keepLowAnchor);
+    if(!keepSidePosition) resetTcPosition(keepLowAnchor);
     tc.classList.toggle('tut-eye-stage',!!(s.eyeTap||s.inEye||s.morphCrystal));
 
     /* ── DRAWER mode ── */
@@ -14101,6 +14114,11 @@ document.addEventListener('DOMContentLoaded',function(){(function(){
       }
       if(s.morphCrystal&&eyeOn){
         bl.classList.remove('tut-vis');
+        if(s.blueText) bl.classList.add('tut-blue'); else bl.classList.remove('tut-blue');
+        if(s.text){
+          setTutorialText(bt,s.text);
+          setTimeout(function(){bl.classList.add('tut-vis');},90);
+        }
         applyTutorialEyeAnchor();
         var concentrationSceneRevealed=false;
         var revealConcentrationScene=function(){
@@ -14127,9 +14145,9 @@ document.addEventListener('DOMContentLoaded',function(){(function(){
         fromEyeToOmnia(function(){
           revealConcentrationScene();
           captureTutorialEyeAnchor();
-          finishStep(s,400);
           applyTutorialEyeAnchor();
           tutorialEyeAnchorY=null;
+          setTimeout(function(){rdy=true;},400);
         });
         th.textContent='Tap to continue'; th.style.display='block'; sk.style.display='block';
         return;
