@@ -14160,14 +14160,14 @@ document.addEventListener('DOMContentLoaded',function(){(function(){
             bl.classList.remove('tut-vis');
             th.textContent=s.eyeTap?'Tap the screen':'Tap to continue';
             th.style.display='block'; sk.style.display='block';
-            // Remove position-altering classes without transitioning (no snap yet)
+            // Remove position-altering classes and apply the destination layout
+            // in one transition-free pass; Omnia's own FLIP handles the motion.
             withoutTcTransition(function(){
               tc.classList.remove('tut-content-bottom','tut-obj-callout','tut-clock-callout');
               if(!keepLowAnchor) tc.classList.remove('tut-content-low');
+              positionTcBeside(s.targets?s.targets[0]:s.target, s.omniaLeft?'left':'right');
+              if(s.omniaNarrowLeft) tc.style.maxWidth='min(220px,46vw)';
             });
-            // Apply destination layout for tc
-            positionTcBeside(s.targets?s.targets[0]:s.target, s.omniaLeft?'left':'right');
-            if(s.omniaNarrowLeft) tc.style.maxWidth='min(220px,46vw)';
             if(s.targets) litSpotMulti(s.targets); else litSpot(s.target);
             // FLIP on ow: measure destination, then invert+animate
             var owTo=ow.getBoundingClientRect();
@@ -14181,7 +14181,7 @@ document.addEventListener('DOMContentLoaded',function(){(function(){
               if(s.blueText) bl.classList.add('tut-blue'); else bl.classList.remove('tut-blue');
               if(s.text) setTutorialText(bt,s.text);
               bl.classList.add('tut-vis');
-            },500);
+            },260);
             setTimeout(function(){
               ow.style.transition=''; ow.style.transform='';
             },560);
