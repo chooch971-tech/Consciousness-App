@@ -14017,6 +14017,7 @@ document.addEventListener('DOMContentLoaded',function(){(function(){
       !!s.omniaLeft===!!prev.omniaLeft&&!!s.omniaRight===!!prev.omniaRight);
     var keepLowAnchor=tc.classList.contains('tut-content-low')&&!!s.omniaLow;
     var keepObjCallout=tc.classList.contains('tut-obj-callout')&&!!s.omniaObjCallout;
+    var willScrollSlide=!!(s.mode==='spot'&&(s.omniaLeft||s.omniaRight)&&s.scrollTo&&prevOwRect&&prev&&(prev.omniaLow||prev.omniaMid));
     if(keepLowAnchor) captureTutorialEyeAnchor();
     cur=i; rdy=false;
     var keepEyeAnchor=!!(tutorialEyeAnchorY!=null&&((s.inEye&&(i===1||i===2))||s.morphCrystal));
@@ -14030,7 +14031,7 @@ document.addEventListener('DOMContentLoaded',function(){(function(){
     if(!s.asana) ow.classList.remove('asana-state');
     document.querySelectorAll('.tut-elem-glow').forEach(function(e){e.classList.remove('tut-elem-glow');});
     hidePathChoice();
-    if(!keepSidePosition && !willFlip && !willFlipToClock && !keepObjCallout) resetTcPosition(keepLowAnchor);
+    if(!keepSidePosition && !willFlip && !willFlipToClock && !keepObjCallout && !willScrollSlide) resetTcPosition(keepLowAnchor);
     tc.classList.toggle('tut-eye-stage',!!(s.eyeTap||s.inEye||s.morphCrystal));
 
     /* ── DRAWER mode ── */
@@ -14248,6 +14249,48 @@ document.addEventListener('DOMContentLoaded',function(){(function(){
             setTimeout(function(){rdy=true;},700);
             return;
           }
+        }
+        // Slide Omnia from his prior (low/mid) position to the new side anchor after scroll.
+        if(willScrollSlide){
+          var slideFrom=prevOwRect;
+          var prevBlTrans=bl.style.transition;
+          bl.style.transition='opacity 0.22s ease';
+          bl.classList.remove('tut-vis');
+          // Keep tc visible at its current low position while the card scrolls.
+          scrollToCard(s.scrollTo,function(){
+            var targetSel=s.targets?s.targets[0]:s.target;
+            if(s.targets) litSpotMulti(s.targets); else litSpot(s.target);
+            // Snap tc to its destination layout without transitioning so the FLIP on ow is clean.
+            withoutTcTransition(function(){
+              tc.classList.remove('tut-content-low','tut-content-bottom','tut-clock-callout');
+              positionTcBeside(targetSel,s.omniaLeft?'left':'right');
+              if(s.omniaNarrowLeft) tc.style.maxWidth='min(220px,46vw)';
+            });
+            tc.classList.add('tut-vis');
+            // Pre-load step text in the (still-hidden) bubble.
+            if(s.blueText) bl.classList.add('tut-blue'); else bl.classList.remove('tut-blue');
+            if(s.text) setTutorialText(bt,s.text);
+            // FLIP: slide ow from prior screen position to its new anchor.
+            var slideTo=ow.getBoundingClientRect();
+            var slDX=slideFrom.left-slideTo.left, slDY=slideFrom.top-slideTo.top;
+            ow.style.transition='none';
+            ow.style.transform='translate('+slDX+'px,'+slDY+'px)';
+            void ow.offsetWidth;
+            ow.style.transition='transform 0.6s cubic-bezier(.22,.9,.23,1)';
+            ow.style.transform='none';
+            setTimeout(function(){
+              bl.style.transition=prevBlTrans;
+              void bl.offsetWidth;
+              bl.classList.add('tut-vis');
+            },280);
+            setTimeout(function(){
+              ow.style.transition=''; ow.style.transform='';
+            },640);
+            th.textContent=s.eyeTap?'Tap the screen':'Tap to continue';
+            th.style.display='block'; sk.style.display='block';
+            setTimeout(function(){rdy=true;},760);
+          });
+          return;
         }
         tc.classList.remove('tut-vis','tut-content-bottom');
         var doSpot=function(){
