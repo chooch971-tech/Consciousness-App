@@ -13980,10 +13980,10 @@ document.addEventListener('DOMContentLoaded',function(){(function(){
   }
 
   /* ── Finish step: show bubble + set rdy ── */
-  function finishStep(s,delay){
+  function finishStep(s,delay,bubbleDelay){
     bl.classList.remove('tut-vis');
     if(s.blueText) bl.classList.add('tut-blue'); else bl.classList.remove('tut-blue');
-    if(s.text){setTutorialText(bt,s.text);setTimeout(function(){bl.classList.add('tut-vis');},120);}
+    if(s.text){setTutorialText(bt,s.text);setTimeout(function(){bl.classList.add('tut-vis');},(bubbleDelay||120));}
     th.textContent=s.eyeTap?'Tap the screen':'Tap to continue';
     th.style.display='block'; sk.style.display='block';
     setTimeout(function(){rdy=true;},delay||700);
@@ -14119,7 +14119,7 @@ document.addEventListener('DOMContentLoaded',function(){(function(){
             if(s.blueText) bl.classList.add('tut-blue'); else bl.classList.remove('tut-blue');
             setTutorialText(bt,s.text);
             bl.classList.add('tut-vis');
-          },460);
+          },560);
         }
         applyTutorialEyeAnchor();
         var concentrationSceneRevealed=false;
