@@ -14179,28 +14179,43 @@ document.addEventListener('DOMContentLoaded',function(){(function(){
         tc.classList.add('tut-vis'); tc.classList.remove('tut-content-bottom');
       }
       if(s.morphCrystal&&eyeOn){
+        // Lock ow's screen position throughout the morph. Anything that resizes
+        // the bubble or tc (text swap, class changes, morph end cleanup) otherwise
+        // tugs ow vertically because tc is centered with translate(-50%,-50%).
+        var morphAnchorY=prevOwRect?(prevOwRect.top+prevOwRect.height/2):null;
+        var anchorOwToMorph=function(){
+          if(morphAnchorY==null) return;
+          var r=ow.getBoundingClientRect();
+          var delta=morphAnchorY-(r.top+r.height/2);
+          if(Math.abs(delta)<0.5) return;
+          var topPx=parseFloat(window.getComputedStyle(tc).top);
+          if(isNaN(topPx)) topPx=window.innerHeight/2;
+          withoutTcTransition(function(){
+            tc.style.top=(topPx+delta)+'px';
+          });
+        };
+        // Pre-empt the text-swap shift: hide the bubble instantly (no fade),
+        // load the new short text now while it's invisible, and snap tc.top so
+        // ow is back at its step-2 position before the morph even starts. The
+        // bubble fades back in midway through the morph.
+        var morphPrevBlTrans=bl.style.transition;
+        bl.style.transition='none';
         bl.classList.remove('tut-vis');
+        void bl.offsetWidth;
         if(s.text){
-          setTimeout(function(){
-            if(s.blueText) bl.classList.add('tut-blue'); else bl.classList.remove('tut-blue');
-            // The previous step's longer text made the bubble taller; swapping to
-            // this step's shorter text shrinks the centered tc column and tugs ow
-            // upward mid-morph. Anchor ow by offsetting tc.top to absorb the shift.
-            var preR=ow.getBoundingClientRect();
-            var preY=preR.top+preR.height/2;
-            setTutorialText(bt,s.text);
-            var postR=ow.getBoundingClientRect();
-            var anchorDelta=preY-(postR.top+postR.height/2);
-            if(Math.abs(anchorDelta)>=0.5){
-              var topPx=parseFloat(window.getComputedStyle(tc).top);
-              withoutTcTransition(function(){
-                tc.style.top=((isNaN(topPx)?window.innerHeight/2:topPx)+anchorDelta)+'px';
-              });
-            }
-            bl.classList.add('tut-vis');
-          },560);
+          if(s.blueText) bl.classList.add('tut-blue'); else bl.classList.remove('tut-blue');
+          setTutorialText(bt,s.text);
         }
+        anchorOwToMorph();
+        bl.style.transition=morphPrevBlTrans;
+        void bl.offsetWidth;
+        // Fade the new bubble in late in the morph so it doesn't compete visually.
+        setTimeout(function(){
+          anchorOwToMorph();
+          bl.classList.add('tut-vis');
+        },820);
         applyTutorialEyeAnchor();
+        anchorOwToMorph();
         var concentrationSceneRevealed=false;
         var revealConcentrationScene=function(){
           if(concentrationSceneRevealed) return;
@@ -14227,6 +14242,9 @@ document.addEventListener('DOMContentLoaded',function(){(function(){
         fromEyeToOmnia(function(){
           clearTimeout(concentrationRevealTimer);
           revealConcentrationScene();
+          // Re-anchor after the morph end class flips and crystal style cleanup,
+          // which can nudge ow as the wrap reverts from eye-state to default.
+          anchorOwToMorph();
           captureTutorialEyeAnchor();
           applyTutorialEyeAnchor();
           tutorialEyeAnchorY=null;
