@@ -13985,6 +13985,7 @@ document.addEventListener('DOMContentLoaded',function(){(function(){
     var prevOmniaBelow=!!(prev&&prev.mode==='full'&&prev.omniaBelow&&prevOwRect);
     var sideStepAhead=!!(s.mode==='spot'&&(s.omniaLeft||s.omniaRight)&&!s.scrollTo);
     var willFlip=prevOmniaBelow&&sideStepAhead;
+    var willFlipToClock=!!(prev&&prev.mode==='spot'&&s.mode==='full'&&s.omniaClock&&prevOwRect);
     var sideStep=!!(s.mode==='spot'&&(s.omniaLeft||s.omniaRight));
     var prevSideStep=!!(prev&&prev.mode==='spot'&&(prev.omniaLeft||prev.omniaRight));
     var keepSidePosition=!!(sideStep&&prevSideStep&&s.target&&s.target===prev.target&&
@@ -14003,7 +14004,7 @@ document.addEventListener('DOMContentLoaded',function(){(function(){
     if(!s.asana) ow.classList.remove('asana-state');
     document.querySelectorAll('.tut-elem-glow').forEach(function(e){e.classList.remove('tut-elem-glow');});
     hidePathChoice();
-    if(!keepSidePosition && !willFlip) resetTcPosition(keepLowAnchor);
+    if(!keepSidePosition && !willFlip && !willFlipToClock) resetTcPosition(keepLowAnchor);
     tc.classList.toggle('tut-eye-stage',!!(s.eyeTap||s.inEye||s.morphCrystal));
 
     /* ── DRAWER mode ── */
@@ -14095,8 +14096,37 @@ document.addEventListener('DOMContentLoaded',function(){(function(){
         ? 'rgba(7,8,13,1)'
         : 'rgba(7,8,13,0.92)';
       if(s.omniaClock){
-        tc.classList.add('tut-vis','tut-clock-callout');
-        tc.classList.remove('tut-content-bottom');
+        if(willFlipToClock){
+          var clockOwFrom=prevOwRect;
+          bl.classList.remove('tut-vis');
+          setTutorialText(bt,'');
+          th.textContent='Tap to continue';
+          th.style.display='block'; sk.style.display='block';
+          withoutTcTransition(function(){
+            tc.classList.add('tut-vis','tut-clock-callout');
+            tc.classList.remove('tut-content-bottom','tut-obj-callout');
+          });
+          var clockOwTo=ow.getBoundingClientRect();
+          var clockDX=clockOwFrom.left-clockOwTo.left, clockDY=clockOwFrom.top-clockOwTo.top;
+          ow.style.transition='none';
+          ow.style.transform='translate('+clockDX+'px,'+clockDY+'px)';
+          void ow.offsetWidth;
+          ow.style.transition='transform 0.52s cubic-bezier(.22,.9,.23,1)';
+          ow.style.transform='none';
+          setTimeout(function(){
+            if(s.blueText) bl.classList.add('tut-blue'); else bl.classList.remove('tut-blue');
+            if(s.text) setTutorialText(bt,s.text);
+            bl.classList.add('tut-vis');
+          },260);
+          setTimeout(function(){
+            ow.style.transition=''; ow.style.transform='';
+          },560);
+          setTimeout(function(){rdy=true;},700);
+          return;
+        } else {
+          tc.classList.add('tut-vis','tut-clock-callout');
+          tc.classList.remove('tut-content-bottom');
+        }
       } else if(s.omniaBelow){
         tc.classList.add('tut-vis','tut-content-bottom');
         if(s.omniaObjCallout) tc.classList.add('tut-obj-callout');
@@ -14158,6 +14188,7 @@ document.addEventListener('DOMContentLoaded',function(){(function(){
             // owFromRect already captured before any resets — Omnia's current screen pos
             var owFrom=prevOwRect;
             bl.classList.remove('tut-vis');
+            setTutorialText(bt,'');
             th.textContent=s.eyeTap?'Tap the screen':'Tap to continue';
             th.style.display='block'; sk.style.display='block';
             // Remove position-altering classes and apply the destination layout
