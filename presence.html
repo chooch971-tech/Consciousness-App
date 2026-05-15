@@ -1617,7 +1617,7 @@ body:not(.tut-live) #tutCorgi {
     <div class="mode-tabs">
       <button class="mode-tab active" id="modeAwareness">Awareness</button>
       <button class="mode-tab" id="modeConcentration">Concentration</button>
-      <button class="mode-tab" id="modePrayer">Prayer</button>
+      <button class="mode-tab" id="modePrayer">Guide</button>
     </div>
     <div id="activeSessionBanner" style="display:none; background:rgba(126,184,164,0.07); border:1px solid rgba(126,184,164,.18); border-radius:8px; padding:10px 16px; margin-bottom:12px; display:none; justify-content:space-between; align-items:center;">
       <span style="font-size:9px; letter-spacing:.2em; text-transform:uppercase; color:var(--accent);">● Session Running</span>
@@ -2510,7 +2510,7 @@ body:not(.tut-live) #tutCorgi {
     </div>
     <div class="drawer-items">
       <button class="drawer-item" id="drawerGuide">
-        <span class="drawer-item-icon">✦</span>Guide
+        <span class="drawer-item-icon">✦</span>Prayer
       </button>
       <button class="drawer-item" id="drawerJournal">
         <span class="drawer-item-icon">📓</span>Journal Log
@@ -3998,7 +3998,8 @@ window.bardonGoBack = function() {
 };
 document.getElementById('drawerGuide').addEventListener('click', function() {
   closeDrawer();
-  openGuide();
+  showScreen('homeScreen');
+  switchMode('prayer');
 });
 
 document.getElementById('drawerSettings').addEventListener('click', function() {
@@ -7671,7 +7672,7 @@ function switchMode(mode) {
     coPanel.style.display = 'flex';
     renderConcHome();
   } else {
-    prTab.classList.add('active','prayer-mode');
+    // Prayer is now a drawer item — show its panel without highlighting any home tab
     prPanel.style.display = 'flex';
     renderPrayerPanel();
   }
@@ -7703,7 +7704,7 @@ document.getElementById('concHomeSymbolFill').addEventListener('click', function
   showRankModal(concState.level, concState.xp, 'concentration');
 });
 document.getElementById('modeConcentration').addEventListener('click', function() { switchMode('concentration'); });
-document.getElementById('modePrayer').addEventListener('click', function() { switchMode('prayer'); });
+document.getElementById('modePrayer').addEventListener('click', function() { openGuide(); });
 
 /* ── Omnia animations: scheduler + registered animations ── */
 function initOmniaAnims(){
