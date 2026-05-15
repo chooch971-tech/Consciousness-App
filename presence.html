@@ -14272,8 +14272,11 @@ document.addEventListener('DOMContentLoaded',function(){(function(){
         if(willScrollSlide){
           var slideFrom=prevOwRect;
           var prevBlTrans=bl.style.transition;
-          bl.style.transition='opacity 0.22s ease';
+          // Hide bubble instantly (no fade) so any in-flight opacity transition can't
+          // paint the new text in the old bubble during/after the scroll.
+          bl.style.transition='none';
           bl.classList.remove('tut-vis');
+          void bl.offsetWidth;
           // Keep tc visible at its current low position while the card scrolls.
           scrollToCard(s.scrollTo,function(){
             var targetSel=s.targets?s.targets[0]:s.target;
@@ -14285,9 +14288,10 @@ document.addEventListener('DOMContentLoaded',function(){(function(){
               if(s.omniaNarrowLeft) tc.style.maxWidth='min(220px,46vw)';
             });
             tc.classList.add('tut-vis');
-            // Pre-load step text in the (still-hidden) bubble.
+            // Pre-load step text while the bubble is still forcibly hidden.
             if(s.blueText) bl.classList.add('tut-blue'); else bl.classList.remove('tut-blue');
             if(s.text) setTutorialText(bt,s.text);
+            void bl.offsetWidth;
             // FLIP: slide ow from prior screen position to its new anchor.
             // Use center-based FLIP because ow changes size (92x108→124x146) between steps.
             var slideTo=ow.getBoundingClientRect();
@@ -14300,9 +14304,10 @@ document.addEventListener('DOMContentLoaded',function(){(function(){
             ow.style.transition='transform 0.6s cubic-bezier(.22,.9,.23,1)';
             ow.style.transform='none';
             setTimeout(function(){
-              bl.style.transition=prevBlTrans;
+              bl.style.transition='opacity 0.22s ease';
               void bl.offsetWidth;
               bl.classList.add('tut-vis');
+              setTimeout(function(){ bl.style.transition=prevBlTrans; },260);
             },280);
             setTimeout(function(){
               ow.style.transition=''; ow.style.transform='';
