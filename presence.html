@@ -14125,7 +14125,14 @@ document.addEventListener('DOMContentLoaded',function(){(function(){
       if(s.omniaClock){
         if(willFlipToClock){
           var clockOwFrom=prevOwRect;
+          // Hide the prior bubble instantly (no opacity transition) so it can't be seen
+          // briefly at the new corner location, and so emptying its text doesn't visibly
+          // shrink tc before the FLIP setup runs.
+          var clockPrevBlTrans=bl.style.transition;
+          bl.style.transition='none';
           bl.classList.remove('tut-vis');
+          void bl.offsetWidth;
+          bl.style.transition=clockPrevBlTrans;
           setTutorialText(bt,'');
           th.textContent='Tap to continue';
           th.style.display='block'; sk.style.display='block';
@@ -14138,7 +14145,14 @@ document.addEventListener('DOMContentLoaded',function(){(function(){
             tc.classList.remove('tut-content-bottom','tut-obj-callout','tut-content-low');
           });
           var clockOwTo=ow.getBoundingClientRect();
-          var clockDX=clockOwFrom.left-clockOwTo.left, clockDY=clockOwFrom.top-clockOwTo.top;
+          // FLIP by centers (not top-left): ow's CSS size shrinks from 124x146 to 100x118
+          // when tut-clock-callout applies, so a top-left FLIP would visually snap Omnia
+          // by (width_diff/2, height_diff/2) at the start of the slide.
+          var clockFromCX=clockOwFrom.left+clockOwFrom.width/2;
+          var clockFromCY=clockOwFrom.top+clockOwFrom.height/2;
+          var clockToCX=clockOwTo.left+clockOwTo.width/2;
+          var clockToCY=clockOwTo.top+clockOwTo.height/2;
+          var clockDX=clockFromCX-clockToCX, clockDY=clockFromCY-clockToCY;
           ow.style.transition='none';
           ow.style.transform='translate('+clockDX+'px,'+clockDY+'px)';
           void ow.offsetWidth;
