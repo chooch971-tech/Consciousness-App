@@ -175,6 +175,7 @@
     .mode-tab { flex:1; padding:10px 0 8px; text-align:center; font-size:9px; letter-spacing:.25em; text-transform:uppercase; color:var(--muted); background:none; border:none; border-bottom:2px solid transparent; cursor:pointer; font-family:'DM Mono',monospace; transition:all .2s; }
     .mode-tab.active { color:var(--accent); border-bottom-color:var(--accent); }
     .mode-tab.active.conc-mode { color:#d4956e; border-bottom-color:#d4956e; }
+    .mode-tab.active.guide-mode { color:#9b8ec4; border-bottom-color:#9b8ec4; }
 
     /* CONCENTRATION THEME */
     .conc-accent { color:#d4956e !important; }
@@ -7633,9 +7634,9 @@ function switchMode(mode) {
   var prPanel = document.getElementById('prayerPanel');
   var guPanel = document.getElementById('guidePanel');
 
-  awTab.classList.remove('active','conc-mode');
-  coTab.classList.remove('active','conc-mode');
-  prTab.classList.remove('active','prayer-mode');
+  awTab.classList.remove('active','conc-mode','guide-mode');
+  coTab.classList.remove('active','conc-mode','guide-mode');
+  prTab.classList.remove('active','prayer-mode','guide-mode');
   awPanel.style.display = 'none';
   coPanel.style.display = 'none';
   prPanel.style.display = 'none';
@@ -7650,7 +7651,7 @@ function switchMode(mode) {
     coPanel.style.display = 'flex';
     renderConcHome();
   } else if (mode === 'guide') {
-    prTab.classList.add('active');
+    prTab.classList.add('active','guide-mode');
     if (guPanel) guPanel.style.display = 'flex';
     openGuide();
   } else {
