@@ -14183,7 +14183,20 @@ document.addEventListener('DOMContentLoaded',function(){(function(){
         if(s.text){
           setTimeout(function(){
             if(s.blueText) bl.classList.add('tut-blue'); else bl.classList.remove('tut-blue');
+            // The previous step's longer text made the bubble taller; swapping to
+            // this step's shorter text shrinks the centered tc column and tugs ow
+            // upward mid-morph. Anchor ow by offsetting tc.top to absorb the shift.
+            var preR=ow.getBoundingClientRect();
+            var preY=preR.top+preR.height/2;
             setTutorialText(bt,s.text);
+            var postR=ow.getBoundingClientRect();
+            var anchorDelta=preY-(postR.top+postR.height/2);
+            if(Math.abs(anchorDelta)>=0.5){
+              var topPx=parseFloat(window.getComputedStyle(tc).top);
+              withoutTcTransition(function(){
+                tc.style.top=((isNaN(topPx)?window.innerHeight/2:topPx)+anchorDelta)+'px';
+              });
+            }
             bl.classList.add('tut-vis');
           },560);
         }
