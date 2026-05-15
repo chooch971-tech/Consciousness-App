@@ -14289,8 +14289,11 @@ document.addEventListener('DOMContentLoaded',function(){(function(){
             if(s.blueText) bl.classList.add('tut-blue'); else bl.classList.remove('tut-blue');
             if(s.text) setTutorialText(bt,s.text);
             // FLIP: slide ow from prior screen position to its new anchor.
+            // Use center-based FLIP because ow changes size (92x108→124x146) between steps.
             var slideTo=ow.getBoundingClientRect();
-            var slDX=slideFrom.left-slideTo.left, slDY=slideFrom.top-slideTo.top;
+            var slFromCX=slideFrom.left+slideFrom.width/2, slFromCY=slideFrom.top+slideFrom.height/2;
+            var slToCX=slideTo.left+slideTo.width/2, slToCY=slideTo.top+slideTo.height/2;
+            var slDX=slFromCX-slToCX, slDY=slFromCY-slToCY;
             ow.style.transition='none';
             ow.style.transform='translate('+slDX+'px,'+slDY+'px)';
             void ow.offsetWidth;
