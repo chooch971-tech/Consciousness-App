@@ -7835,9 +7835,13 @@ function initOmniaAnims(){
   });
   register({
     id:'peek',
-    cooldownShown:2000,
-    cooldownClicked:90000,
+    tabs:['awareness','concentration'],
+    cooldownShown:0,
+    cooldownClicked:0,
     show:function(done){
+      // After firing once, never show again this session
+      current.cooldownShown=Infinity;
+      current.cooldownClicked=Infinity;
       var side=(currentMode==='concentration')?'left':'right';
       setPeekSide(side);
       peek.classList.add('peek-in');
@@ -8176,6 +8180,8 @@ function initOmniaAnims(){
     });
   });
   scheduleAmbient();
+  // Peek fires once shortly after app open, then never again
+  setTimeout(trigger, 8000);
 }
 if(document.readyState==='loading'){
   document.addEventListener('DOMContentLoaded',initOmniaAnims);
