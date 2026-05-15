@@ -765,6 +765,22 @@
   left:clamp(14px,5vw,34px);
   right:auto;
 }
+#tutContent.tut-obj-bubble-above .tut-bubble {
+  position:fixed;
+  left:clamp(14px,4vw,18px);
+  bottom:174px;
+  width:min(174px,46vw);
+  max-width:none;
+  box-sizing:border-box;
+  padding:13px 12px;
+}
+#tutContent.tut-obj-bubble-above .tut-bubble::after {
+  left:45px;
+}
+#tutContent.tut-obj-bubble-above .tut-bubble p {
+  font-size:12.5px;
+  line-height:1.42;
+}
 #tutContent.tut-obj-callout .tut-crystal-svg {
   width:58px;
 }
@@ -13580,6 +13596,7 @@ document.addEventListener('DOMContentLoaded',function(){(function(){
       tc.classList.remove('tut-clock-callout');
       tc.classList.remove('tut-obj-callout');
       tc.classList.remove('tut-obj-callout-left');
+      tc.classList.remove('tut-obj-bubble-above');
       tc.classList.remove('tut-eye-stage');
     });
   }
@@ -14260,12 +14277,14 @@ document.addEventListener('DOMContentLoaded',function(){(function(){
         tc.classList.add('tut-vis');
         tc.classList.add('tut-content-bottom');
         if(s.omniaObjCallout) tc.classList.add('tut-obj-callout');
-        if(s.omniaObjCallout&&!s.omniaObjSlideLeft) tc.classList.remove('tut-obj-callout-left');
+        if(s.omniaObjCallout&&!s.omniaObjSlideLeft) tc.classList.remove('tut-obj-callout-left','tut-obj-bubble-above');
         var doSpot2=function(){if(s.targets) litSpotMulti(s.targets); else litSpot(s.target);};
         if(s.scrollTo){scrollToCard(s.scrollTo,function(){doSpot2();finishStep(s);});return;}
         setTimeout(doSpot2,180);
         if(keepObjCallout){
           var objOwFrom=ow.getBoundingClientRect();
+          var objBubbleTransition=bl.style.transition;
+          bl.style.transition='opacity 0.24s ease';
           bl.classList.remove('tut-vis');
           if(s.blueText) bl.classList.add('tut-blue'); else bl.classList.remove('tut-blue');
           th.textContent=s.eyeTap?'Tap the screen':'Tap to continue';
@@ -14285,10 +14304,13 @@ document.addEventListener('DOMContentLoaded',function(){(function(){
               ow.style.transition=''; ow.style.transform='';
             },1000);
           } else {
-            tc.classList.remove('tut-obj-callout-left');
+            tc.classList.remove('tut-obj-callout-left','tut-obj-bubble-above');
           }
           setTimeout(function(){
+            if(s.omniaObjSlideLeft) tc.classList.add('tut-obj-bubble-above');
             if(s.text) setTutorialText(bt,s.text);
+            bl.style.transition=objBubbleTransition;
+            void bl.offsetWidth;
             bl.classList.add('tut-vis');
           },300);
           setTimeout(function(){rdy=true;},1120);
