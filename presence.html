@@ -14158,6 +14158,8 @@ document.addEventListener('DOMContentLoaded',function(){(function(){
             // owFromRect already captured before any resets — Omnia's current screen pos
             var owFrom=prevOwRect;
             bl.classList.remove('tut-vis');
+            th.textContent=s.eyeTap?'Tap the screen':'Tap to continue';
+            th.style.display='block'; sk.style.display='block';
             // Remove position-altering classes without transitioning (no snap yet)
             withoutTcTransition(function(){
               tc.classList.remove('tut-content-bottom','tut-obj-callout','tut-clock-callout');
@@ -14176,9 +14178,14 @@ document.addEventListener('DOMContentLoaded',function(){(function(){
             ow.style.transition='transform 0.52s cubic-bezier(.22,.9,.23,1)';
             ow.style.transform='none';
             setTimeout(function(){
+              if(s.blueText) bl.classList.add('tut-blue'); else bl.classList.remove('tut-blue');
+              if(s.text) setTutorialText(bt,s.text);
+              bl.classList.add('tut-vis');
+            },500);
+            setTimeout(function(){
               ow.style.transition=''; ow.style.transform='';
-              finishStep(s);
             },560);
+            setTimeout(function(){rdy=true;},700);
             return;
           }
         }
