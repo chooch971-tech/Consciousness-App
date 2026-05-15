@@ -13415,7 +13415,7 @@ document.addEventListener('DOMContentLoaded',function(){(function(){
                text:'For the Visualization exercise, you\'ll learn to see objects as if they were right in front of you.'},
     /* 9  */ {mode:'full', objFlash:true, omniaBelow:true, omniaObjCallout:true,
                text:'You\'ll start with easier objects, like shapes. But then go into objects.'},
-    /* 10 */ {mode:'spot', target:'[data-exercise="visual"]', omniaLeft:true, omniaNarrowLeft:true,
+    /* 10 */ {mode:'spot', target:'[data-exercise="visual"]', omniaBelow:true, omniaObjCallout:true,
                text:'You\'ll learn to do this with your eyes open as well — a concept that sounds difficult but is rather easy after some perseverance.'},
     /* 11 */ {mode:'spot', target:'[data-exercise="auditory"]', omniaRight:true, scrollTo:'[data-exercise="auditory"]',
                text:'Just as you did with visualization, you\'ll repeat the same with sounds. You\'ll hear these sounds as if they were actually there.'},
@@ -13991,6 +13991,7 @@ document.addEventListener('DOMContentLoaded',function(){(function(){
     var keepSidePosition=!!(sideStep&&prevSideStep&&s.target&&s.target===prev.target&&
       !!s.omniaLeft===!!prev.omniaLeft&&!!s.omniaRight===!!prev.omniaRight);
     var keepLowAnchor=tc.classList.contains('tut-content-low')&&!!s.omniaLow;
+    var keepObjCallout=tc.classList.contains('tut-obj-callout')&&!!s.omniaObjCallout;
     if(keepLowAnchor) captureTutorialEyeAnchor();
     cur=i; rdy=false;
     var keepEyeAnchor=!!(tutorialEyeAnchorY!=null&&((s.inEye&&(i===1||i===2))||s.morphCrystal));
@@ -14004,7 +14005,7 @@ document.addEventListener('DOMContentLoaded',function(){(function(){
     if(!s.asana) ow.classList.remove('asana-state');
     document.querySelectorAll('.tut-elem-glow').forEach(function(e){e.classList.remove('tut-elem-glow');});
     hidePathChoice();
-    if(!keepSidePosition && !willFlip && !willFlipToClock) resetTcPosition(keepLowAnchor);
+    if(!keepSidePosition && !willFlip && !willFlipToClock && !keepObjCallout) resetTcPosition(keepLowAnchor);
     tc.classList.toggle('tut-eye-stage',!!(s.eyeTap||s.inEye||s.morphCrystal));
 
     /* ── DRAWER mode ── */
@@ -14253,9 +14254,22 @@ document.addEventListener('DOMContentLoaded',function(){(function(){
       } else {
         tc.classList.add('tut-vis');
         tc.classList.add('tut-content-bottom');
+        if(s.omniaObjCallout) tc.classList.add('tut-obj-callout');
         var doSpot2=function(){if(s.targets) litSpotMulti(s.targets); else litSpot(s.target);};
         if(s.scrollTo){scrollToCard(s.scrollTo,function(){doSpot2();finishStep(s);});return;}
         setTimeout(doSpot2,180);
+        if(keepObjCallout){
+          bl.classList.remove('tut-vis');
+          if(s.blueText) bl.classList.add('tut-blue'); else bl.classList.remove('tut-blue');
+          th.textContent=s.eyeTap?'Tap the screen':'Tap to continue';
+          th.style.display='block'; sk.style.display='block';
+          setTimeout(function(){
+            if(s.text) setTutorialText(bt,s.text);
+            bl.classList.add('tut-vis');
+          },260);
+          setTimeout(function(){rdy=true;},780);
+          return;
+        }
       }
     }
 
