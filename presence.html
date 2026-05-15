@@ -13980,6 +13980,9 @@ document.addEventListener('DOMContentLoaded',function(){(function(){
     if(i>=STEPS.length){end();return;}
     var s=STEPS[i];
     var prev=STEPS[cur];
+    // Capture tc position BEFORE any resets, for smooth FLIP transitions
+    var prevTcRect=tc.classList.contains('tut-vis') ? tc.getBoundingClientRect() : null;
+    var prevOmniaBelow=!!(prev&&prev.mode==='full'&&prev.omniaBelow&&prevTcRect);
     var sideStep=!!(s.mode==='spot'&&(s.omniaLeft||s.omniaRight));
     var prevSideStep=!!(prev&&prev.mode==='spot'&&(prev.omniaLeft||prev.omniaRight));
     var keepSidePosition=!!(sideStep&&prevSideStep&&s.target&&s.target===prev.target&&
@@ -14146,6 +14149,44 @@ document.addEventListener('DOMContentLoaded',function(){(function(){
       ov.classList.add('tut-spot');
       ov.style.background='rgba(7,8,13,0.08)';
       if(s.omniaLeft||s.omniaRight){
+        // Smooth FLIP slide when coming from a full/omniaBelow step
+        if(prevOmniaBelow && !s.scrollTo){
+          var slideTarget=document.querySelector(s.targets?s.targets[0]:s.target);
+          if(slideTarget){
+            bl.classList.remove('tut-vis');
+            // 1. Disable transitions, move tc to final layout position
+            tc.style.transition='none';
+            tc.classList.remove('tut-content-bottom');
+            var sr=slideTarget.getBoundingClientRect();
+            var midY=sr.top+sr.height/2;
+            var clampedY=Math.max(80,Math.min(window.innerHeight-200,midY));
+            var tcH=tc.offsetHeight;
+            var toTop=clampedY-tcH/2;
+            if(s.omniaLeft){
+              var leftAvail=Math.max(148,sr.left-30);
+              var leftW=s.omniaNarrowLeft?Math.min(220,Math.floor(0.46*window.innerWidth)):Math.max(148,Math.min(leftAvail,260));
+              tc.style.left='12px'; tc.style.right='auto'; tc.style.maxWidth=leftW+'px';
+            } else {
+              var availW=window.innerWidth-sr.right-30;
+              tc.style.right='12px'; tc.style.left='auto'; tc.style.maxWidth=Math.max(156,Math.min(availW,280))+'px';
+            }
+            tc.style.top=toTop+'px'; tc.style.bottom='auto'; tc.style.transform='none';
+            // 2. Commit destination, then invert to FROM position via transform
+            void tc.offsetWidth;
+            var toLeft=s.omniaLeft?12:window.innerWidth-12-tc.offsetWidth;
+            tc.style.transform='translate('+(prevTcRect.left-toLeft)+'px,'+(prevTcRect.top-toTop)+'px)';
+            // 3. Force reflow, then play animation to zero offset
+            void tc.offsetWidth;
+            tc.style.transition='transform 0.52s cubic-bezier(.22,.9,.23,1)';
+            if(s.targets) litSpotMulti(s.targets); else litSpot(s.target);
+            tc.style.transform='none';
+            setTimeout(function(){
+              tc.style.transition='';
+              finishStep(s);
+            },560);
+            return;
+          }
+        }
         tc.classList.remove('tut-vis','tut-content-bottom');
         var doSpot=function(){
           if(s.targets) litSpotMulti(s.targets); else litSpot(s.target);
