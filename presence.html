@@ -14190,7 +14190,8 @@ document.addEventListener('DOMContentLoaded',function(){(function(){
             var prevBubbleTransition=bl.style.transition;
             bl.style.transition='none';
             bl.classList.remove('tut-vis');
-            setTutorialText(bt,'');
+            if(s.blueText) bl.classList.add('tut-blue'); else bl.classList.remove('tut-blue');
+            if(s.text) setTutorialText(bt,s.text);
             void bl.offsetWidth;
             bl.style.transition=prevBubbleTransition;
             th.textContent=s.eyeTap?'Tap the screen':'Tap to continue';
@@ -14213,8 +14214,6 @@ document.addEventListener('DOMContentLoaded',function(){(function(){
             ow.style.transition='transform 0.52s cubic-bezier(.22,.9,.23,1)';
             ow.style.transform='none';
             setTimeout(function(){
-              if(s.blueText) bl.classList.add('tut-blue'); else bl.classList.remove('tut-blue');
-              if(s.text) setTutorialText(bt,s.text);
               bl.classList.add('tut-vis');
             },260);
             setTimeout(function(){
