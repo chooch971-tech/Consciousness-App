@@ -1773,6 +1773,9 @@ body:not(.tut-live) #tutCorgi {
 
     <!-- PRAYER PANEL (inside homeScreen) -->
     <div id="prayerPanel" style="display:none; flex:1; flex-direction:column; overflow:hidden;">
+      <div style="display:flex; align-items:center; margin-bottom:4px;">
+        <button class="history-back" style="color:#9b8ec4;" onclick="switchMode('awareness')">← back</button>
+      </div>
       <div style="flex:1; overflow-y:auto; -webkit-overflow-scrolling:touch;">
         <div style="display:flex; flex-direction:column; padding-bottom:40px;">
 
@@ -8264,7 +8267,7 @@ var PRAYER_ENCOURAGEMENTS = [
 ];
 
 var PRAYER_DEFAULT = {
-  enabled: true,
+  enabled: false,
   count: 5,
   times: ['06:00','09:00','12:00','15:00','18:00'],
   durationSec: 120,
