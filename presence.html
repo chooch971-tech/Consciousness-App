@@ -14142,7 +14142,9 @@ document.addEventListener('DOMContentLoaded',function(){(function(){
             if(glowEl) setTimeout(function(){ glowEl.classList.add('tut-elem-glow'); }, 420);
           }
         };
+        var concentrationRevealTimer=setTimeout(revealConcentrationScene,900);
         fromEyeToOmnia(function(){
+          clearTimeout(concentrationRevealTimer);
           revealConcentrationScene();
           captureTutorialEyeAnchor();
           applyTutorialEyeAnchor();
