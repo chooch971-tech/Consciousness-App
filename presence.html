@@ -13599,6 +13599,7 @@ document.addEventListener('DOMContentLoaded',function(){(function(){
       tc.classList.remove('tut-obj-callout-left');
       tc.classList.remove('tut-obj-bubble-above');
       tc.classList.remove('tut-eye-stage');
+      bl.style.bottom='';
     });
   }
   function captureTutorialEyeAnchor(){
@@ -14311,6 +14312,18 @@ document.addEventListener('DOMContentLoaded',function(){(function(){
             if(s.omniaObjSlideLeft) tc.classList.add('tut-obj-bubble-above');
             if(s.text) setTutorialText(bt,s.text);
             bl.style.transition=objBubbleTransition;
+            // Dynamically place the bubble just above the spotlit card so it never
+            // overlaps the target on any screen size.
+            if(s.omniaObjSlideLeft){
+              var bubTargetSel=s.targets?s.targets[0]:s.target;
+              var bubTarget=bubTargetSel?document.querySelector(bubTargetSel):null;
+              if(bubTarget){
+                var rTop=bubTarget.getBoundingClientRect().top;
+                // bubble.bottom (from screen bottom) = distance to card top + gap + arrow
+                var bubBottom=Math.max(184,(window.innerHeight-rTop)+18);
+                bl.style.bottom=bubBottom+'px';
+              }
+            }
             void bl.offsetWidth;
             bl.classList.add('tut-vis');
           },300);
