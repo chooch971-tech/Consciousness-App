@@ -14187,8 +14187,12 @@ document.addEventListener('DOMContentLoaded',function(){(function(){
           if(flipTarget){
             // owFromRect already captured before any resets — Omnia's current screen pos
             var owFrom=prevOwRect;
+            var prevBubbleTransition=bl.style.transition;
+            bl.style.transition='none';
             bl.classList.remove('tut-vis');
             setTutorialText(bt,'');
+            void bl.offsetWidth;
+            bl.style.transition=prevBubbleTransition;
             th.textContent=s.eyeTap?'Tap the screen':'Tap to continue';
             th.style.display='block'; sk.style.display='block';
             // Remove position-altering classes and apply the destination layout
