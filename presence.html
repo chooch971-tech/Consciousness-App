@@ -13600,6 +13600,7 @@ document.addEventListener('DOMContentLoaded',function(){(function(){
       tc.classList.remove('tut-obj-bubble-above');
       tc.classList.remove('tut-eye-stage');
       bl.style.bottom='';
+      ow.style.bottom=''; ow.style.transition=''; ow.style.transform='';
     });
   }
   function captureTutorialEyeAnchor(){
@@ -14292,12 +14293,36 @@ document.addEventListener('DOMContentLoaded',function(){(function(){
           th.textContent=s.eyeTap?'Tap the screen':'Tap to continue';
           th.style.display='block'; sk.style.display='block';
           if(s.omniaObjSlideLeft){
+            // Apply all destination layout changes upfront (invisible — bubble has opacity:0)
+            // so we can measure final positions for a 2D FLIP slide (left + up together).
             withoutTcTransition(function(){
               tc.classList.add('tut-obj-callout-left');
+              tc.classList.add('tut-obj-bubble-above');
             });
-            var objOwTo=ow.getBoundingClientRect();
-            var objDX=objOwFrom.left-objOwTo.left, objDY=objOwFrom.top-objOwTo.top;
+            if(s.text) setTutorialText(bt,s.text);
+            // Compute bubble bottom: just above the spotlit card
+            var bubTargetSel=s.targets?s.targets[0]:s.target;
+            var bubTargetEl=bubTargetSel?document.querySelector(bubTargetSel):null;
+            var bubBottom=184;
+            if(bubTargetEl){
+              var btRect=bubTargetEl.getBoundingClientRect();
+              bubBottom=Math.max(184,(window.innerHeight-btRect.top)+18);
+            }
+            bl.style.bottom=bubBottom+'px';
+            // Compute Omnia's target bottom so he sits just under the bubble's arrow tip
+            var owH=ow.getBoundingClientRect().height||92;
+            // arrow tip is at (window.innerHeight - bubBottom + 8) from screen top
+            var arrowTipFromTop=window.innerHeight-bubBottom+8;
+            var owTargetBottom=window.innerHeight-arrowTipFromTop-10-owH; // 10px gap
+            owTargetBottom=Math.max(72,owTargetBottom);
+            // Set Omnia's final inline bottom, then measure his true final rect
             ow.style.transition='none';
+            ow.style.bottom=owTargetBottom+'px';
+            void ow.offsetWidth;
+            var objOwFinal=ow.getBoundingClientRect();
+            // 2D FLIP: translate from old position to new, animate back to none
+            var objDX=objOwFrom.left-objOwFinal.left;
+            var objDY=objOwFrom.top-objOwFinal.top;
             ow.style.transform='translate('+objDX+'px,'+objDY+'px)';
             void ow.offsetWidth;
             ow.style.transition='transform 0.95s cubic-bezier(.42,0,.2,1)';
@@ -14309,21 +14334,8 @@ document.addEventListener('DOMContentLoaded',function(){(function(){
             tc.classList.remove('tut-obj-callout-left','tut-obj-bubble-above');
           }
           setTimeout(function(){
-            if(s.omniaObjSlideLeft) tc.classList.add('tut-obj-bubble-above');
-            if(s.text) setTutorialText(bt,s.text);
+            if(!s.omniaObjSlideLeft) tc.classList.add('tut-obj-bubble-above');
             bl.style.transition=objBubbleTransition;
-            // Dynamically place the bubble just above the spotlit card so it never
-            // overlaps the target on any screen size.
-            if(s.omniaObjSlideLeft){
-              var bubTargetSel=s.targets?s.targets[0]:s.target;
-              var bubTarget=bubTargetSel?document.querySelector(bubTargetSel):null;
-              if(bubTarget){
-                var rTop=bubTarget.getBoundingClientRect().top;
-                // bubble.bottom (from screen bottom) = distance to card top + gap + arrow
-                var bubBottom=Math.max(184,(window.innerHeight-rTop)+18);
-                bl.style.bottom=bubBottom+'px';
-              }
-            }
             void bl.offsetWidth;
             bl.classList.add('tut-vis');
           },300);
