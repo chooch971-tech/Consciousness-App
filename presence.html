@@ -761,6 +761,10 @@
   margin:0;
   transform:none;
 }
+#tutContent.tut-obj-callout.tut-obj-callout-left #tutOmniaWrap {
+  left:clamp(14px,5vw,34px);
+  right:auto;
+}
 #tutContent.tut-obj-callout .tut-crystal-svg {
   width:58px;
 }
@@ -13415,7 +13419,7 @@ document.addEventListener('DOMContentLoaded',function(){(function(){
                text:'For the Visualization exercise, you\'ll learn to see objects as if they were right in front of you.'},
     /* 9  */ {mode:'full', objFlash:true, omniaBelow:true, omniaObjCallout:true,
                text:'You\'ll start with easier objects, like shapes. But then go into objects.'},
-    /* 10 */ {mode:'spot', target:'[data-exercise="visual"]', omniaBelow:true, omniaObjCallout:true,
+    /* 10 */ {mode:'spot', target:'[data-exercise="visual"]', omniaBelow:true, omniaObjCallout:true, omniaObjSlideLeft:true,
                text:'You\'ll learn to do this with your eyes open as well — a concept that sounds difficult but is rather easy after some perseverance.'},
     /* 11 */ {mode:'spot', target:'[data-exercise="auditory"]', omniaRight:true, scrollTo:'[data-exercise="auditory"]',
                text:'Just as you did with visualization, you\'ll repeat the same with sounds. You\'ll hear these sounds as if they were actually there.'},
@@ -13575,6 +13579,7 @@ document.addEventListener('DOMContentLoaded',function(){(function(){
       if(!preserveLow) tc.classList.remove('tut-content-low');
       tc.classList.remove('tut-clock-callout');
       tc.classList.remove('tut-obj-callout');
+      tc.classList.remove('tut-obj-callout-left');
       tc.classList.remove('tut-eye-stage');
     });
   }
@@ -14255,19 +14260,38 @@ document.addEventListener('DOMContentLoaded',function(){(function(){
         tc.classList.add('tut-vis');
         tc.classList.add('tut-content-bottom');
         if(s.omniaObjCallout) tc.classList.add('tut-obj-callout');
+        if(s.omniaObjCallout&&!s.omniaObjSlideLeft) tc.classList.remove('tut-obj-callout-left');
         var doSpot2=function(){if(s.targets) litSpotMulti(s.targets); else litSpot(s.target);};
         if(s.scrollTo){scrollToCard(s.scrollTo,function(){doSpot2();finishStep(s);});return;}
         setTimeout(doSpot2,180);
         if(keepObjCallout){
+          var objOwFrom=ow.getBoundingClientRect();
           bl.classList.remove('tut-vis');
           if(s.blueText) bl.classList.add('tut-blue'); else bl.classList.remove('tut-blue');
           th.textContent=s.eyeTap?'Tap the screen':'Tap to continue';
           th.style.display='block'; sk.style.display='block';
+          if(s.omniaObjSlideLeft){
+            withoutTcTransition(function(){
+              tc.classList.add('tut-obj-callout-left');
+            });
+            var objOwTo=ow.getBoundingClientRect();
+            var objDX=objOwFrom.left-objOwTo.left, objDY=objOwFrom.top-objOwTo.top;
+            ow.style.transition='none';
+            ow.style.transform='translate('+objDX+'px,'+objDY+'px)';
+            void ow.offsetWidth;
+            ow.style.transition='transform 0.95s cubic-bezier(.42,0,.2,1)';
+            ow.style.transform='none';
+            setTimeout(function(){
+              ow.style.transition=''; ow.style.transform='';
+            },1000);
+          } else {
+            tc.classList.remove('tut-obj-callout-left');
+          }
           setTimeout(function(){
             if(s.text) setTutorialText(bt,s.text);
             bl.classList.add('tut-vis');
-          },260);
-          setTimeout(function(){rdy=true;},780);
+          },300);
+          setTimeout(function(){rdy=true;},1120);
           return;
         }
       }
