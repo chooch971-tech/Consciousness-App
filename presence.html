@@ -1123,7 +1123,7 @@ body.tut-live #omniaTabPeek { display:none !important; }
 .tut-asana-svg {
   grid-area:1/1; width:84px;
   animation:omniaFloat 4.5s ease-in-out infinite;
-  filter:drop-shadow(0 0 12px rgba(196,120,120,.4));
+  filter:drop-shadow(0 0 14px rgba(142,204,224,.45));
   opacity:0; transition:opacity 0.65s ease;
 }
 #tutContent.tut-content-bottom .tut-asana-svg { width:54px; }
@@ -14366,35 +14366,52 @@ document.addEventListener('DOMContentLoaded',function(){(function(){
         <g opacity=".5"><line x1="62" y1="48" x2="68" y2="48" stroke="#b8eaff" stroke-width="1.1"/><line x1="65" y1="45" x2="65" y2="51" stroke="#b8eaff" stroke-width="1.1"/></g>
         <g opacity=".38"><line x1="4" y1="22" x2="10" y2="22" stroke="#b8eaff" stroke-width="1"/><line x1="7" y1="19" x2="7" y2="25" stroke="#b8eaff" stroke-width="1"/></g>
       </svg>
-      <svg class="tut-asana-svg" viewBox="0 0 88 90" xmlns="http://www.w3.org/2000/svg">
+      <svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 88 148" class="tut-asana-svg">
         <defs>
-          <radialGradient id="tasg" cx="50%" cy="35%" r="60%">
-            <stop offset="0%" stop-color="#e8c8a8" stop-opacity=".6"/>
-            <stop offset="100%" stop-color="#c47878" stop-opacity="0"/>
+          <linearGradient y2="100%" x2="100%" y1="0%" x1="0%" id="og1">
+            <stop stop-opacity="0.92" stop-color="#ddf0ff" offset="0%"></stop>
+            <stop stop-opacity="0.48" stop-color="#6ab8d8" offset="100%"></stop>
+          </linearGradient>
+          <radialGradient r="58%" cy="38%" cx="50%" id="og3">
+            <stop stop-opacity="0.38" stop-color="#b8eaff" offset="0%"></stop>
+            <stop stop-opacity="0" stop-color="#2878a0" offset="100%"></stop>
           </radialGradient>
-          <filter id="tagl2"><feGaussianBlur stdDeviation="2" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+          <filter height="180%" width="180%" y="-40%" x="-40%" id="oglow">
+            <feGaussianBlur result="blur" stdDeviation="2.2"></feGaussianBlur>
+            <feMerge><feMergeNode in="blur"></feMergeNode><feMergeNode in="SourceGraphic"></feMergeNode></feMerge>
+          </filter>
+          <style>
+            @keyframes omniaBreathe {
+              0%, 100% { transform: scale(1) translateY(0); }
+              50%      { transform: scale(1.018) translateY(-1.2px); }
+            }
+            #breathing-group {
+              animation: omniaBreathe 4s ease-in-out infinite;
+              transform-origin: 44px 48px;
+            }
+          </style>
         </defs>
-        <!-- Head crystal -->
-        <polygon points="44,4 52,14 44,22 36,14" fill="#d4b08e" stroke="#c47878" stroke-width=".8" opacity=".92" filter="url(#tagl2)"/>
-        <!-- Glow halo -->
-        <ellipse cx="44" cy="48" rx="28" ry="32" fill="url(#tasg)" opacity=".4"/>
-        <!-- Body -->
-        <polygon points="44,22 62,40 44,56 26,40" fill="#c4a080" stroke="#c47878" stroke-width=".7" opacity=".88"/>
-        <!-- Left leg -->
-        <polygon points="26,40 8,68 26,74 44,56" fill="#b89070" stroke="#c47878" stroke-width=".6" opacity=".8"/>
-        <!-- Right leg -->
-        <polygon points="62,40 80,68 62,74 44,56" fill="#b89070" stroke="#c47878" stroke-width=".6" opacity=".8"/>
-        <!-- Foot left -->
-        <ellipse cx="18" cy="74" rx="10" ry="4" fill="#a07860" stroke="#c47878" stroke-width=".5" opacity=".6"/>
-        <!-- Foot right -->
-        <ellipse cx="70" cy="74" rx="10" ry="4" fill="#a07860" stroke="#c47878" stroke-width=".5" opacity=".6"/>
-        <!-- Sparkles -->
-        <g opacity=".38">
-          <line x1="4" y1="30" x2="10" y2="30" stroke="#d4b08e" stroke-width="1"/>
-          <line x1="7" y1="27" x2="7" y2="33" stroke="#d4b08e" stroke-width="1"/>
-          <line x1="78" y1="30" x2="84" y2="30" stroke="#d4b08e" stroke-width="1"/>
-          <line x1="81" y1="27" x2="81" y2="33" stroke="#d4b08e" stroke-width="1"/>
+        <polygon opacity=".65" fill="#4a6f8a" points="4,125 22,105 48,125"></polygon>
+        <polygon opacity=".65" fill="#4a6f8a" points="68,125 82,107 96,125"></polygon>
+        <polygon opacity=".85" fill="#5a7f9c" points="8,125 44,88 80,125"></polygon>
+        <polygon opacity=".55" fill="#d4ecff" points="22,109 44,96 66,109"></polygon>
+        <polygon opacity=".35" fill="#e8f4ff" points="32,101 44,93 56,101"></polygon>
+        <rect opacity=".75" fill="#4a6f8a" height="9" width="88" y="125" x="0"></rect>
+        <g id="breathing-group">
+          <polygon opacity=".96" filter="url(#oglow)" stroke-width="1.1" stroke="#90cce8" fill="url(#og1)" points="44,9 56,19 44,29 32,19"></polygon>
+          <path opacity=".88" stroke-width="1.15" stroke="#2a7a9e" d="M37,21 L41,21"></path>
+          <path opacity=".88" stroke-width="1.15" stroke="#2a7a9e" d="M47,21 L51,21"></path>
+          <polygon opacity=".93" stroke-width="0.9" stroke="#88c4e0" fill="#b8dcf5" points="44,28 61,42 56,60 32,60 27,42"></polygon>
+          <path opacity=".88" stroke-linecap="round" stroke-width="5.8" stroke="#88c4e0" fill="none" d="M32 42 Q24 50 27 61"></path>
+          <path opacity=".88" stroke-linecap="round" stroke-width="5.8" stroke="#88c4e0" fill="none" d="M56 42 Q64 50 61 61"></path>
+          <ellipse opacity=".95" transform="rotate(-35 27 61)" fill="#b8eaff" ry="3.8" rx="5" cy="61" cx="27"></ellipse>
+          <ellipse opacity=".95" transform="rotate(35 61 61)" fill="#b8eaff" ry="3.8" rx="5" cy="61" cx="61"></ellipse>
+          <path opacity=".9" stroke-width="0.8" stroke="#88c4e0" fill="#a8d4f0" d="M36 59 Q28 71 24 76 Q29 81 38 78"></path>
+          <path opacity=".92" stroke-width="0.8" stroke="#88c4e0" fill="#b8dcf5" d="M52 59 Q61 68 67 73 Q63 80 53 78"></path>
         </g>
+        <ellipse opacity=".9" transform="rotate(-40 27 80)" fill="#98c8e8" ry="3" rx="6.5" cy="80" cx="27"></ellipse>
+        <ellipse opacity=".9" transform="rotate(38 63 79)" fill="#98c8e8" ry="3" rx="6.5" cy="79" cx="63"></ellipse>
+        <ellipse opacity=".28" fill="url(#og3)" ry="34" rx="29" cy="49" cx="44"></ellipse>
       </svg>
     </div>
   </div>
