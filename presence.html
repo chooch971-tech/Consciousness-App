@@ -4524,7 +4524,8 @@ function resetAllProgressSnapshot() {
     presence_soul_mirror_v1: JSON.stringify({positive:[], negative:[], notes:'', _resetAt:resetAt}),
     presence_guide_v1: JSON.stringify({_resetAt:resetAt}),
     presence_omnia_v1: JSON.stringify(omnia),
-    bardon_rpg_v2: JSON.stringify({_resetAt:resetAt})
+    bardon_rpg_v2: JSON.stringify({_resetAt:resetAt}),
+    presence_visited: '1'
   };
 }
 
@@ -4561,6 +4562,20 @@ function shouldTakeCloudValue(key, local, cloud) {
     return true;
   }
 }
+
+(function preserveTutorialVisitedAfterReset() {
+  if (localStorage.getItem('presence_visited')) return;
+  var resetKeys = ['presence_v3','presence_conc_v1','presence_omnia_v1','bardon_rpg_v2'];
+  var hasResetSnapshot = resetKeys.some(function(key) {
+    try {
+      var raw = localStorage.getItem(key);
+      return raw && !!JSON.parse(raw)._resetAt;
+    } catch(e) {
+      return false;
+    }
+  });
+  if (hasResetSnapshot) localStorage.setItem('presence_visited', '1');
+})();
 
 async function pushResetSnapshotToCloud() {
   if (!syncEnabled || !authToken) return;
