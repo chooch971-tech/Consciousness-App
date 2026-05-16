@@ -7647,6 +7647,7 @@ var currentMode = 'awareness';
 
 function switchMode(mode) {
   currentMode = mode;
+  if(window._omniaQuickDismiss && mode==='guide') window._omniaQuickDismiss();
   var awTab = document.getElementById('modeAwareness');
   var coTab = document.getElementById('modeConcentration');
   var prTab = document.getElementById('modePrayer');
@@ -7741,6 +7742,18 @@ function initOmniaAnims(){
   function trigger(){
     if(document.body.classList.contains('tut-live')) return;
     if(document.getElementById('homeScreen').style.display==='none') return;
+    // If peek is showing but the user switched to a tab it shouldn't appear on, dismiss it
+    if(current && current.id==='peek' && peekVisible && !peekShooting){
+      if(!current.tabs || current.tabs.indexOf(currentMode)<0){
+        clearTimeout(peekHideTimer);
+        peek.classList.remove('peek-in');
+        peekVisible=false;
+        var dDismiss=peekDone; peekDone=null;
+        if(dDismiss) dDismiss(false);
+        current=null;
+        return;
+      }
+    }
     // If peek is already showing on the wrong side, snap it to the correct side
     if(current && current.id==='peek' && peekVisible && !peekShooting){
       var shouldBe=(currentMode==='concentration')?'left':'right';
