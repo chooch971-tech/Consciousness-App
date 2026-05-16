@@ -4514,23 +4514,14 @@ document.getElementById('settingsResetPrayer').addEventListener('click', functio
 });
 
 function resetAllProgress() {
-  state = { ...DEFAULT_STATE };
-  saveState();
-  localStorage.removeItem('presence_session');
-  localStorage.removeItem('presence_guide_v1');
-  localStorage.removeItem('presence_omnia_v1');
-  localStorage.removeItem('presence_conc_v1');
-  localStorage.removeItem('presence_prayer_v1');
-  localStorage.removeItem('presence_journal_v1');
-  localStorage.removeItem('presence_soul_mirror_v1');
-  localStorage.removeItem('bardon_rpg_v2');
-  // Reset in-memory subsystem state
-  guideState = {};
-  guidePathMode = null;
-  omniaState = cloneOmniaDefault();
+  var keys = [
+    'presence_v3','presence_session','presence_guide_v1','presence_omnia_v1',
+    'presence_conc_v1','presence_prayer_v1','presence_journal_v1',
+    'presence_soul_mirror_v1','bardon_rpg_v2','presence_visited'
+  ];
+  keys.forEach(function(k) { localStorage.removeItem(k); });
   notifyServerSessionEnd();
-  renderHome();
-  showToast('All progress reset');
+  window.location.reload();
 }
 
 // ═══════════════════════════════════════
