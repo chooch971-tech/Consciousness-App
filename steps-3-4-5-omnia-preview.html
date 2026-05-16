@@ -1,0 +1,514 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Omnia · Steps III–V Preview</title>
+<style>
+  :root {
+    --bg: #050608;
+    --text: #e8eef4;
+    --muted: #99a4b0;
+    --accent: #8ecce0;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: radial-gradient(circle at 50% 30%, #0c1018 0%, #050608 78%);
+    color: var(--text);
+    font-family: 'DM Mono', monospace;
+    min-height: 100vh;
+    padding: 56px 16px 80px;
+  }
+  h1 {
+    font-family: Cormorant Garamond, serif;
+    font-weight: 300;
+    margin: 0 0 8px;
+    font-size: 26px;
+    letter-spacing: .06em;
+    text-align: center;
+  }
+  .lede {
+    max-width: 560px;
+    margin: 0 auto 56px;
+    text-align: center;
+    font-size: 11px;
+    line-height: 1.85;
+    color: var(--muted);
+  }
+  .lede em { color: var(--accent); font-style: normal; }
+
+  .grid {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 48px 28px;
+    max-width: 1280px;
+    margin: 0 auto;
+  }
+  .step-card {
+    flex: 0 0 220px;
+    max-width: 240px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 14px;
+  }
+
+  .figure-cell {
+    position: relative;
+    width: 200px;
+    height: 280px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .step-kicker {
+    font-size: 9px;
+    letter-spacing: .3em;
+    text-transform: uppercase;
+    color: var(--accent);
+  }
+  .step-name {
+    font-family: Cormorant Garamond, serif;
+    font-size: 18px;
+    line-height: 1.3;
+    color: var(--text);
+    text-align: center;
+  }
+  .step-desc {
+    font-size: 10.5px;
+    line-height: 1.7;
+    color: var(--muted);
+    text-align: center;
+    padding: 0 4px;
+  }
+  .step-tier {
+    font-size: 8px;
+    letter-spacing: .22em;
+    text-transform: uppercase;
+    color: #b8eaff;
+    opacity: .7;
+  }
+
+  /* ── Base Omnia ──────────────────────────── */
+  .omnia-figure {
+    position: relative;
+    width: 130px;
+    height: 190px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    animation: omniaFloat 4.5s ease-in-out infinite;
+    filter: drop-shadow(0 0 14px rgba(160,210,240,.45));
+    z-index: 2;
+  }
+  .omnia-figure svg { width: 100%; height: auto; overflow: visible; }
+
+  /* ambient base aura */
+  .omnia-aura {
+    position: absolute;
+    inset: -16%;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(184,234,255,.16) 0%, rgba(184,234,255,0) 60%);
+    pointer-events: none;
+    z-index: 1;
+  }
+
+  /* ── Step II: Triadic Orbit ──────────────── */
+  .triad {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    transform-style: preserve-3d;
+    perspective: 600px;
+    z-index: 4;
+  }
+  .triad-ring {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 0;
+    height: 0;
+    transform: translate(-50%, -50%) rotateX(72deg);
+    animation: triadSpin 9s linear infinite;
+    transform-style: preserve-3d;
+  }
+  .triad-shard {
+    position: absolute;
+    width: 16px;
+    height: 20px;
+    margin: -10px 0 0 -8px;
+    transform-style: preserve-3d;
+  }
+  .triad-shard-inner {
+    position: absolute;
+    inset: 0;
+    transform: rotateX(-72deg);
+  }
+  .triad-shard svg {
+    width: 100%; height: 100%; overflow: visible;
+    filter: drop-shadow(0 0 4px currentColor) drop-shadow(0 0 10px currentColor);
+  }
+  .triad-shard.t-physical { transform: rotate(0deg)   translateX(80px); }
+  .triad-shard.t-astral   { transform: rotate(120deg) translateX(80px); }
+  .triad-shard.t-mental   { transform: rotate(240deg) translateX(80px); }
+  .triad-shard.t-physical .triad-shard-inner { color: #e8b8a0; }
+  .triad-shard.t-astral   .triad-shard-inner { color: #c4a8d4; }
+  .triad-shard.t-mental   .triad-shard-inner { color: #a8c8e8; }
+
+  /* ── Step III: Crown Aureole ─────────────── */
+  .crown {
+    position: absolute;
+    top: 4px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 78px;
+    height: 78px;
+    pointer-events: none;
+    z-index: 3;
+    background:
+      radial-gradient(circle, rgba(232,232,200,.42) 0%, rgba(232,232,200,.18) 32%, rgba(232,232,200,0) 65%);
+    border-radius: 50%;
+    animation: crownPulse 4.4s ease-in-out infinite;
+    mix-blend-mode: screen;
+  }
+  .crown::before {
+    /* fine inner ring */
+    content:'';
+    position: absolute;
+    inset: 20%;
+    border-radius: 50%;
+    border: 1px solid rgba(240,220,160,.36);
+    box-shadow: 0 0 14px rgba(240,220,160,.32), inset 0 0 10px rgba(240,220,160,.18);
+  }
+
+  /* ── Step IV: Polar Currents ─────────────── */
+  .polar {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    z-index: 3;
+  }
+  .polar-arc {
+    position: absolute;
+    top: 50%;
+    width: 70px;
+    height: 132px;
+    border-radius: 50%;
+    transform: translateY(-50%);
+    pointer-events: none;
+    mix-blend-mode: screen;
+  }
+  .polar-arc.electric {
+    left: -22px;
+    background: radial-gradient(ellipse at right center, rgba(126,200,255,.52) 0%, rgba(126,200,255,.18) 38%, rgba(126,200,255,0) 70%);
+    animation: polarBreathLeft 5.6s ease-in-out infinite;
+  }
+  .polar-arc.magnetic {
+    right: -22px;
+    background: radial-gradient(ellipse at left center, rgba(255,155,138,.52) 0%, rgba(255,155,138,.18) 38%, rgba(255,155,138,0) 70%);
+    animation: polarBreathRight 5.6s ease-in-out infinite;
+  }
+
+  /* ── Step V: Element Wheel + Luminous Mantle ── */
+  .mantle {
+    position: absolute;
+    inset: -22%;
+    border-radius: 50%;
+    pointer-events: none;
+    z-index: 0;
+    background:
+      radial-gradient(circle, rgba(255,238,200,.18) 0%, rgba(255,238,200,.10) 30%, rgba(255,238,200,0) 62%),
+      conic-gradient(from 0deg, rgba(232,184,160,.10), rgba(196,168,212,.10), rgba(168,200,232,.10), rgba(140,196,160,.10), rgba(232,184,160,.10));
+    animation: mantleSpin 22s linear infinite, mantlePulse 6s ease-in-out infinite;
+    filter: blur(2px);
+    mix-blend-mode: screen;
+  }
+  .elements {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    z-index: 5;
+    animation: elementWheelSpin 26s linear infinite;
+  }
+  .element {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 18px;
+    height: 18px;
+    margin: -9px 0 0 -9px;
+    border-radius: 50%;
+    animation: elementPulse 4.6s ease-in-out infinite;
+  }
+  .element::before {
+    content:'';
+    position: absolute;
+    inset: -45%;
+    border-radius: 50%;
+    background: radial-gradient(circle, currentColor 0%, transparent 70%);
+    opacity: .42;
+    filter: blur(2px);
+  }
+  /* Cardinal positions: N (top), E (right), S (bottom), W (left) — radius 116px */
+  .element.fire  { transform: translate(0,    -116px); color: #ff8b4d; background: radial-gradient(circle, #ffe2c0 0%, #ff8b4d 60%, #b04420 100%); box-shadow: 0 0 14px #ff8b4d; }
+  .element.air   { transform: translate(116px, 0);     color: #f5e29a; background: radial-gradient(circle, #fff8d8 0%, #f5e29a 60%, #b8a160 100%); box-shadow: 0 0 14px #f5e29a; animation-delay: 1.15s; }
+  .element.water { transform: translate(0,     116px); color: #6bb8ff; background: radial-gradient(circle, #d6efff 0%, #6bb8ff 60%, #2870a8 100%); box-shadow: 0 0 14px #6bb8ff; animation-delay: 2.3s; }
+  .element.earth { transform: translate(-116px,0);     color: #8fc880; background: radial-gradient(circle, #d8f0c8 0%, #8fc880 60%, #4a7a48 100%); box-shadow: 0 0 14px #8fc880; animation-delay: 3.45s; }
+  /* Connecting diamond — faint */
+  .element-diamond {
+    position: absolute;
+    top: 50%; left: 50%;
+    width: 232px; height: 232px;
+    margin: -116px 0 0 -116px;
+    border: 1px solid rgba(255,238,200,.12);
+    transform: rotate(45deg);
+    pointer-events: none;
+    z-index: 4;
+    box-shadow: 0 0 24px rgba(255,238,200,.06) inset;
+  }
+
+  /* Step V also intensifies the base aura and adds a body-shimmer */
+  .step-5 .omnia-figure { filter: drop-shadow(0 0 24px rgba(255,238,200,.42)); }
+  .step-5 .omnia-aura {
+    background:
+      radial-gradient(circle, rgba(255,238,200,.22) 0%, rgba(255,238,200,0) 55%),
+      radial-gradient(circle, rgba(184,234,255,.18) 0%, rgba(184,234,255,0) 64%);
+  }
+  .step-5 .omnia-figure svg {
+    animation: bodyScintillate 7s ease-in-out infinite;
+  }
+
+  /* ── Keyframes ──────────────────────────── */
+  @keyframes omniaFloat {
+    0%, 100% { transform: translateY(0); }
+    50%      { transform: translateY(-6px); }
+  }
+  @keyframes triadSpin {
+    from { transform: translate(-50%,-50%) rotateX(72deg) rotateZ(0deg); }
+    to   { transform: translate(-50%,-50%) rotateX(72deg) rotateZ(360deg); }
+  }
+  @keyframes crownPulse {
+    0%, 100% { opacity: .8; transform: translateX(-50%) scale(.96); }
+    50%      { opacity: 1;  transform: translateX(-50%) scale(1.06); }
+  }
+  @keyframes polarBreathLeft {
+    0%, 100% { opacity: .55; transform: translateY(-50%) scale(.9, 1); }
+    50%      { opacity: 1;   transform: translateY(-50%) scale(1.18, 1.04); }
+  }
+  @keyframes polarBreathRight {
+    0%, 100% { opacity: 1;   transform: translateY(-50%) scale(1.18, 1.04); }
+    50%      { opacity: .55; transform: translateY(-50%) scale(.9, 1); }
+  }
+  @keyframes elementWheelSpin {
+    from { transform: rotate(0deg); }
+    to   { transform: rotate(360deg); }
+  }
+  @keyframes elementPulse {
+    0%, 100% { transform-origin: center; filter: brightness(1); }
+    50%      { filter: brightness(1.35); }
+  }
+  @keyframes mantleSpin {
+    from { transform: rotate(0deg); }
+    to   { transform: rotate(360deg); }
+  }
+  @keyframes mantlePulse {
+    0%, 100% { opacity: .72; }
+    50%      { opacity: 1; }
+  }
+  @keyframes bodyScintillate {
+    0%, 100% { filter: brightness(1) saturate(1); }
+    50%      { filter: brightness(1.18) saturate(1.18); }
+  }
+
+  /* Section heading between Step IV and Step V to mark the milestone */
+  .milestone-band {
+    width: 100%;
+    text-align: center;
+    margin: 48px auto 24px;
+    font-size: 9px;
+    letter-spacing: .32em;
+    color: #ffd8a0;
+    text-transform: uppercase;
+    opacity: .82;
+  }
+  .milestone-band span {
+    display: inline-block;
+    padding: 6px 18px;
+    border: 1px solid rgba(255,216,160,.32);
+    border-radius: 999px;
+    background: rgba(255,216,160,.05);
+  }
+</style>
+</head>
+<body>
+  <h1>The Path of Omnia · Steps III through V</h1>
+  <div class="lede">
+    Each step layers a new permanent ornament on Omnia's form. <em>Step V</em> is the first major milestone — the four elements arrange themselves in cardinal balance and a luminous mantle wraps the entire being. Steps VI–IX will refine this new form; Step X marks the next great change.
+  </div>
+
+  <div class="grid">
+
+    <!-- Step I -->
+    <div class="step-card">
+      <div class="step-tier">Foundation</div>
+      <div class="figure-cell">
+        <div class="omnia-figure">
+          <div class="omnia-aura"></div>
+          <svg viewBox="0 0 80 130"><use href="#omnia-body"/></svg>
+        </div>
+      </div>
+      <div class="step-kicker">Step I</div>
+      <div class="step-name">Fundamentals</div>
+      <div class="step-desc">A small center of light. The work begins with stillness, attention, and the will to return.</div>
+    </div>
+
+    <!-- Step II -->
+    <div class="step-card">
+      <div class="step-tier">+ Triadic Orbit</div>
+      <div class="figure-cell">
+        <div class="omnia-figure">
+          <div class="omnia-aura"></div>
+          <svg viewBox="0 0 80 130"><use href="#omnia-body"/></svg>
+          <div class="triad">
+            <div class="triad-ring">
+              <div class="triad-shard t-physical"><div class="triad-shard-inner"><svg viewBox="0 0 18 22"><polygon points="9,1 17,8 13,21 5,21 1,8" fill="currentColor" stroke="rgba(255,255,255,.6)" stroke-width="0.6"/></svg></div></div>
+              <div class="triad-shard t-astral"><div class="triad-shard-inner"><svg viewBox="0 0 18 22"><polygon points="9,1 17,8 13,21 5,21 1,8" fill="currentColor" stroke="rgba(255,255,255,.6)" stroke-width="0.6"/></svg></div></div>
+              <div class="triad-shard t-mental"><div class="triad-shard-inner"><svg viewBox="0 0 18 22"><polygon points="9,1 17,8 13,21 5,21 1,8" fill="currentColor" stroke="rgba(255,255,255,.6)" stroke-width="0.6"/></svg></div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="step-kicker">Step II</div>
+      <div class="step-name">Consolidation</div>
+      <div class="step-desc">Three shards — physical, astral, mental — circle the form. The bodies are beginning to coordinate.</div>
+    </div>
+
+    <!-- Step III -->
+    <div class="step-card">
+      <div class="step-tier">+ Crown Aureole</div>
+      <div class="figure-cell">
+        <div class="omnia-figure">
+          <div class="omnia-aura"></div>
+          <div class="crown"></div>
+          <svg viewBox="0 0 80 130"><use href="#omnia-body"/></svg>
+          <div class="triad">
+            <div class="triad-ring">
+              <div class="triad-shard t-physical"><div class="triad-shard-inner"><svg viewBox="0 0 18 22"><polygon points="9,1 17,8 13,21 5,21 1,8" fill="currentColor" stroke="rgba(255,255,255,.6)" stroke-width="0.6"/></svg></div></div>
+              <div class="triad-shard t-astral"><div class="triad-shard-inner"><svg viewBox="0 0 18 22"><polygon points="9,1 17,8 13,21 5,21 1,8" fill="currentColor" stroke="rgba(255,255,255,.6)" stroke-width="0.6"/></svg></div></div>
+              <div class="triad-shard t-mental"><div class="triad-shard-inner"><svg viewBox="0 0 18 22"><polygon points="9,1 17,8 13,21 5,21 1,8" fill="currentColor" stroke="rgba(255,255,255,.6)" stroke-width="0.6"/></svg></div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="step-kicker">Step III</div>
+      <div class="step-name">Integration</div>
+      <div class="step-desc">The three bodies move as a single field. A soft aureole crowns the form — first sign of clarity taking root at the head.</div>
+    </div>
+
+    <!-- Step IV -->
+    <div class="step-card">
+      <div class="step-tier">+ Polar Currents</div>
+      <div class="figure-cell">
+        <div class="omnia-figure">
+          <div class="omnia-aura"></div>
+          <div class="crown"></div>
+          <div class="polar">
+            <div class="polar-arc electric"></div>
+            <div class="polar-arc magnetic"></div>
+          </div>
+          <svg viewBox="0 0 80 130"><use href="#omnia-body"/></svg>
+          <div class="triad">
+            <div class="triad-ring">
+              <div class="triad-shard t-physical"><div class="triad-shard-inner"><svg viewBox="0 0 18 22"><polygon points="9,1 17,8 13,21 5,21 1,8" fill="currentColor" stroke="rgba(255,255,255,.6)" stroke-width="0.6"/></svg></div></div>
+              <div class="triad-shard t-astral"><div class="triad-shard-inner"><svg viewBox="0 0 18 22"><polygon points="9,1 17,8 13,21 5,21 1,8" fill="currentColor" stroke="rgba(255,255,255,.6)" stroke-width="0.6"/></svg></div></div>
+              <div class="triad-shard t-mental"><div class="triad-shard-inner"><svg viewBox="0 0 18 22"><polygon points="9,1 17,8 13,21 5,21 1,8" fill="currentColor" stroke="rgba(255,255,255,.6)" stroke-width="0.6"/></svg></div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="step-kicker">Step IV</div>
+      <div class="step-name">Polarity</div>
+      <div class="step-desc">Omnia learns the two great currents. The electric fluid runs cool on one side, the magnetic warm on the other — their balance is the breath of the work.</div>
+    </div>
+
+  </div>
+
+  <div class="milestone-band"><span>⟡ Milestone · Step V · Element Mastery ⟡</span></div>
+
+  <div class="grid">
+    <!-- Step V (highlighted) -->
+    <div class="step-card step-5" style="flex: 0 0 300px; max-width: 320px;">
+      <div class="step-tier">+ Element Wheel + Luminous Mantle</div>
+      <div class="figure-cell" style="width: 280px; height: 340px;">
+        <div class="mantle"></div>
+        <div class="element-diamond"></div>
+        <div class="elements">
+          <div class="element fire" title="Fire"></div>
+          <div class="element air" title="Air"></div>
+          <div class="element water" title="Water"></div>
+          <div class="element earth" title="Earth"></div>
+        </div>
+        <div class="omnia-figure" style="width: 150px; height: 220px;">
+          <div class="omnia-aura"></div>
+          <div class="crown"></div>
+          <div class="polar">
+            <div class="polar-arc electric"></div>
+            <div class="polar-arc magnetic"></div>
+          </div>
+          <svg viewBox="0 0 80 130"><use href="#omnia-body"/></svg>
+          <div class="triad">
+            <div class="triad-ring">
+              <div class="triad-shard t-physical"><div class="triad-shard-inner"><svg viewBox="0 0 18 22"><polygon points="9,1 17,8 13,21 5,21 1,8" fill="currentColor" stroke="rgba(255,255,255,.6)" stroke-width="0.6"/></svg></div></div>
+              <div class="triad-shard t-astral"><div class="triad-shard-inner"><svg viewBox="0 0 18 22"><polygon points="9,1 17,8 13,21 5,21 1,8" fill="currentColor" stroke="rgba(255,255,255,.6)" stroke-width="0.6"/></svg></div></div>
+              <div class="triad-shard t-mental"><div class="triad-shard-inner"><svg viewBox="0 0 18 22"><polygon points="9,1 17,8 13,21 5,21 1,8" fill="currentColor" stroke="rgba(255,255,255,.6)" stroke-width="0.6"/></svg></div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="step-kicker">Step V · Milestone</div>
+      <div class="step-name">Element Mastery</div>
+      <div class="step-desc">Fire, Air, Water, Earth take their cardinal positions around Omnia. A luminous mantle now wraps the entire form. The being is no longer only a vessel — it is a working compass of the elements.</div>
+    </div>
+  </div>
+
+  <!-- Reusable Omnia body SVG (referenced by every step via <use>) -->
+  <svg width="0" height="0" style="position:absolute;">
+    <defs>
+      <linearGradient id="og1" x1="0%" y1="0%" x2="100%" y2="100%">
+        <stop offset="0%" stop-color="#ddf0ff" stop-opacity="0.92"/>
+        <stop offset="100%" stop-color="#6ab8d8" stop-opacity="0.48"/>
+      </linearGradient>
+      <linearGradient id="og2" x1="100%" y1="0%" x2="0%" y2="100%">
+        <stop offset="0%" stop-color="#ffffff" stop-opacity="0.78"/>
+        <stop offset="100%" stop-color="#4a9ec0" stop-opacity="0.22"/>
+      </linearGradient>
+      <radialGradient id="og3" cx="50%" cy="38%" r="58%">
+        <stop offset="0%" stop-color="#b8eaff" stop-opacity="0.38"/>
+        <stop offset="100%" stop-color="#2878a0" stop-opacity="0"/>
+      </radialGradient>
+      <filter id="oga" x="-30%" y="-30%" width="160%" height="160%">
+        <feGaussianBlur stdDeviation="2.5" result="b"/>
+        <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+      </filter>
+      <g id="omnia-body">
+        <ellipse cx="40" cy="68" rx="28" ry="48" fill="url(#og3)" opacity="0.55"/>
+        <polygon points="40,3 54,14 40,25 26,14" fill="url(#og1)" stroke="#90cce8" stroke-width="0.55" filter="url(#oga)"/>
+        <polygon points="40,3 54,14 40,13" fill="#ceeaff" opacity="0.72"/>
+        <polygon points="40,3 26,14 40,13" fill="#b0dcf5" opacity="0.42"/>
+        <line x1="40" y1="3" x2="40" y2="25" stroke="#b8e0f8" stroke-width="0.4" opacity="0.55"/>
+        <line x1="26" y1="14" x2="54" y2="14" stroke="#b8e0f8" stroke-width="0.4" opacity="0.35"/>
+        <polygon points="40,25 60,36 64,58 40,70 16,58 20,36" fill="url(#og1)" stroke="#88c4e0" stroke-width="0.55"/>
+        <polygon points="40,25 60,36 40,44" fill="#d4ecff" opacity="0.52"/>
+        <polygon points="40,25 20,36 40,44" fill="#bce0f8" opacity="0.32"/>
+        <line x1="40" y1="25" x2="40" y2="70" stroke="#a8d8f2" stroke-width="0.38" opacity="0.48"/>
+        <polygon points="16,58 64,58 40,70" fill="url(#og2)" opacity="0.38"/>
+        <polygon points="40,70 64,58 56,88 40,100 24,88 16,58" fill="url(#og1)" stroke="#88c4e0" stroke-width="0.55" opacity="0.88"/>
+        <polygon points="40,100 56,88 40,114" fill="url(#og2)" stroke="#88c4e0" stroke-width="0.48" opacity="0.72"/>
+        <polygon points="40,100 24,88 40,114" fill="#b4dcf4" stroke="#88c4e0" stroke-width="0.48" opacity="0.52"/>
+      </g>
+    </defs>
+  </svg>
+</body>
+</html>
