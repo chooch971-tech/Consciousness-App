@@ -4468,13 +4468,6 @@ document.getElementById('drawerResetAll').addEventListener('click', function() {
         'There is no going back. Every level, session, and record will be gone forever.',
         function() {
           resetAllProgress();
-          concState = Object.assign({}, CONC_DEFAULT);
-          saveConcState();
-          renderConcHome();
-          localStorage.removeItem('presence_prayer_v1');
-          prayerState = loadPrayerState();
-          renderPrayer();
-          showToast('All progress reset');
         }
       );
     }
@@ -4513,14 +4506,70 @@ document.getElementById('settingsResetPrayer').addEventListener('click', functio
   );
 });
 
-function resetAllProgress() {
+function resetAllProgressSnapshot() {
+  var awareness = Object.assign({}, DEFAULT_STATE);
+  var concentration = Object.assign({}, CONC_DEFAULT);
+  var prayer = Object.assign({}, PRAYER_DEFAULT);
+  var omnia = cloneOmniaDefault();
+  omnia.lastTick = Date.now();
+  return {
+    presence_v3: JSON.stringify(awareness),
+    presence_conc_v1: JSON.stringify(concentration),
+    presence_prayer_v1: JSON.stringify(prayer),
+    presence_journal_v1: JSON.stringify({}),
+    presence_soul_mirror_v1: JSON.stringify({positive:[], negative:[], notes:''}),
+    presence_guide_v1: JSON.stringify({}),
+    presence_omnia_v1: JSON.stringify(omnia),
+    bardon_rpg_v2: JSON.stringify({})
+  };
+}
+
+async function pushResetSnapshotToCloud() {
+  if (!syncEnabled || !authToken) return;
+  try {
+    var data = {
+      presence_v3: localStorage.getItem('presence_v3'),
+      presence_conc_v1: localStorage.getItem('presence_conc_v1'),
+      presence_prayer_v1: localStorage.getItem('presence_prayer_v1'),
+      presence_journal_v1: localStorage.getItem('presence_journal_v1'),
+      presence_soul_mirror_v1: localStorage.getItem('presence_soul_mirror_v1'),
+      presence_guide_v1: localStorage.getItem('presence_guide_v1'),
+      presence_omnia_v1: localStorage.getItem('presence_omnia_v1'),
+      bardon_rpg_v2: localStorage.getItem('bardon_rpg_v2'),
+      presence_visited: localStorage.getItem('presence_visited')
+    };
+    var res = await fetch(SYNC_API_URL + '/sync/push', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer ' + authToken
+      },
+      body: JSON.stringify({ data: data, deviceInfo: detectDevice() })
+    });
+    if (!res.ok && res.status === 401) authLogout();
+  } catch(e) {
+    console.warn('[Sync] Reset push failed:', e.message);
+  }
+}
+
+async function resetAllProgress() {
   var keys = [
     'presence_v3','presence_session','presence_guide_v1','presence_omnia_v1',
     'presence_conc_v1','presence_prayer_v1','presence_journal_v1',
     'presence_soul_mirror_v1','bardon_rpg_v2','presence_visited'
   ];
   keys.forEach(function(k) { localStorage.removeItem(k); });
-  notifyServerSessionEnd();
+  var resetData = resetAllProgressSnapshot();
+  Object.keys(resetData).forEach(function(k) { localStorage.setItem(k, resetData[k]); });
+  sessionStorage.setItem('presence_reset_all_pending', String(Date.now()));
+  omniaState = loadOmniaState();
+  guideState = loadGuideState();
+  guidePathMode = null;
+  concState = loadConcState();
+  prayerState = loadPrayerState();
+  state = loadState();
+  try { await notifyServerSessionEnd(); } catch(e) {}
+  await pushResetSnapshotToCloud();
   window.location.reload();
 }
 
@@ -4644,6 +4693,18 @@ window.addEventListener('pagehide', function() {
 if (!localStorage.getItem('presence_auth_token')) {
   showScreen('loginScreen');
 } else {
+  if (sessionStorage.getItem('presence_reset_all_pending')) {
+    sessionStorage.removeItem('presence_reset_all_pending');
+    window._syncPullPending = false;
+    state = loadState();
+    concState = loadConcState();
+    omniaState = loadOmniaState();
+    prayerState = loadPrayerState();
+    guideState = loadGuideState();
+    guidePathMode = null;
+    renderHome();
+    if (syncEnabled && authToken) syncPushData();
+  } else {
   // Mark pull as pending so saveState guards don't overwrite empty state
   window._syncPullPending = true;
 
@@ -4703,6 +4764,7 @@ if (!localStorage.getItem('presence_auth_token')) {
   } else {
     window._syncPullPending = false;
     renderHome();
+  }
   }
   var savedSession = localStorage.getItem('presence_session');
   if (savedSession) {
