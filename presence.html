@@ -4505,14 +4505,9 @@ document.getElementById('settingsResetPrayer').addEventListener('click', functio
   );
 });
 
-function resetAllProgressSnapshot(options) {
-  options = options || {};
+function resetAllProgressSnapshot() {
   var awareness = Object.assign({}, DEFAULT_STATE);
   var concentration = Object.assign({}, CONC_DEFAULT);
-  if (options.zeroLevels) {
-    awareness.level = 0;
-    concentration.level = 0;
-  }
   var prayer = Object.assign({}, PRAYER_DEFAULT);
   var omnia = cloneOmniaDefault();
   omnia.lastTick = Date.now();
@@ -4596,7 +4591,7 @@ function applyLocalProgressSnapshot(snapshot) {
 }
 
 function resetLocalProgressForSignedOut() {
-  applyLocalProgressSnapshot(resetAllProgressSnapshot({ zeroLevels: true }));
+  applyLocalProgressSnapshot(resetAllProgressSnapshot());
 }
 
 // ═══════════════════════════════════════
