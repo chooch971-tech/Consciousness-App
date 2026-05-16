@@ -160,15 +160,15 @@
   /* ── Step III: Crown Aureole ─────────────── */
   .crown {
     position: absolute;
-    top: 4px;
+    top: -10px;
     left: 50%;
     transform: translateX(-50%);
-    width: 78px;
-    height: 78px;
+    width: 60px;
+    height: 60px;
     pointer-events: none;
     z-index: 3;
     background:
-      radial-gradient(circle, rgba(232,232,200,.42) 0%, rgba(232,232,200,.18) 32%, rgba(232,232,200,0) 65%);
+      radial-gradient(circle, rgba(232,232,200,.48) 0%, rgba(232,232,200,.22) 36%, rgba(232,232,200,0) 68%);
     border-radius: 50%;
     animation: crownPulse 4.4s ease-in-out infinite;
     mix-blend-mode: screen;
@@ -177,11 +177,13 @@
     /* fine inner ring */
     content:'';
     position: absolute;
-    inset: 20%;
+    inset: 18%;
     border-radius: 50%;
-    border: 1px solid rgba(240,220,160,.36);
-    box-shadow: 0 0 14px rgba(240,220,160,.32), inset 0 0 10px rgba(240,220,160,.18);
+    border: 1px solid rgba(240,220,160,.40);
+    box-shadow: 0 0 12px rgba(240,220,160,.36), inset 0 0 8px rgba(240,220,160,.20);
   }
+  /* Step V uses a larger figure — nudge crown down slightly to stay on the head */
+  .step-5 .crown { top: -12px; width: 70px; height: 70px; }
 
   /* ── Step IV: Polar Currents ─────────────── */
   .polar {
