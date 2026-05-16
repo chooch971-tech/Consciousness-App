@@ -785,6 +785,49 @@ body.omnia-tier-orbit .omnia-triad-orbit { display:block; }
   0%, 100% { opacity:.82; }
   50%      { opacity:1; }
 }
+
+/* ── Step III permanent add-on: Crown Aureole ─────────────────────── */
+.omnia-crown { position:absolute; top:-10px; left:50%; transform:translateX(-50%); width:60px; height:60px; pointer-events:none; z-index:3; background:radial-gradient(circle, rgba(232,232,200,.48) 0%, rgba(232,232,200,.22) 36%, rgba(232,232,200,0) 68%); border-radius:50%; display:none; animation:omniaCrownPulse 4.4s ease-in-out infinite; mix-blend-mode:screen; }
+.omnia-crown::before { content:''; position:absolute; inset:18%; border-radius:50%; border:1px solid rgba(240,220,160,.40); box-shadow:0 0 12px rgba(240,220,160,.36), inset 0 0 8px rgba(240,220,160,.20); }
+body.omnia-tier-crown .omnia-crown { display:block; }
+.oe-omnia-figure .omnia-crown { top:-14px; width:72px; height:72px; }
+#drawerOmniaBtn .omnia-crown { top:-5px; width:32px; height:32px; }
+@keyframes omniaCrownPulse { 0%,100%{opacity:.8;transform:translateX(-50%) scale(.96);} 50%{opacity:1;transform:translateX(-50%) scale(1.06);} }
+
+/* ── Step IV permanent add-on: Polar Currents ─────────────────────── */
+.omnia-polar { position:absolute; inset:0; pointer-events:none; z-index:3; display:none; }
+body.omnia-tier-polar .omnia-polar { display:block; }
+.omnia-polar-arc { position:absolute; top:50%; border-radius:50%; transform:translateY(-50%); pointer-events:none; mix-blend-mode:screen; }
+.omnia-polar-arc.electric { left:-12px; width:44px; height:90px; background:radial-gradient(ellipse at right center, rgba(126,200,255,.52) 0%, rgba(126,200,255,.18) 38%, rgba(126,200,255,0) 70%); animation:omniaPolarLeft 5.6s ease-in-out infinite; }
+.omnia-polar-arc.magnetic { right:-12px; width:44px; height:90px; background:radial-gradient(ellipse at left center, rgba(255,155,138,.52) 0%, rgba(255,155,138,.18) 38%, rgba(255,155,138,0) 70%); animation:omniaPolarRight 5.6s ease-in-out infinite; }
+.oe-omnia-figure .omnia-polar-arc { width:60px; height:130px; }
+.oe-omnia-figure .omnia-polar-arc.electric { left:-18px; }
+.oe-omnia-figure .omnia-polar-arc.magnetic { right:-18px; }
+@keyframes omniaPolarLeft  { 0%,100%{opacity:.55;transform:translateY(-50%) scale(.9,1);}  50%{opacity:1;transform:translateY(-50%) scale(1.18,1.04);} }
+@keyframes omniaPolarRight { 0%,100%{opacity:1;transform:translateY(-50%) scale(1.18,1.04);} 50%{opacity:.55;transform:translateY(-50%) scale(.9,1);} }
+
+/* ── Step V permanent add-on: Element Wheel + Luminous Mantle ──────── */
+.omnia-mantle { position:absolute; inset:-22%; border-radius:50%; pointer-events:none; z-index:0; display:none; background:radial-gradient(circle, rgba(255,238,200,.18) 0%, rgba(255,238,200,.10) 30%, rgba(255,238,200,0) 62%), conic-gradient(from 0deg, rgba(232,184,160,.10), rgba(196,168,212,.10), rgba(168,200,232,.10), rgba(140,196,160,.10), rgba(232,184,160,.10)); animation:omniaMantleSpin 22s linear infinite, omniaMantlePulse 6s ease-in-out infinite; filter:blur(2px); mix-blend-mode:screen; }
+body.omnia-tier-elements .omnia-mantle { display:block; }
+.omnia-elements { position:absolute; inset:0; pointer-events:none; z-index:5; display:none; animation:omniaElemSpin 26s linear infinite; }
+body.omnia-tier-elements .omnia-elements { display:block; }
+.omnia-element { position:absolute; top:50%; left:50%; width:13px; height:13px; margin:-6.5px 0 0 -6.5px; border-radius:50%; animation:omniaElemPulse 4.6s ease-in-out infinite; }
+.omnia-element::before { content:''; position:absolute; inset:-45%; border-radius:50%; background:radial-gradient(circle, currentColor 0%, transparent 70%); opacity:.42; filter:blur(2px); }
+.omnia-element.e-fire  { transform:translate(0,-66px);  color:#ff8b4d; background:radial-gradient(circle,#ffe2c0 0%,#ff8b4d 60%,#b04420 100%); box-shadow:0 0 9px #ff8b4d; }
+.omnia-element.e-air   { transform:translate(66px,0);   color:#f5e29a; background:radial-gradient(circle,#fff8d8 0%,#f5e29a 60%,#b8a160 100%); box-shadow:0 0 9px #f5e29a; animation-delay:1.15s; }
+.omnia-element.e-water { transform:translate(0,66px);   color:#6bb8ff; background:radial-gradient(circle,#d6efff 0%,#6bb8ff 60%,#2870a8 100%); box-shadow:0 0 9px #6bb8ff; animation-delay:2.3s; }
+.omnia-element.e-earth { transform:translate(-66px,0);  color:#8fc880; background:radial-gradient(circle,#d8f0c8 0%,#8fc880 60%,#4a7a48 100%); box-shadow:0 0 9px #8fc880; animation-delay:3.45s; }
+.oe-omnia-figure .omnia-element { width:17px; height:17px; margin:-8.5px 0 0 -8.5px; }
+.oe-omnia-figure .omnia-element.e-fire  { transform:translate(0,-96px); }
+.oe-omnia-figure .omnia-element.e-air   { transform:translate(96px,0); }
+.oe-omnia-figure .omnia-element.e-water { transform:translate(0,96px); }
+.oe-omnia-figure .omnia-element.e-earth { transform:translate(-96px,0); }
+body.omnia-tier-elements .omnia-figure { filter:drop-shadow(0 0 18px rgba(255,238,200,.28)); }
+@keyframes omniaElemSpin  { from{transform:rotate(0deg);}   to{transform:rotate(360deg);} }
+@keyframes omniaElemPulse { 0%,100%{filter:brightness(1);} 50%{filter:brightness(1.35);} }
+@keyframes omniaMantleSpin  { from{transform:rotate(0deg);}   to{transform:rotate(360deg);} }
+@keyframes omniaMantlePulse { 0%,100%{opacity:.72;} 50%{opacity:1;} }
+
 .omnia-name { font-family:Cormorant Garamond,serif; font-size:11px; letter-spacing:.42em; text-transform:uppercase; color:#8ecce0; margin-top:10px; opacity:.85; }
 .omnia-speak { font-size:12px; color:var(--muted); line-height:1.85; text-align:center; padding:0 4px; margin-top:10px; font-style:italic; }
 .omnia-speak em { color:#a8d8ec; font-style:normal; }
@@ -9190,7 +9233,21 @@ var OMNIA_BARDON_STEPS = [
     roman:'III',
     name:'Step III · Integration',
     text:'The three bodies are becoming one coordinated field. Later steps will unlock as Omnia grows through sustained practice.',
-    req:{ physical:90, astral:90, mental:90, recommended:30 }
+    req:{ physical:70, astral:70, mental:70, recommended:45 }
+  },
+  {
+    step:4,
+    roman:'IV',
+    name:'Step IV · Polarity',
+    text:'Omnia learns how to transfer his consciousness into any being. The abilities are getting stronger, everything is becoming balanced.',
+    req:{ physical:85, astral:85, mental:85, recommended:90 }
+  },
+  {
+    step:5,
+    roman:'V',
+    name:'Step V · Element Mastery',
+    text:'Fire, Air, Water, and Earth arrange themselves in cardinal balance around Omnia. The luminous mantle wraps the entire form. The being is no longer only a vessel — it is a working compass of the elements.',
+    req:{ physical:100, astral:100, mental:100, recommended:140 }
   }
 ];
 
@@ -9445,12 +9502,46 @@ function injectOmniaTriad(fig) {
     + '</div>';
   fig.appendChild(triad);
 }
+function injectOmniaCrown(fig) {
+  if (!fig || fig.querySelector('.omnia-crown')) return;
+  var el = document.createElement('div');
+  el.className = 'omnia-crown';
+  el.setAttribute('aria-hidden', 'true');
+  fig.appendChild(el);
+}
+function injectOmniaPolar(fig) {
+  if (!fig || fig.querySelector('.omnia-polar')) return;
+  var el = document.createElement('div');
+  el.className = 'omnia-polar';
+  el.setAttribute('aria-hidden', 'true');
+  el.innerHTML = '<div class="omnia-polar-arc electric"></div><div class="omnia-polar-arc magnetic"></div>';
+  fig.appendChild(el);
+}
+function injectOmniaElements(fig) {
+  if (!fig || fig.querySelector('.omnia-elements')) return;
+  var mantle = document.createElement('div');
+  mantle.className = 'omnia-mantle';
+  mantle.setAttribute('aria-hidden', 'true');
+  fig.appendChild(mantle);
+  var wheel = document.createElement('div');
+  wheel.className = 'omnia-elements';
+  wheel.setAttribute('aria-hidden', 'true');
+  wheel.innerHTML = '<div class="omnia-element e-fire"></div><div class="omnia-element e-air"></div><div class="omnia-element e-water"></div><div class="omnia-element e-earth"></div>';
+  fig.appendChild(wheel);
+}
 function applyOmniaStepVisuals() {
   var step = (omniaState && omniaState.bardonStep) || 1;
-  document.body.classList.toggle('omnia-tier-orbit', step >= 2);
+  document.body.classList.toggle('omnia-tier-orbit',    step >= 2);
+  document.body.classList.toggle('omnia-tier-crown',    step >= 3);
+  document.body.classList.toggle('omnia-tier-polar',    step >= 4);
+  document.body.classList.toggle('omnia-tier-elements', step >= 5);
   ['guideOmniaFigure', 'omniaCenterFigure', 'drawerOmniaBtn'].forEach(function(id) {
     var el = document.getElementById(id);
-    if (el) injectOmniaTriad(el);
+    if (!el) return;
+    injectOmniaTriad(el);
+    if (step >= 3) injectOmniaCrown(el);
+    if (step >= 4) injectOmniaPolar(el);
+    if (step >= 5) injectOmniaElements(el);
   });
 }
 
