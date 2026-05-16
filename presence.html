@@ -271,7 +271,7 @@
     .guide-cadence-toggle { border:1px solid rgba(142,204,224,.24); background:rgba(142,204,224,.06); color:#8ecce0; border-radius:4px; padding:7px 9px; font-family:'DM Mono',monospace; font-size:8px; letter-spacing:.14em; text-transform:uppercase; cursor:pointer; white-space:nowrap; }
     .guide-cadence-toggle.off { color:var(--muted); border-color:var(--border); background:rgba(255,255,255,.02); }
     .guide-plan-controls { display:none; justify-content:space-between; align-items:center; gap:10px; border:1px solid rgba(142,204,224,.12); background:rgba(255,255,255,.025); border-radius:8px; padding:9px 10px; margin-bottom:12px; }
-    .guide-tabs { display:flex; justify-content:center; gap:4px; margin:0 auto 16px; padding:4px; background:rgba(255,255,255,.03); border:1px solid var(--border); border-radius:999px; width:fit-content; border-bottom:none; }
+    .guide-tabs { display:flex; justify-content:center; gap:4px; margin:4px auto 14px; padding:4px; background:rgba(255,255,255,.03); border:1px solid var(--border); border-radius:999px; width:fit-content; border-bottom:none; }
     .guide-tab { padding:8px 22px; border-radius:999px; background:transparent; border:none; font-family:'DM Mono',monospace; font-size:9px; letter-spacing:.22em; text-transform:uppercase; color:var(--muted); cursor:pointer; transition:background .22s, color .22s; }
     .guide-tab.active { background:rgba(142,204,224,.16); color:#8ecce0; }
     .guide-tab:not(.active):hover { color:var(--text); }
@@ -338,7 +338,6 @@
 
     /* ── Upgrade screen v3: Omnia-as-centerpiece, bodies as focus ── */
     body.upgrade-stage .omnia-wrap { display:none; }
-    body.upgrade-stage .guide-tabs { margin-bottom:6px; }
     .oe-v2 { display:flex; flex-direction:column; padding:0; background:none; border:none; box-shadow:none; }
 
     /* Slim sticky stage strip */
@@ -1761,6 +1760,10 @@ body:not(.tut-live) #tutCorgi {
     </div>
     <!-- GUIDE PANEL (inside homeScreen) -->
     <div id="guidePanel" style="display:none; flex:1; flex-direction:column; overflow-y:auto; overflow-x:hidden; -webkit-overflow-scrolling:touch; min-height:0; padding-bottom:60px;">
+    <div class="guide-tabs">
+      <button class="guide-tab active" id="guidePathTab">Path</button>
+      <button class="guide-tab" id="guideOmniaTab">Upgrade</button>
+    </div>
     <!-- Omnia character -->
     <div class="omnia-wrap">
       <div class="omnia-figure" id="guideOmniaFigure" role="button" tabindex="0" aria-label="Reveal an Omnia symbol">
@@ -1825,12 +1828,6 @@ body:not(.tut-live) #tutCorgi {
       </div>
       <div class="omnia-name">Omnia</div>
       <div class="omnia-speak">I am here to guide your practice today.<br>Tell me — <em>have you walked this path before?</em></div>
-    </div>
-
-
-    <div class="guide-tabs">
-      <button class="guide-tab active" id="guidePathTab">Path</button>
-      <button class="guide-tab" id="guideOmniaTab">Upgrade</button>
     </div>
 
     <div class="guide-swipe-wrap" id="guideSwipeWrap">
