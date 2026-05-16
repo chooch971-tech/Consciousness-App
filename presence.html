@@ -4506,21 +4506,60 @@ document.getElementById('settingsResetPrayer').addEventListener('click', functio
 });
 
 function resetAllProgressSnapshot() {
+  var resetAt = Date.now();
   var awareness = Object.assign({}, DEFAULT_STATE);
   var concentration = Object.assign({}, CONC_DEFAULT);
   var prayer = Object.assign({}, PRAYER_DEFAULT);
   var omnia = cloneOmniaDefault();
-  omnia.lastTick = Date.now();
+  awareness._resetAt = resetAt;
+  concentration._resetAt = resetAt;
+  prayer._resetAt = resetAt;
+  omnia._resetAt = resetAt;
+  omnia.lastTick = resetAt;
   return {
     presence_v3: JSON.stringify(awareness),
     presence_conc_v1: JSON.stringify(concentration),
     presence_prayer_v1: JSON.stringify(prayer),
-    presence_journal_v1: JSON.stringify({}),
-    presence_soul_mirror_v1: JSON.stringify({positive:[], negative:[], notes:''}),
-    presence_guide_v1: JSON.stringify({}),
+    presence_journal_v1: JSON.stringify({_resetAt:resetAt}),
+    presence_soul_mirror_v1: JSON.stringify({positive:[], negative:[], notes:'', _resetAt:resetAt}),
+    presence_guide_v1: JSON.stringify({_resetAt:resetAt}),
     presence_omnia_v1: JSON.stringify(omnia),
-    bardon_rpg_v2: JSON.stringify({})
+    bardon_rpg_v2: JSON.stringify({_resetAt:resetAt})
   };
+}
+
+function syncProgressScore(key, obj) {
+  if (!obj || typeof obj !== 'object') return 0;
+  if (key === 'presence_omnia_v1') {
+    var bodies = obj.bodies || {};
+    return (obj.totalAkashaEarned || 0)
+      + (obj.akasha || 0)
+      + (obj.reservoir || 0)
+      + ((bodies.physical || 0) + (bodies.astral || 0) + (bodies.mental || 0)) * 1000
+      + ((obj.bardonStep || 1) - 1) * 10000
+      + ((obj.completedRecommended || 0) * 100);
+  }
+  if (obj.xp != null) return obj.xp;
+  return obj.totalSessions || (obj.history && obj.history.length) || 0;
+}
+
+function shouldTakeCloudValue(key, local, cloud) {
+  if (!cloud) return false;
+  if (!local) return true;
+  if (local === cloud) return false;
+  try {
+    var localObj = JSON.parse(local);
+    var cloudObj = JSON.parse(cloud);
+    var localReset = (localObj && localObj._resetAt) || 0;
+    var cloudReset = (cloudObj && cloudObj._resetAt) || 0;
+    if (localReset || cloudReset) {
+      if (cloudReset !== localReset) return cloudReset > localReset;
+      return syncProgressScore(key, cloudObj) >= syncProgressScore(key, localObj);
+    }
+    return syncProgressScore(key, cloudObj) >= syncProgressScore(key, localObj);
+  } catch(e) {
+    return true;
+  }
 }
 
 async function pushResetSnapshotToCloud() {
@@ -4676,21 +4715,7 @@ document.addEventListener('visibilitychange', function() {
         if (!v) return;
         var local = localStorage.getItem(k);
         if (local === v) return;
-        var shouldTakeCloud = false;
-        if (!local) {
-          shouldTakeCloud = true;
-        } else {
-          try {
-            var localObj = JSON.parse(local);
-            var cloudObj = JSON.parse(v);
-            var localSessions = localObj.totalSessions || (localObj.history && localObj.history.length) || 0;
-            var cloudSessions = cloudObj.totalSessions || (cloudObj.history && cloudObj.history.length) || 0;
-            shouldTakeCloud = cloudSessions >= localSessions;
-          } catch(e) {
-            shouldTakeCloud = true;
-          }
-        }
-        if (shouldTakeCloud) {
+        if (shouldTakeCloudValue(k, local, v)) {
           localStorage.setItem(k, v);
           changed = true;
         }
@@ -4741,21 +4766,7 @@ if (!localStorage.getItem('presence_auth_token')) {
         if (!v) return;
         var local = localStorage.getItem(k);
         if (local === v) return;
-        var shouldTakeCloud = false;
-        if (!local) {
-          shouldTakeCloud = true;
-        } else {
-          try {
-            var localObj = JSON.parse(local);
-            var cloudObj = JSON.parse(v);
-            var localSessions = localObj.totalSessions || (localObj.history && localObj.history.length) || 0;
-            var cloudSessions = cloudObj.totalSessions || (cloudObj.history && cloudObj.history.length) || 0;
-            shouldTakeCloud = cloudSessions >= localSessions;
-          } catch(e) {
-            shouldTakeCloud = true;
-          }
-        }
-        if (shouldTakeCloud) {
+        if (shouldTakeCloudValue(k, local, v)) {
           localStorage.setItem(k, v);
           changed = true;
         }
@@ -9238,7 +9249,7 @@ var OMNIA_DEFAULT = {
   akasha: 0,
   reservoir: 0,
   lastTick: Date.now(),
-  bodies: { physical:0, astral:0, mental:0 },
+  bodies: { physical:1, astral:1, mental:1 },
   upgrades: { current:1, vessel:1, attunement:1 },
   bardonStep:1,
   rec: null,
@@ -9348,6 +9359,9 @@ function loadOmniaState() {
     var merged = cloneOmniaDefault();
     Object.assign(merged, parsed);
     merged.bodies = Object.assign(cloneOmniaDefault().bodies, parsed.bodies || {});
+    ['physical','astral','mental'].forEach(function(body) {
+      merged.bodies[body] = Math.max(1, Number(merged.bodies[body]) || 1);
+    });
     merged.upgrades = Object.assign(cloneOmniaDefault().upgrades, parsed.upgrades || {});
     merged.cosmetics = Object.assign(cloneOmniaDefault().cosmetics, parsed.cosmetics || {});
     merged.cosmetics.unlockedPalettes = merged.cosmetics.unlockedPalettes || ['aether'];
@@ -9774,9 +9788,10 @@ function omniaStage() {
 }
 
 function omniaBodyCost(body) {
-  var lvl = omniaState.bodies[body] || 0;
+  var lvl = Math.max(1, omniaState.bodies[body] || 1);
+  var built = Math.max(0, lvl - 1);
   var stepNum = omniaState.bardonStep || 1;
-  var base = 78 + lvl * 15 + Math.floor(Math.pow(lvl, 1.55) * 3.2);
+  var base = 78 + built * 15 + Math.floor(Math.pow(built, 1.55) * 3.2);
   var stepMult = 1 + Math.max(0, stepNum - 1) * 0.16;
   return Math.floor(base * stepMult);
 }
@@ -11728,23 +11743,8 @@ async function syncPullData() {
     Object.entries(result.data).forEach(function([k, v]) {
       if (!v) return; // skip nulls
       var local = localStorage.getItem(k);
-      if (!local) {
-        // Nothing local — always take cloud
+      if (shouldTakeCloudValue(k, local, v)) {
         localStorage.setItem(k, v);
-      } else {
-        // Compare XP (primary) or session counts — take whichever has more progress
-        try {
-          var localObj = JSON.parse(local);
-          var cloudObj = JSON.parse(v);
-          var localScore = localObj.xp != null ? localObj.xp : (localObj.totalSessions || 0);
-          var cloudScore = cloudObj.xp != null ? cloudObj.xp : (cloudObj.totalSessions || 0);
-          if (cloudScore >= localScore) {
-            localStorage.setItem(k, v);
-          }
-          // else keep local (it has more progress)
-        } catch(e) {
-          localStorage.setItem(k, v); // not JSON, just overwrite
-        }
       }
     });
     
