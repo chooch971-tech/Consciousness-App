@@ -9649,6 +9649,24 @@ function omniaReservoirCap() {
   return Math.floor(1800 + (omniaState.upgrades.vessel || 1) * 520 + omniaBodyTotal() * 12);
 }
 
+function omniaAkashaCap() {
+  var step = omniaState.bardonStep || 1;
+  var vesselLvl = omniaState.upgrades.vessel || 1;
+  var stepBase = [6000, 18000, 45000, 100000, 220000][Math.min(step - 1, 4)];
+  var vesselBonus = Math.floor(stepBase * (vesselLvl - 1) * 0.18);
+  return stepBase + vesselBonus;
+}
+
+function omniaUpgradeStepMax(upgId) {
+  var step = omniaState.bardonStep || 1;
+  var caps = { current:[3,6,10,15,999], vessel:[3,6,10,15,999], attunement:[2,4,7,11,999] };
+  return (caps[upgId] || [999])[Math.min(step - 1, 4)];
+}
+
+function omniaUpgradeAtMax(upgId) {
+  return (omniaState.upgrades[upgId] || 1) >= omniaUpgradeStepMax(upgId);
+}
+
 function omniaAccrue() {
   var now = Date.now();
   var elapsedHours = Math.max(0, (now - (omniaState.lastTick || now)) / 3600000);
@@ -9828,9 +9846,13 @@ function renderOmniaEngine() {
   var stripStep = document.getElementById('omniaStripStep');
   if (stageName) stageName.textContent = stage.name;
   if (stageSub) stageSub.textContent = stage.sub;
-  if (wallet) wallet.textContent = Math.floor(omniaState.akasha || 0);
+  var akashaCap = omniaAkashaCap();
+  var akashaAmt = Math.floor(omniaState.akasha || 0);
+  if (wallet) wallet.textContent = akashaAmt;
   var walletCorner = document.getElementById('omniaAkashaWalletCorner');
-  if (walletCorner) walletCorner.textContent = Math.floor(omniaState.akasha || 0);
+  if (walletCorner) walletCorner.textContent = akashaAmt.toLocaleString();
+  var walletCornerParent = walletCorner && walletCorner.parentElement;
+  if (walletCornerParent) walletCornerParent.title = akashaAmt.toLocaleString() + ' / ' + akashaCap.toLocaleString() + ' akasha';
   if (stripStep) stripStep.textContent = 'Step ' + step.roman;
   var bardonTrack = document.getElementById('omniaBardonTrack');
   if (bardonTrack) {
@@ -9916,11 +9938,16 @@ function renderOmniaEngine() {
     upGrid.innerHTML = OMNIA_UPGRADES.map(function(upg) {
       var lvl = omniaState.upgrades[upg.id] || 1;
       var cost = omniaUpgradeCost(upg);
+      var stepMax = omniaUpgradeStepMax(upg.id);
+      var atMax = lvl >= stepMax;
       var sub = upg.sub;
       if (upg.id === 'current') sub += ' · next +' + 55 + '/hr';
+      var btnHtml = atMax
+        ? '<button class="omnia-mini-btn" disabled style="opacity:.45;cursor:default;">Step max</button>'
+        : '<button class="omnia-mini-btn" data-omnia-upgrade="' + upg.id + '"' + ((omniaState.akasha || 0) < cost ? ' disabled' : '') + '>Upgrade ' + cost + '</button>';
       return '<div class="omnia-upgrade-row">'
-        + '<div><div class="omnia-upgrade-name">' + upg.name + ' ' + lvl + '</div><div class="omnia-upgrade-sub">' + sub + '</div></div>'
-        + '<button class="omnia-mini-btn" data-omnia-upgrade="' + upg.id + '"' + ((omniaState.akasha || 0) < cost ? ' disabled' : '') + '>Upgrade ' + cost + '</button>'
+        + '<div><div class="omnia-upgrade-name">' + upg.name + ' ' + lvl + (atMax ? '' : ' <span style="font-size:8px;color:var(--muted);letter-spacing:.1em;">/ ' + stepMax + '</span>') + '</div><div class="omnia-upgrade-sub">' + sub + '</div></div>'
+        + btnHtml
         + '</div>';
     }).join('');
   }
@@ -9938,11 +9965,19 @@ function collectOmniaAkasha() {
   omniaAccrue();
   var amount = Math.floor(omniaState.reservoir || 0);
   if (amount < 1) return;
-  omniaState.akasha = (omniaState.akasha || 0) + amount;
+  var cap = omniaAkashaCap();
+  var current = omniaState.akasha || 0;
+  var room = Math.max(0, cap - current);
+  var collected = Math.min(amount, room);
+  omniaState.akasha = current + collected;
   omniaState.reservoir = 0;
   saveOmniaState();
   renderOmniaEngine();
-  showToast('Collected ' + amount + ' akasha');
+  if (collected < amount) {
+    showToast('Collected ' + collected + ' akasha · wallet full (' + cap.toLocaleString() + ' cap)');
+  } else {
+    showToast('Collected ' + collected + ' akasha');
+  }
 }
 
 function omniaBodyCap(body) {
@@ -10012,6 +10047,7 @@ function fireOmniaBodyBurst(body) {
 function buyOmniaUpgrade(id) {
   var upg = OMNIA_UPGRADES.find(function(u) { return u.id === id; });
   if (!upg) return;
+  if (omniaUpgradeAtMax(id)) return;
   var cost = omniaUpgradeCost(upg);
   if ((omniaState.akasha || 0) < cost) return;
   omniaState.akasha -= cost;
