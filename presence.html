@@ -4347,8 +4347,7 @@ document.getElementById('customAudUpload').addEventListener('change', function(e
 
 document.getElementById('syncLogoutBtn').addEventListener('click', function() {
   if (confirm('Sign out of cloud sync?')) {
-    authLogout();
-    showScreen('loginScreen');
+    authLogout({ clearLocalProgress: true });
   }
 });
 document.getElementById('syncLoginBtn').addEventListener('click', function() {
@@ -4506,9 +4505,14 @@ document.getElementById('settingsResetPrayer').addEventListener('click', functio
   );
 });
 
-function resetAllProgressSnapshot() {
+function resetAllProgressSnapshot(options) {
+  options = options || {};
   var awareness = Object.assign({}, DEFAULT_STATE);
   var concentration = Object.assign({}, CONC_DEFAULT);
+  if (options.zeroLevels) {
+    awareness.level = 0;
+    concentration.level = 0;
+  }
   var prayer = Object.assign({}, PRAYER_DEFAULT);
   var omnia = cloneOmniaDefault();
   omnia.lastTick = Date.now();
@@ -4571,6 +4575,28 @@ async function resetAllProgress() {
   try { await notifyServerSessionEnd(); } catch(e) {}
   await pushResetSnapshotToCloud();
   window.location.reload();
+}
+
+function applyLocalProgressSnapshot(snapshot) {
+  var keys = [
+    'presence_v3','presence_session','presence_guide_v1','presence_omnia_v1',
+    'presence_conc_v1','presence_prayer_v1','presence_journal_v1',
+    'presence_soul_mirror_v1','bardon_rpg_v2','presence_visited'
+  ];
+  keys.forEach(function(k) { localStorage.removeItem(k); });
+  Object.keys(snapshot).forEach(function(k) { localStorage.setItem(k, snapshot[k]); });
+  state = loadState();
+  concState = loadConcState();
+  omniaState = loadOmniaState();
+  prayerState = loadPrayerState();
+  guideState = loadGuideState();
+  guidePathMode = null;
+  window._syncPullPending = false;
+  sessionStorage.removeItem('presence_reset_all_pending');
+}
+
+function resetLocalProgressForSignedOut() {
+  applyLocalProgressSnapshot(resetAllProgressSnapshot({ zeroLevels: true }));
 }
 
 // ═══════════════════════════════════════
@@ -11736,7 +11762,9 @@ async function syncPullData() {
   }
 }
 
-function authLogout() {
+function authLogout(options) {
+  options = options || {};
+  if (options.clearLocalProgress) resetLocalProgressForSignedOut();
   authToken = null;
   authEmail = null;
   localStorage.removeItem('presence_auth_token');
