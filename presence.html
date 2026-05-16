@@ -428,8 +428,9 @@
     .oe-accordion[open] > summary { border-bottom:1px solid var(--border); }
     .oe-acc-chev { transition:transform .25s ease; font-size:13px; color:var(--muted); }
     .oe-accordion[open] .oe-acc-chev { transform:rotate(45deg); color:#8ecce0; }
-    .oe-engine-stage { display:flex; align-items:baseline; gap:10px; margin-bottom:8px; }
+    .oe-engine-kicker { font-size:8px; letter-spacing:.24em; text-transform:uppercase; color:#8ecce0; margin-bottom:10px; }
     .oe-engine-divider { height:1px; background:var(--border); margin:14px 0; }
+    .oe-body-btn.capped { background:color-mix(in srgb, var(--body-color) 22%, transparent); color:var(--body-color); border-color:var(--body-color); opacity:.78; cursor:default; }
     .oe-acc-body { padding:14px; }
     .oe-acc-body .omnia-upgrades { gap:10px; }
     .oe-acc-body .omnia-upgrade-row:first-child { border-top:none; padding-top:0; }
@@ -1939,13 +1940,7 @@ body:not(.tut-live) #tutCorgi {
             <span class="oe-acc-chev">+</span>
           </summary>
           <div class="oe-acc-body">
-            <div class="oe-engine-stage">
-              <div class="oe-strip-name-row">
-                <span class="oe-strip-stage-name" id="omniaStageName">Vessel</span>
-                <span class="oe-strip-step" id="omniaStripStep">Step I</span>
-              </div>
-            </div>
-            <div class="oe-bardon-track" id="omniaBardonTrack"></div>
+            <div class="oe-engine-kicker">Akasha Generator</div>
             <div class="oe-reservoir-inner">
               <div class="oe-reservoir-row">
                 <span>Reservoir</span>
@@ -9655,7 +9650,9 @@ function awardOmniaForExercise(exId, seconds) {
   if (recommended) {
     omniaState.recStreak = (omniaState.recStreak || 0) + 1;
     omniaState.completedRecommended = (omniaState.completedRecommended || 0) + 1;
-    omniaState.bodies[meta.body] = (omniaState.bodies[meta.body] || 0) + 1;
+    if (!omniaBodyAtCap(meta.body)) {
+      omniaState.bodies[meta.body] = (omniaState.bodies[meta.body] || 0) + 1;
+    }
     omniaPickRecommendation(true);
   } else {
     omniaState.recStreak = Math.max(0, (omniaState.recStreak || 0) - 1);
@@ -9755,7 +9752,9 @@ function renderOmniaEngine() {
         + '<div class="oe-body-lvl-row"><span class="oe-body-lvl" data-body-lvl="' + body + '">' + lvl + '</span><span class="oe-body-lvl-key">lvl</span></div>'
         + '<div class="oe-body-need ' + (met ? 'need-met' : '') + '">' + (need > 0 ? ('<span class="' + (met ? 'need-met' : '') + '">' + Math.min(lvl, need) + ' / ' + need + '</span> · step ' + step.roman) : 'no step req') + '</div>'
         + '<div class="oe-body-bar"><div class="oe-body-bar-fill" style="width:' + pct + '%;"></div></div>'
-        + '<button class="oe-body-btn" data-omnia-body="' + body + '"' + ((omniaState.akasha || 0) < cost ? ' disabled' : '') + '>Build <span class="oe-body-cost">' + cost + '</span></button>'
+        + (met
+            ? '<button class="oe-body-btn capped" disabled>At Goal</button>'
+            : '<button class="oe-body-btn" data-omnia-body="' + body + '"' + ((omniaState.akasha || 0) < cost ? ' disabled' : '') + '>Build <span class="oe-body-cost">' + cost + '</span></button>')
         + '</div>';
     }).join('');
   }
@@ -9801,7 +9800,15 @@ function collectOmniaAkasha() {
   showToast('Collected ' + amount + ' akasha');
 }
 
+function omniaBodyCap(body) {
+  var step = omniaCurrentStep();
+  return (step && step.req && step.req[body]) || Infinity;
+}
+function omniaBodyAtCap(body) {
+  return (omniaState.bodies[body] || 0) >= omniaBodyCap(body);
+}
 function buildOmniaBody(body) {
+  if (omniaBodyAtCap(body)) return;
   var cost = omniaBodyCost(body);
   if ((omniaState.akasha || 0) < cost) return;
   omniaState.akasha -= cost;
