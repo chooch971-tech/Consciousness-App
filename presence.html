@@ -3320,10 +3320,18 @@ const DEFAULT_STATE = {
   depth: 1,                  // unified depth level
 };
 
+function normalizeLevel(value) {
+  var level = Number(value);
+  if (!Number.isFinite(level)) return 1;
+  return Math.min(777, Math.max(1, Math.floor(level)));
+}
+
 function loadState() {
   try {
     const s = localStorage.getItem('presence_v3');
-    return s ? { ...DEFAULT_STATE, ...JSON.parse(s) } : { ...DEFAULT_STATE };
+    var loaded = s ? { ...DEFAULT_STATE, ...JSON.parse(s) } : { ...DEFAULT_STATE };
+    loaded.level = normalizeLevel(loaded.level);
+    return loaded;
   } catch { return { ...DEFAULT_STATE }; }
 }
 
@@ -4465,11 +4473,11 @@ document.getElementById('drawerResetAll').addEventListener('click', function() {
   closeDrawer();
   showConfirm(
     'Reset All Progress',
-    'This will permanently erase all Awareness, Concentration, and Prayer progress, history, and streaks.',
+    'This will permanently erase all Awareness, Concentration, Prayer, Omnia, history, and streaks.',
     function() {
       showConfirm(
         'Are you absolutely sure?',
-        'There is no going back. Every level, session, and record will be gone forever.',
+        'There is no going back. Every level, Omnia body level, session, and record will be gone forever.',
         function() {
           resetAllProgress();
         }
@@ -4510,17 +4518,32 @@ document.getElementById('settingsResetPrayer').addEventListener('click', functio
   );
 });
 
+function createOmniaResetState(resetAt) {
+  var omnia = cloneOmniaDefault();
+  omnia.akasha = 0;
+  omnia.reservoir = 0;
+  omnia.lastTick = resetAt;
+  omnia.bodies = { physical:1, astral:1, mental:1 };
+  omnia.upgrades = { current:1, vessel:1, attunement:1 };
+  omnia.bardonStep = 1;
+  omnia.rec = null;
+  omnia.recStreak = 0;
+  omnia.completedRecommended = 0;
+  omnia.totalAkashaEarned = 0;
+  omnia.cosmetics = cloneOmniaDefault().cosmetics;
+  omnia._resetAt = resetAt;
+  return omnia;
+}
+
 function resetAllProgressSnapshot() {
   var resetAt = Date.now();
   var awareness = Object.assign({}, DEFAULT_STATE);
   var concentration = Object.assign({}, CONC_DEFAULT);
   var prayer = Object.assign({}, PRAYER_DEFAULT);
-  var omnia = cloneOmniaDefault();
+  var omnia = createOmniaResetState(resetAt);
   awareness._resetAt = resetAt;
   concentration._resetAt = resetAt;
   prayer._resetAt = resetAt;
-  omnia._resetAt = resetAt;
-  omnia.lastTick = resetAt;
   return {
     presence_v3: JSON.stringify(awareness),
     presence_conc_v1: JSON.stringify(concentration),
@@ -4683,7 +4706,9 @@ var CONC_DEFAULT = { level:1, xp:0, bestSeconds:0, bestAsanaSeconds:0, totalSess
 function loadConcState() {
   try {
     var s = localStorage.getItem('presence_conc_v1');
-    return s ? Object.assign({}, CONC_DEFAULT, JSON.parse(s)) : Object.assign({}, CONC_DEFAULT);
+    var loaded = s ? Object.assign({}, CONC_DEFAULT, JSON.parse(s)) : Object.assign({}, CONC_DEFAULT);
+    loaded.level = normalizeLevel(loaded.level);
+    return loaded;
   } catch(e) { return Object.assign({}, CONC_DEFAULT); }
 }
 
