@@ -14127,6 +14127,11 @@ document.addEventListener('DOMContentLoaded',function(){(function(){
   var tutorialEyeMorphRaf=null;
   var tutorialEyeAnchorY=null;
 
+  function tutorialCanBootOnHome(){
+    var homeEl=document.getElementById('homeScreen');
+    return !!homeEl && homeEl.style.display==='flex' && !document.querySelector('.screen.active');
+  }
+
   /* ── Particles ── */
   function mkP(){
     var cx=window.innerWidth/2, cy=window.innerHeight*0.45;
@@ -15153,8 +15158,9 @@ document.addEventListener('DOMContentLoaded',function(){(function(){
   /* ── Boot ── */
   function boot(){
     if(localStorage.getItem(VISITED)) return;
+    if(!tutorialCanBootOnHome()) return;
     document.body.classList.add('tut-live');
-    ov.style.display='block'; ov.style.opacity='0';
+    ov.style.display='block'; ov.style.opacity='0'; ov.style.pointerEvents='auto';
     ov.style.transition='opacity 0.7s ease,background 0.4s ease';
     setTimeout(function(){ov.style.opacity='1';go(0);},120);
   }
@@ -15172,7 +15178,7 @@ document.addEventListener('DOMContentLoaded',function(){(function(){
     df.classList.remove('tut-float-on'); fb.classList.remove('tut-vis');
     hidePathChoice(); cp.classList.remove('tut-cap-on');
     clearPulse(); closeDrawer();
-    ov.style.display='block'; ov.style.opacity='0';
+    ov.style.display='block'; ov.style.opacity='0'; ov.style.pointerEvents='auto';
     ov.style.transition='opacity 0.7s ease';
     setTimeout(function(){ov.style.opacity='1';go(0);},120);
   };
@@ -15180,8 +15186,12 @@ document.addEventListener('DOMContentLoaded',function(){(function(){
   if(!localStorage.getItem(VISITED)){
     window.__tutBoot=function(){
       if(localStorage.getItem(VISITED)) return;
-      window.__tutBoot=null;
-      setTimeout(boot,900);
+      setTimeout(function(){
+        if(localStorage.getItem(VISITED)) return;
+        if(!tutorialCanBootOnHome()) return;
+        window.__tutBoot=null;
+        boot();
+      },900);
     };
     var homeEl=document.getElementById('homeScreen');
     if(homeEl){
