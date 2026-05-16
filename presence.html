@@ -271,10 +271,11 @@
     .guide-cadence-toggle { border:1px solid rgba(142,204,224,.24); background:rgba(142,204,224,.06); color:#8ecce0; border-radius:4px; padding:7px 9px; font-family:'DM Mono',monospace; font-size:8px; letter-spacing:.14em; text-transform:uppercase; cursor:pointer; white-space:nowrap; }
     .guide-cadence-toggle.off { color:var(--muted); border-color:var(--border); background:rgba(255,255,255,.02); }
     .guide-plan-controls { display:none; justify-content:space-between; align-items:center; gap:10px; border:1px solid rgba(142,204,224,.12); background:rgba(255,255,255,.025); border-radius:8px; padding:9px 10px; margin-bottom:12px; }
-    .guide-tabs { display:flex; gap:0; margin:0 0 20px; border-bottom:1px solid var(--border); }
-    .guide-tab { flex:1; padding:10px 0 9px; border:none; border-bottom:2px solid transparent; background:none; color:var(--muted); font-family:'DM Mono',monospace; font-size:9px; letter-spacing:.24em; text-transform:uppercase; cursor:pointer; }
-    .guide-tab.active { color:#8ecce0; border-bottom-color:#8ecce0; }
-    .guide-tab-panel { display:block; }
+    .guide-tabs { display:flex; justify-content:center; gap:8px; margin:0 0 14px; border-bottom:none; }
+    .guide-tab { width:7px; height:7px; border-radius:50%; background:var(--border); border:none; padding:0; cursor:pointer; font-size:0; color:transparent; transition:background .22s, width .22s, border-radius .22s; }
+    .guide-tab.active { background:#8ecce0; width:20px; border-radius:4px; }
+    .guide-swipe-wrap { display:flex; width:200%; transition:transform .32s cubic-bezier(.4,0,.2,1); will-change:transform; }
+    .guide-tab-panel { width:50%; flex-shrink:0; min-width:0; overflow-x:hidden; }
     .omnia-engine { margin:0 0 20px; background:rgba(142,204,224,.045); border:1px solid rgba(142,204,224,.16); border-radius:12px; padding:16px; box-shadow:0 0 24px rgba(80,160,190,.04) inset; }
     .omnia-engine-top { display:flex; justify-content:space-between; align-items:flex-start; gap:14px; margin-bottom:14px; }
     .omnia-engine-kicker { font-size:8px; letter-spacing:.25em; text-transform:uppercase; color:#8ecce0; margin-bottom:5px; }
@@ -335,7 +336,7 @@
 
     /* ── Upgrade screen v3: Omnia-as-centerpiece, bodies as focus ── */
     body.upgrade-stage .omnia-wrap { display:none; }
-    body.upgrade-stage .guide-tabs { margin-bottom:0; }
+    body.upgrade-stage .guide-tabs { margin-bottom:6px; }
     .oe-v2 { display:flex; flex-direction:column; padding:0; background:none; border:none; box-shadow:none; }
 
     /* Slim sticky stage strip */
@@ -1757,7 +1758,7 @@ body:not(.tut-live) #tutCorgi {
       </div>
     </div>
     <!-- GUIDE PANEL (inside homeScreen) -->
-    <div id="guidePanel" style="display:none; flex:1; flex-direction:column; overflow-y:auto; -webkit-overflow-scrolling:touch; min-height:0; padding-bottom:60px;">
+    <div id="guidePanel" style="display:none; flex:1; flex-direction:column; overflow-y:auto; overflow-x:hidden; -webkit-overflow-scrolling:touch; min-height:0; padding-bottom:60px;">
     <!-- Omnia character -->
     <div class="omnia-wrap">
       <div class="omnia-figure" id="guideOmniaFigure" role="button" tabindex="0" aria-label="Reveal an Omnia symbol">
@@ -1830,7 +1831,8 @@ body:not(.tut-live) #tutCorgi {
       <button class="guide-tab" id="guideOmniaTab">Upgrade</button>
     </div>
 
-    <div class="guide-tab-panel" id="guideOmniaPanel" style="display:none;">
+    <div class="guide-swipe-wrap" id="guideSwipeWrap">
+    <div class="guide-tab-panel" id="guideOmniaPanel">
     <div class="oe-v2" id="omniaEngine">
 
       <!-- Omnia centerpiece -->
@@ -1970,6 +1972,7 @@ body:not(.tut-live) #tutCorgi {
       <div class="oe-stage-sub" id="omniaStageSub" style="display:none;"></div>
     </div>
     </div>
+    </div>
 
     <div class="guide-tab-panel" id="guidePathPanel">
 
@@ -2028,6 +2031,7 @@ body:not(.tut-live) #tutCorgi {
       <div class="omnia-response" style="margin-top:18px; padding-bottom:8px;">Go well. Return when you are ready.</div>
     </div>
     </div>
+    </div><!-- end guideSwipeWrap -->
     </div><!-- end guidePanel -->
   </div><!-- end homeScreen -->
 
@@ -10170,12 +10174,12 @@ var GUIDE_FOUNDATION_THOUGHT_TIPS = {
 
 function switchGuideTab(tab) {
   guideActiveTab = tab;
-  var pathPanel = document.getElementById('guidePathPanel');
-  var omniaPanel = document.getElementById('guideOmniaPanel');
+  var wrap = document.getElementById('guideSwipeWrap');
   var pathTab = document.getElementById('guidePathTab');
   var omniaTab = document.getElementById('guideOmniaTab');
-  if (pathPanel) pathPanel.style.display = tab === 'path' ? 'block' : 'none';
-  if (omniaPanel) omniaPanel.style.display = tab === 'omnia' ? 'block' : 'none';
+  // OmniaPanel is first child (left), PathPanel is second (right)
+  // Path active = slide right (-50%), Omnia active = slide to start (0)
+  if (wrap) wrap.style.transform = tab === 'omnia' ? 'translateX(0)' : 'translateX(-50%)';
   if (pathTab) pathTab.classList.toggle('active', tab === 'path');
   if (omniaTab) omniaTab.classList.toggle('active', tab === 'omnia');
   document.body.classList.toggle('upgrade-stage', tab === 'omnia');
@@ -10811,6 +10815,38 @@ document.getElementById('guidePathTab').addEventListener('click', function() {
 document.getElementById('guideOmniaTab').addEventListener('click', function() {
   switchGuideTab('omnia');
 });
+
+// Set initial swipe position (Path is shown by default)
+(function() {
+  var wrap = document.getElementById('guideSwipeWrap');
+  if (wrap) wrap.style.transform = 'translateX(-50%)';
+})();
+
+// Horizontal swipe between Path and Upgrade
+(function() {
+  var panel = document.getElementById('guidePanel');
+  var startX, startY, dragging;
+  panel.addEventListener('touchstart', function(e) {
+    startX = e.touches[0].clientX;
+    startY = e.touches[0].clientY;
+    dragging = false;
+  }, {passive: true});
+  panel.addEventListener('touchmove', function(e) {
+    if (startX == null) return;
+    var dx = e.touches[0].clientX - startX;
+    var dy = e.touches[0].clientY - startY;
+    if (!dragging && Math.abs(dy) > Math.abs(dx)) { startX = null; return; }
+    dragging = true;
+  }, {passive: true});
+  panel.addEventListener('touchend', function(e) {
+    if (startX == null || !dragging) return;
+    var dx = e.changedTouches[0].clientX - startX;
+    startX = null; dragging = false;
+    if (Math.abs(dx) < 55) return;
+    if (dx < 0 && guideActiveTab === 'path') switchGuideTab('omnia');
+    else if (dx > 0 && guideActiveTab === 'omnia') switchGuideTab('path');
+  }, {passive: true});
+})();
 document.getElementById('omniaCollectBtn').addEventListener('click', collectOmniaAkasha);
 document.getElementById('omniaAkashaPillBtn').addEventListener('click', function() {
   var drop = document.getElementById('omniaReservoirDrop');
