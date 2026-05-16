@@ -338,7 +338,10 @@
 
     /* ── Upgrade screen v3: Omnia-as-centerpiece, bodies as focus ── */
     body.upgrade-stage .omnia-wrap { display:none; }
-    .oe-v2 { display:flex; flex-direction:column; padding:0; background:none; border:none; box-shadow:none; }
+    .oe-v2 { display:flex; flex-direction:column; padding:0; background:none; border:none; box-shadow:none; position:relative; }
+    .oe-akasha-corner { position:absolute; top:8px; right:14px; z-index:5; display:flex; align-items:baseline; gap:5px; padding:7px 13px; border:1px solid rgba(212,180,142,.32); border-radius:999px; background:rgba(212,180,142,.06); pointer-events:none; }
+    .oe-akasha-corner-val { font-family:Cormorant Garamond,serif; font-size:18px; line-height:1; color:#e8c896; }
+    .oe-akasha-corner-key { font-size:8px; letter-spacing:.2em; text-transform:uppercase; color:#d4b08e; }
 
     /* Slim sticky stage strip */
     .oe-strip { padding:12px 14px 10px; background:rgba(255,255,255,.025); border:1px solid var(--border); border-radius:14px; margin:0 14px 4px; }
@@ -1898,7 +1901,22 @@ body:not(.tut-live) #tutCorgi {
         </div>
       </div>
 
-      <!-- Akashic Engine strip — below centerpiece -->
+      <!-- Top-right akasha total -->
+      <div class="oe-akasha-corner" id="omniaAkashaCorner">
+        <span class="oe-akasha-corner-val" id="omniaAkashaWalletCorner">0</span>
+        <span class="oe-akasha-corner-key">akasha</span>
+      </div>
+
+      <!-- Body trio: the focus -->
+      <div class="oe-bodies" id="omniaBodyGrid"></div>
+
+      <!-- Inline session progress + advance -->
+      <div class="oe-session-row">
+        <div class="oe-session-progress" id="omniaSessionProgress"></div>
+        <button class="oe-advance-btn" id="omniaAdvanceBtn">Advance Step</button>
+      </div>
+
+      <!-- Akashic Engine strip — below the advance button -->
       <div class="oe-strip">
         <div class="oe-strip-row">
           <div class="oe-strip-stage">
@@ -1925,15 +1943,6 @@ body:not(.tut-live) #tutCorgi {
             <div class="oe-rate" id="omniaRateText"></div>
           </div>
         </div>
-      </div>
-
-      <!-- Body trio: the focus -->
-      <div class="oe-bodies" id="omniaBodyGrid"></div>
-
-      <!-- Inline session progress + advance -->
-      <div class="oe-session-row">
-        <div class="oe-session-progress" id="omniaSessionProgress"></div>
-        <button class="oe-advance-btn" id="omniaAdvanceBtn">Advance Step</button>
       </div>
 
       <!-- Secondary sections -->
@@ -9679,6 +9688,8 @@ function renderOmniaEngine() {
   if (stageName) stageName.textContent = stage.name;
   if (stageSub) stageSub.textContent = stage.sub;
   if (wallet) wallet.textContent = Math.floor(omniaState.akasha || 0);
+  var walletCorner = document.getElementById('omniaAkashaWalletCorner');
+  if (walletCorner) walletCorner.textContent = Math.floor(omniaState.akasha || 0);
   if (stripStep) stripStep.textContent = 'Step ' + step.roman;
   var bardonTrack = document.getElementById('omniaBardonTrack');
   if (bardonTrack) {
