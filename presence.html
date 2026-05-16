@@ -274,7 +274,7 @@
     .guide-tabs { display:flex; justify-content:center; gap:8px; margin:0 0 14px; border-bottom:none; }
     .guide-tab { width:7px; height:7px; border-radius:50%; background:var(--border); border:none; padding:0; cursor:pointer; font-size:0; color:transparent; transition:background .22s, width .22s, border-radius .22s; }
     .guide-tab.active { background:#8ecce0; width:20px; border-radius:4px; }
-    .guide-swipe-wrap { display:flex; width:200%; transition:transform .32s cubic-bezier(.4,0,.2,1); will-change:transform; }
+    .guide-swipe-wrap { display:flex; width:200%; align-items:flex-start; transition:transform .32s cubic-bezier(.4,0,.2,1), height .32s cubic-bezier(.4,0,.2,1); will-change:transform, height; overflow:hidden; }
     .guide-tab-panel { width:50%; flex-shrink:0; min-width:0; overflow-x:hidden; }
     .omnia-engine { margin:0 0 20px; background:rgba(142,204,224,.045); border:1px solid rgba(142,204,224,.16); border-radius:12px; padding:16px; box-shadow:0 0 24px rgba(80,160,190,.04) inset; }
     .omnia-engine-top { display:flex; justify-content:space-between; align-items:flex-start; gap:14px; margin-bottom:14px; }
@@ -7871,8 +7871,9 @@ function switchMode(mode) {
     renderConcHome();
   } else if (mode === 'guide') {
     prTab.classList.add('active','guide-mode');
-    if (guPanel) guPanel.style.display = 'flex';
+    if (guPanel) { guPanel.style.display = 'flex'; guPanel.scrollTop = 0; }
     openGuide();
+    requestAnimationFrame(syncGuideSwipeHeight);
   } else {
     // Prayer is now a drawer item — show its panel without highlighting any home tab
     prPanel.style.display = 'flex';
@@ -9774,6 +9775,7 @@ function renderOmniaEngine() {
       + renderOmniaCosmeticSection('Entity Forms', 'entity', OMNIA_ENTITIES)
       + renderOmniaCosmeticSection('Companions', 'companion', OMNIA_COMPANIONS);
   }
+  if (guideActiveTab === 'omnia') requestAnimationFrame(syncGuideSwipeHeight);
 }
 
 function collectOmniaAkasha() {
@@ -10172,6 +10174,14 @@ var GUIDE_FOUNDATION_THOUGHT_TIPS = {
   vacancy:'Let the mind stay empty; tap at the first sign of content.'
 };
 
+function syncGuideSwipeHeight() {
+  var wrap = document.getElementById('guideSwipeWrap');
+  if (!wrap) return;
+  var activeId = guideActiveTab === 'omnia' ? 'guideOmniaPanel' : 'guidePathPanel';
+  var active = document.getElementById(activeId);
+  if (!active) return;
+  wrap.style.height = active.scrollHeight + 'px';
+}
 function switchGuideTab(tab) {
   guideActiveTab = tab;
   var wrap = document.getElementById('guideSwipeWrap');
@@ -10184,6 +10194,11 @@ function switchGuideTab(tab) {
   if (omniaTab) omniaTab.classList.toggle('active', tab === 'omnia');
   document.body.classList.toggle('upgrade-stage', tab === 'omnia');
   if (tab === 'omnia') renderOmniaEngine();
+  // Match wrap height to active panel content to remove empty space
+  requestAnimationFrame(syncGuideSwipeHeight);
+  // Reset scroll so user starts at the top of the newly-active panel
+  var gp = document.getElementById('guidePanel');
+  if (gp) gp.scrollTop = 0;
 }
 
 // ── Render exercise assessment rows ───────────────────────
@@ -10821,6 +10836,7 @@ document.getElementById('guideOmniaTab').addEventListener('click', function() {
   var wrap = document.getElementById('guideSwipeWrap');
   if (wrap) wrap.style.transform = 'translateX(-50%)';
 })();
+window.addEventListener('resize', function() { requestAnimationFrame(syncGuideSwipeHeight); });
 
 // Horizontal swipe between Path and Upgrade
 (function() {
