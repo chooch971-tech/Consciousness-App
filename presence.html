@@ -4517,6 +4517,17 @@ function resetAllProgress() {
   state = { ...DEFAULT_STATE };
   saveState();
   localStorage.removeItem('presence_session');
+  localStorage.removeItem('presence_guide_v1');
+  localStorage.removeItem('presence_omnia_v1');
+  localStorage.removeItem('presence_conc_v1');
+  localStorage.removeItem('presence_prayer_v1');
+  localStorage.removeItem('presence_journal_v1');
+  localStorage.removeItem('presence_soul_mirror_v1');
+  localStorage.removeItem('bardon_rpg_v2');
+  // Reset in-memory subsystem state
+  guideState = {};
+  guidePathMode = null;
+  omniaState = cloneOmniaDefault();
   notifyServerSessionEnd();
   renderHome();
   showToast('All progress reset');
@@ -9651,10 +9662,7 @@ function omniaReservoirCap() {
 
 function omniaAkashaCap() {
   var step = omniaState.bardonStep || 1;
-  var vesselLvl = omniaState.upgrades.vessel || 1;
-  var stepBase = [6000, 18000, 45000, 100000, 220000][Math.min(step - 1, 4)];
-  var vesselBonus = Math.floor(stepBase * (vesselLvl - 1) * 0.18);
-  return stepBase + vesselBonus;
+  return [6000, 18000, 45000, 100000, 220000][Math.min(step - 1, 4)];
 }
 
 function omniaUpgradeStepMax(upgId) {
