@@ -35,7 +35,7 @@
     }
     .app { position:relative; z-index:1; height:100dvh; display:flex; flex-direction:column; overflow:hidden; }
     .screen { display:none; flex-direction:column; height:100%; padding:var(--safe-top) 24px max(env(safe-area-inset-bottom),28px); }
-    .screen.active { display:flex; }
+    .screen.active { display:flex; position:fixed; inset:0; z-index:20; background:var(--bg); }
 
     /* INTRO */
     #introScreen { justify-content:space-between; }
@@ -3515,6 +3515,11 @@ function clearStaleInteractionLocks() {
   if (float) float.classList.remove('tut-float-on');
   if (drawer) drawer.classList.remove('show');
 }
+function suppressTutorialForExerciseEntry() {
+  try { localStorage.setItem('presence_visited', '1'); } catch(e) {}
+  window.__tutBoot = null;
+  clearStaleInteractionLocks();
+}
 function showScreen(id) {
   if (id === 'homeScreen') {
     document.querySelectorAll('.screen').forEach(function(s) { s.classList.remove('active'); });
@@ -6456,6 +6461,7 @@ var EXERCISE_DEFS = {
 };
 
 function openExerciseSetup(ex) {
+  suppressTutorialForExerciseEntry();
   currentExercise = ex;
   stopAllAudio();
   var def = EXERCISE_DEFS[ex];
@@ -6511,13 +6517,17 @@ document.getElementById('concExpertGrid').addEventListener('click', function(e) 
   var card = e.target.closest('.exercise-card[data-exercise]');
   if (!card) return;
   var def = EXERCISE_DEFS[card.dataset.exercise];
-  if (def && def.begin) def.begin();
+  if (def && def.begin) {
+    suppressTutorialForExerciseEntry();
+    def.begin();
+  }
 });
 
 document.getElementById('exerciseGrid').addEventListener('click', function(e) {
   var card = e.target.closest('.exercise-card');
   if (!card || !card.dataset.exercise) return;
   if (card.dataset.exercise === 'soulmirror') {
+    suppressTutorialForExerciseEntry();
     // Reset to mirror tab
     document.querySelectorAll('.soul-tab').forEach(function(t) {
       t.style.borderBottomColor = 'transparent';
@@ -6531,7 +6541,10 @@ document.getElementById('exerciseGrid').addEventListener('click', function(e) {
     showScreen('soulMirrorScreen');
   } else if (card.dataset.exercise === 'multisense' || card.dataset.exercise === 'allangles') {
     var def = EXERCISE_DEFS[card.dataset.exercise];
-    if (def) def.begin();
+    if (def) {
+      suppressTutorialForExerciseEntry();
+      def.begin();
+    }
   } else {
     openExerciseSetup(card.dataset.exercise);
   }
@@ -6687,7 +6700,10 @@ document.getElementById('visTutorialBack').addEventListener('click', function() 
 
 document.getElementById('exSetupBeginBtn').addEventListener('click', function() {
   var def = EXERCISE_DEFS[currentExercise];
-  if (def && def.begin) def.begin();
+  if (def && def.begin) {
+    suppressTutorialForExerciseEntry();
+    def.begin();
+  }
 });
 
 function switchVisCategory(cat) {
@@ -11074,6 +11090,7 @@ function beginGuidePlanItem(btn) {
   }
   if (ex === 'soulmirror') {
     switchMode('concentration');
+    suppressTutorialForExerciseEntry();
     renderSoulMirrorTraits();
     showScreen('soulMirrorScreen');
     return;
