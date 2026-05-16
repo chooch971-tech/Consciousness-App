@@ -759,6 +759,32 @@
 .omnia-figure.morphing .omnia-crystal-layer { opacity:.12; transform:scale(.82) rotate(10deg); filter:blur(3px); }
 .omnia-figure.morphing .omnia-symbol-layer { opacity:0; }
 .omnia-figure.morphing .omnia-morph-ring { animation:omniaRingTurn 1.9s ease both; }
+
+/* ── Step II permanent add-on: Triadic Orbit ─────────────── */
+.omnia-triad-orbit { --orbit-radius: 56px; position:absolute; inset:0; pointer-events:none; transform-style:preserve-3d; perspective:600px; display:none; z-index:4; }
+body.omnia-tier-orbit .omnia-triad-orbit { display:block; }
+.omnia-triad-orbit .triad-ring { position:absolute; top:50%; left:50%; width:0; height:0; transform:translate(-50%,-50%) rotateX(72deg); animation:omniaTriadSpin 9s linear infinite; transform-style:preserve-3d; }
+.omnia-triad-orbit .triad-shard { position:absolute; top:0; left:0; width:14px; height:17px; margin:-8.5px 0 0 -7px; transform-style:preserve-3d; }
+.omnia-triad-orbit .triad-shard-inner { position:absolute; inset:0; transform:rotateX(-72deg); animation:omniaTriadFloat 4.5s ease-in-out infinite; }
+.omnia-triad-orbit .triad-shard svg { width:100%; height:100%; overflow:visible; filter:drop-shadow(0 0 4px currentColor) drop-shadow(0 0 9px currentColor); }
+.omnia-triad-orbit .triad-shard.t-physical { transform:rotate(0deg) translateX(var(--orbit-radius)); }
+.omnia-triad-orbit .triad-shard.t-astral { transform:rotate(120deg) translateX(var(--orbit-radius)); }
+.omnia-triad-orbit .triad-shard.t-mental { transform:rotate(240deg) translateX(var(--orbit-radius)); }
+.omnia-triad-orbit .triad-shard.t-physical .triad-shard-inner { color:#e8b8a0; }
+.omnia-triad-orbit .triad-shard.t-astral   .triad-shard-inner { color:#c4a8d4; }
+.omnia-triad-orbit .triad-shard.t-mental   .triad-shard-inner { color:#a8c8e8; }
+.oe-omnia-figure .omnia-triad-orbit { --orbit-radius: 92px; }
+.oe-omnia-figure .omnia-triad-orbit .triad-shard { width:18px; height:22px; margin:-11px 0 0 -9px; }
+#drawerOmniaBtn .omnia-triad-orbit { --orbit-radius: 30px; }
+#drawerOmniaBtn .omnia-triad-orbit .triad-shard { width:9px; height:11px; margin:-5.5px 0 0 -4.5px; }
+@keyframes omniaTriadSpin {
+  from { transform:translate(-50%,-50%) rotateX(72deg) rotateZ(0deg); }
+  to   { transform:translate(-50%,-50%) rotateX(72deg) rotateZ(360deg); }
+}
+@keyframes omniaTriadFloat {
+  0%, 100% { opacity:.82; }
+  50%      { opacity:1; }
+}
 .omnia-name { font-family:Cormorant Garamond,serif; font-size:11px; letter-spacing:.42em; text-transform:uppercase; color:#8ecce0; margin-top:10px; opacity:.85; }
 .omnia-speak { font-size:12px; color:var(--muted); line-height:1.85; text-align:center; padding:0 4px; margin-top:10px; font-style:italic; }
 .omnia-speak em { color:#a8d8ec; font-style:normal; }
@@ -1339,7 +1365,7 @@ body:not(.tut-live) #tutCorgi {
 #drawerOmniaBtn {
   background:none; border:none; cursor:pointer; padding:4px;
   opacity:0.65; transition:opacity 0.2s ease, filter 0.2s ease;
-  line-height:0; margin-bottom:10px;
+  line-height:0; margin-bottom:10px; position:relative;
 }
 #drawerOmniaBtn:hover {
   opacity:1;
@@ -8415,8 +8441,10 @@ function initOmniaAnims(){
 }
 if(document.readyState==='loading'){
   document.addEventListener('DOMContentLoaded',initOmniaAnims);
+  document.addEventListener('DOMContentLoaded',function(){ if(typeof applyOmniaStepVisuals==='function') applyOmniaStepVisuals(); });
 } else {
   initOmniaAnims();
+  if(typeof applyOmniaStepVisuals==='function') applyOmniaStepVisuals();
 }
 document.getElementById('concStopBtn').addEventListener('click', function() { stopConcentration(); });
 document.getElementById('concStopBtn2').addEventListener('click', function() { stopConcentration(); });
@@ -9401,6 +9429,31 @@ function updateDrawerEntityBtn() {
   }
 }
 
+function injectOmniaTriad(fig) {
+  if (!fig || fig.querySelector('.omnia-triad-orbit')) return;
+  var triad = document.createElement('div');
+  triad.className = 'omnia-triad-orbit';
+  triad.setAttribute('aria-hidden', 'true');
+  triad.innerHTML =
+    '<div class="triad-ring">'
+    + ['t-physical','t-astral','t-mental'].map(function(c) {
+        return '<div class="triad-shard ' + c + '">'
+          + '<div class="triad-shard-inner">'
+          + '<svg viewBox="0 0 18 22"><polygon points="9,1 17,8 13,21 5,21 1,8" fill="currentColor" stroke="rgba(255,255,255,.6)" stroke-width="0.6"/></svg>'
+          + '</div></div>';
+      }).join('')
+    + '</div>';
+  fig.appendChild(triad);
+}
+function applyOmniaStepVisuals() {
+  var step = (omniaState && omniaState.bardonStep) || 1;
+  document.body.classList.toggle('omnia-tier-orbit', step >= 2);
+  ['guideOmniaFigure', 'omniaCenterFigure', 'drawerOmniaBtn'].forEach(function(id) {
+    var el = document.getElementById(id);
+    if (el) injectOmniaTriad(el);
+  });
+}
+
 function applyOmniaCosmetics() {
   if (!omniaState.cosmetics) omniaState.cosmetics = cloneOmniaDefault().cosmetics;
   var palette = omniaFindCosmetic(OMNIA_PALETTES, omniaState.cosmetics.palette || 'aether');
@@ -9666,6 +9719,7 @@ function awardOmniaForExercise(exId, seconds) {
 function renderOmniaEngine() {
   omniaAccrue();
   applyOmniaCosmetics();
+  applyOmniaStepVisuals();
   var stage = omniaStage();
   var step = omniaCurrentStep();
   var canAdvance = omniaStepReady(step);
