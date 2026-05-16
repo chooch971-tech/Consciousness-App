@@ -1841,7 +1841,8 @@ body:not(.tut-live) #tutCorgi {
           <div class="oe-aura oe-aura-astral" id="omniaAuraAstral"></div>
           <div class="oe-aura oe-aura-mental" id="omniaAuraMental"></div>
           <div class="oe-flash" id="omniaCenterFlash"></div>
-          <div class="oe-omnia-figure" id="omniaCenterFigure">
+          <div class="oe-omnia-figure omnia-figure" id="omniaCenterFigure" role="button" tabindex="0" aria-label="Reveal an Omnia symbol">
+            <div class="omnia-crystal-layer">
             <svg viewBox="0 0 80 130" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
               <defs>
                 <linearGradient id="oeOg1" x1="0%" y1="0%" x2="100%" y2="100%">
@@ -1884,6 +1885,10 @@ body:not(.tut-live) #tutCorgi {
                 <line x1="71" y1="45" x2="71" y2="51" stroke="#b8eaff" stroke-width="0.9"/>
               </g>
             </svg>
+            </div>
+            <svg class="omnia-shard-layer" id="omniaCenterShardSvg" viewBox="0 0 100 130" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"></svg>
+            <div class="omnia-morph-ring"></div>
+            <div class="omnia-symbol-layer" id="omniaCenterSymbolLayer"></div>
           </div>
         </div>
         <div class="oe-stage-step">
@@ -10022,9 +10027,9 @@ function omniaMorphOutline(sym, color) {
     + '</g>';
 }
 
-function animateOmniaShardMorph(sym) {
-  var fig = document.getElementById('guideOmniaFigure');
-  var svg = document.getElementById('guideOmniaShardSvg');
+function animateOmniaShardMorph(sym, figId, svgId) {
+  var fig = document.getElementById(figId || 'guideOmniaFigure');
+  var svg = document.getElementById(svgId || 'guideOmniaShardSvg');
   if (!fig || !svg) return;
   if (omniaMorphRaf) cancelAnimationFrame(omniaMorphRaf);
   var from = OMNIA_CRYSTAL_MORPH_SHARDS;
@@ -10123,9 +10128,9 @@ function renderOmniaMorphSymbol(sym) {
     + '</svg>';
 }
 
-function morphGuideOmnia() {
-  var fig = document.getElementById('guideOmniaFigure');
-  var layer = document.getElementById('guideOmniaSymbolLayer');
+function morphOmniaFigureBy(figId, layerId, svgId) {
+  var fig = document.getElementById(figId);
+  var layer = document.getElementById(layerId);
   if (!fig || !layer) return;
   var entityId = (omniaState && omniaState.cosmetics && omniaState.cosmetics.entity) || 'omnia';
   var entity = omniaFindCosmetic(OMNIA_ENTITIES, entityId) || OMNIA_ENTITIES[0];
@@ -10140,10 +10145,16 @@ function morphGuideOmnia() {
   layer.innerHTML = renderOmniaMorphSymbol(sym);
   layer.style.color = sym.color;
   fig.setAttribute('aria-label', entity.name + ' reveals ' + sym.label);
-  animateOmniaShardMorph(sym);
+  animateOmniaShardMorph(sym, figId, svgId);
   omniaMorphTimer = setTimeout(function() {
     fig.setAttribute('aria-label', 'Reveal a ' + entity.name + ' symbol');
   }, 2200);
+}
+function morphGuideOmnia() {
+  morphOmniaFigureBy('guideOmniaFigure', 'guideOmniaSymbolLayer', 'guideOmniaShardSvg');
+}
+function morphOmniaCenter() {
+  morphOmniaFigureBy('omniaCenterFigure', 'omniaCenterSymbolLayer', 'omniaCenterShardSvg');
 }
 
 // ── Persistent selections ──────────────────────────────────
@@ -10861,7 +10872,10 @@ document.getElementById('guideOmniaFigure').addEventListener('keydown', function
     morphGuideOmnia();
   }
 });
-document.getElementById('omniaCenterFigure').addEventListener('click', morphGuideOmnia);
+document.getElementById('omniaCenterFigure').addEventListener('click', morphOmniaCenter);
+document.getElementById('omniaCenterFigure').addEventListener('keydown', function(e) {
+  if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); morphOmniaCenter(); }
+});
 document.getElementById('omniaAdvanceBtn').addEventListener('click', advanceOmniaStep);
 document.getElementById('omniaBeginRecBtn').addEventListener('click', beginOmniaRecommendation);
 document.getElementById('omniaNewRecBtn').addEventListener('click', function() {
