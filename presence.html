@@ -428,6 +428,8 @@
     .oe-accordion[open] > summary { border-bottom:1px solid var(--border); }
     .oe-acc-chev { transition:transform .25s ease; font-size:13px; color:var(--muted); }
     .oe-accordion[open] .oe-acc-chev { transform:rotate(45deg); color:#8ecce0; }
+    .oe-engine-stage { display:flex; align-items:baseline; gap:10px; margin-bottom:8px; }
+    .oe-engine-divider { height:1px; background:var(--border); margin:14px 0; }
     .oe-acc-body { padding:14px; }
     .oe-acc-body .omnia-upgrades { gap:10px; }
     .oe-acc-body .omnia-upgrade-row:first-child { border-top:none; padding-top:0; }
@@ -1916,35 +1918,6 @@ body:not(.tut-live) #tutCorgi {
         <button class="oe-advance-btn" id="omniaAdvanceBtn">Advance Step</button>
       </div>
 
-      <!-- Akashic Engine strip — below the advance button -->
-      <div class="oe-strip">
-        <div class="oe-strip-row">
-          <div class="oe-strip-stage">
-            <div class="oe-strip-kicker">Akashic Engine</div>
-            <div class="oe-strip-name-row">
-              <span class="oe-strip-stage-name" id="omniaStageName">Vessel</span>
-              <span class="oe-strip-step" id="omniaStripStep">Step I</span>
-            </div>
-          </div>
-          <button type="button" class="oe-akasha-pill-btn" id="omniaAkashaPillBtn" aria-expanded="false">
-            <span class="oe-akasha-pill-val" id="omniaAkashaWallet">0</span>
-            <span class="oe-akasha-pill-key">akasha</span>
-          </button>
-        </div>
-        <div class="oe-bardon-track" id="omniaBardonTrack"></div>
-        <div class="oe-reservoir-drop" id="omniaReservoirDrop">
-          <div class="oe-reservoir-inner">
-            <div class="oe-reservoir-row">
-              <span>Reservoir</span>
-              <span id="omniaReservoirText">0 / 0</span>
-            </div>
-            <div class="omnia-bar"><div class="omnia-bar-fill" id="omniaReservoirFill"></div></div>
-            <button class="oe-collect-btn-mini" id="omniaCollectBtn">Collect Akasha</button>
-            <div class="oe-rate" id="omniaRateText"></div>
-          </div>
-        </div>
-      </div>
-
       <!-- Secondary sections -->
       <div class="oe-secondary">
 
@@ -1962,10 +1935,27 @@ body:not(.tut-live) #tutCorgi {
 
         <details class="oe-accordion" open>
           <summary>
-            <span>Engine Upgrades</span>
+            <span>Akashic Engine</span>
             <span class="oe-acc-chev">+</span>
           </summary>
           <div class="oe-acc-body">
+            <div class="oe-engine-stage">
+              <div class="oe-strip-name-row">
+                <span class="oe-strip-stage-name" id="omniaStageName">Vessel</span>
+                <span class="oe-strip-step" id="omniaStripStep">Step I</span>
+              </div>
+            </div>
+            <div class="oe-bardon-track" id="omniaBardonTrack"></div>
+            <div class="oe-reservoir-inner">
+              <div class="oe-reservoir-row">
+                <span>Reservoir</span>
+                <span id="omniaReservoirText">0 / 0</span>
+              </div>
+              <div class="omnia-bar"><div class="omnia-bar-fill" id="omniaReservoirFill"></div></div>
+              <button class="oe-collect-btn-mini" id="omniaCollectBtn">Collect Akasha</button>
+              <div class="oe-rate" id="omniaRateText"></div>
+            </div>
+            <div class="oe-engine-divider"></div>
             <div class="omnia-upgrades" id="omniaUpgradeGrid"></div>
           </div>
         </details>
@@ -9098,7 +9088,7 @@ var OMNIA_DEFAULT = {
   reservoir: 0,
   lastTick: Date.now(),
   bodies: { physical:0, astral:0, mental:0 },
-  upgrades: { current:1, vessel:1, discernment:1 },
+  upgrades: { current:1, vessel:1, attunement:1 },
   bardonStep:1,
   rec: null,
   recStreak: 0,
@@ -9130,9 +9120,9 @@ var OMNIA_EXERCISE_META = {
 };
 
 var OMNIA_UPGRADES = [
-  { id:'current', name:'Akashic Engine', sub:'Generate akasha more quickly each hour', base:520, step:260 },
+  { id:'current', name:'Akashic Current', sub:'Generate akasha more quickly each hour', base:520, step:260 },
   { id:'vessel', name:'Deep Vessel', sub:'Reservoir capacity before overflow', base:480, step:240 },
-  { id:'discernment', name:'Discernment', sub:'Better recommendations and bonus rewards', base:640, step:320 }
+  { id:'attunement', name:'Attunement', sub:'Cheapens cosmetics and engine upgrades', base:640, step:320 }
 ];
 
 var OMNIA_PALETTES = [
@@ -9162,7 +9152,7 @@ var OMNIA_BARDON_STEPS = [
     step:1,
     roman:'I',
     name:'Step I · Fundamentals',
-    text:'Your work will build Omnia and both of you will grow together. You must still the mind and prepare yourself astrally to ascend to Step II.',
+    text:'Your work will build Omnia and both of you will grow together. You must still the mind and prepare yourself astrally to ascend to the next step.',
     req:{ physical:12, astral:12, mental:12, recommended:6 }
   },
   {
@@ -9461,9 +9451,10 @@ function renderOmniaCosmeticSection(title, kind, items) {
     + items.map(function(item) {
       var unlocked = omniaCosmeticUnlocked(kind, item.id);
       var selected = omniaCosmeticSelected(kind, item.id);
-      var label = selected ? 'Selected' : unlocked ? 'Select' : 'Unlock ' + item.cost;
-      var disabled = !unlocked && (omniaState.akasha || 0) < item.cost;
-      var sub = item.sub + (!unlocked && item.cost ? ' · ' + item.cost + ' akasha' : '');
+      var liveCost = omniaCosmeticCost(item);
+      var label = selected ? 'Selected' : unlocked ? 'Select' : 'Unlock ' + liveCost;
+      var disabled = !unlocked && (omniaState.akasha || 0) < liveCost;
+      var sub = item.sub + (!unlocked && item.cost ? ' · ' + liveCost + ' akasha' : '');
       return '<div class="omnia-cosmetic-card' + (selected ? ' selected' : '') + '">'
         + '<div class="omnia-cosmetic-main">'
         + renderOmniaCosmeticPreview(kind, item)
@@ -9488,8 +9479,9 @@ function unlockOrSelectOmniaCosmetic(kind, id) {
   var item = omniaFindCosmetic(list, id);
   var unlocked = omniaCosmeticUnlocked(kind, id);
   if (!unlocked) {
-    if ((omniaState.akasha || 0) < item.cost) return;
-    omniaState.akasha -= item.cost;
+    var liveCost = omniaCosmeticCost(item);
+    if ((omniaState.akasha || 0) < liveCost) return;
+    omniaState.akasha -= liveCost;
     omniaUnlockList(kind).push(id);
   }
   if (kind === 'palette') omniaState.cosmetics.palette = id;
@@ -9550,9 +9542,17 @@ function omniaBodyCost(body) {
   return Math.floor(base * stepMult);
 }
 
+function omniaDiscountMult() {
+  var att = (omniaState.upgrades && omniaState.upgrades.attunement) || 1;
+  return Math.max(0.5, 1 - (att - 1) * 0.05);
+}
+function omniaCosmeticCost(item) {
+  return Math.floor((item.cost || 0) * omniaDiscountMult());
+}
 function omniaUpgradeCost(upg) {
   var lvl = omniaState.upgrades[upg.id] || 1;
-  return Math.floor((upg.base + (lvl - 1) * upg.step) * Math.pow(1.14, Math.max(0, lvl - 1)));
+  var raw = Math.floor((upg.base + (lvl - 1) * upg.step) * Math.pow(1.14, Math.max(0, lvl - 1)));
+  return Math.floor(raw * omniaDiscountMult());
 }
 
 function omniaCurrentStep() {
@@ -9586,7 +9586,7 @@ function omniaPickRecommendation(forceNew) {
   pool.sort(function(a,b) {
     return omniaLastDoneIndex(b, history) - omniaLastDoneIndex(a, history);
   });
-  var dayOffset = Math.floor(Date.now() / 86400000) + (omniaState.upgrades.discernment || 1);
+  var dayOffset = Math.floor(Date.now() / 86400000);
   var id = pool[Math.abs(dayOffset) % pool.length] || 'clock';
   omniaState.rec = { id:id, setAt:Date.now() };
   saveOmniaState();
@@ -9638,9 +9638,8 @@ function omniaExerciseReward(exId, seconds, recommended) {
   var progressionSoftCap = 1 / (1 + Math.max(0, total - 36) / 95);
   var stepPenalty = 1 - Math.min(0.24, Math.max(0, stepNum - 1) * 0.07);
   var catchup = total < 42 ? 1 + (42 - total) / 120 : 1;
-  var discernment = omniaState.upgrades.discernment || 1;
   var streakMult = 1 + Math.min(0.45, (omniaState.recStreak || 0) * 0.08);
-  var recMult = recommended ? 1.75 + discernment * 0.08 : 1;
+  var recMult = recommended ? 1.75 : 1;
   return Math.max(42, Math.floor(base * progressionSoftCap * stepPenalty * catchup * streakMult * recMult));
 }
 
@@ -10868,14 +10867,6 @@ document.getElementById('guideOmniaTab').addEventListener('click', function() {
   }, {passive: true});
 })();
 document.getElementById('omniaCollectBtn').addEventListener('click', collectOmniaAkasha);
-document.getElementById('omniaAkashaPillBtn').addEventListener('click', function() {
-  var drop = document.getElementById('omniaReservoirDrop');
-  var btn = document.getElementById('omniaAkashaPillBtn');
-  if (!drop) return;
-  var isOpen = drop.classList.toggle('open');
-  btn.classList.toggle('open', isOpen);
-  btn.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
-});
 document.getElementById('guideOmniaFigure').addEventListener('click', morphGuideOmnia);
 document.getElementById('guideOmniaFigure').addEventListener('keydown', function(e) {
   if (e.key === 'Enter' || e.key === ' ') {
