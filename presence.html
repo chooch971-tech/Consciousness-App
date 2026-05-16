@@ -332,6 +332,66 @@
     .omnia-step-req { display:flex; justify-content:space-between; align-items:center; gap:12px; font-size:9px; letter-spacing:.08em; color:var(--muted); }
     .omnia-step-req.done { color:#8ecce0; }
     .omnia-action-row { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+
+    /* ── Upgrade screen v2 ── */
+    .oe-v2 { display:flex; flex-direction:column; gap:14px; padding:0; background:none; border:none; box-shadow:none; }
+    .oe-stage { position:sticky; top:0; z-index:5; padding:14px 14px 12px; background:linear-gradient(180deg, rgba(7,8,13,.96) 0%, rgba(7,8,13,.9) 80%, rgba(7,8,13,0) 100%); margin:0 -2px 4px; }
+    .oe-stage-top { display:flex; justify-content:space-between; align-items:flex-start; gap:14px; }
+    .oe-stage-kicker { font-size:8px; letter-spacing:.28em; text-transform:uppercase; color:#8ecce0; margin-bottom:4px; }
+    .oe-stage-name { font-family:Cormorant Garamond,serif; font-size:26px; font-weight:300; color:var(--text); line-height:1; }
+    .oe-stage-sub { font-size:9px; color:var(--muted); letter-spacing:.06em; margin-top:9px; line-height:1.55; }
+    .oe-akasha-pill { display:flex; flex-direction:column; align-items:flex-end; padding:6px 12px; border:1px solid rgba(142,204,224,.22); border-radius:999px; background:rgba(142,204,224,.06); min-width:88px; }
+    .oe-akasha-val { font-family:Cormorant Garamond,serif; font-size:22px; line-height:1; color:#b8eaff; }
+    .oe-akasha-key { font-size:7px; letter-spacing:.22em; text-transform:uppercase; color:var(--muted); margin-top:3px; }
+    .oe-bardon-track { display:flex; gap:5px; margin-top:14px; }
+    .oe-bardon-dot { flex:1; height:3px; border-radius:999px; background:rgba(255,255,255,.07); transition:background .3s, box-shadow .3s; }
+    .oe-bardon-dot.done { background:rgba(142,204,224,.45); }
+    .oe-bardon-dot.active { background:#8ecce0; box-shadow:0 0 8px rgba(142,204,224,.55); }
+
+    .oe-card { border:1px solid var(--border); border-radius:12px; padding:14px; background:rgba(255,255,255,.025); }
+    .oe-card--hero { border-color:rgba(142,204,224,.28); background:linear-gradient(180deg, rgba(142,204,224,.07), rgba(142,204,224,.02)); box-shadow:0 0 22px rgba(80,160,190,.05) inset; }
+    .oe-card-head { display:flex; justify-content:space-between; align-items:flex-start; gap:12px; margin-bottom:10px; }
+    .oe-card-kicker { font-size:8px; letter-spacing:.24em; text-transform:uppercase; color:#8ecce0; margin-bottom:5px; }
+    .oe-step-name { font-family:Cormorant Garamond,serif; font-size:22px; font-weight:300; color:var(--text); line-height:1.1; }
+    .oe-step-num { font-family:Cormorant Garamond,serif; font-size:38px; font-weight:300; color:rgba(142,204,224,.55); line-height:.9; padding-top:2px; }
+    .oe-step-text { font-size:10px; color:var(--muted); line-height:1.6; margin-bottom:12px; }
+    .oe-step-reqs { display:grid; gap:7px; margin-bottom:13px; }
+    .oe-primary-btn { width:100%; padding:11px; border-radius:8px; border:1px solid rgba(142,204,224,.32); background:rgba(142,204,224,.1); color:#b8eaff; font-family:'DM Mono',monospace; font-size:9px; letter-spacing:.2em; text-transform:uppercase; cursor:pointer; }
+    .oe-primary-btn:disabled { opacity:.42; cursor:default; }
+
+    .oe-bodies-row { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; }
+    .oe-bodies-row .omnia-body-card { padding:10px 9px; margin:0; }
+    .oe-bodies-row .omnia-body-head { flex-direction:column; align-items:flex-start; gap:3px; margin-bottom:8px; }
+    .oe-bodies-row .omnia-body-name { font-size:7.5px; letter-spacing:.16em; }
+    .oe-bodies-row .omnia-body-lvl { font-family:Cormorant Garamond,serif; font-size:18px; font-weight:300; color:var(--text); }
+    .oe-bodies-row .omnia-body-actions { flex-direction:column; gap:8px; margin-top:8px; align-items:stretch; }
+    .oe-bodies-row .omnia-body-effect { display:none; }
+    .oe-bodies-row .omnia-body-actions .omnia-mini-btn { width:100%; padding:6px 4px; font-size:7px; letter-spacing:.1em; }
+
+    .oe-duo { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+    .oe-card--practice { border-color:rgba(212,149,110,.22); background:rgba(212,149,110,.05); display:flex; flex-direction:column; }
+    .oe-card--practice .oe-card-kicker { color:#d4b08e; }
+    .oe-rec-name { font-size:11px; letter-spacing:.14em; text-transform:uppercase; color:var(--text); margin-bottom:4px; }
+    .oe-rec-reward { font-size:8px; letter-spacing:.12em; color:#d4b08e; margin-bottom:8px; }
+    .oe-rec-text { font-size:9px; color:var(--muted); line-height:1.55; margin-bottom:12px; flex:1; }
+    .oe-rec-actions { display:grid; gap:6px; }
+    .oe-card--reservoir { display:flex; flex-direction:column; }
+    .oe-reservoir-val { font-family:Cormorant Garamond,serif; font-size:20px; color:#b8eaff; line-height:1; margin-bottom:9px; }
+    .oe-rate { font-size:8px; color:var(--muted); letter-spacing:.08em; margin-top:8px; line-height:1.5; flex:1; }
+    .oe-collect { width:100%; margin-top:10px; padding:8px; font-size:8px; }
+
+    .oe-accordion { border:1px solid var(--border); border-radius:12px; background:rgba(255,255,255,.02); overflow:hidden; }
+    .oe-accordion summary { list-style:none; cursor:pointer; padding:13px 14px; display:flex; justify-content:space-between; align-items:center; font-size:9px; letter-spacing:.22em; text-transform:uppercase; color:#8ecce0; user-select:none; }
+    .oe-accordion summary::-webkit-details-marker { display:none; }
+    .oe-accordion summary::marker { content:''; }
+    .oe-accordion[open] > summary { border-bottom:1px solid var(--border); }
+    .oe-acc-chev { transition:transform .25s ease; font-size:13px; color:var(--muted); }
+    .oe-accordion[open] .oe-acc-chev { transform:rotate(45deg); color:#8ecce0; }
+    .oe-acc-body { padding:14px; }
+    .oe-acc-body .omnia-upgrades { gap:10px; }
+    .oe-acc-body .omnia-upgrade-row:first-child { border-top:none; padding-top:0; }
+    .oe-acc-body .omnia-cosmetics { margin-top:0; border-top:none; padding-top:0; }
+
     .conc-history-item { background:var(--surface); border:1px solid var(--border); border-radius:8px; padding:16px; margin-bottom:10px; }
     .conc-history-top { display:flex; justify-content:space-between; align-items:center; margin-bottom:4px; }
     .conc-history-date { font-size:10px; letter-spacing:.15em; color:var(--muted); }
@@ -1721,61 +1781,83 @@ body:not(.tut-live) #tutCorgi {
     </div>
 
     <div class="guide-tab-panel" id="guideOmniaPanel" style="display:none;">
-    <div class="omnia-engine" id="omniaEngine">
-      <div class="omnia-engine-top">
-        <div>
-          <div class="omnia-engine-kicker">Akashic Engine</div>
-          <div class="omnia-engine-title" id="omniaStageName">Vessel</div>
-          <div class="omnia-engine-sub" id="omniaStageSub">Omnia is learning to take form through your practice.</div>
-        </div>
-        <div class="omnia-akasha-bank">
-          <div class="omnia-akasha-val" id="omniaAkashaWallet">0</div>
-          <div class="omnia-akasha-key">akasha</div>
-        </div>
-      </div>
+    <div class="oe-v2" id="omniaEngine">
 
-      <div class="omnia-reservoir">
-        <div class="omnia-reservoir-row">
-          <span class="omnia-reservoir-label">reservoir</span>
-          <span class="omnia-reservoir-value" id="omniaReservoirText">0 / 0</span>
-        </div>
-        <div class="omnia-bar"><div class="omnia-bar-fill" id="omniaReservoirFill"></div></div>
-        <button class="omnia-collect-btn" id="omniaCollectBtn">Collect Akasha</button>
-        <div class="omnia-engine-sub" id="omniaRateText" style="text-align:center; margin-top:9px;"></div>
-      </div>
-
-      <div class="omnia-step-card">
-        <div class="omnia-step-top">
-          <div>
-            <div class="omnia-step-label">Bardon Step</div>
-            <div class="omnia-step-name" id="omniaStepName">Step I</div>
+      <!-- Sticky stage header -->
+      <div class="oe-stage">
+        <div class="oe-stage-top">
+          <div style="min-width:0;">
+            <div class="oe-stage-kicker">Akashic Engine</div>
+            <div class="oe-stage-name" id="omniaStageName">Vessel</div>
           </div>
-          <div class="omnia-step-num" id="omniaStepNum">I</div>
+          <div class="oe-akasha-pill">
+            <span class="oe-akasha-val" id="omniaAkashaWallet">0</span>
+            <span class="oe-akasha-key">akasha</span>
+          </div>
         </div>
-        <div class="omnia-step-text" id="omniaStepText"></div>
-        <div class="omnia-step-reqs" id="omniaStepReqs"></div>
-        <div class="omnia-action-row">
-          <button class="omnia-mini-btn" id="omniaAdvanceBtn">Advance Step</button>
+        <div class="oe-bardon-track" id="omniaBardonTrack"></div>
+        <div class="oe-stage-sub" id="omniaStageSub">Omnia is learning to take form through your practice.</div>
+      </div>
+
+      <!-- Hero: active Bardon step -->
+      <div class="oe-card oe-card--hero">
+        <div class="oe-card-head">
+          <div>
+            <div class="oe-card-kicker">Active Step</div>
+            <div class="oe-step-name" id="omniaStepName">Step I</div>
+          </div>
+          <div class="oe-step-num" id="omniaStepNum">I</div>
+        </div>
+        <div class="oe-step-text" id="omniaStepText"></div>
+        <div class="oe-step-reqs" id="omniaStepReqs"></div>
+        <button class="oe-primary-btn" id="omniaAdvanceBtn">Advance Step</button>
+      </div>
+
+      <!-- Bodies (compact 3-up tied to step reqs above) -->
+      <div class="oe-bodies-row" id="omniaBodyGrid"></div>
+
+      <!-- 2-up: Today's Practice + Reservoir -->
+      <div class="oe-duo">
+        <div class="oe-card oe-card--practice">
+          <div class="oe-card-kicker">Today's Practice</div>
+          <div class="oe-rec-name" id="omniaRecName">Clock</div>
+          <div class="oe-rec-reward" id="omniaRecReward"></div>
+          <div class="oe-rec-text" id="omniaRecText"></div>
+          <div class="oe-rec-actions">
+            <button class="omnia-mini-btn" id="omniaBeginRecBtn">Begin</button>
+            <button class="omnia-mini-btn" id="omniaNewRecBtn">New Reading</button>
+          </div>
+        </div>
+        <div class="oe-card oe-card--reservoir">
+          <div class="oe-card-kicker">Reservoir</div>
+          <div class="oe-reservoir-val" id="omniaReservoirText">0 / 0</div>
+          <div class="omnia-bar"><div class="omnia-bar-fill" id="omniaReservoirFill"></div></div>
+          <div class="oe-rate" id="omniaRateText"></div>
+          <button class="omnia-collect-btn oe-collect" id="omniaCollectBtn">Collect</button>
         </div>
       </div>
 
-      <div class="omnia-body-grid" id="omniaBodyGrid"></div>
-
-      <div class="omnia-rec-card">
-        <div class="omnia-rec-top">
-          <div class="omnia-rec-label">Omnia recommends</div>
-          <div class="omnia-rec-reward" id="omniaRecReward"></div>
+      <!-- Accordion: spending -->
+      <details class="oe-accordion">
+        <summary>
+          <span>Upgrade Omnia</span>
+          <span class="oe-acc-chev">+</span>
+        </summary>
+        <div class="oe-acc-body">
+          <div class="omnia-upgrades" id="omniaUpgradeGrid"></div>
         </div>
-        <div class="omnia-rec-name" id="omniaRecName">Clock</div>
-        <div class="omnia-rec-text" id="omniaRecText"></div>
-        <div class="omnia-rec-actions">
-          <button class="omnia-mini-btn" id="omniaBeginRecBtn">Begin</button>
-          <button class="omnia-mini-btn" id="omniaNewRecBtn">New Reading</button>
-        </div>
-      </div>
+      </details>
 
-      <div class="omnia-upgrades" id="omniaUpgradeGrid"></div>
-      <div class="omnia-cosmetics" id="omniaCosmeticGrid"></div>
+      <details class="oe-accordion">
+        <summary>
+          <span>Appearance</span>
+          <span class="oe-acc-chev">+</span>
+        </summary>
+        <div class="oe-acc-body">
+          <div class="omnia-cosmetics" id="omniaCosmeticGrid"></div>
+        </div>
+      </details>
+
     </div>
     </div>
 
@@ -9477,6 +9559,16 @@ function renderOmniaEngine() {
   if (stageName) stageName.textContent = stage.name;
   if (stageSub) stageSub.textContent = stage.sub;
   if (wallet) wallet.textContent = Math.floor(omniaState.akasha || 0);
+  var bardonTrack = document.getElementById('omniaBardonTrack');
+  if (bardonTrack) {
+    var currentStep = omniaState.bardonStep || 1;
+    var dotsHtml = '';
+    for (var i = 1; i <= 10; i++) {
+      var dotCls = 'oe-bardon-dot' + (i < currentStep ? ' done' : (i === currentStep ? ' active' : ''));
+      dotsHtml += '<div class="' + dotCls + '" title="Step ' + i + '"></div>';
+    }
+    bardonTrack.innerHTML = dotsHtml;
+  }
   if (resText) resText.textContent = Math.floor(reservoir) + ' / ' + cap;
   if (resFill) resFill.style.width = Math.min(100, reservoir / cap * 100) + '%';
   if (rateText) rateText.textContent = omniaRatePerHour() + ' akasha per hour · resonance ' + (omniaState.recStreak || 0);
