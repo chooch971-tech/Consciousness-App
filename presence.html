@@ -339,6 +339,7 @@
 
     /* ── Upgrade screen v3: Omnia-as-centerpiece, bodies as focus ── */
     body.upgrade-stage .omnia-wrap { display:none; }
+    body.upgrade-stage .guide-path-omnia-wrap { display:none; }
     .oe-v2 { display:flex; flex-direction:column; padding:0; background:none; border:none; box-shadow:none; position:relative; }
     .oe-akasha-corner { position:absolute; top:8px; right:14px; z-index:5; display:flex; align-items:baseline; gap:5px; padding:7px 13px; border:1px solid rgba(212,180,142,.32); border-radius:999px; background:rgba(212,180,142,.06); pointer-events:none; }
     .oe-akasha-corner-val { font-family:Cormorant Garamond,serif; font-size:18px; line-height:1; color:#e8c896; }
@@ -2294,7 +2295,9 @@ body:not(.tut-live) #tutCorgi {
           </div>
         </div>
         <div class="oe-stage-step">
-          <div class="oe-stage-step-label">Now Building</div>
+          <div class="omnia-name" style="margin-top:0; margin-bottom:6px;">Omnia</div>
+          <div class="omnia-speak" style="margin-top:0;">Your regiment is ready.<br><em>Complete each exercise to earn Akasha.</em></div>
+          <div class="oe-stage-step-label" style="margin-top:14px;">Now Building</div>
           <div class="oe-stage-step-name" id="omniaStepName">Step I · Fundamentals</div>
           <div class="oe-stage-step-need" id="omniaStepText"></div>
         </div>
