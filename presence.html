@@ -5501,9 +5501,32 @@ function showTutorialPostSession(secs, akashaDelta) {
   });
 }
 
+function playSessionCompleteSound() {
+  try {
+    var ctx = new (window.AudioContext || window.webkitAudioContext)();
+    // Ascending major arpeggio — C5, E5, G5, C6
+    var notes = [523.25, 659.25, 783.99, 1046.50];
+    notes.forEach(function(freq, i) {
+      var osc  = ctx.createOscillator();
+      var osc2 = ctx.createOscillator();
+      var gain = ctx.createGain();
+      osc.connect(gain); osc2.connect(gain); gain.connect(ctx.destination);
+      osc.type  = 'sine'; osc.frequency.setValueAtTime(freq, ctx.currentTime + i * 0.16);
+      osc2.type = 'sine'; osc2.frequency.setValueAtTime(freq * 2.756, ctx.currentTime + i * 0.16);
+      gain.gain.setValueAtTime(0, ctx.currentTime + i * 0.16);
+      gain.gain.linearRampToValueAtTime(i === 3 ? 0.22 : 0.15, ctx.currentTime + i * 0.16 + 0.04);
+      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + i * 0.16 + (i === 3 ? 1.8 : 0.9));
+      osc.start(ctx.currentTime + i * 0.16);  osc.stop(ctx.currentTime + i * 0.16 + 2);
+      osc2.start(ctx.currentTime + i * 0.16); osc2.stop(ctx.currentTime + i * 0.16 + 2);
+    });
+    if (navigator.vibrate) navigator.vibrate([80, 60, 80, 60, 200]);
+  } catch(e) {}
+}
+
 function showSessionComplete(opts) {
   var el = document.getElementById('sessionComplete');
   if (!el) return;
+  playSessionCompleteSound();
   el.innerHTML =
     '<div class="tut-legend-title">' + opts.title + '</div>'
     + '<div class="tut-legend-sub">' + opts.sub + '</div>'
@@ -6882,6 +6905,7 @@ function saveVisSessionResult() {
   });
   if (concState.history.length > 100) concState.history = concState.history.slice(0, 100);
   saveConcState();
+  if (syncEnabled && authToken) syncPushData();
   var _visPreAkasha = omniaState ? omniaState.akasha : 0;
   awardOmniaForExercise('visual', totalXP);
 
@@ -8059,6 +8083,7 @@ function saveAudResult() {
   });
   if (concState.history.length > 100) concState.history = concState.history.slice(0, 100);
   saveConcState();
+  if (syncEnabled && authToken) syncPushData();
   var _audPreAkasha = omniaState ? omniaState.akasha : 0;
   awardOmniaForExercise('auditory', totalXP);
 
@@ -8387,16 +8412,9 @@ function endThoughtControl(completed) {
     switchMode('concentration');
     return;
   }
-  if (completed) {
-    // Show times-up overlay and loop alarm until user taps
-    _tcCompletedElapsed = elapsed;
-    var overlay = document.getElementById('tcTimesUpOverlay');
-    if (overlay) overlay.style.display = 'flex';
-    playTCAlarm();
-    _tcAlarmInterval = setInterval(playTCAlarm, 6000);
-  } else {
-    showTCResult(elapsed, completed);
-  }
+  // Skip times-up overlay — go straight to the completion card
+  playTCAlarm();
+  showTCResult(elapsed, completed);
 }
 
 function dismissTCAlarm() {
@@ -8470,6 +8488,7 @@ function saveTCResult() {
   });
   if (concState.history.length > 100) concState.history = concState.history.slice(0, 100);
   saveConcState();
+  if (syncEnabled && authToken) syncPushData();
   var _tcPreAkasha = omniaState ? omniaState.akasha : 0;
   awardOmniaForExercise('thought', elapsedSec);
 
@@ -8571,6 +8590,7 @@ function showAsanaResult(seconds) {
   });
   if (concState.history.length > 100) concState.history = concState.history.slice(0, 100);
   saveConcState();
+  if (syncEnabled && authToken) syncPushData();
   var _asanaPreAkasha = omniaState ? omniaState.akasha : 0;
   awardOmniaForExercise('asana', seconds);
 
