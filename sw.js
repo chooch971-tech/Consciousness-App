@@ -1,5 +1,6 @@
 // Service Worker for Presence app
 // Handles background push notifications
+// Deploy trigger: 2026-05-17T02:24Z
 
 // Derive app URL from service worker's own scope (works from any repo path)
 const APP_URL = self.registration ? self.registration.scope + 'presence.html' : '/Consciousness-App/presence.html';
