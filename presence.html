@@ -1359,6 +1359,24 @@ body.tut-live #omniaTabPeek { display:none !important; }
 }
 #tutPostSession.tut-ps-show { display:flex; }
 #tutPostSession.tut-ps-vis { opacity:1; }
+#sessionComplete {
+  display:none; position:fixed; inset:0; z-index:9800;
+  background:rgba(7,8,13,0.98);
+  flex-direction:column; align-items:center; justify-content:center;
+  padding:40px 24px max(env(safe-area-inset-bottom),40px);
+  overflow-y:auto;
+  opacity:0; transition:opacity 0.55s ease;
+}
+#sessionComplete.sc-show { display:flex; }
+#sessionComplete.sc-vis { opacity:1; }
+.sc-done-btn {
+  margin-top:32px; padding:16px 48px;
+  background:rgba(126,184,164,0.12); border:1.5px solid rgba(126,184,164,0.55);
+  border-radius:6px; color:#7eb8a4;
+  font-family:'DM Mono',monospace; font-size:13px; letter-spacing:.18em;
+  text-transform:uppercase; cursor:pointer;
+}
+.sc-done-btn:hover { background:rgba(126,184,164,0.22); border-color:rgba(126,184,164,0.78); }
 .tut-ps-secs {
   font-family:'DM Mono',monospace; font-size:76px; letter-spacing:-.02em;
   line-height:1; color:#d4956e; margin-bottom:8px;
@@ -1593,6 +1611,7 @@ body.tut-live #omniaTabPeek { display:none !important; }
   .tut-legend-title { font-size:46px; }
   .tut-legend-cards { max-width:420px; gap:14px; }
   .tut-legend-card-value { font-size:34px; }
+  .sc-done-btn { font-size:15px; padding:20px 52px; }
 }
 
 /* ── Guide orientation toast ── */
@@ -5343,22 +5362,13 @@ function stopConcentration() {
   // Guard: if concStartTime is null (shouldn't happen now but just in case)
   concSeconds = concStartTime ? Math.floor((Date.now() - concStartTime) / 1000) : 0;
   concStartTime = null;
-  if (window._tutorialFirstClock) {
-    // Skip the results screen entirely — go straight to Meditative legend!
-    var tutRawSecs = Math.max(concSeconds, 1);
-    document.getElementById('concResultBig').textContent = tutRawSecs;
-    document.getElementById('concNotes').value = '';
-    document.getElementById('concAdaptWrap').innerHTML = '';
-    concResultSaved = false;
-    saveConcResult();
-    return;
-  }
-  if (concSeconds < 10) {
-    showScreen('homeScreen');
-    switchMode('concentration');
-    return;
-  }
-  showConcResult(concSeconds);
+  var rawSecs = Math.max(concSeconds, 1);
+  document.getElementById('concResultBig').textContent = rawSecs;
+  document.getElementById('concNotes').value = '';
+  document.getElementById('concAdaptWrap').innerHTML = '';
+  concResultSaved = false;
+  saveConcResult();
+  return;
 }
 
 function showConcResult(seconds) {
@@ -5427,43 +5437,30 @@ function saveConcResult(repeatAfter) {
   awardOmniaForExercise('clock', seconds);
   if (syncEnabled && authToken) syncPushData();
 
-  var repeatBtn = document.getElementById('concSaveRepeatBtn');
-  if (repeatBtn) {
-    repeatBtn.disabled = true;
-    repeatBtn.style.display = 'none';
-  }
-
-  var div = document.getElementById('concAdaptWrap');
-  div.innerHTML = '<div class="adapt-card" style="border-color:rgba(212,149,110,.2);">'
-    + '<div class="adapt-title" style="color:#d4956e;">result</div>'
-    + '<div class="adapt-text">+' + xpEarned + ' XP earned</div>'
-    + '<div class="adapt-text" style="margin-top:6px;">Rank ' + concState.level + ': ' + getConcRank(concState.level) + '</div>'
-    + (isNewBest ? '<div class="adapt-text" style="margin-top:6px;color:#d4956e;">New personal best!</div>' : '')
-    + '</div>';
-
-  if (repeatAfter) {
-    renderConcHome();
-    setTimeout(function() { startConcentration(); }, 260);
-    return;
-  }
-
-  var saveBtn = document.getElementById('concSaveBtn');
-  saveBtn.textContent = 'Done';
-  saveBtn.onclick = function() {
-    renderConcHome();
-    showScreen('homeScreen');
-    document.getElementById('awarenessPanel').style.display = 'none';
-    document.getElementById('concentrationPanel').style.display = 'flex';
-    if (concDidLevelUp1) setTimeout(function() { showConcLevelUp(concState.level); }, 400);
-  };
+  var _akashaDelta = omniaState ? Math.round(omniaState.akasha - _tutPreAkasha) : 0;
   if (window._tutorialFirstClock) {
     window._tutorialFirstClock = false;
-    /* Bonus Akasha gift on top of the award already called above */
     if (omniaState) { omniaState.akasha += 50; saveOmniaState(); }
     var tutAkashaDelta = omniaState ? Math.round(omniaState.akasha - _tutPreAkasha) : 50;
     showTutorialPostSession(seconds, tutAkashaDelta);
     return;
   }
+  var _concDidLevelUp = concDidLevelUp1;
+  var _fmtSecs = (Math.floor(seconds/60) > 0 ? Math.floor(seconds/60) + ':' + (seconds%60 < 10 ? '0' : '') + seconds%60 : '0:' + (seconds < 10 ? '0' : '') + seconds);
+  showSessionComplete({
+    title: 'Meditative legend!',
+    sub: 'Clock Exercise',
+    xp: xpEarned,
+    akashaDelta: _akashaDelta,
+    stat3: { label: 'Time', color: 'blue', value: _fmtSecs },
+    onDone: function() {
+      renderConcHome();
+      showScreen('homeScreen');
+      document.getElementById('awarenessPanel').style.display = 'none';
+      document.getElementById('concentrationPanel').style.display = 'flex';
+      if (_concDidLevelUp) setTimeout(function() { showConcLevelUp(concState.level); }, 400);
+    }
+  });
 }
 
 function showTutorialPostSession(secs, akashaDelta) {
@@ -5501,6 +5498,40 @@ function showTutorialPostSession(secs, akashaDelta) {
   ps.classList.add('tut-ps-show');
   requestAnimationFrame(function() {
     requestAnimationFrame(function() { ps.classList.add('tut-ps-vis'); });
+  });
+}
+
+function showSessionComplete(opts) {
+  var el = document.getElementById('sessionComplete');
+  if (!el) return;
+  el.innerHTML =
+    '<div class="tut-legend-title">' + opts.title + '</div>'
+    + '<div class="tut-legend-sub">' + opts.sub + '</div>'
+    + '<div class="tut-legend-cards">'
+    + '<div class="tut-legend-card amber">'
+    + '<span class="tut-legend-card-label">XP</span>'
+    + '<span class="tut-legend-card-value">+' + opts.xp + '</span>'
+    + '</div>'
+    + '<div class="tut-legend-card teal">'
+    + '<span class="tut-legend-card-label">Akasha</span>'
+    + '<span class="tut-legend-card-value">+' + (opts.akashaDelta || 0) + '</span>'
+    + '</div>'
+    + '<div class="tut-legend-card ' + (opts.stat3.color || 'blue') + '">'
+    + '<span class="tut-legend-card-label">' + opts.stat3.label + '</span>'
+    + '<span class="tut-legend-card-value">' + opts.stat3.value + '</span>'
+    + '</div>'
+    + '</div>'
+    + '<button class="sc-done-btn" id="scDoneBtn">Done →</button>';
+  document.getElementById('scDoneBtn').onclick = function() {
+    el.classList.remove('sc-vis');
+    setTimeout(function() {
+      el.classList.remove('sc-show');
+      if (opts.onDone) opts.onDone();
+    }, 420);
+  };
+  el.classList.add('sc-show');
+  requestAnimationFrame(function() {
+    requestAnimationFrame(function() { el.classList.add('sc-vis'); });
   });
 }
 
@@ -6821,10 +6852,7 @@ function showVisSessionResult() {
     }).join('');
   }
 
-  var btn = document.getElementById('visSaveBtn');
-  btn.textContent = 'Save & Continue';
-  btn.onclick = saveVisSessionResult;
-  showScreen('visResultScreen');
+  saveVisSessionResult();
 }
 
 function saveVisSessionResult() {
@@ -16091,6 +16119,9 @@ document.addEventListener('DOMContentLoaded',function(){(function(){
 
 <!-- Post-session tutorial overlay (content built dynamically by showTutorialPostSession) -->
 <div id="tutPostSession"></div>
+
+<!-- Session completion legend card (content built dynamically by showSessionComplete) -->
+<div id="sessionComplete"></div>
 
 <!-- Guide orientation toast (shown after tutorial when user chooses Go to Guide) -->
 <div id="tutGuideTip">
