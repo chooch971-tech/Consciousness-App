@@ -5343,6 +5343,16 @@ function stopConcentration() {
   // Guard: if concStartTime is null (shouldn't happen now but just in case)
   concSeconds = concStartTime ? Math.floor((Date.now() - concStartTime) / 1000) : 0;
   concStartTime = null;
+  if (window._tutorialFirstClock) {
+    // Skip the results screen entirely — go straight to Meditative legend!
+    var tutRawSecs = Math.max(concSeconds, 1);
+    document.getElementById('concResultBig').textContent = tutRawSecs;
+    document.getElementById('concNotes').value = '';
+    document.getElementById('concAdaptWrap').innerHTML = '';
+    concResultSaved = false;
+    saveConcResult();
+    return;
+  }
   if (concSeconds < 10) {
     showScreen('homeScreen');
     switchMode('concentration');
@@ -5447,13 +5457,12 @@ function saveConcResult(repeatAfter) {
     if (concDidLevelUp1) setTimeout(function() { showConcLevelUp(concState.level); }, 400);
   };
   if (window._tutorialFirstClock) {
-    var tutSecs = seconds;
     window._tutorialFirstClock = false;
     /* Bonus Akasha gift on top of the award already called above */
     if (omniaState) { omniaState.akasha += 50; saveOmniaState(); }
     var tutAkashaDelta = omniaState ? Math.round(omniaState.akasha - _tutPreAkasha) : 50;
-    saveBtn.textContent = 'Claim XP →';
-    (function(s,ak){ saveBtn.onclick = function() { showTutorialPostSession(s,ak); }; })(tutSecs, tutAkashaDelta);
+    showTutorialPostSession(seconds, tutAkashaDelta);
+    return;
   }
 }
 
