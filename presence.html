@@ -913,7 +913,7 @@ body.omnia-tier-elements .omnia-figure { filter:drop-shadow(0 0 18px rgba(255,23
   border-top:8px solid rgba(126,184,164,0.35);
 }
 .tut-bubble p {
-  font-family:'Cormorant Garamond',Georgia,serif; font-size:15px;
+  font-family:'Cormorant Garamond',Georgia,serif; font-size:18px;
   font-weight:300; font-style:italic; line-height:1.78;
   color:#f7fbff; text-align:center; margin:0;
 }
@@ -1293,23 +1293,23 @@ body.tut-live #omniaTabPeek { display:none !important; }
 }
 #tutQuestionPanel.tut-vis { display:flex; }
 #tutQuestionLabel {
-  font-family:'DM Mono',monospace; font-size:8px; letter-spacing:.32em;
+  font-family:'DM Mono',monospace; font-size:10px; letter-spacing:.28em;
   text-transform:uppercase; color:rgba(142,204,224,0.5);
   margin-bottom:14px;
 }
 #tutQuestionText {
-  font-family:'DM Mono',monospace; font-size:14px; letter-spacing:.08em;
+  font-family:'DM Mono',monospace; font-size:16px; letter-spacing:.06em;
   text-align:center; color:#cce8f8; margin-bottom:32px;
-  max-width:300px; line-height:1.65;
+  max-width:min(340px,92vw); line-height:1.65;
 }
 #tutQuestionChoices {
-  display:flex; flex-direction:column; gap:10px;
-  width:100%; max-width:min(320px,88vw);
+  display:flex; flex-direction:column; gap:12px;
+  width:100%; max-width:min(340px,92vw);
 }
 .tut-q-btn {
   background:rgba(10,15,28,0.92); border:1px solid rgba(126,184,164,0.32);
-  border-radius:12px; padding:15px 20px; cursor:pointer; text-align:center;
-  font-family:'DM Mono',monospace; font-size:9px; letter-spacing:.22em;
+  border-radius:14px; padding:17px 20px; min-height:54px; cursor:pointer; text-align:center;
+  font-family:'DM Mono',monospace; font-size:12px; letter-spacing:.18em;
   text-transform:uppercase; color:#7eb8a4; width:100%;
   transition:background 0.18s, border-color 0.18s, transform 0.12s;
 }
@@ -1321,8 +1321,8 @@ body.tut-live #omniaTabPeek { display:none !important; }
 }
 .tut-q-btn.tut-q-launch {
   background:rgba(126,184,164,0.16); border-color:rgba(126,184,164,0.6);
-  color:#a0d8bc; font-size:11px; letter-spacing:.3em; padding:18px 20px;
-  margin-top:8px;
+  color:#a0d8bc; font-size:13px; letter-spacing:.28em; padding:20px 20px;
+  min-height:58px; margin-top:8px;
 }
 .tut-q-btn.tut-q-launch:hover { background:rgba(126,184,164,0.28); border-color:#7eb8a4; }
 
@@ -1336,11 +1336,11 @@ body.tut-live #omniaTabPeek { display:none !important; }
 }
 #tutClockTip.tut-ct-show { opacity:1; }
 #tutClockTip p {
-  font-family:'DM Mono',monospace; font-size:13px; letter-spacing:.08em;
-  color:#cce8f8; margin:0 0 7px; line-height:1.5;
+  font-family:'DM Mono',monospace; font-size:15px; letter-spacing:.06em;
+  color:#cce8f8; margin:0 0 8px; line-height:1.5;
 }
 #tutClockTip span {
-  font-family:'DM Mono',monospace; font-size:8px; letter-spacing:.24em;
+  font-family:'DM Mono',monospace; font-size:11px; letter-spacing:.18em;
   text-transform:uppercase; color:rgba(126,184,164,0.6);
 }
 
@@ -1360,44 +1360,44 @@ body.tut-live #omniaTabPeek { display:none !important; }
   line-height:1; color:#d4956e; margin-bottom:8px;
 }
 .tut-ps-sec-label {
-  font-family:'DM Mono',monospace; font-size:9px; letter-spacing:.32em;
+  font-family:'DM Mono',monospace; font-size:11px; letter-spacing:.24em;
   text-transform:uppercase; color:rgba(212,149,110,0.55); margin-bottom:30px;
 }
 .tut-ps-reaction {
-  font-family:'DM Mono',monospace; font-size:15px; letter-spacing:.06em;
-  text-align:center; color:#b8eaff; max-width:280px;
-  margin-bottom:10px; line-height:1.6;
+  font-family:'DM Mono',monospace; font-size:17px; letter-spacing:.04em;
+  text-align:center; color:#b8eaff; max-width:300px;
+  margin-bottom:12px; line-height:1.6;
 }
 .tut-ps-tip {
-  font-family:'DM Mono',monospace; font-size:9px; letter-spacing:.2em;
+  font-family:'DM Mono',monospace; font-size:12px; letter-spacing:.14em;
   text-transform:uppercase; color:rgba(126,184,164,0.6);
-  text-align:center; max-width:260px; margin-bottom:36px; line-height:1.7;
+  text-align:center; max-width:280px; margin-bottom:36px; line-height:1.7;
 }
 .tut-ps-divider {
-  width:100%; max-width:320px; border:none;
+  width:100%; max-width:340px; border:none;
   border-top:1px solid rgba(126,184,164,0.12); margin-bottom:24px;
 }
 .tut-ps-plan-header {
-  font-family:'DM Mono',monospace; font-size:8px; letter-spacing:.32em;
+  font-family:'DM Mono',monospace; font-size:11px; letter-spacing:.24em;
   text-transform:uppercase; color:rgba(184,234,255,0.4); margin-bottom:16px;
 }
-.tut-ps-plan { width:100%; max-width:320px; margin-bottom:36px; }
+.tut-ps-plan { width:100%; max-width:340px; margin-bottom:36px; }
 .tut-ps-item {
   display:flex; align-items:baseline; gap:12px;
-  padding:12px 0; border-bottom:1px solid rgba(255,255,255,0.05);
+  padding:14px 0; border-bottom:1px solid rgba(255,255,255,0.05);
 }
 .tut-ps-item-name {
-  font-family:'DM Mono',monospace; font-size:10px; letter-spacing:.18em;
+  font-family:'DM Mono',monospace; font-size:13px; letter-spacing:.14em;
   text-transform:uppercase; color:#b8eaff; flex:1;
 }
 .tut-ps-item-detail {
-  font-family:'DM Mono',monospace; font-size:9px; letter-spacing:.12em;
-  color:rgba(184,234,255,0.42);
+  font-family:'DM Mono',monospace; font-size:12px; letter-spacing:.1em;
+  color:rgba(184,234,255,0.5);
 }
 #tutPS-btn {
   background:rgba(126,184,164,0.13); border:1px solid rgba(126,184,164,0.48);
-  border-radius:14px; padding:16px 36px; cursor:pointer;
-  font-family:'DM Mono',monospace; font-size:10px; letter-spacing:.28em;
+  border-radius:14px; padding:18px 40px; min-height:54px; cursor:pointer;
+  font-family:'DM Mono',monospace; font-size:13px; letter-spacing:.22em;
   text-transform:uppercase; color:#7eb8a4;
   transition:background 0.2s, border-color 0.2s;
 }
@@ -1405,13 +1405,13 @@ body.tut-live #omniaTabPeek { display:none !important; }
 
 /* Post-clock stage shared */
 .tut-stage-headline {
-  font-family:'DM Mono',monospace; font-size:17px; letter-spacing:.03em;
-  color:#b8eaff; text-align:center; margin-bottom:10px;
+  font-family:'DM Mono',monospace; font-size:22px; letter-spacing:.02em;
+  color:#b8eaff; text-align:center; margin-bottom:12px;
 }
 .tut-stage-sub {
-  font-family:'DM Mono',monospace; font-size:9px; letter-spacing:.2em;
+  font-family:'DM Mono',monospace; font-size:13px; letter-spacing:.14em;
   text-transform:uppercase; color:rgba(126,184,164,0.6); text-align:center;
-  max-width:260px; margin-bottom:48px; line-height:1.7;
+  max-width:300px; margin-bottom:48px; line-height:1.7;
 }
 
 /* Streak stage */
@@ -1419,7 +1419,7 @@ body.tut-live #omniaTabPeek { display:none !important; }
   display:flex; flex-direction:column; align-items:center; margin-bottom:32px;
 }
 .tut-streak-day-label {
-  font-family:'DM Mono',monospace; font-size:9px; letter-spacing:.4em;
+  font-family:'DM Mono',monospace; font-size:13px; letter-spacing:.28em;
   text-transform:uppercase; color:rgba(212,149,110,0.55); margin-bottom:6px;
 }
 .tut-streak-num {
@@ -1435,8 +1435,8 @@ body.tut-live #omniaTabPeek { display:none !important; }
 }
 .tut-remind-btn {
   background:rgba(126,184,164,0.07); border:1px solid rgba(126,184,164,0.25);
-  border-radius:12px; padding:15px 20px; cursor:pointer;
-  font-family:'DM Mono',monospace; font-size:10px; letter-spacing:.22em;
+  border-radius:13px; padding:17px 20px; min-height:54px; cursor:pointer;
+  font-family:'DM Mono',monospace; font-size:13px; letter-spacing:.16em;
   text-transform:uppercase; color:#7eb8a4;
   transition:background 0.2s,border-color 0.2s,color 0.2s; text-align:center;
 }
@@ -1467,19 +1467,49 @@ body.tut-live #omniaTabPeek { display:none !important; }
 }
 .tut-acct-primary {
   background:rgba(126,184,164,0.13); border:1px solid rgba(126,184,164,0.48);
-  border-radius:14px; padding:16px 36px; cursor:pointer;
-  font-family:'DM Mono',monospace; font-size:10px; letter-spacing:.28em;
+  border-radius:14px; padding:18px 36px; min-height:56px; cursor:pointer;
+  font-family:'DM Mono',monospace; font-size:13px; letter-spacing:.22em;
   text-transform:uppercase; color:#7eb8a4;
   transition:background 0.2s,border-color 0.2s;
 }
 .tut-acct-primary:hover { background:rgba(126,184,164,0.24); border-color:rgba(126,184,164,0.78); }
 .tut-acct-skip {
   background:none; border:none; cursor:pointer;
-  font-family:'DM Mono',monospace; font-size:9px; letter-spacing:.2em;
-  text-transform:uppercase; color:rgba(126,184,164,0.38); padding:12px;
+  font-family:'DM Mono',monospace; font-size:12px; letter-spacing:.16em;
+  text-transform:uppercase; color:rgba(126,184,164,0.4); padding:14px;
   transition:color 0.2s;
 }
 .tut-acct-skip:hover { color:rgba(126,184,164,0.7); }
+
+/* Desktop / larger screen boosts */
+@media (min-width:600px) {
+  #tutContent { max-width:min(540px,88vw); }
+  .tut-bubble { padding:22px 28px; max-width:min(420px,80vw); }
+  .tut-bubble p { font-size:20px; }
+  #tutQuestionText { font-size:20px; max-width:min(420px,80vw); }
+  #tutQuestionChoices { max-width:min(400px,80vw); }
+  .tut-q-btn { font-size:14px; padding:20px 24px; min-height:60px; }
+  .tut-q-btn.tut-q-launch { font-size:16px; padding:24px 24px; min-height:66px; }
+  .tut-ps-secs { font-size:96px; }
+  .tut-ps-reaction { font-size:20px; max-width:360px; }
+  .tut-ps-tip { font-size:14px; max-width:340px; }
+  .tut-ps-plan-header { font-size:13px; }
+  .tut-ps-plan { max-width:400px; }
+  .tut-ps-item-name { font-size:15px; }
+  .tut-ps-item-detail { font-size:14px; }
+  #tutPS-btn { font-size:15px; padding:20px 52px; }
+  .tut-stage-headline { font-size:28px; }
+  .tut-stage-sub { font-size:15px; max-width:380px; }
+  .tut-streak-num { font-size:124px; }
+  .tut-streak-day-label { font-size:15px; }
+  .tut-remind-choices { max-width:380px; }
+  .tut-remind-btn { font-size:15px; padding:20px 24px; }
+  .tut-acct-btns { max-width:380px; }
+  .tut-acct-primary { font-size:15px; padding:20px 48px; }
+  .tut-acct-skip { font-size:14px; }
+  #tutClockTip p { font-size:17px; }
+  #tutClockTip span { font-size:13px; }
+}
 
 #tutPathChoice.tut-vis { display:flex; }
 .tut-path-btn {
@@ -1493,19 +1523,19 @@ body.tut-live #omniaTabPeek { display:none !important; }
 .tut-path-btn.tut-experienced { border-color:rgba(142,204,224,0.35); color:#8ecce0; }
 .tut-path-btn.tut-experienced:hover { background:rgba(142,204,224,0.1); border-color:rgba(142,204,224,0.6); }
 .tut-tap-hint {
-  display:none; position:fixed; bottom:8px; left:50%; transform:translateX(-50%);
-  font-size:8px; letter-spacing:.28em; text-transform:uppercase;
-  color:rgba(126,184,164,0.4); animation:tutPulse 2.2s ease-in-out infinite;
+  display:none; position:fixed; bottom:10px; left:50%; transform:translateX(-50%);
+  font-size:11px; letter-spacing:.22em; text-transform:uppercase;
+  color:rgba(126,184,164,0.45); animation:tutPulse 2.2s ease-in-out infinite;
   white-space:nowrap; pointer-events:none; z-index:9006;
 }
 @keyframes tutPulse { 0%,100%{opacity:.4;} 50%{opacity:.85;} }
 .tut-skip-btn {
   display:none; position:fixed; top:max(env(safe-area-inset-top),20px); right:20px;
-  font-size:8px; letter-spacing:.22em; text-transform:uppercase;
-  color:rgba(221,216,206,0.28); background:none; border:none; cursor:pointer;
-  z-index:9008; padding:10px; pointer-events:auto; transition:color 0.2s;
+  font-size:11px; letter-spacing:.18em; text-transform:uppercase;
+  color:rgba(221,216,206,0.32); background:none; border:none; cursor:pointer;
+  z-index:9008; padding:12px; pointer-events:auto; transition:color 0.2s;
 }
-.tut-skip-btn:hover { color:rgba(221,216,206,0.6); }
+.tut-skip-btn:hover { color:rgba(221,216,206,0.65); }
 
 
 /* Thought word animation (inside #tutOverlay) */
