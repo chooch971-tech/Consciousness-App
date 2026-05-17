@@ -1,5 +1,4 @@
 [build]
-  ignore = "git diff --quiet HEAD^ HEAD -- presence.html index.html app/ manifest.webmanifest sw.js favicon.png apple-touch-icon.png presence-icon-redesign.svg"
 
 [[headers]]
   for = "/presence.html"
