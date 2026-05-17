@@ -6882,27 +6882,29 @@ function saveVisSessionResult() {
   });
   if (concState.history.length > 100) concState.history = concState.history.slice(0, 100);
   saveConcState();
+  var _visPreAkasha = omniaState ? omniaState.akasha : 0;
   awardOmniaForExercise('visual', totalXP);
-
-  var div = document.getElementById('visAdaptWrap');
-  div.innerHTML = '<div class="adapt-card" style="border-color:rgba(212,149,110,.2);">'
-    + '<div class="adapt-title" style="color:#d4956e;">session results</div>'
-    + '<div class="adapt-text">+' + totalXP + ' XP earned across ' + visReps.length + ' reps</div>'
-    + '<div class="adapt-text" style="margin-top:6px;">Rank ' + concState.level + ': ' + getConcRank(concState.level) + '</div>'
-    + '</div>';
 
   currentVisObject = pickVisObject();
   var wrap = document.getElementById('visPreviewWrap');
   if (wrap) wrap.innerHTML = renderVisObject(currentVisObject, 175);
 
-  var btn = document.getElementById('visSaveBtn');
-  btn.textContent = 'Done';
-  btn.onclick = function() {
-    renderConcHome();
-    showScreen('homeScreen');
-    switchMode('concentration');
-    if (concDidLevelUp2) setTimeout(function() { showConcLevelUp(concState.level); }, 400);
-  };
+  var _akashaDeltaVis = omniaState ? Math.round(omniaState.akasha - _visPreAkasha) : 0;
+  var _concDidLevelUpVis = concDidLevelUp2;
+  var _totalSecVis = Math.floor((Date.now() - visSessionStartTime) / 1000);
+  showSessionComplete({
+    title: 'Sharp as ever.',
+    sub: visReps.length + ' rep' + (visReps.length !== 1 ? 's' : ''),
+    xp: totalXP,
+    akashaDelta: _akashaDeltaVis,
+    stat3: { label: 'Session', color: 'blue', value: fmtTimer(_totalSecVis) },
+    onDone: function() {
+      renderConcHome();
+      showScreen('homeScreen');
+      switchMode('concentration');
+      if (_concDidLevelUpVis) setTimeout(function() { showConcLevelUp(concState.level); }, 400);
+    }
+  });
 }
 
 // ── Exercise tab switching ──
@@ -8028,10 +8030,7 @@ function showAudResult() {
     }).join('');
   }
 
-  var btn = document.getElementById('audSaveBtn');
-  btn.textContent = 'Save & Continue';
-  btn.onclick = saveAudResult;
-  showScreen('audResultScreen');
+  saveAudResult();
 }
 
 function saveAudResult() {
@@ -8060,23 +8059,24 @@ function saveAudResult() {
   });
   if (concState.history.length > 100) concState.history = concState.history.slice(0, 100);
   saveConcState();
+  var _audPreAkasha = omniaState ? omniaState.akasha : 0;
   awardOmniaForExercise('auditory', totalXP);
 
-  var div = document.getElementById('audAdaptWrap');
-  div.innerHTML = '<div class="adapt-card" style="border-color:rgba(212,149,110,.2);">'
-    + '<div class="adapt-title" style="color:#d4956e;">session results</div>'
-    + '<div class="adapt-text">+' + totalXP + ' XP across ' + audReps.length + ' reps</div>'
-    + '<div class="adapt-text" style="margin-top:6px;">Rank ' + concState.level + ': ' + getConcRank(concState.level) + '</div>'
-    + '</div>';
-
-  var btn = document.getElementById('audSaveBtn');
-  btn.textContent = 'Done';
-  btn.onclick = function() {
-    renderConcHome();
-    showScreen('homeScreen');
-    switchMode('concentration');
-    if (concDidLevelUpA) setTimeout(function() { showConcLevelUp(concState.level); }, 400);
-  };
+  var _akashaDeltaAud = omniaState ? Math.round(omniaState.akasha - _audPreAkasha) : 0;
+  var _concDidLevelUpAud = concDidLevelUpA;
+  showSessionComplete({
+    title: 'Pure focus.',
+    sub: audReps.length + ' rep' + (audReps.length !== 1 ? 's' : ''),
+    xp: totalXP,
+    akashaDelta: _akashaDeltaAud,
+    stat3: { label: 'Reps', color: 'blue', value: audReps.length },
+    onDone: function() {
+      renderConcHome();
+      showScreen('homeScreen');
+      switchMode('concentration');
+      if (_concDidLevelUpAud) setTimeout(function() { showConcLevelUp(concState.level); }, 400);
+    }
+  });
 }
 
 // ── Tap to record halt on auditory session ────────────────
@@ -8232,6 +8232,7 @@ var _tcAlarmInterval = null;  // loops the alarm until dismissed
 var _tcCompletedElapsed = 0;  // elapsed seconds saved for dismissal
 var tcResultElapsedSec = 0;
 var tcResultSaved = false;
+var _tcCompletedFlag = false;  // whether session was completed (vs ended early)
 
 // Thought duration wired in openExerciseSetup
 
@@ -8408,6 +8409,7 @@ function dismissTCAlarm() {
 
 function showTCResult(elapsedSec, completed) {
   tcResultElapsedSec = elapsedSec;
+  _tcCompletedFlag = !!completed;
   tcResultSaved = false;
   var totalIntrusions = tcIntrusions.length;
   var minutes = elapsedSec / 60;
@@ -8429,10 +8431,7 @@ function showTCResult(elapsedSec, completed) {
   document.getElementById('tcNotes').value = '';
   document.getElementById('tcAdaptWrap').innerHTML = '';
 
-  var btn = document.getElementById('tcSaveBtn');
-  btn.textContent = 'Save & Continue';
-  btn.onclick = saveTCResult;
-  showScreen('tcResultScreen');
+  saveTCResult();
 }
 
 function saveTCResult() {
@@ -8471,22 +8470,24 @@ function saveTCResult() {
   });
   if (concState.history.length > 100) concState.history = concState.history.slice(0, 100);
   saveConcState();
+  var _tcPreAkasha = omniaState ? omniaState.akasha : 0;
   awardOmniaForExercise('thought', elapsedSec);
 
-  document.getElementById('tcAdaptWrap').innerHTML = '<div class="adapt-card" style="border-color:rgba(164,126,184,.2);">'
-    + '<div class="adapt-title" style="color:#a47eb8;">session results</div>'
-    + '<div class="adapt-text">+' + xpEarned + ' XP earned</div>'
-    + '<div class="adapt-text" style="margin-top:6px;">Rank ' + concState.level + ': ' + getConcRank(concState.level) + '</div>'
-    + '</div>';
-
-  var btn = document.getElementById('tcSaveBtn');
-  btn.textContent = 'Done';
-  btn.onclick = function() {
-    renderConcHome();
-    showScreen('homeScreen');
-    switchMode('concentration');
-    if (concDidLevelUpTC) setTimeout(function() { showConcLevelUp(concState.level); }, 400);
-  };
+  var _akashaDeltaTC = omniaState ? Math.round(omniaState.akasha - _tcPreAkasha) : 0;
+  var _concDidLevelUpTC2 = concDidLevelUpTC;
+  showSessionComplete({
+    title: 'Mind controlled.',
+    sub: fmtTimer(elapsedSec) + (_tcCompletedFlag ? ' · completed' : ''),
+    xp: xpEarned,
+    akashaDelta: _akashaDeltaTC,
+    stat3: { label: 'Thoughts', color: 'blue', value: tcIntrusions.length },
+    onDone: function() {
+      renderConcHome();
+      showScreen('homeScreen');
+      switchMode('concentration');
+      if (_concDidLevelUpTC2) setTimeout(function() { showConcLevelUp(concState.level); }, 400);
+    }
+  });
 }
 
 // Session tap area
@@ -8548,8 +8549,6 @@ function endAsana() {
 }
 
 function showAsanaResult(seconds) {
-  showScreen('asanaResultScreen');
-
   var xpEarned = seconds;
   concState.xp += xpEarned;
   if (isConcNewSession()) concState.totalSessions++;
@@ -8572,29 +8571,22 @@ function showAsanaResult(seconds) {
   });
   if (concState.history.length > 100) concState.history = concState.history.slice(0, 100);
   saveConcState();
+  var _asanaPreAkasha = omniaState ? omniaState.akasha : 0;
   awardOmniaForExercise('asana', seconds);
 
-  // Display
-  document.getElementById('asanaResultTime').textContent = fmtAsanaTime(seconds);
-  document.getElementById('asanaResultBest').textContent = fmtAsanaTime(concState.bestAsanaSeconds || seconds);
-
-  // Adapt card
-  var isNewBest = seconds >= (concState.bestAsanaSeconds || 0);
-  var msg = seconds < 60  ? 'Every second of stillness is practice. Return tomorrow.'
-          : seconds < 300 ? 'Good. The body is learning to be commanded.'
-          : seconds < 600 ? 'Strong hold. The will is developing.'
-          : seconds < 1800 ? 'Exceptional stillness. The body obeys.'
-          : 'Mastery. You are beyond the body.';
-  var div = document.getElementById('asanaAdaptWrap');
-  div.innerHTML = '<div class="adapt-card" style="border-color:rgba(126,184,164,.2);">'
-    + '<div class="adapt-title" style="color:#7eb8a4;">result</div>'
-    + '<div class="adapt-text">+' + xpEarned + ' XP · ' + currentAsanaPosture + '</div>'
-    + (isNewBest ? '<div class="adapt-text" style="color:#7eb8a4; margin-top:6px;">↑ New personal best</div>' : '')
-    + '<div class="adapt-text" style="margin-top:8px;">' + msg + '</div>'
-    + '</div>';
-
-  if (didLevelUp) setTimeout(function() { showLevelUp(concState.level, getConcRank(concState.level), 'concentration'); }, 800);
-  renderConcHome();
+  var _akashaDeltaAsana = omniaState ? Math.round(omniaState.akasha - _asanaPreAkasha) : 0;
+  showSessionComplete({
+    title: 'Stillness mastered.',
+    sub: currentAsanaPosture,
+    xp: xpEarned,
+    akashaDelta: _akashaDeltaAsana,
+    stat3: { label: 'Time', color: 'blue', value: fmtAsanaTime(seconds) },
+    onDone: function() {
+      showScreen('homeScreen');
+      switchMode('concentration');
+      if (didLevelUp) setTimeout(function() { showLevelUp(concState.level, getConcRank(concState.level), 'concentration'); }, 800);
+    }
+  });
 }
 
 function saveAsanaResult() {
