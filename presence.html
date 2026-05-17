@@ -1284,6 +1284,42 @@ body.tut-live #omniaTabPeek { display:none !important; }
   width:100%; max-width:min(320px,88vw);
   pointer-events:auto; position:relative; z-index:9510;
 }
+
+/* ── Question panel (Duolingo-style choice screens) ── */
+#tutQuestionPanel {
+  display:none; position:fixed; inset:0; z-index:9020;
+  flex-direction:column; align-items:center; justify-content:center;
+  padding:32px 24px; pointer-events:auto;
+}
+#tutQuestionPanel.tut-vis { display:flex; }
+#tutQuestionLabel {
+  font-family:'DM Mono',monospace; font-size:8px; letter-spacing:.32em;
+  text-transform:uppercase; color:rgba(142,204,224,0.5);
+  margin-bottom:14px;
+}
+#tutQuestionText {
+  font-family:'DM Mono',monospace; font-size:14px; letter-spacing:.08em;
+  text-align:center; color:#cce8f8; margin-bottom:32px;
+  max-width:300px; line-height:1.65;
+}
+#tutQuestionChoices {
+  display:flex; flex-direction:column; gap:10px;
+  width:100%; max-width:min(320px,88vw);
+}
+.tut-q-btn {
+  background:rgba(10,15,28,0.92); border:1px solid rgba(126,184,164,0.32);
+  border-radius:12px; padding:15px 20px; cursor:pointer; text-align:center;
+  font-family:'DM Mono',monospace; font-size:9px; letter-spacing:.22em;
+  text-transform:uppercase; color:#7eb8a4; width:100%;
+  transition:background 0.18s, border-color 0.18s, transform 0.12s;
+}
+.tut-q-btn:hover { background:rgba(126,184,164,0.1); border-color:rgba(126,184,164,0.58); }
+.tut-q-btn:active { transform:scale(0.97); }
+.tut-q-btn.tut-q-selected {
+  background:rgba(126,184,164,0.18); border-color:rgba(126,184,164,0.85);
+  color:#a0d8bc; pointer-events:none;
+}
+
 #tutPathChoice.tut-vis { display:flex; }
 .tut-path-btn {
   background:rgba(10,15,28,0.95); border:1px solid rgba(126,184,164,0.35);
@@ -14087,9 +14123,23 @@ document.addEventListener('DOMContentLoaded',function(){(function(){
     /* 0 */ {mode:'full', sparks:true, eyeTap:true, darkFull:true,
               text:'Hi. I\'m Omnia.'},
     /* 1 */ {mode:'full', inEye:true, blueText:true, darkFull:true, blinkNext:true,
-              text:'I\'ll help you train your focus.'},
-    /* 2 */ {mode:'full', darkFull:true, last:true, launchClock:true,
-              text:'Keep your eyes on the moving point. Stop when your mind wanders.'},
+              text:'I\'ll train you to master your mind.'},
+    /* 2 */ {mode:'question', label:'About you',
+              text:'What\'s your biggest challenge right now?',
+              answerKey:'challenge',
+              choices:['I can\'t stop thinking','I lose focus easily','I feel scattered']},
+    /* 3 */ {mode:'full', darkFull:true, dynamicText:function(){
+              var a=tutAnswers.challenge||'';
+              if(a==="I can't stop thinking") return 'Thought control will be your greatest weapon.';
+              if(a==="I lose focus easily")   return 'The clock exercise will change that fast.';
+              return 'We\'ll bring it together, one breath at a time.';
+            }},
+    /* 4 */ {mode:'question', label:'Self-assessment',
+              text:'How long can you focus before a thought interrupts?',
+              answerKey:'duration',
+              choices:['A few seconds','Maybe 30 seconds','Over a minute']},
+    /* 5 */ {mode:'full', darkFull:true, last:true, launchClock:true,
+              text:'Let\'s find out.'},
   ];
 
   var ov=document.getElementById('tutOverlay');
@@ -14116,6 +14166,47 @@ document.addEventListener('DOMContentLoaded',function(){(function(){
   var tutAudCtx=null, tutCreekNodes=[], corgiTimer=null;
   var tutorialEyeMorphRaf=null;
   var tutorialEyeAnchorY=null;
+  var tutAnswers={};
+
+  var qp=document.getElementById('tutQuestionPanel');
+  var ql=document.getElementById('tutQuestionLabel');
+  var qt=document.getElementById('tutQuestionText');
+  var qc=document.getElementById('tutQuestionChoices');
+
+  function showQuestion(s){
+    ov.style.display='block'; ov.style.opacity='1'; ov.style.pointerEvents='none';
+    ov.style.background='rgba(7,8,13,1)';
+    ov.classList.remove('tut-spot');
+    tc.classList.remove('tut-vis');
+    stopSparks(); clearPulse(); darkSpot();
+    th.style.display='none'; sk.style.display='none'; db.style.display='none';
+    if(ql) ql.textContent=s.label||'';
+    if(qt) qt.textContent=s.text||'';
+    if(qc){
+      qc.innerHTML='';
+      (s.choices||[]).forEach(function(choice){
+        var btn=document.createElement('button');
+        btn.className='tut-q-btn';
+        btn.textContent=choice;
+        btn.addEventListener('click',function(){
+          if(s.answerKey) tutAnswers[s.answerKey]=choice;
+          btn.classList.add('tut-q-selected');
+          setTimeout(function(){
+            hideQuestion();
+            go(cur+1);
+          },340);
+        });
+        qc.appendChild(btn);
+      });
+    }
+    setTimeout(function(){qp.classList.add('tut-vis');},60);
+    rdy=false;
+  }
+  function hideQuestion(){
+    qp.classList.remove('tut-vis');
+    ov.style.opacity='0';
+    setTimeout(function(){ov.style.opacity='1';},50);
+  }
 
   function tutorialCanBootOnHome(){
     var homeEl=document.getElementById('homeScreen');
@@ -14614,7 +14705,8 @@ document.addEventListener('DOMContentLoaded',function(){(function(){
   function finishStep(s,delay,bubbleDelay){
     bl.classList.remove('tut-vis');
     if(s.blueText) bl.classList.add('tut-blue'); else bl.classList.remove('tut-blue');
-    if(s.text){setTutorialText(bt,s.text);setTimeout(function(){bl.classList.add('tut-vis');},(bubbleDelay||120));}
+    var stepText=typeof s.dynamicText==='function'?s.dynamicText():(s.text||'');
+    if(stepText){setTutorialText(bt,stepText);setTimeout(function(){bl.classList.add('tut-vis');},(bubbleDelay||120));}
     th.textContent=s.eyeTap?'Tap the screen':'Tap to continue';
     th.style.display='block'; sk.style.display='block';
     setTimeout(function(){rdy=true;},delay||700);
@@ -14717,6 +14809,14 @@ document.addEventListener('DOMContentLoaded',function(){(function(){
       setTimeout(function(){fb.classList.add('tut-vis');},60);
       cp.classList.add('tut-cap-on');
       setTimeout(function(){rdy=true;},700);
+      return;
+    }
+
+    /* ── QUESTION mode ── */
+    if(s.mode==='question'){
+      hidePathChoice();
+      closeDrawer();
+      showQuestion(s);
       return;
     }
 
@@ -15074,6 +15174,7 @@ document.addEventListener('DOMContentLoaded',function(){(function(){
     localStorage.setItem(VISITED,'1');
     document.body.classList.remove('tut-live');
     document.querySelectorAll('.tut-elem-glow').forEach(function(e){e.classList.remove('tut-elem-glow');});
+    if(qp) qp.classList.remove('tut-vis');
     stopSparks(); clearPulse(); darkSpot();
     hideClockBg(); hideObjFlash(); stopTutCreek(); hideThoughtAnim();
     if(corgiTimer){clearTimeout(corgiTimer); cg.style.display='none';}
@@ -15338,6 +15439,13 @@ document.addEventListener('DOMContentLoaded',function(){(function(){
 <div id="tutDrawerCapture"></div>
 <!-- Corgi -->
 <div id="tutCorgi">🐕</div>
+
+<!-- Question panel for Duolingo-style choice steps -->
+<div id="tutQuestionPanel">
+  <p id="tutQuestionLabel">Question</p>
+  <p id="tutQuestionText"></p>
+  <div id="tutQuestionChoices"></div>
+</div>
 
 </body>
 </html>
