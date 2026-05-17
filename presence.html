@@ -1320,6 +1320,83 @@ body.tut-live #omniaTabPeek { display:none !important; }
   color:#a0d8bc; pointer-events:none;
 }
 
+/* ── Clock tip card (shown during 5-sec countdown on first tutorial session) ── */
+#tutClockTip {
+  position:fixed; bottom:130px; left:50%; transform:translateX(-50%);
+  z-index:9900; background:rgba(7,8,13,0.94);
+  border:1px solid rgba(126,184,164,0.28); border-radius:14px;
+  padding:16px 24px; text-align:center; pointer-events:none;
+  opacity:0; transition:opacity 0.7s ease; max-width:min(300px,88vw);
+}
+#tutClockTip.tut-ct-show { opacity:1; }
+#tutClockTip p {
+  font-family:'DM Mono',monospace; font-size:13px; letter-spacing:.08em;
+  color:#cce8f8; margin:0 0 7px; line-height:1.5;
+}
+#tutClockTip span {
+  font-family:'DM Mono',monospace; font-size:8px; letter-spacing:.24em;
+  text-transform:uppercase; color:rgba(126,184,164,0.6);
+}
+
+/* ── Post-session tutorial overlay ── */
+#tutPostSession {
+  display:none; position:fixed; inset:0; z-index:9900;
+  background:rgba(7,8,13,0.98);
+  flex-direction:column; align-items:center; justify-content:center;
+  padding:40px 24px max(env(safe-area-inset-bottom),40px);
+  overflow-y:auto;
+  opacity:0; transition:opacity 0.55s ease;
+}
+#tutPostSession.tut-ps-show { display:flex; }
+#tutPostSession.tut-ps-vis { opacity:1; }
+.tut-ps-secs {
+  font-family:'DM Mono',monospace; font-size:76px; letter-spacing:-.02em;
+  line-height:1; color:#d4956e; margin-bottom:8px;
+}
+.tut-ps-sec-label {
+  font-family:'DM Mono',monospace; font-size:9px; letter-spacing:.32em;
+  text-transform:uppercase; color:rgba(212,149,110,0.55); margin-bottom:30px;
+}
+.tut-ps-reaction {
+  font-family:'DM Mono',monospace; font-size:15px; letter-spacing:.06em;
+  text-align:center; color:#b8eaff; max-width:280px;
+  margin-bottom:10px; line-height:1.6;
+}
+.tut-ps-tip {
+  font-family:'DM Mono',monospace; font-size:9px; letter-spacing:.2em;
+  text-transform:uppercase; color:rgba(126,184,164,0.6);
+  text-align:center; max-width:260px; margin-bottom:36px; line-height:1.7;
+}
+.tut-ps-divider {
+  width:100%; max-width:320px; border:none;
+  border-top:1px solid rgba(126,184,164,0.12); margin-bottom:24px;
+}
+.tut-ps-plan-header {
+  font-family:'DM Mono',monospace; font-size:8px; letter-spacing:.32em;
+  text-transform:uppercase; color:rgba(184,234,255,0.4); margin-bottom:16px;
+}
+.tut-ps-plan { width:100%; max-width:320px; margin-bottom:36px; }
+.tut-ps-item {
+  display:flex; align-items:baseline; gap:12px;
+  padding:12px 0; border-bottom:1px solid rgba(255,255,255,0.05);
+}
+.tut-ps-item-name {
+  font-family:'DM Mono',monospace; font-size:10px; letter-spacing:.18em;
+  text-transform:uppercase; color:#b8eaff; flex:1;
+}
+.tut-ps-item-detail {
+  font-family:'DM Mono',monospace; font-size:9px; letter-spacing:.12em;
+  color:rgba(184,234,255,0.42);
+}
+#tutPS-btn {
+  background:rgba(126,184,164,0.13); border:1px solid rgba(126,184,164,0.48);
+  border-radius:14px; padding:16px 36px; cursor:pointer;
+  font-family:'DM Mono',monospace; font-size:10px; letter-spacing:.28em;
+  text-transform:uppercase; color:#7eb8a4;
+  transition:background 0.2s, border-color 0.2s;
+}
+#tutPS-btn:hover { background:rgba(126,184,164,0.24); border-color:rgba(126,184,164,0.78); }
+
 #tutPathChoice.tut-vis { display:flex; }
 .tut-path-btn {
   background:rgba(10,15,28,0.95); border:1px solid rgba(126,184,164,0.35);
@@ -5155,6 +5232,69 @@ function saveConcResult(repeatAfter) {
     document.getElementById('concentrationPanel').style.display = 'flex';
     if (concDidLevelUp1) setTimeout(function() { showConcLevelUp(concState.level); }, 400);
   };
+  if (window._tutorialFirstClock) {
+    var tutSecs = seconds;
+    window._tutorialFirstClock = false;
+    saveBtn.textContent = 'See your results →';
+    (function(s){ saveBtn.onclick = function() { showTutorialPostSession(s); }; })(tutSecs);
+  }
+}
+
+function showTutorialPostSession(secs) {
+  var answers = window._tutorialAnswers || {};
+  var challenge = answers.challenge || '';
+  var predicted = answers.duration || '';
+
+  var predictedSecs = predicted === 'Over a minute' ? 60 : predicted === 'Maybe 30 seconds' ? 30 : 10;
+  var ratio = secs / Math.max(predictedSecs, 1);
+  var reaction = ratio >= 1.15
+    ? 'Better than you predicted. We\'ll push further.'
+    : ratio < 0.85
+    ? 'This is exactly why we train. It gets easier.'
+    : 'Right on target. Now we build from here.';
+
+  var tip = challenge === "I can't stop thinking"
+    ? 'Thought control becomes your greatest weapon.'
+    : challenge === 'I lose focus easily'
+    ? 'The clock rebuilds focus faster than anything else.'
+    : 'Stillness compounds. Each session goes further.';
+
+  var target = Math.max(secs + 15, 20);
+  var planItems = [{ name: 'Clock', detail: '×3  ·  aim for ' + target + ' sec' }];
+  if (challenge === "I can't stop thinking")
+    planItems.push({ name: 'Thought Control', detail: '×1  ·  2 min' });
+  else if (challenge === 'I lose focus easily')
+    planItems.push({ name: 'Clock', detail: '×1 extra  ·  no pressure' });
+  else
+    planItems.push({ name: 'Visualization', detail: '×1  ·  shapes' });
+
+  var ps = document.getElementById('tutPostSession');
+  if (!ps) return;
+  document.getElementById('tutPS-secs').textContent = secs;
+  document.getElementById('tutPS-reaction').textContent = reaction;
+  document.getElementById('tutPS-tip').textContent = tip;
+  document.getElementById('tutPS-plan').innerHTML = planItems.map(function(p) {
+    return '<div class="tut-ps-item">'
+      + '<span class="tut-ps-item-name">' + p.name + '</span>'
+      + '<span class="tut-ps-item-detail">' + p.detail + '</span>'
+      + '</div>';
+  }).join('');
+
+  document.getElementById('tutPS-btn').onclick = function() {
+    ps.classList.remove('tut-ps-vis');
+    setTimeout(function() {
+      ps.classList.remove('tut-ps-show');
+      renderConcHome();
+      showScreen('homeScreen');
+      document.getElementById('awarenessPanel').style.display = 'none';
+      document.getElementById('concentrationPanel').style.display = 'flex';
+    }, 500);
+  };
+
+  ps.classList.add('tut-ps-show');
+  requestAnimationFrame(function() {
+    requestAnimationFrame(function() { ps.classList.add('tut-ps-vis'); });
+  });
 }
 
 // Recalculate totalSessions from history using the same 2-hour window rule
@@ -14139,7 +14279,7 @@ document.addEventListener('DOMContentLoaded',function(){(function(){
               answerKey:'duration',
               choices:['A few seconds','Maybe 30 seconds','Over a minute']},
     /* 5 */ {mode:'full', darkFull:true, last:true, launchClock:true,
-              text:'Let\'s find out.'},
+              text:'Watch the moving dot. The moment a thought appears — tap Stop.'},
   ];
 
   var ov=document.getElementById('tutOverlay');
@@ -15234,11 +15374,19 @@ document.addEventListener('DOMContentLoaded',function(){(function(){
     var s=STEPS[cur];
     end();
     if(s&&s.launchClock){
+      window._tutorialFirstClock=true;
+      window._tutorialAnswers=JSON.parse(JSON.stringify(tutAnswers));
       setTimeout(function(){
         switchMode('concentration');
         setTimeout(function(){
           var clockCard=document.querySelector('[data-exercise="clock"]');
           if(clockCard) clockCard.click();
+          // Show tip card during countdown
+          var tip=document.getElementById('tutClockTip');
+          if(tip){
+            setTimeout(function(){tip.classList.add('tut-ct-show');},400);
+            setTimeout(function(){tip.classList.remove('tut-ct-show');},5200);
+          }
         },400);
       },300);
     }
@@ -15445,6 +15593,24 @@ document.addEventListener('DOMContentLoaded',function(){(function(){
   <p id="tutQuestionLabel">Question</p>
   <p id="tutQuestionText"></p>
   <div id="tutQuestionChoices"></div>
+</div>
+
+<!-- Clock tip card: shown during countdown on first tutorial session -->
+<div id="tutClockTip">
+  <p>Eyes on the dot.</p>
+  <span>Stop the moment a thought appears</span>
+</div>
+
+<!-- Post-session tutorial overlay: shown after first clock session is saved -->
+<div id="tutPostSession">
+  <div class="tut-ps-secs" id="tutPS-secs">0</div>
+  <div class="tut-ps-sec-label">seconds of focus</div>
+  <div class="tut-ps-reaction" id="tutPS-reaction"></div>
+  <div class="tut-ps-tip" id="tutPS-tip"></div>
+  <hr class="tut-ps-divider">
+  <div class="tut-ps-plan-header">Your Day 1 plan</div>
+  <div class="tut-ps-plan" id="tutPS-plan"></div>
+  <button id="tutPS-btn">Begin your practice →</button>
 </div>
 
 </body>
