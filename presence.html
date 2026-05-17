@@ -339,7 +339,6 @@
 
     /* ── Upgrade screen v3: Omnia-as-centerpiece, bodies as focus ── */
     body.upgrade-stage .omnia-wrap { display:none; }
-    body.upgrade-stage .guide-path-omnia-wrap { display:none; }
     .oe-v2 { display:flex; flex-direction:column; padding:0; background:none; border:none; box-shadow:none; position:relative; }
     .oe-akasha-corner { position:absolute; top:8px; right:14px; z-index:5; display:flex; align-items:baseline; gap:5px; padding:7px 13px; border:1px solid rgba(212,180,142,.32); border-radius:999px; background:rgba(212,180,142,.06); pointer-events:none; }
     .oe-akasha-corner-val { font-family:Cormorant Garamond,serif; font-size:18px; line-height:1; color:#e8c896; }
@@ -2171,68 +2170,6 @@ body:not(.tut-live) #tutCorgi {
       <button class="guide-tab active" id="guidePathTab">Path</button>
       <button class="guide-tab" id="guideOmniaTab">Upgrade</button>
     </div>
-    <!-- Omnia character (Path tab — aura centerpiece) -->
-    <div class="guide-path-omnia-wrap">
-      <div class="guide-path-omnia-stage">
-        <div class="oe-aura oe-aura-physical" id="guidePathAuraPhysical"></div>
-        <div class="oe-aura oe-aura-astral"   id="guidePathAuraAstral"></div>
-        <div class="oe-aura oe-aura-mental"   id="guidePathAuraMental"></div>
-        <div class="oe-flash" id="guidePathFlash"></div>
-        <div class="oe-omnia-figure omnia-figure" id="guideOmniaFigure" role="button" tabindex="0" aria-label="Reveal an Omnia symbol">
-          <div class="omnia-crystal-layer">
-          <svg viewBox="0 0 80 130" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-            <defs>
-              <linearGradient id="og1" x1="0%" y1="0%" x2="100%" y2="100%">
-                <stop offset="0%" stop-color="#ddf0ff" stop-opacity="0.92"/>
-                <stop offset="100%" stop-color="#6ab8d8" stop-opacity="0.48"/>
-              </linearGradient>
-              <linearGradient id="og2" x1="100%" y1="0%" x2="0%" y2="100%">
-                <stop offset="0%" stop-color="#ffffff" stop-opacity="0.78"/>
-                <stop offset="100%" stop-color="#4a9ec0" stop-opacity="0.22"/>
-              </linearGradient>
-              <radialGradient id="og3" cx="50%" cy="38%" r="58%">
-                <stop offset="0%" stop-color="#b8eaff" stop-opacity="0.38"/>
-                <stop offset="100%" stop-color="#2878a0" stop-opacity="0"/>
-              </radialGradient>
-              <filter id="oglow" x="-30%" y="-30%" width="160%" height="160%">
-                <feGaussianBlur stdDeviation="2.5" result="blur"/>
-                <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
-              </filter>
-            </defs>
-            <ellipse cx="40" cy="68" rx="28" ry="48" fill="url(#og3)" opacity="0.62"/>
-            <polygon points="40,3 54,14 40,25 26,14" fill="url(#og1)" stroke="#90cce8" stroke-width="0.55" filter="url(#oglow)"/>
-            <polygon points="40,3 54,14 40,13" fill="#ceeaff" opacity="0.72"/>
-            <polygon points="40,3 26,14 40,13" fill="#b0dcf5" opacity="0.42"/>
-            <line x1="40" y1="3" x2="40" y2="25" stroke="#b8e0f8" stroke-width="0.4" opacity="0.55"/>
-            <line x1="26" y1="14" x2="54" y2="14" stroke="#b8e0f8" stroke-width="0.4" opacity="0.35"/>
-            <polygon points="40,25 60,36 64,58 40,70 16,58 20,36" fill="url(#og1)" stroke="#88c4e0" stroke-width="0.55"/>
-            <polygon points="40,25 60,36 40,44" fill="#d4ecff" opacity="0.52"/>
-            <polygon points="40,25 20,36 40,44" fill="#bce0f8" opacity="0.32"/>
-            <line x1="40" y1="25" x2="40" y2="70" stroke="#a8d8f2" stroke-width="0.38" opacity="0.48"/>
-            <polygon points="16,58 64,58 40,70" fill="url(#og2)" opacity="0.38"/>
-            <polygon points="40,70 64,58 56,88 40,100 24,88 16,58" fill="url(#og1)" stroke="#88c4e0" stroke-width="0.55" opacity="0.88"/>
-            <polygon points="40,100 56,88 40,114" fill="url(#og2)" stroke="#88c4e0" stroke-width="0.48" opacity="0.72"/>
-            <polygon points="40,100 24,88 40,114" fill="#b4dcf4" stroke="#88c4e0" stroke-width="0.48" opacity="0.52"/>
-            <g opacity="0.65" filter="url(#oglow)">
-              <line x1="6" y1="22" x2="12" y2="22" stroke="#b8eaff" stroke-width="1"/>
-              <line x1="9" y1="19" x2="9" y2="25" stroke="#b8eaff" stroke-width="1"/>
-            </g>
-            <g opacity="0.48">
-              <line x1="68" y1="48" x2="74" y2="48" stroke="#b8eaff" stroke-width="0.9"/>
-              <line x1="71" y1="45" x2="71" y2="51" stroke="#b8eaff" stroke-width="0.9"/>
-            </g>
-          </svg>
-          </div>
-          <svg class="omnia-shard-layer" id="guideOmniaShardSvg" viewBox="0 0 100 130" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"></svg>
-          <div class="omnia-morph-ring"></div>
-          <div class="omnia-symbol-layer" id="guideOmniaSymbolLayer"></div>
-          <div class="omnia-companion" id="guideOmniaCompanion"></div>
-        </div>
-      </div>
-      <div class="omnia-name">Omnia</div>
-      <div class="omnia-speak" id="guideOmniaSpeak">Your regiment is ready.<br><em>Complete each exercise to earn Akasha.</em></div>
-    </div>
-
     <div class="guide-swipe-wrap" id="guideSwipeWrap">
     <div class="guide-tab-panel guide-tab-hidden" id="guideOmniaPanel">
     <div class="oe-v2" id="omniaEngine">
@@ -2370,6 +2307,68 @@ body:not(.tut-live) #tutCorgi {
     </div>
 
     <div class="guide-tab-panel" id="guidePathPanel">
+
+    <!-- Omnia character (Path tab — aura centerpiece) -->
+    <div class="guide-path-omnia-wrap">
+      <div class="guide-path-omnia-stage">
+        <div class="oe-aura oe-aura-physical" id="guidePathAuraPhysical"></div>
+        <div class="oe-aura oe-aura-astral"   id="guidePathAuraAstral"></div>
+        <div class="oe-aura oe-aura-mental"   id="guidePathAuraMental"></div>
+        <div class="oe-flash" id="guidePathFlash"></div>
+        <div class="oe-omnia-figure omnia-figure" id="guideOmniaFigure" role="button" tabindex="0" aria-label="Reveal an Omnia symbol">
+          <div class="omnia-crystal-layer">
+          <svg viewBox="0 0 80 130" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+            <defs>
+              <linearGradient id="og1" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stop-color="#ddf0ff" stop-opacity="0.92"/>
+                <stop offset="100%" stop-color="#6ab8d8" stop-opacity="0.48"/>
+              </linearGradient>
+              <linearGradient id="og2" x1="100%" y1="0%" x2="0%" y2="100%">
+                <stop offset="0%" stop-color="#ffffff" stop-opacity="0.78"/>
+                <stop offset="100%" stop-color="#4a9ec0" stop-opacity="0.22"/>
+              </linearGradient>
+              <radialGradient id="og3" cx="50%" cy="38%" r="58%">
+                <stop offset="0%" stop-color="#b8eaff" stop-opacity="0.38"/>
+                <stop offset="100%" stop-color="#2878a0" stop-opacity="0"/>
+              </radialGradient>
+              <filter id="oglow" x="-30%" y="-30%" width="160%" height="160%">
+                <feGaussianBlur stdDeviation="2.5" result="blur"/>
+                <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+              </filter>
+            </defs>
+            <ellipse cx="40" cy="68" rx="28" ry="48" fill="url(#og3)" opacity="0.62"/>
+            <polygon points="40,3 54,14 40,25 26,14" fill="url(#og1)" stroke="#90cce8" stroke-width="0.55" filter="url(#oglow)"/>
+            <polygon points="40,3 54,14 40,13" fill="#ceeaff" opacity="0.72"/>
+            <polygon points="40,3 26,14 40,13" fill="#b0dcf5" opacity="0.42"/>
+            <line x1="40" y1="3" x2="40" y2="25" stroke="#b8e0f8" stroke-width="0.4" opacity="0.55"/>
+            <line x1="26" y1="14" x2="54" y2="14" stroke="#b8e0f8" stroke-width="0.4" opacity="0.35"/>
+            <polygon points="40,25 60,36 64,58 40,70 16,58 20,36" fill="url(#og1)" stroke="#88c4e0" stroke-width="0.55"/>
+            <polygon points="40,25 60,36 40,44" fill="#d4ecff" opacity="0.52"/>
+            <polygon points="40,25 20,36 40,44" fill="#bce0f8" opacity="0.32"/>
+            <line x1="40" y1="25" x2="40" y2="70" stroke="#a8d8f2" stroke-width="0.38" opacity="0.48"/>
+            <polygon points="16,58 64,58 40,70" fill="url(#og2)" opacity="0.38"/>
+            <polygon points="40,70 64,58 56,88 40,100 24,88 16,58" fill="url(#og1)" stroke="#88c4e0" stroke-width="0.55" opacity="0.88"/>
+            <polygon points="40,100 56,88 40,114" fill="url(#og2)" stroke="#88c4e0" stroke-width="0.48" opacity="0.72"/>
+            <polygon points="40,100 24,88 40,114" fill="#b4dcf4" stroke="#88c4e0" stroke-width="0.48" opacity="0.52"/>
+            <g opacity="0.65" filter="url(#oglow)">
+              <line x1="6" y1="22" x2="12" y2="22" stroke="#b8eaff" stroke-width="1"/>
+              <line x1="9" y1="19" x2="9" y2="25" stroke="#b8eaff" stroke-width="1"/>
+            </g>
+            <g opacity="0.48">
+              <line x1="68" y1="48" x2="74" y2="48" stroke="#b8eaff" stroke-width="0.9"/>
+              <line x1="71" y1="45" x2="71" y2="51" stroke="#b8eaff" stroke-width="0.9"/>
+            </g>
+          </svg>
+          </div>
+          <svg class="omnia-shard-layer" id="guideOmniaShardSvg" viewBox="0 0 100 130" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"></svg>
+          <div class="omnia-morph-ring"></div>
+          <div class="omnia-symbol-layer" id="guideOmniaSymbolLayer"></div>
+          <div class="omnia-companion" id="guideOmniaCompanion"></div>
+        </div>
+      </div>
+      <div class="omnia-name">Omnia</div>
+      <div class="omnia-speak" id="guideOmniaSpeak">Your regiment is ready.<br><em>Complete each exercise to earn Akasha.</em></div>
+    </div>
 
     <div class="guide-route-grid" id="guideRouteGrid" style="display:none">
       <button class="guide-route-card" id="guideBeginnerPathBtn">
