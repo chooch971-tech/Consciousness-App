@@ -1403,6 +1403,84 @@ body.tut-live #omniaTabPeek { display:none !important; }
 }
 #tutPS-btn:hover { background:rgba(126,184,164,0.24); border-color:rgba(126,184,164,0.78); }
 
+/* Post-clock stage shared */
+.tut-stage-headline {
+  font-family:'DM Mono',monospace; font-size:17px; letter-spacing:.03em;
+  color:#b8eaff; text-align:center; margin-bottom:10px;
+}
+.tut-stage-sub {
+  font-family:'DM Mono',monospace; font-size:9px; letter-spacing:.2em;
+  text-transform:uppercase; color:rgba(126,184,164,0.6); text-align:center;
+  max-width:260px; margin-bottom:48px; line-height:1.7;
+}
+
+/* Streak stage */
+.tut-streak-num-wrap {
+  display:flex; flex-direction:column; align-items:center; margin-bottom:32px;
+}
+.tut-streak-day-label {
+  font-family:'DM Mono',monospace; font-size:9px; letter-spacing:.4em;
+  text-transform:uppercase; color:rgba(212,149,110,0.55); margin-bottom:6px;
+}
+.tut-streak-num {
+  font-family:'DM Mono',monospace; font-size:96px; line-height:1;
+  color:#d4956e;
+  text-shadow:0 0 60px rgba(212,149,110,0.45),0 0 20px rgba(212,149,110,0.3);
+}
+
+/* Reminder stage */
+.tut-remind-choices {
+  display:flex; flex-direction:column; gap:12px;
+  width:100%; max-width:300px; margin-bottom:12px;
+}
+.tut-remind-btn {
+  background:rgba(126,184,164,0.07); border:1px solid rgba(126,184,164,0.25);
+  border-radius:12px; padding:15px 20px; cursor:pointer;
+  font-family:'DM Mono',monospace; font-size:10px; letter-spacing:.22em;
+  text-transform:uppercase; color:#7eb8a4;
+  transition:background 0.2s,border-color 0.2s,color 0.2s; text-align:center;
+}
+.tut-remind-btn:hover,.tut-remind-btn.selected {
+  background:rgba(126,184,164,0.2); border-color:rgba(126,184,164,0.65);
+}
+
+/* Notification stage */
+.tut-notif-ring {
+  width:68px; height:68px; border-radius:50%;
+  border:1px solid rgba(184,234,255,0.25);
+  display:flex; align-items:center; justify-content:center;
+  margin-bottom:32px; position:relative;
+}
+.tut-notif-ring::after {
+  content:''; position:absolute; inset:-9px; border-radius:50%;
+  border:1px solid rgba(184,234,255,0.09);
+}
+.tut-notif-dot {
+  width:11px; height:11px; border-radius:50%; background:#b8eaff;
+  box-shadow:0 0 14px rgba(184,234,255,0.6);
+}
+
+/* Account + shared action buttons */
+.tut-acct-btns {
+  display:flex; flex-direction:column; gap:14px;
+  width:100%; max-width:300px; margin-top:8px;
+}
+.tut-acct-primary {
+  background:rgba(126,184,164,0.13); border:1px solid rgba(126,184,164,0.48);
+  border-radius:14px; padding:16px 36px; cursor:pointer;
+  font-family:'DM Mono',monospace; font-size:10px; letter-spacing:.28em;
+  text-transform:uppercase; color:#7eb8a4;
+  transition:background 0.2s,border-color 0.2s;
+}
+.tut-acct-primary:hover { background:rgba(126,184,164,0.24); border-color:rgba(126,184,164,0.78); }
+.tut-acct-skip {
+  background:none; border:none; cursor:pointer;
+  font-family:'DM Mono',monospace; font-size:9px; letter-spacing:.2em;
+  text-transform:uppercase; color:rgba(126,184,164,0.38); padding:12px;
+  transition:color 0.2s;
+}
+.tut-acct-skip:hover { color:rgba(126,184,164,0.7); }
+
 #tutPathChoice.tut-vis { display:flex; }
 .tut-path-btn {
   background:rgba(10,15,28,0.95); border:1px solid rgba(126,184,164,0.35);
@@ -5287,19 +5365,123 @@ function showTutorialPostSession(secs) {
   }).join('');
 
   document.getElementById('tutPS-btn').onclick = function() {
-    ps.classList.remove('tut-ps-vis');
-    setTimeout(function() {
-      ps.classList.remove('tut-ps-show');
-      renderConcHome();
-      showScreen('homeScreen');
-      document.getElementById('awarenessPanel').style.display = 'none';
-      document.getElementById('concentrationPanel').style.display = 'flex';
-    }, 500);
+    showTutorialStreakCelebration();
   };
 
   ps.classList.add('tut-ps-show');
   requestAnimationFrame(function() {
     requestAnimationFrame(function() { ps.classList.add('tut-ps-vis'); });
+  });
+}
+
+function tutFadeStage(buildFn) {
+  var ps = document.getElementById('tutPostSession');
+  ps.classList.remove('tut-ps-vis');
+  setTimeout(function() {
+    ps.innerHTML = '';
+    buildFn(ps);
+  }, 420);
+}
+
+function showTutorialStreakCelebration() {
+  tutFadeStage(function(ps) {
+    ps.innerHTML =
+      '<div class="tut-streak-num-wrap">'
+      + '<div class="tut-streak-day-label">Day</div>'
+      + '<div class="tut-streak-num">1</div>'
+      + '</div>'
+      + '<div class="tut-stage-headline">Your streak begins.</div>'
+      + '<div class="tut-stage-sub">Every master started exactly here.</div>'
+      + '<button class="tut-acct-primary" id="tutStage-next">Continue →</button>';
+    document.getElementById('tutStage-next').onclick = showTutorialReminder;
+    requestAnimationFrame(function() {
+      requestAnimationFrame(function() { ps.classList.add('tut-ps-vis'); });
+    });
+  });
+}
+
+function showTutorialReminder() {
+  tutFadeStage(function(ps) {
+    ps.innerHTML =
+      '<div class="tut-stage-headline">When can I expect you?</div>'
+      + '<div class="tut-stage-sub">Consistency is the practice.</div>'
+      + '<div class="tut-remind-choices">'
+      + '<button class="tut-remind-btn" data-time="07:00">Morning  ·  7 am</button>'
+      + '<button class="tut-remind-btn" data-time="12:00">Afternoon  ·  12 pm</button>'
+      + '<button class="tut-remind-btn" data-time="20:00">Evening  ·  8 pm</button>'
+      + '<button class="tut-remind-btn" data-time="">I\'ll decide later</button>'
+      + '</div>';
+    ps.querySelectorAll('.tut-remind-btn').forEach(function(btn) {
+      btn.addEventListener('click', function() {
+        var t = btn.getAttribute('data-time');
+        if (t) localStorage.setItem('presence_reminder_time', t);
+        ps.querySelectorAll('.tut-remind-btn').forEach(function(b) { b.classList.remove('selected'); });
+        btn.classList.add('selected');
+        setTimeout(showTutorialNotification, 380);
+      });
+    });
+    requestAnimationFrame(function() {
+      requestAnimationFrame(function() { ps.classList.add('tut-ps-vis'); });
+    });
+  });
+}
+
+function showTutorialNotification() {
+  tutFadeStage(function(ps) {
+    ps.innerHTML =
+      '<div class="tut-notif-ring"><div class="tut-notif-dot"></div></div>'
+      + '<div class="tut-stage-headline">Want a daily nudge?</div>'
+      + '<div class="tut-stage-sub">Omnia can remind you when it\'s time to train.</div>'
+      + '<div class="tut-acct-btns">'
+      + '<button class="tut-acct-primary" id="tutNotif-yes">Yes, remind me</button>'
+      + '<button class="tut-acct-skip" id="tutNotif-no">Not now</button>'
+      + '</div>';
+    document.getElementById('tutNotif-yes').onclick = function() {
+      if ('Notification' in window) {
+        Notification.requestPermission()
+          .then(function() { showTutorialAccountPrompt(); })
+          .catch(function() { showTutorialAccountPrompt(); });
+      } else {
+        showTutorialAccountPrompt();
+      }
+    };
+    document.getElementById('tutNotif-no').onclick = showTutorialAccountPrompt;
+    requestAnimationFrame(function() {
+      requestAnimationFrame(function() { ps.classList.add('tut-ps-vis'); });
+    });
+  });
+}
+
+function showTutorialAccountPrompt() {
+  tutFadeStage(function(ps) {
+    ps.innerHTML =
+      '<div class="tut-stage-headline">Protect your streak.</div>'
+      + '<div class="tut-stage-sub">Create an account to keep your progress across devices.</div>'
+      + '<div class="tut-acct-btns">'
+      + '<button class="tut-acct-primary" id="tutAcct-create">Create account →</button>'
+      + '<button class="tut-acct-skip" id="tutAcct-skip">Continue without saving</button>'
+      + '</div>';
+    document.getElementById('tutAcct-create').onclick = function() {
+      ps.classList.remove('tut-ps-vis');
+      setTimeout(function() {
+        ps.classList.remove('tut-ps-show');
+        renderConcHome();
+        showScreen('loginScreen');
+      }, 500);
+    };
+    document.getElementById('tutAcct-skip').onclick = function() {
+      ps.classList.remove('tut-ps-vis');
+      setTimeout(function() {
+        ps.classList.remove('tut-ps-show');
+        renderConcHome();
+        showScreen('homeScreen');
+        document.getElementById('awarenessPanel').style.display = 'none';
+        document.getElementById('concentrationPanel').style.display = 'flex';
+      }, 500);
+    };
+    requestAnimationFrame(function() {
+      requestAnimationFrame(function() { ps.classList.add('tut-ps-vis'); });
+    });
   });
 }
 
