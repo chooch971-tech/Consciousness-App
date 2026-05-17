@@ -14084,65 +14084,12 @@ document.addEventListener('DOMContentLoaded',function(){(function(){
   var VISITED='presence_visited';
 
   var STEPS=[
-    /* 0  */ {mode:'full', sparks:true, eyeTap:true, darkFull:true,
-               text:'Namaste! My name is Omnia. Welcome to your new favorite meditation practice.'},
-    /* 1  */ {mode:'full', inEye:true, blueText:true, darkFull:true, blinkNext:true,
-               text:'Allow me to show you around.'},
-    /* 2  */ {mode:'full', inEye:true, blueText:true, darkFull:true,
-               text:'These exercises will hone your concentration and imagination skills. Believe it or not, these exercises have been derived from secret societies and practiced for thousands of years!'},
-    /* 3  */ {mode:'full', morphCrystal:true, panel:'concentration', cards:true, spotPanel:'#modeConcentration',
-               text:'This is where the Concentration exercises lay. Master them to know thyself.'},
-    /* 4  */ {mode:'spot', target:'#concRingBtn', omniaLow:true,
-               text:'Practice to level up. All of these exercises go towards your XP bubble and come with a unique title.'},
-    /* 5  */ {mode:'spot', targets:['#concHomeSymbol','#concHomeSymbolFill'], omniaLow:true,
-               text:'Here is your rank — you can click on it for more information. Go through all the ranks to ascend!'},
-    /* 6  */ {mode:'spot', target:'[data-exercise="clock"]', omniaRight:true, scrollTo:'[data-exercise="clock"]',
-               text:'You\'ll place your complete attention on the seconds hand of a clock. Each second of true focus makes your mind stronger.'},
-    /* 7  */ {mode:'full', clockBg:true, omniaClock:true,
-               text:'You must place your complete focus here and only stop once the mind becomes distracted.'},
-    /* 8  */ {mode:'spot', target:'[data-exercise="visual"]', omniaLeft:true, omniaNarrowLeft:true, scrollTo:'[data-exercise="visual"]',
-               text:'For the Visualization exercise, you\'ll learn to see objects as if they were right in front of you.'},
-    /* 9  */ {mode:'full', objFlash:true, omniaBelow:true, omniaObjCallout:true,
-               text:'You\'ll start with easier objects, like shapes. But then go into objects.'},
-    /* 10 */ {mode:'spot', target:'[data-exercise="visual"]', omniaBelow:true, omniaObjCallout:true, omniaObjSlideLeft:true,
-               text:'You\'ll learn to do this with your eyes open as well — a concept that sounds difficult but is rather easy after some perseverance.'},
-    /* 11 */ {mode:'spot', target:'[data-exercise="auditory"]', omniaRight:true, scrollTo:'[data-exercise="auditory"]',
-               text:'Just as you did with visualization, you\'ll repeat the same with sounds. You\'ll hear these sounds as if they were actually there.'},
-    /* 12 */ {mode:'spot', target:'[data-exercise="auditory"]', omniaRight:true, playCreek:true,
-               text:'Here, take a listen:'},
-    /* 13 */ {mode:'spot', target:'[data-exercise="auditory"]', omniaRight:true, stopCreek:true,
-               text:'Isn\'t that amazing?'},
-    /* 14 */ {mode:'spot', target:'[data-exercise="thought"]', omniaLeft:true, scrollTo:'[data-exercise="thought"]',
-               text:'Thought Control is where you attempt to hold the mind in complete emptiness — no thoughts, no images, no inner speech. Tap when any thought arises.'},
-    /* 15 */ {mode:'full', thoughtBg:true, omniaBelow:true,
-               text:'Here, thoughts are symbolized rising from the mind. The goal is complete inner silence until even they fade.'},
-    /* 16 */ {mode:'spot', target:'[data-exercise="asana"]', omniaLeft:true, scrollTo:'[data-exercise="asana"]', asana:true,
-               text:'In asana you\'ll learn to sit completely motionless — stilling the body as the foundation for stilling the mind.'},
-    /* 17 */ {mode:'spot', target:'[data-exercise="asana"]', omniaLeft:true, asana:true,
-               text:'Sit in a chair with your legs completely together. Start with five minutes and work your way up!'},
-    /* 18 */ {mode:'spot', target:'[data-exercise="soulmirror"]', omniaLeft:true,
-               text:'Soul Mirror is where inner transformation lies. You\'ll track your negative and positive traits and work on them.'},
-    /* 19 */ {mode:'spot', target:'[data-exercise="soulmirror"]', omniaLeft:true,
-               text:'You can work on traits with pore breathing — breathing out bad qualities and purifying yourself.'},
-    /* 20 */ {mode:'drawer', target:'#drawerJournal', omniaRight:true,
-               text:'Your Journal Log lives here. Every session is recorded — your streak, your progress, your notes.'},
-    /* 21 */ {mode:'drawer', target:'#drawerGuide', openGuide:true,
-               text:'This is where I live and will give you your daily regiment.'},
-    /* 22 */ {mode:'guide', pathChoice:true, skipTo:25},
-    /* 23 */ {mode:'guide', nextIdx:25,
-               text:'No problem! Here is your agenda for the day, and it will always be here for you to go back to. This is how you\'ll grow.'},
-    /* 24 */ {mode:'guide', nextIdx:25,
-               text:'I\'ll challenge you a bit harder each and every day.'},
-    /* 25 */ {mode:'guide', target:'#guideOmniaTab', clickTarget:true,
-               text:'And here is where I can be upgraded. You and I can grow together!!'},
-    /* 26 */ {mode:'guide',
-               text:'The more exercises you do, the more Akasha we generate for upgrades, cosmetics, and other cool items!'},
-    /* 27 */ {mode:'guide', corgi:true,
-               text:'You can even get me a pet corgi!'},
-    /* 28 */ {mode:'drawer', target:'#drawerOmniaBtn', spotDrawer:true,
-               text:'Feel free to click on me here any time you want to go through this tutorial again.'},
-    /* 29 */ {mode:'drawer', target:'#drawerGuide', spotDrawer:true, last:true,
-               text:'I\'ll be in here. It\'s nice to meet you!'},
+    /* 0 */ {mode:'full', sparks:true, eyeTap:true, darkFull:true,
+              text:'Hi. I\'m Omnia.'},
+    /* 1 */ {mode:'full', inEye:true, blueText:true, darkFull:true, blinkNext:true,
+              text:'I\'ll help you train your focus.'},
+    /* 2 */ {mode:'full', darkFull:true, last:true, launchClock:true,
+              text:'Keep your eyes on the moving point. Stop when your mind wanders.'},
   ];
 
   var ov=document.getElementById('tutOverlay');
@@ -15181,7 +15128,20 @@ document.addEventListener('DOMContentLoaded',function(){(function(){
     go(s.nextIdx!=null?s.nextIdx:cur+1);
   });
 
-  db.addEventListener('click',function(e){e.stopPropagation();end();});
+  db.addEventListener('click',function(e){
+    e.stopPropagation();
+    var s=STEPS[cur];
+    end();
+    if(s&&s.launchClock){
+      setTimeout(function(){
+        switchMode('concentration');
+        setTimeout(function(){
+          var clockCard=document.querySelector('[data-exercise="clock"]');
+          if(clockCard) clockCard.click();
+        },400);
+      },300);
+    }
+  });
   sk.addEventListener('click',function(e){e.stopPropagation();end();});
 
   /* ── Path choice buttons ── */
@@ -15372,7 +15332,7 @@ document.addEventListener('DOMContentLoaded',function(){(function(){
     <button class="tut-path-btn" id="tutPathNew">I am new to this</button>
     <button class="tut-path-btn tut-experienced" id="tutPathExp">I have some experience</button>
   </div>
-  <button id="tutDoneBtn">Begin your practice →</button>
+  <button id="tutDoneBtn">Start →</button>
 </div>
 <!-- Click-capture for drawer / guide steps -->
 <div id="tutDrawerCapture"></div>
