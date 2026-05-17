@@ -15814,7 +15814,7 @@ document.addEventListener('DOMContentLoaded',function(){(function(){
       th.style.display='none';
       blinkCrystalEye(function(){go(cur+1);});
     } else {
-      if(s.last){db.click();}else{go(cur+1);}
+      if(s.last){db.click();}else if(s.commitBtn){db.click();}else{go(cur+1);}
     }
   });
 
@@ -15863,6 +15863,8 @@ document.addEventListener('DOMContentLoaded',function(){(function(){
         setTimeout(function(){tip.classList.add('tut-ct-show');},400);
         setTimeout(function(){tip.classList.remove('tut-ct-show');},5200);
       }
+    } else if(s&&s.commitBtn){
+      go(cur+1);
     } else {
       end();
     }
