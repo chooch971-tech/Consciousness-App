@@ -14847,8 +14847,12 @@ document.addEventListener('DOMContentLoaded',function(){(function(){
     if(s.blueText) bl.classList.add('tut-blue'); else bl.classList.remove('tut-blue');
     var stepText=typeof s.dynamicText==='function'?s.dynamicText():(s.text||'');
     if(stepText){setTutorialText(bt,stepText);setTimeout(function(){bl.classList.add('tut-vis');},(bubbleDelay||120));}
-    th.textContent=s.eyeTap?'Tap the screen':'Tap to continue';
+    th.textContent=s.eyeTap?'Tap the screen':s.last?'Tap to start':'Tap to continue';
     th.style.display='block'; sk.style.display='block';
+    if(s.last){
+      db.style.display='block';
+      df.classList.add('tut-float-on');
+    }
     setTimeout(function(){rdy=true;},delay||700);
   }
 
@@ -15351,7 +15355,7 @@ document.addEventListener('DOMContentLoaded',function(){(function(){
       th.style.display='none';
       blinkCrystalEye(function(){go(cur+1);});
     } else {
-      go(cur+1);
+      if(s.last){db.click();}else{go(cur+1);}
     }
   });
 
