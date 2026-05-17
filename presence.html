@@ -1590,14 +1590,36 @@ body.tut-live #omniaTabPeek { display:none !important; }
 .tut-ps-omnia-wrap {
   display:flex; flex-direction:column; align-items:center; margin-bottom:18px; margin-top:-8px;
 }
+.tut-ps-omnia-stage {
+  position:relative; width:140px; height:155px;
+  display:flex; align-items:center; justify-content:center;
+}
 .tut-ps-omnia-crystal {
-  width:62px; height:auto;
+  width:62px; height:auto; position:relative; z-index:2;
   animation:omniaCelebrate 1.4s ease-out both, omniaCelebrateFloat 3.5s ease-in-out 1.4s infinite;
   filter:drop-shadow(0 0 8px rgba(126,184,164,0.4));
 }
-.tut-ps-omnia-name {
-  font-family:'DM Mono',monospace; font-size:9px; letter-spacing:.22em;
-  text-transform:uppercase; color:rgba(126,184,164,0.55); margin-top:6px;
+@keyframes tutPsShardTwinkle {
+  0%,100% { opacity:0; transform:scale(0.4) rotate(0deg); }
+  45%,55% { opacity:0.9; transform:scale(1.1) rotate(45deg); }
+}
+.tut-ps-shard {
+  position:absolute; width:7px; height:7px; z-index:1;
+  animation:tutPsShardTwinkle 2.2s ease-in-out infinite;
+  transform-origin:center;
+}
+/* Tutorial progress bar */
+#tutProgress {
+  display:none; position:fixed; top:0; left:0; right:0;
+  height:3px; background:rgba(255,255,255,0.06); z-index:9010;
+  pointer-events:none;
+}
+body.tut-live #tutProgress { display:block; }
+#tutProgressFill {
+  height:100%; width:0%;
+  background:linear-gradient(90deg,#7eb8a4,#b8eaff);
+  border-radius:0 2px 2px 0;
+  transition:width 0.45s cubic-bezier(.4,0,.2,1);
 }
 
 /* ── Goal choice subtext ── */
@@ -5596,8 +5618,21 @@ function showTutorialPostSession(secs, akashaDelta) {
     + '<polygon points="36,100 20,88 36,116" fill="#88c0e0" stroke="#88c4e0" stroke-width=".6" opacity=".52"/>'
     + '</svg>';
 
+  /* Heart-arranged shards: 10 points along a heart curve around the crystal */
+  var _hPts=[
+    [34,20,0],[50,16,0.2],[66,20,0.4],
+    [77,35,0.6],[74,55,0.8],[63,69,1.0],
+    [50,80,1.2],[37,69,1.4],[26,55,1.6],
+    [23,35,1.8]
+  ];
+  var shardsHTML=_hPts.map(function(p){
+    return '<svg class="tut-ps-shard" style="left:'+p[0]+'%;top:'+p[1]+'%;animation-delay:'+p[2]+'s" viewBox="0 0 8 8" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">'
+      +'<polygon points="4,0 8,4 4,8 0,4" fill="#7eb8a4"/>'
+      +'</svg>';
+  }).join('');
+
   ps.innerHTML =
-    '<div class="tut-ps-omnia-wrap">' + crystalSVG + '<span class="tut-ps-omnia-name">Omnia</span></div>'
+    '<div class="tut-ps-omnia-wrap"><div class="tut-ps-omnia-stage">' + crystalSVG + shardsHTML + '</div></div>'
     + '<div class="tut-legend-title">Meditative legend!</div>'
     + '<div class="tut-legend-sub">You completed your first exercise.</div>'
     + '<div class="tut-legend-cards">'
@@ -11902,7 +11937,7 @@ function renderGuidePlan(mode, skipScroll) {
     return '<div class="guide-plan-card' + (item.done ? ' done' : '') + '">'
       + '<div class="guide-plan-exname" style="color:' + accentColor + ';">' + item.name + modeLabel + '</div>'
       + '<div class="guide-plan-dur">' + durLabel + '</div>'
-      + '<div class="guide-plan-tip">' + item.tip + '</div>'
+      + (item.done ? '' : '<div class="guide-plan-tip">' + item.tip + '</div>')
       + (item.progress ? '<div class="guide-plan-meta">' + (item.done ? 'complete today · ' : '') + item.progress + '</div>' : '')
       + (item.open ? '<div class="guide-plan-action"><button class="guide-plan-start"' + startAttrs + (item.done ? ' disabled' : '') + '>' + (item.done ? 'Complete' : 'Begin') + '</button></div>' : '')
       + '</div>';
@@ -15626,6 +15661,9 @@ document.addEventListener('DOMContentLoaded',function(){(function(){
     var willScrollSlide=!!(s.mode==='spot'&&(s.omniaLeft||s.omniaRight)&&s.scrollTo&&prevOwRect&&prev&&(prev.omniaLow||prev.omniaMid));
     if(keepLowAnchor) captureTutorialEyeAnchor();
     cur=i; rdy=false;
+    /* Progress bar */
+    var _pf=document.getElementById('tutProgressFill');
+    if(_pf) _pf.style.width=Math.round((i+1)/STEPS.length*100)+'%';
     /* greetPulse: bounce Omnia happily on step 0 */
     if(s.greetPulse){
       ow.classList.remove('tut-greet-pulse');
@@ -16250,6 +16288,9 @@ document.addEventListener('DOMContentLoaded',function(){(function(){
   <div id="tutThoughtBg"></div>
 
 </div><!-- end #tutOverlay -->
+
+<!-- Tutorial progress bar (fixed top, shown only during tutorial) -->
+<div id="tutProgress"><div id="tutProgressFill"></div></div>
 
 <!-- tutContent: outside overlay so z-index 9005 clears spotlight (9002) -->
 <div id="tutContent">
