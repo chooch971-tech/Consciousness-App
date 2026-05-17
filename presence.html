@@ -1319,6 +1319,12 @@ body.tut-live #omniaTabPeek { display:none !important; }
   background:rgba(126,184,164,0.18); border-color:rgba(126,184,164,0.85);
   color:#a0d8bc; pointer-events:none;
 }
+.tut-q-btn.tut-q-launch {
+  background:rgba(126,184,164,0.16); border-color:rgba(126,184,164,0.6);
+  color:#a0d8bc; font-size:11px; letter-spacing:.3em; padding:18px 20px;
+  margin-top:8px;
+}
+.tut-q-btn.tut-q-launch:hover { background:rgba(126,184,164,0.28); border-color:#7eb8a4; }
 
 /* ── Clock tip card (shown during 5-sec countdown on first tutorial session) ── */
 #tutClockTip {
@@ -14278,8 +14284,9 @@ document.addEventListener('DOMContentLoaded',function(){(function(){
               text:'How long can you focus before a thought interrupts?',
               answerKey:'duration',
               choices:['A few seconds','Maybe 30 seconds','Over a minute']},
-    /* 5 */ {mode:'full', darkFull:true, last:true, launchClock:true,
-              text:'Watch the moving dot. The moment a thought appears — tap Stop.'},
+    /* 5 */ {mode:'question', label:'',
+              text:'Watch the moving dot. The moment a thought appears — tap Stop.',
+              choices:['Begin →'], launchClock:true},
   ];
 
   var ov=document.getElementById('tutOverlay');
@@ -14326,11 +14333,39 @@ document.addEventListener('DOMContentLoaded',function(){(function(){
       qc.innerHTML='';
       (s.choices||[]).forEach(function(choice){
         var btn=document.createElement('button');
-        btn.className='tut-q-btn';
+        btn.className='tut-q-btn'+(s.launchClock?' tut-q-launch':'');
         btn.textContent=choice;
         btn.addEventListener('click',function(){
-          if(s.answerKey) tutAnswers[s.answerKey]=choice;
           btn.classList.add('tut-q-selected');
+          if(s.launchClock){
+            setTimeout(function(){
+              qp.classList.remove('tut-vis');
+              window._tutorialFirstClock=true;
+              window._tutorialAnswers=JSON.parse(JSON.stringify(tutAnswers));
+              localStorage.setItem(VISITED,'1');
+              document.body.classList.remove('tut-live');
+              ov.style.transition='none';
+              ov.style.opacity='0';
+              ov.style.display='none';
+              ov.style.pointerEvents='none';
+              tc.classList.remove('tut-vis','tut-content-bottom');
+              df.classList.remove('tut-float-on');
+              th.style.display='none'; sk.style.display='none';
+              stopSparks(); darkSpot(); resetTutorialEye();
+              suppressTutorialForExerciseEntry();
+              var hs=document.getElementById('homeScreen');
+              if(hs) hs.style.display='flex';
+              currentExercise='clock';
+              startConcentration();
+              var tip=document.getElementById('tutClockTip');
+              if(tip){
+                setTimeout(function(){tip.classList.add('tut-ct-show');},400);
+                setTimeout(function(){tip.classList.remove('tut-ct-show');},5200);
+              }
+            },340);
+            return;
+          }
+          if(s.answerKey) tutAnswers[s.answerKey]=choice;
           setTimeout(function(){
             hideQuestion();
             go(cur+1);
