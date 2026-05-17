@@ -10834,10 +10834,10 @@ function renderOmniaEngine() {
     }
     bardonTrack.innerHTML = dotsHtml;
   }
-  // Aura opacity scales with body level (capped at ~0.85)
+  // Aura opacity scales with body level; minimum 0.6 so bubble is always visible
   var auraStage = document.getElementById('omniaCenterStage');
   if (auraStage) {
-    var auraFor = function(lvl) { return Math.min(0.85, 0.18 + (lvl || 0) * 0.025); };
+    var auraFor = function(lvl) { return Math.min(0.88, 0.60 + (lvl || 0) * 0.025); };
     var aP = document.getElementById('omniaAuraPhysical');
     var aA = document.getElementById('omniaAuraAstral');
     var aM = document.getElementById('omniaAuraMental');
