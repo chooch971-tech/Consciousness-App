@@ -5446,6 +5446,7 @@ function saveConcResult(repeatAfter) {
     return;
   }
   var _concDidLevelUp = concDidLevelUp1;
+  var _originMode = currentMode;
   var _fmtSecs = (Math.floor(seconds/60) > 0 ? Math.floor(seconds/60) + ':' + (seconds%60 < 10 ? '0' : '') + seconds%60 : '0:' + (seconds < 10 ? '0' : '') + seconds);
   showSessionComplete({
     title: 'Meditative legend!',
@@ -5456,8 +5457,7 @@ function saveConcResult(repeatAfter) {
     onDone: function() {
       renderConcHome();
       showScreen('homeScreen');
-      document.getElementById('awarenessPanel').style.display = 'none';
-      document.getElementById('concentrationPanel').style.display = 'flex';
+      returnAfterExercise(_originMode);
       if (_concDidLevelUp) setTimeout(function() { showConcLevelUp(concState.level); }, 400);
     }
   });
@@ -5499,6 +5499,15 @@ function showTutorialPostSession(secs, akashaDelta) {
   requestAnimationFrame(function() {
     requestAnimationFrame(function() { ps.classList.add('tut-ps-vis'); });
   });
+}
+
+function returnAfterExercise(originMode) {
+  if (originMode === 'guide') {
+    switchMode('guide');
+    openGuide();
+  } else {
+    switchMode('concentration');
+  }
 }
 
 function playSessionCompleteSound() {
@@ -6915,6 +6924,7 @@ function saveVisSessionResult() {
 
   var _akashaDeltaVis = omniaState ? Math.round(omniaState.akasha - _visPreAkasha) : 0;
   var _concDidLevelUpVis = concDidLevelUp2;
+  var _visOriginMode = currentMode;
   var _totalSecVis = Math.floor((Date.now() - visSessionStartTime) / 1000);
   showSessionComplete({
     title: 'Sharp as ever.',
@@ -6925,7 +6935,7 @@ function saveVisSessionResult() {
     onDone: function() {
       renderConcHome();
       showScreen('homeScreen');
-      switchMode('concentration');
+      returnAfterExercise(_visOriginMode);
       if (_concDidLevelUpVis) setTimeout(function() { showConcLevelUp(concState.level); }, 400);
     }
   });
@@ -8089,6 +8099,7 @@ function saveAudResult() {
 
   var _akashaDeltaAud = omniaState ? Math.round(omniaState.akasha - _audPreAkasha) : 0;
   var _concDidLevelUpAud = concDidLevelUpA;
+  var _audOriginMode = currentMode;
   showSessionComplete({
     title: 'Pure focus.',
     sub: audReps.length + ' rep' + (audReps.length !== 1 ? 's' : ''),
@@ -8098,7 +8109,7 @@ function saveAudResult() {
     onDone: function() {
       renderConcHome();
       showScreen('homeScreen');
-      switchMode('concentration');
+      returnAfterExercise(_audOriginMode);
       if (_concDidLevelUpAud) setTimeout(function() { showConcLevelUp(concState.level); }, 400);
     }
   });
@@ -8494,6 +8505,7 @@ function saveTCResult() {
 
   var _akashaDeltaTC = omniaState ? Math.round(omniaState.akasha - _tcPreAkasha) : 0;
   var _concDidLevelUpTC2 = concDidLevelUpTC;
+  var _tcOriginMode = currentMode;
   showSessionComplete({
     title: 'Mind controlled.',
     sub: fmtTimer(elapsedSec) + (_tcCompletedFlag ? ' · completed' : ''),
@@ -8503,7 +8515,7 @@ function saveTCResult() {
     onDone: function() {
       renderConcHome();
       showScreen('homeScreen');
-      switchMode('concentration');
+      returnAfterExercise(_tcOriginMode);
       if (_concDidLevelUpTC2) setTimeout(function() { showConcLevelUp(concState.level); }, 400);
     }
   });
@@ -8595,6 +8607,7 @@ function showAsanaResult(seconds) {
   awardOmniaForExercise('asana', seconds);
 
   var _akashaDeltaAsana = omniaState ? Math.round(omniaState.akasha - _asanaPreAkasha) : 0;
+  var _asanaOriginMode = currentMode;
   showSessionComplete({
     title: 'Stillness mastered.',
     sub: currentAsanaPosture,
@@ -8603,7 +8616,7 @@ function showAsanaResult(seconds) {
     stat3: { label: 'Time', color: 'blue', value: fmtAsanaTime(seconds) },
     onDone: function() {
       showScreen('homeScreen');
-      switchMode('concentration');
+      returnAfterExercise(_asanaOriginMode);
       if (didLevelUp) setTimeout(function() { showLevelUp(concState.level, getConcRank(concState.level), 'concentration'); }, 800);
     }
   });
