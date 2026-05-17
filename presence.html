@@ -1511,7 +1511,106 @@ body.tut-live #omniaTabPeek { display:none !important; }
   #tutClockTip span { font-size:13px; }
 }
 
-#tutPathChoice.tut-vis { display:flex; }
+/* ── Omnia greeting pulse (Step 0) ── */
+@keyframes omniaGreetPulse {
+  0%,100% { transform:translateY(0) scale(1); }
+  25%     { transform:translateY(-14px) scale(1.08); }
+  50%     { transform:translateY(0) scale(1); }
+  70%     { transform:translateY(-7px) scale(1.04); }
+}
+.tut-greet-pulse .tut-crystal-svg,
+.tut-greet-pulse .tut-shard-svg { animation:omniaGreetPulse 1.1s ease-in-out !important; }
+
+/* ── Goal choice subtext ── */
+.tut-q-btn-sub {
+  display:block; font-size:10px; letter-spacing:.06em; text-transform:none;
+  opacity:0.52; margin-top:5px; line-height:1.4;
+}
+
+/* ── Bar chart experience choices ── */
+.tut-q-btn-inner { display:flex; justify-content:space-between; align-items:center; gap:12px; width:100%; }
+.tut-q-bars { display:flex; gap:3px; flex-shrink:0; }
+.tut-q-bar { width:8px; height:22px; border-radius:2px; background:rgba(126,184,164,0.18); }
+.tut-q-bar.filled { background:#7eb8a4; }
+
+/* ── Recommended badge on launch choices ── */
+.tut-q-btn { position:relative; }
+.tut-q-recommended::before {
+  content:'RECOMMENDED'; position:absolute; top:-11px; right:14px;
+  font-size:8px; letter-spacing:.18em; font-family:'DM Mono',monospace;
+  background:#7eb8a4; color:#07080d; padding:2px 8px; border-radius:4px;
+  pointer-events:none;
+}
+
+/* ── Achievement list in bubble (Step 5) ── */
+.tut-achievement-list { margin-top:16px; display:flex; flex-direction:column; gap:12px; }
+.tut-achievement-row {
+  display:flex; align-items:flex-start; gap:12px; text-align:left;
+}
+.tut-achievement-icon { flex-shrink:0; width:22px; height:22px; }
+.tut-achievement-text {
+  font-family:'DM Mono',monospace; font-size:12px; letter-spacing:.06em;
+  color:rgba(247,251,255,0.82); line-height:1.55;
+}
+@media (min-width:600px) {
+  .tut-achievement-text { font-size:14px; }
+}
+
+/* ── "Meditative legend!" completion screen ── */
+.tut-legend-title {
+  font-family:'Cormorant Garamond',Georgia,serif; font-size:36px;
+  font-weight:400; color:#f7fbff; text-align:center; margin-bottom:8px; line-height:1.2;
+}
+.tut-legend-sub {
+  font-family:'DM Mono',monospace; font-size:12px; letter-spacing:.16em;
+  text-transform:uppercase; color:rgba(184,234,255,0.5); text-align:center; margin-bottom:4px;
+}
+.tut-legend-cards {
+  display:flex; gap:10px; width:100%; max-width:340px; margin:28px 0 36px;
+}
+.tut-legend-card {
+  flex:1; border-radius:14px; border:2px solid; padding:16px 8px; text-align:center;
+  background:rgba(7,8,13,0.6);
+}
+.tut-legend-card-label {
+  font-family:'DM Mono',monospace; font-size:9px; letter-spacing:.2em;
+  text-transform:uppercase; opacity:0.6; margin-bottom:10px; display:block;
+}
+.tut-legend-card-value {
+  font-family:'DM Mono',monospace; font-size:28px; line-height:1; display:block;
+}
+.tut-legend-card.amber { border-color:#d4956e; }
+.tut-legend-card.amber .tut-legend-card-value { color:#d4956e; }
+.tut-legend-card.teal  { border-color:#7eb8a4; }
+.tut-legend-card.teal  .tut-legend-card-value { color:#7eb8a4; }
+.tut-legend-card.blue  { border-color:#b8eaff; }
+.tut-legend-card.blue  .tut-legend-card-value { color:#b8eaff; }
+@media (min-width:600px) {
+  .tut-legend-title { font-size:46px; }
+  .tut-legend-cards { max-width:420px; gap:14px; }
+  .tut-legend-card-value { font-size:34px; }
+}
+
+/* ── Guide orientation toast ── */
+#tutGuideTip {
+  position:fixed; bottom:28px; left:50%; transform:translateX(-50%);
+  z-index:9100; background:rgba(7,8,13,0.96);
+  border:1px solid rgba(126,184,164,0.3); border-radius:16px;
+  padding:18px 24px 14px; text-align:center; max-width:min(320px,88vw);
+  opacity:0; transition:opacity 0.5s ease; pointer-events:none;
+  display:none;
+}
+#tutGuideTip.tut-ct-show { opacity:1; pointer-events:auto; }
+#tutGuideTip p {
+  font-family:'DM Mono',monospace; font-size:13px; letter-spacing:.06em;
+  color:#cce8f8; margin:0 0 14px; line-height:1.55;
+}
+#tutGuideTipBtn {
+  background:rgba(126,184,164,0.12); border:1px solid rgba(126,184,164,0.4);
+  border-radius:10px; padding:9px 22px; cursor:pointer;
+  font-family:'DM Mono',monospace; font-size:10px; letter-spacing:.22em;
+  text-transform:uppercase; color:#7eb8a4;
+}
 .tut-path-btn {
   background:rgba(10,15,28,0.95); border:1px solid rgba(126,184,164,0.35);
   border-radius:12px; padding:14px 20px; cursor:pointer; text-align:center;
@@ -5280,8 +5379,8 @@ function saveConcResult(repeatAfter) {
   var seconds = parseInt(document.getElementById('concResultBig').textContent);
   var notes = document.getElementById('concNotes').value.trim();
 
-  // Sessions under 10 seconds don't count
-  if (seconds < 10) {
+  // Sessions under 10 seconds don't count (skip gate during first tutorial session)
+  if (seconds < 10 && !window._tutorialFirstClock) {
     var div = document.getElementById('concAdaptWrap');
     if (div) div.innerHTML = '<div class="adapt-card" style="border-color:rgba(212,149,110,.15); opacity:.7;">'
       + '<div class="adapt-text" style="color:var(--muted);">Session too short to record. Keep going.</div>'
@@ -5314,6 +5413,7 @@ function saveConcResult(repeatAfter) {
   });
   if (concState.history.length > 100) concState.history = concState.history.slice(0, 100);
   saveConcState();
+  var _tutPreAkasha = omniaState ? omniaState.akasha : 0;
   awardOmniaForExercise('clock', seconds);
   if (syncEnabled && authToken) syncPushData();
 
@@ -5349,50 +5449,41 @@ function saveConcResult(repeatAfter) {
   if (window._tutorialFirstClock) {
     var tutSecs = seconds;
     window._tutorialFirstClock = false;
-    saveBtn.textContent = 'See your results →';
-    (function(s){ saveBtn.onclick = function() { showTutorialPostSession(s); }; })(tutSecs);
+    /* Bonus Akasha gift on top of the award already called above */
+    if (omniaState) { omniaState.akasha += 50; saveOmniaState(); }
+    var tutAkashaDelta = omniaState ? Math.round(omniaState.akasha - _tutPreAkasha) : 50;
+    saveBtn.textContent = 'Claim XP →';
+    (function(s,ak){ saveBtn.onclick = function() { showTutorialPostSession(s,ak); }; })(tutSecs, tutAkashaDelta);
   }
 }
 
-function showTutorialPostSession(secs) {
-  var answers = window._tutorialAnswers || {};
-  var challenge = answers.challenge || '';
-  var predicted = answers.duration || '';
-
-  var predictedSecs = predicted === 'Over a minute' ? 60 : predicted === 'Maybe 30 seconds' ? 30 : 10;
-  var ratio = secs / Math.max(predictedSecs, 1);
-  var reaction = ratio >= 1.15
-    ? 'Better than you predicted. We\'ll push further.'
-    : ratio < 0.85
-    ? 'This is exactly why we train. It gets easier.'
-    : 'Right on target. Now we build from here.';
-
-  var tip = challenge === "I can't stop thinking"
-    ? 'Thought control becomes your greatest weapon.'
-    : challenge === 'I lose focus easily'
-    ? 'The clock rebuilds focus faster than anything else.'
-    : 'Stillness compounds. Each session goes further.';
-
-  var target = Math.max(secs + 15, 20);
-  var planItems = [{ name: 'Clock', detail: '×3  ·  aim for ' + target + ' sec' }];
-  if (challenge === "I can't stop thinking")
-    planItems.push({ name: 'Thought Control', detail: '×1  ·  2 min' });
-  else if (challenge === 'I lose focus easily')
-    planItems.push({ name: 'Clock', detail: '×1 extra  ·  no pressure' });
-  else
-    planItems.push({ name: 'Visualization', detail: '×1  ·  shapes' });
-
+function showTutorialPostSession(secs, akashaDelta) {
   var ps = document.getElementById('tutPostSession');
   if (!ps) return;
-  document.getElementById('tutPS-secs').textContent = secs;
-  document.getElementById('tutPS-reaction').textContent = reaction;
-  document.getElementById('tutPS-tip').textContent = tip;
-  document.getElementById('tutPS-plan').innerHTML = planItems.map(function(p) {
-    return '<div class="tut-ps-item">'
-      + '<span class="tut-ps-item-name">' + p.name + '</span>'
-      + '<span class="tut-ps-item-detail">' + p.detail + '</span>'
-      + '</div>';
-  }).join('');
+
+  /* Format seconds as m:ss */
+  var mins = Math.floor(secs / 60);
+  var rem  = secs % 60;
+  var timeStr = mins > 0 ? (mins + ':' + (rem < 10 ? '0' : '') + rem) : ('0:' + (rem < 10 ? '0' : '') + rem);
+
+  ps.innerHTML =
+    '<div class="tut-legend-title">Meditative legend!</div>'
+    + '<div class="tut-legend-sub">You completed your first exercise.</div>'
+    + '<div class="tut-legend-cards">'
+    + '<div class="tut-legend-card amber">'
+    + '<span class="tut-legend-card-label">XP</span>'
+    + '<span class="tut-legend-card-value">' + secs + '</span>'
+    + '</div>'
+    + '<div class="tut-legend-card teal">'
+    + '<span class="tut-legend-card-label">Akasha</span>'
+    + '<span class="tut-legend-card-value">+' + (akashaDelta || 50) + '</span>'
+    + '</div>'
+    + '<div class="tut-legend-card blue">'
+    + '<span class="tut-legend-card-label">Time</span>'
+    + '<span class="tut-legend-card-value">' + timeStr + '</span>'
+    + '</div>'
+    + '</div>'
+    + '<button id="tutPS-btn">Claim XP →</button>';
 
   document.getElementById('tutPS-btn').onclick = function() {
     showTutorialStreakCelebration();
@@ -5492,23 +5583,56 @@ function showTutorialAccountPrompt() {
       + '<button class="tut-acct-skip" id="tutAcct-skip">Continue without saving</button>'
       + '</div>';
     document.getElementById('tutAcct-create').onclick = function() {
-      ps.classList.remove('tut-ps-vis');
-      setTimeout(function() {
-        ps.classList.remove('tut-ps-show');
-        renderConcHome();
-        showScreen('loginScreen');
-      }, 500);
+      showTutorialGuideIntro(true);
     };
     document.getElementById('tutAcct-skip').onclick = function() {
+      showTutorialGuideIntro(false);
+    };
+    requestAnimationFrame(function() {
+      requestAnimationFrame(function() { ps.classList.add('tut-ps-vis'); });
+    });
+  });
+}
+
+function showTutorialGuideIntro(goToLogin) {
+  tutFadeStage(function(ps) {
+    ps.innerHTML =
+      '<div class="tut-stage-headline">Your daily regiment is ready.</div>'
+      + '<div class="tut-stage-sub">Omnia updates it as your skills grow.</div>'
+      + '<div class="tut-acct-btns">'
+      + '<button class="tut-acct-primary" id="tutGuide-go">Go to Guide →</button>'
+      + '<button class="tut-acct-skip" id="tutGuide-skip">Start exploring</button>'
+      + '</div>';
+
+    function goHome(showGuide) {
       ps.classList.remove('tut-ps-vis');
       setTimeout(function() {
         ps.classList.remove('tut-ps-show');
         renderConcHome();
-        showScreen('homeScreen');
-        document.getElementById('awarenessPanel').style.display = 'none';
-        document.getElementById('concentrationPanel').style.display = 'flex';
+        if (showGuide) {
+          showScreen('homeScreen');
+          if (typeof switchMode === 'function') switchMode('guide');
+          if (typeof openGuide === 'function') openGuide();
+          var gt = document.getElementById('tutGuideTip');
+          if (gt) {
+            gt.style.display = 'block';
+            setTimeout(function() { gt.classList.add('tut-ct-show'); }, 60);
+            var gtTimer = setTimeout(function() { gt.classList.remove('tut-ct-show'); setTimeout(function(){gt.style.display='none';},600); }, 7000);
+            var gtBtn = document.getElementById('tutGuideTipBtn');
+            if (gtBtn) gtBtn.onclick = function() { clearTimeout(gtTimer); gt.classList.remove('tut-ct-show'); setTimeout(function(){gt.style.display='none';},600); };
+          }
+        } else if (goToLogin) {
+          showScreen('loginScreen');
+        } else {
+          showScreen('homeScreen');
+          document.getElementById('awarenessPanel').style.display = 'none';
+          document.getElementById('concentrationPanel').style.display = 'flex';
+        }
       }, 500);
-    };
+    }
+
+    document.getElementById('tutGuide-go').onclick = function() { goHome(true); };
+    document.getElementById('tutGuide-skip').onclick = function() { goHome(false); };
     requestAnimationFrame(function() {
       requestAnimationFrame(function() { ps.classList.add('tut-ps-vis'); });
     });
@@ -14478,8 +14602,8 @@ document.addEventListener('DOMContentLoaded',function(){(function(){
   var VISITED='presence_visited';
 
   var STEPS=[
-    /* 0 */ {mode:'full', sparks:true, eyeTap:true, darkFull:true,
-              text:'Hi. I\'m Omnia.'},
+    /* 0 */ {mode:'full', sparks:true, eyeTap:true, darkFull:true, greetPulse:true,
+              text:'Hi there. I\'m Omnia.'},
     /* 1 */ {mode:'full', inEye:true, blueText:true, darkFull:true, blinkNext:true,
               text:'I\'ll train you to master your mind.'},
     /* 2 */ {mode:'question', label:'About you',
@@ -14488,17 +14612,35 @@ document.addEventListener('DOMContentLoaded',function(){(function(){
               choices:['I can\'t stop thinking','I lose focus easily','I feel scattered']},
     /* 3 */ {mode:'full', darkFull:true, dynamicText:function(){
               var a=tutAnswers.challenge||'';
-              if(a==="I can't stop thinking") return 'Thought control will be your greatest weapon.';
-              if(a==="I lose focus easily")   return 'The clock exercise will change that fast.';
-              return 'We\'ll bring it together, one breath at a time.';
+              if(a==="I can't stop thinking") return 'Through this practice, you\'ll learn to quiet every thought.';
+              if(a==="I lose focus easily")   return 'Concentration exercises will still your restless mind.';
+              return 'These exercises are proven. Trust the process.';
             }},
-    /* 4 */ {mode:'question', label:'Self-assessment',
-              text:'How long can you focus before a thought interrupts?',
-              answerKey:'duration',
-              choices:['A few seconds','Maybe 30 seconds','Over a minute']},
-    /* 5 */ {mode:'question', label:'',
-              text:'Watch the moving dot. The moment a thought appears — tap Stop.',
-              choices:['Begin →'], launchClock:true},
+    /* 4 */ {mode:'question', label:'Daily goal',
+              text:'What\'s your daily training goal?',
+              answerKey:'goal',
+              choices:[
+                {label:'10 min / day', subtext:'That\'s enough to start. I adapt as you grow.'},
+                {label:'20 min / day', subtext:'Serious about this. I like it.'},
+                {label:'30 min / day', subtext:'A complete lifestyle change. Perfect.'},
+                {label:'60+ min / day', subtext:'A full overhaul. I\'ll get you there.'}
+              ]},
+    /* 5 */ {mode:'full', darkFull:true, commitBtn:true, achievementList:true,
+              text:'Here\'s what you can achieve in 3 months.'},
+    /* 6 */ {mode:'question', label:'Experience',
+              text:'How experienced are you with concentration exercises?',
+              answerKey:'experience', hasBarChart:true,
+              choices:[
+                {label:'Just starting',    bars:1},
+                {label:'Some experience',  bars:2},
+                {label:'Getting serious',  bars:3},
+                {label:'Experienced',      bars:4},
+                {label:'Advanced',         bars:5}
+              ]},
+    /* 7 */ {mode:'question', label:'',
+              text:'Where would you like to start?',
+              recommendedKey:'experience',
+              choices:['Start from Scratch','Find my Level'], launchClock:true},
   ];
 
   var ov=document.getElementById('tutOverlay');
@@ -14543,10 +14685,45 @@ document.addEventListener('DOMContentLoaded',function(){(function(){
     if(qt) qt.textContent=s.text||'';
     if(qc){
       qc.innerHTML='';
-      (s.choices||[]).forEach(function(choice){
+      (s.choices||[]).forEach(function(choice,idx){
+        var label=typeof choice==='object'?choice.label:choice;
+        var subtext=typeof choice==='object'?choice.subtext:null;
+        var bars=typeof choice==='object'?choice.bars:null;
         var btn=document.createElement('button');
         btn.className='tut-q-btn'+(s.launchClock?' tut-q-launch':'');
-        btn.textContent=choice;
+
+        /* Recommended badge for launch choices */
+        if(s.launchClock&&s.recommendedKey){
+          var expBars=(tutAnswers[s.recommendedKey+'Bars'])||1;
+          var rec=(expBars<=2&&idx===0)||(expBars>=3&&idx===1);
+          if(rec) btn.classList.add('tut-q-recommended');
+        }
+
+        /* Bar chart layout */
+        if(s.hasBarChart&&bars){
+          var inner=document.createElement('span');
+          inner.className='tut-q-btn-inner';
+          var lbl=document.createElement('span');
+          lbl.textContent=label;
+          var barWrap=document.createElement('span');
+          barWrap.className='tut-q-bars';
+          for(var b=1;b<=5;b++){
+            var bar=document.createElement('span');
+            bar.className='tut-q-bar'+(b<=bars?' filled':'');
+            barWrap.appendChild(bar);
+          }
+          inner.appendChild(lbl); inner.appendChild(barWrap);
+          btn.appendChild(inner);
+        } else {
+          btn.textContent=label;
+          if(subtext){
+            var sub=document.createElement('span');
+            sub.className='tut-q-btn-sub';
+            sub.textContent=subtext;
+            btn.appendChild(sub);
+          }
+        }
+
         btn.addEventListener('click',function(){
           btn.classList.add('tut-q-selected');
           if(s.launchClock){
@@ -14577,7 +14754,8 @@ document.addEventListener('DOMContentLoaded',function(){(function(){
             },340);
             return;
           }
-          if(s.answerKey) tutAnswers[s.answerKey]=choice;
+          if(s.answerKey) tutAnswers[s.answerKey]=label;
+          if(s.answerKey&&bars!=null) tutAnswers[s.answerKey+'Bars']=bars;
           setTimeout(function(){
             hideQuestion();
             go(cur+1);
@@ -15093,12 +15271,39 @@ document.addEventListener('DOMContentLoaded',function(){(function(){
     bl.classList.remove('tut-vis');
     if(s.blueText) bl.classList.add('tut-blue'); else bl.classList.remove('tut-blue');
     var stepText=typeof s.dynamicText==='function'?s.dynamicText():(s.text||'');
-    if(stepText){setTutorialText(bt,stepText);setTimeout(function(){bl.classList.add('tut-vis');},(bubbleDelay||120));}
+    if(stepText){
+      setTutorialText(bt,stepText);
+      /* Achievement list bullets (Step 5) */
+      if(s.achievementList){
+        var achSVGs=[
+          '<svg class="tut-achievement-icon" viewBox="0 0 22 22" fill="none"><circle cx="11" cy="11" r="9" stroke="#7eb8a4" stroke-width="1.5"/><path d="M7 11c0-2.21 1.79-4 4-4s4 1.79 4 4-1.79 4-4 4" stroke="#7eb8a4" stroke-width="1.5" stroke-linecap="round"/><circle cx="11" cy="11" r="1.5" fill="#7eb8a4"/></svg>',
+          '<svg class="tut-achievement-icon" viewBox="0 0 22 22" fill="none"><path d="M11 3l2 6h6l-5 3.6 1.9 6L11 15l-4.9 3.6L8 12.6 3 9h6z" stroke="#7eb8a4" stroke-width="1.4" stroke-linejoin="round"/></svg>',
+          '<svg class="tut-achievement-icon" viewBox="0 0 22 22" fill="none"><rect x="4" y="5" width="14" height="13" rx="2" stroke="#7eb8a4" stroke-width="1.5"/><path d="M7 2v4M15 2v4M4 10h14" stroke="#7eb8a4" stroke-width="1.5" stroke-linecap="round"/></svg>'
+        ];
+        var achTexts=[
+          '10–15+ min of a completely stilled mind',
+          'Unbreakable focus — in work, motivation, happiness',
+          'A meditation habit that actually works'
+        ];
+        var achList=document.createElement('div');
+        achList.className='tut-achievement-list';
+        achTexts.forEach(function(txt,i){
+          var row=document.createElement('div');
+          row.className='tut-achievement-row';
+          row.innerHTML=achSVGs[i]+'<span class="tut-achievement-text">'+txt+'</span>';
+          achList.appendChild(row);
+        });
+        bt.appendChild(achList);
+      }
+      setTimeout(function(){bl.classList.add('tut-vis');},(bubbleDelay||120));
+    }
     th.textContent=s.eyeTap?'Tap the screen':s.last?'Tap to start':'Tap to continue';
     th.style.display='block'; sk.style.display='block';
-    if(s.last){
+    if(s.last||s.commitBtn){
       db.style.display='block';
       df.classList.add('tut-float-on');
+      if(s.commitBtn) db.textContent="I'm Committed →";
+      else db.textContent='Begin →';
     }
     setTimeout(function(){rdy=true;},delay||700);
   }
@@ -15123,6 +15328,13 @@ document.addEventListener('DOMContentLoaded',function(){(function(){
     var willScrollSlide=!!(s.mode==='spot'&&(s.omniaLeft||s.omniaRight)&&s.scrollTo&&prevOwRect&&prev&&(prev.omniaLow||prev.omniaMid));
     if(keepLowAnchor) captureTutorialEyeAnchor();
     cur=i; rdy=false;
+    /* greetPulse: bounce Omnia happily on step 0 */
+    if(s.greetPulse){
+      ow.classList.remove('tut-greet-pulse');
+      void ow.offsetWidth;
+      ow.classList.add('tut-greet-pulse');
+      ow.addEventListener('animationend',function h(){ow.classList.remove('tut-greet-pulse');ow.removeEventListener('animationend',h);},{once:true});
+    }
     var keepEyeAnchor=!!(tutorialEyeAnchorY!=null&&((s.inEye&&(i===1||i===2))||s.morphCrystal));
     var keepFigureAnchor=keepEyeAnchor||keepLowAnchor;
     if(!keepFigureAnchor) tutorialEyeAnchorY=null;
@@ -15865,16 +16077,13 @@ document.addEventListener('DOMContentLoaded',function(){(function(){
   <span>Stop the moment a thought appears</span>
 </div>
 
-<!-- Post-session tutorial overlay: shown after first clock session is saved -->
-<div id="tutPostSession">
-  <div class="tut-ps-secs" id="tutPS-secs">0</div>
-  <div class="tut-ps-sec-label">seconds of focus</div>
-  <div class="tut-ps-reaction" id="tutPS-reaction"></div>
-  <div class="tut-ps-tip" id="tutPS-tip"></div>
-  <hr class="tut-ps-divider">
-  <div class="tut-ps-plan-header">Your Day 1 plan</div>
-  <div class="tut-ps-plan" id="tutPS-plan"></div>
-  <button id="tutPS-btn">Begin your practice →</button>
+<!-- Post-session tutorial overlay (content built dynamically by showTutorialPostSession) -->
+<div id="tutPostSession"></div>
+
+<!-- Guide orientation toast (shown after tutorial when user chooses Go to Guide) -->
+<div id="tutGuideTip">
+  <p>Complete daily exercises to earn Akasha and build Omnia.</p>
+  <button id="tutGuideTipBtn">Got it</button>
 </div>
 
 </body>
