@@ -15381,17 +15381,15 @@ document.addEventListener('DOMContentLoaded',function(){(function(){
       window._tutorialFirstClock=true;
       window._tutorialAnswers=JSON.parse(JSON.stringify(tutAnswers));
       setTimeout(function(){
-        switchMode('concentration');
-        setTimeout(function(){
-          var clockCard=document.querySelector('[data-exercise="clock"]');
-          if(clockCard) clockCard.click();
-          // Show tip card during countdown
-          var tip=document.getElementById('tutClockTip');
-          if(tip){
-            setTimeout(function(){tip.classList.add('tut-ct-show');},400);
-            setTimeout(function(){tip.classList.remove('tut-ct-show');},5200);
-          }
-        },400);
+        suppressTutorialForExerciseEntry();
+        currentExercise='clock';
+        startConcentration();
+        // Show tip card during the 5-sec countdown
+        var tip=document.getElementById('tutClockTip');
+        if(tip){
+          setTimeout(function(){tip.classList.add('tut-ct-show');},400);
+          setTimeout(function(){tip.classList.remove('tut-ct-show');},5200);
+        }
       },300);
     }
   });
