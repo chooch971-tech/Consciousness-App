@@ -15376,21 +15376,36 @@ document.addEventListener('DOMContentLoaded',function(){(function(){
   db.addEventListener('click',function(e){
     e.stopPropagation();
     var s=STEPS[cur];
-    end();
     if(s&&s.launchClock){
+      // Clear tutorial state synchronously — no transitions, no timeouts
       window._tutorialFirstClock=true;
       window._tutorialAnswers=JSON.parse(JSON.stringify(tutAnswers));
-      setTimeout(function(){
-        suppressTutorialForExerciseEntry();
-        currentExercise='clock';
-        startConcentration();
-        // Show tip card during the 5-sec countdown
-        var tip=document.getElementById('tutClockTip');
-        if(tip){
-          setTimeout(function(){tip.classList.add('tut-ct-show');},400);
-          setTimeout(function(){tip.classList.remove('tut-ct-show');},5200);
-        }
-      },300);
+      localStorage.setItem(VISITED,'1');
+      document.body.classList.remove('tut-live');
+      if(qp) qp.classList.remove('tut-vis');
+      ov.style.transition='none';
+      ov.style.opacity='0';
+      ov.style.display='none';
+      ov.style.pointerEvents='none';
+      tc.classList.remove('tut-vis','tut-content-bottom');
+      df.classList.remove('tut-float-on');
+      db.style.display='none';
+      th.style.display='none';
+      sk.style.display='none';
+      stopSparks(); darkSpot(); resetTutorialEye();
+      suppressTutorialForExerciseEntry();
+      // Ensure home screen is the active base before switching to clock screen
+      var hs=document.getElementById('homeScreen');
+      if(hs) hs.style.display='flex';
+      currentExercise='clock';
+      startConcentration();
+      var tip=document.getElementById('tutClockTip');
+      if(tip){
+        setTimeout(function(){tip.classList.add('tut-ct-show');},400);
+        setTimeout(function(){tip.classList.remove('tut-ct-show');},5200);
+      }
+    } else {
+      end();
     }
   });
   sk.addEventListener('click',function(e){e.stopPropagation();end();});
