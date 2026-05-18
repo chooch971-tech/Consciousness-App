@@ -13558,10 +13558,23 @@ async function syncPushData() {
       presence_visited: localStorage.getItem('presence_visited'),
     };
 
-    // Don't push if all meaningful keys are null — avoids overwriting cloud data with empty local state
-    const hasData = data.presence_v3 || data.presence_conc_v1 || data.bardon_rpg_v2;
-    if (!hasData) {
-      console.log('[Sync] Skipping push — no local data to sync');
+    // Don't push if local state has no real progress — prevents a fresh browser from
+    // overwriting a real cloud snapshot with default/empty data
+    const hasMeaningfulData = (function() {
+      try {
+        var v3 = data.presence_v3 ? JSON.parse(data.presence_v3) : null;
+        var conc = data.presence_conc_v1 ? JSON.parse(data.presence_conc_v1) : null;
+        var omnia = data.presence_omnia_v1 ? JSON.parse(data.presence_omnia_v1) : null;
+        var hasAwareness = v3 && ((v3.xp || 0) > 0 || (v3.totalSessions || 0) > 0 || (v3.streak || 0) > 0);
+        var hasConc = conc && ((conc.xp || 0) > 0 || (conc.totalSessions || 0) > 0);
+        var hasOmnia = omnia && ((omnia.akasha || 0) > 0 || (omnia.totalAkashaEarned || 0) > 0
+          || ((omnia.bodies && (omnia.bodies.physical > 1 || omnia.bodies.astral > 1 || omnia.bodies.mental > 1))));
+        var hasJournal = data.presence_journal_v1 && data.presence_journal_v1.length > 50;
+        return hasAwareness || hasConc || hasOmnia || hasJournal;
+      } catch(e) { return true; }
+    })();
+    if (!hasMeaningfulData) {
+      console.log('[Sync] Skipping push — no meaningful local progress to sync');
       return;
     }
     
@@ -13749,8 +13762,10 @@ document.getElementById('loginSubmitBtn').addEventListener('click', async functi
   var success = await authRegisterOrLogin(email, password, isRegisterMode);
   if (success) {
     try {
-      await syncPullData();
-      await syncPushData();
+      var pulled = await syncPullData();
+      // Only push local data if cloud had nothing — avoids a fresh browser
+      // overwriting real cloud progress immediately after pull
+      if (!pulled) await syncPushData();
     } catch(e) { console.warn('[Login] Sync failed:', e.message); }
     window.location.reload();
   } else {

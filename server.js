@@ -11,11 +11,16 @@ app.use(express.json());
 
 // ── VAPID Keys ──────────────────────────────────────────
 const VAPID_PUBLIC_KEY = 'BD8weuWNktThYNUkWKnkv5Hgz2-yiJyC_T1YVCrYomhOH2rJSys97xrRnm5BsrGNc9t8MRmqRaN2KHnF-zLjXlI';
-const VAPID_PRIVATE_KEY = process.env.VAPID_PRIVATE_KEY || 'ZipKa05D5Iv6fs121ugqxQrwX8MVrlaW5K-I9CMCodU';
-const MONGO_URI = process.env.MONGO_URI || 'mongodb+srv://REDACTED@cluster0.6zqbl9w.mongodb.net/?appName=Cluster0';
+const VAPID_PRIVATE_KEY = process.env.VAPID_PRIVATE_KEY;
+const MONGO_URI = process.env.MONGO_URI;
 
 // ── Cloud Sync JWT ──────────────────────────────────────
-const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-change-this-in-env';
+const JWT_SECRET = process.env.JWT_SECRET;
+
+if (!VAPID_PRIVATE_KEY || !MONGO_URI || !JWT_SECRET) {
+  console.error('Missing required environment variables: VAPID_PRIVATE_KEY, MONGO_URI, JWT_SECRET');
+  process.exit(1);
+}
 const TOKEN_EXPIRY = '30d';
 
 webpush.setVapidDetails('mailto:placeholder@email.com', VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY);
@@ -290,6 +295,8 @@ app.post('/api/sync/sync/push', verifyToken, async (req, res) => {
       presence_prayer_v1: data.presence_prayer_v1,
       presence_journal_v1: data.presence_journal_v1,
       presence_soul_mirror_v1: data.presence_soul_mirror_v1,
+      presence_guide_v1: data.presence_guide_v1,
+      presence_omnia_v1: data.presence_omnia_v1,
       bardon_rpg_v2: data.bardon_rpg_v2,
       presence_visited: data.presence_visited,
       deviceInfo: deviceInfo || 'Unknown device',
@@ -318,6 +325,8 @@ app.get('/api/sync/sync/pull', verifyToken, async (req, res) => {
         presence_prayer_v1: syncData.presence_prayer_v1,
         presence_journal_v1: syncData.presence_journal_v1,
         presence_soul_mirror_v1: syncData.presence_soul_mirror_v1,
+        presence_guide_v1: syncData.presence_guide_v1,
+        presence_omnia_v1: syncData.presence_omnia_v1,
         bardon_rpg_v2: syncData.bardon_rpg_v2,
         presence_visited: syncData.presence_visited,
       },
