@@ -1,0 +1,365 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Streak Celebration Preview</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300&family=DM+Mono:wght@300;400&display=swap');
+
+  :root {
+    --bg: #07080d;
+    --surface: #0f1018;
+    --border: rgba(255,255,255,0.07);
+    --fg: #e8e4dc;
+    --muted: rgba(232,228,220,0.38);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--fg);
+    font-family: 'DM Mono', monospace;
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  /* ── Phone frame ── */
+  .phone {
+    width: 375px;
+    height: 812px;
+    background: var(--bg);
+    border-radius: 48px;
+    border: 2px solid rgba(255,255,255,0.10);
+    box-shadow: 0 32px 80px rgba(0,0,0,0.7), inset 0 0 0 1px rgba(255,255,255,0.04);
+    position: relative;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 32px 28px 44px;
+  }
+
+  /* notch */
+  .phone::before {
+    content: '';
+    position: absolute;
+    top: 14px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 120px;
+    height: 28px;
+    background: #000;
+    border-radius: 20px;
+    z-index: 10;
+  }
+
+  /* ── Speech bubble ── */
+  .sco-bubble {
+    background: rgba(255,255,255,0.055);
+    border: 1px solid rgba(255,255,255,0.09);
+    border-radius: 18px;
+    padding: 15px 20px;
+    width: 100%;
+    font-size: 14px;
+    color: var(--fg);
+    line-height: 1.65;
+    position: relative;
+    margin-bottom: 28px;
+  }
+  .sco-bubble::after {
+    content: '';
+    position: absolute;
+    bottom: -11px;
+    left: 50%;
+    transform: translateX(-50%);
+    border-left: 10px solid transparent;
+    border-right: 10px solid transparent;
+    border-top: 11px solid rgba(255,255,255,0.055);
+  }
+
+  /* ── Mascot ── */
+  .sco-mascot-wrap {
+    position: relative;
+    width: 120px;
+    height: 150px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 20px;
+  }
+  .sco-glow {
+    position: absolute;
+    inset: -20%;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(212,149,110,0.22) 0%, rgba(212,149,110,0.08) 45%, transparent 70%);
+    animation: scoPulse 3s ease-in-out infinite;
+  }
+  @keyframes scoPulse {
+    0%,100% { transform: scale(.94); opacity: .7; }
+    50%      { transform: scale(1.06); opacity: 1; }
+  }
+
+  /* ── Number ── */
+  .sco-num {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 90px;
+    font-weight: 300;
+    color: #d4956e;
+    line-height: 1;
+    margin-bottom: 4px;
+  }
+  .sco-label {
+    font-size: 13px;
+    letter-spacing: .08em;
+    color: rgba(212,149,110,0.65);
+    margin-bottom: 32px;
+  }
+
+  /* ── Week dots ── */
+  .sco-week {
+    display: flex;
+    gap: 10px;
+    align-items: flex-end;
+    margin-bottom: 40px;
+  }
+  .sco-week-col {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 7px;
+  }
+  .sco-week-lbl {
+    font-size: 9px;
+    letter-spacing: .1em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+  .sco-week-lbl.active { color: #d4956e; }
+  .sco-dot {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.05);
+    border: 1.5px solid rgba(255,255,255,0.09);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 17px;
+    transition: background .3s, border-color .3s;
+  }
+  .sco-dot.done {
+    background: #d4956e;
+    border-color: #d4956e;
+    color: #fff;
+  }
+  .sco-dot.today {
+    border-color: #d4956e;
+  }
+
+  /* ── Buttons ── */
+  .sco-commit-btn {
+    background: #d4956e;
+    color: #07080d;
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    letter-spacing: .20em;
+    text-transform: uppercase;
+    border: none;
+    border-radius: 14px;
+    padding: 18px 40px;
+    cursor: pointer;
+    width: 100%;
+    transition: opacity .15s;
+  }
+  .sco-commit-btn:active { opacity: .82; }
+  .sco-later {
+    margin-top: 14px;
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    color: var(--muted);
+    background: none;
+    border: none;
+    cursor: pointer;
+    letter-spacing: .12em;
+    text-transform: uppercase;
+  }
+
+  /* ── Controls outside phone ── */
+  .controls {
+    position: fixed;
+    bottom: 24px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    gap: 12px;
+    z-index: 100;
+  }
+  .ctrl-btn {
+    background: rgba(255,255,255,0.07);
+    border: 1px solid rgba(255,255,255,0.12);
+    color: var(--fg);
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    letter-spacing: .14em;
+    text-transform: uppercase;
+    padding: 10px 20px;
+    border-radius: 8px;
+    cursor: pointer;
+  }
+  .ctrl-btn:hover { background: rgba(255,255,255,0.11); }
+  .ctrl-label {
+    color: var(--muted);
+    font-family: 'DM Mono', monospace;
+    font-size: 9px;
+    letter-spacing: .2em;
+    text-transform: uppercase;
+    align-self: center;
+  }
+</style>
+</head>
+<body>
+
+<div class="phone" id="phone">
+  <!-- speech bubble -->
+  <div class="sco-bubble" id="bubble">I knew you'd come back. Let's do this again tomorrow.</div>
+
+  <!-- Omnia crystal + glow -->
+  <div class="sco-mascot-wrap">
+    <div class="sco-glow"></div>
+    <svg viewBox="0 0 80 130" width="86" height="126" xmlns="http://www.w3.org/2000/svg" style="filter:drop-shadow(0 0 12px rgba(184,234,255,.38)) drop-shadow(0 0 24px rgba(184,234,255,.18))">
+      <defs>
+        <linearGradient id="g1" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stop-color="#ddf0ff" stop-opacity=".92"/>
+          <stop offset="100%" stop-color="#6ab8d8" stop-opacity=".48"/>
+        </linearGradient>
+        <linearGradient id="g2" x1="100%" y1="0%" x2="0%" y2="100%">
+          <stop offset="0%" stop-color="#ffffff" stop-opacity=".78"/>
+          <stop offset="100%" stop-color="#4a9ec0" stop-opacity=".22"/>
+        </linearGradient>
+        <radialGradient id="g3" cx="50%" cy="38%" r="58%">
+          <stop offset="0%" stop-color="#b8eaff" stop-opacity=".42"/>
+          <stop offset="100%" stop-color="#2878a0" stop-opacity="0"/>
+        </radialGradient>
+        <filter id="glow" x="-30%" y="-30%" width="160%" height="160%">
+          <feGaussianBlur stdDeviation="2.5" result="blur"/>
+          <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+        </filter>
+      </defs>
+      <ellipse cx="40" cy="68" rx="28" ry="48" fill="url(#g3)" opacity=".62"/>
+      <polygon points="40,3 54,14 40,25 26,14" fill="url(#g1)" stroke="#90cce8" stroke-width=".55" filter="url(#glow)"/>
+      <polygon points="40,3 54,14 40,13" fill="#ceeaff" opacity=".72"/>
+      <polygon points="40,3 26,14 40,13" fill="#b0dcf5" opacity=".42"/>
+      <line x1="40" y1="3" x2="40" y2="25" stroke="#b8e0f8" stroke-width=".4" opacity=".55"/>
+      <line x1="26" y1="14" x2="54" y2="14" stroke="#b8e0f8" stroke-width=".4" opacity=".35"/>
+      <polygon points="40,25 60,36 64,58 40,70 16,58 20,36" fill="url(#g1)" stroke="#88c4e0" stroke-width=".55"/>
+      <polygon points="40,25 60,36 40,44" fill="#d4ecff" opacity=".52"/>
+      <polygon points="40,25 20,36 40,44" fill="#bce0f8" opacity=".32"/>
+      <line x1="40" y1="25" x2="40" y2="70" stroke="#a8d8f2" stroke-width=".38" opacity=".48"/>
+      <polygon points="16,58 64,58 40,70" fill="url(#g2)" opacity=".38"/>
+      <polygon points="40,70 64,58 56,88 40,100 24,88 16,58" fill="url(#g1)" stroke="#88c4e0" stroke-width=".55" opacity=".88"/>
+      <polygon points="40,100 56,88 40,114" fill="url(#g2)" stroke="#88c4e0" stroke-width=".48" opacity=".72"/>
+      <polygon points="40,100 24,88 40,114" fill="#b4dcf4" stroke="#88c4e0" stroke-width=".48" opacity=".52"/>
+      <g opacity=".65" filter="url(#glow)">
+        <line x1="6" y1="22" x2="12" y2="22" stroke="#b8eaff" stroke-width="1"/>
+        <line x1="9" y1="19" x2="9" y2="25" stroke="#b8eaff" stroke-width="1"/>
+      </g>
+      <g opacity=".48">
+        <line x1="68" y1="48" x2="74" y2="48" stroke="#b8eaff" stroke-width=".9"/>
+        <line x1="71" y1="45" x2="71" y2="51" stroke="#b8eaff" stroke-width=".9"/>
+      </g>
+    </svg>
+  </div>
+
+  <!-- Streak number -->
+  <div class="sco-num" id="streakNum">2</div>
+  <div class="sco-label">day streak</div>
+
+  <!-- Week dots -->
+  <div class="sco-week" id="weekDots"></div>
+
+  <!-- Buttons -->
+  <button class="sco-commit-btn">I'm Committed →</button>
+  <button class="sco-later">Continue</button>
+</div>
+
+<!-- Preview controls -->
+<div class="controls">
+  <span class="ctrl-label">Streak:</span>
+  <button class="ctrl-btn" onclick="setStreak(1)">Day 1</button>
+  <button class="ctrl-btn" onclick="setStreak(2)">Day 2</button>
+  <button class="ctrl-btn" onclick="setStreak(7)">Day 7</button>
+  <button class="ctrl-btn" onclick="setStreak(30)">Day 30</button>
+</div>
+
+<script>
+  var DAY_LABELS = ['Su','Mo','Tu','We','Th','Fr','Sa'];
+
+  var MESSAGES = {
+    1:  'Day one. The hardest step is done.',
+    2:  'I knew you\'d come back. Let\'s do this again tomorrow.',
+    3:  'Three days in. Don\'t break the chain.',
+    4:  'Momentum is building. Trust the process.',
+    5:  'The mind is becoming still. Keep going.',
+    6:  'You\'re here again. That\'s everything.',
+    7:  'Seven days. A real habit is forming.',
+    14: 'Two weeks. The practice is becoming part of you.',
+    30: 'Thirty days. You\'ve become someone who meditates.',
+  };
+
+  function getMessage(streak) {
+    if (MESSAGES[streak]) return MESSAGES[streak];
+    var pool = [
+      'Consistency is the highest discipline.',
+      'The work compounds. Every session counts.',
+      'Your mind is changing. You can feel it.',
+      'This is what mastery looks like — showing up.',
+      'Omnia grows as you practice. You grow together.',
+      'Rare consistency. You\'re becoming who you set out to be.',
+    ];
+    return pool[(streak - 1) % pool.length];
+  }
+
+  function buildWeekDots(streak) {
+    // Simulate: today = Monday, practiced Sun + Mon (streak=2)
+    // or fill in more days for higher streaks
+    var today = new Date();
+    var dow = today.getDay(); // 0=Sun
+    var startOfWeek = new Date(today);
+    startOfWeek.setDate(today.getDate() - dow);
+
+    var practicedCount = Math.min(streak, dow + 1); // practiced days this week
+    var html = '';
+
+    DAY_LABELS.forEach(function(lbl, i) {
+      var d = new Date(startOfWeek);
+      d.setDate(startOfWeek.getDate() + i);
+      var isToday = i === dow;
+      var isFuture = i > dow;
+      // Simulate practiced: fill from (today - practicedCount + 1) onward
+      var isPracticed = !isFuture && i >= (dow - practicedCount + 1);
+
+      var dotClass = 'sco-dot' + (isPracticed ? ' done' : isToday ? ' today' : '');
+      html += '<div class="sco-week-col">'
+        + '<div class="sco-week-lbl' + (isToday ? ' active' : '') + '">' + lbl + '</div>'
+        + '<div class="' + dotClass + '">' + (isPracticed ? '✓' : '') + '</div>'
+        + '</div>';
+    });
+    return html;
+  }
+
+  function setStreak(n) {
+    document.getElementById('streakNum').textContent = n;
+    document.getElementById('bubble').textContent = getMessage(n);
+    document.getElementById('weekDots').innerHTML = buildWeekDots(n);
+  }
+
+  // Init with streak = 2
+  setStreak(2);
+</script>
+</body>
+</html>
