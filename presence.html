@@ -3834,6 +3834,15 @@ const DEFAULT_STATE = {
   stillness: 0,              // stat: fed by awareness sessions
   focus: 0,                  // stat: fed by concentration sessions (updated separately)
   depth: 1,                  // unified depth level
+  // ── Streak v2 (freezes + calendar) ──
+  streakFreezes: 0,          // available freezes (0-3)
+  streakFreezesEverEarned: 0, // lifetime count (for "earned N freezes" toast)
+  freezesUsed: 0,            // lifetime freezes consumed
+  practicedDates: [],        // array of 'YYYY-MM-DD' strings
+  streakStartDate: null,     // 'YYYY-MM-DD' of current streak's day 1
+  streakCommit: 7,           // current commitment goal (7/14/30/45)
+  endedStreakInfo: null,     // {days, date} stashed when streak ends, cleared after modal shown
+  streakEndedPromptShown: false,
 };
 
 function normalizeLevel(value) {
