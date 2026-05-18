@@ -138,6 +138,9 @@
     .so-society-title { font-size:12px; color:var(--fg); margin-bottom:3px; }
     .so-society-sub { font-size:10px; color:var(--muted); }
     .so-society-lock { font-size:16px; }
+    /* Back button */
+    .so-back-btn { position:absolute; top:max(env(safe-area-inset-top),16px); left:16px; z-index:10; background:rgba(0,0,0,0.25); border:none; border-radius:50%; width:38px; height:38px; display:flex; align-items:center; justify-content:center; cursor:pointer; color:#fff; font-size:18px; line-height:1; padding:0; backdrop-filter:blur(4px); }
+    .so-back-btn:active { background:rgba(0,0,0,0.45); }
     /* Close */
     .so-close-btn { font-family:'DM Mono',monospace; font-size:11px; letter-spacing:.18em; text-transform:uppercase; color:var(--muted); background:none; border:none; cursor:pointer; padding:12px 24px; align-self:center; }
     /* Streak-ended modal */
@@ -6104,7 +6107,8 @@ function showStreakScreen() {
   var goalPct = commit > 0 ? Math.min(100, Math.round(streak / commit * 100)) : 100;
   var societyLocked = streak < 7;
   el.innerHTML =
-    '<div class="so-hero">'
+    '<button class="so-back-btn" id="soBackBtn" aria-label="Back">&#8592;</button>'
+    + '<div class="so-hero">'
     + '<svg class="so-flame-svg" viewBox="0 0 52 64" fill="none" aria-hidden="true">'
     + '<path d="M26 6C26 6 40 22 40 34C40 42 35 47 30 47C35 33 26 24 26 24C26 24 18 36 22 46C17 45 12 40 12 34C12 22 26 6 26 6Z" fill="rgba(255,200,80,0.9)"/>'
     + '<path d="M26 28C26 28 32 36 30 43C28 49 23 48 21 46C26 40 26 28 26 28Z" fill="rgba(255,250,180,0.8)"/>'
@@ -6151,10 +6155,12 @@ function showStreakScreen() {
     var cal = el.querySelector('.so-cal-card');
     if (cal) cal.innerHTML = buildStreakCalendar(yr, mo, state.streakCommit || 7);
   }, { once: false });
-  document.getElementById('soCloseBtn').onclick = function() {
+  function closeStreakOverlay() {
     el.classList.remove('so-vis');
     setTimeout(function() { el.classList.remove('so-show'); }, 420);
-  };
+  }
+  document.getElementById('soBackBtn').onclick = closeStreakOverlay;
+  document.getElementById('soCloseBtn').onclick = closeStreakOverlay;
   el.classList.add('so-show');
   requestAnimationFrame(function() { requestAnimationFrame(function() { el.classList.add('so-vis'); }); });
 }
