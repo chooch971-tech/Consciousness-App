@@ -4052,7 +4052,36 @@ function touchPracticeStreak() {
   if (typeof pathQuestRecordCompletion === 'function') pathQuestRecordCompletion();
 }
 
+function backfillPracticedDates() {
+  if (!state.practicedDates) state.practicedDates = [];
+  var seen = {};
+  state.practicedDates.forEach(function(d) { seen[d] = true; });
+  var added = false;
+  function add(dateLike) {
+    if (!dateLike) return;
+    var iso;
+    try { iso = new Date(dateLike).toISOString().slice(0,10); } catch(e) { return; }
+    if (!iso || seen[iso]) return;
+    seen[iso] = true;
+    state.practicedDates.push(iso);
+    added = true;
+  }
+  (state.history || []).forEach(function(h) { add(h.date); });
+  if (typeof concState !== 'undefined' && concState && concState.history) {
+    concState.history.forEach(function(h) { add(h.date); });
+  }
+  if (state.lastSessionDate) {
+    try { add(new Date(state.lastSessionDate).toISOString().slice(0,10)); } catch(e) {}
+  }
+  if (added) {
+    state.practicedDates.sort();
+    if (state.practicedDates.length > 365) state.practicedDates = state.practicedDates.slice(-365);
+    saveState();
+  }
+}
+
 function checkStreakStatus() {
+  backfillPracticedDates();
   if (!state.lastSessionDate || !state.streak) return;
   var today = new Date(); today.setHours(0,0,0,0);
   var last = new Date(state.lastSessionDate); last.setHours(0,0,0,0);
@@ -6009,6 +6038,7 @@ function buildStreakCalendar(year, month, commit) {
 function showStreakScreen() {
   var el = document.getElementById('streakOverlay');
   if (!el) return;
+  if (typeof backfillPracticedDates === 'function') backfillPracticedDates();
   var streak = state.streak || 0;
   var commit = state.streakCommit || 7;
   var freezes = state.streakFreezes || 0;
