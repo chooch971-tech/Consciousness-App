@@ -158,6 +158,27 @@
     .so-ended-commit-akasha { font-size:9px; color:#7eb8a4; font-family:'DM Mono',monospace; }
     .so-ended-start { font-family:'DM Mono',monospace; font-size:11px; letter-spacing:.16em; text-transform:uppercase; background:#d4956e; color:#07080d; border:none; border-radius:10px; padding:14px 28px; cursor:pointer; width:100%; margin-bottom:8px; }
     .so-ended-dismiss { font-family:'DM Mono',monospace; font-size:10px; color:var(--muted); background:none; border:none; cursor:pointer; }
+    /* ── Streak celebration overlay ── */
+    #streakCelebOverlay { display:none; position:fixed; inset:0; z-index:9750; background:rgba(7,8,13,0.97); flex-direction:column; align-items:center; justify-content:center; padding:32px 28px max(env(safe-area-inset-bottom),40px); opacity:0; transition:opacity 0.4s ease; }
+    #streakCelebOverlay.sco-show { display:flex; }
+    #streakCelebOverlay.sco-vis { opacity:1; }
+    .sco-bubble { background:rgba(255,255,255,0.055); border:1px solid rgba(255,255,255,0.09); border-radius:18px; padding:15px 20px; max-width:300px; width:100%; font-size:14px; color:var(--fg); line-height:1.65; position:relative; margin-bottom:28px; }
+    .sco-bubble::after { content:''; position:absolute; bottom:-11px; left:50%; transform:translateX(-50%); border-left:10px solid transparent; border-right:10px solid transparent; border-top:11px solid rgba(255,255,255,0.055); }
+    .sco-mascot-wrap { position:relative; width:120px; height:150px; display:flex; align-items:center; justify-content:center; margin-bottom:20px; }
+    .sco-glow { position:absolute; inset:-20%; border-radius:50%; background:radial-gradient(circle, rgba(212,149,110,0.22) 0%, rgba(212,149,110,0.08) 45%, transparent 70%); animation:scoPulse 3s ease-in-out infinite; }
+    @keyframes scoPulse { 0%,100%{transform:scale(.94);opacity:.7;} 50%{transform:scale(1.06);opacity:1;} }
+    .sco-num { font-family:Cormorant Garamond,serif; font-size:90px; font-weight:300; color:#d4956e; line-height:1; margin-bottom:4px; }
+    .sco-label { font-size:13px; letter-spacing:.08em; color:rgba(212,149,110,0.65); margin-bottom:32px; }
+    .sco-week { display:flex; gap:10px; align-items:flex-end; margin-bottom:44px; }
+    .sco-week-col { display:flex; flex-direction:column; align-items:center; gap:7px; }
+    .sco-week-lbl { font-size:9px; letter-spacing:.1em; text-transform:uppercase; color:var(--muted); }
+    .sco-week-lbl.active { color:#d4956e; }
+    .sco-dot { width:40px; height:40px; border-radius:50%; background:rgba(255,255,255,0.05); border:1.5px solid rgba(255,255,255,0.09); display:flex; align-items:center; justify-content:center; font-size:17px; }
+    .sco-dot.done { background:#d4956e; border-color:#d4956e; color:#fff; }
+    .sco-dot.today { border-color:#d4956e; }
+    .sco-commit-btn { background:#d4956e; color:#07080d; font-family:'DM Mono',monospace; font-size:11px; letter-spacing:.20em; text-transform:uppercase; border:none; border-radius:14px; padding:18px 40px; cursor:pointer; width:100%; max-width:300px; transition:opacity .15s; }
+    .sco-commit-btn:active { opacity:.82; }
+    .sco-later { margin-top:14px; font-family:'DM Mono',monospace; font-size:10px; color:var(--muted); background:none; border:none; cursor:pointer; letter-spacing:.12em; text-transform:uppercase; }
     @media (min-width:600px) {
       .so-hero-num { font-size:120px; }
     }
@@ -4048,6 +4069,12 @@ function touchPracticeStreak() {
     if (syncEnabled && authToken) syncPushData();
     var el = document.getElementById('streakCount');
     if (el) el.textContent = state.streak;
+    // Show streak celebration if not in tutorial
+    if (!window._tutorialFirstClock && localStorage.getItem('presence_tutorialVisited')) {
+      setTimeout(function() {
+        if (typeof showStreakCelebration === 'function') showStreakCelebration();
+      }, 1400);
+    }
   }
   if (typeof pathQuestRecordCompletion === 'function') pathQuestRecordCompletion();
 }
@@ -6205,6 +6232,81 @@ function tutFadeStage(buildFn) {
     ps.innerHTML = '';
     buildFn(ps);
   }, 420);
+}
+
+function showStreakCelebration() {
+  var el = document.getElementById('streakCelebOverlay');
+  if (!el) return;
+  var streak = state.streak || 0;
+  var msgs = [
+    'You came back. That\'s the whole practice.',
+    'Three days in. Don\'t break the chain.',
+    'Momentum is building. Trust the process.',
+    'The mind is becoming still. Keep going.',
+    'You\'re here again. That\'s everything.',
+    'Consistency is the highest discipline.',
+    'The work compounds. Every session counts.',
+    'Your mind is changing. You can feel it.',
+    'This is what mastery looks like — showing up.',
+    'Omnia grows as you practice. You grow together.'
+  ];
+  var msg = streak === 1 ? 'Day one. The hardest step is done.'
+    : streak === 2 ? 'I knew you\'d come back. Let\'s do this again tomorrow.'
+    : streak === 7 ? 'Seven days. A real habit is forming.'
+    : streak === 30 ? 'Thirty days. You\'ve become someone who meditates.'
+    : msgs[(streak - 1) % msgs.length];
+
+  // Week dots: Sun–Sat of the current week
+  var now = new Date();
+  var todayISO = now.toISOString().slice(0,10);
+  var dow = now.getDay();
+  var practiced = state.practicedDates || [];
+  var dayLabels = ['Su','Mo','Tu','We','Th','Fr','Sa'];
+  var weekHTML = dayLabels.map(function(lbl, i) {
+    var d = new Date(now); d.setDate(d.getDate() - dow + i);
+    var ds = d.toISOString().slice(0,10);
+    var done = practiced.indexOf(ds) !== -1;
+    var isToday = ds === todayISO;
+    return '<div class="sco-week-col">'
+      + '<div class="sco-week-lbl' + (isToday ? ' active' : '') + '">' + lbl + '</div>'
+      + '<div class="sco-dot' + (done ? ' done' : isToday ? ' today' : '') + '">'
+      + (done ? '✓' : '') + '</div>'
+      + '</div>';
+  }).join('');
+
+  // Crystal SVG
+  var cSVG = '<svg viewBox="0 0 80 130" width="86" height="126" xmlns="http://www.w3.org/2000/svg" style="filter:drop-shadow(0 0 12px rgba(184,234,255,.35))">'
+    + '<defs><linearGradient id="scoG1" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#ddf0ff" stop-opacity=".92"/><stop offset="100%" stop-color="#6ab8d8" stop-opacity=".48"/></linearGradient><radialGradient id="scoG3" cx="50%" cy="38%" r="58%"><stop offset="0%" stop-color="#b8eaff" stop-opacity=".42"/><stop offset="100%" stop-color="#2878a0" stop-opacity="0"/></radialGradient></defs>'
+    + '<ellipse cx="40" cy="68" rx="28" ry="48" fill="url(#scoG3)" opacity=".62"/>'
+    + '<polygon points="40,3 54,14 40,25 26,14" fill="url(#scoG1)" stroke="#90cce8" stroke-width=".55"/>'
+    + '<polygon points="40,3 54,14 40,13" fill="#ceeaff" opacity=".72"/>'
+    + '<polygon points="40,3 26,14 40,13" fill="#b0dcf5" opacity=".42"/>'
+    + '<polygon points="40,25 60,36 64,58 40,70 16,58 20,36" fill="url(#scoG1)" stroke="#88c4e0" stroke-width=".55"/>'
+    + '<polygon points="40,25 60,36 40,44" fill="#d4ecff" opacity=".52"/>'
+    + '<polygon points="40,25 20,36 40,44" fill="#bce0f8" opacity=".32"/>'
+    + '<polygon points="40,70 64,58 56,88 40,100 24,88 16,58" fill="url(#scoG1)" stroke="#88c4e0" stroke-width=".55" opacity=".88"/>'
+    + '<polygon points="40,100 56,88 40,114" fill="url(#scoG1)" stroke="#88c4e0" stroke-width=".48" opacity=".72"/>'
+    + '<polygon points="40,100 24,88 40,114" fill="#b4dcf4" stroke="#88c4e0" stroke-width=".48" opacity=".52"/>'
+    + '</svg>';
+
+  el.innerHTML =
+    '<div class="sco-bubble">' + msg + '</div>'
+    + '<div class="sco-mascot-wrap"><div class="sco-glow"></div>' + cSVG + '</div>'
+    + '<div class="sco-num">' + streak + '</div>'
+    + '<div class="sco-label">day streak</div>'
+    + '<div class="sco-week">' + weekHTML + '</div>'
+    + '<button class="sco-commit-btn" id="scoCelebBtn">I\'m Committed →</button>'
+    + '<button class="sco-later" id="scoCelebLater">Continue</button>';
+
+  function close() {
+    el.classList.remove('sco-vis');
+    setTimeout(function() { el.classList.remove('sco-show'); }, 400);
+  }
+  document.getElementById('scoCelebBtn').onclick = close;
+  document.getElementById('scoCelebLater').onclick = close;
+
+  el.classList.add('sco-show');
+  requestAnimationFrame(function() { requestAnimationFrame(function() { el.classList.add('sco-vis'); }); });
 }
 
 function showTutorialStreakCelebration() {
@@ -17169,6 +17271,9 @@ document.addEventListener('DOMContentLoaded',function(){(function(){
 <!-- Post-session tutorial overlay (content built dynamically by showTutorialPostSession) -->
 <div id="tutPostSession"></div>
 <div id="streakOverlay"></div>
+
+<!-- Streak continuation celebration (shown after session extends streak) -->
+<div id="streakCelebOverlay"></div>
 
 <!-- Session completion legend card (content built dynamically by showSessionComplete) -->
 <div id="sessionComplete"></div>
