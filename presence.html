@@ -86,25 +86,80 @@
     }
     #streakOverlay.so-show { display:flex; }
     #streakOverlay.so-vis { opacity:1; }
-    .so-flame { font-size:64px; line-height:1; margin-bottom:8px; }
-    .so-hero-num { font-family:Cormorant Garamond,serif; font-size:100px; font-weight:300; color:#d4956e; line-height:1; }
-    .so-hero-label { font-size:9px; letter-spacing:.32em; text-transform:uppercase; color:rgba(212,149,110,0.55); margin-bottom:6px; }
-    .so-hero-sub { font-size:13px; color:var(--muted); font-style:italic; text-align:center; max-width:280px; margin-bottom:32px; line-height:1.7; }
-    .so-section-label { font-size:9px; letter-spacing:.22em; text-transform:uppercase; color:var(--muted); margin-bottom:16px; text-align:center; }
-    .so-commit-grid { display:grid; grid-template-columns:1fr 1fr; gap:12px; width:100%; max-width:360px; margin-bottom:32px; }
-    .so-commit-card { background:var(--surface); border:1.5px solid var(--border); border-radius:14px; padding:20px 12px; display:flex; flex-direction:column; align-items:center; gap:5px; cursor:pointer; transition:border-color .2s, background .2s; position:relative; }
-    .so-commit-card:active { opacity:.8; }
-    .so-commit-card.selected { border-color:#d4956e; background:rgba(212,149,110,0.09); }
-    .so-commit-card.selected::after { content:'✓'; position:absolute; top:10px; right:12px; font-size:11px; color:#d4956e; }
-    .so-commit-days { font-family:Cormorant Garamond,serif; font-size:42px; font-weight:300; color:#d4956e; line-height:1; }
-    .so-commit-unit { font-size:8px; letter-spacing:.26em; text-transform:uppercase; color:var(--muted); margin-bottom:6px; }
-    .so-commit-xp { font-size:11px; color:#d4956e; font-family:'DM Mono',monospace; }
-    .so-commit-akasha { font-size:10px; color:#7eb8a4; font-family:'DM Mono',monospace; opacity:0.85; }
-    .so-close-btn { font-family:'DM Mono',monospace; font-size:11px; letter-spacing:.18em; text-transform:uppercase; color:var(--muted); background:none; border:none; cursor:pointer; padding:12px 24px; }
+    /* Streak overlay — hero band */
+    .so-hero { width:100%; background:linear-gradient(160deg,#b86820 0%,#d4956e 45%,#c07030 100%); padding:max(env(safe-area-inset-top),44px) 24px 32px; display:flex; flex-direction:column; align-items:center; }
+    .so-flame-svg { width:48px; height:48px; margin-bottom:8px; }
+    .so-hero-num { font-family:Cormorant Garamond,serif; font-size:96px; font-weight:300; color:#fff; line-height:1; text-shadow:0 2px 20px rgba(0,0,0,.22); }
+    .so-hero-label { font-size:11px; letter-spacing:.22em; text-transform:uppercase; color:rgba(255,255,255,0.7); margin-bottom:6px; }
+    .so-hero-sub { font-size:12px; color:rgba(255,255,255,0.6); font-style:italic; text-align:center; max-width:280px; line-height:1.7; }
+    /* Body */
+    .so-body { width:100%; max-width:420px; padding:18px 20px max(env(safe-area-inset-bottom),36px); display:flex; flex-direction:column; gap:14px; }
+    /* Freeze card */
+    .so-freeze-card { background:rgba(126,184,164,0.07); border:1.5px solid rgba(126,184,164,0.20); border-radius:16px; padding:15px 18px; display:flex; align-items:flex-start; gap:14px; }
+    .so-freeze-icon { font-size:24px; margin-top:2px; }
+    .so-freeze-text { flex:1; }
+    .so-freeze-title { font-size:12px; letter-spacing:.06em; color:#7eb8a4; margin-bottom:3px; }
+    .so-freeze-sub { font-size:10px; color:var(--muted); line-height:1.5; }
+    .so-freeze-gems { display:flex; gap:6px; margin-top:9px; }
+    .so-freeze-gem { width:24px; height:24px; border-radius:6px; border:1.5px solid rgba(126,184,164,0.28); background:rgba(126,184,164,0.04); transition:background .3s,border-color .3s; }
+    .so-freeze-gem.active { background:rgba(126,184,164,0.22); border-color:#7eb8a4; box-shadow:0 0 8px rgba(126,184,164,0.35); }
+    /* Calendar */
+    .so-cal-card { background:var(--surface); border:1.5px solid var(--border); border-radius:16px; padding:16px 14px 18px; }
+    .so-cal-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:12px; }
+    .so-cal-title { font-family:Cormorant Garamond,serif; font-size:19px; color:var(--fg); }
+    .so-cal-nav { background:none; border:none; color:var(--muted); cursor:pointer; font-size:14px; padding:4px 10px; border-radius:8px; }
+    .so-cal-nav:active { background:var(--border); }
+    .so-cal-stats { display:flex; gap:8px; margin-bottom:12px; }
+    .so-cal-stat { flex:1; border:1.5px solid var(--border); border-radius:10px; padding:9px 8px; text-align:center; }
+    .so-cal-stat-val { font-family:Cormorant Garamond,serif; font-size:22px; color:#d4956e; line-height:1; }
+    .so-cal-stat-lbl { font-size:8px; letter-spacing:.14em; text-transform:uppercase; color:var(--muted); margin-top:3px; }
+    .so-cal-grid-head { display:grid; grid-template-columns:repeat(7,1fr); text-align:center; margin-bottom:4px; }
+    .so-cal-grid-head span { font-size:8px; letter-spacing:.1em; text-transform:uppercase; color:var(--muted); }
+    .so-cal-grid { display:grid; grid-template-columns:repeat(7,1fr); gap:2px; }
+    .so-cal-day { aspect-ratio:1; display:flex; align-items:center; justify-content:center; font-size:11px; font-family:'DM Mono',monospace; color:var(--muted); border-radius:50%; position:relative; }
+    .so-cal-day.practiced { background:#d4956e; color:#fff; }
+    .so-cal-day.today { box-shadow:0 0 0 2px #d4956e; color:#d4956e; }
+    .so-cal-day.today.practiced { color:#fff; }
+    .so-cal-day.goal-end::after { content:'🎯'; position:absolute; top:-9px; right:-5px; font-size:9px; }
+    .so-cal-day.empty { opacity:0; pointer-events:none; }
+    /* Goal */
+    .so-goal-card { background:var(--surface); border:1.5px solid var(--border); border-radius:16px; padding:16px 18px; }
+    .so-goal-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:11px; }
+    .so-goal-title { font-size:9px; letter-spacing:.22em; text-transform:uppercase; color:var(--muted); }
+    .so-goal-fraction { font-size:10px; color:#d4956e; font-family:'DM Mono',monospace; }
+    .so-goal-track { height:8px; background:rgba(212,149,110,0.12); border-radius:4px; overflow:hidden; }
+    .so-goal-fill { height:100%; background:linear-gradient(90deg,#b86820,#d4956e); border-radius:4px; transition:width 0.6s ease; }
+    .so-goal-labels { display:flex; justify-content:space-between; margin-top:5px; }
+    .so-goal-lbl { font-size:8px; color:var(--muted); }
+    /* Society */
+    .so-society-card { background:var(--surface); border:1.5px solid var(--border); border-radius:16px; padding:15px 18px; display:flex; align-items:center; gap:14px; }
+    .so-society-icon { font-size:24px; }
+    .so-society-text { flex:1; }
+    .so-society-title { font-size:12px; color:var(--fg); margin-bottom:3px; }
+    .so-society-sub { font-size:10px; color:var(--muted); }
+    .so-society-lock { font-size:16px; }
+    /* Close */
+    .so-close-btn { font-family:'DM Mono',monospace; font-size:11px; letter-spacing:.18em; text-transform:uppercase; color:var(--muted); background:none; border:none; cursor:pointer; padding:12px 24px; align-self:center; }
+    /* Streak-ended modal */
+    .so-ended-overlay { display:none; position:fixed; inset:0; z-index:9800; background:rgba(7,8,13,0.93); flex-direction:column; align-items:center; justify-content:center; padding:24px; opacity:0; transition:opacity 0.35s ease; }
+    .so-ended-overlay.seo-show { display:flex; }
+    .so-ended-overlay.seo-vis { opacity:1; }
+    .so-ended-card { background:var(--surface); border:1px solid var(--border); border-radius:20px; padding:30px 22px; max-width:340px; width:100%; text-align:center; }
+    .so-ended-flame { font-size:44px; margin-bottom:10px; }
+    .so-ended-title { font-family:Cormorant Garamond,serif; font-size:26px; color:#d4956e; margin-bottom:7px; }
+    .so-ended-sub { font-size:12px; color:var(--muted); line-height:1.7; margin-bottom:18px; }
+    .so-ended-commits { display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:18px; }
+    .so-ended-commit-card { border:1.5px solid var(--border); border-radius:12px; padding:13px 10px; text-align:center; cursor:pointer; transition:border-color .2s,background .2s; position:relative; }
+    .so-ended-commit-card.selected { border-color:#d4956e; background:rgba(212,149,110,0.09); }
+    .so-ended-commit-card.selected::after { content:'✓'; position:absolute; top:8px; right:10px; font-size:10px; color:#d4956e; }
+    .so-ended-commit-days { font-family:Cormorant Garamond,serif; font-size:32px; color:#d4956e; line-height:1; }
+    .so-ended-commit-unit { font-size:7px; letter-spacing:.22em; text-transform:uppercase; color:var(--muted); margin:3px 0; }
+    .so-ended-commit-xp { font-size:10px; color:#d4956e; font-family:'DM Mono',monospace; }
+    .so-ended-commit-akasha { font-size:9px; color:#7eb8a4; font-family:'DM Mono',monospace; }
+    .so-ended-start { font-family:'DM Mono',monospace; font-size:11px; letter-spacing:.16em; text-transform:uppercase; background:#d4956e; color:#07080d; border:none; border-radius:10px; padding:14px 28px; cursor:pointer; width:100%; margin-bottom:8px; }
+    .so-ended-dismiss { font-family:'DM Mono',monospace; font-size:10px; color:var(--muted); background:none; border:none; cursor:pointer; }
     @media (min-width:600px) {
-      .so-hero-num { font-size:130px; }
-      .so-commit-grid { max-width:440px; gap:16px; }
-      .so-commit-days { font-size:52px; }
+      .so-hero-num { font-size:120px; }
     }
     /* ── Idle game new UI ── */
     .residue-glow { animation: residuePulse 2.5s ease-in-out infinite; cursor:pointer; }
