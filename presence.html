@@ -10919,6 +10919,13 @@ function loadOmniaState() {
 
 function saveOmniaState() {
   try { localStorage.setItem('presence_omnia_v1', JSON.stringify(omniaState)); } catch(e) {}
+  // Debounce sync so rapid omniaAccrue calls don't spam the network
+  clearTimeout(saveOmniaState._syncTimer);
+  saveOmniaState._syncTimer = setTimeout(function() {
+    if (typeof syncEnabled !== 'undefined' && syncEnabled && typeof authToken !== 'undefined' && authToken) {
+      if (typeof syncPushData === 'function') syncPushData();
+    }
+  }, 3000);
 }
 
 var omniaState = loadOmniaState();
