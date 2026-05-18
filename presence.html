@@ -279,6 +279,43 @@
     .guide-plan-start { border:1px solid rgba(142,204,224,.24); background:rgba(142,204,224,.06); color:#8ecce0; border-radius:4px; padding:7px 10px; font-family:'DM Mono',monospace; font-size:8px; letter-spacing:.14em; text-transform:uppercase; cursor:pointer; }
     .guide-plan-start:disabled { opacity:.45; cursor:default; }
     .guide-plan-note { border:1px solid rgba(212,149,110,.16); background:rgba(212,149,110,.045); border-radius:8px; padding:12px 14px; margin-top:12px; font-size:10px; color:var(--muted); line-height:1.6; }
+
+    /* ── Path Quest layout (Duolingo-style) ── */
+    #guidePathPanel .guide-path-omnia-wrap,
+    #guidePathPanel #guideAssessmentPanel,
+    #guidePathPanel #guidePlanOutput,
+    #guidePathPanel .guide-locked-path,
+    #guidePathPanel .guide-confirm-panel,
+    #guidePathPanel .guide-route-grid { display:none !important; }
+    .path-quest-root { display:flex; flex-direction:column; gap:18px; padding:18px 2px 28px; }
+    .path-quest-card { border:1px solid rgba(255,255,255,0.07); border-radius:14px; padding:18px 18px 18px; background:rgba(255,255,255,0.02); }
+    .path-quest-omnia { cursor:pointer; }
+    .pq-row { display:flex; justify-content:space-between; align-items:center; margin-bottom:6px; }
+    .pq-label { font-family:'DM Mono',monospace; font-size:10px; letter-spacing:.22em; text-transform:uppercase; color:rgba(255,255,255,0.4); }
+    .pq-chev { font-size:14px; color:rgba(126,184,164,0.7); transition:transform 0.25s ease; }
+    .path-quest-card.expanded .pq-chev { transform:rotate(90deg); }
+    .pq-time { display:flex; align-items:center; gap:6px; font-family:'DM Mono',monospace; font-size:11px; color:#e08a78; letter-spacing:.06em; }
+    .pq-time::before { content:''; width:10px; height:10px; border-radius:50%; border:1.5px solid #e08a78; }
+    .pq-title { font-family:Cormorant Garamond, serif; font-size:21px; color:#fff; margin-bottom:14px; line-height:1.25; }
+    .pq-bar { position:relative; height:24px; border-radius:99px; background:rgba(255,255,255,0.07); overflow:hidden; }
+    .pq-bar-fill { height:100%; min-width:0; border-radius:99px; background:linear-gradient(90deg,#d49bb0,#e08aa0); transition:width 0.65s cubic-bezier(.4,0,.2,1); }
+    .pq-bar.weekend .pq-bar-fill { background:linear-gradient(90deg,#c4a8d4,#b88dc8); }
+    .pq-bar-text { position:absolute; left:0; right:0; top:0; bottom:0; display:flex; align-items:center; justify-content:center; font-family:'DM Mono',monospace; font-size:11px; color:#fff; font-weight:600; text-shadow:0 1px 2px rgba(0,0,0,0.5); letter-spacing:.04em; }
+    .pq-reward-row { display:flex; align-items:center; gap:12px; margin-top:14px; }
+    .pq-reward-icon { width:48px; height:42px; flex-shrink:0; display:flex; align-items:center; justify-content:center; }
+    .pq-reward-text { flex:1; font-family:'DM Mono',monospace; font-size:11px; letter-spacing:.1em; color:#d4a874; }
+    .pq-claim { border:none; border-radius:8px; padding:10px 20px; background:linear-gradient(180deg,#f5c878,#d49850); color:#1a1208; font-family:'DM Mono',monospace; font-size:10px; letter-spacing:.2em; text-transform:uppercase; font-weight:700; cursor:pointer; box-shadow:0 4px 0 #8b5a20, 0 6px 12px rgba(212,152,80,0.25); transition:transform 0.1s ease, box-shadow 0.1s ease; }
+    .pq-claim:active { transform:translateY(2px); box-shadow:0 2px 0 #8b5a20, 0 4px 8px rgba(212,152,80,0.2); }
+    .pq-claimed { font-family:'DM Mono',monospace; font-size:9px; letter-spacing:.2em; text-transform:uppercase; color:rgba(126,184,164,0.55); border:1px solid rgba(126,184,164,0.28); border-radius:6px; padding:7px 14px; }
+    .pq-exercises { margin-top:18px; padding-top:14px; border-top:1px solid rgba(255,255,255,0.06); display:flex; flex-direction:column; gap:10px; }
+    .pq-ex-row { display:flex; align-items:center; justify-content:space-between; padding:11px 13px; border-radius:10px; background:rgba(255,255,255,0.025); border:1px solid rgba(255,255,255,0.06); cursor:default; }
+    .pq-ex-row.done { opacity:0.5; }
+    .pq-ex-info { flex:1; min-width:0; }
+    .pq-ex-name { font-family:'DM Mono',monospace; font-size:11px; letter-spacing:.14em; text-transform:uppercase; color:#b8eaff; margin-bottom:3px; }
+    .pq-ex-row.done .pq-ex-name { color:#7eb8a4; }
+    .pq-ex-dur { font-family:'DM Mono',monospace; font-size:9px; color:rgba(255,255,255,0.4); letter-spacing:.08em; }
+    .pq-ex-start { border:1px solid rgba(126,184,164,0.32); background:rgba(126,184,164,0.08); color:#7eb8a4; border-radius:6px; padding:8px 16px; font-family:'DM Mono',monospace; font-size:9px; letter-spacing:.2em; text-transform:uppercase; cursor:pointer; }
+    .pq-ex-start:disabled { opacity:0.5; cursor:default; background:transparent; }
     .guide-route-grid { display:grid; grid-template-columns:1fr; gap:10px; margin-bottom:20px; }
     .guide-route-card { width:100%; padding:16px 18px; background:rgba(255,255,255,.03); border:1px solid var(--border); border-radius:10px; color:var(--text); font-family:'DM Mono',monospace; text-align:left; cursor:pointer; transition:border-color .2s, background .2s, transform .15s; }
     .guide-route-card:active { transform:scale(.985); }
@@ -2406,6 +2443,9 @@ body:not(.tut-live) #tutCorgi {
 
     <div class="guide-tab-panel" id="guidePathPanel">
 
+    <!-- Duolingo-style quest layout (replaces the legacy Path content) -->
+    <div class="path-quest-root" id="pathQuestRoot"></div>
+
     <!-- Omnia character (Path tab — aura centerpiece) -->
     <div class="guide-path-omnia-wrap">
       <div class="guide-path-omnia-stage">
@@ -3814,6 +3854,8 @@ function touchPracticeStreak() {
     var el = document.getElementById('streakCount');
     if (el) el.textContent = state.streak;
   }
+  // Path quest tracking — every completed exercise bumps daily/weekend counters
+  if (typeof pathQuestRecordCompletion === 'function') pathQuestRecordCompletion();
 }
 
 // Collect pending residue into XP
@@ -11983,6 +12025,227 @@ function beginGuidePlanItem(btn) {
   openExerciseSetup(ex);
 }
 
+// ── Path Quest tracking ──────────────────────────────
+function pathQuestTodayKey() {
+  var d = new Date();
+  return d.getFullYear() + '-' + (d.getMonth() + 1) + '-' + d.getDate();
+}
+function pathQuestWeekendKey() {
+  // Identify the weekend by its Sunday's date; Fri/Sat/Sun share one key
+  var d = new Date();
+  var day = d.getDay();
+  var addDays = day === 0 ? 0 : (7 - day);
+  var sun = new Date(d.getTime());
+  sun.setDate(sun.getDate() + addDays);
+  return sun.getFullYear() + '-' + (sun.getMonth() + 1) + '-' + sun.getDate();
+}
+function isPathQuestWeekendWindow() {
+  var d = new Date().getDay();
+  return d === 5 || d === 6 || d === 0; // Fri, Sat, Sun
+}
+function pathQuestState() {
+  if (!guideState.quests) guideState.quests = {};
+  var tk = pathQuestTodayKey();
+  var wk = pathQuestWeekendKey();
+  if (!guideState.quests.daily || guideState.quests.daily.date !== tk) {
+    guideState.quests.daily = { date:tk, count:0, claimed:false };
+  }
+  if (!guideState.quests.weekend || guideState.quests.weekend.weekId !== wk) {
+    guideState.quests.weekend = { weekId:wk, count:0, claimed:false };
+  }
+  return guideState.quests;
+}
+function pathQuestReward(type) {
+  var step = (typeof omniaState !== 'undefined' && omniaState.bardonStep) || 1;
+  if (type === 'daily')   return 20 + step * 10;
+  if (type === 'weekend') return 60 + step * 30;
+  return 0;
+}
+function pathQuestFormatTime(targetDate) {
+  var ms = targetDate.getTime() - Date.now();
+  if (ms <= 0) return '0M';
+  var hrs = Math.floor(ms / 3600000);
+  var mins = Math.floor((ms % 3600000) / 60000);
+  if (hrs >= 24) { var days = Math.floor(hrs / 24); return days + 'D ' + (hrs % 24) + 'H'; }
+  if (hrs > 0)   return hrs + 'H ' + mins + 'M';
+  return mins + 'M';
+}
+function pathQuestDailyTimeLeft() {
+  var d = new Date(); d.setHours(23, 59, 59, 999);
+  return pathQuestFormatTime(d);
+}
+function pathQuestWeekendTimeLeft() {
+  var d = new Date();
+  var day = d.getDay();
+  var addDays = day === 0 ? 0 : (7 - day);
+  d.setDate(d.getDate() + addDays);
+  d.setHours(23, 59, 59, 999);
+  return pathQuestFormatTime(d);
+}
+function pathQuestRecordCompletion() {
+  var q = pathQuestState();
+  q.daily.count = (q.daily.count || 0) + 1;
+  if (isPathQuestWeekendWindow()) q.weekend.count = (q.weekend.count || 0) + 1;
+  saveGuideState(guideState);
+  if (document.getElementById('pathQuestRoot')) renderPathQuests();
+}
+function claimPathQuestReward(type) {
+  var q = pathQuestState();
+  var data = q[type];
+  if (!data || data.claimed) return;
+  var target = type === 'daily' ? 2 : 12;
+  if ((data.count || 0) < target) return;
+  var amount = pathQuestReward(type);
+  if (typeof omniaState !== 'undefined') {
+    omniaState.akasha = (omniaState.akasha || 0) + amount;
+    if (typeof saveOmniaState === 'function') saveOmniaState();
+  }
+  data.claimed = true;
+  saveGuideState(guideState);
+  renderPathQuests();
+  if (typeof renderOmniaEngine === 'function') renderOmniaEngine();
+  if (typeof playSessionCompleteSound === 'function') playSessionCompleteSound();
+}
+function pathQuestChestSVG(unlocked) {
+  if (unlocked) {
+    return '<svg viewBox="0 0 48 42" xmlns="http://www.w3.org/2000/svg" width="48" height="42">'
+      + '<rect x="6" y="16" width="36" height="22" rx="2" fill="#d49850" stroke="#6b4218" stroke-width="1.5"/>'
+      + '<path d="M6,16 Q6,4 24,4 Q42,4 42,16 Z" fill="#e8b070" stroke="#6b4218" stroke-width="1.5"/>'
+      + '<rect x="20" y="20" width="8" height="12" fill="#6b4218"/>'
+      + '<circle cx="24" cy="25" r="1.6" fill="#f5d098"/>'
+      + '<path d="M14,7 L17,12 L21,7 L21,10 L19,13 L16,13 L14,10 Z" fill="#fff8d8" opacity="0.85"/>'
+      + '</svg>';
+  }
+  return '<svg viewBox="0 0 48 42" xmlns="http://www.w3.org/2000/svg" width="48" height="42" opacity="0.42">'
+    + '<rect x="6" y="16" width="36" height="22" rx="2" fill="#555" stroke="#2a2a2a" stroke-width="1.5"/>'
+    + '<path d="M6,16 Q6,4 24,4 Q42,4 42,16 Z" fill="#6a6a6a" stroke="#2a2a2a" stroke-width="1.5"/>'
+    + '<rect x="20" y="20" width="8" height="12" fill="#2a2a2a"/>'
+    + '</svg>';
+}
+function renderPathQuests() {
+  var root = document.getElementById('pathQuestRoot');
+  if (!root) return;
+  var q = pathQuestState();
+
+  var items = (typeof buildFoundationalGuideItems === 'function') ? buildFoundationalGuideItems() : [];
+  var pathTotal = items.length;
+  var pathDone = items.filter(function(i) { return i.done; }).length;
+  var pathPct = pathTotal ? Math.round(pathDone / pathTotal * 100) : 0;
+  var expanded = root.dataset.pathExpanded === '1';
+
+  var dailyCount = q.daily.count || 0, dailyTarget = 2;
+  var dailyClamp = Math.min(dailyCount, dailyTarget);
+  var dailyDone = dailyCount >= dailyTarget, dailyClaimed = !!q.daily.claimed;
+  var dailyReward = pathQuestReward('daily');
+
+  var weekendVisible = isPathQuestWeekendWindow();
+  var weekendCount = q.weekend.count || 0, weekendTarget = 12;
+  var weekendClamp = Math.min(weekendCount, weekendTarget);
+  var weekendDone = weekendCount >= weekendTarget, weekendClaimed = !!q.weekend.claimed;
+  var weekendReward = pathQuestReward('weekend');
+
+  var html = '';
+
+  // ── Omnia's Path card (expandable) ──
+  html += '<div class="path-quest-card path-quest-omnia' + (expanded ? ' expanded' : '') + '" id="pathQuestOmniaCard">'
+    + '<div class="pq-row">'
+      + '<div class="pq-label">OMNIA\'S PATH</div>'
+      + '<div class="pq-chev">&#9656;</div>'
+    + '</div>'
+    + '<div class="pq-title">Today\'s practice</div>'
+    + '<div class="pq-bar">'
+      + '<div class="pq-bar-fill" style="width:' + pathPct + '%"></div>'
+      + '<span class="pq-bar-text">' + pathDone + ' / ' + pathTotal + '</span>'
+    + '</div>'
+    + (expanded ? '<div class="pq-exercises" id="pathQuestExercisesList"></div>' : '')
+    + '</div>';
+
+  // ── Weekend Quest (Fri-Sun only) ──
+  if (weekendVisible) {
+    var weekendPct = weekendClamp / weekendTarget * 100;
+    html += '<div class="path-quest-card path-quest-weekend">'
+      + '<div class="pq-row">'
+        + '<div class="pq-label">WEEKEND QUEST</div>'
+        + '<div class="pq-time">' + pathQuestWeekendTimeLeft() + '</div>'
+      + '</div>'
+      + '<div class="pq-title">Complete 12 exercises</div>'
+      + '<div class="pq-bar weekend">'
+        + '<div class="pq-bar-fill" style="width:' + weekendPct + '%"></div>'
+        + '<span class="pq-bar-text">' + weekendClamp + ' / ' + weekendTarget + '</span>'
+      + '</div>'
+      + '<div class="pq-reward-row">'
+        + '<div class="pq-reward-icon">' + pathQuestChestSVG(weekendDone) + '</div>'
+        + '<div class="pq-reward-text">+' + weekendReward + ' Akasha</div>'
+        + (weekendDone && !weekendClaimed
+            ? '<button class="pq-claim" data-quest="weekend">Claim</button>'
+            : weekendClaimed ? '<div class="pq-claimed">Claimed</div>' : '')
+      + '</div>'
+      + '</div>';
+  }
+
+  // ── Daily Quest ──
+  var dailyPct = dailyClamp / dailyTarget * 100;
+  html += '<div class="path-quest-card path-quest-daily">'
+    + '<div class="pq-row">'
+      + '<div class="pq-label">DAILY QUEST</div>'
+      + '<div class="pq-time">' + pathQuestDailyTimeLeft() + '</div>'
+    + '</div>'
+    + '<div class="pq-title">Complete your next 2 exercises</div>'
+    + '<div class="pq-bar daily">'
+      + '<div class="pq-bar-fill" style="width:' + dailyPct + '%"></div>'
+      + '<span class="pq-bar-text">' + dailyClamp + ' / ' + dailyTarget + '</span>'
+    + '</div>'
+    + '<div class="pq-reward-row">'
+      + '<div class="pq-reward-icon">' + pathQuestChestSVG(dailyDone) + '</div>'
+      + '<div class="pq-reward-text">+' + dailyReward + ' Akasha</div>'
+      + (dailyDone && !dailyClaimed
+          ? '<button class="pq-claim" data-quest="daily">Claim</button>'
+          : dailyClaimed ? '<div class="pq-claimed">Claimed</div>' : '')
+    + '</div>'
+    + '</div>';
+
+  root.innerHTML = html;
+
+  if (expanded) {
+    var exList = document.getElementById('pathQuestExercisesList');
+    if (exList) {
+      exList.innerHTML = items.map(function(item) {
+        var durLabel = item.durationLabel || (item.duration ? item.duration + ' min' : 'Open-ended');
+        var modeLabel = item.mode ? ' · ' + (GUIDE_FOUNDATION_THOUGHT_LABELS[item.mode] || item.mode) : '';
+        var startAttrs = item.open
+          ? ' data-guide-start="' + item.open + '"'
+            + (item.mode ? ' data-guide-mode="' + item.mode + '"' : '')
+            + (item.duration ? ' data-guide-duration="' + item.duration + '"' : '')
+          : '';
+        return '<div class="pq-ex-row' + (item.done ? ' done' : '') + '">'
+          + '<div class="pq-ex-info">'
+            + '<div class="pq-ex-name">' + item.name + modeLabel + '</div>'
+            + '<div class="pq-ex-dur">' + durLabel + '</div>'
+          + '</div>'
+          + (item.open
+              ? '<button class="pq-ex-start"' + startAttrs + (item.done ? ' disabled' : '') + '>' + (item.done ? '✓' : 'Begin') + '</button>'
+              : '')
+          + '</div>';
+      }).join('');
+    }
+  }
+
+  var omniaCard = document.getElementById('pathQuestOmniaCard');
+  if (omniaCard) {
+    omniaCard.onclick = function(e) {
+      if (e.target.closest('.pq-ex-start') || e.target.closest('.pq-claim')) return;
+      root.dataset.pathExpanded = expanded ? '0' : '1';
+      renderPathQuests();
+    };
+  }
+  root.querySelectorAll('.pq-claim').forEach(function(btn) {
+    btn.onclick = function(e) { e.stopPropagation(); claimPathQuestReward(btn.dataset.quest); };
+  });
+  root.querySelectorAll('.pq-ex-start').forEach(function(btn) {
+    btn.onclick = function(e) { e.stopPropagation(); if (typeof beginGuidePlanItem === 'function') beginGuidePlanItem(btn); };
+  });
+}
+
 // ── Open / init guide screen ──────────────────────────────
 function openGuide() {
   guideState = loadGuideState();
@@ -11998,6 +12261,7 @@ function openGuide() {
   }
   setGuidePathMode(guidePathMode);
   renderGuidePlan(guidePathMode, true);
+  renderPathQuests();
   switchGuideTab('path');
 }
 
