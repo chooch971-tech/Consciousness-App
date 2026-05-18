@@ -2217,6 +2217,7 @@ body:not(.tut-live) #tutCorgi {
 
       <div id="loginForm">
         <input type="email" id="loginEmail" placeholder="Email" style="width:100%;padding:12px 14px;border:1px solid var(--border);border-radius:8px;background:rgba(255,255,255,.03);color:#e8e0d0;font-family:Georgia,serif;font-size:13px;margin-bottom:12px;box-sizing:border-box;" autocomplete="email"/>
+        <input type="text" id="loginUsername" placeholder="Choose a username" style="display:none;width:100%;padding:12px 14px;border:1px solid var(--border);border-radius:8px;background:rgba(255,255,255,.03);color:#e8e0d0;font-family:Georgia,serif;font-size:13px;margin-bottom:12px;box-sizing:border-box;" autocomplete="username" maxlength="24"/>
         <input type="password" id="loginPassword" placeholder="Password" style="width:100%;padding:12px 14px;border:1px solid var(--border);border-radius:8px;background:rgba(255,255,255,.03);color:#e8e0d0;font-family:Georgia,serif;font-size:13px;margin-bottom:16px;box-sizing:border-box;" autocomplete="current-password"/>
         <button id="loginSubmitBtn" style="width:100%;padding:12px;border:1px solid #7eb8a4;border-radius:8px;background:rgba(126,184,164,.08);color:#7eb8a4;font-family:'DM Mono',monospace;font-size:9px;letter-spacing:.2em;text-transform:uppercase;cursor:pointer;margin-bottom:12px;">Sign In</button>
         <button id="loginToggleBtn" style="width:100%;padding:12px;border:1px solid var(--border);border-radius:8px;background:transparent;color:var(--muted);font-family:'DM Mono',monospace;font-size:9px;letter-spacing:.2em;text-transform:uppercase;cursor:pointer;margin-bottom:16px;">Create Account</button>
@@ -3465,6 +3466,9 @@ body:not(.tut-live) #tutCorgi {
       </button>
       <button class="drawer-item" id="drawerDonate">
         <span class="drawer-item-icon">☕</span>Donate
+      </button>
+      <button class="drawer-item" id="drawerFriends">
+        <span class="drawer-item-icon">👥</span>Friends
       </button>
       <div class="drawer-divider"></div>
       <button class="drawer-item danger" id="drawerResetAll">
@@ -13505,22 +13509,26 @@ var SYNC_API_URL = SERVER_URL + '/api/sync';
 // ── Cloud Sync State ──────────────────────────────────────────
 var authToken = localStorage.getItem('presence_auth_token');
 var authEmail = localStorage.getItem('presence_auth_email');
+var authUsername = localStorage.getItem('presence_auth_username');
 var syncEnabled = !!authToken;
 
 // ═══════════════════════════════════════════════════════════════
 // CLOUD SYNC FUNCTIONS
 // ═══════════════════════════════════════════════════════════════
 
-async function authRegisterOrLogin(email, password, isRegister) {
+async function authRegisterOrLogin(email, password, isRegister, username) {
   try {
     const endpoint = isRegister ? 'register' : 'login';
     const url = SYNC_API_URL + '/auth/' + endpoint;
     console.log('[Auth] Attempting ' + endpoint);
 
+    const body = { email, password };
+    if (isRegister && username) body.username = username;
+
     const res = await fetch(url, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email, password })
+      body: JSON.stringify(body)
     });
 
     console.log('[Auth] Response status:', res.status);
@@ -13530,8 +13538,10 @@ async function authRegisterOrLogin(email, password, isRegister) {
 
     authToken = result.token;
     authEmail = result.email;
+    authUsername = result.username || null;
     localStorage.setItem('presence_auth_token', authToken);
     localStorage.setItem('presence_auth_email', authEmail);
+    if (authUsername) localStorage.setItem('presence_auth_username', authUsername);
     syncEnabled = true;
 
     console.log('[Auth] Success.');
@@ -13641,8 +13651,10 @@ function authLogout(options) {
   if (options.clearLocalProgress) resetLocalProgressForSignedOut();
   authToken = null;
   authEmail = null;
+  authUsername = null;
   localStorage.removeItem('presence_auth_token');
   localStorage.removeItem('presence_auth_email');
+  localStorage.removeItem('presence_auth_username');
   syncEnabled = false;
   showScreen('loginScreen');
 }
@@ -13745,11 +13757,13 @@ function toggleAuthMode() {
   isRegisterMode = !isRegisterMode;
   document.getElementById('loginSubmitBtn').textContent = isRegisterMode ? 'Create Account' : 'Sign In';
   document.getElementById('loginToggleBtn').textContent = isRegisterMode ? 'Sign In Instead' : 'Create Account';
+  document.getElementById('loginUsername').style.display = isRegisterMode ? 'block' : 'none';
 }
 
 document.getElementById('loginSubmitBtn').addEventListener('click', async function() {
   var email = document.getElementById('loginEmail').value.trim();
   var password = document.getElementById('loginPassword').value;
+  var username = document.getElementById('loginUsername').value.trim();
   var errorEl = document.getElementById('loginError');
   if (!email || !password) {
     errorEl.textContent = 'Email and password required';
@@ -13759,7 +13773,7 @@ document.getElementById('loginSubmitBtn').addEventListener('click', async functi
   this.disabled = true;
   this.textContent = 'Please wait…';
   errorEl.style.display = 'none';
-  var success = await authRegisterOrLogin(email, password, isRegisterMode);
+  var success = await authRegisterOrLogin(email, password, isRegisterMode, username);
   if (success) {
     try {
       var pulled = await syncPullData();

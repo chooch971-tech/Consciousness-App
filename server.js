@@ -30,6 +30,7 @@ let subsCollection;
 let prayerCollection;
 let usersCollection;
 let syncDataCollection;
+let friendsCollection;
 let subscriptions = [];
 let prayerSchedules = [];
 
@@ -42,6 +43,7 @@ async function connectDB() {
     prayerCollection = db.collection('prayer_schedules');
     usersCollection = db.collection('users');
     syncDataCollection = db.collection('sync_data');
+    friendsCollection = db.collection('friends');
     
     subscriptions = await subsCollection.find({}).toArray();
     const cutoff = Date.now() - 24 * 60 * 60 * 1000;
@@ -235,14 +237,20 @@ setInterval(async () => {
 // REGISTER
 app.post('/api/sync/auth/register', async (req, res) => {
   try {
-    const { email, password } = req.body;
+    const { email, password, username } = req.body;
     if (!email || !password) return res.status(400).json({ error: 'Email and password required' });
     const existingUser = await usersCollection.findOne({ email });
     if (existingUser) return res.status(400).json({ error: 'Email already in use' });
+    if (username) {
+      const existingUsername = await usersCollection.findOne({ username });
+      if (existingUsername) return res.status(400).json({ error: 'Username already taken' });
+    }
     const passwordHash = await bcrypt.hash(password, 10);
-    const result = await usersCollection.insertOne({ email, passwordHash, createdAt: new Date(), lastSync: null });
+    const userDoc = { email, passwordHash, createdAt: new Date(), lastSync: null };
+    if (username) userDoc.username = username;
+    const result = await usersCollection.insertOne(userDoc);
     const token = jwt.sign({ userId: result.insertedId.toString(), email }, JWT_SECRET, { expiresIn: TOKEN_EXPIRY });
-    res.json({ token, userId: result.insertedId, email });
+    res.json({ token, userId: result.insertedId, email, username: username || null });
   } catch (err) {
     console.error('Register error:', err);
     res.status(500).json({ error: 'Registration failed' });
@@ -259,7 +267,7 @@ app.post('/api/sync/auth/login', async (req, res) => {
     const validPassword = await bcrypt.compare(password, user.passwordHash);
     if (!validPassword) return res.status(401).json({ error: 'Invalid credentials' });
     const token = jwt.sign({ userId: user._id.toString(), email: user.email }, JWT_SECRET, { expiresIn: TOKEN_EXPIRY });
-    res.json({ token, userId: user._id, email: user.email });
+    res.json({ token, userId: user._id, email: user.email, username: user.username || null });
   } catch (err) {
     console.error('Login error:', err);
     res.status(500).json({ error: 'Login failed' });
@@ -350,6 +358,164 @@ app.get('/api/sync/sync/history', verifyToken, async (req, res) => {
     res.json({ history });
   } catch (err) {
     res.status(500).json({ error: 'Failed to fetch history' });
+  }
+});
+
+// ── FRIENDS ROUTES ──────────────────────────────────────
+
+// LIST ACCEPTED FRIENDS
+app.get('/api/sync/friends/list', verifyToken, async (req, res) => {
+  try {
+    const selfId = req.user.userId;
+    const selfOid = new ObjectId(selfId);
+    const docs = await friendsCollection.find({
+      status: 'accepted',
+      $or: [{ userId: selfId }, { friendId: selfId }]
+    }).toArray();
+
+    const friends = [];
+    for (const doc of docs) {
+      const otherId = doc.userId === selfId ? doc.friendId : doc.userId;
+      let otherOid;
+      try { otherOid = new ObjectId(otherId); } catch(e) { continue; }
+      const otherUser = await usersCollection.findOne({ _id: otherOid });
+      if (!otherUser) continue;
+
+      const latestSync = await syncDataCollection.find({ userId: otherOid }).sort({ syncedAt: -1 }).limit(1).next();
+
+      let streak = 0, concLevel = 1, concXp = 0, akasha = 0, bardonStep = 1;
+      let bodies = { physical: 1, astral: 1, mental: 1 };
+
+      if (latestSync) {
+        try {
+          const v3 = latestSync.presence_v3 ? JSON.parse(latestSync.presence_v3) : null;
+          if (v3) streak = v3.streak || 0;
+        } catch(e) {}
+        try {
+          const conc = latestSync.presence_conc_v1 ? JSON.parse(latestSync.presence_conc_v1) : null;
+          if (conc) { concLevel = conc.level || 1; concXp = conc.xp || 0; }
+        } catch(e) {}
+        try {
+          const omnia = latestSync.presence_omnia_v1 ? JSON.parse(latestSync.presence_omnia_v1) : null;
+          if (omnia) {
+            akasha = omnia.akasha || 0;
+            bardonStep = omnia.bardonStep || 1;
+            if (omnia.bodies) bodies = omnia.bodies;
+          }
+        } catch(e) {}
+      }
+
+      friends.push({
+        userId: otherId,
+        username: otherUser.username || otherUser.email,
+        email: otherUser.email,
+        lastSync: latestSync ? latestSync.syncedAt : null,
+        streak, concLevel, concXp, akasha, bardonStep, bodies
+      });
+    }
+    res.json({ friends });
+  } catch (err) {
+    console.error('Friends list error:', err);
+    res.status(500).json({ error: 'Failed to load friends' });
+  }
+});
+
+// SEARCH USERS BY USERNAME PREFIX
+app.get('/api/sync/friends/search', verifyToken, async (req, res) => {
+  try {
+    const q = (req.query.q || '').trim();
+    if (!q) return res.json({ users: [] });
+    const selfId = req.user.userId;
+    const users = await usersCollection.find({
+      username: { $regex: '^' + q.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), $options: 'i' },
+      _id: { $ne: new ObjectId(selfId) }
+    }).limit(8).project({ _id: 1, username: 1 }).toArray();
+    res.json({ users: users.map(u => ({ userId: u._id.toString(), username: u.username })) });
+  } catch (err) {
+    console.error('Friends search error:', err);
+    res.status(500).json({ error: 'Search failed' });
+  }
+});
+
+// SEND FRIEND REQUEST
+app.post('/api/sync/friends/request', verifyToken, async (req, res) => {
+  try {
+    const selfId = req.user.userId;
+    const { username } = req.body;
+    if (!username) return res.status(400).json({ error: 'Username required' });
+    const target = await usersCollection.findOne({ username });
+    if (!target) return res.status(404).json({ error: 'User not found' });
+    const targetId = target._id.toString();
+    if (targetId === selfId) return res.status(400).json({ error: 'Cannot add yourself' });
+    const existing = await friendsCollection.findOne({
+      $or: [
+        { userId: selfId, friendId: targetId },
+        { userId: targetId, friendId: selfId }
+      ]
+    });
+    if (existing) return res.status(400).json({ error: 'Already friends or request pending' });
+    await friendsCollection.insertOne({ userId: selfId, friendId: targetId, status: 'pending', createdAt: new Date() });
+    res.json({ message: 'Friend request sent' });
+  } catch (err) {
+    console.error('Friend request error:', err);
+    res.status(500).json({ error: 'Failed to send request' });
+  }
+});
+
+// ACCEPT FRIEND REQUEST
+app.post('/api/sync/friends/accept', verifyToken, async (req, res) => {
+  try {
+    const selfId = req.user.userId;
+    const { requesterId } = req.body;
+    if (!requesterId) return res.status(400).json({ error: 'requesterId required' });
+    const result = await friendsCollection.updateOne(
+      { userId: requesterId, friendId: selfId, status: 'pending' },
+      { $set: { status: 'accepted' } }
+    );
+    if (result.matchedCount === 0) return res.status(404).json({ error: 'Request not found' });
+    res.json({ message: 'Friend request accepted' });
+  } catch (err) {
+    console.error('Accept friend error:', err);
+    res.status(500).json({ error: 'Failed to accept request' });
+  }
+});
+
+// DECLINE / REMOVE FRIEND
+app.post('/api/sync/friends/decline', verifyToken, async (req, res) => {
+  try {
+    const selfId = req.user.userId;
+    const { userId } = req.body;
+    if (!userId) return res.status(400).json({ error: 'userId required' });
+    await friendsCollection.deleteMany({
+      $or: [
+        { userId: selfId, friendId: userId },
+        { userId: userId, friendId: selfId }
+      ]
+    });
+    res.json({ message: 'Friend removed' });
+  } catch (err) {
+    console.error('Decline friend error:', err);
+    res.status(500).json({ error: 'Failed to remove friend' });
+  }
+});
+
+// LIST PENDING INCOMING REQUESTS
+app.get('/api/sync/friends/requests', verifyToken, async (req, res) => {
+  try {
+    const selfId = req.user.userId;
+    const docs = await friendsCollection.find({ friendId: selfId, status: 'pending' }).toArray();
+    const requests = [];
+    for (const doc of docs) {
+      let userOid;
+      try { userOid = new ObjectId(doc.userId); } catch(e) { continue; }
+      const user = await usersCollection.findOne({ _id: userOid });
+      if (!user) continue;
+      requests.push({ userId: doc.userId, username: user.username || user.email });
+    }
+    res.json({ requests });
+  } catch (err) {
+    console.error('Friend requests error:', err);
+    res.status(500).json({ error: 'Failed to load requests' });
   }
 });
 
