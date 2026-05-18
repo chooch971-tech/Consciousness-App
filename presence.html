@@ -966,6 +966,62 @@ body.omnia-tier-elements .omnia-figure { filter:drop-shadow(0 0 18px rgba(255,23
 @keyframes omniaMantleSpin  { from{transform:rotate(0deg);}   to{transform:rotate(360deg);} }
 @keyframes omniaMantlePulse { 0%,100%{opacity:.72;} 50%{opacity:1;} }
 
+/* ── Step VI permanent add-on: Etheric Echo ─────────────────────── */
+.omnia-echo { position:absolute; inset:0; pointer-events:none; z-index:0; display:none; }
+body.omnia-tier-echo .omnia-echo { display:block; }
+.omnia-echo-ghost { position:absolute; inset:0; opacity:0; animation:omniaEchoFloat 7s ease-in-out infinite; }
+.omnia-echo-ghost:nth-child(1) { animation-delay:0s; }
+.omnia-echo-ghost:nth-child(2) { animation-delay:2.3s; }
+.omnia-echo-ghost:nth-child(3) { animation-delay:4.6s; }
+@keyframes omniaEchoFloat { 0%,100%{opacity:0;} 20%,80%{opacity:0.20;} 50%{opacity:0.32;} }
+
+/* ── Step VII permanent add-on: Sensory Beams ─────────────────────── */
+.omnia-senses { position:absolute; inset:-30%; pointer-events:none; z-index:2; display:none; }
+body.omnia-tier-senses .omnia-senses { display:block; animation:omniaSensesSpin 50s linear infinite; }
+.omnia-sense-beam { position:absolute; top:50%; left:50%; height:1px; transform-origin:0 50%; opacity:0; background:linear-gradient(90deg,rgba(176,224,230,0),rgba(176,224,230,0.42),rgba(176,224,230,0)); animation:omniaSensesPulse 6s ease-in-out infinite; }
+.omnia-sense-beam:nth-child(1)  { transform:rotate(0deg);   width:52%; animation-delay:0s;    }
+.omnia-sense-beam:nth-child(2)  { transform:rotate(45deg);  width:48%; animation-delay:0.75s; }
+.omnia-sense-beam:nth-child(3)  { transform:rotate(90deg);  width:52%; animation-delay:1.5s;  }
+.omnia-sense-beam:nth-child(4)  { transform:rotate(135deg); width:48%; animation-delay:2.25s; }
+.omnia-sense-beam:nth-child(5)  { transform:rotate(180deg); width:52%; animation-delay:3s;    }
+.omnia-sense-beam:nth-child(6)  { transform:rotate(225deg); width:48%; animation-delay:3.75s; }
+.omnia-sense-beam:nth-child(7)  { transform:rotate(270deg); width:52%; animation-delay:4.5s;  }
+.omnia-sense-beam:nth-child(8)  { transform:rotate(315deg); width:48%; animation-delay:5.25s; }
+@keyframes omniaSensesPulse { 0%,100%{opacity:0;} 50%{opacity:1;} }
+@keyframes omniaSensesSpin  { from{transform:rotate(0deg);} to{transform:rotate(360deg);} }
+
+/* ── Step VIII permanent add-on: Living Currents ─────────────────────── */
+.omnia-currents { position:absolute; inset:-8%; pointer-events:none; z-index:3; display:none; overflow:hidden; border-radius:50%; }
+body.omnia-tier-currents .omnia-currents { display:block; }
+.omnia-current-stream { position:absolute; width:2px; border-radius:1px; opacity:0; animation:omniaCurrentFlow 5.5s ease-in-out infinite; }
+.omnia-current-stream.cs-1 { left:28%; top:0; height:42%; background:linear-gradient(180deg,transparent,rgba(100,180,255,0.6),transparent); animation-delay:0s; }
+.omnia-current-stream.cs-2 { left:48%; top:8%; height:60%; background:linear-gradient(180deg,transparent,rgba(255,155,138,0.5),transparent); animation-delay:1.1s; }
+.omnia-current-stream.cs-3 { left:68%; top:4%; height:50%; background:linear-gradient(180deg,transparent,rgba(100,180,255,0.5),transparent); animation-delay:2.2s; }
+.omnia-current-stream.cs-4 { left:18%; top:12%; height:45%; background:linear-gradient(180deg,transparent,rgba(255,155,138,0.4),transparent); animation-delay:3.3s; }
+.omnia-current-stream.cs-5 { left:80%; top:18%; height:38%; background:linear-gradient(180deg,transparent,rgba(100,180,255,0.4),transparent); animation-delay:4.4s; }
+@keyframes omniaCurrentFlow { 0%{opacity:0;transform:translateY(0);} 30%{opacity:1;} 70%{opacity:1;} 100%{opacity:0;transform:translateY(28px);} }
+
+/* ── Step IX permanent add-on: Astral Mirror Disc ─────────────────────── */
+.omnia-mirror { position:absolute; bottom:-20%; left:50%; transform:translateX(-50%) rotateX(72deg); width:88%; height:38%; border-radius:50%; pointer-events:none; z-index:0; display:none;
+  background:radial-gradient(ellipse at center,rgba(160,210,240,0.16) 0%,rgba(160,210,240,0.07) 42%,transparent 70%);
+  border:1px solid rgba(160,210,240,0.18); animation:omniaMirrorPulse 5.5s ease-in-out infinite; }
+body.omnia-tier-mirror .omnia-mirror { display:block; }
+.omnia-mirror-reflection { position:absolute; top:0; left:50%; transform:translateX(-50%); width:55%; height:100%; background:linear-gradient(180deg,rgba(200,230,255,0.10) 0%,transparent 60%); border-radius:50%; filter:blur(3px); }
+@keyframes omniaMirrorPulse { 0%,100%{opacity:0.55;} 50%{opacity:1;} }
+
+/* ── Step X permanent add-on: Apotheosis Mandala ─────────────────────── */
+.omnia-apotheosis { position:absolute; inset:-52%; pointer-events:none; z-index:0; display:none; }
+body.omnia-tier-apotheosis .omnia-apotheosis { display:block; animation:omniaApotheosisSpin 70s linear infinite; }
+.omnia-apo-ring { position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); border-radius:50%; border:1px solid; animation:omniaApotheosisPulse 8s ease-in-out infinite; }
+.omnia-apo-ring:nth-child(1) { width:44%; height:44%; border-color:rgba(255,238,200,0.24); animation-delay:0s; }
+.omnia-apo-ring:nth-child(2) { width:64%; height:64%; border-color:rgba(220,180,140,0.16); animation-delay:1.2s; }
+.omnia-apo-ring:nth-child(3) { width:84%; height:84%; border-color:rgba(200,160,120,0.10); animation-delay:2.4s; }
+.omnia-apo-dot { position:absolute; width:4px; height:4px; margin:-2px 0 0 -2px; border-radius:50%; background:rgba(255,238,200,0.65); animation:omniaApoDotPulse 4.5s ease-in-out infinite; }
+body.omnia-tier-apotheosis .omnia-figure { filter:drop-shadow(0 0 22px rgba(255,238,200,.40)) drop-shadow(0 0 50px rgba(255,238,200,.18)); }
+@keyframes omniaApotheosisSpin { from{transform:rotate(0deg);} to{transform:rotate(360deg);} }
+@keyframes omniaApotheosisPulse { 0%,100%{opacity:0.55;} 50%{opacity:1;} }
+@keyframes omniaApoDotPulse { 0%,100%{transform:translate(-50%,-50%) scale(1);opacity:0.65;} 50%{transform:translate(-50%,-50%) scale(1.6);opacity:1;} }
+
 .omnia-name { font-family:Cormorant Garamond,serif; font-size:11px; letter-spacing:.42em; text-transform:uppercase; color:#8ecce0; margin-top:10px; opacity:.85; }
 .omnia-speak { font-size:12px; color:var(--muted); line-height:1.85; text-align:center; padding:0 4px; margin-top:10px; font-style:italic; }
 .omnia-speak em { color:#a8d8ec; font-style:normal; }
@@ -3960,17 +4016,68 @@ function calcMomentum(streak) {
 
 function touchPracticeStreak() {
   var today = new Date().toDateString();
+  var todayISO = new Date().toISOString().slice(0,10);
   if (state.lastSessionDate !== today) {
     var yesterday = new Date(Date.now() - 86400000).toDateString();
-    state.streak = (state.lastSessionDate === yesterday) ? state.streak + 1 : 1;
+    var isConsecutive = state.lastSessionDate === yesterday;
+    var prevStreak = state.streak || 0;
+    if (isConsecutive) {
+      state.streak = prevStreak + 1;
+      // +1 freeze every 7 streak days, capped at 3
+      if (state.streak % 7 === 0 && (state.streakFreezes || 0) < 3) {
+        state.streakFreezes = Math.min(3, (state.streakFreezes || 0) + 1);
+        state.streakFreezesEverEarned = (state.streakFreezesEverEarned || 0) + 1;
+      }
+    } else {
+      state.streak = 1;
+      state.streakStartDate = todayISO;
+      // +3 freezes at the start of every new streak, capped at 3
+      var fGift = Math.min(3, 3 - (state.streakFreezes || 0));
+      if (fGift > 0) {
+        state.streakFreezes = (state.streakFreezes || 0) + fGift;
+        state.streakFreezesEverEarned = (state.streakFreezesEverEarned || 0) + fGift;
+      }
+    }
     state.lastSessionDate = today;
+    if (!state.practicedDates) state.practicedDates = [];
+    if (state.practicedDates.indexOf(todayISO) === -1) {
+      state.practicedDates.push(todayISO);
+      if (state.practicedDates.length > 90) state.practicedDates = state.practicedDates.slice(-90);
+    }
     saveState();
     if (syncEnabled && authToken) syncPushData();
     var el = document.getElementById('streakCount');
     if (el) el.textContent = state.streak;
   }
-  // Path quest tracking — every completed exercise bumps daily/weekend counters
   if (typeof pathQuestRecordCompletion === 'function') pathQuestRecordCompletion();
+}
+
+function checkStreakStatus() {
+  if (!state.lastSessionDate || !state.streak) return;
+  var today = new Date(); today.setHours(0,0,0,0);
+  var last = new Date(state.lastSessionDate); last.setHours(0,0,0,0);
+  var diffDays = Math.round((today - last) / 86400000);
+  if (diffDays > 1) {
+    var missed = diffDays - 1;
+    var spend = Math.min(missed, state.streakFreezes || 0);
+    var broken = missed - spend;
+    if (spend > 0) {
+      state.streakFreezes -= spend;
+      state.freezesUsed = (state.freezesUsed || 0) + spend;
+    }
+    if (broken > 0) {
+      state.endedStreakInfo = { days: state.streak, date: state.lastSessionDate };
+      state.streakEndedPromptShown = false;
+      state.streak = 0;
+      state.streakStartDate = null;
+    }
+    saveState();
+  }
+  if (state.endedStreakInfo && !state.streakEndedPromptShown) {
+    state.streakEndedPromptShown = true;
+    saveState();
+    setTimeout(showStreakEndedPrompt, 2200);
+  }
 }
 
 // Collect pending residue into XP
@@ -4144,6 +4251,7 @@ document.addEventListener('DOMContentLoaded', function() {
   clearStaleInteractionLocks();
   setTimeout(clearStaleInteractionLocks, 250);
   setTimeout(clearStaleInteractionLocks, 1000);
+  if (typeof checkStreakStatus === 'function') checkStreakStatus();
 });
 function randomPrompt(exclude) { var p; do { p = PROMPTS[Math.floor(Math.random() * PROMPTS.length)]; } while (p === exclude); return p; }
 
@@ -5859,59 +5967,163 @@ var STREAK_COMMITS = [
   { days:45, xp:5000,  akasha:1000 },
 ];
 
+function buildStreakCalendar(year, month, commit) {
+  var monthNames = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+  var dayNames = ['S','M','T','W','T','F','S'];
+  var now = new Date();
+  var todayStr = now.toISOString().slice(0,10);
+  var practiced = state.practicedDates || [];
+  var firstDow = new Date(year, month, 1).getDay();
+  var daysInMonth = new Date(year, month + 1, 0).getDate();
+  var goalEndStr = null;
+  if (state.streakStartDate && commit) {
+    var sd = new Date(state.streakStartDate);
+    sd.setDate(sd.getDate() + commit - 1);
+    goalEndStr = sd.toISOString().slice(0,10);
+  }
+  var prefix = year + '-' + String(month+1).padStart(2,'0') + '-';
+  var practiced7 = practiced.filter(function(d){ return d.startsWith(prefix); }).length;
+  var html = '<div class="so-cal-header">'
+    + '<button class="so-cal-nav" data-dir="prev">◀</button>'
+    + '<div class="so-cal-title">' + monthNames[month] + ' ' + year + '</div>'
+    + '<button class="so-cal-nav" data-dir="next">▶</button>'
+    + '</div>'
+    + '<div class="so-cal-stats">'
+    + '<div class="so-cal-stat"><div class="so-cal-stat-val">' + practiced7 + '</div><div class="so-cal-stat-lbl">✓ Practiced</div></div>'
+    + '<div class="so-cal-stat"><div class="so-cal-stat-val">' + (state.freezesUsed || 0) + '</div><div class="so-cal-stat-lbl">❄ Freezes used</div></div>'
+    + '</div>'
+    + '<div class="so-cal-grid-head">' + dayNames.map(function(d){return '<span>'+d+'</span>';}).join('') + '</div>'
+    + '<div class="so-cal-grid">';
+  for (var i = 0; i < firstDow; i++) html += '<div class="so-cal-day empty"></div>';
+  for (var d = 1; d <= daysInMonth; d++) {
+    var ds = prefix + String(d).padStart(2,'0');
+    var cls = 'so-cal-day';
+    if (practiced.indexOf(ds) !== -1) cls += ' practiced';
+    if (ds === todayStr) cls += ' today';
+    if (goalEndStr && ds === goalEndStr) cls += ' goal-end';
+    html += '<div class="' + cls + '">' + d + '</div>';
+  }
+  return html + '</div>';
+}
+
 function showStreakScreen() {
   var el = document.getElementById('streakOverlay');
   if (!el) return;
   var streak = state.streak || 0;
-  var committed = parseInt(localStorage.getItem('presence_streak_commit') || '0', 10);
-
+  var commit = state.streakCommit || 7;
+  var freezes = state.streakFreezes || 0;
   var subText = streak === 0 ? 'Start your journey today.'
     : streak === 1 ? 'Day one. The hardest step is done.'
     : streak < 7  ? 'You\'re building momentum. Don\'t stop.'
     : streak < 30 ? 'A real habit is forming.'
     : 'Exceptional consistency. Rare.';
-
-  var cardsHTML = STREAK_COMMITS.map(function(c) {
-    var sel = committed === c.days ? ' selected' : '';
-    return '<div class="so-commit-card' + sel + '" data-days="' + c.days + '">'
-      + '<div class="so-commit-days">' + c.days + '</div>'
-      + '<div class="so-commit-unit">days</div>'
-      + '<div class="so-commit-xp">+' + c.xp.toLocaleString() + ' XP</div>'
-      + '<div class="so-commit-akasha">+' + c.akasha + ' Akasha</div>'
-      + '</div>';
+  var now = new Date();
+  var calYear = now.getFullYear();
+  var calMonth = now.getMonth();
+  var gemsHTML = [0,1,2].map(function(i){
+    return '<div class="so-freeze-gem' + (i < freezes ? ' active' : '') + '"></div>';
   }).join('');
-
+  var goalPct = commit > 0 ? Math.min(100, Math.round(streak / commit * 100)) : 100;
+  var societyLocked = streak < 7;
   el.innerHTML =
-    '<div class="so-flame">🔥</div>'
+    '<div class="so-hero">'
+    + '<svg class="so-flame-svg" viewBox="0 0 52 64" fill="none" aria-hidden="true">'
+    + '<path d="M26 6C26 6 40 22 40 34C40 42 35 47 30 47C35 33 26 24 26 24C26 24 18 36 22 46C17 45 12 40 12 34C12 22 26 6 26 6Z" fill="rgba(255,200,80,0.9)"/>'
+    + '<path d="M26 28C26 28 32 36 30 43C28 49 23 48 21 46C26 40 26 28 26 28Z" fill="rgba(255,250,180,0.8)"/>'
+    + '<ellipse cx="26" cy="54" rx="13" ry="4" fill="rgba(180,80,20,0.30)"/>'
+    + '</svg>'
     + '<div class="so-hero-num">' + streak + '</div>'
-    + '<div class="so-hero-label">day streak</div>'
+    + '<div class="so-hero-label">Day Streak</div>'
     + '<div class="so-hero-sub">' + subText + '</div>'
-    + '<div class="so-section-label">Commit to a goal · earn the bonus on completion</div>'
-    + '<div class="so-commit-grid">' + cardsHTML + '</div>'
-    + '<button class="so-close-btn" id="soCloseBtn">Close</button>';
-
-  el.querySelectorAll('.so-commit-card').forEach(function(card) {
-    card.addEventListener('click', function() {
-      var days = parseInt(card.dataset.days, 10);
-      var prev = parseInt(localStorage.getItem('presence_streak_commit') || '0', 10);
-      localStorage.setItem('presence_streak_commit', String(days));
-      el.querySelectorAll('.so-commit-card').forEach(function(c) { c.classList.remove('selected'); });
-      card.classList.add('selected');
-      if (prev !== days && omniaState) {
-        omniaState.akasha = (omniaState.akasha || 0) + 25;
-        saveOmniaState();
-      }
-    });
-  });
-
+    + '</div>'
+    + '<div class="so-body">'
+    + '<div class="so-freeze-card">'
+    + '<div class="so-freeze-icon">❄️</div>'
+    + '<div class="so-freeze-text">'
+    + '<div class="so-freeze-title">Streak Freezes · ' + freezes + ' available</div>'
+    + '<div class="so-freeze-sub">Auto-spent when you miss a day · +1 every 7 streak days</div>'
+    + '<div class="so-freeze-gems">' + gemsHTML + '</div>'
+    + '</div></div>'
+    + '<div class="so-cal-card" id="soCalCard">' + buildStreakCalendar(calYear, calMonth, commit) + '</div>'
+    + '<div class="so-goal-card">'
+    + '<div class="so-goal-header"><span class="so-goal-title">Streak Goal</span><span class="so-goal-fraction">' + streak + ' / ' + commit + ' days</span></div>'
+    + '<div class="so-goal-track"><div class="so-goal-fill" style="width:' + goalPct + '%"></div></div>'
+    + '<div class="so-goal-labels"><span class="so-goal-lbl">📅 Day 1</span><span class="so-goal-lbl">🏆 Day ' + commit + '</span></div>'
+    + '</div>'
+    + '<div class="so-society-card" style="opacity:' + (societyLocked ? '.45' : '1') + '">'
+    + '<div class="so-society-icon">👥</div>'
+    + '<div class="so-society-text">'
+    + '<div class="so-society-title">Streak Society</div>'
+    + '<div class="so-society-sub">' + (societyLocked ? 'Reach a 7 day streak to join and see friends\' streaks' : 'Compare streaks with friends') + '</div>'
+    + '</div>'
+    + '<div class="so-society-lock">' + (societyLocked ? '🔒' : '→') + '</div>'
+    + '</div>'
+    + '<button class="so-close-btn" id="soCloseBtn">Close</button>'
+    + '</div>';
+  el.dataset.calYear = calYear;
+  el.dataset.calMonth = calMonth;
+  el.addEventListener('click', function(e) {
+    var btn = e.target.closest('.so-cal-nav');
+    if (!btn) return;
+    var yr = parseInt(el.dataset.calYear, 10);
+    var mo = parseInt(el.dataset.calMonth, 10);
+    if (btn.dataset.dir === 'prev') { mo--; if(mo<0){mo=11;yr--;} }
+    else { mo++; if(mo>11){mo=0;yr++;} }
+    el.dataset.calYear = yr; el.dataset.calMonth = mo;
+    var cal = el.querySelector('.so-cal-card');
+    if (cal) cal.innerHTML = buildStreakCalendar(yr, mo, state.streakCommit || 7);
+  }, { once: false });
   document.getElementById('soCloseBtn').onclick = function() {
     el.classList.remove('so-vis');
     setTimeout(function() { el.classList.remove('so-show'); }, 420);
   };
-
   el.classList.add('so-show');
+  requestAnimationFrame(function() { requestAnimationFrame(function() { el.classList.add('so-vis'); }); });
+}
+
+function showStreakEndedPrompt() {
+  if (document.getElementById('streakEndedOverlay')) return;
+  var info = state.endedStreakInfo;
+  var overlay = document.createElement('div');
+  overlay.className = 'so-ended-overlay';
+  overlay.id = 'streakEndedOverlay';
+  var cardsHTML = STREAK_COMMITS.map(function(c) {
+    var sel = (state.streakCommit || 7) === c.days ? ' selected' : '';
+    return '<div class="so-ended-commit-card' + sel + '" data-days="' + c.days + '">'
+      + '<div class="so-ended-commit-days">' + c.days + '</div>'
+      + '<div class="so-ended-commit-unit">days</div>'
+      + '<div class="so-ended-commit-xp">+' + c.xp.toLocaleString() + ' XP</div>'
+      + '<div class="so-ended-commit-akasha">+' + c.akasha + ' Akasha</div>'
+      + '</div>';
+  }).join('');
+  overlay.innerHTML = '<div class="so-ended-card">'
+    + '<div class="so-ended-flame">🔥</div>'
+    + '<div class="so-ended-title">Streak Ended</div>'
+    + '<div class="so-ended-sub">Your ' + (info ? info.days : 0) + ' day streak ended. Every master has fallen — and risen. Commit to a new goal and begin again.</div>'
+    + '<div class="so-ended-commits">' + cardsHTML + '</div>'
+    + '<button class="so-ended-start" id="seoPrimaryBtn">Begin Again →</button>'
+    + '<button class="so-ended-dismiss" id="seoDismissBtn">Maybe later</button>'
+    + '</div>';
+  document.body.appendChild(overlay);
+  overlay.querySelectorAll('.so-ended-commit-card').forEach(function(card) {
+    card.addEventListener('click', function() {
+      state.streakCommit = parseInt(card.dataset.days, 10);
+      overlay.querySelectorAll('.so-ended-commit-card').forEach(function(c) { c.classList.remove('selected'); });
+      card.classList.add('selected');
+      saveState();
+    });
+  });
+  function dismiss() {
+    state.endedStreakInfo = null;
+    saveState();
+    overlay.classList.remove('seo-vis');
+    setTimeout(function() { if(overlay.parentNode) overlay.parentNode.removeChild(overlay); }, 360);
+  }
+  document.getElementById('seoPrimaryBtn').onclick = dismiss;
+  document.getElementById('seoDismissBtn').onclick = dismiss;
   requestAnimationFrame(function() {
-    requestAnimationFrame(function() { el.classList.add('so-vis'); });
+    overlay.classList.add('seo-show');
+    requestAnimationFrame(function() { overlay.classList.add('seo-vis'); });
   });
 }
 
@@ -10409,6 +10621,41 @@ var OMNIA_BARDON_STEPS = [
     name:'Step V · Element Mastery',
     text:'Fire, Air, Water, and Earth arrange themselves in cardinal balance around Omnia. The luminous mantle wraps the entire form. The being is no longer only a vessel — it is a working compass of the elements.',
     req:{ physical:100, astral:100, mental:100, recommended:140 }
+  },
+  {
+    step:6,
+    roman:'VI',
+    name:'Step VI · Etheric Echo',
+    text:'Omnia\'s presence now echoes across the subtle planes. Each session leaves a luminous trace — a ghost of mastery that follows and teaches. The practitioner begins to perceive the etheric body of all matter.',
+    req:{ physical:115, astral:115, mental:115, recommended:200 }
+  },
+  {
+    step:7,
+    roman:'VII',
+    name:'Step VII · Awakened Senses',
+    text:'The subtle senses fully awaken. Omnia perceives beyond ordinary sight — sensing etheric currents of thought, emotional fields, and the living web of awareness that underlies all phenomena.',
+    req:{ physical:132, astral:132, mental:132, recommended:275 }
+  },
+  {
+    step:8,
+    roman:'VIII',
+    name:'Step VIII · Living Currents',
+    text:'The great currents of the universe flow through and around Omnia. Electric and magnetic forces are felt, directed, and woven into the daily work. The body becomes a conductor of cosmic intelligence.',
+    req:{ physical:152, astral:152, mental:152, recommended:360 }
+  },
+  {
+    step:9,
+    roman:'IX',
+    name:'Step IX · Astral Mirror',
+    text:'The astral mirror comes alive. Omnia can project consciousness into the reflection of reality — examining events, spaces, and beings from within the subtle plane with perfect clarity.',
+    req:{ physical:175, astral:175, mental:175, recommended:460 }
+  },
+  {
+    step:10,
+    roman:'X',
+    name:'Step X · Apotheosis',
+    text:'The final integration. Omnia becomes a living axis between worlds — a consecrated form through which the divine current flows freely. Sacred geometry crowns the work. The journey is eternal.',
+    req:{ physical:200, astral:200, mental:200, recommended:600 }
   }
 ];
 
@@ -10693,12 +10940,78 @@ function injectOmniaElements(fig) {
   wheel.innerHTML = '<div class="omnia-element e-fire"></div><div class="omnia-element e-air"></div><div class="omnia-element e-water"></div><div class="omnia-element e-earth"></div>';
   fig.appendChild(wheel);
 }
+function injectOmniaEcho(fig) {
+  if (!fig || fig.querySelector('.omnia-echo')) return;
+  var echo = document.createElement('div');
+  echo.className = 'omnia-echo';
+  echo.setAttribute('aria-hidden', 'true');
+  var crystalClone = fig.querySelector('.omnia-crystal-layer');
+  var inner = crystalClone ? crystalClone.innerHTML : '';
+  [
+    'translate(-13px,-7px) scale(0.87)',
+    'translate(13px,-4px) scale(0.81)',
+    'translate(0px,13px) scale(0.76)'
+  ].forEach(function(t, i) {
+    echo.innerHTML += '<div class="omnia-echo-ghost" style="transform:' + t + ';filter:blur(' + (i+1) + 'px) hue-rotate(' + (i*30+20) + 'deg);">'
+      + '<svg viewBox="0 0 80 130" style="width:100%;height:100%;opacity:' + (0.30 - i*0.07) + ';">' + inner + '</svg>'
+      + '</div>';
+  });
+  fig.insertBefore(echo, fig.firstChild);
+}
+function injectOmniaSenses(fig) {
+  if (!fig || fig.querySelector('.omnia-senses')) return;
+  var el = document.createElement('div');
+  el.className = 'omnia-senses';
+  el.setAttribute('aria-hidden', 'true');
+  for (var i = 0; i < 8; i++) el.innerHTML += '<div class="omnia-sense-beam"></div>';
+  fig.insertBefore(el, fig.firstChild);
+}
+function injectOmniaCurrents(fig) {
+  if (!fig || fig.querySelector('.omnia-currents')) return;
+  var el = document.createElement('div');
+  el.className = 'omnia-currents';
+  el.setAttribute('aria-hidden', 'true');
+  el.innerHTML = '<div class="omnia-current-stream cs-1"></div>'
+    + '<div class="omnia-current-stream cs-2"></div>'
+    + '<div class="omnia-current-stream cs-3"></div>'
+    + '<div class="omnia-current-stream cs-4"></div>'
+    + '<div class="omnia-current-stream cs-5"></div>';
+  fig.appendChild(el);
+}
+function injectOmniaMirror(fig) {
+  if (!fig || fig.querySelector('.omnia-mirror')) return;
+  var el = document.createElement('div');
+  el.className = 'omnia-mirror';
+  el.setAttribute('aria-hidden', 'true');
+  el.innerHTML = '<div class="omnia-mirror-reflection"></div>';
+  fig.appendChild(el);
+}
+function injectOmniaApotheosis(fig) {
+  if (!fig || fig.querySelector('.omnia-apotheosis')) return;
+  var el = document.createElement('div');
+  el.className = 'omnia-apotheosis';
+  el.setAttribute('aria-hidden', 'true');
+  el.innerHTML = '<div class="omnia-apo-ring"></div><div class="omnia-apo-ring"></div><div class="omnia-apo-ring"></div>';
+  var angles = [0,30,60,90,120,150,180,210,240,270,300,330];
+  angles.forEach(function(a) {
+    var rad = a * Math.PI / 180;
+    var x = 50 + 42 * Math.cos(rad);
+    var y = 50 + 42 * Math.sin(rad);
+    el.innerHTML += '<div class="omnia-apo-dot" style="left:' + x.toFixed(1) + '%;top:' + y.toFixed(1) + '%;"></div>';
+  });
+  fig.insertBefore(el, fig.firstChild);
+}
 function applyOmniaStepVisuals() {
   var step = (omniaState && omniaState.bardonStep) || 1;
-  document.body.classList.toggle('omnia-tier-orbit',    step >= 2);
-  document.body.classList.toggle('omnia-tier-crown',    step >= 3);
-  document.body.classList.toggle('omnia-tier-polar',    step >= 4);
-  document.body.classList.toggle('omnia-tier-elements', step >= 5);
+  document.body.classList.toggle('omnia-tier-orbit',      step >= 2);
+  document.body.classList.toggle('omnia-tier-crown',      step >= 3);
+  document.body.classList.toggle('omnia-tier-polar',      step >= 4);
+  document.body.classList.toggle('omnia-tier-elements',   step >= 5);
+  document.body.classList.toggle('omnia-tier-echo',       step >= 6);
+  document.body.classList.toggle('omnia-tier-senses',     step >= 7);
+  document.body.classList.toggle('omnia-tier-currents',   step >= 8);
+  document.body.classList.toggle('omnia-tier-mirror',     step >= 9);
+  document.body.classList.toggle('omnia-tier-apotheosis', step >= 10);
   ['guideOmniaFigure', 'omniaCenterFigure', 'drawerOmniaBtn', 'pathBannerOmniaFigure'].forEach(function(id) {
     var el = document.getElementById(id);
     if (!el) return;
@@ -10706,6 +11019,11 @@ function applyOmniaStepVisuals() {
     if (step >= 3) injectOmniaCrown(el);
     if (step >= 4) injectOmniaPolar(el);
     if (step >= 5) injectOmniaElements(el);
+    if (step >= 6) injectOmniaEcho(el);
+    if (step >= 7) injectOmniaSenses(el);
+    if (step >= 8) injectOmniaCurrents(el);
+    if (step >= 9) injectOmniaMirror(el);
+    if (step >= 10) injectOmniaApotheosis(el);
   });
 }
 

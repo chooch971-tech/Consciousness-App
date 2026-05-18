@@ -1,0 +1,432 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Omnia Steps VI–X · Design Reference</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300&family=DM+Mono:wght@300;400&display=swap');
+
+  :root {
+    --bg: #07080d;
+    --surface: #0f1018;
+    --border: rgba(255,255,255,0.07);
+    --fg: #e8e4dc;
+    --muted: rgba(232,228,220,0.38);
+    --accent: #7eb8a4;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--bg); color: var(--fg); font-family: 'DM Mono', monospace; padding: 40px 24px 80px; }
+
+  h1 { font-family: 'Cormorant Garamond', serif; font-size: 32px; font-weight: 300; letter-spacing: .12em; text-align: center; margin-bottom: 8px; color: #c8e8f8; }
+  .subtitle { text-align: center; font-size: 10px; letter-spacing: .28em; text-transform: uppercase; color: var(--muted); margin-bottom: 56px; }
+
+  .steps-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 32px; max-width: 1100px; margin: 0 auto; }
+
+  /* ── Step card ── */
+  .step-card { border: 1px solid var(--border); border-radius: 20px; background: var(--surface); padding: 32px 24px 28px; display: flex; flex-direction: column; align-items: center; gap: 0; }
+  .step-roman { font-family: 'Cormorant Garamond', serif; font-size: 11px; letter-spacing: .5em; text-transform: uppercase; color: var(--muted); margin-bottom: 6px; }
+  .step-name { font-family: 'Cormorant Garamond', serif; font-size: 22px; font-weight: 300; color: #c8e8f8; margin-bottom: 4px; text-align: center; }
+  .step-keyword { font-size: 8px; letter-spacing: .3em; text-transform: uppercase; color: var(--accent); margin-bottom: 24px; }
+  .step-desc { font-size: 11px; color: var(--muted); line-height: 1.8; text-align: center; margin-top: 24px; max-width: 280px; }
+  .step-req { font-size: 9px; letter-spacing: .14em; color: rgba(126,184,164,0.5); margin-top: 14px; }
+
+  /* ── Figure wrapper ── */
+  .fig-wrap {
+    position: relative;
+    width: 120px;
+    height: 180px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .omnia-crystal {
+    position: relative;
+    z-index: 2;
+    filter: drop-shadow(0 0 12px rgba(184,234,255,0.35));
+  }
+
+  /* ─────────────────────────────────────────────
+     STEP VI · Etheric Echo
+  ───────────────────────────────────────────── */
+  .echo-layer {
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+  }
+  .echo-ghost {
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    animation: echoFloat 7s ease-in-out infinite;
+  }
+  .echo-ghost:nth-child(1) { transform: translate(-14px, -8px) scale(0.87); filter: blur(1px) hue-rotate(25deg); animation-delay: 0s; }
+  .echo-ghost:nth-child(2) { transform: translate(14px, -4px) scale(0.81); filter: blur(2px) hue-rotate(55deg); animation-delay: 2.3s; }
+  .echo-ghost:nth-child(3) { transform: translate(0px, 14px) scale(0.76); filter: blur(3px) hue-rotate(85deg); animation-delay: 4.6s; }
+  @keyframes echoFloat {
+    0%,100% { opacity: 0; }
+    20%,80%  { opacity: 0.22; }
+    50%      { opacity: 0.36; }
+  }
+
+  /* ─────────────────────────────────────────────
+     STEP VII · Sensory Beams
+  ───────────────────────────────────────────── */
+  .senses-layer {
+    position: absolute;
+    inset: -50%;
+    z-index: 1;
+    pointer-events: none;
+    animation: sensesSpin 50s linear infinite;
+  }
+  .sense-beam {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    height: 1.5px;
+    transform-origin: 0 50%;
+    opacity: 0;
+    border-radius: 1px;
+    background: linear-gradient(90deg, rgba(176,224,230,0), rgba(176,224,230,0.55), rgba(176,224,230,0));
+    animation: sensesPulse 6s ease-in-out infinite;
+  }
+  .sense-beam:nth-child(1)  { transform: rotate(0deg);   width: 50%; animation-delay: 0s;    }
+  .sense-beam:nth-child(2)  { transform: rotate(45deg);  width: 44%; animation-delay: 0.75s; }
+  .sense-beam:nth-child(3)  { transform: rotate(90deg);  width: 50%; animation-delay: 1.5s;  }
+  .sense-beam:nth-child(4)  { transform: rotate(135deg); width: 44%; animation-delay: 2.25s; }
+  .sense-beam:nth-child(5)  { transform: rotate(180deg); width: 50%; animation-delay: 3s;    }
+  .sense-beam:nth-child(6)  { transform: rotate(225deg); width: 44%; animation-delay: 3.75s; }
+  .sense-beam:nth-child(7)  { transform: rotate(270deg); width: 50%; animation-delay: 4.5s;  }
+  .sense-beam:nth-child(8)  { transform: rotate(315deg); width: 44%; animation-delay: 5.25s; }
+  @keyframes sensesPulse { 0%,100% { opacity: 0; } 50% { opacity: 1; } }
+  @keyframes sensesSpin  { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+
+  /* ─────────────────────────────────────────────
+     STEP VIII · Living Currents
+  ───────────────────────────────────────────── */
+  .currents-layer {
+    position: absolute;
+    inset: -5%;
+    z-index: 3;
+    overflow: hidden;
+    border-radius: 50%;
+    pointer-events: none;
+  }
+  .current-stream {
+    position: absolute;
+    width: 2px;
+    border-radius: 1px;
+    opacity: 0;
+    animation: currentFlow 5.5s ease-in-out infinite;
+  }
+  .cs-1 { left: 28%; top: 0;  height: 42%; background: linear-gradient(180deg, transparent, rgba(100,180,255,0.7), transparent); animation-delay: 0s; }
+  .cs-2 { left: 48%; top: 8%; height: 60%; background: linear-gradient(180deg, transparent, rgba(255,155,138,0.6), transparent); animation-delay: 1.1s; }
+  .cs-3 { left: 68%; top: 4%; height: 50%; background: linear-gradient(180deg, transparent, rgba(100,180,255,0.6), transparent); animation-delay: 2.2s; }
+  .cs-4 { left: 18%; top: 12%; height: 45%; background: linear-gradient(180deg, transparent, rgba(255,155,138,0.5), transparent); animation-delay: 3.3s; }
+  .cs-5 { left: 80%; top: 18%; height: 38%; background: linear-gradient(180deg, transparent, rgba(100,180,255,0.5), transparent); animation-delay: 4.4s; }
+  @keyframes currentFlow {
+    0%   { opacity: 0; transform: translateY(0); }
+    30%  { opacity: 1; }
+    70%  { opacity: 1; }
+    100% { opacity: 0; transform: translateY(28px); }
+  }
+
+  /* ─────────────────────────────────────────────
+     STEP IX · Astral Mirror
+  ───────────────────────────────────────────── */
+  .mirror-layer {
+    position: absolute;
+    bottom: -14%;
+    left: 50%;
+    transform: translateX(-50%) rotateX(72deg);
+    width: 88%;
+    height: 38%;
+    border-radius: 50%;
+    background: radial-gradient(ellipse at center, rgba(160,210,240,0.20) 0%, rgba(160,210,240,0.08) 42%, transparent 70%);
+    border: 1px solid rgba(160,210,240,0.22);
+    animation: mirrorPulse 5.5s ease-in-out infinite;
+    pointer-events: none;
+    z-index: 1;
+  }
+  .mirror-reflection {
+    position: absolute;
+    top: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 55%;
+    height: 100%;
+    background: linear-gradient(180deg, rgba(200,230,255,0.14) 0%, transparent 60%);
+    border-radius: 50%;
+    filter: blur(3px);
+  }
+  @keyframes mirrorPulse { 0%,100% { opacity: 0.5; } 50% { opacity: 1; } }
+
+  /* ─────────────────────────────────────────────
+     STEP X · Apotheosis Mandala
+  ───────────────────────────────────────────── */
+  .apotheosis-layer {
+    position: absolute;
+    inset: -75%;
+    z-index: 0;
+    animation: apotheosisSpin 70s linear infinite;
+    pointer-events: none;
+  }
+  .apo-ring {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%,-50%);
+    border-radius: 50%;
+    border: 1px solid;
+    animation: apotheosisPulse 8s ease-in-out infinite;
+  }
+  .apo-ring:nth-child(1) { width: 44%; height: 44%; border-color: rgba(255,238,200,0.28); animation-delay: 0s; }
+  .apo-ring:nth-child(2) { width: 64%; height: 64%; border-color: rgba(220,180,140,0.18); animation-delay: 1.2s; }
+  .apo-ring:nth-child(3) { width: 84%; height: 84%; border-color: rgba(200,160,120,0.12); animation-delay: 2.4s; }
+  .apo-dot {
+    position: absolute;
+    width: 4px;
+    height: 4px;
+    margin: -2px 0 0 -2px;
+    border-radius: 50%;
+    background: rgba(255,238,200,0.7);
+    animation: apoDotPulse 4.5s ease-in-out infinite;
+  }
+  @keyframes apotheosisSpin   { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+  @keyframes apotheosisPulse  { 0%,100% { opacity: 0.55; } 50% { opacity: 1; } }
+  @keyframes apoDotPulse { 0%,100% { transform: translate(-50%,-50%) scale(1); opacity: 0.65; } 50% { transform: translate(-50%,-50%) scale(1.7); opacity: 1; } }
+
+  /* shared existing step visuals for context */
+  .triad-orbit {
+    position: absolute;
+    inset: 0;
+    --orbit-radius: 56px;
+    z-index: 4;
+    pointer-events: none;
+  }
+  .triad-ring {
+    position: absolute;
+    top: 50%; left: 50%;
+    width: 0; height: 0;
+    transform: translate(-50%,-50%) rotateX(72deg);
+    animation: triadSpin 9s linear infinite;
+    transform-style: preserve-3d;
+  }
+  .triad-shard {
+    position: absolute;
+    width: 12px; height: 15px;
+    margin: -7.5px 0 0 -6px;
+  }
+  .triad-shard-inner {
+    position: absolute;
+    inset: 0;
+    transform: rotateX(-72deg);
+    animation: triadFloat 4.5s ease-in-out infinite;
+  }
+  .t-physical { transform: rotate(0deg) translateX(var(--orbit-radius)); color: #e8b8a0; }
+  .t-astral   { transform: rotate(120deg) translateX(var(--orbit-radius)); color: #c4a8d4; }
+  .t-mental   { transform: rotate(240deg) translateX(var(--orbit-radius)); color: #a8c8e8; }
+  .triad-shard svg { width: 100%; height: 100%; overflow: visible; filter: drop-shadow(0 0 4px currentColor) drop-shadow(0 0 9px currentColor); }
+  @keyframes triadSpin  { from { transform: translate(-50%,-50%) rotateX(72deg) rotateZ(0deg); } to { transform: translate(-50%,-50%) rotateX(72deg) rotateZ(360deg); } }
+  @keyframes triadFloat { 0%,100% { opacity: .82; } 50% { opacity: 1; } }
+
+  /* step color accents */
+  .step-card[data-step="6"] { border-color: rgba(100,200,220,0.15); }
+  .step-card[data-step="7"] { border-color: rgba(176,224,230,0.18); }
+  .step-card[data-step="8"] { border-color: rgba(100,160,255,0.18); }
+  .step-card[data-step="9"] { border-color: rgba(160,210,240,0.20); }
+  .step-card[data-step="10"] { border-color: rgba(255,238,200,0.22); background: rgba(255,238,200,0.02); }
+
+  .step-card[data-step="10"] .step-name { color: #ffe8a0; }
+  .step-card[data-step="10"] .omnia-crystal { filter: drop-shadow(0 0 18px rgba(255,238,200,0.55)) drop-shadow(0 0 40px rgba(255,238,200,0.20)); }
+
+  .legend { max-width: 700px; margin: 56px auto 0; border-top: 1px solid var(--border); padding-top: 32px; }
+  .legend h2 { font-family: 'Cormorant Garamond', serif; font-size: 18px; font-weight: 300; color: #c8e8f8; margin-bottom: 20px; }
+  .legend-row { display: flex; gap: 16px; margin-bottom: 14px; align-items: flex-start; }
+  .legend-roman { font-family: 'Cormorant Garamond', serif; font-size: 15px; color: #c8e8f8; min-width: 32px; }
+  .legend-text { font-size: 10px; color: var(--muted); line-height: 1.75; }
+  .legend-reqs { font-size: 8px; letter-spacing: .14em; color: rgba(126,184,164,0.55); margin-top: 4px; }
+</style>
+</head>
+<body>
+
+<h1>Omnia · Steps VI – X</h1>
+<p class="subtitle">Visual Design Reference · Presence App</p>
+
+<div class="steps-grid">
+
+  <!-- STEP VI: ETHERIC ECHO -->
+  <div class="step-card" data-step="6">
+    <div class="step-roman">Step VI</div>
+    <div class="step-name">Etheric Echo</div>
+    <div class="step-keyword">Ghost · Trace · Memory</div>
+
+    <div class="fig-wrap">
+      <!-- Echo ghosts (behind crystal) -->
+      <div class="echo-layer">
+        <div class="echo-ghost"><svg viewBox="0 0 80 130" width="80" height="130"><!-- crystal --><defs><linearGradient id="ecg1" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#ddf0ff" stop-opacity="0.92"/><stop offset="100%" stop-color="#6ab8d8" stop-opacity="0.48"/></linearGradient></defs><ellipse cx="40" cy="68" rx="28" ry="48" fill="rgba(184,234,255,0.06)"/><polygon points="40,3 54,14 40,25 26,14" fill="url(#ecg1)" stroke="#90cce8" stroke-width="0.55"/><polygon points="40,25 60,36 64,58 40,70 16,58 20,36" fill="url(#ecg1)" stroke="#88c4e0" stroke-width="0.55"/><polygon points="40,70 64,58 56,88 40,100 24,88 16,58" fill="url(#ecg1)" stroke="#88c4e0" stroke-width="0.55" opacity="0.88"/><polygon points="40,100 56,88 40,114" fill="rgba(180,220,244,0.72)" stroke="#88c4e0" stroke-width="0.48"/><polygon points="40,100 24,88 40,114" fill="#b4dcf4" stroke="#88c4e0" stroke-width="0.48" opacity="0.52"/></svg></div>
+        <div class="echo-ghost"><svg viewBox="0 0 80 130" width="80" height="130"><defs><linearGradient id="ecg2" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#ddf0ff" stop-opacity="0.92"/><stop offset="100%" stop-color="#6ab8d8" stop-opacity="0.48"/></linearGradient></defs><polygon points="40,3 54,14 40,25 26,14" fill="url(#ecg2)" stroke="#90cce8" stroke-width="0.55"/><polygon points="40,25 60,36 64,58 40,70 16,58 20,36" fill="url(#ecg2)" stroke="#88c4e0" stroke-width="0.55"/><polygon points="40,70 64,58 56,88 40,100 24,88 16,58" fill="url(#ecg2)" stroke="#88c4e0" stroke-width="0.55" opacity="0.88"/><polygon points="40,100 56,88 40,114" fill="rgba(180,220,244,0.72)" stroke="#88c4e0" stroke-width="0.48"/><polygon points="40,100 24,88 40,114" fill="#b4dcf4" stroke="#88c4e0" stroke-width="0.48" opacity="0.52"/></svg></div>
+        <div class="echo-ghost"><svg viewBox="0 0 80 130" width="80" height="130"><defs><linearGradient id="ecg3" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#ddf0ff" stop-opacity="0.92"/><stop offset="100%" stop-color="#6ab8d8" stop-opacity="0.48"/></linearGradient></defs><polygon points="40,3 54,14 40,25 26,14" fill="url(#ecg3)" stroke="#90cce8" stroke-width="0.55"/><polygon points="40,25 60,36 64,58 40,70 16,58 20,36" fill="url(#ecg3)" stroke="#88c4e0" stroke-width="0.55"/><polygon points="40,70 64,58 56,88 40,100 24,88 16,58" fill="url(#ecg3)" stroke="#88c4e0" stroke-width="0.55" opacity="0.88"/><polygon points="40,100 56,88 40,114" fill="rgba(180,220,244,0.72)" stroke="#88c4e0" stroke-width="0.48"/><polygon points="40,100 24,88 40,114" fill="#b4dcf4" stroke="#88c4e0" stroke-width="0.48" opacity="0.52"/></svg></div>
+      </div>
+      <!-- Main crystal -->
+      <svg class="omnia-crystal" viewBox="0 0 80 130" width="80" height="130"><defs><linearGradient id="g1" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#ddf0ff" stop-opacity="0.92"/><stop offset="100%" stop-color="#6ab8d8" stop-opacity="0.48"/></linearGradient><linearGradient id="g2" x1="100%" y1="0%" x2="0%" y2="100%"><stop offset="0%" stop-color="#ffffff" stop-opacity="0.78"/><stop offset="100%" stop-color="#4a9ec0" stop-opacity="0.22"/></linearGradient><radialGradient id="g3" cx="50%" cy="38%" r="58%"><stop offset="0%" stop-color="#b8eaff" stop-opacity="0.42"/><stop offset="100%" stop-color="#2878a0" stop-opacity="0"/></radialGradient><filter id="glow" x="-30%" y="-30%" width="160%" height="160%"><feGaussianBlur stdDeviation="2.5" result="blur"/><feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge></filter></defs><ellipse cx="40" cy="68" rx="28" ry="48" fill="url(#g3)" opacity="0.62"/><polygon points="40,3 54,14 40,25 26,14" fill="url(#g1)" stroke="#90cce8" stroke-width="0.55" filter="url(#glow)"/><polygon points="40,3 54,14 40,13" fill="#ceeaff" opacity="0.72"/><polygon points="40,3 26,14 40,13" fill="#b0dcf5" opacity="0.42"/><line x1="40" y1="3" x2="40" y2="25" stroke="#b8e0f8" stroke-width="0.4" opacity="0.55"/><line x1="26" y1="14" x2="54" y2="14" stroke="#b8e0f8" stroke-width="0.4" opacity="0.35"/><polygon points="40,25 60,36 64,58 40,70 16,58 20,36" fill="url(#g1)" stroke="#88c4e0" stroke-width="0.55"/><polygon points="40,25 60,36 40,44" fill="#d4ecff" opacity="0.52"/><polygon points="40,25 20,36 40,44" fill="#bce0f8" opacity="0.32"/><line x1="40" y1="25" x2="40" y2="70" stroke="#a8d8f2" stroke-width="0.38" opacity="0.48"/><polygon points="16,58 64,58 40,70" fill="url(#g2)" opacity="0.38"/><polygon points="40,70 64,58 56,88 40,100 24,88 16,58" fill="url(#g1)" stroke="#88c4e0" stroke-width="0.55" opacity="0.88"/><polygon points="40,100 56,88 40,114" fill="url(#g2)" stroke="#88c4e0" stroke-width="0.48" opacity="0.72"/><polygon points="40,100 24,88 40,114" fill="#b4dcf4" stroke="#88c4e0" stroke-width="0.48" opacity="0.52"/><g opacity="0.65" filter="url(#glow)"><line x1="6" y1="22" x2="12" y2="22" stroke="#b8eaff" stroke-width="1"/><line x1="9" y1="19" x2="9" y2="25" stroke="#b8eaff" stroke-width="1"/></g><g opacity="0.48"><line x1="68" y1="48" x2="74" y2="48" stroke="#b8eaff" stroke-width="0.9"/><line x1="71" y1="45" x2="71" y2="51" stroke="#b8eaff" stroke-width="0.9"/></g></svg>
+      <!-- Triad orbit (inherited from step II+) -->
+      <div class="triad-orbit"><div class="triad-ring"><div class="triad-shard t-physical"><div class="triad-shard-inner"><svg viewBox="0 0 18 22"><polygon points="9,1 17,8 13,21 5,21 1,8" fill="currentColor" stroke="rgba(255,255,255,.6)" stroke-width="0.6"/></svg></div></div><div class="triad-shard t-astral"><div class="triad-shard-inner"><svg viewBox="0 0 18 22"><polygon points="9,1 17,8 13,21 5,21 1,8" fill="currentColor" stroke="rgba(255,255,255,.6)" stroke-width="0.6"/></svg></div></div><div class="triad-shard t-mental"><div class="triad-shard-inner"><svg viewBox="0 0 18 22"><polygon points="9,1 17,8 13,21 5,21 1,8" fill="currentColor" stroke="rgba(255,255,255,.6)" stroke-width="0.6"/></svg></div></div></div></div>
+    </div>
+
+    <p class="step-desc">Omnia's presence echoes across the subtle planes. Each session leaves a luminous trace — three ghost-crystal offset copies that breathe in and out of visibility, hue-shifted into warmer spectrum, blurred with distance.</p>
+    <p class="step-reqs">Bodies: 115 · Recommended: 200 sessions</p>
+  </div>
+
+  <!-- STEP VII: SENSORY BEAMS -->
+  <div class="step-card" data-step="7">
+    <div class="step-roman">Step VII</div>
+    <div class="step-name">Awakened Senses</div>
+    <div class="step-keyword">Perception · Field · Sight Beyond</div>
+
+    <div class="fig-wrap">
+      <div class="senses-layer">
+        <div class="sense-beam"></div>
+        <div class="sense-beam"></div>
+        <div class="sense-beam"></div>
+        <div class="sense-beam"></div>
+        <div class="sense-beam"></div>
+        <div class="sense-beam"></div>
+        <div class="sense-beam"></div>
+        <div class="sense-beam"></div>
+      </div>
+      <svg class="omnia-crystal" viewBox="0 0 80 130" width="80" height="130"><defs><linearGradient id="s1" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#ddf0ff" stop-opacity="0.92"/><stop offset="100%" stop-color="#6ab8d8" stop-opacity="0.48"/></linearGradient><linearGradient id="s2" x1="100%" y1="0%" x2="0%" y2="100%"><stop offset="0%" stop-color="#ffffff" stop-opacity="0.78"/><stop offset="100%" stop-color="#4a9ec0" stop-opacity="0.22"/></linearGradient><radialGradient id="s3" cx="50%" cy="38%" r="58%"><stop offset="0%" stop-color="#b8eaff" stop-opacity="0.42"/><stop offset="100%" stop-color="#2878a0" stop-opacity="0"/></radialGradient><filter id="sglow"><feGaussianBlur stdDeviation="2.5" result="blur"/><feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge></filter></defs><ellipse cx="40" cy="68" rx="28" ry="48" fill="url(#s3)" opacity="0.62"/><polygon points="40,3 54,14 40,25 26,14" fill="url(#s1)" stroke="#90cce8" stroke-width="0.55" filter="url(#sglow)"/><polygon points="40,25 60,36 64,58 40,70 16,58 20,36" fill="url(#s1)" stroke="#88c4e0" stroke-width="0.55"/><polygon points="40,70 64,58 56,88 40,100 24,88 16,58" fill="url(#s1)" stroke="#88c4e0" stroke-width="0.55" opacity="0.88"/><polygon points="40,100 56,88 40,114" fill="url(#s2)" stroke="#88c4e0" stroke-width="0.48" opacity="0.72"/><polygon points="40,100 24,88 40,114" fill="#b4dcf4" stroke="#88c4e0" stroke-width="0.48" opacity="0.52"/></svg>
+      <div class="triad-orbit"><div class="triad-ring"><div class="triad-shard t-physical"><div class="triad-shard-inner"><svg viewBox="0 0 18 22"><polygon points="9,1 17,8 13,21 5,21 1,8" fill="currentColor" stroke="rgba(255,255,255,.6)" stroke-width="0.6"/></svg></div></div><div class="triad-shard t-astral"><div class="triad-shard-inner"><svg viewBox="0 0 18 22"><polygon points="9,1 17,8 13,21 5,21 1,8" fill="currentColor" stroke="rgba(255,255,255,.6)" stroke-width="0.6"/></svg></div></div><div class="triad-shard t-mental"><div class="triad-shard-inner"><svg viewBox="0 0 18 22"><polygon points="9,1 17,8 13,21 5,21 1,8" fill="currentColor" stroke="rgba(255,255,255,.6)" stroke-width="0.6"/></svg></div></div></div></div>
+    </div>
+
+    <p class="step-desc">Eight aquamarine beams radiate from the crystal center, cycling one by one — like opening eyes in every direction simultaneously. The whole layer slowly rotates, never stopping. Subtle senses awakening.</p>
+    <p class="step-reqs">Bodies: 132 · Recommended: 275 sessions</p>
+  </div>
+
+  <!-- STEP VIII: LIVING CURRENTS -->
+  <div class="step-card" data-step="8">
+    <div class="step-roman">Step VIII</div>
+    <div class="step-name">Living Currents</div>
+    <div class="step-keyword">Flow · Electric · Magnetic</div>
+
+    <div class="fig-wrap">
+      <div class="currents-layer">
+        <div class="current-stream cs-1"></div>
+        <div class="current-stream cs-2"></div>
+        <div class="current-stream cs-3"></div>
+        <div class="current-stream cs-4"></div>
+        <div class="current-stream cs-5"></div>
+      </div>
+      <svg class="omnia-crystal" viewBox="0 0 80 130" width="80" height="130"><defs><linearGradient id="c1" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#ddf0ff" stop-opacity="0.92"/><stop offset="100%" stop-color="#6ab8d8" stop-opacity="0.48"/></linearGradient><linearGradient id="c2" x1="100%" y1="0%" x2="0%" y2="100%"><stop offset="0%" stop-color="#ffffff" stop-opacity="0.78"/><stop offset="100%" stop-color="#4a9ec0" stop-opacity="0.22"/></linearGradient><radialGradient id="c3" cx="50%" cy="38%" r="58%"><stop offset="0%" stop-color="#b8eaff" stop-opacity="0.42"/><stop offset="100%" stop-color="#2878a0" stop-opacity="0"/></radialGradient><filter id="cglow"><feGaussianBlur stdDeviation="2.5" result="blur"/><feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge></filter></defs><ellipse cx="40" cy="68" rx="28" ry="48" fill="url(#c3)" opacity="0.62"/><polygon points="40,3 54,14 40,25 26,14" fill="url(#c1)" stroke="#90cce8" stroke-width="0.55" filter="url(#cglow)"/><polygon points="40,25 60,36 64,58 40,70 16,58 20,36" fill="url(#c1)" stroke="#88c4e0" stroke-width="0.55"/><polygon points="40,70 64,58 56,88 40,100 24,88 16,58" fill="url(#c1)" stroke="#88c4e0" stroke-width="0.55" opacity="0.88"/><polygon points="40,100 56,88 40,114" fill="url(#c2)" stroke="#88c4e0" stroke-width="0.48" opacity="0.72"/><polygon points="40,100 24,88 40,114" fill="#b4dcf4" stroke="#88c4e0" stroke-width="0.48" opacity="0.52"/></svg>
+      <div class="triad-orbit"><div class="triad-ring"><div class="triad-shard t-physical"><div class="triad-shard-inner"><svg viewBox="0 0 18 22"><polygon points="9,1 17,8 13,21 5,21 1,8" fill="currentColor" stroke="rgba(255,255,255,.6)" stroke-width="0.6"/></svg></div></div><div class="triad-shard t-astral"><div class="triad-shard-inner"><svg viewBox="0 0 18 22"><polygon points="9,1 17,8 13,21 5,21 1,8" fill="currentColor" stroke="rgba(255,255,255,.6)" stroke-width="0.6"/></svg></div></div><div class="triad-shard t-mental"><div class="triad-shard-inner"><svg viewBox="0 0 18 22"><polygon points="9,1 17,8 13,21 5,21 1,8" fill="currentColor" stroke="rgba(255,255,255,.6)" stroke-width="0.6"/></svg></div></div></div></div>
+    </div>
+
+    <p class="step-desc">Electric blue and magnetic coral streams flow downward through the crystal figure — alternating colors, staggered timing. Five independent threads, each fading in, drifting down, fading out. The body as a conductor.</p>
+    <p class="step-reqs">Bodies: 152 · Recommended: 360 sessions</p>
+  </div>
+
+  <!-- STEP IX: ASTRAL MIRROR -->
+  <div class="step-card" data-step="9">
+    <div class="step-roman">Step IX</div>
+    <div class="step-name">Astral Mirror</div>
+    <div class="step-keyword">Reflection · Projection · Clarity</div>
+
+    <div class="fig-wrap">
+      <svg class="omnia-crystal" viewBox="0 0 80 130" width="80" height="130"><defs><linearGradient id="m1" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#ddf0ff" stop-opacity="0.92"/><stop offset="100%" stop-color="#6ab8d8" stop-opacity="0.48"/></linearGradient><linearGradient id="m2" x1="100%" y1="0%" x2="0%" y2="100%"><stop offset="0%" stop-color="#ffffff" stop-opacity="0.78"/><stop offset="100%" stop-color="#4a9ec0" stop-opacity="0.22"/></linearGradient><radialGradient id="m3" cx="50%" cy="38%" r="58%"><stop offset="0%" stop-color="#b8eaff" stop-opacity="0.42"/><stop offset="100%" stop-color="#2878a0" stop-opacity="0"/></radialGradient><filter id="mglow"><feGaussianBlur stdDeviation="2.5" result="blur"/><feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge></filter></defs><ellipse cx="40" cy="68" rx="28" ry="48" fill="url(#m3)" opacity="0.62"/><polygon points="40,3 54,14 40,25 26,14" fill="url(#m1)" stroke="#90cce8" stroke-width="0.55" filter="url(#mglow)"/><polygon points="40,25 60,36 64,58 40,70 16,58 20,36" fill="url(#m1)" stroke="#88c4e0" stroke-width="0.55"/><polygon points="40,70 64,58 56,88 40,100 24,88 16,58" fill="url(#m1)" stroke="#88c4e0" stroke-width="0.55" opacity="0.88"/><polygon points="40,100 56,88 40,114" fill="url(#m2)" stroke="#88c4e0" stroke-width="0.48" opacity="0.72"/><polygon points="40,100 24,88 40,114" fill="#b4dcf4" stroke="#88c4e0" stroke-width="0.48" opacity="0.52"/></svg>
+      <div class="mirror-layer"><div class="mirror-reflection"></div></div>
+      <div class="triad-orbit"><div class="triad-ring"><div class="triad-shard t-physical"><div class="triad-shard-inner"><svg viewBox="0 0 18 22"><polygon points="9,1 17,8 13,21 5,21 1,8" fill="currentColor" stroke="rgba(255,255,255,.6)" stroke-width="0.6"/></svg></div></div><div class="triad-shard t-astral"><div class="triad-shard-inner"><svg viewBox="0 0 18 22"><polygon points="9,1 17,8 13,21 5,21 1,8" fill="currentColor" stroke="rgba(255,255,255,.6)" stroke-width="0.6"/></svg></div></div><div class="triad-shard t-mental"><div class="triad-shard-inner"><svg viewBox="0 0 18 22"><polygon points="9,1 17,8 13,21 5,21 1,8" fill="currentColor" stroke="rgba(255,255,255,.6)" stroke-width="0.6"/></svg></div></div></div></div>
+    </div>
+
+    <p class="step-desc">A translucent elliptical disc hovers below the crystal, perspective-rotated to appear horizontal. It breathes — opacity pulsing from dim to bright. A luminous reflection of what Omnia has become, projected on the subtle plane.</p>
+    <p class="step-reqs">Bodies: 175 · Recommended: 460 sessions</p>
+  </div>
+
+  <!-- STEP X: APOTHEOSIS -->
+  <div class="step-card" data-step="10">
+    <div class="step-roman">Step X</div>
+    <div class="step-name">Apotheosis</div>
+    <div class="step-keyword">Sacred · Complete · Eternal</div>
+
+    <div class="fig-wrap">
+      <div class="apotheosis-layer" id="apoLayer">
+        <div class="apo-ring"></div>
+        <div class="apo-ring"></div>
+        <div class="apo-ring"></div>
+        <!-- 12 constellation dots injected by script below -->
+      </div>
+      <svg class="omnia-crystal" viewBox="0 0 80 130" width="80" height="130" style="filter:drop-shadow(0 0 18px rgba(255,238,200,0.55)) drop-shadow(0 0 40px rgba(255,238,200,0.20));"><defs><linearGradient id="a1" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#fff8e0" stop-opacity="0.96"/><stop offset="100%" stop-color="#d4b870" stop-opacity="0.55"/></linearGradient><linearGradient id="a2" x1="100%" y1="0%" x2="0%" y2="100%"><stop offset="0%" stop-color="#ffffff" stop-opacity="0.88"/><stop offset="100%" stop-color="#c89840" stop-opacity="0.28"/></linearGradient><radialGradient id="a3" cx="50%" cy="38%" r="58%"><stop offset="0%" stop-color="#fff0c0" stop-opacity="0.45"/><stop offset="100%" stop-color="#c89040" stop-opacity="0"/></radialGradient><filter id="aglow"><feGaussianBlur stdDeviation="3" result="blur"/><feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge></filter></defs><ellipse cx="40" cy="68" rx="28" ry="48" fill="url(#a3)" opacity="0.7"/><polygon points="40,3 54,14 40,25 26,14" fill="url(#a1)" stroke="#e0c870" stroke-width="0.55" filter="url(#aglow)"/><polygon points="40,3 54,14 40,13" fill="#fff8d8" opacity="0.82"/><polygon points="40,3 26,14 40,13" fill="#ffe8a0" opacity="0.52"/><line x1="40" y1="3" x2="40" y2="25" stroke="#ffe8a0" stroke-width="0.4" opacity="0.65"/><line x1="26" y1="14" x2="54" y2="14" stroke="#ffe8a0" stroke-width="0.4" opacity="0.45"/><polygon points="40,25 60,36 64,58 40,70 16,58 20,36" fill="url(#a1)" stroke="#d4b060" stroke-width="0.55"/><polygon points="40,25 60,36 40,44" fill="#fff0c0" opacity="0.62"/><polygon points="40,25 20,36 40,44" fill="#ffe0a0" opacity="0.42"/><line x1="40" y1="25" x2="40" y2="70" stroke="#f0d080" stroke-width="0.38" opacity="0.55"/><polygon points="16,58 64,58 40,70" fill="url(#a2)" opacity="0.45"/><polygon points="40,70 64,58 56,88 40,100 24,88 16,58" fill="url(#a1)" stroke="#d4b060" stroke-width="0.55" opacity="0.92"/><polygon points="40,100 56,88 40,114" fill="url(#a2)" stroke="#d4b060" stroke-width="0.48" opacity="0.80"/><polygon points="40,100 24,88 40,114" fill="#e8d090" stroke="#d4b060" stroke-width="0.48" opacity="0.60"/><g opacity="0.8" filter="url(#aglow)"><line x1="6" y1="22" x2="12" y2="22" stroke="#ffe0a0" stroke-width="1"/><line x1="9" y1="19" x2="9" y2="25" stroke="#ffe0a0" stroke-width="1"/></g><g opacity="0.6"><line x1="68" y1="48" x2="74" y2="48" stroke="#ffe0a0" stroke-width="0.9"/><line x1="71" y1="45" x2="71" y2="51" stroke="#ffe0a0" stroke-width="0.9"/></g></svg>
+      <div class="triad-orbit" style="--orbit-radius:56px;"><div class="triad-ring"><div class="triad-shard t-physical" style="color:#f0c880;"><div class="triad-shard-inner"><svg viewBox="0 0 18 22"><polygon points="9,1 17,8 13,21 5,21 1,8" fill="currentColor" stroke="rgba(255,255,255,.6)" stroke-width="0.6"/></svg></div></div><div class="triad-shard t-astral" style="color:#f0e0a0;"><div class="triad-shard-inner"><svg viewBox="0 0 18 22"><polygon points="9,1 17,8 13,21 5,21 1,8" fill="currentColor" stroke="rgba(255,255,255,.6)" stroke-width="0.6"/></svg></div></div><div class="triad-shard t-mental" style="color:#e8d080;"><div class="triad-shard-inner"><svg viewBox="0 0 18 22"><polygon points="9,1 17,8 13,21 5,21 1,8" fill="currentColor" stroke="rgba(255,255,255,.6)" stroke-width="0.6"/></svg></div></div></div></div>
+    </div>
+
+    <p class="step-desc">Three sacred concentric rings slowly rotate around Omnia, dimming and brightening in sequence. Twelve golden constellation dots breathe at the 12 clock-positions of the outermost ring. The crystal turns gold. The figure is no longer a vessel — it is an axis.</p>
+    <p class="step-reqs">Bodies: 200 · Recommended: 600 sessions</p>
+  </div>
+
+</div><!-- /steps-grid -->
+
+<!-- Legend / full descriptions -->
+<div class="legend">
+  <h2>Full Step Descriptions</h2>
+
+  <div class="legend-row">
+    <div class="legend-roman">VI</div>
+    <div class="legend-text">
+      <strong>Etheric Echo</strong> — Omnia's presence now echoes across the subtle planes. Each session leaves a luminous trace — a ghost of mastery that follows and teaches. The practitioner begins to perceive the etheric body of all matter. Three offset, blurred, hue-shifted copies of the crystal body fade in and out behind the main figure, drifting at slightly different offsets and timings.
+      <div class="legend-reqs">Bodies 115 · Recommended 200 sessions</div>
+    </div>
+  </div>
+
+  <div class="legend-row">
+    <div class="legend-roman">VII</div>
+    <div class="legend-text">
+      <strong>Awakened Senses</strong> — The subtle senses fully awaken. Omnia perceives beyond ordinary sight — sensing etheric currents of thought, emotional fields, and the living web of awareness that underlies all phenomena. Eight aquamarine gradient beams radiate outward from the crystal core, pulsing one at a time in sequence as the entire layer slowly rotates over 50 seconds.
+      <div class="legend-reqs">Bodies 132 · Recommended 275 sessions</div>
+    </div>
+  </div>
+
+  <div class="legend-row">
+    <div class="legend-roman">VIII</div>
+    <div class="legend-text">
+      <strong>Living Currents</strong> — The great currents of the universe flow through and around Omnia. Electric and magnetic forces are felt, directed, and woven into the daily work. The body becomes a conductor of cosmic intelligence. Five vertical streams — alternating electric blue and magnetic coral — flow downward through the figure, staggered 1.1 seconds apart.
+      <div class="legend-reqs">Bodies 152 · Recommended 360 sessions</div>
+    </div>
+  </div>
+
+  <div class="legend-row">
+    <div class="legend-roman">IX</div>
+    <div class="legend-text">
+      <strong>Astral Mirror</strong> — The astral mirror comes alive. Omnia can project consciousness into the reflection of reality — examining events, spaces, and beings from within the subtle plane with perfect clarity. A translucent elliptical disc appears below the crystal, perspective-foreshortened to appear horizontal (rotateX 72°), breathing in and out over 5.5 seconds.
+      <div class="legend-reqs">Bodies 175 · Recommended 460 sessions</div>
+    </div>
+  </div>
+
+  <div class="legend-row">
+    <div class="legend-roman">X</div>
+    <div class="legend-text">
+      <strong>Apotheosis</strong> — The final integration. Omnia becomes a living axis between worlds — a consecrated form through which the divine current flows freely. Sacred geometry crowns the work. Three concentric golden rings rotate at 70 seconds/revolution, pulsing in staggered phase. Twelve constellation dots breathe at the clock positions of the outer ring. The crystal itself turns golden. The journey is eternal.
+      <div class="legend-reqs">Bodies 200 · Recommended 600 sessions</div>
+    </div>
+  </div>
+</div>
+
+<script>
+  // Inject 12 constellation dots into the apotheosis layer
+  var apoLayer = document.getElementById('apoLayer');
+  if (apoLayer) {
+    [0,30,60,90,120,150,180,210,240,270,300,330].forEach(function(a, i) {
+      var rad = a * Math.PI / 180;
+      var x = 50 + 42 * Math.cos(rad);
+      var y = 50 + 42 * Math.sin(rad);
+      var dot = document.createElement('div');
+      dot.className = 'apo-dot';
+      dot.style.cssText = 'left:' + x.toFixed(1) + '%;top:' + y.toFixed(1) + '%;animation-delay:' + (i * 0.375) + 's;';
+      apoLayer.appendChild(dot);
+    });
+  }
+</script>
+</body>
+</html>
