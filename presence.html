@@ -287,6 +287,16 @@
     #guidePathPanel .guide-locked-path,
     #guidePathPanel .guide-confirm-panel,
     #guidePathPanel .guide-route-grid { display:none !important; }
+    /* Path banner — Duolingo-style colored header with Omnia on the right */
+    .path-banner { position:relative; height:130px; margin:14px 0 4px; border-radius:18px; background:linear-gradient(135deg,#1f3550 0%,#2a4f6e 45%,#3d6a8e 100%); overflow:hidden; display:flex; align-items:center; justify-content:flex-end; padding:0 22px 0 22px; }
+    .path-banner::before { content:''; position:absolute; inset:0; background:radial-gradient(circle at 75% 50%, rgba(184,234,255,0.20), transparent 62%); pointer-events:none; }
+    .path-banner::after { content:''; position:absolute; left:-30%; right:-30%; bottom:-80%; height:160%; background:radial-gradient(ellipse at 50% 0%, rgba(126,184,164,0.10), transparent 65%); pointer-events:none; }
+    .path-banner-glow { position:absolute; right:6px; top:50%; width:170px; height:170px; transform:translateY(-50%); background:radial-gradient(circle, rgba(184,234,255,0.32) 0%, rgba(126,184,164,0.10) 38%, transparent 70%); pointer-events:none; }
+    .path-banner-figure { position:relative; z-index:2; width:78px; height:118px; display:flex; align-items:center; justify-content:center; animation:omniaFloat 4.5s ease-in-out infinite; filter:drop-shadow(0 0 12px rgba(160,210,240,.55)); cursor:pointer; }
+    .path-banner-figure svg.path-banner-crystal { width:100%; height:auto; overflow:visible; }
+    .path-banner-figure .omnia-shard-layer { position:absolute; inset:0; width:100%; height:100%; opacity:0; pointer-events:none; }
+    .path-banner-figure .omnia-symbol-layer { position:absolute; inset:0; display:flex; align-items:center; justify-content:center; pointer-events:none; }
+    .path-banner-figure .omnia-morph-ring { position:absolute; left:50%; top:50%; transform:translate(-50%,-50%); opacity:0; border:1px solid rgba(184,234,255,.45); border-radius:50%; width:62px; height:62px; box-shadow:0 0 14px rgba(142,204,224,.24), inset 0 0 14px rgba(142,204,224,.12); pointer-events:none; }
     .path-quest-root { display:flex; flex-direction:column; gap:18px; padding:18px 2px 28px; }
     .path-quest-card { border:1px solid rgba(255,255,255,0.07); border-radius:14px; padding:18px 18px 18px; background:rgba(255,255,255,0.02); }
     .path-quest-omnia { cursor:pointer; }
@@ -2442,6 +2452,47 @@ body:not(.tut-live) #tutCorgi {
     </div>
 
     <div class="guide-tab-panel" id="guidePathPanel">
+
+    <!-- Path banner — Duolingo-style header with Omnia on the right -->
+    <div class="path-banner" id="pathBanner">
+      <div class="path-banner-glow"></div>
+      <div class="path-banner-figure omnia-figure" id="pathBannerOmniaFigure" role="button" tabindex="0" aria-label="Reveal an Omnia symbol">
+        <svg class="path-banner-crystal" viewBox="0 0 80 130" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+          <defs>
+            <linearGradient id="pbg1" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stop-color="#ddf0ff" stop-opacity="0.92"/>
+              <stop offset="100%" stop-color="#6ab8d8" stop-opacity="0.48"/>
+            </linearGradient>
+            <linearGradient id="pbg2" x1="100%" y1="0%" x2="0%" y2="100%">
+              <stop offset="0%" stop-color="#ffffff" stop-opacity="0.78"/>
+              <stop offset="100%" stop-color="#4a9ec0" stop-opacity="0.22"/>
+            </linearGradient>
+            <radialGradient id="pbg3" cx="50%" cy="38%" r="58%">
+              <stop offset="0%" stop-color="#b8eaff" stop-opacity="0.42"/>
+              <stop offset="100%" stop-color="#2878a0" stop-opacity="0"/>
+            </radialGradient>
+            <filter id="pboglow" x="-30%" y="-30%" width="160%" height="160%">
+              <feGaussianBlur stdDeviation="2.5" result="blur"/>
+              <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+            </filter>
+          </defs>
+          <ellipse cx="40" cy="68" rx="28" ry="48" fill="url(#pbg3)" opacity="0.62"/>
+          <polygon points="40,3 54,14 40,25 26,14" fill="url(#pbg1)" stroke="#90cce8" stroke-width="0.55" filter="url(#pboglow)"/>
+          <polygon points="40,3 54,14 40,13" fill="#ceeaff" opacity="0.72"/>
+          <polygon points="40,3 26,14 40,13" fill="#b0dcf5" opacity="0.42"/>
+          <polygon points="40,25 60,36 64,58 40,70 16,58 20,36" fill="url(#pbg1)" stroke="#88c4e0" stroke-width="0.55"/>
+          <polygon points="40,25 60,36 40,44" fill="#d4ecff" opacity="0.52"/>
+          <polygon points="40,25 20,36 40,44" fill="#bce0f8" opacity="0.32"/>
+          <polygon points="16,58 64,58 40,70" fill="url(#pbg2)" opacity="0.38"/>
+          <polygon points="40,70 64,58 56,88 40,100 24,88 16,58" fill="url(#pbg1)" stroke="#88c4e0" stroke-width="0.55" opacity="0.88"/>
+          <polygon points="40,100 56,88 40,114" fill="url(#pbg2)" stroke="#88c4e0" stroke-width="0.48" opacity="0.72"/>
+          <polygon points="40,100 24,88 40,114" fill="#b4dcf4" stroke="#88c4e0" stroke-width="0.48" opacity="0.52"/>
+        </svg>
+        <svg class="omnia-shard-layer" id="pathBannerOmniaShardSvg" viewBox="0 0 100 130" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"></svg>
+        <div class="omnia-morph-ring"></div>
+        <div class="omnia-symbol-layer" id="pathBannerOmniaSymbolLayer"></div>
+      </div>
+    </div>
 
     <!-- Duolingo-style quest layout (replaces the legacy Path content) -->
     <div class="path-quest-root" id="pathQuestRoot"></div>
@@ -10584,7 +10635,7 @@ function applyOmniaStepVisuals() {
   document.body.classList.toggle('omnia-tier-crown',    step >= 3);
   document.body.classList.toggle('omnia-tier-polar',    step >= 4);
   document.body.classList.toggle('omnia-tier-elements', step >= 5);
-  ['guideOmniaFigure', 'omniaCenterFigure', 'drawerOmniaBtn'].forEach(function(id) {
+  ['guideOmniaFigure', 'omniaCenterFigure', 'drawerOmniaBtn', 'pathBannerOmniaFigure'].forEach(function(id) {
     var el = document.getElementById(id);
     if (!el) return;
     injectOmniaTriad(el);
@@ -11408,6 +11459,9 @@ function morphGuideOmnia() {
 }
 function morphOmniaCenter() {
   morphOmniaFigureBy('omniaCenterFigure', 'omniaCenterSymbolLayer', 'omniaCenterShardSvg');
+}
+function morphPathBannerOmnia() {
+  morphOmniaFigureBy('pathBannerOmniaFigure', 'pathBannerOmniaSymbolLayer', 'pathBannerOmniaShardSvg');
 }
 
 // ── Persistent selections ──────────────────────────────────
@@ -12341,6 +12395,15 @@ document.getElementById('guideOmniaFigure').addEventListener('keydown', function
   }
 });
 document.getElementById('omniaCenterFigure').addEventListener('click', morphOmniaCenter);
+(function(){
+  var pbf = document.getElementById('pathBannerOmniaFigure');
+  if (pbf) {
+    pbf.addEventListener('click', morphPathBannerOmnia);
+    pbf.addEventListener('keydown', function(e) {
+      if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); morphPathBannerOmnia(); }
+    });
+  }
+})();
 document.getElementById('omniaCenterFigure').addEventListener('keydown', function(e) {
   if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); morphOmniaCenter(); }
 });
