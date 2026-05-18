@@ -179,6 +179,27 @@
     .sco-commit-btn { background:#d4956e; color:#07080d; font-family:'DM Mono',monospace; font-size:11px; letter-spacing:.20em; text-transform:uppercase; border:none; border-radius:14px; padding:18px 40px; cursor:pointer; width:100%; max-width:300px; transition:opacity .15s; }
     .sco-commit-btn:active { opacity:.82; }
     .sco-later { margin-top:14px; font-family:'DM Mono',monospace; font-size:10px; color:var(--muted); background:none; border:none; cursor:pointer; letter-spacing:.12em; text-transform:uppercase; }
+    /* ── Streak celebration animation ── */
+    .sco-burst { position:absolute; inset:-100%; pointer-events:none; z-index:0; }
+    .sco-flash { position:absolute; top:50%; left:50%; width:0; height:0; border-radius:50%; background:radial-gradient(circle, rgba(255,240,200,.95) 0%, rgba(255,200,120,.55) 30%, rgba(212,149,110,0) 70%); transform:translate(-50%,-50%); animation:scoFlash 1.1s ease-out forwards; mix-blend-mode:screen; }
+    @keyframes scoFlash { 0% { width:0; height:0; opacity:0; } 12% { width:90px; height:90px; opacity:1; } 100% { width:520px; height:520px; opacity:0; } }
+    .sco-shockwave { position:absolute; top:50%; left:50%; width:60px; height:60px; border-radius:50%; border:2px solid rgba(255,230,180,.7); transform:translate(-50%,-50%) scale(0); animation:scoShock 1.4s cubic-bezier(.22,.85,.4,1) forwards; }
+    @keyframes scoShock { 0% { transform:translate(-50%,-50%) scale(0); opacity:0; border-width:3px; } 14% { opacity:1; } 100% { transform:translate(-50%,-50%) scale(7); opacity:0; border-width:0.5px; } }
+    .sco-shockwave.two { animation-delay:.18s; border-color:rgba(184,234,255,.55); }
+    .sco-particle { position:absolute; top:50%; left:50%; width:6px; height:6px; border-radius:50%; transform-origin:0 0; animation:scoParticle 1.6s cubic-bezier(.18,.7,.3,1) forwards; opacity:0; }
+    @keyframes scoParticle { 0% { transform:translate(-50%,-50%) rotate(var(--a)) translateX(0) scale(0); opacity:0; } 10% { opacity:1; } 60% { transform:translate(-50%,-50%) rotate(var(--a)) translateX(var(--d)) scale(1.2); opacity:1; } 100% { transform:translate(-50%,-50%) rotate(var(--a)) translateX(calc(var(--d) * 1.4)) scale(0); opacity:0; } }
+    .sco-mascot-wrap.sco-anim svg { animation:scoCrystalReveal 1.4s cubic-bezier(.22,.85,.4,1) both; }
+    @keyframes scoCrystalReveal { 0% { transform:scale(0.2); opacity:0; filter:blur(8px) brightness(3); } 30% { transform:scale(1.45); opacity:1; filter:blur(0) brightness(2.2); } 55% { transform:scale(.92); filter:blur(0) brightness(1.4); } 100% { transform:scale(1); opacity:1; filter:blur(0) brightness(1); } }
+    .sco-bubble.sco-fadein, .sco-num.sco-fadein, .sco-label.sco-fadein, .sco-week.sco-fadein, .sco-commit-btn.sco-fadein, .sco-later.sco-fadein { opacity:0; transform:translateY(8px); animation:scoFadeIn .55s ease-out forwards; }
+    @keyframes scoFadeIn { to { opacity:1; transform:translateY(0); } }
+    .sco-week.sco-fadein .sco-week-col { opacity:0; animation:scoFadeIn .4s ease-out forwards; }
+    .sco-week.sco-fadein .sco-week-col:nth-child(1) { animation-delay:.05s; }
+    .sco-week.sco-fadein .sco-week-col:nth-child(2) { animation-delay:.10s; }
+    .sco-week.sco-fadein .sco-week-col:nth-child(3) { animation-delay:.15s; }
+    .sco-week.sco-fadein .sco-week-col:nth-child(4) { animation-delay:.20s; }
+    .sco-week.sco-fadein .sco-week-col:nth-child(5) { animation-delay:.25s; }
+    .sco-week.sco-fadein .sco-week-col:nth-child(6) { animation-delay:.30s; }
+    .sco-week.sco-fadein .sco-week-col:nth-child(7) { animation-delay:.35s; }
     @media (min-width:600px) {
       .so-hero-num { font-size:120px; }
     }
@@ -6289,14 +6310,34 @@ function showStreakCelebration() {
     + '<polygon points="40,100 24,88 40,114" fill="#b4dcf4" stroke="#88c4e0" stroke-width=".48" opacity=".52"/>'
     + '</svg>';
 
+  // Burst particles — 18 light shards radiating outward
+  var burstHTML = '<div class="sco-burst" id="scoBurst">'
+    + '<div class="sco-flash"></div>'
+    + '<div class="sco-shockwave"></div>'
+    + '<div class="sco-shockwave two"></div>';
+  var colors = ['#fff0c8','#b8eaff','#d4956e','#e8d8b0','#a8d8ec','#ffe2a0'];
+  for (var i = 0; i < 18; i++) {
+    var angle = (i / 18) * 360 + (Math.random() * 12 - 6);
+    var dist = 140 + Math.random() * 100;
+    var color = colors[i % colors.length];
+    var delay = Math.random() * 0.15;
+    var size = 4 + Math.random() * 5;
+    burstHTML += '<div class="sco-particle" style="--a:' + angle + 'deg;--d:' + dist + 'px;'
+      + 'width:' + size + 'px;height:' + size + 'px;background:' + color
+      + ';box-shadow:0 0 8px ' + color + ',0 0 14px ' + color
+      + ';animation-delay:' + delay + 's;"></div>';
+  }
+  burstHTML += '</div>';
+
   el.innerHTML =
-    '<div class="sco-bubble">' + msg + '</div>'
-    + '<div class="sco-mascot-wrap"><div class="sco-glow"></div>' + cSVG + '</div>'
-    + '<div class="sco-num">' + streak + '</div>'
-    + '<div class="sco-label">day streak</div>'
-    + '<div class="sco-week">' + weekHTML + '</div>'
-    + '<button class="sco-commit-btn" id="scoCelebBtn">I\'m Committed →</button>'
-    + '<button class="sco-later" id="scoCelebLater">Continue</button>';
+    burstHTML
+    + '<div class="sco-bubble sco-fadein" style="animation-delay:.55s">' + msg + '</div>'
+    + '<div class="sco-mascot-wrap sco-anim"><div class="sco-glow"></div>' + cSVG + '</div>'
+    + '<div class="sco-num sco-fadein" style="animation-delay:.65s">' + streak + '</div>'
+    + '<div class="sco-label sco-fadein" style="animation-delay:.72s">day streak</div>'
+    + '<div class="sco-week sco-fadein" style="animation-delay:.80s">' + weekHTML + '</div>'
+    + '<button class="sco-commit-btn sco-fadein" id="scoCelebBtn" style="animation-delay:1.15s">I\'m Committed →</button>'
+    + '<button class="sco-later sco-fadein" id="scoCelebLater" style="animation-delay:1.25s">Continue</button>';
 
   function close() {
     el.classList.remove('sco-vis');
@@ -6306,7 +6347,61 @@ function showStreakCelebration() {
   document.getElementById('scoCelebLater').onclick = close;
 
   el.classList.add('sco-show');
-  requestAnimationFrame(function() { requestAnimationFrame(function() { el.classList.add('sco-vis'); }); });
+  requestAnimationFrame(function() {
+    requestAnimationFrame(function() {
+      el.classList.add('sco-vis');
+      playStreakBurstSound();
+      if (navigator.vibrate) navigator.vibrate([40, 50, 120, 60, 80, 40, 220]);
+    });
+  });
+}
+
+function playStreakBurstSound() {
+  try {
+    var ctx = new (window.AudioContext || window.webkitAudioContext)();
+    var t0 = ctx.currentTime;
+    // 1) Sub-bass impact at t=0 — the "burst" thud
+    var sub = ctx.createOscillator(), subG = ctx.createGain();
+    sub.type = 'sine'; sub.frequency.setValueAtTime(120, t0); sub.frequency.exponentialRampToValueAtTime(40, t0 + 0.45);
+    subG.gain.setValueAtTime(0, t0); subG.gain.linearRampToValueAtTime(0.32, t0 + 0.02); subG.gain.exponentialRampToValueAtTime(0.001, t0 + 0.6);
+    sub.connect(subG); subG.connect(ctx.destination); sub.start(t0); sub.stop(t0 + 0.7);
+    // 2) Rising whoosh — filtered noise sweep
+    var noise = ctx.createBufferSource();
+    var buf = ctx.createBuffer(1, ctx.sampleRate * 0.8, ctx.sampleRate);
+    var data = buf.getChannelData(0);
+    for (var n = 0; n < data.length; n++) data[n] = (Math.random() * 2 - 1) * (1 - n / data.length);
+    noise.buffer = buf;
+    var bp = ctx.createBiquadFilter(); bp.type = 'bandpass'; bp.Q.value = 1.8;
+    bp.frequency.setValueAtTime(400, t0); bp.frequency.exponentialRampToValueAtTime(5000, t0 + 0.7);
+    var noiseG = ctx.createGain(); noiseG.gain.setValueAtTime(0, t0); noiseG.gain.linearRampToValueAtTime(0.18, t0 + 0.1); noiseG.gain.exponentialRampToValueAtTime(0.001, t0 + 0.8);
+    noise.connect(bp); bp.connect(noiseG); noiseG.connect(ctx.destination); noise.start(t0);
+    // 3) Cinematic ascending major chord — Cmaj9 spread, layered sine + triangle
+    var chord = [261.63, 392.00, 523.25, 659.25, 783.99, 1046.50]; // C E G B C
+    chord.forEach(function(freq, i) {
+      var delay = 0.35 + i * 0.06;
+      var osc = ctx.createOscillator(), osc2 = ctx.createOscillator(), g = ctx.createGain();
+      osc.type = 'sine'; osc2.type = 'triangle';
+      osc.frequency.setValueAtTime(freq, t0 + delay);
+      osc2.frequency.setValueAtTime(freq * 2.005, t0 + delay);
+      g.gain.setValueAtTime(0, t0 + delay);
+      g.gain.linearRampToValueAtTime(i >= 4 ? 0.13 : 0.09, t0 + delay + 0.04);
+      g.gain.exponentialRampToValueAtTime(0.001, t0 + delay + 2.8);
+      osc.connect(g); osc2.connect(g); g.connect(ctx.destination);
+      osc.start(t0 + delay); osc.stop(t0 + delay + 3);
+      osc2.start(t0 + delay); osc2.stop(t0 + delay + 3);
+    });
+    // 4) Sparkle shimmer — high bells over the chord
+    [1567, 2093, 2637, 3136, 2349].forEach(function(freq, i) {
+      var delay = 0.55 + i * 0.08;
+      var osc = ctx.createOscillator(), g = ctx.createGain();
+      osc.type = 'sine'; osc.frequency.setValueAtTime(freq, t0 + delay);
+      g.gain.setValueAtTime(0, t0 + delay);
+      g.gain.linearRampToValueAtTime(0.06, t0 + delay + 0.02);
+      g.gain.exponentialRampToValueAtTime(0.001, t0 + delay + 0.7);
+      osc.connect(g); g.connect(ctx.destination);
+      osc.start(t0 + delay); osc.stop(t0 + delay + 0.8);
+    });
+  } catch(e) {}
 }
 
 function showTutorialStreakCelebration() {
