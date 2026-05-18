@@ -2046,6 +2046,38 @@ body:not(.tut-live) #tutCorgi {
   opacity:1;
   filter:drop-shadow(0 0 7px rgba(160,210,240,0.65));
 }
+
+/* Friends panel */
+#friendsPanel { display:none; position:fixed; inset:0; z-index:9600; background:rgba(7,8,13,0.98); flex-direction:column; overflow-y:auto; -webkit-overflow-scrolling:touch; opacity:0; transition:opacity 0.35s; }
+#friendsPanel.fp-show { display:flex; }
+#friendsPanel.fp-vis { opacity:1; }
+.fp-header { display:flex; align-items:center; gap:12px; padding:max(env(safe-area-inset-top),20px) 20px 16px; border-bottom:1px solid var(--border); position:sticky; top:0; background:rgba(7,8,13,0.97); z-index:2; }
+.fp-back { background:rgba(255,255,255,0.06); border:none; border-radius:50%; width:36px; height:36px; color:var(--text); font-size:18px; cursor:pointer; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+.fp-title { font-family:Cormorant Garamond,serif; font-size:22px; font-weight:300; color:var(--text); }
+.fp-body { padding:20px; display:flex; flex-direction:column; gap:20px; max-width:480px; width:100%; margin:0 auto; }
+.fp-search-row { display:flex; gap:8px; }
+.fp-search-input { flex:1; padding:11px 14px; border:1px solid var(--border); border-radius:8px; background:rgba(255,255,255,.04); color:var(--text); font-family:'DM Mono',monospace; font-size:11px; letter-spacing:.05em; outline:none; }
+.fp-search-input:focus { border-color:var(--accent); }
+.fp-search-btn { padding:11px 16px; border:1px solid var(--accent); border-radius:8px; background:rgba(126,184,164,.08); color:var(--accent); font-family:'DM Mono',monospace; font-size:9px; letter-spacing:.15em; text-transform:uppercase; cursor:pointer; white-space:nowrap; }
+.fp-search-btn:disabled { opacity:.4; cursor:default; }
+.fp-section-title { font-size:9px; letter-spacing:.22em; text-transform:uppercase; color:var(--muted); margin-bottom:8px; }
+.fp-search-results { display:flex; flex-direction:column; gap:6px; }
+.fp-user-row { display:flex; align-items:center; justify-content:space-between; padding:12px 14px; border:1px solid var(--border); border-radius:10px; background:rgba(255,255,255,.02); }
+.fp-user-name { font-family:'DM Mono',monospace; font-size:11px; color:var(--text); }
+.fp-add-btn { padding:6px 14px; border:1px solid var(--accent); border-radius:6px; background:transparent; color:var(--accent); font-family:'DM Mono',monospace; font-size:9px; letter-spacing:.12em; text-transform:uppercase; cursor:pointer; }
+.fp-add-btn:disabled { opacity:.4; cursor:default; }
+.fp-friend-card { border:1px solid var(--border); border-radius:14px; padding:16px; background:rgba(255,255,255,.02); }
+.fp-friend-name { font-family:'DM Mono',monospace; font-size:12px; color:var(--text); margin-bottom:4px; }
+.fp-friend-active { font-size:9px; color:var(--muted); letter-spacing:.08em; margin-bottom:12px; }
+.fp-friend-stats { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; }
+.fp-stat { background:rgba(255,255,255,.04); border-radius:8px; padding:10px 8px; text-align:center; }
+.fp-stat-val { font-family:'DM Mono',monospace; font-size:18px; color:var(--text); line-height:1; }
+.fp-stat-lbl { font-size:8px; letter-spacing:.15em; text-transform:uppercase; color:var(--muted); margin-top:4px; }
+.fp-request-row { display:flex; align-items:center; justify-content:space-between; padding:12px 14px; border:1px solid rgba(126,184,164,0.3); border-radius:10px; background:rgba(126,184,164,.04); }
+.fp-accept-btn { padding:6px 12px; border:1px solid var(--accent); border-radius:6px; background:rgba(126,184,164,.12); color:var(--accent); font-family:'DM Mono',monospace; font-size:9px; letter-spacing:.1em; text-transform:uppercase; cursor:pointer; }
+.fp-decline-btn { padding:6px 10px; border:1px solid var(--border); border-radius:6px; background:transparent; color:var(--muted); font-family:'DM Mono',monospace; font-size:9px; cursor:pointer; }
+.fp-empty { text-align:center; padding:32px 0; color:var(--muted); font-size:11px; letter-spacing:.1em; }
+.fp-remove-btn { padding:4px 10px; border:1px solid var(--border); border-radius:6px; background:transparent; color:var(--muted); font-family:'DM Mono',monospace; font-size:8px; cursor:pointer; opacity:.6; }
 </style>
 <script>
   // Set safe-area padding variables before first paint.
@@ -17409,6 +17441,31 @@ document.addEventListener('DOMContentLoaded',function(){(function(){
 <div id="tutPostSession"></div>
 <div id="streakOverlay"></div>
 
+<div id="friendsPanel">
+  <div class="fp-header">
+    <button class="fp-back" id="fpBackBtn">&#8592;</button>
+    <div class="fp-title">Friends</div>
+  </div>
+  <div class="fp-body">
+    <div>
+      <div class="fp-section-title">Add by username</div>
+      <div class="fp-search-row">
+        <input class="fp-search-input" id="fpSearchInput" placeholder="Enter username…" maxlength="24" autocomplete="off"/>
+        <button class="fp-search-btn" id="fpSearchBtn">Search</button>
+      </div>
+      <div class="fp-search-results" id="fpSearchResults"></div>
+    </div>
+    <div id="fpRequestsSection" style="display:none;">
+      <div class="fp-section-title">Friend Requests</div>
+      <div id="fpRequestsList"></div>
+    </div>
+    <div>
+      <div class="fp-section-title">Your Friends</div>
+      <div id="fpFriendsList"></div>
+    </div>
+  </div>
+</div>
+
 <!-- Streak continuation celebration (shown after session extends streak) -->
 <div id="streakCelebOverlay"></div>
 
@@ -17421,5 +17478,168 @@ document.addEventListener('DOMContentLoaded',function(){(function(){
   <button id="tutGuideTipBtn">Got it</button>
 </div>
 
+<script>
+function openFriendsPanel() {
+  var el = document.getElementById('friendsPanel');
+  if (!el) return;
+  el.classList.add('fp-show');
+  requestAnimationFrame(function() { requestAnimationFrame(function() { el.classList.add('fp-vis'); }); });
+  loadFriendsPanel();
+}
+
+function closeFriendsPanel() {
+  var el = document.getElementById('friendsPanel');
+  if (!el) return;
+  el.classList.remove('fp-vis');
+  setTimeout(function() { el.classList.remove('fp-show'); }, 320);
+}
+
+async function loadFriendsPanel() {
+  if (!authToken) return;
+  // Load friends list
+  try {
+    var res = await fetch(SYNC_API_URL + '/friends/list', { headers: { 'Authorization': 'Bearer ' + authToken } });
+    var data = await res.json();
+    renderFriendsList(data.friends || []);
+  } catch(e) { console.warn('Friends load failed', e); }
+  // Load pending requests
+  try {
+    var rres = await fetch(SYNC_API_URL + '/friends/requests', { headers: { 'Authorization': 'Bearer ' + authToken } });
+    var rdata = await rres.json();
+    renderFriendRequests(rdata.requests || []);
+  } catch(e) {}
+}
+
+function renderFriendsList(friends) {
+  var el = document.getElementById('fpFriendsList');
+  if (!el) return;
+  if (!friends.length) { el.innerHTML = '<div class="fp-empty">No friends yet.<br>Search by username to add some.</div>'; return; }
+  el.innerHTML = friends.map(function(f) {
+    var lastActive = f.lastSync ? timeAgo(new Date(f.lastSync)) : 'never';
+    var bodies = f.bodies || { physical:1, astral:1, mental:1 };
+    var bodyTotal = (bodies.physical||1) + (bodies.astral||1) + (bodies.mental||1);
+    return '<div class="fp-friend-card">'
+      + '<div style="display:flex;justify-content:space-between;align-items:flex-start;">'
+      + '<div><div class="fp-friend-name">@' + escHtml(f.username) + '</div>'
+      + '<div class="fp-friend-active">Active ' + lastActive + '</div></div>'
+      + '<button class="fp-remove-btn" onclick="removeFriend(\'' + f.userId + '\')">Remove</button>'
+      + '</div>'
+      + '<div class="fp-friend-stats">'
+      + '<div class="fp-stat"><div class="fp-stat-val">' + (f.streak||0) + '</div><div class="fp-stat-lbl">Streak</div></div>'
+      + '<div class="fp-stat"><div class="fp-stat-val">' + (f.concLevel||1) + '</div><div class="fp-stat-lbl">Conc Lvl</div></div>'
+      + '<div class="fp-stat"><div class="fp-stat-val">' + bodyTotal + '</div><div class="fp-stat-lbl">Body Pts</div></div>'
+      + '<div class="fp-stat"><div class="fp-stat-val">' + Math.floor(f.akasha||0) + '</div><div class="fp-stat-lbl">Akasha</div></div>'
+      + '<div class="fp-stat"><div class="fp-stat-val">' + (f.bardonStep||1) + '</div><div class="fp-stat-lbl">Step</div></div>'
+      + '<div class="fp-stat"><div class="fp-stat-val">' + (f.concXp||0) + 's</div><div class="fp-stat-lbl">Focus</div></div>'
+      + '</div></div>';
+  }).join('');
+}
+
+function renderFriendRequests(requests) {
+  var sec = document.getElementById('fpRequestsSection');
+  var el = document.getElementById('fpRequestsList');
+  if (!sec || !el) return;
+  if (!requests.length) { sec.style.display='none'; return; }
+  sec.style.display='block';
+  el.innerHTML = requests.map(function(r) {
+    return '<div class="fp-request-row">'
+      + '<span class="fp-user-name">@' + escHtml(r.username) + '</span>'
+      + '<div style="display:flex;gap:6px;">'
+      + '<button class="fp-accept-btn" onclick="acceptFriend(\'' + r.userId + '\')">Accept</button>'
+      + '<button class="fp-decline-btn" onclick="declineFriend(\'' + r.userId + '\')">Decline</button>'
+      + '</div></div>';
+  }).join('');
+}
+
+async function searchFriends() {
+  var q = (document.getElementById('fpSearchInput').value || '').trim();
+  var resultsEl = document.getElementById('fpSearchResults');
+  if (!q || !authToken) return;
+  resultsEl.innerHTML = '<div class="fp-empty">Searching…</div>';
+  try {
+    var res = await fetch(SYNC_API_URL + '/friends/search?q=' + encodeURIComponent(q), { headers: { 'Authorization': 'Bearer ' + authToken } });
+    var data = await res.json();
+    var users = data.users || [];
+    if (!users.length) { resultsEl.innerHTML = '<div class="fp-empty">No users found.</div>'; return; }
+    resultsEl.innerHTML = users.map(function(u) {
+      return '<div class="fp-user-row">'
+        + '<span class="fp-user-name">@' + escHtml(u.username) + '</span>'
+        + '<button class="fp-add-btn" onclick="sendFriendRequest(\'' + escHtml(u.username) + '\', this)">Add</button>'
+        + '</div>';
+    }).join('');
+  } catch(e) { resultsEl.innerHTML = '<div class="fp-empty">Search failed.</div>'; }
+}
+
+async function sendFriendRequest(username, btn) {
+  if (!authToken) return;
+  if (btn) btn.disabled = true;
+  try {
+    var res = await fetch(SYNC_API_URL + '/friends/request', {
+      method:'POST', headers:{'Content-Type':'application/json','Authorization':'Bearer ' + authToken},
+      body: JSON.stringify({ username: username })
+    });
+    var data = await res.json();
+    if (res.ok) { if (btn) { btn.textContent='Sent'; btn.style.opacity='.5'; } }
+    else { if (btn) { btn.disabled=false; btn.textContent='Add'; } showToast(data.error || 'Request failed'); }
+  } catch(e) { if (btn) { btn.disabled=false; } }
+}
+
+async function acceptFriend(requesterId) {
+  if (!authToken) return;
+  try {
+    await fetch(SYNC_API_URL + '/friends/accept', {
+      method:'POST', headers:{'Content-Type':'application/json','Authorization':'Bearer ' + authToken},
+      body: JSON.stringify({ requesterId: requesterId })
+    });
+    loadFriendsPanel();
+  } catch(e) {}
+}
+
+async function declineFriend(userId) {
+  if (!authToken) return;
+  try {
+    await fetch(SYNC_API_URL + '/friends/decline', {
+      method:'POST', headers:{'Content-Type':'application/json','Authorization':'Bearer ' + authToken},
+      body: JSON.stringify({ userId: userId })
+    });
+    loadFriendsPanel();
+  } catch(e) {}
+}
+
+async function removeFriend(userId) {
+  if (!authToken || !confirm('Remove this friend?')) return;
+  try {
+    await fetch(SYNC_API_URL + '/friends/decline', {
+      method:'POST', headers:{'Content-Type':'application/json','Authorization':'Bearer ' + authToken},
+      body: JSON.stringify({ userId: userId })
+    });
+    loadFriendsPanel();
+  } catch(e) {}
+}
+
+function escHtml(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function timeAgo(date) {
+  var diff = Math.floor((Date.now() - date) / 1000);
+  if (diff < 60) return 'just now';
+  if (diff < 3600) return Math.floor(diff/60) + 'm ago';
+  if (diff < 86400) return Math.floor(diff/3600) + 'h ago';
+  return Math.floor(diff/86400) + 'd ago';
+}
+
+// Wire up events
+document.getElementById('fpBackBtn').addEventListener('click', closeFriendsPanel);
+document.getElementById('fpSearchBtn').addEventListener('click', searchFriends);
+document.getElementById('fpSearchInput').addEventListener('keydown', function(e) { if (e.key === 'Enter') searchFriends(); });
+document.getElementById('drawerFriends').addEventListener('click', function() {
+  // Close drawer first
+  var overlay = document.querySelector('.drawer-overlay');
+  if (overlay) overlay.classList.remove('show');
+  if (!authToken) { showToast('Sign in to use Friends'); return; }
+  openFriendsPanel();
+});
+</script>
 </body>
 </html>
