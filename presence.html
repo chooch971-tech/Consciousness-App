@@ -10869,17 +10869,25 @@ function renderOmniaEngine() {
     }
     bardonTrack.innerHTML = dotsHtml;
   }
-  // Aura opacity scales with body level; minimum 0.6 so bubble is always visible
-  var auraStage = document.getElementById('omniaCenterStage');
-  if (auraStage) {
-    var auraFor = function(lvl) { return Math.min(0.88, 0.60 + (lvl || 0) * 0.025); };
-    var aP = document.getElementById('omniaAuraPhysical');
-    var aA = document.getElementById('omniaAuraAstral');
-    var aM = document.getElementById('omniaAuraMental');
-    if (aP) aP.style.opacity = auraFor(omniaState.bodies.physical);
-    if (aA) aA.style.opacity = auraFor(omniaState.bodies.astral);
-    if (aM) aM.style.opacity = auraFor(omniaState.bodies.mental);
-  }
+  // Aura opacity scales with body level; high baseline so the bubble glow is
+  // consistently visible. Path and Upgrade tabs share the same formula so
+  // their Omnia bubbles always look identical.
+  var auraFor = function(lvl) { return Math.min(0.98, 0.85 + (lvl || 0) * 0.015); };
+  var pLvl = omniaState.bodies.physical, aLvl = omniaState.bodies.astral, mLvl = omniaState.bodies.mental;
+  // Upgrade tab
+  var aP = document.getElementById('omniaAuraPhysical');
+  var aA = document.getElementById('omniaAuraAstral');
+  var aM = document.getElementById('omniaAuraMental');
+  if (aP) aP.style.opacity = auraFor(pLvl);
+  if (aA) aA.style.opacity = auraFor(aLvl);
+  if (aM) aM.style.opacity = auraFor(mLvl);
+  // Path tab — mirror exactly so both bubbles match
+  var gP = document.getElementById('guidePathAuraPhysical');
+  var gA = document.getElementById('guidePathAuraAstral');
+  var gM = document.getElementById('guidePathAuraMental');
+  if (gP) gP.style.opacity = auraFor(pLvl);
+  if (gA) gA.style.opacity = auraFor(aLvl);
+  if (gM) gM.style.opacity = auraFor(mLvl);
   if (resText) resText.textContent = Math.floor(reservoir) + ' / ' + cap;
   if (resFill) resFill.style.width = Math.min(100, reservoir / cap * 100) + '%';
   if (rateText) rateText.textContent = omniaRatePerHour() + ' akasha per hour · resonance ' + (omniaState.recStreak || 0);
