@@ -291,6 +291,16 @@ app.post('/api/sync/auth/logout', verifyToken, (req, res) => {
   res.json({ message: 'Logged out' });
 });
 
+// HEARTBEAT — lightweight ping to mark user as online
+app.post('/api/sync/auth/heartbeat', verifyToken, async (req, res) => {
+  try {
+    await usersCollection.updateOne({ _id: new ObjectId(req.user.userId) }, { $set: { lastActive: new Date() } });
+    res.json({ ok: true });
+  } catch (err) {
+    res.status(500).json({ error: 'Heartbeat failed' });
+  }
+});
+
 // PUSH DATA
 app.post('/api/sync/sync/push', verifyToken, async (req, res) => {
   try {
@@ -410,6 +420,7 @@ app.get('/api/sync/friends/list', verifyToken, async (req, res) => {
         username: otherUser.username || otherUser.email,
         email: otherUser.email,
         lastSync: latestSync ? latestSync.syncedAt : null,
+        lastActive: otherUser.lastActive || null,
         streak, concLevel, concXp, akasha, bardonStep, bodies
       });
     }

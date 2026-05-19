@@ -2078,6 +2078,8 @@ body:not(.tut-live) #tutCorgi {
 .fp-decline-btn { padding:6px 10px; border:1px solid var(--border); border-radius:6px; background:transparent; color:var(--muted); font-family:'DM Mono',monospace; font-size:9px; cursor:pointer; }
 .fp-empty { text-align:center; padding:32px 0; color:var(--muted); font-size:11px; letter-spacing:.1em; }
 .fp-remove-btn { padding:4px 10px; border:1px solid var(--border); border-radius:6px; background:transparent; color:var(--muted); font-family:'DM Mono',monospace; font-size:8px; cursor:pointer; opacity:.6; }
+.fp-online-dot { display:inline-block; width:7px; height:7px; border-radius:50%; background:#4caf80; box-shadow:0 0 5px rgba(76,175,128,.6); flex-shrink:0; }
+.fp-offline-dot { display:inline-block; width:7px; height:7px; border-radius:50%; background:rgba(255,255,255,.15); flex-shrink:0; }
 </style>
 <script>
   // Set safe-area padding variables before first paint.
@@ -17515,13 +17517,16 @@ function renderFriendsList(friends) {
   if (!el) return;
   if (!friends.length) { el.innerHTML = '<div class="fp-empty">No friends yet.<br>Search by username to add some.</div>'; return; }
   el.innerHTML = friends.map(function(f) {
-    var lastActive = f.lastSync ? timeAgo(new Date(f.lastSync)) : 'never';
+    var now = Date.now();
+    var isOnline = f.lastActive && (now - new Date(f.lastActive).getTime() < 2 * 60 * 1000);
+    var statusDot = isOnline ? '<span class="fp-online-dot"></span>' : '<span class="fp-offline-dot"></span>';
+    var statusText = isOnline ? 'Online now' : (f.lastActive ? 'Active ' + timeAgo(new Date(f.lastActive)) : (f.lastSync ? 'Synced ' + timeAgo(new Date(f.lastSync)) : 'Never active'));
     var bodies = f.bodies || { physical:1, astral:1, mental:1 };
     var bodyTotal = (bodies.physical||1) + (bodies.astral||1) + (bodies.mental||1);
     return '<div class="fp-friend-card">'
       + '<div style="display:flex;justify-content:space-between;align-items:flex-start;">'
-      + '<div><div class="fp-friend-name">@' + escHtml(f.username) + '</div>'
-      + '<div class="fp-friend-active">Active ' + lastActive + '</div></div>'
+      + '<div><div class="fp-friend-name" style="display:flex;align-items:center;gap:7px;">' + statusDot + '@' + escHtml(f.username) + '</div>'
+      + '<div class="fp-friend-active">' + statusText + '</div></div>'
       + '<button class="fp-remove-btn" onclick="removeFriend(\'' + f.userId + '\')">Remove</button>'
       + '</div>'
       + '<div class="fp-friend-stats">'
@@ -17634,12 +17639,21 @@ document.getElementById('fpBackBtn').addEventListener('click', closeFriendsPanel
 document.getElementById('fpSearchBtn').addEventListener('click', searchFriends);
 document.getElementById('fpSearchInput').addEventListener('keydown', function(e) { if (e.key === 'Enter') searchFriends(); });
 document.getElementById('drawerFriends').addEventListener('click', function() {
-  // Close drawer first
   var overlay = document.querySelector('.drawer-overlay');
   if (overlay) overlay.classList.remove('show');
   if (!authToken) { showToast('Sign in to use Friends'); return; }
   openFriendsPanel();
 });
+
+// Heartbeat — ping every 60 s while app is open and user is signed in
+(function() {
+  function sendHeartbeat() {
+    if (!authToken) return;
+    fetch(SYNC_API_URL + '/auth/heartbeat', { method:'POST', headers:{'Authorization':'Bearer ' + authToken} }).catch(function(){});
+  }
+  sendHeartbeat();
+  setInterval(sendHeartbeat, 60000);
+})();
 </script>
 </body>
 </html>
