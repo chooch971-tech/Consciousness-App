@@ -291,6 +291,24 @@ app.post('/api/sync/auth/logout', verifyToken, (req, res) => {
   res.json({ message: 'Logged out' });
 });
 
+// SET USERNAME — lets existing users claim a username post-registration
+app.post('/api/sync/auth/set-username', verifyToken, async (req, res) => {
+  try {
+    const { username } = req.body;
+    if (!username || typeof username !== 'string') return res.status(400).json({ error: 'Username required' });
+    const clean = username.trim().toLowerCase().replace(/[^a-z0-9_]/g, '');
+    if (clean.length < 3) return res.status(400).json({ error: 'Username must be at least 3 characters (letters, numbers, underscores)' });
+    if (clean.length > 24) return res.status(400).json({ error: 'Username too long (max 24 characters)' });
+    const existing = await usersCollection.findOne({ username: clean });
+    if (existing && existing._id.toString() !== req.user.userId) return res.status(400).json({ error: 'Username already taken' });
+    await usersCollection.updateOne({ _id: new ObjectId(req.user.userId) }, { $set: { username: clean } });
+    res.json({ username: clean });
+  } catch (err) {
+    console.error('Set username error:', err);
+    res.status(500).json({ error: 'Failed to set username' });
+  }
+});
+
 // HEARTBEAT — lightweight ping to mark user as online
 app.post('/api/sync/auth/heartbeat', verifyToken, async (req, res) => {
   try {

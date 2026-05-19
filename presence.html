@@ -2115,6 +2115,16 @@ body:not(.tut-live) #tutCorgi {
           <button id="syncLogoutBtn" style="width:100%; display:none; font-size:9px; letter-spacing:.15em; padding:10px; border:1px solid var(--border); border-radius:6px; background:transparent; color:var(--muted); cursor:pointer;">Sign Out</button>
           <button id="syncLoginBtn" style="width:100%; display:none; font-size:9px; letter-spacing:.15em; padding:10px; border:1px solid rgba(126,184,164,.35); border-radius:6px; background:rgba(126,184,164,.08); color:#7eb8a4; cursor:pointer; font-family:'DM Mono',monospace;">Sign In / Create Account</button>
         </div>
+        <!-- Set Username card — shown only when signed in without a username -->
+        <div id="setUsernameCard" style="display:none; background:rgba(126,184,164,.05); border:1px solid rgba(126,184,164,.25); border-radius:10px; padding:16px 18px;">
+          <div style="font-size:12px; color:var(--text); margin-bottom:4px;">Set your username</div>
+          <div style="font-size:10px; color:var(--muted); line-height:1.6; margin-bottom:12px;">Choose a username so friends can find and add you. Letters, numbers, and underscores only.</div>
+          <div style="display:flex; gap:8px;">
+            <input id="setUsernameInput" type="text" placeholder="username" maxlength="24" autocomplete="off" style="flex:1; padding:10px 12px; border:1px solid var(--border); border-radius:7px; background:rgba(255,255,255,.04); color:var(--text); font-family:'DM Mono',monospace; font-size:11px; letter-spacing:.05em; outline:none;"/>
+            <button id="setUsernameBtn" style="padding:10px 16px; border:1px solid var(--accent); border-radius:7px; background:rgba(126,184,164,.1); color:var(--accent); font-family:'DM Mono',monospace; font-size:9px; letter-spacing:.15em; text-transform:uppercase; cursor:pointer; white-space:nowrap;">Save</button>
+          </div>
+          <div id="setUsernameError" style="font-size:10px; color:#c47a7a; margin-top:8px; display:none;"></div>
+        </div>
       </div>
 
       <!-- Backup & Restore -->
@@ -5102,14 +5112,16 @@ document.getElementById('drawerSettings').addEventListener('click', function() {
   // Update sync status when opening settings
   if (syncEnabled && authEmail) {
     document.getElementById('syncStatusText').textContent = '✓ Syncing across devices';
-    document.getElementById('syncStatusEmail').textContent = authEmail;
+    document.getElementById('syncStatusEmail').textContent = authUsername ? '@' + authUsername + ' · ' + authEmail : authEmail;
     document.getElementById('syncLogoutBtn').style.display = 'block';
     document.getElementById('syncLoginBtn').style.display = 'none';
+    document.getElementById('setUsernameCard').style.display = authUsername ? 'none' : 'block';
   } else {
     document.getElementById('syncStatusText').textContent = 'Not logged in';
     document.getElementById('syncStatusEmail').textContent = '';
     document.getElementById('syncLogoutBtn').style.display = 'none';
     document.getElementById('syncLoginBtn').style.display = 'block';
+    document.getElementById('setUsernameCard').style.display = 'none';
   }
   showScreen('settingsScreen');
   renderCustomVisImageList();
@@ -5182,6 +5194,38 @@ document.getElementById('customAudUpload').addEventListener('change', function(e
 document.getElementById('syncLogoutBtn').addEventListener('click', function() {
   if (confirm('Sign out of cloud sync?')) {
     authLogout({ clearLocalProgress: true });
+  }
+});
+
+document.getElementById('setUsernameBtn').addEventListener('click', async function() {
+  var input = document.getElementById('setUsernameInput');
+  var errEl = document.getElementById('setUsernameError');
+  var val = (input.value || '').trim();
+  if (!val) return;
+  this.disabled = true;
+  errEl.style.display = 'none';
+  try {
+    var res = await fetch(SYNC_API_URL + '/auth/set-username', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + authToken },
+      body: JSON.stringify({ username: val })
+    });
+    var data = await res.json();
+    if (res.ok) {
+      authUsername = data.username;
+      localStorage.setItem('presence_auth_username', authUsername);
+      document.getElementById('setUsernameCard').style.display = 'none';
+      document.getElementById('syncStatusEmail').textContent = '@' + authUsername + ' · ' + authEmail;
+      showToast('Username set: @' + authUsername);
+    } else {
+      errEl.textContent = data.error || 'Failed to set username';
+      errEl.style.display = 'block';
+      this.disabled = false;
+    }
+  } catch(e) {
+    errEl.textContent = 'Network error. Try again.';
+    errEl.style.display = 'block';
+    this.disabled = false;
   }
 });
 document.getElementById('syncLoginBtn').addEventListener('click', function() {
