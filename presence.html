@@ -12514,8 +12514,10 @@ function guideThoughtDuration(h) {
 }
 
 function guideClockStats() {
-  var out = { count:0, totalSec:0, bestSec:0, todaySec:0, todayBestSec:0, todayCount:0, firstMs:0, lastMs:0 };
+  var out = { count:0, totalSec:0, bestSec:0, todaySec:0, todayBestSec:0, todayCount:0, firstMs:0, lastMs:0, qualTarget:5, qualTenCount:0 };
   var history = (typeof concState !== 'undefined' && concState.history) ? concState.history : [];
+  // Collect clock sessions sorted oldest-first for tier simulation
+  var clockSessions = [];
   history.forEach(function(h) {
     if (!guideIsClockHistory(h)) return;
     var sec = guideHistorySeconds(h);
@@ -12530,7 +12532,20 @@ function guideClockStats() {
       out.todaySec += sec;
       if (sec > out.todayBestSec) out.todayBestSec = sec;
     }
+    clockSessions.push({ sec:sec, ms:ms });
   });
+  // Simulate tier progression: +1 min per 2 qualifying sessions, cap at 10
+  clockSessions.sort(function(a, b) { return a.ms - b.ms; });
+  var tier = 5, qualAtTier = 0;
+  clockSessions.forEach(function(s) {
+    if (s.sec >= tier * 60) {
+      qualAtTier++;
+      if (tier === 10) out.qualTenCount++;
+      if (qualAtTier >= 2 && tier < 10) { tier++; qualAtTier = 0; }
+    }
+  });
+  out.qualTarget = tier;
+  out.qualAtTier = qualAtTier; // sessions completed at current tier (0 or 1)
   return out;
 }
 
@@ -12590,7 +12605,24 @@ function guideThoughtTargetMinutes(mode, thoughtStats) {
 }
 
 function guideClockTargetMinutes(clockStats) {
-  return guideClamp(5 + Math.floor((clockStats.totalSec || 0) / 300), 5, 20);
+  return clockStats.qualTarget || 5;
+}
+
+function guideClockFinalTarget(clockStats) {
+  var auto = guideClockTargetMinutes(clockStats);
+  if (auto >= 10 && guideState.clockUserTarget != null) {
+    return guideClamp(guideState.clockUserTarget, 10, 15);
+  }
+  return auto;
+}
+
+function guideClockAtCap(clockStats) {
+  return guideClockTargetMinutes(clockStats) >= 10;
+}
+
+function guideClockShowUpsell(clockStats) {
+  // Show upsell after 14 qualifying 10-min sessions and user hasn't set a manual target yet
+  return guideClockAtCap(clockStats) && (clockStats.qualTenCount || 0) >= 14 && guideState.clockUserTarget == null;
 }
 
 function guideClockAttentionTargetSec(clockStats) {
@@ -12731,19 +12763,26 @@ function buildFoundationalGuideItems() {
   var thought = guideThoughtStats();
   var mode = guideCurrentThoughtMode(thought);
   var modeStats = thought[mode] || { count:0, bestSec:0, todaySec:0 };
-  var clockMinutes = guideClockTargetMinutes(clock);
+  var clockMinutes = guideClockFinalTarget(clock);
   var clockDailyTarget = clockMinutes * 60 * rounds;
   var thoughtMinutes = guideThoughtTargetMinutes(mode, thought);
   var thoughtDailyTarget = thoughtMinutes * 60 * rounds;
   var attentionTarget = guideClockAttentionTargetSec(clock);
+  var atCap = guideClockAtCap(clock);
+  var showUpsell = guideClockShowUpsell(clock);
   var attentionText = attentionTarget
     ? ' Your concentration target is ' + guideFmtTime(attentionTarget) + ', based on the first-weeks rule of three times your best recorded hold.'
     : ' First establish a clean baseline; after that Omnia sets the clock target at three times your best hold.';
+  var tierProgress = !atCap
+    ? ' (' + (clock.qualAtTier || 0) + '/2 sessions toward ' + (clockMinutes + 1) + ' min)'
+    : '';
   var nextThought = mode === 'observation'
     ? 'When observation reaches a ten-minute gap, Omnia will move you to Thought Focus at five minutes.'
     : mode === 'focus'
       ? 'When focus reaches a ten-minute gap, Omnia will move you to Vacancy at five minutes.'
       : 'When vacancy reaches a ten-minute gap, Omnia will cycle all three forms instead of adding more volume.';
+
+  var clockExtra = showUpsell ? 'upsell' : atCap ? 'stepper' : null;
 
   var items = [
     {
@@ -12753,8 +12792,9 @@ function buildFoundationalGuideItems() {
       durationLabel:clockMinutes + ' min' + (rounds > 1 ? ' x2' : ''),
       done:clock.todaySec >= clockDailyTarget,
       progress:'today ' + guideFmtTime(clock.todaySec) + ' / ' + guideFmtTime(clockDailyTarget),
-      tip:'Accumulate the time across one or more reps. Every five minutes of total Clock work raises this agenda by one minute.' + attentionText,
-      open:'clock'
+      tip:'Complete the full session to count toward the next tier. Two qualifying sessions unlock the next minute.' + tierProgress + attentionText,
+      open:'clock',
+      clockExtra:clockExtra
     },
     {
       id:'thought',
@@ -12766,6 +12806,16 @@ function buildFoundationalGuideItems() {
       progress:'today ' + guideFmtTime(modeStats.todaySec) + ' / ' + guideFmtTime(thoughtDailyTarget) + ' · best gap ' + guideFmtTime(modeStats.bestSec || 0),
       tip:GUIDE_FOUNDATION_THOUGHT_TIPS[mode] + ' Omnia adds one minute after every two completed sessions in this form, up to ten minutes. ' + nextThought,
       open:'thought'
+    },
+    {
+      id:'soulmirror',
+      name:'Soul Mirror',
+      duration:null,
+      durationLabel:'Reflection',
+      done:!!(guideExerciseStats().soulmirror && guideExerciseStats().soulmirror.todayCount > 0),
+      progress:'',
+      tip:'Record one honest weakness and one genuine strength. The mirror is the foundation of all inner work — begin it now, not later.',
+      open:'soulmirror'
     }
   ];
 
@@ -13150,7 +13200,30 @@ function renderPathQuests() {
     var beginHtml = item.open
       ? '<button class="pq-ex-start" style="' + beginStyle + '"' + startAttrs + (item.done ? ' disabled' : '') + '>' + (item.done ? 'Done' : 'Begin') + '</button>'
       : '';
-    return '<div style="display:flex;align-items:center;gap:14px;background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:14px 14px 14px 0;position:relative;overflow:hidden;' + (item.done ? 'opacity:.5;' : '') + '">'
+
+    // Clock-specific extras: upsell banner or stepper
+    var extraHtml = '';
+    if (item.clockExtra === 'upsell') {
+      extraHtml = '<div style="margin-top:10px;padding:10px 12px;border-radius:8px;background:rgba(212,176,142,.07);border:1px solid rgba(212,176,142,.18);display:flex;align-items:center;justify-content:space-between;gap:10px;">'
+        + '<div style="font-size:9px;color:#d4b08e;letter-spacing:.1em;">Ready for 15 min intervals?</div>'
+        + '<div style="display:flex;gap:8px;">'
+        + '<button class="pq-clock-upsell-yes" style="padding:5px 12px;border-radius:6px;border:1px solid rgba(212,176,142,.4);background:rgba(212,176,142,.1);color:#d4b08e;font-family:\'DM Mono\',monospace;font-size:8px;letter-spacing:.2em;cursor:pointer;">Yes</button>'
+        + '<button class="pq-clock-upsell-no" style="padding:5px 12px;border-radius:6px;border:1px solid rgba(255,255,255,.08);background:none;color:var(--muted);font-family:\'DM Mono\',monospace;font-size:8px;letter-spacing:.2em;cursor:pointer;">Stay at 10</button>'
+        + '</div></div>';
+    } else if (item.clockExtra === 'stepper') {
+      var cur = guideClamp(guideState.clockUserTarget != null ? guideState.clockUserTarget : 10, 10, 15);
+      extraHtml = '<div style="margin-top:10px;display:flex;align-items:center;gap:10px;">'
+        + '<div style="font-size:9px;color:var(--muted);letter-spacing:.1em;">Your target</div>'
+        + '<div style="display:flex;align-items:center;gap:6px;">'
+        + '<button class="pq-clock-step" data-dir="-1" style="width:24px;height:24px;border-radius:6px;border:1px solid rgba(255,255,255,.1);background:rgba(255,255,255,.04);color:var(--text);font-size:14px;cursor:pointer;display:flex;align-items:center;justify-content:center;">−</button>'
+        + '<span style="font-family:\'Cormorant Garamond\',serif;font-size:18px;font-weight:300;color:var(--text);min-width:36px;text-align:center;">' + cur + ' min</span>'
+        + '<button class="pq-clock-step" data-dir="1" style="width:24px;height:24px;border-radius:6px;border:1px solid rgba(255,255,255,.1);background:rgba(255,255,255,.04);color:var(--text);font-size:14px;cursor:pointer;display:flex;align-items:center;justify-content:center;">+</button>'
+        + '</div></div>';
+    }
+
+    var cardPadding = extraHtml ? 'padding:14px 14px 10px 0;' : 'padding:14px 14px 14px 0;';
+    return '<div style="display:flex;flex-direction:column;background:var(--surface);border:1px solid var(--border);border-radius:14px;' + cardPadding + 'position:relative;overflow:hidden;' + (item.done ? 'opacity:.5;' : '') + '">'
+      + '<div style="display:flex;align-items:center;gap:14px;">'
       + '<div style="width:3px;align-self:stretch;border-radius:0 3px 3px 0;background:' + color + ';flex-shrink:0;"></div>'
       + '<div style="font-size:22px;width:36px;text-align:center;flex-shrink:0;">' + icon + '</div>'
       + '<div style="flex:1;min-width:0;">'
@@ -13158,6 +13231,8 @@ function renderPathQuests() {
       + '<div style="font-size:9px;color:var(--muted);letter-spacing:.06em;">' + meta + '</div>'
       + '</div>'
       + '<div style="display:flex;align-items:center;gap:10px;flex-shrink:0;padding-right:2px;">' + checkHtml + beginHtml + '</div>'
+      + '</div>'
+      + (extraHtml ? '<div style="padding:0 14px 12px 16px;">' + extraHtml + '</div>' : '')
       + '</div>';
   }).join('');
   html += '</div>';  // close cards container
@@ -13245,6 +13320,34 @@ function renderPathQuests() {
   });
   root.querySelectorAll('.pq-ex-start').forEach(function(btn) {
     btn.onclick = function(e) { e.stopPropagation(); if (typeof beginGuidePlanItem === 'function') beginGuidePlanItem(btn); };
+  });
+  var upsellYes = root.querySelector('.pq-clock-upsell-yes');
+  if (upsellYes) {
+    upsellYes.onclick = function(e) {
+      e.stopPropagation();
+      guideState.clockUserTarget = 11; // start at 11 — they can adjust up from there
+      saveGuideState(guideState);
+      renderPathQuests();
+    };
+  }
+  var upsellNo = root.querySelector('.pq-clock-upsell-no');
+  if (upsellNo) {
+    upsellNo.onclick = function(e) {
+      e.stopPropagation();
+      guideState.clockUserTarget = 10; // locks in 10, dismisses upsell, shows stepper
+      saveGuideState(guideState);
+      renderPathQuests();
+    };
+  }
+  root.querySelectorAll('.pq-clock-step').forEach(function(btn) {
+    btn.onclick = function(e) {
+      e.stopPropagation();
+      var dir = parseInt(btn.dataset.dir, 10);
+      var cur = guideClamp(guideState.clockUserTarget != null ? guideState.clockUserTarget : 10, 10, 15);
+      guideState.clockUserTarget = guideClamp(cur + dir, 10, 15);
+      saveGuideState(guideState);
+      renderPathQuests();
+    };
   });
 }
 
