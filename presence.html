@@ -394,16 +394,48 @@
     #guidePathPanel .guide-confirm-panel,
     #guidePathPanel .guide-route-grid { display:none !important; }
     /* Path banner — Duolingo-style colored header with Omnia on the right */
-    .path-banner { position:relative; height:130px; margin:14px 0 4px; border-radius:18px; background:linear-gradient(135deg,#1f3550 0%,#2a4f6e 45%,#3d6a8e 100%); overflow:hidden; display:flex; align-items:center; justify-content:flex-end; padding:0 22px 0 22px; }
-    .path-banner::before { content:''; position:absolute; inset:0; background:radial-gradient(circle at 75% 50%, rgba(184,234,255,0.20), transparent 62%); pointer-events:none; }
-    .path-banner::after { content:''; position:absolute; left:-30%; right:-30%; bottom:-80%; height:160%; background:radial-gradient(ellipse at 50% 0%, rgba(126,184,164,0.10), transparent 65%); pointer-events:none; }
-    .path-banner-glow { position:absolute; right:6px; top:50%; width:170px; height:170px; transform:translateY(-50%); background:radial-gradient(circle, rgba(184,234,255,0.32) 0%, rgba(126,184,164,0.10) 38%, transparent 70%); pointer-events:none; }
-    .path-banner-figure { position:relative; z-index:2; width:78px; height:118px; display:flex; align-items:center; justify-content:center; animation:omniaFloat 4.5s ease-in-out infinite; filter:drop-shadow(0 0 12px rgba(160,210,240,.55)); cursor:pointer; }
+    .path-banner { position:relative; height:148px; margin:14px 0 4px; border-radius:18px; background:linear-gradient(145deg,#0a1a2e 0%,#0d2a3a 40%,#0c1e30 100%); overflow:hidden; display:flex; align-items:center; justify-content:space-between; padding:0 22px; }
+    .path-banner::before { content:''; position:absolute; inset:0; background:radial-gradient(ellipse 60% 70% at 72% 55%, rgba(100,190,220,.18) 0%, transparent 70%); pointer-events:none; }
+    .path-banner::after { content:''; position:absolute; inset:0; background:radial-gradient(ellipse 40% 50% at 68% 48%, rgba(180,230,255,.08) 0%, transparent 60%); pointer-events:none; }
+    .path-banner-text { z-index:2; display:flex; flex-direction:column; gap:3px; }
+    .path-banner-label { font-size:8px; letter-spacing:.28em; text-transform:uppercase; color:rgba(142,204,224,.7); }
+    .path-banner-title { font-family:'Cormorant Garamond',serif; font-size:24px; font-weight:300; color:#d8f0ff; line-height:1.1; }
+    .path-banner-sub { font-size:9px; letter-spacing:.1em; color:rgba(200,230,245,.42); }
+    .path-banner-glow { position:absolute; right:6px; top:50%; width:170px; height:170px; transform:translateY(-50%); background:radial-gradient(circle, rgba(184,234,255,0.25) 0%, rgba(126,184,164,0.10) 38%, transparent 70%); pointer-events:none; }
+    .path-banner-figure { position:relative; z-index:2; width:78px; height:118px; display:flex; align-items:center; justify-content:center; animation:omniaFloat 4.5s ease-in-out infinite; filter:drop-shadow(0 0 16px rgba(140,200,230,.45)); cursor:pointer; }
     .path-banner-figure svg.path-banner-crystal { width:100%; height:auto; overflow:visible; }
     .path-banner-figure .omnia-shard-layer { position:absolute; inset:0; width:100%; height:100%; opacity:0; pointer-events:none; }
     .path-banner-figure .omnia-symbol-layer { position:absolute; inset:0; display:flex; align-items:center; justify-content:center; pointer-events:none; }
     .path-banner-figure .omnia-morph-ring { position:absolute; left:50%; top:50%; transform:translate(-50%,-50%); opacity:0; border:1px solid rgba(184,234,255,.45); border-radius:50%; width:62px; height:62px; box-shadow:0 0 14px rgba(142,204,224,.24), inset 0 0 14px rgba(142,204,224,.12); pointer-events:none; }
     .path-quest-root { display:flex; flex-direction:column; gap:18px; padding:18px 2px 28px; }
+    /* ── Guide redesign: day strip + exercise cards ── */
+    .path-day-strip { display:flex; align-items:center; justify-content:space-between; margin:14px 0 0; padding:0 2px; }
+    .path-day-name { font-family:'Cormorant Garamond',serif; font-size:20px; font-weight:300; color:var(--text); }
+    .path-day-progress { display:flex; align-items:center; gap:8px; }
+    .path-day-frac { font-size:9px; color:var(--muted); letter-spacing:.05em; }
+    .path-day-frac strong { color:var(--text); }
+    .path-ex-list { display:flex; flex-direction:column; gap:8px; margin-top:10px; }
+    .path-ex-card { display:flex; align-items:center; background:var(--surface); border:1px solid var(--border); border-radius:14px; padding:14px 14px 14px 0; overflow:hidden; transition:border-color .2s; }
+    .path-ex-card.done { opacity:.55; }
+    .path-ex-card.done .path-ex-begin { opacity:.35; pointer-events:none; }
+    .path-ex-swatch { width:3px; align-self:stretch; border-radius:0 3px 3px 0; flex-shrink:0; }
+    .path-ex-icon { font-size:20px; width:40px; text-align:center; flex-shrink:0; }
+    .path-ex-info { flex:1; min-width:0; }
+    .path-ex-name { font-size:10px; letter-spacing:.18em; text-transform:uppercase; line-height:1.3; margin-bottom:3px; }
+    .path-ex-meta { font-size:9px; color:var(--muted); letter-spacing:.06em; }
+    .path-ex-right { display:flex; align-items:center; gap:10px; flex-shrink:0; }
+    .path-ex-check { width:22px; height:22px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:11px; }
+    .path-ex-check.empty { border:1px solid var(--border); }
+    .path-ex-check.done { background:rgba(126,184,164,.15); color:var(--accent); }
+    .path-ex-begin { padding:8px 14px; border-radius:8px; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.04); color:var(--text); font-family:'DM Mono',monospace; font-size:9px; letter-spacing:.2em; text-transform:uppercase; cursor:pointer; }
+    .path-ex-begin:hover { border-color:rgba(255,255,255,.2); background:rgba(255,255,255,.07); }
+    .path-ex-begin:disabled { opacity:.35; cursor:default; }
+    .path-streak-nudge { display:flex; align-items:center; gap:12px; margin-top:12px; border:1px solid var(--border); border-radius:12px; background:rgba(255,255,255,.02); padding:12px 16px; }
+    .path-streak-icon { font-size:20px; }
+    .path-streak-body { flex:1; }
+    .path-streak-title { font-size:10px; color:var(--text); letter-spacing:.06em; margin-bottom:2px; }
+    .path-streak-sub { font-size:9px; color:var(--muted); letter-spacing:.05em; }
+    .path-streak-val { font-family:'Cormorant Garamond',serif; font-size:22px; font-weight:300; color:#d4b08e; }
     .path-quest-card { border:1px solid rgba(255,255,255,0.07); border-radius:14px; padding:18px 18px 18px; background:rgba(255,255,255,0.02); }
     .path-quest-omnia { cursor:pointer; }
     .pq-row { display:flex; justify-content:space-between; align-items:center; margin-bottom:6px; }
@@ -2664,8 +2696,13 @@ body:not(.tut-live) #tutCorgi {
 
     <div class="guide-tab-panel" id="guidePathPanel">
 
-    <!-- Path banner — Duolingo-style header with Omnia on the right -->
+    <!-- Path banner — Omnia on the right, text on the left -->
     <div class="path-banner" id="pathBanner">
+      <div class="path-banner-text">
+        <div class="path-banner-label">Omnia's Path</div>
+        <div class="path-banner-title">Practice Now</div>
+        <div class="path-banner-sub" id="pathBannerSub">Step I · Fundamentals</div>
+      </div>
       <div class="path-banner-glow"></div>
       <div class="path-banner-figure omnia-figure" id="pathBannerOmniaFigure" role="button" tabindex="0" aria-label="Reveal an Omnia symbol">
         <svg class="path-banner-crystal" viewBox="0 0 80 130" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
@@ -2811,17 +2848,33 @@ body:not(.tut-live) #tutCorgi {
     </div>
 
     <!-- Plan output -->
-    <div id="guidePlanOutput" style="display:none; margin-top:28px;">
-      <div style="display:flex; justify-content:space-between; align-items:baseline; margin-bottom:4px;">
-        <div style="font-size:9px; letter-spacing:.22em; text-transform:uppercase; color:var(--muted);">Practice Now</div>
-        <div style="font-size:9px; color:var(--muted); opacity:.6;" id="guidePlanDayLabel"></div>
+    <div id="guidePlanOutput" style="display:none; margin-top:4px;">
+      <div class="path-day-strip">
+        <div class="path-day-name" id="guidePlanDayLabel"></div>
+        <div class="path-day-progress">
+          <span class="path-day-frac" id="guidePlanFrac"></span>
+          <svg id="guidePlanRing" width="32" height="32" viewBox="0 0 32 32">
+            <circle cx="16" cy="16" r="13" fill="none" stroke="rgba(255,255,255,.07)" stroke-width="2.5"/>
+            <circle id="guidePlanRingFill" cx="16" cy="16" r="13" fill="none" stroke="#8ecce0" stroke-width="2.5"
+              stroke-dasharray="81.68" stroke-dashoffset="81.68"
+              stroke-linecap="round" transform="rotate(-90 16 16)" opacity=".85"/>
+          </svg>
+        </div>
       </div>
-      <div style="font-size:9px; letter-spacing:.12em; color:#8ecce0; text-transform:uppercase; margin-bottom:14px;" id="guidePlanFocus"></div>
-      <div class="guide-plan-controls" id="guidePlanControls">
+      <div class="guide-plan-controls" id="guidePlanControls" style="margin-top:10px;">
         <div class="guide-cadence-label">Cadence</div>
         <button class="guide-cadence-toggle" id="guidePlanTwoADayBtn">2x/day on</button>
       </div>
-      <div id="guidePlanCards"></div>
+      <div class="path-ex-list" id="guidePlanCards"></div>
+      <div class="path-streak-nudge" id="guideStreakNudge" style="display:none;">
+        <div class="path-streak-icon">🔥</div>
+        <div class="path-streak-body">
+          <div class="path-streak-title">Keep your streak alive</div>
+          <div class="path-streak-sub">Complete today's practice before midnight</div>
+        </div>
+        <div class="path-streak-val" id="guideStreakVal">0d</div>
+      </div>
+      <div style="font-size:9px; letter-spacing:.12em; color:rgba(142,204,224,.4); text-transform:uppercase; display:none;" id="guidePlanFocus"></div>
       <div class="omnia-response" style="margin-top:18px; padding-bottom:8px;">Go well. Return when you are ready.</div>
     </div>
     </div>
@@ -12775,12 +12828,33 @@ function renderGuidePlan(mode, skipScroll) {
   var items = mode === 'experienced' ? buildExperiencedGuideItems() : buildFoundationalGuideItems();
   var focus = mode === 'experienced' ? 'Personal Recommendations' : 'Foundational Path' + (guideTwoADayEnabled() ? ' · 2x/day' : '');
 
-  document.getElementById('guidePlanFocus').textContent = focus;
   var dayNames = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
-  document.getElementById('guidePlanDayLabel').textContent = mode === 'experienced' ? 'Custom' : 'Adaptive · ' + dayNames[dayIdx];
+  var dayLabelEl = document.getElementById('guidePlanDayLabel');
+  if (dayLabelEl) dayLabelEl.textContent = mode === 'experienced' ? 'Custom' : dayNames[dayIdx];
+  var focusEl = document.getElementById('guidePlanFocus');
+  if (focusEl) focusEl.textContent = focus;
   var planControls = document.getElementById('guidePlanControls');
   if (planControls) planControls.style.display = 'flex';
   renderGuideCadenceControl();
+
+  // Exercise icons by type
+  var exIcon = { clock:'⏰', visual:'👁', auditory:'🎧', thought:'◯', asana:'🧘', soulmirror:'🪞' };
+
+  var doneCount = items.filter(function(i){ return i.done; }).length;
+  var totalCount = items.length;
+
+  // Update arc ring
+  var ringFill = document.getElementById('guidePlanRingFill');
+  if (ringFill) {
+    var pct = totalCount > 0 ? doneCount / totalCount : 0;
+    ringFill.setAttribute('stroke-dashoffset', (81.68 * (1 - pct)).toFixed(2));
+  }
+  var fracEl = document.getElementById('guidePlanFrac');
+  if (fracEl) fracEl.innerHTML = '<strong>' + doneCount + '</strong> / ' + totalCount + ' done';
+
+  // Update banner sub-text with step/focus
+  var bannerSub = document.getElementById('pathBannerSub');
+  if (bannerSub) bannerSub.textContent = focus;
 
   var cardsHTML = items.map(function(item) {
     var durLabel = item.durationLabel || (item.duration ? item.duration + ' min' : 'Open-ended');
@@ -12790,23 +12864,43 @@ function renderGuidePlan(mode, skipScroll) {
       : item.id === 'auditory' ? '#8eccc0'
       : item.id === 'thought'  ? '#98b4cc'
       : item.id === 'asana'    ? '#d49898'
-      : '#c4a8d4'; // soulmirror
+      : '#c4a8d4';
+    var icon = exIcon[item.id] || '◆';
     var startAttrs = item.open
       ? ' data-guide-start="' + item.open + '"'
         + (item.mode ? ' data-guide-mode="' + item.mode + '"' : '')
         + (item.duration ? ' data-guide-duration="' + item.duration + '"' : '')
       : '';
-    return '<div class="guide-plan-card' + (item.done ? ' done' : '') + '">'
-      + '<div class="guide-plan-exname" style="color:' + accentColor + ';">' + item.name + modeLabel + '</div>'
-      + '<div class="guide-plan-dur">' + durLabel + '</div>'
-      + (item.done ? '' : '<div class="guide-plan-tip">' + item.tip + '</div>')
-      + (item.progress ? '<div class="guide-plan-meta">' + (item.done ? 'complete today · ' : '') + item.progress + '</div>' : '')
-      + (item.open ? '<div class="guide-plan-action"><button class="guide-plan-start"' + startAttrs + (item.done ? ' disabled' : '') + '>' + (item.done ? 'Complete' : 'Begin') + '</button></div>' : '')
+    var checkHtml = item.done
+      ? '<div class="path-ex-check done">✓</div>'
+      : '<div class="path-ex-check empty"></div>';
+    var beginHtml = item.open
+      ? '<button class="path-ex-begin guide-plan-start"' + startAttrs + (item.done ? ' disabled' : '') + '>' + (item.done ? 'Done' : 'Begin') + '</button>'
+      : '';
+    return '<div class="path-ex-card' + (item.done ? ' done' : '') + '">'
+      + '<div class="path-ex-swatch" style="background:' + accentColor + ';"></div>'
+      + '<div class="path-ex-icon">' + icon + '</div>'
+      + '<div class="path-ex-info">'
+      + '<div class="path-ex-name" style="color:' + accentColor + ';">' + item.name + modeLabel + '</div>'
+      + '<div class="path-ex-meta">' + durLabel + (item.progress ? ' · ' + item.progress : '') + '</div>'
+      + '</div>'
+      + '<div class="path-ex-right">' + checkHtml + beginHtml + '</div>'
       + '</div>';
   }).join('');
+
   var note = mode === 'beginner' ? guideFoundationalNote() : '';
   document.getElementById('guidePlanCards').innerHTML = cardsHTML
     + (note ? '<div class="guide-plan-note">' + note + '</div>' : '');
+
+  // Show streak nudge if user has a streak going
+  var streakNudge = document.getElementById('guideStreakNudge');
+  var streakVal = document.getElementById('guideStreakVal');
+  if (streakNudge && typeof state !== 'undefined' && state.streak > 0) {
+    streakNudge.style.display = 'flex';
+    if (streakVal) streakVal.textContent = state.streak + 'd';
+  } else if (streakNudge) {
+    streakNudge.style.display = 'none';
+  }
 
   document.getElementById('guidePlanOutput').style.display = 'block';
   // Scroll to plan only when triggered by an explicit user action
