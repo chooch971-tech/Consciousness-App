@@ -13119,10 +13119,9 @@ function renderPathQuests() {
     + '</svg>'
     + '</div></div>';
 
-  // Section label
-  html += '<div style="font-size:8px;letter-spacing:.26em;text-transform:uppercase;color:var(--muted);margin:2px 2px 4px;">Exercises</div>';
-
-  // Exercise cards
+  // Section label + exercise cards (wrapped together so flex gap doesn't push them apart)
+  html += '<div>';
+  html += '<div style="font-size:8px;letter-spacing:.26em;text-transform:uppercase;color:var(--muted);margin:0 2px 8px;">Exercises</div>';
   html += '<div style="display:flex;flex-direction:column;gap:8px;">';
   html += items.map(function(item) {
     var rounds = (item.durationLabel && item.durationLabel.indexOf('x2') !== -1) ? 2 : 1;
@@ -13161,47 +13160,72 @@ function renderPathQuests() {
       + '<div style="display:flex;align-items:center;gap:10px;flex-shrink:0;padding-right:2px;">' + checkHtml + beginHtml + '</div>'
       + '</div>';
   }).join('');
-  html += '</div>';
+  html += '</div>';  // close cards container
+  html += '</div>';  // close label+cards wrapper
+
+  // Mockup-style quest card builder
+  function questCardHTML(opts) {
+    // opts: label, labelColor, timerText, title, progressNumerator, progressDenominator, progressUnit, pct, fillGrad, reward, done, claimed, dataQuest, borderColor, bgGrad, glowColor
+    return '<div style="border-radius:16px;border:1px solid ' + opts.borderColor + ';background:' + opts.bgGrad + ';padding:18px 20px;position:relative;overflow:hidden;">'
+      + '<div style="content:\'\';position:absolute;top:-30px;right:-20px;width:100px;height:100px;border-radius:50%;background:radial-gradient(circle,' + opts.glowColor + ' 0%,transparent 70%);pointer-events:none;"></div>'
+      + '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;position:relative;">'
+      + '<div style="font-size:8px;letter-spacing:.26em;text-transform:uppercase;color:' + opts.labelColor + ';">' + opts.label + '</div>'
+      + '<div style="display:flex;align-items:center;gap:5px;font-size:9px;letter-spacing:.1em;color:var(--muted);"><div style="width:6px;height:6px;border-radius:50%;border:1px solid ' + opts.labelColor + ';"></div>' + opts.timerText + '</div>'
+      + '</div>'
+      + '<div style="font-family:\'Cormorant Garamond\',serif;font-size:19px;font-weight:300;color:var(--text);margin-bottom:14px;line-height:1.2;position:relative;">' + opts.title + '</div>'
+      + '<div style="height:3px;border-radius:2px;background:rgba(255,255,255,.06);overflow:hidden;margin-bottom:8px;position:relative;">'
+      + '<div style="height:100%;border-radius:2px;background:' + opts.fillGrad + ';width:' + opts.pct + '%;transition:width .5s ease;"></div>'
+      + '</div>'
+      + '<div style="font-size:9px;color:var(--muted);letter-spacing:.08em;position:relative;"><strong style="color:var(--text);">' + opts.progressNumerator + '</strong> / ' + opts.progressDenominator + (opts.progressUnit ? ' ' + opts.progressUnit : '') + '</div>'
+      + '<div style="display:flex;align-items:center;gap:12px;margin-top:14px;position:relative;">'
+      + '<div style="width:48px;height:42px;flex-shrink:0;display:flex;align-items:center;justify-content:center;">' + pathQuestChestSVG(opts.done) + '</div>'
+      + '<div style="flex:1;font-family:\'DM Mono\',monospace;font-size:11px;letter-spacing:.1em;color:#d4a874;">+' + opts.reward + ' Akasha</div>'
+      + (opts.done && !opts.claimed ? '<button class="pq-claim" data-quest="' + opts.dataQuest + '">Claim</button>' : opts.claimed ? '<div class="pq-claimed">Claimed</div>' : '')
+      + '</div></div>';
+  }
 
   // ── Awareness Quest (every other day) ──
   if (awarenessQuestVisible) {
-    var awPct = awarenessClamp / awarenessTarget * 100;
-    html += '<div class="path-quest-card" style="border:1px solid rgba(155,142,196,.22);background:linear-gradient(135deg,rgba(155,142,196,.06) 0%,rgba(142,204,224,.03) 100%);">'
-      + '<div class="pq-row"><div class="pq-label" style="color:rgba(155,142,196,.7);">AWARENESS QUEST</div><div class="pq-time">' + pathQuestDailyTimeLeft() + '</div></div>'
-      + '<div class="pq-title">15 minutes of awareness practice</div>'
-      + '<div style="height:3px;border-radius:2px;background:rgba(255,255,255,.06);overflow:hidden;margin-bottom:8px;">'
-      + '<div style="height:100%;border-radius:2px;background:linear-gradient(90deg,#9b8ec4,#8ecce0);width:' + awPct + '%;transition:width .5s ease;"></div>'
-      + '</div>'
-      + '<div style="font-size:9px;color:var(--muted);letter-spacing:.08em;margin-bottom:10px;"><strong style="color:var(--text);">' + awarenessClamp + '</strong> / ' + awarenessTarget + ' min</div>'
-      + '<div class="pq-reward-row"><div class="pq-reward-icon">' + pathQuestChestSVG(awarenessDone) + '</div><div class="pq-reward-text">+' + awarenessReward + ' Akasha</div>'
-      + (awarenessDone && !awarenessClaimed ? '<button class="pq-claim" data-quest="awareness">Claim</button>' : awarenessClaimed ? '<div class="pq-claimed">Claimed</div>' : '')
-      + '</div></div>';
+    html += questCardHTML({
+      label:'Awareness Quest', labelColor:'rgba(155,142,196,.6)',
+      timerText:pathQuestDailyTimeLeft(), title:'15 minutes of awareness practice',
+      progressNumerator:awarenessClamp, progressDenominator:awarenessTarget, progressUnit:'min',
+      pct:awarenessClamp / awarenessTarget * 100,
+      fillGrad:'linear-gradient(90deg,#9b8ec4 0%,#8ecce0 100%)',
+      reward:awarenessReward, done:awarenessDone, claimed:awarenessClaimed, dataQuest:'awareness',
+      borderColor:'rgba(155,142,196,.18)',
+      bgGrad:'linear-gradient(135deg,rgba(155,142,196,.06) 0%,rgba(142,204,224,.04) 100%)',
+      glowColor:'rgba(155,142,196,.1)'
+    });
   }
 
   // ── Weekend Quest (Fri-Sun only) ──
   if (weekendVisible) {
-    var weekendPct = weekendClamp / weekendTarget * 100;
-    html += '<div class="path-quest-card path-quest-weekend" style="margin-top:0;">'
-      + '<div class="pq-row"><div class="pq-label">WEEKEND QUEST</div><div class="pq-time">' + pathQuestWeekendTimeLeft() + '</div></div>'
-      + '<div class="pq-title">Complete 12 exercises</div>'
-      + '<div class="pq-bar weekend"><div class="pq-bar-fill" style="width:' + weekendPct + '%"></div><span class="pq-bar-text">' + weekendClamp + ' / ' + weekendTarget + '</span></div>'
-      + '<div class="pq-reward-row"><div class="pq-reward-icon">' + pathQuestChestSVG(weekendDone) + '</div><div class="pq-reward-text">+' + weekendReward + ' Akasha</div>'
-      + (weekendDone && !weekendClaimed ? '<button class="pq-claim" data-quest="weekend">Claim</button>' : weekendClaimed ? '<div class="pq-claimed">Claimed</div>' : '')
-      + '</div></div>';
+    html += questCardHTML({
+      label:'Weekend Quest', labelColor:'rgba(196,168,212,.6)',
+      timerText:pathQuestWeekendTimeLeft(), title:'Complete 12 exercises',
+      progressNumerator:weekendClamp, progressDenominator:weekendTarget, progressUnit:'',
+      pct:weekendClamp / weekendTarget * 100,
+      fillGrad:'linear-gradient(90deg,#c4a8d4 0%,#b88dc8 100%)',
+      reward:weekendReward, done:weekendDone, claimed:weekendClaimed, dataQuest:'weekend',
+      borderColor:'rgba(196,168,212,.18)',
+      bgGrad:'linear-gradient(135deg,rgba(196,168,212,.06) 0%,rgba(155,142,196,.04) 100%)',
+      glowColor:'rgba(196,168,212,.1)'
+    });
   }
 
   // ── Daily Quest ──
-  var dailyPct = dailyClamp / dailyTarget * 100;
-  html += '<div class="path-quest-card path-quest-daily" style="border:1px solid rgba(142,204,224,.18);background:linear-gradient(135deg,rgba(142,204,224,.06) 0%,rgba(126,184,164,.04) 100%);">'
-    + '<div class="pq-row"><div class="pq-label" style="color:rgba(142,204,224,.6);">DAILY QUEST</div><div class="pq-time">' + pathQuestDailyTimeLeft() + '</div></div>'
-    + '<div class="pq-title">Complete your next 2 exercises</div>'
-    + '<div style="height:3px;border-radius:2px;background:rgba(255,255,255,.06);overflow:hidden;margin-bottom:8px;">'
-    + '<div style="height:100%;border-radius:2px;background:linear-gradient(90deg,#8ecce0,#7eb8a4);width:' + dailyPct + '%;transition:width .5s ease;"></div>'
-    + '</div>'
-    + '<div style="font-size:9px;color:var(--muted);letter-spacing:.08em;margin-bottom:10px;"><strong style="color:var(--text);">' + dailyClamp + '</strong> / ' + dailyTarget + '</div>'
-    + '<div class="pq-reward-row"><div class="pq-reward-icon">' + pathQuestChestSVG(dailyDone) + '</div><div class="pq-reward-text">+' + dailyReward + ' Akasha</div>'
-    + (dailyDone && !dailyClaimed ? '<button class="pq-claim" data-quest="daily">Claim</button>' : dailyClaimed ? '<div class="pq-claimed">Claimed</div>' : '')
-    + '</div></div>';
+  html += questCardHTML({
+    label:'Daily Quest', labelColor:'rgba(142,204,224,.6)',
+    timerText:pathQuestDailyTimeLeft(), title:'Complete your next 2 exercises',
+    progressNumerator:dailyClamp, progressDenominator:dailyTarget, progressUnit:'',
+    pct:dailyClamp / dailyTarget * 100,
+    fillGrad:'linear-gradient(90deg,#8ecce0 0%,#7eb8a4 100%)',
+    reward:dailyReward, done:dailyDone, claimed:dailyClaimed, dataQuest:'daily',
+    borderColor:'rgba(142,204,224,.18)',
+    bgGrad:'linear-gradient(135deg,rgba(142,204,224,.06) 0%,rgba(126,184,164,.04) 100%)',
+    glowColor:'rgba(142,204,224,.1)'
+  });
 
   // ── Streak nudge (always shown) ──
   var streakVal = (typeof state !== 'undefined' && state.streak) || 0;
