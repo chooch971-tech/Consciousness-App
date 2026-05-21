@@ -403,7 +403,7 @@
     .path-banner-title { font-family:'Cormorant Garamond',serif; font-size:24px; font-weight:300; color:#d8f0ff; line-height:1.1; }
     .path-banner-sub { font-size:9px; letter-spacing:.1em; color:rgba(200,230,245,.42); }
     .path-banner-glow { position:absolute; right:6px; top:50%; width:170px; height:170px; transform:translateY(-50%); background:radial-gradient(circle, rgba(184,234,255,0.25) 0%, rgba(126,184,164,0.10) 38%, transparent 70%); pointer-events:none; }
-    .path-banner-figure { position:relative; z-index:2; width:78px; height:118px; display:flex; align-items:center; justify-content:center; animation:omniaFloat 4.5s ease-in-out infinite; filter:drop-shadow(0 0 16px rgba(140,200,230,.45)); cursor:pointer; }
+    .path-banner-figure { position:relative; z-index:2; width:78px; height:118px; top:10px; display:flex; align-items:center; justify-content:center; animation:omniaFloat 4.5s ease-in-out infinite; filter:drop-shadow(0 0 16px rgba(140,200,230,.45)); cursor:pointer; }
     .path-banner-figure svg.path-banner-crystal { width:100%; height:auto; overflow:visible; }
     .path-banner-figure .omnia-shard-layer { position:absolute; inset:0; width:100%; height:100%; opacity:0; pointer-events:none; }
     .path-banner-figure .omnia-symbol-layer { position:absolute; inset:0; display:flex; align-items:center; justify-content:center; pointer-events:none; }
@@ -2706,6 +2706,7 @@ body:not(.tut-live) #tutCorgi {
       </div>
       <div class="path-banner-glow"></div>
       <div class="path-banner-figure omnia-figure" id="pathBannerOmniaFigure" role="button" tabindex="0" aria-label="Reveal an Omnia symbol">
+        <div class="omnia-crystal-layer">
         <svg class="path-banner-crystal" viewBox="0 0 80 130" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
           <defs>
             <linearGradient id="pbg1" x1="0%" y1="0%" x2="100%" y2="100%">
@@ -2737,6 +2738,7 @@ body:not(.tut-live) #tutCorgi {
           <polygon points="40,100 56,88 40,114" fill="url(#pbg2)" stroke="#88c4e0" stroke-width="0.48" opacity="0.72"/>
           <polygon points="40,100 24,88 40,114" fill="#b4dcf4" stroke="#88c4e0" stroke-width="0.48" opacity="0.52"/>
         </svg>
+        </div>
         <svg class="omnia-shard-layer" id="pathBannerOmniaShardSvg" viewBox="0 0 100 130" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"></svg>
         <div class="omnia-morph-ring"></div>
         <div class="omnia-symbol-layer" id="pathBannerOmniaSymbolLayer"></div>
@@ -13081,7 +13083,10 @@ function renderPathQuests() {
   html += '<div style="display:flex;flex-direction:column;gap:8px;">';
   html += items.map(function(item) {
     var durLabel = item.durationLabel || (item.duration ? item.duration + ' min' : 'Open-ended');
-    var modeLabel = item.mode ? ' · ' + (GUIDE_FOUNDATION_THOUGHT_LABELS[item.mode] || item.mode) : '';
+    var displayName = (item.id === 'thought' && item.mode)
+      ? (GUIDE_FOUNDATION_THOUGHT_LABELS[item.mode] || item.mode)
+      : item.name;
+    var modeLabel = (item.id !== 'thought' && item.mode) ? ' · ' + (GUIDE_FOUNDATION_THOUGHT_LABELS[item.mode] || item.mode) : '';
     var color = exColor[item.id] || '#c4a8d4';
     var icon = exIcon[item.id] || '◆';
     var startAttrs = item.open
@@ -13101,7 +13106,7 @@ function renderPathQuests() {
       + '<div style="width:3px;align-self:stretch;border-radius:0 3px 3px 0;background:' + color + ';flex-shrink:0;"></div>'
       + '<div style="font-size:20px;width:42px;text-align:center;flex-shrink:0;">' + icon + '</div>'
       + '<div style="flex:1;min-width:0;">'
-      + '<div style="font-size:10px;letter-spacing:.18em;text-transform:uppercase;color:' + color + ';margin-bottom:3px;">' + item.name + modeLabel + '</div>'
+      + '<div style="font-size:10px;letter-spacing:.18em;text-transform:uppercase;color:' + color + ';margin-bottom:3px;">' + displayName + modeLabel + '</div>'
       + '<div style="font-size:9px;color:var(--muted);letter-spacing:.06em;">' + durLabel + '</div>'
       + '</div>'
       + '<div style="display:flex;align-items:center;gap:10px;flex-shrink:0;padding-right:2px;">' + checkHtml + beginHtml + '</div>'
