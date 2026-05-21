@@ -1,0 +1,482 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=390, initial-scale=1"/>
+<title>Guide Redesign — Presence</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300&family=DM+Mono:wght@300;400&display=swap" rel="stylesheet"/>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg:      #07080d;
+    --surface: #0e1018;
+    --border:  rgba(255,255,255,.07);
+    --text:    #e8e0d0;
+    --muted:   #6b6a72;
+    --accent:  #7eb8a4;
+    --guide:   #8ecce0;
+  }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'DM Mono', monospace;
+    display: flex;
+    justify-content: center;
+    min-height: 100vh;
+    padding: 0;
+  }
+
+  .phone {
+    width: 390px;
+    min-height: 100vh;
+    background: var(--bg);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    position: relative;
+  }
+
+  /* ── Fake status bar + nav ───────────────────── */
+  .fake-nav {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 20px 0;
+    flex-shrink: 0;
+  }
+  .nav-hamburger { display: flex; flex-direction: column; gap: 5px; cursor: pointer; }
+  .nav-hamburger span { display: block; width: 20px; height: 1.5px; background: var(--muted); border-radius: 2px; }
+  .nav-wordmark { font-family: 'Cormorant Garamond', serif; font-size: 11px; font-weight: 300; letter-spacing: .38em; text-transform: uppercase; color: var(--accent); }
+  .nav-streak { font-family: 'DM Mono', monospace; font-size: 9px; letter-spacing: .15em; color: var(--muted); }
+  .nav-streak span { color: var(--text); }
+
+  /* ── Mode tabs ───────────────────────────────── */
+  .mode-tabs {
+    display: flex;
+    margin: 10px 20px 0;
+    border-bottom: 1px solid var(--border);
+  }
+  .mode-tab {
+    flex: 1; padding: 10px 0 8px; text-align: center;
+    font-size: 9px; letter-spacing: .25em; text-transform: uppercase;
+    color: var(--muted); background: none; border: none;
+    border-bottom: 2px solid transparent; cursor: pointer;
+    font-family: 'DM Mono', monospace;
+  }
+  .mode-tab.active { color: var(--guide); border-bottom-color: var(--guide); }
+
+  /* ── Scrollable content ──────────────────────── */
+  .guide-scroll {
+    flex: 1; overflow-y: auto; padding-bottom: 40px;
+    -webkit-overflow-scrolling: touch;
+  }
+  .guide-scroll::-webkit-scrollbar { display: none; }
+
+  /* ── Path / Upgrade pill tabs ────────────────── */
+  .guide-pill-tabs {
+    display: flex; justify-content: center;
+    gap: 4px; margin: 16px auto 0;
+    padding: 4px;
+    background: rgba(255,255,255,.03);
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    width: fit-content;
+  }
+  .guide-pill-tab {
+    padding: 7px 22px; border-radius: 999px;
+    background: transparent; border: none;
+    font-family: 'DM Mono', monospace;
+    font-size: 9px; letter-spacing: .22em; text-transform: uppercase;
+    color: var(--muted); cursor: pointer;
+  }
+  .guide-pill-tab.active { background: rgba(142,204,224,.15); color: var(--guide); }
+
+  /* ── Hero banner ─────────────────────────────── */
+  .guide-hero {
+    margin: 16px 16px 0;
+    border-radius: 18px;
+    overflow: hidden;
+    position: relative;
+    height: 148px;
+    background: linear-gradient(145deg, #0a1a2e 0%, #0d2a3a 40%, #0c1e30 100%);
+    flex-shrink: 0;
+  }
+  /* ambient glow layers */
+  .guide-hero::before {
+    content: '';
+    position: absolute; inset: 0;
+    background: radial-gradient(ellipse 60% 70% at 72% 55%, rgba(100,190,220,.18) 0%, transparent 70%);
+  }
+  .guide-hero::after {
+    content: '';
+    position: absolute; inset: 0;
+    background: radial-gradient(ellipse 40% 50% at 68% 48%, rgba(180,230,255,.08) 0%, transparent 60%);
+  }
+
+  /* scattered accent dots */
+  .hero-dots {
+    position: absolute; inset: 0; pointer-events: none;
+  }
+  .hero-dot {
+    position: absolute; border-radius: 50%;
+    background: rgba(180,220,255,.55);
+    animation: heroFloat 4s ease-in-out infinite;
+  }
+  @keyframes heroFloat {
+    0%, 100% { transform: translateY(0); opacity: .55; }
+    50%       { transform: translateY(-5px); opacity: .8; }
+  }
+
+  .hero-text {
+    position: absolute; left: 22px; bottom: 20px; z-index: 2;
+  }
+  .hero-label {
+    font-size: 8px; letter-spacing: .28em; text-transform: uppercase;
+    color: rgba(142,204,224,.7); margin-bottom: 4px;
+  }
+  .hero-title {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 22px; font-weight: 300;
+    color: #d8f0ff; line-height: 1.1;
+  }
+  .hero-sub {
+    font-size: 9px; letter-spacing: .1em;
+    color: rgba(200,230,245,.45); margin-top: 3px;
+  }
+
+  /* Omnia crystal in hero */
+  .hero-omnia {
+    position: absolute; right: 22px; top: 50%;
+    transform: translateY(-52%);
+    width: 74px; height: 120px;
+    z-index: 2;
+    filter: drop-shadow(0 0 18px rgba(140,200,230,.35));
+    animation: omniaFloat 5s ease-in-out infinite;
+  }
+  @keyframes omniaFloat {
+    0%, 100% { transform: translateY(-52%); }
+    50%       { transform: translateY(-58%); }
+  }
+
+  /* ── Today's summary strip ───────────────────── */
+  .today-strip {
+    display: flex; align-items: center; justify-content: space-between;
+    margin: 14px 16px 0; padding: 0 2px;
+  }
+  .today-heading {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 20px; font-weight: 300; color: var(--text);
+  }
+  .today-progress-pill {
+    display: flex; align-items: center; gap: 8px;
+  }
+  .today-fraction {
+    font-size: 11px; color: var(--muted); letter-spacing: .05em;
+  }
+  .today-fraction strong { color: var(--text); }
+  /* arc ring */
+  .today-ring { width: 32px; height: 32px; flex-shrink: 0; }
+
+  /* ── Section label ───────────────────────────── */
+  .section-label {
+    font-size: 8px; letter-spacing: .26em; text-transform: uppercase;
+    color: var(--muted); margin: 16px 16px 8px;
+  }
+
+  /* ── Exercise cards ──────────────────────────── */
+  .ex-list { display: flex; flex-direction: column; gap: 8px; margin: 0 16px; }
+
+  .ex-card {
+    display: flex; align-items: center; gap: 14px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 14px 14px 14px 0;
+    position: relative;
+    overflow: hidden;
+    transition: border-color .2s;
+  }
+  .ex-card.done { opacity: .5; }
+  .ex-card.done .ex-begin { opacity: .35; pointer-events: none; }
+
+  /* left color bar */
+  .ex-bar {
+    width: 3px; align-self: stretch; border-radius: 0 3px 3px 0;
+    flex-shrink: 0;
+  }
+
+  .ex-icon {
+    font-size: 22px; width: 36px; text-align: center; flex-shrink: 0;
+  }
+
+  .ex-info { flex: 1; min-width: 0; }
+  .ex-name {
+    font-size: 10px; letter-spacing: .18em; text-transform: uppercase;
+    line-height: 1.3; margin-bottom: 3px;
+  }
+  .ex-meta { font-size: 9px; color: var(--muted); letter-spacing: .06em; }
+
+  .ex-right { display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
+
+  .ex-checkmark {
+    width: 22px; height: 22px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 11px;
+  }
+  .ex-checkmark.done { background: rgba(126,184,164,.15); color: var(--accent); }
+  .ex-checkmark.empty { border: 1px solid var(--border); color: transparent; }
+
+  .ex-begin {
+    padding: 8px 14px;
+    border-radius: 8px;
+    border: 1px solid rgba(255,255,255,.12);
+    background: rgba(255,255,255,.04);
+    color: var(--text);
+    font-family: 'DM Mono', monospace;
+    font-size: 9px; letter-spacing: .2em; text-transform: uppercase;
+    cursor: pointer;
+  }
+  .ex-begin:hover { border-color: rgba(255,255,255,.22); background: rgba(255,255,255,.07); }
+
+  /* ── Quest card ──────────────────────────────── */
+  .quest-card {
+    margin: 16px 16px 0;
+    border-radius: 16px;
+    border: 1px solid rgba(142,204,224,.18);
+    background: linear-gradient(135deg, rgba(142,204,224,.06) 0%, rgba(126,184,164,.04) 100%);
+    padding: 18px 20px;
+    position: relative;
+    overflow: hidden;
+  }
+  .quest-card::before {
+    content: '';
+    position: absolute; top: -30px; right: -20px;
+    width: 100px; height: 100px; border-radius: 50%;
+    background: radial-gradient(circle, rgba(142,204,224,.1) 0%, transparent 70%);
+  }
+  .quest-top {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 10px;
+  }
+  .quest-label {
+    font-size: 8px; letter-spacing: .26em; text-transform: uppercase;
+    color: rgba(142,204,224,.6);
+  }
+  .quest-timer {
+    display: flex; align-items: center; gap: 5px;
+    font-size: 9px; letter-spacing: .1em; color: var(--muted);
+  }
+  .quest-timer-dot {
+    width: 6px; height: 6px; border-radius: 50%;
+    border: 1px solid rgba(142,204,224,.5);
+  }
+  .quest-title {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 19px; font-weight: 300; color: var(--text);
+    margin-bottom: 14px; line-height: 1.2;
+  }
+  .quest-track {
+    height: 3px; border-radius: 2px;
+    background: rgba(255,255,255,.06);
+    position: relative; overflow: hidden; margin-bottom: 8px;
+  }
+  .quest-fill {
+    height: 100%; border-radius: 2px;
+    background: linear-gradient(90deg, var(--guide) 0%, var(--accent) 100%);
+    transition: width .5s ease;
+  }
+  .quest-frac {
+    font-size: 9px; color: var(--muted); letter-spacing: .08em;
+  }
+  .quest-frac strong { color: var(--text); }
+
+  /* ── Streak nudge ────────────────────────────── */
+  .streak-nudge {
+    margin: 10px 16px 0;
+    border-radius: 12px;
+    border: 1px solid rgba(255,255,255,.05);
+    background: rgba(255,255,255,.02);
+    padding: 12px 16px;
+    display: flex; align-items: center; gap: 12px;
+  }
+  .streak-flame { font-size: 20px; }
+  .streak-text { flex: 1; }
+  .streak-title { font-size: 10px; color: var(--text); letter-spacing: .06em; margin-bottom: 2px; }
+  .streak-sub { font-size: 9px; color: var(--muted); letter-spacing: .05em; }
+  .streak-val { font-family: 'Cormorant Garamond', serif; font-size: 22px; font-weight: 300; color: #d4b08e; }
+
+</style>
+</head>
+<body>
+<div class="phone">
+
+  <!-- Nav bar -->
+  <div class="fake-nav">
+    <div class="nav-hamburger"><span></span><span></span><span></span></div>
+    <div class="nav-wordmark">Presence</div>
+    <div class="nav-streak">streak <span>3d</span></div>
+  </div>
+
+  <!-- Mode tabs -->
+  <div class="mode-tabs" style="margin: 10px 20px 0;">
+    <button class="mode-tab active">Guide</button>
+    <button class="mode-tab">Concentration</button>
+    <button class="mode-tab">Awareness ▾</button>
+  </div>
+
+  <!-- Scrollable guide content -->
+  <div class="guide-scroll">
+
+    <!-- Path / Upgrade pill tabs -->
+    <div class="guide-pill-tabs">
+      <button class="guide-pill-tab active">Path</button>
+      <button class="guide-pill-tab">Upgrade</button>
+    </div>
+
+    <!-- Hero banner -->
+    <div class="guide-hero">
+      <!-- ambient dots -->
+      <div class="hero-dots">
+        <div class="hero-dot" style="width:7px;height:7px;left:52%;top:38%;animation-delay:0s;"></div>
+        <div class="hero-dot" style="width:5px;height:5px;left:38%;top:55%;animation-delay:1.2s;"></div>
+        <div class="hero-dot" style="width:4px;height:4px;left:60%;top:65%;animation-delay:.6s;opacity:.35;"></div>
+        <div class="hero-dot" style="width:6px;height:6px;left:44%;top:28%;animation-delay:2s;opacity:.4;"></div>
+      </div>
+
+      <!-- Omnia crystal SVG -->
+      <svg class="hero-omnia" viewBox="0 0 80 130" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <linearGradient id="og1" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stop-color="#ddf0ff" stop-opacity=".92"/>
+            <stop offset="100%" stop-color="#6ab8d8" stop-opacity=".48"/>
+          </linearGradient>
+          <linearGradient id="og2" x1="100%" y1="0%" x2="0%" y2="100%">
+            <stop offset="0%" stop-color="#ffffff" stop-opacity=".78"/>
+            <stop offset="100%" stop-color="#4a9ec0" stop-opacity=".22"/>
+          </linearGradient>
+          <radialGradient id="og3" cx="50%" cy="38%" r="58%">
+            <stop offset="0%" stop-color="#b8eaff" stop-opacity=".42"/>
+            <stop offset="100%" stop-color="#2878a0" stop-opacity="0"/>
+          </radialGradient>
+          <filter id="oglow" x="-30%" y="-30%" width="160%" height="160%">
+            <feGaussianBlur stdDeviation="2.5" result="blur"/>
+            <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+          </filter>
+        </defs>
+        <ellipse cx="40" cy="68" rx="28" ry="48" fill="url(#og3)" opacity=".62"/>
+        <polygon points="40,3 54,14 40,25 26,14" fill="url(#og1)" stroke="#90cce8" stroke-width=".55" filter="url(#oglow)"/>
+        <polygon points="40,3 54,14 40,13" fill="#ceeaff" opacity=".72"/>
+        <polygon points="40,3 26,14 40,13" fill="#b0dcf5" opacity=".42"/>
+        <polygon points="40,25 60,36 64,58 40,70 16,58 20,36" fill="url(#og1)" stroke="#88c4e0" stroke-width=".55"/>
+        <polygon points="40,25 60,36 40,44" fill="#d4ecff" opacity=".52"/>
+        <polygon points="40,25 20,36 40,44" fill="#bce0f8" opacity=".32"/>
+        <polygon points="40,70 64,58 56,88 40,100 24,88 16,58" fill="url(#og1)" stroke="#88c4e0" stroke-width=".55" opacity=".88"/>
+        <polygon points="40,100 56,88 40,114" fill="url(#og2)" stroke="#88c4e0" stroke-width=".48" opacity=".72"/>
+        <polygon points="40,100 24,88 40,114" fill="#b4dcf4" stroke="#88c4e0" stroke-width=".48" opacity=".52"/>
+      </svg>
+
+      <div class="hero-text">
+        <div class="hero-label">Omnia's Path</div>
+        <div class="hero-title">Today's practice</div>
+        <div class="hero-sub">Step I · Fundamentals</div>
+      </div>
+    </div>
+
+    <!-- Today summary strip -->
+    <div class="today-strip">
+      <div class="today-heading">Wednesday</div>
+      <div class="today-progress-pill">
+        <span class="today-fraction"><strong>0</strong> / 2 done</span>
+        <!-- SVG arc ring -->
+        <svg class="today-ring" viewBox="0 0 32 32">
+          <circle cx="16" cy="16" r="13" fill="none" stroke="rgba(255,255,255,.07)" stroke-width="2.5"/>
+          <!-- 0% filled arc — change stroke-dashoffset to animate -->
+          <circle cx="16" cy="16" r="13" fill="none" stroke="#8ecce0" stroke-width="2.5"
+            stroke-dasharray="81.68" stroke-dashoffset="81.68"
+            stroke-linecap="round" transform="rotate(-90 16 16)" opacity=".8"/>
+        </svg>
+      </div>
+    </div>
+
+    <!-- Exercise list -->
+    <div class="section-label">Exercises</div>
+    <div class="ex-list">
+
+      <!-- CLOCK -->
+      <div class="ex-card">
+        <div class="ex-bar" style="background:#d4b08e;"></div>
+        <div class="ex-icon">⏰</div>
+        <div class="ex-info">
+          <div class="ex-name" style="color:#d4b08e;">Clock</div>
+          <div class="ex-meta">5 min · ×2 sessions</div>
+        </div>
+        <div class="ex-right">
+          <div class="ex-checkmark empty"></div>
+          <button class="ex-begin">Begin</button>
+        </div>
+      </div>
+
+      <!-- THOUGHT CONTROL -->
+      <div class="ex-card">
+        <div class="ex-bar" style="background:#98b4cc;"></div>
+        <div class="ex-icon">◯</div>
+        <div class="ex-info">
+          <div class="ex-name" style="color:#98b4cc;">Thought Control</div>
+          <div class="ex-meta">Thought Observation · 5 min · ×2</div>
+        </div>
+        <div class="ex-right">
+          <div class="ex-checkmark empty"></div>
+          <button class="ex-begin">Begin</button>
+        </div>
+      </div>
+
+      <!-- DONE example -->
+      <div class="ex-card done">
+        <div class="ex-bar" style="background:#8ab8e0;"></div>
+        <div class="ex-icon">👁</div>
+        <div class="ex-info">
+          <div class="ex-name" style="color:#8ab8e0;">Visualization</div>
+          <div class="ex-meta">5 min · completed</div>
+        </div>
+        <div class="ex-right">
+          <div class="ex-checkmark done">✓</div>
+          <button class="ex-begin" disabled>Done</button>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Daily quest card -->
+    <div class="quest-card">
+      <div class="quest-top">
+        <div class="quest-label">Daily Quest</div>
+        <div class="quest-timer">
+          <div class="quest-timer-dot"></div>
+          2h 32m
+        </div>
+      </div>
+      <div class="quest-title">Complete your next 2 exercises</div>
+      <div class="quest-track">
+        <div class="quest-fill" style="width: 50%;"></div>
+      </div>
+      <div class="quest-frac"><strong>1</strong> / 2</div>
+    </div>
+
+    <!-- Streak nudge -->
+    <div class="streak-nudge">
+      <div class="streak-flame">🔥</div>
+      <div class="streak-text">
+        <div class="streak-title">Keep your streak alive</div>
+        <div class="streak-sub">Complete today's practice before midnight</div>
+      </div>
+      <div class="streak-val">3d</div>
+    </div>
+
+  </div><!-- end guide-scroll -->
+</div><!-- end phone -->
+</body>
+</html>
