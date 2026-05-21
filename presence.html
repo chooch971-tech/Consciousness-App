@@ -496,6 +496,14 @@
     .guide-swipe-wrap { width:100%; }
     .guide-tab-panel { width:100%; }
     .guide-tab-panel.guide-tab-hidden { display:none; }
+    .ptree-wrap { padding:10px 0 0; position:relative; }
+    .ptree-svg { display:block; width:100%; }
+    .ptree-legend { display:flex; align-items:center; justify-content:center; gap:14px; padding:12px 20px 18px; border-top:1px solid var(--border); }
+    .ptree-legend-item { display:flex; align-items:center; gap:6px; font-size:8px; letter-spacing:.12em; color:var(--muted); }
+    .ptree-tooltip { display:none; margin:0 16px 16px; background:rgba(10,12,17,.95); border:1px solid var(--border); border-radius:14px; padding:14px 18px; }
+    .ptree-tt-name { font-family:Cormorant Garamond,serif; font-size:18px; font-weight:300; color:var(--text); margin-bottom:4px; }
+    .ptree-tt-stat { font-size:9px; color:var(--muted); letter-spacing:.06em; line-height:1.7; }
+    .ptree-tt-stat strong { color:var(--text); }
     .omnia-engine { margin:0 0 20px; background:rgba(142,204,224,.045); border:1px solid rgba(142,204,224,.16); border-radius:12px; padding:16px; box-shadow:0 0 24px rgba(80,160,190,.04) inset; }
     .omnia-engine-top { display:flex; justify-content:space-between; align-items:flex-start; gap:14px; margin-bottom:14px; }
     .omnia-engine-kicker { font-size:8px; letter-spacing:.25em; text-transform:uppercase; color:#8ecce0; margin-bottom:5px; }
@@ -2558,6 +2566,7 @@ body:not(.tut-live) #tutCorgi {
     <div class="guide-tabs">
       <button class="guide-tab active" id="guidePathTab">Path</button>
       <button class="guide-tab" id="guideOmniaTab">Upgrade</button>
+      <button class="guide-tab" id="guideTreeTab">Tree</button>
     </div>
     <div class="guide-swipe-wrap" id="guideSwipeWrap">
     <div class="guide-tab-panel guide-tab-hidden" id="guideOmniaPanel">
@@ -2885,6 +2894,29 @@ body:not(.tut-live) #tutCorgi {
       <div style="font-size:9px; letter-spacing:.12em; color:rgba(142,204,224,.4); text-transform:uppercase; display:none;" id="guidePlanFocus"></div>
       <div class="omnia-response" style="margin-top:18px; padding-bottom:8px;">Go well. Return when you are ready.</div>
     </div>
+    </div>
+    <div class="guide-tab-panel guide-tab-hidden" id="guideTreePanel">
+      <div class="ptree-wrap">
+        <div id="guideTreeSVGWrap"></div>
+      </div>
+      <div class="ptree-legend">
+        <div class="ptree-legend-item">
+          <svg width="18" height="18" viewBox="0 0 18 18"><circle cx="9" cy="9" r="7" fill="none" stroke="#8ecce0" stroke-width=".7" stroke-opacity=".35" stroke-dasharray="2 2"/><circle cx="9" cy="9" r="4" fill="none" stroke="#8ecce0" stroke-width=".8" stroke-opacity=".55"/><circle cx="9" cy="9" r="1.8" fill="#b8eaff"/></svg>
+          Depth = sessions
+        </div>
+        <div class="ptree-legend-item">
+          <svg width="18" height="18" viewBox="0 0 18 18"><circle cx="9" cy="9" r="5" fill="#b8eaff" opacity=".9"/><circle cx="9" cy="9" r="2" fill="#ffffff"/></svg>
+          Brightness = quality
+        </div>
+        <div class="ptree-legend-item">
+          <svg width="22" height="10" viewBox="0 0 22 10"><line x1="0" y1="5" x2="22" y2="5" stroke="#8ecce0" stroke-width=".8" stroke-opacity=".4" stroke-dasharray="3 3"/></svg>
+          Path available
+        </div>
+      </div>
+      <div class="ptree-tooltip" id="ptreeTooltip">
+        <div class="ptree-tt-name" id="ptreeTooltipName"></div>
+        <div class="ptree-tt-stat" id="ptreeTooltipStat"></div>
+      </div>
     </div>
     </div><!-- end guideSwipeWrap -->
     </div><!-- end guidePanel -->
@@ -12317,18 +12349,210 @@ var GUIDE_FOUNDATION_THOUGHT_TIPS = {
   vacancy:'Let the mind stay empty; tap at the first sign of content.'
 };
 
+// ── Practice Tree ─────────────────────────────────────────
+
+function practiceTreeNodeBrightness(exId, stats) {
+  var st = stats[exId] || { bestSec:0, count:0 };
+  if (exId === 'clock') return Math.min(15, Math.floor((st.bestSec||0)/60));
+  if (exId === 'observation' || exId === 'focus' || exId === 'vacancy') {
+    var t = stats.thought || { bestSec:0 };
+    return Math.min(20, Math.floor((t.bestSec||0)/45));
+  }
+  if (exId === 'asana') return Math.min(20, Math.floor((st.bestSec||0)/90));
+  if (exId === 'soulmirror') return Math.min(20, Math.floor((st.count||0)/2));
+  if (exId === 'pore') {
+    var ss = stats.soulmirror || { count:0 };
+    return Math.min(20, Math.floor((ss.count||0)/2));
+  }
+  if (exId === 'visual') return Math.min(20, Math.floor((st.bestSec||0)/30));
+  if (exId === 'auditory') return Math.min(20, Math.floor((st.bestSec||0)/30));
+  if (exId === 'kether') {
+    var score = 0;
+    ['clock','observation','asana','soulmirror','visual','auditory'].forEach(function(id) {
+      if (practiceTreeNodeBrightness(id, stats) >= 10) score++;
+    });
+    return Math.round(score / 6 * 20);
+  }
+  return 0;
+}
+
+function practiceTreeNodeRecency(exId, stats) {
+  var lookupId = exId === 'pore' ? 'soulmirror'
+    : (exId === 'observation' || exId === 'focus' || exId === 'vacancy') ? 'thought'
+    : exId === 'kether' ? null : exId;
+  if (!lookupId) return 0.15;
+  var ms = (stats[lookupId] || {}).lastMs || 0;
+  if (!ms) return 0.15;
+  var days = (Date.now() - ms) / 86400000;
+  if (days <= 7) return 1.0;
+  if (days >= 60) return 0.2;
+  return 1.0 - (days - 7) / 53 * 0.8;
+}
+
+function practiceTreeNodeDepth(exId, stats) {
+  var lookupId = exId === 'pore' ? 'soulmirror'
+    : (exId === 'observation' || exId === 'focus' || exId === 'vacancy') ? 'thought'
+    : exId;
+  return Math.min(3, Math.floor(((stats[lookupId] || {}).count||0) / 10));
+}
+
+function renderPracticeTree() {
+  var el = document.getElementById('guideTreeSVGWrap');
+  if (!el) return;
+
+  var stats = guideExerciseStats();
+
+  var NODES = [
+    { id:'kether',    ex:'kether',      cx:170, cy:48,  color:'#c8a848', lc:'#f8f4e8', label:'STEP I',        fs:6,   gf:'pt-gf-gold' },
+    { id:'chokmah',   ex:'visual',      cx:242, cy:115, color:'#4878c0', lc:'#c8dcf8', label:'VISUALIZATION', fs:5.5, gf:'pt-gf-blue' },
+    { id:'binah',     ex:'vacancy',     cx:98,  cy:115, color:'#6068c8', lc:'#dce0f8', label:'VACANCY',       fs:5.5, gf:'pt-gf-purple' },
+    { id:'chesed',    ex:'auditory',    cx:242, cy:190, color:'#4898a0', lc:'#c4ecec', label:'AUDITORY',      fs:6,   gf:'pt-gf-teal-sm' },
+    { id:'geburah',   ex:'focus',       cx:98,  cy:190, color:'#5070a0', lc:'#d0dcf0', label:'THT FOCUS',     fs:5.5, gf:'pt-gf-teal-sm' },
+    { id:'tiphareth', ex:'observation', cx:170, cy:260, color:'#5888a8', lc:'#ccdcee', label:'THOUGHT OBS.',  fs:7,   gf:'pt-gf-teal' },
+    { id:'netzach',   ex:'pore',        cx:242, cy:340, color:'#6890b4', lc:'#dce8f4', label:'PORE BREATH',   fs:5.5, gf:'pt-gf-blue' },
+    { id:'hod',       ex:'soulmirror',  cx:98,  cy:340, color:'#8860a8', lc:'#e4d4f4', label:'SOUL MIRROR',   fs:6,   gf:'pt-gf-purple' },
+    { id:'yesod',     ex:'asana',       cx:170, cy:400, color:'#c87878', lc:'#f4d8d8', label:'ASANA',         fs:7,   gf:'pt-gf-rose' },
+    { id:'malkuth',   ex:'clock',       cx:170, cy:490, color:'#6ab8d0', lc:'#ddf8ff', label:'CLOCK',         fs:7.5, gf:'pt-gf-teal' }
+  ];
+
+  var bMap = {};
+  NODES.forEach(function(n) { bMap[n.id] = practiceTreeNodeBrightness(n.ex, stats); });
+
+  function pathLine(x1, y1, x2, y2, stroke, srcId) {
+    var b = bMap[srcId] || 0;
+    var op = Math.max(0.06, Math.min(0.45, 0.07 + b * 0.022));
+    var sw = (0.7 + b * 0.04).toFixed(1);
+    var dash = b > 2 ? '' : ' stroke-dasharray="3 3"';
+    return '<line x1="'+x1+'" y1="'+y1+'" x2="'+x2+'" y2="'+y2+'" stroke="'+stroke+'" stroke-width="'+sw+'" stroke-opacity="'+op.toFixed(3)+'"'+dash+'/>';
+  }
+
+  function nodeCircles(n) {
+    var b = bMap[n.id];
+    var rec = practiceTreeNodeRecency(n.ex, stats);
+    var dep = practiceTreeNodeDepth(n.ex, stats);
+    var starR = Math.max(2.5, 2.5 + b * 0.55);
+    var auraR = (starR * (1.3 + rec * 0.5)).toFixed(1);
+    var coronaR = (starR * 4.4).toFixed(1);
+    var coreR = Math.max(1.2, starR * 0.38).toFixed(1);
+    var coronaOp = Math.min(0.12, 0.02 + b * 0.003).toFixed(3);
+    var auraOp = (0.04 + rec * 0.1).toFixed(3);
+    var starOp = Math.min(0.97, 0.12 + b * 0.043).toFixed(3);
+    var coreOp = b > 2 ? '1' : b > 0 ? '0.45' : '0';
+    var labelY = (n.cy - starR - 4).toFixed(1);
+    var labelOp = b > 5 ? '0.8' : b > 2 ? '0.5' : b > 0 ? '0.3' : '0.2';
+
+    var rings = '';
+    for (var r = 1; r <= dep; r++) {
+      var rr = (starR * (1.9 + r * 0.8)).toFixed(1);
+      var rop = (0.1 - r * 0.02).toFixed(3);
+      rings += '<circle cx="'+n.cx+'" cy="'+n.cy+'" r="'+rr+'" fill="none" stroke="'+n.color+'" stroke-width=".5" stroke-opacity="'+rop+'" stroke-dasharray="2 2"/>';
+    }
+
+    var pulse = '';
+    if (rec > 0.5 && b > 0) {
+      var pr = (starR * 3.2).toFixed(1);
+      var pr0 = (starR * 1.8).toFixed(1);
+      pulse = '<circle cx="'+n.cx+'" cy="'+n.cy+'" r="'+pr+'" fill="'+n.color+'">'
+        + '<animate attributeName="r" values="'+pr0+';'+pr+';'+pr0+'" dur="5s" repeatCount="indefinite"/>'
+        + '<animate attributeName="opacity" values=".07;0;.07" dur="5s" repeatCount="indefinite"/>'
+        + '</circle>';
+    }
+
+    return '<circle cx="'+n.cx+'" cy="'+n.cy+'" r="'+coronaR+'" fill="'+n.color+'" opacity="'+coronaOp+'"/>'
+      + rings
+      + '<circle cx="'+n.cx+'" cy="'+n.cy+'" r="'+auraR+'" fill="'+n.lc+'" opacity="'+auraOp+'" filter="url(#'+n.gf+')"/>'
+      + pulse
+      + '<circle cx="'+n.cx+'" cy="'+n.cy+'" r="'+(starR.toFixed(1))+'" fill="'+n.lc+'" opacity="'+starOp+'" filter="url(#'+n.gf+')"/>'
+      + '<circle cx="'+n.cx+'" cy="'+n.cy+'" r="'+coreR+'" fill="#ffffff" opacity="'+coreOp+'"/>'
+      + '<circle cx="'+n.cx+'" cy="'+n.cy+'" r="'+(starR*2.2).toFixed(1)+'" fill="transparent" data-node="'+n.id+'" class="ptree-tap-area" style="cursor:pointer;"/>'
+      + '<text x="'+n.cx+'" y="'+labelY+'" text-anchor="middle" font-family="DM Mono,monospace" font-size="'+n.fs+'" letter-spacing=".12em" fill="'+n.color+'" opacity="'+labelOp+'">'+n.label+'</text>';
+  }
+
+  var bgStars = '<g opacity=".28"><circle cx="18" cy="62" r=".6" fill="#e8e4dc"/><circle cx="305" cy="88" r=".5" fill="#e8e4dc"/><circle cx="28" cy="200" r=".7" fill="#e8e4dc"/><circle cx="316" cy="220" r=".5" fill="#e8e4dc"/><circle cx="12" cy="360" r=".6" fill="#e8e4dc"/><circle cx="328" cy="380" r=".5" fill="#e8e4dc"/><circle cx="62" cy="490" r=".4" fill="#e8e4dc"/><circle cx="278" cy="500" r=".6" fill="#e8e4dc"/><circle cx="44" cy="130" r=".5" fill="#e8e4dc"/><circle cx="298" cy="145" r=".4" fill="#e8e4dc"/><circle cx="170" cy="22" r=".5" fill="#e8e4dc"/><circle cx="90" cy="46" r=".4" fill="#e8e4dc"/><circle cx="250" cy="38" r=".5" fill="#e8e4dc"/></g>';
+
+  var paths = [
+    pathLine(170,490,170,400,'#8ecce0','malkuth'),
+    pathLine(170,400,98,340,'#8ecce0','yesod'),
+    pathLine(170,400,242,340,'#8ecce0','yesod'),
+    pathLine(98,340,170,260,'#8ecce0','hod'),
+    pathLine(242,340,170,260,'#8ecce0','netzach'),
+    pathLine(170,260,98,190,'#98b4cc','tiphareth'),
+    pathLine(170,260,242,190,'#8ecce0','tiphareth'),
+    pathLine(98,190,98,115,'#98b4cc','geburah'),
+    pathLine(242,190,242,115,'#8ab8e0','chesed'),
+    pathLine(98,115,170,48,'#c4a8d4','binah'),
+    pathLine(242,115,170,48,'#8ab8e0','chokmah'),
+    '<line x1="98" y1="340" x2="242" y2="340" stroke="rgba(255,255,255,.055)" stroke-width=".6" stroke-dasharray="2 4"/>',
+    '<line x1="98" y1="190" x2="242" y2="190" stroke="rgba(255,255,255,.045)" stroke-width=".5" stroke-dasharray="2 4"/>',
+    '<line x1="98" y1="115" x2="242" y2="115" stroke="rgba(255,255,255,.035)" stroke-width=".5" stroke-dasharray="2 4"/>'
+  ].join('');
+
+  var nodesStr = NODES.map(nodeCircles).join('');
+
+  var svg = '<svg class="ptree-svg" viewBox="0 0 340 540" xmlns="http://www.w3.org/2000/svg">'
+    + '<defs>'
+    + '<radialGradient id="pt-neb1" cx="50%" cy="48%" r="42%"><stop offset="0%" stop-color="#8ecce0" stop-opacity=".04"/><stop offset="100%" stop-color="#8ecce0" stop-opacity="0"/></radialGradient>'
+    + '<radialGradient id="pt-neb2" cx="50%" cy="80%" r="30%"><stop offset="0%" stop-color="#d4b08e" stop-opacity=".03"/><stop offset="100%" stop-color="#d4b08e" stop-opacity="0"/></radialGradient>'
+    + '<radialGradient id="pt-neb3" cx="50%" cy="12%" r="28%"><stop offset="0%" stop-color="#c4a8d4" stop-opacity=".04"/><stop offset="100%" stop-color="#c4a8d4" stop-opacity="0"/></radialGradient>'
+    + '<filter id="pt-gf-teal" x="-100%" y="-100%" width="300%" height="300%"><feGaussianBlur stdDeviation="5" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>'
+    + '<filter id="pt-gf-teal-sm" x="-80%" y="-80%" width="260%" height="260%"><feGaussianBlur stdDeviation="3.5" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>'
+    + '<filter id="pt-gf-gold" x="-80%" y="-80%" width="260%" height="260%"><feGaussianBlur stdDeviation="4" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>'
+    + '<filter id="pt-gf-purple" x="-80%" y="-80%" width="260%" height="260%"><feGaussianBlur stdDeviation="3.5" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>'
+    + '<filter id="pt-gf-rose" x="-80%" y="-80%" width="260%" height="260%"><feGaussianBlur stdDeviation="3" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>'
+    + '<filter id="pt-gf-blue" x="-80%" y="-80%" width="260%" height="260%"><feGaussianBlur stdDeviation="3" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>'
+    + '</defs>'
+    + '<rect x="0" y="0" width="340" height="540" fill="url(#pt-neb1)"/>'
+    + '<rect x="0" y="0" width="340" height="540" fill="url(#pt-neb2)"/>'
+    + '<rect x="0" y="0" width="340" height="540" fill="url(#pt-neb3)"/>'
+    + bgStars
+    + paths
+    + nodesStr
+    + '<path d="M 50 528 Q 170 515 290 528" fill="none" stroke="#d4b08e" stroke-width=".7" stroke-opacity=".12" stroke-dasharray="3 4"/>'
+    + '<text x="170" y="540" text-anchor="middle" font-family="Cormorant Garamond,serif" font-style="italic" font-size="10" fill="rgba(212,176,142,.22)" letter-spacing=".08em">Step I · Fundamentals</text>'
+    + '</svg>';
+
+  el.innerHTML = svg;
+
+  // Node tap to show tooltip
+  el.querySelectorAll('.ptree-tap-area').forEach(function(area) {
+    area.addEventListener('click', function() {
+      var nodeId = area.dataset.node;
+      var node = NODES.find(function(n) { return n.id === nodeId; });
+      if (!node) return;
+      var b = bMap[nodeId];
+      var rec = practiceTreeNodeRecency(node.ex, stats);
+      var dep = practiceTreeNodeDepth(node.ex, stats);
+      var nameMap = {kether:'Step I Gate',chokmah:'Visualization',binah:'Vacancy of Mind',chesed:'Auditory',geburah:'Thought Focus',tiphareth:'Thought Observation',netzach:'Pore Breathing',hod:'Soul Mirror',yesod:'Asana',malkuth:'Clock'};
+      var tt = document.getElementById('ptreeTooltip');
+      var ttName = document.getElementById('ptreeTooltipName');
+      var ttStat = document.getElementById('ptreeTooltipStat');
+      if (!tt) return;
+      ttName.textContent = nameMap[nodeId] || node.label;
+      ttStat.innerHTML = '<strong>Brightness</strong> '+b+' / '+(nodeId==='clock'?15:20)
+        + ' &nbsp;·&nbsp; <strong>Depth rings</strong> '+dep+' / 3'
+        + ' &nbsp;·&nbsp; <strong>Recency</strong> '+(rec >= 0.99 ? 'this week' : rec <= 0.21 ? '60+ days' : Math.round((1-rec)/0.8*53+7)+'d ago');
+      tt.style.display = tt.style.display === 'block' ? 'none' : 'block';
+    });
+  });
+}
+
 function switchGuideTab(tab) {
   guideActiveTab = tab;
   var pathPanel = document.getElementById('guidePathPanel');
   var omniaPanel = document.getElementById('guideOmniaPanel');
+  var treePanel = document.getElementById('guideTreePanel');
   var pathTab = document.getElementById('guidePathTab');
   var omniaTab = document.getElementById('guideOmniaTab');
+  var treeTab = document.getElementById('guideTreeTab');
   if (pathPanel) pathPanel.classList.toggle('guide-tab-hidden', tab !== 'path');
   if (omniaPanel) omniaPanel.classList.toggle('guide-tab-hidden', tab !== 'omnia');
+  if (treePanel) treePanel.classList.toggle('guide-tab-hidden', tab !== 'tree');
   if (pathTab) pathTab.classList.toggle('active', tab === 'path');
   if (omniaTab) omniaTab.classList.toggle('active', tab === 'omnia');
+  if (treeTab) treeTab.classList.toggle('active', tab === 'tree');
   document.body.classList.toggle('upgrade-stage', tab === 'omnia');
   if (tab === 'omnia') renderOmniaEngine();
+  if (tab === 'tree') renderPracticeTree();
   var gp = document.getElementById('guidePanel');
   if (gp) gp.scrollTop = 0;
 }
@@ -13410,9 +13634,12 @@ document.getElementById('guidePathTab').addEventListener('click', function() {
 document.getElementById('guideOmniaTab').addEventListener('click', function() {
   switchGuideTab('omnia');
 });
+document.getElementById('guideTreeTab').addEventListener('click', function() {
+  switchGuideTab('tree');
+});
 
 
-// Horizontal swipe between Path and Upgrade
+// Horizontal swipe between Path / Upgrade / Tree
 (function() {
   var panel = document.getElementById('guidePanel');
   var startX, startY, dragging;
@@ -13433,8 +13660,10 @@ document.getElementById('guideOmniaTab').addEventListener('click', function() {
     var dx = e.changedTouches[0].clientX - startX;
     startX = null; dragging = false;
     if (Math.abs(dx) < 55) return;
-    if (dx < 0 && guideActiveTab === 'path') switchGuideTab('omnia');
-    else if (dx > 0 && guideActiveTab === 'omnia') switchGuideTab('path');
+    var tabOrder = ['path','omnia','tree'];
+    var idx = tabOrder.indexOf(guideActiveTab);
+    if (dx < 0 && idx < tabOrder.length - 1) switchGuideTab(tabOrder[idx + 1]);
+    else if (dx > 0 && idx > 0) switchGuideTab(tabOrder[idx - 1]);
   }, {passive: true});
 })();
 document.getElementById('omniaCollectBtn').addEventListener('click', collectOmniaAkasha);
