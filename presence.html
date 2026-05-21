@@ -407,7 +407,7 @@
     .path-banner-figure svg.path-banner-crystal { width:100%; height:auto; overflow:visible; }
     .path-banner-figure .omnia-shard-layer { position:absolute; inset:0; width:100%; height:100%; opacity:0; pointer-events:none; }
     .path-banner-figure .omnia-symbol-layer { position:absolute; inset:0; display:flex; align-items:center; justify-content:center; pointer-events:none; }
-    .path-banner-figure .omnia-morph-ring { position:absolute; left:50%; top:50%; transform:translate(-50%,-50%); opacity:0; border:1px solid rgba(184,234,255,.45); border-radius:50%; width:62px; height:62px; box-shadow:0 0 14px rgba(142,204,224,.24), inset 0 0 14px rgba(142,204,224,.12); pointer-events:none; }
+    .path-banner-figure .omnia-morph-ring { position:absolute; left:50%; top:50%; transform:translate(-50%,-50%); opacity:0; border:1px solid rgba(184,234,255,.45); border-radius:50%; width:62px; height:62px; box-shadow:0 0 14px rgba(142,204,224,.24), inset 0 0 14px rgba(142,204,224,.12); pointer-events:none; animation:none !important; }
     .path-quest-root { display:flex; flex-direction:column; gap:18px; padding:18px 2px 28px; }
     /* ── Guide redesign: day strip + exercise cards ── */
     .path-day-strip { display:flex; align-items:center; justify-content:space-between; margin:14px 0 0; padding:0 2px; }
@@ -4815,7 +4815,12 @@ function submitSurvey() {
   });
   if (state.history.length > 100) state.history = state.history.slice(0, 100);
   saveState();
-  
+
+  // Credit awareness quest minutes (awareness sessions are the main meditation sessions)
+  if (typeof pathQuestRecordAwarenessMinutes === 'function' && typeof guideState !== 'undefined') {
+    pathQuestRecordAwarenessMinutes(surveyDurationMin);
+  }
+
   // Push to cloud if logged in
   if (syncEnabled && authToken) syncPushData();
 
@@ -11561,11 +11566,12 @@ function omniaRatePerHour() {
   var earlyBoost = total < 48 ? Math.floor((48 - total) * 1.5) : 0;
   var stepTax = Math.max(0, stepNum - 1) * 16;
   var bodyBonus = Math.floor(Math.sqrt(Math.max(0, total)) * 9);
-  return Math.max(10, Math.floor(10 + currentLvl * 12 + Math.floor(bodyBonus * 0.5) + Math.floor(earlyBoost * 0.3) - stepTax));
+  var secondGen = stepNum >= 5 ? Math.floor(18 + currentLvl * 8) : 0;
+  return Math.max(10, Math.floor(10 + currentLvl * 12 + Math.floor(bodyBonus * 0.5) + Math.floor(earlyBoost * 0.3) - stepTax + secondGen));
 }
 
 function omniaReservoirCap() {
-  return Math.floor(1800 + (omniaState.upgrades.vessel || 1) * 520 + omniaBodyTotal() * 12);
+  return Math.floor(480 + (omniaState.upgrades.vessel || 1) * 180 + omniaBodyTotal() * 6);
 }
 
 function omniaAkashaCap() {
@@ -11802,7 +11808,10 @@ function renderOmniaEngine() {
   if (gM) gM.style.opacity = auraFor(mLvl);
   if (resText) resText.textContent = Math.floor(reservoir) + ' / ' + cap;
   if (resFill) resFill.style.width = Math.min(100, reservoir / cap * 100) + '%';
-  if (rateText) rateText.textContent = omniaRatePerHour() + ' akasha per hour · resonance ' + (omniaState.recStreak || 0);
+  var stepNum2 = omniaState.bardonStep || 1;
+  var rateLabel = omniaRatePerHour() + ' akasha per hour · resonance ' + (omniaState.recStreak || 0);
+  if (stepNum2 >= 5) rateLabel += ' · dual generator';
+  if (rateText) rateText.textContent = rateLabel;
 
   var stepName = document.getElementById('omniaStepName');
   var stepText = document.getElementById('omniaStepText');
@@ -12957,6 +12966,11 @@ function isPathQuestWeekendWindow() {
   var d = new Date().getDay();
   return d === 5 || d === 6 || d === 0; // Fri, Sat, Sun
 }
+function isAwarenessQuestDay() {
+  var d = new Date();
+  var dayOfYear = Math.floor((d - new Date(d.getFullYear(), 0, 0)) / 86400000);
+  return dayOfYear % 2 === 0;
+}
 function pathQuestState() {
   if (!guideState.quests) guideState.quests = {};
   var tk = pathQuestTodayKey();
@@ -12967,12 +12981,16 @@ function pathQuestState() {
   if (!guideState.quests.weekend || guideState.quests.weekend.weekId !== wk) {
     guideState.quests.weekend = { weekId:wk, count:0, claimed:false };
   }
+  if (!guideState.quests.awareness || guideState.quests.awareness.date !== tk) {
+    guideState.quests.awareness = { date:tk, minutes:0, claimed:false };
+  }
   return guideState.quests;
 }
 function pathQuestReward(type) {
   var step = (typeof omniaState !== 'undefined' && omniaState.bardonStep) || 1;
   if (type === 'daily')   return 20 + step * 10;
   if (type === 'weekend') return 60 + step * 30;
+  if (type === 'awareness') return 35 + step * 15;
   return 0;
 }
 function pathQuestFormatTime(targetDate) {
@@ -13003,12 +13021,20 @@ function pathQuestRecordCompletion() {
   saveGuideState(guideState);
   if (document.getElementById('pathQuestRoot')) renderPathQuests();
 }
+function pathQuestRecordAwarenessMinutes(minutes) {
+  if (!minutes || minutes < 1) return;
+  var q = pathQuestState();
+  q.awareness.minutes = (q.awareness.minutes || 0) + minutes;
+  saveGuideState(guideState);
+  if (document.getElementById('pathQuestRoot')) renderPathQuests();
+}
 function claimPathQuestReward(type) {
   var q = pathQuestState();
   var data = q[type];
   if (!data || data.claimed) return;
-  var target = type === 'daily' ? 2 : 12;
-  if ((data.count || 0) < target) return;
+  var target = type === 'daily' ? 2 : type === 'awareness' ? 15 : 12;
+  var progress = type === 'awareness' ? (data.minutes || 0) : (data.count || 0);
+  if (progress < target) return;
   var amount = pathQuestReward(type);
   if (typeof omniaState !== 'undefined') {
     omniaState.akasha = (omniaState.akasha || 0) + amount;
@@ -13055,6 +13081,12 @@ function renderPathQuests() {
   var weekendClamp = Math.min(weekendCount, weekendTarget);
   var weekendDone = weekendCount >= weekendTarget, weekendClaimed = !!q.weekend.claimed;
   var weekendReward = pathQuestReward('weekend');
+
+  var awarenessQuestVisible = isAwarenessQuestDay();
+  var awarenessMinutes = q.awareness.minutes || 0, awarenessTarget = 15;
+  var awarenessClamp = Math.min(awarenessMinutes, awarenessTarget);
+  var awarenessDone = awarenessMinutes >= awarenessTarget, awarenessClaimed = !!q.awareness.claimed;
+  var awarenessReward = pathQuestReward('awareness');
 
   var exIcon = { clock:'⏰', visual:'👁', auditory:'🎧', thought:'◯', asana:'🧘', soulmirror:'🪞' };
   var exColor = { clock:'#d4b08e', visual:'#8ab8e0', auditory:'#8eccc0', thought:'#98b4cc', asana:'#d49898', soulmirror:'#c4a8d4' };
@@ -13113,6 +13145,21 @@ function renderPathQuests() {
       + '</div>';
   }).join('');
   html += '</div>';
+
+  // ── Awareness Quest (every other day) ──
+  if (awarenessQuestVisible) {
+    var awPct = awarenessClamp / awarenessTarget * 100;
+    html += '<div class="path-quest-card" style="border:1px solid rgba(155,142,196,.22);background:linear-gradient(135deg,rgba(155,142,196,.06) 0%,rgba(142,204,224,.03) 100%);">'
+      + '<div class="pq-row"><div class="pq-label" style="color:rgba(155,142,196,.7);">AWARENESS QUEST</div><div class="pq-time">' + pathQuestDailyTimeLeft() + '</div></div>'
+      + '<div class="pq-title">15 minutes of awareness practice</div>'
+      + '<div style="height:3px;border-radius:2px;background:rgba(255,255,255,.06);overflow:hidden;margin-bottom:8px;">'
+      + '<div style="height:100%;border-radius:2px;background:linear-gradient(90deg,#9b8ec4,#8ecce0);width:' + awPct + '%;transition:width .5s ease;"></div>'
+      + '</div>'
+      + '<div style="font-size:9px;color:var(--muted);letter-spacing:.08em;margin-bottom:10px;"><strong style="color:var(--text);">' + awarenessClamp + '</strong> / ' + awarenessTarget + ' min</div>'
+      + '<div class="pq-reward-row"><div class="pq-reward-icon">' + pathQuestChestSVG(awarenessDone) + '</div><div class="pq-reward-text">+' + awarenessReward + ' Akasha</div>'
+      + (awarenessDone && !awarenessClaimed ? '<button class="pq-claim" data-quest="awareness">Claim</button>' : awarenessClaimed ? '<div class="pq-claimed">Claimed</div>' : '')
+      + '</div></div>';
+  }
 
   // ── Weekend Quest (Fri-Sun only) ──
   if (weekendVisible) {
