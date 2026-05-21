@@ -1,0 +1,506 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Presence · Star Map Concept</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400&family=DM+Mono:wght@300;400&display=swap');
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #0d0f14;
+    --surface: #13161e;
+    --border: rgba(255,255,255,.07);
+    --text: #e8e4dc;
+    --muted: rgba(232,228,220,.38);
+    --accent: #7eb8a4;
+  }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'DM Mono', monospace;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 40px 20px 60px;
+  }
+
+  h1 {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 28px;
+    font-weight: 300;
+    letter-spacing: .08em;
+    margin-bottom: 6px;
+    color: var(--text);
+  }
+
+  .sub {
+    font-size: 9px;
+    letter-spacing: .22em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 40px;
+  }
+
+  .compare {
+    display: flex;
+    gap: 40px;
+    align-items: flex-start;
+    flex-wrap: wrap;
+    justify-content: center;
+    width: 100%;
+    max-width: 1000px;
+  }
+
+  .col {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .col-label {
+    font-size: 8px;
+    letter-spacing: .28em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+
+  .phone {
+    width: 300px;
+    height: 480px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 28px;
+    overflow: hidden;
+    position: relative;
+  }
+
+  /* ── DUOLINGO STYLE (left) ─────────────────── */
+  .duo-map {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 24px 0 40px;
+    gap: 0;
+    overflow-y: auto;
+    height: 100%;
+  }
+
+  .duo-node {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    position: relative;
+  }
+
+  .duo-node::before {
+    content: '';
+    width: 2px;
+    height: 36px;
+    background: rgba(255,255,255,.08);
+    margin-bottom: 0;
+  }
+  .duo-node:first-child::before { display: none; }
+
+  .duo-circle {
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 22px;
+    position: relative;
+    margin-bottom: 6px;
+  }
+  .duo-circle.done {
+    background: radial-gradient(circle at 38% 35%, #8ecce0, #5a9ab8);
+    box-shadow: 0 0 18px rgba(142,204,224,.4);
+  }
+  .duo-circle.active {
+    background: radial-gradient(circle at 38% 35%, #d4b08e, #a07848);
+    box-shadow: 0 0 18px rgba(212,176,142,.4);
+    animation: pulse 2.2s ease-in-out infinite;
+  }
+  .duo-circle.locked {
+    background: rgba(255,255,255,.04);
+    border: 1px solid rgba(255,255,255,.08);
+    opacity: .4;
+    filter: grayscale(1);
+  }
+  @keyframes pulse {
+    0%,100% { box-shadow: 0 0 14px rgba(212,176,142,.3); }
+    50% { box-shadow: 0 0 28px rgba(212,176,142,.6); }
+  }
+
+  .duo-label {
+    font-size: 8px;
+    letter-spacing: .14em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 0;
+  }
+
+  .duo-lock {
+    position: absolute;
+    bottom: 0; right: 0;
+    width: 18px; height: 18px;
+    background: rgba(0,0,0,.6);
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 9px;
+  }
+
+  /* ── STAR MAP STYLE (right) ──────────────────── */
+  .star-map-wrap {
+    width: 100%;
+    height: 100%;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .map-title {
+    position: absolute;
+    top: 16px; left: 0; right: 0;
+    text-align: center;
+    font-size: 8px;
+    letter-spacing: .28em;
+    text-transform: uppercase;
+    color: rgba(232,228,220,.25);
+    z-index: 5;
+  }
+
+  svg.star-canvas {
+    width: 100%;
+    height: 100%;
+  }
+
+  .tooltip {
+    position: absolute;
+    bottom: 16px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(13,15,20,.92);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 10px 16px;
+    text-align: center;
+    z-index: 10;
+    width: 220px;
+  }
+  .tooltip-name {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 16px;
+    font-weight: 300;
+    color: var(--text);
+    margin-bottom: 3px;
+  }
+  .tooltip-stat {
+    font-size: 8px;
+    letter-spacing: .18em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+
+  /* ── CAPTION BOXES ───────────────────── */
+  .caption {
+    width: 300px;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 16px 18px;
+    background: rgba(255,255,255,.015);
+  }
+  .caption-title {
+    font-size: 8px;
+    letter-spacing: .22em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 8px;
+  }
+  .caption-text {
+    font-size: 10px;
+    line-height: 1.7;
+    color: rgba(232,228,220,.65);
+  }
+  .caption-bad { border-color: rgba(196,120,140,.18); }
+  .caption-good { border-color: rgba(142,204,224,.18); }
+
+  .divider {
+    width: 1px;
+    height: 480px;
+    background: var(--border);
+    align-self: center;
+    flex-shrink: 0;
+  }
+
+  /* ── LEGEND ─────────────────────────── */
+  .legend {
+    margin-top: 48px;
+    display: flex;
+    gap: 28px;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+  .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 9px;
+    letter-spacing: .12em;
+    color: var(--muted);
+  }
+  .legend-dot {
+    width: 10px; height: 10px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+
+  .note {
+    margin-top: 32px;
+    max-width: 600px;
+    text-align: center;
+    font-size: 10px;
+    line-height: 1.8;
+    color: rgba(232,228,220,.45);
+    border-top: 1px solid var(--border);
+    padding-top: 28px;
+  }
+  .note strong { color: rgba(232,228,220,.7); }
+</style>
+</head>
+<body>
+
+<h1>Two approaches to progress</h1>
+<p class="sub">Prescriptive map vs. retrospective star chart</p>
+
+<div class="compare">
+
+  <!-- LEFT: Duolingo style -->
+  <div class="col">
+    <div class="col-label">Duolingo model — prescriptive</div>
+    <div class="phone">
+      <div class="duo-map">
+        <div class="duo-node">
+          <div class="duo-circle done">⏰</div>
+          <div class="duo-label">Clock</div>
+        </div>
+        <div class="duo-node">
+          <div class="duo-circle done">◯</div>
+          <div class="duo-label">Thought Obs.</div>
+        </div>
+        <div class="duo-node">
+          <div class="duo-circle done">🪞</div>
+          <div class="duo-label">Soul Mirror</div>
+        </div>
+        <div class="duo-node">
+          <div class="duo-circle active">🧘</div>
+          <div class="duo-label">Asana</div>
+        </div>
+        <div class="duo-node">
+          <div class="duo-circle locked">◈</div>
+          <div class="duo-label">Thought Focus</div>
+          <div class="duo-lock">🔒</div>
+        </div>
+        <div class="duo-node">
+          <div class="duo-circle locked">👁</div>
+          <div class="duo-label">Visualization</div>
+        </div>
+        <div class="duo-node">
+          <div class="duo-circle locked">🎧</div>
+          <div class="duo-label">Auditory</div>
+        </div>
+      </div>
+    </div>
+    <div class="caption caption-bad">
+      <div class="caption-title">Problems</div>
+      <div class="caption-text">
+        Implies "you passed this, move on." Clock at month 1 and Clock at year 3 are the same exercise at totally different depths. The lock icon tells experienced users they're on a kids' track. No room for the spiral nature of Bardon's system.
+      </div>
+    </div>
+  </div>
+
+  <div class="divider"></div>
+
+  <!-- RIGHT: Star map style -->
+  <div class="col">
+    <div class="col-label">Star chart model — retrospective</div>
+    <div class="phone">
+      <div class="star-map-wrap">
+        <div class="map-title">Your practice sky</div>
+        <svg class="star-canvas" viewBox="0 0 300 480" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <!-- Ambient nebula -->
+            <radialGradient id="neb1" cx="35%" cy="40%" r="45%">
+              <stop offset="0%" stop-color="#8ecce0" stop-opacity=".06"/>
+              <stop offset="100%" stop-color="#8ecce0" stop-opacity="0"/>
+            </radialGradient>
+            <radialGradient id="neb2" cx="70%" cy="65%" r="38%">
+              <stop offset="0%" stop-color="#c4a8d4" stop-opacity=".05"/>
+              <stop offset="100%" stop-color="#c4a8d4" stop-opacity="0"/>
+            </radialGradient>
+            <radialGradient id="neb3" cx="55%" cy="25%" r="30%">
+              <stop offset="0%" stop-color="#d4b08e" stop-opacity=".04"/>
+              <stop offset="100%" stop-color="#d4b08e" stop-opacity="0"/>
+            </radialGradient>
+            <!-- Star glows -->
+            <filter id="glow-blue" x="-80%" y="-80%" width="260%" height="260%">
+              <feGaussianBlur stdDeviation="3.5" result="blur"/>
+              <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+            </filter>
+            <filter id="glow-gold" x="-80%" y="-80%" width="260%" height="260%">
+              <feGaussianBlur stdDeviation="3" result="blur"/>
+              <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+            </filter>
+            <filter id="glow-purple" x="-80%" y="-80%" width="260%" height="260%">
+              <feGaussianBlur stdDeviation="2.5" result="blur"/>
+              <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+            </filter>
+            <filter id="glow-dim" x="-60%" y="-60%" width="220%" height="220%">
+              <feGaussianBlur stdDeviation="1.5" result="blur"/>
+              <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+            </filter>
+          </defs>
+
+          <!-- Background scatter stars -->
+          <g opacity=".35">
+            <circle cx="22" cy="44" r=".7" fill="#e8e4dc"/>
+            <circle cx="58" cy="120" r=".5" fill="#e8e4dc"/>
+            <circle cx="245" cy="88" r=".6" fill="#e8e4dc"/>
+            <circle cx="270" cy="210" r=".4" fill="#e8e4dc"/>
+            <circle cx="40" cy="340" r=".5" fill="#e8e4dc"/>
+            <circle cx="280" cy="370" r=".7" fill="#e8e4dc"/>
+            <circle cx="160" cy="440" r=".4" fill="#e8e4dc"/>
+            <circle cx="90" cy="460" r=".6" fill="#e8e4dc"/>
+            <circle cx="30" cy="200" r=".5" fill="#e8e4dc"/>
+            <circle cx="255" cy="300" r=".4" fill="#e8e4dc"/>
+            <circle cx="190" cy="50" r=".6" fill="#e8e4dc"/>
+            <circle cx="220" cy="160" r=".5" fill="#e8e4dc"/>
+          </g>
+
+          <!-- Nebulae -->
+          <rect x="0" y="0" width="300" height="480" fill="url(#neb1)"/>
+          <rect x="0" y="0" width="300" height="480" fill="url(#neb2)"/>
+          <rect x="0" y="0" width="300" height="480" fill="url(#neb3)"/>
+
+          <!-- ── CONSTELLATION LINES (practiced nodes connected) ── -->
+          <!-- Clock → Thought Observation -->
+          <line x1="100" y1="130" x2="155" y2="195" stroke="#8ecce0" stroke-width=".8" stroke-opacity=".3" stroke-dasharray="none"/>
+          <!-- Thought Obs → Soul Mirror -->
+          <line x1="155" y1="195" x2="80" y2="255" stroke="#8ecce0" stroke-width=".8" stroke-opacity=".3"/>
+          <!-- Clock → Soul Mirror (secondary line) -->
+          <line x1="100" y1="130" x2="80" y2="255" stroke="#8ecce0" stroke-width=".5" stroke-opacity=".14"/>
+          <!-- Soul Mirror → Thought Focus (dim — partially practiced) -->
+          <line x1="80" y1="255" x2="185" y2="300" stroke="#c4a8d4" stroke-width=".6" stroke-opacity=".18" stroke-dasharray="4 3"/>
+
+          <!-- ── PRACTICED STARS (bright) ── -->
+          <!-- Clock — brightest, most practiced -->
+          <circle cx="100" cy="130" r="10" fill="#8ecce0" opacity=".12" filter="url(#glow-blue)"/>
+          <circle cx="100" cy="130" r="5.5" fill="#b8eaff" opacity=".9" filter="url(#glow-blue)"/>
+          <circle cx="100" cy="130" r="2.5" fill="#ffffff"/>
+          <text x="100" y="118" text-anchor="middle" font-family="DM Mono,monospace" font-size="7" letter-spacing=".15em" fill="rgba(184,234,255,.7)" text-transform="uppercase">CLOCK</text>
+          <!-- Small "depth ring" showing how deep practice is -->
+          <circle cx="100" cy="130" r="16" fill="none" stroke="#8ecce0" stroke-width=".5" stroke-opacity=".2" stroke-dasharray="2 2"/>
+          <circle cx="100" cy="130" r="22" fill="none" stroke="#8ecce0" stroke-width=".4" stroke-opacity=".1" stroke-dasharray="1.5 3"/>
+
+          <!-- Thought Observation — well practiced -->
+          <circle cx="155" cy="195" r="8" fill="#98b4cc" opacity=".12" filter="url(#glow-blue)"/>
+          <circle cx="155" cy="195" r="4.5" fill="#b8d0e8" opacity=".88" filter="url(#glow-blue)"/>
+          <circle cx="155" cy="195" r="2" fill="#ddeeff"/>
+          <text x="155" y="183" text-anchor="middle" font-family="DM Mono,monospace" font-size="6.5" letter-spacing=".12em" fill="rgba(184,208,232,.65)">THOUGHT OBS.</text>
+          <circle cx="155" cy="195" r="13" fill="none" stroke="#98b4cc" stroke-width=".5" stroke-opacity=".18" stroke-dasharray="2 2"/>
+
+          <!-- Soul Mirror — visited, glowing softly -->
+          <circle cx="80" cy="255" r="6" fill="#c4a8d4" opacity=".12" filter="url(#glow-purple)"/>
+          <circle cx="80" cy="255" r="3.5" fill="#d8c4ec" opacity=".8" filter="url(#glow-purple)"/>
+          <circle cx="80" cy="255" r="1.6" fill="#eeddf8"/>
+          <text x="80" y="243" text-anchor="middle" font-family="DM Mono,monospace" font-size="6.5" letter-spacing=".12em" fill="rgba(196,168,212,.6)">SOUL MIRROR</text>
+
+          <!-- ── DISCOVERABLE STARS (dim — available but not yet practiced) ── -->
+          <!-- Thought Focus -->
+          <circle cx="185" cy="300" r="3" fill="#98b4cc" opacity=".25" filter="url(#glow-dim)"/>
+          <circle cx="185" cy="300" r="1.5" fill="#c8d8e8" opacity=".4"/>
+          <text x="185" y="290" text-anchor="middle" font-family="DM Mono,monospace" font-size="6" letter-spacing=".1em" fill="rgba(152,180,204,.3)">THOUGHT FOCUS</text>
+
+          <!-- Pore Breathing — faint hint -->
+          <circle cx="55" cy="330" r="2.5" fill="#c4a8d4" opacity=".2" filter="url(#glow-dim)"/>
+          <circle cx="55" cy="330" r="1.2" fill="#d8c4ec" opacity=".35"/>
+          <text x="55" y="320" text-anchor="middle" font-family="DM Mono,monospace" font-size="6" letter-spacing=".1em" fill="rgba(196,168,212,.25)">PORE BREATH</text>
+
+          <!-- Asana — visible but dim -->
+          <circle cx="220" cy="220" r="2.5" fill="#d49898" opacity=".2" filter="url(#glow-dim)"/>
+          <circle cx="220" cy="220" r="1.2" fill="#e8b8b8" opacity=".35"/>
+          <text x="220" y="210" text-anchor="middle" font-family="DM Mono,monospace" font-size="6" letter-spacing=".1em" fill="rgba(212,152,152,.3)">ASANA</text>
+
+          <!-- ── HIDDEN STARS (barely visible — unknown) ── -->
+          <!-- Visualization — faint flicker -->
+          <circle cx="210" cy="370" r="1.5" fill="#8ab8e0" opacity=".12"/>
+          <!-- Auditory — barely there -->
+          <circle cx="130" cy="400" r="1.2" fill="#8eccc0" opacity=".1"/>
+          <!-- Vacancy — hint -->
+          <circle cx="240" cy="140" r="1.4" fill="#98b4cc" opacity=".1"/>
+
+          <!-- ── STEP I MILESTONE (arc at bottom) ── -->
+          <path d="M 60 450 Q 150 420 240 450" fill="none" stroke="#d4b08e" stroke-width=".8" stroke-opacity=".22" stroke-dasharray="3 4"/>
+          <text x="150" y="465" text-anchor="middle" font-family="Cormorant Garamond,serif" font-size="9" fill="rgba(212,176,142,.35)" letter-spacing=".1em">Step I · Fundamentals</text>
+
+          <!-- ── ACTIVE INDICATOR PULSE (clock, most recent practice) ── -->
+          <circle cx="100" cy="130" r="28">
+            <animate attributeName="r" values="18;28;18" dur="3.5s" repeatCount="indefinite"/>
+            <animate attributeName="opacity" values="0.06;0;0.06" dur="3.5s" repeatCount="indefinite"/>
+            <animate attributeName="fill" values="#8ecce0;#8ecce0;#8ecce0" dur="3.5s" repeatCount="indefinite"/>
+          </circle>
+
+        </svg>
+
+        <!-- Tooltip for tapped star (static for mockup) -->
+        <div class="tooltip">
+          <div class="tooltip-name">Clock</div>
+          <div class="tooltip-stat">42 sessions · best hold 4m 12s · 10 min tier</div>
+        </div>
+      </div>
+    </div>
+    <div class="caption caption-good">
+      <div class="caption-title">How it works</div>
+      <div class="caption-text">
+        Stars you've practiced glow bright. Depth rings show how deep your practice is. Constellation lines form between related exercises. Dim stars hint at what's coming. Hidden stars are barely visible until you're near them. Tapping any star shows your stats for that practice — no locks, no linear track.
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- Legend -->
+<div class="legend">
+  <div class="legend-item">
+    <div class="legend-dot" style="background:#b8eaff;box-shadow:0 0 6px rgba(184,234,255,.6);"></div>
+    Practiced (bright)
+  </div>
+  <div class="legend-item">
+    <div class="legend-dot" style="background:rgba(152,180,204,.4);"></div>
+    Available (dim)
+  </div>
+  <div class="legend-item">
+    <div class="legend-dot" style="background:rgba(200,200,200,.12);"></div>
+    Unknown (hidden)
+  </div>
+  <div class="legend-item" style="gap:6px;">
+    <svg width="24" height="10" viewBox="0 0 24 10"><line x1="0" y1="5" x2="24" y2="5" stroke="#8ecce0" stroke-width="1" stroke-opacity=".4"/></svg>
+    Constellation line
+  </div>
+  <div class="legend-item" style="gap:6px;">
+    <svg width="24" height="10" viewBox="0 0 24 10"><circle cx="12" cy="5" r="4" fill="none" stroke="#8ecce0" stroke-width=".8" stroke-dasharray="2 2" stroke-opacity=".4"/></svg>
+    Practice depth
+  </div>
+</div>
+
+<div class="note">
+  <strong>Key insight:</strong> The star chart never tells you what to do next — Omnia's Path tab still does that. The chart only reflects what you've built. A new user sees one or two bright stars in a vast dark sky. A veteran sees constellations. Both experiences feel honest to the actual practice. The depth rings around practiced stars let experienced users see vertical progress even when the exercise name hasn't changed.
+</div>
+
+</body>
+</html>
