@@ -11571,7 +11571,7 @@ function omniaRatePerHour() {
 }
 
 function omniaReservoirCap() {
-  return Math.floor(480 + (omniaState.upgrades.vessel || 1) * 180 + omniaBodyTotal() * 6);
+  return Math.floor(120 + (omniaState.upgrades.vessel || 1) * 180 + omniaBodyTotal() * 6);
 }
 
 function omniaAkashaCap() {
@@ -12812,9 +12812,9 @@ function buildFoundationalGuideItems() {
       name:'Soul Mirror',
       duration:null,
       durationLabel:'Reflection',
-      done:!!(guideExerciseStats().soulmirror && guideExerciseStats().soulmirror.todayCount > 0),
+      done:(function(){ var sm = loadSoulMirror(); return !!(sm._lastEditDate && sm._lastEditDate === guideLocalDayKey()); })(),
       progress:'',
-      tip:'Record one honest weakness and one genuine strength. The mirror is the foundation of all inner work — begin it now, not later.',
+      tip:'Open the mirror and make one honest edit — add a trait, revise one, or write a note. That is all Omnia asks today.',
       open:'soulmirror'
     }
   ];
@@ -16091,7 +16091,10 @@ function loadSoulMirror(){
   try{var s=localStorage.getItem('presence_soul_mirror_v1');return s?JSON.parse(s):{positive:[],negative:[],notes:''};}
   catch(e){return{positive:[],negative:[],notes:''};}
 }
-function saveSoulMirror(data){localStorage.setItem('presence_soul_mirror_v1',JSON.stringify(data));}
+function saveSoulMirror(data){
+  data._lastEditDate = guideLocalDayKey();
+  localStorage.setItem('presence_soul_mirror_v1',JSON.stringify(data));
+}
 
 function renderSoulMirrorTraits(){
   var data=loadSoulMirror();
