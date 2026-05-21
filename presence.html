@@ -489,13 +489,21 @@
     .guide-cadence-toggle { border:1px solid rgba(142,204,224,.24); background:rgba(142,204,224,.06); color:#8ecce0; border-radius:4px; padding:7px 9px; font-family:'DM Mono',monospace; font-size:8px; letter-spacing:.14em; text-transform:uppercase; cursor:pointer; white-space:nowrap; }
     .guide-cadence-toggle.off { color:var(--muted); border-color:var(--border); background:rgba(255,255,255,.02); }
     .guide-plan-controls { display:none; justify-content:space-between; align-items:center; gap:10px; border:1px solid rgba(142,204,224,.12); background:rgba(255,255,255,.025); border-radius:8px; padding:9px 10px; margin-bottom:12px; }
-    .guide-tabs { display:flex; justify-content:center; gap:4px; margin:4px auto 14px; padding:4px; background:rgba(255,255,255,.03); border:1px solid var(--border); border-radius:999px; width:fit-content; border-bottom:none; }
-    .guide-tab { padding:8px 22px; border-radius:999px; background:transparent; border:none; font-family:'DM Mono',monospace; font-size:9px; letter-spacing:.22em; text-transform:uppercase; color:var(--muted); cursor:pointer; transition:background .22s, color .22s; }
-    .guide-tab.active { background:rgba(142,204,224,.16); color:#8ecce0; }
-    .guide-tab:not(.active):hover { color:var(--text); }
+    .guide-dots-nav { display:flex; flex-direction:column; align-items:center; gap:8px; padding:12px 0 10px; }
+    .guide-dots-label { font-family:'DM Mono',monospace; font-size:9px; letter-spacing:.22em; text-transform:uppercase; color:var(--text); min-height:14px; }
+    .guide-dots { display:flex; gap:10px; align-items:center; }
+    .guide-dot { width:6px; height:6px; border-radius:50%; border:none; background:rgba(255,255,255,.18); cursor:pointer; padding:0; transition:background .22s, transform .22s; }
+    .guide-dot.active { background:#8ecce0; transform:scale(1.3); }
+    .guide-dot:not(.active):hover { background:rgba(255,255,255,.38); }
     .guide-swipe-wrap { width:100%; }
     .guide-tab-panel { width:100%; }
     .guide-tab-panel.guide-tab-hidden { display:none; }
+    .pq-menu-btn { position:absolute; top:10px; right:10px; width:28px; height:28px; border-radius:6px; border:none; background:transparent; color:var(--muted); font-size:14px; cursor:pointer; display:flex; align-items:center; justify-content:center; letter-spacing:.05em; transition:background .18s, color .18s; z-index:2; }
+    .pq-menu-btn:hover { background:rgba(255,255,255,.06); color:var(--text); }
+    .pq-skip-menu { position:fixed; background:var(--surface); border:1px solid var(--border); border-radius:12px; z-index:600; min-width:160px; box-shadow:0 4px 20px rgba(0,0,0,.5); overflow:hidden; display:none; }
+    .pq-skip-item { display:block; width:100%; padding:12px 16px; border:none; background:none; color:var(--text); font-family:'DM Mono',monospace; font-size:9px; letter-spacing:.14em; text-transform:uppercase; cursor:pointer; text-align:left; }
+    .pq-skip-item:hover { background:rgba(255,255,255,.05); }
+    .pq-skip-item.warn { color:#d49898; }
     .ptree-wrap { padding:10px 0 0; position:relative; }
     .ptree-svg { display:block; width:100%; }
     .ptree-legend { display:flex; align-items:center; justify-content:center; gap:14px; padding:12px 20px 18px; border-top:1px solid var(--border); }
@@ -2338,6 +2346,21 @@ body:not(.tut-live) #tutCorgi {
       <button class="awareness-sub-item" id="subMenuAwareness">Awareness</button>
       <button class="awareness-sub-item" id="subMenuPrayer">Prayer</button>
     </div>
+    <div class="pq-skip-menu" id="pqSkipMenu">
+      <button class="pq-skip-item" id="pqSkipPostpone">Postpone 7 days</button>
+      <button class="pq-skip-item warn" id="pqSkipTellOmnia">Tell Omnia…</button>
+    </div>
+    <div id="pqTellOmniaOverlay" style="display:none;position:fixed;inset:0;z-index:700;background:rgba(0,0,0,.6);align-items:center;justify-content:center;padding:24px;">
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:18px;padding:24px;width:100%;max-width:340px;">
+        <div style="font-family:'Cormorant Garamond',serif;font-size:20px;font-weight:300;color:var(--text);margin-bottom:6px;">Tell Omnia</div>
+        <div style="font-size:9px;color:var(--muted);letter-spacing:.1em;margin-bottom:16px;">What's your concern with this exercise?</div>
+        <textarea id="pqTellOmniaText" style="width:100%;background:rgba(255,255,255,.04);border:1px solid var(--border);border-radius:10px;color:var(--text);font-family:'DM Mono',monospace;font-size:10px;padding:12px;resize:none;height:90px;outline:none;" placeholder="I find it hard because…"></textarea>
+        <div style="display:flex;gap:10px;margin-top:14px;">
+          <button id="pqTellOmniaCancel" style="flex:1;padding:10px;border-radius:8px;border:1px solid var(--border);background:none;color:var(--muted);font-family:'DM Mono',monospace;font-size:9px;letter-spacing:.18em;text-transform:uppercase;cursor:pointer;">Cancel</button>
+          <button id="pqTellOmniaSend" style="flex:1;padding:10px;border-radius:8px;border:1px solid rgba(142,204,224,.3);background:rgba(142,204,224,.08);color:#8ecce0;font-family:'DM Mono',monospace;font-size:9px;letter-spacing:.18em;text-transform:uppercase;cursor:pointer;">Send</button>
+        </div>
+      </div>
+    </div>
     <div id="activeSessionBanner" style="display:none; background:rgba(126,184,164,0.07); border:1px solid rgba(126,184,164,.18); border-radius:8px; padding:10px 16px; margin-bottom:12px; display:none; justify-content:space-between; align-items:center;">
       <span style="font-size:9px; letter-spacing:.2em; text-transform:uppercase; color:var(--accent);">● Session Running</span>
       <button onclick="showScreen('sessionScreen');" style="font-size:9px; letter-spacing:.15em; text-transform:uppercase; color:var(--accent); background:none; border:1px solid rgba(126,184,164,.3); border-radius:4px; padding:5px 12px; cursor:pointer; font-family:'DM Mono',monospace;">Return →</button>
@@ -2563,10 +2586,13 @@ body:not(.tut-live) #tutCorgi {
     </div>
     <!-- GUIDE PANEL (inside homeScreen) -->
     <div id="guidePanel" style="display:none; flex:1; flex-direction:column; overflow-y:auto; overflow-x:hidden; -webkit-overflow-scrolling:touch; min-height:0; padding-bottom:60px;">
-    <div class="guide-tabs">
-      <button class="guide-tab active" id="guidePathTab">Path</button>
-      <button class="guide-tab" id="guideOmniaTab">Upgrade</button>
-      <button class="guide-tab" id="guideTreeTab">Tree</button>
+    <div class="guide-dots-nav">
+      <div class="guide-dots-label" id="guideDotLabel">Path</div>
+      <div class="guide-dots">
+        <button class="guide-dot active" id="guidePathTab" data-tab="path" aria-label="Path"></button>
+        <button class="guide-dot" id="guideOmniaTab" data-tab="omnia" aria-label="Upgrade"></button>
+        <button class="guide-dot" id="guideTreeTab" data-tab="tree" aria-label="Tree"></button>
+      </div>
     </div>
     <div class="guide-swipe-wrap" id="guideSwipeWrap">
     <div class="guide-tab-panel guide-tab-hidden" id="guideOmniaPanel">
@@ -12550,6 +12576,9 @@ function switchGuideTab(tab) {
   if (pathTab) pathTab.classList.toggle('active', tab === 'path');
   if (omniaTab) omniaTab.classList.toggle('active', tab === 'omnia');
   if (treeTab) treeTab.classList.toggle('active', tab === 'tree');
+  var labelMap = { path:'Path', omnia:'Upgrade', tree:'Tree' };
+  var dotLabel = document.getElementById('guideDotLabel');
+  if (dotLabel) dotLabel.textContent = labelMap[tab] || '';
   document.body.classList.toggle('upgrade-stage', tab === 'omnia');
   if (tab === 'omnia') renderOmniaEngine();
   if (tab === 'tree') renderPracticeTree();
@@ -13045,7 +13074,13 @@ function buildFoundationalGuideItems() {
 
   var gate = guideFoundationNewGate(guideExerciseStats(), thought, rounds);
   if (gate) items.push(gate);
-  return items;
+
+  var postponed = guideState.postponed || {};
+  var now = Date.now();
+  return items.filter(function(item) {
+    var until = postponed[item.id];
+    return !until || now >= until;
+  });
 }
 
 function guideFoundationNewGate(stats, thoughtStats, rounds) {
@@ -13446,7 +13481,9 @@ function renderPathQuests() {
     }
 
     var cardPadding = extraHtml ? 'padding:14px 14px 10px 0;' : 'padding:14px 14px 14px 0;';
+    var menuBtn = '<button class="pq-menu-btn" data-ex-id="' + item.id + '" title="Options">···</button>';
     return '<div style="display:flex;flex-direction:column;background:var(--surface);border:1px solid var(--border);border-radius:14px;' + cardPadding + 'position:relative;overflow:hidden;' + (item.done ? 'opacity:.5;' : '') + '">'
+      + menuBtn
       + '<div style="display:flex;align-items:center;gap:14px;">'
       + '<div style="width:3px;align-self:stretch;border-radius:0 3px 3px 0;background:' + color + ';flex-shrink:0;"></div>'
       + '<div style="font-size:22px;width:36px;text-align:center;flex-shrink:0;">' + icon + '</div>'
@@ -13454,7 +13491,7 @@ function renderPathQuests() {
       + '<div style="font-size:10px;letter-spacing:.18em;text-transform:uppercase;color:' + color + ';margin-bottom:3px;line-height:1.3;">' + displayName + '</div>'
       + '<div style="font-size:9px;color:var(--muted);letter-spacing:.06em;">' + meta + '</div>'
       + '</div>'
-      + '<div style="display:flex;align-items:center;gap:10px;flex-shrink:0;padding-right:2px;">' + checkHtml + beginHtml + '</div>'
+      + '<div style="display:flex;align-items:center;gap:10px;flex-shrink:0;padding-right:32px;">' + checkHtml + beginHtml + '</div>'
       + '</div>'
       + (extraHtml ? '<div style="padding:0 14px 12px 16px;">' + extraHtml + '</div>' : '')
       + '</div>';
@@ -13575,6 +13612,63 @@ function renderPathQuests() {
   });
 }
 
+// ── Exercise card ··· menu ─────────────────────────────────
+(function() {
+  var activeExId = null;
+  var menu = document.getElementById('pqSkipMenu');
+  var overlay = document.getElementById('pqTellOmniaOverlay');
+
+  function openSkipMenu(btn) {
+    activeExId = btn.dataset.exId;
+    var r = btn.getBoundingClientRect();
+    menu.style.top = (r.bottom + 4) + 'px';
+    menu.style.right = (window.innerWidth - r.right) + 'px';
+    menu.style.left = 'auto';
+    menu.style.display = 'block';
+  }
+  function closeSkipMenu() { if (menu) menu.style.display = 'none'; }
+
+  document.getElementById('pathQuestRoot').addEventListener('click', function(e) {
+    var btn = e.target.closest('.pq-menu-btn');
+    if (btn) { e.stopPropagation(); openSkipMenu(btn); return; }
+  });
+
+  document.getElementById('pqSkipPostpone').addEventListener('click', function() {
+    if (!activeExId) return;
+    closeSkipMenu();
+    if (!guideState.postponed) guideState.postponed = {};
+    var until = Date.now() + 7 * 86400000;
+    guideState.postponed[activeExId] = until;
+    saveGuideState(guideState);
+    renderPathQuests();
+  });
+
+  document.getElementById('pqSkipTellOmnia').addEventListener('click', function() {
+    closeSkipMenu();
+    overlay.style.display = 'flex';
+    var ta = document.getElementById('pqTellOmniaText');
+    if (ta) { ta.value = ''; setTimeout(function() { ta.focus(); }, 80); }
+  });
+
+  document.getElementById('pqTellOmniaCancel').addEventListener('click', function() {
+    overlay.style.display = 'none';
+  });
+
+  document.getElementById('pqTellOmniaSend').addEventListener('click', function() {
+    var ta = document.getElementById('pqTellOmniaText');
+    var msg = ta ? ta.value.trim() : '';
+    overlay.style.display = 'none';
+    if (!msg || !activeExId) return;
+    if (!guideState.omniaNotes) guideState.omniaNotes = {};
+    guideState.omniaNotes[activeExId] = { note: msg, date: guideLocalDayKey() };
+    saveGuideState(guideState);
+  });
+
+  document.addEventListener('click', function(e) {
+    if (!e.target.closest('#pqSkipMenu') && !e.target.closest('.pq-menu-btn')) closeSkipMenu();
+  });
+})();
+
 // ── Open / init guide screen ──────────────────────────────
 function openGuide() {
   guideState = loadGuideState();
@@ -13628,14 +13722,10 @@ document.getElementById('guidePlanCards').addEventListener('click', function(e) 
   if (btn) beginGuidePlanItem(btn);
 });
 
-document.getElementById('guidePathTab').addEventListener('click', function() {
-  switchGuideTab('path');
-});
-document.getElementById('guideOmniaTab').addEventListener('click', function() {
-  switchGuideTab('omnia');
-});
-document.getElementById('guideTreeTab').addEventListener('click', function() {
-  switchGuideTab('tree');
+document.querySelectorAll('.guide-dot[data-tab]').forEach(function(dot) {
+  dot.addEventListener('click', function() {
+    switchGuideTab(this.dataset.tab);
+  });
 });
 
 
