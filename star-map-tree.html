@@ -1,0 +1,553 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Presence · Practice Tree</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300&family=DM+Mono:wght@300;400&display=swap');
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #0a0c11;
+    --surface: #11141b;
+    --border: rgba(255,255,255,.06);
+    --text: #e8e4dc;
+    --muted: rgba(232,228,220,.35);
+  }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'DM Mono', monospace;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 48px 20px 80px;
+    gap: 48px;
+  }
+
+  .page-title {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 26px;
+    font-weight: 300;
+    letter-spacing: .08em;
+    color: var(--text);
+    text-align: center;
+  }
+  .page-sub {
+    font-size: 8px;
+    letter-spacing: .26em;
+    text-transform: uppercase;
+    color: var(--muted);
+    text-align: center;
+    margin-top: 6px;
+  }
+
+  /* ── PHONE SHELL ─────────────────────────── */
+  .phone {
+    width: 340px;
+    background: var(--surface);
+    border: 1px solid rgba(255,255,255,.08);
+    border-radius: 36px;
+    overflow: hidden;
+    position: relative;
+    box-shadow: 0 40px 80px rgba(0,0,0,.6);
+  }
+
+  /* nav bar */
+  .nav {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 18px 24px 12px;
+    border-bottom: 1px solid var(--border);
+    flex-shrink: 0;
+  }
+  .nav-hamburger { display:flex; flex-direction:column; gap:4px; cursor:pointer; }
+  .nav-hamburger span { display:block; width:18px; height:1.5px; background:var(--muted); border-radius:1px; }
+  .nav-wordmark { font-family:'Cormorant Garamond',serif; font-size:14px; letter-spacing:.18em; color:rgba(232,228,220,.6); }
+  .nav-streak { font-size:8px; letter-spacing:.16em; color:var(--muted); }
+  .nav-streak span { color:var(--text); }
+
+  /* guide sub-tabs */
+  .guide-tabs {
+    display: flex;
+    gap: 8px;
+    padding: 14px 20px 0;
+  }
+  .guide-tab {
+    padding: 7px 16px;
+    border-radius: 8px;
+    font-family: 'DM Mono', monospace;
+    font-size: 9px;
+    letter-spacing: .18em;
+    text-transform: uppercase;
+    border: 1px solid var(--border);
+    background: none;
+    color: var(--muted);
+    cursor: pointer;
+  }
+  .guide-tab.active {
+    background: rgba(255,255,255,.05);
+    border-color: rgba(255,255,255,.12);
+    color: var(--text);
+  }
+
+  /* ── TREE CANVAS WRAPPER ─────────────────── */
+  .tree-wrap {
+    position: relative;
+    width: 100%;
+    padding: 10px 0 24px;
+    overflow: hidden;
+  }
+
+  svg.tree-svg {
+    display: block;
+    width: 100%;
+  }
+
+  /* ── NODE TOOLTIP (tap detail) ───────────── */
+  .tree-tooltip {
+    position: absolute;
+    bottom: 28px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 260px;
+    background: rgba(10,12,17,.96);
+    border: 1px solid rgba(255,255,255,.08);
+    border-radius: 14px;
+    padding: 14px 18px;
+    z-index: 20;
+    pointer-events: none;
+  }
+  .tt-row { display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 6px; }
+  .tt-name { font-family: 'Cormorant Garamond', serif; font-size: 18px; font-weight: 300; color: var(--text); }
+  .tt-level { font-size: 8px; letter-spacing: .18em; text-transform: uppercase; color: var(--muted); }
+  .tt-stat { font-size: 9px; color: var(--muted); letter-spacing: .08em; line-height: 1.6; }
+  .tt-stat strong { color: var(--text); }
+
+  /* ── DEPTH LEGEND ────────────────────────── */
+  .depth-legend {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 18px;
+    padding: 0 20px 18px;
+    border-top: 1px solid var(--border);
+    padding-top: 14px;
+  }
+  .dl-item { display: flex; align-items: center; gap: 7px; font-size: 8px; letter-spacing: .12em; color: var(--muted); }
+
+  /* ── ANNOTATIONS ─────────────────────────── */
+  .annotations {
+    width: 340px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+  .ann-row {
+    display: flex;
+    gap: 12px;
+    align-items: flex-start;
+  }
+  .ann-dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    flex-shrink: 0;
+    margin-top: 3px;
+  }
+  .ann-text {
+    font-size: 10px;
+    line-height: 1.7;
+    color: rgba(232,228,220,.55);
+  }
+  .ann-text strong { color: rgba(232,228,220,.8); }
+
+  .section-label {
+    font-size: 8px;
+    letter-spacing: .26em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 4px;
+    width: 340px;
+  }
+
+  .placement-note {
+    width: 340px;
+    border: 1px solid rgba(142,204,224,.14);
+    border-radius: 14px;
+    background: rgba(142,204,224,.03);
+    padding: 20px 22px;
+  }
+  .pn-title {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 16px;
+    font-weight: 300;
+    color: var(--text);
+    margin-bottom: 10px;
+  }
+  .pn-text {
+    font-size: 10px;
+    line-height: 1.75;
+    color: rgba(232,228,220,.55);
+  }
+  .pn-text strong { color: rgba(142,204,224,.8); }
+</style>
+</head>
+<body>
+
+<div>
+  <div class="page-title">Practice Tree</div>
+  <div class="page-sub">Retrospective star chart · tree of life structure</div>
+</div>
+
+<!-- PHONE -->
+<div class="phone">
+
+  <!-- Nav -->
+  <div class="nav">
+    <div class="nav-hamburger"><span></span><span></span><span></span></div>
+    <div class="nav-wordmark">Presence</div>
+    <div class="nav-streak">streak <span>12d</span></div>
+  </div>
+
+  <!-- Guide sub-tabs: Path | Upgrade | Tree -->
+  <div class="guide-tabs">
+    <button class="guide-tab">Path</button>
+    <button class="guide-tab">Upgrade</button>
+    <button class="guide-tab active">Tree</button>
+  </div>
+
+  <!-- Tree SVG canvas -->
+  <div class="tree-wrap">
+    <svg class="tree-svg" viewBox="0 0 340 540" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+
+        <!-- Nebula background washes -->
+        <radialGradient id="neb-center" cx="50%" cy="48%" r="42%">
+          <stop offset="0%" stop-color="#8ecce0" stop-opacity=".045"/>
+          <stop offset="100%" stop-color="#8ecce0" stop-opacity="0"/>
+        </radialGradient>
+        <radialGradient id="neb-low" cx="50%" cy="80%" r="30%">
+          <stop offset="0%" stop-color="#d4b08e" stop-opacity=".04"/>
+          <stop offset="100%" stop-color="#d4b08e" stop-opacity="0"/>
+        </radialGradient>
+        <radialGradient id="neb-top" cx="50%" cy="12%" r="28%">
+          <stop offset="0%" stop-color="#c4a8d4" stop-opacity=".05"/>
+          <stop offset="100%" stop-color="#c4a8d4" stop-opacity="0"/>
+        </radialGradient>
+
+        <!-- Glow filters per color -->
+        <filter id="glow-teal" x="-100%" y="-100%" width="300%" height="300%">
+          <feGaussianBlur stdDeviation="5" result="blur"/>
+          <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+        </filter>
+        <filter id="glow-teal-sm" x="-80%" y="-80%" width="260%" height="260%">
+          <feGaussianBlur stdDeviation="3.5" result="blur"/>
+          <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+        </filter>
+        <filter id="glow-gold" x="-80%" y="-80%" width="260%" height="260%">
+          <feGaussianBlur stdDeviation="4" result="blur"/>
+          <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+        </filter>
+        <filter id="glow-purple" x="-80%" y="-80%" width="260%" height="260%">
+          <feGaussianBlur stdDeviation="3.5" result="blur"/>
+          <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+        </filter>
+        <filter id="glow-rose" x="-80%" y="-80%" width="260%" height="260%">
+          <feGaussianBlur stdDeviation="3" result="blur"/>
+          <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+        </filter>
+        <filter id="glow-dim" x="-60%" y="-60%" width="220%" height="220%">
+          <feGaussianBlur stdDeviation="2" result="blur"/>
+          <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+        </filter>
+
+        <!-- Radial for star cores -->
+        <radialGradient id="grad-clock" cx="38%" cy="35%" r="65%">
+          <stop offset="0%" stop-color="#ddf8ff"/>
+          <stop offset="100%" stop-color="#6ab8d0"/>
+        </radialGradient>
+        <radialGradient id="grad-thought" cx="38%" cy="35%" r="65%">
+          <stop offset="0%" stop-color="#ccdcee"/>
+          <stop offset="100%" stop-color="#5888a8"/>
+        </radialGradient>
+        <radialGradient id="grad-mirror" cx="38%" cy="35%" r="65%">
+          <stop offset="0%" stop-color="#e4d4f4"/>
+          <stop offset="100%" stop-color="#8860a8"/>
+        </radialGradient>
+        <radialGradient id="grad-asana" cx="38%" cy="35%" r="65%">
+          <stop offset="0%" stop-color="#f4d8d8"/>
+          <stop offset="100%" stop-color="#c87878"/>
+        </radialGradient>
+        <radialGradient id="grad-pore" cx="38%" cy="35%" r="65%">
+          <stop offset="0%" stop-color="#dce8f4"/>
+          <stop offset="100%" stop-color="#6890b4"/>
+        </radialGradient>
+        <radialGradient id="grad-focus" cx="38%" cy="35%" r="65%">
+          <stop offset="0%" stop-color="#d0dcf0"/>
+          <stop offset="100%" stop-color="#5070a0"/>
+        </radialGradient>
+        <radialGradient id="grad-vis" cx="38%" cy="35%" r="65%">
+          <stop offset="0%" stop-color="#c8dcf8"/>
+          <stop offset="100%" stop-color="#4878c0"/>
+        </radialGradient>
+        <radialGradient id="grad-aud" cx="38%" cy="35%" r="65%">
+          <stop offset="0%" stop-color="#c4ecec"/>
+          <stop offset="100%" stop-color="#4898a0"/>
+        </radialGradient>
+        <radialGradient id="grad-vacancy" cx="38%" cy="35%" r="65%">
+          <stop offset="0%" stop-color="#dce0f8"/>
+          <stop offset="100%" stop-color="#6068c8"/>
+        </radialGradient>
+        <radialGradient id="grad-crown" cx="38%" cy="35%" r="65%">
+          <stop offset="0%" stop-color="#f8f4e8"/>
+          <stop offset="100%" stop-color="#c8a848"/>
+        </radialGradient>
+
+      </defs>
+
+      <!-- Background nebulae -->
+      <rect x="0" y="0" width="340" height="540" fill="url(#neb-center)"/>
+      <rect x="0" y="0" width="340" height="540" fill="url(#neb-low)"/>
+      <rect x="0" y="0" width="340" height="540" fill="url(#neb-top)"/>
+
+      <!-- Background scatter stars -->
+      <g opacity=".3">
+        <circle cx="18" cy="62" r=".6" fill="#e8e4dc"/>
+        <circle cx="305" cy="88" r=".5" fill="#e8e4dc"/>
+        <circle cx="28" cy="200" r=".7" fill="#e8e4dc"/>
+        <circle cx="316" cy="220" r=".5" fill="#e8e4dc"/>
+        <circle cx="12" cy="360" r=".6" fill="#e8e4dc"/>
+        <circle cx="328" cy="380" r=".5" fill="#e8e4dc"/>
+        <circle cx="62" cy="490" r=".4" fill="#e8e4dc"/>
+        <circle cx="278" cy="500" r=".6" fill="#e8e4dc"/>
+        <circle cx="44" cy="130" r=".5" fill="#e8e4dc"/>
+        <circle cx="298" cy="145" r=".4" fill="#e8e4dc"/>
+        <circle cx="22" cy="430" r=".5" fill="#e8e4dc"/>
+        <circle cx="320" cy="310" r=".6" fill="#e8e4dc"/>
+        <circle cx="170" cy="22" r=".5" fill="#e8e4dc"/>
+        <circle cx="90" cy="46" r=".4" fill="#e8e4dc"/>
+        <circle cx="250" cy="38" r=".5" fill="#e8e4dc"/>
+      </g>
+
+      <!--
+        TREE OF LIFE LAYOUT (bottom → top)
+        Node positions (cx, cy):
+
+        Malkuth      (Foundation/Earth)    — Clock         170, 490
+        Yesod        (Foundation/Body)     — Asana         170, 400
+        Hod          (Splendor/Form)       — Soul Mirror    98, 340
+        Netzach      (Victory/Feeling)     — Pore Breath   242, 340
+        Tiphareth    (Beauty/Heart)        — Thought Obs.  170, 260
+        Geburah      (Strength/Discipline) — Thought Focus  98, 190
+        Chesed       (Mercy/Expansion)     — Auditory      242, 190
+        Binah        (Understanding)       — Vacancy        98, 115
+        Chokmah      (Wisdom)              — Visualization 242, 115
+        Kether       (Crown/Step Gate)     — Step I        170,  48
+      -->
+
+      <!-- ══ PATH LINES (edges of the tree) ══════════════════ -->
+      <!-- Malkuth → Yesod (Clock → Asana) — bright, practiced -->
+      <line x1="170" y1="490" x2="170" y2="400" stroke="#8ecce0" stroke-width="1.2" stroke-opacity=".35"/>
+
+      <!-- Yesod → Hod (Asana → Soul Mirror) — practiced -->
+      <line x1="170" y1="400" x2="98" y2="340" stroke="#8ecce0" stroke-width="1" stroke-opacity=".3"/>
+      <!-- Yesod → Netzach (Asana → Pore Breathing) — dim, not yet -->
+      <line x1="170" y1="400" x2="242" y2="340" stroke="#8ecce0" stroke-width=".8" stroke-opacity=".1" stroke-dasharray="3 3"/>
+
+      <!-- Hod → Tiphareth (Soul Mirror → Thought Obs.) — practiced -->
+      <line x1="98" y1="340" x2="170" y2="260" stroke="#8ecce0" stroke-width="1" stroke-opacity=".3"/>
+      <!-- Netzach → Tiphareth (Pore Breath → Thought Obs.) — dim -->
+      <line x1="242" y1="340" x2="170" y2="260" stroke="#8ecce0" stroke-width=".8" stroke-opacity=".08" stroke-dasharray="3 3"/>
+
+      <!-- Tiphareth → Geburah (Thought Obs. → Thought Focus) — practiced -->
+      <line x1="170" y1="260" x2="98" y2="190" stroke="#98b4cc" stroke-width=".9" stroke-opacity=".28"/>
+      <!-- Tiphareth → Chesed (Thought Obs. → Auditory) — dim -->
+      <line x1="170" y1="260" x2="242" y2="190" stroke="#8eccc0" stroke-width=".7" stroke-opacity=".07" stroke-dasharray="3 3"/>
+
+      <!-- Geburah → Binah (Thought Focus → Vacancy) — dim -->
+      <line x1="98" y1="190" x2="98" y2="115" stroke="#98b4cc" stroke-width=".7" stroke-opacity=".12" stroke-dasharray="3 3"/>
+      <!-- Chesed → Chokmah (Auditory → Visualization) — dim -->
+      <line x1="242" y1="190" x2="242" y2="115" stroke="#8ab8e0" stroke-width=".7" stroke-opacity=".07" stroke-dasharray="3 3"/>
+
+      <!-- Binah → Kether (Vacancy → Crown) — barely visible -->
+      <line x1="98" y1="115" x2="170" y2="48" stroke="#c4a8d4" stroke-width=".6" stroke-opacity=".1" stroke-dasharray="2 4"/>
+      <!-- Chokmah → Kether (Vis → Crown) — barely visible -->
+      <line x1="242" y1="115" x2="170" y2="48" stroke="#8ab8e0" stroke-width=".6" stroke-opacity=".08" stroke-dasharray="2 4"/>
+
+      <!-- Horizontal cross-connections (the pillars) -->
+      <!-- Hod ↔ Netzach — dim -->
+      <line x1="98" y1="340" x2="242" y2="340" stroke="rgba(255,255,255,.06)" stroke-width=".6" stroke-dasharray="2 4"/>
+      <!-- Geburah ↔ Chesed — dim -->
+      <line x1="98" y1="190" x2="242" y2="190" stroke="rgba(255,255,255,.05)" stroke-width=".5" stroke-dasharray="2 4"/>
+      <!-- Binah ↔ Chokmah — barely visible -->
+      <line x1="98" y1="115" x2="242" y2="115" stroke="rgba(255,255,255,.04)" stroke-width=".5" stroke-dasharray="2 4"/>
+
+
+      <!-- ══ NODES ════════════════════════════════════════════ -->
+
+      <!-- ── KETHER: Step I Gate (Crown, top) — dim/future ── -->
+      <circle cx="170" cy="48" r="18" fill="#c8a848" opacity=".04"/>
+      <circle cx="170" cy="48" r="9" fill="#f8f4e8" opacity=".08" filter="url(#glow-dim)"/>
+      <circle cx="170" cy="48" r="4" fill="url(#grad-crown)" opacity=".22"/>
+      <text x="170" y="35" text-anchor="middle" font-family="DM Mono,monospace" font-size="6.5" letter-spacing=".14em" fill="rgba(200,168,72,.3)">STEP I GATE</text>
+
+      <!-- ── CHOKMAH: Visualization (upper right) — faint hint ── -->
+      <circle cx="242" cy="115" r="12" fill="#4878c0" opacity=".03"/>
+      <circle cx="242" cy="115" r="5" fill="#c8dcf8" opacity=".12" filter="url(#glow-dim)"/>
+      <circle cx="242" cy="115" r="2.2" fill="url(#grad-vis)" opacity=".3"/>
+      <text x="242" y="102" text-anchor="middle" font-family="DM Mono,monospace" font-size="6" letter-spacing=".1em" fill="rgba(142,180,224,.22)">VISUALIZATION</text>
+
+      <!-- ── BINAH: Vacancy of Mind (upper left) — faint hint ── -->
+      <circle cx="98" cy="115" r="12" fill="#6068c8" opacity=".03"/>
+      <circle cx="98" cy="115" r="5" fill="#dce0f8" opacity=".12" filter="url(#glow-dim)"/>
+      <circle cx="98" cy="115" r="2.2" fill="url(#grad-vacancy)" opacity=".3"/>
+      <text x="98" y="102" text-anchor="middle" font-family="DM Mono,monospace" font-size="6" letter-spacing=".1em" fill="rgba(140,148,212,.22)">VACANCY</text>
+
+      <!-- ── CHESED: Auditory (mid right) — barely visible ── -->
+      <circle cx="242" cy="190" r="14" fill="#4898a0" opacity=".03"/>
+      <circle cx="242" cy="190" r="6" fill="#c4ecec" opacity=".1" filter="url(#glow-dim)"/>
+      <circle cx="242" cy="190" r="2.5" fill="url(#grad-aud)" opacity=".2"/>
+      <text x="242" y="177" text-anchor="middle" font-family="DM Mono,monospace" font-size="6" letter-spacing=".1em" fill="rgba(142,200,192,.18)">AUDITORY</text>
+
+      <!-- ── GEBURAH: Thought Focus (mid left) — dim but visible, partially practiced ── -->
+      <circle cx="98" cy="190" r="22" fill="#5070a0" opacity=".05"/>
+      <circle cx="98" cy="190" r="11" fill="#d0dcf0" opacity=".1" filter="url(#glow-teal-sm)"/>
+      <circle cx="98" cy="190" r="5" fill="url(#grad-focus)" opacity=".55" filter="url(#glow-teal-sm)"/>
+      <circle cx="98" cy="190" r="2.2" fill="#e8f0fc"/>
+      <!-- Subtle depth ring — some practice done -->
+      <circle cx="98" cy="190" r="17" fill="none" stroke="#98b4cc" stroke-width=".5" stroke-opacity=".14" stroke-dasharray="2 2"/>
+      <text x="98" y="177" text-anchor="middle" font-family="DM Mono,monospace" font-size="6.5" letter-spacing=".12em" fill="rgba(152,180,204,.5)">THOUGHT FOCUS</text>
+
+      <!-- ── NETZACH: Pore Breathing (lower right) — dim ── -->
+      <circle cx="242" cy="340" r="16" fill="#6890b4" opacity=".04"/>
+      <circle cx="242" cy="340" r="7" fill="#dce8f4" opacity=".1" filter="url(#glow-dim)"/>
+      <circle cx="242" cy="340" r="3" fill="url(#grad-pore)" opacity=".3"/>
+      <text x="242" y="327" text-anchor="middle" font-family="DM Mono,monospace" font-size="6" letter-spacing=".1em" fill="rgba(152,196,220,.25)">PORE BREATH</text>
+
+      <!-- ── HOD: Soul Mirror (lower left) — practiced, glowing ── -->
+      <circle cx="98" cy="340" r="28" fill="#8860a8" opacity=".06"/>
+      <circle cx="98" cy="340" r="14" fill="#e4d4f4" opacity=".1" filter="url(#glow-purple)"/>
+      <circle cx="98" cy="340" r="7" fill="url(#grad-mirror)" opacity=".82" filter="url(#glow-purple)"/>
+      <circle cx="98" cy="340" r="3" fill="#f4ecfc"/>
+      <circle cx="98" cy="340" r="20" fill="none" stroke="#c4a8d4" stroke-width=".6" stroke-opacity=".2" stroke-dasharray="2 2"/>
+      <circle cx="98" cy="340" r="26" fill="none" stroke="#c4a8d4" stroke-width=".4" stroke-opacity=".1" stroke-dasharray="1.5 3"/>
+      <text x="98" y="327" text-anchor="middle" font-family="DM Mono,monospace" font-size="6.5" letter-spacing=".12em" fill="rgba(196,168,212,.7)">SOUL MIRROR</text>
+
+      <!-- ── TIPHARETH: Thought Observation (center heart) — brightest, most practiced ── -->
+      <!-- Outer corona -->
+      <circle cx="170" cy="260" r="40" fill="#5888a8" opacity=".04"/>
+      <!-- Halo rings — depth indicators -->
+      <circle cx="170" cy="260" r="32" fill="none" stroke="#8ecce0" stroke-width=".5" stroke-opacity=".12" stroke-dasharray="2 3"/>
+      <circle cx="170" cy="260" r="25" fill="none" stroke="#8ecce0" stroke-width=".6" stroke-opacity=".16" stroke-dasharray="2 2"/>
+      <circle cx="170" cy="260" r="18" fill="none" stroke="#8ecce0" stroke-width=".7" stroke-opacity=".22"/>
+      <!-- Glow aura -->
+      <circle cx="170" cy="260" r="14" fill="#ccdcee" opacity=".14" filter="url(#glow-teal)"/>
+      <!-- Star body -->
+      <circle cx="170" cy="260" r="9.5" fill="url(#grad-thought)" opacity=".95" filter="url(#glow-teal-sm)"/>
+      <circle cx="170" cy="260" r="4" fill="#f0f8ff"/>
+      <!-- Animated pulse (most-practiced node) -->
+      <circle cx="170" cy="260" r="40">
+        <animate attributeName="r" values="24;40;24" dur="4s" repeatCount="indefinite"/>
+        <animate attributeName="opacity" values=".06;0;.06" dur="4s" repeatCount="indefinite"/>
+        <animate attributeName="fill" values="#8ecce0;#8ecce0;#8ecce0" dur="4s" repeatCount="indefinite"/>
+      </circle>
+      <text x="170" y="244" text-anchor="middle" font-family="DM Mono,monospace" font-size="7" letter-spacing=".14em" fill="rgba(142,204,224,.8)">THOUGHT OBS.</text>
+
+      <!-- ── YESOD: Asana (foundation pillar) — well practiced ── -->
+      <circle cx="170" cy="400" r="32" fill="#c87878" opacity=".04"/>
+      <circle cx="170" cy="400" r="16" fill="#f4d8d8" opacity=".09" filter="url(#glow-rose)"/>
+      <circle cx="170" cy="400" r="8" fill="url(#grad-asana)" opacity=".88" filter="url(#glow-rose)"/>
+      <circle cx="170" cy="400" r="3.5" fill="#fceaea"/>
+      <circle cx="170" cy="400" r="23" fill="none" stroke="#d49898" stroke-width=".6" stroke-opacity=".18" stroke-dasharray="2 2"/>
+      <circle cx="170" cy="400" r="29" fill="none" stroke="#d49898" stroke-width=".4" stroke-opacity=".1" stroke-dasharray="1.5 3"/>
+      <text x="170" y="386" text-anchor="middle" font-family="DM Mono,monospace" font-size="7" letter-spacing=".14em" fill="rgba(212,152,152,.75)">ASANA</text>
+
+      <!-- ── MALKUTH: Clock (earth root, bottom) — deeply practiced, full corona ── -->
+      <!-- Full corona — deepest practice -->
+      <circle cx="170" cy="490" r="44" fill="#6ab8d0" opacity=".04"/>
+      <!-- Three depth rings -->
+      <circle cx="170" cy="490" r="36" fill="none" stroke="#8ecce0" stroke-width=".5" stroke-opacity=".1" stroke-dasharray="2 4"/>
+      <circle cx="170" cy="490" r="28" fill="none" stroke="#8ecce0" stroke-width=".6" stroke-opacity=".15" stroke-dasharray="2 3"/>
+      <circle cx="170" cy="490" r="20" fill="none" stroke="#8ecce0" stroke-width=".8" stroke-opacity=".22"/>
+      <!-- Glow -->
+      <circle cx="170" cy="490" r="15" fill="#ddf8ff" opacity=".12" filter="url(#glow-teal)"/>
+      <!-- Star core — large, bright, well-practiced -->
+      <circle cx="170" cy="490" r="11" fill="url(#grad-clock)" opacity=".96" filter="url(#glow-teal)"/>
+      <circle cx="170" cy="490" r="4.5" fill="#ffffff"/>
+      <text x="170" y="474" text-anchor="middle" font-family="DM Mono,monospace" font-size="7.5" letter-spacing=".16em" fill="rgba(184,234,255,.9)">CLOCK</text>
+
+      <!-- Bardon step arc label -->
+      <path d="M 50 528 Q 170 515 290 528" fill="none" stroke="#d4b08e" stroke-width=".7" stroke-opacity=".18" stroke-dasharray="3 4"/>
+      <text x="170" y="540" text-anchor="middle" font-family="Cormorant Garamond,serif" font-style="italic" font-size="10" fill="rgba(212,176,142,.3)" letter-spacing=".08em">Step I · Fundamentals</text>
+
+    </svg>
+  </div>
+
+  <!-- Depth legend inside phone -->
+  <div class="depth-legend">
+    <div class="dl-item">
+      <svg width="18" height="18" viewBox="0 0 18 18">
+        <circle cx="9" cy="9" r="7" fill="none" stroke="#8ecce0" stroke-width=".7" stroke-opacity=".35" stroke-dasharray="2 2"/>
+        <circle cx="9" cy="9" r="4" fill="none" stroke="#8ecce0" stroke-width=".8" stroke-opacity=".55"/>
+        <circle cx="9" cy="9" r="1.8" fill="#b8eaff"/>
+      </svg>
+      Depth rings = sessions
+    </div>
+    <div class="dl-item">
+      <svg width="18" height="18" viewBox="0 0 18 18">
+        <circle cx="9" cy="9" r="5" fill="#b8eaff" opacity=".9"/>
+        <circle cx="9" cy="9" r="2" fill="#ffffff"/>
+      </svg>
+      Brightness = quality
+    </div>
+    <div class="dl-item">
+      <svg width="22" height="10" viewBox="0 0 22 10">
+        <line x1="0" y1="5" x2="22" y2="5" stroke="#8ecce0" stroke-width=".8" stroke-opacity=".4" stroke-dasharray="3 3"/>
+      </svg>
+      Path available
+    </div>
+  </div>
+
+</div><!-- end phone -->
+
+<!-- ANNOTATIONS -->
+<div class="section-label">How it works</div>
+
+<div class="annotations">
+  <div class="ann-row">
+    <div class="ann-dot" style="background:#b8eaff;box-shadow:0 0 5px rgba(184,234,255,.5);"></div>
+    <div class="ann-text"><strong>Star size and brightness</strong> reflect quality — sessions per tier, longest unbroken hold, post-session score. A Clock star after 3 years of practice is visibly larger and brighter than after 3 weeks.</div>
+  </div>
+  <div class="ann-row">
+    <div class="ann-dot" style="background:rgba(142,204,224,.3);border:1px solid rgba(142,204,224,.4);"></div>
+    <div class="ann-text"><strong>Depth rings</strong> grow outward as total sessions accumulate. Each concentric ring = a tier milestone. At 10-min Clock mastery you might have 2 rings; at 15-min, 3.</div>
+  </div>
+  <div class="ann-row">
+    <div class="ann-dot" style="background:rgba(232,228,220,.18);"></div>
+    <div class="ann-text"><strong>Dim stars</strong> are available — no lock icon, no wall, just less light. Tapping them shows what Omnia says about them and how many sessions it would take to begin illuminating them.</div>
+  </div>
+  <div class="ann-row">
+    <div class="ann-dot" style="background:rgba(200,168,72,.3);"></div>
+    <div class="ann-text"><strong>The Kether gate</strong> at the crown glows gold when all Tiphareth-level stars reach a minimum brightness — it's not a lock, it's a lantern that lights up when you're ready for the next Bardon step.</div>
+  </div>
+</div>
+
+<!-- PLACEMENT NOTE -->
+<div class="section-label">Where it lives</div>
+
+<div class="placement-note">
+  <div class="pn-title">A third tab inside Guide</div>
+  <div class="pn-text">
+    Guide stays three tabs: <strong>Path</strong> (Omnia's daily agenda) · <strong>Upgrade</strong> (Omnia engine) · <strong>Tree</strong> (this chart).<br><br>
+    Path drives the <em>action</em>. Tree reflects the <em>result</em>. The player moves between them naturally — they check Path to know what to do today, they open Tree to see what they've built.<br><br>
+    Optionally: tapping Omnia in the banner crystal on the Path screen animates a transition into the Tree — the crystal "opens" into the star chart. This makes Omnia feel like the keeper of the map rather than a separate UI element.
+  </div>
+</div>
+
+</body>
+</html>
