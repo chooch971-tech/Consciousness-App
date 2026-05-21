@@ -489,8 +489,7 @@
     .guide-cadence-toggle { border:1px solid rgba(142,204,224,.24); background:rgba(142,204,224,.06); color:#8ecce0; border-radius:4px; padding:7px 9px; font-family:'DM Mono',monospace; font-size:8px; letter-spacing:.14em; text-transform:uppercase; cursor:pointer; white-space:nowrap; }
     .guide-cadence-toggle.off { color:var(--muted); border-color:var(--border); background:rgba(255,255,255,.02); }
     .guide-plan-controls { display:none; justify-content:space-between; align-items:center; gap:10px; border:1px solid rgba(142,204,224,.12); background:rgba(255,255,255,.025); border-radius:8px; padding:9px 10px; margin-bottom:12px; }
-    .guide-dots-nav { display:flex; flex-direction:column; align-items:center; gap:8px; padding:12px 0 10px; }
-    .guide-dots-label { font-family:'DM Mono',monospace; font-size:9px; letter-spacing:.22em; text-transform:uppercase; color:var(--text); min-height:14px; }
+    .guide-dots-nav { display:flex; flex-direction:column; align-items:center; padding:12px 0 10px; }
     .guide-dots { display:flex; gap:10px; align-items:center; }
     .guide-dot { width:6px; height:6px; border-radius:50%; border:none; background:rgba(255,255,255,.18); cursor:pointer; padding:0; transition:background .22s, transform .22s; }
     .guide-dot.active { background:#8ecce0; transform:scale(1.3); }
@@ -508,10 +507,18 @@
     .ptree-svg { display:block; width:100%; }
     .ptree-legend { display:flex; align-items:center; justify-content:center; gap:14px; padding:12px 20px 18px; border-top:1px solid var(--border); }
     .ptree-legend-item { display:flex; align-items:center; gap:6px; font-size:8px; letter-spacing:.12em; color:var(--muted); }
-    .ptree-tooltip { display:none; margin:0 16px 16px; background:rgba(10,12,17,.95); border:1px solid var(--border); border-radius:14px; padding:14px 18px; }
-    .ptree-tt-name { font-family:Cormorant Garamond,serif; font-size:18px; font-weight:300; color:var(--text); margin-bottom:4px; }
-    .ptree-tt-stat { font-size:9px; color:var(--muted); letter-spacing:.06em; line-height:1.7; }
+    .ptree-tooltip { display:none; margin:0 16px 16px; background:rgba(10,12,17,.95); border:1px solid var(--border); border-radius:14px; padding:16px 18px; animation:ptreeFadeIn .18s ease; }
+    .ptree-tt-name { font-family:'Cormorant Garamond',serif; font-size:20px; font-weight:300; color:var(--text); margin-bottom:6px; }
+    .ptree-tt-sub { font-size:8px; letter-spacing:.2em; text-transform:uppercase; color:var(--muted); margin-bottom:10px; }
+    .ptree-tt-bar-wrap { background:rgba(255,255,255,.06); border-radius:4px; height:3px; margin-bottom:10px; }
+    .ptree-tt-bar { height:3px; border-radius:4px; background:#8ecce0; transition:width .4s ease; }
+    .ptree-tt-stat { font-size:9px; color:var(--muted); letter-spacing:.06em; line-height:1.9; }
     .ptree-tt-stat strong { color:var(--text); }
+    .ptree-first-visit { position:absolute; inset:0; z-index:30; display:flex; align-items:center; justify-content:center; padding:32px 24px; background:rgba(10,12,17,.72); backdrop-filter:blur(2px); cursor:pointer; }
+    .ptree-first-bubble { background:rgba(17,20,27,.97); border:1px solid rgba(142,204,224,.2); border-radius:18px; padding:24px 22px; max-width:280px; text-align:center; box-shadow:0 8px 32px rgba(0,0,0,.6); }
+    .ptree-first-bubble p { font-family:'Cormorant Garamond',serif; font-size:18px; font-weight:300; color:var(--text); line-height:1.55; letter-spacing:.02em; margin-bottom:18px; }
+    .ptree-first-bubble span { font-size:8px; letter-spacing:.22em; text-transform:uppercase; color:rgba(142,204,224,.6); }
+    @keyframes ptreeFadeIn { from { opacity:0; transform:translateY(4px); } to { opacity:1; transform:translateY(0); } }
     .omnia-engine { margin:0 0 20px; background:rgba(142,204,224,.045); border:1px solid rgba(142,204,224,.16); border-radius:12px; padding:16px; box-shadow:0 0 24px rgba(80,160,190,.04) inset; }
     .omnia-engine-top { display:flex; justify-content:space-between; align-items:flex-start; gap:14px; margin-bottom:14px; }
     .omnia-engine-kicker { font-size:8px; letter-spacing:.25em; text-transform:uppercase; color:#8ecce0; margin-bottom:5px; }
@@ -2587,7 +2594,6 @@ body:not(.tut-live) #tutCorgi {
     <!-- GUIDE PANEL (inside homeScreen) -->
     <div id="guidePanel" style="display:none; flex:1; flex-direction:column; overflow-y:auto; overflow-x:hidden; -webkit-overflow-scrolling:touch; min-height:0; padding-bottom:60px;">
     <div class="guide-dots-nav">
-      <div class="guide-dots-label" id="guideDotLabel">Path</div>
       <div class="guide-dots">
         <button class="guide-dot active" id="guidePathTab" data-tab="path" aria-label="Path"></button>
         <button class="guide-dot" id="guideOmniaTab" data-tab="omnia" aria-label="Upgrade"></button>
@@ -2922,8 +2928,14 @@ body:not(.tut-live) #tutCorgi {
     </div>
     </div>
     <div class="guide-tab-panel guide-tab-hidden" id="guideTreePanel">
-      <div class="ptree-wrap">
+      <div class="ptree-wrap" style="position:relative;">
         <div id="guideTreeSVGWrap"></div>
+        <div class="ptree-first-visit" id="ptreeFirstVisit" style="display:none;">
+          <div class="ptree-first-bubble">
+            <p>master the exercises to illuminate the tree. the more you practice, the brighter it becomes.</p>
+            <span>tap to continue</span>
+          </div>
+        </div>
       </div>
       <div class="ptree-legend">
         <div class="ptree-legend-item">
@@ -2941,6 +2953,8 @@ body:not(.tut-live) #tutCorgi {
       </div>
       <div class="ptree-tooltip" id="ptreeTooltip">
         <div class="ptree-tt-name" id="ptreeTooltipName"></div>
+        <div class="ptree-tt-sub" id="ptreeTooltipSub"></div>
+        <div class="ptree-tt-bar-wrap"><div class="ptree-tt-bar" id="ptreeTooltipBar" style="width:0%;"></div></div>
         <div class="ptree-tt-stat" id="ptreeTooltipStat"></div>
       </div>
     </div>
@@ -12456,22 +12470,23 @@ function renderPracticeTree() {
     var b = bMap[n.id];
     var rec = practiceTreeNodeRecency(n.ex, stats);
     var dep = practiceTreeNodeDepth(n.ex, stats);
-    var starR = Math.max(2.5, 2.5 + b * 0.55);
+    // Increased minimum sizes/opacities so all nodes are visible even at brightness 0
+    var starR = Math.max(3.5, 3 + b * 0.55);
     var auraR = (starR * (1.3 + rec * 0.5)).toFixed(1);
-    var coronaR = (starR * 4.4).toFixed(1);
-    var coreR = Math.max(1.2, starR * 0.38).toFixed(1);
-    var coronaOp = Math.min(0.12, 0.02 + b * 0.003).toFixed(3);
-    var auraOp = (0.04 + rec * 0.1).toFixed(3);
-    var starOp = Math.min(0.97, 0.12 + b * 0.043).toFixed(3);
-    var coreOp = b > 2 ? '1' : b > 0 ? '0.45' : '0';
-    var labelY = (n.cy - starR - 4).toFixed(1);
-    var labelOp = b > 5 ? '0.8' : b > 2 ? '0.5' : b > 0 ? '0.3' : '0.2';
+    var coronaR = (starR * 4.2).toFixed(1);
+    var coreR = Math.max(1.5, starR * 0.38).toFixed(1);
+    var coronaOp = Math.min(0.14, 0.04 + b * 0.005).toFixed(3);
+    var auraOp = (0.07 + rec * 0.1).toFixed(3);
+    var starOp = Math.min(0.97, 0.32 + b * 0.04).toFixed(3);
+    var coreOp = b > 4 ? '1' : b > 1 ? '0.6' : '0.25';
+    var labelY = (n.cy - starR - 5).toFixed(1);
+    var labelOp = b > 5 ? '0.9' : b > 2 ? '0.65' : '0.45';
 
     var rings = '';
     for (var r = 1; r <= dep; r++) {
       var rr = (starR * (1.9 + r * 0.8)).toFixed(1);
-      var rop = (0.1 - r * 0.02).toFixed(3);
-      rings += '<circle cx="'+n.cx+'" cy="'+n.cy+'" r="'+rr+'" fill="none" stroke="'+n.color+'" stroke-width=".5" stroke-opacity="'+rop+'" stroke-dasharray="2 2"/>';
+      var rop = (0.14 - r * 0.02).toFixed(3);
+      rings += '<circle cx="'+n.cx+'" cy="'+n.cy+'" r="'+rr+'" fill="none" stroke="'+n.color+'" stroke-width=".6" stroke-opacity="'+rop+'" stroke-dasharray="2 2"/>';
     }
 
     var pulse = '';
@@ -12480,18 +12495,19 @@ function renderPracticeTree() {
       var pr0 = (starR * 1.8).toFixed(1);
       pulse = '<circle cx="'+n.cx+'" cy="'+n.cy+'" r="'+pr+'" fill="'+n.color+'">'
         + '<animate attributeName="r" values="'+pr0+';'+pr+';'+pr0+'" dur="5s" repeatCount="indefinite"/>'
-        + '<animate attributeName="opacity" values=".07;0;.07" dur="5s" repeatCount="indefinite"/>'
+        + '<animate attributeName="opacity" values=".08;0;.08" dur="5s" repeatCount="indefinite"/>'
         + '</circle>';
     }
 
+    var tapR = Math.max(starR * 2.5, 16).toFixed(1);
     return '<circle cx="'+n.cx+'" cy="'+n.cy+'" r="'+coronaR+'" fill="'+n.color+'" opacity="'+coronaOp+'"/>'
       + rings
       + '<circle cx="'+n.cx+'" cy="'+n.cy+'" r="'+auraR+'" fill="'+n.lc+'" opacity="'+auraOp+'" filter="url(#'+n.gf+')"/>'
       + pulse
       + '<circle cx="'+n.cx+'" cy="'+n.cy+'" r="'+(starR.toFixed(1))+'" fill="'+n.lc+'" opacity="'+starOp+'" filter="url(#'+n.gf+')"/>'
       + '<circle cx="'+n.cx+'" cy="'+n.cy+'" r="'+coreR+'" fill="#ffffff" opacity="'+coreOp+'"/>'
-      + '<circle cx="'+n.cx+'" cy="'+n.cy+'" r="'+(starR*2.2).toFixed(1)+'" fill="transparent" data-node="'+n.id+'" class="ptree-tap-area" style="cursor:pointer;"/>'
-      + '<text x="'+n.cx+'" y="'+labelY+'" text-anchor="middle" font-family="DM Mono,monospace" font-size="'+n.fs+'" letter-spacing=".12em" fill="'+n.color+'" opacity="'+labelOp+'">'+n.label+'</text>';
+      + '<text x="'+n.cx+'" y="'+labelY+'" text-anchor="middle" font-family="DM Mono,monospace" font-size="'+n.fs+'" letter-spacing=".12em" fill="'+n.color+'" opacity="'+labelOp+'">'+n.label+'</text>'
+      + '<circle cx="'+n.cx+'" cy="'+n.cy+'" r="'+tapR+'" fill="transparent" data-node="'+n.id+'" class="ptree-tap-area" style="cursor:pointer;"/>';
   }
 
   var bgStars = '<g opacity=".28"><circle cx="18" cy="62" r=".6" fill="#e8e4dc"/><circle cx="305" cy="88" r=".5" fill="#e8e4dc"/><circle cx="28" cy="200" r=".7" fill="#e8e4dc"/><circle cx="316" cy="220" r=".5" fill="#e8e4dc"/><circle cx="12" cy="360" r=".6" fill="#e8e4dc"/><circle cx="328" cy="380" r=".5" fill="#e8e4dc"/><circle cx="62" cy="490" r=".4" fill="#e8e4dc"/><circle cx="278" cy="500" r=".6" fill="#e8e4dc"/><circle cx="44" cy="130" r=".5" fill="#e8e4dc"/><circle cx="298" cy="145" r=".4" fill="#e8e4dc"/><circle cx="170" cy="22" r=".5" fill="#e8e4dc"/><circle cx="90" cy="46" r=".4" fill="#e8e4dc"/><circle cx="250" cy="38" r=".5" fill="#e8e4dc"/></g>';
@@ -12533,32 +12549,94 @@ function renderPracticeTree() {
     + bgStars
     + paths
     + nodesStr
-    + '<path d="M 50 528 Q 170 515 290 528" fill="none" stroke="#d4b08e" stroke-width=".7" stroke-opacity=".12" stroke-dasharray="3 4"/>'
-    + '<text x="170" y="540" text-anchor="middle" font-family="Cormorant Garamond,serif" font-style="italic" font-size="10" fill="rgba(212,176,142,.22)" letter-spacing=".08em">Step I · Fundamentals</text>'
     + '</svg>';
 
   el.innerHTML = svg;
 
-  // Node tap to show tooltip
+  // First-visit overlay
+  var fvKey = 'ptree_intro_seen';
+  var fvEl = document.getElementById('ptreeFirstVisit');
+  if (fvEl && !localStorage.getItem(fvKey)) {
+    fvEl.style.display = 'flex';
+    fvEl.addEventListener('click', function() {
+      fvEl.style.display = 'none';
+      localStorage.setItem(fvKey, '1');
+    }, { once: true });
+  }
+
+  // Node info data
+  var nameMap = {
+    kether:'Step I Gate', chokmah:'Visualization', binah:'Vacancy of Mind',
+    chesed:'Auditory', geburah:'Thought Focus', tiphareth:'Thought Observation',
+    netzach:'Pore Breathing', hod:'Soul Mirror', yesod:'Asana', malkuth:'Clock'
+  };
+  var descMap = {
+    kether:'Lights up as all exercises approach mastery.',
+    chokmah:'Hold a mental image clearly for five minutes without halting.',
+    binah:'Let the mind stay empty — note the first sign of content.',
+    chesed:'Concentrated listening on a single sound.',
+    geburah:'Fix attention on one thought or word and hold it.',
+    tiphareth:'Watch thoughts arise and pass without entering them.',
+    netzach:'Breathing through every pore of the body simultaneously.',
+    hod:'Honest daily reflection on traits and patterns.',
+    yesod:'Seated stillness — no movement for the full duration.',
+    malkuth:'Follow the seconds hand without losing awareness.'
+  };
+  var maxMap = { malkuth:15 };
+
+  var tt = document.getElementById('ptreeTooltip');
+  var ttName = document.getElementById('ptreeTooltipName');
+  var ttSub = document.getElementById('ptreeTooltipSub');
+  var ttBar = document.getElementById('ptreeTooltipBar');
+  var ttStat = document.getElementById('ptreeTooltipStat');
+  var openNodeId = null;
+
   el.querySelectorAll('.ptree-tap-area').forEach(function(area) {
     area.addEventListener('click', function() {
       var nodeId = area.dataset.node;
+      if (openNodeId === nodeId) {
+        tt.style.display = 'none';
+        openNodeId = null;
+        return;
+      }
+      openNodeId = nodeId;
       var node = NODES.find(function(n) { return n.id === nodeId; });
-      if (!node) return;
+      if (!node || !tt) return;
       var b = bMap[nodeId];
-      var rec = practiceTreeNodeRecency(node.ex, stats);
+      var max = maxMap[nodeId] || 20;
       var dep = practiceTreeNodeDepth(node.ex, stats);
-      var nameMap = {kether:'Step I Gate',chokmah:'Visualization',binah:'Vacancy of Mind',chesed:'Auditory',geburah:'Thought Focus',tiphareth:'Thought Observation',netzach:'Pore Breathing',hod:'Soul Mirror',yesod:'Asana',malkuth:'Clock'};
-      var tt = document.getElementById('ptreeTooltip');
-      var ttName = document.getElementById('ptreeTooltipName');
-      var ttStat = document.getElementById('ptreeTooltipStat');
-      if (!tt) return;
+      var rec = practiceTreeNodeRecency(node.ex, stats);
+      var lookupId = (node.ex === 'pore') ? 'soulmirror'
+        : (node.ex === 'observation' || node.ex === 'focus' || node.ex === 'vacancy') ? 'thought'
+        : node.ex === 'kether' ? null : node.ex;
+      var st = lookupId ? (stats[lookupId] || {}) : {};
+      var sessions = st.count || 0;
+      var bestSec = st.bestSec || 0;
+      var recencyStr = rec >= 0.99 ? 'this week'
+        : rec <= 0.21 ? '60+ days ago'
+        : Math.round((1 - rec) / 0.8 * 53 + 7) + ' days ago';
+
       ttName.textContent = nameMap[nodeId] || node.label;
-      ttStat.innerHTML = '<strong>Brightness</strong> '+b+' / '+(nodeId==='clock'?15:20)
-        + ' &nbsp;·&nbsp; <strong>Depth rings</strong> '+dep+' / 3'
-        + ' &nbsp;·&nbsp; <strong>Recency</strong> '+(rec >= 0.99 ? 'this week' : rec <= 0.21 ? '60+ days' : Math.round((1-rec)/0.8*53+7)+'d ago');
-      tt.style.display = tt.style.display === 'block' ? 'none' : 'block';
+      if (ttSub) ttSub.textContent = descMap[nodeId] || '';
+      if (ttBar) ttBar.style.width = Math.round(b / max * 100) + '%';
+      if (ttBar) ttBar.style.background = node.color;
+
+      var statLines = [];
+      statLines.push('<strong>Brightness</strong> ' + b + ' / ' + max);
+      statLines.push('<strong>Sessions</strong> ' + sessions + (dep > 0 ? ' · ' + dep + ' depth ring' + (dep > 1 ? 's' : '') : ''));
+      if (bestSec > 0) statLines.push('<strong>Best hold</strong> ' + (bestSec >= 60 ? Math.floor(bestSec/60) + 'm ' + (bestSec%60) + 's' : bestSec + 's'));
+      if (sessions > 0) statLines.push('<strong>Last practiced</strong> ' + recencyStr);
+      ttStat.innerHTML = statLines.join('<br>');
+      tt.style.display = 'block';
     });
+  });
+
+  // Close tooltip when tapping SVG background
+  el.querySelector('.ptree-svg').addEventListener('click', function(e) {
+    if (!e.target.classList.contains('ptree-tap-area')) {
+      tt.style.display = 'none';
+      openNodeId = null;
+    }
   });
 }
 
@@ -12576,9 +12654,6 @@ function switchGuideTab(tab) {
   if (pathTab) pathTab.classList.toggle('active', tab === 'path');
   if (omniaTab) omniaTab.classList.toggle('active', tab === 'omnia');
   if (treeTab) treeTab.classList.toggle('active', tab === 'tree');
-  var labelMap = { path:'Path', omnia:'Upgrade', tree:'Tree' };
-  var dotLabel = document.getElementById('guideDotLabel');
-  if (dotLabel) dotLabel.textContent = labelMap[tab] || '';
   document.body.classList.toggle('upgrade-stage', tab === 'omnia');
   if (tab === 'omnia') renderOmniaEngine();
   if (tab === 'tree') renderPracticeTree();
