@@ -397,6 +397,7 @@
     .path-banner { position:relative; height:148px; margin:14px 0 4px; border-radius:18px; background:linear-gradient(145deg,#0a1a2e 0%,#0d2a3a 40%,#0c1e30 100%); overflow:hidden; display:flex; align-items:center; justify-content:space-between; padding:0 22px; }
     .path-banner::before { content:''; position:absolute; inset:0; background:radial-gradient(ellipse 60% 70% at 72% 55%, rgba(100,190,220,.18) 0%, transparent 70%); pointer-events:none; }
     .path-banner::after { content:''; position:absolute; inset:0; background:radial-gradient(ellipse 40% 50% at 68% 48%, rgba(180,230,255,.08) 0%, transparent 60%); pointer-events:none; }
+    @keyframes heroFloat { 0%,100%{transform:translateY(0);opacity:.55} 50%{transform:translateY(-5px);opacity:.85} }
     .path-banner-text { z-index:2; display:flex; flex-direction:column; gap:3px; }
     .path-banner-label { font-size:8px; letter-spacing:.28em; text-transform:uppercase; color:rgba(142,204,224,.7); }
     .path-banner-title { font-family:'Cormorant Garamond',serif; font-size:24px; font-weight:300; color:#d8f0ff; line-height:1.1; }
@@ -2740,9 +2741,14 @@ body:not(.tut-live) #tutCorgi {
         <div class="omnia-morph-ring"></div>
         <div class="omnia-symbol-layer" id="pathBannerOmniaSymbolLayer"></div>
       </div>
+      <!-- ambient floating dots between text and Omnia -->
+      <div style="position:absolute;inset:0;pointer-events:none;">
+        <div style="position:absolute;width:7px;height:7px;border-radius:50%;background:rgba(180,220,255,.55);left:52%;top:38%;animation:heroFloat 4s ease-in-out infinite;animation-delay:0s;"></div>
+        <div style="position:absolute;width:5px;height:5px;border-radius:50%;background:rgba(180,220,255,.55);left:38%;top:58%;animation:heroFloat 4s ease-in-out infinite;animation-delay:1.2s;"></div>
+        <div style="position:absolute;width:4px;height:4px;border-radius:50%;background:rgba(180,220,255,.35);left:60%;top:65%;animation:heroFloat 4s ease-in-out infinite;animation-delay:.6s;"></div>
+        <div style="position:absolute;width:6px;height:6px;border-radius:50%;background:rgba(180,220,255,.4);left:44%;top:25%;animation:heroFloat 4s ease-in-out infinite;animation-delay:2s;"></div>
+      </div>
     </div>
-
-    <!-- Duolingo-style quest layout (replaces the legacy Path content) -->
     <div class="path-quest-root" id="pathQuestRoot"></div>
 
     <!-- Omnia character (Path tab — aura centerpiece) -->
@@ -13036,8 +13042,6 @@ function renderPathQuests() {
   var items = (typeof buildFoundationalGuideItems === 'function') ? buildFoundationalGuideItems() : [];
   var pathTotal = items.length;
   var pathDone = items.filter(function(i) { return i.done; }).length;
-  var pathPct = pathTotal ? Math.round(pathDone / pathTotal * 100) : 0;
-  var expanded = root.dataset.pathExpanded === '1';
 
   var dailyCount = q.daily.count || 0, dailyTarget = 2;
   var dailyClamp = Math.min(dailyCount, dailyTarget);
@@ -13050,100 +13054,98 @@ function renderPathQuests() {
   var weekendDone = weekendCount >= weekendTarget, weekendClaimed = !!q.weekend.claimed;
   var weekendReward = pathQuestReward('weekend');
 
+  var exIcon = { clock:'⏰', visual:'👁', auditory:'🎧', thought:'◯', asana:'🧘', soulmirror:'🪞' };
+  var exColor = { clock:'#d4b08e', visual:'#8ab8e0', auditory:'#8eccc0', thought:'#98b4cc', asana:'#d49898', soulmirror:'#c4a8d4' };
+
+  var dayNames = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+  var dayName = dayNames[new Date().getDay()];
+
+  // Arc ring calculation
+  var ringCirc = 81.68;
+  var ringOffset = pathTotal > 0 ? (ringCirc * (1 - pathDone / pathTotal)).toFixed(2) : ringCirc;
+
   var html = '';
 
-  // ── Omnia's Path card (expandable) ──
-  html += '<div class="path-quest-card path-quest-omnia' + (expanded ? ' expanded' : '') + '" id="pathQuestOmniaCard">'
-    + '<div class="pq-row">'
-      + '<div class="pq-label">OMNIA\'S PATH</div>'
-      + '<div class="pq-chev">&#9656;</div>'
-    + '</div>'
-    + '<div class="pq-title">Today\'s practice</div>'
-    + '<div class="pq-bar">'
-      + '<div class="pq-bar-fill" style="width:' + pathPct + '%"></div>'
-      + '<span class="pq-bar-text">' + pathDone + ' / ' + pathTotal + '</span>'
-    + '</div>'
-    + (expanded ? '<div class="pq-exercises" id="pathQuestExercisesList"></div>' : '')
-    + '</div>';
+  // ── Day strip + exercise cards ──
+  html += '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;padding:0 2px;">'
+    + '<div style="font-family:\'Cormorant Garamond\',serif;font-size:20px;font-weight:300;color:var(--text);">' + dayName + '</div>'
+    + '<div style="display:flex;align-items:center;gap:8px;">'
+    + '<span style="font-size:9px;color:var(--muted);letter-spacing:.05em;"><strong style="color:var(--text);">' + pathDone + '</strong> / ' + pathTotal + ' done</span>'
+    + '<svg width="32" height="32" viewBox="0 0 32 32">'
+    + '<circle cx="16" cy="16" r="13" fill="none" stroke="rgba(255,255,255,.07)" stroke-width="2.5"/>'
+    + '<circle cx="16" cy="16" r="13" fill="none" stroke="#8ecce0" stroke-width="2.5" stroke-dasharray="' + ringCirc + '" stroke-dashoffset="' + ringOffset + '" stroke-linecap="round" transform="rotate(-90 16 16)" opacity=".85"/>'
+    + '</svg>'
+    + '</div></div>';
+
+  // Exercise cards
+  html += '<div style="display:flex;flex-direction:column;gap:8px;">';
+  html += items.map(function(item) {
+    var durLabel = item.durationLabel || (item.duration ? item.duration + ' min' : 'Open-ended');
+    var modeLabel = item.mode ? ' · ' + (GUIDE_FOUNDATION_THOUGHT_LABELS[item.mode] || item.mode) : '';
+    var color = exColor[item.id] || '#c4a8d4';
+    var icon = exIcon[item.id] || '◆';
+    var startAttrs = item.open
+      ? ' data-guide-start="' + item.open + '"'
+        + (item.mode ? ' data-guide-mode="' + item.mode + '"' : '')
+        + (item.duration ? ' data-guide-duration="' + item.duration + '"' : '')
+      : '';
+    var checkHtml = item.done
+      ? '<div style="width:22px;height:22px;border-radius:50%;background:rgba(126,184,164,.15);color:var(--accent);display:flex;align-items:center;justify-content:center;font-size:11px;">✓</div>'
+      : '<div style="width:22px;height:22px;border-radius:50%;border:1px solid var(--border);"></div>';
+    var beginHtml = item.open
+      ? '<button class="pq-ex-start" style="padding:8px 14px;border-radius:8px;border:1px solid rgba(255,255,255,.1);background:rgba(255,255,255,.04);color:var(--text);font-family:\'DM Mono\',monospace;font-size:9px;letter-spacing:.2em;text-transform:uppercase;cursor:pointer;"'
+        + startAttrs + (item.done ? ' disabled style="opacity:.35;cursor:default;padding:8px 14px;border-radius:8px;border:1px solid rgba(255,255,255,.1);background:rgba(255,255,255,.04);color:var(--text);font-family:\'DM Mono\',monospace;font-size:9px;letter-spacing:.2em;text-transform:uppercase;"' : '')
+        + '>' + (item.done ? 'Done' : 'Begin') + '</button>'
+      : '';
+    return '<div style="display:flex;align-items:center;background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:14px 14px 14px 0;overflow:hidden;' + (item.done ? 'opacity:.55;' : '') + '">'
+      + '<div style="width:3px;align-self:stretch;border-radius:0 3px 3px 0;background:' + color + ';flex-shrink:0;"></div>'
+      + '<div style="font-size:20px;width:42px;text-align:center;flex-shrink:0;">' + icon + '</div>'
+      + '<div style="flex:1;min-width:0;">'
+      + '<div style="font-size:10px;letter-spacing:.18em;text-transform:uppercase;color:' + color + ';margin-bottom:3px;">' + item.name + modeLabel + '</div>'
+      + '<div style="font-size:9px;color:var(--muted);letter-spacing:.06em;">' + durLabel + '</div>'
+      + '</div>'
+      + '<div style="display:flex;align-items:center;gap:10px;flex-shrink:0;padding-right:2px;">' + checkHtml + beginHtml + '</div>'
+      + '</div>';
+  }).join('');
+  html += '</div>';
 
   // ── Weekend Quest (Fri-Sun only) ──
   if (weekendVisible) {
     var weekendPct = weekendClamp / weekendTarget * 100;
-    html += '<div class="path-quest-card path-quest-weekend">'
-      + '<div class="pq-row">'
-        + '<div class="pq-label">WEEKEND QUEST</div>'
-        + '<div class="pq-time">' + pathQuestWeekendTimeLeft() + '</div>'
-      + '</div>'
+    html += '<div class="path-quest-card path-quest-weekend" style="margin-top:0;">'
+      + '<div class="pq-row"><div class="pq-label">WEEKEND QUEST</div><div class="pq-time">' + pathQuestWeekendTimeLeft() + '</div></div>'
       + '<div class="pq-title">Complete 12 exercises</div>'
-      + '<div class="pq-bar weekend">'
-        + '<div class="pq-bar-fill" style="width:' + weekendPct + '%"></div>'
-        + '<span class="pq-bar-text">' + weekendClamp + ' / ' + weekendTarget + '</span>'
-      + '</div>'
-      + '<div class="pq-reward-row">'
-        + '<div class="pq-reward-icon">' + pathQuestChestSVG(weekendDone) + '</div>'
-        + '<div class="pq-reward-text">+' + weekendReward + ' Akasha</div>'
-        + (weekendDone && !weekendClaimed
-            ? '<button class="pq-claim" data-quest="weekend">Claim</button>'
-            : weekendClaimed ? '<div class="pq-claimed">Claimed</div>' : '')
-      + '</div>'
-      + '</div>';
+      + '<div class="pq-bar weekend"><div class="pq-bar-fill" style="width:' + weekendPct + '%"></div><span class="pq-bar-text">' + weekendClamp + ' / ' + weekendTarget + '</span></div>'
+      + '<div class="pq-reward-row"><div class="pq-reward-icon">' + pathQuestChestSVG(weekendDone) + '</div><div class="pq-reward-text">+' + weekendReward + ' Akasha</div>'
+      + (weekendDone && !weekendClaimed ? '<button class="pq-claim" data-quest="weekend">Claim</button>' : weekendClaimed ? '<div class="pq-claimed">Claimed</div>' : '')
+      + '</div></div>';
   }
 
   // ── Daily Quest ──
   var dailyPct = dailyClamp / dailyTarget * 100;
-  html += '<div class="path-quest-card path-quest-daily">'
-    + '<div class="pq-row">'
-      + '<div class="pq-label">DAILY QUEST</div>'
-      + '<div class="pq-time">' + pathQuestDailyTimeLeft() + '</div>'
-    + '</div>'
+  html += '<div class="path-quest-card path-quest-daily" style="border:1px solid rgba(142,204,224,.18);background:linear-gradient(135deg,rgba(142,204,224,.06) 0%,rgba(126,184,164,.04) 100%);">'
+    + '<div class="pq-row"><div class="pq-label" style="color:rgba(142,204,224,.6);">DAILY QUEST</div><div class="pq-time">' + pathQuestDailyTimeLeft() + '</div></div>'
     + '<div class="pq-title">Complete your next 2 exercises</div>'
-    + '<div class="pq-bar daily">'
-      + '<div class="pq-bar-fill" style="width:' + dailyPct + '%"></div>'
-      + '<span class="pq-bar-text">' + dailyClamp + ' / ' + dailyTarget + '</span>'
+    + '<div style="height:3px;border-radius:2px;background:rgba(255,255,255,.06);overflow:hidden;margin-bottom:8px;">'
+    + '<div style="height:100%;border-radius:2px;background:linear-gradient(90deg,#8ecce0,#7eb8a4);width:' + dailyPct + '%;transition:width .5s ease;"></div>'
     + '</div>'
-    + '<div class="pq-reward-row">'
-      + '<div class="pq-reward-icon">' + pathQuestChestSVG(dailyDone) + '</div>'
-      + '<div class="pq-reward-text">+' + dailyReward + ' Akasha</div>'
-      + (dailyDone && !dailyClaimed
-          ? '<button class="pq-claim" data-quest="daily">Claim</button>'
-          : dailyClaimed ? '<div class="pq-claimed">Claimed</div>' : '')
-    + '</div>'
-    + '</div>';
+    + '<div style="font-size:9px;color:var(--muted);letter-spacing:.08em;margin-bottom:10px;"><strong style="color:var(--text);">' + dailyClamp + '</strong> / ' + dailyTarget + '</div>'
+    + '<div class="pq-reward-row"><div class="pq-reward-icon">' + pathQuestChestSVG(dailyDone) + '</div><div class="pq-reward-text">+' + dailyReward + ' Akasha</div>'
+    + (dailyDone && !dailyClaimed ? '<button class="pq-claim" data-quest="daily">Claim</button>' : dailyClaimed ? '<div class="pq-claimed">Claimed</div>' : '')
+    + '</div></div>';
+
+  // ── Streak nudge ──
+  if (typeof state !== 'undefined' && state.streak > 0) {
+    html += '<div style="display:flex;align-items:center;gap:12px;border:1px solid var(--border);border-radius:12px;background:rgba(255,255,255,.02);padding:12px 16px;">'
+      + '<div style="font-size:20px;">🔥</div>'
+      + '<div style="flex:1;"><div style="font-size:10px;color:var(--text);letter-spacing:.06em;margin-bottom:2px;">Keep your streak alive</div>'
+      + '<div style="font-size:9px;color:var(--muted);letter-spacing:.05em;">Complete today\'s practice before midnight</div></div>'
+      + '<div style="font-family:\'Cormorant Garamond\',serif;font-size:22px;font-weight:300;color:#d4b08e;">' + state.streak + 'd</div>'
+      + '</div>';
+  }
 
   root.innerHTML = html;
 
-  if (expanded) {
-    var exList = document.getElementById('pathQuestExercisesList');
-    if (exList) {
-      exList.innerHTML = items.map(function(item) {
-        var durLabel = item.durationLabel || (item.duration ? item.duration + ' min' : 'Open-ended');
-        var modeLabel = item.mode ? ' · ' + (GUIDE_FOUNDATION_THOUGHT_LABELS[item.mode] || item.mode) : '';
-        var startAttrs = item.open
-          ? ' data-guide-start="' + item.open + '"'
-            + (item.mode ? ' data-guide-mode="' + item.mode + '"' : '')
-            + (item.duration ? ' data-guide-duration="' + item.duration + '"' : '')
-          : '';
-        return '<div class="pq-ex-row' + (item.done ? ' done' : '') + '">'
-          + '<div class="pq-ex-info">'
-            + '<div class="pq-ex-name">' + item.name + modeLabel + '</div>'
-            + '<div class="pq-ex-dur">' + durLabel + '</div>'
-          + '</div>'
-          + (item.open
-              ? '<button class="pq-ex-start"' + startAttrs + (item.done ? ' disabled' : '') + '>' + (item.done ? '✓' : 'Begin') + '</button>'
-              : '')
-          + '</div>';
-      }).join('');
-    }
-  }
-
-  var omniaCard = document.getElementById('pathQuestOmniaCard');
-  if (omniaCard) {
-    omniaCard.onclick = function(e) {
-      if (e.target.closest('.pq-ex-start') || e.target.closest('.pq-claim')) return;
-      root.dataset.pathExpanded = expanded ? '0' : '1';
-      renderPathQuests();
-    };
-  }
   root.querySelectorAll('.pq-claim').forEach(function(btn) {
     btn.onclick = function(e) { e.stopPropagation(); claimPathQuestReward(btn.dataset.quest); };
   });
