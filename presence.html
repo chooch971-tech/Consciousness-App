@@ -308,6 +308,12 @@
     .mode-tab.active { color:var(--accent); border-bottom-color:var(--accent); }
     .mode-tab.active.conc-mode { color:#d4956e; border-bottom-color:#d4956e; }
     .mode-tab.active.guide-mode { color:#9b8ec4; border-bottom-color:#9b8ec4; }
+    .mode-tab.active.prayer-mode { color:#9b8ec4; border-bottom-color:#9b8ec4; }
+    .mode-tab-caret { font-size:8px; opacity:0.55; margin-left:4px; vertical-align:middle; }
+    #awarenessSubMenu { display:none; position:fixed; background:var(--surface); border:1px solid var(--border); border-radius:10px; z-index:500; min-width:130px; box-shadow:0 4px 20px rgba(0,0,0,0.5); overflow:hidden; }
+    .awareness-sub-item { display:block; width:100%; padding:13px 18px; text-align:left; border:none; background:none; color:var(--text); font-family:'DM Mono',monospace; font-size:10px; letter-spacing:.12em; text-transform:uppercase; cursor:pointer; }
+    .awareness-sub-item:hover { background:rgba(255,255,255,.05); }
+    .awareness-sub-item.aw-sub-active { color:var(--accent); }
 
     /* CONCENTRATION THEME */
     .conc-accent { color:#d4956e !important; }
@@ -2283,9 +2289,13 @@ body:not(.tut-live) #tutCorgi {
       <span class="streak-badge">streak <span id="streakCount">0</span>d</span>
     </div>
     <div class="mode-tabs">
-      <button class="mode-tab active" id="modeAwareness">Awareness</button>
-      <button class="mode-tab" id="modeConcentration">Concentration</button>
       <button class="mode-tab" id="modePrayer">Guide</button>
+      <button class="mode-tab" id="modeConcentration">Concentration</button>
+      <button class="mode-tab active" id="modeAwareness"><span id="awarenessTabLabel">Awareness</span><span class="mode-tab-caret">&#9662;</span></button>
+    </div>
+    <div id="awarenessSubMenu">
+      <button class="awareness-sub-item" id="subMenuAwareness">Awareness</button>
+      <button class="awareness-sub-item" id="subMenuPrayer">Prayer</button>
     </div>
     <div id="activeSessionBanner" style="display:none; background:rgba(126,184,164,0.07); border:1px solid rgba(126,184,164,.18); border-radius:8px; padding:10px 16px; margin-bottom:12px; display:none; justify-content:space-between; align-items:center;">
       <span style="font-size:9px; letter-spacing:.2em; text-transform:uppercase; color:var(--accent);">● Session Running</span>
@@ -9595,6 +9605,21 @@ document.getElementById('asanaViewHistoryBtn').addEventListener('click', functio
 
 // ── Mode switching ──
 var currentMode = 'awareness';
+var awarenessSubMode = 'awareness'; // 'awareness' or 'prayer'
+
+function openAwarenessSubMenu(tabEl) {
+  var menu = document.getElementById('awarenessSubMenu');
+  var r = tabEl.getBoundingClientRect();
+  menu.style.right = (window.innerWidth - r.right) + 'px';
+  menu.style.top = (r.bottom + 4) + 'px';
+  menu.style.display = 'block';
+  document.getElementById('subMenuAwareness').classList.toggle('aw-sub-active', awarenessSubMode === 'awareness');
+  document.getElementById('subMenuPrayer').classList.toggle('aw-sub-active', awarenessSubMode === 'prayer');
+}
+function closeAwarenessSubMenu() {
+  var m = document.getElementById('awarenessSubMenu');
+  if (m) m.style.display = 'none';
+}
 
 function switchMode(mode) {
   currentMode = mode;
@@ -9620,6 +9645,8 @@ function switchMode(mode) {
     awTab.classList.add('active');
     awPanel.style.display = 'flex';
     renderHome();
+    var lbl = document.getElementById('awarenessTabLabel');
+    if (lbl) lbl.textContent = 'Awareness';
   } else if (mode === 'concentration') {
     coTab.classList.add('active','conc-mode');
     coPanel.style.display = 'flex';
@@ -9629,13 +9656,40 @@ function switchMode(mode) {
     if (guPanel) { guPanel.style.display = 'flex'; guPanel.scrollTop = 0; }
     openGuide();
   } else {
-    // Prayer is now a drawer item — show its panel without highlighting any home tab
+    // Prayer is a sub-mode under the Awareness tab
+    awTab.classList.add('active', 'prayer-mode');
     prPanel.style.display = 'flex';
     renderPrayerPanel();
+    var lbl = document.getElementById('awarenessTabLabel');
+    if (lbl) lbl.textContent = 'Prayer';
   }
 }
 
-document.getElementById('modeAwareness').addEventListener('click', function() { switchMode('awareness'); });
+document.getElementById('modeAwareness').addEventListener('click', function(e) {
+  if (currentMode === 'awareness' || currentMode === 'prayer') {
+    openAwarenessSubMenu(this);
+  } else {
+    closeAwarenessSubMenu();
+    switchMode(awarenessSubMode);
+  }
+});
+document.getElementById('subMenuAwareness').addEventListener('click', function(e) {
+  e.stopPropagation();
+  awarenessSubMode = 'awareness';
+  switchMode('awareness');
+  closeAwarenessSubMenu();
+});
+document.getElementById('subMenuPrayer').addEventListener('click', function(e) {
+  e.stopPropagation();
+  awarenessSubMode = 'prayer';
+  switchMode('prayer');
+  closeAwarenessSubMenu();
+});
+document.addEventListener('click', function(e) {
+  if (!e.target.closest('#modeAwareness') && !e.target.closest('#awarenessSubMenu')) {
+    closeAwarenessSubMenu();
+  }
+});
 document.getElementById('awarenessRingBtn').addEventListener('click', function() {
   var collected = collectResidue();
   if (collected > 0) {
