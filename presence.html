@@ -17617,7 +17617,11 @@ document.addEventListener('DOMContentLoaded',function(){(function(){
     var keepObjCallout=tc.classList.contains('tut-obj-callout')&&!!s.omniaObjCallout;
     var willScrollSlide=!!(s.mode==='spot'&&(s.omniaLeft||s.omniaRight)&&s.scrollTo&&prevOwRect&&prev&&(prev.omniaLow||prev.omniaMid));
     /* Slide-exit: animate bubble out left before showing new content */
-    var needsExit=!!(bl.classList.contains('tut-vis')&&!willFlip&&!willFlipToClock&&!keepObjCallout&&!willScrollSlide&&!s.greetPulse&&(s.mode==='full'||s.mode==='spot'));
+    /* Skip exit animation if bubble was already faded via inline style (eyeTap/blinkNext
+       handlers set style.opacity='0' before calling go()). The tutBubbleExit keyframe
+       starts at opacity:1 with fill-mode:both, which would override the inline opacity
+       and flash the old bubble text back into view. */
+    var needsExit=!!(bl.classList.contains('tut-vis')&&bl.style.opacity!=='0'&&!willFlip&&!willFlipToClock&&!keepObjCallout&&!willScrollSlide&&!s.greetPulse&&(s.mode==='full'||s.mode==='spot'));
     if(keepLowAnchor) captureTutorialEyeAnchor();
     cur=i; rdy=false;
     /* Progress bar */
