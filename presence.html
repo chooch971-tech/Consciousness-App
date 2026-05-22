@@ -18105,14 +18105,24 @@ document.addEventListener('DOMContentLoaded',function(){(function(){
     if(s.eyeTap&&!eyeOn){
       rdy=false;
       captureTutorialEyeAnchor();
-      bl.classList.remove('tut-vis');
       th.style.display='none';
-      toEye(function(){go(cur+1);});
+      bl.style.transition='opacity 0.18s ease';
+      bl.style.opacity='0';
+      setTimeout(function(){
+        bl.classList.remove('tut-vis');
+        bl.style.transition=''; bl.style.opacity='';
+        toEye(function(){go(cur+1);});
+      },180);
     } else if(s.blinkNext&&eyeOn){
       rdy=false;
-      bl.classList.remove('tut-vis');
       th.style.display='none';
-      blinkCrystalEye(function(){go(cur+1);});
+      bl.style.transition='opacity 0.18s ease';
+      bl.style.opacity='0';
+      setTimeout(function(){
+        bl.classList.remove('tut-vis');
+        bl.style.transition=''; bl.style.opacity='';
+        blinkCrystalEye(function(){go(cur+1);});
+      },180);
     } else {
       if(s.last){db.click();}else if(s.commitBtn){db.click();}else{go(cur+1);}
     }
