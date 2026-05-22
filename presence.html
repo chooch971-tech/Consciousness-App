@@ -2641,7 +2641,7 @@ body:not(.tut-live) #tutCorgi {
       </div>
     </div>
     <!-- GUIDE PANEL (inside homeScreen) -->
-    <div id="guidePanel" style="display:flex; flex:1; flex-direction:column; overflow-y:auto; overflow-x:hidden; -webkit-overflow-scrolling:touch; min-height:0; padding-bottom:60px;">
+    <div id="guidePanel" style="display:flex; flex:1 1 0; flex-direction:column; overflow-y:auto; overflow-x:hidden; -webkit-overflow-scrolling:touch; min-height:0; height:0; padding-bottom:60px;">
     <div class="guide-dots-nav">
       <div class="guide-dots">
         <button class="guide-dot active" id="guidePathTab" data-tab="path" aria-label="Path"></button>
@@ -4660,18 +4660,27 @@ function renderHome() {
     var _gp = document.getElementById('guidePanel');
     openGuide();
     if(_gp) {
-      /* iOS Safari sometimes fails to compute flex:1 height on initial page load,
-         leaving the panel collapsed. Toggling display forces a layout pass. We do
-         this in both rAF (catches desktop's earlier paint) and setTimeout (catches
-         iOS Safari which often hasn't settled its viewport by the first rAF). */
-      var _forceFlexLayout = function(){
+      /* iOS Safari is unreliable about computing flex:1 height on initial load.
+         Same-tick display:none → display:flex appears to get coalesced (no layout
+         pass), so we split it across two animation frames: the hide commits in
+         one frame, the show commits in the next. We fire this several times at
+         widening delays plus on window.load to catch the case where Safari's
+         viewport / URL-bar settles later than expected. */
+      var _hideShow = function(){
         _gp.style.display='none';
-        void _gp.offsetHeight;
-        _gp.style.display='flex';
-        _gp.scrollTop=0;
+        requestAnimationFrame(function(){
+          void _gp.offsetHeight;
+          _gp.style.display='flex';
+          _gp.scrollTop=0;
+        });
       };
-      requestAnimationFrame(_forceFlexLayout);
-      setTimeout(_forceFlexLayout, 60);
+      requestAnimationFrame(_hideShow);
+      setTimeout(_hideShow, 120);
+      setTimeout(_hideShow, 400);
+      setTimeout(_hideShow, 900);
+      if (document.readyState !== 'complete') {
+        window.addEventListener('load', function(){ setTimeout(_hideShow, 50); }, { once:true });
+      }
     }
   }
 }
@@ -17598,7 +17607,10 @@ document.addEventListener('DOMContentLoaded',function(){(function(){
         });
         bt.appendChild(achList);
       }
-      setTimeout(function(){bl.classList.add('tut-vis');},(bubbleDelay||120));
+      /* Show the bubble immediately. The 0.46s tutBubbleEnter bounce-in already
+         provides perceived "entry" time; the previous 120ms settle was masked by
+         the stale-text flash we just fixed, and now reads as dead air. */
+      setTimeout(function(){bl.classList.add('tut-vis');},(bubbleDelay!=null?bubbleDelay:0));
     }
     var _useContinueBtn=!s.eyeTap&&!s.last&&!s.commitBtn;
     th.textContent=s.eyeTap?'Tap the screen':s.last?'Tap to start':'Tap to continue';
