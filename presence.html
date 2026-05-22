@@ -1606,8 +1606,16 @@ body.tut-live #omniaTabPeek { display:none !important; }
   display:none; position:fixed; inset:0; z-index:9020;
   flex-direction:column; align-items:center; justify-content:center;
   padding:32px 24px; pointer-events:auto;
+  opacity:0; transition:opacity 0.28s ease;
 }
-#tutQuestionPanel.tut-vis { display:flex; }
+#tutQuestionPanel.tut-vis { display:flex; opacity:1; }
+@keyframes tutOmniaNod {
+  0%  { transform:scale(1) translateY(0); }
+  30% { transform:scale(1.07) translateY(-6px); }
+  65% { transform:scale(0.96) translateY(2px); }
+  100%{ transform:scale(1) translateY(0); }
+}
+.tut-omnia-nod { animation:tutOmniaNod 0.42s cubic-bezier(0.34,1.56,0.64,1); }
 #tutQuestionLabel {
   font-family:'DM Mono',monospace; font-size:10px; letter-spacing:.28em;
   text-transform:uppercase; color:rgba(142,204,224,0.5);
@@ -16856,7 +16864,7 @@ document.addEventListener('DOMContentLoaded',function(){(function(){
 
   var STEPS=[
     /* 0 */ {mode:'full', sparks:true, eyeTap:true, darkFull:true, greetPulse:true,
-              text:'Hi there. I\'m Omnia.'},
+              text:'Hi there! I\'m Omnia.'},
     /* 1 */ {mode:'full', inEye:true, blueText:true, darkFull:true, blinkNext:true,
               text:'I\'ll train you to master your mind.'},
     /* 2 */ {mode:'question', label:'About you',
@@ -17011,10 +17019,8 @@ document.addEventListener('DOMContentLoaded',function(){(function(){
           }
           if(s.answerKey) tutAnswers[s.answerKey]=label;
           if(s.answerKey&&bars!=null) tutAnswers[s.answerKey+'Bars']=bars;
-          setTimeout(function(){
-            hideQuestion();
-            go(cur+1);
-          },340);
+          hideQuestion();
+          setTimeout(function(){ go(cur+1); },300);
         });
         qc.appendChild(btn);
       });
@@ -17023,9 +17029,11 @@ document.addEventListener('DOMContentLoaded',function(){(function(){
     rdy=false;
   }
   function hideQuestion(){
-    qp.classList.remove('tut-vis');
-    ov.style.opacity='0';
-    setTimeout(function(){ov.style.opacity='1';},50);
+    qp.style.opacity='0';
+    setTimeout(function(){
+      qp.classList.remove('tut-vis');
+      qp.style.opacity='';
+    },280);
   }
 
   function tutorialCanBootOnHome(){
@@ -18075,7 +18083,7 @@ document.addEventListener('DOMContentLoaded',function(){(function(){
     if(corgiTimer){clearTimeout(corgiTimer); cg.style.display='none';}
     resetTutorialEye();
     tutorialEyeAnchorY=null;
-    ow.classList.remove('asana-state');
+    ow.classList.remove('asana-state','tut-omnia-nod');
     cp.classList.remove('tut-cap-on');
     closeDrawer();
     tc.classList.remove('tut-vis','tut-content-bottom');
@@ -18113,6 +18121,10 @@ document.addEventListener('DOMContentLoaded',function(){(function(){
   if(cb) cb.addEventListener('click',function(){
     if(!rdy) return;
     var s=STEPS[cur];
+    ow.classList.remove('tut-omnia-nod');
+    void ow.offsetWidth;
+    ow.classList.add('tut-omnia-nod');
+    ow.addEventListener('animationend',function h(){ow.classList.remove('tut-omnia-nod');ow.removeEventListener('animationend',h);},{once:true});
     if(s.last||s.commitBtn){db.click();}else{go(cur+1);}
   });
 
