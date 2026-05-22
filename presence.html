@@ -1215,6 +1215,11 @@ body.omnia-tier-apotheosis .omnia-figure { filter:drop-shadow(0 0 22px rgba(255,
   position:relative; opacity:0; transition:opacity 0.4s ease 0.12s; order:0;
 }
 .tut-bubble.tut-vis { opacity:1; animation:tutBubbleEnter 0.46s cubic-bezier(0.34,1.56,0.64,1) both; }
+/* When entering from a question step, the bouncy translateY animation reads
+   as a hop. Soft-enter mode skips the transform animation and just lets the
+   opacity transition (inherited from the .tut-bubble base) fade the bubble in
+   alongside tutContent's own fade-up. */
+.tut-bubble.tut-soft-enter.tut-vis { animation:none; transform:none; }
 @keyframes tutBubbleEnter {
   0%  { transform:translateY(14px) scale(0.96); }
   60% { transform:translateY(-4px) scale(1.02); }
@@ -1928,6 +1933,20 @@ body.tut-live #tutProgress { display:block; }
 .tut-q-bars { display:flex; gap:3px; flex-shrink:0; }
 .tut-q-bar { width:8px; height:22px; border-radius:2px; background:rgba(126,184,164,0.18); transition:background 0.2s; }
 .tut-q-bar.filled { background:#7eb8a4; }
+/* Per-option accent for non-bar / non-launch questions (challenge, goal) — each
+   row gets a distinct color so the screen reads as a Duolingo-style palette
+   instead of a uniform green list. Five-color cycle in case future questions
+   add more options. */
+.tut-q-btn.tut-q-color-0{ border-color:rgba(142,204,224,0.45); color:#8ecce0; }
+.tut-q-btn.tut-q-color-1{ border-color:rgba(244,194,100,0.5);  color:#f4c264; }
+.tut-q-btn.tut-q-color-2{ border-color:rgba(196,168,212,0.5);  color:#c4a8d4; }
+.tut-q-btn.tut-q-color-3{ border-color:rgba(126,184,164,0.45); color:#7eb8a4; }
+.tut-q-btn.tut-q-color-4{ border-color:rgba(212,176,142,0.5);  color:#d4b08e; }
+.tut-q-btn.tut-q-color-0:hover{ background:rgba(142,204,224,0.12); border-color:rgba(142,204,224,0.7); }
+.tut-q-btn.tut-q-color-1:hover{ background:rgba(244,194,100,0.13); border-color:rgba(244,194,100,0.78); }
+.tut-q-btn.tut-q-color-2:hover{ background:rgba(196,168,212,0.13); border-color:rgba(196,168,212,0.75); }
+.tut-q-btn.tut-q-color-3:hover{ background:rgba(126,184,164,0.12); border-color:rgba(126,184,164,0.7); }
+.tut-q-btn.tut-q-color-4:hover{ background:rgba(212,176,142,0.13); border-color:rgba(212,176,142,0.75); }
 /* Per-level accent so each Experience option has its own color identity */
 .tut-q-btn[data-bars="1"]{ border-color:rgba(126,184,164,0.42); color:#7eb8a4; }
 .tut-q-btn[data-bars="2"]{ border-color:rgba(142,204,224,0.42); color:#8ecce0; }
@@ -17051,6 +17070,7 @@ document.addEventListener('DOMContentLoaded',function(){(function(){
       ov.style.background='rgba(7,8,13,1)';
       ov.classList.remove('tut-spot');
       tc.classList.remove('tut-vis');
+      bl.classList.remove('tut-soft-enter');
       stopSparks(); clearPulse(); darkSpot();
       th.style.display='none'; sk.style.display='none'; db.style.display='none';
       db.classList.remove('tut-done-commit');
@@ -17083,6 +17103,9 @@ document.addEventListener('DOMContentLoaded',function(){(function(){
         btn.className='tut-q-btn'+(s.launchClock?' tut-q-launch':'');
         /* data-bars drives per-level color theming on bar-chart questions */
         if(s.hasBarChart&&bars) btn.setAttribute('data-bars',String(bars));
+        /* Non-bar / non-launch questions get a per-index accent color so each
+           option pops with its own identity (challenge + goal screens) */
+        else if(!s.launchClock) btn.classList.add('tut-q-color-'+(idx%5));
 
         /* Recommended badge for launch choices */
         if(s.launchClock&&s.recommendedKey){
@@ -17956,15 +17979,22 @@ document.addEventListener('DOMContentLoaded',function(){(function(){
         tc.classList.add('tut-vis'); tc.classList.remove('tut-content-bottom');
       }
       /* Smooth entry from a question step — fade tc (Omnia + bubble) up
-         instead of snapping it in. The bubble's own enter-bounce still plays
-         on top. Skip for morph step which manages its own opacity. */
-      if(prev&&prev.mode==='question'&&!(s.morphCrystal&&eyeOn)){
+         instead of snapping it in, and suppress the bubble's bouncy enter
+         animation (which reads as a hop after the question fade). Skip for
+         morph step which manages its own opacity. tut-soft-enter is added
+         here and cleared by setupQuestion when leaving for the next question
+         (or by the default branch below for any non-question-entry full step). */
+      var enteringFromQuestion=!!(prev&&prev.mode==='question'&&!(s.morphCrystal&&eyeOn));
+      if(enteringFromQuestion){
         tc.style.transition='none';
         tc.style.opacity='0';
         void tc.offsetWidth;
         tc.style.transition='opacity 0.4s ease-out';
         requestAnimationFrame(function(){tc.style.opacity='1';});
         setTimeout(function(){tc.style.opacity='';tc.style.transition='';},460);
+        bl.classList.add('tut-soft-enter');
+      } else {
+        bl.classList.remove('tut-soft-enter');
       }
       if(s.morphCrystal&&eyeOn){
         // Lock ow's screen position throughout the morph. Anything that resizes
@@ -18371,7 +18401,9 @@ document.addEventListener('DOMContentLoaded',function(){(function(){
     bk.addEventListener('click',function(e){
       e.stopPropagation();
       if(!rdy) return;
-      if(cur<=BACK_MIN_STEP) return;
+      /* Block clicks below the floor; cur===BACK_MIN_STEP (=3) is still allowed
+         and walks back to step 2, the first question. */
+      if(cur<BACK_MIN_STEP) return;
       var target=cur-1;
       var targetStep=STEPS[target];
       if(targetStep&&targetStep.answerKey){
@@ -18420,8 +18452,11 @@ document.addEventListener('DOMContentLoaded',function(){(function(){
     resetTutorialEye();
     ow.classList.remove('asana-state');
     tc.classList.remove('tut-vis','tut-content-bottom');
+    bl.classList.remove('tut-soft-enter','tut-vis','tut-bubble-exit','tut-blue');
+    db.classList.remove('tut-done-commit');
     resetTcPosition();
     th.style.display='none'; sk.style.display='none';
+    if(bk) bk.style.display='none';
     df.classList.remove('tut-float-on'); fb.classList.remove('tut-vis');
     hidePathChoice(); cp.classList.remove('tut-cap-on');
     clearPulse(); closeDrawer();
