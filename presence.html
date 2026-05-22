@@ -509,7 +509,7 @@
     .ptree-legend-item { display:flex; align-items:center; gap:6px; font-size:8px; letter-spacing:.12em; color:var(--muted); }
     .ptree-sheet-backdrop { display:none; position:fixed; inset:0; z-index:199; }
     .ptree-sheet-backdrop.open { display:block; }
-    .ptree-sheet { position:fixed; bottom:0; left:0; right:0; z-index:200; background:rgba(12,14,20,.98); border-top:2px solid var(--ptree-accent,#8ecce0); border-radius:20px 20px 0 0; padding:0 22px calc(env(safe-area-inset-bottom,0px) + 36px); transform:translateY(105%); transition:transform .3s cubic-bezier(.32,.72,0,1); box-shadow:0 -12px 40px rgba(0,0,0,.6); }
+    .ptree-sheet { position:fixed; bottom:0; left:0; right:0; z-index:200; background:rgba(12,14,20,.98); border-top:2px solid var(--ptree-accent,#8ecce0); border-radius:20px 20px 0 0; padding:0 22px calc(env(safe-area-inset-bottom,0px) + 36px); transform:translateY(105%); transition:transform .3s cubic-bezier(.32,.72,0,1); box-shadow:0 -12px 40px rgba(0,0,0,.6); max-height:72vh; overflow-y:auto; }
     .ptree-sheet.open { transform:translateY(0); }
     .ptree-sheet-handle { width:36px; height:4px; background:rgba(255,255,255,.15); border-radius:2px; margin:14px auto 20px; }
     .ptree-sheet-name { font-family:'Cormorant Garamond',serif; font-size:22px; font-weight:300; color:var(--text); margin-bottom:5px; }
@@ -12450,7 +12450,7 @@ function renderPracticeTree() {
   var stats = guideExerciseStats();
 
   var NODES = [
-    { id:'kether',    ex:'kether',      cx:170, cy:48,  color:'#c8a848', lc:'#f8f0cc', label:'STEP I',        fs:6,   gf:'pt-gf-gold' },
+    { id:'kether',    ex:'kether',      cx:170, cy:48,  color:'#c8a848', lc:'#f8f0cc', label:'FUNDAMENTALS', label2:'MASTERY', fs:5.5, gf:'pt-gf-gold' },
     { id:'chokmah',   ex:'visual',      cx:242, cy:115, color:'#6e9fd4', lc:'#c4dff8', label:'VISUALIZATION', fs:6.5, gf:'pt-gf-blue' },
     { id:'binah',     ex:'vacancy',     cx:98,  cy:115, color:'#7898b8', lc:'#ccdaec', label:'VACANCY',       fs:6.5, gf:'pt-gf-purple' },
     { id:'chesed',    ex:'auditory',    cx:242, cy:190, color:'#6eb8a4', lc:'#c4ece4', label:'AUDITORY',      fs:6.5, gf:'pt-gf-teal-sm' },
@@ -12513,7 +12513,11 @@ function renderPracticeTree() {
       + pulse
       + '<circle cx="'+n.cx+'" cy="'+n.cy+'" r="'+(starR.toFixed(1))+'" fill="'+n.lc+'" opacity="'+starOp+'" filter="url(#'+n.gf+')"/>'
       + '<circle cx="'+n.cx+'" cy="'+n.cy+'" r="'+coreR+'" fill="#ffffff" opacity="'+coreOp+'"/>'
-      + '<text x="'+n.cx+'" y="'+labelY+'" text-anchor="middle" font-family="DM Mono,monospace" font-size="'+n.fs+'" letter-spacing=".12em" fill="'+n.lc+'" paint-order="stroke fill" stroke="rgba(5,8,15,.88)" stroke-width="2.8" stroke-linejoin="round" opacity="'+labelOp+'">'+n.label+'</text>'
+      + (n.label2
+        ? '<text x="'+n.cx+'" y="'+(parseFloat(labelY)-6).toFixed(1)+'" text-anchor="middle" font-family="DM Mono,monospace" font-size="'+n.fs+'" letter-spacing=".12em" fill="'+n.lc+'" paint-order="stroke fill" stroke="rgba(5,8,15,.88)" stroke-width="2.8" stroke-linejoin="round" opacity="'+labelOp+'">'+n.label+'</text>'
+          +'<text x="'+n.cx+'" y="'+labelY+'" text-anchor="middle" font-family="DM Mono,monospace" font-size="'+n.fs+'" letter-spacing=".12em" fill="'+n.lc+'" paint-order="stroke fill" stroke="rgba(5,8,15,.88)" stroke-width="2.8" stroke-linejoin="round" opacity="'+labelOp+'">'+n.label2+'</text>'
+        : '<text x="'+n.cx+'" y="'+labelY+'" text-anchor="middle" font-family="DM Mono,monospace" font-size="'+n.fs+'" letter-spacing=".12em" fill="'+n.lc+'" paint-order="stroke fill" stroke="rgba(5,8,15,.88)" stroke-width="2.8" stroke-linejoin="round" opacity="'+labelOp+'">'+n.label+'</text>'
+      )
       + '<circle cx="'+n.cx+'" cy="'+n.cy+'" r="'+tapR+'" fill="transparent" data-node="'+n.id+'" class="ptree-tap-area" style="cursor:pointer;"/>';
   }
 
@@ -12573,7 +12577,7 @@ function renderPracticeTree() {
 
   // Node info data
   var nameMap = {
-    kether:'Step I Gate', chokmah:'Visualization', binah:'Vacancy of Mind',
+    kether:'Fundamentals Mastery', chokmah:'Visualization', binah:'Vacancy of Mind',
     chesed:'Auditory', geburah:'Thought Focus', tiphareth:'Thought Observation',
     netzach:'Pore Breathing', hod:'Soul Mirror', yesod:'Asana', malkuth:'Clock'
   };
