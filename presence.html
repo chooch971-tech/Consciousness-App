@@ -491,7 +491,7 @@
     .guide-plan-controls { display:none; justify-content:space-between; align-items:center; gap:10px; border:1px solid rgba(142,204,224,.12); background:rgba(255,255,255,.025); border-radius:8px; padding:9px 10px; margin-bottom:12px; }
     .guide-dots-nav { display:flex; flex-direction:column; align-items:center; padding:12px 0 10px; }
     .guide-dots { display:flex; gap:0; align-items:center; }
-    .guide-dot { width:6px; height:6px; border-radius:50%; border:none; background:rgba(255,255,255,.18); cursor:pointer; padding:10px; background-clip:content-box; transition:background .22s, transform .22s; }
+    .guide-dot { box-sizing:content-box; width:6px; height:6px; border-radius:50%; border:none; background:rgba(255,255,255,.18); cursor:pointer; padding:10px; background-clip:content-box; transition:background .22s, transform .22s; }
     .guide-dot.active { background:#8ecce0; background-clip:content-box; transform:scale(1.3); }
     .guide-dot:not(.active):hover { background:rgba(255,255,255,.38); background-clip:content-box; }
     .guide-swipe-wrap { width:100%; }
@@ -2358,6 +2358,7 @@ body:not(.tut-live) #tutCorgi {
       <button class="awareness-sub-item" id="subMenuPrayer">Prayer</button>
     </div>
     <div class="pq-skip-menu" id="pqSkipMenu">
+      <button class="pq-skip-item" id="pqSkipSwitch" style="display:none;"></button>
       <button class="pq-skip-item" id="pqSkipPostpone">Postpone 7 days</button>
       <button class="pq-skip-item warn" id="pqSkipTellOmnia">Tell Omnia…</button>
     </div>
@@ -13099,7 +13100,7 @@ function buildFoundationalGuideItems() {
   var rounds = guideTwoADayEnabled() ? 2 : 1;
   var clock = guideClockStats();
   var thought = guideThoughtStats();
-  var mode = guideCurrentThoughtMode(thought);
+  var mode = guideState.thoughtModeForced || guideCurrentThoughtMode(thought);
   var modeStats = thought[mode] || { count:0, bestSec:0, todaySec:0 };
   var clockMinutes = guideClockFinalTarget(clock);
   var clockDailyTarget = clockMinutes * 60 * rounds;
@@ -13157,7 +13158,18 @@ function buildFoundationalGuideItems() {
     }
   ];
 
-  var gate = guideFoundationNewGate(guideExerciseStats(), thought, rounds);
+  var stats = guideExerciseStats();
+  var gate = guideFoundationNewGate(stats, thought, rounds);
+  var gateForced = guideState.gateForced;
+  if (gateForced && (!gate || gate.id !== gateForced)) {
+    var dailyTarget5 = 5 * 60 * rounds;
+    var forcedGateItems = {
+      asana: { id:'asana', name:'Asana', duration:5, durationLabel:'5 min' + (rounds > 1 ? ' x2' : ''), done:(stats.asana||{}).todaySec >= dailyTarget5, progress:'physical body gate · ' + ((stats.asana||{}).count||0) + ' recorded', tip:'Begin building stillness. Sit upright and complete the whole period without negotiating with each impulse.', open:'asana' },
+      visual: { id:'visual', name:'Visualization', duration:5, durationLabel:'5 min' + (rounds > 1 ? ' x2' : ''), done:(stats.visual||{}).todaySec >= dailyTarget5, progress:'new gate · ' + ((stats.visual||{}).count||0) + ' recorded', tip:'Hold a simple mental image clearly. Clarity matters more than complexity.', open:'visual' },
+      auditory: { id:'auditory', name:'Auditory', duration:5, durationLabel:'5 min' + (rounds > 1 ? ' x2' : ''), done:(stats.auditory||{}).todaySec >= dailyTarget5, progress:'astral refinement gate · ' + ((stats.auditory||{}).count||0) + ' recorded', tip:'Focused listening on a single sound. Broaden the astral body steadily.', open:'auditory' }
+    };
+    gate = forcedGateItems[gateForced] || gate;
+  }
   if (gate) items.push(gate);
 
   var postponed = guideState.postponed || {};
@@ -13566,7 +13578,7 @@ function renderPathQuests() {
     }
 
     var cardPadding = extraHtml ? 'padding:14px 14px 10px 0;' : 'padding:14px 14px 14px 0;';
-    var menuBtn = '<button class="pq-menu-btn" data-ex-id="' + item.id + '" title="Options">···</button>';
+    var menuBtn = '<button class="pq-menu-btn" data-ex-id="' + item.id + '"' + (item.mode ? ' data-ex-mode="' + item.mode + '"' : '') + ' title="Options">···</button>';
     return '<div style="display:flex;flex-direction:column;background:var(--surface);border:1px solid var(--border);border-radius:14px;' + cardPadding + 'position:relative;overflow:hidden;' + (item.done ? 'opacity:.5;' : '') + '">'
       + menuBtn
       + '<div style="display:flex;align-items:center;gap:14px;">'
@@ -13700,11 +13712,36 @@ function renderPathQuests() {
 // ── Exercise card ··· menu ─────────────────────────────────
 (function() {
   var activeExId = null;
+  var activeExMode = null;
   var menu = document.getElementById('pqSkipMenu');
   var overlay = document.getElementById('pqTellOmniaOverlay');
+  var switchBtn = document.getElementById('pqSkipSwitch');
+
+  // Progression: what exercise/mode comes next after each exercise
+  function pqSwitchNext(exId, thoughtMode) {
+    if (exId === 'thought') {
+      var order = GUIDE_FOUNDATION_THOUGHT_ORDER; // ['observation','focus','vacancy']
+      var cur = thoughtMode || 'observation';
+      var idx = order.indexOf(cur);
+      if (idx < order.length - 1) return { exId:'thought', mode: order[idx+1], label: GUIDE_FOUNDATION_THOUGHT_LABELS[order[idx+1]] };
+      return null;
+    }
+    var map = { soulmirror:{ exId:'asana', label:'Asana' }, asana:{ exId:'visual', label:'Visualization' }, visual:{ exId:'auditory', label:'Auditory' } };
+    return map[exId] || null;
+  }
 
   function openSkipMenu(btn) {
     activeExId = btn.dataset.exId;
+    activeExMode = btn.dataset.exMode || null;
+    var next = pqSwitchNext(activeExId, activeExMode);
+    if (switchBtn) {
+      if (next) {
+        switchBtn.textContent = 'Switch to ' + next.label + ' →';
+        switchBtn.style.display = 'block';
+      } else {
+        switchBtn.style.display = 'none';
+      }
+    }
     var r = btn.getBoundingClientRect();
     menu.style.top = (r.bottom + 4) + 'px';
     menu.style.right = (window.innerWidth - r.right) + 'px';
@@ -13716,6 +13753,20 @@ function renderPathQuests() {
   document.getElementById('pathQuestRoot').addEventListener('click', function(e) {
     var btn = e.target.closest('.pq-menu-btn');
     if (btn) { e.stopPropagation(); openSkipMenu(btn); return; }
+  });
+
+  if (switchBtn) switchBtn.addEventListener('click', function() {
+    if (!activeExId) return;
+    var next = pqSwitchNext(activeExId, activeExMode);
+    if (!next) return;
+    closeSkipMenu();
+    if (next.exId === 'thought') {
+      guideState.thoughtModeForced = next.mode;
+    } else {
+      guideState.gateForced = next.exId;
+    }
+    saveGuideState(guideState);
+    renderPathQuests();
   });
 
   document.getElementById('pqSkipPostpone').addEventListener('click', function() {
