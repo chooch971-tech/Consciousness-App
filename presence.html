@@ -12027,9 +12027,9 @@ function omniaPickRecommendation(forceNew) {
 }
 
 function omniaPickGuidedPathRecommendation(forceNew) {
-  if (typeof guideState === 'undefined' || typeof buildFoundationalGuideItems !== 'function') return null;
-  if (!guideState._pathLockedV2 || guideState._pathModeV2 !== 'beginner') return null;
-  var items = buildFoundationalGuideItems().filter(function(item) {
+  if (typeof guideState === 'undefined' || typeof buildGuideRegimentItems !== 'function') return null;
+  if (!guideState._pathLockedV2) return null;
+  var items = buildGuideRegimentItems().filter(function(item) {
     return item && OMNIA_EXERCISE_META[item.id];
   });
   if (!items.length) return null;
@@ -12041,9 +12041,9 @@ function omniaPickGuidedPathRecommendation(forceNew) {
 }
 
 function omniaExerciseIsGuidedAgenda(exId) {
-  if (typeof guideState === 'undefined' || typeof buildFoundationalGuideItems !== 'function') return false;
-  if (!guideState._pathLockedV2 || guideState._pathModeV2 !== 'beginner') return false;
-  return buildFoundationalGuideItems().some(function(item) { return item.id === exId; });
+  if (typeof guideState === 'undefined' || typeof buildGuideRegimentItems !== 'function') return false;
+  if (!guideState._pathLockedV2) return false;
+  return buildGuideRegimentItems().some(function(item) { return item.id === exId; });
 }
 
 function omniaLastDoneIndex(id, history) {
@@ -13319,6 +13319,7 @@ function guideHistoryExerciseId(h) {
   if (h.exercise === 'asana') return 'asana';
   if (h.exercise === 'pore_breathing') return 'soulmirror';
   if (h.type === 'visualization') return 'visual';
+  if (h.type === 'all-angles' || h.type === 'multi-sense') return 'visual';
   if (h.type === 'auditory') return 'auditory';
   if (h.type === 'thought') return 'thought';
   return 'clock';
@@ -13326,8 +13327,9 @@ function guideHistoryExerciseId(h) {
 
 function guideExerciseStats() {
   var stats = {};
+  var recentCutoff = Date.now() - 14 * 86400000;
   GUIDE_EXERCISES.forEach(function(ex) {
-    stats[ex.id] = { count:0, bestSec:0, totalSec:0, todaySec:0, todayCount:0, lastMs:0 };
+    stats[ex.id] = { count:0, bestSec:0, totalSec:0, todaySec:0, todayCount:0, lastMs:0, recentCount:0, recentSec:0 };
   });
   var history = (typeof concState !== 'undefined' && concState.history) ? concState.history : [];
   history.forEach(function(h) {
@@ -13342,6 +13344,10 @@ function guideExerciseStats() {
     if (guideIsToday(h.date)) {
       stats[id].todayCount++;
       stats[id].todaySec += sec;
+    }
+    if (ms && ms >= recentCutoff) {
+      stats[id].recentCount++;
+      stats[id].recentSec += sec;
     }
     if (ms > stats[id].lastMs) stats[id].lastMs = ms;
   });
@@ -13563,17 +13569,161 @@ function guideFoundationalNote() {
   return '';
 }
 
+function guideSelfRatedExperienceCount() {
+  return GUIDE_EXERCISES.reduce(function(sum, ex) {
+    return sum + (guideIsExperienced(ex.id) ? 1 : 0);
+  }, 0);
+}
+
+function guideAdvancedPracticeProfile(stats) {
+  var advancedIds = ['visual','auditory','thought','asana','soulmirror'];
+  var profile = { total:0, recent:0, active:0, strong:0 };
+  advancedIds.forEach(function(id) {
+    var st = stats[id] || { count:0, bestSec:0, recentCount:0 };
+    var count = st.count || 0;
+    var recent = st.recentCount || 0;
+    profile.total += count;
+    profile.recent += recent;
+    if (count >= 2 || recent >= 2 || st.bestSec >= 300) profile.active++;
+    if (count >= 4 || recent >= 3 || st.bestSec >= 600) profile.strong++;
+  });
+  return profile;
+}
+
+function guideDetectAdaptedLevel(stats) {
+  var history = (typeof concState !== 'undefined' && concState.history) ? concState.history : [];
+  if (history.length < 5) return { level:null, confidence:0, sessions:history.length };
+
+  var recent = history.slice(0, 10);
+  var totalSec = 0;
+  var advancedCount = 0;
+  var longCount = 0;
+  recent.forEach(function(h) {
+    var id = guideHistoryExerciseId(h);
+    var sec = id === 'thought' ? guideThoughtDuration(h) : (h.seconds || 0);
+    totalSec += sec;
+    if (id !== 'clock') advancedCount++;
+    if (sec >= 600) longCount++;
+  });
+
+  var avgSec = recent.length ? totalSec / recent.length : 0;
+  var profile = guideAdvancedPracticeProfile(stats || guideExerciseStats());
+  var score = 0;
+  if (avgSec >= 300) score++;
+  if (avgSec >= 600) score++;
+  if (longCount >= 3) score += 2;
+  if (advancedCount >= 4) score += 2;
+  if (guideExerciseBreadth(stats || guideExerciseStats()) >= 3) score++;
+  if (profile.strong >= 1) score++;
+  if (profile.recent >= 4) score++;
+
+  if (score >= 4) {
+    return {
+      level:'advanced',
+      confidence:guideClamp(55 + score * 8, 70, 96),
+      sessions:history.length,
+      avgSec:avgSec,
+      advancedCount:advancedCount
+    };
+  }
+
+  if (history.length >= 8 && avgSec < 120 && advancedCount === 0) {
+    return { level:'beginner', confidence:72, sessions:history.length, avgSec:avgSec, advancedCount:advancedCount };
+  }
+
+  return { level:null, confidence:0, sessions:history.length, avgSec:avgSec, advancedCount:advancedCount };
+}
+
+function guideShouldUseExperiencedRegiment(stats) {
+  if (guideState._pathModeV2 === 'experienced') return true;
+  if (guideSelfRatedExperienceCount() >= 2) return true;
+
+  var detected = guideDetectAdaptedLevel(stats || guideExerciseStats());
+  if (detected.level === 'advanced' && detected.confidence >= 70) return true;
+
+  var profile = guideAdvancedPracticeProfile(stats || guideExerciseStats());
+  if (profile.strong >= 1 && (profile.active >= 2 || profile.recent >= 4 || profile.total >= 8)) return true;
+  if (guideExerciseBreadth(stats || guideExerciseStats()) >= 4 && profile.total >= 5) return true;
+  return false;
+}
+
+function guideCurrentRegimentInfo(mode) {
+  var baseMode = mode || guidePathMode || guideState._pathModeV2 || 'beginner';
+  var stats = guideExerciseStats();
+  var detected = guideDetectAdaptedLevel(stats);
+  var experienced = guideShouldUseExperiencedRegiment(stats);
+  var resolvedMode = experienced ? 'experienced' : 'beginner';
+  var autoAdapted = resolvedMode === 'experienced' && baseMode !== 'experienced';
+  return {
+    mode: resolvedMode,
+    selectedMode: baseMode,
+    autoAdapted: autoAdapted,
+    detectedLevel: detected.level,
+    confidence: detected.confidence || 0,
+    focus: resolvedMode === 'experienced'
+      ? (autoAdapted ? 'Adaptive Regiment' : 'Personal Recommendations')
+      : 'Foundational Path' + (guideTwoADayEnabled() ? ' · 2x/day' : ''),
+    dayLabel: resolvedMode === 'experienced' ? (autoAdapted ? 'Adaptive' : 'Custom') : null
+  };
+}
+
+function guideMaybeNoticeAdaptation(info) {
+  if (!info || !info.autoAdapted || info.detectedLevel !== 'advanced') return;
+  if (guideState._omniaAdaptNoticeV1 === 'advanced') return;
+  guideState._omniaAdaptNoticeV1 = 'advanced';
+  guideState._detectedLevelV1 = 'advanced';
+  if (!guideState._adaptationHistoryV1) guideState._adaptationHistoryV1 = [];
+  guideState._adaptationHistoryV1.push({
+    date:new Date().toISOString(),
+    fromLevel:info.selectedMode || 'beginner',
+    toLevel:'advanced',
+    confidence:info.confidence || 0
+  });
+  saveGuideState(guideState);
+  if (typeof showToast === 'function') {
+    showToast('Omnia noticed your practice changing · regiment adapted', 4200);
+  }
+}
+
+function buildGuideRegimentItems(mode) {
+  var info = guideCurrentRegimentInfo(mode);
+  return info.mode === 'experienced' ? buildExperiencedGuideItems() : buildFoundationalGuideItems();
+}
+
+function guideApplyTutorialPathChoice(mode, experienceBars, launchChoice) {
+  var st = loadGuideState();
+  var bars = parseInt(experienceBars, 10) || 1;
+  st._pathModeV2 = mode;
+  st._pathLockedV2 = true;
+  st._tutorialExperienceBarsV1 = bars;
+  if (launchChoice) st._tutorialLaunchChoiceV1 = launchChoice;
+
+  if (mode === 'experienced') {
+    var opt = bars >= 5 ? '15+ min' : bars >= 4 ? '10 min' : '5 min';
+    ['clock','visual','auditory','thought'].forEach(function(id) {
+      if (!st[id] || st[id] === 'New to me') st[id] = opt;
+    });
+    if (bars >= 4 && (!st.asana || st.asana === 'New to me')) st.asana = '10 min';
+    if (bars >= 4 && (!st.soulmirror || st.soulmirror === 'New to me')) st.soulmirror = 'Familiar';
+  }
+
+  saveGuideState(st);
+  guideState = st;
+  guidePathMode = st._pathModeV2 || guidePathMode;
+}
+
 // ── Render the daily plan output ──────────────────────────
 function renderGuidePlan(mode, skipScroll) {
-  mode = mode || guidePathMode || 'beginner';
+  var regiment = guideCurrentRegimentInfo(mode);
+  mode = regiment.mode;
   var dayIdx = new Date().getDay(); // 0–6
 
-  var items = mode === 'experienced' ? buildExperiencedGuideItems() : buildFoundationalGuideItems();
-  var focus = mode === 'experienced' ? 'Personal Recommendations' : 'Foundational Path' + (guideTwoADayEnabled() ? ' · 2x/day' : '');
+  var items = buildGuideRegimentItems(regiment.selectedMode);
+  var focus = regiment.focus;
 
   var dayNames = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
   var dayLabelEl = document.getElementById('guidePlanDayLabel');
-  if (dayLabelEl) dayLabelEl.textContent = mode === 'experienced' ? 'Custom' : dayNames[dayIdx];
+  if (dayLabelEl) dayLabelEl.textContent = regiment.dayLabel || dayNames[dayIdx];
   var focusEl = document.getElementById('guidePlanFocus');
   if (focusEl) focusEl.textContent = focus;
   var planControls = document.getElementById('guidePlanControls');
@@ -13801,9 +13951,13 @@ function renderPathQuests() {
   if (!root) return;
   var q = pathQuestState();
 
-  var items = (typeof buildFoundationalGuideItems === 'function') ? buildFoundationalGuideItems() : [];
+  var regiment = (typeof guideCurrentRegimentInfo === 'function') ? guideCurrentRegimentInfo() : { mode:'beginner', focus:'Step I · Fundamentals' };
+  var items = (typeof buildGuideRegimentItems === 'function') ? buildGuideRegimentItems(regiment.selectedMode) : [];
   var pathTotal = items.length;
   var pathDone = items.filter(function(i) { return i.done; }).length;
+  var bannerSub = document.getElementById('pathBannerSub');
+  if (bannerSub) bannerSub.textContent = regiment.focus;
+  if (typeof guideMaybeNoticeAdaptation === 'function') guideMaybeNoticeAdaptation(regiment);
 
   var dailyCount = q.daily.count || 0, dailyTarget = 2;
   var dailyClamp = Math.min(dailyCount, dailyTarget);
@@ -17307,6 +17461,10 @@ document.addEventListener('DOMContentLoaded',function(){(function(){
           btn.classList.add('tut-q-selected');
           btn.style.animation='tutChoicePop 0.34s cubic-bezier(0.34,1.56,0.64,1)';
           if(s.launchClock){
+            if (typeof guideApplyTutorialPathChoice === 'function') {
+              var expBars = tutAnswers.experienceBars || 1;
+              guideApplyTutorialPathChoice(label === 'Find my Level' ? 'experienced' : 'beginner', expBars, label);
+            }
             setTimeout(function(){
               qp.classList.remove('tut-vis');
               window._tutorialFirstClock=true;
@@ -18626,12 +18784,14 @@ document.addEventListener('DOMContentLoaded',function(){(function(){
   /* ── Path choice buttons ── */
   document.getElementById('tutPathNew').addEventListener('click',function(e){
     e.stopPropagation();
+    if (typeof guideApplyTutorialPathChoice === 'function') guideApplyTutorialPathChoice('beginner', (tutAnswers.experienceBars || 1), 'Path tutorial: new');
     hidePathChoice();
     df.classList.remove('tut-float-on'); fb.classList.remove('tut-vis');
     setTimeout(function(){go(23);},300);
   });
   document.getElementById('tutPathExp').addEventListener('click',function(e){
     e.stopPropagation();
+    if (typeof guideApplyTutorialPathChoice === 'function') guideApplyTutorialPathChoice('experienced', (tutAnswers.experienceBars || 3), 'Path tutorial: experienced');
     hidePathChoice();
     df.classList.remove('tut-float-on'); fb.classList.remove('tut-vis');
     setTimeout(function(){go(24);},300);
