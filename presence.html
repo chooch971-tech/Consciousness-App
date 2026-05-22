@@ -524,10 +524,6 @@
     .ptree-first-bubble p { font-family:'Cormorant Garamond',serif; font-size:21px; font-weight:300; color:var(--text); line-height:1.5; letter-spacing:.02em; margin-bottom:12px; }
     .ptree-first-desc { font-size:10px; color:var(--muted); line-height:1.7; letter-spacing:.04em; margin-bottom:24px; }
     .ptree-first-bubble span { display:block; font-size:7px; letter-spacing:.3em; text-transform:uppercase; color:rgba(200,168,72,.45); padding-top:18px; border-top:1px solid rgba(255,255,255,.05); }
-    .guide-begin-cta { position:sticky; bottom:0; padding:24px 0 0; background:linear-gradient(to bottom, transparent, var(--bg) 38%); margin-top:8px; }
-    .guide-begin-btn { width:100%; padding:16px; border-radius:14px; border:1px solid rgba(155,142,196,.22); background:rgba(155,142,196,.07); color:#c4b8e8; font-family:'DM Mono',monospace; font-size:9px; letter-spacing:.3em; text-transform:uppercase; cursor:pointer; transition:background .2s, border-color .2s; }
-    .guide-begin-btn:hover { background:rgba(155,142,196,.14); border-color:rgba(155,142,196,.38); }
-    .guide-begin-btn:active { transform:scale(.98); }
     @keyframes ptreeFadeIn { from { opacity:0; transform:translateY(4px); } to { opacity:1; transform:translateY(0); } }
     .omnia-engine { margin:0 0 20px; background:rgba(142,204,224,.045); border:1px solid rgba(142,204,224,.16); border-radius:12px; padding:16px; box-shadow:0 0 24px rgba(80,160,190,.04) inset; }
     .omnia-engine-top { display:flex; justify-content:space-between; align-items:flex-start; gap:14px; margin-bottom:14px; }
@@ -1216,7 +1212,17 @@ body.omnia-tier-apotheosis .omnia-figure { filter:drop-shadow(0 0 22px rgba(255,
   border-radius:16px; padding:18px 22px; max-width:min(340px,88vw);
   position:relative; opacity:0; transition:opacity 0.4s ease 0.12s; order:0;
 }
-.tut-bubble.tut-vis { opacity:1; }
+.tut-bubble.tut-vis { opacity:1; animation:tutBubbleEnter 0.46s cubic-bezier(0.34,1.56,0.64,1) both; }
+@keyframes tutBubbleEnter {
+  0%  { transform:translateY(14px) scale(0.96); }
+  60% { transform:translateY(-4px) scale(1.02); }
+  100%{ transform:translateY(0) scale(1); }
+}
+.tut-bubble.tut-bubble-exit { animation:tutBubbleExit 0.16s ease-in both; }
+@keyframes tutBubbleExit {
+  0%  { opacity:1; transform:translateX(0); }
+  100%{ opacity:0; transform:translateX(-18px); }
+}
 .tut-bubble::after {
   content:''; position:absolute; bottom:-8px; left:50%; transform:translateX(-50%);
   border-left:8px solid transparent; border-right:8px solid transparent;
@@ -1894,7 +1900,7 @@ body.tut-live #tutProgress { display:block; }
   height:100%; width:0%;
   background:linear-gradient(90deg,#7eb8a4,#b8eaff);
   border-radius:0 2px 2px 0;
-  transition:width 0.45s cubic-bezier(.4,0,.2,1);
+  transition:width 0.55s cubic-bezier(0.34,1.56,0.64,1);
 }
 
 /* ── Goal choice subtext ── */
@@ -2005,6 +2011,26 @@ body.tut-live #tutProgress { display:block; }
   white-space:nowrap; pointer-events:none; z-index:9006;
 }
 @keyframes tutPulse { 0%,100%{opacity:.4;} 50%{opacity:.85;} }
+@keyframes tutChoicePop {
+  0%  { transform:scale(1); }
+  35% { transform:scale(0.92); }
+  68% { transform:scale(1.06); }
+  100%{ transform:scale(1); }
+}
+.tut-continue-btn {
+  display:none; position:fixed; bottom:52px; left:50%;
+  transform:translateX(-50%) translateY(22px);
+  background:linear-gradient(135deg,#7eb8a4 0%,#8ecce0 100%);
+  color:#07080d; font-family:'DM Mono',monospace;
+  font-size:11px; letter-spacing:.22em; text-transform:uppercase;
+  border:none; border-radius:14px; padding:16px 44px;
+  cursor:pointer; z-index:9010; pointer-events:auto;
+  opacity:0; transition:opacity 0.26s ease, transform 0.38s cubic-bezier(0.34,1.56,0.64,1);
+  box-shadow:0 4px 24px rgba(126,184,164,0.28), 0 0 0 1px rgba(142,204,224,0.14);
+}
+.tut-continue-btn.tut-cont-show { opacity:1; transform:translateX(-50%) translateY(0); }
+.tut-continue-btn:active { transform:translateX(-50%) scale(0.96); }
+body:not(.tut-live) .tut-continue-btn { display:none !important; }
 .tut-skip-btn {
   display:none; position:fixed; top:max(env(safe-area-inset-top),20px); right:20px;
   font-size:11px; letter-spacing:.18em; text-transform:uppercase;
@@ -2974,9 +3000,6 @@ body:not(.tut-live) #tutCorgi {
       </div>
     </div>
     </div><!-- end guideSwipeWrap -->
-    <div class="guide-begin-cta" style="padding-left:20px;padding-right:20px;">
-      <button class="guide-begin-btn" id="guideBeginBtn">Begin Session</button>
-    </div>
     </div><!-- end guidePanel -->
   </div><!-- end homeScreen -->
 
@@ -13881,11 +13904,6 @@ document.querySelectorAll('.guide-dot[data-tab]').forEach(function(dot) {
   });
 });
 
-document.getElementById('guideBeginBtn').addEventListener('click', function() {
-  switchMode('awareness');
-});
-
-
 // Horizontal swipe/drag between Path / Upgrade / Tree
 (function() {
   var panel = document.getElementById('guidePanel');
@@ -16903,6 +16921,7 @@ document.addEventListener('DOMContentLoaded',function(){(function(){
   var ql=document.getElementById('tutQuestionLabel');
   var qt=document.getElementById('tutQuestionText');
   var qc=document.getElementById('tutQuestionChoices');
+  var cb=document.getElementById('tutContinueBtn');
 
   function showQuestion(s){
     ov.style.display='block'; ov.style.opacity='1'; ov.style.pointerEvents='none';
@@ -16956,6 +16975,7 @@ document.addEventListener('DOMContentLoaded',function(){(function(){
 
         btn.addEventListener('click',function(){
           btn.classList.add('tut-q-selected');
+          btn.style.animation='tutChoicePop 0.34s cubic-bezier(0.34,1.56,0.64,1)';
           if(s.launchClock){
             setTimeout(function(){
               qp.classList.remove('tut-vis');
@@ -17496,6 +17516,21 @@ document.addEventListener('DOMContentLoaded',function(){(function(){
     if(el) el.innerHTML=highlightTutorialText(text||'');
   }
 
+  /* ── Continue button helpers ── */
+  var _cbHideTimer=null;
+  function showContinueBtn(){
+    if(!cb) return;
+    clearTimeout(_cbHideTimer);
+    cb.style.display='block';
+    void cb.offsetWidth;
+    cb.classList.add('tut-cont-show');
+  }
+  function hideContinueBtn(){
+    if(!cb) return;
+    cb.classList.remove('tut-cont-show');
+    _cbHideTimer=setTimeout(function(){cb.style.display='none';},380);
+  }
+
   /* ── Finish step: show bubble + set rdy ── */
   function finishStep(s,delay,bubbleDelay){
     bl.classList.remove('tut-vis');
@@ -17527,20 +17562,26 @@ document.addEventListener('DOMContentLoaded',function(){(function(){
       }
       setTimeout(function(){bl.classList.add('tut-vis');},(bubbleDelay||120));
     }
+    var _useContinueBtn=!s.eyeTap&&!s.last&&!s.commitBtn;
     th.textContent=s.eyeTap?'Tap the screen':s.last?'Tap to start':'Tap to continue';
-    th.style.display='block'; sk.style.display='block';
+    th.style.display=s.eyeTap?'block':'none'; sk.style.display='block';
     if(s.last||s.commitBtn){
       db.style.display='block';
       df.classList.add('tut-float-on');
       if(s.commitBtn) db.textContent="I'm Committed →";
       else db.textContent='Begin →';
     }
-    setTimeout(function(){rdy=true;},delay||700);
+    var _d=delay||700;
+    setTimeout(function(){
+      rdy=true;
+      if(_useContinueBtn) showContinueBtn();
+    },_d);
   }
 
   /* ── Show step ── */
   function go(i){
     if(i>=STEPS.length){end();return;}
+    hideContinueBtn();
     var s=STEPS[i];
     var prev=STEPS[cur];
     // Capture Omnia's screen position BEFORE any resets, for smooth FLIP transitions
@@ -17556,6 +17597,8 @@ document.addEventListener('DOMContentLoaded',function(){(function(){
     var keepLowAnchor=tc.classList.contains('tut-content-low')&&!!s.omniaLow;
     var keepObjCallout=tc.classList.contains('tut-obj-callout')&&!!s.omniaObjCallout;
     var willScrollSlide=!!(s.mode==='spot'&&(s.omniaLeft||s.omniaRight)&&s.scrollTo&&prevOwRect&&prev&&(prev.omniaLow||prev.omniaMid));
+    /* Slide-exit: animate bubble out left before showing new content */
+    var needsExit=!!(bl.classList.contains('tut-vis')&&!willFlip&&!willFlipToClock&&!keepObjCallout&&!willScrollSlide&&!s.greetPulse&&(s.mode==='full'||s.mode==='spot'));
     if(keepLowAnchor) captureTutorialEyeAnchor();
     cur=i; rdy=false;
     /* Progress bar */
@@ -18002,8 +18045,17 @@ document.addEventListener('DOMContentLoaded',function(){(function(){
       }
     }
 
-    finishStep(s);
-    if(keepFigureAnchor) applyTutorialEyeAnchor();
+    if(needsExit){
+      bl.classList.add('tut-bubble-exit');
+      setTimeout(function(){
+        bl.classList.remove('tut-vis','tut-bubble-exit');
+        finishStep(s);
+        if(keepFigureAnchor) applyTutorialEyeAnchor();
+      },160);
+    } else {
+      finishStep(s);
+      if(keepFigureAnchor) applyTutorialEyeAnchor();
+    }
   }
 
   /* ── End ── */
@@ -18012,6 +18064,7 @@ document.addEventListener('DOMContentLoaded',function(){(function(){
     document.body.classList.remove('tut-live');
     document.querySelectorAll('.tut-elem-glow').forEach(function(e){e.classList.remove('tut-elem-glow');});
     if(qp) qp.classList.remove('tut-vis');
+    hideContinueBtn();
     stopSparks(); clearPulse(); darkSpot();
     hideClockBg(); hideObjFlash(); stopTutCreek(); hideThoughtAnim();
     if(corgiTimer){clearTimeout(corgiTimer); cg.style.display='none';}
@@ -18050,6 +18103,12 @@ document.addEventListener('DOMContentLoaded',function(){(function(){
     } else {
       if(s.last){db.click();}else if(s.commitBtn){db.click();}else{go(cur+1);}
     }
+  });
+
+  if(cb) cb.addEventListener('click',function(){
+    if(!rdy) return;
+    var s=STEPS[cur];
+    if(s.last||s.commitBtn){db.click();}else{go(cur+1);}
   });
 
   cp.addEventListener('click',function(){
@@ -18267,6 +18326,7 @@ document.addEventListener('DOMContentLoaded',function(){(function(){
     </div>
   </div>
 <div class="tut-tap-hint" id="tutTapHint">Tap to continue</div>
+<button class="tut-continue-btn" id="tutContinueBtn">Continue →</button>
 <button class="tut-skip-btn" id="tutSkipBtn">Skip</button>
 
 <!-- Spotlight: lives outside overlay for independent visibility -->
