@@ -1860,8 +1860,12 @@ body.tut-live #omniaTabPeek { display:none !important; }
   50%     { transform:translateY(0) scale(1); }
   70%     { transform:translateY(-7px) scale(1.04); }
 }
-.tut-greet-pulse .tut-crystal-svg,
-.tut-greet-pulse .tut-shard-svg { animation:omniaGreetPulse 1.1s ease-in-out !important; }
+.tut-greet-pulse .tut-crystal-svg { animation:omniaGreetPulse 1.1s ease-in-out !important; }
+/* Skip the shard-svg: its base transform is translate(-50%,-50%) for centering,
+   and the greetPulse keyframes only specify translateY+scale (replacing the
+   centering transform). When tap fires mid-pulse and tut-morphing makes the
+   shard visible, the shard appears displaced — then snaps back when the pulse
+   ends, causing a visible jump just before the eye morph completes. */
 
 @keyframes omniaCelebrate {
   0%   { transform:translateY(0) scale(1);    filter:drop-shadow(0 0 8px rgba(126,184,164,0.4)); }
@@ -4656,11 +4660,18 @@ function renderHome() {
     var _gp = document.getElementById('guidePanel');
     openGuide();
     if(_gp) {
-      _gp.style.display='none';
-      requestAnimationFrame(function(){
+      /* iOS Safari sometimes fails to compute flex:1 height on initial page load,
+         leaving the panel collapsed. Toggling display forces a layout pass. We do
+         this in both rAF (catches desktop's earlier paint) and setTimeout (catches
+         iOS Safari which often hasn't settled its viewport by the first rAF). */
+      var _forceFlexLayout = function(){
+        _gp.style.display='none';
+        void _gp.offsetHeight;
         _gp.style.display='flex';
         _gp.scrollTop=0;
-      });
+      };
+      requestAnimationFrame(_forceFlexLayout);
+      setTimeout(_forceFlexLayout, 60);
     }
   }
 }
