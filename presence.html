@@ -17562,8 +17562,16 @@ document.addEventListener('DOMContentLoaded',function(){(function(){
 
   /* ── Finish step: show bubble + set rdy ── */
   function finishStep(s,delay,bubbleDelay){
+    /* Remove tut-vis BEFORE clearing inline opacity. If we cleared inline first
+       while tut-vis was still on, the computed opacity would briefly resolve to
+       1 (CSS .tut-vis rule) before the class removal kicks in — flashing the
+       previous step's stale bubble text. Removing the class first keeps the
+       computed opacity at 0 throughout the cleanup. */
+    bl.classList.remove('tut-vis','tut-bubble-exit');
     bl.style.opacity=''; bl.style.transition='';
-    bl.classList.remove('tut-vis');
+    /* Force sync reflow so iOS Safari commits the hidden state before any
+       subsequent style/text changes can trigger a paint with stale content. */
+    void bl.offsetWidth;
     if(s.blueText) bl.classList.add('tut-blue'); else bl.classList.remove('tut-blue');
     var stepText=typeof s.dynamicText==='function'?s.dynamicText():(s.text||'');
     if(stepText){
