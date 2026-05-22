@@ -346,6 +346,14 @@
     /* CONCENTRATION SESSION */
     #concSessionScreen { justify-content:space-between; }
     .conc-session-label { font-size:9px; letter-spacing:.25em; text-transform:uppercase; color:#d4956e; text-align:center; margin-bottom:24px; transition:opacity .6s ease; }
+    /* Instructions mode — shown before the user presses Begin. The default
+       9px uppercase style is too dense for sentence-length text, so swap to
+       a readable sentence-case treatment with line wrap. */
+    .conc-session-label.conc-label-instructions {
+      font-size:13px; letter-spacing:.02em; text-transform:none;
+      color:#cce8f8; max-width:340px; line-height:1.6;
+      margin-left:auto; margin-right:auto;
+    }
     .conc-elapsed-label { font-size:9px; letter-spacing:.2em; text-transform:uppercase; color:var(--muted); text-align:center; margin-top:28px; }
     @keyframes concLabelFlash { 0%,100% { opacity:1; } 50% { opacity:0; } }
     .conc-label-flash { animation: concLabelFlash .9s ease-in-out infinite; }
@@ -6150,25 +6158,82 @@ function renderConcHome() {
 
 var concCountInterval = null; // track countdown so we can cancel it
 var concResultSaved = false; // prevents double-saving from multiple button hooks
+var concPendingBegin = false; // session screen is showing instructions, awaiting Begin click
+var concAutoStopTimer = null; // tutorial first session auto-ends after 60s
 
 function startConcentration() {
   concStartTime = null; // explicitly null until countdown finishes
   concSeconds = 0;
+  if (concAutoStopTimer) { clearTimeout(concAutoStopTimer); concAutoStopTimer = null; }
   buildClockSVG();
   updateClockHand(0);
   showScreen('concSessionScreen');
 
-  // Reset and flash the label
+  // Tutorial first-session gets a 60s auto-cap (retention) and a stripped-down
+  // header (no top-left ✕, no top-right Stop) so the user can only press Begin
+  // → wait → Stop. Veterans see the full UI and the clock runs until they stop.
+  var isTutorialFirst = window._tutorialFirstClock === true;
+  var discardBtn = document.querySelector('#concSessionScreen .session-discard-btn');
+  var topStopBtn = document.getElementById('concStopBtn');
+  if (discardBtn) discardBtn.style.visibility = isTutorialFirst ? 'hidden' : '';
+  if (topStopBtn) topStopBtn.style.visibility = isTutorialFirst ? 'hidden' : '';
+
+  // Instructions are shown up front; user has as long as they need to read.
   var sessionLabel = document.getElementById('concSessionLabel');
-  if (sessionLabel) { sessionLabel.style.opacity = '1'; sessionLabel.classList.add('conc-label-flash'); }
+  if (sessionLabel) {
+    sessionLabel.textContent = isTutorialFirst
+      ? 'Focus on the tip of the seconds hand. Stop the moment a thought appears. Auto-ends at 60 seconds.'
+      : 'Focus on the tip of the seconds hand. Stop the moment a thought appears. The clock continues until you press Stop.';
+    sessionLabel.style.opacity = '1';
+    sessionLabel.classList.remove('conc-label-flash');
+    sessionLabel.classList.add('conc-label-instructions');
+  }
 
-  // Disable stop buttons during countdown
-  var stopBtn = document.getElementById('concStopBtn');
-  var stopBtn2 = document.getElementById('concStopBtn2');
-  if (stopBtn) { stopBtn.disabled = true; stopBtn.style.opacity = '0.3'; }
-  if (stopBtn2) { stopBtn2.disabled = true; stopBtn2.style.opacity = '0.3'; }
+  // Bottom button becomes Begin; top stop disabled until the clock is running.
+  var bottomBtn = document.getElementById('concStopBtn2');
+  if (bottomBtn) {
+    bottomBtn.textContent = 'Begin';
+    bottomBtn.disabled = false;
+    bottomBtn.style.opacity = '';
+  }
+  if (topStopBtn) { topStopBtn.disabled = true; topStopBtn.style.opacity = '0.3'; }
 
-  // 5-second countdown before hand starts moving
+  var countdown = document.getElementById('clockCountdown');
+  if (countdown) { countdown.classList.remove('show'); countdown.textContent = ''; }
+
+  concPendingBegin = true;
+}
+
+function beginCountdown() {
+  if (!concPendingBegin) return;
+  concPendingBegin = false;
+  var isTutorialFirst = window._tutorialFirstClock === true;
+
+  // Swap instructions to the brief flashing label that fades after countdown.
+  var sessionLabel = document.getElementById('concSessionLabel');
+  if (sessionLabel) {
+    sessionLabel.textContent = 'focus on the tip of the seconds hand';
+    sessionLabel.style.opacity = '1';
+    sessionLabel.classList.remove('conc-label-instructions');
+    sessionLabel.classList.add('conc-label-flash');
+  }
+
+  // Bottom button now means Stop; disable during countdown.
+  var bottomBtn = document.getElementById('concStopBtn2');
+  if (bottomBtn) {
+    bottomBtn.textContent = 'Stop';
+    bottomBtn.disabled = true;
+    bottomBtn.style.opacity = '0.3';
+  }
+  var topStopBtn = document.getElementById('concStopBtn');
+  if (topStopBtn) { topStopBtn.disabled = true; topStopBtn.style.opacity = '0.3'; }
+
+  // The tutorial tip card was sized to live during the countdown — fade it
+  // out now so it doesn't linger on the clock face.
+  var tip = document.getElementById('tutClockTip');
+  if (tip) tip.classList.remove('tut-ct-show');
+
+  // 5-second countdown before hand starts moving.
   var countdown = document.getElementById('clockCountdown');
   var count = 5;
   if (countdown) { countdown.textContent = count; countdown.classList.add('show'); }
@@ -6182,17 +6247,22 @@ function startConcentration() {
       clearInterval(concCountInterval);
       concCountInterval = null;
       if (countdown) { countdown.classList.remove('show'); countdown.textContent = ''; }
-      // Fade out the label then hide it
       if (sessionLabel) {
         sessionLabel.classList.remove('conc-label-flash');
         sessionLabel.style.opacity = '0';
       }
-      // Re-enable stop buttons
-      if (stopBtn) { stopBtn.disabled = false; stopBtn.style.opacity = ''; }
-      if (stopBtn2) { stopBtn2.disabled = false; stopBtn2.style.opacity = ''; }
-      // Now start the clock
+      if (bottomBtn) { bottomBtn.disabled = false; bottomBtn.style.opacity = ''; }
+      // Top stop stays hidden during tutorial; otherwise re-enable.
+      if (topStopBtn && !isTutorialFirst) { topStopBtn.disabled = false; topStopBtn.style.opacity = ''; }
       concStartTime = Date.now();
       concTimerHandle = requestAnimationFrame(tickConcentration);
+      // Tutorial first session: auto-stop at 60s for retention.
+      if (isTutorialFirst) {
+        concAutoStopTimer = setTimeout(function() {
+          concAutoStopTimer = null;
+          stopConcentration();
+        }, 60 * 1000);
+      }
     }
   }, 1000);
 }
@@ -6206,6 +6276,15 @@ function tickConcentration() {
 }
 
 function stopConcentration() {
+  // Clear the tutorial 60s auto-stop watchdog regardless of state.
+  if (concAutoStopTimer) { clearTimeout(concAutoStopTimer); concAutoStopTimer = null; }
+  // If we're still on the Begin screen (no countdown, no clock), bail to home.
+  if (concPendingBegin) {
+    concPendingBegin = false;
+    showScreen('homeScreen');
+    switchMode('concentration');
+    return;
+  }
   // If still in countdown, cancel it and go back home
   if (concCountInterval) {
     clearInterval(concCountInterval);
@@ -8474,8 +8553,10 @@ function discardSession(type) {
       break;
     case 'clock':
       if (concCountInterval) { clearInterval(concCountInterval); concCountInterval = null; }
+      if (concAutoStopTimer) { clearTimeout(concAutoStopTimer); concAutoStopTimer = null; }
       cancelAnimationFrame(concTimerHandle);
       concStartTime = null;
+      concPendingBegin = false;
       var cd = document.getElementById('clockCountdown');
       if (cd) { cd.classList.remove('show'); cd.textContent = ''; }
       showScreen('homeScreen');
@@ -10566,7 +10647,11 @@ if(document.readyState==='loading'){
   if(typeof applyOmniaStepVisuals==='function') applyOmniaStepVisuals();
 }
 document.getElementById('concStopBtn').addEventListener('click', function() { stopConcentration(); });
-document.getElementById('concStopBtn2').addEventListener('click', function() { stopConcentration(); });
+document.getElementById('concStopBtn2').addEventListener('click', function() {
+  // Bottom button is Begin during the pre-start instructions phase, Stop once
+  // the countdown / clock has started.
+  if (concPendingBegin) beginCountdown(); else stopConcentration();
+});
 document.getElementById('concHistoryBtn').addEventListener('click', function() { concHistoryFrom='home'; concHistoryFilter='all'; renderConcHistory(); showScreen('concHistoryScreen'); });
 document.getElementById('concHistoryBack').addEventListener('click', function() {
   if (concHistoryFrom === 'exSetupScreen') {
@@ -17244,8 +17329,9 @@ document.addEventListener('DOMContentLoaded',function(){(function(){
               startConcentration();
               var tip=document.getElementById('tutClockTip');
               if(tip){
+                // Tip stays visible until the user presses Begin (handled in
+                // beginCountdown) so the instructions don't disappear mid-read.
                 setTimeout(function(){tip.classList.add('tut-ct-show');},400);
-                setTimeout(function(){tip.classList.remove('tut-ct-show');},5200);
               }
             },340);
             return;
@@ -18499,8 +18585,9 @@ document.addEventListener('DOMContentLoaded',function(){(function(){
       startConcentration();
       var tip=document.getElementById('tutClockTip');
       if(tip){
+        // Tip stays visible until the user presses Begin (handled in
+        // beginCountdown) so the instructions don't disappear mid-read.
         setTimeout(function(){tip.classList.add('tut-ct-show');},400);
-        setTimeout(function(){tip.classList.remove('tut-ct-show');},5200);
       }
     } else if(s&&s.commitBtn){
       go(cur+1);
