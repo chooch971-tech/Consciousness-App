@@ -1926,8 +1926,24 @@ body.tut-live #tutProgress { display:block; }
 /* ── Bar chart experience choices ── */
 .tut-q-btn-inner { display:flex; justify-content:space-between; align-items:center; gap:12px; width:100%; }
 .tut-q-bars { display:flex; gap:3px; flex-shrink:0; }
-.tut-q-bar { width:8px; height:22px; border-radius:2px; background:rgba(126,184,164,0.18); }
+.tut-q-bar { width:8px; height:22px; border-radius:2px; background:rgba(126,184,164,0.18); transition:background 0.2s; }
 .tut-q-bar.filled { background:#7eb8a4; }
+/* Per-level accent so each Experience option has its own color identity */
+.tut-q-btn[data-bars="1"]{ border-color:rgba(126,184,164,0.42); color:#7eb8a4; }
+.tut-q-btn[data-bars="2"]{ border-color:rgba(142,204,224,0.42); color:#8ecce0; }
+.tut-q-btn[data-bars="3"]{ border-color:rgba(196,168,212,0.45); color:#c4a8d4; }
+.tut-q-btn[data-bars="4"]{ border-color:rgba(212,176,142,0.45); color:#d4b08e; }
+.tut-q-btn[data-bars="5"]{ border-color:rgba(244,194,100,0.5); color:#f4c264; }
+.tut-q-btn[data-bars="1"] .tut-q-bar.filled{ background:#7eb8a4; }
+.tut-q-btn[data-bars="2"] .tut-q-bar.filled{ background:#8ecce0; }
+.tut-q-btn[data-bars="3"] .tut-q-bar.filled{ background:#c4a8d4; }
+.tut-q-btn[data-bars="4"] .tut-q-bar.filled{ background:#d4b08e; }
+.tut-q-btn[data-bars="5"] .tut-q-bar.filled{ background:#f4c264; }
+.tut-q-btn[data-bars="1"]:hover{ background:rgba(126,184,164,0.12); border-color:rgba(126,184,164,0.7); }
+.tut-q-btn[data-bars="2"]:hover{ background:rgba(142,204,224,0.12); border-color:rgba(142,204,224,0.7); }
+.tut-q-btn[data-bars="3"]:hover{ background:rgba(196,168,212,0.12); border-color:rgba(196,168,212,0.72); }
+.tut-q-btn[data-bars="4"]:hover{ background:rgba(212,176,142,0.12); border-color:rgba(212,176,142,0.72); }
+.tut-q-btn[data-bars="5"]:hover{ background:rgba(244,194,100,0.14); border-color:rgba(244,194,100,0.78); }
 
 /* ── Recommended badge on launch choices ── */
 .tut-q-btn { position:relative; }
@@ -2052,6 +2068,14 @@ body:not(.tut-live) .tut-continue-btn { display:none !important; }
   z-index:9008; padding:12px; pointer-events:auto; transition:color 0.2s;
 }
 .tut-skip-btn:hover { color:rgba(221,216,206,0.65); }
+.tut-back-btn {
+  display:none; position:fixed; top:max(env(safe-area-inset-top),20px); left:20px;
+  font-size:11px; letter-spacing:.18em; text-transform:uppercase;
+  color:rgba(221,216,206,0.32); background:none; border:none; cursor:pointer;
+  z-index:9008; padding:12px; pointer-events:auto; transition:color 0.2s, opacity 0.2s;
+}
+.tut-back-btn:hover { color:rgba(221,216,206,0.7); }
+body:not(.tut-live) .tut-back-btn { display:none !important; }
 
 
 /* Thought word animation (inside #tutOverlay) */
@@ -2122,9 +2146,21 @@ body:not(.tut-live) .tut-continue-btn { display:none !important; }
   font-size:8.5px; letter-spacing:.26em; text-transform:uppercase;
   background:rgba(126,184,164,0.12); border:1px solid rgba(126,184,164,0.3);
   border-radius:6px; color:#7eb8a4; padding:11px 26px; cursor:pointer;
-  transition:background 0.2s;
+  transition:background 0.2s, transform 0.18s;
 }
 #tutDoneBtn:hover { background:rgba(126,184,164,0.22); }
+/* Commit-button variant — visually identical to .tut-continue-btn (gradient pill) */
+#tutDoneBtn.tut-done-commit {
+  font-size:11px; letter-spacing:.22em;
+  background:linear-gradient(135deg,#7eb8a4 0%,#8ecce0 100%);
+  border:none; border-radius:14px;
+  color:#07080d; padding:16px 44px;
+  box-shadow:0 4px 24px rgba(126,184,164,0.28), 0 0 0 1px rgba(142,204,224,0.14);
+}
+#tutDoneBtn.tut-done-commit:hover {
+  background:linear-gradient(135deg,#8cc4b0 0%,#a0d4e8 100%);
+}
+#tutDoneBtn.tut-done-commit:active { transform:scale(0.96); }
 .drawer-item.tut-pulse { animation:drawerPulse 1.5s ease-in-out infinite; border-radius:8px; }
 @keyframes drawerPulse {
   0%,100% { background:transparent; }
@@ -16996,14 +17032,45 @@ document.addEventListener('DOMContentLoaded',function(){(function(){
   var qt=document.getElementById('tutQuestionText');
   var qc=document.getElementById('tutQuestionChoices');
   var cb=document.getElementById('tutContinueBtn');
+  var bk=document.getElementById('tutBackBtn');
+  /* Steps 0-2 are intro + first question — going back into the eye-morph sequence
+     leaves Omnia in an inconsistent state, so back is only enabled from step 3. */
+  var BACK_MIN_STEP=3;
 
   function showQuestion(s){
-    ov.style.display='block'; ov.style.opacity='1'; ov.style.pointerEvents='none';
-    ov.style.background='rgba(7,8,13,1)';
-    ov.classList.remove('tut-spot');
-    tc.classList.remove('tut-vis');
-    stopSparks(); clearPulse(); darkSpot();
-    th.style.display='none'; sk.style.display='none'; db.style.display='none';
+    /* If Omnia / bubble / done-button are on screen from the previous step,
+       fade them out together first so the swap into the question panel reads as
+       one continuous transition rather than a hard cut. The setup body then
+       runs after the fade completes. */
+    var hadTc=tc.classList.contains('tut-vis');
+    var hadDb=db.style.display==='block';
+    var setupQuestion=function(){
+      tc.style.opacity=''; tc.style.transition='';
+      db.style.opacity=''; db.style.transition='';
+      ov.style.display='block'; ov.style.opacity='1'; ov.style.pointerEvents='none';
+      ov.style.background='rgba(7,8,13,1)';
+      ov.classList.remove('tut-spot');
+      tc.classList.remove('tut-vis');
+      stopSparks(); clearPulse(); darkSpot();
+      th.style.display='none'; sk.style.display='none'; db.style.display='none';
+      db.classList.remove('tut-done-commit');
+      _showQuestionBody(s);
+    };
+    if(hadTc||hadDb){
+      if(hadTc){
+        tc.style.transition='opacity 0.28s ease';
+        tc.style.opacity='0';
+      }
+      if(hadDb){
+        db.style.transition='opacity 0.28s ease';
+        db.style.opacity='0';
+      }
+      setTimeout(setupQuestion,300);
+    } else {
+      setupQuestion();
+    }
+  }
+  function _showQuestionBody(s){
     if(ql) ql.textContent=s.label||'';
     if(qt) qt.textContent=s.text||'';
     if(qc){
@@ -17014,6 +17081,8 @@ document.addEventListener('DOMContentLoaded',function(){(function(){
         var bars=typeof choice==='object'?choice.bars:null;
         var btn=document.createElement('button');
         btn.className='tut-q-btn'+(s.launchClock?' tut-q-launch':'');
+        /* data-bars drives per-level color theming on bar-chart questions */
+        if(s.hasBarChart&&bars) btn.setAttribute('data-bars',String(bars));
 
         /* Recommended badge for launch choices */
         if(s.launchClock&&s.recommendedKey){
@@ -17064,6 +17133,7 @@ document.addEventListener('DOMContentLoaded',function(){(function(){
               tc.classList.remove('tut-vis','tut-content-bottom');
               df.classList.remove('tut-float-on');
               th.style.display='none'; sk.style.display='none';
+              if(bk) bk.style.display='none';
               stopSparks(); darkSpot(); resetTutorialEye();
               suppressTutorialForExerciseEntry();
               var hs=document.getElementById('homeScreen');
@@ -17621,12 +17691,16 @@ document.addEventListener('DOMContentLoaded',function(){(function(){
     var stepText=typeof s.dynamicText==='function'?s.dynamicText():(s.text||'');
     if(stepText){
       setTutorialText(bt,stepText);
-      /* Achievement list bullets (Step 5) */
+      /* Achievement list bullets (Step 5) — each row uses a distinct accent color
+         so the bubble pops more visually instead of reading as a uniform green list */
       if(s.achievementList){
         var achSVGs=[
-          '<svg class="tut-achievement-icon" viewBox="0 0 22 22" fill="none"><circle cx="11" cy="11" r="9" stroke="#7eb8a4" stroke-width="1.5"/><path d="M7 11c0-2.21 1.79-4 4-4s4 1.79 4 4-1.79 4-4 4" stroke="#7eb8a4" stroke-width="1.5" stroke-linecap="round"/><circle cx="11" cy="11" r="1.5" fill="#7eb8a4"/></svg>',
-          '<svg class="tut-achievement-icon" viewBox="0 0 22 22" fill="none"><path d="M11 3l2 6h6l-5 3.6 1.9 6L11 15l-4.9 3.6L8 12.6 3 9h6z" stroke="#7eb8a4" stroke-width="1.4" stroke-linejoin="round"/></svg>',
-          '<svg class="tut-achievement-icon" viewBox="0 0 22 22" fill="none"><rect x="4" y="5" width="14" height="13" rx="2" stroke="#7eb8a4" stroke-width="1.5"/><path d="M7 2v4M15 2v4M4 10h14" stroke="#7eb8a4" stroke-width="1.5" stroke-linecap="round"/></svg>'
+          /* Calm mind — cool blue */
+          '<svg class="tut-achievement-icon" viewBox="0 0 22 22" fill="none"><circle cx="11" cy="11" r="9" stroke="#8ecce0" stroke-width="1.5"/><path d="M7 11c0-2.21 1.79-4 4-4s4 1.79 4 4-1.79 4-4 4" stroke="#8ecce0" stroke-width="1.5" stroke-linecap="round"/><circle cx="11" cy="11" r="1.5" fill="#8ecce0"/></svg>',
+          /* Focus — warm gold star */
+          '<svg class="tut-achievement-icon" viewBox="0 0 22 22" fill="none"><path d="M11 3l2 6h6l-5 3.6 1.9 6L11 15l-4.9 3.6L8 12.6 3 9h6z" stroke="#f4c264" stroke-width="1.4" stroke-linejoin="round" fill="rgba(244,194,100,0.12)"/></svg>',
+          /* Habit / calendar — lavender */
+          '<svg class="tut-achievement-icon" viewBox="0 0 22 22" fill="none"><rect x="4" y="5" width="14" height="13" rx="2" stroke="#c4a8d4" stroke-width="1.5"/><path d="M7 2v4M15 2v4M4 10h14" stroke="#c4a8d4" stroke-width="1.5" stroke-linecap="round"/></svg>'
         ];
         var achTexts=[
           '10–15+ min of a completely stilled mind',
@@ -17654,8 +17728,16 @@ document.addEventListener('DOMContentLoaded',function(){(function(){
     if(s.last||s.commitBtn){
       db.style.display='block';
       df.classList.add('tut-float-on');
-      if(s.commitBtn) db.textContent="I'm Committed →";
-      else db.textContent='Begin →';
+      if(s.commitBtn){
+        db.textContent="I'm Committed →";
+        /* Commit step uses the same gradient pill as the Continue button */
+        db.classList.add('tut-done-commit');
+      } else {
+        db.textContent='Begin →';
+        db.classList.remove('tut-done-commit');
+      }
+    } else {
+      db.classList.remove('tut-done-commit');
     }
     var _d=delay||700;
     setTimeout(function(){
@@ -17691,6 +17773,11 @@ document.addEventListener('DOMContentLoaded',function(){(function(){
     var needsExit=!!(bl.classList.contains('tut-vis')&&bl.style.opacity!=='0'&&!willFlip&&!willFlipToClock&&!keepObjCallout&&!willScrollSlide&&!s.greetPulse&&(s.mode==='full'||s.mode==='spot'));
     if(keepLowAnchor) captureTutorialEyeAnchor();
     cur=i; rdy=false;
+    /* Back button visibility — only show once we're past the intro + first question */
+    if(bk){
+      if(i>=BACK_MIN_STEP&&!s.launchClock) bk.style.display='block';
+      else bk.style.display='none';
+    }
     /* Progress bar */
     var _pf=document.getElementById('tutProgressFill');
     if(_pf) _pf.style.width=Math.round((i+1)/STEPS.length*100)+'%';
@@ -17867,6 +17954,17 @@ document.addEventListener('DOMContentLoaded',function(){(function(){
         if(s.omniaObjCallout) tc.classList.add('tut-obj-callout');
       } else {
         tc.classList.add('tut-vis'); tc.classList.remove('tut-content-bottom');
+      }
+      /* Smooth entry from a question step — fade tc (Omnia + bubble) up
+         instead of snapping it in. The bubble's own enter-bounce still plays
+         on top. Skip for morph step which manages its own opacity. */
+      if(prev&&prev.mode==='question'&&!(s.morphCrystal&&eyeOn)){
+        tc.style.transition='none';
+        tc.style.opacity='0';
+        void tc.offsetWidth;
+        tc.style.transition='opacity 0.4s ease-out';
+        requestAnimationFrame(function(){tc.style.opacity='1';});
+        setTimeout(function(){tc.style.opacity='';tc.style.transition='';},460);
       }
       if(s.morphCrystal&&eyeOn){
         // Lock ow's screen position throughout the morph. Anything that resizes
@@ -18166,6 +18264,7 @@ document.addEventListener('DOMContentLoaded',function(){(function(){
     tc.classList.remove('tut-vis','tut-content-bottom');
     resetTcPosition();
     th.style.display='none'; sk.style.display='none';
+    if(bk) bk.style.display='none';
     ov.style.opacity='0';
     df.classList.remove('tut-float-on');
     hidePathChoice();
@@ -18244,6 +18343,7 @@ document.addEventListener('DOMContentLoaded',function(){(function(){
       db.style.display='none';
       th.style.display='none';
       sk.style.display='none';
+      if(bk) bk.style.display='none';
       stopSparks(); darkSpot(); resetTutorialEye();
       suppressTutorialForExerciseEntry();
       // Ensure home screen is the active base before switching to clock screen
@@ -18263,6 +18363,30 @@ document.addEventListener('DOMContentLoaded',function(){(function(){
     }
   });
   sk.addEventListener('click',function(e){e.stopPropagation();end();});
+
+  /* ── Back button: walk back one step at a time, clearing the answer of the
+     step we're returning to so the user can re-pick. Disabled while not rdy to
+     avoid mid-animation re-entry. ── */
+  if(bk){
+    bk.addEventListener('click',function(e){
+      e.stopPropagation();
+      if(!rdy) return;
+      if(cur<=BACK_MIN_STEP) return;
+      var target=cur-1;
+      var targetStep=STEPS[target];
+      if(targetStep&&targetStep.answerKey){
+        delete tutAnswers[targetStep.answerKey];
+        delete tutAnswers[targetStep.answerKey+'Bars'];
+      }
+      /* If we're currently on a question step, fade its panel out before swapping */
+      if(qp&&qp.classList.contains('tut-vis')){
+        hideQuestion();
+        setTimeout(function(){go(target);},300);
+      } else {
+        go(target);
+      }
+    });
+  }
 
   /* ── Path choice buttons ── */
   document.getElementById('tutPathNew').addEventListener('click',function(e){
@@ -18427,6 +18551,7 @@ document.addEventListener('DOMContentLoaded',function(){(function(){
   </div>
 <div class="tut-tap-hint" id="tutTapHint">Tap to continue</div>
 <button class="tut-continue-btn" id="tutContinueBtn">Continue →</button>
+<button class="tut-back-btn" id="tutBackBtn">← Back</button>
 <button class="tut-skip-btn" id="tutSkipBtn">Skip</button>
 
 <!-- Spotlight: lives outside overlay for independent visibility -->
