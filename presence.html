@@ -2641,7 +2641,7 @@ body:not(.tut-live) #tutCorgi {
       </div>
     </div>
     <!-- GUIDE PANEL (inside homeScreen) -->
-    <div id="guidePanel" style="display:flex; flex:1 1 0; flex-direction:column; overflow-y:auto; overflow-x:hidden; -webkit-overflow-scrolling:touch; min-height:0; height:0; padding-bottom:60px;">
+    <div id="guidePanel" style="display:flex; flex:1 1 auto; flex-direction:column; overflow-y:auto; overflow-x:hidden; -webkit-overflow-scrolling:touch; min-height:0; padding-bottom:60px;">
     <div class="guide-dots-nav">
       <div class="guide-dots">
         <button class="guide-dot active" id="guidePathTab" data-tab="path" aria-label="Path"></button>
@@ -4657,31 +4657,8 @@ function renderHome() {
   if (nbaBar) nbaBar.innerHTML = getNextBestAction();
 
   if (currentMode === 'guide' && typeof openGuide === 'function') {
-    var _gp = document.getElementById('guidePanel');
     openGuide();
-    if(_gp) {
-      /* iOS Safari is unreliable about computing flex:1 height on initial load.
-         Same-tick display:none → display:flex appears to get coalesced (no layout
-         pass), so we split it across two animation frames: the hide commits in
-         one frame, the show commits in the next. We fire this several times at
-         widening delays plus on window.load to catch the case where Safari's
-         viewport / URL-bar settles later than expected. */
-      var _hideShow = function(){
-        _gp.style.display='none';
-        requestAnimationFrame(function(){
-          void _gp.offsetHeight;
-          _gp.style.display='flex';
-          _gp.scrollTop=0;
-        });
-      };
-      requestAnimationFrame(_hideShow);
-      setTimeout(_hideShow, 120);
-      setTimeout(_hideShow, 400);
-      setTimeout(_hideShow, 900);
-      if (document.readyState !== 'complete') {
-        window.addEventListener('load', function(){ setTimeout(_hideShow, 50); }, { once:true });
-      }
-    }
+    refreshGuidePanelLayout(true);
   }
 }
 
@@ -9874,6 +9851,7 @@ function switchMode(mode) {
     prTab.classList.add('active','guide-mode');
     if (guPanel) { guPanel.style.display = 'flex'; guPanel.scrollTop = 0; }
     openGuide();
+    refreshGuidePanelLayout(true);
   } else {
     // Prayer is a sub-mode under the Awareness tab
     awTab.classList.add('active', 'prayer-mode');
@@ -12729,6 +12707,22 @@ function renderPracticeTree() {
   });
 }
 
+function refreshGuidePanelLayout(resetScroll) {
+  var gp = document.getElementById('guidePanel');
+  if (!gp) return;
+  gp.style.flex = '1 1 auto';
+  gp.style.height = '';
+  void gp.offsetHeight;
+  if (resetScroll) gp.scrollTop = 0;
+  requestAnimationFrame(function() {
+    void gp.offsetHeight;
+    if (resetScroll) gp.scrollTop = 0;
+  });
+  setTimeout(function() {
+    void gp.offsetHeight;
+  }, 120);
+}
+
 function switchGuideTab(tab) {
   guideActiveTab = tab;
   var pathPanel = document.getElementById('guidePathPanel');
@@ -12748,6 +12742,7 @@ function switchGuideTab(tab) {
   if (tab === 'tree') renderPracticeTree();
   var gp = document.getElementById('guidePanel');
   if (gp) gp.scrollTop = 0;
+  refreshGuidePanelLayout(false);
 }
 
 // ── Render exercise assessment rows ───────────────────────
