@@ -4644,7 +4644,12 @@ function renderHome() {
   var nbaBar = document.getElementById('nbaBar');
   if (nbaBar) nbaBar.innerHTML = getNextBestAction();
 
-  if (currentMode === 'guide' && typeof openGuide === 'function') openGuide();
+  if (currentMode === 'guide' && typeof openGuide === 'function') {
+    var _gp = document.getElementById('guidePanel');
+    if(_gp) _gp.style.display='none';
+    openGuide();
+    if(_gp) { _gp.style.display='flex'; _gp.scrollTop=0; }
+  }
 }
 
 // ═══════════════════════════════════════
