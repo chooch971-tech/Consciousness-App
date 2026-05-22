@@ -1722,7 +1722,7 @@ body.tut-live #omniaTabPeek { display:none !important; }
   background:rgba(7,8,13,0.98);
   flex-direction:column; align-items:center; justify-content:center;
   padding:40px 24px max(env(safe-area-inset-bottom),40px);
-  overflow-y:auto;
+  overflow-y:auto; overflow-x:hidden;
   opacity:0; transition:opacity 0.55s ease;
 }
 #tutPostSession.tut-ps-show { display:flex; }
@@ -1785,13 +1785,15 @@ body.tut-live #omniaTabPeek { display:none !important; }
   color:rgba(184,234,255,0.5);
 }
 #tutPS-btn {
-  background:rgba(126,184,164,0.13); border:1px solid rgba(126,184,164,0.48);
-  border-radius:14px; padding:18px 40px; min-height:54px; cursor:pointer;
+  background:linear-gradient(135deg,#7eb8a4 0%,#8ecce0 100%); border:none;
+  border-radius:14px; padding:16px 44px; min-height:54px; cursor:pointer;
   font-family:'DM Mono',monospace; font-size:13px; letter-spacing:.22em;
-  text-transform:uppercase; color:#7eb8a4;
-  transition:background 0.2s, border-color 0.2s;
+  text-transform:uppercase; color:#07080d;
+  transition:background 0.2s, transform 0.18s, opacity 0.2s;
+  box-shadow:0 4px 24px rgba(126,184,164,0.28), 0 0 0 1px rgba(142,204,224,0.14);
 }
-#tutPS-btn:hover { background:rgba(126,184,164,0.24); border-color:rgba(126,184,164,0.78); }
+#tutPS-btn:hover { background:linear-gradient(135deg,#8cc4b0 0%,#a0d4e8 100%); }
+#tutPS-btn:active { transform:scale(0.96); }
 
 /* Post-clock stage shared */
 .tut-stage-headline {
@@ -1949,6 +1951,18 @@ body.tut-live #omniaTabPeek { display:none !important; }
   animation:tutPsShardTwinkle 2.2s ease-in-out infinite;
   transform-origin:center;
 }
+@keyframes tutPsBeadShower {
+  0% { opacity:0; transform:translateY(-52px) scale(.45); }
+  18% { opacity:.95; }
+  72% { opacity:.82; transform:translateY(24px) scale(1); }
+  100% { opacity:0; transform:translateY(64px) scale(.62); }
+}
+.tut-ps-bead {
+  position:absolute; z-index:1; width:7px; height:7px; border-radius:50%;
+  background:radial-gradient(circle at 32% 28%,#f4ffff 0%,#b8eaff 30%,#7eb8a4 78%);
+  box-shadow:0 0 12px rgba(184,234,255,.42);
+  animation:tutPsBeadShower 2.35s cubic-bezier(.18,.72,.34,1) infinite;
+}
 /* Tutorial progress bar — Duolingo-style pill: thick track, rounded both ends,
    inset margins so it sits between the back/skip buttons, subtle inner shadow
    on the track and a top-light highlight on the fill for that pop-out feel. */
@@ -2051,26 +2065,52 @@ body.tut-live #tutProgress { display:block; }
 
 /* ── "Meditative legend!" completion screen ── */
 .tut-legend-title {
-  font-family:'Cormorant Garamond',Georgia,serif; font-size:36px;
+  font-family:'Cormorant Garamond',Georgia,serif; font-size:34px;
   font-weight:400; color:#f7fbff; text-align:center; margin-bottom:8px; line-height:1.2;
+  width:100%; max-width:calc(100vw - 44px);
 }
 .tut-legend-sub {
   font-family:'DM Mono',monospace; font-size:12px; letter-spacing:.16em;
   text-transform:uppercase; color:rgba(184,234,255,0.5); text-align:center; margin-bottom:4px;
+  width:100%; max-width:calc(100vw - 44px); line-height:1.6;
 }
 .tut-legend-cards {
-  display:flex; gap:10px; width:100%; max-width:340px; margin:28px 0 36px;
+  display:flex; gap:8px; width:min(100%,342px); max-width:calc(100vw - 44px); margin:28px 0 36px;
+  box-sizing:border-box;
 }
 .tut-legend-card {
-  flex:1; border-radius:14px; border:2px solid; padding:16px 8px; text-align:center;
-  background:rgba(7,8,13,0.6);
+  flex:1 1 0; min-width:0; border-radius:14px; border:2px solid; padding:15px 6px; text-align:center;
+  background:rgba(7,8,13,0.6); position:relative; overflow:hidden;
+  opacity:0; transform:translateY(22px) scale(.94);
+  animation:tutLegendRewardIn .62s cubic-bezier(.2,.9,.24,1.18) forwards;
+}
+.tut-legend-card::before {
+  content:''; position:absolute; inset:0;
+  background:linear-gradient(130deg, transparent 0%, rgba(255,255,255,.12) 42%, transparent 68%);
+  transform:translateX(-110%); animation:tutLegendSheen 1.2s ease-out forwards;
+}
+.tut-legend-card:nth-child(1) { animation-delay:.18s; }
+.tut-legend-card:nth-child(2) { animation-delay:.34s; }
+.tut-legend-card:nth-child(3) { animation-delay:.50s; }
+.tut-legend-card:nth-child(1)::before { animation-delay:.36s; }
+.tut-legend-card:nth-child(2)::before { animation-delay:.52s; }
+.tut-legend-card:nth-child(3)::before { animation-delay:.68s; }
+@keyframes tutLegendRewardIn {
+  0% { opacity:0; transform:translateY(22px) scale(.94); }
+  70% { opacity:1; transform:translateY(-3px) scale(1.035); }
+  100% { opacity:1; transform:translateY(0) scale(1); }
+}
+@keyframes tutLegendSheen {
+  0% { transform:translateX(-110%); opacity:0; }
+  30% { opacity:.9; }
+  100% { transform:translateX(115%); opacity:0; }
 }
 .tut-legend-card-label {
   font-family:'DM Mono',monospace; font-size:9px; letter-spacing:.2em;
-  text-transform:uppercase; opacity:0.6; margin-bottom:10px; display:block;
+  text-transform:uppercase; opacity:0.6; margin-bottom:10px; display:block; position:relative; z-index:1;
 }
 .tut-legend-card-value {
-  font-family:'DM Mono',monospace; font-size:28px; line-height:1; display:block;
+  font-family:'DM Mono',monospace; font-size:clamp(22px,7vw,28px); line-height:1; display:block; position:relative; z-index:1;
 }
 .tut-legend-card.amber { border-color:#d4956e; }
 .tut-legend-card.amber .tut-legend-card-value { color:#d4956e; }
@@ -6467,21 +6507,17 @@ function showTutorialPostSession(secs, akashaDelta) {
     + '<polygon points="36,100 20,88 36,116" fill="#88c0e0" stroke="#88c4e0" stroke-width=".6" opacity=".52"/>'
     + '</svg>';
 
-  /* Heart-arranged shards: 10 points along a heart curve around the crystal */
-  var _hPts=[
-    [34,20,0],[50,16,0.2],[66,20,0.4],
-    [77,35,0.6],[74,55,0.8],[63,69,1.0],
-    [50,80,1.2],[37,69,1.4],[26,55,1.6],
-    [23,35,1.8]
+  var _beads=[
+    [24,18,0,6],[37,10,.22,5],[52,14,.44,8],[68,8,.66,5],
+    [78,24,.88,7],[18,35,1.1,5],[34,30,1.32,7],[58,34,1.54,6],
+    [72,42,1.76,5],[27,50,1.98,8],[46,46,2.2,5],[64,56,2.42,7]
   ];
-  var shardsHTML=_hPts.map(function(p){
-    return '<svg class="tut-ps-shard" style="left:'+p[0]+'%;top:'+p[1]+'%;animation-delay:'+p[2]+'s" viewBox="0 0 8 8" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">'
-      +'<polygon points="4,0 8,4 4,8 0,4" fill="#7eb8a4"/>'
-      +'</svg>';
+  var beadsHTML=_beads.map(function(p){
+    return '<span class="tut-ps-bead" style="left:'+p[0]+'%;top:'+p[1]+'%;width:'+p[3]+'px;height:'+p[3]+'px;animation-delay:'+p[2]+'s"></span>';
   }).join('');
 
   ps.innerHTML =
-    '<div class="tut-ps-omnia-wrap"><div class="tut-ps-omnia-stage">' + crystalSVG + shardsHTML + '</div></div>'
+    '<div class="tut-ps-omnia-wrap"><div class="tut-ps-omnia-stage">' + crystalSVG + beadsHTML + '</div></div>'
     + '<div class="tut-legend-title">Meditative legend!</div>'
     + '<div class="tut-legend-sub">You completed your first exercise.</div>'
     + '<div class="tut-legend-cards">'
