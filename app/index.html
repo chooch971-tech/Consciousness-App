@@ -3,13 +3,13 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <meta http-equiv="refresh" content="0; url=/presence.html" />
+  <meta http-equiv="refresh" content="0; url=../presence.html" />
   <title>Presence</title>
   <script>
-    window.location.replace('/presence.html' + window.location.search + window.location.hash);
+    window.location.replace(new URL('../presence.html' + window.location.search + window.location.hash, window.location.href).href);
   </script>
 </head>
 <body>
-  <p>Loading Presence… <a href="/presence.html">Continue</a></p>
+  <p>Loading Presence… <a href="../presence.html">Continue</a></p>
 </body>
 </html>
