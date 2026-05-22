@@ -17290,7 +17290,7 @@ document.addEventListener('DOMContentLoaded',function(){(function(){
         svg.style.opacity=String(.3+t*.7);
         if(outline) outline.setAttribute('opacity',String(Math.max(0,(t-.56)/.44)));
         polys.forEach(function(poly,idx){poly.setAttribute('points',omniaPointString(omniaLerpPoly(from[idx],to[idx],t)));});
-        if(!revealed&&elapsed>=inwardMs*.82){revealed=true;eyeOn=true;ow.classList.add('eye-state');}
+        if(!revealed&&elapsed>=inwardMs*.82){revealed=true;eyeOn=true;ow.classList.add('eye-state');if(done){var _d=done;done=null;_d();}}
       }else if(elapsed<=totalMs){
         svg.style.opacity='1';
         if(outline) outline.setAttribute('opacity','1');
@@ -18191,6 +18191,10 @@ document.addEventListener('DOMContentLoaded',function(){(function(){
       th.style.display='none';
       bl.style.transition='opacity 0.22s ease';
       bl.style.opacity='0';
+      setTimeout(function(){
+        bl.classList.remove('tut-vis');
+        bt.innerHTML='';
+      },240); // clear stale content after fade (220ms) so finishStep(STEPS[3]) starts clean
       blinkCrystalEye(function(){go(cur+1);});
     } else {
       if(s.last){db.click();}else if(s.commitBtn){db.click();}else{go(cur+1);}
