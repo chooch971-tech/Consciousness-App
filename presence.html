@@ -17070,7 +17070,14 @@ document.addEventListener('DOMContentLoaded',function(){(function(){
       ov.style.background='rgba(7,8,13,1)';
       ov.classList.remove('tut-spot');
       tc.classList.remove('tut-vis');
-      bl.classList.remove('tut-soft-enter');
+      /* Hard-reset the speech bubble so no stale class, inline opacity or text
+         can resurface when the next full step's finishStep runs. Without this,
+         leftover state from the previous full step (e.g. opacity:0 inline from
+         the blinkNext fade plus a still-cached text node) can briefly paint the
+         old bubble between the question fade and the next step's fade-in. */
+      bl.classList.remove('tut-soft-enter','tut-vis','tut-bubble-exit');
+      bl.style.opacity=''; bl.style.transition='';
+      bt.innerHTML='';
       stopSparks(); clearPulse(); darkSpot();
       th.style.display='none'; sk.style.display='none'; db.style.display='none';
       db.classList.remove('tut-done-commit');
@@ -17775,6 +17782,9 @@ document.addEventListener('DOMContentLoaded',function(){(function(){
     hideContinueBtn();
     var s=STEPS[i];
     var prev=STEPS[cur];
+    /* Set inside the full-mode block; consumed by the finishStep call below
+       so we can stage the bubble after tc finishes fading in. */
+    var enteringFromQuestion=false;
     // Capture Omnia's screen position BEFORE any resets, for smooth FLIP transitions
     var prevOwRect=tc.classList.contains('tut-vis') ? ow.getBoundingClientRect() : null;
     var prevOmniaBelow=!!(prev&&prev.mode==='full'&&prev.omniaBelow&&prevOwRect);
@@ -17983,8 +17993,11 @@ document.addEventListener('DOMContentLoaded',function(){(function(){
          animation (which reads as a hop after the question fade). Skip for
          morph step which manages its own opacity. tut-soft-enter is added
          here and cleared by setupQuestion when leaving for the next question
-         (or by the default branch below for any non-question-entry full step). */
-      var enteringFromQuestion=!!(prev&&prev.mode==='question'&&!(s.morphCrystal&&eyeOn));
+         (or by the default branch below for any non-question-entry full step).
+         Bubble is staged behind tc by ~320ms so it appears AFTER tc has nearly
+         finished fading in, eliminating any race where bl could briefly paint
+         while tc is still ramping. */
+      enteringFromQuestion=!!(prev&&prev.mode==='question'&&!(s.morphCrystal&&eyeOn));
       if(enteringFromQuestion){
         tc.style.transition='none';
         tc.style.opacity='0';
@@ -17993,6 +18006,14 @@ document.addEventListener('DOMContentLoaded',function(){(function(){
         requestAnimationFrame(function(){tc.style.opacity='1';});
         setTimeout(function(){tc.style.opacity='';tc.style.transition='';},460);
         bl.classList.add('tut-soft-enter');
+        /* Belt-and-suspenders: also force bl invisible up front so even if a
+           lingering inline opacity, transition or text content slipped past the
+           setupQuestion reset, nothing can paint until finishStep deliberately
+           shows the bubble. */
+        bl.classList.remove('tut-vis','tut-bubble-exit');
+        bl.style.opacity='0';
+        bl.style.transition='none';
+        void bl.offsetWidth;
       } else {
         bl.classList.remove('tut-soft-enter');
       }
@@ -18263,15 +18284,19 @@ document.addEventListener('DOMContentLoaded',function(){(function(){
       }
     }
 
+    /* Stagger the bubble's appearance after tc has nearly finished its
+       fade-up when entering from a question — guarantees no overlap that could
+       paint a stale bubble. */
+    var _qBubbleDelay=enteringFromQuestion?340:undefined;
     if(needsExit){
       bl.classList.add('tut-bubble-exit');
       setTimeout(function(){
         bl.classList.remove('tut-vis','tut-bubble-exit');
-        finishStep(s);
+        finishStep(s,undefined,_qBubbleDelay);
         if(keepFigureAnchor) applyTutorialEyeAnchor();
       },160);
     } else {
-      finishStep(s);
+      finishStep(s,undefined,_qBubbleDelay);
       if(keepFigureAnchor) applyTutorialEyeAnchor();
     }
   }
