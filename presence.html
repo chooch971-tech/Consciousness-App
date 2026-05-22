@@ -518,10 +518,16 @@
     .ptree-sheet-bar { height:3px; border-radius:4px; transition:width .4s ease; }
     .ptree-sheet-stat { font-size:10px; color:var(--muted); letter-spacing:.06em; line-height:2.1; }
     .ptree-sheet-stat strong { color:var(--text); }
-    .ptree-first-visit { position:absolute; inset:0; z-index:30; display:flex; align-items:center; justify-content:center; padding:32px 24px; background:rgba(10,12,17,.72); backdrop-filter:blur(2px); cursor:pointer; }
-    .ptree-first-bubble { background:rgba(17,20,27,.97); border:1px solid rgba(142,204,224,.2); border-radius:18px; padding:24px 22px; max-width:280px; text-align:center; box-shadow:0 8px 32px rgba(0,0,0,.6); }
-    .ptree-first-bubble p { font-family:'Cormorant Garamond',serif; font-size:18px; font-weight:300; color:var(--text); line-height:1.55; letter-spacing:.02em; margin-bottom:18px; }
-    .ptree-first-bubble span { font-size:8px; letter-spacing:.22em; text-transform:uppercase; color:rgba(142,204,224,.6); }
+    .ptree-first-visit { position:absolute; inset:0; z-index:30; display:flex; align-items:center; justify-content:center; padding:32px 24px; background:rgba(8,10,16,.78); backdrop-filter:blur(3px); cursor:pointer; }
+    .ptree-first-bubble { background:rgba(10,12,18,.97); border:1px solid rgba(200,168,72,.18); border-radius:22px; padding:36px 28px 28px; max-width:268px; text-align:center; box-shadow:0 16px 56px rgba(0,0,0,.75), 0 0 48px rgba(200,168,72,.05); }
+    .ptree-first-star { font-size:18px; color:#c8a848; opacity:.75; margin-bottom:20px; letter-spacing:.3em; }
+    .ptree-first-bubble p { font-family:'Cormorant Garamond',serif; font-size:21px; font-weight:300; color:var(--text); line-height:1.5; letter-spacing:.02em; margin-bottom:12px; }
+    .ptree-first-desc { font-size:10px; color:var(--muted); line-height:1.7; letter-spacing:.04em; margin-bottom:24px; }
+    .ptree-first-bubble span { display:block; font-size:7px; letter-spacing:.3em; text-transform:uppercase; color:rgba(200,168,72,.45); padding-top:18px; border-top:1px solid rgba(255,255,255,.05); }
+    .guide-begin-cta { position:sticky; bottom:0; padding:24px 0 0; background:linear-gradient(to bottom, transparent, var(--bg) 38%); margin-top:8px; }
+    .guide-begin-btn { width:100%; padding:16px; border-radius:14px; border:1px solid rgba(155,142,196,.22); background:rgba(155,142,196,.07); color:#c4b8e8; font-family:'DM Mono',monospace; font-size:9px; letter-spacing:.3em; text-transform:uppercase; cursor:pointer; transition:background .2s, border-color .2s; }
+    .guide-begin-btn:hover { background:rgba(155,142,196,.14); border-color:rgba(155,142,196,.38); }
+    .guide-begin-btn:active { transform:scale(.98); }
     @keyframes ptreeFadeIn { from { opacity:0; transform:translateY(4px); } to { opacity:1; transform:translateY(0); } }
     .omnia-engine { margin:0 0 20px; background:rgba(142,204,224,.045); border:1px solid rgba(142,204,224,.16); border-radius:12px; padding:16px; box-shadow:0 0 24px rgba(80,160,190,.04) inset; }
     .omnia-engine-top { display:flex; justify-content:space-between; align-items:flex-start; gap:14px; margin-bottom:14px; }
@@ -2349,9 +2355,9 @@ body:not(.tut-live) #tutCorgi {
       <span class="streak-badge">streak <span id="streakCount">0</span>d</span>
     </div>
     <div class="mode-tabs">
-      <button class="mode-tab" id="modePrayer">Guide</button>
+      <button class="mode-tab active guide-mode" id="modePrayer">Guide</button>
       <button class="mode-tab" id="modeConcentration">Concentration</button>
-      <button class="mode-tab active" id="modeAwareness"><span id="awarenessTabLabel">Awareness</span><span class="mode-tab-caret">&#9662;</span></button>
+      <button class="mode-tab" id="modeAwareness"><span id="awarenessTabLabel">Awareness</span><span class="mode-tab-caret">&#9662;</span></button>
     </div>
     <div id="awarenessSubMenu">
       <button class="awareness-sub-item" id="subMenuAwareness">Awareness</button>
@@ -2377,7 +2383,7 @@ body:not(.tut-live) #tutCorgi {
       <span style="font-size:9px; letter-spacing:.2em; text-transform:uppercase; color:var(--accent);">● Session Running</span>
       <button onclick="showScreen('sessionScreen');" style="font-size:9px; letter-spacing:.15em; text-transform:uppercase; color:var(--accent); background:none; border:1px solid rgba(126,184,164,.3); border-radius:4px; padding:5px 12px; cursor:pointer; font-family:'DM Mono',monospace;">Return →</button>
     </div>
-    <div id="awarenessPanel" style="flex:1; display:flex; flex-direction:column; overflow-y:auto; -webkit-overflow-scrolling:touch; min-height:0;">
+    <div id="awarenessPanel" style="flex:1; display:none; flex-direction:column; overflow-y:auto; -webkit-overflow-scrolling:touch; min-height:0;">
     <div class="hero" style="flex:1; min-height:0;">
       <div class="level-ring" id="awarenessRingBtn" style="cursor:pointer;" title="Tap for rank details">
         <svg viewBox="0 0 140 140">
@@ -2597,7 +2603,7 @@ body:not(.tut-live) #tutCorgi {
       </div>
     </div>
     <!-- GUIDE PANEL (inside homeScreen) -->
-    <div id="guidePanel" style="display:none; flex:1; flex-direction:column; overflow-y:auto; overflow-x:hidden; -webkit-overflow-scrolling:touch; min-height:0; padding-bottom:60px;">
+    <div id="guidePanel" style="display:flex; flex:1; flex-direction:column; overflow-y:auto; overflow-x:hidden; -webkit-overflow-scrolling:touch; min-height:0; padding-bottom:60px;">
     <div class="guide-dots-nav">
       <div class="guide-dots">
         <button class="guide-dot active" id="guidePathTab" data-tab="path" aria-label="Path"></button>
@@ -2937,8 +2943,10 @@ body:not(.tut-live) #tutCorgi {
         <div id="guideTreeSVGWrap"></div>
         <div class="ptree-first-visit" id="ptreeFirstVisit" style="display:none;">
           <div class="ptree-first-bubble">
-            <p>master the exercises to illuminate the tree. the more you practice, the brighter it becomes.</p>
-            <span>tap to continue</span>
+            <div class="ptree-first-star">✦ ✦ ✦</div>
+            <p>master the exercises to illuminate the tree.</p>
+            <div class="ptree-first-desc">the more you practice, the brighter each star becomes. your progress is written in light.</div>
+            <span>tap anywhere to begin</span>
           </div>
         </div>
       </div>
@@ -2966,6 +2974,9 @@ body:not(.tut-live) #tutCorgi {
       </div>
     </div>
     </div><!-- end guideSwipeWrap -->
+    <div class="guide-begin-cta" style="padding-left:20px;padding-right:20px;">
+      <button class="guide-begin-btn" id="guideBeginBtn">Begin Session</button>
+    </div>
     </div><!-- end guidePanel -->
   </div><!-- end homeScreen -->
 
@@ -4609,6 +4620,8 @@ function renderHome() {
   // Next Best Action bar
   var nbaBar = document.getElementById('nbaBar');
   if (nbaBar) nbaBar.innerHTML = getNextBestAction();
+
+  if (currentMode === 'guide' && typeof openGuide === 'function') openGuide();
 }
 
 // ═══════════════════════════════════════
@@ -9749,7 +9762,7 @@ document.getElementById('asanaViewHistoryBtn').addEventListener('click', functio
 });
 
 // ── Mode switching ──
-var currentMode = 'awareness';
+var currentMode = 'guide';
 var awarenessSubMode = 'awareness'; // 'awareness' or 'prayer'
 
 function openAwarenessSubMenu(tabEl) {
@@ -13866,6 +13879,10 @@ document.querySelectorAll('.guide-dot[data-tab]').forEach(function(dot) {
   dot.addEventListener('click', function() {
     switchGuideTab(this.dataset.tab);
   });
+});
+
+document.getElementById('guideBeginBtn').addEventListener('click', function() {
+  switchMode('awareness');
 });
 
 
