@@ -1656,6 +1656,39 @@ body.tut-live #omniaTabPeek { display:none !important; }
   min-height:58px; margin-top:8px;
 }
 .tut-q-btn.tut-q-launch:hover { background:rgba(126,184,164,0.28); border-color:#7eb8a4; }
+/* Per-option color identity for launch choices — "Start from Scratch" reads
+   as cool blue (fresh start), "Find my Level" as warm gold (targeted). */
+.tut-q-btn.tut-q-launch[data-launch-idx="0"]{
+  --rec-color:142,204,224;
+  background:rgba(142,204,224,0.13); border-color:rgba(142,204,224,0.55);
+  color:#a8d8ec;
+}
+.tut-q-btn.tut-q-launch[data-launch-idx="0"]:hover{
+  background:rgba(142,204,224,0.24); border-color:#8ecce0;
+}
+.tut-q-btn.tut-q-launch[data-launch-idx="1"]{
+  --rec-color:244,194,100;
+  background:rgba(244,194,100,0.11); border-color:rgba(244,194,100,0.5);
+  color:#f5d289;
+}
+.tut-q-btn.tut-q-launch[data-launch-idx="1"]:hover{
+  background:rgba(244,194,100,0.2); border-color:#f4c264;
+}
+/* Recommended option — a steady glow pulse so the user's eye is drawn to it,
+   colored to match the option's own accent via the --rec-color variable. */
+@keyframes tutRecommendedPulse {
+  0%,100% {
+    box-shadow:0 0 0 0 rgba(var(--rec-color,126,184,164),0.55),
+               0 0 16px rgba(var(--rec-color,126,184,164),0.32);
+  }
+  50% {
+    box-shadow:0 0 0 8px rgba(var(--rec-color,126,184,164),0.0),
+               0 0 30px rgba(var(--rec-color,126,184,164),0.62);
+  }
+}
+.tut-q-btn.tut-q-recommended.tut-q-launch {
+  animation:tutRecommendedPulse 1.9s ease-in-out infinite;
+}
 
 /* ── Clock tip card (shown during 5-sec countdown on first tutorial session) ── */
 #tutClockTip {
@@ -1981,10 +2014,17 @@ body.tut-live #tutProgress { display:block; }
 /* ── Recommended badge on launch choices ── */
 .tut-q-btn { position:relative; }
 .tut-q-recommended::before {
-  content:'RECOMMENDED'; position:absolute; top:-11px; right:14px;
-  font-size:8px; letter-spacing:.18em; font-family:'DM Mono',monospace;
-  background:#7eb8a4; color:#07080d; padding:2px 8px; border-radius:4px;
+  content:'RECOMMENDED'; position:absolute; top:-12px; right:14px;
+  font-size:9px; letter-spacing:.22em; font-weight:600;
+  font-family:'DM Mono',monospace;
+  background:linear-gradient(135deg,#8ecce0,#b8eaff);
+  color:#07080d; padding:3px 10px; border-radius:5px;
+  box-shadow:0 2px 8px rgba(142,204,224,0.45);
   pointer-events:none;
+}
+.tut-q-recommended[data-launch-idx="1"]::before {
+  background:linear-gradient(135deg,#f4c264,#ffd87a);
+  box-shadow:0 2px 8px rgba(244,194,100,0.5);
 }
 
 /* ── Achievement list in bubble (Step 5) ── */
@@ -2101,13 +2141,26 @@ body:not(.tut-live) .tut-continue-btn { display:none !important; }
   z-index:9008; padding:12px; pointer-events:auto; transition:color 0.2s;
 }
 .tut-skip-btn:hover { color:rgba(221,216,206,0.65); }
+/* Back button: rendered as a compact circular icon button so it sits cleanly
+   to the left of the progress bar without overlapping it, and high-contrast
+   enough to read as a primary affordance rather than a faint hint. */
 .tut-back-btn {
-  display:none; position:fixed; top:max(env(safe-area-inset-top),20px); left:20px;
-  font-size:11px; letter-spacing:.18em; text-transform:uppercase;
-  color:rgba(221,216,206,0.32); background:none; border:none; cursor:pointer;
-  z-index:9008; padding:12px; pointer-events:auto; transition:color 0.2s, opacity 0.2s;
+  display:none; position:fixed; top:max(env(safe-area-inset-top),18px); left:18px;
+  width:36px; height:36px; line-height:34px;
+  font-size:18px; font-weight:500; text-align:center;
+  color:rgba(247,251,255,0.92);
+  background:rgba(255,255,255,0.08);
+  border:1px solid rgba(247,251,255,0.24);
+  border-radius:50%; padding:0; cursor:pointer;
+  z-index:9008; pointer-events:auto;
+  transition:color 0.18s, background 0.18s, border-color 0.18s, transform 0.18s;
 }
-.tut-back-btn:hover { color:rgba(221,216,206,0.7); }
+.tut-back-btn:hover {
+  color:#fff;
+  background:rgba(255,255,255,0.14);
+  border-color:rgba(247,251,255,0.46);
+}
+.tut-back-btn:active { transform:scale(0.94); }
 body:not(.tut-live) .tut-back-btn { display:none !important; }
 
 
@@ -17125,9 +17178,13 @@ document.addEventListener('DOMContentLoaded',function(){(function(){
         btn.className='tut-q-btn'+(s.launchClock?' tut-q-launch':'');
         /* data-bars drives per-level color theming on bar-chart questions */
         if(s.hasBarChart&&bars) btn.setAttribute('data-bars',String(bars));
+        /* data-launch-idx drives per-option color theming and per-option
+           recommended-glow color for the launch step ("Where would you like
+           to start?") */
+        else if(s.launchClock) btn.setAttribute('data-launch-idx',String(idx));
         /* Non-bar / non-launch questions get a per-index accent color so each
            option pops with its own identity (challenge + goal screens) */
-        else if(!s.launchClock) btn.classList.add('tut-q-color-'+(idx%5));
+        else btn.classList.add('tut-q-color-'+(idx%5));
 
         /* Recommended badge for launch choices */
         if(s.launchClock&&s.recommendedKey){
@@ -18645,7 +18702,7 @@ document.addEventListener('DOMContentLoaded',function(){(function(){
   </div>
 <div class="tut-tap-hint" id="tutTapHint">Tap to continue</div>
 <button class="tut-continue-btn" id="tutContinueBtn">Continue →</button>
-<button class="tut-back-btn" id="tutBackBtn">← Back</button>
+<button class="tut-back-btn" id="tutBackBtn" aria-label="Back">←</button>
 <button class="tut-skip-btn" id="tutSkipBtn">Skip</button>
 
 <!-- Spotlight: lives outside overlay for independent visibility -->
