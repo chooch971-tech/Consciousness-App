@@ -7013,11 +7013,11 @@ function showSessionComplete(opts) {
 
 function tutFadeStage(buildFn) {
   var ps = document.getElementById('tutPostSession');
-  ps.classList.remove('tut-ps-vis');
-  setTimeout(function() {
-    ps.innerHTML = '';
-    buildFn(ps);
-  }, 420);
+  // Keep the overlay fully opaque at all times — fading the whole container
+  // reveals whatever screen is behind it, causing a flash. Each screen's
+  // child elements handle their own entrance via CSS fadeUp animations.
+  ps.innerHTML = '';
+  buildFn(ps);
 }
 
 function showStreakCelebration() {
