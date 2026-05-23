@@ -1960,6 +1960,81 @@ body.tut-live #omniaTabPeek { display:none !important; }
   font-family:'DM Mono',monospace; font-size:10px; letter-spacing:.22em;
   text-transform:uppercase; color:rgba(221,216,206,0.36); text-align:center; margin-bottom:50px;
 }
+/* Continue button on streak screen — matches #tutPS-btn gradient pill */
+.tut-s1-continue {
+  background:linear-gradient(135deg,#7eb8a4 0%,#8ecce0 100%); border:none;
+  border-radius:14px; padding:16px 44px; min-height:54px; cursor:pointer;
+  font-family:'DM Mono',monospace; font-size:13px; letter-spacing:.22em;
+  text-transform:uppercase; color:#07080d;
+  transition:background 0.2s, transform 0.18s;
+  box-shadow:0 4px 24px rgba(126,184,164,0.28), 0 0 0 1px rgba(142,204,224,0.14);
+}
+.tut-s1-continue:hover { background:linear-gradient(135deg,#8cc4b0 0%,#a0d4e8 100%); }
+.tut-s1-continue:active { transform:scale(0.96); }
+
+/* ── Streak commit redesign ──────────────────────────────── */
+.tut-commit-list {
+  width:100%; max-width:340px;
+  display:flex; flex-direction:column; margin-bottom:28px;
+}
+.tut-commit-row {
+  display:flex; align-items:center; gap:18px;
+  padding:17px 12px 17px 14px;
+  border-bottom:1px solid rgba(221,216,206,0.06);
+  border-left:2px solid transparent;
+  border-radius:6px; cursor:pointer;
+  transition:background 0.2s,border-color 0.2s;
+}
+.tut-commit-row:first-child { border-top:1px solid rgba(221,216,206,0.06); }
+/* Tier accent colors — teal → sage → amber → gold */
+.tut-commit-row[data-tier="1"]{--acc:#8ecce0;--acc-r:142;--acc-g:204;--acc-b:224;}
+.tut-commit-row[data-tier="2"]{--acc:#7eb8a4;--acc-r:126;--acc-g:184;--acc-b:164;}
+.tut-commit-row[data-tier="3"]{--acc:#d4956e;--acc-r:212;--acc-g:149;--acc-b:110;}
+.tut-commit-row[data-tier="4"]{--acc:#e8c070;--acc-r:232;--acc-g:192;--acc-b:112;}
+.tut-commit-row { border-left-color:rgba(var(--acc-r),var(--acc-g),var(--acc-b),0.28); }
+.tut-commit-row:hover { background:rgba(var(--acc-r),var(--acc-g),var(--acc-b),0.05); border-left-color:rgba(var(--acc-r),var(--acc-g),var(--acc-b),0.55); }
+.tut-commit-row.selected { background:rgba(var(--acc-r),var(--acc-g),var(--acc-b),0.09); border-left-color:var(--acc); }
+.tut-commit-row.selected .tut-commit-days { opacity:1; color:var(--acc); }
+.tut-commit-row.selected .tut-commit-day-unit { color:rgba(var(--acc-r),var(--acc-g),var(--acc-b),0.55); }
+.tut-commit-row.selected .tut-commit-divider { background:rgba(var(--acc-r),var(--acc-g),var(--acc-b),0.3); }
+.tut-commit-days-wrap { display:flex; align-items:baseline; gap:5px; width:78px; flex-shrink:0; }
+.tut-commit-days {
+  font-family:'Cormorant Garamond',serif; font-size:48px; font-weight:300; line-height:1;
+  color:var(--acc); opacity:0.72; transition:opacity 0.2s,color 0.2s;
+}
+.tut-commit-row:hover .tut-commit-days { opacity:1; }
+.tut-commit-day-unit {
+  font-family:'DM Mono',monospace; font-size:8px; letter-spacing:.22em;
+  text-transform:uppercase; color:rgba(var(--acc-r),var(--acc-g),var(--acc-b),0.4);
+  padding-bottom:5px; transition:color 0.2s;
+}
+.tut-commit-divider { width:1px; height:28px; background:rgba(221,216,206,0.1); flex-shrink:0; transition:background 0.2s; }
+.tut-commit-rewards { display:flex; flex-direction:column; gap:4px; flex:1; }
+.tut-commit-xp   { font-family:'DM Mono',monospace; font-size:11px; letter-spacing:.1em; color:#8ecce0; }
+.tut-commit-akasha { font-family:'DM Mono',monospace; font-size:10px; letter-spacing:.1em; color:rgba(212,149,110,0.75); }
+.tut-commit-arrow {
+  font-size:13px; flex-shrink:0;
+  color:rgba(var(--acc-r),var(--acc-g),var(--acc-b),0.25);
+  transition:color 0.2s,transform 0.2s;
+}
+.tut-commit-row:hover .tut-commit-arrow,
+.tut-commit-row.selected .tut-commit-arrow { color:rgba(var(--acc-r),var(--acc-g),var(--acc-b),0.7); transform:translateX(3px); }
+/* headline italic accent for commit screen */
+.tut-commit-headline {
+  font-family:'Cormorant Garamond',serif; font-size:32px; font-weight:300;
+  color:#ddd8ce; text-align:center; line-height:1.2; margin-bottom:8px;
+}
+.tut-commit-headline em { font-style:italic; color:#d4956e; }
+.tut-commit-sub {
+  font-family:'DM Mono',monospace; font-size:10px; letter-spacing:.22em;
+  text-transform:uppercase; color:rgba(221,216,206,0.35); text-align:center; margin-bottom:36px;
+}
+.tut-commit-skip {
+  background:none; border:none; font-family:'DM Mono',monospace; font-size:10px;
+  letter-spacing:.22em; text-transform:uppercase; color:rgba(221,216,206,0.25);
+  cursor:pointer; padding:14px; transition:color 0.2s;
+}
+.tut-commit-skip:hover { color:rgba(221,216,206,0.5); }
 
 /* Reminder stage */
 .tut-remind-choices {
@@ -6681,6 +6756,9 @@ function showTutorialPostSession(secs, akashaDelta) {
     showTutorialStreakCelebration();
   };
 
+  // Swap concSessionScreen out immediately so it never bleeds through the
+  // overlay during tutFadeStage's opacity transitions.
+  showScreen('homeScreen');
   ps.classList.add('tut-ps-show');
   requestAnimationFrame(function() {
     requestAnimationFrame(function() {
@@ -7130,7 +7208,7 @@ function showTutorialStreakCelebration() {
       + '</div>'
       + '<h1 class="tut-s1-headline">Your streak begins.</h1>'
       + '<p class="tut-s1-sub">Every master started exactly here.</p>'
-      + '<button class="tut-acct-primary" id="tutStage-next">Continue →</button>';
+      + '<button class="tut-s1-continue" id="tutStage-next">Continue →</button>';
     document.getElementById('tutStage-next').onclick = showTutorialStreakCommit;
     requestAnimationFrame(function() {
       requestAnimationFrame(function() { ps.classList.add('tut-ps-vis'); });
@@ -7140,27 +7218,34 @@ function showTutorialStreakCelebration() {
 
 function showTutorialStreakCommit() {
   tutFadeStage(function(ps) {
-    var cardsHTML = STREAK_COMMITS.map(function(c) {
-      return '<div class="so-commit-card" data-days="' + c.days + '" style="cursor:pointer;">'
-        + '<div class="so-commit-days">' + c.days + '</div>'
-        + '<div class="so-commit-unit">days</div>'
-        + '<div class="so-commit-xp">+' + c.xp.toLocaleString() + ' XP</div>'
-        + '<div class="so-commit-akasha">+' + c.akasha + ' Akasha</div>'
+    var tiers = [1, 2, 3, 4];
+    var rowsHTML = STREAK_COMMITS.map(function(c, i) {
+      return '<div class="tut-commit-row" data-tier="' + tiers[i] + '" data-days="' + c.days + '">'
+        + '<div class="tut-commit-days-wrap">'
+        +   '<span class="tut-commit-days">' + c.days + '</span>'
+        +   '<span class="tut-commit-day-unit">days</span>'
+        + '</div>'
+        + '<div class="tut-commit-divider"></div>'
+        + '<div class="tut-commit-rewards">'
+        +   '<span class="tut-commit-xp">+' + c.xp.toLocaleString() + ' XP</span>'
+        +   '<span class="tut-commit-akasha">+' + c.akasha + ' Akasha</span>'
+        + '</div>'
+        + '<span class="tut-commit-arrow">→</span>'
         + '</div>';
     }).join('');
 
     ps.innerHTML =
-      '<div class="tut-stage-headline">How long will you commit?</div>'
-      + '<div class="tut-stage-sub">Complete your streak goal and earn a bonus.</div>'
-      + '<div class="so-commit-grid" style="margin:24px 0;">' + cardsHTML + '</div>'
-      + '<button class="tut-acct-primary" id="tutCommit-skip">Skip for now</button>';
+      '<h2 class="tut-commit-headline">How long will you <em>commit?</em></h2>'
+      + '<p class="tut-commit-sub">Complete your goal and earn a bonus.</p>'
+      + '<div class="tut-commit-list">' + rowsHTML + '</div>'
+      + '<button class="tut-commit-skip" id="tutCommit-skip">Skip for now</button>';
 
-    ps.querySelectorAll('.so-commit-card').forEach(function(card) {
-      card.addEventListener('click', function() {
-        var days = parseInt(card.dataset.days, 10);
+    ps.querySelectorAll('.tut-commit-row').forEach(function(row) {
+      row.addEventListener('click', function() {
+        var days = parseInt(row.dataset.days, 10);
         localStorage.setItem('presence_streak_commit', String(days));
-        ps.querySelectorAll('.so-commit-card').forEach(function(c) { c.classList.remove('selected'); });
-        card.classList.add('selected');
+        ps.querySelectorAll('.tut-commit-row').forEach(function(r) { r.classList.remove('selected'); });
+        row.classList.add('selected');
         setTimeout(showTutorialReminder, 400);
       });
     });
