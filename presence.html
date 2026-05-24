@@ -14233,13 +14233,14 @@ function buildGuideRegimentItems(mode) {
   return info.mode === 'experienced' ? buildExperiencedGuideItems() : buildFoundationalGuideItems();
 }
 
-function guideApplyTutorialPathChoice(mode, experienceBars, launchChoice) {
+function guideApplyTutorialPathChoice(mode, experienceBars, launchChoice, goal) {
   var st = loadGuideState();
   var bars = parseInt(experienceBars, 10) || 1;
   st._pathModeV2 = mode;
   st._pathLockedV2 = true;
   st._tutorialExperienceBarsV1 = bars;
   if (launchChoice) st._tutorialLaunchChoiceV1 = launchChoice;
+  if (goal) st._tutorialGoalV1 = goal;
 
   if (mode === 'experienced') {
     var opt = bars >= 5 ? '15+ min' : bars >= 4 ? '10 min' : '5 min';
@@ -14248,6 +14249,11 @@ function guideApplyTutorialPathChoice(mode, experienceBars, launchChoice) {
     });
     if (bars >= 4 && (!st.asana || st.asana === 'New to me')) st.asana = '10 min';
     if (bars >= 4 && (!st.soulmirror || st.soulmirror === 'New to me')) st.soulmirror = 'Familiar';
+  }
+
+  // Serious daily goal → unlock Asana immediately in the foundational plan
+  if (goal === '30 min / day' || goal === '60+ min / day') {
+    if (!st.gateForced) st.gateForced = 'asana';
   }
 
   saveGuideState(st);
@@ -18067,7 +18073,7 @@ document.addEventListener('DOMContentLoaded',function(){(function(){
           if(s.launchClock){
             if (typeof guideApplyTutorialPathChoice === 'function') {
               var expBars = tutAnswers.experienceBars || 1;
-              guideApplyTutorialPathChoice(label === 'Find my Level' ? 'experienced' : 'beginner', expBars, label);
+              guideApplyTutorialPathChoice(label === 'Find my Level' ? 'experienced' : 'beginner', expBars, label, tutAnswers.goal);
             }
             setTimeout(function(){
               qp.classList.remove('tut-vis');
@@ -19388,14 +19394,14 @@ document.addEventListener('DOMContentLoaded',function(){(function(){
   /* ── Path choice buttons ── */
   document.getElementById('tutPathNew').addEventListener('click',function(e){
     e.stopPropagation();
-    if (typeof guideApplyTutorialPathChoice === 'function') guideApplyTutorialPathChoice('beginner', (tutAnswers.experienceBars || 1), 'Path tutorial: new');
+    if (typeof guideApplyTutorialPathChoice === 'function') guideApplyTutorialPathChoice('beginner', (tutAnswers.experienceBars || 1), 'Path tutorial: new', tutAnswers.goal);
     hidePathChoice();
     df.classList.remove('tut-float-on'); fb.classList.remove('tut-vis');
     setTimeout(function(){go(23);},300);
   });
   document.getElementById('tutPathExp').addEventListener('click',function(e){
     e.stopPropagation();
-    if (typeof guideApplyTutorialPathChoice === 'function') guideApplyTutorialPathChoice('experienced', (tutAnswers.experienceBars || 3), 'Path tutorial: experienced');
+    if (typeof guideApplyTutorialPathChoice === 'function') guideApplyTutorialPathChoice('experienced', (tutAnswers.experienceBars || 3), 'Path tutorial: experienced', tutAnswers.goal);
     hidePathChoice();
     df.classList.remove('tut-float-on'); fb.classList.remove('tut-vis');
     setTimeout(function(){go(24);},300);
