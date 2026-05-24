@@ -6756,9 +6756,6 @@ function showTutorialPostSession(secs, akashaDelta) {
     showTutorialStreakCelebration();
   };
 
-  // Swap concSessionScreen out immediately so it never bleeds through the
-  // overlay during tutFadeStage's opacity transitions.
-  showScreen('homeScreen');
   ps.classList.add('tut-ps-show');
   requestAnimationFrame(function() {
     requestAnimationFrame(function() {
