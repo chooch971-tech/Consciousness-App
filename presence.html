@@ -1756,6 +1756,16 @@ body.tut-live #omniaTabPeek { display:none !important; }
 }
 #sessionComplete.sc-show { display:flex; }
 #sessionComplete.sc-vis { opacity:1; }
+#concRepOverlay {
+  display:none; position:fixed; inset:0; z-index:9801;
+  background:rgba(7,8,13,0.98);
+  flex-direction:column; align-items:center; justify-content:center;
+  padding:40px 24px max(env(safe-area-inset-bottom),40px);
+  overflow-y:auto;
+  opacity:0; transition:opacity 0.4s ease;
+}
+#concRepOverlay.cro-show { display:flex; }
+#concRepOverlay.cro-vis { opacity:1; }
 .sc-done-btn {
   margin-top:32px; padding:16px 48px;
   background:rgba(126,184,164,0.12); border:1.5px solid rgba(126,184,164,0.55);
@@ -6759,8 +6769,14 @@ var concCountInterval = null; // track countdown so we can cancel it
 var concResultSaved = false; // prevents double-saving from multiple button hooks
 var concPendingBegin = false; // session screen is showing instructions, awaiting Begin click
 var concAutoStopTimer = null; // tutorial first session auto-ends after 60s
+var concReps = [];
+var concInSession = false;
 
 function startConcentration() {
+  if (!concInSession) {
+    concReps = [];
+    concInSession = true;
+  }
   concStartTime = null; // explicitly null until countdown finishes
   concSeconds = 0;
   if (concAutoStopTimer) { clearTimeout(concAutoStopTimer); concAutoStopTimer = null; }
@@ -6908,12 +6924,124 @@ function stopConcentration() {
   concSeconds = concStartTime ? Math.floor((Date.now() - concStartTime) / 1000) : 0;
   concStartTime = null;
   var rawSecs = Math.max(concSeconds, 1);
-  document.getElementById('concResultBig').textContent = rawSecs;
-  document.getElementById('concNotes').value = '';
-  document.getElementById('concAdaptWrap').innerHTML = '';
-  concResultSaved = false;
-  saveConcResult();
+
+  // Tutorial first session: original single-rep flow
+  if (window._tutorialFirstClock) {
+    document.getElementById('concResultBig').textContent = rawSecs;
+    document.getElementById('concNotes').value = '';
+    document.getElementById('concAdaptWrap').innerHTML = '';
+    concResultSaved = false;
+    saveConcResult();
+    return;
+  }
+
+  // Multi-rep session
+  if (rawSecs >= 10) concReps.push({ seconds: rawSecs });
+  showConcRepOverlay(rawSecs);
   return;
+}
+
+function showConcRepOverlay(repSecs) {
+  var el = document.getElementById('concRepOverlay');
+  if (!el) return;
+  var repNum = concReps.length;
+  var tooShort = repSecs < 10;
+  var totalXP = concReps.reduce(function(s, r) { return s + r.seconds; }, 0);
+  var akashaEst = totalXP > 0 ? omniaExerciseReward('clock', totalXP) : 0;
+
+  el.innerHTML =
+    '<div style="font-family:\'DM Mono\',monospace;font-size:9px;letter-spacing:.18em;text-transform:uppercase;color:var(--muted);margin-bottom:6px;">'
+    + (tooShort ? 'Too short to record' : 'Rep ' + repNum + ' complete') + '</div>'
+    + '<div style="font-family:\'Cormorant Garamond\',serif;font-size:64px;font-weight:300;color:var(--text);line-height:1;">' + fmtSecs(repSecs) + '</div>'
+    + '<div class="tut-legend-cards" style="margin-top:24px;">'
+    + '<div class="tut-legend-card amber"><span class="tut-legend-card-label">XP</span><span class="tut-legend-card-value">+' + totalXP + '</span></div>'
+    + '<div class="tut-legend-card teal"><span class="tut-legend-card-label">Akasha</span><span class="tut-legend-card-value">~' + akashaEst + '</span></div>'
+    + '<div class="tut-legend-card blue"><span class="tut-legend-card-label">Reps</span><span class="tut-legend-card-value">' + repNum + '</span></div>'
+    + '</div>'
+    + '<button id="concRepNextBtn" class="sc-done-btn" style="margin-top:28px;">Rep ' + (repNum + 1) + ' →</button>'
+    + '<button id="concEndSessionBtn" class="sc-repeat-btn">End Session</button>';
+
+  document.getElementById('concRepNextBtn').onclick = function() {
+    el.classList.remove('cro-vis');
+    setTimeout(function() { el.classList.remove('cro-show'); startConcentration(); }, 320);
+  };
+  document.getElementById('concEndSessionBtn').onclick = function() {
+    el.classList.remove('cro-vis');
+    setTimeout(function() { el.classList.remove('cro-show'); saveConcSession(); }, 320);
+  };
+
+  el.classList.add('cro-show');
+  requestAnimationFrame(function() {
+    requestAnimationFrame(function() { el.classList.add('cro-vis'); });
+  });
+}
+
+function fmtSecs(s) {
+  return (Math.floor(s / 60) > 0
+    ? Math.floor(s / 60) + ':' + (s % 60 < 10 ? '0' : '') + s % 60
+    : '0:' + (s < 10 ? '0' : '') + s);
+}
+
+function saveConcSession() {
+  concInSession = false;
+  var validReps = concReps.filter(function(r) { return r.seconds >= 10; });
+  concReps = [];
+  if (validReps.length === 0) {
+    renderConcHome();
+    showScreen('homeScreen');
+    returnAfterExercise(currentMode);
+    return;
+  }
+
+  var totalXP = validReps.reduce(function(s, r) { return s + r.seconds; }, 0);
+  var bestRep = validReps.reduce(function(a, r) { return r.seconds > a ? r.seconds : a; }, 0);
+  var isNewBest = bestRep > concState.bestSeconds;
+
+  concState.xp += totalXP;
+  if (isConcNewSession()) concState.totalSessions++;
+  if (isNewBest) concState.bestSeconds = bestRep;
+
+  var concPrevLevel = concState.level;
+  while (concState.level < 777) {
+    var xpThis = concState.xp - concSumXpToLevel(concState.level);
+    if (xpThis >= concXpForLevel(concState.level)) { concState.level++; } else { break; }
+  }
+  var didLevelUp = concState.level > concPrevLevel;
+
+  concState.history.unshift({ date: new Date().toISOString(), seconds: bestRep, xpEarned: totalXP, notes: '' });
+  if (concState.history.length > 100) concState.history = concState.history.slice(0, 100);
+  saveConcState();
+
+  var _tutPreAkasha = omniaState ? omniaState.akasha : 0;
+  awardOmniaForExercise('clock', totalXP);
+  if (syncEnabled && authToken) syncPushData();
+  touchPracticeStreak();
+
+  var _akashaDelta = omniaState ? Math.round(omniaState.akasha - _tutPreAkasha) : 0;
+  var _originMode = currentMode;
+  var _fmtBest = fmtSecs(bestRep);
+
+  var _omniaMsg = null;
+  if (concState.bestSeconds > 0 && concState.bestSeconds < 900) {
+    var _raw3x = Math.min(concState.bestSeconds * 3, 900);
+    _omniaMsg = 'Next target: ' + fmtSecs(_raw3x) + '. Three times your best — build until you reach 15 minutes.';
+  }
+
+  var repCount = validReps.length;
+  showSessionComplete({
+    title: 'Meditative legend!',
+    sub: repCount + ' rep' + (repCount !== 1 ? 's' : '') + ' · Clock Exercise',
+    xp: totalXP,
+    akashaDelta: _akashaDelta,
+    stat3: { label: 'Best', color: 'blue', value: _fmtBest },
+    omniaMsg: _omniaMsg,
+    onDone: function() {
+      renderConcHome();
+      showScreen('homeScreen');
+      returnAfterExercise(_originMode);
+      if (didLevelUp) setTimeout(function() { showConcLevelUp(concState.level); }, 400);
+    }
+  });
 }
 
 function showConcResult(seconds) {
@@ -6994,22 +7122,12 @@ function saveConcResult(repeatAfter) {
   var _concDidLevelUp = concDidLevelUp1;
   var _originMode = currentMode;
   var _fmtSecs = (Math.floor(seconds/60) > 0 ? Math.floor(seconds/60) + ':' + (seconds%60 < 10 ? '0' : '') + seconds%60 : '0:' + (seconds < 10 ? '0' : '') + seconds);
-  // Mouni Sadhu 3x target suggestion: next goal = bestSeconds × 3, until 15-min mastery
-  var _omniaClockMsg = null;
-  if (concState.bestSeconds > 0 && concState.bestSeconds < 900) {
-    var _raw3x = Math.min(concState.bestSeconds * 3, 900);
-    var _t3m = Math.floor(_raw3x / 60), _t3s = _raw3x % 60;
-    var _t3Str = _t3m + ':' + (_t3s < 10 ? '0' : '') + _t3s;
-    _omniaClockMsg = 'Next target: ' + _t3Str + '. Three times your best — build until you reach 15 minutes.';
-  }
   showSessionComplete({
     title: 'Meditative legend!',
     sub: 'Clock Exercise',
     xp: xpEarned,
     akashaDelta: _akashaDelta,
     stat3: { label: 'Time', color: 'blue', value: _fmtSecs },
-    omniaMsg: _omniaClockMsg,
-    onRepeat: function() { startConcentration(); },
     onDone: function() {
       renderConcHome();
       showScreen('homeScreen');
@@ -14658,7 +14776,7 @@ function renderGuidePlan(mode, skipScroll) {
       + '<div class="path-ex-icon" style="background:' + accentColor + '1e;border:1px solid ' + accentColor + '38;color:' + accentColor + ';">' + icon + '</div>'
       + '<div class="path-ex-info">'
       + '<div class="path-ex-name" style="color:' + accentColor + ';">' + item.name + modeLabel + '</div>'
-      + '<div class="path-ex-meta">' + durLabel + (item.progress ? ' · ' + item.progress : '') + '</div>'
+      + '<div class="path-ex-meta">' + durLabel + (item.id === 'clock' && concState.totalSessions >= 4 && concState.bestSeconds > 0 && concState.bestSeconds < 900 ? ' · target ' + fmtSecs(Math.min(concState.bestSeconds * 3, 900)) : '') + (item.progress ? ' · ' + item.progress : '') + '</div>'
       + '</div>'
       + '<div class="path-ex-right">' + checkHtml + beginHtml + '</div>'
       + '<button class="pq-menu-btn" data-ex-id="' + item.id + '"' + (item.mode ? ' data-ex-mode="' + item.mode + '"' : '') + ' title="Options">···</button>'
@@ -14908,6 +15026,10 @@ function renderPathQuests() {
     if (item.duration) metaParts.push(item.duration + ' min');
     else if (item.durationLabel) metaParts.push(item.durationLabel.replace(/\s*x2\s*$/, ''));
     if (rounds > 1) metaParts.push('×2 sessions');
+    if (item.id === 'clock' && concState.totalSessions >= 4 && concState.bestSeconds > 0 && concState.bestSeconds < 900) {
+      var _ct = Math.min(concState.bestSeconds * 3, 900);
+      metaParts.push('target ' + fmtSecs(_ct));
+    }
     if (item.done) metaParts.push('completed');
     var meta = metaParts.join(' · ') || 'Open-ended';
 
@@ -20017,6 +20139,8 @@ document.addEventListener('DOMContentLoaded',function(){(function(){
 
 <!-- Streak continuation celebration (shown after session extends streak) -->
 <div id="streakCelebOverlay"></div>
+
+<div id="concRepOverlay"></div>
 
 <!-- Session completion legend card (content built dynamically by showSessionComplete) -->
 <div id="sessionComplete"></div>
