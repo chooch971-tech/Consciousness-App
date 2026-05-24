@@ -3,7 +3,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8"/>
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob: https:; media-src 'self' https:; connect-src 'self' https://presence-server-acik.onrender.com; worker-src 'self'; base-uri 'self'; form-action 'none'"/>
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://accounts.google.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob: https:; media-src 'self' https:; connect-src 'self' https://presence-server-acik.onrender.com https://accounts.google.com; frame-src https://accounts.google.com; worker-src 'self'; base-uri 'self'; form-action 'none'"/>
   <link rel="icon" href="data:,"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"/>
   <meta name="apple-mobile-web-app-capable" content="yes"/>
@@ -2133,6 +2133,17 @@ body.tut-live #omniaTabPeek { display:none !important; }
   transition:color 0.2s;
 }
 .tut-acct-skip:hover { color:rgba(126,184,164,0.7); }
+.tut-google-btn {
+  display:flex; align-items:center; justify-content:center; gap:10px;
+  width:100%; background:rgba(255,255,255,0.06);
+  border:1px solid rgba(255,255,255,0.18); border-radius:14px;
+  padding:17px 24px; min-height:56px; cursor:pointer;
+  font-family:'DM Mono',monospace; font-size:12px; letter-spacing:.14em;
+  text-transform:uppercase; color:#ddd8ce;
+  transition:background 0.2s, border-color 0.2s;
+}
+.tut-google-btn:hover { background:rgba(255,255,255,0.11); border-color:rgba(255,255,255,0.32); }
+.tut-google-btn:disabled { opacity:0.5; cursor:default; pointer-events:none; }
 
 /* Desktop / larger screen boosts */
 @media (min-width:600px) {
@@ -7426,18 +7437,32 @@ function showTutorialReminder() {
   });
 }
 
+var GOOGLE_ICON_SVG = '<svg width="18" height="18" viewBox="0 0 18 18" aria-hidden="true"><path fill="#4285F4" d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844c-.209 1.125-.843 2.078-1.796 2.716v2.259h2.908C16.658 14.017 17.64 11.71 17.64 9.2z"/><path fill="#34A853" d="M9 18c2.43 0 4.467-.806 5.956-2.184l-2.908-2.259c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332A8.997 8.997 0 0 0 9 18z"/><path fill="#FBBC05" d="M3.964 10.706A5.41 5.41 0 0 1 3.682 9c0-.593.102-1.17.282-1.706V4.962H.957A8.996 8.996 0 0 0 0 9c0 1.452.348 2.827.957 4.038l3.007-2.332z"/><path fill="#EA4335" d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0A8.997 8.997 0 0 0 .957 4.962L3.964 7.294C4.672 5.163 6.656 3.58 9 3.58z"/></svg>';
+
 function showTutorialAccountPrompt() {
   tutFadeStage(function(ps) {
     ps.innerHTML =
       '<div class="tut-stage-headline">Protect your streak.</div>'
-      + '<div class="tut-stage-sub">Create an account to keep your progress across devices.</div>'
+      + '<div class="tut-stage-sub">Your progress syncs across devices.</div>'
       + '<div class="tut-acct-btns">'
-      + '<button class="tut-acct-primary" id="tutAcct-create">Create account →</button>'
+      + '<button class="tut-google-btn" id="tutGoogleBtn">' + GOOGLE_ICON_SVG + 'Continue with Google</button>'
       + '<button class="tut-acct-skip" id="tutAcct-skip">Continue without saving</button>'
       + '</div>';
-    document.getElementById('tutAcct-create').onclick = function() {
-      showTutorialGuideIntro(true);
-    };
+
+    var btn = document.getElementById('tutGoogleBtn');
+    btn.addEventListener('click', function() {
+      btn.innerHTML = 'Signing in…';
+      btn.disabled = true;
+      signInWithGoogle(
+        function() { showTutorialGuideIntro(false); },
+        function(reason) {
+          btn.innerHTML = GOOGLE_ICON_SVG + 'Continue with Google';
+          btn.disabled = false;
+          if (reason !== 'dismissed') showToast('Sign-in failed. Try again.');
+        }
+      );
+    });
+
     document.getElementById('tutAcct-skip').onclick = function() {
       showTutorialGuideIntro(false);
     };
@@ -15315,6 +15340,50 @@ document.getElementById('reportShareBtn').addEventListener('click', shareReport)
 
 var SERVER_URL = 'https://presence-server-acik.onrender.com';
 var SYNC_API_URL = SERVER_URL + '/api/sync';
+var GOOGLE_CLIENT_ID = '311497048186-gast7j1trlbddlpvabsnqn1p25h5u5jc.apps.googleusercontent.com';
+
+function loadGoogleScript(cb) {
+  if (window.google && window.google.accounts) { cb(); return; }
+  var s = document.createElement('script');
+  s.src = 'https://accounts.google.com/gsi/client';
+  s.async = true; s.defer = true;
+  s.onload = cb;
+  document.head.appendChild(s);
+}
+
+function signInWithGoogle(onSuccess, onError) {
+  loadGoogleScript(function() {
+    google.accounts.id.initialize({
+      client_id: GOOGLE_CLIENT_ID,
+      callback: async function(response) {
+        try {
+          var res = await fetch(SYNC_API_URL + '/auth/google', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ idToken: response.credential })
+          });
+          var result = await res.json();
+          if (!res.ok) throw new Error(result.error || 'Sign-in failed');
+          authToken = result.token;
+          authEmail = result.email;
+          authUsername = result.username || null;
+          localStorage.setItem('presence_auth_token', authToken);
+          localStorage.setItem('presence_auth_email', authEmail);
+          if (authUsername) localStorage.setItem('presence_auth_username', authUsername);
+          syncEnabled = true;
+          onSuccess();
+        } catch(err) {
+          onError(err.message);
+        }
+      }
+    });
+    google.accounts.id.prompt(function(notification) {
+      if (notification.isSkippedMoment() || notification.isDismissedMoment()) {
+        onError('dismissed');
+      }
+    });
+  });
+}
 
 // ── Cloud Sync State ──────────────────────────────────────────
 var authToken = localStorage.getItem('presence_auth_token');
