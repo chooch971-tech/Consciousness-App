@@ -6781,7 +6781,7 @@ function startConcentration() {
   var sessionLabel = document.getElementById('concSessionLabel');
   var isTutorialBeginner = isTutorialFirst && (guidePathMode !== 'experienced');
   if (sessionLabel) {
-    var label60 = 'Focus on the tip of the seconds hand. Stop the moment a thought appears. Auto-ends at 60 seconds (because you\'re a beginner).';
+    var label60 = 'Focus on the tip of the seconds hand. Click Stop the second a thought appears. Nothing must distract you inside or outside of your mind. The moment you are distracted you MUST stop. For this first exercise, as a beginner, you will only go max 60 seconds.';
     var labelExp = 'Focus on the tip of the seconds hand. Stop the moment a thought appears. Be pitiless with yourself. No ego here. End when a thought appears, no matter the size.';
     var labelVet = 'Focus on the tip of the seconds hand. Stop the moment a thought appears. The clock continues until you press Stop.';
     sessionLabel.textContent = isTutorialBeginner ? label60 : isTutorialFirst ? labelExp : labelVet;
@@ -19948,10 +19948,7 @@ document.addEventListener('DOMContentLoaded',function(){(function(){
 </div>
 
 <!-- Clock tip card: shown during countdown on first tutorial session -->
-<div id="tutClockTip">
-  <p>Eyes on the dot.</p>
-  <span>Stop the moment a thought appears</span>
-</div>
+<div id="tutClockTip"></div>
 
 <!-- Post-session tutorial overlay (content built dynamically by showTutorialPostSession) -->
 <div id="tutPostSession"></div>
