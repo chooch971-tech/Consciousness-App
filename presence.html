@@ -538,6 +538,8 @@
     .pq-skip-item { display:block; width:100%; padding:12px 16px; border:none; background:none; color:var(--text); font-family:'DM Mono',monospace; font-size:9px; letter-spacing:.14em; text-transform:uppercase; cursor:pointer; text-align:left; }
     .pq-skip-item:hover { background:rgba(255,255,255,.05); }
     .pq-skip-item.warn { color:#d49898; }
+    .pq-skip-item.active { color:var(--accent); font-weight:600; }
+    .pq-thought-mode-divider { border:none; border-top:1px solid var(--border); margin:4px 0; }
     .ptree-wrap { padding:10px 0 0; position:relative; }
     .ptree-svg { display:block; width:100%; }
     .ptree-legend { display:flex; align-items:center; justify-content:center; gap:14px; padding:12px 20px 18px; border-top:1px solid var(--border); }
@@ -3117,6 +3119,12 @@ body:not(.tut-live) #tutCorgi {
     </div>
     <div class="pq-skip-menu" id="pqSkipMenu">
       <button class="pq-skip-item" id="pqSkipSwitch" style="display:none;"></button>
+      <div id="pqThoughtModes" style="display:none;">
+        <button class="pq-skip-item" data-thought-mode="observation">Thought Observation</button>
+        <button class="pq-skip-item" data-thought-mode="focus">Thought Focus</button>
+        <button class="pq-skip-item" data-thought-mode="vacancy">Vacancy of Mind</button>
+        <hr class="pq-thought-mode-divider">
+      </div>
       <button class="pq-skip-item" id="pqSkipPostpone">Postpone 7 days</button>
       <button class="pq-skip-item warn" id="pqSkipTellOmnia">Tell Omnia…</button>
     </div>
@@ -15221,6 +15229,7 @@ function renderPathQuests() {
   var menu = document.getElementById('pqSkipMenu');
   var overlay = document.getElementById('pqTellOmniaOverlay');
   var switchBtn = document.getElementById('pqSkipSwitch');
+  var thoughtModesEl = document.getElementById('pqThoughtModes');
 
   // Progression: what exercise/mode comes next after each exercise
   function pqSwitchNext(exId, thoughtMode) {
@@ -15238,13 +15247,19 @@ function renderPathQuests() {
   function openSkipMenu(btn) {
     activeExId = btn.dataset.exId;
     activeExMode = btn.dataset.exMode || null;
-    var next = pqSwitchNext(activeExId, activeExMode);
-    if (switchBtn) {
-      if (next) {
+    var isThought = activeExId === 'thought';
+    if (switchBtn) switchBtn.style.display = 'none';
+    if (thoughtModesEl) thoughtModesEl.style.display = isThought ? 'block' : 'none';
+    if (isThought) {
+      var curMode = guideState.thoughtModeForced || activeExMode || 'observation';
+      thoughtModesEl.querySelectorAll('[data-thought-mode]').forEach(function(b) {
+        b.classList.toggle('active', b.dataset.thoughtMode === curMode);
+      });
+    } else {
+      var next = pqSwitchNext(activeExId, activeExMode);
+      if (switchBtn && next) {
         switchBtn.textContent = 'Switch to ' + next.label + ' →';
         switchBtn.style.display = 'block';
-      } else {
-        switchBtn.style.display = 'none';
       }
     }
     var r = btn.getBoundingClientRect();
@@ -15270,6 +15285,15 @@ function renderPathQuests() {
     } else {
       guideState.gateForced = next.exId;
     }
+    saveGuideState(guideState);
+    renderPathQuests();
+  });
+
+  if (thoughtModesEl) thoughtModesEl.addEventListener('click', function(e) {
+    var b = e.target.closest('[data-thought-mode]');
+    if (!b) return;
+    closeSkipMenu();
+    guideState.thoughtModeForced = b.dataset.thoughtMode;
     saveGuideState(guideState);
     renderPathQuests();
   });
