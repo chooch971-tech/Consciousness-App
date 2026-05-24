@@ -6617,10 +6617,12 @@ function startConcentration() {
 
   // Instructions are shown up front; user has as long as they need to read.
   var sessionLabel = document.getElementById('concSessionLabel');
+  var isTutorialBeginner = isTutorialFirst && (guidePathMode !== 'experienced');
   if (sessionLabel) {
-    sessionLabel.textContent = isTutorialFirst
-      ? 'Focus on the tip of the seconds hand. Stop the moment a thought appears. Auto-ends at 60 seconds.'
-      : 'Focus on the tip of the seconds hand. Stop the moment a thought appears. The clock continues until you press Stop.';
+    var label60 = 'Focus on the tip of the seconds hand. Stop the moment a thought appears. Auto-ends at 60 seconds (because you\'re a beginner).';
+    var labelExp = 'Focus on the tip of the seconds hand. Stop the moment a thought appears. Be pitiless with yourself. No ego here. End when a thought appears, no matter the size.';
+    var labelVet = 'Focus on the tip of the seconds hand. Stop the moment a thought appears. The clock continues until you press Stop.';
+    sessionLabel.textContent = isTutorialBeginner ? label60 : isTutorialFirst ? labelExp : labelVet;
     sessionLabel.style.opacity = '1';
     sessionLabel.classList.remove('conc-label-flash');
     sessionLabel.classList.add('conc-label-instructions');
@@ -6693,8 +6695,8 @@ function beginCountdown() {
       if (topStopBtn && !isTutorialFirst) { topStopBtn.disabled = false; topStopBtn.style.opacity = ''; }
       concStartTime = Date.now();
       concTimerHandle = requestAnimationFrame(tickConcentration);
-      // Tutorial first session: auto-stop at 60s for retention.
-      if (isTutorialFirst) {
+      // Tutorial first session: auto-stop at 60s only for the beginner path.
+      if (isTutorialFirst && guidePathMode !== 'experienced') {
         concAutoStopTimer = setTimeout(function() {
           concAutoStopTimer = null;
           stopConcentration();
