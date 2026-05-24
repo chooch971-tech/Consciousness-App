@@ -6855,6 +6855,7 @@ function beginCountdown() {
       if (isTutorialFirst && guidePathMode !== 'experienced') {
         concAutoStopTimer = setTimeout(function() {
           concAutoStopTimer = null;
+          window._tutAutoStopped = true;
           stopConcentration();
         }, 60 * 1000);
       }
@@ -7074,6 +7075,20 @@ function showTutorialPostSession(secs, akashaDelta) {
     return '<span class="tut-ps-bead" style="left:'+p[0]+'%;top:'+p[1]+'%;width:'+p[3]+'px;height:'+p[3]+'px;animation-delay:'+p[2]+'s"></span>';
   }).join('');
 
+  var _isExperienced = (guidePathMode === 'experienced');
+  var _autoStopped = !!window._tutAutoStopped;
+  window._tutAutoStopped = false;
+  var omniaMsg;
+  if (!_isExperienced && _autoStopped) {
+    omniaMsg = 'You did the entire minute without a distraction! Incredible job.';
+  } else if (!_isExperienced && !_autoStopped) {
+    omniaMsg = 'Impressive first exercise! It\'s difficult, but your resilience will only make it easier over time.';
+  } else if (_isExperienced && secs < 60) {
+    omniaMsg = 'Impressive first exercise! It\'s difficult, but your resilience will only make it easier over time.';
+  } else if (_isExperienced && secs >= 60 && secs <= 180) {
+    omniaMsg = 'Incredible first job! I can see your training has paid off. Your personal best will only improve from here.';
+  }
+
   ps.innerHTML =
     '<div class="tut-ps-omnia-wrap"><div class="tut-ps-omnia-stage">' + crystalSVG + beadsHTML + '</div></div>'
     + '<div class="tut-legend-title">Meditative legend!</div>'
@@ -7092,6 +7107,7 @@ function showTutorialPostSession(secs, akashaDelta) {
     + '<span class="tut-legend-card-value">' + timeStr + '</span>'
     + '</div>'
     + '</div>'
+    + (omniaMsg ? '<div class="omnia-speak">' + omniaMsg + '</div>' : '')
     + '<button id="tutPS-btn">Claim XP →</button>';
 
   document.getElementById('tutPS-btn').onclick = function() {
