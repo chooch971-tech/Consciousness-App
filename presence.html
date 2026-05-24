@@ -7445,23 +7445,11 @@ function showTutorialAccountPrompt() {
       '<div class="tut-stage-headline">Protect your streak.</div>'
       + '<div class="tut-stage-sub">Your progress syncs across devices.</div>'
       + '<div class="tut-acct-btns">'
-      + '<button class="tut-google-btn" id="tutGoogleBtn">' + GOOGLE_ICON_SVG + 'Continue with Google</button>'
+      + '<div id="gSignInContainer" style="display:flex;justify-content:center;min-height:44px;align-items:center;"></div>'
       + '<button class="tut-acct-skip" id="tutAcct-skip">Continue without saving</button>'
       + '</div>';
 
-    var btn = document.getElementById('tutGoogleBtn');
-    btn.addEventListener('click', function() {
-      btn.innerHTML = 'Signing in…';
-      btn.disabled = true;
-      signInWithGoogle(
-        function() { showTutorialGuideIntro(false); },
-        function(reason) {
-          btn.innerHTML = GOOGLE_ICON_SVG + 'Continue with Google';
-          btn.disabled = false;
-          if (reason !== 'dismissed') showToast('Sign-in failed. Try again.');
-        }
-      );
-    });
+    initGoogleSignIn('gSignInContainer', function() { showTutorialGuideIntro(false); });
 
     document.getElementById('tutAcct-skip').onclick = function() {
       showTutorialGuideIntro(false);
@@ -15351,11 +15339,13 @@ function loadGoogleScript(cb) {
   document.head.appendChild(s);
 }
 
-function signInWithGoogle(onSuccess, onError) {
+function initGoogleSignIn(containerId, onSuccess) {
   loadGoogleScript(function() {
     google.accounts.id.initialize({
       client_id: GOOGLE_CLIENT_ID,
       callback: async function(response) {
+        var container = document.getElementById(containerId);
+        if (container) container.innerHTML = '<div style="color:#7eb8a4;font-size:11px;letter-spacing:.15em;padding:14px 0;">Signing in…</div>';
         try {
           var res = await fetch(SYNC_API_URL + '/auth/google', {
             method: 'POST',
@@ -15373,15 +15363,22 @@ function signInWithGoogle(onSuccess, onError) {
           syncEnabled = true;
           onSuccess();
         } catch(err) {
-          onError(err.message);
+          // Restore the button on failure
+          var c = document.getElementById(containerId);
+          if (c) google.accounts.id.renderButton(c, { theme:'filled_black', size:'large', width:280, text:'continue_with' });
+          showToast('Sign-in failed. Try again.');
         }
       }
     });
-    google.accounts.id.prompt(function(notification) {
-      if (notification.isSkippedMoment() || notification.isDismissedMoment()) {
-        onError('dismissed');
-      }
-    });
+    var container = document.getElementById(containerId);
+    if (container) {
+      google.accounts.id.renderButton(container, {
+        theme: 'filled_black',
+        size: 'large',
+        width: 280,
+        text: 'continue_with'
+      });
+    }
   });
 }
 
