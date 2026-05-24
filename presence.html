@@ -5162,13 +5162,13 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 window.addEventListener('pageshow', function() {
-  if (isStandalonePresenceApp()) scheduleGuidePathLayoutRefresh(false);
+  scheduleGuidePathLayoutRefresh(false);
 });
 window.addEventListener('resize', function() {
-  if (isStandalonePresenceApp()) scheduleGuidePathLayoutRefresh(false);
+  scheduleGuidePathLayoutRefresh(false);
 });
 window.addEventListener('orientationchange', function() {
-  if (isStandalonePresenceApp()) scheduleGuidePathLayoutRefresh(false);
+  scheduleGuidePathLayoutRefresh(false);
 });
 function randomPrompt(exclude) { var p; do { p = PROMPTS[Math.floor(Math.random() * PROMPTS.length)]; } while (p === exclude); return p; }
 
@@ -6439,7 +6439,7 @@ var concSeconds = 0;
 
 document.addEventListener('visibilitychange', function() {
   if (document.visibilityState === 'hidden' && sessionStartTime) saveSessionState();
-  if (document.visibilityState === 'visible' && isStandalonePresenceApp()) {
+  if (document.visibilityState === 'visible') {
     scheduleGuidePathLayoutRefresh(false);
   }
   // When app becomes visible again, pull latest cloud data and reload if changed
@@ -13635,6 +13635,15 @@ function refreshGuidePanelLayout(resetScroll) {
   if (!gp) return;
   gp.style.flex = '1 1 auto';
   gp.style.height = '';
+  var home = document.getElementById('homeScreen');
+  if (home && home.style.display !== 'none' && window.innerWidth >= 700) {
+    var homeRect = home.getBoundingClientRect();
+    var panelRect = gp.getBoundingClientRect();
+    var homeStyle = window.getComputedStyle ? window.getComputedStyle(home) : null;
+    var padBottom = homeStyle ? (parseFloat(homeStyle.paddingBottom) || 0) : 0;
+    var available = Math.floor(homeRect.bottom - panelRect.top - padBottom);
+    if (available > 180) gp.style.height = available + 'px';
+  }
   document.body.classList.add('guide-layout-refresh');
   void gp.offsetHeight;
   if (resetScroll) gp.scrollTop = 0;
@@ -13655,7 +13664,7 @@ function isStandalonePresenceApp() {
     || (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches);
 }
 
-function refreshStandaloneGuidePath(resetScroll) {
+function refreshGuidePathIfActive(resetScroll) {
   if (typeof currentMode === 'undefined' || typeof guideActiveTab === 'undefined') return;
   if (currentMode !== 'guide') return;
   if (guideActiveTab !== 'path') return;
@@ -13663,10 +13672,15 @@ function refreshStandaloneGuidePath(resetScroll) {
   refreshGuidePanelLayout(resetScroll);
 }
 
+var guidePathLayoutTimers = [];
 function scheduleGuidePathLayoutRefresh(resetScroll) {
-  refreshStandaloneGuidePath(resetScroll);
-  [80, 240, 700, 1400].forEach(function(delay) {
-    setTimeout(function() { refreshStandaloneGuidePath(resetScroll); }, delay);
+  guidePathLayoutTimers.forEach(function(timer) { clearTimeout(timer); });
+  guidePathLayoutTimers = [];
+  refreshGuidePathIfActive(resetScroll);
+  [40, 120, 280, 700, 1400].forEach(function(delay) {
+    guidePathLayoutTimers.push(setTimeout(function() {
+      refreshGuidePathIfActive(resetScroll);
+    }, delay));
   });
 }
 
@@ -15003,7 +15017,7 @@ function openGuide() {
   renderGuidePlan(guidePathMode, true);
   renderPathQuests();
   switchGuideTab('path');
-  if (isStandalonePresenceApp()) scheduleGuidePathLayoutRefresh(true);
+  scheduleGuidePathLayoutRefresh(true);
 }
 
 // ── Event wiring ──────────────────────────────────────────
