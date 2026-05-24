@@ -5704,8 +5704,25 @@ function submitSurvey() {
     + '<div class="adapt-text" style="margin-top:8px">Rank ' + state.level + ': ' + rankTitle + '</div>'
     + '<div class="adapt-text" style="margin-top:8px; color:var(--accent);">' + nudgeMsg + '</div>'
     + '<div class="adapt-text" style="margin-top:4px; opacity:.6;">Next interval: ' + fmtInterval(newParams.intervalSec) + ' (' + offsetStr + ' from base)</div>'
-    + '<div class="adapt-text" style="margin-top:12px">' + adaptation.message + '</div>'
+    + '<div class="adapt-text" id="aiAwarenessMessage" style="margin-top:12px">' + adaptation.message + '</div>'
     + '</div>';
+
+  requestPresenceAI('post_exercise', {
+    kind: 'awareness',
+    durationMin: surveyDurationMin,
+    targetMin: params.durationMin,
+    score: finalScore.toFixed(1),
+    endedEarly: sessionEndedEarly,
+    streak: state.streak,
+    level: state.level,
+    rank: rankTitle,
+    xpEarned: xpEarned,
+    notes: notes,
+    localMessage: adaptation.message
+  }).then(function(message) {
+    var msgEl = document.getElementById('aiAwarenessMessage');
+    if (msgEl && message) msgEl.textContent = message;
+  }).catch(function() {});
 
   var submitBtn = document.getElementById('submitSurveyBtn');
   submitBtn.textContent = 'Done';
@@ -7520,10 +7537,21 @@ function buildOmniaShowerHtml() {
   return '<div class="tut-ps-omnia-wrap"><div class="tut-ps-omnia-stage">' + crystalSVG + beadsHTML + '</div></div>';
 }
 
+function getLocalPostExerciseMessage(opts) {
+  var stat = opts && opts.stat3 ? opts.stat3 : {};
+  var exercise = opts && opts.sub ? opts.sub : 'practice';
+  var value = stat.value ? ' ' + stat.label.toLowerCase() + ': ' + stat.value + '.' : '';
+  if ((opts && opts.xp || 0) >= 600) return 'That was substantial work. Let the mind stay quiet for a moment before moving on.' + value;
+  if (/rep/i.test(exercise)) return 'Good repetition. The useful part is not the number, but the return after each break.';
+  if (/asana|stillness/i.test(exercise)) return 'The body learned something by staying. Keep the aftertaste of stillness with you.';
+  return 'Good. You completed the exercise. Carry a little of that attention into the next thing.' + value;
+}
+
 function showSessionComplete(opts) {
   var el = document.getElementById('sessionComplete');
   if (!el) return;
   playSessionCompleteSound();
+  var fallbackMessage = opts.omniaMsg || getLocalPostExerciseMessage(opts);
   el.innerHTML =
     buildOmniaShowerHtml()
     + '<div class="tut-legend-title">' + opts.title + '</div>'
@@ -7542,9 +7570,22 @@ function showSessionComplete(opts) {
     + '<span class="tut-legend-card-value">' + opts.stat3.value + '</span>'
     + '</div>'
     + '</div>'
-    + (opts.omniaMsg ? '<div class="omnia-speak">' + opts.omniaMsg + '</div>' : '')
+    + '<div class="omnia-speak" id="scAiMessage">' + fallbackMessage + '</div>'
     + '<button class="sc-done-btn" id="scDoneBtn">Done →</button>'
     + (opts.onRepeat ? '<button class="sc-repeat-btn" id="scRepeatBtn">Repeat ↺</button>' : '');
+  requestPresenceAI('post_exercise', {
+    kind: 'concentration',
+    title: opts.title,
+    exercise: opts.sub,
+    xpEarned: opts.xp,
+    akashaEarned: opts.akashaDelta || 0,
+    statLabel: opts.stat3.label,
+    statValue: opts.stat3.value,
+    localMessage: fallbackMessage
+  }).then(function(message) {
+    var msgEl = document.getElementById('scAiMessage');
+    if (msgEl && message) msgEl.textContent = message;
+  }).catch(function() {});
   document.getElementById('scDoneBtn').onclick = function() {
     el.classList.remove('sc-vis');
     setTimeout(function() {
@@ -15725,6 +15766,22 @@ function getMotivationalMessage(sessions, streak) {
   return MOTIVATIONAL[Math.floor(Math.random() * MOTIVATIONAL.length)];
 }
 
+function getReportFallbackMessage(summary) {
+  var totalSessions = (summary.awarenessSessions || 0) + (summary.concentrationSessions || 0);
+  if (!totalSessions) return 'No sessions in this window yet. Begin small, and let the first return count.';
+  if ((summary.streak || 0) >= 7) return 'Your streak is carrying real momentum. Protect the daily return more than any single number.';
+  if ((summary.awarenessMinutes || 0) > 0 && (summary.concentrationSeconds || 0) > 0) return 'Good balance: awareness and concentration are both being trained. Keep the next session simple and exact.';
+  if ((summary.awarenessMinutes || 0) > 0) return 'Awareness is the thread this period. The next useful step is another clean return to the present.';
+  return 'Concentration is leading this period. Stay patient with the repetitions; they are doing their quiet work.';
+}
+
+function requestProgressReportComment(summary) {
+  requestPresenceAI('progress_report', summary).then(function(message) {
+    var el = document.getElementById('aiReportCommentText');
+    if (el && message) el.textContent = message;
+  }).catch(function() {});
+}
+
 // ── Report renderers ──────────────────────────────────────
 
 function renderReport(period) {
@@ -15777,6 +15834,25 @@ function renderReport(period) {
     html += '<div class="report-chart"><div class="report-chart-title">Session Score Trend</div>' + renderLineChart(awChartData.scoreValues, '#7eb8a4', 48) + '</div>';
   }
   html += '</div>';
+
+  var reportSummary = {
+    period: period,
+    awarenessSessions: awarenessNow.length,
+    awarenessMinutes: awMinNow,
+    previousAwarenessMinutes: awMinPrev,
+    averageAwarenessScore: awScoreNow,
+    concentrationSessions: concNow.length,
+    concentrationSeconds: concNow.reduce(function(a, h) { return a + (h.seconds || 0); }, 0),
+    previousConcentrationSeconds: concPrev.reduce(function(a, h) { return a + (h.seconds || 0); }, 0),
+    prayersCompletedToday: prayerState.todayDone ? prayerState.todayDone.length : 0,
+    prayerGoal: prayerState.count,
+    streak: state.streak,
+    awarenessLevel: state.level,
+    concentrationLevel: concState.level
+  };
+  html += '<div class="report-motivational" id="aiReportComment">'
+    + '<div class="report-motivational-text" id="aiReportCommentText">"' + esc(getReportFallbackMessage(reportSummary)) + '"</div>'
+    + '</div>';
 
   // ── Concentration stats ──
   var concSecNow = concNow.reduce(function(a, h) { return a + (h.seconds || 0); }, 0);
@@ -15844,6 +15920,7 @@ function renderReport(period) {
   html += '</div>';
 
   document.getElementById('reportContent').innerHTML = html;
+  requestProgressReportComment(reportSummary);
 }
 
 function buildChartData(history, period, valueKey) {
@@ -15986,6 +16063,75 @@ document.getElementById('reportShareBtn').addEventListener('click', shareReport)
 var SERVER_URL = 'https://presence-server-acik.onrender.com';
 var SYNC_API_URL = SERVER_URL + '/api/sync';
 var GOOGLE_CLIENT_ID = '311497048186-gast7j1trlbddlpvabsnqn1p25h5u5jc.apps.googleusercontent.com';
+var AI_POST_EXERCISE_DAILY_LIMIT = 8;
+
+function getPresenceAIClientId() {
+  try {
+    var id = localStorage.getItem('presence_ai_client_id');
+    if (!id) {
+      var rand = (window.crypto && crypto.randomUUID) ? crypto.randomUUID() : String(Date.now()) + '-' + Math.random().toString(36).slice(2);
+      id = rand.replace(/[^a-zA-Z0-9_-]/g, '').slice(0, 80);
+      localStorage.setItem('presence_ai_client_id', id);
+    }
+    return id;
+  } catch(e) {
+    return '';
+  }
+}
+
+function localDayKey() {
+  var d = new Date();
+  return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+}
+
+function getPostExerciseAIUsage() {
+  try {
+    var raw = localStorage.getItem('presence_ai_post_exercise_usage_v1');
+    var usage = raw ? JSON.parse(raw) : {};
+    var today = localDayKey();
+    if (usage.day !== today) usage = { day: today, count: 0 };
+    return usage;
+  } catch(e) {
+    return { day: localDayKey(), count: 0 };
+  }
+}
+
+function recordPostExerciseAIUsage() {
+  var usage = getPostExerciseAIUsage();
+  usage.count = Math.min(AI_POST_EXERCISE_DAILY_LIMIT, (usage.count || 0) + 1);
+  try { localStorage.setItem('presence_ai_post_exercise_usage_v1', JSON.stringify(usage)); } catch(e) {}
+}
+
+function canRequestPostExerciseAI() {
+  return (getPostExerciseAIUsage().count || 0) < AI_POST_EXERCISE_DAILY_LIMIT;
+}
+
+function requestPresenceAI(kind, context) {
+  if (kind === 'post_exercise') {
+    if (!canRequestPostExerciseAI()) return Promise.reject(new Error('Daily AI post-exercise limit reached'));
+    recordPostExerciseAIUsage();
+  }
+  var path = kind === 'progress_report' ? '/api/ai/progress-comment' : '/api/ai/post-exercise';
+  var controller = window.AbortController ? new AbortController() : null;
+  var timer = controller ? setTimeout(function() { controller.abort(); }, 5500) : null;
+  return fetch(SERVER_URL + path, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ clientId: getPresenceAIClientId(), context: context || {} }),
+    signal: controller ? controller.signal : undefined
+  }).then(function(res) {
+    if (timer) clearTimeout(timer);
+    if (!res.ok) throw new Error('AI unavailable');
+    return res.json();
+  }).then(function(data) {
+    var msg = data && data.message ? String(data.message).trim() : '';
+    if (!msg) throw new Error('Empty AI message');
+    return msg;
+  }).catch(function(err) {
+    if (timer) clearTimeout(timer);
+    throw err;
+  });
+}
 
 function loadGoogleScript(cb) {
   if (window.google && window.google.accounts) { cb(); return; }

@@ -40,6 +40,8 @@ const MONGO_URI = process.env.MONGO_URI;
 // ── Cloud Sync JWT ──────────────────────────────────────
 const JWT_SECRET    = process.env.JWT_SECRET;
 const ADMIN_SECRET  = process.env.ADMIN_SECRET;
+const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
+const OPENAI_MODEL = process.env.OPENAI_MODEL || 'gpt-5-nano';
 
 if (!VAPID_PRIVATE_KEY || !MONGO_URI || !JWT_SECRET) {
   console.error('Missing required environment variables: VAPID_PRIVATE_KEY, MONGO_URI, JWT_SECRET');
@@ -162,6 +164,121 @@ function randomPromptFor(endpoint) {
   do { idx = Math.floor(Math.random() * PROMPTS.length); } while (idx === last);
   usedPrompts.set(endpoint, idx);
   return PROMPTS[idx];
+}
+
+// ── AI helpers ────────────────────────────────────────────
+const aiRateBuckets = new Map();
+const aiDailyBuckets = new Map();
+const AI_RATE_LIMIT = 30;
+const AI_RATE_WINDOW_MS = 60 * 1000;
+const AI_POST_EXERCISE_DAILY_LIMIT = 8;
+
+function aiRateLimit(req, res, next) {
+  const now = Date.now();
+  const key = req.user?.userId || req.ip || req.headers['x-forwarded-for'] || 'unknown';
+  const bucket = aiRateBuckets.get(key) || { count: 0, resetAt: now + AI_RATE_WINDOW_MS };
+  if (now > bucket.resetAt) {
+    bucket.count = 0;
+    bucket.resetAt = now + AI_RATE_WINDOW_MS;
+  }
+  bucket.count++;
+  aiRateBuckets.set(key, bucket);
+  if (bucket.count > AI_RATE_LIMIT) {
+    return res.status(429).json({ error: 'Too many AI requests. Try again shortly.' });
+  }
+  next();
+}
+
+function clampText(value, max) {
+  if (value === null || value === undefined) return '';
+  return String(value).replace(/\s+/g, ' ').trim().slice(0, max);
+}
+
+function cleanClientId(value) {
+  return clampText(value, 80).replace(/[^a-zA-Z0-9_-]/g, '');
+}
+
+function getUtcDayKey() {
+  return new Date().toISOString().slice(0, 10);
+}
+
+function aiDailyLimit(feature, req, res, next) {
+  if (feature !== 'post_exercise') return next();
+  const day = getUtcDayKey();
+  const clientId = cleanClientId(req.body?.clientId);
+  const key = `${feature}:${day}:${clientId || req.user?.userId || req.ip || 'unknown'}`;
+  const used = aiDailyBuckets.get(key) || 0;
+  if (used >= AI_POST_EXERCISE_DAILY_LIMIT) {
+    return res.status(429).json({
+      error: 'Daily AI message limit reached',
+      limit: AI_POST_EXERCISE_DAILY_LIMIT,
+      remaining: 0
+    });
+  }
+  aiDailyBuckets.set(key, used + 1);
+  res.locals.aiRemainingToday = AI_POST_EXERCISE_DAILY_LIMIT - used - 1;
+  next();
+}
+
+function compactContext(value, depth = 0) {
+  if (depth > 4) return null;
+  if (Array.isArray(value)) return value.slice(0, 16).map(item => compactContext(item, depth + 1));
+  if (value && typeof value === 'object') {
+    const out = {};
+    Object.keys(value).slice(0, 36).forEach(key => {
+      out[clampText(key, 40)] = compactContext(value[key], depth + 1);
+    });
+    return out;
+  }
+  if (typeof value === 'string') return clampText(value, 420);
+  if (typeof value === 'number') return Number.isFinite(value) ? value : null;
+  if (typeof value === 'boolean') return value;
+  return null;
+}
+
+async function generateAiMessage(feature, context) {
+  if (!OPENAI_API_KEY) {
+    const err = new Error('OPENAI_API_KEY is not configured');
+    err.status = 503;
+    throw err;
+  }
+
+  const prompts = {
+    post_exercise:
+      'You are Omnia inside the Presence app. Write one short post-exercise message. Be warm, specific, grounded, and direct. Do not mention AI. No medical claims. Max 34 words.',
+    progress_report:
+      'You are Omnia inside the Presence app. Comment on this progress report in 1-2 short sentences. Notice patterns, encourage consistency, and suggest one gentle next focus. Do not mention AI. No medical claims. Max 48 words.'
+  };
+
+  const payload = {
+    model: OPENAI_MODEL,
+    store: false,
+    input: [
+      { role: 'system', content: prompts[feature] || prompts.post_exercise },
+      { role: 'user', content: JSON.stringify(compactContext(context)).slice(0, 4200) }
+    ],
+    max_output_tokens: feature === 'progress_report' ? 90 : 60
+  };
+
+  const response = await fetch('https://api.openai.com/v1/responses', {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${OPENAI_API_KEY}`,
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify(payload)
+  });
+
+  const data = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    const err = new Error(data.error?.message || 'OpenAI request failed');
+    err.status = response.status;
+    throw err;
+  }
+
+  const text = data.output_text
+    || (data.output || []).flatMap(item => item.content || []).map(part => part.text || '').join(' ');
+  return clampText(text, feature === 'progress_report' ? 360 : 240);
 }
 
 // ── Push helpers ─────────────────────────────────────────
@@ -672,6 +789,26 @@ app.get('/debug', verifyAdmin, (req, res) => {
 });
 
 app.get('/vapid-public-key', (req, res) => res.json({ publicKey: VAPID_PUBLIC_KEY }));
+
+app.post('/api/ai/post-exercise', aiRateLimit, (req, res, next) => aiDailyLimit('post_exercise', req, res, next), async (req, res) => {
+  try {
+    const message = await generateAiMessage('post_exercise', req.body?.context || {});
+    res.json({ message, model: OPENAI_MODEL, remainingToday: res.locals.aiRemainingToday });
+  } catch (err) {
+    console.error('[AI] post-exercise error:', err.message);
+    res.status(err.status || 500).json({ error: 'AI message unavailable' });
+  }
+});
+
+app.post('/api/ai/progress-comment', aiRateLimit, async (req, res) => {
+  try {
+    const message = await generateAiMessage('progress_report', req.body?.context || {});
+    res.json({ message, model: OPENAI_MODEL });
+  } catch (err) {
+    console.error('[AI] progress-comment error:', err.message);
+    res.status(err.status || 500).json({ error: 'AI comment unavailable' });
+  }
+});
 
 app.post('/subscribe', async (req, res) => {
   const subscription = req.body;
