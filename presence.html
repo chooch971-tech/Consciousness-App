@@ -15022,11 +15022,8 @@ function renderPathQuests() {
 
   // ── Cadence toggle ──
   var _twoOn = guideTwoADayEnabled();
-  html += '<div style="display:flex;align-items:center;justify-content:space-between;margin:0 2px 14px;">'
-    + '<div style="font-size:8px;letter-spacing:.2em;text-transform:uppercase;color:var(--muted);">Cadence</div>'
-    + '<button id="pqTwoADayBtn" style="font-family:\'DM Mono\',monospace;font-size:8px;letter-spacing:.18em;text-transform:uppercase;padding:5px 11px;border-radius:6px;cursor:pointer;border:1px solid '
-    + (_twoOn ? 'rgba(126,184,164,.4);background:rgba(126,184,164,.1);color:#7eb8a4;' : 'rgba(255,255,255,.12);background:rgba(255,255,255,.04);color:rgba(221,216,206,.35);')
-    + '">' + (_twoOn ? '2× / day' : '1× / day') + '</button>'
+  html += '<div style="display:flex;justify-content:flex-end;margin:0 2px 14px;">'
+    + '<button id="pqTwoADayBtn" class="guide-cadence-toggle' + (_twoOn ? '' : ' off') + '">' + (_twoOn ? '2× / day' : '1× / day') + '</button>'
     + '</div>';
 
   // Section label + exercise cards (wrapped together so flex gap doesn't push them apart)
