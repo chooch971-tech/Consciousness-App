@@ -4,6 +4,7 @@ const cors = require('cors');
 const { MongoClient, ObjectId } = require('mongodb');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
+const { OAuth2Client } = require('google-auth-library');
 
 const app = express();
 app.use(cors());
@@ -316,6 +317,50 @@ app.post('/api/sync/auth/heartbeat', verifyToken, async (req, res) => {
     res.json({ ok: true });
   } catch (err) {
     res.status(500).json({ error: 'Heartbeat failed' });
+  }
+});
+
+// GOOGLE SIGN-IN
+app.post('/api/sync/auth/google', async (req, res) => {
+  const { idToken } = req.body;
+  if (!idToken) return res.status(400).json({ error: 'idToken required' });
+  try {
+    const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
+    const ticket = await googleClient.verifyIdToken({
+      idToken,
+      audience: process.env.GOOGLE_CLIENT_ID
+    });
+    const { sub: googleId, email, name } = ticket.getPayload();
+
+    // Find existing user by googleId or email
+    let user = await usersCollection.findOne({ $or: [{ googleId }, { email }] });
+
+    if (!user) {
+      // New user — create account
+      const result = await usersCollection.insertOne({
+        email,
+        googleId,
+        displayName: name || null,
+        createdAt: new Date(),
+        lastSync: null,
+        lastActive: new Date()
+      });
+      const token = jwt.sign({ userId: result.insertedId.toString(), email }, JWT_SECRET, { expiresIn: TOKEN_EXPIRY });
+      return res.json({ token, userId: result.insertedId, email, username: null });
+    }
+
+    // Existing user — link Google if not already linked
+    if (!user.googleId) {
+      await usersCollection.updateOne({ _id: user._id }, { $set: { googleId, lastActive: new Date() } });
+    } else {
+      await usersCollection.updateOne({ _id: user._id }, { $set: { lastActive: new Date() } });
+    }
+
+    const token = jwt.sign({ userId: user._id.toString(), email: user.email }, JWT_SECRET, { expiresIn: TOKEN_EXPIRY });
+    res.json({ token, userId: user._id, email: user.email, username: user.username || null });
+  } catch (err) {
+    console.error('[Google Auth] Error:', err.message);
+    res.status(401).json({ error: 'Google sign-in failed' });
   }
 });
 
