@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- v2026.05.22-github-pwa-path -->
+<!-- v2026.05.23-splash-no-login -->
 <html lang="en">
 <head>
   <meta charset="UTF-8"/>
@@ -2634,6 +2634,51 @@ body:not(.tut-live) #tutCorgi {
 .fp-remove-btn { padding:4px 10px; border:1px solid var(--border); border-radius:6px; background:transparent; color:var(--muted); font-family:'DM Mono',monospace; font-size:8px; cursor:pointer; opacity:.6; }
 .fp-online-dot { display:inline-block; width:7px; height:7px; border-radius:50%; background:#4caf80; box-shadow:0 0 5px rgba(76,175,128,.6); flex-shrink:0; }
 .fp-offline-dot { display:inline-block; width:7px; height:7px; border-radius:50%; background:rgba(255,255,255,.15); flex-shrink:0; }
+
+/* ── Splash screen ──────────────────────────────────────── */
+#splash {
+  position: fixed; inset: 0; background: #07080d;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  z-index: 9999; pointer-events: none;
+  transition: opacity 0.9s ease, transform 0.9s ease;
+}
+#splash.splash-out { opacity: 0; transform: scale(1.06); }
+#splash::before {
+  content: ''; position: absolute; inset: 0;
+  background: radial-gradient(ellipse 60% 40% at 50% 55%, rgba(126,184,164,0.09) 0%, transparent 70%);
+  opacity: 0; animation: splashGlow 2s ease forwards 0.4s; pointer-events: none;
+}
+.splash-wordmark {
+  font-family: 'Cormorant Garamond', serif; font-size: 48px; font-weight: 300;
+  letter-spacing: 0.14em; color: #e8e0d0;
+  opacity: 0; animation: splashFadeUp 1.2s ease forwards 0.3s;
+}
+.splash-tagline {
+  font-family: 'DM Mono', monospace; font-size: 8px; letter-spacing: 0.32em;
+  text-transform: uppercase; color: rgba(221,216,206,0);
+  margin-top: 14px; animation: splashSub 1.4s ease forwards 0.7s;
+}
+@keyframes splashFadeUp {
+  0%   { opacity:0; transform:translateY(8px); }
+  100% { opacity:1; transform:translateY(0); }
+}
+@keyframes splashSub {
+  0%   { color: rgba(221,216,206,0); }
+  100% { color: rgba(221,216,206,0.22); }
+}
+@keyframes splashGlow {
+  0%   { opacity:0; } 50% { opacity:1; } 100% { opacity:0.4; }
+}
+/* Google sign-in button for Settings */
+.settings-google-btn {
+  width:100%; display:flex; align-items:center; justify-content:center; gap:10px;
+  padding:12px 16px; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.14);
+  border-radius:8px; cursor:pointer; font-family:'DM Mono',monospace; font-size:9px;
+  letter-spacing:0.16em; text-transform:uppercase; color:#ddd8ce;
+  transition:background 0.2s, border-color 0.2s; margin-bottom:8px;
+}
+.settings-google-btn:hover { background:rgba(255,255,255,0.09); border-color:rgba(255,255,255,0.26); }
+.settings-google-btn:disabled { opacity:0.5; cursor:default; }
 </style>
 <script>
   // Set safe-area padding variables before first paint.
@@ -2651,6 +2696,22 @@ body:not(.tut-live) #tutCorgi {
 </script>
 </head>
 <body>
+
+<!-- ── Splash screen ───────────────────────────────────── -->
+<div id="splash">
+  <div class="splash-wordmark">Presence</div>
+  <div class="splash-tagline">Be here now</div>
+</div>
+<script>
+(function() {
+  var s = document.getElementById('splash');
+  setTimeout(function() {
+    s.classList.add('splash-out');
+    setTimeout(function() { s.style.display = 'none'; }, 950);
+  }, 2000);
+})();
+</script>
+
 <div class="app">
   <!-- SETTINGS SCREEN -->
   <div class="screen" id="settingsScreen">
@@ -2667,7 +2728,7 @@ body:not(.tut-live) #tutCorgi {
           <div id="syncStatusText" style="font-size:12px; color:var(--text); margin-bottom:8px;">Not logged in</div>
           <div id="syncStatusEmail" style="font-size:10px; color:var(--muted); margin-bottom:12px;"></div>
           <button id="syncLogoutBtn" style="width:100%; display:none; font-size:9px; letter-spacing:.15em; padding:10px; border:1px solid var(--border); border-radius:6px; background:transparent; color:var(--muted); cursor:pointer;">Sign Out</button>
-          <button id="syncLoginBtn" style="width:100%; display:none; font-size:9px; letter-spacing:.15em; padding:10px; border:1px solid rgba(126,184,164,.35); border-radius:6px; background:rgba(126,184,164,.08); color:#7eb8a4; cursor:pointer; font-family:'DM Mono',monospace;">Sign In / Create Account</button>
+          <div id="settingsGoogleContainer" style="display:none;"></div>
         </div>
         <!-- Set Username card — shown only when signed in without a username -->
         <div id="setUsernameCard" style="display:none; background:rgba(126,184,164,.05); border:1px solid rgba(126,184,164,.25); border-radius:10px; padding:16px 18px;">
@@ -2804,36 +2865,6 @@ body:not(.tut-live) #tutCorgi {
           </a>
         </div>
       </div>
-    </div>
-  </div>
-
-  <!-- HOME -->
-  <!-- LOGIN/REGISTER SCREEN -->
-  <div class="screen" id="loginScreen" style="flex-direction:column;align-items:center;justify-content:center;padding:40px 24px;">
-    <div style="max-width:300px;width:100%;">
-      <div style="font-family:Cormorant Garamond,serif;font-size:32px;font-weight:300;text-align:center;margin-bottom:48px;color:#e8e0d0;">Presence</div>
-
-      <!-- Google sign-in (primary) -->
-      <div id="loginGoogleContainer" style="margin-bottom:20px;"></div>
-
-      <!-- Divider -->
-      <div style="display:flex;align-items:center;gap:12px;margin-bottom:20px;">
-        <div style="flex:1;height:1px;background:var(--border);"></div>
-        <span style="font-family:'DM Mono',monospace;font-size:9px;letter-spacing:.18em;text-transform:uppercase;color:var(--muted);opacity:.5;">or</span>
-        <div style="flex:1;height:1px;background:var(--border);"></div>
-      </div>
-
-      <div id="loginForm">
-        <input type="email" id="loginEmail" placeholder="Email" style="width:100%;padding:12px 14px;border:1px solid var(--border);border-radius:8px;background:rgba(255,255,255,.03);color:#e8e0d0;font-family:Georgia,serif;font-size:13px;margin-bottom:12px;box-sizing:border-box;" autocomplete="email"/>
-        <input type="text" id="loginUsername" placeholder="Choose a username" style="display:none;width:100%;padding:12px 14px;border:1px solid var(--border);border-radius:8px;background:rgba(255,255,255,.03);color:#e8e0d0;font-family:Georgia,serif;font-size:13px;margin-bottom:12px;box-sizing:border-box;" autocomplete="username" maxlength="24"/>
-        <input type="password" id="loginPassword" placeholder="Password" style="width:100%;padding:12px 14px;border:1px solid var(--border);border-radius:8px;background:rgba(255,255,255,.03);color:#e8e0d0;font-family:Georgia,serif;font-size:13px;margin-bottom:16px;box-sizing:border-box;" autocomplete="current-password"/>
-        <button id="loginSubmitBtn" style="width:100%;padding:12px;border:1px solid #7eb8a4;border-radius:8px;background:rgba(126,184,164,.08);color:#7eb8a4;font-family:'DM Mono',monospace;font-size:9px;letter-spacing:.2em;text-transform:uppercase;cursor:pointer;margin-bottom:12px;">Sign In</button>
-        <button id="loginToggleBtn" style="width:100%;padding:12px;border:1px solid var(--border);border-radius:8px;background:transparent;color:var(--muted);font-family:'DM Mono',monospace;font-size:9px;letter-spacing:.2em;text-transform:uppercase;cursor:pointer;margin-bottom:16px;">Create Account</button>
-      </div>
-
-      <div id="loginError" style="color:#d4956e;font-size:10px;text-align:center;margin-bottom:16px;display:none;"></div>
-
-      <button id="loginSkipBtn" style="width:100%;padding:12px;border:none;background:transparent;color:var(--muted);font-family:Georgia,serif;font-size:11px;cursor:pointer;opacity:.6;text-decoration:underline;">Continue without cloud sync</button>
     </div>
   </div>
 
@@ -5025,17 +5056,11 @@ window.addEventListener('load', function() {
   if (localStorage.getItem('presence_visited')) clearStaleInteractionLocks();
 });
 document.addEventListener('DOMContentLoaded', function() {
-  if (!localStorage.getItem('presence_visited')) return;
   clearStaleInteractionLocks();
   setTimeout(clearStaleInteractionLocks, 250);
   setTimeout(clearStaleInteractionLocks, 1000);
   if (typeof checkStreakStatus === 'function') checkStreakStatus();
   if (typeof checkRemindersOnLoad === 'function') checkRemindersOnLoad();
-  // Wire Google button on the login screen (persistent — only init once)
-  initGoogleSignIn('loginGoogleContainer', function() {
-    renderHome(); showScreen('homeScreen');
-    syncPushData();
-  });
 });
 
 window.addEventListener('pageshow', function() {
@@ -5790,13 +5815,20 @@ document.getElementById('drawerSettings').addEventListener('click', function() {
     document.getElementById('syncStatusText').textContent = '✓ Syncing across devices';
     document.getElementById('syncStatusEmail').textContent = authUsername ? '@' + authUsername + ' · ' + authEmail : authEmail;
     document.getElementById('syncLogoutBtn').style.display = 'block';
-    document.getElementById('syncLoginBtn').style.display = 'none';
+    document.getElementById('settingsGoogleContainer').style.display = 'none';
     document.getElementById('setUsernameCard').style.display = authUsername ? 'none' : 'block';
   } else {
-    document.getElementById('syncStatusText').textContent = 'Not logged in';
+    document.getElementById('syncStatusText').textContent = 'Not signed in';
     document.getElementById('syncStatusEmail').textContent = '';
     document.getElementById('syncLogoutBtn').style.display = 'none';
-    document.getElementById('syncLoginBtn').style.display = 'block';
+    var sgc = document.getElementById('settingsGoogleContainer');
+    sgc.style.display = 'block';
+    if (!sgc.hasChildNodes()) {
+      initGoogleSignIn('settingsGoogleContainer', function() {
+        renderHome(); showScreen('homeScreen'); syncPushData();
+        showToast('Signed in ✓');
+      });
+    }
     document.getElementById('setUsernameCard').style.display = 'none';
   }
   showScreen('settingsScreen');
@@ -5904,9 +5936,7 @@ document.getElementById('setUsernameBtn').addEventListener('click', async functi
     this.disabled = false;
   }
 });
-document.getElementById('syncLoginBtn').addEventListener('click', function() {
-  showScreen('loginScreen');
-});
+// syncLoginBtn removed — sign-in now handled by settingsGoogleContainer
 document.getElementById('settingsBack').addEventListener('click', function() {
   renderHome(); showScreen('homeScreen');
 });
@@ -6168,7 +6198,7 @@ async function pushResetSnapshotToCloud() {
       },
       body: JSON.stringify({ data: data, deviceInfo: detectDevice() })
     });
-    if (!res.ok && res.status === 401) authLogout();
+    if (!res.ok && res.status === 401) authLogout({ message: 'Session expired — sign in via Settings' });
   } catch(e) {
     console.warn('[Sync] Reset push failed:', e.message);
   }
@@ -6324,9 +6354,10 @@ window.addEventListener('pagehide', function() {
   if (sessionStartTime) saveSessionState();
 });
 
-// Initial screen — show login if not authenticated, otherwise go to home
+// Initial screen — all users go home; tutorial auto-fires for new users via __tutBoot
 if (!localStorage.getItem('presence_auth_token')) {
-  showScreen('loginScreen');
+  renderHome();
+  // (tutorial poller will fire __tutBoot when homeScreen becomes visible for new users)
 } else {
   if (sessionStorage.getItem('presence_reset_all_pending')) {
     sessionStorage.removeItem('presence_reset_all_pending');
@@ -7502,8 +7533,6 @@ function showTutorialGuideIntro(goToLogin) {
             var gtBtn = document.getElementById('tutGuideTipBtn');
             if (gtBtn) gtBtn.onclick = function() { clearTimeout(gtTimer); gt.classList.remove('tut-ct-show'); setTimeout(function(){gt.style.display='none';},600); };
           }
-        } else if (goToLogin) {
-          showScreen('loginScreen');
         } else {
           showScreen('homeScreen');
           document.getElementById('awarenessPanel').style.display = 'none';
@@ -15503,7 +15532,7 @@ async function syncPushData() {
     });
     
     if (!res.ok) {
-      if (res.status === 401) { authLogout(); }
+      if (res.status === 401) { authLogout({ message: 'Session expired — sign in via Settings' }); }
       return;
     }
     console.log('[Sync] Data pushed to cloud');
@@ -15523,7 +15552,7 @@ async function syncPullData() {
     
     if (!res.ok) {
       window._syncPullPending = false;
-      if (res.status === 401) { authLogout(); }
+      if (res.status === 401) { authLogout({ message: 'Session expired — sign in via Settings' }); }
       return;
     }
     
@@ -15561,7 +15590,14 @@ function authLogout(options) {
   localStorage.removeItem('presence_auth_email');
   localStorage.removeItem('presence_auth_username');
   syncEnabled = false;
-  showScreen('loginScreen');
+  // Re-wire Google button in Settings for the now-signed-out user
+  var sgc = document.getElementById('settingsGoogleContainer');
+  if (sgc) { sgc.innerHTML = ''; initGoogleSignIn('settingsGoogleContainer', function() {
+    renderHome(); showScreen('homeScreen'); syncPushData();
+    showToast('Signed in ✓');
+  }); }
+  renderHome(); showScreen('homeScreen');
+  if (options.message) showToast(options.message, 3500);
 }
 
 function detectDevice() {
@@ -15655,59 +15691,7 @@ if ('serviceWorker' in navigator) {
   });
 }
 
-// ── LOGIN SCREEN HANDLERS ──────────────────────────────────────
-var isRegisterMode = false;
-
-function toggleAuthMode() {
-  isRegisterMode = !isRegisterMode;
-  document.getElementById('loginSubmitBtn').textContent = isRegisterMode ? 'Create Account' : 'Sign In';
-  document.getElementById('loginToggleBtn').textContent = isRegisterMode ? 'Sign In Instead' : 'Create Account';
-  document.getElementById('loginUsername').style.display = isRegisterMode ? 'block' : 'none';
-}
-
-document.getElementById('loginSubmitBtn').addEventListener('click', async function() {
-  var email = document.getElementById('loginEmail').value.trim();
-  var password = document.getElementById('loginPassword').value;
-  var username = document.getElementById('loginUsername').value.trim();
-  var errorEl = document.getElementById('loginError');
-  if (!email || !password) {
-    errorEl.textContent = 'Email and password required';
-    errorEl.style.display = 'block';
-    return;
-  }
-  this.disabled = true;
-  this.textContent = 'Please wait…';
-  errorEl.style.display = 'none';
-  var success = await authRegisterOrLogin(email, password, isRegisterMode, username);
-  if (success) {
-    try {
-      var pulled = await syncPullData();
-      // Only push local data if cloud had nothing — avoids a fresh browser
-      // overwriting real cloud progress immediately after pull
-      if (!pulled) await syncPushData();
-    } catch(e) { console.warn('[Login] Sync failed:', e.message); }
-    window.location.reload();
-  } else {
-    // Show the actual error from the server
-    var lastErr = window._lastAuthError || 'Unknown error';
-    errorEl.textContent = (isRegisterMode ? 'Registration failed: ' : 'Sign in failed: ') + lastErr;
-    errorEl.style.display = 'block';
-    this.disabled = false;
-    this.textContent = isRegisterMode ? 'Create Account' : 'Sign In';
-  }
-});
-
-document.getElementById('loginToggleBtn').addEventListener('click', function(e) {
-  e.preventDefault();
-  toggleAuthMode();
-});
-
-document.getElementById('loginSkipBtn').addEventListener('click', function() {
-  renderHome();
-  showScreen('homeScreen');
-  // Fire tutorial if first visit
-  if (typeof window.__tutBoot === 'function') window.__tutBoot();
-});
+// Login screen removed — sign-in handled via Google in Tutorial and Settings
 
 // ═══ BARDON GAME JS ═══
 (function() {
