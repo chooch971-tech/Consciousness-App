@@ -2115,8 +2115,8 @@ body.tut-live #omniaTabPeek { display:none !important; }
 
 /* Account + shared action buttons */
 .tut-acct-btns {
-  display:flex; flex-direction:column; gap:14px;
-  width:100%; max-width:300px; margin-top:8px;
+  display:flex; flex-direction:column; gap:12px;
+  width:100%; max-width:320px; margin-top:4px;
 }
 .tut-acct-primary {
   background:rgba(126,184,164,0.13); border:1px solid rgba(126,184,164,0.48);
@@ -2128,11 +2128,48 @@ body.tut-live #omniaTabPeek { display:none !important; }
 .tut-acct-primary:hover { background:rgba(126,184,164,0.24); border-color:rgba(126,184,164,0.78); }
 .tut-acct-skip {
   background:none; border:none; cursor:pointer;
-  font-family:'DM Mono',monospace; font-size:12px; letter-spacing:.16em;
-  text-transform:uppercase; color:rgba(126,184,164,0.4); padding:14px;
+  font-family:'DM Mono',monospace; font-size:11px; letter-spacing:.16em;
+  text-transform:uppercase; color:rgba(221,216,206,0.25); padding:12px;
   transition:color 0.2s;
 }
-.tut-acct-skip:hover { color:rgba(126,184,164,0.7); }
+.tut-acct-skip:hover { color:rgba(221,216,206,0.5); }
+.tut-acct-divider {
+  display:flex; align-items:center; gap:10px; width:100%;
+}
+.tut-acct-divider-line { flex:1; height:1px; background:rgba(255,255,255,0.07); }
+.tut-acct-divider-text {
+  font-family:'DM Mono',monospace; font-size:8px; letter-spacing:.22em;
+  text-transform:uppercase; color:rgba(221,216,206,0.2);
+}
+.tut-acct-email-toggle {
+  background:none; border:none; cursor:pointer; width:100%; text-align:center;
+  font-family:'DM Mono',monospace; font-size:9px; letter-spacing:.2em;
+  text-transform:uppercase; color:rgba(221,216,206,0.35); padding:6px 0;
+  transition:color 0.2s;
+}
+.tut-acct-email-toggle:hover { color:rgba(221,216,206,0.6); }
+.tut-acct-email-form {
+  display:none; flex-direction:column; gap:8px; width:100%;
+}
+.tut-acct-email-form.open { display:flex; }
+.tut-acct-input {
+  width:100%; padding:11px 13px; border:1px solid rgba(221,216,206,0.1);
+  border-radius:8px; background:rgba(255,255,255,0.03); color:#e8e0d0;
+  font-family:'DM Mono',monospace; font-size:11px; outline:none;
+  transition:border-color 0.2s;
+}
+.tut-acct-input:focus { border-color:rgba(126,184,164,0.4); }
+.tut-acct-input::placeholder { color:rgba(221,216,206,0.22); }
+.tut-acct-email-submit {
+  width:100%; padding:11px; border:1px solid rgba(126,184,164,0.35);
+  border-radius:8px; background:rgba(126,184,164,0.1); color:#7eb8a4;
+  font-family:'DM Mono',monospace; font-size:9px; letter-spacing:.2em;
+  text-transform:uppercase; cursor:pointer; transition:background 0.2s;
+}
+.tut-acct-email-submit:hover { background:rgba(126,184,164,0.18); }
+.tut-acct-email-err {
+  font-size:10px; color:#d4956e; text-align:center; display:none; padding:2px 0;
+}
 .tut-google-btn {
   display:flex; align-items:center; justify-content:center; gap:10px;
   width:100%; background:rgba(255,255,255,0.06);
@@ -6573,6 +6610,8 @@ function startConcentration() {
   var topStopBtn = document.getElementById('concStopBtn');
   if (discardBtn) discardBtn.style.visibility = isTutorialFirst ? 'hidden' : '';
   if (topStopBtn) topStopBtn.style.visibility = isTutorialFirst ? 'hidden' : '';
+  var titleEl = document.querySelector('#concSessionScreen .session-title');
+  if (titleEl) titleEl.style.visibility = isTutorialFirst ? 'hidden' : '';
 
   // Instructions are shown up front; user has as long as they need to read.
   var sessionLabel = document.getElementById('concSessionLabel');
@@ -7525,18 +7564,61 @@ var GOOGLE_ICON_SVG = '<svg width="18" height="18" viewBox="0 0 18 18" aria-hidd
 function showTutorialAccountPrompt() {
   tutFadeStage(function(ps) {
     ps.innerHTML =
-      '<div class="tut-stage-headline">Protect your streak.</div>'
-      + '<div class="tut-stage-sub">Your progress syncs across devices.</div>'
+      '<div style="font-size:28px;margin-bottom:6px;">🔥</div>'
+      + '<div class="tut-stage-headline" style="font-size:clamp(22px,6vw,30px);margin-bottom:6px;">Protect your streak.</div>'
+      + '<div class="tut-stage-sub" style="margin-bottom:20px;">Sign in to save your progress<br>and sync across devices.</div>'
       + '<div class="tut-acct-btns">'
-      + '<div id="gSignInContainer" style="display:flex;justify-content:center;min-height:44px;align-items:center;"></div>'
-      + '<button class="tut-acct-skip" id="tutAcct-skip">Continue without saving</button>'
+      +   '<div id="gSignInContainer"></div>'
+      +   '<div class="tut-acct-divider"><div class="tut-acct-divider-line"></div><span class="tut-acct-divider-text">or</span><div class="tut-acct-divider-line"></div></div>'
+      +   '<button class="tut-acct-email-toggle" id="tutAcctEmailToggle">Continue with email →</button>'
+      +   '<div class="tut-acct-email-form" id="tutAcctEmailForm">'
+      +     '<input class="tut-acct-input" type="email" id="tutAcctEmail" placeholder="Email" autocomplete="email"/>'
+      +     '<input class="tut-acct-input" type="password" id="tutAcctPassword" placeholder="Password" autocomplete="current-password"/>'
+      +     '<button class="tut-acct-email-submit" id="tutAcctSubmit">Sign In</button>'
+      +     '<button class="tut-acct-email-toggle" id="tutAcctModeToggle" style="font-size:8px;opacity:.6;">No account yet? Create one →</button>'
+      +     '<div class="tut-acct-email-err" id="tutAcctErr"></div>'
+      +   '</div>'
+      +   '<button class="tut-acct-skip" id="tutAcct-skip">Continue without saving</button>'
       + '</div>';
 
     initGoogleSignIn('gSignInContainer', function() { showTutorialGuideIntro(false); });
 
-    document.getElementById('tutAcct-skip').onclick = function() {
-      showTutorialGuideIntro(false);
+    document.getElementById('tutAcct-skip').onclick = function() { showTutorialGuideIntro(false); };
+
+    // Email toggle
+    var emailForm = document.getElementById('tutAcctEmailForm');
+    var emailToggle = document.getElementById('tutAcctEmailToggle');
+    emailToggle.onclick = function() {
+      var open = emailForm.classList.toggle('open');
+      emailToggle.textContent = open ? 'Hide email sign-in ↑' : 'Continue with email →';
     };
+
+    // Sign-in / create account mode toggle
+    var tutEmailMode = false; // false=sign-in, true=create
+    document.getElementById('tutAcctModeToggle').onclick = function() {
+      tutEmailMode = !tutEmailMode;
+      document.getElementById('tutAcctSubmit').textContent = tutEmailMode ? 'Create Account' : 'Sign In';
+      this.textContent = tutEmailMode ? 'Already have an account? Sign in →' : 'No account yet? Create one →';
+    };
+
+    // Submit
+    document.getElementById('tutAcctSubmit').onclick = async function() {
+      var email = (document.getElementById('tutAcctEmail').value || '').trim();
+      var password = document.getElementById('tutAcctPassword').value || '';
+      var errEl = document.getElementById('tutAcctErr');
+      if (!email || !password) { errEl.textContent = 'Email and password required'; errEl.style.display = 'block'; return; }
+      this.disabled = true; this.textContent = 'Please wait…'; errEl.style.display = 'none';
+      var ok = await authRegisterOrLogin(email, password, tutEmailMode, '');
+      if (ok) {
+        showTutorialGuideIntro(false);
+      } else {
+        errEl.textContent = window._lastAuthError || 'Sign-in failed. Try again.';
+        errEl.style.display = 'block';
+        this.disabled = false;
+        this.textContent = tutEmailMode ? 'Create Account' : 'Sign In';
+      }
+    };
+
     requestAnimationFrame(function() {
       requestAnimationFrame(function() { ps.classList.add('tut-ps-vis'); });
     });
