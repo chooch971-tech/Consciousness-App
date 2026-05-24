@@ -442,7 +442,7 @@
     .path-quest-root { display:flex; flex-direction:column; gap:18px; padding:18px 2px 28px; }
     /* ── Guide redesign: day strip + exercise cards ── */
     .path-day-strip { display:flex; align-items:center; justify-content:space-between; margin:14px 0 0; padding:0 2px; }
-    .path-day-name { font-family:'Space Grotesk',sans-serif; font-size:20px; font-weight:700; color:var(--text); letter-spacing:-.01em; }
+    .path-day-name { font-family:'Space Grotesk',sans-serif; font-size:16px; font-weight:700; color:var(--text); letter-spacing:-.01em; }
     .path-day-progress { display:flex; align-items:center; gap:8px; }
     .path-day-frac { font-size:9px; color:var(--muted); letter-spacing:.05em; }
     .path-day-frac strong { color:var(--text); }
@@ -14566,8 +14566,12 @@ function renderGuidePlan(mode, skipScroll) {
   var focus = regiment.focus;
 
   var dayNames = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+  var monthNames2 = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+  var _n2 = new Date(); var _d2 = _n2.getDate();
+  var _o2 = _d2===1||_d2===21||_d2===31?'st':_d2===2||_d2===22?'nd':_d2===3||_d2===23?'rd':'th';
+  var fullDayLabel = dayNames[dayIdx] + ', ' + monthNames2[_n2.getMonth()] + ' ' + _d2 + _o2;
   var dayLabelEl = document.getElementById('guidePlanDayLabel');
-  if (dayLabelEl) dayLabelEl.textContent = regiment.dayLabel || dayNames[dayIdx];
+  if (dayLabelEl) dayLabelEl.textContent = regiment.dayLabel || fullDayLabel;
   var focusEl = document.getElementById('guidePlanFocus');
   if (focusEl) focusEl.textContent = focus;
   var planControls = document.getElementById('guidePlanControls');
@@ -14824,7 +14828,11 @@ function renderPathQuests() {
   var exColor = { clock:'#d4b08e', visual:'#8ab8e0', auditory:'#8eccc0', thought:'#98b4cc', asana:'#d49898', soulmirror:'#c4a8d4' };
 
   var dayNames = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
-  var dayName = dayNames[new Date().getDay()];
+  var monthNames = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+  var _now = new Date();
+  var _d = _now.getDate();
+  var _ord = _d === 1 || _d === 21 || _d === 31 ? 'st' : _d === 2 || _d === 22 ? 'nd' : _d === 3 || _d === 23 ? 'rd' : 'th';
+  var dayName = dayNames[_now.getDay()] + ', ' + monthNames[_now.getMonth()] + ' ' + _d + _ord;
 
   // Arc ring calculation
   var ringCirc = 81.68;
@@ -14834,7 +14842,7 @@ function renderPathQuests() {
 
   // ── Day strip + exercise cards ──
   html += '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;padding:0 2px;">'
-    + '<div style="font-family:\'Cormorant Garamond\',serif;font-size:22px;font-weight:300;color:var(--text);">' + dayName + '</div>'
+    + '<div class="path-day-name">' + dayName + '</div>'
     + '<div style="display:flex;align-items:center;gap:10px;">'
     + '<span style="font-size:9px;color:var(--muted);letter-spacing:.05em;"><strong style="color:var(--text);">' + pathDone + '</strong> / ' + pathTotal + ' done</span>'
     + '<svg width="32" height="32" viewBox="0 0 32 32">'
