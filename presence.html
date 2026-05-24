@@ -519,9 +519,9 @@
     .guide-locked-text { font-size:10px; color:var(--muted); line-height:1.6; }
     .guide-cadence-control { display:none; align-items:center; justify-content:space-between; gap:10px; margin-top:12px; padding-top:12px; border-top:1px solid rgba(142,204,224,.12); }
     .guide-cadence-label { font-size:8px; letter-spacing:.18em; text-transform:uppercase; color:var(--muted); }
-    .guide-cadence-toggle { border:none; background:transparent; color:var(--muted); border-radius:4px; padding:4px 6px; font-family:'DM Mono',monospace; font-size:8px; letter-spacing:.14em; text-transform:uppercase; cursor:pointer; white-space:nowrap; opacity:.35; transition:opacity .15s, color .15s; }
-    .guide-cadence-toggle:hover { opacity:.7; color:var(--text); }
-    .guide-cadence-toggle.off { opacity:.18; }
+    .guide-cadence-toggle { border:none; background:transparent; color:var(--muted); border-radius:4px; padding:4px 6px; font-family:'DM Mono',monospace; font-size:8px; letter-spacing:.14em; text-transform:uppercase; cursor:pointer; white-space:nowrap; opacity:.55; transition:opacity .15s, color .15s; }
+    .guide-cadence-toggle:hover { opacity:.8; color:var(--text); }
+    .guide-cadence-toggle.off { opacity:.32; }
     .guide-plan-controls { display:none; justify-content:space-between; align-items:center; gap:10px; border:1px solid rgba(142,204,224,.12); background:rgba(255,255,255,.025); border-radius:8px; padding:9px 10px; margin-bottom:12px; }
     .guide-dots-nav { display:flex; flex-direction:column; align-items:center; padding:12px 0 10px; }
     .guide-dots { display:flex; gap:0; align-items:center; }
@@ -14475,6 +14475,7 @@ function buildFoundationalGuideItems() {
       duration:thoughtMinutes,
       durationLabel:thoughtMinutes + ' min' + (rounds > 1 ? ' x2' : ''),
       done:modeStats.todaySec >= thoughtDailyTarget,
+      todayCount:modeStats.todayCount || 0,
       progress:'today ' + guideFmtTime(modeStats.todaySec) + ' / ' + guideFmtTime(thoughtDailyTarget) + ' · best gap ' + guideFmtTime(modeStats.bestSec || 0),
       tip:GUIDE_FOUNDATION_THOUGHT_TIPS[mode] + ' Omnia adds one minute after every two completed sessions in this form, up to ten minutes. ' + nextThought,
       open:'thought'
@@ -15037,7 +15038,14 @@ function renderPathQuests() {
     if (item.id === 'thought' && modeText) metaParts.push(modeText);
     if (item.duration) metaParts.push(item.duration + ' min');
     else if (item.durationLabel) metaParts.push(item.durationLabel.replace(/\s*x2\s*$/, ''));
-    if (rounds > 1) metaParts.push('×2 sessions');
+    if (rounds > 1) {
+      var completedToday = item.todayCount || 0;
+      if (completedToday >= 1 && !item.done) {
+        metaParts.push('×1 remaining');
+      } else {
+        metaParts.push('×2 sessions');
+      }
+    }
     if (item.id === 'clock' && concState.totalSessions >= 4 && concState.bestSeconds > 0 && concState.bestSeconds < 900) {
       var _ct = Math.min(concState.bestSeconds * 3, 900);
       metaParts.push('target ' + fmtSecs(_ct));
