@@ -15340,45 +15340,59 @@ function loadGoogleScript(cb) {
 }
 
 function initGoogleSignIn(containerId, onSuccess) {
-  loadGoogleScript(function() {
-    google.accounts.id.initialize({
-      client_id: GOOGLE_CLIENT_ID,
-      callback: async function(response) {
-        var container = document.getElementById(containerId);
-        if (container) container.innerHTML = '<div style="color:#7eb8a4;font-size:11px;letter-spacing:.15em;padding:14px 0;">Signing in…</div>';
-        try {
-          var res = await fetch(SYNC_API_URL + '/auth/google', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ idToken: response.credential })
-          });
-          var result = await res.json();
-          if (!res.ok) throw new Error(result.error || 'Sign-in failed');
-          authToken = result.token;
-          authEmail = result.email;
-          authUsername = result.username || null;
-          localStorage.setItem('presence_auth_token', authToken);
-          localStorage.setItem('presence_auth_email', authEmail);
-          if (authUsername) localStorage.setItem('presence_auth_username', authUsername);
-          syncEnabled = true;
-          onSuccess();
-        } catch(err) {
-          // Restore the button on failure
-          var c = document.getElementById(containerId);
-          if (c) google.accounts.id.renderButton(c, { theme:'filled_black', size:'large', width:280, text:'continue_with' });
-          showToast('Sign-in failed. Try again.');
+  var container = document.getElementById(containerId);
+  if (!container) return;
+
+  // Render our styled button immediately — no SDK needed to display it
+  var btn = document.createElement('button');
+  btn.className = 'tut-google-btn';
+  btn.innerHTML = GOOGLE_ICON_SVG + ' Continue with Google';
+  container.appendChild(btn);
+
+  btn.addEventListener('click', function() {
+    btn.innerHTML = 'Signing in…';
+    btn.disabled = true;
+
+    // Load SDK only when user clicks — initCodeClient + ux_mode:'popup'
+    // calls window.open() from OUR frame (same call stack as user gesture)
+    // so it's never blocked by popup blockers
+    loadGoogleScript(function() {
+      var client = google.accounts.oauth2.initCodeClient({
+        client_id: GOOGLE_CLIENT_ID,
+        scope: 'email profile openid',
+        ux_mode: 'popup',
+        callback: async function(response) {
+          if (response.error) {
+            btn.innerHTML = GOOGLE_ICON_SVG + ' Continue with Google';
+            btn.disabled = false;
+            if (response.error !== 'access_denied') showToast('Sign-in failed. Try again.');
+            return;
+          }
+          try {
+            var res = await fetch(SYNC_API_URL + '/auth/google', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ code: response.code })
+            });
+            var result = await res.json();
+            if (!res.ok) throw new Error(result.error || 'Sign-in failed');
+            authToken = result.token;
+            authEmail = result.email;
+            authUsername = result.username || null;
+            localStorage.setItem('presence_auth_token', authToken);
+            localStorage.setItem('presence_auth_email', authEmail);
+            if (authUsername) localStorage.setItem('presence_auth_username', authUsername);
+            syncEnabled = true;
+            onSuccess();
+          } catch(err) {
+            btn.innerHTML = GOOGLE_ICON_SVG + ' Continue with Google';
+            btn.disabled = false;
+            showToast('Sign-in failed. Try again.');
+          }
         }
-      }
-    });
-    var container = document.getElementById(containerId);
-    if (container) {
-      google.accounts.id.renderButton(container, {
-        theme: 'filled_black',
-        size: 'large',
-        width: 280,
-        text: 'continue_with'
       });
-    }
+      client.requestCode();
+    });
   });
 }
 

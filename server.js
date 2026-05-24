@@ -320,14 +320,33 @@ app.post('/api/sync/auth/heartbeat', verifyToken, async (req, res) => {
   }
 });
 
-// GOOGLE SIGN-IN
+// GOOGLE SIGN-IN — exchanges authorization code for tokens, then finds/creates user
 app.post('/api/sync/auth/google', async (req, res) => {
-  const { idToken } = req.body;
-  if (!idToken) return res.status(400).json({ error: 'idToken required' });
+  const { code } = req.body;
+  if (!code) return res.status(400).json({ error: 'code required' });
   try {
+    // Exchange authorization code for tokens using client secret
+    const tokenRes = await fetch('https://oauth2.googleapis.com/token', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: new URLSearchParams({
+        code,
+        client_id: process.env.GOOGLE_CLIENT_ID,
+        client_secret: process.env.GOOGLE_CLIENT_SECRET,
+        redirect_uri: 'postmessage',
+        grant_type: 'authorization_code'
+      })
+    });
+    const tokens = await tokenRes.json();
+    if (!tokens.id_token) {
+      console.error('[Google Auth] Token exchange failed:', tokens);
+      return res.status(401).json({ error: 'Google token exchange failed' });
+    }
+
+    // Verify the ID token
     const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
     const ticket = await googleClient.verifyIdToken({
-      idToken,
+      idToken: tokens.id_token,
       audience: process.env.GOOGLE_CLIENT_ID
     });
     const { sub: googleId, email, name } = ticket.getPayload();
@@ -336,20 +355,14 @@ app.post('/api/sync/auth/google', async (req, res) => {
     let user = await usersCollection.findOne({ $or: [{ googleId }, { email }] });
 
     if (!user) {
-      // New user — create account
       const result = await usersCollection.insertOne({
-        email,
-        googleId,
-        displayName: name || null,
-        createdAt: new Date(),
-        lastSync: null,
-        lastActive: new Date()
+        email, googleId, displayName: name || null,
+        createdAt: new Date(), lastSync: null, lastActive: new Date()
       });
       const token = jwt.sign({ userId: result.insertedId.toString(), email }, JWT_SECRET, { expiresIn: TOKEN_EXPIRY });
       return res.json({ token, userId: result.insertedId, email, username: null });
     }
 
-    // Existing user — link Google if not already linked
     if (!user.googleId) {
       await usersCollection.updateOne({ _id: user._id }, { $set: { googleId, lastActive: new Date() } });
     } else {
