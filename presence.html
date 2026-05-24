@@ -519,9 +519,9 @@
     .guide-locked-text { font-size:10px; color:var(--muted); line-height:1.6; }
     .guide-cadence-control { display:none; align-items:center; justify-content:space-between; gap:10px; margin-top:12px; padding-top:12px; border-top:1px solid rgba(142,204,224,.12); }
     .guide-cadence-label { font-size:8px; letter-spacing:.18em; text-transform:uppercase; color:var(--muted); }
-    .guide-cadence-toggle { border:1px solid var(--border); background:rgba(255,255,255,.03); color:var(--muted); border-radius:4px; padding:7px 9px; font-family:'DM Mono',monospace; font-size:8px; letter-spacing:.14em; text-transform:uppercase; cursor:pointer; white-space:nowrap; transition:border-color .15s, color .15s; }
-    .guide-cadence-toggle:hover { border-color:rgba(255,255,255,.12); color:var(--text); }
-    .guide-cadence-toggle.off { color:var(--muted); border-color:var(--border); background:rgba(255,255,255,.02); opacity:.6; }
+    .guide-cadence-toggle { border:none; background:transparent; color:var(--muted); border-radius:4px; padding:4px 6px; font-family:'DM Mono',monospace; font-size:8px; letter-spacing:.14em; text-transform:uppercase; cursor:pointer; white-space:nowrap; opacity:.35; transition:opacity .15s, color .15s; }
+    .guide-cadence-toggle:hover { opacity:.7; color:var(--text); }
+    .guide-cadence-toggle.off { opacity:.18; }
     .guide-plan-controls { display:none; justify-content:space-between; align-items:center; gap:10px; border:1px solid rgba(142,204,224,.12); background:rgba(255,255,255,.025); border-radius:8px; padding:9px 10px; margin-bottom:12px; }
     .guide-dots-nav { display:flex; flex-direction:column; align-items:center; padding:12px 0 10px; }
     .guide-dots { display:flex; gap:0; align-items:center; }
@@ -1764,6 +1764,14 @@ body.tut-live #omniaTabPeek { display:none !important; }
   text-transform:uppercase; cursor:pointer;
 }
 .sc-done-btn:hover { background:rgba(126,184,164,0.22); border-color:rgba(126,184,164,0.78); }
+.sc-repeat-btn {
+  margin-top:14px; padding:12px 36px;
+  background:transparent; border:1px solid rgba(255,255,255,.1);
+  border-radius:6px; color:var(--muted);
+  font-family:'DM Mono',monospace; font-size:11px; letter-spacing:.18em;
+  text-transform:uppercase; cursor:pointer; transition:border-color .15s, color .15s;
+}
+.sc-repeat-btn:hover { border-color:rgba(255,255,255,.22); color:var(--text); }
 .tut-ps-secs {
   font-family:'DM Mono',monospace; font-size:76px; letter-spacing:-.02em;
   line-height:1; color:#d4956e; margin-bottom:8px;
@@ -6986,12 +6994,22 @@ function saveConcResult(repeatAfter) {
   var _concDidLevelUp = concDidLevelUp1;
   var _originMode = currentMode;
   var _fmtSecs = (Math.floor(seconds/60) > 0 ? Math.floor(seconds/60) + ':' + (seconds%60 < 10 ? '0' : '') + seconds%60 : '0:' + (seconds < 10 ? '0' : '') + seconds);
+  // Mouni Sadhu 3x target suggestion: next goal = bestSeconds × 3, until 15-min mastery
+  var _omniaClockMsg = null;
+  if (concState.bestSeconds > 0 && concState.bestSeconds < 900) {
+    var _raw3x = Math.min(concState.bestSeconds * 3, 900);
+    var _t3m = Math.floor(_raw3x / 60), _t3s = _raw3x % 60;
+    var _t3Str = _t3m + ':' + (_t3s < 10 ? '0' : '') + _t3s;
+    _omniaClockMsg = 'Next target: ' + _t3Str + '. Three times your best — build until you reach 15 minutes.';
+  }
   showSessionComplete({
     title: 'Meditative legend!',
     sub: 'Clock Exercise',
     xp: xpEarned,
     akashaDelta: _akashaDelta,
     stat3: { label: 'Time', color: 'blue', value: _fmtSecs },
+    omniaMsg: _omniaClockMsg,
+    onRepeat: function() { startConcentration(); },
     onDone: function() {
       renderConcHome();
       showScreen('homeScreen');
@@ -7352,7 +7370,9 @@ function showSessionComplete(opts) {
     + '<span class="tut-legend-card-value">' + opts.stat3.value + '</span>'
     + '</div>'
     + '</div>'
-    + '<button class="sc-done-btn" id="scDoneBtn">Done →</button>';
+    + (opts.omniaMsg ? '<div class="omnia-speak">' + opts.omniaMsg + '</div>' : '')
+    + '<button class="sc-done-btn" id="scDoneBtn">Done →</button>'
+    + (opts.onRepeat ? '<button class="sc-repeat-btn" id="scRepeatBtn">Repeat ↺</button>' : '');
   document.getElementById('scDoneBtn').onclick = function() {
     el.classList.remove('sc-vis');
     setTimeout(function() {
@@ -7360,6 +7380,12 @@ function showSessionComplete(opts) {
       if (opts.onDone) opts.onDone();
     }, 420);
   };
+  if (opts.onRepeat) {
+    document.getElementById('scRepeatBtn').onclick = function() {
+      el.classList.remove('sc-vis');
+      setTimeout(function() { el.classList.remove('sc-show'); opts.onRepeat(); }, 420);
+    };
+  }
   el.classList.add('sc-show');
   requestAnimationFrame(function() {
     requestAnimationFrame(function() { el.classList.add('sc-vis'); });
