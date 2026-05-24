@@ -7711,29 +7711,30 @@ function showTutorialGuideIntro(goToLogin) {
       + '<button class="tut-acct-skip" id="tutGuide-skip">Start exploring</button>'
       + '</div>';
 
+    var isLeavingGuideIntro = false;
     function goHome(showGuide) {
-      _tutDisablePostMode();
-      ps.classList.remove('tut-ps-vis');
-      setTimeout(function() {
-        ps.classList.remove('tut-ps-show');
-        renderConcHome();
-        if (showGuide) {
-          if (typeof switchMode === 'function') switchMode('guide');
-          showScreen('homeScreen');
-          var gt = document.getElementById('tutGuideTip');
-          if (gt) {
-            gt.style.display = 'block';
-            setTimeout(function() { gt.classList.add('tut-ct-show'); }, 60);
-            var gtTimer = setTimeout(function() { gt.classList.remove('tut-ct-show'); setTimeout(function(){gt.style.display='none';},600); }, 7000);
-            var gtBtn = document.getElementById('tutGuideTipBtn');
-            if (gtBtn) gtBtn.onclick = function() { clearTimeout(gtTimer); gt.classList.remove('tut-ct-show'); setTimeout(function(){gt.style.display='none';},600); };
-          }
-        } else {
-          showScreen('homeScreen');
-          document.getElementById('awarenessPanel').style.display = 'none';
-          document.getElementById('concentrationPanel').style.display = 'flex';
+      if (isLeavingGuideIntro) return;
+      isLeavingGuideIntro = true;
+      renderConcHome();
+      showScreen('homeScreen');
+      if (showGuide) {
+        if (typeof switchMode === 'function') switchMode('guide');
+        var gt = document.getElementById('tutGuideTip');
+        if (gt) {
+          gt.style.display = 'block';
+          setTimeout(function() { gt.classList.add('tut-ct-show'); }, 60);
+          var gtTimer = setTimeout(function() { gt.classList.remove('tut-ct-show'); setTimeout(function(){gt.style.display='none';},600); }, 7000);
+          var gtBtn = document.getElementById('tutGuideTipBtn');
+          if (gtBtn) gtBtn.onclick = function() { clearTimeout(gtTimer); gt.classList.remove('tut-ct-show'); setTimeout(function(){gt.style.display='none';},600); };
         }
-      }, 500);
+      } else if (typeof switchMode === 'function') {
+        switchMode('concentration');
+      }
+      requestAnimationFrame(function() {
+        _tutDisablePostMode();
+        ps.classList.remove('tut-ps-vis');
+        setTimeout(function() { ps.classList.remove('tut-ps-show'); }, 500);
+      });
     }
 
     document.getElementById('tutGuide-go').onclick = function() { goHome(true); };
