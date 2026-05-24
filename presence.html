@@ -76,7 +76,6 @@
     .wordmark { position:absolute; left:50%; transform:translateX(-50%); font-family:Cormorant Garamond,serif; font-size:11px; font-weight:300; letter-spacing:.35em; text-transform:uppercase; color:var(--accent); pointer-events:none; }
     .streak-badge { font-size:10px; letter-spacing:.15em; color:var(--muted); }
     .streak-badge span { color:var(--accent); }
-    #streakGoalBadge { color:rgba(221,216,206,0.28); font-size:9px; letter-spacing:.1em; }
     /* ── Streak overlay ── */
     #streakOverlay {
       display:none; position:fixed; inset:0; z-index:9700;
@@ -2824,7 +2823,7 @@ body:not(.tut-live) #tutCorgi {
         <span></span><span></span><span></span>
       </button>
       <span class="wordmark">Presence</span>
-      <span class="streak-badge">streak <span id="streakCount">0</span>d<span id="streakGoalBadge" style="display:none"> · <span id="streakGoalNum"></span>d goal</span></span>
+      <span class="streak-badge">streak <span id="streakCount">0</span>d</span>
     </div>
     <div class="mode-tabs">
       <button class="mode-tab active guide-mode" id="modePrayer">Guide</button>
@@ -5061,17 +5060,6 @@ function renderHome() {
     if (homeSymFill) homeSymFill.textContent = hFill;
   }
   document.getElementById('streakCount').textContent = state.streak;
-  var goalBadge = document.getElementById('streakGoalBadge');
-  var goalNum   = document.getElementById('streakGoalNum');
-  if (goalBadge && goalNum) {
-    var _commit = state.streakCommit || 0;
-    if (_commit > 0 && state.streak < _commit) {
-      goalNum.textContent = _commit;
-      goalBadge.style.display = '';
-    } else {
-      goalBadge.style.display = 'none';
-    }
-  }
   document.getElementById('statXP').textContent = state.xp.toLocaleString();
   var totalHours = (state.xp / 60).toFixed(1);
   var xpStatEl = document.getElementById('statXP');
