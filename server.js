@@ -1,14 +1,36 @@
 const express = require('express');
+const helmet  = require('helmet');
 const webpush = require('web-push');
-const cors = require('cors');
+const cors    = require('cors');
 const { MongoClient, ObjectId } = require('mongodb');
-const bcrypt = require('bcryptjs');
-const jwt = require('jsonwebtoken');
+const bcrypt  = require('bcryptjs');
+const jwt     = require('jsonwebtoken');
 const { OAuth2Client } = require('google-auth-library');
 
 const app = express();
-app.use(cors());
-app.use(express.json());
+
+// ── Security headers ────────────────────────────────────
+app.use(helmet());
+
+// ── CORS — explicit allowlist ───────────────────────────
+const ALLOWED_ORIGINS = [
+  'https://chooch971-tech.github.io',
+  'https://thepresenceapp.com',
+  'http://localhost:3000',
+  'http://localhost:5500',
+  'http://localhost:8080',
+];
+app.use(cors({
+  origin: function(origin, cb) {
+    // allow server-to-server / curl with no Origin header
+    if (!origin || ALLOWED_ORIGINS.includes(origin)) return cb(null, true);
+    cb(new Error('CORS: origin not allowed'));
+  },
+  credentials: true,
+}));
+
+// ── Body parser — 1 MB cap ──────────────────────────────
+app.use(express.json({ limit: '1mb' }));
 
 // ── VAPID Keys ──────────────────────────────────────────
 const VAPID_PUBLIC_KEY = 'BD8weuWNktThYNUkWKnkv5Hgz2-yiJyC_T1YVCrYomhOH2rJSys97xrRnm5BsrGNc9t8MRmqRaN2KHnF-zLjXlI';
@@ -16,11 +38,15 @@ const VAPID_PRIVATE_KEY = process.env.VAPID_PRIVATE_KEY;
 const MONGO_URI = process.env.MONGO_URI;
 
 // ── Cloud Sync JWT ──────────────────────────────────────
-const JWT_SECRET = process.env.JWT_SECRET;
+const JWT_SECRET    = process.env.JWT_SECRET;
+const ADMIN_SECRET  = process.env.ADMIN_SECRET;
 
 if (!VAPID_PRIVATE_KEY || !MONGO_URI || !JWT_SECRET) {
   console.error('Missing required environment variables: VAPID_PRIVATE_KEY, MONGO_URI, JWT_SECRET');
   process.exit(1);
+}
+if (!ADMIN_SECRET) {
+  console.warn('[Security] ADMIN_SECRET not set — admin routes will be inaccessible until it is.');
 }
 const TOKEN_EXPIRY = '30d';
 
@@ -100,6 +126,18 @@ function verifyToken(req, res, next) {
   } catch (err) {
     res.status(401).json({ error: 'Invalid token' });
   }
+}
+
+// ── Admin Middleware ─────────────────────────────────────
+// Protects destructive / broadcast routes.
+// Set ADMIN_SECRET env var; pass as x-admin-secret header.
+function verifyAdmin(req, res, next) {
+  if (!ADMIN_SECRET) return res.status(403).json({ error: 'Admin access not configured' });
+  const provided = req.headers['x-admin-secret'];
+  if (!provided || provided !== ADMIN_SECRET) {
+    return res.status(403).json({ error: 'Forbidden' });
+  }
+  next();
 }
 
 // ── Prompts ──────────────────────────────────────────────
@@ -619,7 +657,7 @@ app.get('/ping', (req, res) => {
   });
 });
 
-app.get('/debug', (req, res) => {
+app.get('/debug', verifyAdmin, (req, res) => {
   const now = Date.now();
   const subs = subscriptions.map(s => ({
     endpointTail: s.endpoint ? '...' + s.endpoint.slice(-30) : 'NONE',
@@ -659,8 +697,8 @@ app.post('/session/start', async (req, res) => {
   let sub = subscriptions.find(s => s.endpoint === endpoint);
   if (!sub) return res.status(404).json({ error: 'Subscriber not found' });
   sub.sessionStart = Date.now();
-  sub.intervalSec = intervalSec || 120;
-  sub.durationSec = durationSec || 1800;
+  sub.intervalSec = Math.max(30, Math.min(3600, parseInt(intervalSec) || 120));
+  sub.durationSec = Math.max(60, Math.min(14400, parseInt(durationSec) || 1800));
   sub.lastFiredCycle = -1;
   await saveSub(sub);
   res.json({ success: true });
@@ -716,6 +754,10 @@ app.post('/notify', async (req, res) => {
     try { await webpush.sendNotification(sub, payload); } catch(e) { console.error(e.message); }
     return res.json({ success: true });
   }
+  // Broadcast to all subscribers — admin only
+  if (!ADMIN_SECRET || req.headers['x-admin-secret'] !== ADMIN_SECRET) {
+    return res.status(403).json({ error: 'Forbidden' });
+  }
   let sent = 0;
   for (const sub of subscriptions) {
     const result = await pushTo(sub, randomPromptFor(sub.endpoint));
@@ -724,7 +766,7 @@ app.post('/notify', async (req, res) => {
   res.json({ success: true, sent });
 });
 
-app.post('/reset-sessions', async (req, res) => {
+app.post('/reset-sessions', verifyAdmin, async (req, res) => {
   for (const sub of subscriptions) {
     sub.sessionStart = null;
     sub.lastFiredCycle = -1;
@@ -733,7 +775,7 @@ app.post('/reset-sessions', async (req, res) => {
   res.json({ success: true });
 });
 
-app.post('/cleanup', async (req, res) => {
+app.post('/cleanup', verifyAdmin, async (req, res) => {
   const seen = new Map();
   const toDelete = [];
   for (const sub of subscriptions) {
@@ -747,7 +789,7 @@ app.post('/cleanup', async (req, res) => {
   res.json({ success: true, removed: toDelete.length, remaining: subscriptions.length });
 });
 
-app.post('/nuke', async (req, res) => {
+app.post('/nuke', verifyAdmin, async (req, res) => {
   try {
     await subsCollection.deleteMany({});
     subscriptions = [];
