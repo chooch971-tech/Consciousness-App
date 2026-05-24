@@ -6779,11 +6779,14 @@ var concPendingBegin = false; // session screen is showing instructions, awaitin
 var concAutoStopTimer = null; // tutorial first session auto-ends after 60s
 var concReps = [];
 var concInSession = false;
+var concSessionStartTime = null;
+var concRepTimerInterval = null;
 
 function startConcentration() {
   if (!concInSession) {
     concReps = [];
     concInSession = true;
+    concSessionStartTime = Date.now();
   }
   concStartTime = null; // explicitly null until countdown finishes
   concSeconds = 0;
@@ -6952,31 +6955,32 @@ function stopConcentration() {
 function showConcRepOverlay(repSecs) {
   var el = document.getElementById('concRepOverlay');
   if (!el) return;
+  if (concRepTimerInterval) { clearInterval(concRepTimerInterval); concRepTimerInterval = null; }
   var repNum = concReps.length;
   var tooShort = repSecs < 10;
-  var totalXP = concReps.reduce(function(s, r) { return s + r.seconds; }, 0);
-  var akashaEst = totalXP > 0 ? omniaExerciseReward('clock', totalXP) : 0;
 
   el.innerHTML =
     '<div style="font-family:\'DM Mono\',monospace;font-size:9px;letter-spacing:.18em;text-transform:uppercase;color:var(--muted);margin-bottom:6px;">'
     + (tooShort ? 'Too short to record' : 'Rep ' + repNum + ' complete') + '</div>'
     + '<div style="font-family:\'Cormorant Garamond\',serif;font-size:64px;font-weight:300;color:var(--text);line-height:1;">' + fmtSecs(repSecs) + '</div>'
-    + '<div class="tut-legend-cards" style="margin-top:24px;">'
-    + '<div class="tut-legend-card amber"><span class="tut-legend-card-label">XP</span><span class="tut-legend-card-value">+' + totalXP + '</span></div>'
-    + '<div class="tut-legend-card teal"><span class="tut-legend-card-label">Akasha</span><span class="tut-legend-card-value">~' + akashaEst + '</span></div>'
-    + '<div class="tut-legend-card blue"><span class="tut-legend-card-label">Reps</span><span class="tut-legend-card-value">' + repNum + '</span></div>'
-    + '</div>'
+    + '<div style="margin-top:16px;font-family:\'DM Mono\',monospace;font-size:10px;letter-spacing:.22em;text-transform:uppercase;color:var(--muted);">Session · <span id="concSessionTimer">0:00</span></div>'
     + '<button id="concRepNextBtn" class="sc-done-btn" style="margin-top:28px;">Rep ' + (repNum + 1) + ' →</button>'
     + '<button id="concEndSessionBtn" class="sc-repeat-btn">End Session</button>';
 
-  document.getElementById('concRepNextBtn').onclick = function() {
+  function updateTimer() {
+    var t = document.getElementById('concSessionTimer');
+    if (t && concSessionStartTime) t.textContent = fmtSecs(Math.floor((Date.now() - concSessionStartTime) / 1000));
+  }
+  updateTimer();
+  concRepTimerInterval = setInterval(updateTimer, 1000);
+
+  function dismiss(cb) {
+    if (concRepTimerInterval) { clearInterval(concRepTimerInterval); concRepTimerInterval = null; }
     el.classList.remove('cro-vis');
-    setTimeout(function() { el.classList.remove('cro-show'); startConcentration(); }, 320);
-  };
-  document.getElementById('concEndSessionBtn').onclick = function() {
-    el.classList.remove('cro-vis');
-    setTimeout(function() { el.classList.remove('cro-show'); saveConcSession(); }, 320);
-  };
+    setTimeout(function() { el.classList.remove('cro-show'); cb(); }, 320);
+  }
+  document.getElementById('concRepNextBtn').onclick = function() { dismiss(startConcentration); };
+  document.getElementById('concEndSessionBtn').onclick = function() { dismiss(saveConcSession); };
 
   el.classList.add('cro-show');
   requestAnimationFrame(function() {
@@ -7034,7 +7038,8 @@ function saveConcSession() {
 
   var _akashaDelta = omniaState ? Math.round(omniaState.akasha - _tutPreAkasha) : 0;
   var _originMode = currentMode;
-  var _fmtBest = fmtSecs(bestRep);
+  var _pbLabel = isNewBest ? 'New PB' : 'PB';
+  var _fmtBest = fmtSecs(concState.bestSeconds);
 
   var _omniaMsg = null;
   if (concState.bestSeconds > 0 && concState.bestSeconds < 900) {
@@ -7048,7 +7053,7 @@ function saveConcSession() {
     sub: repCount + ' rep' + (repCount !== 1 ? 's' : '') + ' · Clock Exercise',
     xp: totalXP,
     akashaDelta: _akashaDelta,
-    stat3: { label: 'Best', color: 'blue', value: _fmtBest },
+    stat3: { label: _pbLabel, color: 'blue', value: _fmtBest },
     omniaMsg: _omniaMsg,
     onDone: function() {
       renderConcHome();
@@ -7482,12 +7487,46 @@ function showStreakEndedPrompt() {
   badge.style.cursor = 'pointer';
 })();
 
+function buildOmniaShowerHtml() {
+  var crystalSVG = '<svg class="tut-ps-omnia-crystal" viewBox="0 0 72 118" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">'
+    + '<defs>'
+    + '<radialGradient id="scog3" cx="50%" cy="40%" r="60%">'
+    + '<stop offset="0%" stop-color="#e8f8ff" stop-opacity=".55"/>'
+    + '<stop offset="100%" stop-color="#8ecce0" stop-opacity="0"/>'
+    + '</radialGradient>'
+    + '<filter id="scogl"><feGaussianBlur stdDeviation="2.5" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>'
+    + '</defs>'
+    + '<ellipse cx="36" cy="62" rx="24" ry="42" fill="url(#scog3)" filter="url(#scogl)" opacity=".55"/>'
+    + '<polygon points="36,2 50,14 36,26 22,14" fill="#ceeaff" stroke="#90cce8" stroke-width=".8" opacity=".95"/>'
+    + '<polygon points="36,2 50,14 36,13" fill="#e8f8ff" opacity=".55"/>'
+    + '<polygon points="36,2 22,14 36,13" fill="#b4daf5" opacity=".35"/>'
+    + '<line x1="36" y1="2" x2="36" y2="26" stroke="#b8e0f8" stroke-width=".5" opacity=".4"/>'
+    + '<polygon points="36,26 56,37 60,59 36,70 12,59 16,37" fill="#b8dcf5" stroke="#88c4e0" stroke-width=".7" opacity=".88"/>'
+    + '<polygon points="36,26 56,37 36,45" fill="#d4ecff" opacity=".44"/>'
+    + '<polygon points="36,26 16,37 36,45" fill="#a8d4f0" opacity=".28"/>'
+    + '<line x1="36" y1="26" x2="36" y2="70" stroke="#a8d8f2" stroke-width=".5" opacity=".38"/>'
+    + '<polygon points="36,70 60,59 52,88 36,100 20,88 12,59" fill="#a8d4f0" stroke="#88c4e0" stroke-width=".7" opacity=".82"/>'
+    + '<polygon points="36,100 52,88 36,116" fill="#98c8e8" stroke="#88c4e0" stroke-width=".6" opacity=".7"/>'
+    + '<polygon points="36,100 20,88 36,116" fill="#88c0e0" stroke="#88c4e0" stroke-width=".6" opacity=".52"/>'
+    + '</svg>';
+  var _beads = [
+    [24,18,0,6],[37,10,.22,5],[52,14,.44,8],[68,8,.66,5],
+    [78,24,.88,7],[18,35,1.1,5],[34,30,1.32,7],[58,34,1.54,6],
+    [72,42,1.76,5],[27,50,1.98,8],[46,46,2.2,5],[64,56,2.42,7]
+  ];
+  var beadsHTML = _beads.map(function(p) {
+    return '<span class="tut-ps-bead" style="left:' + p[0] + '%;top:' + p[1] + '%;width:' + p[3] + 'px;height:' + p[3] + 'px;animation-delay:' + p[2] + 's"></span>';
+  }).join('');
+  return '<div class="tut-ps-omnia-wrap"><div class="tut-ps-omnia-stage">' + crystalSVG + beadsHTML + '</div></div>';
+}
+
 function showSessionComplete(opts) {
   var el = document.getElementById('sessionComplete');
   if (!el) return;
   playSessionCompleteSound();
   el.innerHTML =
-    '<div class="tut-legend-title">' + opts.title + '</div>'
+    buildOmniaShowerHtml()
+    + '<div class="tut-legend-title">' + opts.title + '</div>'
     + '<div class="tut-legend-sub">' + opts.sub + '</div>'
     + '<div class="tut-legend-cards">'
     + '<div class="tut-legend-card amber">'
@@ -8011,6 +8050,7 @@ function showTutorialGuideIntro(goToLogin) {
     function goHome() {
       if (isLeavingGuideIntro) return;
       isLeavingGuideIntro = true;
+      localStorage.removeItem('presence_tutorialPending');
       renderConcHome();
       showScreen('homeScreen');
       if (typeof switchMode === 'function') switchMode('guide');
@@ -19882,6 +19922,7 @@ document.addEventListener('DOMContentLoaded',function(){(function(){
       if(bk) bk.style.display='none';
       stopSparks(); darkSpot(); resetTutorialEye();
       suppressTutorialForExerciseEntry();
+      localStorage.setItem('presence_tutorialPending','1');
       // Ensure home screen is the active base before switching to clock screen
       var hs=document.getElementById('homeScreen');
       if(hs) hs.style.display='flex';
@@ -19992,6 +20033,21 @@ document.addEventListener('DOMContentLoaded',function(){(function(){
         if(homeEl.style.display==='flex'&&!localStorage.getItem(VISITED)){
           clearInterval(_poller);
           if(window.__tutBoot) window.__tutBoot();
+        }
+      },300);
+    }
+  }
+
+  // If user quit mid-tutorial (after launchClock but before guide-intro), resume it
+  if(localStorage.getItem(VISITED) && localStorage.getItem('presence_tutorialPending')){
+    var homeElR=document.getElementById('homeScreen');
+    if(homeElR){
+      var _resumePoller=setInterval(function(){
+        if(homeElR.style.display==='flex'){
+          clearInterval(_resumePoller);
+          window._tutorialFirstClock=true;
+          currentExercise='clock';
+          if(typeof startConcentration==='function') startConcentration();
         }
       },300);
     }
