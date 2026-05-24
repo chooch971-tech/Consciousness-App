@@ -2434,8 +2434,8 @@ body.tut-live #tutProgress { display:block; }
   .sc-done-btn { font-size:15px; padding:20px 52px; }
 }
 
-/* ── Guide orientation toast ── */
-#tutGuideTip {
+/* ── Guide tab tip bubbles (shared) ── */
+.guide-tab-tip {
   position:fixed; bottom:28px; left:50%; transform:translateX(-50%);
   z-index:9100; background:rgba(7,8,13,0.96);
   border:1px solid rgba(126,184,164,0.3); border-radius:16px;
@@ -2443,12 +2443,12 @@ body.tut-live #tutProgress { display:block; }
   opacity:0; transition:opacity 0.5s ease; pointer-events:none;
   display:none;
 }
-#tutGuideTip.tut-ct-show { opacity:1; pointer-events:auto; }
-#tutGuideTip p {
+.guide-tab-tip.tut-ct-show { opacity:1; pointer-events:auto; }
+.guide-tab-tip p {
   font-family:'DM Mono',monospace; font-size:13px; letter-spacing:.06em;
   color:#cce8f8; margin:0 0 14px; line-height:1.55;
 }
-#tutGuideTipBtn {
+.guide-tab-tip button {
   background:rgba(126,184,164,0.12); border:1px solid rgba(126,184,164,0.4);
   border-radius:10px; padding:9px 22px; cursor:pointer;
   font-family:'DM Mono',monospace; font-size:10px; letter-spacing:.22em;
@@ -7641,9 +7641,8 @@ function showTutorialGuideIntro(goToLogin) {
         ps.classList.remove('tut-ps-show');
         renderConcHome();
         if (showGuide) {
-          showScreen('homeScreen');
           if (typeof switchMode === 'function') switchMode('guide');
-          if (typeof openGuide === 'function') openGuide();
+          showScreen('homeScreen');
           var gt = document.getElementById('tutGuideTip');
           if (gt) {
             gt.style.display = 'block';
@@ -13609,8 +13608,8 @@ function switchGuideTab(tab) {
   if (omniaTab) omniaTab.classList.toggle('active', tab === 'omnia');
   if (treeTab) treeTab.classList.toggle('active', tab === 'tree');
   document.body.classList.toggle('upgrade-stage', tab === 'omnia');
-  if (tab === 'omnia') renderOmniaEngine();
-  if (tab === 'tree') renderPracticeTree();
+  if (tab === 'omnia') { renderOmniaEngine(); _showGuideTabTip('omnia'); }
+  if (tab === 'tree') { renderPracticeTree(); _showGuideTabTip('tree'); }
   if (tab === 'path' && typeof renderPathQuests === 'function') renderPathQuests();
   var gp = document.getElementById('guidePanel');
   if (gp) gp.scrollTop = 0;
@@ -14969,6 +14968,24 @@ document.querySelectorAll('.guide-dot[data-tab]').forEach(function(dot) {
     switchGuideTab(this.dataset.tab);
   });
 });
+
+// ── Guide tab one-time tip bubbles ───────────────────────────
+var _guideTabTipShown = {};
+function _showGuideTabTip(tab) {
+  if (_guideTabTipShown[tab]) return;
+  _guideTabTipShown[tab] = true;
+  var tipId = tab === 'omnia' ? 'tutOmniaTip' : 'tutTreeTip';
+  var el = document.getElementById(tipId);
+  if (!el) return;
+  el.style.display = 'block';
+  setTimeout(function() { el.classList.add('tut-ct-show'); }, 60);
+  var timer = setTimeout(function() { _hideGuideTabTip(el); }, 7000);
+  el.querySelector('button').onclick = function() { clearTimeout(timer); _hideGuideTabTip(el); };
+}
+function _hideGuideTabTip(el) {
+  el.classList.remove('tut-ct-show');
+  setTimeout(function() { el.style.display = 'none'; }, 500);
+}
 
 // Horizontal swipe/drag between Path / Upgrade / Tree
 (function() {
@@ -19727,9 +19744,17 @@ document.addEventListener('DOMContentLoaded',function(){(function(){
 <div id="sessionComplete"></div>
 
 <!-- Guide orientation toast (shown after tutorial when user chooses Go to Guide) -->
-<div id="tutGuideTip">
+<div id="tutGuideTip" class="guide-tab-tip">
   <p>Complete daily exercises to earn Akasha and build Omnia.</p>
   <button id="tutGuideTipBtn">Got it</button>
+</div>
+<div id="tutOmniaTip" class="guide-tab-tip">
+  <p>Spend Akasha to build Omnia's bodies. Each level makes your practice more powerful.</p>
+  <button id="tutOmniaTipBtn">Got it</button>
+</div>
+<div id="tutTreeTip" class="guide-tab-tip">
+  <p>Each star is an exercise. The brighter it glows, the deeper your practice runs.</p>
+  <button id="tutTreeTipBtn">Got it</button>
 </div>
 
 <script>
