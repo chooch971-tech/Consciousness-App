@@ -7013,7 +7013,14 @@ function saveConcSession() {
   saveConcState();
 
   var _tutPreAkasha = omniaState ? omniaState.akasha : 0;
-  awardOmniaForExercise('clock', totalXP);
+  var _todayStr = new Date().toISOString().slice(0, 10);
+  var _clockToday = concState.history.filter(function(h) { return h.date && h.date.slice(0, 10) === _todayStr; }).length;
+  var _akashaCapped = _clockToday > 3;
+  if (!_akashaCapped) {
+    awardOmniaForExercise('clock', totalXP);
+  } else {
+    showToast('Clock · Daily Akasha cap reached · XP still counts', 3200);
+  }
   if (syncEnabled && authToken) syncPushData();
   touchPracticeStreak();
 
