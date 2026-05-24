@@ -1724,14 +1724,8 @@ body.tut-live #omniaTabPeek { display:none !important; }
 }
 
 /* ── Clock tip card (shown during 5-sec countdown on first tutorial session) ── */
-#tutClockTip {
-  position:fixed; bottom:130px; left:50%; transform:translateX(-50%);
-  z-index:9900; background:rgba(7,8,13,0.94);
-  border:1px solid rgba(126,184,164,0.28); border-radius:14px;
-  padding:16px 24px; text-align:center; pointer-events:none;
-  opacity:0; transition:opacity 0.7s ease; max-width:min(300px,88vw);
-}
-#tutClockTip.tut-ct-show { opacity:1; }
+#tutClockTip { display:none !important; }
+#tutClockTip.tut-ct-show { display:none !important; }
 #tutClockTip p {
   font-family:'DM Mono',monospace; font-size:15px; letter-spacing:.06em;
   color:#cce8f8; margin:0 0 8px; line-height:1.5;
