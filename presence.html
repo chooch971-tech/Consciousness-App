@@ -2038,20 +2038,65 @@ body.tut-live #omniaTabPeek { display:none !important; }
 .tut-commit-skip:hover { color:rgba(221,216,206,0.5); }
 
 /* Reminder stage */
-.tut-remind-choices {
-  display:flex; flex-direction:column; gap:12px;
-  width:100%; max-width:300px; margin-bottom:12px;
+/* ── Reminder: multi-select tiles ─────────────────── */
+.tut-remind-list {
+  width:100%; max-width:340px; display:flex; flex-direction:column; margin-bottom:24px;
 }
-.tut-remind-btn {
-  background:rgba(126,184,164,0.07); border:1px solid rgba(126,184,164,0.25);
-  border-radius:13px; padding:17px 20px; min-height:54px; cursor:pointer;
-  font-family:'DM Mono',monospace; font-size:13px; letter-spacing:.16em;
-  text-transform:uppercase; color:#7eb8a4;
-  transition:background 0.2s,border-color 0.2s,color 0.2s; text-align:center;
+.tut-remind-tile {
+  display:flex; align-items:center; gap:16px;
+  padding:16px 14px; border-bottom:1px solid rgba(221,216,206,0.06);
+  border-left:2px solid transparent; border-radius:6px; cursor:pointer;
+  transition:background 0.18s, border-color 0.18s;
 }
-.tut-remind-btn:hover,.tut-remind-btn.selected {
-  background:rgba(126,184,164,0.2); border-color:rgba(126,184,164,0.65);
+.tut-remind-tile:first-child { border-top:1px solid rgba(221,216,206,0.06); }
+.tut-remind-tile[data-slot="morning"]  { --r-acc:#8ecce0; --r-r:142; --r-g:204; --r-b:224; }
+.tut-remind-tile[data-slot="noon"]     { --r-acc:#e8c070; --r-r:232; --r-g:192; --r-b:112; }
+.tut-remind-tile[data-slot="evening"]  { --r-acc:#7eb8a4; --r-r:126; --r-g:184; --r-b:164; }
+.tut-remind-tile { border-left-color:rgba(var(--r-r),var(--r-g),var(--r-b),0.22); }
+.tut-remind-tile:hover { background:rgba(var(--r-r),var(--r-g),var(--r-b),0.05); border-left-color:rgba(var(--r-r),var(--r-g),var(--r-b),0.45); }
+.tut-remind-tile.active { background:rgba(var(--r-r),var(--r-g),var(--r-b),0.09); border-left-color:var(--r-acc); }
+
+.tut-remind-check {
+  width:22px; height:22px; border-radius:50%; flex-shrink:0;
+  border:1.5px solid rgba(var(--r-r),var(--r-g),var(--r-b),0.35);
+  display:flex; align-items:center; justify-content:center;
+  transition:border-color 0.18s, background 0.18s;
 }
+.tut-remind-tile.active .tut-remind-check { background:var(--r-acc); border-color:var(--r-acc); }
+.tut-remind-check-mark { display:none; color:#07080d; font-size:12px; font-weight:700; line-height:1; }
+.tut-remind-tile.active .tut-remind-check-mark { display:block; }
+
+.tut-remind-tile-body { flex:1; display:flex; flex-direction:column; gap:2px; }
+.tut-remind-tile-period {
+  font-size:8px; letter-spacing:.22em; text-transform:uppercase;
+  color:rgba(var(--r-r),var(--r-g),var(--r-b),0.45);
+  transition:color 0.18s;
+}
+.tut-remind-tile.active .tut-remind-tile-period { color:rgba(var(--r-r),var(--r-g),var(--r-b),0.75); }
+.tut-remind-tile-time {
+  font-family:'Cormorant Garamond', serif; font-size:28px; font-weight:300; line-height:1;
+  color:var(--r-acc); opacity:0.7; transition:opacity 0.18s;
+}
+.tut-remind-tile.active .tut-remind-tile-time { opacity:1; }
+
+.tut-remind-confirm {
+  width:100%; max-width:340px;
+  background:linear-gradient(135deg,#7eb8a4 0%,#8ecce0 100%); border:none;
+  border-radius:14px; padding:16px 44px; min-height:54px; cursor:pointer;
+  font-family:'DM Mono',monospace; font-size:13px; letter-spacing:.22em;
+  text-transform:uppercase; color:#07080d;
+  box-shadow:0 4px 24px rgba(126,184,164,0.28),0 0 0 1px rgba(142,204,224,0.14);
+  margin-bottom:16px; opacity:0.35; pointer-events:none;
+  transition:opacity 0.2s, transform 0.18s;
+}
+.tut-remind-confirm.ready { opacity:1; pointer-events:auto; }
+.tut-remind-confirm.ready:active { transform:scale(0.97); }
+.tut-remind-late-skip {
+  background:none; border:none; font-family:'DM Mono',monospace; font-size:10px;
+  letter-spacing:.22em; text-transform:uppercase; color:rgba(221,216,206,0.25);
+  cursor:pointer; padding:12px; transition:color 0.2s;
+}
+.tut-remind-late-skip:hover { color:rgba(221,216,206,0.5); }
 
 /* Notification stage */
 .tut-notif-ring {
@@ -4965,6 +5010,7 @@ document.addEventListener('DOMContentLoaded', function() {
   setTimeout(clearStaleInteractionLocks, 250);
   setTimeout(clearStaleInteractionLocks, 1000);
   if (typeof checkStreakStatus === 'function') checkStreakStatus();
+  if (typeof checkRemindersOnLoad === 'function') checkRemindersOnLoad();
 });
 
 window.addEventListener('pageshow', function() {
@@ -7268,52 +7314,124 @@ function showTutorialStreakCommit() {
   });
 }
 
-function showTutorialReminder() {
-  tutFadeStage(function(ps) {
-    ps.innerHTML =
-      '<div class="tut-stage-headline">When can I expect you?</div>'
-      + '<div class="tut-stage-sub">Consistency is the practice.</div>'
-      + '<div class="tut-remind-choices">'
-      + '<button class="tut-remind-btn" data-time="07:00">Morning  ·  7 am</button>'
-      + '<button class="tut-remind-btn" data-time="12:00">Afternoon  ·  12 pm</button>'
-      + '<button class="tut-remind-btn" data-time="20:00">Evening  ·  8 pm</button>'
-      + '<button class="tut-remind-btn" data-time="">I\'ll decide later</button>'
-      + '</div>';
-    ps.querySelectorAll('.tut-remind-btn').forEach(function(btn) {
-      btn.addEventListener('click', function() {
-        var t = btn.getAttribute('data-time');
-        if (t) localStorage.setItem('presence_reminder_time', t);
-        ps.querySelectorAll('.tut-remind-btn').forEach(function(b) { b.classList.remove('selected'); });
-        btn.classList.add('selected');
-        setTimeout(showTutorialNotification, 380);
-      });
-    });
-    requestAnimationFrame(function() {
-      requestAnimationFrame(function() { ps.classList.add('tut-ps-vis'); });
-    });
+// ── Reminder notification scheduling ───────────────────────────
+function scheduleReminderNotifications(times) {
+  if (!times || !times.length) return;
+  localStorage.setItem('presence_reminder_times', JSON.stringify(times));
+  _armReminderTimeouts(times);
+}
+
+function _armReminderTimeouts(times) {
+  if (!('Notification' in window) || Notification.permission !== 'granted') return;
+  var now = new Date();
+  times.forEach(function(t) {
+    var parts = t.split(':');
+    var target = new Date(now);
+    target.setHours(parseInt(parts[0], 10), parseInt(parts[1], 10), 0, 0);
+    if (target <= now) return; // time already passed today — skip
+    var ms = target - now;
+    setTimeout(function() {
+      try {
+        new Notification('Presence', {
+          body: 'Time to train. Your mind is waiting.',
+          icon: '/favicon.ico',
+          tag: 'presence-reminder-' + t,
+          renotify: false
+        });
+      } catch(e) {}
+    }, ms);
   });
 }
 
-function showTutorialNotification() {
+function checkRemindersOnLoad() {
+  var saved = localStorage.getItem('presence_reminder_times');
+  if (!saved) return;
+  if (!('Notification' in window) || Notification.permission !== 'granted') return;
+  var times;
+  try { times = JSON.parse(saved); } catch(e) { return; }
+  var now = new Date();
+  var todayKey = now.toISOString().slice(0, 10);
+  var shownKey = 'presence_notif_shown_' + todayKey;
+  var shown;
+  try { shown = JSON.parse(localStorage.getItem(shownKey) || '[]'); } catch(e) { shown = []; }
+  var h = now.getHours(), m = now.getMinutes();
+  var shownUpdated = false;
+  times.forEach(function(t) {
+    var parts = t.split(':');
+    var rh = parseInt(parts[0], 10), rm = parseInt(parts[1], 10);
+    var diffMin = (h * 60 + m) - (rh * 60 + rm);
+    // Fire if within 60-min window after the reminder time and not yet shown today
+    if (diffMin >= 0 && diffMin <= 60 && shown.indexOf(t) === -1) {
+      try {
+        new Notification('Presence', {
+          body: 'Time to train. Your mind is waiting.',
+          tag: 'presence-reminder-' + t,
+          renotify: false
+        });
+        shown.push(t);
+        shownUpdated = true;
+      } catch(e) {}
+    }
+  });
+  if (shownUpdated) localStorage.setItem(shownKey, JSON.stringify(shown));
+  _armReminderTimeouts(times); // arm for any times still ahead today
+}
+// ───────────────────────────────────────────────────────────────
+
+function showTutorialReminder() {
   tutFadeStage(function(ps) {
+    var SLOTS = [
+      { slot:'morning', label:'Morning',   time:'7 AM',  value:'07:00' },
+      { slot:'noon',    label:'Afternoon', time:'12 PM', value:'12:00' },
+      { slot:'evening', label:'Evening',   time:'8 PM',  value:'20:00' },
+    ];
+    var selected = [];
+
+    var tilesHTML = SLOTS.map(function(s) {
+      return '<div class="tut-remind-tile" data-value="' + s.value + '" data-slot="' + s.slot + '">'
+        + '<div class="tut-remind-check"><span class="tut-remind-check-mark">✓</span></div>'
+        + '<div class="tut-remind-tile-body">'
+        +   '<span class="tut-remind-tile-period">' + s.label + '</span>'
+        +   '<span class="tut-remind-tile-time">' + s.time + '</span>'
+        + '</div>'
+        + '</div>';
+    }).join('');
+
     ps.innerHTML =
-      '<div class="tut-notif-ring"><div class="tut-notif-dot"></div></div>'
-      + '<div class="tut-stage-headline">Want a daily nudge?</div>'
-      + '<div class="tut-stage-sub">Omnia can remind you when it\'s time to train.</div>'
-      + '<div class="tut-acct-btns">'
-      + '<button class="tut-acct-primary" id="tutNotif-yes">Yes, remind me</button>'
-      + '<button class="tut-acct-skip" id="tutNotif-no">Not now</button>'
-      + '</div>';
-    document.getElementById('tutNotif-yes').onclick = function() {
-      if ('Notification' in window) {
-        Notification.requestPermission()
-          .then(function() { showTutorialAccountPrompt(); })
-          .catch(function() { showTutorialAccountPrompt(); });
-      } else {
+      '<h2 class="tut-stage-headline">When can I expect you?</h2>'
+      + '<p class="tut-stage-sub">Select all that apply.</p>'
+      + '<div class="tut-remind-list">' + tilesHTML + '</div>'
+      + '<button class="tut-remind-confirm" id="tutRemindConfirm">Set reminders</button>'
+      + '<button class="tut-remind-late-skip" id="tutRemindSkip">I\'ll decide later</button>';
+
+    var confirmBtn = document.getElementById('tutRemindConfirm');
+
+    ps.querySelectorAll('.tut-remind-tile').forEach(function(tile) {
+      tile.addEventListener('click', function() {
+        tile.classList.toggle('active');
+        var v = tile.dataset.value;
+        var idx = selected.indexOf(v);
+        if (idx === -1) { selected.push(v); } else { selected.splice(idx, 1); }
+        if (selected.length > 0) { confirmBtn.classList.add('ready'); }
+        else { confirmBtn.classList.remove('ready'); }
+      });
+    });
+
+    confirmBtn.addEventListener('click', function() {
+      if (!confirmBtn.classList.contains('ready')) return;
+      function proceed() {
+        scheduleReminderNotifications(selected);
         showTutorialAccountPrompt();
       }
-    };
-    document.getElementById('tutNotif-no').onclick = showTutorialAccountPrompt;
+      if ('Notification' in window && Notification.permission === 'default') {
+        Notification.requestPermission().then(proceed).catch(proceed);
+      } else {
+        proceed();
+      }
+    });
+
+    document.getElementById('tutRemindSkip').onclick = showTutorialAccountPrompt;
+
     requestAnimationFrame(function() {
       requestAnimationFrame(function() { ps.classList.add('tut-ps-vis'); });
     });
