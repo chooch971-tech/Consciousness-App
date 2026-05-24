@@ -2728,7 +2728,23 @@ body:not(.tut-live) #tutCorgi {
           <div id="syncStatusText" style="font-size:12px; color:var(--text); margin-bottom:8px;">Not logged in</div>
           <div id="syncStatusEmail" style="font-size:10px; color:var(--muted); margin-bottom:12px;"></div>
           <button id="syncLogoutBtn" style="width:100%; display:none; font-size:9px; letter-spacing:.15em; padding:10px; border:1px solid var(--border); border-radius:6px; background:transparent; color:var(--muted); cursor:pointer;">Sign Out</button>
-          <div id="settingsGoogleContainer" style="display:none;"></div>
+          <!-- Sign-in options shown when signed out -->
+          <div id="settingsSignInWrap" style="display:none;">
+            <div id="settingsGoogleContainer"></div>
+            <div style="display:flex;align-items:center;gap:10px;margin:12px 0 8px;">
+              <div style="flex:1;height:1px;background:var(--border);"></div>
+              <span style="font-size:8px;letter-spacing:.2em;text-transform:uppercase;color:var(--muted);opacity:.5;">or</span>
+              <div style="flex:1;height:1px;background:var(--border);"></div>
+            </div>
+            <button id="settingsEmailToggle" style="width:100%;background:none;border:none;font-family:'DM Mono',monospace;font-size:9px;letter-spacing:.18em;text-transform:uppercase;color:var(--muted);cursor:pointer;padding:6px 0 10px;text-align:center;opacity:.7;">Continue with email →</button>
+            <div id="settingsEmailForm" style="display:none;flex-direction:column;gap:8px;margin-bottom:4px;">
+              <input type="email" id="settingsEmailInput" placeholder="Email" autocomplete="email" style="width:100%;padding:10px 12px;border:1px solid var(--border);border-radius:7px;background:rgba(255,255,255,.03);color:#e8e0d0;font-family:'DM Mono',monospace;font-size:11px;outline:none;"/>
+              <input type="password" id="settingsPasswordInput" placeholder="Password" autocomplete="current-password" style="width:100%;padding:10px 12px;border:1px solid var(--border);border-radius:7px;background:rgba(255,255,255,.03);color:#e8e0d0;font-family:'DM Mono',monospace;font-size:11px;outline:none;"/>
+              <button id="settingsEmailSubmit" style="width:100%;padding:10px;border:1px solid rgba(126,184,164,.35);border-radius:7px;background:rgba(126,184,164,.08);color:#7eb8a4;font-family:'DM Mono',monospace;font-size:9px;letter-spacing:.18em;text-transform:uppercase;cursor:pointer;">Sign In</button>
+              <button id="settingsEmailCreate" style="width:100%;padding:10px;border:1px solid var(--border);border-radius:7px;background:transparent;color:var(--muted);font-family:'DM Mono',monospace;font-size:9px;letter-spacing:.18em;text-transform:uppercase;cursor:pointer;">Create Account</button>
+              <div id="settingsEmailError" style="display:none;color:#d4956e;font-size:10px;text-align:center;padding-top:2px;"></div>
+            </div>
+          </div>
         </div>
         <!-- Set Username card — shown only when signed in without a username -->
         <div id="setUsernameCard" style="display:none; background:rgba(126,184,164,.05); border:1px solid rgba(126,184,164,.25); border-radius:10px; padding:16px 18px;">
@@ -5812,24 +5828,9 @@ document.getElementById('drawerSettings').addEventListener('click', function() {
   closeDrawer(); 
   // Update sync status when opening settings
   if (syncEnabled && authEmail) {
-    document.getElementById('syncStatusText').textContent = '✓ Syncing across devices';
-    document.getElementById('syncStatusEmail').textContent = authUsername ? '@' + authUsername + ' · ' + authEmail : authEmail;
-    document.getElementById('syncLogoutBtn').style.display = 'block';
-    document.getElementById('settingsGoogleContainer').style.display = 'none';
-    document.getElementById('setUsernameCard').style.display = authUsername ? 'none' : 'block';
+    _refreshSettingsSyncCardSignedIn();
   } else {
-    document.getElementById('syncStatusText').textContent = 'Not signed in';
-    document.getElementById('syncStatusEmail').textContent = '';
-    document.getElementById('syncLogoutBtn').style.display = 'none';
-    var sgc = document.getElementById('settingsGoogleContainer');
-    sgc.style.display = 'block';
-    if (!sgc.hasChildNodes()) {
-      initGoogleSignIn('settingsGoogleContainer', function() {
-        renderHome(); showScreen('homeScreen'); syncPushData();
-        showToast('Signed in ✓');
-      });
-    }
-    document.getElementById('setUsernameCard').style.display = 'none';
+    _refreshSettingsSyncCard();
   }
   showScreen('settingsScreen');
   renderCustomVisImageList();
@@ -5901,7 +5902,7 @@ document.getElementById('customAudUpload').addEventListener('change', function(e
 
 document.getElementById('syncLogoutBtn').addEventListener('click', function() {
   if (confirm('Sign out of cloud sync?')) {
-    authLogout({ clearLocalProgress: true });
+    authLogout({ clearLocalProgress: true, stayOnSettings: true });
   }
 });
 
@@ -5936,9 +5937,45 @@ document.getElementById('setUsernameBtn').addEventListener('click', async functi
     this.disabled = false;
   }
 });
-// syncLoginBtn removed — sign-in now handled by settingsGoogleContainer
+// syncLoginBtn removed — sign-in now handled by settingsSignInWrap
 document.getElementById('settingsBack').addEventListener('click', function() {
   renderHome(); showScreen('homeScreen');
+});
+
+// Settings email toggle
+document.getElementById('settingsEmailToggle').addEventListener('click', function() {
+  var form = document.getElementById('settingsEmailForm');
+  var isOpen = form.style.display === 'flex';
+  form.style.display = isOpen ? 'none' : 'flex';
+  this.textContent = isOpen ? 'Continue with email →' : 'Hide email sign-in ↑';
+});
+
+// Settings email sign-in / create account
+var _settingsEmailMode = false; // false=sign-in, true=create-account
+document.getElementById('settingsEmailCreate').addEventListener('click', function() {
+  _settingsEmailMode = !_settingsEmailMode;
+  document.getElementById('settingsEmailSubmit').textContent = _settingsEmailMode ? 'Create Account' : 'Sign In';
+  this.textContent = _settingsEmailMode ? 'Sign In Instead' : 'Create Account';
+});
+document.getElementById('settingsEmailSubmit').addEventListener('click', async function() {
+  var email = (document.getElementById('settingsEmailInput').value || '').trim();
+  var password = document.getElementById('settingsPasswordInput').value;
+  var errEl = document.getElementById('settingsEmailError');
+  if (!email || !password) { errEl.textContent = 'Email and password required'; errEl.style.display = 'block'; return; }
+  this.disabled = true;
+  this.textContent = 'Please wait…';
+  errEl.style.display = 'none';
+  var ok = await authRegisterOrLogin(email, password, _settingsEmailMode, '');
+  if (ok) {
+    _refreshSettingsSyncCardSignedIn();
+    syncPushData();
+    showToast('Signed in ✓');
+  } else {
+    errEl.textContent = (window._lastAuthError || 'Sign-in failed');
+    errEl.style.display = 'block';
+    this.disabled = false;
+    this.textContent = _settingsEmailMode ? 'Create Account' : 'Sign In';
+  }
 });
 
 // ── EXPORT ──────────────────────────────────────────────
@@ -15580,6 +15617,47 @@ async function syncPullData() {
   }
 }
 
+function _refreshSettingsSyncCard() {
+  var wrap = document.getElementById('settingsSignInWrap');
+  var sgc  = document.getElementById('settingsGoogleContainer');
+  var st   = document.getElementById('syncStatusText');
+  var se   = document.getElementById('syncStatusEmail');
+  var lb   = document.getElementById('syncLogoutBtn');
+  var uc   = document.getElementById('setUsernameCard');
+  if (!wrap) return;
+  if (st) st.textContent = 'Not signed in';
+  if (se) se.textContent = '';
+  if (lb) lb.style.display = 'none';
+  if (uc) uc.style.display = 'none';
+  wrap.style.display = 'block';
+  if (sgc) {
+    sgc.innerHTML = '';
+    initGoogleSignIn('settingsGoogleContainer', function() {
+      _refreshSettingsSyncCardSignedIn();
+      syncPushData();
+      showToast('Signed in ✓');
+    });
+  }
+  // Reset email form state
+  var ef = document.getElementById('settingsEmailForm');
+  if (ef) ef.style.display = 'none';
+  var toggle = document.getElementById('settingsEmailToggle');
+  if (toggle) toggle.textContent = 'Continue with email →';
+}
+
+function _refreshSettingsSyncCardSignedIn() {
+  var wrap = document.getElementById('settingsSignInWrap');
+  var st   = document.getElementById('syncStatusText');
+  var se   = document.getElementById('syncStatusEmail');
+  var lb   = document.getElementById('syncLogoutBtn');
+  var uc   = document.getElementById('setUsernameCard');
+  if (st) st.textContent = '✓ Syncing across devices';
+  if (se) se.textContent = authUsername ? '@' + authUsername + ' · ' + authEmail : authEmail;
+  if (lb) lb.style.display = 'block';
+  if (wrap) wrap.style.display = 'none';
+  if (uc) uc.style.display = authUsername ? 'none' : 'block';
+}
+
 function authLogout(options) {
   options = options || {};
   if (options.clearLocalProgress) resetLocalProgressForSignedOut();
@@ -15590,13 +15668,11 @@ function authLogout(options) {
   localStorage.removeItem('presence_auth_email');
   localStorage.removeItem('presence_auth_username');
   syncEnabled = false;
-  // Re-wire Google button in Settings for the now-signed-out user
-  var sgc = document.getElementById('settingsGoogleContainer');
-  if (sgc) { sgc.innerHTML = ''; initGoogleSignIn('settingsGoogleContainer', function() {
-    renderHome(); showScreen('homeScreen'); syncPushData();
-    showToast('Signed in ✓');
-  }); }
-  renderHome(); showScreen('homeScreen');
+  _refreshSettingsSyncCard();
+  // Stay on Settings if that's where the action came from; otherwise show toast
+  if (!options.stayOnSettings) {
+    renderHome(); showScreen('homeScreen');
+  }
   if (options.message) showToast(options.message, 3500);
 }
 
