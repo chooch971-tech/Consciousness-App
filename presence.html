@@ -1805,6 +1805,100 @@ body.tut-live #omniaTabPeek { display:none !important; }
   text-transform:uppercase; color:rgba(126,184,164,0.6); text-align:center;
   max-width:300px; margin-bottom:48px; line-height:1.7;
 }
+.tut-guide-ready {
+  width:100%; max-width:280px; display:flex; flex-direction:column; align-items:center;
+  position:relative; padding-top:4px;
+}
+.tut-guide-scene {
+  position:relative; width:260px; max-width:100%; height:220px; margin:0 auto 28px;
+  display:flex; align-items:center; justify-content:center;
+}
+.tut-guide-route {
+  position:absolute; inset:18px 30px 28px; border-radius:999px;
+  border:1px solid rgba(142,204,224,0.18);
+  transform:rotate(-12deg); opacity:.92;
+}
+.tut-guide-route::before,
+.tut-guide-route::after {
+  content:''; position:absolute; left:50%; top:50%; border-radius:999px;
+  border:1px solid rgba(212,149,110,0.16); transform:translate(-50%,-50%) rotate(24deg);
+}
+.tut-guide-route::before { width:76%; height:62%; }
+.tut-guide-route::after { width:52%; height:42%; border-color:rgba(126,184,164,0.2); }
+.tut-guide-core {
+  position:relative; width:132px; height:132px; border-radius:50%;
+  border:1px solid rgba(184,234,255,0.22);
+  background:
+    radial-gradient(circle at 50% 50%,rgba(232,248,255,0.22) 0 9%,transparent 10%),
+    conic-gradient(from 20deg,transparent 0 12%,rgba(142,204,224,0.18) 13% 18%,transparent 19% 37%,rgba(212,149,110,0.16) 38% 43%,transparent 44% 62%,rgba(126,184,164,0.18) 63% 68%,transparent 69% 87%,rgba(196,168,212,0.16) 88% 93%,transparent 94% 100%),
+    radial-gradient(circle at 50% 35%,rgba(184,234,255,0.16),rgba(14,24,34,0.04) 54%,rgba(7,8,13,0) 72%);
+  box-shadow:0 0 32px rgba(142,204,224,0.18), inset 0 0 30px rgba(142,204,224,0.05);
+  animation:tutGuideCoreIn .74s cubic-bezier(.22,1,.36,1) both;
+}
+.tut-guide-core::before {
+  content:''; position:absolute; inset:24px; border-radius:50%;
+  border:1px solid rgba(212,149,110,0.18);
+  box-shadow:0 0 0 14px rgba(142,204,224,0.025), inset 0 0 18px rgba(126,184,164,0.08);
+}
+.tut-guide-core::after {
+  content:''; position:absolute; left:50%; top:50%; width:22px; height:22px;
+  transform:translate(-50%,-50%);
+  border-radius:50%;
+  background:radial-gradient(circle,#f4fbff 0%,#b8eaff 42%,rgba(142,204,224,0.32) 68%,transparent 72%);
+  box-shadow:
+    0 -42px 0 -7px rgba(142,204,224,0.82),
+    34px -18px 0 -8px rgba(212,149,110,0.76),
+    32px 24px 0 -8px rgba(196,168,212,0.78),
+    -34px 24px 0 -8px rgba(126,184,164,0.78),
+    -36px -17px 0 -8px rgba(142,204,224,0.7),
+    0 0 20px rgba(184,234,255,0.72);
+}
+@keyframes tutGuideCoreIn {
+  from { opacity:0; transform:scale(.82); }
+  to { opacity:1; transform:scale(1); }
+}
+.tut-guide-node {
+  position:absolute; width:11px; height:11px; border-radius:50%;
+  color:var(--node-color,#8ecce0); background:var(--node-color,#8ecce0);
+  box-shadow:0 0 16px currentColor;
+  opacity:0; animation:tutGuideNodeIn .62s cubic-bezier(.22,1,.36,1) forwards;
+}
+.tut-guide-node::after {
+  content:''; position:absolute; inset:-8px; border-radius:50%;
+  border:1px solid currentColor; opacity:.38;
+}
+.tut-guide-node:nth-child(1) { --node-color:#8ecce0; left:28px; top:56px; animation-delay:.16s; }
+.tut-guide-node:nth-child(2) { --node-color:#d4956e; right:34px; top:72px; animation-delay:.3s; }
+.tut-guide-node:nth-child(3) { --node-color:#7eb8a4; left:62px; bottom:42px; animation-delay:.44s; }
+.tut-guide-node:nth-child(4) { --node-color:#c4a8d4; right:66px; bottom:32px; animation-delay:.58s; }
+@keyframes tutGuideNodeIn {
+  from { opacity:0; transform:scale(.35); }
+  to { opacity:1; transform:scale(1); }
+}
+.tut-guide-kicker {
+  font-family:'DM Mono',monospace; font-size:10px; letter-spacing:.32em;
+  text-transform:uppercase; color:#8ecce0; margin-bottom:12px;
+}
+.tut-guide-title {
+  width:100%; font-family:'Cormorant Garamond',serif; font-size:clamp(30px,8vw,38px);
+  font-weight:300; line-height:1.03; color:#f1ece2; text-align:center;
+  margin-bottom:14px;
+}
+.tut-guide-copy {
+  font-family:'DM Mono',monospace; font-size:12px; letter-spacing:.08em;
+  line-height:1.85; color:rgba(221,216,206,0.52); text-align:center;
+  max-width:280px; margin-bottom:30px;
+}
+.tut-guide-start {
+  width:100%; min-height:58px; border:none; border-radius:14px;
+  background:linear-gradient(135deg,#8ecce0 0%,#7eb8a4 52%,#d4b08e 100%);
+  color:#07080d; cursor:pointer; font-family:'DM Mono',monospace;
+  font-size:13px; letter-spacing:.22em; text-transform:uppercase;
+  box-shadow:0 12px 34px rgba(126,184,164,0.24),0 0 0 1px rgba(255,255,255,0.1) inset;
+  transition:transform .18s ease, filter .18s ease;
+}
+.tut-guide-start:hover { filter:brightness(1.08); }
+.tut-guide-start:active { transform:scale(.97); }
 
 /* ── Day-1 Streak Celebration: flame scene ─────────────────── */
 .tut-s1-scene {
@@ -7704,31 +7798,35 @@ function showTutorialGuideIntro(goToLogin) {
   _tutSetPostBack(showTutorialAccountPrompt);
   tutFadeStage(function(ps) {
     ps.innerHTML =
-      '<div class="tut-stage-headline">Your daily regiment is ready.</div>'
-      + '<div class="tut-stage-sub">Omnia updates it as your skills grow.</div>'
-      + '<div class="tut-acct-btns">'
-      + '<button class="tut-acct-primary" id="tutGuide-go">Go to Guide →</button>'
-      + '<button class="tut-acct-skip" id="tutGuide-skip">Start exploring</button>'
+      '<div class="tut-guide-ready">'
+      + '<div class="tut-guide-scene" aria-hidden="true">'
+      + '<span class="tut-guide-node"></span>'
+      + '<span class="tut-guide-node"></span>'
+      + '<span class="tut-guide-node"></span>'
+      + '<span class="tut-guide-node"></span>'
+      + '<div class="tut-guide-route"></div>'
+      + '<div class="tut-guide-core"></div>'
+      + '</div>'
+      + '<div class="tut-guide-kicker">Omnia&apos;s Path</div>'
+      + '<div class="tut-guide-title">Your daily<br>regiment is ready.</div>'
+      + '<div class="tut-guide-copy">A living path has been prepared. Return each day and Omnia will shape it around your practice.</div>'
+      + '<button class="tut-guide-start" id="tutGuide-start">Start Exploring →</button>'
       + '</div>';
 
     var isLeavingGuideIntro = false;
-    function goHome(showGuide) {
+    function goHome() {
       if (isLeavingGuideIntro) return;
       isLeavingGuideIntro = true;
       renderConcHome();
       showScreen('homeScreen');
-      if (showGuide) {
-        if (typeof switchMode === 'function') switchMode('guide');
-        var gt = document.getElementById('tutGuideTip');
-        if (gt) {
-          gt.style.display = 'block';
-          setTimeout(function() { gt.classList.add('tut-ct-show'); }, 60);
-          var gtTimer = setTimeout(function() { gt.classList.remove('tut-ct-show'); setTimeout(function(){gt.style.display='none';},600); }, 7000);
-          var gtBtn = document.getElementById('tutGuideTipBtn');
-          if (gtBtn) gtBtn.onclick = function() { clearTimeout(gtTimer); gt.classList.remove('tut-ct-show'); setTimeout(function(){gt.style.display='none';},600); };
-        }
-      } else if (typeof switchMode === 'function') {
-        switchMode('concentration');
+      if (typeof switchMode === 'function') switchMode('guide');
+      var gt = document.getElementById('tutGuideTip');
+      if (gt) {
+        gt.style.display = 'block';
+        setTimeout(function() { gt.classList.add('tut-ct-show'); }, 60);
+        var gtTimer = setTimeout(function() { gt.classList.remove('tut-ct-show'); setTimeout(function(){gt.style.display='none';},600); }, 7000);
+        var gtBtn = document.getElementById('tutGuideTipBtn');
+        if (gtBtn) gtBtn.onclick = function() { clearTimeout(gtTimer); gt.classList.remove('tut-ct-show'); setTimeout(function(){gt.style.display='none';},600); };
       }
       requestAnimationFrame(function() {
         _tutDisablePostMode();
@@ -7737,8 +7835,7 @@ function showTutorialGuideIntro(goToLogin) {
       });
     }
 
-    document.getElementById('tutGuide-go').onclick = function() { goHome(true); };
-    document.getElementById('tutGuide-skip').onclick = function() { goHome(false); };
+    document.getElementById('tutGuide-start').onclick = goHome;
     requestAnimationFrame(function() {
       requestAnimationFrame(function() { ps.classList.add('tut-ps-vis'); });
     });
