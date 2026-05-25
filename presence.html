@@ -16015,12 +16015,22 @@ function reportRangeLabel(start, endExclusive) {
 }
 
 function loadProgressReportComments() {
-  try { return JSON.parse(localStorage.getItem('presence_ai_report_comments_v1') || '{}'); }
-  catch(e) { return {}; }
+  try {
+    var c = JSON.parse(localStorage.getItem('presence_ai_report_comments_v1') || '{}');
+    // Drop any truncated entries so they re-fetch
+    var dirty = false;
+    Object.keys(c).forEach(function(k) { if (c[k].message && c[k].message.length < 150) { delete c[k]; dirty = true; } });
+    if (dirty) try { localStorage.setItem('presence_ai_report_comments_v1', JSON.stringify(c)); } catch(e) {}
+    return c;
+  } catch(e) { return {}; }
 }
 
 function saveProgressReportComment(key, message) {
   var comments = loadProgressReportComments();
+  // Purge any previously-truncated entries (< 150 chars = hit token limit)
+  Object.keys(comments).forEach(function(k) {
+    if (comments[k].message && comments[k].message.length < 150) delete comments[k];
+  });
   comments[key] = { message: message, savedAt: new Date().toISOString() };
   try { localStorage.setItem('presence_ai_report_comments_v1', JSON.stringify(comments)); } catch(e) {}
 }
