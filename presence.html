@@ -6201,7 +6201,7 @@ document.getElementById('settingsEmailSubmit').addEventListener('click', async f
 
 // ── EXPORT ──────────────────────────────────────────────
 document.getElementById('exportBtn').addEventListener('click', function() {
-  var keys = ['presence_v3','presence_conc_v1','presence_prayer_v1','presence_journal_v1','presence_soul_mirror_v1','presence_guide_v1','presence_omnia_v1','bardon_rpg_v2','presence_visited'];
+  var keys = ['presence_v3','presence_conc_v1','presence_prayer_v1','presence_journal_v1','presence_soul_mirror_v1','presence_ai_report_comments_v1','presence_guide_v1','presence_omnia_v1','bardon_rpg_v2','presence_visited'];
   var backup = { version: 1, exportedAt: new Date().toISOString(), data: {} };
   keys.forEach(function(k) {
     var val = localStorage.getItem(k);
@@ -6232,7 +6232,7 @@ document.getElementById('importFile').addEventListener('change', function(e) {
       if (!backup.data || backup.version !== 1) throw new Error('Invalid backup file.');
       // Allowlist: only restore keys that the export writes. Prevents a malicious
       // backup from overwriting auth tokens or injecting unknown localStorage keys.
-      var ALLOWED_KEYS = ['presence_v3','presence_conc_v1','presence_prayer_v1','presence_journal_v1','presence_soul_mirror_v1','presence_guide_v1','presence_omnia_v1','bardon_rpg_v2','presence_visited'];
+      var ALLOWED_KEYS = ['presence_v3','presence_conc_v1','presence_prayer_v1','presence_journal_v1','presence_soul_mirror_v1','presence_ai_report_comments_v1','presence_guide_v1','presence_omnia_v1','bardon_rpg_v2','presence_visited'];
       var count = 0, skipped = 0;
       Object.entries(backup.data).forEach(function([k, v]) {
         if (ALLOWED_KEYS.indexOf(k) === -1) { skipped++; return; }
@@ -6443,6 +6443,7 @@ async function pushResetSnapshotToCloud() {
       presence_prayer_v1: localStorage.getItem('presence_prayer_v1'),
       presence_journal_v1: localStorage.getItem('presence_journal_v1'),
       presence_soul_mirror_v1: localStorage.getItem('presence_soul_mirror_v1'),
+      presence_ai_report_comments_v1: localStorage.getItem('presence_ai_report_comments_v1'),
       presence_guide_v1: localStorage.getItem('presence_guide_v1'),
       presence_omnia_v1: localStorage.getItem('presence_omnia_v1'),
       bardon_rpg_v2: localStorage.getItem('bardon_rpg_v2'),
@@ -6466,7 +6467,7 @@ async function resetAllProgress() {
   var keys = [
     'presence_v3','presence_session','presence_guide_v1','presence_omnia_v1',
     'presence_conc_v1','presence_prayer_v1','presence_journal_v1',
-    'presence_soul_mirror_v1','bardon_rpg_v2','presence_visited'
+    'presence_soul_mirror_v1','presence_ai_report_comments_v1','bardon_rpg_v2','presence_visited'
   ];
   keys.forEach(function(k) { localStorage.removeItem(k); });
   var resetData = resetAllProgressSnapshot();
@@ -6487,7 +6488,7 @@ function applyLocalProgressSnapshot(snapshot) {
   var keys = [
     'presence_v3','presence_session','presence_guide_v1','presence_omnia_v1',
     'presence_conc_v1','presence_prayer_v1','presence_journal_v1',
-    'presence_soul_mirror_v1','bardon_rpg_v2','presence_visited'
+    'presence_soul_mirror_v1','presence_ai_report_comments_v1','bardon_rpg_v2','presence_visited'
   ];
   keys.forEach(function(k) { localStorage.removeItem(k); });
   Object.keys(snapshot).forEach(function(k) { localStorage.setItem(k, snapshot[k]); });
@@ -15725,6 +15726,139 @@ function getMotivationalMessage(sessions, streak) {
   return MOTIVATIONAL[Math.floor(Math.random() * MOTIVATIONAL.length)];
 }
 
+var pendingProgressReportComments = {};
+
+function reportDayStart(value) {
+  var d = value ? new Date(value) : new Date();
+  return new Date(d.getFullYear(), d.getMonth(), d.getDate());
+}
+
+function reportAddDays(date, days) {
+  var d = new Date(date);
+  d.setDate(d.getDate() + days);
+  return reportDayStart(d);
+}
+
+function reportDateKey(date) {
+  var d = reportDayStart(date);
+  return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+}
+
+function reportRangeLabel(start, endExclusive) {
+  var end = reportAddDays(endExclusive, -1);
+  var opts = { month: 'short', day: 'numeric' };
+  if (reportDateKey(start) === reportDateKey(end)) return start.toLocaleDateString('en-US', opts);
+  return start.toLocaleDateString('en-US', opts) + ' - ' + end.toLocaleDateString('en-US', opts);
+}
+
+function loadProgressReportComments() {
+  try { return JSON.parse(localStorage.getItem('presence_ai_report_comments_v1') || '{}'); }
+  catch(e) { return {}; }
+}
+
+function saveProgressReportComment(key, message) {
+  var comments = loadProgressReportComments();
+  comments[key] = { message: message, savedAt: new Date().toISOString() };
+  try { localStorage.setItem('presence_ai_report_comments_v1', JSON.stringify(comments)); } catch(e) {}
+}
+
+function reportPracticeSessionsInRange(start, end) {
+  var aw = filterHistory(state.history || [], start, end);
+  var conc = filterHistory(concState.history || [], start, end);
+  var prayers = (prayerState && prayerState.history ? prayerState.history : []).filter(function(h) {
+    var d = new Date(h.date);
+    return d >= start && d < end;
+  });
+  return { aw: aw, conc: conc, prayers: prayers };
+}
+
+function hasPracticeInRange(start, end) {
+  var p = reportPracticeSessionsInRange(start, end);
+  return !!(p.aw.length || p.conc.length || p.prayers.length);
+}
+
+function getFirstPracticeDate() {
+  var dates = [];
+  (state.history || []).forEach(function(h) { if (h.date) dates.push(reportDayStart(h.date)); });
+  (concState.history || []).forEach(function(h) { if (h.date) dates.push(reportDayStart(h.date)); });
+  if (prayerState && prayerState.history) {
+    prayerState.history.forEach(function(h) { if (h.date) dates.push(reportDayStart(h.date)); });
+  }
+  if (!dates.length) return null;
+  return dates.reduce(function(a, b) { return a < b ? a : b; });
+}
+
+function buildCompletedReportSummary(type, start, end, key, title) {
+  var prevStart = reportAddDays(start, -Math.round((end - start) / 86400000));
+  var prevEnd = start;
+  var current = reportPracticeSessionsInRange(start, end);
+  var previous = reportPracticeSessionsInRange(prevStart, prevEnd);
+  var awarenessMinutes = sumMinutes(current.aw);
+  var previousAwarenessMinutes = sumMinutes(previous.aw);
+  var concentrationSeconds = current.conc.reduce(function(a, h) { return a + (h.seconds || 0); }, 0);
+  var previousConcentrationSeconds = previous.conc.reduce(function(a, h) { return a + (h.seconds || 0); }, 0);
+  return {
+    key: key,
+    title: title,
+    period: type,
+    range: reportRangeLabel(start, end),
+    startDate: reportDateKey(start),
+    endDate: reportDateKey(reportAddDays(end, -1)),
+    awarenessSessions: current.aw.length,
+    awarenessMinutes: awarenessMinutes,
+    previousAwarenessMinutes: previousAwarenessMinutes,
+    averageAwarenessScore: avgScore(current.aw),
+    concentrationSessions: current.conc.length,
+    concentrationSeconds: concentrationSeconds,
+    previousConcentrationSeconds: previousConcentrationSeconds,
+    prayerSessions: current.prayers.length,
+    prayerMinutes: Math.round(current.prayers.reduce(function(a, h) { return a + ((h.durationSec || 0) / 60); }, 0)),
+    streak: state.streak,
+    awarenessLevel: state.level,
+    concentrationLevel: concState.level
+  };
+}
+
+function buildDueProgressReportSummaries() {
+  var today = reportDayStart(new Date());
+  var due = [];
+  var yesterday = reportAddDays(today, -1);
+  var tomorrowOfYesterday = today;
+  if (hasPracticeInRange(yesterday, tomorrowOfYesterday)) {
+    due.push(buildCompletedReportSummary(
+      'daily',
+      yesterday,
+      tomorrowOfYesterday,
+      'daily:' + reportDateKey(yesterday),
+      'Day complete'
+    ));
+  }
+
+  var first = getFirstPracticeDate();
+  if (!first) return due;
+  [
+    { type: 'weekly', days: 7, label: 'Week' },
+    { type: 'monthly', days: 30, label: 'Month' },
+    { type: 'yearly', days: 365, label: 'Year' }
+  ].forEach(function(cadence) {
+    var elapsedDays = Math.floor((today - first) / 86400000);
+    var completed = Math.floor(elapsedDays / cadence.days);
+    if (completed <= 0) return;
+    var index = completed - 1;
+    var start = reportAddDays(first, index * cadence.days);
+    var end = reportAddDays(start, cadence.days);
+    if (end > today || !hasPracticeInRange(start, end)) return;
+    due.push(buildCompletedReportSummary(
+      cadence.type,
+      start,
+      end,
+      cadence.type + ':' + reportDateKey(start) + ':' + reportDateKey(reportAddDays(end, -1)),
+      cadence.label + ' ' + (index + 1) + ' complete'
+    ));
+  });
+  return due;
+}
+
 function getReportFallbackMessage(summary) {
   var totalSessions = (summary.awarenessSessions || 0) + (summary.concentrationSessions || 0);
   if (!totalSessions) return 'No sessions in this window yet. Begin small, and let the first return count.';
@@ -15734,11 +15868,41 @@ function getReportFallbackMessage(summary) {
   return 'Concentration is leading this period. Stay patient with the repetitions; they are doing their quiet work.';
 }
 
-function requestProgressReportComment(summary) {
+function requestProgressReportComment(summary, targetId) {
+  var saved = loadProgressReportComments()[summary.key];
+  if (saved && saved.message) return;
+  if (pendingProgressReportComments[summary.key]) return;
+  pendingProgressReportComments[summary.key] = true;
   requestPresenceAI('progress_report', summary).then(function(message) {
-    var el = document.getElementById('aiReportCommentText');
-    if (el && message) el.textContent = message;
-  }).catch(function() {});
+    if (!message) return;
+    saveProgressReportComment(summary.key, message);
+    if (syncEnabled && authToken) syncPushData();
+    var el = document.getElementById(targetId);
+    if (el) el.textContent = message;
+  }).catch(function() {}).finally(function() {
+    delete pendingProgressReportComments[summary.key];
+  });
+}
+
+function renderDueProgressReportComments(summaries) {
+  if (!summaries.length) return '';
+  var saved = loadProgressReportComments();
+  var html = '<div class="report-section">';
+  html += '<div class="report-section-title">Omnia Reports</div>';
+  summaries.forEach(function(summary, i) {
+    var id = 'aiReportCommentText' + i;
+    var message = saved[summary.key] && saved[summary.key].message
+      ? saved[summary.key].message
+      : getReportFallbackMessage(summary);
+    html += '<div class="report-motivational" style="margin-bottom:10px;">'
+      + '<div style="font-size:9px;letter-spacing:.2em;text-transform:uppercase;color:var(--muted);margin-bottom:8px;">'
+      + esc(summary.title) + ' · ' + esc(summary.range)
+      + '</div>'
+      + '<div class="report-motivational-text" id="' + id + '">"' + esc(message) + '"</div>'
+      + '</div>';
+  });
+  html += '</div>';
+  return html;
 }
 
 // ── Report renderers ──────────────────────────────────────
@@ -15749,6 +15913,7 @@ function renderReport(period) {
   var awarenessPrev = filterHistory(state.history, range.prevStart, range.prevEnd);
   var concNow = filterHistory(concState.history, range.start, range.now);
   var concPrev = filterHistory(concState.history, range.prevStart, range.prevEnd);
+  var dueReportSummaries = buildDueProgressReportSummaries();
 
   var html = '';
 
@@ -15766,6 +15931,8 @@ function renderReport(period) {
     var msg = getMotivationalMessage(awarenessNow.length + concNow.length, state.streak);
     html += '<div class="report-motivational"><div class="report-motivational-text">"' + msg + '"</div></div>';
   }
+
+  html += renderDueProgressReportComments(dueReportSummaries);
 
   // ── Awareness stats ──
   var awMinNow = sumMinutes(awarenessNow);
@@ -15793,25 +15960,6 @@ function renderReport(period) {
     html += '<div class="report-chart"><div class="report-chart-title">Session Score Trend</div>' + renderLineChart(awChartData.scoreValues, '#7eb8a4', 48) + '</div>';
   }
   html += '</div>';
-
-  var reportSummary = {
-    period: period,
-    awarenessSessions: awarenessNow.length,
-    awarenessMinutes: awMinNow,
-    previousAwarenessMinutes: awMinPrev,
-    averageAwarenessScore: awScoreNow,
-    concentrationSessions: concNow.length,
-    concentrationSeconds: concNow.reduce(function(a, h) { return a + (h.seconds || 0); }, 0),
-    previousConcentrationSeconds: concPrev.reduce(function(a, h) { return a + (h.seconds || 0); }, 0),
-    prayersCompletedToday: prayerState.todayDone ? prayerState.todayDone.length : 0,
-    prayerGoal: prayerState.count,
-    streak: state.streak,
-    awarenessLevel: state.level,
-    concentrationLevel: concState.level
-  };
-  html += '<div class="report-motivational" id="aiReportComment">'
-    + '<div class="report-motivational-text" id="aiReportCommentText">"' + esc(getReportFallbackMessage(reportSummary)) + '"</div>'
-    + '</div>';
 
   // ── Concentration stats ──
   var concSecNow = concNow.reduce(function(a, h) { return a + (h.seconds || 0); }, 0);
@@ -15879,7 +16027,9 @@ function renderReport(period) {
   html += '</div>';
 
   document.getElementById('reportContent').innerHTML = html;
-  requestProgressReportComment(reportSummary);
+  dueReportSummaries.forEach(function(summary, i) {
+    requestProgressReportComment(summary, 'aiReportCommentText' + i);
+  });
 }
 
 function buildChartData(history, period, valueKey) {
@@ -16168,6 +16318,7 @@ async function syncPushData() {
       presence_prayer_v1: localStorage.getItem('presence_prayer_v1'),
       presence_journal_v1: localStorage.getItem('presence_journal_v1'),
       presence_soul_mirror_v1: localStorage.getItem('presence_soul_mirror_v1'),
+      presence_ai_report_comments_v1: localStorage.getItem('presence_ai_report_comments_v1'),
       presence_guide_v1: localStorage.getItem('presence_guide_v1'),
       presence_omnia_v1: localStorage.getItem('presence_omnia_v1'),
       bardon_rpg_v2: localStorage.getItem('bardon_rpg_v2'),
