@@ -937,6 +937,19 @@
     .rpt-omnia-meta { margin-top:10px; font-size:8px; letter-spacing:.18em; text-transform:uppercase; color:var(--muted); font-family:'DM Mono',monospace; }
     .rpt-omnia-refresh { margin-top:10px; background:none; border:none; font-size:8px; letter-spacing:.15em; text-transform:uppercase; color:var(--muted); font-family:'DM Mono',monospace; cursor:pointer; opacity:.5; }
     .rpt-omnia-refresh:hover { opacity:.9; }
+    /* Bubble row layout */
+    .rpt-omnia-card__inner--row { display:flex; flex-direction:row; align-items:center; padding:14px 16px; gap:14px; }
+    .rpt-omnia-stage--sm { width:70px; height:78px; margin-bottom:0; flex-shrink:0; }
+    .rpt-omnia-crystal--sm { width:32px; }
+    .rpt-omnia-clipboard--sm { width:24px; right:4px; }
+    .rpt-omnia-bubble { flex:1; position:relative; background:rgba(255,255,255,.04); border:1px solid rgba(168,210,235,.2); border-radius:12px; padding:12px 14px; }
+    .rpt-omnia-bubble::before { content:''; position:absolute; left:-9px; top:50%; transform:translateY(-50%); border:8px solid transparent; border-right-color:rgba(168,210,235,.2); border-left-width:0; }
+    .rpt-omnia-bubble::after { content:''; position:absolute; left:-7px; top:50%; transform:translateY(-50%); border:6px solid transparent; border-right-color:rgba(10,11,18,1); border-left-width:0; }
+    .rpt-omnia-bubble-text { font-family:'Cormorant Garamond',serif; font-size:13.5px; font-style:italic; color:var(--text); line-height:1.72; }
+    .rpt-omnia-bubble-text--dim { color:var(--muted); font-size:12px; }
+    .rpt-omnia-bubble-meta { margin-top:8px; font-size:8px; letter-spacing:.16em; text-transform:uppercase; color:var(--muted); font-family:'DM Mono',monospace; }
+    .rpt-omnia-bubble-refresh { display:inline-block; margin-top:5px; background:none; border:none; font-size:8px; letter-spacing:.13em; text-transform:uppercase; color:var(--muted); font-family:'DM Mono',monospace; cursor:pointer; opacity:.5; padding:0; }
+    .rpt-omnia-bubble-refresh:hover { opacity:.9; }
     .report-section { margin-bottom:24px; }
     .report-section-title { font-size:9px; letter-spacing:.25em; text-transform:uppercase; color:var(--muted); margin-bottom:10px; padding-bottom:6px; border-bottom:1px solid var(--border); }
     .report-cards { display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:12px; }
@@ -15796,11 +15809,12 @@ var OMNIA_CLIPBOARD_SVG_REFLECT = '<rect x="2" y="5" width="34" height="41" rx="
   + '<rect x="7" y="29" width="14" height="1.5" rx=".75" fill="rgba(184,234,255,.1)"/>'
   + '<text x="17" y="43" font-size="10" fill="rgba(184,234,255,.3)" font-family="monospace" text-anchor="middle">?</text>';
 
-function buildRptOmniaStage(loading) {
-  var crystalClass = 'rpt-omnia-crystal' + (loading ? ' rpt-omnia-crystal--loading' : '');
+function buildRptOmniaStage(loading, small) {
+  var crystalClass = 'rpt-omnia-crystal' + (loading ? ' rpt-omnia-crystal--loading' : '') + (small ? ' rpt-omnia-crystal--sm' : '');
   var clipInner = loading ? OMNIA_CLIPBOARD_SVG_REFLECT : OMNIA_CLIPBOARD_SVG_CONTENT;
-  var clipClass = 'rpt-omnia-clipboard' + (loading ? '' : ' rpt-omnia-clipboard--still');
-  return '<div class="rpt-omnia-stage">'
+  var clipClass = 'rpt-omnia-clipboard' + (loading ? '' : ' rpt-omnia-clipboard--still') + (small ? ' rpt-omnia-clipboard--sm' : '');
+  var stageClass = 'rpt-omnia-stage' + (small ? ' rpt-omnia-stage--sm' : '');
+  return '<div class="' + stageClass + '">'
     + OMNIA_CRYSTAL_SVG_RPT.replace('class="rpt-omnia-crystal"','class="'+crystalClass+'"')
     + '<svg class="'+clipClass+'" viewBox="0 0 38 48" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">'+clipInner+'</svg>'
     + '</div>';
@@ -16222,15 +16236,19 @@ function renderReport(period) {
       var isFresh = cachedEntry && cachedEntry.ts && (Date.now() - cachedEntry.ts) < omniaReportTTL(period);
 
       html += '<div class="rpt-omnia-card" style="margin-top:16px;" id="omniaReportCard">'
-        + '<div class="rpt-omnia-card__inner">';
+        + '<div class="rpt-omnia-card__inner rpt-omnia-card__inner--row">';
       if (isFresh) {
-        html += buildRptOmniaStage(false)
-          + '<div class="rpt-omnia-text">' + esc(cachedEntry.commentary) + '</div>'
-          + '<div class="rpt-omnia-meta">Omnia · ' + periodLabel + '</div>'
-          + '<button class="rpt-omnia-refresh" onclick="refreshOmniaReport(\'' + period + '\')">↺ refresh</button>';
+        html += buildRptOmniaStage(false, true)
+          + '<div class="rpt-omnia-bubble">'
+          + '<div class="rpt-omnia-bubble-text">' + esc(cachedEntry.commentary) + '</div>'
+          + '<div class="rpt-omnia-bubble-meta">Omnia · ' + periodLabel + '</div>'
+          + '<button class="rpt-omnia-bubble-refresh" onclick="refreshOmniaReport(\'' + period + '\')">↺ refresh</button>'
+          + '</div>';
       } else {
-        html += buildRptOmniaStage(true)
-          + '<div class="rpt-omnia-text rpt-omnia-text--dim" id="omniaReportText">Omnia is evaluating your practice…</div>';
+        html += buildRptOmniaStage(true, true)
+          + '<div class="rpt-omnia-bubble">'
+          + '<div class="rpt-omnia-bubble-text rpt-omnia-bubble-text--dim" id="omniaReportText">Omnia is reflecting…</div>'
+          + '</div>';
         // Kick off the fetch after render
         setTimeout(function() { loadOmniaReportInto(period); }, 0);
       }
@@ -16359,10 +16377,13 @@ function loadOmniaReportInto(period) {
     if (!inner) return;
     var periodLabel = period === 'daily' ? 'today' : period === 'weekly' ? 'this week' : 'this month';
     if (err || !commentary) return; // stay in loading state on error
-    inner.innerHTML = buildRptOmniaStage(false)
-      + '<div class="rpt-omnia-text" style="opacity:0;transition:opacity .6s ease;" id="omniaReportText">' + esc(commentary) + '</div>'
-      + '<div class="rpt-omnia-meta">Omnia · ' + periodLabel + '</div>'
-      + '<button class="rpt-omnia-refresh" onclick="refreshOmniaReport(\'' + period + '\')">↺ refresh</button>';
+    inner.className = 'rpt-omnia-card__inner rpt-omnia-card__inner--row';
+    inner.innerHTML = buildRptOmniaStage(false, true)
+      + '<div class="rpt-omnia-bubble">'
+      + '<div class="rpt-omnia-bubble-text" style="opacity:0;transition:opacity .6s ease;" id="omniaReportText">' + esc(commentary) + '</div>'
+      + '<div class="rpt-omnia-bubble-meta">Omnia · ' + periodLabel + '</div>'
+      + '<button class="rpt-omnia-bubble-refresh" onclick="refreshOmniaReport(\'' + period + '\')">↺ refresh</button>'
+      + '</div>';
     requestAnimationFrame(function() {
       var t = document.getElementById('omniaReportText');
       if (t) t.style.opacity = '1';
@@ -16375,8 +16396,13 @@ function refreshOmniaReport(period) {
   var card = document.getElementById('omniaReportCard');
   if (card) {
     var inner = card.querySelector('.rpt-omnia-card__inner');
-    if (inner) inner.innerHTML = buildRptOmniaStage(true)
-      + '<div class="rpt-omnia-text rpt-omnia-text--dim">Omnia is evaluating your practice…</div>';
+    if (inner) {
+      inner.className = 'rpt-omnia-card__inner rpt-omnia-card__inner--row';
+      inner.innerHTML = buildRptOmniaStage(true, true)
+        + '<div class="rpt-omnia-bubble">'
+        + '<div class="rpt-omnia-bubble-text rpt-omnia-bubble-text--dim">Omnia is reflecting…</div>'
+        + '</div>';
+    }
   }
   loadOmniaReportInto(period);
 }
