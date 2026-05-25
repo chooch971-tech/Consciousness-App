@@ -15825,7 +15825,7 @@ function showReports() {
   currentReportPeriod = 'daily';
   updateReportTabStyles();
   showScreen('reportsScreen');
-  try { renderReport('daily'); } catch(e) { console.error('[showReports]', e); }
+  try { renderReport('daily'); } catch(e) { console.error('[showReports]', e); var rc=document.getElementById('reportContent'); if(rc) rc.innerHTML='<div style="padding:24px;color:rgba(255,100,100,.7);font-family:DM Mono,monospace;font-size:11px;line-height:1.7;">Render error: '+String(e)+'</div>'; }
 }
 
 // ── Data helpers ──────────────────────────────────────────
