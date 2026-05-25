@@ -1,0 +1,95 @@
+# Presence — Roadmap
+
+Last updated: 2026-05-25
+
+---
+
+## V0.1 — Beta Launch (target: June 7–8)
+
+### Path Screen
+- [ ] Redesign chests
+- [ ] Chest opening animation
+
+### Upgrade Screen (replaces Bardon RPG)
+- [ ] Redesign everything below "Advance to Step II"
+- [ ] Biblically accurate angel asset
+- [ ] Test all cosmetics
+- [ ] Remove all Bardon RPG code (`bardonScreen`, `bardon_rpg_v2` localStorage key, related JS/CSS)
+
+### Star Screen
+- [ ] Fix borked menus
+- [ ] Finalize all functionality
+- [ ] Design polish (less vibecoded)
+
+### Streak Screen
+- [ ] Design polish (less vibecoded)
+- [ ] Streak animation when a new day is added
+- [ ] Design Streak Society section
+- [ ] Rename Streak Society
+
+### Progress Reports
+- [ ] Design overhaul (less vibecoded)
+- [ ] Add bar charts
+- [ ] Hide prayer section when prayer is disabled in settings
+
+### Journal
+- [ ] Complete redesign
+
+### Friends Screen
+- [ ] Initial design
+
+### Profile
+- [ ] Design
+
+### FAQ
+- [ ] Write content
+- [ ] Design
+
+### Settings
+- [ ] Overhaul
+
+### About Section
+- [ ] Write content
+
+### Cleanup
+- [ ] Remove Bardon RPG dead code
+- [ ] Remove `/api/sync/sync/diagnose` debug endpoint from server.js
+
+---
+
+## V0.1.1 — Beta Patch (target: June 14)
+
+- [ ] Prayer screen redesign
+- [ ] Bug fixes from V0.1
+- [ ] Minor quality-of-life / design improvements from V0.1
+
+---
+
+## V0.2 — (target: July 5 or July 12)
+
+- [ ] Gitdoctor revision
+- [ ] All bug fixes / QoL improvements from V0.1.1
+- [ ] Security overhaul
+- [ ] Pavlok support
+
+---
+
+## V0.2.1 — App Store Release (target: July 17)
+
+- [ ] Bug fixes and improvements from V0.2
+- [ ] Package for Apple App Store + Android Google Play
+- [ ] Create subscription tiers on Buy Me a Coffee
+- [ ] Decide whether to keep web app
+
+---
+
+## Recently Completed
+
+- [x] Journal redesign: Day/Week/Month tabs, week strip, Omnia daily prompts, `.jl-*` CSS
+- [x] Progress Report: Omnia speech bubble with AI commentary, `.rpt-*` CSS
+- [x] Sync: sign-out no longer wipes local data
+- [x] Sync: pull-on-login restores cloud data immediately
+- [x] Sync: JWT auto-refresh (silently renews at 20 days, expires at 30)
+- [x] Sync: persistent warning in Settings when sync is disconnected
+- [x] Sync: server pull finds most recent meaningful snapshot (not just latest)
+- [x] Sync: push local state after pull when local is ahead of cloud
