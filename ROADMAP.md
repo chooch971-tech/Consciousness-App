@@ -35,6 +35,13 @@ Last updated: 2026-05-25
 ### Journal
 - [ ] Complete redesign
 
+### Concentration Screen
+- [ ] Redesign
+- [ ] Exercises need significant work (holding off on Advanced exercises for now)
+
+### Awareness Screen
+- [ ] Redesign
+
 ### Friends Screen
 - [ ] Initial design
 
@@ -71,15 +78,47 @@ Last updated: 2026-05-25
 - [ ] All bug fixes / QoL improvements from V0.1.1
 - [ ] Security overhaul
 - [ ] Pavlok support
+- [ ] Frequencies
+- [ ] Fix multi-sense exercise
+- [ ] Eliminate redundant code
 
 ---
 
-## V0.2.1 — App Store Release (target: July 17)
+## V0.2.1 — App Store Release (target: July 19)
 
 - [ ] Bug fixes and improvements from V0.2
 - [ ] Package for Apple App Store + Android Google Play
 - [ ] Create subscription tiers on Buy Me a Coffee
 - [ ] Decide whether to keep web app
+- [ ] Multi-notification feature (editable in Settings)
+
+---
+
+## V0.3 — (target: August 2)
+
+- [ ] Security improvements
+- [ ] Bug fixes and improvements from V0.2 / V0.2.1
+- [ ] SEO optimization (meta tags, structured data, indexing)
+- [ ] Code quality improvements
+- [ ] All Angles exercise
+- [ ] Complete anti-vibecode pass
+
+---
+
+## V0.4 — (target: August 16)
+
+- [ ] Ads ready + complete marketing strategy
+- [ ] Accounts on all social media platforms ready to post
+- [ ] Completed marketing plan
+- [ ] Multi-language support infrastructure
+- [ ] WatchOS app (?)
+
+---
+
+## V1.0 — Public Launch (target: August 30, 2026)
+
+- [ ] Launch marketing campaign
+- [ ] 🚀
 
 ---
 
