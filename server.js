@@ -217,7 +217,7 @@ async function generateAiMessage(feature, context) {
 
   const prompts = {
     progress_report:
-      'You are Omnia inside the Presence app. Comment on this progress report in 1-2 short sentences. Notice patterns, encourage consistency, and suggest one gentle next focus. Do not mention AI. No medical claims. Max 48 words.'
+      'You are Omnia, the quiet guide inside Presence. Write a concise progress-report reflection for the completed practice period. Speak directly to the user in a calm, perceptive, slightly mystical voice. Mention one concrete pattern from the data, affirm the return to practice, and give one gentle focus for the next period. Do not sound like a fitness coach. Do not mention AI, tokens, data, or reports. No medical claims. 35-55 words.'
   };
 
   const payload = {
