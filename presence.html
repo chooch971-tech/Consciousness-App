@@ -15824,8 +15824,8 @@ function updateReportTabStyles() {
 function showReports() {
   currentReportPeriod = 'daily';
   updateReportTabStyles();
-  renderReport('daily');
   showScreen('reportsScreen');
+  try { renderReport('daily'); } catch(e) { console.error('[showReports]', e); }
 }
 
 // ── Data helpers ──────────────────────────────────────────
@@ -16497,7 +16497,7 @@ document.querySelectorAll('.report-period-tab').forEach(function(tab) {
 });
 
 document.getElementById('reportsBack').addEventListener('click', function() {
-  renderJournal(new Date()); showScreen('journalScreen');
+  renderHome(); showScreen('homeScreen');
 });
 
 document.getElementById('reportShareBtn').addEventListener('click', shareReport);
