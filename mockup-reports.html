@@ -73,13 +73,14 @@
     width: 50px;
     position: relative; z-index: 2;
     filter: drop-shadow(0 0 10px rgba(184,234,255,.45)) drop-shadow(0 0 3px rgba(184,234,255,.5));
-    animation: omniaBounceCrystal 1.1s ease-in-out infinite;
+    animation: omniaBounceCrystal 1.5s linear infinite;
     transform-origin: bottom center;
+    will-change: transform;
   }
   @keyframes omniaBounceCrystal {
-    0%, 100% { transform: translateY(0); }
-    45%      { transform: translateY(-14px); }
-    60%      { transform: translateY(-11px); }
+    0%   { transform: translateY(0); animation-timing-function: cubic-bezier(.215,.61,.355,1); }
+    50%  { transform: translateY(-15px); animation-timing-function: cubic-bezier(.55,.055,.675,.19); }
+    100% { transform: translateY(0); }
   }
 
   /* Clipboard */
@@ -89,13 +90,15 @@
     bottom: 4px;
     width: 38px;
     z-index: 3;
-    animation: omniaBounceClip 1.1s ease-in-out infinite;
-    animation-delay: .08s;
+    animation: omniaBounceClip 1.5s linear infinite;
+    animation-delay: .15s;
+    transform-origin: bottom center;
+    will-change: transform;
   }
   @keyframes omniaBounceClip {
-    0%, 100% { transform: translateY(0) rotate(4deg); }
-    45%      { transform: translateY(-11px) rotate(4deg); }
-    60%      { transform: translateY(-9px) rotate(4deg); }
+    0%   { transform: translateY(0) rotate(4deg); animation-timing-function: cubic-bezier(.215,.61,.355,1); }
+    50%  { transform: translateY(-11px) rotate(4deg); animation-timing-function: cubic-bezier(.55,.055,.675,.19); }
+    100% { transform: translateY(0) rotate(4deg); }
   }
 
   /* Text / meta */
@@ -290,8 +293,8 @@
             <text x="17" y="43" font-size="10" fill="rgba(184,234,255,.3)" font-family="monospace" text-anchor="middle">?</text>
           </svg>
         </div>
-        <div class="rpt-omnia__text rpt-omnia__text--dim">Omnia is reflecting…</div>
-        <div class="rpt-omnia__meta" style="opacity:.5">available Sunday</div>
+        <div class="rpt-omnia__text rpt-omnia__text--dim">Omnia is evaluating. Come back Sunday for a custom analysis of this week.</div>
+        <div class="rpt-omnia__meta" style="opacity:.45">available Sunday</div>
       </div>
     </div>
     <div class="rpt-stats">
