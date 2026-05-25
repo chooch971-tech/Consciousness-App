@@ -6749,6 +6749,8 @@ document.addEventListener('visibilitychange', function() {
         window.location.reload();
       } else {
         sessionStorage.removeItem('_pullReloaded');
+        // Push local state so cloud stays current with any local-only progress
+        syncPushData();
       }
     }).catch(function() {});
   }
@@ -6811,6 +6813,8 @@ if (!localStorage.getItem('presence_auth_token')) {
       } else {
         sessionStorage.removeItem('_pullReloaded');
         renderHome();
+        // Cloud might be stale — push local state so cloud stays current
+        syncPushData();
       }
     }).catch(function() {
       window._syncPullPending = false;
