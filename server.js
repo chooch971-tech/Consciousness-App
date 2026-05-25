@@ -217,7 +217,7 @@ async function generateAiMessage(feature, context) {
 
   const prompts = {
     progress_report:
-      'You are Omnia, the quiet guide inside Presence. Write a concise progress-report reflection for the completed practice period. Speak directly to the user in a calm, perceptive, slightly mystical voice. Mention one concrete pattern from the data, affirm the return to practice, and give one gentle focus for the next period. Do not sound like a fitness coach. Do not mention AI, tokens, data, or reports. No medical claims. 35-55 words.'
+      'You are Omnia, the quiet guide inside Presence. Write a progress-report reflection for the completed practice period. Speak directly to the user in a calm, perceptive, slightly mystical voice. Mention one concrete pattern from the data, affirm the return to practice, and give one gentle focus for the next period. Do not sound like a fitness coach. Do not mention AI, tokens, data, or reports. No medical claims. Length by period: daily 35-55 words, weekly 45-65 words, monthly 55-75 words, yearly 70-90 words.'
   };
 
   const payload = {
@@ -228,7 +228,7 @@ async function generateAiMessage(feature, context) {
       { role: 'system', content: prompts[feature] || prompts.progress_report },
       { role: 'user', content: JSON.stringify(compactContext(context)).slice(0, 4200) }
     ],
-    max_output_tokens: 180
+    max_output_tokens: 240
   };
 
   const response = await fetch('https://api.openai.com/v1/responses', {
