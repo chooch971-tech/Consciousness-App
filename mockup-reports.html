@@ -3,14 +3,13 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
-<title>Progress Report · Mockup v2</title>
+<title>Progress Report · Mockup v3</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300;1,400&family=DM+Mono:wght@300;400&display=swap" rel="stylesheet">
 <style>
   :root {
     --bg: #07080d;
     --surface: #0d0e16;
-    --surface2: #111320;
     --text: #ddd8ce;
     --muted: rgba(221,216,206,.38);
     --muted2: rgba(221,216,206,.18);
@@ -18,7 +17,6 @@
     --accent-dim: rgba(126,184,164,.1);
     --border: rgba(221,216,206,.07);
     --amber: #c8906a;
-    --purple: #9b8ec4;
   }
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
   body {
@@ -29,11 +27,7 @@
     display: flex;
     justify-content: center;
   }
-  .phone {
-    width: 390px;
-    min-height: 844px;
-    background: var(--bg);
-  }
+  .phone { width: 390px; min-height: 844px; background: var(--bg); }
 
   /* ── Header ── */
   .rpt-header {
@@ -58,10 +52,8 @@
   .rpt-period {
     display: flex;
     justify-content: center;
-    gap: 0;
     padding: 0 24px 0;
     border-bottom: 1px solid var(--border);
-    margin-bottom: 0;
   }
   .rpt-period__item {
     flex: 1;
@@ -78,7 +70,6 @@
     font-size: 16px;
     font-weight: 300;
     color: var(--muted);
-    letter-spacing: .02em;
     transition: color .2s;
   }
   .rpt-period__sub {
@@ -90,22 +81,19 @@
     transition: color .2s;
   }
   .rpt-period__dot {
-    width: 3px;
-    height: 3px;
+    width: 3px; height: 3px;
     border-radius: 50%;
     background: transparent;
     margin-top: 2px;
     transition: background .2s;
   }
   .rpt-period__item.active .rpt-period__label { color: var(--text); }
-  .rpt-period__item.active .rpt-period__sub { color: var(--muted); }
-  .rpt-period__item.active .rpt-period__dot { background: var(--accent); }
-  /* Active underline */
+  .rpt-period__item.active .rpt-period__sub   { color: var(--muted); }
+  .rpt-period__item.active .rpt-period__dot   { background: var(--accent); }
   .rpt-period__item.active::after {
     content: '';
     position: absolute;
-    bottom: -1px;
-    left: 0; right: 0;
+    bottom: -1px; left: 0; right: 0;
     height: 1px;
     background: var(--accent);
     opacity: .5;
@@ -123,9 +111,9 @@
   /* ── Omnia card ── */
   .rpt-omnia {
     margin: 16px 20px 0;
-    border: 1px solid rgba(126,184,164,.15);
+    border: 1px solid rgba(184,234,255,.12);
     border-radius: 14px;
-    background: rgba(126,184,164,.03);
+    background: rgba(184,234,255,.025);
     overflow: hidden;
   }
   .rpt-omnia__inner {
@@ -136,8 +124,7 @@
   }
   .rpt-omnia__stage {
     position: relative;
-    width: 90px;
-    height: 100px;
+    width: 90px; height: 100px;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -146,16 +133,16 @@
   .omnia-crystal {
     width: 48px;
     animation: omniaFloat 4s ease-in-out infinite;
-    filter: drop-shadow(0 0 12px rgba(126,184,164,.3));
+    filter: drop-shadow(0 0 10px rgba(184,234,255,.4));
   }
   @keyframes omniaFloat {
     0%, 100% { transform: translateY(0); }
-    50% { transform: translateY(-5px); }
+    50%       { transform: translateY(-6px); }
   }
   .omnia-bead {
     position: absolute;
     border-radius: 50%;
-    background: radial-gradient(circle at 35% 35%, rgba(255,255,255,.9), var(--accent) 60%, rgba(60,140,110,.6));
+    background: radial-gradient(circle at 32% 28%, #f4ffff 0%, #b8eaff 30%, #7eb8a4 78%);
     animation: beadShower 2.8s ease-in infinite;
     opacity: 0;
   }
@@ -173,10 +160,7 @@
     line-height: 1.75;
     text-align: center;
   }
-  .rpt-omnia__text--loading {
-    color: var(--muted);
-    font-size: 12px;
-  }
+  .rpt-omnia__text--loading { color: var(--muted); font-size: 12px; }
   .rpt-omnia__meta {
     margin-top: 10px;
     font-size: 8px;
@@ -187,15 +171,13 @@
   }
   .rpt-omnia__refresh {
     margin-top: 10px;
-    background: none;
-    border: none;
+    background: none; border: none;
     font-size: 8px;
     letter-spacing: .15em;
     text-transform: uppercase;
     color: var(--muted);
     font-family: 'DM Mono', monospace;
-    cursor: pointer;
-    opacity: .5;
+    cursor: pointer; opacity: .5;
   }
 
   /* ── Stat grid ── */
@@ -219,27 +201,14 @@
     line-height: 1;
     margin-bottom: 4px;
   }
-  .rpt-stat__val small {
-    font-size: 15px;
-    opacity: .45;
-  }
-  .rpt-stat__label {
-    font-size: 8px;
-    letter-spacing: .14em;
-    text-transform: uppercase;
-    color: var(--muted);
-  }
-  .rpt-stat__delta {
-    font-size: 9px;
-    margin-top: 5px;
-  }
-  .delta-up { color: var(--accent); }
+  .rpt-stat__val small { font-size: 15px; opacity: .45; }
+  .rpt-stat__label { font-size: 8px; letter-spacing: .14em; text-transform: uppercase; color: var(--muted); }
+  .rpt-stat__delta { font-size: 9px; margin-top: 5px; }
+  .delta-up   { color: var(--accent); }
   .delta-flat { color: var(--muted); }
 
   /* ── Section headings ── */
-  .rpt-section {
-    padding: 20px 20px 0;
-  }
+  .rpt-section { padding: 20px 20px 0; }
   .rpt-section__title {
     font-size: 8px;
     letter-spacing: .22em;
@@ -260,50 +229,17 @@
     padding: 14px;
     margin-top: 8px;
   }
-  .rpt-chart__title {
-    font-size: 8px;
-    letter-spacing: .14em;
-    text-transform: uppercase;
-    color: var(--muted);
-    margin-bottom: 14px;
-  }
-  .rpt-bar-row {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    margin-bottom: 8px;
-  }
+  .rpt-bar-row { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
   .rpt-bar-row:last-child { margin-bottom: 0; }
-  .rpt-bar-label {
-    font-size: 8px;
-    color: var(--muted);
-    width: 22px;
-    flex-shrink: 0;
-    letter-spacing: .05em;
-  }
-  .rpt-bar-track {
-    flex: 1;
-    height: 3px;
-    background: rgba(255,255,255,.04);
-    border-radius: 2px;
-    overflow: hidden;
-  }
-  .rpt-bar-fill {
-    height: 100%;
-    border-radius: 2px;
-  }
+  .rpt-bar-label { font-size: 8px; color: var(--muted); width: 22px; flex-shrink: 0; }
+  .rpt-bar-track { flex: 1; height: 3px; background: rgba(255,255,255,.04); border-radius: 2px; overflow: hidden; }
+  .rpt-bar-fill { height: 100%; border-radius: 2px; }
   .rpt-bar-fill--green { background: var(--accent); opacity: .55; }
   .rpt-bar-fill--amber { background: var(--amber); opacity: .55; }
   .rpt-bar-fill--today { opacity: .9 !important; }
-  .rpt-bar-val {
-    font-size: 8px;
-    color: var(--muted);
-    width: 30px;
-    text-align: right;
-    flex-shrink: 0;
-  }
+  .rpt-bar-val { font-size: 8px; color: var(--muted); width: 30px; text-align: right; flex-shrink: 0; }
 
-  /* ── PB progression sparkline ── */
+  /* ── Sparkline ── */
   .rpt-sparkline {
     background: var(--surface);
     border: 1px solid var(--border);
@@ -311,60 +247,28 @@
     padding: 14px;
     margin-top: 8px;
   }
-  .rpt-sparkline__title {
-    font-size: 8px;
-    letter-spacing: .14em;
-    text-transform: uppercase;
-    color: var(--muted);
-    margin-bottom: 12px;
-  }
-  .rpt-spark-row {
-    display: flex;
-    align-items: flex-end;
-    gap: 4px;
-    height: 36px;
-  }
-  .rpt-spark-bar {
-    flex: 1;
-    border-radius: 2px 2px 0 0;
-    background: rgba(200,144,106,.3);
-    min-height: 3px;
-    position: relative;
-    transition: opacity .2s;
-  }
+  .rpt-sparkline__title { font-size: 8px; letter-spacing: .14em; text-transform: uppercase; color: var(--muted); margin-bottom: 12px; }
+  .rpt-spark-row { display: flex; align-items: flex-end; gap: 4px; height: 36px; }
+  .rpt-spark-bar { flex: 1; border-radius: 2px 2px 0 0; background: rgba(200,144,106,.3); min-height: 3px; }
   .rpt-spark-bar--today { background: var(--amber); opacity: .8; }
-  .rpt-spark-labels {
-    display: flex;
-    gap: 4px;
-    margin-top: 5px;
-  }
-  .rpt-spark-label {
-    flex: 1;
-    font-size: 7px;
-    color: var(--muted2);
-    text-align: center;
-    letter-spacing: .04em;
-  }
+  .rpt-spark-labels { display: flex; gap: 4px; margin-top: 5px; }
+  .rpt-spark-label { flex: 1; font-size: 7px; color: var(--muted2); text-align: center; }
 
-  /* ── Footer spacer ── */
-  .rpt-footer { height: 48px; }
-
-  /* ── View panels ── */
+  /* ── Views ── */
   .view { display: none; }
   .view.active { display: block; }
+  .rpt-footer { height: 48px; }
 </style>
 </head>
 <body>
 <div class="phone">
 
-  <!-- Header -->
   <div class="rpt-header">
     <div class="rpt-header__title">Progress Report</div>
     <div class="rpt-header__right">chooch971</div>
   </div>
 
-  <!-- Period selector -->
-  <div class="rpt-period" id="periodBar">
+  <div class="rpt-period">
     <div class="rpt-period__item active" onclick="switchPeriod('daily',this)">
       <div class="rpt-period__label">Daily</div>
       <div class="rpt-period__sub">today</div>
@@ -387,26 +291,35 @@
     </div>
   </div>
 
-  <!-- ── DAILY VIEW ── -->
+  <!-- ── DAILY ── -->
   <div class="view active" id="view-daily">
     <div class="rpt-period-heading">Sunday, May 25, 2026</div>
-
-    <!-- Omnia card — content state -->
     <div class="rpt-omnia">
       <div class="rpt-omnia__inner">
         <div class="rpt-omnia__stage">
-          <svg class="omnia-crystal" viewBox="0 0 72 118" fill="none">
+          <svg class="omnia-crystal" viewBox="0 0 80 130" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
             <defs>
-              <linearGradient id="cg1" x1="36" y1="0" x2="36" y2="118" gradientUnits="userSpaceOnUse">
-                <stop offset="0%" stop-color="#b8ede0"/>
-                <stop offset="50%" stop-color="#7eb8a4"/>
-                <stop offset="100%" stop-color="#3a7a64"/>
-              </linearGradient>
+              <linearGradient id="ogD1" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#ddf0ff" stop-opacity="0.92"/><stop offset="100%" stop-color="#6ab8d8" stop-opacity="0.48"/></linearGradient>
+              <linearGradient id="ogD2" x1="100%" y1="0%" x2="0%" y2="100%"><stop offset="0%" stop-color="#ffffff" stop-opacity="0.78"/><stop offset="100%" stop-color="#4a9ec0" stop-opacity="0.22"/></linearGradient>
+              <radialGradient id="ogD3" cx="50%" cy="38%" r="58%"><stop offset="0%" stop-color="#b8eaff" stop-opacity="0.42"/><stop offset="100%" stop-color="#2878a0" stop-opacity="0"/></radialGradient>
+              <filter id="ogDglow"><feGaussianBlur stdDeviation="2.5" result="blur"/><feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
             </defs>
-            <path d="M36 2 L68 38 L54 116 L18 116 L4 38 Z" fill="url(#cg1)" opacity=".9"/>
-            <path d="M36 2 L4 38 L18 116 L36 80 Z" fill="rgba(255,255,255,.14)" opacity=".5"/>
-            <path d="M24 38 L36 2 L48 38 Z" fill="rgba(255,255,255,.2)"/>
-            <line x1="36" y1="2" x2="36" y2="116" stroke="rgba(255,255,255,.1)" stroke-width=".8"/>
+            <ellipse cx="40" cy="68" rx="28" ry="48" fill="url(#ogD3)" opacity="0.62"/>
+            <polygon points="40,3 54,14 40,25 26,14" fill="url(#ogD1)" stroke="#90cce8" stroke-width="0.55" filter="url(#ogDglow)"/>
+            <polygon points="40,3 54,14 40,13" fill="#ceeaff" opacity="0.72"/>
+            <polygon points="40,3 26,14 40,13" fill="#b0dcf5" opacity="0.42"/>
+            <line x1="40" y1="3" x2="40" y2="25" stroke="#b8e0f8" stroke-width="0.4" opacity="0.55"/>
+            <line x1="26" y1="14" x2="54" y2="14" stroke="#b8e0f8" stroke-width="0.4" opacity="0.35"/>
+            <polygon points="40,25 60,36 64,58 40,70 16,58 20,36" fill="url(#ogD1)" stroke="#88c4e0" stroke-width="0.55"/>
+            <polygon points="40,25 60,36 40,44" fill="#d4ecff" opacity="0.52"/>
+            <polygon points="40,25 20,36 40,44" fill="#bce0f8" opacity="0.32"/>
+            <line x1="40" y1="25" x2="40" y2="70" stroke="#a8d8f2" stroke-width="0.38" opacity="0.48"/>
+            <polygon points="16,58 64,58 40,70" fill="url(#ogD2)" opacity="0.38"/>
+            <polygon points="40,70 64,58 56,88 40,100 24,88 16,58" fill="url(#ogD1)" stroke="#88c4e0" stroke-width="0.55" opacity="0.88"/>
+            <polygon points="40,100 56,88 40,114" fill="url(#ogD2)" stroke="#88c4e0" stroke-width="0.48" opacity="0.72"/>
+            <polygon points="40,100 24,88 40,114" fill="#b4dcf4" stroke="#88c4e0" stroke-width="0.48" opacity="0.52"/>
+            <g opacity="0.65" filter="url(#ogDglow)"><line x1="6" y1="22" x2="12" y2="22" stroke="#b8eaff" stroke-width="1"/><line x1="9" y1="19" x2="9" y2="25" stroke="#b8eaff" stroke-width="1"/></g>
+            <g opacity="0.48"><line x1="68" y1="48" x2="74" y2="48" stroke="#b8eaff" stroke-width="0.9"/><line x1="71" y1="45" x2="71" y2="51" stroke="#b8eaff" stroke-width="0.9"/></g>
           </svg>
         </div>
         <div class="rpt-omnia__text">Your 38 minutes today is your strongest Sunday this month. Sitting through the restless afternoon session took more discipline than an easy sit — that's the real work.</div>
@@ -414,8 +327,6 @@
         <button class="rpt-omnia__refresh">↺ refresh</button>
       </div>
     </div>
-
-    <!-- Stats -->
     <div class="rpt-stats">
       <div class="rpt-stat">
         <div class="rpt-stat__val">38<small>m</small></div>
@@ -441,26 +352,35 @@
     <div class="rpt-footer"></div>
   </div>
 
-  <!-- ── WEEKLY VIEW ── -->
+  <!-- ── WEEKLY ── -->
   <div class="view" id="view-weekly">
     <div class="rpt-period-heading">Week 21 · May 19–25</div>
-
-    <!-- Omnia card — loading state -->
     <div class="rpt-omnia">
       <div class="rpt-omnia__inner">
         <div class="rpt-omnia__stage">
-          <svg class="omnia-crystal" viewBox="0 0 72 118" fill="none">
+          <svg class="omnia-crystal" viewBox="0 0 80 130" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
             <defs>
-              <linearGradient id="cg2" x1="36" y1="0" x2="36" y2="118" gradientUnits="userSpaceOnUse">
-                <stop offset="0%" stop-color="#b8ede0"/>
-                <stop offset="50%" stop-color="#7eb8a4"/>
-                <stop offset="100%" stop-color="#3a7a64"/>
-              </linearGradient>
+              <linearGradient id="ogW1" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#ddf0ff" stop-opacity="0.92"/><stop offset="100%" stop-color="#6ab8d8" stop-opacity="0.48"/></linearGradient>
+              <linearGradient id="ogW2" x1="100%" y1="0%" x2="0%" y2="100%"><stop offset="0%" stop-color="#ffffff" stop-opacity="0.78"/><stop offset="100%" stop-color="#4a9ec0" stop-opacity="0.22"/></linearGradient>
+              <radialGradient id="ogW3" cx="50%" cy="38%" r="58%"><stop offset="0%" stop-color="#b8eaff" stop-opacity="0.42"/><stop offset="100%" stop-color="#2878a0" stop-opacity="0"/></radialGradient>
+              <filter id="ogWglow"><feGaussianBlur stdDeviation="2.5" result="blur"/><feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
             </defs>
-            <path d="M36 2 L68 38 L54 116 L18 116 L4 38 Z" fill="url(#cg2)" opacity=".9"/>
-            <path d="M36 2 L4 38 L18 116 L36 80 Z" fill="rgba(255,255,255,.14)" opacity=".5"/>
-            <path d="M24 38 L36 2 L48 38 Z" fill="rgba(255,255,255,.2)"/>
-            <line x1="36" y1="2" x2="36" y2="116" stroke="rgba(255,255,255,.1)" stroke-width=".8"/>
+            <ellipse cx="40" cy="68" rx="28" ry="48" fill="url(#ogW3)" opacity="0.62"/>
+            <polygon points="40,3 54,14 40,25 26,14" fill="url(#ogW1)" stroke="#90cce8" stroke-width="0.55" filter="url(#ogWglow)"/>
+            <polygon points="40,3 54,14 40,13" fill="#ceeaff" opacity="0.72"/>
+            <polygon points="40,3 26,14 40,13" fill="#b0dcf5" opacity="0.42"/>
+            <line x1="40" y1="3" x2="40" y2="25" stroke="#b8e0f8" stroke-width="0.4" opacity="0.55"/>
+            <line x1="26" y1="14" x2="54" y2="14" stroke="#b8e0f8" stroke-width="0.4" opacity="0.35"/>
+            <polygon points="40,25 60,36 64,58 40,70 16,58 20,36" fill="url(#ogW1)" stroke="#88c4e0" stroke-width="0.55"/>
+            <polygon points="40,25 60,36 40,44" fill="#d4ecff" opacity="0.52"/>
+            <polygon points="40,25 20,36 40,44" fill="#bce0f8" opacity="0.32"/>
+            <line x1="40" y1="25" x2="40" y2="70" stroke="#a8d8f2" stroke-width="0.38" opacity="0.48"/>
+            <polygon points="16,58 64,58 40,70" fill="url(#ogW2)" opacity="0.38"/>
+            <polygon points="40,70 64,58 56,88 40,100 24,88 16,58" fill="url(#ogW1)" stroke="#88c4e0" stroke-width="0.55" opacity="0.88"/>
+            <polygon points="40,100 56,88 40,114" fill="url(#ogW2)" stroke="#88c4e0" stroke-width="0.48" opacity="0.72"/>
+            <polygon points="40,100 24,88 40,114" fill="#b4dcf4" stroke="#88c4e0" stroke-width="0.48" opacity="0.52"/>
+            <g opacity="0.65" filter="url(#ogWglow)"><line x1="6" y1="22" x2="12" y2="22" stroke="#b8eaff" stroke-width="1"/><line x1="9" y1="19" x2="9" y2="25" stroke="#b8eaff" stroke-width="1"/></g>
+            <g opacity="0.48"><line x1="68" y1="48" x2="74" y2="48" stroke="#b8eaff" stroke-width="0.9"/><line x1="71" y1="45" x2="71" y2="51" stroke="#b8eaff" stroke-width="0.9"/></g>
           </svg>
           <span class="omnia-bead" style="left:20%;top:12%;width:6px;height:6px;animation-delay:0s"></span>
           <span class="omnia-bead" style="left:38%;top:6%;width:5px;height:5px;animation-delay:.32s"></span>
@@ -473,8 +393,6 @@
         <div class="rpt-omnia__text rpt-omnia__text--loading">Omnia is reflecting…</div>
       </div>
     </div>
-
-    <!-- Stats -->
     <div class="rpt-stats">
       <div class="rpt-stat">
         <div class="rpt-stat__val">3<small>h</small> 18<small>m</small></div>
@@ -487,50 +405,18 @@
         <div class="rpt-stat__delta delta-up">↑ 3 vs prior week</div>
       </div>
     </div>
-
-    <!-- Awareness chart -->
     <div class="rpt-section">
       <div class="rpt-section__title rpt-section__title--green">Awareness · daily minutes</div>
       <div class="rpt-chart">
-        <div class="rpt-bar-row">
-          <div class="rpt-bar-label">Mon</div>
-          <div class="rpt-bar-track"><div class="rpt-bar-fill rpt-bar-fill--green" style="width:62%"></div></div>
-          <div class="rpt-bar-val">25m</div>
-        </div>
-        <div class="rpt-bar-row">
-          <div class="rpt-bar-label">Tue</div>
-          <div class="rpt-bar-track"><div class="rpt-bar-fill rpt-bar-fill--green" style="width:45%"></div></div>
-          <div class="rpt-bar-val">18m</div>
-        </div>
-        <div class="rpt-bar-row">
-          <div class="rpt-bar-label">Wed</div>
-          <div class="rpt-bar-track"><div class="rpt-bar-fill rpt-bar-fill--green" style="width:80%"></div></div>
-          <div class="rpt-bar-val">32m</div>
-        </div>
-        <div class="rpt-bar-row">
-          <div class="rpt-bar-label">Thu</div>
-          <div class="rpt-bar-track"><div class="rpt-bar-fill rpt-bar-fill--green" style="width:0%"></div></div>
-          <div class="rpt-bar-val" style="color:var(--muted2)">—</div>
-        </div>
-        <div class="rpt-bar-row">
-          <div class="rpt-bar-label">Fri</div>
-          <div class="rpt-bar-track"><div class="rpt-bar-fill rpt-bar-fill--green" style="width:50%"></div></div>
-          <div class="rpt-bar-val">20m</div>
-        </div>
-        <div class="rpt-bar-row">
-          <div class="rpt-bar-label">Sat</div>
-          <div class="rpt-bar-track"><div class="rpt-bar-fill rpt-bar-fill--green" style="width:0%"></div></div>
-          <div class="rpt-bar-val" style="color:var(--muted2)">—</div>
-        </div>
-        <div class="rpt-bar-row">
-          <div class="rpt-bar-label">Sun</div>
-          <div class="rpt-bar-track"><div class="rpt-bar-fill rpt-bar-fill--green rpt-bar-fill--today" style="width:95%"></div></div>
-          <div class="rpt-bar-val" style="color:var(--accent);opacity:.9">38m</div>
-        </div>
+        <div class="rpt-bar-row"><div class="rpt-bar-label">Mon</div><div class="rpt-bar-track"><div class="rpt-bar-fill rpt-bar-fill--green" style="width:62%"></div></div><div class="rpt-bar-val">25m</div></div>
+        <div class="rpt-bar-row"><div class="rpt-bar-label">Tue</div><div class="rpt-bar-track"><div class="rpt-bar-fill rpt-bar-fill--green" style="width:45%"></div></div><div class="rpt-bar-val">18m</div></div>
+        <div class="rpt-bar-row"><div class="rpt-bar-label">Wed</div><div class="rpt-bar-track"><div class="rpt-bar-fill rpt-bar-fill--green" style="width:80%"></div></div><div class="rpt-bar-val">32m</div></div>
+        <div class="rpt-bar-row"><div class="rpt-bar-label">Thu</div><div class="rpt-bar-track"><div class="rpt-bar-fill rpt-bar-fill--green" style="width:0%"></div></div><div class="rpt-bar-val" style="color:var(--muted2)">—</div></div>
+        <div class="rpt-bar-row"><div class="rpt-bar-label">Fri</div><div class="rpt-bar-track"><div class="rpt-bar-fill rpt-bar-fill--green" style="width:50%"></div></div><div class="rpt-bar-val">20m</div></div>
+        <div class="rpt-bar-row"><div class="rpt-bar-label">Sat</div><div class="rpt-bar-track"><div class="rpt-bar-fill rpt-bar-fill--green" style="width:0%"></div></div><div class="rpt-bar-val" style="color:var(--muted2)">—</div></div>
+        <div class="rpt-bar-row"><div class="rpt-bar-label">Sun</div><div class="rpt-bar-track"><div class="rpt-bar-fill rpt-bar-fill--green rpt-bar-fill--today" style="width:95%"></div></div><div class="rpt-bar-val" style="color:var(--accent);opacity:.9">38m</div></div>
       </div>
     </div>
-
-    <!-- Clock PB progression -->
     <div class="rpt-section">
       <div class="rpt-section__title rpt-section__title--amber">Clock · PB progression this week</div>
       <div class="rpt-sparkline">
@@ -548,40 +434,47 @@
           <div class="rpt-spark-bar rpt-spark-bar--today" style="height:100%"></div>
         </div>
         <div class="rpt-spark-labels">
-          <div class="rpt-spark-label">M</div>
-          <div class="rpt-spark-label"></div>
-          <div class="rpt-spark-label">T</div>
-          <div class="rpt-spark-label"></div>
-          <div class="rpt-spark-label">W</div>
-          <div class="rpt-spark-label"></div>
-          <div class="rpt-spark-label">F</div>
-          <div class="rpt-spark-label"></div>
+          <div class="rpt-spark-label">M</div><div class="rpt-spark-label"></div>
+          <div class="rpt-spark-label">T</div><div class="rpt-spark-label"></div>
+          <div class="rpt-spark-label">W</div><div class="rpt-spark-label"></div>
+          <div class="rpt-spark-label">F</div><div class="rpt-spark-label"></div>
           <div class="rpt-spark-label"></div>
           <div class="rpt-spark-label" style="color:var(--amber);opacity:.8">S ✦</div>
         </div>
       </div>
     </div>
-
     <div class="rpt-footer"></div>
   </div>
 
-  <!-- ── MONTHLY VIEW ── -->
+  <!-- ── MONTHLY ── -->
   <div class="view" id="view-monthly">
     <div class="rpt-period-heading">May 2026</div>
     <div class="rpt-omnia">
       <div class="rpt-omnia__inner">
         <div class="rpt-omnia__stage">
-          <svg class="omnia-crystal" viewBox="0 0 72 118" fill="none">
+          <svg class="omnia-crystal" viewBox="0 0 80 130" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
             <defs>
-              <linearGradient id="cg3" x1="36" y1="0" x2="36" y2="118" gradientUnits="userSpaceOnUse">
-                <stop offset="0%" stop-color="#b8ede0"/>
-                <stop offset="50%" stop-color="#7eb8a4"/>
-                <stop offset="100%" stop-color="#3a7a64"/>
-              </linearGradient>
+              <linearGradient id="ogM1" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#ddf0ff" stop-opacity="0.92"/><stop offset="100%" stop-color="#6ab8d8" stop-opacity="0.48"/></linearGradient>
+              <linearGradient id="ogM2" x1="100%" y1="0%" x2="0%" y2="100%"><stop offset="0%" stop-color="#ffffff" stop-opacity="0.78"/><stop offset="100%" stop-color="#4a9ec0" stop-opacity="0.22"/></linearGradient>
+              <radialGradient id="ogM3" cx="50%" cy="38%" r="58%"><stop offset="0%" stop-color="#b8eaff" stop-opacity="0.42"/><stop offset="100%" stop-color="#2878a0" stop-opacity="0"/></radialGradient>
+              <filter id="ogMglow"><feGaussianBlur stdDeviation="2.5" result="blur"/><feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
             </defs>
-            <path d="M36 2 L68 38 L54 116 L18 116 L4 38 Z" fill="url(#cg3)" opacity=".9"/>
-            <path d="M36 2 L4 38 L18 116 L36 80 Z" fill="rgba(255,255,255,.14)" opacity=".5"/>
-            <path d="M24 38 L36 2 L48 38 Z" fill="rgba(255,255,255,.2)"/>
+            <ellipse cx="40" cy="68" rx="28" ry="48" fill="url(#ogM3)" opacity="0.62"/>
+            <polygon points="40,3 54,14 40,25 26,14" fill="url(#ogM1)" stroke="#90cce8" stroke-width="0.55" filter="url(#ogMglow)"/>
+            <polygon points="40,3 54,14 40,13" fill="#ceeaff" opacity="0.72"/>
+            <polygon points="40,3 26,14 40,13" fill="#b0dcf5" opacity="0.42"/>
+            <line x1="40" y1="3" x2="40" y2="25" stroke="#b8e0f8" stroke-width="0.4" opacity="0.55"/>
+            <line x1="26" y1="14" x2="54" y2="14" stroke="#b8e0f8" stroke-width="0.4" opacity="0.35"/>
+            <polygon points="40,25 60,36 64,58 40,70 16,58 20,36" fill="url(#ogM1)" stroke="#88c4e0" stroke-width="0.55"/>
+            <polygon points="40,25 60,36 40,44" fill="#d4ecff" opacity="0.52"/>
+            <polygon points="40,25 20,36 40,44" fill="#bce0f8" opacity="0.32"/>
+            <line x1="40" y1="25" x2="40" y2="70" stroke="#a8d8f2" stroke-width="0.38" opacity="0.48"/>
+            <polygon points="16,58 64,58 40,70" fill="url(#ogM2)" opacity="0.38"/>
+            <polygon points="40,70 64,58 56,88 40,100 24,88 16,58" fill="url(#ogM1)" stroke="#88c4e0" stroke-width="0.55" opacity="0.88"/>
+            <polygon points="40,100 56,88 40,114" fill="url(#ogM2)" stroke="#88c4e0" stroke-width="0.48" opacity="0.72"/>
+            <polygon points="40,100 24,88 40,114" fill="#b4dcf4" stroke="#88c4e0" stroke-width="0.48" opacity="0.52"/>
+            <g opacity="0.65" filter="url(#ogMglow)"><line x1="6" y1="22" x2="12" y2="22" stroke="#b8eaff" stroke-width="1"/><line x1="9" y1="19" x2="9" y2="25" stroke="#b8eaff" stroke-width="1"/></g>
+            <g opacity="0.48"><line x1="68" y1="48" x2="74" y2="48" stroke="#b8eaff" stroke-width="0.9"/><line x1="71" y1="45" x2="71" y2="51" stroke="#b8eaff" stroke-width="0.9"/></g>
           </svg>
         </div>
         <div class="rpt-omnia__text">You've meditated 22 of 25 days this month — a consistency rate you haven't hit since February. Your Clock PB has grown from 48 seconds to 2:14 in 47 sessions. The trend is real.</div>
@@ -590,86 +483,37 @@
       </div>
     </div>
     <div class="rpt-stats">
-      <div class="rpt-stat">
-        <div class="rpt-stat__val">14<small>h</small></div>
-        <div class="rpt-stat__label">Total time</div>
-      </div>
-      <div class="rpt-stat">
-        <div class="rpt-stat__val">22</div>
-        <div class="rpt-stat__label">Active days</div>
-      </div>
-      <div class="rpt-stat">
-        <div class="rpt-stat__val">88<small>%</small></div>
-        <div class="rpt-stat__label">Consistency</div>
-        <div class="rpt-stat__delta delta-up">best month</div>
-      </div>
-      <div class="rpt-stat">
-        <div class="rpt-stat__val">2:14</div>
-        <div class="rpt-stat__label">PB this month</div>
-        <div class="rpt-stat__delta delta-up">+1:26 from Apr</div>
-      </div>
+      <div class="rpt-stat"><div class="rpt-stat__val">14<small>h</small></div><div class="rpt-stat__label">Total time</div></div>
+      <div class="rpt-stat"><div class="rpt-stat__val">22</div><div class="rpt-stat__label">Active days</div></div>
+      <div class="rpt-stat"><div class="rpt-stat__val">88<small>%</small></div><div class="rpt-stat__label">Consistency</div><div class="rpt-stat__delta delta-up">best month</div></div>
+      <div class="rpt-stat"><div class="rpt-stat__val">2:14</div><div class="rpt-stat__label">PB this month</div><div class="rpt-stat__delta delta-up">+1:26 from Apr</div></div>
     </div>
-
-    <!-- Monthly awareness bars by week -->
     <div class="rpt-section">
       <div class="rpt-section__title rpt-section__title--green">Awareness · hours per week</div>
       <div class="rpt-chart">
-        <div class="rpt-bar-row">
-          <div class="rpt-bar-label">Wk 18</div>
-          <div class="rpt-bar-track"><div class="rpt-bar-fill rpt-bar-fill--green" style="width:58%"></div></div>
-          <div class="rpt-bar-val">2.4h</div>
-        </div>
-        <div class="rpt-bar-row">
-          <div class="rpt-bar-label">Wk 19</div>
-          <div class="rpt-bar-track"><div class="rpt-bar-fill rpt-bar-fill--green" style="width:72%"></div></div>
-          <div class="rpt-bar-val">3.0h</div>
-        </div>
-        <div class="rpt-bar-row">
-          <div class="rpt-bar-label">Wk 20</div>
-          <div class="rpt-bar-track"><div class="rpt-bar-fill rpt-bar-fill--green" style="width:65%"></div></div>
-          <div class="rpt-bar-val">2.7h</div>
-        </div>
-        <div class="rpt-bar-row">
-          <div class="rpt-bar-label">Wk 21</div>
-          <div class="rpt-bar-track"><div class="rpt-bar-fill rpt-bar-fill--green rpt-bar-fill--today" style="width:92%"></div></div>
-          <div class="rpt-bar-val" style="color:var(--accent);opacity:.9">3.8h</div>
-        </div>
+        <div class="rpt-bar-row"><div class="rpt-bar-label">Wk 18</div><div class="rpt-bar-track"><div class="rpt-bar-fill rpt-bar-fill--green" style="width:58%"></div></div><div class="rpt-bar-val">2.4h</div></div>
+        <div class="rpt-bar-row"><div class="rpt-bar-label">Wk 19</div><div class="rpt-bar-track"><div class="rpt-bar-fill rpt-bar-fill--green" style="width:72%"></div></div><div class="rpt-bar-val">3.0h</div></div>
+        <div class="rpt-bar-row"><div class="rpt-bar-label">Wk 20</div><div class="rpt-bar-track"><div class="rpt-bar-fill rpt-bar-fill--green" style="width:65%"></div></div><div class="rpt-bar-val">2.7h</div></div>
+        <div class="rpt-bar-row"><div class="rpt-bar-label">Wk 21</div><div class="rpt-bar-track"><div class="rpt-bar-fill rpt-bar-fill--green rpt-bar-fill--today" style="width:92%"></div></div><div class="rpt-bar-val" style="color:var(--accent);opacity:.9">3.8h</div></div>
       </div>
     </div>
     <div class="rpt-footer"></div>
   </div>
 
-  <!-- ── ALL TIME VIEW ── -->
+  <!-- ── ALL TIME ── -->
   <div class="view" id="view-alltime">
     <div class="rpt-period-heading">Since beginning</div>
     <div class="rpt-stats">
-      <div class="rpt-stat">
-        <div class="rpt-stat__val">47</div>
-        <div class="rpt-stat__label">Day streak</div>
-      </div>
-      <div class="rpt-stat">
-        <div class="rpt-stat__val">68<small>h</small></div>
-        <div class="rpt-stat__label">Total time</div>
-      </div>
-      <div class="rpt-stat">
-        <div class="rpt-stat__val">2:14</div>
-        <div class="rpt-stat__label">Clock PB</div>
-        <div class="rpt-stat__delta delta-up">all-time best</div>
-      </div>
-      <div class="rpt-stat">
-        <div class="rpt-stat__val">312</div>
-        <div class="rpt-stat__label">Sessions</div>
-      </div>
-      <div class="rpt-stat rpt-stat--full">
-        <div class="rpt-stat__val" style="font-size:22px;">6:42</div>
-        <div class="rpt-stat__label">Next Clock milestone (3× PB)</div>
-      </div>
+      <div class="rpt-stat"><div class="rpt-stat__val">47</div><div class="rpt-stat__label">Day streak</div></div>
+      <div class="rpt-stat"><div class="rpt-stat__val">68<small>h</small></div><div class="rpt-stat__label">Total time</div></div>
+      <div class="rpt-stat"><div class="rpt-stat__val">2:14</div><div class="rpt-stat__label">Clock PB</div><div class="rpt-stat__delta delta-up">all-time best</div></div>
+      <div class="rpt-stat"><div class="rpt-stat__val">312</div><div class="rpt-stat__label">Sessions</div></div>
+      <div class="rpt-stat rpt-stat--full"><div class="rpt-stat__val" style="font-size:22px;">6:42</div><div class="rpt-stat__label">Next Clock milestone (3× PB)</div></div>
     </div>
     <div class="rpt-footer"></div>
   </div>
 
 </div>
-
 <script>
   function switchPeriod(period, el) {
     document.querySelectorAll('.rpt-period__item').forEach(i => i.classList.remove('active'));
