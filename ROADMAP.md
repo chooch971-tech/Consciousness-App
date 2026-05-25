@@ -4,7 +4,7 @@ Last updated: 2026-05-25
 
 ---
 
-## V0.1 — Beta Launch (target: June 7–8)
+## V0.1 — Private Beta (1 friend, target: June 7–8)
 
 ### Path Screen
 - [ ] Redesign chests
@@ -64,7 +64,7 @@ Last updated: 2026-05-25
 
 ---
 
-## V0.1.1 — Beta Patch (target: June 14)
+## V0.1.1 — Private Beta Expansion (few friends/family, target: June 14)
 
 - [ ] Prayer screen redesign
 - [ ] Bug fixes from V0.1
