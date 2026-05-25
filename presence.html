@@ -847,19 +847,19 @@
     .report-period-tab.active { background:rgba(126,184,164,.1); border-color:rgba(126,184,164,.35); color:var(--accent); }
 
     /* ── Journal Log redesign ─────────────────────────────── */
-    .jl-nav { display:flex; align-items:center; justify-content:space-between; padding:14px 20px 0; flex-shrink:0; }
-    .jl-nav__arrow { width:34px; height:34px; display:flex; align-items:center; justify-content:center; cursor:pointer; color:rgba(221,216,206,.2); font-size:18px; border:none; background:none; border-radius:6px; transition:color .15s; }
-    .jl-nav__arrow:hover { color:var(--muted); }
-    .jl-nav__arrow:disabled { opacity:.2; pointer-events:none; }
-    .jl-nav__date { font-family:'Cormorant Garamond',serif; font-size:20px; font-weight:300; text-align:center; }
-    .jl-nav__sub { font-size:8px; letter-spacing:.2em; text-transform:uppercase; color:var(--accent); opacity:.65; text-align:center; margin-top:3px; }
-    .jl-week-dots { display:flex; justify-content:center; gap:8px; padding:12px 0 0; }
-    .jl-week-dot { width:5px; height:5px; border-radius:50%; background:rgba(255,255,255,.1); cursor:pointer; transition:all .15s; flex-shrink:0; }
-    .jl-week-dot.filled { background:var(--accent); opacity:.5; }
+    .jl-nav { display:flex; align-items:center; justify-content:space-between; padding:14px 24px 0; flex-shrink:0; }
+    .jl-nav__arrow { width:34px; height:34px; display:flex; align-items:center; justify-content:center; cursor:pointer; color:rgba(255,255,255,.3); font-size:18px; border:none; background:none; border-radius:6px; transition:color .15s; }
+    .jl-nav__arrow:hover { color:rgba(255,255,255,.7); }
+    .jl-nav__arrow:disabled { opacity:.15; pointer-events:none; }
+    .jl-nav__date { font-family:'Cormorant Garamond',serif; font-size:22px; font-weight:300; text-align:center; color:#f0ece4; }
+    .jl-nav__sub { font-size:9px; letter-spacing:.2em; text-transform:uppercase; color:var(--accent); opacity:.9; text-align:center; margin-top:4px; }
+    .jl-week-dots { display:flex; justify-content:center; gap:8px; padding:14px 0 0; }
+    .jl-week-dot { width:5px; height:5px; border-radius:50%; background:rgba(255,255,255,.15); cursor:pointer; transition:all .15s; flex-shrink:0; }
+    .jl-week-dot.filled { background:var(--accent); opacity:.6; }
     .jl-week-dot.active { background:var(--accent); opacity:1; transform:scale(1.4); }
-    .jl-sep { height:1px; background:var(--border); margin:16px 24px; flex-shrink:0; }
-    .jl-summary { padding:0 24px; font-size:9px; letter-spacing:.12em; color:var(--muted); display:flex; gap:14px; flex-shrink:0; }
-    .jl-summary b { color:var(--text); font-weight:400; }
+    .jl-sep { height:1px; background:rgba(255,255,255,.09); margin:20px 24px; flex-shrink:0; }
+    .jl-summary { padding:0 24px; font-size:9px; letter-spacing:.12em; color:rgba(221,216,206,.5); display:flex; gap:14px; flex-shrink:0; }
+    .jl-summary b { color:#f0ece4; font-weight:400; }
     .jl-timeline { padding:16px 24px 0; display:flex; flex-direction:column; }
     .jl-entry { display:flex; gap:14px; padding-bottom:18px; }
     .jl-entry__left { display:flex; flex-direction:column; align-items:center; flex-shrink:0; width:42px; }
@@ -876,32 +876,31 @@
     .jl-entry__badge { font-size:8px; padding:2px 7px; border-radius:3px; background:rgba(126,184,164,.1); color:var(--accent); }
     .jl-entry__note { margin-top:7px; font-family:'Cormorant Garamond',serif; font-size:13px; font-style:italic; color:var(--muted); line-height:1.6; }
     .jl-notable { padding:0 24px; }
-    .jl-section-label { font-size:8px; letter-spacing:.22em; text-transform:uppercase; color:var(--muted); margin-bottom:10px; }
-    .jl-record { display:flex; gap:10px; align-items:flex-start; padding:10px 12px; border-radius:8px; background:rgba(212,180,100,.04); border:1px solid rgba(212,180,100,.12); margin-bottom:7px; }
-    .jl-record__glyph { font-size:11px; flex-shrink:0; margin-top:1px; opacity:.6; }
-    .jl-record__text { font-size:11px; line-height:1.5; color:var(--text); opacity:.75; }
+    .jl-section-label { font-size:9px; letter-spacing:.22em; text-transform:uppercase; color:rgba(255,255,255,.45); margin-bottom:12px; }
+    .jl-record { display:flex; gap:10px; align-items:flex-start; padding:12px 14px; border-radius:10px; background:rgba(212,180,100,.07); border:1px solid rgba(212,180,100,.18); margin-bottom:8px; }
+    .jl-record__glyph { font-size:13px; flex-shrink:0; margin-top:1px; opacity:.85; }
+    .jl-record__text { font-size:11px; line-height:1.5; color:rgba(255,255,255,.8); }
     .jl-note-wrap { padding:0 24px; margin-bottom:40px; }
-    .jl-omnia-prompt { font-family:'Cormorant Garamond',serif; font-size:13px; font-style:italic; color:var(--muted); line-height:1.65; margin-bottom:10px; }
-    .jl-note-input { width:100%; background:transparent; border:none; border-bottom:1px solid var(--border); color:var(--text); font-family:'DM Mono',monospace; font-size:12px; letter-spacing:.03em; line-height:1.85; padding:4px 0 20px; resize:none; min-height:160px; -webkit-appearance:none; box-sizing:border-box; }
-    .jl-note-input::placeholder { color:rgba(221,216,206,.13); }
-    .jl-note-input:focus { outline:none; border-bottom-color:rgba(126,184,164,.3); }
+    .jl-omnia-prompt { font-family:'Cormorant Garamond',serif; font-size:14px; font-style:italic; color:rgba(255,255,255,.45); line-height:1.65; margin-bottom:14px; }
+    .jl-note-input { width:100%; background:rgba(255,255,255,.05); border:1px solid rgba(255,255,255,.1); border-radius:14px; color:#f0ece4; font-family:'DM Mono',monospace; font-size:13px; letter-spacing:.03em; line-height:1.85; padding:16px 18px 18px; resize:none; min-height:180px; -webkit-appearance:none; box-sizing:border-box; }
+    .jl-note-input::placeholder { color:rgba(255,255,255,.2); }
+    .jl-note-input:focus { outline:none; border-color:rgba(126,184,164,.4); background:rgba(255,255,255,.07); }
     .jl-sessions-wrap { padding:0 24px 32px; }
-    .jl-session-item { display:flex; justify-content:space-between; align-items:flex-start; padding:12px 0; border-bottom:1px solid var(--border); }
-    .jl-session-item:last-child { border-bottom:none; }
+    .jl-session-item { display:flex; justify-content:space-between; align-items:flex-start; padding:14px 16px; background:rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.09); border-radius:12px; margin-bottom:8px; }
     .jl-session-item__left { flex:1; min-width:0; }
-    .jl-session-item__tag { font-size:8px; letter-spacing:.14em; text-transform:uppercase; color:var(--muted); margin-bottom:3px; }
-    .jl-session-item__tag--aw { color:var(--accent); opacity:.65; }
-    .jl-session-item__tag--conc { color:#d4956e; opacity:.75; }
-    .jl-session-item__name { font-family:'Cormorant Garamond',serif; font-size:17px; font-weight:300; color:var(--text); line-height:1.2; }
-    .jl-session-item__note { font-family:'Cormorant Garamond',serif; font-size:12px; font-style:italic; color:var(--muted); line-height:1.55; margin-top:4px; }
+    .jl-session-item__tag { font-size:8px; letter-spacing:.14em; text-transform:uppercase; margin-bottom:4px; }
+    .jl-session-item__tag--aw { color:var(--accent); opacity:.85; }
+    .jl-session-item__tag--conc { color:#d4956e; opacity:.9; }
+    .jl-session-item__name { font-family:'Cormorant Garamond',serif; font-size:18px; font-weight:300; color:#f0ece4; line-height:1.2; }
+    .jl-session-item__note { font-family:'Cormorant Garamond',serif; font-size:12px; font-style:italic; color:rgba(221,216,206,.55); line-height:1.55; margin-top:5px; }
     .jl-session-item__right { flex-shrink:0; margin-left:16px; text-align:right; padding-top:2px; }
-    .jl-session-item__val { font-size:13px; color:var(--text); font-family:'DM Mono',monospace; }
-    .jl-session-item__sub { font-size:8px; color:var(--muted); margin-top:3px; }
-    .jl-session-item__pb { font-size:8px; padding:2px 6px; border-radius:3px; background:rgba(126,184,164,.1); color:var(--accent); margin-top:4px; display:inline-block; }
+    .jl-session-item__val { font-size:14px; color:#f0ece4; font-family:'DM Mono',monospace; }
+    .jl-session-item__sub { font-size:8px; color:rgba(221,216,206,.45); margin-top:4px; }
+    .jl-session-item__pb { font-size:8px; padding:2px 6px; border-radius:3px; background:rgba(126,184,164,.15); color:var(--accent); margin-top:5px; display:inline-block; }
     .jl-note-actions { display:flex; justify-content:space-between; align-items:center; margin-top:9px; }
-    .jl-save-btn { padding:9px 22px; border-radius:6px; border:1px solid rgba(126,184,164,.25); background:rgba(126,184,164,.08); color:var(--accent); font-family:'DM Mono',monospace; font-size:8px; letter-spacing:.2em; text-transform:uppercase; cursor:pointer; }
-    .jl-clear-btn { font-size:8px; color:rgba(200,100,100,.4); background:none; border:none; font-family:'DM Mono',monospace; letter-spacing:.14em; text-transform:uppercase; cursor:pointer; }
-    .jl-empty { padding:40px 24px; text-align:center; color:var(--muted); font-size:11px; letter-spacing:.06em; line-height:2; }
+    .jl-save-btn { padding:9px 22px; border-radius:6px; border:1px solid rgba(126,184,164,.35); background:rgba(126,184,164,.12); color:#7eb8a4; font-family:'DM Mono',monospace; font-size:8px; letter-spacing:.2em; text-transform:uppercase; cursor:pointer; }
+    .jl-clear-btn { font-size:8px; color:rgba(220,120,100,.55); background:none; border:none; font-family:'DM Mono',monospace; letter-spacing:.14em; text-transform:uppercase; cursor:pointer; }
+    .jl-empty { padding:40px 24px; text-align:center; color:rgba(255,255,255,.3); font-size:11px; letter-spacing:.06em; line-height:2; }
 
     /* ── Progress Report: Omnia card ─────────────────────── */
     .rpt-omnia-card { margin-bottom:20px; border:1px solid rgba(168,210,235,.2); border-radius:14px; background:linear-gradient(160deg,rgba(232,184,160,.04) 0%,rgba(196,168,212,.04) 50%,rgba(168,200,232,.05) 100%); overflow:hidden; position:relative; }
@@ -4462,10 +4461,10 @@ body:not(.tut-live) #tutCorgi {
   </div>
 
   <!-- JOURNAL LOG SCREEN -->
-  <div class="screen" id="journalScreen" style="padding:0; flex-direction:column;">
-    <div style="padding:var(--safe-top) 24px 0; display:flex; justify-content:space-between; align-items:center; flex-shrink:0;">
-      <div style="font-family:Cormorant Garamond,serif; font-size:24px; font-weight:300; color:var(--text);">Journal</div>
-      <button class="history-back" id="journalBack">← back</button>
+  <div class="screen" id="journalScreen" style="padding:0; flex-direction:column; background:#0d0e1c;">
+    <div style="padding:var(--safe-top) 24px 12px; display:flex; justify-content:space-between; align-items:center; flex-shrink:0;">
+      <div style="font-family:Cormorant Garamond,serif; font-size:34px; font-weight:400; color:#ffffff; letter-spacing:-.01em;">Journal</div>
+      <button class="history-back" id="journalBack" style="color:rgba(255,255,255,.5);">← back</button>
     </div>
     <div id="journalContent" style="flex:1; overflow-y:auto; -webkit-overflow-scrolling:touch; padding-bottom:max(env(safe-area-inset-bottom),20px);"></div>
   </div>
