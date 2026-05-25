@@ -4452,10 +4452,7 @@ body:not(.tut-live) #tutCorgi {
   <div class="screen" id="journalScreen" style="padding:0; flex-direction:column;">
     <div style="padding:var(--safe-top) 24px 0; display:flex; justify-content:space-between; align-items:center; flex-shrink:0;">
       <div style="font-family:Cormorant Garamond,serif; font-size:24px; font-weight:300; color:var(--text);">Journal</div>
-      <div style="display:flex; align-items:center; gap:14px;">
-        <button id="journalProgressBtn" style="background:none; border:none; color:var(--accent); font-family:'DM Mono',monospace; font-size:9px; letter-spacing:.18em; text-transform:uppercase; cursor:pointer; opacity:0.75; padding:4px 0;">Progress →</button>
-        <button class="history-back" id="journalBack">← back</button>
-      </div>
+      <button class="history-back" id="journalBack">← back</button>
     </div>
     <div id="journalContent" style="flex:1; overflow-y:auto; -webkit-overflow-scrolling:touch; padding-bottom:max(env(safe-area-inset-bottom),20px);"></div>
   </div>
@@ -4494,6 +4491,9 @@ body:not(.tut-live) #tutCorgi {
       </button>
       <button class="drawer-item" id="drawerJournal">
         <span class="drawer-item-icon">📓</span>Journal Log
+      </button>
+      <button class="drawer-item" id="drawerReports">
+        <span class="drawer-item-icon">◈</span>Progress Report
       </button>
       <button class="drawer-item" id="drawerPlayground">
         <span class="drawer-item-icon">🧪</span>Playground
@@ -18606,8 +18606,8 @@ function journalDayLabel(date){
 function isToday(date){return getJournalKey(date)===getJournalKey(new Date());}
 
 function compileDayActivity(dateKey){
-  var awSessions=(state.history||[]).filter(function(h){return h.date&&h.date.slice(0,10)===dateKey;});
-  var concSessions=(concState.history||[]).filter(function(h){return h.date&&h.date.slice(0,10)===dateKey;});
+  var awSessions=(state.history||[]).filter(function(h){return h.date&&getJournalKey(new Date(h.date))===dateKey;});
+  var concSessions=(concState.history||[]).filter(function(h){return h.date&&getJournalKey(new Date(h.date))===dateKey;});
   var bests=[];
   if(awSessions.length){
     var longest=awSessions.reduce(function(a,b){return(a.durationMin||0)>(b.durationMin||0)?a:b;});
@@ -18639,14 +18639,19 @@ function renderJournal(date){
   } else if(concState.history&&concState.history.length){
     firstDate=new Date(concState.history[concState.history.length-1].date);
   }
-  var dayNum=firstDate?Math.max(1,Math.ceil((Date.now()-firstDate.getTime())/86400000)):null;
+  var dayNum=null;
+  if(firstDate){
+    var _firstMidnight=new Date(firstDate.getFullYear(),firstDate.getMonth(),firstDate.getDate(),0,0,0,0);
+    var _viewedMidnight=new Date(date.getFullYear(),date.getMonth(),date.getDate(),0,0,0,0);
+    dayNum=Math.max(1,Math.floor((_viewedMidnight-_firstMidnight)/86400000)+1);
+  }
 
   // ── Week strip dots (last 7 days) ──
   var weekDots='';
   for(var wi=6;wi>=0;wi--){
     var wd=new Date();wd.setHours(0,0,0,0);wd.setDate(wd.getDate()-wi);
     var wk=getJournalKey(wd);
-    var hasData=!!(journal[wk]&&journal[wk].note)||(state.history||[]).some(function(h){return h.date&&h.date.slice(0,10)===wk;})||(concState.history||[]).some(function(h){return h.date&&h.date.slice(0,10)===wk;});
+    var hasData=!!(journal[wk]&&journal[wk].note)||(state.history||[]).some(function(h){return h.date&&getJournalKey(new Date(h.date))===wk;})||(concState.history||[]).some(function(h){return h.date&&getJournalKey(new Date(h.date))===wk;});
     var isAct=wk===dateKey;
     var cls='jl-week-dot'+(hasData?' filled':'')+(isAct?' active':'');
     var dayDiff=wi;
@@ -18778,11 +18783,11 @@ function clearJournalEntry(){
 document.getElementById('journalBack').addEventListener('click',function(){
   renderHome();showScreen('homeScreen');
 });
-document.getElementById('journalProgressBtn').addEventListener('click', function() {
-  showReports();
-});
 document.getElementById('drawerJournal').addEventListener('click',function(){
   closeDrawer();renderJournal(new Date());showScreen('journalScreen');
+});
+document.getElementById('drawerReports').addEventListener('click',function(){
+  closeDrawer();showReports();
 });
 // ══════════════════════════════════════════════════════
 
