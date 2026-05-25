@@ -901,6 +901,9 @@
     .jl-save-btn { padding:9px 22px; border-radius:6px; border:1px solid rgba(126,184,164,.35); background:rgba(126,184,164,.12); color:#7eb8a4; font-family:'DM Mono',monospace; font-size:8px; letter-spacing:.2em; text-transform:uppercase; cursor:pointer; }
     .jl-clear-btn { font-size:8px; color:rgba(220,120,100,.55); background:none; border:none; font-family:'DM Mono',monospace; letter-spacing:.14em; text-transform:uppercase; cursor:pointer; }
     .jl-empty { padding:40px 24px; text-align:center; color:rgba(255,255,255,.3); font-size:11px; letter-spacing:.06em; line-height:2; }
+    .jl-mode-tabs { display:flex; gap:3px; padding:14px 24px 0; flex-shrink:0; }
+    .jl-mode-tab { flex:1; padding:7px 4px; border-radius:7px; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.03); color:rgba(255,255,255,.35); font-family:'DM Mono',monospace; font-size:8px; letter-spacing:.16em; text-transform:uppercase; cursor:pointer; transition:all .18s; }
+    .jl-mode-tab.active { background:rgba(126,184,164,.12); border-color:rgba(126,184,164,.3); color:#7eb8a4; }
 
     /* ── Progress Report: Omnia card ─────────────────────── */
     .rpt-omnia-card { margin-bottom:20px; border:1px solid rgba(168,210,235,.2); border-radius:14px; background:linear-gradient(160deg,rgba(232,184,160,.04) 0%,rgba(196,168,212,.04) 50%,rgba(168,200,232,.05) 100%); overflow:hidden; position:relative; }
@@ -18559,6 +18562,26 @@ window.bardonShowEndModal = function() {
 // ══════════════════════════════════════════════════════
 
 var journalCurrentDate = null;
+var journalMode = 'day'; // 'day' | 'week' | 'month'
+
+function getWeekKey(date) {
+  var d = new Date(date); d.setHours(0,0,0,0);
+  var day = d.getDay();
+  d.setDate(d.getDate() + (day===0 ? -6 : 1-day)); // shift to Monday
+  return 'w-'+d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+}
+function getMonthKey(date) {
+  return 'm-'+date.getFullYear()+'-'+String(date.getMonth()+1).padStart(2,'0');
+}
+function getJournalEntryKey(date) {
+  if(journalMode==='week') return getWeekKey(date);
+  if(journalMode==='month') return getMonthKey(date);
+  return getJournalKey(date);
+}
+function setJournalMode(mode) {
+  journalMode=mode;
+  renderJournal(journalCurrentDate||new Date());
+}
 
 var OMNIA_JOURNAL_PROMPTS = [
   'What pulled your attention most today — and were you the one who chose to let it?',
@@ -18590,13 +18613,25 @@ function omniaJournalPrompt() {
 
 function journalPrev() {
   var d = new Date(journalCurrentDate);
-  d.setDate(d.getDate() - 1);
+  if(journalMode==='week') d.setDate(d.getDate()-7);
+  else if(journalMode==='month') d.setMonth(d.getMonth()-1);
+  else d.setDate(d.getDate()-1);
   renderJournal(d);
 }
 function journalNext() {
-  if (isToday(journalCurrentDate)) return;
   var d = new Date(journalCurrentDate);
-  d.setDate(d.getDate() + 1);
+  if(journalMode==='week'){
+    var nd=new Date(d);nd.setDate(nd.getDate()+7);
+    if(nd>new Date())return;
+    d=nd;
+  } else if(journalMode==='month'){
+    var nd2=new Date(d.getFullYear(),d.getMonth()+1,1);
+    if(nd2>new Date())return;
+    d=nd2;
+  } else {
+    if(isToday(d))return;
+    d.setDate(d.getDate()+1);
+  }
   renderJournal(d);
 }
 function saveJournalNote() {
@@ -18604,7 +18639,7 @@ function saveJournalNote() {
   if (!inp) return;
   var note = inp.value.trim();
   var journal = loadJournal();
-  var key = getJournalKey(journalCurrentDate);
+  var key = getJournalEntryKey(journalCurrentDate);
   if (!journal[key]) journal[key] = {};
   journal[key].note = note;
   saveJournal(journal);
@@ -18651,76 +18686,14 @@ function compileDayActivity(dateKey){
   return{awSessions:awSessions,concSessions:concSessions,bests:bests};
 }
 
-function renderJournal(date){
-  journalCurrentDate=date;
-  var dateKey=getJournalKey(date);
-  var journal=loadJournal();
-  var entry=journal[dateKey]||{};
-  var activity=compileDayActivity(dateKey);
-
-  // Day-of-practice counter (local calendar days)
-  var firstDate=null;
-  if(state.history&&state.history.length) firstDate=new Date(state.history[state.history.length-1].date);
-  else if(concState.history&&concState.history.length) firstDate=new Date(concState.history[concState.history.length-1].date);
-  var dayNum=null;
-  if(firstDate){
-    var _fm=new Date(firstDate.getFullYear(),firstDate.getMonth(),firstDate.getDate());
-    var _vm=new Date(date.getFullYear(),date.getMonth(),date.getDate());
-    dayNum=Math.max(1,Math.floor((_vm-_fm)/86400000)+1);
-  }
-
-  // Week dots
-  var weekDots='';
-  for(var wi=6;wi>=0;wi--){
-    var wd=new Date();wd.setHours(0,0,0,0);wd.setDate(wd.getDate()-wi);
-    var wk=getJournalKey(wd);
-    var hasData=!!(journal[wk]&&journal[wk].note)
-      ||(state.history||[]).some(function(h){return h.date&&getJournalKey(new Date(h.date))===wk;})
-      ||(concState.history||[]).some(function(h){return h.date&&getJournalKey(new Date(h.date))===wk;});
-    var isAct=wk===dateKey;
-    var cls='jl-week-dot'+(hasData?' filled':'')+(isAct?' active':'');
-    var dayDiff=wi;
-    weekDots+='<div class="'+cls+'" onclick="(function(){var d=new Date();d.setDate(d.getDate()-'+dayDiff+');renderJournal(d);})()" title="'+wd.toLocaleDateString('en-US',{weekday:'short'})+'"></div>';
-  }
-
-  var today=new Date();today.setHours(0,0,0,0);
-  var dateCopy=new Date(date);dateCopy.setHours(0,0,0,0);
-  var isDateToday=dateCopy.getTime()===today.getTime();
-  var dateStr=date.toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric'});
-  var noteVal=entry.note||'';
-
-  // ── Nav + date ──
-  var html='<div class="jl-nav">'
-    +'<button class="jl-nav__arrow" onclick="journalPrev()">‹</button>'
-    +'<div><div class="jl-nav__date">'+dateStr+'</div>'
-    +(dayNum?'<div class="jl-nav__sub">Day '+dayNum+' of practice</div>':'')
-    +'</div>'
-    +'<button class="jl-nav__arrow"'+(isDateToday?' disabled':'')+' onclick="journalNext()">›</button>'
-    +'</div>'
-    +'<div class="jl-week-dots">'+weekDots+'</div>'
-    +'<div class="jl-sep"></div>';
-
-  // ── Writing (PRIMARY) ──
-  html+='<div class="jl-note-wrap">';
-  if(isDateToday) html+='<div class="jl-omnia-prompt">'+omniaJournalPrompt()+'</div>';
-  html+='<textarea id="journalNoteInput" class="jl-note-input" placeholder="Write about today…" rows="5">'+noteVal.replace(/</g,'&lt;').replace(/>/g,'&gt;')+'</textarea>'
-    +'<div class="jl-note-actions">'
-    +'<button class="jl-save-btn" onclick="saveJournalNote()">Save note</button>'
-    +(noteVal?'<button class="jl-clear-btn" onclick="clearJournalEntry()">Clear</button>':'')
-    +'</div></div>';
-
-  // ── Sessions ──
-  var allSessions=[];
-  activity.awSessions.forEach(function(h){allSessions.push({type:'aw',data:h});});
-  activity.concSessions.forEach(function(h){allSessions.push({type:'conc',data:h});});
-  allSessions.sort(function(a,b){return new Date(a.data.date)-new Date(b.data.date);});
-
-  html+='<div class="jl-sep"></div><div class="jl-sessions-wrap">';
-  if(allSessions.length){
-    html+='<div class="jl-section-label">Sessions · '+allSessions.length+'</div>';
-    allSessions.forEach(function(s){
+function _jlSessionCards(sessions, emptyMsg) {
+  var html='';
+  if(sessions.length){
+    html+='<div class="jl-section-label">Sessions · '+sessions.length+'</div>';
+    sessions.forEach(function(s){
       var h=s.data;
       var time=new Date(h.date).toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'});
+      var dateLbl = journalMode!=='day' ? new Date(h.date).toLocaleDateString('en-US',{month:'short',day:'numeric'})+' · ' : '';
       html+='<div class="jl-session-item"><div class="jl-session-item__left">';
       if(s.type==='aw'){
         var modeLabel=h.mode==='vacancy'?'Vacancy of Mind':h.mode==='thought'?'Thought Observation':'Awareness';
@@ -18743,15 +18716,142 @@ function renderJournal(date){
         html+='<div class="jl-session-item__val">'+timeStr+'</div>';
         if(isBest) html+='<div class="jl-session-item__pb">PB ✦</div>';
       }
-      html+='<div class="jl-session-item__sub">'+time+'</div>'
+      html+='<div class="jl-session-item__sub">'+dateLbl+time+'</div>'
         +'</div></div>';
     });
   } else {
-    html+='<div class="jl-empty">'+(isDateToday?'Your sessions will appear here after your first practice today.':'No sessions recorded.')+'</div>';
+    html+='<div class="jl-empty">'+emptyMsg+'</div>';
   }
-  html+='</div>';
+  return html;
+}
 
-  // ── Notable ──
+function renderJournal(date){
+  journalCurrentDate=date;
+  var journal=loadJournal();
+
+  var modeTabs='<div class="jl-mode-tabs">'
+    +'<button class="jl-mode-tab'+(journalMode==='day'?' active':'')+'" onclick="setJournalMode(\'day\')">Day</button>'
+    +'<button class="jl-mode-tab'+(journalMode==='week'?' active':'')+'" onclick="setJournalMode(\'week\')">Week</button>'
+    +'<button class="jl-mode-tab'+(journalMode==='month'?' active':'')+'" onclick="setJournalMode(\'month\')">Month</button>'
+    +'</div>';
+
+  if(journalMode==='week'||journalMode==='month'){
+    var entryKey=getJournalEntryKey(date);
+    var entry=journal[entryKey]||{};
+    var noteVal=entry.note||'';
+    var now=new Date();
+    var isCurrent=false, navLabel='', navSub='', placeholder='', sessions=[];
+
+    if(journalMode==='week'){
+      var wday=date.getDay();
+      var mon=new Date(date);mon.setHours(0,0,0,0);mon.setDate(date.getDate()+(wday===0?-6:1-wday));
+      var sun=new Date(mon);sun.setDate(mon.getDate()+6);sun.setHours(23,59,59,999);
+      var curMon=new Date(now);curMon.setHours(0,0,0,0);curMon.setDate(now.getDate()+(now.getDay()===0?-6:1-now.getDay()));
+      isCurrent=mon.getTime()===curMon.getTime();
+      var mFmt=mon.toLocaleDateString('en-US',{month:'short',day:'numeric'});
+      var sFmt=sun.toLocaleDateString('en-US',{month:'short',day:'numeric'});
+      navLabel=mFmt+' – '+sFmt;
+      navSub=mon.toLocaleDateString('en-US',{year:'numeric'});
+      placeholder='Write about this week…';
+      (state.history||[]).forEach(function(h){var d=new Date(h.date);if(d>=mon&&d<=sun)sessions.push({type:'aw',data:h});});
+      (concState.history||[]).forEach(function(h){var d=new Date(h.date);if(d>=mon&&d<=sun)sessions.push({type:'conc',data:h});});
+    } else {
+      var mStart=new Date(date.getFullYear(),date.getMonth(),1);
+      var mEnd=new Date(date.getFullYear(),date.getMonth()+1,0);mEnd.setHours(23,59,59,999);
+      var curStart=new Date(now.getFullYear(),now.getMonth(),1);
+      isCurrent=mStart.getTime()===curStart.getTime();
+      navLabel=date.toLocaleDateString('en-US',{month:'long',year:'numeric'});
+      navSub='';
+      placeholder='Write about this month…';
+      (state.history||[]).forEach(function(h){var d=new Date(h.date);if(d>=mStart&&d<=mEnd)sessions.push({type:'aw',data:h});});
+      (concState.history||[]).forEach(function(h){var d=new Date(h.date);if(d>=mStart&&d<=mEnd)sessions.push({type:'conc',data:h});});
+    }
+    sessions.sort(function(a,b){return new Date(a.data.date)-new Date(b.data.date);});
+
+    var html=modeTabs
+      +'<div class="jl-nav">'
+      +'<button class="jl-nav__arrow" onclick="journalPrev()">‹</button>'
+      +'<div><div class="jl-nav__date">'+navLabel+'</div>'
+      +(navSub?'<div class="jl-nav__sub">'+navSub+'</div>':'')
+      +'</div>'
+      +'<button class="jl-nav__arrow"'+(isCurrent?' disabled':'')+' onclick="journalNext()">›</button>'
+      +'</div>'
+      +'<div class="jl-sep"></div>'
+      +'<div class="jl-note-wrap">'
+      +'<textarea id="journalNoteInput" class="jl-note-input" placeholder="'+placeholder+'" rows="5">'+noteVal.replace(/</g,'&lt;').replace(/>/g,'&gt;')+'</textarea>'
+      +'<div class="jl-note-actions">'
+      +'<button class="jl-save-btn" onclick="saveJournalNote()">Save note</button>'
+      +(noteVal?'<button class="jl-clear-btn" onclick="clearJournalEntry()">Clear</button>':'')
+      +'</div></div>'
+      +'<div class="jl-sep"></div><div class="jl-sessions-wrap">'
+      +_jlSessionCards(sessions, 'No sessions recorded.')
+      +'</div>';
+    document.getElementById('journalContent').innerHTML=html;
+    return;
+  }
+
+  // ── Day view ──
+  var dateKey=getJournalKey(date);
+  var entry=journal[dateKey]||{};
+  var activity=compileDayActivity(dateKey);
+
+  var firstDate=null;
+  if(state.history&&state.history.length) firstDate=new Date(state.history[state.history.length-1].date);
+  else if(concState.history&&concState.history.length) firstDate=new Date(concState.history[concState.history.length-1].date);
+  var dayNum=null;
+  if(firstDate){
+    var _fm=new Date(firstDate.getFullYear(),firstDate.getMonth(),firstDate.getDate());
+    var _vm=new Date(date.getFullYear(),date.getMonth(),date.getDate());
+    dayNum=Math.max(1,Math.floor((_vm-_fm)/86400000)+1);
+  }
+
+  var weekDots='';
+  for(var wi=6;wi>=0;wi--){
+    var wd=new Date();wd.setHours(0,0,0,0);wd.setDate(wd.getDate()-wi);
+    var wk=getJournalKey(wd);
+    var hasData=!!(journal[wk]&&journal[wk].note)
+      ||(state.history||[]).some(function(h){return h.date&&getJournalKey(new Date(h.date))===wk;})
+      ||(concState.history||[]).some(function(h){return h.date&&getJournalKey(new Date(h.date))===wk;});
+    var isAct=wk===dateKey;
+    var cls='jl-week-dot'+(hasData?' filled':'')+(isAct?' active':'');
+    var dayDiff=wi;
+    weekDots+='<div class="'+cls+'" onclick="(function(){var d=new Date();d.setDate(d.getDate()-'+dayDiff+');renderJournal(d);})()" title="'+wd.toLocaleDateString('en-US',{weekday:'short'})+'"></div>';
+  }
+
+  var today=new Date();today.setHours(0,0,0,0);
+  var dateCopy=new Date(date);dateCopy.setHours(0,0,0,0);
+  var isDateToday=dateCopy.getTime()===today.getTime();
+  var dateStr=date.toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric'});
+  var noteVal=entry.note||'';
+
+  var html=modeTabs
+    +'<div class="jl-nav">'
+    +'<button class="jl-nav__arrow" onclick="journalPrev()">‹</button>'
+    +'<div><div class="jl-nav__date">'+dateStr+'</div>'
+    +(dayNum?'<div class="jl-nav__sub">Day '+dayNum+' of practice</div>':'')
+    +'</div>'
+    +'<button class="jl-nav__arrow"'+(isDateToday?' disabled':'')+' onclick="journalNext()">›</button>'
+    +'</div>'
+    +'<div class="jl-week-dots">'+weekDots+'</div>'
+    +'<div class="jl-sep"></div>';
+
+  html+='<div class="jl-note-wrap">';
+  if(isDateToday) html+='<div class="jl-omnia-prompt">'+omniaJournalPrompt()+'</div>';
+  html+='<textarea id="journalNoteInput" class="jl-note-input" placeholder="Write about today…" rows="5">'+noteVal.replace(/</g,'&lt;').replace(/>/g,'&gt;')+'</textarea>'
+    +'<div class="jl-note-actions">'
+    +'<button class="jl-save-btn" onclick="saveJournalNote()">Save note</button>'
+    +(noteVal?'<button class="jl-clear-btn" onclick="clearJournalEntry()">Clear</button>':'')
+    +'</div></div>';
+
+  var allSessions=[];
+  activity.awSessions.forEach(function(h){allSessions.push({type:'aw',data:h});});
+  activity.concSessions.forEach(function(h){allSessions.push({type:'conc',data:h});});
+  allSessions.sort(function(a,b){return new Date(a.data.date)-new Date(b.data.date);});
+
+  html+='<div class="jl-sep"></div><div class="jl-sessions-wrap">'
+    +_jlSessionCards(allSessions, isDateToday?'Your sessions will appear here after your first practice today.':'No sessions recorded.')
+    +'</div>';
+
   if(activity.bests.length){
     html+='<div class="jl-sep"></div><div class="jl-notable" style="margin-bottom:32px;">'
       +'<div class="jl-section-label">Notable</div>';
@@ -18767,7 +18867,7 @@ function renderJournal(date){
 function clearJournalEntry(){
   showConfirm('Clear Note','The training log (sessions and records) will remain. Only the note will be removed.',function(){
     var journal=loadJournal();
-    var key=getJournalKey(journalCurrentDate);
+    var key=getJournalEntryKey(journalCurrentDate);
     if(journal[key]){delete journal[key].note;if(!Object.keys(journal[key]).length)delete journal[key];saveJournal(journal);}
     document.getElementById('journalNoteInput').value='';
     renderJournal(journalCurrentDate);showToast('Note cleared');
