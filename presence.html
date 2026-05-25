@@ -425,7 +425,7 @@
     #guidePathPanel .guide-confirm-panel,
     #guidePathPanel .guide-route-grid { display:none !important; }
     /* Path banner — Duolingo-style colored header with Omnia on the right */
-    .path-banner { position:relative; height:148px; margin:14px 0 4px; border-radius:18px; background:linear-gradient(145deg,#0a1a2e 0%,#0d2a3a 40%,#0c1e30 100%); overflow:hidden; display:flex; align-items:center; justify-content:space-between; padding:0 22px; }
+    .path-banner { position:relative; height:148px; margin:14px 0 0; border-radius:18px; background:linear-gradient(145deg,#0a1a2e 0%,#0d2a3a 40%,#0c1e30 100%); overflow:hidden; display:flex; align-items:center; justify-content:space-between; padding:0 22px; }
     .path-banner::before { content:''; position:absolute; inset:0; background:radial-gradient(ellipse 60% 70% at 72% 55%, rgba(100,190,220,.18) 0%, transparent 70%); pointer-events:none; }
     .path-banner::after { content:''; position:absolute; inset:0; background:radial-gradient(ellipse 40% 50% at 68% 48%, rgba(180,230,255,.08) 0%, transparent 60%); pointer-events:none; }
     @keyframes heroFloat { 0%,100%{transform:translateY(0);opacity:.55} 50%{transform:translateY(-5px);opacity:.85} }
@@ -439,7 +439,7 @@
     .path-banner-figure .omnia-shard-layer { position:absolute; inset:0; width:100%; height:100%; opacity:0; pointer-events:none; }
     .path-banner-figure .omnia-symbol-layer { position:absolute; inset:0; display:flex; align-items:center; justify-content:center; pointer-events:none; }
     .path-banner-figure .omnia-morph-ring { position:absolute; left:50%; top:50%; transform:translate(-50%,-50%); opacity:0; border:1px solid rgba(184,234,255,.45); border-radius:50%; width:62px; height:62px; box-shadow:0 0 14px rgba(142,204,224,.24), inset 0 0 14px rgba(142,204,224,.12); pointer-events:none; animation:none !important; }
-    .path-quest-root { display:flex; flex-direction:column; gap:18px; padding:18px 2px 28px; }
+    .path-quest-root { display:flex; flex-direction:column; gap:18px; padding:8px 2px 28px; }
     /* ── Guide redesign: day strip + exercise cards ── */
     .path-day-strip { display:flex; align-items:center; justify-content:space-between; margin:14px 0 0; padding:0 2px; }
     .path-day-name { font-family:'Space Grotesk',sans-serif; font-size:16px; font-weight:700; color:var(--text); letter-spacing:-.01em; }
@@ -15201,7 +15201,7 @@ function renderPathQuests() {
   var html = '';
 
   // ── Day strip + exercise cards ──
-  html += '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;padding:0 2px;">'
+  html += '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;padding:0 2px;">'
     + '<div class="path-day-name">' + dayName + '</div>'
     + '<div style="display:flex;align-items:center;gap:10px;">'
     + '<span style="font-size:9px;color:var(--muted);letter-spacing:.05em;"><strong style="color:var(--text);">' + pathDone + '</strong> / ' + pathTotal + ' done</span>'
@@ -15213,13 +15213,13 @@ function renderPathQuests() {
 
   // ── Cadence toggle ──
   var _twoOn = guideTwoADayEnabled();
-  html += '<div style="display:flex;justify-content:flex-end;margin:0 2px 14px;">'
+  html += '<div style="display:flex;justify-content:flex-end;margin:0 2px 8px;">'
     + '<button id="pqTwoADayBtn" class="guide-cadence-toggle' + (_twoOn ? '' : ' off') + '">' + (_twoOn ? '2× / day' : '1× / day') + '</button>'
     + '</div>';
 
   // Section label + exercise cards (wrapped together so flex gap doesn't push them apart)
   html += '<div>';
-  html += '<div style="font-size:8px;letter-spacing:.26em;text-transform:uppercase;color:var(--muted);margin:0 2px 8px;">Exercises</div>';
+  html += '<div style="font-size:8px;letter-spacing:.26em;text-transform:uppercase;color:var(--muted);margin:0 2px 6px;">Exercises</div>';
   html += '<div style="display:flex;flex-direction:column;gap:8px;">';
   html += items.map(function(item) {
     var rounds = (item.durationLabel && item.durationLabel.indexOf('x2') !== -1) ? 2 : 1;
