@@ -18998,7 +18998,7 @@ function openJournalEntry(dateKey){
   } else { hintEl.innerHTML=''; }
   var hasWritten=!!(entry.title&&entry.title.trim())||!!(entry.note&&entry.note.trim());
   document.getElementById('journalEntryDelete').style.display=hasWritten?'flex':'none';
-  document.getElementById('journalEntryLog').innerHTML=journalProgressHTML(dateKey)+journalLogHTML(dateKey);
+  document.getElementById('journalEntryLog').innerHTML=hasWritten?journalProgressHTML(dateKey)+journalLogHTML(dateKey):'';
   showScreen('journalEntryScreen');
   journalAutoGrow();
 }
