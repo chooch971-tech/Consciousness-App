@@ -15211,15 +15211,13 @@ function renderPathQuests() {
     + '</svg>'
     + '</div></div>';
 
-  // ── Cadence toggle ──
+  // ── Section label with cadence toggle inline ──
   var _twoOn = guideTwoADayEnabled();
-  html += '<div style="display:flex;justify-content:flex-end;margin:0 2px 8px;">'
+  html += '<div>';
+  html += '<div style="display:flex;align-items:center;justify-content:space-between;margin:0 2px 6px;">'
+    + '<span style="font-size:8px;letter-spacing:.26em;text-transform:uppercase;color:var(--muted);">Exercises</span>'
     + '<button id="pqTwoADayBtn" class="guide-cadence-toggle' + (_twoOn ? '' : ' off') + '">' + (_twoOn ? '2× / day' : '1× / day') + '</button>'
     + '</div>';
-
-  // Section label + exercise cards (wrapped together so flex gap doesn't push them apart)
-  html += '<div>';
-  html += '<div style="font-size:8px;letter-spacing:.26em;text-transform:uppercase;color:var(--muted);margin:0 2px 6px;">Exercises</div>';
   html += '<div style="display:flex;flex-direction:column;gap:8px;">';
   html += items.map(function(item) {
     var rounds = (item.durationLabel && item.durationLabel.indexOf('x2') !== -1) ? 2 : 1;
