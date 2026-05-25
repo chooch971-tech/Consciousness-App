@@ -16200,8 +16200,6 @@ function renderReport(period) {
   var awarenessPrev = filterHistory(state.history, range.prevStart, range.prevEnd);
   var concNow = filterHistory(concState.history, range.start, range.now);
   var concPrev = filterHistory(concState.history, range.prevStart, range.prevEnd);
-  var dueReportSummaries = buildDueProgressReportSummaries();
-
   var html = '';
 
   // ── Omnia commentary card ──
@@ -16268,8 +16266,6 @@ function renderReport(period) {
       html += '</div>';
     }
   }
-
-  html += renderDueProgressReportComments(dueReportSummaries);
 
   // ── Awareness stats ──
   var awMinNow = sumMinutes(awarenessNow);
@@ -16364,9 +16360,6 @@ function renderReport(period) {
   html += '</div>';
 
   document.getElementById('reportContent').innerHTML = html;
-  dueReportSummaries.forEach(function(summary, i) {
-    requestProgressReportComment(summary, 'aiReportCommentText' + i);
-  });
 }
 
 function loadOmniaReportInto(period) {
