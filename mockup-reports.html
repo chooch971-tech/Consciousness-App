@@ -1,0 +1,546 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<title>Progress Report · Mockup</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300;1,400&family=DM+Mono:wght@300;400&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #07080d;
+    --surface: #0e0f17;
+    --text: #ddd8ce;
+    --muted: rgba(221,216,206,.38);
+    --accent: #7eb8a4;
+    --accent-dim: rgba(126,184,164,.12);
+    --border: rgba(221,216,206,.08);
+    --border2: rgba(221,216,206,.16);
+  }
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'DM Mono', monospace;
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+  }
+  .phone-frame {
+    width: 390px;
+    min-height: 844px;
+    background: var(--bg);
+    overflow: hidden;
+  }
+
+  /* Screen header */
+  .screen-header {
+    padding: 52px 20px 16px;
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+  }
+  .screen-title {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 24px;
+    font-weight: 300;
+    letter-spacing: .02em;
+  }
+  .screen-title span {
+    font-size: 9px;
+    font-family: 'DM Mono', monospace;
+    letter-spacing: .2em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-left: 2px;
+    vertical-align: middle;
+  }
+
+  /* Tab selector */
+  .rpt-tabs {
+    display: flex;
+    gap: 3px;
+    padding: 0 20px 16px;
+  }
+  .rpt-tab {
+    flex: 1;
+    padding: 8px 4px;
+    border-radius: 6px;
+    border: 1px solid var(--border);
+    background: var(--surface);
+    color: var(--muted);
+    font-family: 'DM Mono', monospace;
+    font-size: 8px;
+    letter-spacing: .14em;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: all .2s;
+    text-align: center;
+  }
+  .rpt-tab.active {
+    background: rgba(126,184,164,.1);
+    border-color: rgba(126,184,164,.3);
+    color: var(--accent);
+  }
+
+  /* Omnia commentary card */
+  .rpt-omnia {
+    margin: 0 20px 24px;
+    border: 1px solid rgba(126,184,164,.2);
+    border-radius: 14px;
+    background: rgba(126,184,164,.04);
+    overflow: hidden;
+  }
+  .rpt-omnia__inner {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 20px 20px 18px;
+  }
+  .rpt-omnia__stage {
+    position: relative;
+    width: 100px;
+    height: 110px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 12px;
+    flex-shrink: 0;
+  }
+
+  /* Crystal SVG */
+  .omnia-crystal {
+    width: 56px;
+    animation: omniaFloat 4s ease-in-out infinite;
+    filter: drop-shadow(0 0 14px rgba(126,184,164,.35));
+  }
+  @keyframes omniaFloat {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-6px); }
+  }
+
+  /* Beads */
+  .omnia-bead {
+    position: absolute;
+    border-radius: 50%;
+    background: radial-gradient(circle at 35% 35%, rgba(255,255,255,.9), var(--accent) 60%, rgba(60,140,110,.6));
+    animation: beadShower 2.8s ease-in infinite;
+    opacity: 0;
+  }
+  @keyframes beadShower {
+    0%   { opacity: 0; transform: translateY(-10px) scale(.5); }
+    15%  { opacity: .85; transform: translateY(0) scale(1); }
+    80%  { opacity: .4; }
+    100% { opacity: 0; transform: translateY(28px) scale(.7); }
+  }
+
+  .rpt-omnia__text {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 14px;
+    font-style: italic;
+    color: var(--text);
+    line-height: 1.75;
+    text-align: center;
+  }
+  .rpt-omnia__meta {
+    margin-top: 10px;
+    font-size: 8px;
+    letter-spacing: .18em;
+    text-transform: uppercase;
+    color: var(--muted);
+    font-family: 'DM Mono', monospace;
+  }
+  .rpt-omnia__refresh {
+    margin-top: 12px;
+    background: none;
+    border: none;
+    font-size: 8px;
+    letter-spacing: .15em;
+    text-transform: uppercase;
+    color: var(--muted);
+    font-family: 'DM Mono', monospace;
+    cursor: pointer;
+    opacity: .6;
+  }
+  .rpt-omnia__refresh:hover { opacity: 1; }
+
+  /* Loading state */
+  .rpt-omnia--loading .rpt-omnia__text {
+    color: var(--muted);
+    font-size: 12px;
+  }
+
+  /* Stat sections */
+  .rpt-section {
+    padding: 0 20px;
+    margin-bottom: 28px;
+  }
+  .rpt-section__title {
+    font-size: 9px;
+    letter-spacing: .22em;
+    text-transform: uppercase;
+    font-family: 'DM Mono', monospace;
+    margin-bottom: 12px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--border);
+  }
+  .rpt-section__title--green { color: var(--accent); }
+  .rpt-section__title--amber { color: #d4956e; }
+  .rpt-section__title--purple { color: #9b8ec4; }
+  .rpt-section__title--muted { color: var(--muted); }
+
+  /* Cards grid */
+  .rpt-cards {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    margin-bottom: 14px;
+  }
+  .rpt-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 14px 14px 12px;
+  }
+  .rpt-card--full { grid-column: span 2; }
+  .rpt-card__val {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 28px;
+    font-weight: 300;
+    line-height: 1;
+    margin-bottom: 4px;
+  }
+  .rpt-card__label {
+    font-size: 8px;
+    letter-spacing: .14em;
+    text-transform: uppercase;
+    color: var(--muted);
+    font-family: 'DM Mono', monospace;
+  }
+  .rpt-card__delta {
+    font-size: 9px;
+    margin-top: 5px;
+    font-family: 'DM Mono', monospace;
+  }
+  .delta-up { color: var(--accent); }
+  .delta-down { color: #c07070; }
+
+  /* Chart */
+  .rpt-chart {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 14px;
+    margin-bottom: 10px;
+  }
+  .rpt-chart__title {
+    font-size: 8px;
+    letter-spacing: .14em;
+    text-transform: uppercase;
+    color: var(--muted);
+    font-family: 'DM Mono', monospace;
+    margin-bottom: 14px;
+  }
+  .rpt-bar-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 8px;
+  }
+  .rpt-bar-label {
+    font-size: 8px;
+    color: var(--muted);
+    font-family: 'DM Mono', monospace;
+    width: 16px;
+    flex-shrink: 0;
+    text-align: right;
+  }
+  .rpt-bar-track {
+    flex: 1;
+    height: 4px;
+    background: rgba(255,255,255,.05);
+    border-radius: 2px;
+    overflow: hidden;
+  }
+  .rpt-bar-fill {
+    height: 100%;
+    border-radius: 2px;
+    background: var(--accent);
+    opacity: .6;
+  }
+  .rpt-bar-val {
+    font-size: 8px;
+    color: var(--muted);
+    font-family: 'DM Mono', monospace;
+    width: 28px;
+    flex-shrink: 0;
+  }
+
+  /* Share button */
+  .rpt-share {
+    display: block;
+    width: calc(100% - 40px);
+    margin: 8px 20px 48px;
+    padding: 14px;
+    border-radius: 8px;
+    border: 1px solid rgba(126,184,164,.2);
+    background: transparent;
+    color: var(--accent);
+    font-family: 'DM Mono', monospace;
+    font-size: 9px;
+    letter-spacing: .18em;
+    text-transform: uppercase;
+    cursor: pointer;
+    text-align: center;
+  }
+
+  /* State toggle buttons (demo only) */
+  .demo-toggle {
+    display: flex;
+    gap: 8px;
+    padding: 0 20px;
+    margin-bottom: 16px;
+  }
+  .demo-btn {
+    padding: 6px 12px;
+    border-radius: 4px;
+    border: 1px solid var(--border2);
+    background: var(--surface);
+    color: var(--muted);
+    font-family: 'DM Mono', monospace;
+    font-size: 8px;
+    letter-spacing: .1em;
+    cursor: pointer;
+  }
+  .demo-btn.on { border-color: rgba(126,184,164,.4); color: var(--accent); }
+  .demo-label {
+    font-size: 8px;
+    color: var(--muted);
+    font-family: 'DM Mono', monospace;
+    letter-spacing: .1em;
+    padding: 0 20px;
+    margin-bottom: 8px;
+    opacity: .5;
+  }
+</style>
+</head>
+<body>
+<div class="phone-frame">
+
+  <!-- Screen header -->
+  <div class="screen-header">
+    <div class="screen-title">Progress <span>report</span></div>
+  </div>
+
+  <!-- Tab selector -->
+  <div class="rpt-tabs">
+    <button class="rpt-tab active">Daily</button>
+    <button class="rpt-tab" onclick="switchTab(this,'weekly')">Weekly</button>
+    <button class="rpt-tab" onclick="switchTab(this,'monthly')">Monthly</button>
+    <button class="rpt-tab" onclick="switchTab(this,'all')">All time</button>
+  </div>
+
+  <!-- Demo state toggle -->
+  <div class="demo-label">— demo: toggle omnia state —</div>
+  <div class="demo-toggle">
+    <button class="demo-btn on" onclick="showState('loading',this)">Loading</button>
+    <button class="demo-btn" onclick="showState('content',this)">Content</button>
+  </div>
+
+  <!-- Omnia commentary card — LOADING STATE -->
+  <div class="rpt-omnia rpt-omnia--loading" id="omniaLoading">
+    <div class="rpt-omnia__inner">
+      <div class="rpt-omnia__stage">
+        <!-- Crystal SVG -->
+        <svg class="omnia-crystal" viewBox="0 0 72 118" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <linearGradient id="cg1" x1="36" y1="0" x2="36" y2="118" gradientUnits="userSpaceOnUse">
+              <stop offset="0%" stop-color="#b8ede0"/>
+              <stop offset="50%" stop-color="#7eb8a4"/>
+              <stop offset="100%" stop-color="#3a7a64"/>
+            </linearGradient>
+            <linearGradient id="cg2" x1="0" y1="0" x2="72" y2="0" gradientUnits="userSpaceOnUse">
+              <stop offset="0%" stop-color="rgba(255,255,255,.18)"/>
+              <stop offset="100%" stop-color="rgba(255,255,255,.0)"/>
+            </linearGradient>
+          </defs>
+          <!-- Main body -->
+          <path d="M36 2 L68 38 L54 116 L18 116 L4 38 Z" fill="url(#cg1)" opacity=".9"/>
+          <!-- Left face highlight -->
+          <path d="M36 2 L4 38 L18 116 L36 80 Z" fill="url(#cg2)" opacity=".3"/>
+          <!-- Top cap -->
+          <path d="M24 38 L36 2 L48 38 Z" fill="rgba(255,255,255,.22)"/>
+          <!-- Inner line detail -->
+          <line x1="36" y1="2" x2="36" y2="116" stroke="rgba(255,255,255,.12)" stroke-width=".8"/>
+          <line x1="4" y1="38" x2="68" y2="38" stroke="rgba(255,255,255,.1)" stroke-width=".6"/>
+        </svg>
+        <!-- Beads -->
+        <span class="omnia-bead" style="left:22%;top:14%;width:6px;height:6px;animation-delay:0s"></span>
+        <span class="omnia-bead" style="left:38%;top:8%;width:5px;height:5px;animation-delay:.28s"></span>
+        <span class="omnia-bead" style="left:55%;top:12%;width:8px;height:8px;animation-delay:.56s"></span>
+        <span class="omnia-bead" style="left:70%;top:6%;width:5px;height:5px;animation-delay:.84s"></span>
+        <span class="omnia-bead" style="left:80%;top:22%;width:7px;height:7px;animation-delay:1.1s"></span>
+        <span class="omnia-bead" style="left:14%;top:34%;width:5px;height:5px;animation-delay:1.38s"></span>
+        <span class="omnia-bead" style="left:32%;top:28%;width:7px;height:7px;animation-delay:1.66s"></span>
+        <span class="omnia-bead" style="left:60%;top:32%;width:6px;height:6px;animation-delay:1.94s"></span>
+        <span class="omnia-bead" style="left:75%;top:40%;width:5px;height:5px;animation-delay:2.22s"></span>
+      </div>
+      <div class="rpt-omnia__text">Omnia is reflecting…</div>
+    </div>
+  </div>
+
+  <!-- Omnia commentary card — CONTENT STATE (hidden initially) -->
+  <div class="rpt-omnia" id="omniaContent" style="display:none;">
+    <div class="rpt-omnia__inner">
+      <div class="rpt-omnia__stage">
+        <svg class="omnia-crystal" viewBox="0 0 72 118" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <linearGradient id="cg3" x1="36" y1="0" x2="36" y2="118" gradientUnits="userSpaceOnUse">
+              <stop offset="0%" stop-color="#b8ede0"/>
+              <stop offset="50%" stop-color="#7eb8a4"/>
+              <stop offset="100%" stop-color="#3a7a64"/>
+            </linearGradient>
+            <linearGradient id="cg4" x1="0" y1="0" x2="72" y2="0" gradientUnits="userSpaceOnUse">
+              <stop offset="0%" stop-color="rgba(255,255,255,.18)"/>
+              <stop offset="100%" stop-color="rgba(255,255,255,.0)"/>
+            </linearGradient>
+          </defs>
+          <path d="M36 2 L68 38 L54 116 L18 116 L4 38 Z" fill="url(#cg3)" opacity=".9"/>
+          <path d="M36 2 L4 38 L18 116 L36 80 Z" fill="url(#cg4)" opacity=".3"/>
+          <path d="M24 38 L36 2 L48 38 Z" fill="rgba(255,255,255,.22)"/>
+          <line x1="36" y1="2" x2="36" y2="116" stroke="rgba(255,255,255,.12)" stroke-width=".8"/>
+          <line x1="4" y1="38" x2="68" y2="38" stroke="rgba(255,255,255,.1)" stroke-width=".6"/>
+        </svg>
+      </div>
+      <div class="rpt-omnia__text">Your 38 minutes today is your strongest Sunday this month. The afternoon session showed real resilience — staying for 18 minutes when you noted restlessness takes more discipline than an easy sit.</div>
+      <div class="rpt-omnia__meta">Omnia · updated today</div>
+      <button class="rpt-omnia__refresh">↺ refresh</button>
+    </div>
+  </div>
+
+  <!-- Overview section -->
+  <div class="rpt-section">
+    <div class="rpt-section__title rpt-section__title--muted">Today · May 25</div>
+    <div class="rpt-cards">
+      <div class="rpt-card">
+        <div class="rpt-card__val">38<small style="font-size:14px;opacity:.5">m</small></div>
+        <div class="rpt-card__label">Total time</div>
+        <div class="rpt-card__delta delta-up">↑ 12m vs avg</div>
+      </div>
+      <div class="rpt-card">
+        <div class="rpt-card__val">3</div>
+        <div class="rpt-card__label">Sessions</div>
+        <div class="rpt-card__delta delta-up">↑ 1 vs avg</div>
+      </div>
+      <div class="rpt-card">
+        <div class="rpt-card__val">2:14</div>
+        <div class="rpt-card__label">Best hold</div>
+        <div class="rpt-card__delta delta-up">New PB ✦</div>
+      </div>
+      <div class="rpt-card">
+        <div class="rpt-card__val">47</div>
+        <div class="rpt-card__label">Day streak</div>
+        <div class="rpt-card__delta" style="color:var(--muted)">ongoing</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Awareness section -->
+  <div class="rpt-section">
+    <div class="rpt-section__title rpt-section__title--green">Awareness</div>
+    <div class="rpt-cards">
+      <div class="rpt-card">
+        <div class="rpt-card__val">38<small style="font-size:14px;opacity:.5">m</small></div>
+        <div class="rpt-card__label">Time today</div>
+      </div>
+      <div class="rpt-card">
+        <div class="rpt-card__val">2</div>
+        <div class="rpt-card__label">Sessions</div>
+      </div>
+    </div>
+    <div class="rpt-chart">
+      <div class="rpt-chart__title">Sessions this week (min)</div>
+      <div class="rpt-bar-row">
+        <div class="rpt-bar-label">M</div>
+        <div class="rpt-bar-track"><div class="rpt-bar-fill" style="width:60%"></div></div>
+        <div class="rpt-bar-val">24m</div>
+      </div>
+      <div class="rpt-bar-row">
+        <div class="rpt-bar-label">T</div>
+        <div class="rpt-bar-track"><div class="rpt-bar-fill" style="width:45%"></div></div>
+        <div class="rpt-bar-val">18m</div>
+      </div>
+      <div class="rpt-bar-row">
+        <div class="rpt-bar-label">W</div>
+        <div class="rpt-bar-track"><div class="rpt-bar-fill" style="width:80%"></div></div>
+        <div class="rpt-bar-val">32m</div>
+      </div>
+      <div class="rpt-bar-row">
+        <div class="rpt-bar-label">T</div>
+        <div class="rpt-bar-track"><div class="rpt-bar-fill" style="width:0%"></div></div>
+        <div class="rpt-bar-val" style="color:rgba(221,216,206,.18)">—</div>
+      </div>
+      <div class="rpt-bar-row">
+        <div class="rpt-bar-label">F</div>
+        <div class="rpt-bar-track"><div class="rpt-bar-fill" style="width:50%"></div></div>
+        <div class="rpt-bar-val">20m</div>
+      </div>
+      <div class="rpt-bar-row">
+        <div class="rpt-bar-label">S</div>
+        <div class="rpt-bar-track"><div class="rpt-bar-fill" style="width:0%"></div></div>
+        <div class="rpt-bar-val" style="color:rgba(221,216,206,.18)">—</div>
+      </div>
+      <div class="rpt-bar-row">
+        <div class="rpt-bar-label">S</div>
+        <div class="rpt-bar-track"><div class="rpt-bar-fill" style="width:95%"></div></div>
+        <div class="rpt-bar-val">38m</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Clock section -->
+  <div class="rpt-section">
+    <div class="rpt-section__title rpt-section__title--amber">Clock · Concentration</div>
+    <div class="rpt-cards">
+      <div class="rpt-card">
+        <div class="rpt-card__val">2:14</div>
+        <div class="rpt-card__label">All-time PB</div>
+        <div class="rpt-card__delta delta-up">Today ✦</div>
+      </div>
+      <div class="rpt-card">
+        <div class="rpt-card__val">47</div>
+        <div class="rpt-card__label">Total sessions</div>
+        <div class="rpt-card__delta" style="color:var(--muted)">lifetime</div>
+      </div>
+      <div class="rpt-card rpt-card--full">
+        <div class="rpt-card__val" style="font-size:20px;">6:42</div>
+        <div class="rpt-card__label">Target (3× PB)</div>
+        <div class="rpt-card__delta" style="color:var(--muted)">next milestone</div>
+      </div>
+    </div>
+  </div>
+
+  <button class="rpt-share">↗ Share report</button>
+
+</div>
+
+<script>
+  function switchTab(btn, period) {
+    document.querySelectorAll('.rpt-tab').forEach(t => t.classList.remove('active'));
+    btn.classList.add('active');
+  }
+  function showState(state, btn) {
+    document.querySelectorAll('.demo-btn').forEach(b => b.classList.remove('on'));
+    btn.classList.add('on');
+    if (state === 'loading') {
+      document.getElementById('omniaLoading').style.display = '';
+      document.getElementById('omniaContent').style.display = 'none';
+    } else {
+      document.getElementById('omniaLoading').style.display = 'none';
+      document.getElementById('omniaContent').style.display = '';
+    }
+  }
+</script>
+</body>
+</html>
