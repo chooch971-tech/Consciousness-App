@@ -882,9 +882,22 @@
     .jl-record__text { font-size:11px; line-height:1.5; color:var(--text); opacity:.75; }
     .jl-note-wrap { padding:0 24px; margin-bottom:40px; }
     .jl-omnia-prompt { font-family:'Cormorant Garamond',serif; font-size:13px; font-style:italic; color:var(--muted); line-height:1.65; margin-bottom:10px; }
-    .jl-note-input { width:100%; background:rgba(255,255,255,.025); border:1px solid var(--border); border-radius:10px; color:var(--text); font-family:'DM Mono',monospace; font-size:11px; letter-spacing:.03em; line-height:1.75; padding:13px 15px; resize:none; min-height:80px; -webkit-appearance:none; box-sizing:border-box; }
-    .jl-note-input::placeholder { color:rgba(221,216,206,.18); }
-    .jl-note-input:focus { outline:none; border-color:rgba(126,184,164,.25); }
+    .jl-note-input { width:100%; background:transparent; border:none; border-bottom:1px solid var(--border); color:var(--text); font-family:'DM Mono',monospace; font-size:12px; letter-spacing:.03em; line-height:1.85; padding:4px 0 20px; resize:none; min-height:160px; -webkit-appearance:none; box-sizing:border-box; }
+    .jl-note-input::placeholder { color:rgba(221,216,206,.13); }
+    .jl-note-input:focus { outline:none; border-bottom-color:rgba(126,184,164,.3); }
+    .jl-sessions-wrap { padding:0 24px 32px; }
+    .jl-session-item { display:flex; justify-content:space-between; align-items:flex-start; padding:12px 0; border-bottom:1px solid var(--border); }
+    .jl-session-item:last-child { border-bottom:none; }
+    .jl-session-item__left { flex:1; min-width:0; }
+    .jl-session-item__tag { font-size:8px; letter-spacing:.14em; text-transform:uppercase; color:var(--muted); margin-bottom:3px; }
+    .jl-session-item__tag--aw { color:var(--accent); opacity:.65; }
+    .jl-session-item__tag--conc { color:#d4956e; opacity:.75; }
+    .jl-session-item__name { font-family:'Cormorant Garamond',serif; font-size:17px; font-weight:300; color:var(--text); line-height:1.2; }
+    .jl-session-item__note { font-family:'Cormorant Garamond',serif; font-size:12px; font-style:italic; color:var(--muted); line-height:1.55; margin-top:4px; }
+    .jl-session-item__right { flex-shrink:0; margin-left:16px; text-align:right; padding-top:2px; }
+    .jl-session-item__val { font-size:13px; color:var(--text); font-family:'DM Mono',monospace; }
+    .jl-session-item__sub { font-size:8px; color:var(--muted); margin-top:3px; }
+    .jl-session-item__pb { font-size:8px; padding:2px 6px; border-radius:3px; background:rgba(126,184,164,.1); color:var(--accent); margin-top:4px; display:inline-block; }
     .jl-note-actions { display:flex; justify-content:space-between; align-items:center; margin-top:9px; }
     .jl-save-btn { padding:9px 22px; border-radius:6px; border:1px solid rgba(126,184,164,.25); background:rgba(126,184,164,.08); color:var(--accent); font-family:'DM Mono',monospace; font-size:8px; letter-spacing:.2em; text-transform:uppercase; cursor:pointer; }
     .jl-clear-btn { font-size:8px; color:rgba(200,100,100,.4); background:none; border:none; font-family:'DM Mono',monospace; letter-spacing:.14em; text-transform:uppercase; cursor:pointer; }
@@ -4486,35 +4499,38 @@ body:not(.tut-live) #tutCorgi {
       <div class="drawer-level" id="drawerLevel">Level 1 · Initiate</div>
     </div>
     <div class="drawer-items">
-      <button class="drawer-item" id="drawerGuide">
-        <span class="drawer-item-icon">✦</span>Prayer
-      </button>
-      <button class="drawer-item" id="drawerJournal">
-        <span class="drawer-item-icon">📓</span>Journal Log
-      </button>
       <button class="drawer-item" id="drawerReports">
         <span class="drawer-item-icon">◈</span>Progress Report
+      </button>
+      <button class="drawer-item" id="drawerJournal">
+        <span class="drawer-item-icon">📓</span>Journal
       </button>
       <button class="drawer-item" id="drawerPlayground">
         <span class="drawer-item-icon">🧪</span>Playground
       </button>
-      <button class="drawer-item" id="drawerBardon" style="display:none;">
-        <span class="drawer-item-icon">📖</span>The Path <span style="color:var(--muted); font-size:10px;">(Idle game)</span>
+      <button class="drawer-item" id="drawerFriends">
+        <span class="drawer-item-icon">👥</span>Friends
+      </button>
+      <button class="drawer-item" id="drawerProfile">
+        <span class="drawer-item-icon">◎</span>Profile
       </button>
       <button class="drawer-item" id="drawerFaq">
         <span class="drawer-item-icon">💬</span>FAQ
       </button>
-      <button class="drawer-item" id="drawerSettings">
-        <span class="drawer-item-icon">⚙️</span>Settings
-      </button>
       <button class="drawer-item" id="drawerAbout">
         <span class="drawer-item-icon">◎</span>About
+      </button>
+      <button class="drawer-item" id="drawerSettings">
+        <span class="drawer-item-icon">⚙️</span>Settings
       </button>
       <button class="drawer-item" id="drawerDonate">
         <span class="drawer-item-icon">☕</span>Donate
       </button>
-      <button class="drawer-item" id="drawerFriends">
-        <span class="drawer-item-icon">👥</span>Friends
+      <button class="drawer-item" id="drawerGuide" style="display:none;">
+        <span class="drawer-item-icon">✦</span>Prayer
+      </button>
+      <button class="drawer-item" id="drawerBardon" style="display:none;">
+        <span class="drawer-item-icon">📖</span>The Path <span style="color:var(--muted); font-size:10px;">(Idle game)</span>
       </button>
       <div class="drawer-divider"></div>
       <button class="drawer-item danger" id="drawerResetAll">
@@ -6130,7 +6146,7 @@ document.getElementById('drawerGuide').addEventListener('click', function() {
 });
 
 document.getElementById('drawerSettings').addEventListener('click', function() {
-  closeDrawer(); 
+  closeDrawer();
   // Update sync status when opening settings
   if (syncEnabled && authEmail) {
     _refreshSettingsSyncCardSignedIn();
@@ -6140,6 +6156,17 @@ document.getElementById('drawerSettings').addEventListener('click', function() {
   showScreen('settingsScreen');
   renderCustomVisImageList();
   renderCustomAudSoundList();
+});
+document.getElementById('drawerJournal').addEventListener('click',function(){
+  closeDrawer();renderJournal(new Date());showScreen('journalScreen');
+});
+document.getElementById('drawerReports').addEventListener('click',function(){
+  closeDrawer();showReports();
+});
+document.getElementById('drawerProfile').addEventListener('click',function(){
+  closeDrawer();
+  if(syncEnabled&&authEmail){_refreshSettingsSyncCardSignedIn();}else{_refreshSettingsSyncCard();}
+  showScreen('settingsScreen');
 });
 
 document.getElementById('customVisUpload').addEventListener('change', function(e) {
@@ -18632,140 +18659,108 @@ function renderJournal(date){
   var entry=journal[dateKey]||{};
   var activity=compileDayActivity(dateKey);
 
-  // ── Day-of-practice counter ──
+  // Day-of-practice counter (local calendar days)
   var firstDate=null;
-  if(state.history&&state.history.length){
-    firstDate=new Date(state.history[state.history.length-1].date);
-  } else if(concState.history&&concState.history.length){
-    firstDate=new Date(concState.history[concState.history.length-1].date);
-  }
+  if(state.history&&state.history.length) firstDate=new Date(state.history[state.history.length-1].date);
+  else if(concState.history&&concState.history.length) firstDate=new Date(concState.history[concState.history.length-1].date);
   var dayNum=null;
   if(firstDate){
-    var _firstMidnight=new Date(firstDate.getFullYear(),firstDate.getMonth(),firstDate.getDate(),0,0,0,0);
-    var _viewedMidnight=new Date(date.getFullYear(),date.getMonth(),date.getDate(),0,0,0,0);
-    dayNum=Math.max(1,Math.floor((_viewedMidnight-_firstMidnight)/86400000)+1);
+    var _fm=new Date(firstDate.getFullYear(),firstDate.getMonth(),firstDate.getDate());
+    var _vm=new Date(date.getFullYear(),date.getMonth(),date.getDate());
+    dayNum=Math.max(1,Math.floor((_vm-_fm)/86400000)+1);
   }
 
-  // ── Week strip dots (last 7 days) ──
+  // Week dots
   var weekDots='';
   for(var wi=6;wi>=0;wi--){
     var wd=new Date();wd.setHours(0,0,0,0);wd.setDate(wd.getDate()-wi);
     var wk=getJournalKey(wd);
-    var hasData=!!(journal[wk]&&journal[wk].note)||(state.history||[]).some(function(h){return h.date&&getJournalKey(new Date(h.date))===wk;})||(concState.history||[]).some(function(h){return h.date&&getJournalKey(new Date(h.date))===wk;});
+    var hasData=!!(journal[wk]&&journal[wk].note)
+      ||(state.history||[]).some(function(h){return h.date&&getJournalKey(new Date(h.date))===wk;})
+      ||(concState.history||[]).some(function(h){return h.date&&getJournalKey(new Date(h.date))===wk;});
     var isAct=wk===dateKey;
     var cls='jl-week-dot'+(hasData?' filled':'')+(isAct?' active':'');
     var dayDiff=wi;
     weekDots+='<div class="'+cls+'" onclick="(function(){var d=new Date();d.setDate(d.getDate()-'+dayDiff+');renderJournal(d);})()" title="'+wd.toLocaleDateString('en-US',{weekday:'short'})+'"></div>';
   }
 
-  // ── Date display ──
   var today=new Date();today.setHours(0,0,0,0);
   var dateCopy=new Date(date);dateCopy.setHours(0,0,0,0);
   var isDateToday=dateCopy.getTime()===today.getTime();
   var dateStr=date.toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric'});
-  var dateSub=(dayNum?'Day '+dayNum+' of practice':'');
-
-  // ── Summary line ──
-  var totalAwMin=activity.awSessions.reduce(function(a,h){return a+(h.durationMin||0);},0);
-  var totalConcSec=activity.concSessions.reduce(function(a,h){return a+(h.seconds||0);},0);
-  var concBestSec=activity.concSessions.length?Math.max.apply(null,activity.concSessions.map(function(h){return h.seconds||0;})):0;
-  var totalSessions=activity.awSessions.length+activity.concSessions.length;
-  var summaryParts=[];
-  if(totalAwMin>0)summaryParts.push('<b>'+fmtDuration(totalAwMin)+'</b> meditated');
-  if(concBestSec>0)summaryParts.push('best <b>'+fmtTimer(concBestSec)+'</b>');
-  if(totalSessions>0)summaryParts.push('<b>'+totalSessions+'</b> session'+(totalSessions!==1?'s':''));
-
-  // ── 30 / 365-day reflection prompt ──
-  var reflectionHtml='';
-  if(isDateToday&&firstDate){
-    var sinceDays=Math.floor((Date.now()-firstDate.getTime())/86400000);
-    if(sinceDays===30||sinceDays===365){
-      var rLabel=sinceDays===30?'30-Day Reflection':'1-Year Reflection';
-      var rPrompt=sinceDays===30?'You\'ve been practicing for 30 days. How has your relationship with presence changed?':'One full year of practice. Who were you when you started? What have you become?';
-      reflectionHtml='<div style="margin:16px 24px 0;background:rgba(126,184,164,.07);border:1px solid rgba(126,184,164,.2);border-radius:10px;padding:14px 16px;">'
-        +'<div style="font-size:8px;letter-spacing:.25em;text-transform:uppercase;color:var(--accent);margin-bottom:6px;">🌿 '+rLabel+'</div>'
-        +'<div style="font-size:12px;color:var(--muted);line-height:1.65;font-style:italic;font-family:\'Cormorant Garamond\',serif;">'+rPrompt+'</div></div>';
-    }
-  }
-
-  // ── Timeline ──
-  var timelineHtml='';
-  var allSessions=[];
-  activity.awSessions.forEach(function(h){allSessions.push({type:'aw',data:h});});
-  activity.concSessions.forEach(function(h){allSessions.push({type:'conc',data:h});});
-  allSessions.sort(function(a,b){return new Date(a.data.date)-new Date(b.data.date);});
-
-  if(allSessions.length){
-    timelineHtml='<div class="jl-timeline">';
-    allSessions.forEach(function(s,i){
-      var h=s.data;
-      var isLast=i===allSessions.length-1;
-      var time=new Date(h.date).toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'});
-      timelineHtml+='<div class="jl-entry">';
-      timelineHtml+='<div class="jl-entry__left"><div class="jl-entry__time">'+time+'</div>'+(isLast?'':'<div class="jl-entry__line"></div>')+'</div>';
-      timelineHtml+='<div class="jl-entry__right">';
-      if(s.type==='aw'){
-        var modeLabel=h.mode==='vacancy'?'Vacancy of Mind':h.mode==='thought'?'Thought Observation':h.mode==='auto'?'Awareness':'Awareness';
-        timelineHtml+='<div class="jl-entry__type jl-entry__type--aw">Awareness</div>';
-        timelineHtml+='<div class="jl-entry__name">'+modeLabel+'</div>';
-        timelineHtml+='<div class="jl-entry__meta"><span class="jl-entry__dur">'+fmtDuration(h.durationMin||0)+'</span>';
-        if(h.score)timelineHtml+='<span class="jl-entry__tag">'+parseFloat(h.score).toFixed(1)+'/5</span>';
-        if(h.endedEarly)timelineHtml+='<span class="jl-entry__tag">ended early</span>';
-        timelineHtml+='</div>';
-        if(h.notes)timelineHtml+='<div class="jl-entry__note">"'+esc(h.notes)+'"</div>';
-      } else {
-        var typeLabel=h.exercise==='asana'?'Asana':h.exercise==='pore_breathing'?'Pore Breathing':h.type==='visualization'?'Visualization':h.type==='auditory'?'Auditory':h.type==='thought'?'Thought Control':'Clock';
-        var timeStr=h.exercise==='asana'||h.exercise==='pore_breathing'?fmtAsanaTime(h.seconds||0):fmtTimer(h.seconds||0);
-        var isBestEver=h.seconds&&concState.bestSeconds&&h.seconds>=concState.bestSeconds;
-        timelineHtml+='<div class="jl-entry__type jl-entry__type--conc">Concentration</div>';
-        timelineHtml+='<div class="jl-entry__name">'+typeLabel+'</div>';
-        timelineHtml+='<div class="jl-entry__meta"><span class="jl-entry__dur">'+timeStr+'</span>';
-        if(isBestEver)timelineHtml+='<span class="jl-entry__badge">PB ✦</span>';
-        if(h.exercise==='pore_breathing'&&h.breaths)timelineHtml+='<span class="jl-entry__tag">'+h.breaths+' breaths</span>';
-        timelineHtml+='</div>';
-        if(h.notes)timelineHtml+='<div class="jl-entry__note">"'+esc(h.notes)+'"</div>';
-      }
-      timelineHtml+='</div></div>';
-    });
-    timelineHtml+='</div>';
-  } else {
-    timelineHtml='<div class="jl-empty">'+(isDateToday?'No sessions today yet.<br>Your practice will appear here.':'No sessions recorded.')+'</div>';
-  }
-
-  // ── Notable ──
-  var notableHtml='';
-  if(activity.bests.length){
-    notableHtml='<div class="jl-sep"></div><div class="jl-notable"><div class="jl-section-label">Notable</div>';
-    activity.bests.forEach(function(b){
-      notableHtml+='<div class="jl-record"><div class="jl-record__glyph">'+b.icon+'</div><div class="jl-record__text">'+b.text+'</div></div>';
-    });
-    notableHtml+='</div>';
-  }
-
-  // ── Daily note ──
   var noteVal=entry.note||'';
-  var noteHtml='<div class="jl-sep"></div><div class="jl-note-wrap">'
-    +'<div class="jl-section-label">Daily note</div>'
-    +'<div class="jl-omnia-prompt">'+omniaJournalPrompt()+'</div>'
-    +'<textarea id="journalNoteInput" class="jl-note-input" placeholder="Write something about today…" rows="4">'+noteVal.replace(/</g,'&lt;').replace(/>/g,'&gt;')+'</textarea>'
+
+  // ── Nav + date ──
+  var html='<div class="jl-nav">'
+    +'<button class="jl-nav__arrow" onclick="journalPrev()">‹</button>'
+    +'<div><div class="jl-nav__date">'+dateStr+'</div>'
+    +(dayNum?'<div class="jl-nav__sub">Day '+dayNum+' of practice</div>':'')
+    +'</div>'
+    +'<button class="jl-nav__arrow"'+(isDateToday?' disabled':'')+' onclick="journalNext()">›</button>'
+    +'</div>'
+    +'<div class="jl-week-dots">'+weekDots+'</div>'
+    +'<div class="jl-sep"></div>';
+
+  // ── Writing (PRIMARY) ──
+  html+='<div class="jl-note-wrap">';
+  if(isDateToday) html+='<div class="jl-omnia-prompt">'+omniaJournalPrompt()+'</div>';
+  html+='<textarea id="journalNoteInput" class="jl-note-input" placeholder="Write about today…" rows="5">'+noteVal.replace(/</g,'&lt;').replace(/>/g,'&gt;')+'</textarea>'
     +'<div class="jl-note-actions">'
     +'<button class="jl-save-btn" onclick="saveJournalNote()">Save note</button>'
     +(noteVal?'<button class="jl-clear-btn" onclick="clearJournalEntry()">Clear</button>':'')
     +'</div></div>';
 
-  // ── Assemble ──
-  var html=''
-    +'<div class="jl-nav">'
-    +'<button class="jl-nav__arrow" onclick="journalPrev()">‹</button>'
-    +'<div><div class="jl-nav__date">'+dateStr+'</div>'+(dateSub?'<div class="jl-nav__sub">'+dateSub+'</div>':'')+'</div>'
-    +'<button class="jl-nav__arrow"'+(isDateToday?' disabled':'')+' onclick="journalNext()">›</button>'
-    +'</div>'
-    +'<div class="jl-week-dots">'+weekDots+'</div>'
-    +(summaryParts.length?'<div class="jl-sep"></div><div class="jl-summary">'+summaryParts.join('<span style="opacity:.3">·</span>')+'</div>':'<div class="jl-sep"></div>')
-    +reflectionHtml
-    +timelineHtml
-    +notableHtml
-    +noteHtml;
+  // ── Sessions ──
+  var allSessions=[];
+  activity.awSessions.forEach(function(h){allSessions.push({type:'aw',data:h});});
+  activity.concSessions.forEach(function(h){allSessions.push({type:'conc',data:h});});
+  allSessions.sort(function(a,b){return new Date(a.data.date)-new Date(b.data.date);});
+
+  html+='<div class="jl-sep"></div><div class="jl-sessions-wrap">';
+  if(allSessions.length){
+    html+='<div class="jl-section-label">Sessions · '+allSessions.length+'</div>';
+    allSessions.forEach(function(s){
+      var h=s.data;
+      var time=new Date(h.date).toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'});
+      html+='<div class="jl-session-item"><div class="jl-session-item__left">';
+      if(s.type==='aw'){
+        var modeLabel=h.mode==='vacancy'?'Vacancy of Mind':h.mode==='thought'?'Thought Observation':'Awareness';
+        html+='<div class="jl-session-item__tag jl-session-item__tag--aw">Awareness</div>'
+          +'<div class="jl-session-item__name">'+modeLabel+'</div>';
+        if(h.notes) html+='<div class="jl-session-item__note">"'+esc(h.notes)+'"</div>';
+      } else {
+        var typeLabel=h.exercise==='asana'?'Asana':h.exercise==='pore_breathing'?'Pore Breathing':h.type==='visualization'?'Visualization':h.type==='auditory'?'Auditory':h.type==='thought'?'Thought Control':'Clock';
+        html+='<div class="jl-session-item__tag jl-session-item__tag--conc">Concentration</div>'
+          +'<div class="jl-session-item__name">'+typeLabel+'</div>';
+        if(h.notes) html+='<div class="jl-session-item__note">"'+esc(h.notes)+'"</div>';
+      }
+      html+='</div><div class="jl-session-item__right">';
+      if(s.type==='aw'){
+        html+='<div class="jl-session-item__val">'+fmtDuration(h.durationMin||0)+'</div>';
+        if(h.score) html+='<div class="jl-session-item__sub">'+parseFloat(h.score).toFixed(1)+'/5</div>';
+      } else {
+        var timeStr=h.exercise==='asana'||h.exercise==='pore_breathing'?fmtAsanaTime(h.seconds||0):fmtTimer(h.seconds||0);
+        var isBest=h.seconds&&concState.bestSeconds&&h.seconds>=concState.bestSeconds;
+        html+='<div class="jl-session-item__val">'+timeStr+'</div>';
+        if(isBest) html+='<div class="jl-session-item__pb">PB ✦</div>';
+      }
+      html+='<div class="jl-session-item__sub">'+time+'</div>'
+        +'</div></div>';
+    });
+  } else {
+    html+='<div class="jl-empty">'+(isDateToday?'Your sessions will appear here after your first practice today.':'No sessions recorded.')+'</div>';
+  }
+  html+='</div>';
+
+  // ── Notable ──
+  if(activity.bests.length){
+    html+='<div class="jl-sep"></div><div class="jl-notable" style="margin-bottom:32px;">'
+      +'<div class="jl-section-label">Notable</div>';
+    activity.bests.forEach(function(b){
+      html+='<div class="jl-record"><div class="jl-record__glyph">'+b.icon+'</div><div class="jl-record__text">'+b.text+'</div></div>';
+    });
+    html+='</div>';
+  }
 
   document.getElementById('journalContent').innerHTML=html;
 }
@@ -18782,12 +18777,6 @@ function clearJournalEntry(){
 
 document.getElementById('journalBack').addEventListener('click',function(){
   renderHome();showScreen('homeScreen');
-});
-document.getElementById('drawerJournal').addEventListener('click',function(){
-  closeDrawer();renderJournal(new Date());showScreen('journalScreen');
-});
-document.getElementById('drawerReports').addEventListener('click',function(){
-  closeDrawer();showReports();
 });
 // ══════════════════════════════════════════════════════
 
