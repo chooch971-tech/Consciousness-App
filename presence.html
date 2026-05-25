@@ -6726,8 +6726,9 @@ document.addEventListener('visibilitychange', function() {
   if (document.visibilityState === 'visible') {
     scheduleGuidePathLayoutRefresh(false);
   }
-  // When app becomes visible again, pull latest cloud data and reload if changed
+  // When app becomes visible again, refresh token if needed, then pull
   if (document.visibilityState === 'visible' && syncEnabled && authToken) {
+    maybeRefreshToken();
     fetch(SYNC_API_URL + '/sync/pull', {
       headers: { 'Authorization': 'Bearer ' + authToken }
     }).then(function(r) { return r.json(); }).then(function(result) {
@@ -16799,7 +16800,9 @@ function _refreshSettingsSyncCard() {
   var lb   = document.getElementById('syncLogoutBtn');
   var uc   = document.getElementById('setUsernameCard');
   if (!wrap) return;
-  if (st) st.textContent = 'Not signed in';
+  var syncWarning = localStorage.getItem('presence_sync_warning');
+  if (st) st.textContent = syncWarning ? '⚠ Sync disconnected — sign in to reconnect' : 'Not signed in';
+  if (st) st.style.color = syncWarning ? '#d4956e' : '';
   if (se) se.textContent = '';
   if (lb) lb.style.display = 'none';
   if (uc) uc.style.display = 'none';
@@ -16828,7 +16831,8 @@ function _refreshSettingsSyncCardSignedIn() {
   var se   = document.getElementById('syncStatusEmail');
   var lb   = document.getElementById('syncLogoutBtn');
   var uc   = document.getElementById('setUsernameCard');
-  if (st) st.textContent = '✓ Syncing across devices';
+  localStorage.removeItem('presence_sync_warning');
+  if (st) { st.textContent = '✓ Syncing across devices'; st.style.color = ''; }
   if (se) se.textContent = authUsername ? '@' + authUsername + ' · ' + authEmail : authEmail;
   if (lb) lb.style.display = 'block';
   if (wrap) wrap.style.display = 'none';
@@ -16845,11 +16849,15 @@ function authLogout(options) {
   localStorage.removeItem('presence_auth_username');
   syncEnabled = false;
   _refreshSettingsSyncCard();
-  // Stay on Settings if that's where the action came from; otherwise show toast
+  // Persist a warning so the user sees it next time they open Settings
+  if (options.message) {
+    localStorage.setItem('presence_sync_warning', options.message);
+    showToast(options.message, 3500);
+  }
+  // Stay on Settings if that's where the action came from; otherwise go home
   if (!options.stayOnSettings) {
     renderHome(); showScreen('homeScreen');
   }
-  if (options.message) showToast(options.message, 3500);
 }
 
 function detectDevice() {
@@ -16860,6 +16868,32 @@ function detectDevice() {
   if (/Windows/.test(ua)) return 'Windows';
   if (/Linux/.test(ua)) return 'Linux';
   return 'Unknown';
+}
+
+// Silently refresh the JWT before it can expire.
+// Decodes the token's iat claim (no library needed — JWT payload is plain base64).
+// Refreshes if the token is older than 20 days so it never reaches the 30-day expiry
+// during normal use.
+async function maybeRefreshToken() {
+  if (!syncEnabled || !authToken) return;
+  try {
+    var parts = authToken.split('.');
+    if (parts.length !== 3) return;
+    var payload = JSON.parse(atob(parts[1].replace(/-/g,'+').replace(/_/g,'/')));
+    var ageMs = Date.now() - (payload.iat || 0) * 1000;
+    if (ageMs < 20 * 24 * 60 * 60 * 1000) return; // under 20 days old — fine
+    var res = await fetch(SYNC_API_URL + '/auth/refresh', {
+      method: 'POST',
+      headers: { 'Authorization': 'Bearer ' + authToken }
+    });
+    if (!res.ok) return; // if refresh fails, do nothing — next push will catch the 401
+    var result = await res.json();
+    if (result.token) {
+      authToken = result.token;
+      localStorage.setItem('presence_auth_token', authToken);
+      console.log('[Auth] Token refreshed silently');
+    }
+  } catch(e) {}
 }
 
 var VAPID_PUBLIC_KEY = 'BD8weuWNktThYNUkWKnkv5Hgz2-yiJyC_T1YVCrYomhOH2rJSys97xrRnm5BsrGNc9t8MRmqRaN2KHnF-zLjXlI';
