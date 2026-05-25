@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
-<title>Progress Report · Mockup v3</title>
+<title>Progress Report · Mockup v4</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300;1,400&family=DM+Mono:wght@300;400&display=swap" rel="stylesheet">
 <style>
@@ -14,7 +14,6 @@
     --muted: rgba(221,216,206,.38);
     --muted2: rgba(221,216,206,.18);
     --accent: #7eb8a4;
-    --accent-dim: rgba(126,184,164,.1);
     --border: rgba(221,216,206,.07);
     --amber: #c8906a;
   }
@@ -30,205 +29,171 @@
   .phone { width: 390px; min-height: 844px; background: var(--bg); }
 
   /* ── Header ── */
-  .rpt-header {
-    padding: 54px 24px 16px;
-    display: flex;
-    align-items: baseline;
-    justify-content: space-between;
-  }
-  .rpt-header__title {
-    font-family: 'Cormorant Garamond', serif;
-    font-size: 26px;
-    font-weight: 300;
-  }
-  .rpt-header__right {
-    font-size: 8px;
-    letter-spacing: .18em;
-    text-transform: uppercase;
-    color: var(--muted);
-  }
+  .rpt-header { padding: 54px 24px 16px; display: flex; align-items: baseline; justify-content: space-between; }
+  .rpt-header__title { font-family: 'Cormorant Garamond', serif; font-size: 26px; font-weight: 300; }
+  .rpt-header__right { font-size: 8px; letter-spacing: .18em; text-transform: uppercase; color: var(--muted); }
 
   /* ── Period selector ── */
-  .rpt-period {
-    display: flex;
-    justify-content: center;
-    padding: 0 24px 0;
-    border-bottom: 1px solid var(--border);
-  }
-  .rpt-period__item {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 6px;
-    padding: 8px 4px 14px;
-    cursor: pointer;
-    position: relative;
-  }
-  .rpt-period__label {
-    font-family: 'Cormorant Garamond', serif;
-    font-size: 16px;
-    font-weight: 300;
-    color: var(--muted);
-    transition: color .2s;
-  }
-  .rpt-period__sub {
-    font-size: 7px;
-    letter-spacing: .14em;
-    text-transform: uppercase;
-    color: var(--muted2);
-    font-family: 'DM Mono', monospace;
-    transition: color .2s;
-  }
-  .rpt-period__dot {
-    width: 3px; height: 3px;
-    border-radius: 50%;
-    background: transparent;
-    margin-top: 2px;
-    transition: background .2s;
-  }
+  .rpt-period { display: flex; padding: 0 24px 0; border-bottom: 1px solid var(--border); }
+  .rpt-period__item { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 8px 4px 14px; cursor: pointer; position: relative; }
+  .rpt-period__label { font-family: 'Cormorant Garamond', serif; font-size: 16px; font-weight: 300; color: var(--muted); transition: color .2s; }
+  .rpt-period__sub { font-size: 7px; letter-spacing: .14em; text-transform: uppercase; color: var(--muted2); transition: color .2s; }
+  .rpt-period__dot { width: 3px; height: 3px; border-radius: 50%; background: transparent; margin-top: 2px; transition: background .2s; }
   .rpt-period__item.active .rpt-period__label { color: var(--text); }
   .rpt-period__item.active .rpt-period__sub   { color: var(--muted); }
   .rpt-period__item.active .rpt-period__dot   { background: var(--accent); }
-  .rpt-period__item.active::after {
-    content: '';
-    position: absolute;
-    bottom: -1px; left: 0; right: 0;
-    height: 1px;
-    background: var(--accent);
-    opacity: .5;
-  }
+  .rpt-period__item.active::after { content:''; position:absolute; bottom:-1px; left:0; right:0; height:1px; background:var(--accent); opacity:.5; }
 
-  /* ── Period sub-heading ── */
-  .rpt-period-heading {
-    padding: 16px 24px 0;
-    font-size: 9px;
-    letter-spacing: .2em;
-    text-transform: uppercase;
-    color: var(--muted);
-  }
+  /* ── Period heading ── */
+  .rpt-period-heading { padding: 16px 24px 0; font-size: 9px; letter-spacing: .2em; text-transform: uppercase; color: var(--muted); }
 
   /* ── Omnia card ── */
   .rpt-omnia {
     margin: 16px 20px 0;
-    border: 1px solid rgba(184,234,255,.12);
+    border: 1px solid rgba(168,210,235,.22);
     border-radius: 14px;
-    background: rgba(184,234,255,.025);
+    background: linear-gradient(160deg, rgba(232,184,160,.04) 0%, rgba(196,168,212,.04) 50%, rgba(168,200,232,.06) 100%);
     overflow: hidden;
+    position: relative;
   }
-  .rpt-omnia__inner {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    padding: 20px 20px 18px;
+  /* Top shimmer line */
+  .rpt-omnia::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 20%; right: 20%;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(184,234,255,.4), transparent);
   }
+  .rpt-omnia__inner { display: flex; flex-direction: column; align-items: center; padding: 20px 20px 18px; }
+
+  /* Stage */
   .rpt-omnia__stage {
     position: relative;
-    width: 90px; height: 100px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+    width: 120px; height: 130px;
+    display: flex; align-items: center; justify-content: center;
     margin-bottom: 10px;
+    flex-shrink: 0;
   }
-  .omnia-crystal {
-    width: 48px;
-    animation: omniaFloat 4s ease-in-out infinite;
-    filter: drop-shadow(0 0 10px rgba(184,234,255,.4));
-  }
-  @keyframes omniaFloat {
-    0%, 100% { transform: translateY(0); }
-    50%       { transform: translateY(-6px); }
-  }
-  .omnia-bead {
+
+  /* Aura layers */
+  .omnia-aura {
     position: absolute;
+    inset: 0;
+    border-radius: 50%;
+    pointer-events: none;
+    mix-blend-mode: screen;
+  }
+  .omnia-aura--physical {
+    background: radial-gradient(circle at 50% 68%, rgba(232,184,160,.55), transparent 56%);
+    animation: omniaAuraPulse 3.2s ease-in-out infinite;
+  }
+  .omnia-aura--astral {
+    background: radial-gradient(circle at 50% 50%, rgba(196,168,212,.5), transparent 54%);
+    animation: omniaAuraPulse 3.9s ease-in-out infinite;
+    animation-delay: -.9s;
+  }
+  .omnia-aura--mental {
+    background: radial-gradient(circle at 50% 34%, rgba(152,190,220,.55), transparent 52%);
+    animation: omniaAuraPulse 4.6s ease-in-out infinite;
+    animation-delay: -1.8s;
+  }
+  @keyframes omniaAuraPulse {
+    0%, 100% { opacity: .3; transform: scale(.88); }
+    50%      { opacity: .85; transform: scale(1.12); }
+  }
+
+  /* Crystal */
+  .omnia-crystal {
+    width: 52px;
+    position: relative; z-index: 2;
+    animation: omniaCrystalFloat 4s ease-in-out infinite;
+    filter: drop-shadow(0 0 12px rgba(184,234,255,.45)) drop-shadow(0 0 4px rgba(184,234,255,.6));
+  }
+  .omnia-crystal--loading {
+    animation: omniaCrystalBounce 1.6s ease-in-out infinite, omniaCrystalFloat 4s ease-in-out 1.6s infinite;
+  }
+  @keyframes omniaCrystalFloat {
+    0%, 100% { transform: translateY(0); }
+    50%      { transform: translateY(-7px); }
+  }
+  @keyframes omniaCrystalBounce {
+    0%, 100% { transform: translateY(0) scale(1); filter: drop-shadow(0 0 12px rgba(184,234,255,.45)); }
+    20%      { transform: translateY(-16px) scale(1.1); filter: drop-shadow(0 0 28px rgba(184,234,255,.9)); }
+    40%      { transform: translateY(-4px) scale(1.04); }
+    60%      { transform: translateY(-12px) scale(1.07); filter: drop-shadow(0 0 20px rgba(196,168,212,.8)); }
+    80%      { transform: translateY(-2px) scale(1.02); }
+  }
+
+  /* Orbiting triad shards */
+  .omnia-orbit-item {
+    position: absolute;
+    left: 50%; top: 50%;
+    z-index: 1;
+    pointer-events: none;
+  }
+  .omnia-orbit-item svg { display: block; filter: drop-shadow(0 0 4px currentColor) drop-shadow(0 0 8px currentColor); }
+  .omnia-orbit-item.op { color: #e8b8a0; animation: omniaOrbit_P 10s linear infinite; }
+  .omnia-orbit-item.oa { color: #c4a8d4; animation: omniaOrbit_A 10s linear infinite; }
+  .omnia-orbit-item.om { color: #a8c8e8; animation: omniaOrbit_M 10s linear infinite; }
+
+  @keyframes omniaOrbit_P {
+    from { transform: translate(-5px,-6px) rotate(0deg)   translateX(44px) rotate(0deg); }
+    to   { transform: translate(-5px,-6px) rotate(360deg) translateX(44px) rotate(-360deg); }
+  }
+  @keyframes omniaOrbit_A {
+    from { transform: translate(-5px,-6px) rotate(120deg)  translateX(44px) rotate(-120deg); }
+    to   { transform: translate(-5px,-6px) rotate(480deg)  translateX(44px) rotate(-480deg); }
+  }
+  @keyframes omniaOrbit_M {
+    from { transform: translate(-5px,-6px) rotate(240deg)  translateX(44px) rotate(-240deg); }
+    to   { transform: translate(-5px,-6px) rotate(600deg)  translateX(44px) rotate(-600deg); }
+  }
+
+  /* Beads */
+  .omnia-bead {
+    position: absolute; z-index: 1;
     border-radius: 50%;
     background: radial-gradient(circle at 32% 28%, #f4ffff 0%, #b8eaff 30%, #7eb8a4 78%);
     animation: beadShower 2.8s ease-in infinite;
     opacity: 0;
   }
   @keyframes beadShower {
-    0%   { opacity: 0; transform: translateY(-8px) scale(.5); }
-    15%  { opacity: .8; transform: translateY(0) scale(1); }
-    80%  { opacity: .35; }
-    100% { opacity: 0; transform: translateY(24px) scale(.7); }
-  }
-  .rpt-omnia__text {
-    font-family: 'Cormorant Garamond', serif;
-    font-size: 14px;
-    font-style: italic;
-    color: var(--text);
-    line-height: 1.75;
-    text-align: center;
-  }
-  .rpt-omnia__text--loading { color: var(--muted); font-size: 12px; }
-  .rpt-omnia__meta {
-    margin-top: 10px;
-    font-size: 8px;
-    letter-spacing: .18em;
-    text-transform: uppercase;
-    color: var(--muted);
-    font-family: 'DM Mono', monospace;
-  }
-  .rpt-omnia__refresh {
-    margin-top: 10px;
-    background: none; border: none;
-    font-size: 8px;
-    letter-spacing: .15em;
-    text-transform: uppercase;
-    color: var(--muted);
-    font-family: 'DM Mono', monospace;
-    cursor: pointer; opacity: .5;
+    0%   { opacity: 0; transform: translateY(-10px) scale(.5); }
+    15%  { opacity: .85; transform: translateY(0) scale(1); }
+    80%  { opacity: .4; }
+    100% { opacity: 0; transform: translateY(28px) scale(.7); }
   }
 
-  /* ── Stat grid ── */
-  .rpt-stats {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 6px;
-    padding: 16px 20px 0;
-  }
-  .rpt-stat {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 10px;
-    padding: 14px 14px 12px;
-  }
-  .rpt-stat--full { grid-column: span 2; }
-  .rpt-stat__val {
+  /* Omnia text */
+  .rpt-omnia__text {
     font-family: 'Cormorant Garamond', serif;
-    font-size: 30px;
-    font-weight: 300;
-    line-height: 1;
-    margin-bottom: 4px;
+    font-size: 14px; font-style: italic;
+    color: var(--text);
+    line-height: 1.75; text-align: center;
   }
+  .rpt-omnia__text--loading { color: var(--muted); font-size: 12px; }
+  .rpt-omnia__meta { margin-top: 10px; font-size: 8px; letter-spacing: .18em; text-transform: uppercase; color: var(--muted); }
+  .rpt-omnia__refresh { margin-top: 10px; background: none; border: none; font-size: 8px; letter-spacing: .15em; text-transform: uppercase; color: var(--muted); cursor: pointer; opacity: .5; }
+
+  /* ── Stat grid ── */
+  .rpt-stats { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; padding: 16px 20px 0; }
+  .rpt-stat { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 14px 14px 12px; }
+  .rpt-stat--full { grid-column: span 2; }
+  .rpt-stat__val { font-family: 'Cormorant Garamond', serif; font-size: 30px; font-weight: 300; line-height: 1; margin-bottom: 4px; }
   .rpt-stat__val small { font-size: 15px; opacity: .45; }
   .rpt-stat__label { font-size: 8px; letter-spacing: .14em; text-transform: uppercase; color: var(--muted); }
   .rpt-stat__delta { font-size: 9px; margin-top: 5px; }
-  .delta-up   { color: var(--accent); }
+  .delta-up { color: var(--accent); }
   .delta-flat { color: var(--muted); }
 
   /* ── Section headings ── */
   .rpt-section { padding: 20px 20px 0; }
-  .rpt-section__title {
-    font-size: 8px;
-    letter-spacing: .22em;
-    text-transform: uppercase;
-    font-family: 'DM Mono', monospace;
-    padding-bottom: 10px;
-    border-bottom: 1px solid var(--border);
-    margin-bottom: 10px;
-  }
+  .rpt-section__title { font-size: 8px; letter-spacing: .22em; text-transform: uppercase; padding-bottom: 10px; border-bottom: 1px solid var(--border); margin-bottom: 10px; }
   .rpt-section__title--green { color: var(--accent); opacity: .7; }
   .rpt-section__title--amber { color: var(--amber); opacity: .7; }
 
   /* ── Bar chart ── */
-  .rpt-chart {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 10px;
-    padding: 14px;
-    margin-top: 8px;
-  }
+  .rpt-chart { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 14px; margin-top: 8px; }
   .rpt-bar-row { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
   .rpt-bar-row:last-child { margin-bottom: 0; }
   .rpt-bar-label { font-size: 8px; color: var(--muted); width: 22px; flex-shrink: 0; }
@@ -240,13 +205,7 @@
   .rpt-bar-val { font-size: 8px; color: var(--muted); width: 30px; text-align: right; flex-shrink: 0; }
 
   /* ── Sparkline ── */
-  .rpt-sparkline {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 10px;
-    padding: 14px;
-    margin-top: 8px;
-  }
+  .rpt-sparkline { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 14px; margin-top: 8px; }
   .rpt-sparkline__title { font-size: 8px; letter-spacing: .14em; text-transform: uppercase; color: var(--muted); margin-bottom: 12px; }
   .rpt-spark-row { display: flex; align-items: flex-end; gap: 4px; height: 36px; }
   .rpt-spark-bar { flex: 1; border-radius: 2px 2px 0 0; background: rgba(200,144,106,.3); min-height: 3px; }
@@ -254,7 +213,6 @@
   .rpt-spark-labels { display: flex; gap: 4px; margin-top: 5px; }
   .rpt-spark-label { flex: 1; font-size: 7px; color: var(--muted2); text-align: center; }
 
-  /* ── Views ── */
   .view { display: none; }
   .view.active { display: block; }
   .rpt-footer { height: 48px; }
@@ -297,15 +255,20 @@
     <div class="rpt-omnia">
       <div class="rpt-omnia__inner">
         <div class="rpt-omnia__stage">
+          <!-- Auras -->
+          <div class="omnia-aura omnia-aura--physical"></div>
+          <div class="omnia-aura omnia-aura--astral"></div>
+          <div class="omnia-aura omnia-aura--mental"></div>
+          <!-- Crystal -->
           <svg class="omnia-crystal" viewBox="0 0 80 130" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
             <defs>
               <linearGradient id="ogD1" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#ddf0ff" stop-opacity="0.92"/><stop offset="100%" stop-color="#6ab8d8" stop-opacity="0.48"/></linearGradient>
               <linearGradient id="ogD2" x1="100%" y1="0%" x2="0%" y2="100%"><stop offset="0%" stop-color="#ffffff" stop-opacity="0.78"/><stop offset="100%" stop-color="#4a9ec0" stop-opacity="0.22"/></linearGradient>
               <radialGradient id="ogD3" cx="50%" cy="38%" r="58%"><stop offset="0%" stop-color="#b8eaff" stop-opacity="0.42"/><stop offset="100%" stop-color="#2878a0" stop-opacity="0"/></radialGradient>
-              <filter id="ogDglow"><feGaussianBlur stdDeviation="2.5" result="blur"/><feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+              <filter id="ogDg"><feGaussianBlur stdDeviation="2.5" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
             </defs>
             <ellipse cx="40" cy="68" rx="28" ry="48" fill="url(#ogD3)" opacity="0.62"/>
-            <polygon points="40,3 54,14 40,25 26,14" fill="url(#ogD1)" stroke="#90cce8" stroke-width="0.55" filter="url(#ogDglow)"/>
+            <polygon points="40,3 54,14 40,25 26,14" fill="url(#ogD1)" stroke="#90cce8" stroke-width="0.55" filter="url(#ogDg)"/>
             <polygon points="40,3 54,14 40,13" fill="#ceeaff" opacity="0.72"/>
             <polygon points="40,3 26,14 40,13" fill="#b0dcf5" opacity="0.42"/>
             <line x1="40" y1="3" x2="40" y2="25" stroke="#b8e0f8" stroke-width="0.4" opacity="0.55"/>
@@ -318,9 +281,13 @@
             <polygon points="40,70 64,58 56,88 40,100 24,88 16,58" fill="url(#ogD1)" stroke="#88c4e0" stroke-width="0.55" opacity="0.88"/>
             <polygon points="40,100 56,88 40,114" fill="url(#ogD2)" stroke="#88c4e0" stroke-width="0.48" opacity="0.72"/>
             <polygon points="40,100 24,88 40,114" fill="#b4dcf4" stroke="#88c4e0" stroke-width="0.48" opacity="0.52"/>
-            <g opacity="0.65" filter="url(#ogDglow)"><line x1="6" y1="22" x2="12" y2="22" stroke="#b8eaff" stroke-width="1"/><line x1="9" y1="19" x2="9" y2="25" stroke="#b8eaff" stroke-width="1"/></g>
+            <g opacity="0.65" filter="url(#ogDg)"><line x1="6" y1="22" x2="12" y2="22" stroke="#b8eaff" stroke-width="1"/><line x1="9" y1="19" x2="9" y2="25" stroke="#b8eaff" stroke-width="1"/></g>
             <g opacity="0.48"><line x1="68" y1="48" x2="74" y2="48" stroke="#b8eaff" stroke-width="0.9"/><line x1="71" y1="45" x2="71" y2="51" stroke="#b8eaff" stroke-width="0.9"/></g>
           </svg>
+          <!-- Orbiting triad shards -->
+          <div class="omnia-orbit-item op"><svg viewBox="0 0 10 12" width="10" height="12"><polygon points="5,1 9,4 7.5,11 2.5,11 1,4" fill="currentColor" stroke="rgba(255,255,255,.5)" stroke-width="0.5"/></svg></div>
+          <div class="omnia-orbit-item oa"><svg viewBox="0 0 10 12" width="10" height="12"><polygon points="5,1 9,4 7.5,11 2.5,11 1,4" fill="currentColor" stroke="rgba(255,255,255,.5)" stroke-width="0.5"/></svg></div>
+          <div class="omnia-orbit-item om"><svg viewBox="0 0 10 12" width="10" height="12"><polygon points="5,1 9,4 7.5,11 2.5,11 1,4" fill="currentColor" stroke="rgba(255,255,255,.5)" stroke-width="0.5"/></svg></div>
         </div>
         <div class="rpt-omnia__text">Your 38 minutes today is your strongest Sunday this month. Sitting through the restless afternoon session took more discipline than an easy sit — that's the real work.</div>
         <div class="rpt-omnia__meta">Omnia · today</div>
@@ -328,26 +295,10 @@
       </div>
     </div>
     <div class="rpt-stats">
-      <div class="rpt-stat">
-        <div class="rpt-stat__val">38<small>m</small></div>
-        <div class="rpt-stat__label">Time today</div>
-        <div class="rpt-stat__delta delta-up">↑ 12m vs avg</div>
-      </div>
-      <div class="rpt-stat">
-        <div class="rpt-stat__val">3</div>
-        <div class="rpt-stat__label">Sessions</div>
-        <div class="rpt-stat__delta delta-up">↑ 1 vs avg</div>
-      </div>
-      <div class="rpt-stat">
-        <div class="rpt-stat__val">2:14</div>
-        <div class="rpt-stat__label">Clock PB</div>
-        <div class="rpt-stat__delta delta-up">New today ✦</div>
-      </div>
-      <div class="rpt-stat">
-        <div class="rpt-stat__val">47</div>
-        <div class="rpt-stat__label">Day streak</div>
-        <div class="rpt-stat__delta delta-flat">ongoing</div>
-      </div>
+      <div class="rpt-stat"><div class="rpt-stat__val">38<small>m</small></div><div class="rpt-stat__label">Time today</div><div class="rpt-stat__delta delta-up">↑ 12m vs avg</div></div>
+      <div class="rpt-stat"><div class="rpt-stat__val">3</div><div class="rpt-stat__label">Sessions</div><div class="rpt-stat__delta delta-up">↑ 1 vs avg</div></div>
+      <div class="rpt-stat"><div class="rpt-stat__val">2:14</div><div class="rpt-stat__label">Clock PB</div><div class="rpt-stat__delta delta-up">New today ✦</div></div>
+      <div class="rpt-stat"><div class="rpt-stat__val">47</div><div class="rpt-stat__label">Day streak</div><div class="rpt-stat__delta delta-flat">ongoing</div></div>
     </div>
     <div class="rpt-footer"></div>
   </div>
@@ -358,15 +309,18 @@
     <div class="rpt-omnia">
       <div class="rpt-omnia__inner">
         <div class="rpt-omnia__stage">
-          <svg class="omnia-crystal" viewBox="0 0 80 130" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+          <div class="omnia-aura omnia-aura--physical"></div>
+          <div class="omnia-aura omnia-aura--astral"></div>
+          <div class="omnia-aura omnia-aura--mental"></div>
+          <svg class="omnia-crystal omnia-crystal--loading" viewBox="0 0 80 130" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
             <defs>
               <linearGradient id="ogW1" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#ddf0ff" stop-opacity="0.92"/><stop offset="100%" stop-color="#6ab8d8" stop-opacity="0.48"/></linearGradient>
               <linearGradient id="ogW2" x1="100%" y1="0%" x2="0%" y2="100%"><stop offset="0%" stop-color="#ffffff" stop-opacity="0.78"/><stop offset="100%" stop-color="#4a9ec0" stop-opacity="0.22"/></linearGradient>
               <radialGradient id="ogW3" cx="50%" cy="38%" r="58%"><stop offset="0%" stop-color="#b8eaff" stop-opacity="0.42"/><stop offset="100%" stop-color="#2878a0" stop-opacity="0"/></radialGradient>
-              <filter id="ogWglow"><feGaussianBlur stdDeviation="2.5" result="blur"/><feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+              <filter id="ogWg"><feGaussianBlur stdDeviation="2.5" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
             </defs>
             <ellipse cx="40" cy="68" rx="28" ry="48" fill="url(#ogW3)" opacity="0.62"/>
-            <polygon points="40,3 54,14 40,25 26,14" fill="url(#ogW1)" stroke="#90cce8" stroke-width="0.55" filter="url(#ogWglow)"/>
+            <polygon points="40,3 54,14 40,25 26,14" fill="url(#ogW1)" stroke="#90cce8" stroke-width="0.55" filter="url(#ogWg)"/>
             <polygon points="40,3 54,14 40,13" fill="#ceeaff" opacity="0.72"/>
             <polygon points="40,3 26,14 40,13" fill="#b0dcf5" opacity="0.42"/>
             <line x1="40" y1="3" x2="40" y2="25" stroke="#b8e0f8" stroke-width="0.4" opacity="0.55"/>
@@ -379,31 +333,27 @@
             <polygon points="40,70 64,58 56,88 40,100 24,88 16,58" fill="url(#ogW1)" stroke="#88c4e0" stroke-width="0.55" opacity="0.88"/>
             <polygon points="40,100 56,88 40,114" fill="url(#ogW2)" stroke="#88c4e0" stroke-width="0.48" opacity="0.72"/>
             <polygon points="40,100 24,88 40,114" fill="#b4dcf4" stroke="#88c4e0" stroke-width="0.48" opacity="0.52"/>
-            <g opacity="0.65" filter="url(#ogWglow)"><line x1="6" y1="22" x2="12" y2="22" stroke="#b8eaff" stroke-width="1"/><line x1="9" y1="19" x2="9" y2="25" stroke="#b8eaff" stroke-width="1"/></g>
+            <g opacity="0.65" filter="url(#ogWg)"><line x1="6" y1="22" x2="12" y2="22" stroke="#b8eaff" stroke-width="1"/><line x1="9" y1="19" x2="9" y2="25" stroke="#b8eaff" stroke-width="1"/></g>
             <g opacity="0.48"><line x1="68" y1="48" x2="74" y2="48" stroke="#b8eaff" stroke-width="0.9"/><line x1="71" y1="45" x2="71" y2="51" stroke="#b8eaff" stroke-width="0.9"/></g>
           </svg>
+          <div class="omnia-orbit-item op"><svg viewBox="0 0 10 12" width="10" height="12"><polygon points="5,1 9,4 7.5,11 2.5,11 1,4" fill="currentColor" stroke="rgba(255,255,255,.5)" stroke-width="0.5"/></svg></div>
+          <div class="omnia-orbit-item oa"><svg viewBox="0 0 10 12" width="10" height="12"><polygon points="5,1 9,4 7.5,11 2.5,11 1,4" fill="currentColor" stroke="rgba(255,255,255,.5)" stroke-width="0.5"/></svg></div>
+          <div class="omnia-orbit-item om"><svg viewBox="0 0 10 12" width="10" height="12"><polygon points="5,1 9,4 7.5,11 2.5,11 1,4" fill="currentColor" stroke="rgba(255,255,255,.5)" stroke-width="0.5"/></svg></div>
+          <!-- Extra beads for loading state -->
           <span class="omnia-bead" style="left:20%;top:12%;width:6px;height:6px;animation-delay:0s"></span>
-          <span class="omnia-bead" style="left:38%;top:6%;width:5px;height:5px;animation-delay:.32s"></span>
-          <span class="omnia-bead" style="left:60%;top:10%;width:7px;height:7px;animation-delay:.64s"></span>
-          <span class="omnia-bead" style="left:75%;top:24%;width:5px;height:5px;animation-delay:.96s"></span>
-          <span class="omnia-bead" style="left:12%;top:36%;width:5px;height:5px;animation-delay:1.28s"></span>
-          <span class="omnia-bead" style="left:55%;top:34%;width:6px;height:6px;animation-delay:1.6s"></span>
-          <span class="omnia-bead" style="left:82%;top:40%;width:5px;height:5px;animation-delay:1.92s"></span>
+          <span class="omnia-bead" style="left:38%;top:6%;width:5px;height:5px;animation-delay:.3s"></span>
+          <span class="omnia-bead" style="left:62%;top:10%;width:7px;height:7px;animation-delay:.6s"></span>
+          <span class="omnia-bead" style="left:76%;top:24%;width:5px;height:5px;animation-delay:.9s"></span>
+          <span class="omnia-bead" style="left:12%;top:35%;width:5px;height:5px;animation-delay:1.2s"></span>
+          <span class="omnia-bead" style="left:55%;top:34%;width:6px;height:6px;animation-delay:1.5s"></span>
+          <span class="omnia-bead" style="left:82%;top:42%;width:5px;height:5px;animation-delay:1.8s"></span>
         </div>
         <div class="rpt-omnia__text rpt-omnia__text--loading">Omnia is reflecting…</div>
       </div>
     </div>
     <div class="rpt-stats">
-      <div class="rpt-stat">
-        <div class="rpt-stat__val">3<small>h</small> 18<small>m</small></div>
-        <div class="rpt-stat__label">Total time</div>
-        <div class="rpt-stat__delta delta-up">↑ 34m vs prior week</div>
-      </div>
-      <div class="rpt-stat">
-        <div class="rpt-stat__val">19</div>
-        <div class="rpt-stat__label">Sessions</div>
-        <div class="rpt-stat__delta delta-up">↑ 3 vs prior week</div>
-      </div>
+      <div class="rpt-stat"><div class="rpt-stat__val">3<small>h</small> 18<small>m</small></div><div class="rpt-stat__label">Total time</div><div class="rpt-stat__delta delta-up">↑ 34m vs prior week</div></div>
+      <div class="rpt-stat"><div class="rpt-stat__val">19</div><div class="rpt-stat__label">Sessions</div><div class="rpt-stat__delta delta-up">↑ 3 vs prior week</div></div>
     </div>
     <div class="rpt-section">
       <div class="rpt-section__title rpt-section__title--green">Awareness · daily minutes</div>
@@ -422,14 +372,10 @@
       <div class="rpt-sparkline">
         <div class="rpt-sparkline__title">Best hold per session (seconds)</div>
         <div class="rpt-spark-row">
-          <div class="rpt-spark-bar" style="height:28%"></div>
-          <div class="rpt-spark-bar" style="height:35%"></div>
-          <div class="rpt-spark-bar" style="height:28%"></div>
-          <div class="rpt-spark-bar" style="height:44%"></div>
-          <div class="rpt-spark-bar" style="height:38%"></div>
-          <div class="rpt-spark-bar" style="height:56%"></div>
-          <div class="rpt-spark-bar" style="height:48%"></div>
-          <div class="rpt-spark-bar" style="height:62%"></div>
+          <div class="rpt-spark-bar" style="height:28%"></div><div class="rpt-spark-bar" style="height:35%"></div>
+          <div class="rpt-spark-bar" style="height:28%"></div><div class="rpt-spark-bar" style="height:44%"></div>
+          <div class="rpt-spark-bar" style="height:38%"></div><div class="rpt-spark-bar" style="height:56%"></div>
+          <div class="rpt-spark-bar" style="height:48%"></div><div class="rpt-spark-bar" style="height:62%"></div>
           <div class="rpt-spark-bar" style="height:70%"></div>
           <div class="rpt-spark-bar rpt-spark-bar--today" style="height:100%"></div>
         </div>
@@ -452,15 +398,18 @@
     <div class="rpt-omnia">
       <div class="rpt-omnia__inner">
         <div class="rpt-omnia__stage">
+          <div class="omnia-aura omnia-aura--physical"></div>
+          <div class="omnia-aura omnia-aura--astral"></div>
+          <div class="omnia-aura omnia-aura--mental"></div>
           <svg class="omnia-crystal" viewBox="0 0 80 130" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
             <defs>
               <linearGradient id="ogM1" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#ddf0ff" stop-opacity="0.92"/><stop offset="100%" stop-color="#6ab8d8" stop-opacity="0.48"/></linearGradient>
               <linearGradient id="ogM2" x1="100%" y1="0%" x2="0%" y2="100%"><stop offset="0%" stop-color="#ffffff" stop-opacity="0.78"/><stop offset="100%" stop-color="#4a9ec0" stop-opacity="0.22"/></linearGradient>
               <radialGradient id="ogM3" cx="50%" cy="38%" r="58%"><stop offset="0%" stop-color="#b8eaff" stop-opacity="0.42"/><stop offset="100%" stop-color="#2878a0" stop-opacity="0"/></radialGradient>
-              <filter id="ogMglow"><feGaussianBlur stdDeviation="2.5" result="blur"/><feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+              <filter id="ogMg"><feGaussianBlur stdDeviation="2.5" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
             </defs>
             <ellipse cx="40" cy="68" rx="28" ry="48" fill="url(#ogM3)" opacity="0.62"/>
-            <polygon points="40,3 54,14 40,25 26,14" fill="url(#ogM1)" stroke="#90cce8" stroke-width="0.55" filter="url(#ogMglow)"/>
+            <polygon points="40,3 54,14 40,25 26,14" fill="url(#ogM1)" stroke="#90cce8" stroke-width="0.55" filter="url(#ogMg)"/>
             <polygon points="40,3 54,14 40,13" fill="#ceeaff" opacity="0.72"/>
             <polygon points="40,3 26,14 40,13" fill="#b0dcf5" opacity="0.42"/>
             <line x1="40" y1="3" x2="40" y2="25" stroke="#b8e0f8" stroke-width="0.4" opacity="0.55"/>
@@ -473,11 +422,14 @@
             <polygon points="40,70 64,58 56,88 40,100 24,88 16,58" fill="url(#ogM1)" stroke="#88c4e0" stroke-width="0.55" opacity="0.88"/>
             <polygon points="40,100 56,88 40,114" fill="url(#ogM2)" stroke="#88c4e0" stroke-width="0.48" opacity="0.72"/>
             <polygon points="40,100 24,88 40,114" fill="#b4dcf4" stroke="#88c4e0" stroke-width="0.48" opacity="0.52"/>
-            <g opacity="0.65" filter="url(#ogMglow)"><line x1="6" y1="22" x2="12" y2="22" stroke="#b8eaff" stroke-width="1"/><line x1="9" y1="19" x2="9" y2="25" stroke="#b8eaff" stroke-width="1"/></g>
+            <g opacity="0.65" filter="url(#ogMg)"><line x1="6" y1="22" x2="12" y2="22" stroke="#b8eaff" stroke-width="1"/><line x1="9" y1="19" x2="9" y2="25" stroke="#b8eaff" stroke-width="1"/></g>
             <g opacity="0.48"><line x1="68" y1="48" x2="74" y2="48" stroke="#b8eaff" stroke-width="0.9"/><line x1="71" y1="45" x2="71" y2="51" stroke="#b8eaff" stroke-width="0.9"/></g>
           </svg>
+          <div class="omnia-orbit-item op"><svg viewBox="0 0 10 12" width="10" height="12"><polygon points="5,1 9,4 7.5,11 2.5,11 1,4" fill="currentColor" stroke="rgba(255,255,255,.5)" stroke-width="0.5"/></svg></div>
+          <div class="omnia-orbit-item oa"><svg viewBox="0 0 10 12" width="10" height="12"><polygon points="5,1 9,4 7.5,11 2.5,11 1,4" fill="currentColor" stroke="rgba(255,255,255,.5)" stroke-width="0.5"/></svg></div>
+          <div class="omnia-orbit-item om"><svg viewBox="0 0 10 12" width="10" height="12"><polygon points="5,1 9,4 7.5,11 2.5,11 1,4" fill="currentColor" stroke="rgba(255,255,255,.5)" stroke-width="0.5"/></svg></div>
         </div>
-        <div class="rpt-omnia__text">You've meditated 22 of 25 days this month — a consistency rate you haven't hit since February. Your Clock PB has grown from 48 seconds to 2:14 in 47 sessions. The trend is real.</div>
+        <div class="rpt-omnia__text">You've meditated 22 of 25 days this month — consistency you haven't hit since February. Your Clock PB has grown from 48 seconds to 2:14 across 47 sessions. The trend is real.</div>
         <div class="rpt-omnia__meta">Omnia · this month</div>
         <button class="rpt-omnia__refresh">↺ refresh</button>
       </div>
