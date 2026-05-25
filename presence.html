@@ -6316,8 +6316,11 @@ document.getElementById('settingsEmailSubmit').addEventListener('click', async f
   var ok = await authRegisterOrLogin(email, password, _settingsEmailMode, '');
   if (ok) {
     _refreshSettingsSyncCardSignedIn();
-    syncPushData();
     showToast('Signed in ✓');
+    syncPullData().then(function(restored) {
+      if (restored) window.location.reload();
+      else syncPushData();
+    });
   } else {
     errEl.textContent = (window._lastAuthError || 'Sign-in failed');
     errEl.style.display = 'block';
@@ -6538,7 +6541,12 @@ function shouldTakeCloudValue(key, local, cloud) {
     var localReset = (localObj && localObj._resetAt) || 0;
     var cloudReset = (cloudObj && cloudObj._resetAt) || 0;
     if (localReset || cloudReset) {
-      if (cloudReset !== localReset) return cloudReset > localReset;
+      if (cloudReset !== localReset) {
+        // If local was reset but cloud was never deliberately reset and has real
+        // progress, the local reset was a sign-out clear — prefer cloud.
+        if (localReset > 0 && cloudReset === 0 && syncProgressScore(key, cloudObj) > 0) return true;
+        return cloudReset > localReset;
+      }
       return syncProgressScore(key, cloudObj) >= syncProgressScore(key, localObj);
     }
     return syncProgressScore(key, cloudObj) >= syncProgressScore(key, localObj);
@@ -6630,7 +6638,16 @@ function applyLocalProgressSnapshot(snapshot) {
 }
 
 function resetLocalProgressForSignedOut() {
-  applyLocalProgressSnapshot(resetAllProgressSnapshot());
+  // Don't use _resetAt here — that flag is for deliberate "Reset All Progress" only.
+  // Without it, shouldTakeCloudValue will correctly prefer cloud data on next pull.
+  var snapshot = resetAllProgressSnapshot();
+  ['presence_v3','presence_conc_v1','presence_prayer_v1','presence_journal_v1',
+   'presence_soul_mirror_v1','presence_guide_v1','presence_omnia_v1','bardon_rpg_v2'].forEach(function(k) {
+    if (snapshot[k]) {
+      try { var o = JSON.parse(snapshot[k]); delete o._resetAt; snapshot[k] = JSON.stringify(o); } catch(e) {}
+    }
+  });
+  applyLocalProgressSnapshot(snapshot);
 }
 
 // ═══════════════════════════════════════
@@ -16787,8 +16804,11 @@ function _refreshSettingsSyncCard() {
     sgc.innerHTML = '';
     initGoogleSignIn('settingsGoogleContainer', function() {
       _refreshSettingsSyncCardSignedIn();
-      syncPushData();
       showToast('Signed in ✓');
+      syncPullData().then(function(restored) {
+        if (restored) window.location.reload();
+        else syncPushData();
+      });
     });
   }
   // Reset email form state
