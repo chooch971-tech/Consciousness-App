@@ -168,10 +168,8 @@ function randomPromptFor(endpoint) {
 
 // ── AI helpers ────────────────────────────────────────────
 const aiRateBuckets = new Map();
-const aiDailyBuckets = new Map();
 const AI_RATE_LIMIT = 30;
 const AI_RATE_WINDOW_MS = 60 * 1000;
-const AI_POST_EXERCISE_DAILY_LIMIT = 8;
 
 function aiRateLimit(req, res, next) {
   const now = Date.now();
@@ -192,32 +190,6 @@ function aiRateLimit(req, res, next) {
 function clampText(value, max) {
   if (value === null || value === undefined) return '';
   return String(value).replace(/\s+/g, ' ').trim().slice(0, max);
-}
-
-function cleanClientId(value) {
-  return clampText(value, 80).replace(/[^a-zA-Z0-9_-]/g, '');
-}
-
-function getUtcDayKey() {
-  return new Date().toISOString().slice(0, 10);
-}
-
-function aiDailyLimit(feature, req, res, next) {
-  if (feature !== 'post_exercise') return next();
-  const day = getUtcDayKey();
-  const clientId = cleanClientId(req.body?.clientId);
-  const key = `${feature}:${day}:${clientId || req.user?.userId || req.ip || 'unknown'}`;
-  const used = aiDailyBuckets.get(key) || 0;
-  if (used >= AI_POST_EXERCISE_DAILY_LIMIT) {
-    return res.status(429).json({
-      error: 'Daily AI message limit reached',
-      limit: AI_POST_EXERCISE_DAILY_LIMIT,
-      remaining: 0
-    });
-  }
-  aiDailyBuckets.set(key, used + 1);
-  res.locals.aiRemainingToday = AI_POST_EXERCISE_DAILY_LIMIT - used - 1;
-  next();
 }
 
 function compactContext(value, depth = 0) {
@@ -244,8 +216,6 @@ async function generateAiMessage(feature, context) {
   }
 
   const prompts = {
-    post_exercise:
-      'You are Omnia inside the Presence app. Write one short post-exercise message. Be warm, specific, grounded, and direct. Do not mention AI. No medical claims. Max 34 words.',
     progress_report:
       'You are Omnia inside the Presence app. Comment on this progress report in 1-2 short sentences. Notice patterns, encourage consistency, and suggest one gentle next focus. Do not mention AI. No medical claims. Max 48 words.'
   };
@@ -255,10 +225,10 @@ async function generateAiMessage(feature, context) {
     store: false,
     reasoning: { effort: 'minimal' },
     input: [
-      { role: 'system', content: prompts[feature] || prompts.post_exercise },
+      { role: 'system', content: prompts[feature] || prompts.progress_report },
       { role: 'user', content: JSON.stringify(compactContext(context)).slice(0, 4200) }
     ],
-    max_output_tokens: feature === 'progress_report' ? 180 : 120
+    max_output_tokens: 180
   };
 
   const response = await fetch('https://api.openai.com/v1/responses', {
@@ -279,7 +249,7 @@ async function generateAiMessage(feature, context) {
 
   const text = data.output_text
     || (data.output || []).flatMap(item => item.content || []).map(part => part.text || '').join(' ');
-  const message = clampText(text, feature === 'progress_report' ? 360 : 240);
+  const message = clampText(text, 360);
   if (!message) {
     const err = new Error('OpenAI returned an empty message');
     err.status = 502;
@@ -796,16 +766,6 @@ app.get('/debug', verifyAdmin, (req, res) => {
 });
 
 app.get('/vapid-public-key', (req, res) => res.json({ publicKey: VAPID_PUBLIC_KEY }));
-
-app.post('/api/ai/post-exercise', aiRateLimit, (req, res, next) => aiDailyLimit('post_exercise', req, res, next), async (req, res) => {
-  try {
-    const message = await generateAiMessage('post_exercise', req.body?.context || {});
-    res.json({ message, model: OPENAI_MODEL, remainingToday: res.locals.aiRemainingToday });
-  } catch (err) {
-    console.error('[AI] post-exercise error:', err.message);
-    res.status(err.status || 500).json({ error: 'AI message unavailable' });
-  }
-});
 
 app.post('/api/ai/progress-comment', aiRateLimit, async (req, res) => {
   try {
