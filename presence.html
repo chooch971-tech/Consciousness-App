@@ -18948,17 +18948,25 @@ function renderJournal(){
     return;
   }
   var journal=loadJournal();
+  var writtenKeys=keys.filter(function(k){var e=journal[k]||{};return !!(e.title&&e.title.trim())||!!(e.note&&e.note.trim());});
+  if(!writtenKeys.length){
+    container.innerHTML='<div class="jl-empty-state">'
+      +'<div class="jl-empty-state__icon">'+JOURNAL_EMPTY_ICON+'</div>'
+      +'<div class="jl-empty-state__title">No Entries</div>'
+      +'<div class="jl-empty-state__sub">Tap the + button to begin your journal.</div>'
+      +'</div>';
+    return;
+  }
   var prMap=journalComputePRs();
   var html='<div class="jl-list">';
   var lastSection=null;
-  keys.forEach(function(k){
+  writtenKeys.forEach(function(k){
     var section=journalSectionLabel(k);
     if(section!==lastSection){html+='<div class="jl-section-head">'+section+'</div>';lastSection=section;}
     var entry=journal[k]||{};
     var sessions=getSessionsForDay(k);
     var preview=journalCardPreview(entry,sessions);
     var hasNote=entry.note&&entry.note.trim();
-    var hasWritten=hasNote||(entry.title&&entry.title.trim());
     html+='<div class="jl-card" onclick="openJournalEntry(\''+k+'\')">'
       +'<div class="jl-card__body">'
       +'<div class="jl-card__title">'+esc(journalCardTitle(entry))+'</div>'
@@ -18968,7 +18976,7 @@ function renderJournal(){
       +'</div>'
       +'<div class="jl-card__foot">'
       +'<span class="jl-card__date">'+journalDayLabel(k)+'</span>'
-      +(hasWritten?'<button class="jl-card__menu" onclick="event.stopPropagation();journalDeleteEntry(\''+k+'\')" aria-label="Delete entry">&#8943;</button>':'')
+      +'<button class="jl-card__menu" onclick="event.stopPropagation();journalDeleteEntry(\''+k+'\')" aria-label="Delete entry">&#8943;</button>'
       +'</div>'
       +'</div>';
   });
