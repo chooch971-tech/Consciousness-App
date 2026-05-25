@@ -541,27 +541,50 @@ app.post('/api/sync/sync/push', verifyToken, async (req, res) => {
 });
 
 // PULL DATA
+// Returns true if a snapshot document has real user progress
+function snapshotHasMeaningfulProgress(snap) {
+  try {
+    const v3 = snap.presence_v3 ? JSON.parse(snap.presence_v3) : null;
+    const conc = snap.presence_conc_v1 ? JSON.parse(snap.presence_conc_v1) : null;
+    const omnia = snap.presence_omnia_v1 ? JSON.parse(snap.presence_omnia_v1) : null;
+    const hasAwareness = v3 && ((v3.xp || 0) > 0 || (v3.totalSessions || 0) > 0 || (v3.streak || 0) > 0);
+    const hasConc = conc && ((conc.xp || 0) > 0 || (conc.totalSessions || 0) > 0);
+    const hasOmnia = omnia && ((omnia.akasha || 0) > 0 || (omnia.totalAkashaEarned || 0) > 0
+      || (omnia.bodies && (omnia.bodies.physical > 1 || omnia.bodies.astral > 1 || omnia.bodies.mental > 1)));
+    const hasJournal = snap.presence_journal_v1 && snap.presence_journal_v1.length > 50;
+    return hasAwareness || hasConc || hasOmnia || hasJournal;
+  } catch (e) { return false; }
+}
+
 app.get('/api/sync/sync/pull', verifyToken, async (req, res) => {
   try {
-    const syncData = await syncDataCollection.find(
+    // Search the last 20 snapshots for the most recent one with real progress.
+    // This recovers from cases where a sign-out cycle accidentally pushed empty
+    // data, leaving a blank snapshot as the most recent document.
+    const snapshots = await syncDataCollection.find(
       { userId: new ObjectId(req.user.userId) }
-    ).sort({ syncedAt: -1 }).limit(1).next();
-    if (!syncData) return res.json({ data: null, message: 'No sync data found' });
+    ).sort({ syncedAt: -1 }).limit(20).toArray();
+
+    if (!snapshots.length) return res.json({ data: null, message: 'No sync data found' });
+
+    // Prefer the most recent snapshot with meaningful progress; fall back to newest
+    const best = snapshots.find(s => snapshotHasMeaningfulProgress(s)) || snapshots[0];
+
     res.json({
       data: {
-        presence_v3: syncData.presence_v3,
-        presence_conc_v1: syncData.presence_conc_v1,
-        presence_prayer_v1: syncData.presence_prayer_v1,
-        presence_journal_v1: syncData.presence_journal_v1,
-        presence_soul_mirror_v1: syncData.presence_soul_mirror_v1,
-        presence_ai_report_comments_v1: syncData.presence_ai_report_comments_v1,
-        presence_guide_v1: syncData.presence_guide_v1,
-        presence_omnia_v1: syncData.presence_omnia_v1,
-        bardon_rpg_v2: syncData.bardon_rpg_v2,
-        presence_visited: syncData.presence_visited,
+        presence_v3: best.presence_v3,
+        presence_conc_v1: best.presence_conc_v1,
+        presence_prayer_v1: best.presence_prayer_v1,
+        presence_journal_v1: best.presence_journal_v1,
+        presence_soul_mirror_v1: best.presence_soul_mirror_v1,
+        presence_ai_report_comments_v1: best.presence_ai_report_comments_v1,
+        presence_guide_v1: best.presence_guide_v1,
+        presence_omnia_v1: best.presence_omnia_v1,
+        bardon_rpg_v2: best.bardon_rpg_v2,
+        presence_visited: best.presence_visited,
       },
-      syncedAt: syncData.syncedAt,
-      deviceInfo: syncData.deviceInfo,
+      syncedAt: best.syncedAt,
+      deviceInfo: best.deviceInfo,
     });
   } catch (err) {
     console.error('Pull sync error:', err);
