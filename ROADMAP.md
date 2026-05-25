@@ -33,7 +33,7 @@ Last updated: 2026-05-25
 - [ ] Hide prayer section when prayer is disabled in settings
 
 ### Journal
-- [ ] Complete redesign
+- [x] Complete redesign — Apple Journal-style entry list + editor
 
 ### Concentration Screen
 - [ ] Redesign

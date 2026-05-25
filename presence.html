@@ -846,64 +846,56 @@
     .report-period-tab { flex:1; padding:8px 4px; text-align:center; font-size:8px; letter-spacing:.15em; text-transform:uppercase; color:var(--muted); background:var(--surface); border:1px solid var(--border); border-radius:6px; cursor:pointer; font-family:'DM Mono',monospace; transition:all .2s; }
     .report-period-tab.active { background:rgba(126,184,164,.1); border-color:rgba(126,184,164,.35); color:var(--accent); }
 
-    /* ── Journal Log redesign ─────────────────────────────── */
-    .jl-nav { display:flex; align-items:center; justify-content:space-between; padding:14px 24px 0; flex-shrink:0; }
-    .jl-nav__arrow { width:34px; height:34px; display:flex; align-items:center; justify-content:center; cursor:pointer; color:rgba(255,255,255,.3); font-size:18px; border:none; background:none; border-radius:6px; transition:color .15s; }
-    .jl-nav__arrow:hover { color:rgba(255,255,255,.7); }
-    .jl-nav__arrow:disabled { opacity:.15; pointer-events:none; }
-    .jl-nav__date { font-family:'Cormorant Garamond',serif; font-size:22px; font-weight:300; text-align:center; color:#f0ece4; }
-    .jl-nav__sub { font-size:9px; letter-spacing:.2em; text-transform:uppercase; color:var(--accent); opacity:.9; text-align:center; margin-top:4px; }
-    .jl-week-dots { display:flex; justify-content:center; gap:8px; padding:14px 0 0; }
-    .jl-week-dot { width:5px; height:5px; border-radius:50%; background:rgba(255,255,255,.15); cursor:pointer; transition:all .15s; flex-shrink:0; }
-    .jl-week-dot.filled { background:var(--accent); opacity:.6; }
-    .jl-week-dot.active { background:var(--accent); opacity:1; transform:scale(1.4); }
-    .jl-sep { height:1px; background:rgba(255,255,255,.09); margin:20px 24px; flex-shrink:0; }
-    .jl-summary { padding:0 24px; font-size:9px; letter-spacing:.12em; color:rgba(221,216,206,.5); display:flex; gap:14px; flex-shrink:0; }
-    .jl-summary b { color:#f0ece4; font-weight:400; }
-    .jl-timeline { padding:16px 24px 0; display:flex; flex-direction:column; }
-    .jl-entry { display:flex; gap:14px; padding-bottom:18px; }
-    .jl-entry__left { display:flex; flex-direction:column; align-items:center; flex-shrink:0; width:42px; }
-    .jl-entry__time { font-size:8px; color:var(--muted); letter-spacing:.04em; padding-top:2px; white-space:nowrap; }
-    .jl-entry__line { width:1px; flex:1; background:var(--border); margin-top:6px; }
-    .jl-entry__right { flex:1; min-width:0; }
-    .jl-entry__type { font-size:8px; letter-spacing:.16em; text-transform:uppercase; color:var(--muted); margin-bottom:2px; }
-    .jl-entry__type--aw { color:var(--accent); opacity:.65; }
-    .jl-entry__type--conc { color:#d4956e; opacity:.75; }
-    .jl-entry__name { font-family:'Cormorant Garamond',serif; font-size:17px; font-weight:300; line-height:1.15; margin-bottom:4px; }
-    .jl-entry__meta { display:flex; gap:6px; flex-wrap:wrap; align-items:center; }
-    .jl-entry__dur { font-size:9px; color:var(--muted); }
-    .jl-entry__tag { font-size:8px; padding:2px 7px; border-radius:3px; background:rgba(255,255,255,.04); color:var(--muted); }
-    .jl-entry__badge { font-size:8px; padding:2px 7px; border-radius:3px; background:rgba(126,184,164,.1); color:var(--accent); }
-    .jl-entry__note { margin-top:7px; font-family:'Cormorant Garamond',serif; font-size:13px; font-style:italic; color:var(--muted); line-height:1.6; }
-    .jl-notable { padding:0 24px; }
-    .jl-section-label { font-size:9px; letter-spacing:.22em; text-transform:uppercase; color:rgba(255,255,255,.45); margin-bottom:12px; }
-    .jl-record { display:flex; gap:10px; align-items:flex-start; padding:12px 14px; border-radius:10px; background:rgba(212,180,100,.07); border:1px solid rgba(212,180,100,.18); margin-bottom:8px; }
-    .jl-record__glyph { font-size:13px; flex-shrink:0; margin-top:1px; opacity:.85; }
-    .jl-record__text { font-size:11px; line-height:1.5; color:rgba(255,255,255,.8); }
-    .jl-note-wrap { padding:0 24px; margin-bottom:40px; }
-    .jl-omnia-prompt { font-family:'Cormorant Garamond',serif; font-size:14px; font-style:italic; color:rgba(255,255,255,.45); line-height:1.65; margin-bottom:14px; }
-    .jl-note-input { width:100%; background:rgba(255,255,255,.05); border:1px solid rgba(255,255,255,.1); border-radius:14px; color:#f0ece4; font-family:'DM Mono',monospace; font-size:13px; letter-spacing:.03em; line-height:1.85; padding:16px 18px 18px; resize:none; min-height:180px; -webkit-appearance:none; box-sizing:border-box; }
-    .jl-note-input::placeholder { color:rgba(255,255,255,.2); }
-    .jl-note-input:focus { outline:none; border-color:rgba(126,184,164,.4); background:rgba(255,255,255,.07); }
-    .jl-sessions-wrap { padding:0 24px 32px; }
-    .jl-session-item { display:flex; justify-content:space-between; align-items:flex-start; padding:14px 16px; background:rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.09); border-radius:12px; margin-bottom:8px; }
-    .jl-session-item__left { flex:1; min-width:0; }
-    .jl-session-item__tag { font-size:8px; letter-spacing:.14em; text-transform:uppercase; margin-bottom:4px; }
-    .jl-session-item__tag--aw { color:var(--accent); opacity:.85; }
-    .jl-session-item__tag--conc { color:#d4956e; opacity:.9; }
-    .jl-session-item__name { font-family:'Cormorant Garamond',serif; font-size:18px; font-weight:300; color:#f0ece4; line-height:1.2; }
-    .jl-session-item__note { font-family:'Cormorant Garamond',serif; font-size:12px; font-style:italic; color:rgba(221,216,206,.55); line-height:1.55; margin-top:5px; }
-    .jl-session-item__right { flex-shrink:0; margin-left:16px; text-align:right; padding-top:2px; }
-    .jl-session-item__val { font-size:14px; color:#f0ece4; font-family:'DM Mono',monospace; }
-    .jl-session-item__sub { font-size:8px; color:rgba(221,216,206,.45); margin-top:4px; }
-    .jl-session-item__pb { font-size:8px; padding:2px 6px; border-radius:3px; background:rgba(126,184,164,.15); color:var(--accent); margin-top:5px; display:inline-block; }
-    .jl-note-actions { display:flex; justify-content:space-between; align-items:center; margin-top:9px; }
-    .jl-save-btn { padding:9px 22px; border-radius:6px; border:1px solid rgba(126,184,164,.35); background:rgba(126,184,164,.12); color:#7eb8a4; font-family:'DM Mono',monospace; font-size:8px; letter-spacing:.2em; text-transform:uppercase; cursor:pointer; }
-    .jl-clear-btn { font-size:8px; color:rgba(220,120,100,.55); background:none; border:none; font-family:'DM Mono',monospace; letter-spacing:.14em; text-transform:uppercase; cursor:pointer; }
-    .jl-empty { padding:40px 24px; text-align:center; color:rgba(255,255,255,.3); font-size:11px; letter-spacing:.06em; line-height:2; }
-    .jl-mode-tabs { display:flex; gap:3px; padding:14px 24px 0; flex-shrink:0; }
-    .jl-mode-tab { flex:1; padding:7px 4px; border-radius:7px; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.03); color:rgba(255,255,255,.35); font-family:'DM Mono',monospace; font-size:8px; letter-spacing:.16em; text-transform:uppercase; cursor:pointer; transition:all .18s; }
-    .jl-mode-tab.active { background:rgba(126,184,164,.12); border-color:rgba(126,184,164,.3); color:#7eb8a4; }
+    /* ── Journal — Apple-inspired entry list + editor ─────── */
+    .jl-list { padding:6px 20px 40px; }
+    .jl-section-head { font-family:'Space Grotesk',sans-serif; font-size:19px; font-weight:700; color:#f2efe8; letter-spacing:-.01em; margin:26px 4px 12px; }
+    .jl-section-head:first-child { margin-top:6px; }
+    .jl-card { background:rgba(255,255,255,.045); border:1px solid rgba(255,255,255,.07); border-radius:16px; margin-bottom:13px; overflow:hidden; cursor:pointer; transition:background .15s; }
+    .jl-card:active { background:rgba(255,255,255,.08); }
+    .jl-card__body { padding:16px 18px 13px; }
+    .jl-card__title { font-size:17px; font-weight:600; color:#f5f2ec; line-height:1.3; margin-bottom:3px; }
+    .jl-card__preview { font-size:14px; color:rgba(221,216,206,.6); line-height:1.5; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
+    .jl-card__preview--empty { font-style:italic; color:rgba(221,216,206,.35); }
+    .jl-card__chips { display:flex; gap:6px; flex-wrap:wrap; margin-top:11px; }
+    .jl-card__chip { font-size:10px; letter-spacing:.03em; padding:3px 9px; border-radius:20px; background:rgba(126,184,164,.1); color:rgba(126,184,164,.9); }
+    .jl-card__chip--conc { background:rgba(212,149,110,.1); color:rgba(212,149,110,.9); }
+    .jl-card__foot { display:flex; align-items:center; justify-content:space-between; padding:10px 14px 10px 18px; border-top:1px solid rgba(255,255,255,.06); }
+    .jl-card__date { font-size:12px; color:rgba(221,216,206,.5); letter-spacing:.02em; }
+    .jl-card__menu { width:30px; height:30px; display:flex; align-items:center; justify-content:center; border:none; background:none; color:rgba(221,216,206,.5); font-size:17px; cursor:pointer; border-radius:8px; flex-shrink:0; }
+    .jl-card__menu:active { background:rgba(255,255,255,.1); }
+    .jl-empty-state { display:flex; flex-direction:column; align-items:center; justify-content:center; padding:110px 40px 60px; text-align:center; }
+    .jl-empty-state__icon { margin-bottom:22px; }
+    .jl-empty-state__title { font-size:22px; font-weight:700; color:#f0ece4; margin-bottom:8px; font-family:'Space Grotesk',sans-serif; }
+    .jl-empty-state__sub { font-size:14px; color:rgba(221,216,206,.5); line-height:1.5; }
+    .jl-fab { position:absolute; right:22px; bottom:max(env(safe-area-inset-bottom),24px); width:58px; height:58px; border-radius:50%; border:none; background:linear-gradient(150deg,#8088f2,#6a6fe6); color:#fff; font-size:30px; font-weight:300; line-height:1; display:flex; align-items:center; justify-content:center; cursor:pointer; box-shadow:0 6px 22px rgba(106,111,230,.5); z-index:30; transition:transform .12s; }
+    .jl-fab:active { transform:scale(.9); }
+    /* Editor */
+    .jl-editor-bar { display:flex; align-items:center; justify-content:space-between; padding:var(--safe-top) 16px 10px; flex-shrink:0; }
+    .jl-editor-back { width:38px; height:38px; border-radius:50%; background:rgba(255,255,255,.08); border:none; color:#f0ece4; font-size:20px; line-height:1; display:flex; align-items:center; justify-content:center; cursor:pointer; }
+    .jl-editor-actions { display:flex; align-items:center; gap:9px; }
+    .jl-editor-del { width:38px; height:38px; border-radius:50%; background:rgba(255,255,255,.08); border:none; color:rgba(224,128,108,.85); font-size:15px; cursor:pointer; display:flex; align-items:center; justify-content:center; }
+    .jl-editor-save { width:42px; height:42px; border-radius:50%; background:linear-gradient(150deg,#8088f2,#6a6fe6); border:none; color:#fff; font-size:19px; display:flex; align-items:center; justify-content:center; cursor:pointer; box-shadow:0 3px 12px rgba(106,111,230,.45); }
+    .jl-editor-scroll { flex:1; overflow-y:auto; -webkit-overflow-scrolling:touch; padding:0 22px max(env(safe-area-inset-bottom),28px); }
+    .jl-editor-datestamp { font-size:12px; letter-spacing:.05em; color:rgba(221,216,206,.45); margin:2px 2px 18px; }
+    .jl-title-input { width:100%; background:none; border:none; color:#f7f4ee; font-family:'Cormorant Garamond',serif; font-size:30px; font-weight:400; letter-spacing:-.01em; padding:0 2px; margin-bottom:10px; -webkit-appearance:none; }
+    .jl-title-input::placeholder { color:rgba(255,255,255,.2); }
+    .jl-title-input:focus { outline:none; }
+    .jl-omnia-hint { font-family:'Cormorant Garamond',serif; font-size:15px; font-style:italic; color:rgba(126,184,164,.62); line-height:1.6; margin:2px 2px 16px; padding-left:13px; border-left:2px solid rgba(126,184,164,.32); }
+    .jl-body-input { width:100%; background:none; border:none; color:#e8e3d9; font-family:'DM Mono',monospace; font-size:14px; line-height:1.85; letter-spacing:.01em; padding:0 2px; resize:none; min-height:260px; -webkit-appearance:none; box-sizing:border-box; }
+    .jl-body-input::placeholder { color:rgba(255,255,255,.2); }
+    .jl-body-input:focus { outline:none; }
+    .jl-log { margin-top:30px; border-top:1px solid rgba(255,255,255,.08); padding-top:20px; }
+    .jl-log__label { font-size:10px; letter-spacing:.22em; text-transform:uppercase; color:rgba(255,255,255,.4); margin-bottom:8px; font-family:'DM Mono',monospace; }
+    .jl-log__item { display:flex; align-items:center; gap:13px; padding:12px 0; border-bottom:1px solid rgba(255,255,255,.05); }
+    .jl-log__item:last-child { border-bottom:none; }
+    .jl-log__icon { width:40px; height:40px; border-radius:11px; display:flex; align-items:center; justify-content:center; font-size:17px; flex-shrink:0; }
+    .jl-log__icon--aw { background:rgba(126,184,164,.13); }
+    .jl-log__icon--conc { background:rgba(212,149,110,.13); }
+    .jl-log__info { flex:1; min-width:0; }
+    .jl-log__name { font-size:14px; color:#f0ece4; font-weight:500; margin-bottom:2px; }
+    .jl-log__meta { font-size:11px; color:rgba(221,216,206,.45); letter-spacing:.02em; }
+    .jl-log__val { font-family:'DM Mono',monospace; font-size:14px; color:#f0ece4; flex-shrink:0; display:flex; align-items:center; }
+    .jl-log__pb { font-size:8px; padding:2px 6px; border-radius:4px; background:rgba(126,184,164,.15); color:#7eb8a4; margin-left:7px; }
 
     /* ── Progress Report: Omnia card ─────────────────────── */
     .rpt-omnia-card { margin-bottom:20px; border:1px solid rgba(168,210,235,.2); border-radius:14px; background:linear-gradient(160deg,rgba(232,184,160,.04) 0%,rgba(196,168,212,.04) 50%,rgba(168,200,232,.05) 100%); overflow:hidden; position:relative; }
@@ -4477,12 +4469,31 @@ body:not(.tut-live) #tutCorgi {
   </div>
 
   <!-- JOURNAL LOG SCREEN -->
-  <div class="screen" id="journalScreen" style="padding:0; flex-direction:column; background:#0d0e1c;">
+  <div class="screen" id="journalScreen" style="padding:0; flex-direction:column; background:#0d0e1c; position:relative;">
     <div style="padding:var(--safe-top) 24px 12px; display:flex; justify-content:space-between; align-items:center; flex-shrink:0;">
       <div style="font-family:Cormorant Garamond,serif; font-size:34px; font-weight:400; color:#ffffff; letter-spacing:-.01em;">Journal</div>
       <button class="history-back" id="journalBack" style="color:rgba(255,255,255,.5);">← back</button>
     </div>
     <div id="journalContent" style="flex:1; overflow-y:auto; -webkit-overflow-scrolling:touch; padding-bottom:max(env(safe-area-inset-bottom),20px);"></div>
+    <button class="jl-fab" id="journalFab" aria-label="New entry">+</button>
+  </div>
+
+  <!-- JOURNAL ENTRY EDITOR -->
+  <div class="screen" id="journalEntryScreen" style="padding:0; flex-direction:column; background:#0d0e1c;">
+    <div class="jl-editor-bar">
+      <button class="jl-editor-back" id="journalEntryBack" aria-label="Back">&#8249;</button>
+      <div class="jl-editor-actions">
+        <button class="jl-editor-del" id="journalEntryDelete" aria-label="Delete entry" style="display:none;">&#10005;</button>
+        <button class="jl-editor-save" id="journalEntrySave" aria-label="Save">&#10003;</button>
+      </div>
+    </div>
+    <div class="jl-editor-scroll">
+      <div class="jl-editor-datestamp" id="journalEntryDate"></div>
+      <input class="jl-title-input" id="journalTitleInput" placeholder="Title" autocomplete="off" />
+      <div id="journalOmniaHint"></div>
+      <textarea class="jl-body-input" id="journalBodyInput" placeholder="Start writing&#8230;"></textarea>
+      <div id="journalEntryLog"></div>
+    </div>
   </div>
 
   <!-- HISTORY -->
@@ -6174,7 +6185,7 @@ document.getElementById('drawerSettings').addEventListener('click', function() {
   renderCustomAudSoundList();
 });
 document.getElementById('drawerJournal').addEventListener('click',function(){
-  closeDrawer();renderJournal(new Date());showScreen('journalScreen');
+  closeDrawer();renderJournal();showScreen('journalScreen');
 });
 document.getElementById('drawerReports').addEventListener('click',function(){
   closeDrawer();showReports();
@@ -18650,27 +18661,7 @@ window.bardonShowEndModal = function() {
 // JOURNAL LOG SYSTEM
 // ══════════════════════════════════════════════════════
 
-var journalCurrentDate = null;
-var journalMode = 'day'; // 'day' | 'week' | 'month'
-
-function getWeekKey(date) {
-  var d = new Date(date); d.setHours(0,0,0,0);
-  var day = d.getDay();
-  d.setDate(d.getDate() + (day===0 ? -6 : 1-day)); // shift to Monday
-  return 'w-'+d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
-}
-function getMonthKey(date) {
-  return 'm-'+date.getFullYear()+'-'+String(date.getMonth()+1).padStart(2,'0');
-}
-function getJournalEntryKey(date) {
-  if(journalMode==='week') return getWeekKey(date);
-  if(journalMode==='month') return getMonthKey(date);
-  return getJournalKey(date);
-}
-function setJournalMode(mode) {
-  journalMode=mode;
-  renderJournal(journalCurrentDate||new Date());
-}
+var journalEditKey = null; // date key currently open in the editor
 
 var OMNIA_JOURNAL_PROMPTS = [
   'What pulled your attention most today — and were you the one who chose to let it?',
@@ -18700,42 +18691,6 @@ function omniaJournalPrompt() {
   return OMNIA_JOURNAL_PROMPTS[epoch % OMNIA_JOURNAL_PROMPTS.length];
 }
 
-function journalPrev() {
-  var d = new Date(journalCurrentDate);
-  if(journalMode==='week') d.setDate(d.getDate()-7);
-  else if(journalMode==='month') d.setMonth(d.getMonth()-1);
-  else d.setDate(d.getDate()-1);
-  renderJournal(d);
-}
-function journalNext() {
-  var d = new Date(journalCurrentDate);
-  if(journalMode==='week'){
-    var nd=new Date(d);nd.setDate(nd.getDate()+7);
-    if(nd>new Date())return;
-    d=nd;
-  } else if(journalMode==='month'){
-    var nd2=new Date(d.getFullYear(),d.getMonth()+1,1);
-    if(nd2>new Date())return;
-    d=nd2;
-  } else {
-    if(isToday(d))return;
-    d.setDate(d.getDate()+1);
-  }
-  renderJournal(d);
-}
-function saveJournalNote() {
-  var inp = document.getElementById('journalNoteInput');
-  if (!inp) return;
-  var note = inp.value.trim();
-  var journal = loadJournal();
-  var key = getJournalEntryKey(journalCurrentDate);
-  if (!journal[key]) journal[key] = {};
-  journal[key].note = note;
-  saveJournal(journal);
-  renderJournal(journalCurrentDate);
-  showToast('Note saved');
-}
-
 function loadJournal(){
   try{var s=localStorage.getItem('presence_journal_v1');return s?JSON.parse(s):{};}
   catch(e){return{};}
@@ -18746,226 +18701,252 @@ function getJournalKey(date){
   return date.getFullYear()+'-'+String(date.getMonth()+1).padStart(2,'0')+'-'+String(date.getDate()).padStart(2,'0');
 }
 
-function journalDayLabel(date){
-  var today=new Date(),yesterday=new Date(today);yesterday.setDate(yesterday.getDate()-1);
-  if(getJournalKey(date)===getJournalKey(today))return 'Today · '+date.toLocaleDateString('en-US',{month:'long',day:'numeric',year:'numeric'});
-  if(getJournalKey(date)===getJournalKey(yesterday))return 'Yesterday · '+date.toLocaleDateString('en-US',{month:'long',day:'numeric',year:'numeric'});
-  return date.toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric',year:'numeric'});
+var JOURNAL_EMPTY_ICON='<svg width="58" height="94" viewBox="0 0 80 130" xmlns="http://www.w3.org/2000/svg"><polygon points="40,3 54,14 40,25 26,14" fill="#9fd0ec" opacity=".55"/><polygon points="40,25 60,36 64,58 40,70 16,58 20,36" fill="#7fb8d8" opacity=".5"/><polygon points="40,70 64,58 56,88 40,100 24,88 16,58" fill="#6aa6c8" opacity=".42"/><polygon points="40,100 56,88 40,114" fill="#5e9ac0" opacity=".4"/><polygon points="40,100 24,88 40,114" fill="#5290b8" opacity=".32"/></svg>';
+
+var JOURNAL_CONC_ICONS={clock:'⊙',visualization:'◉',auditory:'◈',thought:'◌',asana:'✦',pore_breathing:'❂',soulmirror:'◆'};
+
+function dateFromKey(k){var p=k.split('-');return new Date(+p[0],+p[1]-1,+p[2]);}
+
+function journalDayLabel(dateKey){
+  return dateFromKey(dateKey).toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric'});
 }
 
-function isToday(date){return getJournalKey(date)===getJournalKey(new Date());}
+function journalSectionLabel(dateKey){
+  var todayKey=getJournalKey(new Date());
+  var y=new Date();y.setDate(y.getDate()-1);
+  if(dateKey===todayKey)return 'Today';
+  if(dateKey===getJournalKey(y))return 'Yesterday';
+  return dateFromKey(dateKey).toLocaleDateString('en-US',{month:'long',year:'numeric'});
+}
 
-function compileDayActivity(dateKey){
-  var awSessions=(state.history||[]).filter(function(h){return h.date&&getJournalKey(new Date(h.date))===dateKey;});
-  var concSessions=(concState.history||[]).filter(function(h){return h.date&&getJournalKey(new Date(h.date))===dateKey;});
-  var bests=[];
-  if(awSessions.length){
-    var longest=awSessions.reduce(function(a,b){return(a.durationMin||0)>(b.durationMin||0)?a:b;});
-    var allDurs=(state.history||[]).map(function(h){return h.durationMin||0;});
-    if((longest.durationMin||0)>=Math.max.apply(null,allDurs)&&(longest.durationMin||0)>0)
-      bests.push({icon:'⭐',text:'Longest awareness session: '+fmtDuration(longest.durationMin)});
-    var scored=awSessions.filter(function(h){return h.score;});
-    if(scored.length){
-      var best=scored.reduce(function(a,b){return parseFloat(a.score||0)>parseFloat(b.score||0)?a:b;});
-      var allScores=(state.history||[]).filter(function(h){return h.score;}).map(function(h){return parseFloat(h.score);});
-      if(allScores.length&&parseFloat(best.score)>=Math.max.apply(null,allScores))
-        bests.push({icon:'🎯',text:'Best session score: '+best.score+'/5'});
+// All day-keys (YYYY-MM-DD) that have a logged session or a written entry, sorted newest-first.
+function journalAllDayKeys(){
+  var set={};
+  (state.history||[]).forEach(function(h){if(h.date)set[getJournalKey(new Date(h.date))]=1;});
+  (concState.history||[]).forEach(function(h){if(h.date)set[getJournalKey(new Date(h.date))]=1;});
+  var journal=loadJournal();
+  Object.keys(journal).forEach(function(k){
+    if(/^\d{4}-\d{2}-\d{2}$/.test(k)){
+      var e=journal[k];
+      if(e&&((e.title&&e.title.trim())||(e.note&&e.note.trim())))set[k]=1;
     }
-  }
-  return{awSessions:awSessions,concSessions:concSessions,bests:bests};
+  });
+  return Object.keys(set).sort(function(a,b){return a<b?1:a>b?-1:0;});
 }
 
-function _jlSessionCards(sessions, emptyMsg) {
-  var html='';
-  if(sessions.length){
-    html+='<div class="jl-section-label">Sessions · '+sessions.length+'</div>';
-    sessions.forEach(function(s){
-      var h=s.data;
-      var time=new Date(h.date).toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'});
-      var dateLbl = journalMode!=='day' ? new Date(h.date).toLocaleDateString('en-US',{month:'short',day:'numeric'})+' · ' : '';
-      html+='<div class="jl-session-item"><div class="jl-session-item__left">';
-      if(s.type==='aw'){
-        var modeLabel=h.mode==='vacancy'?'Vacancy of Mind':h.mode==='thought'?'Thought Observation':'Awareness';
-        html+='<div class="jl-session-item__tag jl-session-item__tag--aw">Awareness</div>'
-          +'<div class="jl-session-item__name">'+modeLabel+'</div>';
-        if(h.notes) html+='<div class="jl-session-item__note">"'+esc(h.notes)+'"</div>';
-      } else {
-        var typeLabel=h.exercise==='asana'?'Asana':h.exercise==='pore_breathing'?'Pore Breathing':h.type==='visualization'?'Visualization':h.type==='auditory'?'Auditory':h.type==='thought'?'Thought Control':'Clock';
-        html+='<div class="jl-session-item__tag jl-session-item__tag--conc">Concentration</div>'
-          +'<div class="jl-session-item__name">'+typeLabel+'</div>';
-        if(h.notes) html+='<div class="jl-session-item__note">"'+esc(h.notes)+'"</div>';
-      }
-      html+='</div><div class="jl-session-item__right">';
-      if(s.type==='aw'){
-        html+='<div class="jl-session-item__val">'+fmtDuration(h.durationMin||0)+'</div>';
-        if(h.score) html+='<div class="jl-session-item__sub">'+parseFloat(h.score).toFixed(1)+'/5</div>';
-      } else {
-        var timeStr=h.exercise==='asana'||h.exercise==='pore_breathing'?fmtAsanaTime(h.seconds||0):fmtTimer(h.seconds||0);
-        var isBest=h.seconds&&concState.bestSeconds&&h.seconds>=concState.bestSeconds;
-        html+='<div class="jl-session-item__val">'+timeStr+'</div>';
-        if(isBest) html+='<div class="jl-session-item__pb">PB ✦</div>';
-      }
-      html+='<div class="jl-session-item__sub">'+dateLbl+time+'</div>'
-        +'</div></div>';
-    });
-  } else {
-    html+='<div class="jl-empty">'+emptyMsg+'</div>';
+function getSessionsForDay(dateKey){
+  var arr=[];
+  (state.history||[]).forEach(function(h){if(h.date&&getJournalKey(new Date(h.date))===dateKey)arr.push({type:'aw',data:h});});
+  (concState.history||[]).forEach(function(h){if(h.date&&getJournalKey(new Date(h.date))===dateKey)arr.push({type:'conc',data:h});});
+  arr.sort(function(a,b){return new Date(a.data.date)-new Date(b.data.date);});
+  return arr;
+}
+
+function journalSessionInfo(s){
+  var h=s.data;
+  if(s.type==='aw'){
+    var name=h.mode==='vacancy'?'Vacancy of Mind':h.mode==='thought'?'Thought Observation':'Awareness';
+    return {type:'aw',icon:'◎',name:name,val:fmtDuration(h.durationMin||0),sub:(h.score?parseFloat(h.score).toFixed(1)+'/5':''),pb:false};
   }
+  var key=h.exercise==='asana'?'asana':h.exercise==='pore_breathing'?'pore_breathing':(h.type||'clock');
+  var name2=key==='asana'?'Asana':key==='pore_breathing'?'Pore Breathing':key==='visualization'?'Visualization':key==='auditory'?'Auditory':key==='thought'?'Thought Control':'Clock';
+  var val2=(key==='asana'||key==='pore_breathing')?fmtAsanaTime(h.seconds||0):fmtTimer(h.seconds||0);
+  var isBest=h.seconds&&concState.bestSeconds&&h.seconds>=concState.bestSeconds;
+  return {type:'conc',icon:(JOURNAL_CONC_ICONS[key]||'⊙'),name:name2,val:val2,sub:'',pb:isBest};
+}
+
+function journalSessionSummary(sessions){
+  if(!sessions.length)return '';
+  var aw=sessions.filter(function(s){return s.type==='aw';}).length;
+  var conc=sessions.length-aw;
+  var parts=[];
+  if(aw)parts.push(aw+' awareness');
+  if(conc)parts.push(conc+' concentration');
+  return parts.join(' · ')+(sessions.length===1?' session logged':' sessions logged');
+}
+
+function journalCardTitle(entry){
+  if(entry.title&&entry.title.trim())return entry.title.trim();
+  if(entry.note&&entry.note.trim()){
+    var first=entry.note.trim().split('\n')[0];
+    return first.length>60?first.slice(0,60)+'…':first;
+  }
+  return 'Practice Log';
+}
+
+function journalCardPreview(entry,sessions){
+  var hasTitle=entry.title&&entry.title.trim();
+  var hasNote=entry.note&&entry.note.trim();
+  if(hasTitle&&hasNote)return entry.note.trim();
+  if(!hasTitle&&hasNote){
+    var rest=entry.note.trim().split('\n').slice(1).join(' ').trim();
+    return rest||journalSessionSummary(sessions);
+  }
+  return journalSessionSummary(sessions);
+}
+
+function journalChipsHTML(sessions){
+  if(!sessions.length)return '';
+  var seen={},chips=[];
+  sessions.forEach(function(s){
+    var info=journalSessionInfo(s);
+    if(seen[info.name])return;seen[info.name]=1;
+    chips.push('<span class="jl-card__chip'+(info.type==='conc'?' jl-card__chip--conc':'')+'">'+esc(info.name)+'</span>');
+  });
+  var shown=chips.slice(0,3);
+  if(chips.length>3)shown.push('<span class="jl-card__chip">+'+(chips.length-3)+'</span>');
+  return '<div class="jl-card__chips">'+shown.join('')+'</div>';
+}
+
+function journalLogHTML(dateKey){
+  var sessions=getSessionsForDay(dateKey);
+  if(!sessions.length)return '';
+  var html='<div class="jl-log"><div class="jl-log__label">Logged · '+sessions.length+'</div>';
+  sessions.forEach(function(s){
+    var info=journalSessionInfo(s);
+    var time=new Date(s.data.date).toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'});
+    var meta=time+(info.sub?' · '+info.sub:'');
+    html+='<div class="jl-log__item">'
+      +'<div class="jl-log__icon jl-log__icon--'+info.type+'">'+info.icon+'</div>'
+      +'<div class="jl-log__info"><div class="jl-log__name">'+esc(info.name)+'</div><div class="jl-log__meta">'+meta+'</div></div>'
+      +'<div class="jl-log__val">'+info.val+(info.pb?'<span class="jl-log__pb">PB</span>':'')+'</div>'
+      +'</div>';
+  });
+  html+='</div>';
   return html;
 }
 
-function renderJournal(date){
-  journalCurrentDate=date;
-  var journal=loadJournal();
-
-  var modeTabs='<div class="jl-mode-tabs">'
-    +'<button class="jl-mode-tab'+(journalMode==='day'?' active':'')+'" onclick="setJournalMode(\'day\')">Day</button>'
-    +'<button class="jl-mode-tab'+(journalMode==='week'?' active':'')+'" onclick="setJournalMode(\'week\')">Week</button>'
-    +'<button class="jl-mode-tab'+(journalMode==='month'?' active':'')+'" onclick="setJournalMode(\'month\')">Month</button>'
-    +'</div>';
-
-  if(journalMode==='week'||journalMode==='month'){
-    var entryKey=getJournalEntryKey(date);
-    var entry=journal[entryKey]||{};
-    var noteVal=entry.note||'';
-    var now=new Date();
-    var isCurrent=false, navLabel='', navSub='', placeholder='', sessions=[];
-
-    if(journalMode==='week'){
-      var wday=date.getDay();
-      var mon=new Date(date);mon.setHours(0,0,0,0);mon.setDate(date.getDate()+(wday===0?-6:1-wday));
-      var sun=new Date(mon);sun.setDate(mon.getDate()+6);sun.setHours(23,59,59,999);
-      var curMon=new Date(now);curMon.setHours(0,0,0,0);curMon.setDate(now.getDate()+(now.getDay()===0?-6:1-now.getDay()));
-      isCurrent=mon.getTime()===curMon.getTime();
-      var mFmt=mon.toLocaleDateString('en-US',{month:'short',day:'numeric'});
-      var sFmt=sun.toLocaleDateString('en-US',{month:'short',day:'numeric'});
-      navLabel=mFmt+' – '+sFmt;
-      navSub=mon.toLocaleDateString('en-US',{year:'numeric'});
-      placeholder='Write about this week…';
-      (state.history||[]).forEach(function(h){var d=new Date(h.date);if(d>=mon&&d<=sun)sessions.push({type:'aw',data:h});});
-      (concState.history||[]).forEach(function(h){var d=new Date(h.date);if(d>=mon&&d<=sun)sessions.push({type:'conc',data:h});});
-    } else {
-      var mStart=new Date(date.getFullYear(),date.getMonth(),1);
-      var mEnd=new Date(date.getFullYear(),date.getMonth()+1,0);mEnd.setHours(23,59,59,999);
-      var curStart=new Date(now.getFullYear(),now.getMonth(),1);
-      isCurrent=mStart.getTime()===curStart.getTime();
-      navLabel=date.toLocaleDateString('en-US',{month:'long',year:'numeric'});
-      navSub='';
-      placeholder='Write about this month…';
-      (state.history||[]).forEach(function(h){var d=new Date(h.date);if(d>=mStart&&d<=mEnd)sessions.push({type:'aw',data:h});});
-      (concState.history||[]).forEach(function(h){var d=new Date(h.date);if(d>=mStart&&d<=mEnd)sessions.push({type:'conc',data:h});});
-    }
-    sessions.sort(function(a,b){return new Date(a.data.date)-new Date(b.data.date);});
-
-    var html=modeTabs
-      +'<div class="jl-nav">'
-      +'<button class="jl-nav__arrow" onclick="journalPrev()">‹</button>'
-      +'<div><div class="jl-nav__date">'+navLabel+'</div>'
-      +(navSub?'<div class="jl-nav__sub">'+navSub+'</div>':'')
-      +'</div>'
-      +'<button class="jl-nav__arrow"'+(isCurrent?' disabled':'')+' onclick="journalNext()">›</button>'
-      +'</div>'
-      +'<div class="jl-sep"></div>'
-      +'<div class="jl-note-wrap">'
-      +'<textarea id="journalNoteInput" class="jl-note-input" placeholder="'+placeholder+'" rows="5">'+noteVal.replace(/</g,'&lt;').replace(/>/g,'&gt;')+'</textarea>'
-      +'<div class="jl-note-actions">'
-      +'<button class="jl-save-btn" onclick="saveJournalNote()">Save note</button>'
-      +(noteVal?'<button class="jl-clear-btn" onclick="clearJournalEntry()">Clear</button>':'')
-      +'</div></div>'
-      +'<div class="jl-sep"></div><div class="jl-sessions-wrap">'
-      +_jlSessionCards(sessions, 'No sessions recorded.')
+// ── List view ──
+function renderJournal(){
+  var container=document.getElementById('journalContent');
+  if(!container)return;
+  var keys=journalAllDayKeys();
+  if(!keys.length){
+    container.innerHTML='<div class="jl-empty-state">'
+      +'<div class="jl-empty-state__icon">'+JOURNAL_EMPTY_ICON+'</div>'
+      +'<div class="jl-empty-state__title">No Entries</div>'
+      +'<div class="jl-empty-state__sub">Practice an exercise or tap the + button to begin your journal.</div>'
       +'</div>';
-    document.getElementById('journalContent').innerHTML=html;
     return;
   }
-
-  // ── Day view ──
-  var dateKey=getJournalKey(date);
-  var entry=journal[dateKey]||{};
-  var activity=compileDayActivity(dateKey);
-
-  var firstDate=null;
-  if(state.history&&state.history.length) firstDate=new Date(state.history[state.history.length-1].date);
-  else if(concState.history&&concState.history.length) firstDate=new Date(concState.history[concState.history.length-1].date);
-  var dayNum=null;
-  if(firstDate){
-    var _fm=new Date(firstDate.getFullYear(),firstDate.getMonth(),firstDate.getDate());
-    var _vm=new Date(date.getFullYear(),date.getMonth(),date.getDate());
-    dayNum=Math.max(1,Math.floor((_vm-_fm)/86400000)+1);
-  }
-
-  var weekDots='';
-  for(var wi=6;wi>=0;wi--){
-    var wd=new Date();wd.setHours(0,0,0,0);wd.setDate(wd.getDate()-wi);
-    var wk=getJournalKey(wd);
-    var hasData=!!(journal[wk]&&journal[wk].note)
-      ||(state.history||[]).some(function(h){return h.date&&getJournalKey(new Date(h.date))===wk;})
-      ||(concState.history||[]).some(function(h){return h.date&&getJournalKey(new Date(h.date))===wk;});
-    var isAct=wk===dateKey;
-    var cls='jl-week-dot'+(hasData?' filled':'')+(isAct?' active':'');
-    var dayDiff=wi;
-    weekDots+='<div class="'+cls+'" onclick="(function(){var d=new Date();d.setDate(d.getDate()-'+dayDiff+');renderJournal(d);})()" title="'+wd.toLocaleDateString('en-US',{weekday:'short'})+'"></div>';
-  }
-
-  var today=new Date();today.setHours(0,0,0,0);
-  var dateCopy=new Date(date);dateCopy.setHours(0,0,0,0);
-  var isDateToday=dateCopy.getTime()===today.getTime();
-  var dateStr=date.toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric'});
-  var noteVal=entry.note||'';
-
-  var html=modeTabs
-    +'<div class="jl-nav">'
-    +'<button class="jl-nav__arrow" onclick="journalPrev()">‹</button>'
-    +'<div><div class="jl-nav__date">'+dateStr+'</div>'
-    +(dayNum?'<div class="jl-nav__sub">Day '+dayNum+' of practice</div>':'')
-    +'</div>'
-    +'<button class="jl-nav__arrow"'+(isDateToday?' disabled':'')+' onclick="journalNext()">›</button>'
-    +'</div>'
-    +'<div class="jl-week-dots">'+weekDots+'</div>'
-    +'<div class="jl-sep"></div>';
-
-  html+='<div class="jl-note-wrap">';
-  if(isDateToday) html+='<div class="jl-omnia-prompt">'+omniaJournalPrompt()+'</div>';
-  html+='<textarea id="journalNoteInput" class="jl-note-input" placeholder="Write about today…" rows="5">'+noteVal.replace(/</g,'&lt;').replace(/>/g,'&gt;')+'</textarea>'
-    +'<div class="jl-note-actions">'
-    +'<button class="jl-save-btn" onclick="saveJournalNote()">Save note</button>'
-    +(noteVal?'<button class="jl-clear-btn" onclick="clearJournalEntry()">Clear</button>':'')
-    +'</div></div>';
-
-  var allSessions=[];
-  activity.awSessions.forEach(function(h){allSessions.push({type:'aw',data:h});});
-  activity.concSessions.forEach(function(h){allSessions.push({type:'conc',data:h});});
-  allSessions.sort(function(a,b){return new Date(a.data.date)-new Date(b.data.date);});
-
-  html+='<div class="jl-sep"></div><div class="jl-sessions-wrap">'
-    +_jlSessionCards(allSessions, isDateToday?'Your sessions will appear here after your first practice today.':'No sessions recorded.')
-    +'</div>';
-
-  if(activity.bests.length){
-    html+='<div class="jl-sep"></div><div class="jl-notable" style="margin-bottom:32px;">'
-      +'<div class="jl-section-label">Notable</div>';
-    activity.bests.forEach(function(b){
-      html+='<div class="jl-record"><div class="jl-record__glyph">'+b.icon+'</div><div class="jl-record__text">'+b.text+'</div></div>';
-    });
-    html+='</div>';
-  }
-
-  document.getElementById('journalContent').innerHTML=html;
+  var journal=loadJournal();
+  var html='<div class="jl-list">';
+  var lastSection=null;
+  keys.forEach(function(k){
+    var section=journalSectionLabel(k);
+    if(section!==lastSection){html+='<div class="jl-section-head">'+section+'</div>';lastSection=section;}
+    var entry=journal[k]||{};
+    var sessions=getSessionsForDay(k);
+    var preview=journalCardPreview(entry,sessions);
+    var hasNote=entry.note&&entry.note.trim();
+    var hasWritten=hasNote||(entry.title&&entry.title.trim());
+    html+='<div class="jl-card" onclick="openJournalEntry(\''+k+'\')">'
+      +'<div class="jl-card__body">'
+      +'<div class="jl-card__title">'+esc(journalCardTitle(entry))+'</div>'
+      +(preview?'<div class="jl-card__preview'+(hasNote?'':' jl-card__preview--empty')+'">'+esc(preview)+'</div>':'')
+      +journalChipsHTML(sessions)
+      +'</div>'
+      +'<div class="jl-card__foot">'
+      +'<span class="jl-card__date">'+journalDayLabel(k)+'</span>'
+      +(hasWritten?'<button class="jl-card__menu" onclick="event.stopPropagation();journalDeleteEntry(\''+k+'\')" aria-label="Delete entry">&#8943;</button>':'')
+      +'</div>'
+      +'</div>';
+  });
+  html+='</div>';
+  container.innerHTML=html;
 }
 
-function clearJournalEntry(){
-  showConfirm('Clear Note','The training log (sessions and records) will remain. Only the note will be removed.',function(){
-    var journal=loadJournal();
-    var key=getJournalEntryKey(journalCurrentDate);
-    if(journal[key]){delete journal[key].note;if(!Object.keys(journal[key]).length)delete journal[key];saveJournal(journal);}
-    document.getElementById('journalNoteInput').value='';
-    renderJournal(journalCurrentDate);showToast('Note cleared');
+// ── Editor ──
+function journalAutoGrow(){
+  var ta=document.getElementById('journalBodyInput');
+  if(!ta)return;
+  ta.style.height='auto';
+  ta.style.height=Math.max(260,ta.scrollHeight)+'px';
+}
+
+function openJournalEntry(dateKey){
+  journalEditKey=dateKey;
+  var journal=loadJournal();
+  var entry=journal[dateKey]||{};
+  document.getElementById('journalEntryDate').textContent=journalDayLabel(dateKey);
+  document.getElementById('journalTitleInput').value=entry.title||'';
+  document.getElementById('journalBodyInput').value=entry.note||'';
+  var hintEl=document.getElementById('journalOmniaHint');
+  var isCurrentDay=dateKey===getJournalKey(new Date());
+  if(isCurrentDay&&!(entry.note&&entry.note.trim())){
+    hintEl.innerHTML='<div class="jl-omnia-hint">'+esc(omniaJournalPrompt())+'</div>';
+  } else { hintEl.innerHTML=''; }
+  var hasWritten=!!(entry.title&&entry.title.trim())||!!(entry.note&&entry.note.trim());
+  document.getElementById('journalEntryDelete').style.display=hasWritten?'flex':'none';
+  document.getElementById('journalEntryLog').innerHTML=journalLogHTML(dateKey);
+  showScreen('journalEntryScreen');
+  journalAutoGrow();
+}
+
+function closeJournalEntry(){
+  journalEditKey=null;
+  renderJournal();
+  showScreen('journalScreen');
+}
+
+function saveJournalEntry(){
+  if(!journalEditKey){closeJournalEntry();return;}
+  var title=document.getElementById('journalTitleInput').value.trim();
+  var note=document.getElementById('journalBodyInput').value.trim();
+  var journal=loadJournal();
+  if(!title&&!note){
+    if(journal[journalEditKey]){
+      delete journal[journalEditKey].title;delete journal[journalEditKey].note;
+      if(!Object.keys(journal[journalEditKey]).length)delete journal[journalEditKey];
+      saveJournal(journal);
+    }
+  } else {
+    if(!journal[journalEditKey])journal[journalEditKey]={};
+    if(title)journal[journalEditKey].title=title;else delete journal[journalEditKey].title;
+    if(note)journal[journalEditKey].note=note;else delete journal[journalEditKey].note;
+    saveJournal(journal);
+  }
+  closeJournalEntry();
+  showToast('Saved');
+}
+
+function _journalRemoveWritten(dateKey){
+  var journal=loadJournal();
+  if(journal[dateKey]){
+    delete journal[dateKey].title;delete journal[dateKey].note;
+    if(!Object.keys(journal[dateKey]).length)delete journal[dateKey];
+    saveJournal(journal);
+  }
+}
+
+function deleteJournalEntry(){
+  if(!journalEditKey)return;
+  var k=journalEditKey;
+  showConfirm('Delete Entry','Your written note will be removed. Logged sessions stay in your history.',function(){
+    _journalRemoveWritten(k);
+    closeJournalEntry();
+    showToast('Entry deleted');
+  });
+}
+
+function journalDeleteEntry(dateKey){
+  showConfirm('Delete Entry','Your written note will be removed. Logged sessions stay in your history.',function(){
+    _journalRemoveWritten(dateKey);
+    renderJournal();
+    showToast('Entry deleted');
   });
 }
 
 document.getElementById('journalBack').addEventListener('click',function(){
   renderHome();showScreen('homeScreen');
 });
+document.getElementById('journalFab').addEventListener('click',function(){
+  openJournalEntry(getJournalKey(new Date()));
+});
+document.getElementById('journalEntryBack').addEventListener('click',closeJournalEntry);
+document.getElementById('journalEntrySave').addEventListener('click',saveJournalEntry);
+document.getElementById('journalEntryDelete').addEventListener('click',deleteJournalEntry);
+document.getElementById('journalBodyInput').addEventListener('input',journalAutoGrow);
 // ══════════════════════════════════════════════════════
 
 function loadSoulMirror(){
