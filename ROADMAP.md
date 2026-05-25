@@ -102,6 +102,8 @@ Last updated: 2026-05-25
 - [ ] Code quality improvements
 - [ ] All Angles exercise
 - [ ] Complete anti-vibecode pass
+- [ ] Clean up Github
+- [ ] Personal code review
 
 ---
 
