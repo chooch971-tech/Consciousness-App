@@ -896,6 +896,28 @@
     .jl-log__meta { font-size:11px; color:rgba(221,216,206,.45); letter-spacing:.02em; }
     .jl-log__val { font-family:'DM Mono',monospace; font-size:14px; color:#f0ece4; flex-shrink:0; display:flex; align-items:center; }
     .jl-log__pb { font-size:8px; padding:2px 6px; border-radius:4px; background:rgba(126,184,164,.15); color:#7eb8a4; margin-left:7px; }
+    /* Card progress strip */
+    .jl-card__stats { display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin-top:11px; font-size:11px; color:rgba(221,216,206,.5); }
+    .jl-card__stat b { color:rgba(221,216,206,.82); font-weight:600; }
+    .jl-card__dot { opacity:.4; }
+    .jl-card__pr { font-size:9px; letter-spacing:.06em; padding:3px 9px; border-radius:20px; background:rgba(212,180,100,.14); color:#e6cd92; }
+    /* Editor progress block */
+    .jl-prog { margin-top:30px; border-top:1px solid rgba(255,255,255,.08); padding-top:20px; }
+    .jl-prog__label { font-size:10px; letter-spacing:.22em; text-transform:uppercase; color:rgba(255,255,255,.4); margin-bottom:12px; font-family:'DM Mono',monospace; }
+    .jl-prog__tiles { display:flex; gap:8px; margin-bottom:16px; }
+    .jl-prog__tile { flex:1; background:rgba(255,255,255,.04); border:1px solid rgba(255,255,255,.07); border-radius:12px; padding:13px 10px; text-align:center; }
+    .jl-prog__val { font-family:'Cormorant Garamond',serif; font-size:24px; font-weight:300; color:#f0ece4; line-height:1; }
+    .jl-prog__key { font-size:8px; letter-spacing:.14em; text-transform:uppercase; color:rgba(221,216,206,.45); margin-top:6px; font-family:'DM Mono',monospace; }
+    .jl-prog__snap { display:flex; gap:10px; flex-wrap:wrap; }
+    .jl-prog__snap-item { flex:1; min-width:120px; display:flex; align-items:center; gap:10px; background:rgba(255,255,255,.03); border:1px solid rgba(255,255,255,.06); border-radius:10px; padding:10px 12px; }
+    .jl-prog__snap-glyph { width:30px; height:30px; border-radius:8px; display:flex; align-items:center; justify-content:center; font-size:14px; flex-shrink:0; }
+    .jl-prog__snap-glyph--aw { background:rgba(126,184,164,.13); color:#9fd0c4; }
+    .jl-prog__snap-glyph--conc { background:rgba(212,149,110,.13); color:#e0b08e; }
+    .jl-prog__snap-lvl { font-family:'Cormorant Garamond',serif; font-size:18px; font-weight:300; color:#f0ece4; line-height:1; }
+    .jl-prog__snap-sub { font-size:8px; letter-spacing:.12em; text-transform:uppercase; color:rgba(221,216,206,.45); margin-top:3px; font-family:'DM Mono',monospace; }
+    .jl-pr { display:flex; align-items:center; gap:10px; padding:10px 13px; border-radius:10px; background:rgba(212,180,100,.08); border:1px solid rgba(212,180,100,.2); margin-top:8px; }
+    .jl-pr__icon { font-size:14px; flex-shrink:0; }
+    .jl-pr__text { font-size:11.5px; color:#e6cd92; line-height:1.4; }
 
     /* ── Progress Report: Omnia card ─────────────────────── */
     .rpt-omnia-card { margin-bottom:20px; border:1px solid rgba(168,210,235,.2); border-radius:14px; background:linear-gradient(160deg,rgba(232,184,160,.04) 0%,rgba(196,168,212,.04) 50%,rgba(168,200,232,.05) 100%); overflow:hidden; position:relative; }
@@ -18798,6 +18820,18 @@ function journalChipsHTML(sessions){
   return '<div class="jl-card__chips">'+shown.join('')+'</div>';
 }
 
+function journalCardStatsHTML(dateKey,sessions,prCount){
+  if(!sessions.length)return '';
+  var st=journalDayStats(dateKey);
+  var bits=[];
+  if(st.awMin>0)bits.push('<span class="jl-card__stat"><b>'+fmtDuration(st.awMin)+'</b> practiced</span>');
+  bits.push('<span class="jl-card__stat"><b>'+st.count+'</b> session'+(st.count!==1?'s':'')+'</span>');
+  var html='<div class="jl-card__stats">'+bits.join('<span class="jl-card__dot">·</span>');
+  if(prCount>0)html+='<span class="jl-card__pr">★ '+prCount+' record'+(prCount!==1?'s':'')+'</span>';
+  html+='</div>';
+  return html;
+}
+
 function journalLogHTML(dateKey){
   var sessions=getSessionsForDay(dateKey);
   if(!sessions.length)return '';
@@ -18811,6 +18845,90 @@ function journalLogHTML(dateKey){
       +'<div class="jl-log__info"><div class="jl-log__name">'+esc(info.name)+'</div><div class="jl-log__meta">'+meta+'</div></div>'
       +'<div class="jl-log__val">'+info.val+(info.pb?'<span class="jl-log__pb">PB</span>':'')+'</div>'
       +'</div>';
+  });
+  html+='</div>';
+  return html;
+}
+
+// ── Progress ──
+function awLevelFromXp(xp){var l=1;while(l<777&&xp>=sumXpToLevel(l+1))l++;return l;}
+function concLevelFromXp(xp){var l=1;while(l<777&&xp>=concSumXpToLevel(l+1))l++;return l;}
+
+function journalDayStats(dateKey){
+  var sessions=getSessionsForDay(dateKey);
+  var awMin=0,xp=0;
+  sessions.forEach(function(s){
+    var h=s.data;
+    xp+=(h.xpEarned||0);
+    if(s.type==='aw')awMin+=(h.durationMin||0);
+  });
+  return {count:sessions.length,awMin:awMin,xp:xp,hasConc:sessions.some(function(s){return s.type==='conc';})};
+}
+
+// Cumulative level/XP at the end of the given day, anchored to current state so the latest day matches exactly.
+function journalSnapshot(dateKey){
+  var end=dateFromKey(dateKey);end.setHours(23,59,59,999);
+  var awAfter=0,concAfter=0;
+  (state.history||[]).forEach(function(h){if(h.date&&new Date(h.date)>end)awAfter+=(h.xpEarned||0);});
+  (concState.history||[]).forEach(function(h){if(h.date&&new Date(h.date)>end)concAfter+=(h.xpEarned||0);});
+  var awXp=Math.max(0,(state.xp||0)-awAfter);
+  var concXp=Math.max(0,(concState.xp||0)-concAfter);
+  return {awLevel:awLevelFromXp(awXp),concLevel:concLevelFromXp(concXp)};
+}
+
+// Map of dateKey -> [PR label strings]. Walks history chronologically, keeping only
+// the day's best new record per metric so a single day shows at most one of each.
+function journalComputePRs(){
+  var prs={};
+  function setBest(store,k,v){if(!store[k]||v>store[k])store[k]=v;}
+  var awDur={},awScore={},concBest={};
+  var aw=(state.history||[]).filter(function(h){return h.date;}).slice().sort(function(a,b){return new Date(a.date)-new Date(b.date);});
+  var maxDur=0,maxScore=0;
+  aw.forEach(function(h){
+    var k=getJournalKey(new Date(h.date)),dur=h.durationMin||0,sc=parseFloat(h.score||0);
+    if(dur>maxDur&&maxDur>0)setBest(awDur,k,dur);
+    if(dur>maxDur)maxDur=dur;
+    if(sc>maxScore&&maxScore>0)setBest(awScore,k,sc);
+    if(sc>maxScore)maxScore=sc;
+  });
+  var conc=(concState.history||[]).filter(function(h){return h.date&&h.seconds;}).slice().sort(function(a,b){return new Date(a.date)-new Date(b.date);});
+  var maxSec=0;
+  conc.forEach(function(h){
+    var k=getJournalKey(new Date(h.date)),s=h.seconds||0;
+    if(s>maxSec&&maxSec>0)setBest(concBest,k,s);
+    if(s>maxSec)maxSec=s;
+  });
+  function emit(store,label,fmt){Object.keys(store).forEach(function(k){(prs[k]=prs[k]||[]).push(label+' — '+fmt(store[k]));});}
+  emit(awDur,'Longest awareness session',fmtDuration);
+  emit(awScore,'Best focus score',function(v){return v.toFixed(1)+'/5';});
+  emit(concBest,'New concentration record',fmtTimer);
+  return prs;
+}
+
+function journalProgressHTML(dateKey){
+  var st=journalDayStats(dateKey);
+  if(!st.count)return '';
+  var snap=journalSnapshot(dateKey);
+  var prs=(journalComputePRs()[dateKey])||[];
+  var html='<div class="jl-prog"><div class="jl-prog__label">Progress</div>';
+  // day totals
+  html+='<div class="jl-prog__tiles">'
+    +'<div class="jl-prog__tile"><div class="jl-prog__val">'+(st.awMin>0?fmtDuration(st.awMin):'—')+'</div><div class="jl-prog__key">Practiced</div></div>'
+    +'<div class="jl-prog__tile"><div class="jl-prog__val">'+st.count+'</div><div class="jl-prog__key">Sessions</div></div>'
+    +'<div class="jl-prog__tile"><div class="jl-prog__val">+'+st.xp+'</div><div class="jl-prog__key">XP earned</div></div>'
+    +'</div>';
+  // cumulative snapshot
+  html+='<div class="jl-prog__snap">'
+    +'<div class="jl-prog__snap-item"><div class="jl-prog__snap-glyph jl-prog__snap-glyph--aw">◎</div>'
+    +'<div><div class="jl-prog__snap-lvl">Level '+snap.awLevel+'</div><div class="jl-prog__snap-sub">Awareness · '+getRankTitle(snap.awLevel)+'</div></div></div>';
+  if(st.hasConc){
+    html+='<div class="jl-prog__snap-item"><div class="jl-prog__snap-glyph jl-prog__snap-glyph--conc">⊙</div>'
+      +'<div><div class="jl-prog__snap-lvl">Level '+snap.concLevel+'</div><div class="jl-prog__snap-sub">Concentration · '+getConcRank(snap.concLevel)+'</div></div></div>';
+  }
+  html+='</div>';
+  // PR highlights
+  prs.forEach(function(t){
+    html+='<div class="jl-pr"><div class="jl-pr__icon">★</div><div class="jl-pr__text">'+esc(t)+'</div></div>';
   });
   html+='</div>';
   return html;
@@ -18830,6 +18948,7 @@ function renderJournal(){
     return;
   }
   var journal=loadJournal();
+  var prMap=journalComputePRs();
   var html='<div class="jl-list">';
   var lastSection=null;
   keys.forEach(function(k){
@@ -18845,6 +18964,7 @@ function renderJournal(){
       +'<div class="jl-card__title">'+esc(journalCardTitle(entry))+'</div>'
       +(preview?'<div class="jl-card__preview'+(hasNote?'':' jl-card__preview--empty')+'">'+esc(preview)+'</div>':'')
       +journalChipsHTML(sessions)
+      +journalCardStatsHTML(k,sessions,(prMap[k]||[]).length)
       +'</div>'
       +'<div class="jl-card__foot">'
       +'<span class="jl-card__date">'+journalDayLabel(k)+'</span>'
@@ -18878,7 +18998,7 @@ function openJournalEntry(dateKey){
   } else { hintEl.innerHTML=''; }
   var hasWritten=!!(entry.title&&entry.title.trim())||!!(entry.note&&entry.note.trim());
   document.getElementById('journalEntryDelete').style.display=hasWritten?'flex':'none';
-  document.getElementById('journalEntryLog').innerHTML=journalLogHTML(dateKey);
+  document.getElementById('journalEntryLog').innerHTML=journalProgressHTML(dateKey)+journalLogHTML(dateKey);
   showScreen('journalEntryScreen');
   journalAutoGrow();
 }
