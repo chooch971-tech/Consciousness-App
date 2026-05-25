@@ -4621,6 +4621,7 @@ body:not(.tut-live) #tutCorgi {
 <div class="toast" id="toast"></div>
 
 <script>
+function esc(str){ return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
 // ═══════════════════════════════════════
 // PROMPTS
 // ═══════════════════════════════════════
@@ -15825,9 +15826,7 @@ function showReports() {
   currentReportPeriod = 'daily';
   updateReportTabStyles();
   showScreen('reportsScreen');
-  setTimeout(function() {
-    try { renderReport('daily'); } catch(e) { showToast(String(e).slice(0,120), 12000); }
-  }, 50);
+  renderReport('daily');
 }
 
 // ── Data helpers ──────────────────────────────────────────
@@ -16172,15 +16171,12 @@ function renderDueProgressReportComments(summaries) {
 // ── Report renderers ──────────────────────────────────────
 
 function renderReport(period) {
-  var _sect = 'init';
-  try {
-  _sect='getDateRange'; var range = getDateRange(period);
-  _sect='filterAwareness'; var awarenessNow = filterHistory(state.history, range.start, range.now);
-  _sect='filterAwarenessPrev'; var awarenessPrev = filterHistory(state.history, range.prevStart, range.prevEnd);
-  _sect='filterConc'; var concNow = filterHistory(concState.history, range.start, range.now);
-  _sect='filterConcPrev'; var concPrev = filterHistory(concState.history, range.prevStart, range.prevEnd);
-  _sect='buildDue'; var dueReportSummaries = buildDueProgressReportSummaries();
-  } catch(e2) { throw new Error('sect:'+_sect+' '+String(e2)); }
+  var range = getDateRange(period);
+  var awarenessNow = filterHistory(state.history, range.start, range.now);
+  var awarenessPrev = filterHistory(state.history, range.prevStart, range.prevEnd);
+  var concNow = filterHistory(concState.history, range.start, range.now);
+  var concPrev = filterHistory(concState.history, range.prevStart, range.prevEnd);
+  var dueReportSummaries = buildDueProgressReportSummaries();
 
   var html = '';
 
@@ -16339,10 +16335,7 @@ function renderReport(period) {
   html += '</div>';
   html += '</div>';
 
-  var rc = document.getElementById('reportContent');
-  if (!rc) { showToast('reportContent not found!', 5000); return; }
-  rc.innerHTML = html;
-  if (!html.trim()) showToast('html is empty!', 5000);
+  document.getElementById('reportContent').innerHTML = html;
   dueReportSummaries.forEach(function(summary, i) {
     requestProgressReportComment(summary, 'aiReportCommentText' + i);
   });
