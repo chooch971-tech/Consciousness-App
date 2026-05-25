@@ -217,7 +217,9 @@ async function generateAiMessage(feature, context) {
 
   const prompts = {
     progress_report:
-      'You are Omnia, the quiet guide inside Presence. Write a progress-report reflection for the completed practice period. Speak directly to the user in a calm, perceptive, slightly mystical voice. Mention one concrete pattern from the data, affirm the return to practice, and give one gentle focus for the next period. Do not sound like a fitness coach. Do not mention AI, tokens, data, or reports. No medical claims. Length by period: daily 35-55 words, weekly 45-65 words, monthly 55-75 words, yearly 70-90 words.'
+      'You are Omnia, the quiet guide inside Presence. Write a progress-report reflection for the completed practice period. Speak directly to the user in a calm, perceptive, slightly mystical voice. Mention one concrete pattern from the data, affirm the return to practice, and give one gentle focus for the next period. Do not sound like a fitness coach. Do not mention AI, tokens, data, or reports. No medical claims. Length by period: daily 35-55 words, weekly 45-65 words, monthly 55-75 words, yearly 70-90 words.',
+    omnia_report:
+      'You are Omnia, a personalized meditation and concentration guide. The user has shared their training data. Write 2-3 short, personal sentences of coaching commentary. Reference specific numbers. Be direct and honest — not generic. Sound like a knowledgeable coach, not a chatbot. No greeting, no sign-off. 35-60 words.'
   };
 
   const payload = {
@@ -776,6 +778,58 @@ app.post('/api/ai/progress-comment', aiRateLimit, async (req, res) => {
   } catch (err) {
     console.error('[AI] progress-comment error:', err.message);
     res.status(err.status || 500).json({ error: 'AI comment unavailable' });
+  }
+});
+
+app.post('/api/sync/omnia/report', verifyToken, async (req, res) => {
+  const { period, context } = req.body || {};
+  if (!['daily','weekly','monthly'].includes(period)) {
+    return res.status(400).json({ error: 'Invalid period' });
+  }
+  try {
+    const db = client.db('presence');
+    const col = db.collection('omnia_reports');
+    const userId = req.user.id;
+
+    // Period key: same logic as client
+    const now = new Date();
+    let periodKey;
+    if (period === 'daily') {
+      periodKey = now.toISOString().slice(0, 10);
+    } else if (period === 'weekly') {
+      const sun = new Date(now);
+      sun.setDate(now.getDate() - now.getDay());
+      periodKey = 'w-' + sun.toISOString().slice(0, 10);
+    } else {
+      periodKey = 'm-' + now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0');
+    }
+
+    // Return cached if fresh
+    const cached = await col.findOne({ userId, period, periodKey });
+    if (cached && cached.commentary) {
+      return res.json({ commentary: cached.commentary });
+    }
+
+    const systemPrompt = 'You are Omnia, a personalized meditation and concentration guide. '
+      + 'The user has shared their training data. Write 2-3 short, personal sentences of coaching commentary. '
+      + 'Reference specific numbers. Be direct and honest — not generic. '
+      + 'Sound like a knowledgeable coach, not a chatbot. No greeting, no sign-off.';
+
+    const commentary = await generateAiMessage('omnia_report', context || {});
+
+    const ttlMs = period === 'daily' ? 86400000 : period === 'weekly' ? 7 * 86400000 : 31 * 86400000;
+    const expiresAt = new Date(Date.now() + ttlMs);
+    await col.updateOne(
+      { userId, period, periodKey },
+      { $set: { userId, period, periodKey, commentary, generatedAt: new Date(), expiresAt } },
+      { upsert: true }
+    );
+    await col.createIndex({ expiresAt: 1 }, { expireAfterSeconds: 0 });
+
+    res.json({ commentary });
+  } catch (err) {
+    console.error('[Omnia] report error:', err.message);
+    res.status(err.status || 500).json({ error: 'Omnia commentary unavailable' });
   }
 });
 
