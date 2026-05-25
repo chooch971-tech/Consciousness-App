@@ -15825,7 +15825,7 @@ function showReports() {
   currentReportPeriod = 'daily';
   updateReportTabStyles();
   showScreen('reportsScreen');
-  try { renderReport('daily'); } catch(e) { console.error('[showReports]', e); var rc=document.getElementById('reportContent'); if(rc) rc.innerHTML='<div style="padding:24px;color:rgba(255,100,100,.7);font-family:DM Mono,monospace;font-size:11px;line-height:1.7;">Render error: '+String(e)+'</div>'; }
+  try { renderReport('daily'); } catch(e) { console.error('[showReports]', e); showToast('Render error: '+String(e), 8000); }
 }
 
 // ── Data helpers ──────────────────────────────────────────
@@ -16334,7 +16334,10 @@ function renderReport(period) {
   html += '</div>';
   html += '</div>';
 
-  document.getElementById('reportContent').innerHTML = html;
+  var rc = document.getElementById('reportContent');
+  if (!rc) { showToast('reportContent not found!', 5000); return; }
+  rc.innerHTML = html;
+  if (!html.trim()) showToast('html is empty!', 5000);
   dueReportSummaries.forEach(function(summary, i) {
     requestProgressReportComment(summary, 'aiReportCommentText' + i);
   });
