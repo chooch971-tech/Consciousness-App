@@ -6250,7 +6250,7 @@ document.getElementById('customAudUpload').addEventListener('change', function(e
 
 document.getElementById('syncLogoutBtn').addEventListener('click', function() {
   if (confirm('Sign out of cloud sync?')) {
-    authLogout({ clearLocalProgress: true, stayOnSettings: true });
+    authLogout({ clearLocalProgress: false, stayOnSettings: true });
   }
 });
 
@@ -16833,7 +16833,6 @@ function _refreshSettingsSyncCardSignedIn() {
 
 function authLogout(options) {
   options = options || {};
-  if (options.clearLocalProgress) resetLocalProgressForSignedOut();
   authToken = null;
   authEmail = null;
   authUsername = null;
