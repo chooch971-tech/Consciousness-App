@@ -253,11 +253,12 @@ async function generateAiMessage(feature, context) {
   const payload = {
     model: OPENAI_MODEL,
     store: false,
+    reasoning: { effort: 'minimal' },
     input: [
       { role: 'system', content: prompts[feature] || prompts.post_exercise },
       { role: 'user', content: JSON.stringify(compactContext(context)).slice(0, 4200) }
     ],
-    max_output_tokens: feature === 'progress_report' ? 90 : 60
+    max_output_tokens: feature === 'progress_report' ? 180 : 120
   };
 
   const response = await fetch('https://api.openai.com/v1/responses', {
@@ -278,7 +279,13 @@ async function generateAiMessage(feature, context) {
 
   const text = data.output_text
     || (data.output || []).flatMap(item => item.content || []).map(part => part.text || '').join(' ');
-  return clampText(text, feature === 'progress_report' ? 360 : 240);
+  const message = clampText(text, feature === 'progress_report' ? 360 : 240);
+  if (!message) {
+    const err = new Error('OpenAI returned an empty message');
+    err.status = 502;
+    throw err;
+  }
+  return message;
 }
 
 // ── Push helpers ─────────────────────────────────────────
