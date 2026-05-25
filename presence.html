@@ -15318,6 +15318,8 @@ function renderPathQuests() {
       + '</div></div>';
   }
 
+  html += '<div style="display:flex;flex-direction:column;gap:14px;margin-top:10px;">';
+
   // ── Awareness Quest (every other day) ──
   if (awarenessQuestVisible) {
     html += questCardHTML({
@@ -15360,6 +15362,8 @@ function renderPathQuests() {
     bgGrad:'linear-gradient(135deg,rgba(142,204,224,.06) 0%,rgba(126,184,164,.04) 100%)',
     glowColor:'rgba(142,204,224,.1)'
   });
+
+  html += '</div>'; // close quest cards wrapper
 
   // ── Streak nudge (always shown) ──
   var streakVal = (typeof state !== 'undefined' && state.streak) || 0;
