@@ -15825,10 +15825,8 @@ function showReports() {
   currentReportPeriod = 'daily';
   updateReportTabStyles();
   showScreen('reportsScreen');
-  var _rc = document.getElementById('reportContent');
-  if (_rc) { _rc.innerHTML = '<div style="padding:24px;color:white;font-size:16px;background:red;">TEST — content area works</div>'; }
   setTimeout(function() {
-    try { renderReport('daily'); } catch(e) { console.error('[showReports]', e); showToast('Render error: '+String(e), 8000); }
+    try { renderReport('daily'); } catch(e) { showToast(String(e).slice(0,120), 12000); }
   }, 50);
 }
 
@@ -16174,12 +16172,15 @@ function renderDueProgressReportComments(summaries) {
 // ── Report renderers ──────────────────────────────────────
 
 function renderReport(period) {
-  var range = getDateRange(period);
-  var awarenessNow = filterHistory(state.history, range.start, range.now);
-  var awarenessPrev = filterHistory(state.history, range.prevStart, range.prevEnd);
-  var concNow = filterHistory(concState.history, range.start, range.now);
-  var concPrev = filterHistory(concState.history, range.prevStart, range.prevEnd);
-  var dueReportSummaries = buildDueProgressReportSummaries();
+  var _sect = 'init';
+  try {
+  _sect='getDateRange'; var range = getDateRange(period);
+  _sect='filterAwareness'; var awarenessNow = filterHistory(state.history, range.start, range.now);
+  _sect='filterAwarenessPrev'; var awarenessPrev = filterHistory(state.history, range.prevStart, range.prevEnd);
+  _sect='filterConc'; var concNow = filterHistory(concState.history, range.start, range.now);
+  _sect='filterConcPrev'; var concPrev = filterHistory(concState.history, range.prevStart, range.prevEnd);
+  _sect='buildDue'; var dueReportSummaries = buildDueProgressReportSummaries();
+  } catch(e2) { throw new Error('sect:'+_sect+' '+String(e2)); }
 
   var html = '';
 
