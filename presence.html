@@ -304,7 +304,8 @@
     #historyScreen::-webkit-scrollbar { display:none; }
     .history-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:24px; padding-top:8px; }
     .history-title { font-family:Cormorant Garamond,serif; font-size:26px; font-weight:300; color:var(--text); }
-    .history-back { font-size:9px; letter-spacing:.2em; text-transform:uppercase; color:var(--accent); background:none; border:none; cursor:pointer; font-family:'DM Mono',monospace; }
+    .history-back { width:36px; height:36px; display:flex; align-items:center; justify-content:center; border-radius:10px; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.06); color:rgba(221,216,206,.75); cursor:pointer; transition:background .15s, border-color .15s; flex-shrink:0; padding:0; }
+    .history-back:active { background:rgba(255,255,255,.12); border-color:rgba(255,255,255,.18); }
     .history-list { display:flex; flex-direction:column; gap:10px; padding-bottom:40px; }
     .history-item { background:var(--surface); border:1px solid var(--border); border-radius:8px; padding:16px; }
     .history-item-top { display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; padding-right:28px; }
@@ -16346,15 +16347,13 @@ function renderDueProgressReportComments(summaries) {
 // ── Report renderers ──────────────────────────────────────
 
 function updateReportNav() {
-  var navRow = document.getElementById('reportNavPrev') && document.getElementById('reportNavPrev').parentElement;
   var lbl = document.getElementById('reportNavLabel');
   var prev = document.getElementById('reportNavPrev');
   var next = document.getElementById('reportNavNext');
   var isYearly = currentReportPeriod === 'yearly';
-  if (navRow) navRow.style.visibility = isYearly ? 'hidden' : '';
   if (lbl) lbl.textContent = reportNavLabel(currentReportPeriod, reportOffset);
-  if (next) { next.style.opacity = reportOffset >= 0 ? '.25' : '1'; next.style.pointerEvents = reportOffset >= 0 ? 'none' : ''; }
-  if (prev) { prev.style.opacity = isYearly ? '.25' : '1'; prev.style.pointerEvents = isYearly ? 'none' : ''; }
+  if (prev) { prev.style.opacity = isYearly ? '.15' : '.7'; prev.style.pointerEvents = isYearly ? 'none' : ''; prev.style.visibility = ''; }
+  if (next) { next.style.opacity = (isYearly || reportOffset >= 0) ? '.15' : '1'; next.style.pointerEvents = (isYearly || reportOffset >= 0) ? 'none' : ''; }
 }
 
 function renderReport(period) {
@@ -19219,6 +19218,42 @@ document.getElementById('journalEntryBack').addEventListener('click',function(){
 document.getElementById('journalEntrySave').addEventListener('click',saveJournalEntry);
 document.getElementById('journalEntryDelete').addEventListener('click',deleteJournalEntry);
 document.getElementById('journalBodyInput').addEventListener('input',journalAutoGrow);
+
+// ── Back button icon upgrade ───────────────────────────
+(function() {
+  var chevron = '<svg viewBox="0 0 9 15" width="9" height="15" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="7.5,1.5 1.5,7.5 7.5,13.5"/></svg>';
+  document.querySelectorAll('.history-back').forEach(function(btn) {
+    btn.innerHTML = chevron;
+    if (!btn.getAttribute('aria-label')) btn.setAttribute('aria-label', 'Back');
+  });
+})();
+
+// ── Swipe-to-go-back ───────────────────────────────────
+(function() {
+  document.querySelectorAll('.screen').forEach(function(screen) {
+    var backBtn = screen.querySelector('.history-back, .jl-editor-back');
+    if (!backBtn) return;
+    var startX, startY, tracking;
+    screen.addEventListener('touchstart', function(e) {
+      var t = e.touches[0];
+      tracking = t.clientX < 44;
+      if (tracking) { startX = t.clientX; startY = t.clientY; }
+    }, {passive: true});
+    screen.addEventListener('touchmove', function(e) {
+      if (!tracking) return;
+      var t = e.touches[0];
+      if (Math.abs(t.clientY - startY) > Math.abs(t.clientX - startX)) tracking = false;
+    }, {passive: true});
+    screen.addEventListener('touchend', function(e) {
+      if (!tracking) return;
+      var t = e.changedTouches[0];
+      var dx = t.clientX - startX, dy = t.clientY - startY;
+      if (dx > 64 && Math.abs(dx) > Math.abs(dy) * 1.5) backBtn.click();
+      tracking = false;
+    }, {passive: true});
+  });
+})();
+
 // ══════════════════════════════════════════════════════
 
 function loadSoulMirror(){
