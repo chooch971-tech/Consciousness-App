@@ -858,6 +858,17 @@
     .report-period-tabs { display:flex; gap:4px; margin-bottom:20px; }
     .report-period-tab { flex:1; padding:8px 4px; text-align:center; font-size:8px; letter-spacing:.15em; text-transform:uppercase; color:var(--muted); background:var(--surface); border:1px solid var(--border); border-radius:6px; cursor:pointer; font-family:'DM Mono',monospace; transition:all .2s; }
     .report-period-tab.active { background:rgba(126,184,164,.1); border-color:rgba(126,184,164,.35); color:var(--accent); }
+    /* ── Reports period filter menu ── */
+    .rpt-filter-btn { width:36px; height:36px; display:flex; align-items:center; justify-content:center; background:rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.09); border-radius:10px; cursor:pointer; color:var(--muted); flex-shrink:0; transition:background .15s; }
+    .rpt-filter-btn:active { background:rgba(255,255,255,.12); }
+    .rpt-period-menu { position:absolute; top:calc(100% + 6px); right:0; z-index:60; background:#1c1d2e; border:1px solid rgba(255,255,255,.1); border-radius:14px; padding:6px; min-width:170px; box-shadow:0 8px 28px rgba(0,0,0,.55); }
+    .rpt-period-menu__item { display:flex; align-items:center; justify-content:space-between; width:100%; padding:10px 14px; border:none; background:none; cursor:pointer; border-radius:10px; transition:background .15s; }
+    .rpt-period-menu__item:active { background:rgba(255,255,255,.07); }
+    .rpt-period-menu__item.active { background:rgba(126,184,164,.1); }
+    .rpt-period-menu__label { font-family:'Cormorant Garamond',serif; font-size:17px; font-weight:300; color:var(--text); }
+    .rpt-period-menu__sub { font-size:8px; letter-spacing:.14em; text-transform:uppercase; color:var(--muted); font-family:'DM Mono',monospace; }
+    .rpt-period-menu__check { color:var(--accent); font-size:13px; opacity:0; transition:opacity .15s; }
+    .rpt-period-menu__item.active .rpt-period-menu__check { opacity:1; }
 
     /* ── Journal — Apple-inspired entry list + editor ─────── */
     .jl-list { padding:6px 20px 40px; }
@@ -4461,32 +4472,35 @@ body:not(.tut-live) #tutCorgi {
         <div style="position:absolute;width:3px;height:3px;border-radius:50%;background:rgba(200,188,255,.3);left:58%;top:70%;animation:heroFloat 4s ease-in-out infinite;animation-delay:.7s;"></div>
       </div>
     </div>
-    <div style="display:flex; padding:0 24px; border-bottom:1px solid var(--border); flex-shrink:0;">
-      <button class="report-period-tab active" data-period="daily" style="flex:1;display:flex;flex-direction:column;align-items:center;gap:5px;padding:6px 4px 12px;border:none;background:none;cursor:pointer;position:relative;">
-        <span style="font-family:'Cormorant Garamond',serif;font-size:16px;font-weight:300;color:var(--muted);transition:color .2s;">Daily</span>
-        <span style="font-size:7px;letter-spacing:.14em;text-transform:uppercase;color:rgba(221,216,206,.18);font-family:'DM Mono',monospace;transition:color .2s;">today</span>
-        <span class="rpt-tab-dot" style="width:3px;height:3px;border-radius:50%;background:transparent;transition:background .2s;"></span>
+    <div style="display:flex;align-items:center;gap:8px;padding:8px 20px 10px;flex-shrink:0;border-bottom:1px solid var(--border);position:relative;">
+      <button id="reportNavPrev" style="width:32px;height:32px;display:flex;align-items:center;justify-content:center;background:none;border:none;color:var(--text);font-size:20px;cursor:pointer;opacity:.7;flex-shrink:0;">‹</button>
+      <span id="reportNavLabel" style="flex:1;text-align:center;font-family:'DM Mono',monospace;font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:var(--muted);">Today</span>
+      <button id="reportNavNext" style="width:32px;height:32px;display:flex;align-items:center;justify-content:center;background:none;border:none;color:var(--text);font-size:20px;cursor:pointer;opacity:.25;pointer-events:none;flex-shrink:0;">›</button>
+      <button id="reportFilterBtn" class="rpt-filter-btn" aria-label="Select period">
+        <svg viewBox="0 0 18 15" width="16" height="14" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round">
+          <line x1="1" y1="2.5" x2="17" y2="2.5"/><circle cx="5.5" cy="2.5" r="2" fill="var(--bg)" stroke="currentColor" stroke-width="1.6"/>
+          <line x1="1" y1="7.5" x2="17" y2="7.5"/><circle cx="12.5" cy="7.5" r="2" fill="var(--bg)" stroke="currentColor" stroke-width="1.6"/>
+          <line x1="1" y1="12.5" x2="17" y2="12.5"/><circle cx="7.5" cy="12.5" r="2" fill="var(--bg)" stroke="currentColor" stroke-width="1.6"/>
+        </svg>
       </button>
-      <button class="report-period-tab" data-period="weekly" style="flex:1;display:flex;flex-direction:column;align-items:center;gap:5px;padding:6px 4px 12px;border:none;background:none;cursor:pointer;position:relative;">
-        <span style="font-family:'Cormorant Garamond',serif;font-size:16px;font-weight:300;color:var(--muted);transition:color .2s;">Weekly</span>
-        <span style="font-size:7px;letter-spacing:.14em;text-transform:uppercase;color:rgba(221,216,206,.18);font-family:'DM Mono',monospace;transition:color .2s;">this week</span>
-        <span class="rpt-tab-dot" style="width:3px;height:3px;border-radius:50%;background:transparent;transition:background .2s;"></span>
-      </button>
-      <button class="report-period-tab" data-period="monthly" style="flex:1;display:flex;flex-direction:column;align-items:center;gap:5px;padding:6px 4px 12px;border:none;background:none;cursor:pointer;position:relative;">
-        <span style="font-family:'Cormorant Garamond',serif;font-size:16px;font-weight:300;color:var(--muted);transition:color .2s;">Monthly</span>
-        <span style="font-size:7px;letter-spacing:.14em;text-transform:uppercase;color:rgba(221,216,206,.18);font-family:'DM Mono',monospace;transition:color .2s;" id="rptMonthSub">this month</span>
-        <span class="rpt-tab-dot" style="width:3px;height:3px;border-radius:50%;background:transparent;transition:background .2s;"></span>
-      </button>
-      <button class="report-period-tab" data-period="yearly" style="flex:1;display:flex;flex-direction:column;align-items:center;gap:5px;padding:6px 4px 12px;border:none;background:none;cursor:pointer;position:relative;">
-        <span style="font-family:'Cormorant Garamond',serif;font-size:16px;font-weight:300;color:var(--muted);transition:color .2s;">All time</span>
-        <span style="font-size:7px;letter-spacing:.14em;text-transform:uppercase;color:rgba(221,216,206,.18);font-family:'DM Mono',monospace;transition:color .2s;">lifetime</span>
-        <span class="rpt-tab-dot" style="width:3px;height:3px;border-radius:50%;background:transparent;transition:background .2s;"></span>
-      </button>
-    </div>
-    <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 20px 2px;flex-shrink:0;">
-      <button id="reportNavPrev" style="width:32px;height:32px;display:flex;align-items:center;justify-content:center;background:none;border:none;color:var(--text);font-size:20px;cursor:pointer;opacity:.7;">‹</button>
-      <span id="reportNavLabel" style="font-family:'DM Mono',monospace;font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:var(--muted);">Today</span>
-      <button id="reportNavNext" style="width:32px;height:32px;display:flex;align-items:center;justify-content:center;background:none;border:none;color:var(--text);font-size:20px;cursor:pointer;opacity:.25;pointer-events:none;">›</button>
+      <div id="reportPeriodMenu" class="rpt-period-menu" style="display:none;">
+        <button class="rpt-period-menu__item active" data-period="daily">
+          <span class="rpt-period-menu__label">Daily</span>
+          <span class="rpt-period-menu__check">✓</span>
+        </button>
+        <button class="rpt-period-menu__item" data-period="weekly">
+          <span class="rpt-period-menu__label">Weekly</span>
+          <span class="rpt-period-menu__check">✓</span>
+        </button>
+        <button class="rpt-period-menu__item" data-period="monthly">
+          <span class="rpt-period-menu__label">Monthly</span>
+          <span class="rpt-period-menu__check">✓</span>
+        </button>
+        <button class="rpt-period-menu__item" data-period="yearly">
+          <span class="rpt-period-menu__label">All Time</span>
+          <span class="rpt-period-menu__check">✓</span>
+        </button>
+      </div>
     </div>
     <div style="flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:0 24px 40px;">
       <div id="reportContent"></div>
@@ -15925,18 +15939,8 @@ function buildRptOmniaStage(loading, small) {
 }
 
 function updateReportTabStyles() {
-  document.querySelectorAll('.report-period-tab').forEach(function(t) {
-    var isActive = t.dataset.period === currentReportPeriod;
-    t.classList.toggle('active', isActive);
-    var label = t.querySelector('span:first-child');
-    var sub = t.querySelector('span:nth-child(2)');
-    var dot = t.querySelector('.rpt-tab-dot');
-    if (label) label.style.color = isActive ? 'var(--text)' : 'var(--muted)';
-    if (sub) sub.style.color = isActive ? 'var(--muted)' : 'rgba(221,216,206,.18)';
-    if (dot) dot.style.background = isActive ? 'var(--accent)' : 'transparent';
-    // Active underline via ::after is CSS-only; replicate with border-bottom on the button
-    t.style.borderBottom = isActive ? '1px solid rgba(126,184,164,.5)' : '1px solid transparent';
-    t.style.marginBottom = '-1px';
+  document.querySelectorAll('.rpt-period-menu__item').forEach(function(t) {
+    t.classList.toggle('active', t.dataset.period === currentReportPeriod);
   });
 }
 
@@ -16677,15 +16681,27 @@ function copyToClipboard(text) {
   document.body.removeChild(ta);
 }
 
-// ── Period tab listeners ──────────────────────────────────
-document.querySelectorAll('.report-period-tab').forEach(function(tab) {
-  tab.addEventListener('click', function() {
-    currentReportPeriod = this.dataset.period;
-    reportOffset = 0;
-    updateReportTabStyles();
-    renderReport(currentReportPeriod);
+// ── Period filter menu ────────────────────────────────────
+(function() {
+  var btn = document.getElementById('reportFilterBtn');
+  var menu = document.getElementById('reportPeriodMenu');
+  btn.addEventListener('click', function(e) {
+    e.stopPropagation();
+    menu.style.display = menu.style.display === 'none' ? 'block' : 'none';
   });
-});
+  document.addEventListener('click', function() { menu.style.display = 'none'; });
+  menu.addEventListener('click', function(e) { e.stopPropagation(); });
+  document.querySelectorAll('.rpt-period-menu__item').forEach(function(item) {
+    item.addEventListener('click', function() {
+      currentReportPeriod = this.dataset.period;
+      reportOffset = 0;
+      menu.style.display = 'none';
+      updateReportTabStyles();
+      updateReportNav();
+      renderReport(currentReportPeriod);
+    });
+  });
+})();
 
 document.getElementById('reportNavPrev').addEventListener('click', function() {
   if (currentReportPeriod === 'yearly') return;
