@@ -503,6 +503,34 @@
     .pq-claim { border:none; border-radius:8px; padding:10px 20px; background:linear-gradient(180deg,#f5c878,#d49850); color:#1a1208; font-family:'DM Mono',monospace; font-size:10px; letter-spacing:.2em; text-transform:uppercase; font-weight:700; cursor:pointer; box-shadow:0 4px 0 #8b5a20, 0 6px 12px rgba(212,152,80,0.25); transition:transform 0.1s ease, box-shadow 0.1s ease; }
     .pq-claim:active { transform:translateY(2px); box-shadow:0 2px 0 #8b5a20, 0 4px 8px rgba(212,152,80,0.2); }
     .pq-claimed { font-family:'DM Mono',monospace; font-size:9px; letter-spacing:.2em; text-transform:uppercase; color:rgba(126,184,164,0.55); border:1px solid rgba(126,184,164,0.28); border-radius:6px; padding:7px 14px; }
+    /* ── Omnia chest-open reward animation ── */
+    .chest-overlay { position:fixed; inset:0; z-index:820; background:radial-gradient(circle at 50% 42%,rgba(40,30,12,.55),rgba(7,8,13,.9)); backdrop-filter:blur(4px); -webkit-backdrop-filter:blur(4px); display:flex; align-items:center; justify-content:center; opacity:0; transition:opacity .32s ease; }
+    .chest-overlay.show { opacity:1; }
+    .chest-scene { position:relative; width:260px; height:300px; perspective:680px; }
+    .chest-omnia { position:absolute; top:6px; left:50%; width:66px; transform:translateX(-50%); z-index:5; animation:chestOmniaFloat 3.6s ease-in-out infinite; filter:drop-shadow(0 0 14px rgba(184,234,255,.5)); }
+    .chest-omnia.cast { animation:chestOmniaCast 1s cubic-bezier(.34,1.4,.5,1); }
+    .chest-omnia-crystal { width:100%; height:auto; display:block; overflow:visible; }
+    @keyframes chestOmniaFloat { 0%,100%{transform:translateX(-50%) translateY(0);} 50%{transform:translateX(-50%) translateY(-9px);} }
+    @keyframes chestOmniaCast { 0%{transform:translateX(-50%) translateY(0) scale(1);} 30%{transform:translateX(-50%) translateY(-14px) scale(1.08);} 60%{transform:translateX(-50%) translateY(4px) scale(.96);} 100%{transform:translateX(-50%) translateY(0) scale(1);} }
+    .chest-rig { position:absolute; bottom:64px; left:50%; width:140px; height:104px; margin-left:-70px; transform-style:preserve-3d; }
+    .chest-burst { position:absolute; bottom:50px; left:50%; width:170px; height:170px; margin-left:-85px; border-radius:50%; background:radial-gradient(circle,rgba(255,239,176,.95) 0%,rgba(255,200,90,.5) 32%,transparent 66%); opacity:0; pointer-events:none; z-index:1; }
+    .chest-rig.open .chest-burst { animation:chestBurst 1s ease-out forwards; }
+    @keyframes chestBurst { 0%{opacity:0;transform:scale(.2);} 28%{opacity:.95;} 100%{opacity:0;transform:scale(1.5);} }
+    .chest-rays { position:absolute; bottom:54px; left:50%; width:150px; height:150px; margin-left:-75px; opacity:0; z-index:1; pointer-events:none; }
+    .chest-rig.open .chest-rays { animation:chestRays 1.4s ease-out forwards; }
+    @keyframes chestRays { 0%{opacity:0;transform:rotate(0deg) scale(.4);} 30%{opacity:.7;} 100%{opacity:0;transform:rotate(40deg) scale(1.2);} }
+    .chest-base { position:absolute; bottom:0; left:0; width:140px; z-index:3; }
+    .chest-lid { position:absolute; bottom:50px; left:0; width:140px; transform-origin:50% 100%; transform:rotateX(0deg); transition:transform .6s cubic-bezier(.34,1.36,.5,1); z-index:4; }
+    .chest-rig.open .chest-lid { transform:rotateX(-122deg); }
+    .chest-coin { position:absolute; bottom:52px; left:50%; width:8px; height:8px; margin-left:-4px; border-radius:50%; background:radial-gradient(circle at 34% 28%,#fff6d2 0%,#f3cd66 52%,#c8902f 100%); box-shadow:0 0 5px rgba(240,199,94,.7); opacity:0; z-index:5; pointer-events:none; }
+    .chest-rig.open .chest-coin { animation:chestCoin var(--cd,1s) cubic-bezier(.3,.7,.4,1) forwards; animation-delay:var(--cdelay,0s); }
+    @keyframes chestCoin { 0%{opacity:0;transform:translate(0,0) scale(.4);} 14%{opacity:1;transform:translate(calc(var(--tx)*.3),calc(var(--ty)*.35)) scale(1);} 100%{opacity:0;transform:translate(var(--tx),var(--ty)) scale(.55);} }
+    .chest-akasha { position:absolute; bottom:14px; left:0; right:0; text-align:center; z-index:6; opacity:0; transform:translateY(10px); transition:opacity .5s ease,transform .5s cubic-bezier(.34,1.4,.5,1); }
+    .chest-akasha.show { opacity:1; transform:translateY(0); }
+    .chest-akasha__amt { font-family:'Cormorant Garamond',serif; font-size:30px; font-weight:300; color:#f3cd66; text-shadow:0 0 16px rgba(240,199,94,.55); line-height:1; }
+    .chest-akasha__lbl { margin-top:5px; font-family:'DM Mono',monospace; font-size:9px; letter-spacing:.28em; text-transform:uppercase; color:rgba(243,205,102,.7); }
+    .chest-tap-hint { position:absolute; bottom:-14px; left:0; right:0; text-align:center; font-family:'DM Mono',monospace; font-size:8px; letter-spacing:.22em; text-transform:uppercase; color:var(--muted); opacity:0; transition:opacity .4s ease; }
+    .chest-akasha.show + .chest-tap-hint, .chest-scene.done .chest-tap-hint { opacity:.55; }
     .pq-exercises { margin-top:18px; padding-top:14px; border-top:1px solid rgba(255,255,255,0.06); display:flex; flex-direction:column; gap:10px; }
     .pq-ex-row { display:flex; align-items:center; justify-content:space-between; padding:11px 13px; border-radius:10px; background:rgba(255,255,255,0.025); border:1px solid rgba(255,255,255,0.06); cursor:default; }
     .pq-ex-row.done { opacity:0.5; }
@@ -15245,79 +15273,191 @@ function claimPathQuestReward(type) {
   }
   data.claimed = true;
   saveGuideState(guideState);
-  renderPathQuests();
-  if (typeof renderOmniaEngine === 'function') renderOmniaEngine();
   if (typeof playSessionCompleteSound === 'function') playSessionCompleteSound();
+  function afterClaim() {
+    renderPathQuests();
+    if (typeof renderOmniaEngine === 'function') renderOmniaEngine();
+  }
+  if (typeof playChestOpenAnimation === 'function') {
+    playChestOpenAnimation(amount, afterClaim);
+  } else {
+    afterClaim();
+  }
 }
 function pathQuestChestSVG(unlocked) {
   if (unlocked) {
+    // Treasure chest — rich wood, gold fittings, warm glow & sparkles
     return '<svg viewBox="0 0 56 54" xmlns="http://www.w3.org/2000/svg" width="56" height="54">'
       + '<defs>'
-      + '<linearGradient id="chbody" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#7a4820"/><stop offset="100%" stop-color="#3e2008"/></linearGradient>'
-      + '<linearGradient id="chlid" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#9a5c28"/><stop offset="100%" stop-color="#5a3010"/></linearGradient>'
-      + '<radialGradient id="chglow" cx="50%" cy="100%" r="60%"><stop offset="0%" stop-color="#f5c84a" stop-opacity="0.55"/><stop offset="100%" stop-color="#f5c84a" stop-opacity="0"/></radialGradient>'
+      + '<linearGradient id="tcWood" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#8a5a30"/><stop offset="100%" stop-color="#4a2a12"/></linearGradient>'
+      + '<linearGradient id="tcLid" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#9c6838"/><stop offset="100%" stop-color="#5c3618"/></linearGradient>'
+      + '<linearGradient id="tcGold" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#ffe7a0"/><stop offset="48%" stop-color="#f0c75e"/><stop offset="100%" stop-color="#c08a32"/></linearGradient>'
+      + '<radialGradient id="tcGlow" cx="50%" cy="42%" r="58%"><stop offset="0%" stop-color="#ffe9aa" stop-opacity="0.85"/><stop offset="100%" stop-color="#ffcf5e" stop-opacity="0"/></radialGradient>'
       + '</defs>'
-      // glow pool beneath
-      + '<ellipse cx="28" cy="51" rx="17" ry="3" fill="#d4900a" opacity="0.3"/>'
+      // aura behind chest
+      + '<ellipse cx="28" cy="27" rx="23" ry="21" fill="url(#tcGlow)" opacity="0.55"/>'
+      // ground glow
+      + '<ellipse cx="28" cy="49" rx="19" ry="3.2" fill="#e8a91e" opacity="0.32"/>'
       // body
-      + '<rect x="7" y="26" width="42" height="22" rx="3" fill="url(#chbody)" stroke="#2a1406" stroke-width="1"/>'
-      // body top edge sheen
-      + '<rect x="7" y="26" width="42" height="4" rx="2" fill="#9a5c28" opacity="0.6"/>'
-      // wood grain lines
-      + '<line x1="7" y1="33" x2="49" y2="33" stroke="#2a1406" stroke-width="1" opacity="0.4"/>'
-      + '<line x1="7" y1="39" x2="49" y2="39" stroke="#2a1406" stroke-width="1" opacity="0.4"/>'
-      // metal strap horizontal
-      + '<rect x="7" y="31.5" width="42" height="3" rx="1" fill="#c88c30" opacity="0.45"/>'
-      + '<rect x="7" y="37.5" width="42" height="3" rx="1" fill="#c88c30" opacity="0.45"/>'
-      // corner brackets
-      + '<rect x="7" y="26" width="5" height="22" rx="2" fill="#c88c30" opacity="0.4"/>'
-      + '<rect x="44" y="26" width="5" height="22" rx="2" fill="#c88c30" opacity="0.4"/>'
+      + '<rect x="10" y="30" width="36" height="18" rx="2.6" fill="url(#tcWood)" stroke="#37200a" stroke-width="1"/>'
       // lid
-      + '<path d="M7,28 Q7,10 28,10 Q49,10 49,28 Z" fill="url(#chlid)" stroke="#2a1406" stroke-width="1"/>'
-      // lid highlight arc
-      + '<path d="M11,24 Q13,13 28,13 Q43,13 45,24" fill="none" stroke="#d4a050" stroke-width="1.5" opacity="0.5"/>'
-      // lid metal band at seam
-      + '<rect x="7" y="26" width="42" height="3.5" rx="1" fill="#c88c30" opacity="0.55"/>'
-      // inner glow (open chest)
-      + '<ellipse cx="28" cy="28" rx="15" ry="5" fill="url(#chglow)"/>'
+      + '<path d="M10,31 V25 Q10,14.5 28,14.5 Q46,14.5 46,25 V31 Z" fill="url(#tcLid)" stroke="#37200a" stroke-width="1"/>'
+      // lid sheen
+      + '<path d="M13.5,24 Q15.5,18 28,18 Q40.5,18 42.5,24" fill="none" stroke="#d8a45c" stroke-width="1.3" opacity="0.55" stroke-linecap="round"/>'
+      // gold seam band
+      + '<rect x="9" y="28.8" width="38" height="3.6" rx="1.4" fill="url(#tcGold)" stroke="#9c6a22" stroke-width="0.4"/>'
+      // vertical gold straps
+      + '<rect x="15" y="21.5" width="3.2" height="26" rx="1" fill="url(#tcGold)" opacity="0.95"/>'
+      + '<rect x="37.8" y="21.5" width="3.2" height="26" rx="1" fill="url(#tcGold)" opacity="0.95"/>'
+      // corner feet caps
+      + '<rect x="9.5" y="43.8" width="5.4" height="4.2" rx="1.3" fill="url(#tcGold)"/>'
+      + '<rect x="41.1" y="43.8" width="5.4" height="4.2" rx="1.3" fill="url(#tcGold)"/>'
       // lock plate
-      + '<rect x="23" y="31" width="10" height="9" rx="2.5" fill="#c88c30"/>'
-      + '<rect x="24.5" y="32.5" width="7" height="6" rx="1.5" fill="#7a4820"/>'
-      // keyhole
-      + '<circle cx="28" cy="35" r="1.8" fill="#c88c30"/>'
-      + '<path d="M27,36.2 L27,38.5 L29,38.5 L29,36.2 Z" fill="#c88c30"/>'
+      + '<rect x="23.8" y="32" width="8.4" height="9.4" rx="2" fill="url(#tcGold)" stroke="#9c6a22" stroke-width="0.5"/>'
+      + '<circle cx="28" cy="36.6" r="2.1" fill="#5a3a16"/>'
+      + '<circle cx="28" cy="36.4" r="0.95" fill="#ffe9aa" opacity="0.85"/>'
       // sparkles
-      + '<circle cx="10" cy="8" r="1.3" fill="#f5d878" opacity="0.9"/>'
-      + '<circle cx="46" cy="6" r="1" fill="#f5d878" opacity="0.75"/>'
-      + '<circle cx="51" cy="18" r="0.9" fill="#f0cc60" opacity="0.7"/>'
-      + '<path d="M44,3 L44,7 M42,5 L46,5" stroke="#f5d878" stroke-width="1.2" stroke-linecap="round" opacity="0.8"/>'
-      + '<path d="M13,15 L13,18 M11.5,16.5 L14.5,16.5" stroke="#f5d878" stroke-width="1" stroke-linecap="round" opacity="0.55"/>'
+      + '<path d="M44,7 L44,12 M41.5,9.5 L46.5,9.5" stroke="#ffe9a0" stroke-width="1.3" stroke-linecap="round" opacity="0.9"/>'
+      + '<circle cx="11.5" cy="10" r="1.3" fill="#ffe9a0" opacity="0.85"/>'
+      + '<circle cx="49" cy="20" r="1" fill="#ffe9a0" opacity="0.7"/>'
+      + '<circle cx="8" cy="21" r="0.9" fill="#ffe9a0" opacity="0.6"/>'
       + '</svg>';
   }
-  // Locked state — muted warm wood, closed, with padlock
-  return '<svg viewBox="0 0 56 54" xmlns="http://www.w3.org/2000/svg" width="56" height="54" opacity="0.72">'
+  // Locked state — same silhouette, muted warm wood, padlock
+  return '<svg viewBox="0 0 56 54" xmlns="http://www.w3.org/2000/svg" width="56" height="54" opacity="0.82">'
     + '<defs>'
-    + '<linearGradient id="chbodyL" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#6a4828"/><stop offset="100%" stop-color="#38200e"/></linearGradient>'
-    + '<linearGradient id="chlidL" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#7a5830"/><stop offset="100%" stop-color="#482810"/></linearGradient>'
+    + '<linearGradient id="lcWood" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#6a4828"/><stop offset="100%" stop-color="#382010"/></linearGradient>'
+    + '<linearGradient id="lcLid" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#76522e"/><stop offset="100%" stop-color="#422814"/></linearGradient>'
     + '</defs>'
-    + '<rect x="7" y="26" width="42" height="22" rx="3" fill="url(#chbodyL)" stroke="#1e0e04" stroke-width="1"/>'
-    + '<rect x="7" y="26" width="42" height="4" rx="2" fill="#7a5830" opacity="0.5"/>'
-    + '<line x1="7" y1="33" x2="49" y2="33" stroke="#1e0e04" stroke-width="1" opacity="0.35"/>'
-    + '<line x1="7" y1="39" x2="49" y2="39" stroke="#1e0e04" stroke-width="1" opacity="0.35"/>'
-    + '<rect x="7" y="31.5" width="42" height="3" rx="1" fill="#886840" opacity="0.4"/>'
-    + '<rect x="7" y="37.5" width="42" height="3" rx="1" fill="#886840" opacity="0.4"/>'
-    + '<rect x="7" y="26" width="5" height="22" rx="2" fill="#886840" opacity="0.35"/>'
-    + '<rect x="44" y="26" width="5" height="22" rx="2" fill="#886840" opacity="0.35"/>'
-    + '<path d="M7,28 Q7,10 28,10 Q49,10 49,28 Z" fill="url(#chlidL)" stroke="#1e0e04" stroke-width="1"/>'
-    + '<rect x="7" y="26" width="42" height="3.5" rx="1" fill="#886840" opacity="0.45"/>'
+    // body
+    + '<rect x="10" y="30" width="36" height="18" rx="2.6" fill="url(#lcWood)" stroke="#231305" stroke-width="1"/>'
+    // lid
+    + '<path d="M10,31 V25 Q10,14.5 28,14.5 Q46,14.5 46,25 V31 Z" fill="url(#lcLid)" stroke="#231305" stroke-width="1"/>'
+    // lid sheen
+    + '<path d="M13.5,24 Q15.5,18 28,18 Q40.5,18 42.5,24" fill="none" stroke="#8a6838" stroke-width="1" opacity="0.4" stroke-linecap="round"/>'
+    // seam band
+    + '<rect x="9" y="28.8" width="38" height="3.3" rx="1.3" fill="#7a623c" opacity="0.6"/>'
+    // vertical straps
+    + '<rect x="15" y="21.5" width="3.2" height="26" rx="1" fill="#7a623c" opacity="0.5"/>'
+    + '<rect x="37.8" y="21.5" width="3.2" height="26" rx="1" fill="#7a623c" opacity="0.5"/>'
+    // corner caps
+    + '<rect x="9.5" y="43.8" width="5.4" height="4.2" rx="1.3" fill="#7a623c" opacity="0.5"/>'
+    + '<rect x="41.1" y="43.8" width="5.4" height="4.2" rx="1.3" fill="#7a623c" opacity="0.5"/>'
     // padlock body
-    + '<rect x="22" y="31" width="12" height="10" rx="2.5" fill="#6a6050" stroke="#3a3020" stroke-width="1"/>'
+    + '<rect x="23.4" y="34" width="9.2" height="8.2" rx="2" fill="#6e6452" stroke="#3a3122" stroke-width="1"/>'
     // padlock shackle
-    + '<path d="M24.5,31 Q24.5,26.5 28,26.5 Q31.5,26.5 31.5,31" fill="none" stroke="#6a6050" stroke-width="2.5" stroke-linecap="round"/>'
+    + '<path d="M25.4,34 V31.4 Q25.4,28.4 28,28.4 Q30.6,28.4 30.6,31.4 V34" fill="none" stroke="#6e6452" stroke-width="2.2" stroke-linecap="round"/>'
     // keyhole
-    + '<circle cx="28" cy="35.5" r="1.8" fill="#3a3020"/>'
-    + '<rect x="27.2" y="36.8" width="1.6" height="2.2" rx="0.4" fill="#3a3020"/>'
+    + '<circle cx="28" cy="37.6" r="1.5" fill="#2e2618"/>'
+    + '<rect x="27.3" y="38.4" width="1.4" height="2.1" rx="0.4" fill="#2e2618"/>'
     + '</svg>';
+}
+
+// Omnia opens a treasure chest — celebratory reward animation
+function playChestOpenAnimation(amount, onDone) {
+  var done = false;
+  function finish() {
+    if (done) return;
+    done = true;
+    overlay.classList.remove('show');
+    setTimeout(function() {
+      if (overlay.parentNode) overlay.parentNode.removeChild(overlay);
+      if (typeof onDone === 'function') onDone();
+    }, 340);
+  }
+
+  // Animated chest base (body + open interior with gold)
+  var baseSVG = '<svg class="chest-base" viewBox="0 0 140 104" xmlns="http://www.w3.org/2000/svg">'
+    + '<defs>'
+    + '<linearGradient id="caWood" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#8a5a30"/><stop offset="100%" stop-color="#46280f"/></linearGradient>'
+    + '<linearGradient id="caGold" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#ffe7a0"/><stop offset="48%" stop-color="#f0c75e"/><stop offset="100%" stop-color="#c08a32"/></linearGradient>'
+    + '<radialGradient id="caInner" cx="50%" cy="20%" r="80%"><stop offset="0%" stop-color="#fff2be"/><stop offset="55%" stop-color="#f3cd66"/><stop offset="100%" stop-color="#b9842c"/></radialGradient>'
+    + '</defs>'
+    // interior back wall (visible when lid opens)
+    + '<rect x="16" y="40" width="108" height="40" rx="4" fill="#2a1809"/>'
+    // treasure mound inside
+    + '<ellipse cx="70" cy="56" rx="46" ry="14" fill="url(#caInner)"/>'
+    + '<circle cx="50" cy="52" r="6" fill="#ffe28a"/><circle cx="64" cy="56" r="7" fill="#f3cd66"/>'
+    + '<circle cx="80" cy="53" r="6.5" fill="#ffe28a"/><circle cx="92" cy="57" r="5.5" fill="#f0c75e"/>'
+    + '<circle cx="70" cy="50" r="5" fill="#fff2be"/>'
+    // body front
+    + '<rect x="14" y="56" width="112" height="44" rx="6" fill="url(#caWood)" stroke="#37200a" stroke-width="2"/>'
+    // gold rim at top of body
+    + '<rect x="12" y="54" width="116" height="8" rx="3" fill="url(#caGold)" stroke="#9c6a22" stroke-width="0.8"/>'
+    // vertical straps
+    + '<rect x="34" y="56" width="8" height="44" fill="url(#caGold)" opacity="0.95"/>'
+    + '<rect x="98" y="56" width="8" height="44" fill="url(#caGold)" opacity="0.95"/>'
+    // corner feet
+    + '<rect x="14" y="92" width="14" height="9" rx="3" fill="url(#caGold)"/>'
+    + '<rect x="112" y="92" width="14" height="9" rx="3" fill="url(#caGold)"/>'
+    // lock plate
+    + '<rect x="62" y="62" width="16" height="18" rx="3.5" fill="url(#caGold)" stroke="#9c6a22" stroke-width="1"/>'
+    + '<circle cx="70" cy="70" r="3.2" fill="#5a3a16"/>'
+    + '</svg>';
+
+  // Animated lid (pivots open)
+  var lidSVG = '<svg class="chest-lid" viewBox="0 0 140 50" xmlns="http://www.w3.org/2000/svg">'
+    + '<defs>'
+    + '<linearGradient id="caLid" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#9c6838"/><stop offset="100%" stop-color="#5c3618"/></linearGradient>'
+    + '<linearGradient id="caGold2" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#ffe7a0"/><stop offset="48%" stop-color="#f0c75e"/><stop offset="100%" stop-color="#c08a32"/></linearGradient>'
+    + '</defs>'
+    + '<path d="M14,48 V24 Q14,6 70,6 Q126,6 126,24 V48 Z" fill="url(#caLid)" stroke="#37200a" stroke-width="2"/>'
+    + '<path d="M24,22 Q30,12 70,12 Q110,12 116,22" fill="none" stroke="#d8a45c" stroke-width="2" opacity="0.5" stroke-linecap="round"/>'
+    + '<rect x="34" y="6" width="8" height="42" fill="url(#caGold2)" opacity="0.9"/>'
+    + '<rect x="98" y="6" width="8" height="42" fill="url(#caGold2)" opacity="0.9"/>'
+    + '<rect x="12" y="42" width="116" height="8" rx="3" fill="url(#caGold2)" stroke="#9c6a22" stroke-width="0.8"/>'
+    + '</svg>';
+
+  // light rays SVG
+  var rays = '';
+  for (var r = 0; r < 12; r++) {
+    var ang = r * 30;
+    rays += '<rect x="73" y="10" width="4" height="62" rx="2" fill="rgba(255,233,168,.6)" transform="rotate(' + ang + ' 75 75)"/>';
+  }
+  var raysSVG = '<svg class="chest-rays" viewBox="0 0 150 150" xmlns="http://www.w3.org/2000/svg">' + rays + '</svg>';
+
+  // coins (generated with random trajectories)
+  var coins = '';
+  var N = 16;
+  for (var i = 0; i < N; i++) {
+    var tx = (Math.random() * 160 - 80).toFixed(0);
+    var ty = (-50 - Math.random() * 80).toFixed(0);
+    var cd = (0.8 + Math.random() * 0.6).toFixed(2);
+    var cdelay = (0.38 + Math.random() * 0.25).toFixed(2);
+    var sz = (6 + Math.random() * 5).toFixed(1);
+    coins += '<div class="chest-coin" style="width:' + sz + 'px;height:' + sz + 'px;--tx:' + tx + 'px;--ty:' + ty + 'px;--cd:' + cd + 's;--cdelay:' + cdelay + 's;"></div>';
+  }
+
+  var omnia = OMNIA_CRYSTAL_SVG_RPT.replace('class="rpt-omnia-crystal"', 'class="chest-omnia-crystal"');
+
+  var overlay = document.createElement('div');
+  overlay.className = 'chest-overlay';
+  overlay.innerHTML = '<div class="chest-scene">'
+    + '<div class="chest-omnia" id="chestOmnia">' + omnia + '</div>'
+    + '<div class="chest-rig" id="chestRig">'
+    + raysSVG
+    + '<div class="chest-burst"></div>'
+    + baseSVG
+    + lidSVG
+    + coins
+    + '</div>'
+    + '<div class="chest-akasha" id="chestAkasha"><div class="chest-akasha__amt">+' + amount + '</div><div class="chest-akasha__lbl">Akasha</div></div>'
+    + '<div class="chest-tap-hint">tap to continue</div>'
+    + '</div>';
+  document.body.appendChild(overlay);
+  overlay.addEventListener('click', finish);
+
+  // sequence
+  requestAnimationFrame(function() {
+    overlay.classList.add('show');
+  });
+  var rig = overlay.querySelector('#chestRig');
+  var om = overlay.querySelector('#chestOmnia');
+  var ak = overlay.querySelector('#chestAkasha');
+  setTimeout(function() { if (om) om.classList.add('cast'); }, 280);
+  setTimeout(function() { if (rig) rig.classList.add('open'); }, 480);
+  setTimeout(function() { if (ak) ak.classList.add('show'); }, 1150);
+  setTimeout(finish, 3200);
 }
 function colorToTint(hex, alpha) {
   if (!hex || hex[0] !== '#') return 'rgba(255,255,255,' + alpha + ')';
