@@ -6229,6 +6229,32 @@ function closeDrawer() {
 }
 
 document.getElementById('hamburgerBtn').addEventListener('click', openDrawer);
+
+// Swipe right from left edge on homeScreen → open drawer
+(function() {
+  var startX, startY, tracking;
+  document.addEventListener('touchstart', function(e) {
+    var t = e.touches[0];
+    if (t.clientX > 30) return;
+    var hs = document.getElementById('homeScreen');
+    if (!hs || hs.style.display === 'none') return;
+    var overlay = document.getElementById('drawerOverlay');
+    if (overlay && overlay.classList.contains('show')) return;
+    startX = t.clientX; startY = t.clientY; tracking = true;
+  }, {passive: true});
+  document.addEventListener('touchmove', function(e) {
+    if (!tracking) return;
+    var dx = e.touches[0].clientX - startX;
+    var dy = Math.abs(e.touches[0].clientY - startY);
+    if (dy > Math.abs(dx) + 8) tracking = false;
+  }, {passive: true});
+  document.addEventListener('touchend', function(e) {
+    if (!tracking) return;
+    tracking = false;
+    if (e.changedTouches[0].clientX - startX > 50) openDrawer();
+  }, {passive: true});
+})();
+
 document.getElementById('drawerOmniaBtn').addEventListener('click', function() {
   closeDrawer();
   setTimeout(function() {
