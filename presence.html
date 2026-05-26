@@ -4417,7 +4417,7 @@ body:not(.tut-live) #tutCorgi {
   <!-- REPORTS -->
   <div class="screen" id="reportsScreen">
     <div style="padding:var(--safe-top) 24px 16px 24px; display:flex; justify-content:space-between; align-items:center;">
-      <div style="font-family:Cormorant Garamond,serif; font-size:24px; font-weight:300; color:var(--text);">Progress Report</div>
+      <div style="font-family:Cormorant Garamond,serif; font-size:24px; font-weight:300; color:var(--text);">Progress Reports</div>
       <button class="history-back" id="reportsBack">← back</button>
     </div>
     <div style="display:flex; padding:0 24px; border-bottom:1px solid var(--border); flex-shrink:0;">
@@ -18864,7 +18864,7 @@ function journalDayStats(dateKey){
     if(s.type==='conc')concSec+=(h.seconds||0);
   });
   var totalMin=awMin+Math.round(concSec/60);
-  return {count:sessions.length,totalMin:totalMin,xp:xp,hasConc:sessions.some(function(s){return s.type==='conc';})};
+  return {count:sessions.length,totalMin:totalMin,xp:xp,hasAw:sessions.some(function(s){return s.type==='aw';}),hasConc:sessions.some(function(s){return s.type==='conc';})};
 }
 
 // Cumulative level/XP at the end of the given day, anchored to current state so the latest day matches exactly.
@@ -18920,9 +18920,11 @@ function journalProgressHTML(dateKey){
     +'<div class="jl-prog__tile"><div class="jl-prog__val">+'+st.xp+'</div><div class="jl-prog__key">XP earned</div></div>'
     +'</div>';
   // cumulative snapshot
-  html+='<div class="jl-prog__snap">'
-    +'<div class="jl-prog__snap-item"><div class="jl-prog__snap-glyph jl-prog__snap-glyph--aw">◎</div>'
-    +'<div><div class="jl-prog__snap-lvl">Level '+snap.awLevel+'</div><div class="jl-prog__snap-sub">Awareness · '+getRankTitle(snap.awLevel)+'</div></div></div>';
+  html+='<div class="jl-prog__snap">';
+  if(st.hasAw){
+    html+='<div class="jl-prog__snap-item"><div class="jl-prog__snap-glyph jl-prog__snap-glyph--aw">◎</div>'
+      +'<div><div class="jl-prog__snap-lvl">Level '+snap.awLevel+'</div><div class="jl-prog__snap-sub">Awareness · '+getRankTitle(snap.awLevel)+'</div></div></div>';
+  }
   if(st.hasConc){
     html+='<div class="jl-prog__snap-item"><div class="jl-prog__snap-glyph jl-prog__snap-glyph--conc">⊙</div>'
       +'<div><div class="jl-prog__snap-lvl">Level '+snap.concLevel+'</div><div class="jl-prog__snap-sub">Concentration · '+getConcRank(snap.concLevel)+'</div></div></div>';
