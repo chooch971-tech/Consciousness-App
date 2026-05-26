@@ -15687,19 +15687,24 @@ document.querySelectorAll('.guide-dot[data-tab]').forEach(function(dot) {
 });
 
 // ── Guide tab one-time tip bubbles ───────────────────────────
-var _guideTabTipShown = {};
+var _guideTabTipShown = (function() {
+  try { return JSON.parse(localStorage.getItem('presence_guide_tips_seen') || '{}'); } catch(e) { return {}; }
+})();
 function _showGuideTabTip(tab) {
   if (_guideTabTipShown[tab]) return;
-  _guideTabTipShown[tab] = true;
   var tipId = tab === 'omnia' ? 'tutOmniaTip' : 'tutTreeTip';
   var el = document.getElementById(tipId);
   if (!el) return;
   el.style.display = 'block';
   setTimeout(function() { el.classList.add('tut-ct-show'); }, 60);
-  var timer = setTimeout(function() { _hideGuideTabTip(el); }, 7000);
-  el.querySelector('button').onclick = function() { clearTimeout(timer); _hideGuideTabTip(el); };
+  var timer = setTimeout(function() { _hideGuideTabTip(el, tab); }, 7000);
+  el.querySelector('button').onclick = function() { clearTimeout(timer); _hideGuideTabTip(el, tab); };
 }
-function _hideGuideTabTip(el) {
+function _hideGuideTabTip(el, tab) {
+  if (tab) {
+    _guideTabTipShown[tab] = true;
+    try { localStorage.setItem('presence_guide_tips_seen', JSON.stringify(_guideTabTipShown)); } catch(e) {}
+  }
   el.classList.remove('tut-ct-show');
   setTimeout(function() { el.style.display = 'none'; }, 500);
 }
@@ -16366,7 +16371,7 @@ function renderReport(period) {
   var html = '';
 
   // ── Omnia commentary card ──
-  if (period === 'daily' || period === 'weekly' || period === 'monthly') {
+  if ((period === 'daily' || period === 'weekly' || period === 'monthly') && reportOffset === 0) {
     var isEligible = isOmniaReportDay(period);
     var periodLabel = period === 'daily' ? 'today' : period === 'weekly' ? 'this week' : 'this month';
     var stageHtml = buildRptOmniaStage(!isEligible); // loading bounce if not eligible yet
