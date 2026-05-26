@@ -16432,6 +16432,7 @@ function renderReport(period) {
   }
 
   // ── Awareness stats ──
+  if (awarenessNow.length > 0) {
   var awMinNow = sumMinutes(awarenessNow);
   var awMinPrev = sumMinutes(awarenessPrev);
   var awScoreNow = avgScore(awarenessNow);
@@ -16457,8 +16458,10 @@ function renderReport(period) {
     html += '<div class="report-chart"><div class="report-chart-title">Session Score Trend</div>' + renderLineChart(awChartData.scoreValues, '#7eb8a4', 48) + '</div>';
   }
   html += '</div>';
+  } // end awarenessNow.length > 0
 
   // ── Concentration stats ──
+  if (concNow.length > 0) {
   var concSecNow = concNow.reduce(function(a, h) { return a + (h.seconds || 0); }, 0);
   var concSecPrev = concPrev.reduce(function(a, h) { return a + (h.seconds || 0); }, 0);
   var typeBreakdown = {};
@@ -16480,6 +16483,7 @@ function renderReport(period) {
     html += '<div class="report-chart"><div class="report-chart-title">Best Hold Per Session (sec)</div>' + renderBarChart(concChartData.values, concChartData.labels, '#d4956e', 56) + '</div>';
   }
   html += '</div>';
+  } // end concNow.length > 0
 
   // ── Clock Progress chart (all-time trend) ──
   var clockSessions = (concState.history || []).filter(function(s) {
@@ -16504,6 +16508,7 @@ function renderReport(period) {
   }
 
   // ── Prayer stats ──
+  if (prayerState.enabled && prayerState.count > 0) {
   var prayerDone = prayerState.todayDone ? prayerState.todayDone.length : 0;
   html += '<div class="report-section">';
   html += '<div class="report-section-title" style="color:#9b8ec4;">Prayer</div>';
@@ -16512,6 +16517,7 @@ function renderReport(period) {
   html += '<div class="report-card"><div class="report-card-val" style="color:#c4b8e8;">' + (prayerState.streak || 0) + 'd</div><div class="report-card-label">Prayer Streak</div></div>';
   html += '</div>';
   html += '</div>';
+  } // end prayerState.enabled
 
   // ── Total XP ──
   html += '<div class="report-section">';
