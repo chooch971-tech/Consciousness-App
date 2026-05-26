@@ -498,7 +498,7 @@
     .pq-bar.weekend .pq-bar-fill { background:linear-gradient(90deg,#c4a8d4,#b88dc8); }
     .pq-bar-text { position:absolute; left:0; right:0; top:0; bottom:0; display:flex; align-items:center; justify-content:center; font-family:'DM Mono',monospace; font-size:11px; color:#fff; font-weight:600; text-shadow:0 1px 2px rgba(0,0,0,0.5); letter-spacing:.04em; }
     .pq-reward-row { display:flex; align-items:center; gap:12px; margin-top:14px; }
-    .pq-reward-icon { width:48px; height:42px; flex-shrink:0; display:flex; align-items:center; justify-content:center; }
+    .pq-reward-icon { width:56px; height:54px; flex-shrink:0; display:flex; align-items:center; justify-content:center; }
     .pq-reward-text { flex:1; font-family:'DM Mono',monospace; font-size:11px; letter-spacing:.1em; color:#d4a874; }
     .pq-claim { border:none; border-radius:8px; padding:10px 20px; background:linear-gradient(180deg,#f5c878,#d49850); color:#1a1208; font-family:'DM Mono',monospace; font-size:10px; letter-spacing:.2em; text-transform:uppercase; font-weight:700; cursor:pointer; box-shadow:0 4px 0 #8b5a20, 0 6px 12px rgba(212,152,80,0.25); transition:transform 0.1s ease, box-shadow 0.1s ease; }
     .pq-claim:active { transform:translateY(2px); box-shadow:0 2px 0 #8b5a20, 0 4px 8px rgba(212,152,80,0.2); }
@@ -15225,18 +15225,70 @@ function claimPathQuestReward(type) {
 }
 function pathQuestChestSVG(unlocked) {
   if (unlocked) {
-    return '<svg viewBox="0 0 48 42" xmlns="http://www.w3.org/2000/svg" width="48" height="42">'
-      + '<rect x="6" y="16" width="36" height="22" rx="2" fill="#d49850" stroke="#6b4218" stroke-width="1.5"/>'
-      + '<path d="M6,16 Q6,4 24,4 Q42,4 42,16 Z" fill="#e8b070" stroke="#6b4218" stroke-width="1.5"/>'
-      + '<rect x="20" y="20" width="8" height="12" fill="#6b4218"/>'
-      + '<circle cx="24" cy="25" r="1.6" fill="#f5d098"/>'
-      + '<path d="M14,7 L17,12 L21,7 L21,10 L19,13 L16,13 L14,10 Z" fill="#fff8d8" opacity="0.85"/>'
+    return '<svg viewBox="0 0 56 54" xmlns="http://www.w3.org/2000/svg" width="56" height="54">'
+      + '<defs>'
+      + '<linearGradient id="chbody" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#7a4820"/><stop offset="100%" stop-color="#3e2008"/></linearGradient>'
+      + '<linearGradient id="chlid" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#9a5c28"/><stop offset="100%" stop-color="#5a3010"/></linearGradient>'
+      + '<radialGradient id="chglow" cx="50%" cy="100%" r="60%"><stop offset="0%" stop-color="#f5c84a" stop-opacity="0.55"/><stop offset="100%" stop-color="#f5c84a" stop-opacity="0"/></radialGradient>'
+      + '</defs>'
+      // glow pool beneath
+      + '<ellipse cx="28" cy="51" rx="17" ry="3" fill="#d4900a" opacity="0.3"/>'
+      // body
+      + '<rect x="7" y="26" width="42" height="22" rx="3" fill="url(#chbody)" stroke="#2a1406" stroke-width="1"/>'
+      // body top edge sheen
+      + '<rect x="7" y="26" width="42" height="4" rx="2" fill="#9a5c28" opacity="0.6"/>'
+      // wood grain lines
+      + '<line x1="7" y1="33" x2="49" y2="33" stroke="#2a1406" stroke-width="1" opacity="0.4"/>'
+      + '<line x1="7" y1="39" x2="49" y2="39" stroke="#2a1406" stroke-width="1" opacity="0.4"/>'
+      // metal strap horizontal
+      + '<rect x="7" y="31.5" width="42" height="3" rx="1" fill="#c88c30" opacity="0.45"/>'
+      + '<rect x="7" y="37.5" width="42" height="3" rx="1" fill="#c88c30" opacity="0.45"/>'
+      // corner brackets
+      + '<rect x="7" y="26" width="5" height="22" rx="2" fill="#c88c30" opacity="0.4"/>'
+      + '<rect x="44" y="26" width="5" height="22" rx="2" fill="#c88c30" opacity="0.4"/>'
+      // lid
+      + '<path d="M7,28 Q7,10 28,10 Q49,10 49,28 Z" fill="url(#chlid)" stroke="#2a1406" stroke-width="1"/>'
+      // lid highlight arc
+      + '<path d="M11,24 Q13,13 28,13 Q43,13 45,24" fill="none" stroke="#d4a050" stroke-width="1.5" opacity="0.5"/>'
+      // lid metal band at seam
+      + '<rect x="7" y="26" width="42" height="3.5" rx="1" fill="#c88c30" opacity="0.55"/>'
+      // inner glow (open chest)
+      + '<ellipse cx="28" cy="28" rx="15" ry="5" fill="url(#chglow)"/>'
+      // lock plate
+      + '<rect x="23" y="31" width="10" height="9" rx="2.5" fill="#c88c30"/>'
+      + '<rect x="24.5" y="32.5" width="7" height="6" rx="1.5" fill="#7a4820"/>'
+      // keyhole
+      + '<circle cx="28" cy="35" r="1.8" fill="#c88c30"/>'
+      + '<path d="M27,36.2 L27,38.5 L29,38.5 L29,36.2 Z" fill="#c88c30"/>'
+      // sparkles
+      + '<circle cx="10" cy="8" r="1.3" fill="#f5d878" opacity="0.9"/>'
+      + '<circle cx="46" cy="6" r="1" fill="#f5d878" opacity="0.75"/>'
+      + '<circle cx="51" cy="18" r="0.9" fill="#f0cc60" opacity="0.7"/>'
+      + '<path d="M44,3 L44,7 M42,5 L46,5" stroke="#f5d878" stroke-width="1.2" stroke-linecap="round" opacity="0.8"/>'
+      + '<path d="M13,15 L13,18 M11.5,16.5 L14.5,16.5" stroke="#f5d878" stroke-width="1" stroke-linecap="round" opacity="0.55"/>'
       + '</svg>';
   }
-  return '<svg viewBox="0 0 48 42" xmlns="http://www.w3.org/2000/svg" width="48" height="42" opacity="0.42">'
-    + '<rect x="6" y="16" width="36" height="22" rx="2" fill="#555" stroke="#2a2a2a" stroke-width="1.5"/>'
-    + '<path d="M6,16 Q6,4 24,4 Q42,4 42,16 Z" fill="#6a6a6a" stroke="#2a2a2a" stroke-width="1.5"/>'
-    + '<rect x="20" y="20" width="8" height="12" fill="#2a2a2a"/>'
+  // Locked state — dark, closed, muted
+  return '<svg viewBox="0 0 56 54" xmlns="http://www.w3.org/2000/svg" width="56" height="54" opacity="0.38">'
+    + '<defs>'
+    + '<linearGradient id="chbodyL" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#3a3a3a"/><stop offset="100%" stop-color="#1e1e1e"/></linearGradient>'
+    + '<linearGradient id="chlidL" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#484848"/><stop offset="100%" stop-color="#2a2a2a"/></linearGradient>'
+    + '</defs>'
+    + '<rect x="7" y="26" width="42" height="22" rx="3" fill="url(#chbodyL)" stroke="#111" stroke-width="1"/>'
+    + '<rect x="7" y="26" width="42" height="4" rx="2" fill="#484848" opacity="0.6"/>'
+    + '<line x1="7" y1="33" x2="49" y2="33" stroke="#111" stroke-width="1" opacity="0.5"/>'
+    + '<line x1="7" y1="39" x2="49" y2="39" stroke="#111" stroke-width="1" opacity="0.5"/>'
+    + '<rect x="7" y="31.5" width="42" height="3" rx="1" fill="#555" opacity="0.5"/>'
+    + '<rect x="7" y="37.5" width="42" height="3" rx="1" fill="#555" opacity="0.5"/>'
+    + '<rect x="7" y="26" width="5" height="22" rx="2" fill="#555" opacity="0.45"/>'
+    + '<rect x="44" y="26" width="5" height="22" rx="2" fill="#555" opacity="0.45"/>'
+    + '<path d="M7,28 Q7,10 28,10 Q49,10 49,28 Z" fill="url(#chlidL)" stroke="#111" stroke-width="1"/>'
+    + '<rect x="7" y="26" width="42" height="3.5" rx="1" fill="#555" opacity="0.55"/>'
+    // padlock
+    + '<rect x="22" y="31" width="12" height="10" rx="3" fill="#444" stroke="#222" stroke-width="1"/>'
+    + '<path d="M24,31 Q24,26 28,26 Q32,26 32,31" fill="none" stroke="#444" stroke-width="2.5" stroke-linecap="round"/>'
+    + '<circle cx="28" cy="36" r="2" fill="#2a2a2a"/>'
+    + '<rect x="27" y="36.5" width="2" height="2.5" rx="0.5" fill="#2a2a2a"/>'
     + '</svg>';
 }
 function colorToTint(hex, alpha) {
@@ -15405,7 +15457,7 @@ function renderPathQuests() {
       + '</div>'
       + '<div style="font-size:9px;color:var(--muted);letter-spacing:.08em;position:relative;"><strong style="color:var(--text);">' + opts.progressNumerator + '</strong> / ' + opts.progressDenominator + (opts.progressUnit ? ' ' + opts.progressUnit : '') + '</div>'
       + '<div style="display:flex;align-items:center;gap:12px;margin-top:14px;position:relative;">'
-      + '<div style="width:48px;height:42px;flex-shrink:0;display:flex;align-items:center;justify-content:center;">' + pathQuestChestSVG(opts.done) + '</div>'
+      + '<div class="pq-reward-icon">' + pathQuestChestSVG(opts.done) + '</div>'
       + '<div style="flex:1;font-family:\'DM Mono\',monospace;font-size:11px;letter-spacing:.1em;color:#d4a874;">+' + opts.reward + ' Akasha</div>'
       + (opts.done && !opts.claimed ? '<button class="pq-claim" data-quest="' + opts.dataQuest + '">Claim</button>' : opts.claimed ? '<div class="pq-claimed">Claimed</div>' : '')
       + '</div></div>';
