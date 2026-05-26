@@ -16379,8 +16379,9 @@ function renderReport(period) {
   var html = '';
 
   // ── Omnia commentary card ──
-  if ((period === 'daily' || period === 'weekly' || period === 'monthly') && reportOffset === 0) {
-    var isEligible = isOmniaReportDay(period);
+  if (period === 'daily' || period === 'weekly' || period === 'monthly') {
+    // Past periods are always eligible; current period depends on the day
+    var isEligible = reportOffset < 0 ? true : isOmniaReportDay(period);
     var periodLabel = period === 'daily' ? 'today' : period === 'weekly' ? 'this week' : 'this month';
     var stageHtml = buildRptOmniaStage(!isEligible); // loading bounce if not eligible yet
     if (!isEligible) {
