@@ -15811,7 +15811,7 @@ var reportOffset = 0;
 // ── Omnia report eligibility ──────────────────────────────
 function isOmniaReportDay(period) {
   var now = new Date();
-  if (period === 'daily') return true;
+  if (period === 'daily') return false; // daily commentary only on past days (offset < 0)
   if (period === 'weekly') return now.getDay() === 0; // Sunday
   if (period === 'monthly') {
     var lastDay = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
@@ -16403,7 +16403,10 @@ function renderReport(period) {
     if (!isEligible) {
       var _now = new Date();
       var _evalMsg, _availMsg;
-      if (period === 'weekly') {
+      if (period === 'daily') {
+        _evalMsg = 'Omnia will reflect on your practice when the day is complete.';
+        _availMsg = 'available tomorrow';
+      } else if (period === 'weekly') {
         _evalMsg = 'Omnia is evaluating. Come back Sunday for a custom analysis of this week.';
         _availMsg = 'available Sunday';
       } else {
