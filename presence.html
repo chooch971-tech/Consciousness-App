@@ -15877,7 +15877,7 @@ function fetchOmniaReport(period, offset, cb) {
     }
   } catch(e) {}
 
-  var token = localStorage.getItem('presence_jwt');
+  var token = authToken || localStorage.getItem('presence_auth_token');
   if (!token) return cb('no-auth');
 
   var ctx = buildOmniaReportContext(period, offset);
