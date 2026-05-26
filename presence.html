@@ -15878,21 +15878,26 @@ function fetchOmniaReport(period, offset, cb) {
   } catch(e) {}
 
   var token = authToken || localStorage.getItem('presence_auth_token');
-  if (!token) return cb('no-auth');
+  if (!token) { console.warn('[Omnia] no auth token'); return cb('no-auth'); }
 
   var ctx = buildOmniaReportContext(period, offset);
+  console.log('[Omnia] fetching report', period, offset, SYNC_API_URL + '/omnia/report');
   fetch(SYNC_API_URL + '/omnia/report', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
     body: JSON.stringify({ period: period, context: ctx })
-  }).then(function(r){ return r.json(); }).then(function(data){
+  }).then(function(r){
+    console.log('[Omnia] response status', r.status);
+    return r.json();
+  }).then(function(data){
+    console.log('[Omnia] response data', data);
     if (data.commentary) {
       localStorage.setItem(cacheKey, JSON.stringify({ ts: Date.now(), commentary: data.commentary }));
       cb(null, data.commentary);
     } else {
-      cb('no-commentary');
+      cb(data.error || 'no-commentary');
     }
-  }).catch(function(e){ cb(e); });
+  }).catch(function(e){ console.error('[Omnia] fetch error', e); cb(e); });
 }
 
 var OMNIA_CRYSTAL_SVG_RPT = '<svg class="rpt-omnia-crystal" viewBox="0 0 80 130" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">'
@@ -16553,7 +16558,12 @@ function loadOmniaReportInto(period, offset) {
     var inner = card.querySelector('.rpt-omnia-card__inner');
     if (!inner) return;
     var periodLabel = period === 'daily' ? 'today' : period === 'weekly' ? 'this week' : 'this month';
-    if (err || !commentary) return; // stay in loading state on error
+    if (err || !commentary) {
+      console.error('[Omnia] commentary error:', err);
+      var errText = document.getElementById('omniaReportText');
+      if (errText) errText.textContent = 'Omnia is unavailable right now.';
+      return;
+    }
     inner.className = 'rpt-omnia-card__inner rpt-omnia-card__inner--row';
     inner.innerHTML = buildRptOmniaStage(false, true)
       + '<div class="rpt-omnia-bubble">'
