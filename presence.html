@@ -16433,7 +16433,6 @@ function renderReport(period) {
           + '<div class="rpt-omnia-bubble">'
           + '<div class="rpt-omnia-bubble-text">' + esc(cachedEntry.commentary) + '</div>'
           + '<div class="rpt-omnia-bubble-meta">Omnia · ' + periodLabel + '</div>'
-          + (reportOffset === 0 ? '<button class="rpt-omnia-bubble-refresh" onclick="refreshOmniaReport()">↺ refresh</button>' : '')
           + '</div>';
       } else {
         html += buildRptOmniaStage(true, true)
@@ -16564,23 +16563,20 @@ function renderReport(period) {
 function loadOmniaReportInto(period, offset) {
   offset = offset || 0;
   fetchOmniaReport(period, offset, function(err, commentary) {
+    // Guard: if the user navigated to a different period/offset while the
+    // request was in flight, discard this result — it belongs to another view
+    if (currentReportPeriod !== period || reportOffset !== offset) return;
     var card = document.getElementById('omniaReportCard');
     if (!card) return;
     var inner = card.querySelector('.rpt-omnia-card__inner');
     if (!inner) return;
     var periodLabel = period === 'daily' ? 'today' : period === 'weekly' ? 'this week' : 'this month';
-    if (err || !commentary) {
-      console.error('[Omnia] commentary error:', err);
-      var errText = document.getElementById('omniaReportText');
-      if (errText) errText.textContent = 'Omnia is unavailable right now.';
-      return;
-    }
+    if (err || !commentary) return;
     inner.className = 'rpt-omnia-card__inner rpt-omnia-card__inner--row';
     inner.innerHTML = buildRptOmniaStage(false, true)
       + '<div class="rpt-omnia-bubble">'
       + '<div class="rpt-omnia-bubble-text" style="opacity:0;transition:opacity .6s ease;" id="omniaReportText">' + esc(commentary) + '</div>'
       + '<div class="rpt-omnia-bubble-meta">Omnia · ' + periodLabel + '</div>'
-      + (offset === 0 ? '<button class="rpt-omnia-bubble-refresh" onclick="refreshOmniaReport()">↺ refresh</button>' : '')
       + '</div>';
     requestAnimationFrame(function() {
       var t = document.getElementById('omniaReportText');
@@ -16588,22 +16584,6 @@ function loadOmniaReportInto(period, offset) {
     });
   });
 }
-
-function refreshOmniaReport() {
-  var period = currentReportPeriod;
-  localStorage.removeItem(omniaReportCacheKey(period, reportOffset));
-  var card = document.getElementById('omniaReportCard');
-  if (card) {
-    var inner = card.querySelector('.rpt-omnia-card__inner');
-    if (inner) {
-      inner.className = 'rpt-omnia-card__inner rpt-omnia-card__inner--row';
-      inner.innerHTML = buildRptOmniaStage(true, true)
-        + '<div class="rpt-omnia-bubble">'
-        + '<div class="rpt-omnia-bubble-text rpt-omnia-bubble-text--dim">Omnia is reflecting…</div>'
-        + '</div>';
-    }
-  }
-  loadOmniaReportInto(period, reportOffset);
 }
 
 function buildChartData(history, period, valueKey) {
