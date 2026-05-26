@@ -18824,7 +18824,7 @@ function journalCardStatsHTML(dateKey,sessions,prCount){
   if(!sessions.length)return '';
   var st=journalDayStats(dateKey);
   var bits=[];
-  if(st.awMin>0)bits.push('<span class="jl-card__stat"><b>'+fmtDuration(st.awMin)+'</b> practiced</span>');
+  if(st.totalMin>0)bits.push('<span class="jl-card__stat"><b>'+fmtDuration(st.totalMin)+'</b> practiced</span>');
   bits.push('<span class="jl-card__stat"><b>'+st.count+'</b> session'+(st.count!==1?'s':'')+'</span>');
   var html='<div class="jl-card__stats">'+bits.join('<span class="jl-card__dot">·</span>');
   if(prCount>0)html+='<span class="jl-card__pr">★ '+prCount+' record'+(prCount!==1?'s':'')+'</span>';
@@ -18856,13 +18856,15 @@ function concLevelFromXp(xp){var l=1;while(l<777&&xp>=concSumXpToLevel(l+1))l++;
 
 function journalDayStats(dateKey){
   var sessions=getSessionsForDay(dateKey);
-  var awMin=0,xp=0;
+  var awMin=0,concSec=0,xp=0;
   sessions.forEach(function(s){
     var h=s.data;
     xp+=(h.xpEarned||0);
     if(s.type==='aw')awMin+=(h.durationMin||0);
+    if(s.type==='conc')concSec+=(h.seconds||0);
   });
-  return {count:sessions.length,awMin:awMin,xp:xp,hasConc:sessions.some(function(s){return s.type==='conc';})};
+  var totalMin=awMin+Math.round(concSec/60);
+  return {count:sessions.length,totalMin:totalMin,xp:xp,hasConc:sessions.some(function(s){return s.type==='conc';})};
 }
 
 // Cumulative level/XP at the end of the given day, anchored to current state so the latest day matches exactly.
@@ -18913,7 +18915,7 @@ function journalProgressHTML(dateKey){
   var html='<div class="jl-prog"><div class="jl-prog__label">Progress</div>';
   // day totals
   html+='<div class="jl-prog__tiles">'
-    +'<div class="jl-prog__tile"><div class="jl-prog__val">'+(st.awMin>0?fmtDuration(st.awMin):'—')+'</div><div class="jl-prog__key">Practiced</div></div>'
+    +'<div class="jl-prog__tile"><div class="jl-prog__val">'+(st.totalMin>0?fmtDuration(st.totalMin):'—')+'</div><div class="jl-prog__key">Practiced</div></div>'
     +'<div class="jl-prog__tile"><div class="jl-prog__val">'+st.count+'</div><div class="jl-prog__key">Sessions</div></div>'
     +'<div class="jl-prog__tile"><div class="jl-prog__val">+'+st.xp+'</div><div class="jl-prog__key">XP earned</div></div>'
     +'</div>';
@@ -19017,8 +19019,8 @@ function closeJournalEntry(){
   showScreen('journalScreen');
 }
 
-function saveJournalEntry(){
-  if(!journalEditKey){closeJournalEntry();return;}
+function _persistJournalEntry(){
+  if(!journalEditKey)return;
   var title=document.getElementById('journalTitleInput').value.trim();
   var note=document.getElementById('journalBodyInput').value.trim();
   var journal=loadJournal();
@@ -19034,6 +19036,9 @@ function saveJournalEntry(){
     if(note)journal[journalEditKey].note=note;else delete journal[journalEditKey].note;
     saveJournal(journal);
   }
+}
+function saveJournalEntry(){
+  _persistJournalEntry();
   closeJournalEntry();
   showToast('Saved');
 }
@@ -19071,7 +19076,7 @@ document.getElementById('journalBack').addEventListener('click',function(){
 document.getElementById('journalFab').addEventListener('click',function(){
   openJournalEntry(getJournalKey(new Date()));
 });
-document.getElementById('journalEntryBack').addEventListener('click',closeJournalEntry);
+document.getElementById('journalEntryBack').addEventListener('click',function(){_persistJournalEntry();closeJournalEntry();});
 document.getElementById('journalEntrySave').addEventListener('click',saveJournalEntry);
 document.getElementById('journalEntryDelete').addEventListener('click',deleteJournalEntry);
 document.getElementById('journalBodyInput').addEventListener('input',journalAutoGrow);
