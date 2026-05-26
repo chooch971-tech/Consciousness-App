@@ -15820,19 +15820,26 @@ function isOmniaReportDay(period) {
   return false;
 }
 
-function omniaReportPeriodKey(period) {
+function omniaReportPeriodKey(period, offset) {
+  offset = offset || 0;
   var now = new Date();
-  if (period === 'daily') return now.toISOString().slice(0,10);
+  if (period === 'daily') {
+    var d = new Date(now); d.setDate(d.getDate() + offset);
+    return d.toISOString().slice(0,10);
+  }
   if (period === 'weekly') {
-    var sun = new Date(now); sun.setDate(now.getDate() - now.getDay());
+    var sun = new Date(now); sun.setDate(now.getDate() - now.getDay() + offset * 7);
     return 'w-' + sun.toISOString().slice(0,10);
   }
-  if (period === 'monthly') return 'm-' + now.getFullYear() + '-' + String(now.getMonth()+1).padStart(2,'0');
+  if (period === 'monthly') {
+    var mo = new Date(now.getFullYear(), now.getMonth() + offset, 1);
+    return 'm-' + mo.getFullYear() + '-' + String(mo.getMonth()+1).padStart(2,'0');
+  }
   return 'y-' + now.getFullYear();
 }
 
-function omniaReportCacheKey(period) {
-  return 'presence_omnia_report_' + omniaReportPeriodKey(period);
+function omniaReportCacheKey(period, offset) {
+  return 'presence_omnia_report_' + omniaReportPeriodKey(period, offset);
 }
 
 function omniaReportTTL(period) {
@@ -16395,12 +16402,15 @@ function renderReport(period) {
         + '<div class="rpt-omnia-meta" style="opacity:.45">' + _availMsg + '</div>'
         + '</div></div>';
     } else {
-      // Check cache first, render loading state then swap
-      var cacheKey = omniaReportCacheKey(period);
+      // Check cache — use offset-aware key so past periods find their own cache entry
+      var cacheKey = omniaReportCacheKey(period, reportOffset);
       var cachedEntry = null;
       try { cachedEntry = JSON.parse(localStorage.getItem(cacheKey) || 'null'); } catch(e) {}
       var isFresh = cachedEntry && cachedEntry.ts && (Date.now() - cachedEntry.ts) < omniaReportTTL(period);
 
+      if (reportOffset !== 0 && !isFresh) {
+        // Past period with no cached commentary — skip the card entirely
+      } else {
       html += '<div class="rpt-omnia-card" style="margin-top:16px;" id="omniaReportCard">'
         + '<div class="rpt-omnia-card__inner rpt-omnia-card__inner--row">';
       if (isFresh) {
@@ -16408,7 +16418,7 @@ function renderReport(period) {
           + '<div class="rpt-omnia-bubble">'
           + '<div class="rpt-omnia-bubble-text">' + esc(cachedEntry.commentary) + '</div>'
           + '<div class="rpt-omnia-bubble-meta">Omnia · ' + periodLabel + '</div>'
-          + '<button class="rpt-omnia-bubble-refresh" onclick="refreshOmniaReport(\'' + period + '\')">↺ refresh</button>'
+          + (reportOffset === 0 ? '<button class="rpt-omnia-bubble-refresh" onclick="refreshOmniaReport(\'' + period + '\')">↺ refresh</button>' : '')
           + '</div>';
       } else {
         html += buildRptOmniaStage(true, true)
@@ -16419,6 +16429,7 @@ function renderReport(period) {
         setTimeout(function() { loadOmniaReportInto(period); }, 0);
       }
       html += '</div></div>';
+      } // end offset !== 0 guard
     }
   }
 
