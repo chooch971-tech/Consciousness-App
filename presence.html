@@ -439,6 +439,19 @@
     .path-banner-figure .omnia-shard-layer { position:absolute; inset:0; width:100%; height:100%; opacity:0; pointer-events:none; }
     .path-banner-figure .omnia-symbol-layer { position:absolute; inset:0; display:flex; align-items:center; justify-content:center; pointer-events:none; }
     .path-banner-figure .omnia-morph-ring { position:absolute; left:50%; top:50%; transform:translate(-50%,-50%); opacity:0; border:1px solid rgba(184,234,255,.45); border-radius:50%; width:62px; height:62px; box-shadow:0 0 14px rgba(142,204,224,.24), inset 0 0 14px rgba(142,204,224,.12); pointer-events:none; animation:none !important; }
+    /* ── Reports banner ── */
+    .rpt-banner { position:relative; flex-shrink:0; height:124px; margin:12px 0 16px; border-radius:18px; background:linear-gradient(145deg,#15132a 0%,#1d1a3c 45%,#161a30 100%); overflow:hidden; display:flex; align-items:center; justify-content:space-between; padding:0 24px; }
+    .rpt-banner::before { content:''; position:absolute; inset:0; background:radial-gradient(ellipse 58% 72% at 76% 52%, rgba(155,142,196,.20) 0%, transparent 70%); pointer-events:none; }
+    .rpt-banner::after { content:''; position:absolute; inset:0; background:radial-gradient(ellipse 38% 48% at 72% 46%, rgba(184,170,255,.10) 0%, transparent 60%); pointer-events:none; }
+    .rpt-banner-text { z-index:2; display:flex; flex-direction:column; gap:3px; }
+    .rpt-banner-label { font-size:8px; letter-spacing:.28em; text-transform:uppercase; color:rgba(180,168,220,.72); font-family:'DM Mono',monospace; }
+    .rpt-banner-title { font-family:'Cormorant Garamond',serif; font-size:24px; font-weight:300; color:#ece6ff; line-height:1.1; }
+    .rpt-banner-sub { font-size:9px; letter-spacing:.1em; color:rgba(210,200,235,.48); font-family:'DM Mono',monospace; }
+    .rpt-banner-glow { position:absolute; right:10px; top:50%; width:150px; height:150px; transform:translateY(-50%); background:radial-gradient(circle, rgba(184,170,255,0.22) 0%, rgba(126,184,164,0.08) 40%, transparent 70%); pointer-events:none; }
+    .rpt-banner-figure { position:relative; z-index:2; width:96px; height:78px; display:flex; align-items:flex-end; justify-content:center; filter:drop-shadow(0 0 12px rgba(170,150,220,.4)); animation:omniaFloat 5s ease-in-out infinite; }
+    .rpt-banner-figure svg { width:100%; height:auto; overflow:visible; }
+    .rpt-bar { transform-box:fill-box; transform-origin:bottom; animation:rptBarBreath 3.6s ease-in-out infinite; }
+    @keyframes rptBarBreath { 0%,100%{transform:scaleY(1);} 50%{transform:scaleY(1.09);} }
     .path-quest-root { display:flex; flex-direction:column; gap:18px; padding:20px 2px 28px; }
     /* ── Guide redesign: day strip + exercise cards ── */
     .path-day-strip { display:flex; align-items:center; justify-content:space-between; margin:14px 0 0; padding:0 2px; }
@@ -4416,9 +4429,37 @@ body:not(.tut-live) #tutCorgi {
 
   <!-- REPORTS -->
   <div class="screen" id="reportsScreen">
-    <div style="padding:var(--safe-top) 24px 16px 24px; display:flex; justify-content:space-between; align-items:center;">
-      <div style="font-family:Cormorant Garamond,serif; font-size:24px; font-weight:300; color:var(--text);">Progress Reports</div>
+    <div style="display:flex; justify-content:flex-end; align-items:center; flex-shrink:0; margin-bottom:4px;">
       <button class="history-back" id="reportsBack">← back</button>
+    </div>
+    <div class="rpt-banner" id="reportsBanner">
+      <div class="rpt-banner-text">
+        <div class="rpt-banner-label">Your Practice</div>
+        <div class="rpt-banner-title">Progress Reports</div>
+        <div class="rpt-banner-sub" id="reportsBannerSub">&nbsp;</div>
+      </div>
+      <div class="rpt-banner-glow"></div>
+      <div class="rpt-banner-figure">
+        <svg viewBox="0 0 96 76" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+          <defs>
+            <linearGradient id="rptBarA" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#7eb8a4"/><stop offset="100%" stop-color="#7eb8a4" stop-opacity=".35"/></linearGradient>
+            <linearGradient id="rptBarB" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#d4956e"/><stop offset="100%" stop-color="#d4956e" stop-opacity=".35"/></linearGradient>
+            <linearGradient id="rptBarC" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#9b8ec4"/><stop offset="100%" stop-color="#9b8ec4" stop-opacity=".35"/></linearGradient>
+            <linearGradient id="rptBarD" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#cdb6ff"/><stop offset="100%" stop-color="#cdb6ff" stop-opacity=".4"/></linearGradient>
+          </defs>
+          <rect class="rpt-bar" x="6"  y="46" width="14" height="26" rx="3.5" fill="url(#rptBarA)" style="animation-delay:0s"/>
+          <rect class="rpt-bar" x="27" y="34" width="14" height="38" rx="3.5" fill="url(#rptBarB)" style="animation-delay:.45s"/>
+          <rect class="rpt-bar" x="48" y="22" width="14" height="50" rx="3.5" fill="url(#rptBarC)" style="animation-delay:.9s"/>
+          <rect class="rpt-bar" x="69" y="9"  width="14" height="63" rx="3.5" fill="url(#rptBarD)" style="animation-delay:1.35s"/>
+          <polyline points="13,44 34,32 55,20 76,7" fill="none" stroke="#e6dcff" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" opacity=".7"/>
+          <circle cx="76" cy="7" r="3" fill="#fff" opacity=".92"/>
+        </svg>
+      </div>
+      <div style="position:absolute;inset:0;pointer-events:none;">
+        <div style="position:absolute;width:5px;height:5px;border-radius:50%;background:rgba(200,188,255,.5);left:50%;top:30%;animation:heroFloat 4s ease-in-out infinite;animation-delay:0s;"></div>
+        <div style="position:absolute;width:4px;height:4px;border-radius:50%;background:rgba(200,188,255,.4);left:40%;top:62%;animation:heroFloat 4s ease-in-out infinite;animation-delay:1.4s;"></div>
+        <div style="position:absolute;width:3px;height:3px;border-radius:50%;background:rgba(200,188,255,.3);left:58%;top:70%;animation:heroFloat 4s ease-in-out infinite;animation-delay:.7s;"></div>
+      </div>
     </div>
     <div style="display:flex; padding:0 24px; border-bottom:1px solid var(--border); flex-shrink:0;">
       <button class="report-period-tab active" data-period="daily" style="flex:1;display:flex;flex-direction:column;align-items:center;gap:5px;padding:6px 4px 12px;border:none;background:none;cursor:pointer;position:relative;">
@@ -15902,6 +15943,13 @@ function updateReportTabStyles() {
 function showReports() {
   currentReportPeriod = 'daily';
   reportOffset = 0;
+  var sub = document.getElementById('reportsBannerSub');
+  if (sub) {
+    var s = state.streak || 0;
+    sub.textContent = s > 0
+      ? s + ' day streak'
+      : 'Awareness Lv ' + (state.level || 1) + ' · Concentration Lv ' + (concState.level || 1);
+  }
   updateReportTabStyles();
   showScreen('reportsScreen');
   renderReport('daily');
