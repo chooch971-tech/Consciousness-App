@@ -41,7 +41,7 @@ const MONGO_URI = process.env.MONGO_URI;
 const JWT_SECRET    = process.env.JWT_SECRET;
 const ADMIN_SECRET  = process.env.ADMIN_SECRET;
 const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
-const OPENAI_MODEL = process.env.OPENAI_MODEL || 'gpt-5-nano';
+const OPENAI_MODEL = process.env.OPENAI_MODEL || 'gpt-4o-mini';
 
 if (!VAPID_PRIVATE_KEY || !MONGO_URI || !JWT_SECRET) {
   console.error('Missing required environment variables: VAPID_PRIVATE_KEY, MONGO_URI, JWT_SECRET');
@@ -224,16 +224,14 @@ async function generateAiMessage(feature, context) {
 
   const payload = {
     model: OPENAI_MODEL,
-    store: false,
-    reasoning: { effort: 'minimal' },
-    input: [
+    messages: [
       { role: 'system', content: prompts[feature] || prompts.progress_report },
       { role: 'user', content: JSON.stringify(compactContext(context)).slice(0, 4200) }
     ],
-    max_output_tokens: 500
+    max_tokens: 500
   };
 
-  const response = await fetch('https://api.openai.com/v1/responses', {
+  const response = await fetch('https://api.openai.com/v1/chat/completions', {
     method: 'POST',
     headers: {
       'Authorization': `Bearer ${OPENAI_API_KEY}`,
@@ -249,9 +247,8 @@ async function generateAiMessage(feature, context) {
     throw err;
   }
 
-  const text = data.output_text
-    || (data.output || []).flatMap(item => item.content || []).map(part => part.text || '').join(' ');
-  const message = clampText(text, 360);
+  const text = (data.choices && data.choices[0] && data.choices[0].message && data.choices[0].message.content) || '';
+  const message = clampText(text.trim(), 360);
   if (!message) {
     const err = new Error('OpenAI returned an empty message');
     err.status = 502;
@@ -897,8 +894,8 @@ app.post('/api/sync/omnia/report', async (req, res) => {
 
     res.json({ commentary });
   } catch (err) {
-    console.error('[Omnia] report error:', err.message);
-    res.status(err.status || 500).json({ error: 'Omnia commentary unavailable' });
+    console.error('[Omnia] report error:', err.stack || err.message);
+    res.status(err.status || 500).json({ error: err.message || 'Omnia commentary unavailable' });
   }
 });
 
