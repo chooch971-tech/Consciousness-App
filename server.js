@@ -837,27 +837,45 @@ app.post('/api/ai/progress-comment', aiRateLimit, async (req, res) => {
   }
 });
 
-app.post('/api/sync/omnia/report', verifyToken, async (req, res) => {
-  const { period, context } = req.body || {};
+app.post('/api/sync/omnia/report', async (req, res) => {
+  const { period, context, deviceId } = req.body || {};
   if (!['daily','weekly','monthly'].includes(period)) {
     return res.status(400).json({ error: 'Invalid period' });
   }
+  // Use JWT userId if logged in, otherwise fall back to deviceId
+  let userId;
+  const authHeader = req.headers.authorization;
+  if (authHeader && authHeader.startsWith('Bearer ')) {
+    try {
+      const jwt = require('jsonwebtoken');
+      const decoded = jwt.verify(authHeader.slice(7), process.env.JWT_SECRET);
+      userId = decoded.id || decoded.userId;
+    } catch(e) { /* not logged in, use deviceId */ }
+  }
+  if (!userId) {
+    if (!deviceId || typeof deviceId !== 'string' || deviceId.length < 8) {
+      return res.status(400).json({ error: 'deviceId required' });
+    }
+    userId = 'device_' + deviceId.slice(0, 64);
+  }
+
   try {
     const db = client.db('presence');
     const col = db.collection('omnia_reports');
-    const userId = req.user.id;
 
-    // Period key: same logic as client
-    const now = new Date();
-    let periodKey;
-    if (period === 'daily') {
-      periodKey = now.toISOString().slice(0, 10);
-    } else if (period === 'weekly') {
-      const sun = new Date(now);
-      sun.setDate(now.getDate() - now.getDay());
-      periodKey = 'w-' + sun.toISOString().slice(0, 10);
-    } else {
-      periodKey = 'm-' + now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0');
+    // Use the periodKey from the client context (offset-aware) if provided, otherwise compute from now
+    let periodKey = context && context.periodKey;
+    if (!periodKey) {
+      const now = new Date();
+      if (period === 'daily') {
+        periodKey = now.toISOString().slice(0, 10);
+      } else if (period === 'weekly') {
+        const sun = new Date(now);
+        sun.setDate(now.getDate() - now.getDay());
+        periodKey = 'w-' + sun.toISOString().slice(0, 10);
+      } else {
+        periodKey = 'm-' + now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0');
+      }
     }
 
     // Return cached if fresh
@@ -865,11 +883,6 @@ app.post('/api/sync/omnia/report', verifyToken, async (req, res) => {
     if (cached && cached.commentary) {
       return res.json({ commentary: cached.commentary });
     }
-
-    const systemPrompt = 'You are Omnia, a personalized meditation and concentration guide. '
-      + 'The user has shared their training data. Write 2-3 short, personal sentences of coaching commentary. '
-      + 'Reference specific numbers. Be direct and honest — not generic. '
-      + 'Sound like a knowledgeable coach, not a chatbot. No greeting, no sign-off.';
 
     const commentary = await generateAiMessage('omnia_report', context || {});
 

@@ -15867,6 +15867,19 @@ function buildOmniaReportContext(period, offset) {
   };
 }
 
+function getOmniaDeviceId() {
+  var key = 'presence_device_id';
+  var id = localStorage.getItem(key);
+  if (!id) {
+    id = 'xxxxxxxxxxxx4xxxyxxxxxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+      var r = Math.random() * 16 | 0;
+      return (c === 'x' ? r : (r & 0x3 | 0x8)).toString(16);
+    });
+    localStorage.setItem(key, id);
+  }
+  return id;
+}
+
 function fetchOmniaReport(period, offset, cb) {
   var cacheKey = omniaReportCacheKey(period, offset);
   var ttl = omniaReportTTL(period);
@@ -15877,27 +15890,25 @@ function fetchOmniaReport(period, offset, cb) {
     }
   } catch(e) {}
 
-  var token = authToken || localStorage.getItem('presence_auth_token');
-  if (!token) { console.warn('[Omnia] no auth token'); return cb('no-auth'); }
-
   var ctx = buildOmniaReportContext(period, offset);
-  console.log('[Omnia] fetching report', period, offset, SYNC_API_URL + '/omnia/report');
+  ctx.periodKey = omniaReportPeriodKey(period, offset);
+
+  var headers = { 'Content-Type': 'application/json' };
+  var token = authToken || localStorage.getItem('presence_auth_token');
+  if (token) headers['Authorization'] = 'Bearer ' + token;
+
   fetch(SYNC_API_URL + '/omnia/report', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
-    body: JSON.stringify({ period: period, context: ctx })
-  }).then(function(r){
-    console.log('[Omnia] response status', r.status);
-    return r.json();
-  }).then(function(data){
-    console.log('[Omnia] response data', data);
+    headers: headers,
+    body: JSON.stringify({ period: period, deviceId: getOmniaDeviceId(), context: ctx })
+  }).then(function(r){ return r.json(); }).then(function(data){
     if (data.commentary) {
       localStorage.setItem(cacheKey, JSON.stringify({ ts: Date.now(), commentary: data.commentary }));
       cb(null, data.commentary);
     } else {
       cb(data.error || 'no-commentary');
     }
-  }).catch(function(e){ console.error('[Omnia] fetch error', e); cb(e); });
+  }).catch(function(e){ cb(e); });
 }
 
 var OMNIA_CRYSTAL_SVG_RPT = '<svg class="rpt-omnia-crystal" viewBox="0 0 80 130" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">'
