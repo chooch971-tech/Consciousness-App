@@ -63,11 +63,12 @@ let friendsCollection;
 let subscriptions = [];
 let prayerSchedules = [];
 
+let mongoClient;
 async function connectDB() {
   try {
-    const client = new MongoClient(MONGO_URI, { tls: true, tlsAllowInvalidCertificates: false });
-    await client.connect();
-    const db = client.db('presence');
+    mongoClient = new MongoClient(MONGO_URI, { tls: true, tlsAllowInvalidCertificates: false });
+    await mongoClient.connect();
+    const db = mongoClient.db('presence');
     subsCollection = db.collection('subscriptions');
     prayerCollection = db.collection('prayer_schedules');
     usersCollection = db.collection('users');
@@ -857,8 +858,7 @@ app.post('/api/sync/omnia/report', async (req, res) => {
   }
 
   try {
-    const db = client.db('presence');
-    const col = db.collection('omnia_reports');
+    const col = mongoClient.db('presence').collection('omnia_reports');
 
     // Use the periodKey from the client context (offset-aware) if provided, otherwise compute from now
     let periodKey = context && context.periodKey;
