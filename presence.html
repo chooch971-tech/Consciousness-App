@@ -19228,30 +19228,229 @@ document.getElementById('journalBodyInput').addEventListener('input',journalAuto
   });
 })();
 
-// ── Swipe-to-go-back ───────────────────────────────────
+// ── iOS-style interactive swipe-back ─────────────────────
 (function() {
-  document.querySelectorAll('.screen').forEach(function(screen) {
-    var backBtn = screen.querySelector('.history-back, .jl-editor-back');
+  var W = Math.max(window.innerWidth || 375, 320);
+  window.addEventListener('resize', function() { W = Math.max(window.innerWidth || 375, 320); });
+
+  // Session screens: swipe suppressed (no back button, but listed explicitly for safety)
+  var NOSW = {
+    concSessionScreen:1, tcSessionScreen:1, visSessionScreen:1,
+    audSessionScreen:1, asanaSessionScreen:1, prayerSessionScreen:1,
+    sessionScreen:1, homeScreen:1, bardonScreen:1
+  };
+
+  // Which screen sits behind each sub-screen during swipe
+  // (unlisted screens reveal homeScreen)
+  var PREV_SCREEN = { journalEntryScreen: 'journalScreen' };
+
+  var EASE = 'cubic-bezier(0.25,0.46,0.45,0.94)';
+
+  // Swipe state — single object, reset on each gesture
+  var sw = {
+    dragging: false, _animating: false, _pending: null,
+    screenEl: null, backBtn: null,
+    prevEl: null, prevIsHome: false, overlay: null,
+    startX: 0, lastX: 0, lastT: 0, velocity: 0
+  };
+
+  // ── Helpers ──
+
+  function addOverlay(el) {
+    var o = document.createElement('div');
+    o.style.cssText = 'position:absolute;inset:0;background:rgba(0,0,0,.22);pointer-events:none;z-index:1;transition:none;';
+    el.appendChild(o);
+    return o;
+  }
+
+  // Temporarily surface the previous screen behind the active one
+  function showBehind(el) {
+    el.style.position   = 'fixed';
+    el.style.inset      = '0';
+    el.style.zIndex     = '19';
+    el.style.display    = 'flex';
+    el.style.willChange = 'transform';
+    el.style.transition = 'none';
+    el.style.transform  = 'translateX(-28%)';
+  }
+
+  // Remove all swipe-injected inline properties from the previous screen
+  function cleanPrev(el, isHome) {
+    el.style.position = '';
+    el.style.inset = '';
+    el.style.zIndex = '';
+    el.style.willChange = '';
+    el.style.transition = '';
+    el.style.transform = '';
+    // Non-home .screen elements return to display:none (controlled by .active class)
+    if (!isHome) el.style.display = '';
+  }
+
+  // ── Gesture lifecycle ──
+
+  function begin(screenEl, backBtn, startX) {
+    var prevId = PREV_SCREEN[screenEl.id] || 'homeScreen';
+    var prevIsHome = (prevId === 'homeScreen');
+    var prevEl = document.getElementById(prevId);
+    if (!prevEl) return false;
+
+    showBehind(prevEl);
+    var overlay = addOverlay(prevEl);
+
+    screenEl.style.transition = 'none';
+    screenEl.style.willChange = 'transform';
+
+    sw.dragging   = true;
+    sw.screenEl   = screenEl;
+    sw.backBtn    = backBtn;
+    sw.prevEl     = prevEl;
+    sw.prevIsHome = prevIsHome;
+    sw.overlay    = overlay;
+    sw.startX     = startX;
+    sw.lastX      = startX;
+    sw.lastT      = Date.now();
+    sw.velocity   = 0;
+    return true;
+  }
+
+  function update(x) {
+    var now = Date.now();
+    var dt  = Math.max(1, now - sw.lastT);
+    sw.velocity = (x - sw.lastX) / dt * 1000; // px/s
+    sw.lastX = x;
+    sw.lastT = now;
+
+    var dx       = Math.max(0, x - sw.startX);
+    var progress = Math.min(1, dx / W);
+    // Current screen slides right
+    sw.screenEl.style.transform = 'translateX(' + dx + 'px)';
+    // Previous screen slides in from -28% toward 0
+    sw.prevEl.style.transform = 'translateX(' + (-28 + progress * 28) + '%)';
+    // Overlay fades as previous screen is revealed
+    sw.overlay.style.opacity = String((1 - progress) * 0.22);
+  }
+
+  function complete() {
+    var screenEl = sw.screenEl, prevEl = sw.prevEl;
+    var backBtn = sw.backBtn, overlay = sw.overlay, prevIsHome = sw.prevIsHome;
+    sw.dragging    = false;
+    sw._animating  = true;
+
+    // Animate current screen off to the right
+    screenEl.style.transition = 'transform .26s ' + EASE;
+    screenEl.style.transform  = 'translateX(100%)';
+    // Animate previous screen to its natural position
+    prevEl.style.transition = 'transform .26s ' + EASE;
+    prevEl.style.transform  = 'translateX(0)';
+    // Fade out the dim overlay
+    overlay.style.transition = 'opacity .26s ease';
+    overlay.style.opacity    = '0';
+
+    setTimeout(function() {
+      sw._animating = false;
+      overlay.remove();
+
+      // Clean up previous screen inline styles before showScreen normalises it
+      cleanPrev(prevEl, prevIsHome);
+      // Keep homeScreen visible so showScreen('homeScreen') is a no-op display-wise
+      if (prevIsHome) prevEl.style.display = 'flex';
+
+      // Prevent a flash: disable transition on current screen before .active is removed
+      screenEl.style.transition = 'none';
+
+      // Fire the back action — handles state cleanup and calls showScreen,
+      // which removes .active from screenEl (making it display:none via CSS)
+      backBtn.click();
+
+      // .active is now removed → screenEl is display:none → safe to reset transform
+      screenEl.style.transform  = '';
+      screenEl.style.transition = '';
+      screenEl.style.willChange = '';
+    }, 260);
+  }
+
+  function cancel() {
+    var screenEl = sw.screenEl, prevEl = sw.prevEl;
+    var overlay = sw.overlay, prevIsHome = sw.prevIsHome;
+    sw.dragging   = false;
+    sw._animating = true;
+
+    // Snap current screen back
+    screenEl.style.transition = 'transform .22s ' + EASE;
+    screenEl.style.transform  = 'translateX(0)';
+    // Slide previous screen back out of view
+    prevEl.style.transition = 'transform .22s ' + EASE;
+    prevEl.style.transform  = 'translateX(-28%)';
+    // Restore overlay opacity
+    overlay.style.transition = 'opacity .22s ease';
+    overlay.style.opacity    = '0.22';
+
+    setTimeout(function() {
+      sw._animating = false;
+      overlay.remove();
+
+      cleanPrev(prevEl, prevIsHome);
+      // Re-hide both: homeScreen goes back to display:none (sub-screen still active)
+      if (prevIsHome) prevEl.style.display = 'none';
+
+      screenEl.style.transition = '';
+      screenEl.style.transform  = '';
+      screenEl.style.willChange = '';
+    }, 220);
+  }
+
+  // ── Touch event listeners (document-level for reliability) ──
+
+  document.addEventListener('touchstart', function(e) {
+    if (sw.dragging || sw._animating) return;
+    var t = e.touches[0];
+    if (t.clientX > 44) return; // only edge swipes
+
+    var screenEl = document.querySelector('.screen.active');
+    if (!screenEl || NOSW[screenEl.id]) return;
+
+    var backBtn = screenEl.querySelector('.history-back, .jl-editor-back');
     if (!backBtn) return;
-    var startX, startY, tracking;
-    screen.addEventListener('touchstart', function(e) {
-      var t = e.touches[0];
-      tracking = t.clientX < 44;
-      if (tracking) { startX = t.clientX; startY = t.clientY; }
-    }, {passive: true});
-    screen.addEventListener('touchmove', function(e) {
-      if (!tracking) return;
-      var t = e.touches[0];
-      if (Math.abs(t.clientY - startY) > Math.abs(t.clientX - startX)) tracking = false;
-    }, {passive: true});
-    screen.addEventListener('touchend', function(e) {
-      if (!tracking) return;
-      var t = e.changedTouches[0];
-      var dx = t.clientX - startX, dy = t.clientY - startY;
-      if (dx > 64 && Math.abs(dx) > Math.abs(dy) * 1.5) backBtn.click();
-      tracking = false;
-    }, {passive: true});
-  });
+
+    sw._pending = { screenEl: screenEl, backBtn: backBtn, x: t.clientX, y: t.clientY };
+  }, {passive: true});
+
+  document.addEventListener('touchmove', function(e) {
+    if (sw.dragging) { update(e.touches[0].clientX); return; }
+    if (!sw._pending) return;
+
+    var t  = e.touches[0];
+    var dx = t.clientX - sw._pending.x;
+    var dy = Math.abs(t.clientY - sw._pending.y);
+
+    // Cancel if gesture is primarily vertical (user is scrolling)
+    if (dy > Math.abs(dx) && dy > 8) { sw._pending = null; return; }
+    // Not enough horizontal movement yet — wait
+    if (Math.abs(dx) < 6) return;
+    // Leftward swipe — not a back gesture
+    if (dx <= 0) { sw._pending = null; return; }
+
+    // Rightward and horizontal — commit to swipe-back
+    if (begin(sw._pending.screenEl, sw._pending.backBtn, sw._pending.x)) {
+      update(t.clientX);
+    }
+    sw._pending = null;
+  }, {passive: true});
+
+  document.addEventListener('touchend', function(e) {
+    sw._pending = null;
+    if (!sw.dragging) return;
+    var t        = e.changedTouches[0];
+    var progress = (t.clientX - sw.startX) / W;
+    // Complete if dragged far enough OR flicked fast enough
+    (progress > 0.38 || sw.velocity > 280) ? complete() : cancel();
+  }, {passive: true});
+
+  document.addEventListener('touchcancel', function() {
+    sw._pending = null;
+    if (sw.dragging) cancel();
+  }, {passive: true});
+
 })();
 
 // ══════════════════════════════════════════════════════
