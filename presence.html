@@ -15848,8 +15848,8 @@ function omniaReportTTL(period) {
   return 31 * 86400000;
 }
 
-function buildOmniaReportContext(period) {
-  var range = getDateRange(period);
+function buildOmniaReportContext(period, offset) {
+  var range = getDateRange(period, offset || 0);
   var awNow = filterHistory(state.history, range.start, range.now);
   var concNow = filterHistory(concState.history, range.start, range.now);
   var awMin = sumMinutes(awNow);
@@ -15857,6 +15857,7 @@ function buildOmniaReportContext(period) {
   var concBest = concNow.length ? Math.max.apply(null,concNow.map(function(h){return h.seconds||0;})) : 0;
   return {
     period: period,
+    offset: offset || 0,
     awareness_sessions: awNow.length,
     awareness_minutes: awMin,
     concentration_sessions: concNow.length,
@@ -15866,8 +15867,8 @@ function buildOmniaReportContext(period) {
   };
 }
 
-function fetchOmniaReport(period, cb) {
-  var cacheKey = omniaReportCacheKey(period);
+function fetchOmniaReport(period, offset, cb) {
+  var cacheKey = omniaReportCacheKey(period, offset);
   var ttl = omniaReportTTL(period);
   try {
     var cached = JSON.parse(localStorage.getItem(cacheKey) || 'null');
@@ -15879,7 +15880,7 @@ function fetchOmniaReport(period, cb) {
   var token = localStorage.getItem('presence_jwt');
   if (!token) return cb('no-auth');
 
-  var ctx = buildOmniaReportContext(period);
+  var ctx = buildOmniaReportContext(period, offset);
   fetch(SYNC_API_URL + '/omnia/report', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
@@ -16402,15 +16403,12 @@ function renderReport(period) {
         + '<div class="rpt-omnia-meta" style="opacity:.45">' + _availMsg + '</div>'
         + '</div></div>';
     } else {
-      // Check cache — use offset-aware key so past periods find their own cache entry
+      // Check cache — use offset-aware key so each day/week/month has its own entry
       var cacheKey = omniaReportCacheKey(period, reportOffset);
       var cachedEntry = null;
       try { cachedEntry = JSON.parse(localStorage.getItem(cacheKey) || 'null'); } catch(e) {}
       var isFresh = cachedEntry && cachedEntry.ts && (Date.now() - cachedEntry.ts) < omniaReportTTL(period);
 
-      if (reportOffset !== 0 && !isFresh) {
-        // Past period with no cached commentary — skip the card entirely
-      } else {
       html += '<div class="rpt-omnia-card" style="margin-top:16px;" id="omniaReportCard">'
         + '<div class="rpt-omnia-card__inner rpt-omnia-card__inner--row">';
       if (isFresh) {
@@ -16418,18 +16416,17 @@ function renderReport(period) {
           + '<div class="rpt-omnia-bubble">'
           + '<div class="rpt-omnia-bubble-text">' + esc(cachedEntry.commentary) + '</div>'
           + '<div class="rpt-omnia-bubble-meta">Omnia · ' + periodLabel + '</div>'
-          + (reportOffset === 0 ? '<button class="rpt-omnia-bubble-refresh" onclick="refreshOmniaReport(\'' + period + '\')">↺ refresh</button>' : '')
+          + (reportOffset === 0 ? '<button class="rpt-omnia-bubble-refresh" onclick="refreshOmniaReport()">↺ refresh</button>' : '')
           + '</div>';
       } else {
         html += buildRptOmniaStage(true, true)
           + '<div class="rpt-omnia-bubble">'
           + '<div class="rpt-omnia-bubble-text rpt-omnia-bubble-text--dim" id="omniaReportText">Omnia is reflecting…</div>'
           + '</div>';
-        // Kick off the fetch after render
-        setTimeout(function() { loadOmniaReportInto(period); }, 0);
+        var _capturedOffset = reportOffset;
+        setTimeout(function() { loadOmniaReportInto(period, _capturedOffset); }, 0);
       }
       html += '</div></div>';
-      } // end offset !== 0 guard
     }
   }
 
@@ -16547,8 +16544,9 @@ function renderReport(period) {
   document.getElementById('reportContent').innerHTML = html;
 }
 
-function loadOmniaReportInto(period) {
-  fetchOmniaReport(period, function(err, commentary) {
+function loadOmniaReportInto(period, offset) {
+  offset = offset || 0;
+  fetchOmniaReport(period, offset, function(err, commentary) {
     var card = document.getElementById('omniaReportCard');
     if (!card) return;
     var inner = card.querySelector('.rpt-omnia-card__inner');
@@ -16560,7 +16558,7 @@ function loadOmniaReportInto(period) {
       + '<div class="rpt-omnia-bubble">'
       + '<div class="rpt-omnia-bubble-text" style="opacity:0;transition:opacity .6s ease;" id="omniaReportText">' + esc(commentary) + '</div>'
       + '<div class="rpt-omnia-bubble-meta">Omnia · ' + periodLabel + '</div>'
-      + '<button class="rpt-omnia-bubble-refresh" onclick="refreshOmniaReport(\'' + period + '\')">↺ refresh</button>'
+      + (offset === 0 ? '<button class="rpt-omnia-bubble-refresh" onclick="refreshOmniaReport()">↺ refresh</button>' : '')
       + '</div>';
     requestAnimationFrame(function() {
       var t = document.getElementById('omniaReportText');
@@ -16569,8 +16567,9 @@ function loadOmniaReportInto(period) {
   });
 }
 
-function refreshOmniaReport(period) {
-  localStorage.removeItem(omniaReportCacheKey(period));
+function refreshOmniaReport() {
+  var period = currentReportPeriod;
+  localStorage.removeItem(omniaReportCacheKey(period, reportOffset));
   var card = document.getElementById('omniaReportCard');
   if (card) {
     var inner = card.querySelector('.rpt-omnia-card__inner');
@@ -16582,7 +16581,7 @@ function refreshOmniaReport(period) {
         + '</div>';
     }
   }
-  loadOmniaReportInto(period);
+  loadOmniaReportInto(period, reportOffset);
 }
 
 function buildChartData(history, period, valueKey) {
