@@ -4442,6 +4442,11 @@ body:not(.tut-live) #tutCorgi {
         <span class="rpt-tab-dot" style="width:3px;height:3px;border-radius:50%;background:transparent;transition:background .2s;"></span>
       </button>
     </div>
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 20px 2px;flex-shrink:0;">
+      <button id="reportNavPrev" style="width:32px;height:32px;display:flex;align-items:center;justify-content:center;background:none;border:none;color:var(--text);font-size:20px;cursor:pointer;opacity:.7;">‹</button>
+      <span id="reportNavLabel" style="font-family:'DM Mono',monospace;font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:var(--muted);">Today</span>
+      <button id="reportNavNext" style="width:32px;height:32px;display:flex;align-items:center;justify-content:center;background:none;border:none;color:var(--text);font-size:20px;cursor:pointer;opacity:.25;pointer-events:none;">›</button>
+    </div>
     <div style="flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:0 24px 40px;">
       <div id="reportContent"></div>
       <button class="report-share-btn" id="reportShareBtn">↑ Share Report</button>
@@ -15740,6 +15745,7 @@ startPrayerScheduler();
 // ═══════════════════════════════════════
 
 var currentReportPeriod = 'daily';
+var reportOffset = 0;
 
 // ── Omnia report eligibility ──────────────────────────────
 function isOmniaReportDay(period) {
@@ -15895,6 +15901,7 @@ function updateReportTabStyles() {
 
 function showReports() {
   currentReportPeriod = 'daily';
+  reportOffset = 0;
   updateReportTabStyles();
   showScreen('reportsScreen');
   renderReport('daily');
@@ -15902,28 +15909,63 @@ function showReports() {
 
 // ── Data helpers ──────────────────────────────────────────
 
-function getDateRange(period) {
+function getDateRange(period, offset) {
+  offset = offset || 0;
   var now = new Date();
-  var start = new Date(now), prevStart = new Date(now), prevEnd = new Date(now);
+  var start, end, prevStart, prevEnd;
   if (period === 'daily') {
-    start = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-    prevStart = new Date(start); prevStart.setDate(prevStart.getDate() - 1);
-    prevEnd = new Date(start);
+    var d = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    d.setDate(d.getDate() + offset);
+    start = d;
+    end = offset === 0 ? now : new Date(d.getFullYear(), d.getMonth(), d.getDate() + 1);
+    prevStart = new Date(d); prevStart.setDate(prevStart.getDate() - 1);
+    prevEnd = d;
   } else if (period === 'weekly') {
     var day = now.getDay();
-    start = new Date(now.getFullYear(), now.getMonth(), now.getDate() - day);
+    var sun = new Date(now.getFullYear(), now.getMonth(), now.getDate() - day);
+    start = new Date(sun); start.setDate(start.getDate() + offset * 7);
+    end = offset === 0 ? now : new Date(start.getFullYear(), start.getMonth(), start.getDate() + 7);
     prevStart = new Date(start); prevStart.setDate(prevStart.getDate() - 7);
     prevEnd = new Date(start);
   } else if (period === 'monthly') {
-    start = new Date(now.getFullYear(), now.getMonth(), 1);
-    prevStart = new Date(now.getFullYear(), now.getMonth() - 1, 1);
-    prevEnd = new Date(now.getFullYear(), now.getMonth(), 1);
+    var anchor = new Date(now.getFullYear(), now.getMonth() + offset, 1);
+    start = anchor;
+    end = offset === 0 ? now : new Date(anchor.getFullYear(), anchor.getMonth() + 1, 1);
+    prevStart = new Date(anchor.getFullYear(), anchor.getMonth() - 1, 1);
+    prevEnd = new Date(anchor);
   } else {
     start = new Date(now.getFullYear(), 0, 1);
+    end = now;
     prevStart = new Date(now.getFullYear() - 1, 0, 1);
     prevEnd = new Date(now.getFullYear(), 0, 1);
   }
-  return { start: start, prevStart: prevStart, prevEnd: prevEnd, now: now };
+  return { start: start, prevStart: prevStart, prevEnd: prevEnd, now: end };
+}
+
+function reportNavLabel(period, offset) {
+  var now = new Date();
+  if (period === 'daily') {
+    var d = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    d.setDate(d.getDate() + offset);
+    if (offset === 0) return 'Today';
+    if (offset === -1) return 'Yesterday';
+    return d.toLocaleDateString('en-US', {weekday:'short', month:'short', day:'numeric'});
+  }
+  if (period === 'weekly') {
+    if (offset === 0) return 'This Week';
+    if (offset === -1) return 'Last Week';
+    var day = now.getDay();
+    var sun = new Date(now.getFullYear(), now.getMonth(), now.getDate() - day + offset * 7);
+    var sat = new Date(sun); sat.setDate(sat.getDate() + 6);
+    return sun.toLocaleDateString('en-US',{month:'short',day:'numeric'}) + ' – ' + sat.toLocaleDateString('en-US',{month:'short',day:'numeric'});
+  }
+  if (period === 'monthly') {
+    if (offset === 0) return 'This Month';
+    if (offset === -1) return 'Last Month';
+    var anchor = new Date(now.getFullYear(), now.getMonth() + offset, 1);
+    return anchor.toLocaleDateString('en-US', {month:'long', year:'numeric'});
+  }
+  return 'All Time';
 }
 
 function filterHistory(history, from, to) {
@@ -16251,8 +16293,21 @@ function renderDueProgressReportComments(summaries) {
 
 // ── Report renderers ──────────────────────────────────────
 
+function updateReportNav() {
+  var navRow = document.getElementById('reportNavPrev') && document.getElementById('reportNavPrev').parentElement;
+  var lbl = document.getElementById('reportNavLabel');
+  var prev = document.getElementById('reportNavPrev');
+  var next = document.getElementById('reportNavNext');
+  var isYearly = currentReportPeriod === 'yearly';
+  if (navRow) navRow.style.visibility = isYearly ? 'hidden' : '';
+  if (lbl) lbl.textContent = reportNavLabel(currentReportPeriod, reportOffset);
+  if (next) { next.style.opacity = reportOffset >= 0 ? '.25' : '1'; next.style.pointerEvents = reportOffset >= 0 ? 'none' : ''; }
+  if (prev) { prev.style.opacity = isYearly ? '.25' : '1'; prev.style.pointerEvents = isYearly ? 'none' : ''; }
+}
+
 function renderReport(period) {
-  var range = getDateRange(period);
+  var range = getDateRange(period, reportOffset);
+  updateReportNav();
   var awarenessNow = filterHistory(state.history, range.start, range.now);
   var awarenessPrev = filterHistory(state.history, range.prevStart, range.prevEnd);
   var concNow = filterHistory(concState.history, range.start, range.now);
@@ -16538,12 +16593,12 @@ function buildRecords(awarenessToday, concToday) {
 
 // ── Share report ──────────────────────────────────────────
 function shareReport() {
-  var range = getDateRange(currentReportPeriod);
+  var range = getDateRange(currentReportPeriod, reportOffset);
   var awarenessNow = filterHistory(state.history, range.start, range.now);
   var concNow = filterHistory(concState.history, range.start, range.now);
   var awMin = sumMinutes(awarenessNow);
 
-  var periodLabel = { daily: 'Today', weekly: 'This Week', monthly: 'This Month', yearly: 'This Year' }[currentReportPeriod];
+  var periodLabel = reportNavLabel(currentReportPeriod, reportOffset);
     var text = [
     'Presence | ' + periodLabel,
     '',
@@ -16578,9 +16633,21 @@ function copyToClipboard(text) {
 document.querySelectorAll('.report-period-tab').forEach(function(tab) {
   tab.addEventListener('click', function() {
     currentReportPeriod = this.dataset.period;
+    reportOffset = 0;
     updateReportTabStyles();
     renderReport(currentReportPeriod);
   });
+});
+
+document.getElementById('reportNavPrev').addEventListener('click', function() {
+  if (currentReportPeriod === 'yearly') return;
+  reportOffset--;
+  renderReport(currentReportPeriod);
+});
+document.getElementById('reportNavNext').addEventListener('click', function() {
+  if (currentReportPeriod === 'yearly' || reportOffset >= 0) return;
+  reportOffset++;
+  renderReport(currentReportPeriod);
 });
 
 document.getElementById('reportsBack').addEventListener('click', function() {
