@@ -329,6 +329,55 @@
     .aset-profile__name { font-family:'Cormorant Garamond',serif; font-size:21px; font-weight:300; color:var(--text); line-height:1.2; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
     .aset-profile__sub { font-size:10px; letter-spacing:.04em; color:var(--muted); margin-top:3px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
     .aset-profile__chevron { color:var(--muted); opacity:.5; font-size:18px; flex-shrink:0; }
+
+    /* ── PROFILE SCREEN ─────────────────────────────────── */
+    .prof-topbar { display:flex; align-items:center; gap:12px; padding:max(env(safe-area-inset-top),18px) 20px 14px; flex-shrink:0; border-bottom:1px solid var(--border); }
+    .prof-topbar__name { flex:1; font-family:'Cormorant Garamond',serif; font-size:24px; font-weight:300; color:var(--text); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .prof-gear { width:36px; height:36px; border-radius:50%; border:none; background:rgba(255,255,255,.06); color:var(--text); font-size:17px; cursor:pointer; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+    .prof-gear:active { background:rgba(255,255,255,.12); }
+    .prof-scroll { flex:1; overflow-y:auto; -webkit-overflow-scrolling:touch; scrollbar-width:none; -ms-overflow-style:none; padding:24px 20px max(env(safe-area-inset-bottom),40px); }
+    .prof-scroll::-webkit-scrollbar { display:none; }
+
+    .prof-hero { display:flex; flex-direction:column; align-items:center; text-align:center; margin-bottom:32px; }
+    .prof-avatar { position:relative; width:96px; height:96px; border-radius:50%; border:none; cursor:pointer; flex-shrink:0; background:linear-gradient(135deg,#9ed8c4,#7eb8a4); background-size:cover; background-position:center; display:flex; align-items:center; justify-content:center; margin-bottom:14px; }
+    .prof-avatar__initial { font-family:'Cormorant Garamond',serif; font-size:42px; font-weight:300; color:#0e0f17; text-transform:uppercase; }
+    .prof-avatar.has-pic .prof-avatar__initial { display:none; }
+    .prof-avatar__edit { position:absolute; right:-2px; bottom:-2px; width:30px; height:30px; border-radius:50%; background:var(--accent); color:#07080d; font-size:17px; display:flex; align-items:center; justify-content:center; border:3px solid var(--bg); }
+    .prof-hero__name { font-family:'Cormorant Garamond',serif; font-size:26px; font-weight:300; color:var(--text); line-height:1.15; }
+    .prof-hero__handle { font-size:11px; letter-spacing:.05em; color:var(--muted); font-family:'DM Mono',monospace; margin-top:3px; }
+    .prof-cta { margin-top:16px; padding:12px 28px; border-radius:12px; border:none; background:var(--accent); color:#07080d; font-family:'DM Mono',monospace; font-size:10px; letter-spacing:.18em; text-transform:uppercase; font-weight:600; cursor:pointer; box-shadow:0 3px 0 rgba(80,140,120,.5); }
+    .prof-cta:active { transform:translateY(2px); box-shadow:0 1px 0 rgba(80,140,120,.5); }
+
+    .prof-section { margin-bottom:30px; }
+    .prof-section__head { display:flex; align-items:center; justify-content:space-between; margin-bottom:14px; }
+    .prof-section__head span { font-size:10px; letter-spacing:.22em; text-transform:uppercase; color:var(--muted); font-family:'DM Mono',monospace; }
+    .prof-section__more { background:none; border:none; color:var(--muted); font-size:20px; cursor:pointer; padding:0 4px; opacity:.6; }
+
+    .prof-overview { display:grid; grid-template-columns:1fr 1fr; gap:12px 18px; }
+    .prof-ov-item { display:flex; align-items:center; gap:11px; }
+    .prof-ov-item__icon { font-size:20px; flex-shrink:0; width:24px; text-align:center; }
+    .prof-ov-item__val { font-family:'DM Mono',monospace; font-size:15px; color:var(--text); font-weight:600; line-height:1.2; }
+    .prof-ov-item__lbl { font-size:9px; letter-spacing:.1em; color:var(--muted); font-family:'DM Mono',monospace; margin-top:1px; }
+
+    .prof-friends { display:flex; gap:14px; }
+    .prof-friend { display:flex; flex-direction:column; align-items:center; gap:6px; flex:1; min-width:0; }
+    .prof-friend__ring { width:54px; height:54px; border-radius:50%; display:flex; align-items:center; justify-content:center; flex-shrink:0; background-size:cover; background-position:center; }
+    .prof-friend__ring--add { border:2px dashed var(--border2); color:var(--muted); font-size:24px; cursor:pointer; background:transparent; }
+    .prof-friend__ring--add:active { border-color:var(--accent); color:var(--accent); }
+    .prof-friend__ring--filled { background:linear-gradient(135deg,#9ed8c4,#7eb8a4); color:#0e0f17; font-family:'Cormorant Garamond',serif; font-size:22px; font-weight:300; text-transform:uppercase; }
+    .prof-friend__name { font-size:9px; color:var(--muted); font-family:'DM Mono',monospace; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:100%; }
+    .prof-friend__streak { display:flex; align-items:center; gap:2px; font-size:9px; color:#d4956e; font-family:'DM Mono',monospace; }
+
+    .prof-badges { display:flex; gap:14px; }
+    .prof-badge { width:64px; height:64px; border-radius:50%; flex-shrink:0; display:flex; align-items:center; justify-content:center; background:rgba(255,255,255,.04); border:1px solid var(--border); }
+    .prof-badge--locked { color:var(--muted); opacity:.5; font-size:20px; }
+    .prof-badge__emoji { font-size:30px; }
+
+    .prof-ach { display:flex; gap:12px; }
+    .prof-ach-item { flex:1; display:flex; flex-direction:column; align-items:center; gap:6px; opacity:.4; }
+    .prof-ach-item__disc { width:60px; height:60px; border-radius:14px; background:rgba(255,255,255,.04); border:1px solid var(--border); display:flex; align-items:center; justify-content:center; font-size:24px; }
+    .prof-ach-item__lbl { font-size:8px; letter-spacing:.1em; text-transform:uppercase; color:var(--muted); font-family:'DM Mono',monospace; }
+    .prof-empty-note { font-size:10px; color:var(--muted); font-family:'DM Mono',monospace; letter-spacing:.04em; line-height:1.7; opacity:.7; }
     /* exercise settings sub-page placeholder */
     .aset-placeholder { text-align:center; padding:44px 24px; }
     .aset-placeholder__mark { font-size:30px; opacity:.35; margin-bottom:16px; }
@@ -3290,6 +3339,47 @@ body:not(.tut-live) #tutCorgi {
     </div>
   </div>
 
+  <!-- PROFILE -->
+  <div class="screen" id="profileScreen" style="padding:0; flex-direction:column;">
+    <div class="prof-topbar">
+      <button class="history-back" id="profileBack">← back</button>
+      <div class="prof-topbar__name" id="profTopName">Profile</div>
+      <button class="prof-gear" id="profSettingsBtn" aria-label="Settings">⚙</button>
+    </div>
+    <div class="prof-scroll">
+      <div class="prof-hero">
+        <button class="prof-avatar" id="profAvatar" aria-label="Change profile picture">
+          <span class="prof-avatar__initial" id="profAvatarInitial">◎</span>
+          <span class="prof-avatar__edit">+</span>
+        </button>
+        <div class="prof-hero__name" id="profDisplayName">Guest</div>
+        <div class="prof-hero__handle" id="profHandle"></div>
+        <button class="prof-cta" id="profCtaBtn">Complete Profile</button>
+      </div>
+      <input type="file" id="profPicInput" accept="image/*" style="display:none;"/>
+
+      <div class="prof-section">
+        <div class="prof-section__head"><span>Overview</span></div>
+        <div class="prof-overview" id="profOverview"></div>
+      </div>
+
+      <div class="prof-section">
+        <div class="prof-section__head"><span>Friend Streaks</span><button class="prof-section__more" id="profFriendsMore">&#8250;</button></div>
+        <div class="prof-friends" id="profFriendStreaks"></div>
+      </div>
+
+      <div class="prof-section">
+        <div class="prof-section__head"><span>Monthly Badges</span><button class="prof-section__more" id="profBadgesMore">&#8250;</button></div>
+        <div class="prof-badges" id="profBadges"></div>
+      </div>
+
+      <div class="prof-section">
+        <div class="prof-section__head"><span>Achievements</span><button class="prof-section__more" id="profAchMore">&#8250;</button></div>
+        <div class="prof-ach" id="profAchievements"></div>
+      </div>
+    </div>
+  </div>
+
   <!-- GUIDE -->
   <!-- PLAYGROUND -->
   <div class="screen" id="playgroundScreen" style="flex-direction:column;">
@@ -4726,7 +4816,7 @@ body:not(.tut-live) #tutCorgi {
         <span class="drawer-item-icon">👥</span>Friends
       </button>
       <button class="drawer-item" id="drawerProfile">
-        <span class="drawer-item-icon">◎</span>Profile
+        <span class="drawer-item-icon">👤</span>Profile
       </button>
       <button class="drawer-item" id="drawerFaq">
         <span class="drawer-item-icon">💬</span>FAQ
@@ -6402,10 +6492,8 @@ document.getElementById('drawerReports').addEventListener('click',function(){
 });
 document.getElementById('drawerProfile').addEventListener('click',function(){
   closeDrawer();
-  renderSettingsExerciseList();
-  renderCustomVisImageList();
-  renderCustomAudSoundList();
-  openAccountSettings();
+  renderProfile();
+  showScreen('profileScreen');
 });
 
 document.getElementById('customVisUpload').addEventListener('change', function(e) {
@@ -6586,6 +6674,171 @@ function renderSettingsProfileBanner() {
     sub.textContent = 'Sync your progress across devices';
   }
 }
+
+// ── PROFILE ─────────────────────────────────────────────
+var PROFILE_PIC_KEY = 'presence_profile_pic';
+function getProfilePic() { try { return localStorage.getItem(PROFILE_PIC_KEY) || ''; } catch(e) { return ''; } }
+function setProfilePic(dataUrl) {
+  try { if (dataUrl) localStorage.setItem(PROFILE_PIC_KEY, dataUrl); else localStorage.removeItem(PROFILE_PIC_KEY); } catch(e) {}
+}
+
+function _profOvItem(icon, val, lbl) {
+  return '<div class="prof-ov-item"><span class="prof-ov-item__icon">' + icon + '</span>'
+    + '<div><div class="prof-ov-item__val">' + val + '</div>'
+    + '<div class="prof-ov-item__lbl">' + lbl + '</div></div></div>';
+}
+
+function renderProfile() {
+  var signedIn = !!(syncEnabled && (authEmail || authUsername));
+  var display = signedIn ? (authUsername || (authEmail ? authEmail.split('@')[0] : 'Account')) : 'Guest';
+
+  document.getElementById('profTopName').textContent = signedIn ? display : 'Profile';
+  document.getElementById('profDisplayName').textContent = display;
+  var handleEl = document.getElementById('profHandle');
+  handleEl.textContent = signedIn ? (authUsername ? '@' + authUsername : (authEmail || '')) : 'Not signed in';
+
+  // Avatar (uploaded picture or initial)
+  var av = document.getElementById('profAvatar');
+  var init = document.getElementById('profAvatarInitial');
+  var pic = getProfilePic();
+  if (pic) {
+    av.classList.add('has-pic');
+    av.style.backgroundImage = 'url(' + pic + ')';
+  } else {
+    av.classList.remove('has-pic');
+    av.style.backgroundImage = '';
+    init.textContent = (display[0] || '◎');
+  }
+
+  // CTA
+  var cta = document.getElementById('profCtaBtn');
+  if (!signedIn) { cta.textContent = 'Sign In'; cta.style.display = ''; }
+  else if (!pic) { cta.textContent = 'Add Profile Picture'; cta.style.display = ''; }
+  else { cta.style.display = 'none'; }
+
+  // Overview
+  var totalXP = (state.xp || 0) + (concState.xp || 0);
+  var ov = document.getElementById('profOverview');
+  ov.innerHTML =
+      _profOvItem('🔥', (state.streak || 0) + (state.streak === 1 ? ' day' : ' days'), 'Streak')
+    + _profOvItem('⚡', totalXP.toLocaleString() + ' XP', 'Total Earned')
+    + _profOvItem('<span style="color:var(--accent);">◎</span>', 'Level ' + state.level, getRankTitle(state.level))
+    + _profOvItem('<span style="color:#d4956e;">◉</span>', 'Level ' + concState.level, getConcRank(concState.level));
+
+  renderProfileFriendStreaks(signedIn);
+  renderProfileBadges();
+  renderProfileAchievements();
+}
+
+function renderProfileFriendStreaks(signedIn) {
+  var el = document.getElementById('profFriendStreaks');
+  if (!el) return;
+  if (!signedIn || !authToken) {
+    var html = '';
+    for (var i = 0; i < 5; i++) {
+      html += '<div class="prof-friend"><button class="prof-friend__ring prof-friend__ring--add" data-prof-addfriend="1">+</button></div>';
+    }
+    el.innerHTML = html;
+    return;
+  }
+  el.innerHTML = '<div class="prof-friend"><button class="prof-friend__ring prof-friend__ring--add" data-prof-addfriend="1">+</button><div class="prof-friend__name">Add</div></div>';
+  loadProfileFriendStreaks();
+}
+
+async function loadProfileFriendStreaks() {
+  if (!authToken) return;
+  try {
+    var res = await fetch(SYNC_API_URL + '/friends/list', { headers: { 'Authorization': 'Bearer ' + authToken } });
+    var data = await res.json();
+    var friends = (data.friends || []).slice(0, 4);
+    var el = document.getElementById('profFriendStreaks');
+    if (!el) return;
+    var html = '';
+    friends.forEach(function(f) {
+      var nm = f.username || '?';
+      html += '<div class="prof-friend">'
+        + '<div class="prof-friend__ring prof-friend__ring--filled">' + escHtml((nm[0] || '?')) + '</div>'
+        + '<div class="prof-friend__name">@' + escHtml(nm) + '</div>'
+        + '<div class="prof-friend__streak">🔥 ' + (f.streak || 0) + '</div>'
+        + '</div>';
+    });
+    html += '<div class="prof-friend"><button class="prof-friend__ring prof-friend__ring--add" data-prof-addfriend="1">+</button><div class="prof-friend__name">Add</div></div>';
+    el.innerHTML = html;
+  } catch(e) {}
+}
+
+function renderProfileBadges() {
+  var el = document.getElementById('profBadges');
+  if (!el) return;
+  var html = '';
+  for (var i = 0; i < 4; i++) html += '<div class="prof-badge prof-badge--locked">🔒</div>';
+  el.innerHTML = html;
+}
+
+function renderProfileAchievements() {
+  var el = document.getElementById('profAchievements');
+  if (!el) return;
+  var marks = ['🏅', '🎯', '🧘', '🔮'];
+  el.innerHTML = marks.map(function(m) {
+    return '<div class="prof-ach-item"><div class="prof-ach-item__disc">' + m + '</div><div class="prof-ach-item__lbl">Locked</div></div>';
+  }).join('');
+}
+
+function handleProfilePicFile(file) {
+  if (!file || file.type.indexOf('image/') !== 0) { showToast('Please choose an image'); return; }
+  var reader = new FileReader();
+  reader.onload = function(ev) {
+    var img = new Image();
+    img.onload = function() {
+      var size = 256;
+      var canvas = document.createElement('canvas');
+      canvas.width = size; canvas.height = size;
+      var ctx = canvas.getContext('2d');
+      var scale = Math.max(size / img.width, size / img.height);
+      var w = img.width * scale, h = img.height * scale;
+      ctx.drawImage(img, (size - w) / 2, (size - h) / 2, w, h);
+      var out = canvas.toDataURL('image/jpeg', 0.82);
+      setProfilePic(out);
+      renderProfile();
+      showToast('Profile picture updated');
+    };
+    img.onerror = function() { showToast('Could not load image'); };
+    img.src = ev.target.result;
+  };
+  reader.onerror = function() { showToast('Could not read file'); };
+  reader.readAsDataURL(file);
+}
+
+document.getElementById('profileBack').addEventListener('click', function() { renderHome(); showScreen('homeScreen'); });
+document.getElementById('profSettingsBtn').addEventListener('click', function() { showScreen('settingsScreen'); });
+document.getElementById('profAvatar').addEventListener('click', function() { document.getElementById('profPicInput').click(); });
+document.getElementById('profCtaBtn').addEventListener('click', function() {
+  var signedIn = !!(syncEnabled && (authEmail || authUsername));
+  if (!signedIn) {
+    renderSettingsExerciseList();
+    renderCustomVisImageList();
+    renderCustomAudSoundList();
+    openAccountSettings();
+  } else {
+    document.getElementById('profPicInput').click();
+  }
+});
+document.getElementById('profPicInput').addEventListener('change', function(e) {
+  if (e.target.files && e.target.files[0]) handleProfilePicFile(e.target.files[0]);
+  e.target.value = '';
+});
+document.getElementById('profFriendStreaks').addEventListener('click', function(e) {
+  if (e.target.closest('[data-prof-addfriend]')) {
+    if (!authToken) { showToast('Sign in to add friends'); return; }
+    openFriendsPanel();
+  }
+});
+document.getElementById('profFriendsMore').addEventListener('click', function() {
+  if (!authToken) { showToast('Sign in to use Friends'); return; }
+  openFriendsPanel();
+});
+document.getElementById('profBadgesMore').addEventListener('click', function() { showToast('Monthly badges coming soon'); });
+document.getElementById('profAchMore').addEventListener('click', function() { showToast('Achievements coming soon'); });
 
 function openExerciseSettings(id) {
   var ex = EXERCISE_SETTINGS_LIST.find(function(e){ return e.id === id; });
