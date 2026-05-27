@@ -320,6 +320,15 @@
     .aset-row--danger { color:#c47a7a; }
     .aset-row--danger .aset-row__icon { background:rgba(196,122,122,.13); }
     .aset-note { font-size:9px; color:var(--muted); opacity:.5; text-align:center; line-height:1.8; padding:4px 8px 8px; }
+    /* iCloud-style profile banner */
+    .aset-profile { display:flex; align-items:center; gap:14px; width:100%; padding:15px 16px; margin-bottom:30px; background:rgba(255,255,255,.03); border:1px solid var(--border); border-radius:14px; cursor:pointer; text-align:left; box-sizing:border-box; transition:background .12s; font-family:'DM Mono',monospace; }
+    .aset-profile:active { background:rgba(255,255,255,.05); }
+    .aset-profile__avatar { width:54px; height:54px; border-radius:50%; flex-shrink:0; display:flex; align-items:center; justify-content:center; font-family:'Cormorant Garamond',serif; font-size:25px; font-weight:300; color:#0e0f17; background:linear-gradient(135deg,#9ed8c4,#7eb8a4); text-transform:uppercase; }
+    .aset-profile__avatar--out { background:rgba(126,184,164,.12); color:var(--accent); font-size:23px; }
+    .aset-profile__info { flex:1; min-width:0; }
+    .aset-profile__name { font-family:'Cormorant Garamond',serif; font-size:21px; font-weight:300; color:var(--text); line-height:1.2; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .aset-profile__sub { font-size:10px; letter-spacing:.04em; color:var(--muted); margin-top:3px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .aset-profile__chevron { color:var(--muted); opacity:.5; font-size:18px; flex-shrink:0; }
     /* exercise settings sub-page placeholder */
     .aset-placeholder { text-align:center; padding:44px 24px; }
     .aset-placeholder__mark { font-size:30px; opacity:.35; margin-bottom:16px; }
@@ -3133,6 +3142,16 @@ body:not(.tut-live) #tutCorgi {
     </div>
     <div id="settingsScrollBody" style="flex:1; overflow-y:auto; -webkit-overflow-scrolling:touch; scrollbar-width:none; -ms-overflow-style:none;">
 
+      <!-- Profile banner (iCloud-style) — drills into Account -->
+      <button class="aset-profile" id="settingsProfileBanner">
+        <span class="aset-profile__avatar" id="settingsProfileAvatar">◎</span>
+        <span class="aset-profile__info">
+          <span class="aset-profile__name" id="settingsProfileName">Sign in to Presence</span>
+          <span class="aset-profile__sub" id="settingsProfileSub">Sync your progress across devices</span>
+        </span>
+        <span class="aset-profile__chevron">›</span>
+      </button>
+
       <!-- Exercises (Apple-style drill-in) -->
       <div class="aset-group">
         <div class="aset-header">Concentration</div>
@@ -3141,43 +3160,6 @@ body:not(.tut-live) #tutCorgi {
       <div class="aset-group">
         <div class="aset-header">Practices</div>
         <div class="aset-card" id="settingsExPracticeCard"></div>
-      </div>
-
-      <!-- Cloud Sync Status -->
-      <div class="aset-group">
-        <div class="aset-header">Cloud Sync</div>
-        <div style="background:rgba(255,255,255,.03); border:1px solid var(--border); border-radius:10px; padding:16px 18px; margin-bottom:10px;">
-          <div id="syncStatusText" style="font-size:12px; color:var(--text); margin-bottom:8px;">Not logged in</div>
-          <div id="syncStatusEmail" style="font-size:10px; color:var(--muted); margin-bottom:12px;"></div>
-          <button id="syncLogoutBtn" style="width:100%; display:none; font-size:9px; letter-spacing:.15em; padding:10px; border:1px solid var(--border); border-radius:6px; background:transparent; color:var(--muted); cursor:pointer;">Sign Out</button>
-          <!-- Sign-in options shown when signed out -->
-          <div id="settingsSignInWrap" style="display:none;">
-            <div id="settingsGoogleContainer"></div>
-            <div style="display:flex;align-items:center;gap:10px;margin:12px 0 8px;">
-              <div style="flex:1;height:1px;background:var(--border);"></div>
-              <span style="font-size:8px;letter-spacing:.2em;text-transform:uppercase;color:var(--muted);opacity:.5;">or</span>
-              <div style="flex:1;height:1px;background:var(--border);"></div>
-            </div>
-            <button id="settingsEmailToggle" style="width:100%;background:none;border:none;font-family:'DM Mono',monospace;font-size:9px;letter-spacing:.18em;text-transform:uppercase;color:var(--muted);cursor:pointer;padding:6px 0 10px;text-align:center;opacity:.7;">Continue with email →</button>
-            <div id="settingsEmailForm" style="display:none;flex-direction:column;gap:8px;margin-bottom:4px;">
-              <input type="email" id="settingsEmailInput" placeholder="Email" autocomplete="email" style="width:100%;padding:10px 12px;border:1px solid var(--border);border-radius:7px;background:rgba(255,255,255,.03);color:#e8e0d0;font-family:'DM Mono',monospace;font-size:11px;outline:none;"/>
-              <input type="password" id="settingsPasswordInput" placeholder="Password" autocomplete="current-password" style="width:100%;padding:10px 12px;border:1px solid var(--border);border-radius:7px;background:rgba(255,255,255,.03);color:#e8e0d0;font-family:'DM Mono',monospace;font-size:11px;outline:none;"/>
-              <button id="settingsEmailSubmit" style="width:100%;padding:10px;border:1px solid rgba(126,184,164,.35);border-radius:7px;background:rgba(126,184,164,.08);color:#7eb8a4;font-family:'DM Mono',monospace;font-size:9px;letter-spacing:.18em;text-transform:uppercase;cursor:pointer;">Sign In</button>
-              <button id="settingsEmailCreate" style="width:100%;padding:10px;border:1px solid var(--border);border-radius:7px;background:transparent;color:var(--muted);font-family:'DM Mono',monospace;font-size:9px;letter-spacing:.18em;text-transform:uppercase;cursor:pointer;">Create Account</button>
-              <div id="settingsEmailError" style="display:none;color:#d4956e;font-size:10px;text-align:center;padding-top:2px;"></div>
-            </div>
-          </div>
-        </div>
-        <!-- Set Username card — shown only when signed in without a username -->
-        <div id="setUsernameCard" style="display:none; background:rgba(126,184,164,.05); border:1px solid rgba(126,184,164,.25); border-radius:10px; padding:16px 18px;">
-          <div style="font-size:12px; color:var(--text); margin-bottom:4px;">Set your username</div>
-          <div style="font-size:10px; color:var(--muted); line-height:1.6; margin-bottom:12px;">Choose a username so friends can find and add you. Letters, numbers, and underscores only.</div>
-          <div style="display:flex; gap:8px;">
-            <input id="setUsernameInput" type="text" placeholder="username" maxlength="24" autocomplete="off" style="flex:1; padding:10px 12px; border:1px solid var(--border); border-radius:7px; background:rgba(255,255,255,.04); color:var(--text); font-family:'DM Mono',monospace; font-size:11px; letter-spacing:.05em; outline:none;"/>
-            <button id="setUsernameBtn" style="padding:10px 16px; border:1px solid var(--accent); border-radius:7px; background:rgba(126,184,164,.1); color:var(--accent); font-family:'DM Mono',monospace; font-size:9px; letter-spacing:.15em; text-transform:uppercase; cursor:pointer; white-space:nowrap;">Save</button>
-          </div>
-          <div id="setUsernameError" style="font-size:10px; color:#c47a7a; margin-top:8px; display:none;"></div>
-        </div>
       </div>
 
       <!-- Backup & Restore -->
@@ -3201,10 +3183,46 @@ body:not(.tut-live) #tutCorgi {
         </div>
       </div>
 
-      <!-- Custom Visualization Images -->
-      <div class="aset-group">
-        <div class="aset-header">Visualization Images</div>
-        <div style="background:rgba(255,255,255,.03); border:1px solid var(--border); border-radius:10px; padding:16px 18px;">
+      <div class="aset-note">
+        Backups contain all your data in a single JSON file.<br>To move to a new device: export here, transfer the file, import there.
+      </div>
+
+      <!-- Hidden parking: functional blocks moved into sub-pages at runtime (preserves bound handlers) -->
+      <div id="settingsParking" style="display:none;">
+        <div id="acctSyncBlock">
+          <div style="background:rgba(255,255,255,.03); border:1px solid var(--border); border-radius:10px; padding:16px 18px; margin-bottom:10px;">
+            <div id="syncStatusText" style="font-size:12px; color:var(--text); margin-bottom:8px;">Not logged in</div>
+            <div id="syncStatusEmail" style="font-size:10px; color:var(--muted); margin-bottom:12px;"></div>
+            <button id="syncLogoutBtn" style="width:100%; display:none; font-size:9px; letter-spacing:.15em; padding:10px; border:1px solid var(--border); border-radius:6px; background:transparent; color:var(--muted); cursor:pointer;">Sign Out</button>
+            <div id="settingsSignInWrap" style="display:none;">
+              <div id="settingsGoogleContainer"></div>
+              <div style="display:flex;align-items:center;gap:10px;margin:12px 0 8px;">
+                <div style="flex:1;height:1px;background:var(--border);"></div>
+                <span style="font-size:8px;letter-spacing:.2em;text-transform:uppercase;color:var(--muted);opacity:.5;">or</span>
+                <div style="flex:1;height:1px;background:var(--border);"></div>
+              </div>
+              <button id="settingsEmailToggle" style="width:100%;background:none;border:none;font-family:'DM Mono',monospace;font-size:9px;letter-spacing:.18em;text-transform:uppercase;color:var(--muted);cursor:pointer;padding:6px 0 10px;text-align:center;opacity:.7;">Continue with email →</button>
+              <div id="settingsEmailForm" style="display:none;flex-direction:column;gap:8px;margin-bottom:4px;">
+                <input type="email" id="settingsEmailInput" placeholder="Email" autocomplete="email" style="width:100%;padding:10px 12px;border:1px solid var(--border);border-radius:7px;background:rgba(255,255,255,.03);color:#e8e0d0;font-family:'DM Mono',monospace;font-size:11px;outline:none;"/>
+                <input type="password" id="settingsPasswordInput" placeholder="Password" autocomplete="current-password" style="width:100%;padding:10px 12px;border:1px solid var(--border);border-radius:7px;background:rgba(255,255,255,.03);color:#e8e0d0;font-family:'DM Mono',monospace;font-size:11px;outline:none;"/>
+                <button id="settingsEmailSubmit" style="width:100%;padding:10px;border:1px solid rgba(126,184,164,.35);border-radius:7px;background:rgba(126,184,164,.08);color:#7eb8a4;font-family:'DM Mono',monospace;font-size:9px;letter-spacing:.18em;text-transform:uppercase;cursor:pointer;">Sign In</button>
+                <button id="settingsEmailCreate" style="width:100%;padding:10px;border:1px solid var(--border);border-radius:7px;background:transparent;color:var(--muted);font-family:'DM Mono',monospace;font-size:9px;letter-spacing:.18em;text-transform:uppercase;cursor:pointer;">Create Account</button>
+                <div id="settingsEmailError" style="display:none;color:#d4956e;font-size:10px;text-align:center;padding-top:2px;"></div>
+              </div>
+            </div>
+          </div>
+          <div id="setUsernameCard" style="display:none; background:rgba(126,184,164,.05); border:1px solid rgba(126,184,164,.25); border-radius:10px; padding:16px 18px;">
+            <div style="font-size:12px; color:var(--text); margin-bottom:4px;">Set your username</div>
+            <div style="font-size:10px; color:var(--muted); line-height:1.6; margin-bottom:12px;">Choose a username so friends can find and add you. Letters, numbers, and underscores only.</div>
+            <div style="display:flex; gap:8px;">
+              <input id="setUsernameInput" type="text" placeholder="username" maxlength="24" autocomplete="off" style="flex:1; padding:10px 12px; border:1px solid var(--border); border-radius:7px; background:rgba(255,255,255,.04); color:var(--text); font-family:'DM Mono',monospace; font-size:11px; letter-spacing:.05em; outline:none;"/>
+              <button id="setUsernameBtn" style="padding:10px 16px; border:1px solid var(--accent); border-radius:7px; background:rgba(126,184,164,.1); color:var(--accent); font-family:'DM Mono',monospace; font-size:9px; letter-spacing:.15em; text-transform:uppercase; cursor:pointer; white-space:nowrap;">Save</button>
+            </div>
+            <div id="setUsernameError" style="font-size:10px; color:#c47a7a; margin-top:8px; display:none;"></div>
+          </div>
+        </div>
+
+        <div id="visImagesBlock" style="background:rgba(255,255,255,.03); border:1px solid var(--border); border-radius:10px; padding:16px 18px;">
           <div style="font-size:12px; color:var(--text); margin-bottom:4px;">Custom images</div>
           <div style="font-size:10px; color:var(--muted); line-height:1.6; margin-bottom:14px;">Upload your own images to use in Visualization sessions. They will appear under a Custom tab.</div>
           <label style="display:block; width:100%; box-sizing:border-box; text-align:center; padding:10px; border:1px solid rgba(212,149,110,.35); border-radius:6px; font-family:'DM Mono',monospace; font-size:9px; letter-spacing:.15em; text-transform:uppercase; color:#d4956e; cursor:pointer; margin-bottom:14px;">
@@ -3213,12 +3231,8 @@ body:not(.tut-live) #tutCorgi {
           </label>
           <div id="customVisImageList"></div>
         </div>
-      </div>
 
-      <!-- Custom Auditory Sounds -->
-      <div class="aset-group">
-        <div class="aset-header">Auditory Sounds</div>
-        <div style="background:rgba(255,255,255,.03); border:1px solid var(--border); border-radius:10px; padding:16px 18px;">
+        <div id="audSoundsBlock" style="background:rgba(255,255,255,.03); border:1px solid var(--border); border-radius:10px; padding:16px 18px;">
           <div style="font-size:12px; color:var(--text); margin-bottom:4px;">Custom sounds</div>
           <div style="font-size:10px; color:var(--muted); line-height:1.6; margin-bottom:14px;">Upload your own audio files to use in Auditory sessions. They will appear at the bottom of the sound selector.</div>
           <label style="display:block; width:100%; box-sizing:border-box; text-align:center; padding:10px; border:1px solid rgba(110,184,164,.35); border-radius:6px; font-family:'DM Mono',monospace; font-size:9px; letter-spacing:.15em; text-transform:uppercase; color:#6eb8a4; cursor:pointer; margin-bottom:14px;">
@@ -3227,26 +3241,16 @@ body:not(.tut-live) #tutCorgi {
           </label>
           <div id="customAudSoundList"></div>
         </div>
-      </div>
 
-      <!-- Reset Progress -->
-      <div class="aset-group">
-        <div class="aset-header">Reset Progress</div>
-        <div class="aset-card">
-          <button id="settingsResetAwareness" class="aset-row aset-row--danger">
-            <span class="aset-row__icon">↺</span><span class="aset-row__label">Reset Awareness Progress</span>
-          </button>
-          <button id="settingsResetConc" class="aset-row aset-row--danger">
-            <span class="aset-row__icon">↺</span><span class="aset-row__label">Reset Concentration Progress</span>
-          </button>
-          <button id="settingsResetPrayer" class="aset-row aset-row--danger">
-            <span class="aset-row__icon">↺</span><span class="aset-row__label">Reset Prayer Progress</span>
-          </button>
-        </div>
-      </div>
-
-      <div class="aset-note">
-        Backups contain all your data in a single JSON file.<br>To move to a new device: export here, transfer the file, import there.
+        <button id="settingsResetAwareness" class="aset-row aset-row--danger">
+          <span class="aset-row__icon">↺</span><span class="aset-row__label">Reset Awareness Progress</span>
+        </button>
+        <button id="settingsResetConc" class="aset-row aset-row--danger">
+          <span class="aset-row__icon">↺</span><span class="aset-row__label">Reset Concentration Progress</span>
+        </button>
+        <button id="settingsResetPrayer" class="aset-row aset-row--danger">
+          <span class="aset-row__icon">↺</span><span class="aset-row__label">Reset Prayer Progress</span>
+        </button>
       </div>
 
     </div>
@@ -3259,6 +3263,18 @@ body:not(.tut-live) #tutCorgi {
       <button class="history-back" id="exerciseSettingsBack">← back</button>
     </div>
     <div id="exerciseSettingsBody" style="flex:1; overflow-y:auto; -webkit-overflow-scrolling:touch; scrollbar-width:none; -ms-overflow-style:none;"></div>
+  </div>
+
+  <!-- ACCOUNT SUB-PAGE (Apple-style drill-in) -->
+  <div class="screen" id="accountSettingsScreen">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:28px; flex-shrink:0;">
+      <div style="font-family:Cormorant Garamond,serif; font-size:24px; font-weight:300;">Account</div>
+      <button class="history-back" id="accountSettingsBack">← back</button>
+    </div>
+    <div id="accountSettingsBody" style="flex:1; overflow-y:auto; -webkit-overflow-scrolling:touch; scrollbar-width:none; -ms-overflow-style:none;">
+      <div class="aset-header" style="margin-bottom:14px;">Cloud Sync</div>
+      <div id="accountSyncMount"></div>
+    </div>
   </div>
 
   <!-- GUIDE -->
@@ -6360,16 +6376,10 @@ document.getElementById('drawerGuide').addEventListener('click', function() {
 
 document.getElementById('drawerSettings').addEventListener('click', function() {
   closeDrawer();
-  // Update sync status when opening settings
-  if (syncEnabled && authEmail) {
-    _refreshSettingsSyncCardSignedIn();
-  } else {
-    _refreshSettingsSyncCard();
-  }
-  showScreen('settingsScreen');
   renderSettingsExerciseList();
   renderCustomVisImageList();
   renderCustomAudSoundList();
+  showScreen('settingsScreen');
 });
 document.getElementById('drawerJournal').addEventListener('click',function(){
   closeDrawer();renderJournal();showScreen('journalScreen');
@@ -6379,9 +6389,10 @@ document.getElementById('drawerReports').addEventListener('click',function(){
 });
 document.getElementById('drawerProfile').addEventListener('click',function(){
   closeDrawer();
-  if(syncEnabled&&authEmail){_refreshSettingsSyncCardSignedIn();}else{_refreshSettingsSyncCard();}
-  showScreen('settingsScreen');
   renderSettingsExerciseList();
+  renderCustomVisImageList();
+  renderCustomAudSoundList();
+  openAccountSettings();
 });
 
 document.getElementById('customVisUpload').addEventListener('change', function(e) {
@@ -6504,6 +6515,14 @@ var EXERCISE_SETTINGS_LIST = [
   { id:'pore',       name:'Pore Breathing',           icon:'≋',  tint:'rgba(142,204,224,.16)', group:'practice' }
 ];
 
+// Which parked functional blocks mount into each exercise sub-page.
+var EXSET_BLOCKS = {
+  visual:    [{ block:'visImagesBlock', header:'Custom Images' }],
+  auditory:  [{ block:'audSoundsBlock', header:'Custom Sounds' }],
+  awareness: [{ block:'settingsResetAwareness', header:'Reset', card:true, danger:true }],
+  prayer:    [{ block:'settingsResetPrayer', header:'Reset', card:true, danger:true }]
+};
+
 function _asetRowHTML(ex) {
   return '<button class="aset-row" data-exset="' + ex.id + '">'
     + '<span class="aset-row__icon" style="background:' + ex.tint + ';">' + ex.icon + '</span>'
@@ -6512,44 +6531,109 @@ function _asetRowHTML(ex) {
     + '</button>';
 }
 
+// Return all relocatable functional blocks to the hidden parking container.
+function _parkSettingsBlocks() {
+  var park = document.getElementById('settingsParking');
+  if (!park) return;
+  ['acctSyncBlock','visImagesBlock','audSoundsBlock','settingsResetAwareness','settingsResetConc','settingsResetPrayer'].forEach(function(bid) {
+    var el = document.getElementById(bid);
+    if (el && el.parentNode !== park) park.appendChild(el);
+  });
+}
+
 function renderSettingsExerciseList() {
+  renderSettingsProfileBanner();
+  _parkSettingsBlocks();
   var concCard = document.getElementById('settingsExConcCard');
   var pracCard = document.getElementById('settingsExPracticeCard');
   if (!concCard || !pracCard) return;
   concCard.innerHTML = EXERCISE_SETTINGS_LIST.filter(function(e){ return e.group === 'conc'; }).map(_asetRowHTML).join('');
   pracCard.innerHTML = EXERCISE_SETTINGS_LIST.filter(function(e){ return e.group === 'practice'; }).map(_asetRowHTML).join('');
+  // Reset Concentration belongs to the whole Concentration category → append to that card.
+  var resetConc = document.getElementById('settingsResetConc');
+  if (resetConc) concCard.appendChild(resetConc);
+}
+
+function renderSettingsProfileBanner() {
+  var av = document.getElementById('settingsProfileAvatar');
+  var nm = document.getElementById('settingsProfileName');
+  var sub = document.getElementById('settingsProfileSub');
+  if (!av || !nm || !sub) return;
+  var signedIn = !!(syncEnabled && (authEmail || authUsername));
+  if (signedIn) {
+    var display = authUsername || (authEmail ? authEmail.split('@')[0] : 'Account');
+    av.textContent = (display[0] || '◎');
+    av.className = 'aset-profile__avatar';
+    nm.textContent = authUsername ? '@' + authUsername : display;
+    sub.textContent = authEmail || 'Syncing across devices';
+  } else {
+    av.textContent = '◎';
+    av.className = 'aset-profile__avatar aset-profile__avatar--out';
+    nm.textContent = 'Sign in to Presence';
+    sub.textContent = 'Sync your progress across devices';
+  }
 }
 
 function openExerciseSettings(id) {
   var ex = EXERCISE_SETTINGS_LIST.find(function(e){ return e.id === id; });
   if (!ex) return;
+  _parkSettingsBlocks();
   document.getElementById('exerciseSettingsTitle').textContent = ex.name;
   var body = document.getElementById('exerciseSettingsBody');
-  // Placeholder — real per-exercise preferences slot in here later.
-  body.innerHTML = '<div class="aset-group">'
-    + '<div class="aset-card">'
+  var mounts = EXSET_BLOCKS[id];
+  var html = '<div class="aset-group"><div class="aset-card">'
     + '<div class="aset-row" style="cursor:default;">'
     + '<span class="aset-row__icon" style="background:' + ex.tint + ';">' + ex.icon + '</span>'
     + '<span class="aset-row__label">' + ex.name + '</span>'
-    + '</div>'
-    + '</div>'
-    + '</div>'
-    + '<div class="aset-placeholder">'
-    + '<div class="aset-placeholder__mark">⚙</div>'
-    + '<div class="aset-placeholder__title">Settings coming soon</div>'
-    + '<div class="aset-placeholder__sub">Adjustable preferences for ' + ex.name + ' will live here. For now, options are chosen at the start of each session.</div>'
-    + '</div>';
+    + '</div></div></div>';
+  if (mounts && mounts.length) {
+    mounts.forEach(function(m, i) {
+      html += '<div class="aset-group">'
+        + '<div class="aset-header">' + m.header + '</div>'
+        + (m.card ? '<div class="aset-card" id="exsetMount' + i + '"></div>' : '<div id="exsetMount' + i + '"></div>')
+        + '</div>';
+    });
+  } else {
+    html += '<div class="aset-placeholder">'
+      + '<div class="aset-placeholder__mark">⚙</div>'
+      + '<div class="aset-placeholder__title">Settings coming soon</div>'
+      + '<div class="aset-placeholder__sub">Adjustable preferences for ' + ex.name + ' will live here. For now, options are chosen at the start of each session.</div>'
+      + '</div>';
+  }
+  body.innerHTML = html;
+  if (mounts && mounts.length) {
+    mounts.forEach(function(m, i) {
+      var mount = document.getElementById('exsetMount' + i);
+      var blk = document.getElementById(m.block);
+      if (mount && blk) mount.appendChild(blk);
+    });
+  }
   body.scrollTop = 0;
   showScreen('exerciseSettingsScreen');
 }
 
+function openAccountSettings() {
+  _parkSettingsBlocks();
+  var mount = document.getElementById('accountSyncMount');
+  var blk = document.getElementById('acctSyncBlock');
+  if (mount && blk) mount.appendChild(blk);
+  if (syncEnabled && authEmail) { _refreshSettingsSyncCardSignedIn(); } else { _refreshSettingsSyncCard(); }
+  showScreen('accountSettingsScreen');
+}
+
 // Delegated row taps within the Settings exercises lists
 document.getElementById('settingsScrollBody').addEventListener('click', function(e) {
+  if (e.target.closest('#settingsProfileBanner')) { openAccountSettings(); return; }
   var row = e.target.closest('.aset-row[data-exset]');
   if (row) openExerciseSettings(row.dataset.exset);
 });
 
 document.getElementById('exerciseSettingsBack').addEventListener('click', function() {
+  _parkSettingsBlocks();
+  showScreen('settingsScreen');
+});
+document.getElementById('accountSettingsBack').addEventListener('click', function() {
+  _parkSettingsBlocks();
   showScreen('settingsScreen');
 });
 
@@ -19678,7 +19762,7 @@ document.getElementById('journalBodyInput').addEventListener('input',journalAuto
 
   // Which screen sits behind each sub-screen during swipe
   // (unlisted screens reveal homeScreen)
-  var PREV_SCREEN = { journalEntryScreen: 'journalScreen', exerciseSettingsScreen: 'settingsScreen' };
+  var PREV_SCREEN = { journalEntryScreen: 'journalScreen', exerciseSettingsScreen: 'settingsScreen', accountSettingsScreen: 'settingsScreen' };
 
   var EASE = 'cubic-bezier(0.25,0.46,0.45,0.94)';
 
