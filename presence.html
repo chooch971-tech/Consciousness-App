@@ -586,17 +586,24 @@
     .ptree-svg { display:block; width:100%; }
     .ptree-legend { display:flex; align-items:center; justify-content:center; gap:14px; padding:12px 20px 18px; border-top:1px solid var(--border); }
     .ptree-legend-item { display:flex; align-items:center; gap:6px; font-size:8px; letter-spacing:.12em; color:var(--muted); }
-    .ptree-sheet-backdrop { display:none; position:fixed; inset:0; z-index:199; }
+    .ptree-sheet-backdrop { display:none; position:fixed; inset:0; z-index:199; background:rgba(7,8,13,.6); backdrop-filter:blur(3px); -webkit-backdrop-filter:blur(3px); }
     .ptree-sheet-backdrop.open { display:block; }
-    .ptree-sheet { position:fixed; bottom:0; left:0; right:0; z-index:200; background:rgba(12,14,20,.98); border-top:2px solid var(--ptree-accent,#8ecce0); border-radius:20px 20px 0 0; padding:0 22px calc(env(safe-area-inset-bottom,0px) + 36px); transform:translateY(105%); transition:transform .3s cubic-bezier(.32,.72,0,1); box-shadow:0 -12px 40px rgba(0,0,0,.6); max-height:72vh; overflow-y:auto; }
+    .ptree-sheet { position:fixed; bottom:0; left:0; right:0; z-index:200; background:rgba(12,14,20,.98); border-top:2px solid var(--ptree-accent,#8ecce0); border-radius:20px 20px 0 0; padding:0 22px calc(max(env(safe-area-inset-bottom,0px),20px) + 48px); transform:translateY(105%); transition:transform .3s cubic-bezier(.32,.72,0,1); box-shadow:0 -12px 40px rgba(0,0,0,.6); max-height:72vh; overflow-y:auto; will-change:transform; }
     .ptree-sheet.open { transform:translateY(0); }
-    .ptree-sheet-handle { width:36px; height:4px; background:rgba(255,255,255,.15); border-radius:2px; margin:14px auto 20px; }
-    .ptree-sheet-name { font-family:'Cormorant Garamond',serif; font-size:22px; font-weight:300; color:var(--text); margin-bottom:5px; }
-    .ptree-sheet-sub { font-size:9px; letter-spacing:.16em; text-transform:uppercase; color:var(--muted); margin-bottom:14px; line-height:1.7; }
+    .ptree-sheet-top { display:flex; align-items:center; justify-content:center; position:relative; padding:14px 0 6px; }
+    .ptree-sheet-handle { width:40px; height:4px; background:rgba(255,255,255,.18); border-radius:2px; }
+    .ptree-sheet-close { position:absolute; right:0; top:8px; width:32px; height:32px; border-radius:50%; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.06); color:var(--muted); font-size:13px; display:flex; align-items:center; justify-content:center; cursor:pointer; font-family:'DM Mono',monospace; line-height:1; transition:background .15s, color .15s; }
+    .ptree-sheet-close:hover { background:rgba(255,255,255,.12); color:var(--text); }
+    .ptree-sheet-name { font-family:'Cormorant Garamond',serif; font-size:24px; font-weight:300; color:var(--text); margin-bottom:5px; margin-top:10px; }
+    .ptree-sheet-sub { font-size:9px; letter-spacing:.16em; text-transform:uppercase; color:var(--muted); margin-bottom:16px; line-height:1.7; }
     .ptree-sheet-bar-wrap { background:rgba(255,255,255,.07); border-radius:4px; height:3px; margin-bottom:14px; }
     .ptree-sheet-bar { height:3px; border-radius:4px; transition:width .4s ease; }
-    .ptree-sheet-stat { font-size:10px; color:var(--muted); letter-spacing:.06em; line-height:2.1; }
+    .ptree-sheet-stat { font-size:10px; color:var(--muted); letter-spacing:.06em; line-height:2.1; margin-bottom:20px; }
     .ptree-sheet-stat strong { color:var(--text); }
+    .ptree-sheet-begin { display:block; width:100%; padding:13px 20px; border-radius:10px; border:1px solid var(--ptree-accent,#8ecce0); background:rgba(0,0,0,0); color:var(--ptree-accent,#8ecce0); font-family:'DM Mono',monospace; font-size:10px; letter-spacing:.22em; text-transform:uppercase; cursor:pointer; transition:background .2s, opacity .2s; }
+    .ptree-sheet-begin:active { opacity:.7; }
+    .ptree-sheet-begin:hover { background:rgba(255,255,255,.05); }
+    .ptree-sheet-begin[disabled] { opacity:.3; cursor:default; }
     .ptree-first-visit { position:absolute; inset:0; z-index:30; display:flex; align-items:center; justify-content:center; padding:32px 24px; background:rgba(8,10,16,.78); backdrop-filter:blur(3px); cursor:pointer; }
     .ptree-first-bubble { background:rgba(10,12,18,.97); border:1px solid rgba(200,168,72,.18); border-radius:22px; padding:36px 28px 28px; max-width:268px; text-align:center; box-shadow:0 16px 56px rgba(0,0,0,.75), 0 0 48px rgba(200,168,72,.05); }
     .ptree-first-star { font-size:18px; color:#c8a848; opacity:.75; margin-bottom:20px; letter-spacing:.3em; }
@@ -3897,11 +3904,15 @@ body:not(.tut-live) #tutCorgi {
       </div>
       <div class="ptree-sheet-backdrop" id="ptreeSheetBackdrop"></div>
       <div class="ptree-sheet" id="ptreeSheet">
-        <div class="ptree-sheet-handle"></div>
+        <div class="ptree-sheet-top">
+          <div class="ptree-sheet-handle"></div>
+          <button class="ptree-sheet-close" id="ptreeSheetClose" aria-label="Close">✕</button>
+        </div>
         <div class="ptree-sheet-name" id="ptreeSheetName"></div>
         <div class="ptree-sheet-sub" id="ptreeSheetSub"></div>
         <div class="ptree-sheet-bar-wrap"><div class="ptree-sheet-bar" id="ptreeSheetBar" style="width:0%;"></div></div>
         <div class="ptree-sheet-stat" id="ptreeSheetStat"></div>
+        <button class="ptree-sheet-begin" id="ptreeSheetBegin">Begin Practice →</button>
       </div>
     </div>
     </div><!-- end guideSwipeWrap -->
@@ -14205,15 +14216,72 @@ function renderPracticeTree() {
   var sheetSub = document.getElementById('ptreeSheetSub');
   var sheetBar = document.getElementById('ptreeSheetBar');
   var sheetStat = document.getElementById('ptreeSheetStat');
+  var sheetClose = document.getElementById('ptreeSheetClose');
+  var sheetBegin = document.getElementById('ptreeSheetBegin');
   var openNodeId = null;
+  var currentTreeNode = null;
 
   function closePtreeSheet() {
-    if (sheet) sheet.classList.remove('open');
+    if (sheet) { sheet.style.transition = ''; sheet.style.transform = ''; sheet.classList.remove('open'); }
     if (sheetBackdrop) sheetBackdrop.classList.remove('open');
-    openNodeId = null;
+    openNodeId = null; currentTreeNode = null;
   }
 
   if (sheetBackdrop) sheetBackdrop.addEventListener('click', closePtreeSheet);
+  if (sheetClose) sheetClose.addEventListener('click', closePtreeSheet);
+
+  // Swipe-down-to-dismiss on the sheet
+  if (sheet) {
+    var _swY = null, _swTracking = false, _swLastY = null, _swLastT = null, _swVel = 0;
+    sheet.addEventListener('touchstart', function(e) {
+      if (sheet.scrollTop > 4) return;
+      _swY = e.touches[0].clientY; _swLastY = _swY; _swLastT = Date.now();
+      _swTracking = true; _swVel = 0;
+      sheet.style.transition = 'none';
+    }, {passive: true});
+    sheet.addEventListener('touchmove', function(e) {
+      if (!_swTracking) return;
+      var y = e.touches[0].clientY;
+      var now = Date.now(); var dt = Math.max(1, now - _swLastT);
+      _swVel = (_swVel * 0.6) + ((y - _swLastY) / dt * 1000 * 0.4);
+      _swLastY = y; _swLastT = now;
+      var dy = Math.max(0, y - _swY);
+      sheet.style.transform = 'translateY(' + dy + 'px)';
+    }, {passive: true});
+    sheet.addEventListener('touchend', function(e) {
+      if (!_swTracking) return;
+      _swTracking = false;
+      sheet.style.transition = '';
+      var dy = Math.max(0, e.changedTouches[0].clientY - _swY);
+      if (dy > 80 || _swVel > 500) { closePtreeSheet(); }
+      else { sheet.style.transform = ''; }
+    }, {passive: true});
+  }
+
+  // Begin Practice button
+  if (sheetBegin) {
+    sheetBegin.addEventListener('click', function() {
+      if (!currentTreeNode) return;
+      var ex = currentTreeNode.ex;
+      closePtreeSheet();
+      setTimeout(function() {
+        if (ex === 'soulmirror') {
+          showScreen('soulMirrorScreen');
+          if (window.soulMirrorInit) window.soulMirrorInit();
+        } else if (ex === 'pore') {
+          showScreen('soulMirrorScreen');
+          if (window.soulMirrorInit) window.soulMirrorInit();
+          // switch to pore breathing tab
+          setTimeout(function() {
+            var pbTab = document.querySelector('#soulMirrorTabs [data-tab="breathing"]');
+            if (pbTab) pbTab.click();
+          }, 320);
+        } else if (ex && ex !== 'kether') {
+          openExerciseSetup(ex);
+        }
+      }, 320);
+    });
+  }
 
   el.querySelectorAll('.ptree-tap-area').forEach(function(area) {
     area.addEventListener('click', function() {
@@ -14222,6 +14290,7 @@ function renderPracticeTree() {
       openNodeId = nodeId;
       var node = NODES.find(function(n) { return n.id === nodeId; });
       if (!node || !sheet) return;
+      currentTreeNode = node;
       var b = bMap[nodeId];
       var max = maxMap[nodeId] || 20;
       var dep = practiceTreeNodeDepth(node.ex, stats);
@@ -14248,6 +14317,11 @@ function renderPracticeTree() {
       if (bestSec > 0) statLines.push('<strong>Best hold</strong> ' + (bestSec >= 60 ? Math.floor(bestSec/60) + 'm ' + (bestSec%60) + 's' : bestSec + 's'));
       if (sessions > 0) statLines.push('<strong>Last practiced</strong> ' + recencyStr);
       sheetStat.innerHTML = statLines.join('<br>');
+
+      // Show Begin button for all practisable nodes (not kether which is a mastery summary)
+      if (sheetBegin) sheetBegin.style.display = (node.ex === 'kether') ? 'none' : 'block';
+
+      sheet.scrollTop = 0;
       sheet.classList.add('open');
       sheetBackdrop.classList.add('open');
     });
