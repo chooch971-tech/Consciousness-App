@@ -306,6 +306,25 @@
     .history-title { font-family:Cormorant Garamond,serif; font-size:26px; font-weight:300; color:var(--text); }
     .history-back { width:36px; height:36px; display:flex; align-items:center; justify-content:center; border-radius:10px; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.06); color:rgba(221,216,206,.75); cursor:pointer; transition:background .15s, border-color .15s; flex-shrink:0; padding:0; }
     .history-back:active { background:rgba(255,255,255,.12); border-color:rgba(255,255,255,.18); }
+    /* ── Apple-style grouped settings ── */
+    .aset-group { margin-bottom:30px; }
+    .aset-header { font-size:9px; letter-spacing:.22em; text-transform:uppercase; color:var(--muted); margin:0 4px 10px; }
+    .aset-card { background:rgba(255,255,255,.03); border:1px solid var(--border); border-radius:13px; overflow:hidden; }
+    .aset-row { display:flex; align-items:center; gap:13px; width:100%; padding:13px 15px; background:none; border:none; border-bottom:1px solid var(--border); color:var(--text); font-family:'DM Mono',monospace; font-size:12px; letter-spacing:.03em; text-align:left; cursor:pointer; box-sizing:border-box; transition:background .12s; }
+    .aset-row:last-child { border-bottom:none; }
+    .aset-row:active { background:rgba(255,255,255,.05); }
+    .aset-row__icon { width:30px; height:30px; border-radius:8px; display:flex; align-items:center; justify-content:center; font-size:15px; line-height:1; flex-shrink:0; background:rgba(126,184,164,.13); }
+    .aset-row__label { flex:1; min-width:0; }
+    .aset-row__value { font-size:11px; color:var(--muted); white-space:nowrap; }
+    .aset-row__chevron { color:var(--muted); opacity:.55; font-size:16px; flex-shrink:0; margin-left:-2px; }
+    .aset-row--danger { color:#c47a7a; }
+    .aset-row--danger .aset-row__icon { background:rgba(196,122,122,.13); }
+    .aset-note { font-size:9px; color:var(--muted); opacity:.5; text-align:center; line-height:1.8; padding:4px 8px 8px; }
+    /* exercise settings sub-page placeholder */
+    .aset-placeholder { text-align:center; padding:44px 24px; }
+    .aset-placeholder__mark { font-size:30px; opacity:.35; margin-bottom:16px; }
+    .aset-placeholder__title { font-family:Cormorant Garamond,serif; font-size:19px; font-weight:300; color:var(--text); margin-bottom:10px; }
+    .aset-placeholder__sub { font-size:11px; color:var(--muted); line-height:1.8; max-width:300px; margin:0 auto; }
     .history-list { display:flex; flex-direction:column; gap:10px; padding-bottom:40px; }
     .history-item { background:var(--surface); border:1px solid var(--border); border-radius:8px; padding:16px; }
     .history-item-top { display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; padding-right:28px; }
@@ -3114,9 +3133,19 @@ body:not(.tut-live) #tutCorgi {
     </div>
     <div id="settingsScrollBody" style="flex:1; overflow-y:auto; -webkit-overflow-scrolling:touch; scrollbar-width:none; -ms-overflow-style:none;">
 
+      <!-- Exercises (Apple-style drill-in) -->
+      <div class="aset-group">
+        <div class="aset-header">Concentration</div>
+        <div class="aset-card" id="settingsExConcCard"></div>
+      </div>
+      <div class="aset-group">
+        <div class="aset-header">Practices</div>
+        <div class="aset-card" id="settingsExPracticeCard"></div>
+      </div>
+
       <!-- Cloud Sync Status -->
-      <div style="margin-bottom:32px;">
-        <div style="font-size:9px; letter-spacing:.25em; text-transform:uppercase; color:var(--muted); margin-bottom:16px;">Cloud Sync</div>
+      <div class="aset-group">
+        <div class="aset-header">Cloud Sync</div>
         <div style="background:rgba(255,255,255,.03); border:1px solid var(--border); border-radius:10px; padding:16px 18px; margin-bottom:10px;">
           <div id="syncStatusText" style="font-size:12px; color:var(--text); margin-bottom:8px;">Not logged in</div>
           <div id="syncStatusEmail" style="font-size:10px; color:var(--muted); margin-bottom:12px;"></div>
@@ -3152,8 +3181,8 @@ body:not(.tut-live) #tutCorgi {
       </div>
 
       <!-- Backup & Restore -->
-      <div style="margin-bottom:32px;">
-        <div style="font-size:9px; letter-spacing:.25em; text-transform:uppercase; color:var(--muted); margin-bottom:16px;">Backup & Restore</div>
+      <div class="aset-group">
+        <div class="aset-header">Backup & Restore</div>
 
         <div style="background:rgba(255,255,255,.03); border:1px solid var(--border); border-radius:10px; padding:16px 18px; margin-bottom:10px;">
           <div style="font-size:12px; color:var(--text); margin-bottom:4px;">Export progress</div>
@@ -3173,8 +3202,8 @@ body:not(.tut-live) #tutCorgi {
       </div>
 
       <!-- Custom Visualization Images -->
-      <div style="margin-bottom:32px;">
-        <div style="font-size:9px; letter-spacing:.25em; text-transform:uppercase; color:var(--muted); margin-bottom:16px;">Visualization Images</div>
+      <div class="aset-group">
+        <div class="aset-header">Visualization Images</div>
         <div style="background:rgba(255,255,255,.03); border:1px solid var(--border); border-radius:10px; padding:16px 18px;">
           <div style="font-size:12px; color:var(--text); margin-bottom:4px;">Custom images</div>
           <div style="font-size:10px; color:var(--muted); line-height:1.6; margin-bottom:14px;">Upload your own images to use in Visualization sessions. They will appear under a Custom tab.</div>
@@ -3187,8 +3216,8 @@ body:not(.tut-live) #tutCorgi {
       </div>
 
       <!-- Custom Auditory Sounds -->
-      <div style="margin-bottom:32px;">
-        <div style="font-size:9px; letter-spacing:.25em; text-transform:uppercase; color:var(--muted); margin-bottom:16px;">Auditory Sounds</div>
+      <div class="aset-group">
+        <div class="aset-header">Auditory Sounds</div>
         <div style="background:rgba(255,255,255,.03); border:1px solid var(--border); border-radius:10px; padding:16px 18px;">
           <div style="font-size:12px; color:var(--text); margin-bottom:4px;">Custom sounds</div>
           <div style="font-size:10px; color:var(--muted); line-height:1.6; margin-bottom:14px;">Upload your own audio files to use in Auditory sessions. They will appear at the bottom of the sound selector.</div>
@@ -3201,26 +3230,35 @@ body:not(.tut-live) #tutCorgi {
       </div>
 
       <!-- Reset Progress -->
-      <div style="margin-bottom:32px;">
-        <div style="font-size:9px; letter-spacing:.25em; text-transform:uppercase; color:var(--muted); margin-bottom:16px;">Reset Progress</div>
-        <div style="background:rgba(255,255,255,.03); border:1px solid var(--border); border-radius:10px; overflow:hidden;">
-          <button id="settingsResetAwareness" style="width:100%; display:flex; align-items:center; gap:10px; padding:14px 18px; background:none; border:none; border-bottom:1px solid var(--border); color:#c47a7a; font-family:'DM Mono',monospace; font-size:10px; letter-spacing:.12em; cursor:pointer; text-align:left;">
-            <span style="opacity:.7;">↺</span> Reset Awareness Progress
+      <div class="aset-group">
+        <div class="aset-header">Reset Progress</div>
+        <div class="aset-card">
+          <button id="settingsResetAwareness" class="aset-row aset-row--danger">
+            <span class="aset-row__icon">↺</span><span class="aset-row__label">Reset Awareness Progress</span>
           </button>
-          <button id="settingsResetConc" style="width:100%; display:flex; align-items:center; gap:10px; padding:14px 18px; background:none; border:none; border-bottom:1px solid var(--border); color:#c47a7a; font-family:'DM Mono',monospace; font-size:10px; letter-spacing:.12em; cursor:pointer; text-align:left;">
-            <span style="opacity:.7;">↺</span> Reset Concentration Progress
+          <button id="settingsResetConc" class="aset-row aset-row--danger">
+            <span class="aset-row__icon">↺</span><span class="aset-row__label">Reset Concentration Progress</span>
           </button>
-          <button id="settingsResetPrayer" style="width:100%; display:flex; align-items:center; gap:10px; padding:14px 18px; background:none; border:none; color:#c47a7a; font-family:'DM Mono',monospace; font-size:10px; letter-spacing:.12em; cursor:pointer; text-align:left;">
-            <span style="opacity:.7;">↺</span> Reset Prayer Progress
+          <button id="settingsResetPrayer" class="aset-row aset-row--danger">
+            <span class="aset-row__icon">↺</span><span class="aset-row__label">Reset Prayer Progress</span>
           </button>
         </div>
       </div>
 
-      <div style="font-size:9px; color:var(--muted); opacity:.5; text-align:center; line-height:1.8; padding:0 8px;">
+      <div class="aset-note">
         Backups contain all your data in a single JSON file.<br>To move to a new device: export here, transfer the file, import there.
       </div>
 
     </div>
+  </div>
+
+  <!-- EXERCISE SETTINGS SUB-PAGE (Apple-style drill-in) -->
+  <div class="screen" id="exerciseSettingsScreen">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:28px; flex-shrink:0;">
+      <div id="exerciseSettingsTitle" style="font-family:Cormorant Garamond,serif; font-size:24px; font-weight:300;">Exercise</div>
+      <button class="history-back" id="exerciseSettingsBack">← back</button>
+    </div>
+    <div id="exerciseSettingsBody" style="flex:1; overflow-y:auto; -webkit-overflow-scrolling:touch; scrollbar-width:none; -ms-overflow-style:none;"></div>
   </div>
 
   <!-- GUIDE -->
@@ -6329,6 +6367,7 @@ document.getElementById('drawerSettings').addEventListener('click', function() {
     _refreshSettingsSyncCard();
   }
   showScreen('settingsScreen');
+  renderSettingsExerciseList();
   renderCustomVisImageList();
   renderCustomAudSoundList();
 });
@@ -6342,6 +6381,7 @@ document.getElementById('drawerProfile').addEventListener('click',function(){
   closeDrawer();
   if(syncEnabled&&authEmail){_refreshSettingsSyncCardSignedIn();}else{_refreshSettingsSyncCard();}
   showScreen('settingsScreen');
+  renderSettingsExerciseList();
 });
 
 document.getElementById('customVisUpload').addEventListener('change', function(e) {
@@ -6447,6 +6487,70 @@ document.getElementById('setUsernameBtn').addEventListener('click', async functi
 // syncLoginBtn removed — sign-in now handled by settingsSignInWrap
 document.getElementById('settingsBack').addEventListener('click', function() {
   renderHome(); showScreen('homeScreen');
+});
+
+// ── Apple-style per-exercise settings ──
+var EXERCISE_SETTINGS_LIST = [
+  { id:'clock',      name:'Clock Exercise',           icon:'⏱',  tint:'rgba(212,149,110,.16)', group:'conc' },
+  { id:'visual',     name:'Visualization',            icon:'👁', tint:'rgba(110,159,212,.16)', group:'conc' },
+  { id:'auditory',   name:'Auditory',                 icon:'🎧', tint:'rgba(110,184,164,.16)', group:'conc' },
+  { id:'thought',    name:'Thought Control',          icon:'◌',  tint:'rgba(152,180,204,.16)', group:'conc' },
+  { id:'asana',      name:'Asana',                    icon:'🧘', tint:'rgba(196,120,120,.16)', group:'conc' },
+  { id:'multisense', name:'Multi-Sense Visualization',icon:'🎴', tint:'rgba(110,159,212,.16)', group:'conc' },
+  { id:'allangles',  name:'All-Angles Visualization', icon:'🔄', tint:'rgba(110,159,212,.16)', group:'conc' },
+  { id:'awareness',  name:'Awareness',                icon:'◉',  tint:'rgba(126,184,164,.16)', group:'practice' },
+  { id:'prayer',     name:'Prayer',                   icon:'✦',  tint:'rgba(196,168,212,.16)', group:'practice' },
+  { id:'soulmirror', name:'Soul Mirror',              icon:'◆',  tint:'rgba(164,126,184,.16)', group:'practice' },
+  { id:'pore',       name:'Pore Breathing',           icon:'≋',  tint:'rgba(142,204,224,.16)', group:'practice' }
+];
+
+function _asetRowHTML(ex) {
+  return '<button class="aset-row" data-exset="' + ex.id + '">'
+    + '<span class="aset-row__icon" style="background:' + ex.tint + ';">' + ex.icon + '</span>'
+    + '<span class="aset-row__label">' + ex.name + '</span>'
+    + '<span class="aset-row__chevron">›</span>'
+    + '</button>';
+}
+
+function renderSettingsExerciseList() {
+  var concCard = document.getElementById('settingsExConcCard');
+  var pracCard = document.getElementById('settingsExPracticeCard');
+  if (!concCard || !pracCard) return;
+  concCard.innerHTML = EXERCISE_SETTINGS_LIST.filter(function(e){ return e.group === 'conc'; }).map(_asetRowHTML).join('');
+  pracCard.innerHTML = EXERCISE_SETTINGS_LIST.filter(function(e){ return e.group === 'practice'; }).map(_asetRowHTML).join('');
+}
+
+function openExerciseSettings(id) {
+  var ex = EXERCISE_SETTINGS_LIST.find(function(e){ return e.id === id; });
+  if (!ex) return;
+  document.getElementById('exerciseSettingsTitle').textContent = ex.name;
+  var body = document.getElementById('exerciseSettingsBody');
+  // Placeholder — real per-exercise preferences slot in here later.
+  body.innerHTML = '<div class="aset-group">'
+    + '<div class="aset-card">'
+    + '<div class="aset-row" style="cursor:default;">'
+    + '<span class="aset-row__icon" style="background:' + ex.tint + ';">' + ex.icon + '</span>'
+    + '<span class="aset-row__label">' + ex.name + '</span>'
+    + '</div>'
+    + '</div>'
+    + '</div>'
+    + '<div class="aset-placeholder">'
+    + '<div class="aset-placeholder__mark">⚙</div>'
+    + '<div class="aset-placeholder__title">Settings coming soon</div>'
+    + '<div class="aset-placeholder__sub">Adjustable preferences for ' + ex.name + ' will live here. For now, options are chosen at the start of each session.</div>'
+    + '</div>';
+  body.scrollTop = 0;
+  showScreen('exerciseSettingsScreen');
+}
+
+// Delegated row taps within the Settings exercises lists
+document.getElementById('settingsScrollBody').addEventListener('click', function(e) {
+  var row = e.target.closest('.aset-row[data-exset]');
+  if (row) openExerciseSettings(row.dataset.exset);
+});
+
+document.getElementById('exerciseSettingsBack').addEventListener('click', function() {
+  showScreen('settingsScreen');
 });
 
 // Settings email toggle
@@ -19574,7 +19678,7 @@ document.getElementById('journalBodyInput').addEventListener('input',journalAuto
 
   // Which screen sits behind each sub-screen during swipe
   // (unlisted screens reveal homeScreen)
-  var PREV_SCREEN = { journalEntryScreen: 'journalScreen' };
+  var PREV_SCREEN = { journalEntryScreen: 'journalScreen', exerciseSettingsScreen: 'settingsScreen' };
 
   var EASE = 'cubic-bezier(0.25,0.46,0.45,0.94)';
 
