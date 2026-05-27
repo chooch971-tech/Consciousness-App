@@ -1111,10 +1111,12 @@
     .delta-down { color:#b87070; }
     .delta-same { color:var(--muted); }
     /* 3-column summary bar at top of report */
-    .rpt-summary { display:grid; grid-template-columns:1fr 1fr 1fr; gap:8px; margin:16px 0 20px; }
-    .rpt-summary-card { background:var(--surface); border:1px solid var(--border); border-radius:10px; padding:14px 10px 12px; display:flex; flex-direction:column; align-items:center; text-align:center; }
-    .rpt-summary-val { font-family:'Cormorant Garamond',serif; font-size:28px; font-weight:300; line-height:1; color:var(--text); margin-bottom:5px; }
-    .rpt-summary-label { font-size:8px; letter-spacing:.18em; text-transform:uppercase; color:var(--muted); font-family:'DM Mono',monospace; }
+    .rpt-summary { display:grid; grid-template-columns:1fr 1fr 1fr; gap:8px; margin:16px 0 22px; }
+    .rpt-summary-card { background:var(--surface); border:1px solid var(--border); border-radius:10px; padding:17px 10px 14px; display:flex; flex-direction:column; align-items:center; text-align:center; }
+    .rpt-summary-val { font-family:'Cormorant Garamond',serif; font-size:33px; font-weight:400; line-height:1; color:var(--text); margin-bottom:6px; text-shadow:0 1px 18px rgba(255,255,255,.07); }
+    .rpt-summary-val--green { color:var(--accent); text-shadow:0 1px 18px rgba(126,184,164,.22); }
+    .rpt-summary-val--gold { color:#d8b86a; text-shadow:0 1px 18px rgba(216,184,106,.2); }
+    .rpt-summary-label { font-size:8px; letter-spacing:.18em; text-transform:uppercase; color:rgba(221,216,206,.55); font-family:'DM Mono',monospace; }
     /* Level + record highlight cards */
     .rpt-highlight { display:flex; align-items:center; gap:12px; background:var(--surface); border:1px solid var(--border); border-radius:10px; padding:12px 14px; margin-bottom:8px; }
     .rpt-highlight__icon { width:32px; height:32px; border-radius:8px; background:rgba(212,149,110,.12); border:1px solid rgba(212,149,110,.2); display:flex; align-items:center; justify-content:center; flex-shrink:0; font-size:14px; }
@@ -17403,8 +17405,8 @@ function buildOmniaReportCardHtml(period) {
     html += '<div class="rpt-omnia-card">'
       + '<div class="rpt-omnia-card__inner">'
       + stageHtml
-      + '<div class="rpt-omnia-text rpt-omnia-text--dim">' + _evalMsg + '</div>'
-      + '<div class="rpt-omnia-meta" style="opacity:.45">' + _availMsg + '</div>'
+      + '<div class="rpt-omnia-text" style="color:#a9cde6;">' + _evalMsg + '</div>'
+      + '<div class="rpt-omnia-meta" style="color:var(--accent);opacity:.85;">' + _availMsg + '</div>'
       + '</div></div>';
   } else {
     // Check cache — use offset-aware key so each day/week/month has its own entry
@@ -17450,14 +17452,15 @@ function renderReport(period) {
 
   // ── 2. Summary bar + Signals (only when there's practice in the period) ──
   if (totalSessions > 0) {
-    var totalMinPracticed = sumMinutes(awarenessNow);
+    var concMinPracticed = Math.round(concNow.reduce(function(a, h) { return a + (h.seconds || 0); }, 0) / 60);
+    var totalMinPracticed = sumMinutes(awarenessNow) + concMinPracticed;
     var totalXpEarned = awarenessNow.reduce(function(a, h) { return a + (h.xpEarned || 0); }, 0)
                       + concNow.reduce(function(a, h) { return a + (h.xpEarned || 0); }, 0);
 
     html += '<div class="rpt-summary">';
-    html += '<div class="rpt-summary-card"><div class="rpt-summary-val">' + (totalMinPracticed >= 60 ? Math.floor(totalMinPracticed / 60) + 'h ' + (totalMinPracticed % 60) + 'm' : totalMinPracticed + 'm') + '</div><div class="rpt-summary-label">Practiced</div></div>';
+    html += '<div class="rpt-summary-card"><div class="rpt-summary-val rpt-summary-val--green">' + (totalMinPracticed >= 60 ? Math.floor(totalMinPracticed / 60) + 'h ' + (totalMinPracticed % 60) + 'm' : totalMinPracticed + 'm') + '</div><div class="rpt-summary-label">Practiced</div></div>';
     html += '<div class="rpt-summary-card"><div class="rpt-summary-val">' + totalSessions + '</div><div class="rpt-summary-label">Sessions</div></div>';
-    html += '<div class="rpt-summary-card"><div class="rpt-summary-val">+' + totalXpEarned.toLocaleString() + '</div><div class="rpt-summary-label">XP Earned</div></div>';
+    html += '<div class="rpt-summary-card"><div class="rpt-summary-val rpt-summary-val--gold">+' + totalXpEarned.toLocaleString() + '</div><div class="rpt-summary-label">XP Earned</div></div>';
     html += '</div>';
 
     // ── 3. Signals — milestones first, then derived patterns ──
@@ -17523,9 +17526,11 @@ function renderReport(period) {
       html += '<div class="rpt-cap">' + esc(breakdown) + '</div>';
     }
 
-    var concChartData = buildChartData(concState.history, period, 'seconds');
-    if (concChartData.values.some(function(v) { return v > 0; })) {
-      html += '<div class="report-chart"><div class="report-chart-title">Best Hold Per Session</div>' + renderBarChart(concChartData.values, concChartData.labels, '#d4956e', 56) + '</div>';
+    if (period !== 'daily') {
+      var concChartData = buildChartData(concState.history, period, 'seconds');
+      if (concChartData.values.some(function(v) { return v > 0; })) {
+        html += '<div class="report-chart"><div class="report-chart-title">Focus Trend</div>' + renderLineChart(concChartData.values, '#d4956e', 48) + '</div>';
+      }
     }
 
     var clockSessions = (concState.history || []).filter(function(s) {
