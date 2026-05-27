@@ -1061,6 +1061,19 @@
     .delta-up { color:#7eb8a4; }
     .delta-down { color:#b87070; }
     .delta-same { color:var(--muted); }
+    /* 3-column summary bar at top of report */
+    .rpt-summary { display:grid; grid-template-columns:1fr 1fr 1fr; gap:8px; margin:16px 0 20px; }
+    .rpt-summary-card { background:var(--surface); border:1px solid var(--border); border-radius:10px; padding:14px 10px 12px; display:flex; flex-direction:column; align-items:center; text-align:center; }
+    .rpt-summary-val { font-family:'Cormorant Garamond',serif; font-size:28px; font-weight:300; line-height:1; color:var(--text); margin-bottom:5px; }
+    .rpt-summary-label { font-size:8px; letter-spacing:.18em; text-transform:uppercase; color:var(--muted); font-family:'DM Mono',monospace; }
+    /* Level + record highlight cards */
+    .rpt-highlight { display:flex; align-items:center; gap:12px; background:var(--surface); border:1px solid var(--border); border-radius:10px; padding:12px 14px; margin-bottom:8px; }
+    .rpt-highlight__icon { width:32px; height:32px; border-radius:8px; background:rgba(212,149,110,.12); border:1px solid rgba(212,149,110,.2); display:flex; align-items:center; justify-content:center; flex-shrink:0; font-size:14px; }
+    .rpt-highlight__body { flex:1; min-width:0; }
+    .rpt-highlight__title { font-family:'Cormorant Garamond',serif; font-size:18px; font-weight:300; line-height:1.1; color:var(--text); }
+    .rpt-highlight__sub { font-size:8px; letter-spacing:.16em; text-transform:uppercase; color:var(--muted); margin-top:2px; font-family:'DM Mono',monospace; }
+    .rpt-highlight--record { background:rgba(212,180,100,.06); border-color:rgba(212,180,100,.2); }
+    .rpt-highlight--record .rpt-highlight__icon { background:rgba(212,180,100,.12); border-color:rgba(212,180,100,.25); }
     .report-chart { background:var(--surface); border:1px solid var(--border); border-radius:8px; padding:14px; margin-bottom:12px; }
     .report-chart-title { font-size:8px; letter-spacing:.15em; text-transform:uppercase; color:var(--muted); margin-bottom:10px; }
     .report-motivational { background:var(--surface); border:1px solid rgba(126,184,164,.2); border-radius:8px; padding:14px 16px; margin-bottom:12px; }
@@ -4701,7 +4714,7 @@ body:not(.tut-live) #tutCorgi {
     </div>
     <div class="drawer-items">
       <button class="drawer-item" id="drawerReports">
-        <span class="drawer-item-icon">◈</span>Progress Report
+        <span class="drawer-item-icon">◈</span>Progress Reports
       </button>
       <button class="drawer-item" id="drawerJournal">
         <span class="drawer-item-icon">📓</span>Journal
@@ -16893,6 +16906,36 @@ function renderReport(period) {
   var concPrev = filterHistory(concState.history, range.prevStart, range.prevEnd);
   var html = '';
 
+  // ── 3-card summary bar (always shown if any data) ──
+  var totalSessions = awarenessNow.length + concNow.length;
+  var totalMinPracticed = sumMinutes(awarenessNow);
+  var totalXpEarned = awarenessNow.reduce(function(a, h) { return a + (h.xpEarned || 0); }, 0)
+                    + concNow.reduce(function(a, h) { return a + (h.xpEarned || 0); }, 0);
+
+  if (totalSessions > 0) {
+    var concLevelLabel = getConcRank ? (concState.level + ' · ' + getConcRank(concState.level)) : ('Level ' + concState.level);
+    var awLevelLabel = getRankTitle ? (state.level + ' · ' + getRankTitle(state.level)) : ('Level ' + state.level);
+
+    html += '<div class="rpt-summary">';
+    html += '<div class="rpt-summary-card"><div class="rpt-summary-val">' + (totalMinPracticed >= 60 ? Math.floor(totalMinPracticed / 60) + 'h ' + (totalMinPracticed % 60) + 'm' : totalMinPracticed + 'm') + '</div><div class="rpt-summary-label">Practiced</div></div>';
+    html += '<div class="rpt-summary-card"><div class="rpt-summary-val">' + totalSessions + '</div><div class="rpt-summary-label">Sessions</div></div>';
+    html += '<div class="rpt-summary-card"><div class="rpt-summary-val">+' + totalXpEarned.toLocaleString() + '</div><div class="rpt-summary-label">XP Earned</div></div>';
+    html += '</div>';
+
+    // Level highlights
+    if (concNow.length > 0) {
+      html += '<div class="rpt-highlight"><div class="rpt-highlight__icon">◉</div><div class="rpt-highlight__body"><div class="rpt-highlight__title">Level ' + concState.level + '</div><div class="rpt-highlight__sub">Concentration · ' + (typeof getConcRank === 'function' ? getConcRank(concState.level) : '') + '</div></div></div>';
+    } else if (awarenessNow.length > 0) {
+      html += '<div class="rpt-highlight"><div class="rpt-highlight__icon">◎</div><div class="rpt-highlight__body"><div class="rpt-highlight__title">Level ' + state.level + '</div><div class="rpt-highlight__sub">Awareness · ' + (typeof getRankTitle === 'function' ? getRankTitle(state.level) : '') + '</div></div></div>';
+    }
+
+    // Record highlights (all periods, not just daily)
+    var recs = buildRecords(awarenessNow, concNow);
+    recs.forEach(function(r) {
+      html += '<div class="rpt-highlight rpt-highlight--record"><div class="rpt-highlight__icon">★</div><div class="rpt-highlight__body"><div class="rpt-highlight__title" style="font-size:14px;">' + r.text + '</div></div></div>';
+    });
+  }
+
   // ── Omnia commentary card ──
   if (period === 'daily' || period === 'weekly' || period === 'monthly') {
     // Past periods are always eligible; current period depends on the day
@@ -16945,19 +16988,6 @@ function renderReport(period) {
         setTimeout(function() { loadOmniaReportInto(period, _capturedOffset); }, 0);
       }
       html += '</div></div>';
-    }
-  }
-
-  // ── Records (daily only) ──
-  if (period === 'daily') {
-    var records = buildRecords(awarenessNow, concNow);
-    if (records.length) {
-      html += '<div class="report-section">';
-      html += '<div class="report-section-title">Today\'s Records</div>';
-      records.forEach(function(r) {
-        html += '<div class="report-record"><span class="report-record-icon">' + r.icon + '</span><span class="report-record-text">' + r.text + '</span></div>';
-      });
-      html += '</div>';
     }
   }
 
