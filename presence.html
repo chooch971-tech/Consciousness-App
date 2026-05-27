@@ -3364,7 +3364,7 @@ body:not(.tut-live) #tutCorgi {
       </div>
 
       <div class="prof-section">
-        <div class="prof-section__head"><span>Friend Streaks</span><button class="prof-section__more" id="profFriendsMore">&#8250;</button></div>
+        <div class="prof-section__head"><span>Friend Streaks</span><button class="prof-section__more" id="profFriendsMore">Manage &#8250;</button></div>
         <div class="prof-friends" id="profFriendStreaks"></div>
       </div>
 
@@ -4811,9 +4811,6 @@ body:not(.tut-live) #tutCorgi {
       </button>
       <button class="drawer-item" id="drawerPlayground">
         <span class="drawer-item-icon">🧪</span>Playground
-      </button>
-      <button class="drawer-item" id="drawerFriends">
-        <span class="drawer-item-icon">👥</span>Friends
       </button>
       <button class="drawer-item" id="drawerProfile">
         <span class="drawer-item-icon">👤</span>Profile
@@ -22470,12 +22467,6 @@ function timeAgo(date) {
 document.getElementById('fpBackBtn').addEventListener('click', closeFriendsPanel);
 document.getElementById('fpSearchBtn').addEventListener('click', searchFriends);
 document.getElementById('fpSearchInput').addEventListener('keydown', function(e) { if (e.key === 'Enter') searchFriends(); });
-document.getElementById('drawerFriends').addEventListener('click', function() {
-  var overlay = document.querySelector('.drawer-overlay');
-  if (overlay) overlay.classList.remove('show');
-  if (!authToken) { showToast('Sign in to use Friends'); return; }
-  openFriendsPanel();
-});
 
 // Heartbeat — ping every 60 s while app is open and user is signed in
 (function() {

@@ -665,7 +665,20 @@ app.get('/api/sync/friends/list', verifyToken, async (req, res) => {
       if (latestSync) {
         try {
           const v3 = latestSync.presence_v3 ? JSON.parse(latestSync.presence_v3) : null;
-          if (v3) streak = v3.streak || 0;
+          if (v3) {
+            streak = v3.streak || 0;
+            // Decay a stale streak: a friend's stored streak reflects their last sync.
+            // If they haven't practiced in more than one full day, the streak is broken —
+            // mirror the client's checkStreakStatus() so we don't show a phantom streak.
+            if (streak > 0 && v3.lastSessionDate) {
+              const today = new Date(); today.setHours(0, 0, 0, 0);
+              const last = new Date(v3.lastSessionDate); last.setHours(0, 0, 0, 0);
+              if (!isNaN(last.getTime())) {
+                const diffDays = Math.round((today - last) / 86400000);
+                if (diffDays > 1) streak = 0;
+              }
+            }
+          }
         } catch(e) {}
         try {
           const conc = latestSync.presence_conc_v1 ? JSON.parse(latestSync.presence_conc_v1) : null;
