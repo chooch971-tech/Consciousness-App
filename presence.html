@@ -3332,7 +3332,7 @@ body:not(.tut-live) #tutCorgi {
   </div>
 
   <!-- AWARENESS HOME -->
-  <div id="homeScreen" style="display:flex; flex-direction:column; height:100%; padding:var(--safe-top) 24px max(env(safe-area-inset-bottom),28px);">
+  <div id="homeScreen" style="display:flex; flex-direction:column; height:100%; padding:var(--safe-top) 24px max(env(safe-area-inset-bottom),28px); background:var(--bg);">
     <div class="top-bar">
       <button class="hamburger" id="hamburgerBtn" aria-label="Menu">
         <span></span><span></span><span></span>
@@ -19789,6 +19789,7 @@ document.getElementById('journalBodyInput').addEventListener('input',journalAuto
     el.style.inset      = '0';
     el.style.zIndex     = '19';
     el.style.display    = 'flex';
+    el.style.background = 'var(--bg)';
     el.style.willChange = 'transform';
     el.style.transition = 'none';
     el.style.transform  = 'translateX(-28%)';
@@ -19796,12 +19797,13 @@ document.getElementById('journalBodyInput').addEventListener('input',journalAuto
 
   // Remove all swipe-injected inline properties from the previous screen
   function cleanPrev(el, isHome) {
-    el.style.position = '';
-    el.style.inset = '';
-    el.style.zIndex = '';
+    el.style.position   = '';
+    el.style.inset      = '';
+    el.style.zIndex     = '';
+    el.style.background = '';
     el.style.willChange = '';
     el.style.transition = '';
-    el.style.transform = '';
+    el.style.transform  = '';
     // Non-home .screen elements return to display:none (controlled by .active class)
     if (!isHome) el.style.display = '';
   }
@@ -19925,6 +19927,10 @@ document.getElementById('journalBodyInput').addEventListener('input',journalAuto
     if (sw.dragging || sw._animating) return;
     var t = e.touches[0];
     if (t.clientX > 44) return; // only edge swipes
+
+    // Never swipe-back when on the home screen
+    var homeEl = document.getElementById('homeScreen');
+    if (homeEl && homeEl.style.display === 'flex') return;
 
     var screenEl = document.querySelector('.screen.active');
     if (!screenEl || NOSW[screenEl.id]) return;
