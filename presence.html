@@ -1131,6 +1131,33 @@
     .report-record-icon { font-size:16px; }
     .report-record-text { font-size:11px; color:var(--text); line-height:1.4; }
     .report-share-btn { width:100%; padding:14px; border-radius:6px; border:1px solid rgba(126,184,164,.25); background:rgba(126,184,164,.08); color:var(--accent); font-family:'DM Mono',monospace; font-size:10px; letter-spacing:.2em; text-transform:uppercase; cursor:pointer; margin-top:8px; }
+    /* ── Report redesign: section headings, signals, compact strips ── */
+    .rpt-h { font-size:9px; letter-spacing:.24em; text-transform:uppercase; font-family:'DM Mono',monospace; color:var(--muted); margin:0 0 11px; display:flex; align-items:center; gap:10px; }
+    .rpt-h::after { content:''; flex:1; height:1px; background:var(--border); }
+    .rpt-h--green { color:var(--accent); }
+    .rpt-h--amber { color:#d4956e; }
+    .rpt-h--purple { color:#9b8ec4; }
+    .rpt-signals { display:flex; flex-direction:column; gap:1px; background:var(--border); border:1px solid var(--border); border-radius:12px; overflow:hidden; margin-bottom:26px; }
+    .rpt-signal { display:flex; align-items:center; gap:12px; padding:13px 15px; background:var(--surface); }
+    .rpt-signal--milestone { background:rgba(212,180,100,.06); }
+    .rpt-signal__body { flex:1; min-width:0; }
+    .rpt-signal__label { font-size:8px; letter-spacing:.2em; text-transform:uppercase; color:var(--accent); font-family:'DM Mono',monospace; margin-bottom:4px; }
+    .rpt-signal--milestone .rpt-signal__label { color:#d4b064; }
+    .rpt-signal__text { font-family:'Cormorant Garamond',serif; font-size:15px; font-weight:300; color:var(--text); line-height:1.35; }
+    .rpt-signal__val { font-family:'Cormorant Garamond',serif; font-size:23px; font-weight:300; color:var(--text); flex-shrink:0; line-height:1; }
+    .rpt-strip { display:flex; background:var(--surface); border:1px solid var(--border); border-radius:12px; overflow:hidden; margin-bottom:10px; }
+    .rpt-strip__cell { flex:1; padding:14px 8px 12px; text-align:center; border-right:1px solid var(--border); }
+    .rpt-strip__cell:last-child { border-right:none; }
+    .rpt-strip__val { font-family:'Cormorant Garamond',serif; font-size:23px; font-weight:300; line-height:1; margin-bottom:5px; color:var(--text); }
+    .rpt-strip__lbl { font-size:7.5px; letter-spacing:.14em; text-transform:uppercase; color:var(--muted); font-family:'DM Mono',monospace; }
+    .rpt-strip__delta { font-size:8px; margin-top:4px; font-family:'DM Mono',monospace; }
+    .rpt-clockbar { background:var(--surface); border:1px solid var(--border); border-radius:10px; padding:12px 14px; margin-bottom:10px; }
+    .rpt-clockbar__lbl { font-size:8px; letter-spacing:.14em; text-transform:uppercase; color:var(--muted); font-family:'DM Mono',monospace; display:flex; justify-content:space-between; margin-bottom:8px; }
+    .rpt-clockbar__track { height:4px; background:var(--border); border-radius:2px; overflow:hidden; }
+    .rpt-clockbar__fill { height:100%; background:linear-gradient(90deg,#d4956e,#e8b88a); border-radius:2px; transition:width .6s ease; }
+    .rpt-cap { font-size:9px; color:var(--muted); font-family:'DM Mono',monospace; letter-spacing:.04em; margin:-2px 0 16px; padding:0 2px; }
+    .rpt-block { margin-bottom:26px; }
+    .rpt-empty { text-align:center; color:var(--muted); font-size:11px; font-family:'DM Mono',monospace; letter-spacing:.06em; line-height:2; padding:40px 20px; }
 
     /* EXERCISE GRID */
     .exercise-grid { display:grid; grid-template-columns:1fr 1fr; gap:10px; width:100%; margin-bottom:4px; }
@@ -17168,6 +17195,135 @@ function updateReportNav() {
   if (next) { next.style.opacity = (isYearly || reportOffset >= 0) ? '.15' : '1'; next.style.pointerEvents = (isYearly || reportOffset >= 0) ? 'none' : ''; }
 }
 
+function deltaMini(curr, prev) {
+  if (!prev && !curr) return '';
+  if (!prev) return '<span class="delta-up">↑ new</span>';
+  var pct = Math.round(((curr - prev) / prev) * 100);
+  if (pct > 0) return '<span class="delta-up">↑' + pct + '%</span>';
+  if (pct < 0) return '<span class="delta-down">↓' + Math.abs(pct) + '%</span>';
+  return '<span class="delta-same">—</span>';
+}
+
+function rptStripCell(val, lbl, deltaHtml) {
+  return '<div class="rpt-strip__cell"><div class="rpt-strip__val">' + val + '</div><div class="rpt-strip__lbl">' + lbl + '</div>'
+    + (deltaHtml ? '<div class="rpt-strip__delta">' + deltaHtml + '</div>' : '') + '</div>';
+}
+
+// Derive readable "best pattern" insights from the period's sessions.
+function buildSignals(awNow, concNow, period) {
+  var signals = [];
+  var all = awNow.concat(concNow);
+  if (!all.length) return signals;
+  function sMin(h) { return h.durationMin != null ? h.durationMin : (h.seconds ? h.seconds / 60 : 0); }
+  function bucketOf(hr) {
+    if (hr >= 5 && hr < 11) return 'Morning';
+    if (hr >= 11 && hr < 17) return 'Midday';
+    if (hr >= 17 && hr < 22) return 'Evening';
+    return 'Late-night';
+  }
+
+  // Best Rhythm — time of day with the most sessions
+  if (all.length >= 3) {
+    var byBucket = {};
+    all.forEach(function(h) { var d = new Date(h.date); if (isNaN(d)) return; var b = bucketOf(d.getHours()); byBucket[b] = (byBucket[b] || 0) + 1; });
+    var bk = Object.keys(byBucket).sort(function(a, b) { return byBucket[b] - byBucket[a]; });
+    if (bk.length && byBucket[bk[0]] >= 2) {
+      signals.push({ label: 'Best Rhythm', text: bk[0] + ' sessions were most consistent.', val: byBucket[bk[0]] + '×' });
+    }
+  }
+
+  // Deepest Day — weekday holding the most practice (multi-day periods only)
+  if (period !== 'daily') {
+    var dayNames = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+    var byDay = {};
+    all.forEach(function(h) { var d = new Date(h.date); if (isNaN(d)) return; byDay[d.getDay()] = (byDay[d.getDay()] || 0) + sMin(h); });
+    var dk = Object.keys(byDay).sort(function(a, b) { return byDay[b] - byDay[a]; });
+    if (dk.length && byDay[dk[0]] >= 1) {
+      signals.push({ label: 'Deepest Day', text: dayNames[dk[0]] + ' held the deepest practice.', val: fmtDuration(Math.round(byDay[dk[0]])) });
+    }
+  }
+
+  // Sharpest Focus — longest concentration hold
+  if (concNow.length) {
+    var bestHold = Math.max.apply(null, concNow.map(function(h) { return h.seconds || 0; }));
+    if (bestHold > 0) signals.push({ label: 'Sharpest Focus', text: 'Your longest unbroken hold.', val: fmtTimer(bestHold) });
+  }
+
+  // Clearest Reflection — highest awareness score
+  var scored = awNow.filter(function(h) { return h.score; });
+  if (scored.length) {
+    var bestScore = Math.max.apply(null, scored.map(function(h) { return parseFloat(h.score); }));
+    if (bestScore > 0) signals.push({ label: 'Clearest Reflection', text: 'Highest awareness score recorded.', val: bestScore + '/5' });
+  }
+
+  // Cadence — distinct days practiced
+  if (period !== 'daily') {
+    var daysSet = {};
+    all.forEach(function(h) { var d = new Date(h.date); if (isNaN(d)) return; daysSet[d.getFullYear() + '-' + d.getMonth() + '-' + d.getDate()] = 1; });
+    var nDays = Object.keys(daysSet).length;
+    if (nDays >= 2) signals.push({ label: 'Cadence', text: 'You showed up on ' + nDays + ' separate days.', val: nDays + 'd' });
+  }
+
+  return signals;
+}
+
+function buildOmniaReportCardHtml(period) {
+  if (period !== 'daily' && period !== 'weekly' && period !== 'monthly') return '';
+  var html = '';
+  // Past periods are always eligible; current period depends on the day
+  var isEligible = reportOffset < 0 ? true : isOmniaReportDay(period);
+  var periodLabel = period === 'daily' ? 'today' : period === 'weekly' ? 'this week' : 'this month';
+  var stageHtml = buildRptOmniaStage(!isEligible); // loading bounce if not eligible yet
+  if (!isEligible) {
+    var _now = new Date();
+    var _evalMsg, _availMsg;
+    if (period === 'daily') {
+      _evalMsg = 'Omnia will reflect on your practice when the day is complete.';
+      _availMsg = 'available tomorrow';
+    } else if (period === 'weekly') {
+      _evalMsg = 'Omnia is evaluating. Come back Sunday for a custom analysis of this week.';
+      _availMsg = 'available Sunday';
+    } else {
+      var _lastDay = new Date(_now.getFullYear(), _now.getMonth() + 1, 0);
+      var _mNames = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+      var _lastStr = _mNames[_lastDay.getMonth()] + ' ' + _lastDay.getDate();
+      _evalMsg = 'Omnia is evaluating. Come back ' + _lastStr + ' for a custom analysis of this month.';
+      _availMsg = 'available ' + _lastStr;
+    }
+    html += '<div class="rpt-omnia-card">'
+      + '<div class="rpt-omnia-card__inner">'
+      + stageHtml
+      + '<div class="rpt-omnia-text rpt-omnia-text--dim">' + _evalMsg + '</div>'
+      + '<div class="rpt-omnia-meta" style="opacity:.45">' + _availMsg + '</div>'
+      + '</div></div>';
+  } else {
+    // Check cache — use offset-aware key so each day/week/month has its own entry
+    var cacheKey = omniaReportCacheKey(period, reportOffset);
+    var cachedEntry = null;
+    try { cachedEntry = JSON.parse(localStorage.getItem(cacheKey) || 'null'); } catch(e) {}
+    var isFresh = cachedEntry && cachedEntry.ts && (Date.now() - cachedEntry.ts) < omniaReportTTL(period);
+
+    html += '<div class="rpt-omnia-card" id="omniaReportCard">'
+      + '<div class="rpt-omnia-card__inner rpt-omnia-card__inner--row">';
+    if (isFresh) {
+      html += buildRptOmniaStage(false, true)
+        + '<div class="rpt-omnia-bubble">'
+        + '<div class="rpt-omnia-bubble-text">' + esc(cachedEntry.commentary) + '</div>'
+        + '<div class="rpt-omnia-bubble-meta">Omnia · ' + periodLabel + '</div>'
+        + '</div>';
+    } else {
+      html += buildRptOmniaStage(true, true)
+        + '<div class="rpt-omnia-bubble">'
+        + '<div class="rpt-omnia-bubble-text rpt-omnia-bubble-text--dim" id="omniaReportText">Omnia is reflecting…</div>'
+        + '</div>';
+      var _capturedOffset = reportOffset;
+      setTimeout(function() { loadOmniaReportInto(period, _capturedOffset); }, 0);
+    }
+    html += '</div></div>';
+  }
+  return html;
+}
+
 function renderReport(period) {
   var range = getDateRange(period, reportOffset);
   updateReportNav();
@@ -17177,15 +17333,16 @@ function renderReport(period) {
   var concPrev = filterHistory(concState.history, range.prevStart, range.prevEnd);
   var html = '';
 
-  // ── 3-card summary bar (always shown if any data) ──
-  var totalSessions = awarenessNow.length + concNow.length;
-  var totalMinPracticed = sumMinutes(awarenessNow);
-  var totalXpEarned = awarenessNow.reduce(function(a, h) { return a + (h.xpEarned || 0); }, 0)
-                    + concNow.reduce(function(a, h) { return a + (h.xpEarned || 0); }, 0);
+  // ── 1. Omnia commentary — above all data ──
+  html += buildOmniaReportCardHtml(period);
 
+  var totalSessions = awarenessNow.length + concNow.length;
+
+  // ── 2. Summary bar + Signals (only when there's practice in the period) ──
   if (totalSessions > 0) {
-    var concLevelLabel = getConcRank ? (concState.level + ' · ' + getConcRank(concState.level)) : ('Level ' + concState.level);
-    var awLevelLabel = getRankTitle ? (state.level + ' · ' + getRankTitle(state.level)) : ('Level ' + state.level);
+    var totalMinPracticed = sumMinutes(awarenessNow);
+    var totalXpEarned = awarenessNow.reduce(function(a, h) { return a + (h.xpEarned || 0); }, 0)
+                      + concNow.reduce(function(a, h) { return a + (h.xpEarned || 0); }, 0);
 
     html += '<div class="rpt-summary">';
     html += '<div class="rpt-summary-card"><div class="rpt-summary-val">' + (totalMinPracticed >= 60 ? Math.floor(totalMinPracticed / 60) + 'h ' + (totalMinPracticed % 60) + 'm' : totalMinPracticed + 'm') + '</div><div class="rpt-summary-label">Practiced</div></div>';
@@ -17193,170 +17350,110 @@ function renderReport(period) {
     html += '<div class="rpt-summary-card"><div class="rpt-summary-val">+' + totalXpEarned.toLocaleString() + '</div><div class="rpt-summary-label">XP Earned</div></div>';
     html += '</div>';
 
-    // Level highlights
-    if (concNow.length > 0) {
-      html += '<div class="rpt-highlight"><div class="rpt-highlight__icon">◉</div><div class="rpt-highlight__body"><div class="rpt-highlight__title">Level ' + concState.level + '</div><div class="rpt-highlight__sub">Concentration · ' + (typeof getConcRank === 'function' ? getConcRank(concState.level) : '') + '</div></div></div>';
-    } else if (awarenessNow.length > 0) {
-      html += '<div class="rpt-highlight"><div class="rpt-highlight__icon">◎</div><div class="rpt-highlight__body"><div class="rpt-highlight__title">Level ' + state.level + '</div><div class="rpt-highlight__sub">Awareness · ' + (typeof getRankTitle === 'function' ? getRankTitle(state.level) : '') + '</div></div></div>';
-    }
-
-    // Record highlights (all periods, not just daily)
-    var recs = buildRecords(awarenessNow, concNow);
-    recs.forEach(function(r) {
-      html += '<div class="rpt-highlight rpt-highlight--record"><div class="rpt-highlight__icon">★</div><div class="rpt-highlight__body"><div class="rpt-highlight__title" style="font-size:14px;">' + r.text + '</div></div></div>';
-    });
-  }
-
-  // ── Omnia commentary card ──
-  if (period === 'daily' || period === 'weekly' || period === 'monthly') {
-    // Past periods are always eligible; current period depends on the day
-    var isEligible = reportOffset < 0 ? true : isOmniaReportDay(period);
-    var periodLabel = period === 'daily' ? 'today' : period === 'weekly' ? 'this week' : 'this month';
-    var stageHtml = buildRptOmniaStage(!isEligible); // loading bounce if not eligible yet
-    if (!isEligible) {
-      var _now = new Date();
-      var _evalMsg, _availMsg;
-      if (period === 'daily') {
-        _evalMsg = 'Omnia will reflect on your practice when the day is complete.';
-        _availMsg = 'available tomorrow';
-      } else if (period === 'weekly') {
-        _evalMsg = 'Omnia is evaluating. Come back Sunday for a custom analysis of this week.';
-        _availMsg = 'available Sunday';
-      } else {
-        var _lastDay = new Date(_now.getFullYear(), _now.getMonth() + 1, 0);
-        var _mNames = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-        var _lastStr = _mNames[_lastDay.getMonth()] + ' ' + _lastDay.getDate();
-        _evalMsg = 'Omnia is evaluating. Come back ' + _lastStr + ' for a custom analysis of this month.';
-        _availMsg = 'available ' + _lastStr;
-      }
-      html += '<div class="rpt-omnia-card" style="margin-top:16px;">'
-        + '<div class="rpt-omnia-card__inner">'
-        + stageHtml
-        + '<div class="rpt-omnia-text rpt-omnia-text--dim">' + _evalMsg + '</div>'
-        + '<div class="rpt-omnia-meta" style="opacity:.45">' + _availMsg + '</div>'
-        + '</div></div>';
-    } else {
-      // Check cache — use offset-aware key so each day/week/month has its own entry
-      var cacheKey = omniaReportCacheKey(period, reportOffset);
-      var cachedEntry = null;
-      try { cachedEntry = JSON.parse(localStorage.getItem(cacheKey) || 'null'); } catch(e) {}
-      var isFresh = cachedEntry && cachedEntry.ts && (Date.now() - cachedEntry.ts) < omniaReportTTL(period);
-
-      html += '<div class="rpt-omnia-card" style="margin-top:16px;" id="omniaReportCard">'
-        + '<div class="rpt-omnia-card__inner rpt-omnia-card__inner--row">';
-      if (isFresh) {
-        html += buildRptOmniaStage(false, true)
-          + '<div class="rpt-omnia-bubble">'
-          + '<div class="rpt-omnia-bubble-text">' + esc(cachedEntry.commentary) + '</div>'
-          + '<div class="rpt-omnia-bubble-meta">Omnia · ' + periodLabel + '</div>'
-          + '</div>';
-      } else {
-        html += buildRptOmniaStage(true, true)
-          + '<div class="rpt-omnia-bubble">'
-          + '<div class="rpt-omnia-bubble-text rpt-omnia-bubble-text--dim" id="omniaReportText">Omnia is reflecting…</div>'
-          + '</div>';
-        var _capturedOffset = reportOffset;
-        setTimeout(function() { loadOmniaReportInto(period, _capturedOffset); }, 0);
-      }
-      html += '</div></div>';
+    // ── 3. Signals — milestones first, then derived patterns ──
+    var records = buildRecords(awarenessNow, concNow);
+    var signals = buildSignals(awarenessNow, concNow, period);
+    if (records.length || signals.length) {
+      html += '<div class="rpt-h rpt-h--green">Signals</div>';
+      html += '<div class="rpt-signals">';
+      records.forEach(function(r) {
+        html += '<div class="rpt-signal rpt-signal--milestone"><div class="rpt-signal__body"><div class="rpt-signal__label">Milestone</div><div class="rpt-signal__text">' + esc(r.text) + '</div></div></div>';
+      });
+      signals.forEach(function(s) {
+        html += '<div class="rpt-signal"><div class="rpt-signal__body"><div class="rpt-signal__label">' + esc(s.label) + '</div><div class="rpt-signal__text">' + esc(s.text) + '</div></div>'
+          + (s.val ? '<div class="rpt-signal__val">' + esc(s.val) + '</div>' : '') + '</div>';
+      });
+      html += '</div>';
     }
   }
 
-  // ── Awareness stats ──
+  // ── 4. Awareness (compact) ──
   if (awarenessNow.length > 0) {
-  var awMinNow = sumMinutes(awarenessNow);
-  var awMinPrev = sumMinutes(awarenessPrev);
-  var awScoreNow = avgScore(awarenessNow);
-  var awScorePrev = avgScore(awarenessPrev);
+    var awMinNow = sumMinutes(awarenessNow);
+    var awMinPrev = sumMinutes(awarenessPrev);
+    var awScoreNow = avgScore(awarenessNow);
+    var awScorePrev = avgScore(awarenessPrev);
 
-  html += '<div class="report-section">';
-  html += '<div class="report-section-title" style="color:var(--accent);">Awareness</div>';
-  html += '<div class="report-cards">';
-  html += '<div class="report-card"><div class="report-card-val" style="color:var(--accent);">' + awarenessNow.length + '</div><div class="report-card-label">Sessions</div><div class="report-card-delta">' + delta(awarenessNow.length, awarenessPrev.length) + '</div></div>';
-  html += '<div class="report-card"><div class="report-card-val" style="color:var(--accent);">' + fmtDuration(awMinNow) + '</div><div class="report-card-label">Time Practiced</div><div class="report-card-delta">' + delta(awMinNow, awMinPrev) + '</div></div>';
-  if (awScoreNow) {
-    html += '<div class="report-card"><div class="report-card-val" style="color:var(--accent);">' + awScoreNow + '</div><div class="report-card-label">Avg Score</div><div class="report-card-delta">' + delta(parseFloat(awScoreNow), parseFloat(awScorePrev || 0)) + '</div></div>';
-  }
-  html += '<div class="report-card"><div class="report-card-val" style="color:var(--accent);">' + state.streak + 'd</div><div class="report-card-label">Streak</div></div>';
-  html += '</div>';
+    html += '<div class="rpt-block">';
+    html += '<div class="rpt-h rpt-h--green">Awareness</div>';
+    html += '<div class="rpt-strip">';
+    html += rptStripCell(awarenessNow.length, 'Sessions', deltaMini(awarenessNow.length, awarenessPrev.length));
+    html += rptStripCell(fmtDuration(awMinNow), 'Time', deltaMini(awMinNow, awMinPrev));
+    if (awScoreNow) html += rptStripCell(awScoreNow, 'Avg Score', deltaMini(parseFloat(awScoreNow), parseFloat(awScorePrev || 0)));
+    else html += rptStripCell(state.streak + 'd', 'Streak', '');
+    html += '</div>';
 
-  // Awareness chart
-  var awChartData = buildChartData(state.history, period, 'minutes');
-  if (awChartData.values.some(function(v) { return v > 0; })) {
-    html += '<div class="report-chart"><div class="report-chart-title">Minutes Practiced</div>' + renderBarChart(awChartData.values, awChartData.labels, '#7eb8a4', 56) + '</div>';
-  }
-  if (awChartData.values.length >= 3 && awChartData.scoreValues && awChartData.scoreValues.some(function(v) { return v > 0; })) {
-    html += '<div class="report-chart"><div class="report-chart-title">Session Score Trend</div>' + renderLineChart(awChartData.scoreValues, '#7eb8a4', 48) + '</div>';
-  }
-  html += '</div>';
-  } // end awarenessNow.length > 0
-
-  // ── Concentration stats ──
-  if (concNow.length > 0) {
-  var concSecNow = concNow.reduce(function(a, h) { return a + (h.seconds || 0); }, 0);
-  var concSecPrev = concPrev.reduce(function(a, h) { return a + (h.seconds || 0); }, 0);
-  var typeBreakdown = {};
-  concNow.forEach(function(h) { var t = h.type || 'clock'; typeBreakdown[t] = (typeBreakdown[t] || 0) + 1; });
-
-  html += '<div class="report-section">';
-  html += '<div class="report-section-title" style="color:#d4956e;">Concentration</div>';
-  html += '<div class="report-cards">';
-  html += '<div class="report-card"><div class="report-card-val" style="color:#d4b08e;">' + concNow.length + '</div><div class="report-card-label">Sessions</div><div class="report-card-delta">' + delta(concNow.length, concPrev.length) + '</div></div>';
-  html += '<div class="report-card"><div class="report-card-val" style="color:#d4b08e;">' + fmtTimer(concSecNow) + '</div><div class="report-card-label">Best Hold Total</div><div class="report-card-delta">' + delta(concSecNow, concSecPrev) + '</div></div>';
-  if (Object.keys(typeBreakdown).length) {
-    var breakdown = Object.keys(typeBreakdown).map(function(k) { return k + ':' + typeBreakdown[k]; }).join(' · ');
-    html += '<div class="report-card" style="grid-column:span 2;"><div class="report-card-label" style="margin-bottom:6px;">Exercise Breakdown</div><div style="font-size:11px;color:var(--muted);">' + breakdown + '</div></div>';
-  }
-  html += '</div>';
-
-  var concChartData = buildChartData(concState.history, period, 'seconds');
-  if (concChartData.values.some(function(v) { return v > 0; })) {
-    html += '<div class="report-chart"><div class="report-chart-title">Best Hold Per Session (sec)</div>' + renderBarChart(concChartData.values, concChartData.labels, '#d4956e', 56) + '</div>';
-  }
-  html += '</div>';
-  } // end concNow.length > 0
-
-  // ── Clock Progress chart (all-time trend) ──
-  var clockSessions = (concState.history || []).filter(function(s) {
-    return s.exercise !== 'asana' && s.type !== 'visualization' && s.type !== 'auditory' && s.type !== 'thought';
-  }).slice().reverse().slice(-50);
-  if (clockSessions.length >= 1) {
-    var clockBest = Math.max.apply(null, clockSessions.map(function(s) { return s.seconds; }));
-    var clockPct = Math.min(100, Math.round(clockBest / 600 * 1000) / 10);
-    html += '<div class="report-section">';
-    html += '<div class="report-section-title" style="color:#d4956e;">Clock Exercise</div>';
-    html += '<div class="report-cards">';
-    html += '<div class="report-card"><div class="report-card-val" style="color:#d4b08e;">' + clockSessions.length + '</div><div class="report-card-label">Total Sessions</div></div>';
-    html += '<div class="report-card"><div class="report-card-val" style="color:#d4b08e;">' + (clockBest >= 60 ? Math.floor(clockBest/60) + 'm ' + (clockBest%60) + 's' : clockBest + 's') + '</div><div class="report-card-label">Personal Best</div></div>';
-    html += '<div class="report-card" style="grid-column:span 2;"><div class="report-card-label" style="margin-bottom:6px;">Progress to 10 minutes</div>';
-    html += '<div style="height:4px;background:var(--border);border-radius:2px;overflow:hidden;margin-bottom:4px;"><div style="height:100%;width:' + clockPct + '%;background:linear-gradient(90deg,#d4956e,#e8b88a);border-radius:2px;transition:width .6s ease;"></div></div>';
-    html += '<div style="font-size:9px;color:var(--muted);">' + (Number.isInteger(clockPct) ? clockPct : clockPct.toFixed(1)) + '% of goal</div>';
-    html += '</div></div>';
-    if (clockSessions.length >= 2) {
-      html += '<div class="report-chart"><div class="report-chart-title">Hold Time Per Session</div>' + renderClockProgressChart(clockSessions) + '</div>';
+    var awChartData = buildChartData(state.history, period, 'minutes');
+    if (awChartData.values.some(function(v) { return v > 0; })) {
+      html += '<div class="report-chart"><div class="report-chart-title">Minutes Practiced</div>' + renderBarChart(awChartData.values, awChartData.labels, '#7eb8a4', 56) + '</div>';
+    }
+    if (awChartData.values.length >= 3 && awChartData.scoreValues && awChartData.scoreValues.some(function(v) { return v > 0; })) {
+      html += '<div class="report-chart"><div class="report-chart-title">Score Trend</div>' + renderLineChart(awChartData.scoreValues, '#7eb8a4', 48) + '</div>';
     }
     html += '</div>';
   }
 
-  // ── Prayer stats ──
-  if (prayerState.enabled && prayerState.count > 0) {
-  var prayerDone = prayerState.todayDone ? prayerState.todayDone.length : 0;
-  html += '<div class="report-section">';
-  html += '<div class="report-section-title" style="color:#9b8ec4;">Prayer</div>';
-  html += '<div class="report-cards">';
-  html += '<div class="report-card"><div class="report-card-val" style="color:#c4b8e8;">' + prayerDone + '/' + prayerState.count + '</div><div class="report-card-label">Today\'s Prayers</div></div>';
-  html += '<div class="report-card"><div class="report-card-val" style="color:#c4b8e8;">' + (prayerState.streak || 0) + 'd</div><div class="report-card-label">Prayer Streak</div></div>';
-  html += '</div>';
-  html += '</div>';
-  } // end prayerState.enabled
+  // ── 5. Concentration (compact) ──
+  if (concNow.length > 0) {
+    var concSecNow = concNow.reduce(function(a, h) { return a + (h.seconds || 0); }, 0);
+    var concSecPrev = concPrev.reduce(function(a, h) { return a + (h.seconds || 0); }, 0);
+    var concBest = Math.max.apply(null, concNow.map(function(h) { return h.seconds || 0; }));
+    var typeBreakdown = {};
+    concNow.forEach(function(h) { var t = h.type || 'clock'; typeBreakdown[t] = (typeBreakdown[t] || 0) + 1; });
 
-  // ── Total XP ──
-  html += '<div class="report-section">';
-  html += '<div class="report-section-title">Overall</div>';
-  html += '<div class="report-cards">';
-  html += '<div class="report-card"><div class="report-card-val">' + state.level + '</div><div class="report-card-label">Awareness Level</div></div>';
-  html += '<div class="report-card"><div class="report-card-val">' + concState.level + '</div><div class="report-card-label">Concentration Level</div></div>';
-  html += '<div class="report-card" style="grid-column:span 2;"><div class="report-card-val">' + (state.xp + concState.xp).toLocaleString() + '</div><div class="report-card-label">Total XP All Time</div></div>';
+    html += '<div class="rpt-block">';
+    html += '<div class="rpt-h rpt-h--amber">Concentration</div>';
+    html += '<div class="rpt-strip">';
+    html += rptStripCell(concNow.length, 'Sessions', deltaMini(concNow.length, concPrev.length));
+    html += rptStripCell(fmtTimer(concBest), 'Best Hold', '');
+    html += rptStripCell(fmtTimer(concSecNow), 'Total Held', deltaMini(concSecNow, concSecPrev));
+    html += '</div>';
+    if (Object.keys(typeBreakdown).length > 1) {
+      var breakdown = Object.keys(typeBreakdown).map(function(k) { return k + ' ' + typeBreakdown[k]; }).join('   ·   ');
+      html += '<div class="rpt-cap">' + esc(breakdown) + '</div>';
+    }
+
+    var concChartData = buildChartData(concState.history, period, 'seconds');
+    if (concChartData.values.some(function(v) { return v > 0; })) {
+      html += '<div class="report-chart"><div class="report-chart-title">Best Hold Per Session</div>' + renderBarChart(concChartData.values, concChartData.labels, '#d4956e', 56) + '</div>';
+    }
+
+    var clockSessions = (concState.history || []).filter(function(s) {
+      return s.exercise !== 'asana' && s.type !== 'visualization' && s.type !== 'auditory' && s.type !== 'thought';
+    });
+    if (clockSessions.length >= 1) {
+      var clockBest = Math.max.apply(null, clockSessions.map(function(s) { return s.seconds || 0; }));
+      var clockPct = Math.min(100, Math.round(clockBest / 600 * 1000) / 10);
+      html += '<div class="rpt-clockbar">'
+        + '<div class="rpt-clockbar__lbl"><span>Clock · toward 10 min</span><span>' + (Number.isInteger(clockPct) ? clockPct : clockPct.toFixed(1)) + '%</span></div>'
+        + '<div class="rpt-clockbar__track"><div class="rpt-clockbar__fill" style="width:' + clockPct + '%;"></div></div>'
+        + '</div>';
+    }
+    html += '</div>';
+  }
+
+  // ── 6. Prayer (compact) ──
+  if (prayerState.enabled && prayerState.count > 0) {
+    var prayerDone = prayerState.todayDone ? prayerState.todayDone.length : 0;
+    html += '<div class="rpt-block">';
+    html += '<div class="rpt-h rpt-h--purple">Prayer</div>';
+    html += '<div class="rpt-strip">';
+    html += rptStripCell(prayerDone + '/' + prayerState.count, 'Today', '');
+    html += rptStripCell((prayerState.streak || 0) + 'd', 'Streak', '');
+    html += '</div>';
+    html += '</div>';
+  }
+
+  // ── 7. Standing (always) ──
+  if (totalSessions === 0) {
+    html += '<div class="rpt-empty">No practice recorded in this period.<br>Your standing so far is below.</div>';
+  }
+  html += '<div class="rpt-block">';
+  html += '<div class="rpt-h">Standing</div>';
+  html += '<div class="rpt-strip">';
+  html += rptStripCell(state.level, 'Awareness Lvl', '');
+  html += rptStripCell(concState.level, 'Focus Lvl', '');
+  html += rptStripCell((state.xp + concState.xp).toLocaleString(), 'Total XP', '');
   html += '</div>';
   html += '</div>';
 
