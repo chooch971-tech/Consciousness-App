@@ -6253,6 +6253,7 @@ document.getElementById('historyBack').addEventListener('click', function() {
 });
 // ── Hamburger / Drawer ──
 function openDrawer() {
+  if (typeof closeStarMapSheet === 'function') closeStarMapSheet();
   var drawerLevelEl = document.getElementById('drawerLevel');
   if (drawerLevelEl) {
     if (currentMode === 'concentration') {
@@ -11337,6 +11338,7 @@ function closeAwarenessSubMenu() {
 
 function switchMode(mode) {
   currentMode = mode;
+  if (typeof closeStarMapSheet === 'function') closeStarMapSheet();
   if(window._omniaQuickDismiss && mode==='guide') window._omniaQuickDismiss();
   if (mode !== 'guide') document.body.classList.remove('upgrade-stage');
   var awTab = document.getElementById('modeAwareness');
@@ -14218,23 +14220,28 @@ function renderPracticeTree() {
   var sheetStat = document.getElementById('ptreeSheetStat');
   var sheetClose = document.getElementById('ptreeSheetClose');
   var sheetBegin = document.getElementById('ptreeSheetBegin');
-  var openNodeId = null;
-  var currentTreeNode = null;
 
   function closePtreeSheet() {
-    if (sheet) { sheet.style.transition = ''; sheet.style.transform = ''; sheet.classList.remove('open'); }
+    if (sheet) { sheet.style.transition = ''; sheet.style.transform = ''; sheet.classList.remove('open'); sheet.__openNode = null; }
     if (sheetBackdrop) sheetBackdrop.classList.remove('open');
-    openNodeId = null; currentTreeNode = null;
   }
 
-  if (sheetBackdrop) sheetBackdrop.addEventListener('click', closePtreeSheet);
-  if (sheetClose) sheetClose.addEventListener('click', closePtreeSheet);
+  // One-time setup: relocate the sheet + backdrop to <body> so they aren't
+  // positioned relative to #guidePanel (which gets a transform applied,
+  // breaking position:fixed) and bind the persistent gesture handlers.
+  if (sheet && !sheet.__ptreeBound) {
+    sheet.__ptreeBound = true;
+    if (sheetBackdrop && sheetBackdrop.parentNode !== document.body) document.body.appendChild(sheetBackdrop);
+    if (sheet.parentNode !== document.body) document.body.appendChild(sheet);
 
-  // Swipe-down-to-dismiss on the sheet
-  if (sheet) {
+    if (sheetBackdrop) sheetBackdrop.addEventListener('click', closePtreeSheet);
+    if (sheetClose) sheetClose.addEventListener('click', closePtreeSheet);
+
+    // Swipe-down-to-dismiss — only the sheet moves; preventDefault stops the
+    // page/panel behind it from scrolling along with the drag.
     var _swY = null, _swTracking = false, _swLastY = null, _swLastT = null, _swVel = 0;
     sheet.addEventListener('touchstart', function(e) {
-      if (sheet.scrollTop > 4) return;
+      if (sheet.scrollTop > 4) { _swTracking = false; return; }
       _swY = e.touches[0].clientY; _swLastY = _swY; _swLastT = Date.now();
       _swTracking = true; _swVel = 0;
       sheet.style.transition = 'none';
@@ -14242,12 +14249,14 @@ function renderPracticeTree() {
     sheet.addEventListener('touchmove', function(e) {
       if (!_swTracking) return;
       var y = e.touches[0].clientY;
+      var dy = y - _swY;
+      if (dy <= 0) { sheet.style.transform = ''; return; } // upward → allow normal scroll
+      if (e.cancelable) e.preventDefault();
       var now = Date.now(); var dt = Math.max(1, now - _swLastT);
       _swVel = (_swVel * 0.6) + ((y - _swLastY) / dt * 1000 * 0.4);
       _swLastY = y; _swLastT = now;
-      var dy = Math.max(0, y - _swY);
       sheet.style.transform = 'translateY(' + dy + 'px)';
-    }, {passive: true});
+    }, {passive: false});
     sheet.addEventListener('touchend', function(e) {
       if (!_swTracking) return;
       _swTracking = false;
@@ -14256,41 +14265,41 @@ function renderPracticeTree() {
       if (dy > 80 || _swVel > 500) { closePtreeSheet(); }
       else { sheet.style.transform = ''; }
     }, {passive: true});
-  }
 
-  // Begin Practice button
-  if (sheetBegin) {
-    sheetBegin.addEventListener('click', function() {
-      if (!currentTreeNode) return;
-      var ex = currentTreeNode.ex;
-      closePtreeSheet();
-      setTimeout(function() {
-        if (ex === 'soulmirror') {
-          showScreen('soulMirrorScreen');
-          if (window.soulMirrorInit) window.soulMirrorInit();
-        } else if (ex === 'pore') {
-          showScreen('soulMirrorScreen');
-          if (window.soulMirrorInit) window.soulMirrorInit();
-          // switch to pore breathing tab
-          setTimeout(function() {
-            var pbTab = document.querySelector('#soulMirrorTabs [data-tab="breathing"]');
-            if (pbTab) pbTab.click();
-          }, 320);
-        } else if (ex && ex !== 'kether') {
-          openExerciseSetup(ex);
-        }
-      }, 320);
-    });
+    // Begin Practice button — reads the currently-open node's exercise,
+    // stored on the element so this one-time handler stays in sync.
+    if (sheetBegin) {
+      sheetBegin.addEventListener('click', function() {
+        var ex = sheet.__currentEx;
+        if (!ex) return;
+        closePtreeSheet();
+        setTimeout(function() {
+          if (ex === 'soulmirror') {
+            showScreen('soulMirrorScreen');
+            if (window.soulMirrorInit) window.soulMirrorInit();
+          } else if (ex === 'pore') {
+            showScreen('soulMirrorScreen');
+            if (window.soulMirrorInit) window.soulMirrorInit();
+            setTimeout(function() {
+              var pbTab = document.querySelector('#soulMirrorTabs [data-tab="breathing"]');
+              if (pbTab) pbTab.click();
+            }, 320);
+          } else if (ex && ex !== 'kether') {
+            openExerciseSetup(ex);
+          }
+        }, 320);
+      });
+    }
   }
 
   el.querySelectorAll('.ptree-tap-area').forEach(function(area) {
     area.addEventListener('click', function() {
       var nodeId = area.dataset.node;
-      if (openNodeId === nodeId) { closePtreeSheet(); return; }
-      openNodeId = nodeId;
+      if (sheet && sheet.__openNode === nodeId) { closePtreeSheet(); return; }
       var node = NODES.find(function(n) { return n.id === nodeId; });
       if (!node || !sheet) return;
-      currentTreeNode = node;
+      sheet.__openNode = nodeId;
+      sheet.__currentEx = node.ex;
       var b = bMap[nodeId];
       var max = maxMap[nodeId] || 20;
       var dep = practiceTreeNodeDepth(node.ex, stats);
@@ -14387,6 +14396,14 @@ function scheduleGuidePathLayoutRefresh(resetScroll) {
   });
 }
 
+// The star-map detail sheet is appended to <body>, so it overlays everything
+// until explicitly closed. Call this on any navigation away from the tree.
+function closeStarMapSheet() {
+  var s = document.getElementById('ptreeSheet'), b = document.getElementById('ptreeSheetBackdrop');
+  if (s) { s.style.transition = ''; s.style.transform = ''; s.classList.remove('open'); s.__openNode = null; }
+  if (b) b.classList.remove('open');
+}
+
 function switchGuideTab(tab) {
   guideActiveTab = tab;
   var pathPanel = document.getElementById('guidePathPanel');
@@ -14398,6 +14415,7 @@ function switchGuideTab(tab) {
   if (pathPanel) pathPanel.classList.toggle('guide-tab-hidden', tab !== 'path');
   if (omniaPanel) omniaPanel.classList.toggle('guide-tab-hidden', tab !== 'omnia');
   if (treePanel) treePanel.classList.toggle('guide-tab-hidden', tab !== 'tree');
+  if (tab !== 'tree') closeStarMapSheet();
   if (pathTab) pathTab.classList.toggle('active', tab === 'path');
   if (omniaTab) omniaTab.classList.toggle('active', tab === 'omnia');
   if (treeTab) treeTab.classList.toggle('active', tab === 'tree');
