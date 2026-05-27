@@ -3407,6 +3407,43 @@ body:not(.tut-live) #tutCorgi {
     </div>
   </div>
 
+  <div class="screen" id="friendProfileScreen" style="padding:0; flex-direction:column;">
+    <div class="prof-topbar">
+      <button class="history-back" id="friendProfBack">&#8592; back</button>
+      <div class="prof-topbar__name" id="friendProfTopName">Profile</div>
+      <span style="width:34px;flex-shrink:0;"></span>
+    </div>
+    <div class="prof-scroll">
+      <div class="prof-hero">
+        <div class="prof-avatar" id="friendProfAvatar" style="cursor:default;">
+          <span class="prof-avatar__initial" id="friendProfInitial">?</span>
+        </div>
+        <div class="prof-hero__name" id="friendProfName">@friend</div>
+        <div class="prof-hero__handle" id="friendProfHandle"></div>
+      </div>
+
+      <div class="prof-section">
+        <div class="prof-section__head"><span>Overview</span></div>
+        <div class="prof-overview" id="friendProfOverview"></div>
+      </div>
+
+      <div class="prof-section">
+        <div class="prof-section__head"><span>Similar Practitioners</span></div>
+        <div class="prof-friends" id="friendProfSimilar"></div>
+      </div>
+
+      <div class="prof-section">
+        <div class="prof-section__head"><span>Monthly Badges</span></div>
+        <div class="prof-badges" id="friendProfBadges"></div>
+      </div>
+
+      <div class="prof-section">
+        <div class="prof-section__head"><span>Achievements</span></div>
+        <div class="prof-ach" id="friendProfAch"></div>
+      </div>
+    </div>
+  </div>
+
   <!-- GUIDE -->
   <!-- PLAYGROUND -->
   <div class="screen" id="playgroundScreen" style="flex-direction:column;">
@@ -6774,13 +6811,14 @@ async function loadProfileFriendStreaks() {
   try {
     var res = await fetch(SYNC_API_URL + '/friends/list', { headers: { 'Authorization': 'Bearer ' + authToken } });
     var data = await res.json();
+    cacheFriends(data.friends || []);
     var friends = (data.friends || []).slice(0, 4);
     var el = document.getElementById('profFriendStreaks');
     if (!el) return;
     var html = '';
     friends.forEach(function(f) {
       var nm = f.username || '?';
-      html += '<div class="prof-friend">'
+      html += '<div class="prof-friend" data-friend-id="' + escHtml(f.userId) + '">'
         + '<div class="prof-friend__ring prof-friend__ring--filled">' + escHtml((nm[0] || '?')) + '</div>'
         + '<div class="prof-friend__name">@' + escHtml(nm) + '</div>'
         + '<div class="prof-friend__streak">🔥 ' + (f.streak || 0) + '</div>'
@@ -6807,6 +6845,75 @@ function renderProfileAchievements() {
     return '<div class="prof-ach-item"><div class="prof-ach-item__disc">' + m + '</div><div class="prof-ach-item__lbl">Locked</div></div>';
   }).join('');
 }
+
+// ── Friend profile view (mirrors the user's own Profile layout) ──
+var _friendProfileCache = {};
+function cacheFriends(list) {
+  (list || []).forEach(function(f) { if (f && f.userId) _friendProfileCache[f.userId] = f; });
+}
+function openFriendProfile(userId) {
+  var f = _friendProfileCache[userId];
+  if (!f) return;
+  renderFriendProfile(f);
+  showScreen('friendProfileScreen');
+  if (typeof closeFriendsPanel === 'function') closeFriendsPanel();
+}
+function renderFriendProfile(f) {
+  if (!f) return;
+  var uname = f.username || 'friend';
+  document.getElementById('friendProfTopName').textContent = '@' + uname;
+  document.getElementById('friendProfName').textContent = '@' + uname;
+  document.getElementById('friendProfInitial').textContent = (String(uname).trim()[0] || '?').toUpperCase();
+
+  var now = Date.now();
+  var isOnline = f.lastActive && (now - new Date(f.lastActive).getTime() < 2 * 60 * 1000);
+  var statusText = isOnline ? 'Online now'
+    : (f.lastActive ? 'Active ' + timeAgo(new Date(f.lastActive))
+    : (f.lastSync ? 'Synced ' + timeAgo(new Date(f.lastSync)) : 'Friend'));
+  document.getElementById('friendProfHandle').textContent = statusText;
+
+  var bodies = f.bodies || { physical: 1, astral: 1, mental: 1 };
+  var bodyTotal = (bodies.physical || 1) + (bodies.astral || 1) + (bodies.mental || 1);
+  var concRank = (typeof getConcRank === 'function') ? getConcRank(f.concLevel || 1) : 'Concentration';
+  document.getElementById('friendProfOverview').innerHTML =
+      _profOvItem('🔥', (f.streak || 0) + ((f.streak || 0) === 1 ? ' day' : ' days'), 'Streak')
+    + _profOvItem('<span style="color:#d4956e;">◉</span>', 'Level ' + (f.concLevel || 1), concRank)
+    + _profOvItem('◈', bodyTotal, 'Body Points')
+    + _profOvItem('🌀', Math.floor(f.akasha || 0).toLocaleString(), 'Akasha');
+
+  renderFriendProfSimilar(f.userId);
+
+  var bh = '';
+  for (var i = 0; i < 4; i++) bh += '<div class="prof-badge prof-badge--locked">🔒</div>';
+  document.getElementById('friendProfBadges').innerHTML = bh;
+  document.getElementById('friendProfAch').innerHTML = ['🏅', '🎯', '🧘', '🔮'].map(function(m) {
+    return '<div class="prof-ach-item"><div class="prof-ach-item__disc">' + m + '</div><div class="prof-ach-item__lbl">Locked</div></div>';
+  }).join('');
+}
+function renderFriendProfSimilar(excludeId) {
+  var el = document.getElementById('friendProfSimilar');
+  if (!el) return;
+  var others = Object.keys(_friendProfileCache).map(function(k) { return _friendProfileCache[k]; })
+    .filter(function(o) { return o && o.userId && o.userId !== excludeId; })
+    .slice(0, 6);
+  if (!others.length) { el.innerHTML = '<div class="prof-empty-note">No other practitioners to compare yet.</div>'; return; }
+  el.innerHTML = others.map(function(o) {
+    var nm = o.username || '?';
+    return '<div class="prof-friend" data-friend-id="' + escHtml(o.userId) + '">'
+      + '<div class="prof-friend__ring prof-friend__ring--filled">' + escHtml((nm[0] || '?')) + '</div>'
+      + '<div class="prof-friend__name">@' + escHtml(nm) + '</div>'
+      + '<div class="prof-friend__streak">🔥 ' + (o.streak || 0) + '</div>'
+      + '</div>';
+  }).join('');
+}
+document.getElementById('friendProfBack').addEventListener('click', function() {
+  if (typeof renderProfile === 'function') renderProfile();
+  showScreen('profileScreen');
+});
+document.getElementById('friendProfSimilar').addEventListener('click', function(e) {
+  var card = e.target.closest('[data-friend-id]');
+  if (card) openFriendProfile(card.getAttribute('data-friend-id'));
+});
 
 function handleProfilePicFile(file) {
   if (!file || file.type.indexOf('image/') !== 0) { showToast('Please choose an image'); return; }
@@ -6855,7 +6962,10 @@ document.getElementById('profFriendStreaks').addEventListener('click', function(
   if (e.target.closest('[data-prof-addfriend]')) {
     if (!authToken) { showToast('Sign in to add friends'); return; }
     openFriendsPanel();
+    return;
   }
+  var fc = e.target.closest('[data-friend-id]');
+  if (fc) openFriendProfile(fc.getAttribute('data-friend-id'));
 });
 document.getElementById('profFriendsMore').addEventListener('click', function() {
   if (!authToken) { showToast('Sign in to use Friends'); return; }
@@ -20160,7 +20270,7 @@ document.getElementById('journalBodyInput').addEventListener('input',journalAuto
 
   // Which screen sits behind each sub-screen during swipe
   // (unlisted screens reveal homeScreen)
-  var PREV_SCREEN = { journalEntryScreen: 'journalScreen', exerciseSettingsScreen: 'settingsScreen', accountSettingsScreen: 'settingsScreen' };
+  var PREV_SCREEN = { journalEntryScreen: 'journalScreen', exerciseSettingsScreen: 'settingsScreen', accountSettingsScreen: 'settingsScreen', friendProfileScreen: 'profileScreen' };
 
   var EASE = 'cubic-bezier(0.25,0.46,0.45,0.94)';
 
@@ -22462,6 +22572,7 @@ async function loadFriendsPanel() {
 function renderFriendsList(friends) {
   var el = document.getElementById('fpFriendsList');
   if (!el) return;
+  cacheFriends(friends);
   if (!friends.length) { el.innerHTML = '<div class="fp-empty">No friends yet.<br>Search by username to add some.</div>'; return; }
   el.innerHTML = friends.map(function(f) {
     var now = Date.now();
@@ -22470,7 +22581,7 @@ function renderFriendsList(friends) {
     var statusText = isOnline ? 'Online now' : (f.lastActive ? 'Active ' + timeAgo(new Date(f.lastActive)) : (f.lastSync ? 'Synced ' + timeAgo(new Date(f.lastSync)) : 'Never active'));
     var bodies = f.bodies || { physical:1, astral:1, mental:1 };
     var bodyTotal = (bodies.physical||1) + (bodies.astral||1) + (bodies.mental||1);
-    return '<div class="fp-friend-card">'
+    return '<div class="fp-friend-card" data-friend-id="' + escHtml(f.userId) + '" style="cursor:pointer;">'
       + '<div style="display:flex;justify-content:space-between;align-items:flex-start;">'
       + '<div><div class="fp-friend-name" style="display:flex;align-items:center;gap:7px;">' + statusDot + '@' + escHtml(f.username) + '</div>'
       + '<div class="fp-friend-active">' + statusText + '</div></div>'
@@ -22585,6 +22696,11 @@ function timeAgo(date) {
 document.getElementById('fpBackBtn').addEventListener('click', closeFriendsPanel);
 document.getElementById('fpSearchBtn').addEventListener('click', searchFriends);
 document.getElementById('fpSearchInput').addEventListener('keydown', function(e) { if (e.key === 'Enter') searchFriends(); });
+document.getElementById('fpFriendsList').addEventListener('click', function(e) {
+  if (e.target.closest('.fp-remove-btn')) return;
+  var card = e.target.closest('[data-friend-id]');
+  if (card) openFriendProfile(card.getAttribute('data-friend-id'));
+});
 
 // Heartbeat — ping every 60 s while app is open and user is signed in
 (function() {
