@@ -15274,10 +15274,31 @@ function buildExperiencedGuideItems() {
     if (a.priority !== b.priority) return a.priority - b.priority;
     return a.ex.id.localeCompare(b.ex.id);
   });
-  var chosen = candidates.slice(0, 2);
-  var hasBody = chosen.some(function(c) { return c.ex.id === 'asana'; });
-  if (!hasBody) chosen.push({ ex:guideExerciseById('asana'), score:guideExperienceScore('asana') });
-  return chosen.slice(0, 3).map(function(c) {
+
+  var byId = {};
+  candidates.forEach(function(c) { byId[c.ex.id] = c; });
+
+  // Pin the day's exercise set so it doesn't churn mid-day. The priority above
+  // drifts with elapsed time and shifts as sessions are completed, which would
+  // otherwise swap exercises out (and reset "done") within the same day. Only
+  // re-roll when the local calendar day changes.
+  var dayKey = guideLocalDayKey();
+  var pick = guideState._dailyPick;
+  var ids = (pick && pick.day === dayKey && Array.isArray(pick.ids))
+    ? pick.ids.filter(function(id) { return byId[id]; })
+    : [];
+  if (!ids.length) {
+    ids = candidates.slice(0, 2).map(function(c) { return c.ex.id; });
+    if (ids.indexOf('asana') === -1) ids.push('asana');
+    ids = ids.slice(0, 3);
+    guideState._dailyPick = { day: dayKey, ids: ids };
+    saveGuideState(guideState);
+  }
+
+  var chosen = ids.map(function(id) {
+    return byId[id] || { ex:guideExerciseById(id), score:guideExperienceScore(id), count:0 };
+  });
+  return chosen.map(function(c) {
     var id = c.ex.id;
     var score = c.score;
     var dur = id === 'soulmirror' ? null : guideDurationForScore(score);
