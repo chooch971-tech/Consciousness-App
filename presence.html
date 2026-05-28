@@ -15654,7 +15654,8 @@ function buildExperiencedGuideItems() {
     open:gateId
   };
 
-  return fixedItems.concat([gateItem, {
+  fixedItems.push(gateItem);
+  fixedItems.push({
     id:'soulmirror',
     name:'Soul Mirror',
     duration:null,
@@ -15663,7 +15664,9 @@ function buildExperiencedGuideItems() {
     progress:'',
     tip:'Open the mirror and make one honest edit — add a trait, revise one, or write a note. That is all Omnia asks today.',
     open:'soulmirror'
-  }]);
+  });
+
+  return fixedItems;
 }
 
 function buildFoundationalGuideItems() {
