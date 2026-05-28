@@ -12,242 +12,162 @@
     --bg:#07080d; --surface:#0e0f17; --surface2:#13141f;
     --border:rgba(255,255,255,0.07); --border2:rgba(255,255,255,0.12);
     --text:#ddd8ce; --muted:rgba(221,216,206,0.38);
-    /* Concentration palette — copper / gold */
-    --copper:#d4956e; --gold:#d4b08e; --gold-soft:#e8c79c;
+    --copper:#d4956e; --gold:#d4b08e; --gold-soft:#e8c79c; --cream:#ffe8d4;
     --copper-dim:rgba(212,149,110,0.12);
   }
   * { margin:0; padding:0; box-sizing:border-box; }
   html, body { height:100%; background:var(--bg); color:var(--text); font-family:'DM Mono',monospace; overflow-x:hidden; }
   body { display:flex; justify-content:center; }
+  .frame { width:100%; max-width:430px; min-height:100vh; background:var(--bg); position:relative; display:flex; flex-direction:column; padding:0 16px; }
 
-  /* Phone frame so it previews like the app */
-  .frame {
-    width:100%; max-width:430px; min-height:100vh;
-    background:var(--bg); position:relative; overflow:hidden;
-    display:flex; flex-direction:column;
-  }
+  @keyframes omniaFloat { 0%,100%{ transform:translateY(0); } 50%{ transform:translateY(-7px); } }
+  @keyframes heroFloat  { 0%,100%{ transform:translateY(0); opacity:.6; } 50%{ transform:translateY(-9px); opacity:1; } }
+  @keyframes arcaneSpin    { to { transform:translate(-50%,-50%) rotate(360deg); } }
+  @keyframes arcaneSpinRev { to { transform:translate(-50%,-50%) rotate(-360deg); } }
+  @keyframes auraPulse  { 0%,100%{ transform:translateY(-50%) scale(.9); opacity:.6; } 50%{ transform:translateY(-50%) scale(1.12); opacity:1; } }
 
-  /* ─────────────────────────────────────────────────────────────
-     THE MAGICIAN BANNER
-     ───────────────────────────────────────────────────────────── */
+  /* ───────── CONCENTRATION BANNER (mirrors path-banner / rpt-banner) ───────── */
   .conc-banner {
-    position:relative; width:100%; height:230px; flex-shrink:0;
-    overflow:hidden;
-    background:
-      radial-gradient(ellipse 80% 90% at 50% 38%, rgba(212,149,110,0.20), transparent 70%),
-      radial-gradient(ellipse 120% 80% at 50% 120%, rgba(212,149,110,0.10), transparent 60%),
-      linear-gradient(180deg, #0b0a10 0%, #100c0e 55%, #07080d 100%);
-    display:flex; align-items:center; justify-content:center;
-    border-bottom:1px solid rgba(212,149,110,0.14);
+    position:relative; flex-shrink:0; height:138px; margin:14px 0 4px; border-radius:18px;
+    background:linear-gradient(145deg,#241710 0%,#301d12 45%,#1c1410 100%);
+    overflow:hidden; display:flex; align-items:center; justify-content:space-between; padding:0 24px;
   }
-  /* vignette top + bottom so it melts into the page */
-  .conc-banner::after {
-    content:''; position:absolute; inset:0; pointer-events:none;
-    background:linear-gradient(180deg, rgba(7,8,13,0.55) 0%, transparent 25%, transparent 70%, rgba(7,8,13,0.92) 100%);
-  }
+  .conc-banner::before { content:''; position:absolute; inset:0; pointer-events:none;
+    background:radial-gradient(ellipse 58% 72% at 76% 52%, rgba(212,149,110,.22) 0%, transparent 70%); }
+  .conc-banner::after { content:''; position:absolute; inset:0; pointer-events:none;
+    background:radial-gradient(ellipse 38% 48% at 72% 46%, rgba(255,200,150,.10) 0%, transparent 60%); }
 
-  /* Rotating arcane circle (the summoning sigil) */
-  .arcane {
-    position:absolute; top:50%; left:50%;
-    width:300px; height:300px; transform:translate(-50%,-54%);
-    opacity:0.55;
-  }
-  .arcane svg { width:100%; height:100%; display:block; }
-  .arcane-outer { animation:spin 60s linear infinite; transform-origin:center; }
-  .arcane-inner { animation:spinRev 42s linear infinite; transform-origin:center; }
-  @keyframes spin    { to { transform:rotate(360deg); } }
-  @keyframes spinRev { to { transform:rotate(-360deg); } }
+  .conc-banner-text { z-index:2; display:flex; flex-direction:column; gap:4px; }
+  .conc-banner-label { font-size:8px; letter-spacing:.28em; text-transform:uppercase; color:rgba(212,168,130,.75); font-family:'DM Mono',monospace; }
+  .conc-banner-title { font-family:'Cormorant Garamond',serif; font-size:26px; font-weight:300; color:var(--cream); line-height:1.05; }
+  .conc-banner-sub   { font-size:9px; letter-spacing:.12em; color:rgba(232,199,156,.5); font-family:'DM Mono',monospace; margin-top:2px; }
+  .conc-banner-sub b { color:rgba(232,199,156,.85); font-weight:500; }
 
-  /* The conjured core — consciousness being forged */
-  .core-wrap {
-    position:relative; z-index:3;
-    display:flex; flex-direction:column; align-items:center;
-  }
-  .core {
-    position:relative; width:78px; height:78px;
-    display:flex; align-items:center; justify-content:center;
-    animation:bob 6s ease-in-out infinite;
-  }
-  @keyframes bob { 0%,100%{ transform:translateY(0); } 50%{ transform:translateY(-6px); } }
+  .conc-banner-glow { position:absolute; right:8px; top:50%; width:160px; height:160px; transform:translateY(-50%);
+    background:radial-gradient(circle, rgba(255,200,150,0.24) 0%, rgba(212,149,110,0.10) 40%, transparent 70%);
+    pointer-events:none; animation:auraPulse 5s ease-in-out infinite; }
 
-  /* glowing aura behind the crystal */
-  .core-glow {
-    position:absolute; width:150px; height:150px; border-radius:50%;
-    background:radial-gradient(circle, rgba(232,199,156,0.45), rgba(212,149,110,0.18) 40%, transparent 70%);
-    animation:pulseGlow 4.5s ease-in-out infinite; filter:blur(2px);
-  }
-  @keyframes pulseGlow {
-    0%,100% { transform:scale(0.85); opacity:0.55; }
-    50%     { transform:scale(1.15); opacity:0.95; }
-  }
+  /* rotating arcane summoning ring — the Magician's sigil, behind the crystal */
+  .conc-arcane { position:absolute; right:30px; top:50%; width:128px; height:128px;
+    transform:translate(-50%,-50%); opacity:.4; pointer-events:none; z-index:1; transform-origin:center;
+    right:auto; left:calc(100% - 96px); }
+  .conc-arcane svg { width:100%; height:100%; display:block; }
+  .conc-arcane-outer { animation:arcaneSpin 50s linear infinite; transform-origin:64px 64px; }
+  .conc-arcane-inner { animation:arcaneSpinRev 38s linear infinite; transform-origin:64px 64px; }
 
-  /* the crystal itself (octahedron-ish diamond) */
-  .crystal {
-    width:46px; height:46px; position:relative; z-index:2;
-    transform:rotate(45deg);
-    background:linear-gradient(135deg, var(--gold-soft), var(--copper) 60%, #a8633c);
-    box-shadow:0 0 22px rgba(232,199,156,0.7), inset 0 0 14px rgba(255,255,255,0.35);
-    border-radius:8px;
-    animation:shimmer 5s ease-in-out infinite;
-  }
-  .crystal::before {
-    content:''; position:absolute; inset:0; border-radius:8px;
-    background:linear-gradient(315deg, rgba(255,255,255,0.55), transparent 50%);
-    mix-blend-mode:screen;
-  }
-  @keyframes shimmer {
-    0%,100% { filter:brightness(1); }
-    50%     { filter:brightness(1.25); }
-  }
+  .conc-banner-figure { position:relative; z-index:2; width:74px; height:104px; display:flex; align-items:center; justify-content:center;
+    filter:drop-shadow(0 0 14px rgba(232,180,130,.45)); animation:omniaFloat 5s ease-in-out infinite; cursor:pointer; }
+  .conc-banner-figure svg.conc-crystal { width:100%; height:auto; overflow:visible; }
 
-  /* spark particles rising */
-  .spark {
-    position:absolute; bottom:40px; width:3px; height:3px; border-radius:50%;
-    background:var(--gold-soft); box-shadow:0 0 6px var(--gold-soft);
-    opacity:0; animation:rise linear infinite;
-  }
-  @keyframes rise {
-    0%   { transform:translateY(0) scale(1);   opacity:0; }
-    12%  { opacity:1; }
-    80%  { opacity:0.7; }
-    100% { transform:translateY(-150px) scale(0.2); opacity:0; }
-  }
+  /* ambient floating dots */
+  .conc-dots { position:absolute; inset:0; pointer-events:none; z-index:1; }
+  .conc-dots > i { position:absolute; border-radius:50%; background:rgba(255,210,170,.5); animation:heroFloat 4s ease-in-out infinite; }
 
-  /* Banner text */
-  .banner-text { position:absolute; z-index:4; bottom:22px; left:0; right:0; text-align:center; }
-  .banner-eyebrow {
-    font-family:'DM Mono',monospace; font-size:9px; letter-spacing:0.42em;
-    text-transform:uppercase; color:var(--copper); opacity:0.85; margin-bottom:5px;
-  }
-  .banner-title {
-    font-family:'Cormorant Garamond',serif; font-weight:300;
-    font-size:30px; letter-spacing:0.04em; color:var(--gold-soft);
-    line-height:1; text-shadow:0 2px 18px rgba(212,149,110,0.4);
-  }
-
-  /* ─────────────────────────────────────────────────────────────
-     HERO (level ring + stats) — consistent with existing app
-     ───────────────────────────────────────────────────────────── */
-  .hero { padding:22px 24px 10px; display:flex; flex-direction:column; align-items:center; }
-  .level-ring { position:relative; width:118px; height:118px; cursor:pointer; }
-  .level-ring svg { width:100%; height:100%; transform:rotate(-90deg); }
-  .ring-track { fill:none; stroke:var(--border2); stroke-width:3; }
-  .ring-prog  { fill:none; stroke:var(--copper); stroke-width:3; stroke-linecap:round;
-                stroke-dasharray:377; stroke-dashoffset:264; filter:drop-shadow(0 0 5px rgba(212,149,110,0.5)); }
-  .ring-center { position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; }
-  .ring-level-num { font-family:'Cormorant Garamond',serif; font-size:34px; font-weight:300; color:var(--text); line-height:1; }
-  .ring-level-sub { font-size:8px; letter-spacing:0.2em; text-transform:uppercase; color:var(--muted); margin-top:3px; }
-
-  .stats-row { display:flex; gap:34px; margin-top:18px; }
-  .stat { text-align:center; }
-  .stat-val { font-family:'Cormorant Garamond',serif; font-size:22px; font-weight:300; color:var(--gold); line-height:1; }
-  .stat-key { font-size:8px; letter-spacing:0.2em; text-transform:uppercase; color:var(--muted); margin-top:4px; }
-
-  /* ─────────────────────────────────────────────────────────────
-     EXERCISE GRID — consistent with existing app
-     ───────────────────────────────────────────────────────────── */
-  .scroll { flex:1; overflow-y:auto; padding:6px 20px 40px; }
-  .tabs { display:flex; gap:8px; align-items:center; justify-content:center; padding:14px 0 18px; }
-  .tab { font-family:'DM Mono',monospace; font-size:10px; letter-spacing:0.16em; text-transform:uppercase;
+  /* ───────── EXERCISE GRID ───────── */
+  .scroll { flex:1; overflow-y:auto; padding:14px 0 40px; }
+  .tabs { display:flex; gap:8px; align-items:center; justify-content:center; padding:6px 0 18px; }
+  .tab { font-family:'DM Mono',monospace; font-size:10px; letter-spacing:.16em; text-transform:uppercase;
          background:none; border:1px solid var(--border); color:var(--muted); padding:7px 16px; border-radius:20px; cursor:pointer; transition:all .2s; }
-  .tab.active { color:var(--gold); border-color:rgba(212,149,110,0.4); background:var(--copper-dim); }
+  .tab.active { color:var(--gold); border-color:rgba(212,149,110,.4); background:var(--copper-dim); }
 
   .grid { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
-  .card {
-    border:1px solid var(--border); border-radius:14px; padding:18px 16px;
-    background:var(--surface); cursor:pointer; transition:transform .18s, border-color .2s, box-shadow .2s;
-    position:relative; overflow:hidden;
-  }
+  .card { border:1px solid var(--border); border-radius:14px; padding:18px 16px; background:var(--surface);
+          cursor:pointer; transition:transform .18s; position:relative; overflow:hidden; }
   .card:hover { transform:translateY(-3px); }
-  .card::before {
-    content:''; position:absolute; top:0; left:0; right:0; height:2px;
-    background:var(--c-accent, var(--copper)); opacity:0.5;
-  }
-  .card-icon { font-size:24px; margin-bottom:10px; filter:drop-shadow(0 0 6px var(--c-glow, transparent)); }
+  .card::before { content:''; position:absolute; top:0; left:0; right:0; height:2px; background:var(--c-accent,var(--copper)); opacity:.5; }
+  .card-icon { font-size:24px; margin-bottom:10px; filter:drop-shadow(0 0 6px var(--c-glow,transparent)); }
   .card-name { font-family:'Cormorant Garamond',serif; font-size:19px; font-weight:400; color:var(--c-name,var(--gold)); margin-bottom:5px; }
   .card-desc { font-size:9.5px; line-height:1.6; color:var(--muted); }
-
-  .card.clock    { --c-accent:#d4956e; --c-name:#d4b08e; --c-glow:rgba(212,149,110,0.5); border-color:rgba(212,149,110,0.18); }
-  .card.visual   { --c-accent:#6e9fd4; --c-name:#8ab8e0; --c-glow:rgba(110,159,212,0.5); border-color:rgba(110,159,212,0.18); }
-  .card.auditory { --c-accent:#6eb8a4; --c-name:#8eccc0; --c-glow:rgba(110,184,164,0.5); border-color:rgba(110,184,164,0.18); }
-  .card.thought  { --c-accent:#b08ed4; --c-name:#c2a8e0; --c-glow:rgba(176,142,212,0.5); border-color:rgba(176,142,212,0.18); }
-  .card.asana    { --c-accent:#d4b08e; --c-name:#e0c79c; --c-glow:rgba(212,176,142,0.5); border-color:rgba(212,176,142,0.18); }
+  .card.clock    { --c-accent:#d4956e; --c-name:#d4b08e; --c-glow:rgba(212,149,110,.5); border-color:rgba(212,149,110,.18); }
+  .card.visual   { --c-accent:#6e9fd4; --c-name:#8ab8e0; --c-glow:rgba(110,159,212,.5); border-color:rgba(110,159,212,.18); }
+  .card.auditory { --c-accent:#6eb8a4; --c-name:#8eccc0; --c-glow:rgba(110,184,164,.5); border-color:rgba(110,184,164,.18); }
+  .card.thought  { --c-accent:#b08ed4; --c-name:#c2a8e0; --c-glow:rgba(176,142,212,.5); border-color:rgba(176,142,212,.18); }
+  .card.asana    { --c-accent:#d4b08e; --c-name:#e0c79c; --c-glow:rgba(212,176,142,.5); border-color:rgba(212,176,142,.18); }
   .card.full     { grid-column:1 / -1; }
-
-  .footnote { text-align:center; font-size:9px; color:var(--muted); letter-spacing:0.12em; margin-top:26px; line-height:1.8; }
+  .footnote { text-align:center; font-size:9px; color:var(--muted); letter-spacing:.12em; margin-top:26px; line-height:1.8; }
 </style>
 </head>
 <body>
   <div class="frame">
 
-    <!-- ══════════ THE MAGICIAN BANNER ══════════ -->
+    <!-- ══════════ CONCENTRATION BANNER ══════════ -->
     <div class="conc-banner">
-      <!-- rotating arcane summoning circle -->
-      <div class="arcane">
-        <svg viewBox="0 0 300 300">
-          <g class="arcane-outer" fill="none" stroke="#d4956e" stroke-width="0.8" opacity="0.9">
-            <circle cx="150" cy="150" r="140"/>
-            <circle cx="150" cy="150" r="128"/>
-            <!-- tick runes around the outer ring -->
-            <g stroke-width="1.2">
-              <line x1="150" y1="10"  x2="150" y2="26"/>
-              <line x1="150" y1="274" x2="150" y2="290"/>
-              <line x1="10"  y1="150" x2="26"  y2="150"/>
-              <line x1="274" y1="150" x2="290" y2="150"/>
-              <line x1="51"  y1="51"  x2="62"  y2="62"/>
-              <line x1="238" y1="238" x2="249" y2="249"/>
-              <line x1="238" y1="62"  x2="249" y2="51"/>
-              <line x1="51"  y1="249" x2="62"  y2="238"/>
+      <div class="conc-banner-text">
+        <div class="conc-banner-label">The Magician</div>
+        <div class="conc-banner-title">Concentration</div>
+        <div class="conc-banner-sub">Level <b>7</b> · Adept</div>
+      </div>
+
+      <div class="conc-banner-glow"></div>
+
+      <!-- rotating arcane sigil behind the crystal -->
+      <div class="conc-arcane">
+        <svg viewBox="0 0 128 128">
+          <g class="conc-arcane-outer" fill="none" stroke="#d4956e" stroke-width="0.7" opacity="0.9">
+            <circle cx="64" cy="64" r="60"/>
+            <circle cx="64" cy="64" r="54"/>
+            <g stroke-width="1">
+              <line x1="64" y1="4"   x2="64" y2="13"/>
+              <line x1="64" y1="115" x2="64" y2="124"/>
+              <line x1="4"  y1="64"  x2="13" y2="64"/>
+              <line x1="115" y1="64" x2="124" y2="64"/>
+              <line x1="22" y1="22"  x2="29" y2="29"/>
+              <line x1="99" y1="99"  x2="106" y2="106"/>
+              <line x1="99" y1="29"  x2="106" y2="22"/>
+              <line x1="22" y1="106" x2="29" y2="99"/>
             </g>
           </g>
-          <g class="arcane-inner" fill="none" stroke="#e8c79c" stroke-width="0.7" opacity="0.7">
-            <circle cx="150" cy="150" r="96"/>
-            <!-- hermetic triangle + inverted triangle (the seal) -->
-            <polygon points="150,66 222,192 78,192"/>
-            <polygon points="150,234 78,108 222,108"/>
-            <circle cx="150" cy="150" r="58" stroke-dasharray="2 6"/>
+          <g class="conc-arcane-inner" fill="none" stroke="#e8c79c" stroke-width="0.6" opacity="0.65">
+            <circle cx="64" cy="64" r="40"/>
+            <polygon points="64,28 95,82 33,82"/>
+            <polygon points="64,100 33,46 95,46"/>
           </g>
         </svg>
       </div>
 
-      <!-- conjured consciousness core -->
-      <div class="core-wrap">
-        <div class="core">
-          <div class="core-glow"></div>
-          <div class="crystal"></div>
-        </div>
-      </div>
-
-      <!-- rising sparks (positioned via inline style) -->
-      <div class="spark" style="left:44%; animation-duration:3.8s; animation-delay:0s;"></div>
-      <div class="spark" style="left:52%; animation-duration:4.6s; animation-delay:0.9s;"></div>
-      <div class="spark" style="left:48%; animation-duration:3.2s; animation-delay:1.8s;"></div>
-      <div class="spark" style="left:57%; animation-duration:5.1s; animation-delay:2.4s;"></div>
-      <div class="spark" style="left:41%; animation-duration:4.2s; animation-delay:3.1s;"></div>
-      <div class="spark" style="left:54%; animation-duration:3.6s; animation-delay:1.2s;"></div>
-
-      <div class="banner-text">
-        <div class="banner-eyebrow">The Magician</div>
-        <div class="banner-title">Concentration</div>
-      </div>
-    </div>
-
-    <!-- ══════════ HERO ══════════ -->
-    <div class="hero">
-      <div class="level-ring">
-        <svg viewBox="0 0 140 140">
-          <circle class="ring-track" cx="70" cy="70" r="60"/>
-          <circle class="ring-prog"  cx="70" cy="70" r="60"/>
+      <!-- floating copper crystal (Omnia) -->
+      <div class="conc-banner-figure">
+        <svg class="conc-crystal" viewBox="0 0 80 130" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+          <defs>
+            <linearGradient id="ccg1" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stop-color="#ffe8d4" stop-opacity="0.95"/>
+              <stop offset="100%" stop-color="#d4956e" stop-opacity="0.5"/>
+            </linearGradient>
+            <linearGradient id="ccg2" x1="100%" y1="0%" x2="0%" y2="100%">
+              <stop offset="0%" stop-color="#fff6ee" stop-opacity="0.8"/>
+              <stop offset="100%" stop-color="#b8703c" stop-opacity="0.24"/>
+            </linearGradient>
+            <radialGradient id="ccg3" cx="50%" cy="38%" r="58%">
+              <stop offset="0%" stop-color="#ffdcc0" stop-opacity="0.45"/>
+              <stop offset="100%" stop-color="#a8633c" stop-opacity="0"/>
+            </radialGradient>
+            <filter id="ccglow" x="-30%" y="-30%" width="160%" height="160%">
+              <feGaussianBlur stdDeviation="2.5" result="blur"/>
+              <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+            </filter>
+          </defs>
+          <ellipse cx="40" cy="68" rx="28" ry="48" fill="url(#ccg3)" opacity="0.62"/>
+          <polygon points="40,3 54,14 40,25 26,14" fill="url(#ccg1)" stroke="#e0a878" stroke-width="0.55" filter="url(#ccglow)"/>
+          <polygon points="40,3 54,14 40,13" fill="#ffeede" opacity="0.74"/>
+          <polygon points="40,3 26,14 40,13" fill="#f2cdae" opacity="0.44"/>
+          <line x1="40" y1="3" x2="40" y2="25" stroke="#f4d4b8" stroke-width="0.4" opacity="0.55"/>
+          <line x1="26" y1="14" x2="54" y2="14" stroke="#f4d4b8" stroke-width="0.4" opacity="0.35"/>
+          <polygon points="40,25 60,36 64,58 40,70 16,58 20,36" fill="url(#ccg1)" stroke="#dca070" stroke-width="0.55"/>
+          <polygon points="40,25 60,36 40,44" fill="#ffe2cc" opacity="0.54"/>
+          <polygon points="40,25 20,36 40,44" fill="#f6d2b4" opacity="0.34"/>
+          <polygon points="16,58 64,58 40,70" fill="url(#ccg2)" opacity="0.4"/>
+          <polygon points="40,70 64,58 56,88 40,100 24,88 16,58" fill="url(#ccg1)" stroke="#dca070" stroke-width="0.55" opacity="0.88"/>
+          <polygon points="40,100 56,88 40,114" fill="url(#ccg2)" stroke="#dca070" stroke-width="0.48" opacity="0.72"/>
+          <polygon points="40,100 24,88 40,114" fill="#f2cdae" stroke="#dca070" stroke-width="0.48" opacity="0.52"/>
         </svg>
-        <div class="ring-center">
-          <div class="ring-level-num">7</div>
-          <div class="ring-level-sub">Adept</div>
-        </div>
       </div>
-      <div class="stats-row">
-        <div class="stat"><div class="stat-val">1,240</div><div class="stat-key">xp</div></div>
-        <div class="stat"><div class="stat-val">8m 12s</div><div class="stat-key">best</div></div>
-        <div class="stat"><div class="stat-val">54</div><div class="stat-key">sessions</div></div>
+
+      <!-- ambient dots -->
+      <div class="conc-dots">
+        <i style="width:7px;height:7px;left:54%;top:34%;animation-delay:0s;"></i>
+        <i style="width:5px;height:5px;left:42%;top:60%;animation-delay:1.2s;"></i>
+        <i style="width:4px;height:4px;left:62%;top:66%;animation-delay:.6s;background:rgba(255,210,170,.35);"></i>
+        <i style="width:6px;height:6px;left:48%;top:24%;animation-delay:2s;background:rgba(255,210,170,.4);"></i>
       </div>
     </div>
 
