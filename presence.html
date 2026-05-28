@@ -15543,105 +15543,118 @@ function guideExerciseById(id) {
 
 function buildExperiencedGuideItems() {
   var stats = guideExerciseStats();
+  var thought = guideThoughtStats();
   var now = Date.now();
+  var rounds = guideTwoADayEnabled() ? 2 : 1;
 
-  // Soul Mirror is never a concentration gate and never logs practice sessions,
-  // so excluding it from the rotation candidates prevents it from permanently
-  // occupying a slot as "most neglected". It appears as a fixed daily check-in
-  // at the bottom of the list (same as the foundational track).
-  var CONC_IDS = ['clock', 'visual', 'auditory', 'thought', 'asana'];
-  var candidates = CONC_IDS.map(function(id) {
+  // ── Fixed anchors: Clock and Thought Control always appear ──────────────────
+  var clockStats = guideClockStats();
+  var clockScore = guideMonitoredScore('clock', stats);
+  var clockMinutes = guideClockFinalTarget(clockStats);
+  var clockDailyTarget = clockMinutes * 60 * rounds;
+  var atCap = guideClockAtCap(clockStats);
+  var showUpsell = guideClockShowUpsell(clockStats);
+  var clockExtra = showUpsell ? 'upsell' : atCap ? 'stepper' : null;
+  var tierProgress = !atCap
+    ? ' (' + (clockStats.qualAtTier || 0) + '/2 sessions toward ' + (clockMinutes + 1) + ' min)'
+    : '';
+
+  var thoughtMode = guideState.thoughtModeForced || guideCurrentThoughtMode(thought);
+  var thoughtModeStats = thought[thoughtMode] || { count:0, bestSec:0, todaySec:0 };
+  var thoughtMinutes = guideThoughtTargetMinutes(thoughtMode, thought);
+  var thoughtDailyTarget = thoughtMinutes * 60 * rounds;
+  var nextThought = thoughtMode === 'observation'
+    ? 'When observation reaches a ten-minute gap, Omnia will move you to Thought Focus at five minutes.'
+    : thoughtMode === 'focus'
+      ? 'When focus reaches a ten-minute gap, Omnia will move you to Vacancy at five minutes.'
+      : 'When vacancy reaches a ten-minute gap, Omnia will cycle all three forms.';
+
+  var fixedItems = [
+    {
+      id:'clock',
+      name:'Clock',
+      duration:clockMinutes,
+      durationLabel:clockMinutes + ' min' + (rounds > 1 ? ' x2' : ''),
+      done:clockStats.todaySec >= clockDailyTarget,
+      progress:'today ' + guideFmtTime(clockStats.todaySec) + ' / ' + guideFmtTime(clockDailyTarget),
+      tip:'Complete the full session to count toward the next tier. Two qualifying sessions unlock the next minute.' + tierProgress,
+      open:'clock',
+      clockExtra:clockExtra
+    },
+    {
+      id:'thought',
+      name:'Thought Control',
+      mode:thoughtMode,
+      duration:thoughtMinutes,
+      durationLabel:thoughtMinutes + ' min' + (rounds > 1 ? ' x2' : ''),
+      done:thoughtModeStats.todaySec >= thoughtDailyTarget,
+      todayCount:thoughtModeStats.todayCount || 0,
+      progress:'today ' + guideFmtTime(thoughtModeStats.todaySec) + ' / ' + guideFmtTime(thoughtDailyTarget) + ' · best gap ' + guideFmtTime(thoughtModeStats.bestSec || 0),
+      tip:GUIDE_FOUNDATION_THOUGHT_TIPS[thoughtMode] + ' ' + nextThought,
+      open:'thought'
+    }
+  ];
+
+  // ── Rotating gate: most neglected from {visual, auditory, asana} ────────────
+  // Visualization and Auditory are never recommended together (same astral
+  // faculty). Since only one gate rotates here, the anti-pair rule is naturally
+  // satisfied — whichever ranks most neglected appears alone.
+  var GATE_IDS = ['visual', 'auditory', 'asana'];
+  var gateCandidates = GATE_IDS.map(function(id) {
     var ex = guideExerciseById(id);
     var st = stats[id] || { count:0, bestSec:0, lastMs:0 };
     var score = guideMonitoredScore(id, stats);
     var daysSince = st.lastMs ? (now - st.lastMs) / 86400000 : 999;
-    // Lower priority = more neglected = gets picked first.
-    // Score and count raise priority (you've mastered it),
-    // daysSince lowers it (you haven't touched it recently).
     var priority = score * 10 + Math.min(st.count, 8) - Math.min(daysSince, 14) * 0.35;
     return { ex:ex, score:score, count:st.count, daysSince:daysSince, priority:priority };
-  }).sort(function(a,b) {
+  }).sort(function(a, b) {
     if (a.priority !== b.priority) return a.priority - b.priority;
     return a.ex.id.localeCompare(b.ex.id);
   });
 
-  var byId = {};
-  candidates.forEach(function(c) { byId[c.ex.id] = c; });
+  var gateById = {};
+  gateCandidates.forEach(function(c) { gateById[c.ex.id] = c; });
 
-  // Pin the day's pair so "done" state doesn't reset mid-day as the
-  // priority formula drifts with elapsed time. Re-roll each calendar day.
+  // Pin today's gate pick so done-state doesn't drift mid-day.
   var dayKey = guideLocalDayKey();
   var pick = guideState._dailyPick;
-  var fresh = pick && pick.day === dayKey && pick.v === 3 && Array.isArray(pick.ids);
-  var ids = fresh ? pick.ids.filter(function(id) { return byId[id]; }) : [];
-  if (!ids.length) {
-    // Pick the two most genuinely neglected concentration gates.
-    // Rules:
-    //  1. Visualization and Auditory must never appear together — they develop
-    //     the same astral faculty and the user confirmed this feels redundant.
-    //     If both would be selected, keep the more-neglected one and replace
-    //     the other with the next candidate down the priority list.
-    //  2. Apply a same-pair repeat penalty so yesterday's pick doesn't reappear.
-    var lastIds = (pick && Array.isArray(pick.ids)) ? pick.ids : [];
-    var pool = candidates.map(function(c) { return c.ex.id; });
-    ids = pool.slice(0, 2);
-
-    // Rule 1: Visual + Auditory anti-pairing
-    if (ids.indexOf('visual') !== -1 && ids.indexOf('auditory') !== -1) {
-      // Drop the less-neglected one (higher index = higher priority = less neglected)
-      var viIdx = pool.indexOf('visual'), auIdx = pool.indexOf('auditory');
-      var dropId = viIdx < auIdx ? 'auditory' : 'visual'; // lower index = more neglected, keep it
-      ids = ids.filter(function(id) { return id !== dropId; });
-      for (var pi = 2; pi < pool.length; pi++) {
-        if (pool[pi] !== 'visual' && pool[pi] !== 'auditory') { ids.push(pool[pi]); break; }
-      }
-    }
-
-    // Rule 2: same-pair repeat penalty
-    if (ids.slice().sort().join() === lastIds.slice().sort().join() && pool.length > 2) {
-      ids = [pool[1], pool[2]];
-      // Re-check anti-pair rule after swap
-      if (ids.indexOf('visual') !== -1 && ids.indexOf('auditory') !== -1) {
-        ids = [pool[1]];
-        for (var pj = 2; pj < pool.length; pj++) {
-          if (pool[pj] !== ids[0]) { ids.push(pool[pj]); break; }
-        }
-      }
-    }
-
-    ids = ids.filter(function(id, i, arr) { return id && arr.indexOf(id) === i; }).slice(0, 2);
-    guideState._dailyPick = { day: dayKey, ids: ids, v: 3 };
+  var fresh = pick && pick.day === dayKey && pick.v === 4 && Array.isArray(pick.ids) && pick.ids.length === 1;
+  var gateId = fresh ? pick.ids[0] : null;
+  if (!gateId || !gateById[gateId]) {
+    var pool = gateCandidates.map(function(c) { return c.ex.id; });
+    var lastGateId = (pick && Array.isArray(pick.ids) && pick.ids.length === 1) ? pick.ids[0] : null;
+    gateId = pool[0];
+    // Same-gate repeat penalty: if it's the same as yesterday's, pick the next
+    if (gateId === lastGateId && pool.length > 1) gateId = pool[1];
+    guideState._dailyPick = { day: dayKey, ids: [gateId], v: 4 };
     saveGuideState(guideState);
   }
 
-  var chosen = ids.map(function(id) {
-    return byId[id] || { ex:guideExerciseById(id), score:guideExperienceScore(id), count:0 };
-  });
-  return chosen.map(function(c) {
-    var id = c.ex.id;
-    var score = c.score;
-    var dur = id === 'soulmirror' ? null : guideDurationForScore(score);
-    var tip;
-    if (score === 0) {
-      tip = 'This is the neglected gate. Begin modestly and let accuracy matter more than duration.';
-    } else if (score === 1) {
-      tip = 'You have the beginning. Add a little pressure without making the practice theatrical.';
-    } else if (score === 2) {
-      tip = 'You are ready for a clean consolidation session. Hold form, reduce drift, record honestly.';
-    } else {
-      tip = 'This is already strong. Use it as a stabilizing pillar, then notice what remains undeveloped.';
-    }
-    return {
-      id:id,
-      name:c.ex.name,
-      mode:id === 'thought' ? guideCurrentThoughtMode(guideThoughtStats()) : undefined,
-      duration:dur,
-      done:(stats[id] && stats[id].todayCount > 0) || false,
-      progress:c.count ? c.count + ' recorded' : 'no completed sessions recorded',
-      tip:tip + (c.count ? ' Omnia has recorded ' + c.count + ' completed session' + (c.count === 1 ? '' : 's') + ' here.' : ' Omnia has no completed sessions recorded here yet.'),
-      open:id
-    };
-  }).concat([{
+  var gc = gateById[gateId] || { ex:guideExerciseById(gateId), score:guideExperienceScore(gateId), count:0 };
+  var gScore = gc.score;
+  var gDur = guideDurationForScore(gScore);
+  var gTip;
+  if (gScore === 0) {
+    gTip = 'This is the neglected gate. Begin modestly and let accuracy matter more than duration.';
+  } else if (gScore === 1) {
+    gTip = 'You have the beginning. Add a little pressure without making the practice theatrical.';
+  } else if (gScore === 2) {
+    gTip = 'You are ready for a clean consolidation session. Hold form, reduce drift, record honestly.';
+  } else {
+    gTip = 'This is already strong. Use it as a stabilizing pillar, then notice what remains undeveloped.';
+  }
+
+  var gateItem = {
+    id:gateId,
+    name:gc.ex.name,
+    duration:gDur,
+    done:(stats[gateId] && stats[gateId].todayCount > 0) || false,
+    progress:gc.count ? gc.count + ' recorded' : 'no completed sessions recorded',
+    tip:gTip + (gc.count ? ' Omnia has recorded ' + gc.count + ' completed session' + (gc.count === 1 ? '' : 's') + ' here.' : ' Omnia has no completed sessions recorded here yet.'),
+    open:gateId
+  };
+
+  return fixedItems.concat([gateItem, {
     id:'soulmirror',
     name:'Soul Mirror',
     duration:null,
