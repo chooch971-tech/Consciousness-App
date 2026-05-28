@@ -6743,6 +6743,13 @@ var PROFILE_PIC_KEY = 'presence_profile_pic';
 function getProfilePic() { try { return localStorage.getItem(PROFILE_PIC_KEY) || ''; } catch(e) { return ''; } }
 function setProfilePic(dataUrl) {
   try { if (dataUrl) localStorage.setItem(PROFILE_PIC_KEY, dataUrl); else localStorage.removeItem(PROFILE_PIC_KEY); } catch(e) {}
+  if (dataUrl && authToken) {
+    fetch(SYNC_API_URL + '/profile-pic', {
+      method: 'PUT',
+      headers: { 'Authorization': 'Bearer ' + authToken, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ pic: dataUrl })
+    }).catch(function() {});
+  }
 }
 
 function _profOvItem(icon, val, lbl) {
@@ -6821,7 +6828,7 @@ async function loadProfileFriendStreaks() {
     friends.forEach(function(f) {
       var nm = f.username || '?';
       html += '<div class="prof-friend" data-friend-id="' + escHtml(f.userId) + '">'
-        + '<div class="prof-friend__ring prof-friend__ring--filled">' + escHtml((nm[0] || '?')) + '</div>'
+        + _friendRingHtml(nm[0] || '?', f.profilePic || '')
         + '<div class="prof-friend__name">@' + escHtml(nm) + '</div>'
         + '<div class="prof-friend__streak">🔥 ' + (f.streak || 0) + '</div>'
         + '</div>';
@@ -6848,6 +6855,13 @@ function renderProfileAchievements() {
   }).join('');
 }
 
+function _friendRingHtml(initial, pic) {
+  if (pic) {
+    return '<div class="prof-friend__ring prof-friend__ring--filled" style="background-image:url(' + escHtml(pic) + ');color:transparent;font-size:0;"></div>';
+  }
+  return '<div class="prof-friend__ring prof-friend__ring--filled">' + escHtml(String(initial || '?').toUpperCase()[0]) + '</div>';
+}
+
 // ── Friend profile view (mirrors the user's own Profile layout) ──
 var _friendProfileCache = {};
 function cacheFriends(list) {
@@ -6865,7 +6879,19 @@ function renderFriendProfile(f) {
   var uname = f.username || 'friend';
   document.getElementById('friendProfTopName').textContent = '@' + uname;
   document.getElementById('friendProfName').textContent = '@' + uname;
-  document.getElementById('friendProfInitial').textContent = (String(uname).trim()[0] || '?').toUpperCase();
+
+  var av = document.getElementById('friendProfAvatar');
+  var initEl = document.getElementById('friendProfInitial');
+  if (f.profilePic) {
+    av.classList.add('has-pic');
+    av.style.backgroundImage = 'url(' + f.profilePic + ')';
+    initEl.style.display = 'none';
+  } else {
+    av.classList.remove('has-pic');
+    av.style.backgroundImage = '';
+    initEl.style.display = '';
+    initEl.textContent = (String(uname).trim()[0] || '?').toUpperCase();
+  }
 
   var now = Date.now();
   var isOnline = f.lastActive && (now - new Date(f.lastActive).getTime() < 2 * 60 * 1000);
@@ -6902,7 +6928,7 @@ function renderFriendProfSimilar(excludeId) {
   el.innerHTML = others.map(function(o) {
     var nm = o.username || '?';
     return '<div class="prof-friend" data-friend-id="' + escHtml(o.userId) + '">'
-      + '<div class="prof-friend__ring prof-friend__ring--filled">' + escHtml((nm[0] || '?')) + '</div>'
+      + _friendRingHtml(nm[0] || '?', o.profilePic || '')
       + '<div class="prof-friend__name">@' + escHtml(nm) + '</div>'
       + '<div class="prof-friend__streak">🔥 ' + (o.streak || 0) + '</div>'
       + '</div>';

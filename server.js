@@ -698,6 +698,7 @@ app.get('/api/sync/friends/list', verifyToken, async (req, res) => {
         userId: otherId,
         username: otherUser.username || otherUser.email,
         email: otherUser.email,
+        profilePic: otherUser.profilePic || null,
         lastSync: latestSync ? latestSync.syncedAt : null,
         lastActive: otherUser.lastActive || null,
         streak, concLevel, concXp, akasha, bardonStep, bodies
@@ -806,6 +807,24 @@ app.get('/api/sync/friends/requests', verifyToken, async (req, res) => {
   } catch (err) {
     console.error('Friend requests error:', err);
     res.status(500).json({ error: 'Failed to load requests' });
+  }
+});
+
+// UPLOAD / UPDATE OWN PROFILE PICTURE
+app.put('/api/sync/profile-pic', verifyToken, async (req, res) => {
+  try {
+    const { pic } = req.body;
+    if (!pic || typeof pic !== 'string') return res.status(400).json({ error: 'pic required' });
+    if (pic.length > 200000) return res.status(413).json({ error: 'Image too large' });
+    if (!pic.startsWith('data:image/')) return res.status(400).json({ error: 'Invalid image format' });
+    await usersCollection.updateOne(
+      { _id: new ObjectId(req.user.userId) },
+      { $set: { profilePic: pic } }
+    );
+    res.json({ ok: true });
+  } catch (err) {
+    console.error('Profile pic upload error:', err);
+    res.status(500).json({ error: 'Upload failed' });
   }
 });
 
