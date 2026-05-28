@@ -6387,14 +6387,6 @@ function renderHistory() {
 // NOTIFICATIONS
 // ═══════════════════════════════════════
 
-var notifSupported = ('Notification' in window);
-async function requestNotif() {
-  if (!notifSupported) return true;
-  if (Notification.permission === 'granted') return true;
-  try { var r = await Notification.requestPermission(); return r === 'granted'; }
-  catch(e) { return false; }
-}
-
 // ═══════════════════════════════════════
 // EVENTS
 // ═══════════════════════════════════════
@@ -8813,23 +8805,16 @@ function scheduleReminderNotifications(times) {
 }
 
 function _armReminderTimeouts(times) {
-  if (!('Notification' in window) || Notification.permission !== 'granted') return;
   var now = new Date();
   times.forEach(function(t) {
     var parts = t.split(':');
     var target = new Date(now);
     target.setHours(parseInt(parts[0], 10), parseInt(parts[1], 10), 0, 0);
-    if (target <= now) return; // time already passed today — skip
+    if (target <= now) return;
     var ms = target - now;
     setTimeout(function() {
-      try {
-        new Notification('Presence', {
-          body: 'Time to train. Your mind is waiting.',
-          icon: '/favicon.ico',
-          tag: 'presence-reminder-' + t,
-          renotify: false
-        });
-      } catch(e) {}
+      playReminderBell();
+      showToast('Time to train.');
     }, ms);
   });
 }
@@ -8837,35 +8822,9 @@ function _armReminderTimeouts(times) {
 function checkRemindersOnLoad() {
   var saved = localStorage.getItem('presence_reminder_times');
   if (!saved) return;
-  if (!('Notification' in window) || Notification.permission !== 'granted') return;
   var times;
   try { times = JSON.parse(saved); } catch(e) { return; }
-  var now = new Date();
-  var todayKey = now.toISOString().slice(0, 10);
-  var shownKey = 'presence_notif_shown_' + todayKey;
-  var shown;
-  try { shown = JSON.parse(localStorage.getItem(shownKey) || '[]'); } catch(e) { shown = []; }
-  var h = now.getHours(), m = now.getMinutes();
-  var shownUpdated = false;
-  times.forEach(function(t) {
-    var parts = t.split(':');
-    var rh = parseInt(parts[0], 10), rm = parseInt(parts[1], 10);
-    var diffMin = (h * 60 + m) - (rh * 60 + rm);
-    // Fire if within 60-min window after the reminder time and not yet shown today
-    if (diffMin >= 0 && diffMin <= 60 && shown.indexOf(t) === -1) {
-      try {
-        new Notification('Presence', {
-          body: 'Time to train. Your mind is waiting.',
-          tag: 'presence-reminder-' + t,
-          renotify: false
-        });
-        shown.push(t);
-        shownUpdated = true;
-      } catch(e) {}
-    }
-  });
-  if (shownUpdated) localStorage.setItem(shownKey, JSON.stringify(shown));
-  _armReminderTimeouts(times); // arm for any times still ahead today
+  _armReminderTimeouts(times);
 }
 // ───────────────────────────────────────────────────────────────
 
@@ -8916,11 +8875,7 @@ function showTutorialReminder() {
         scheduleReminderNotifications(selected);
         showTutorialAccountPrompt();
       }
-      if ('Notification' in window && Notification.permission === 'default') {
-        Notification.requestPermission().then(proceed).catch(proceed);
-      } else {
-        proceed();
-      }
+      proceed();
     });
 
     document.getElementById('tutRemindSkip').onclick = showTutorialAccountPrompt;
