@@ -41,14 +41,12 @@
   .banner-text { z-index:3; display:flex; flex-direction:column; gap:3px; }
   .banner-label { font-size:8px; letter-spacing:.28em; text-transform:uppercase; color:rgba(255,190,120,.75); }
   .banner-title { font-family:'Cormorant Garamond',serif; font-size:24px; font-weight:300; color:var(--cream); line-height:1.1; }
-
-  /* rank symbol + xp — below the title, clickable, off the image */
-  .banner-rank { display:inline-flex; align-items:center; gap:9px; margin-top:8px; cursor:pointer;
-    padding:5px 10px 5px 5px; border-radius:13px; transition:background .18s; align-self:flex-start; }
-  .banner-rank:hover { background:rgba(212,149,110,.12); }
-  .banner-rank .rank-sym { display:flex; animation:symPulse 5s ease-in-out infinite; }
-  .banner-rank .rank-xp { font-family:'Cormorant Garamond',serif; font-size:18px; color:rgba(255,220,170,.9); line-height:1; }
-  .banner-rank .rank-xp span { font-size:7.5px; letter-spacing:.18em; text-transform:uppercase; color:rgba(255,200,140,.5); margin-left:3px; }
+  /* sub-line: same spec as path-banner-sub — flame + rank inline, clickable */
+  .banner-sub { display:inline-flex; align-items:center; gap:6px; margin-top:1px;
+    font-size:9px; letter-spacing:.1em; color:rgba(255,200,140,.48); cursor:pointer;
+    padding:3px 6px 3px 0; border-radius:8px; transition:color .18s; align-self:flex-start; }
+  .banner-sub:hover { color:rgba(255,210,160,.75); }
+  .banner-sub svg { flex-shrink:0; animation:symPulse 5s ease-in-out infinite; }
 
   /* right side: ripples + focus eye */
   .banner-right { position:relative; z-index:2; width:148px; height:148px; flex-shrink:0;
@@ -144,17 +142,12 @@
     <div class="banner-text">
       <div class="banner-label">The Magician</div>
       <div class="banner-title">Concentration</div>
-      <!-- rank symbol + xp — below title, clickable -->
-      <div class="banner-rank" title="Tap for rank details">
-        <div class="rank-sym">
-          <!-- flame = active will (early-tier magician symbol) -->
-          <svg width="30" height="30" viewBox="0 0 100 100" fill="none" stroke="#e8c79c" stroke-width="2.4" stroke-linecap="round">
-            <path d="M50 8 C50 8 65 28 65 42 C65 52 58 58 58 58 C58 48 52 42 50 38 C48 42 42 48 42 58 C42 58 35 52 35 42 C35 28 50 8 50 8Z" opacity=".9"/>
-            <path d="M50 40 C50 40 58 50 58 60 C58 70 54 76 50 78 C46 76 42 70 42 60 C42 50 50 40 50 40Z" opacity=".6"/>
-            <circle cx="50" cy="72" r="4.5" fill="#ffe8d4" stroke="none" opacity=".85"/>
-          </svg>
-        </div>
-        <div class="rank-xp">1,240<span>xp</span></div>
+      <div class="banner-sub" title="Tap for rank details">
+        <svg width="14" height="14" viewBox="0 0 100 100" fill="none" stroke="rgba(255,200,140,.7)" stroke-width="3" stroke-linecap="round">
+          <path d="M50 8 C50 8 65 28 65 42 C65 52 58 58 58 58 C58 48 52 42 50 38 C48 42 42 48 42 58 C42 58 35 52 35 42 C35 28 50 8 50 8Z"/>
+          <circle cx="50" cy="68" r="5" fill="rgba(255,220,170,.8)" stroke="none"/>
+        </svg>
+        Adept · 1,240 xp
       </div>
     </div>
 
