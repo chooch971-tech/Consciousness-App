@@ -16,152 +16,184 @@
   * { margin:0; padding:0; box-sizing:border-box; }
   html, body { height:100%; background:var(--bg); color:var(--text); font-family:'DM Mono',monospace; overflow:hidden; }
   body { display:flex; justify-content:center; }
-  /* full-height frame */
-  .frame { width:100%; max-width:430px; height:100vh; background:var(--bg); display:flex; flex-direction:column; padding:0 16px 22px; }
+  .frame { width:100%; max-width:430px; height:100vh; background:var(--bg); display:flex; flex-direction:column; padding:0 16px 26px; }
 
-  @keyframes spin { to { transform:rotate(360deg); } }
-  @keyframes ripple { 0%{ transform:scale(.5); opacity:.5; } 70%{ opacity:.1; } 100%{ transform:scale(1.3); opacity:0; } }
-  @keyframes auraPulse { 0%,100%{ transform:translateY(-50%) scale(.92); opacity:.5; } 50%{ transform:translateY(-50%) scale(1.1); opacity:.9; } }
-  @keyframes heroFloat { 0%,100%{ transform:translateY(0); opacity:.5; } 50%{ transform:translateY(-8px); opacity:1; } }
-  @keyframes emblemPulse { 0%,100%{ filter:drop-shadow(0 0 5px rgba(196,224,212,.4)); } 50%{ filter:drop-shadow(0 0 11px rgba(196,224,212,.75)); } }
+  @keyframes spin        { to { transform:rotate(360deg); } }
+  @keyframes ripple      { 0%{ transform:scale(.5); opacity:.5; } 70%{ opacity:.1; } 100%{ transform:scale(1.3); opacity:0; } }
+  @keyframes auraPulse   { 0%,100%{ transform:translateY(-50%) scale(.9); opacity:.45; } 50%{ transform:translateY(-50%) scale(1.1); opacity:.85; } }
+  @keyframes heroFloat   { 0%,100%{ transform:translateY(0); opacity:.5; } 50%{ transform:translateY(-8px); opacity:1; } }
+  @keyframes ringGlow    { 0%,100%{ filter:drop-shadow(0 0 4px rgba(164,196,184,.4)); } 50%{ filter:drop-shadow(0 0 10px rgba(164,196,184,.8)); } }
+  @keyframes symbolPulse { 0%,100%{ opacity:.55; } 50%{ opacity:1; } }
 
+  /* ── BANNER ── */
   .banner { position:relative; flex-shrink:0; height:138px; margin:14px 0 0; border-radius:18px;
     background:linear-gradient(145deg,#0c1c18 0%,#0f2a24 45%,#0b1a18 100%); overflow:hidden;
-    display:flex; align-items:center; padding:0 24px; }
+    display:flex; align-items:center; padding:0 0 0 24px; }
   .banner::before { content:''; position:absolute; inset:0; pointer-events:none;
-    background:radial-gradient(ellipse 58% 72% at 78% 52%, rgba(126,184,164,.20) 0%, transparent 70%); }
+    background:radial-gradient(ellipse 55% 70% at 78% 52%, rgba(126,184,164,.20) 0%, transparent 70%); }
 
-  .banner-text { z-index:3; display:flex; flex-direction:column; gap:4px; }
-  .banner-label { font-size:8px; letter-spacing:.28em; text-transform:uppercase; color:rgba(142,204,184,.78); }
-  .banner-title { font-family:'Cormorant Garamond',serif; font-size:27px; font-weight:300; color:var(--green-soft); line-height:1.05; }
-  .banner-sub   { font-size:9px; letter-spacing:.14em; color:rgba(196,224,212,.6); margin-top:2px; }
+  .banner-text { z-index:3; display:flex; flex-direction:column; gap:5px; }
+  .banner-label { font-size:8px; letter-spacing:.30em; text-transform:uppercase; color:rgba(142,204,184,.75); }
+  .banner-title { font-family:'Cormorant Garamond',serif; font-size:30px; font-weight:300; color:var(--green-soft); line-height:1; }
 
+  .banner-sigil-wrap { position:absolute; right:0; top:0; bottom:0; width:185px;
+    display:flex; align-items:center; justify-content:center; z-index:2; }
   .banner-glow { position:absolute; right:6px; top:50%; width:170px; height:170px; transform:translateY(-50%);
-    background:radial-gradient(circle, rgba(180,230,210,0.20) 0%, rgba(126,184,164,0.08) 44%, transparent 70%);
+    background:radial-gradient(circle, rgba(180,230,210,0.18) 0%, rgba(126,184,164,0.07) 45%, transparent 70%);
     pointer-events:none; animation:auraPulse 5s ease-in-out infinite; }
-  .sigil-stack { position:absolute; right:20px; top:50%; transform:translateY(-50%); width:140px; height:140px; z-index:2; }
-  .ripple { position:absolute; left:50%; top:50%; width:110px; height:110px; margin:-55px 0 0 -55px; border-radius:50%;
+
+  /* witness sigil: expanding awareness ripples only — no spinning ring */
+  .ripple { position:absolute; left:50%; top:50%; width:108px; height:108px; margin:-54px 0 0 -54px; border-radius:50%;
     border:1px solid rgba(164,196,184,.5); animation:ripple 5s ease-out infinite; }
-  .ripple:nth-child(2){ animation-delay:1.6s; } .ripple:nth-child(3){ animation-delay:3.2s; }
-  .tickring { position:absolute; inset:0; transform-origin:center; animation:spin 70s linear infinite; }
-  .tickring svg { width:100%; height:100%; }
-  .rank-emblem { position:absolute; left:50%; top:50%; transform:translate(-50%,-50%); width:56px; height:56px; z-index:3;
-    display:flex; align-items:center; justify-content:center; }
-  .rank-ring { position:absolute; inset:0; } .rank-ring svg { width:100%; height:100%; transform:rotate(-90deg); }
-  .rank-logo { position:relative; z-index:2; animation:emblemPulse 4s ease-in-out infinite; }
+  .ripple:nth-child(2){ animation-delay:1.7s; } .ripple:nth-child(3){ animation-delay:3.4s; }
+  .witness-eye { animation:symbolPulse 5s ease-in-out infinite; }
+
   .dots-bg { position:absolute; inset:0; pointer-events:none; z-index:1; }
   .dots-bg > i { position:absolute; border-radius:50%; background:rgba(180,230,210,.45); animation:heroFloat 4.5s ease-in-out infinite; }
 
-  /* ── body fills remaining height ── */
-  .body { flex:1; display:flex; flex-direction:column; min-height:0; }
-  .spacer { flex:1; }
+  /* ── BODY: fills remaining space ── */
+  .body { flex:1; display:flex; flex-direction:column; min-height:0; padding-top:18px; }
 
-  /* gentle centerpiece in the open space */
-  .center-orb { display:flex; flex-direction:column; align-items:center; justify-content:center; gap:16px; }
-  .breath { width:120px; height:120px; border-radius:50%; position:relative;
-    background:radial-gradient(circle, rgba(126,184,164,0.16), transparent 68%); display:flex; align-items:center; justify-content:center; }
-  .breath::before { content:''; position:absolute; width:78px; height:78px; border-radius:50%; border:1px solid rgba(164,196,184,.35);
-    animation:breathPulse 7s ease-in-out infinite; }
-  @keyframes breathPulse { 0%,100%{ transform:scale(.78); opacity:.5; } 50%{ transform:scale(1.18); opacity:1; } }
-  .breath-word { font-family:'Cormorant Garamond',serif; font-style:italic; font-size:15px; color:rgba(196,224,212,.6); }
+  /* hero: level ring centred, rank symbol + xp below it */
+  .hero { display:flex; flex-direction:column; align-items:center; flex:1; justify-content:center; gap:0; }
 
-  .controls-card { width:100%; border:1px solid var(--border); border-radius:16px; background:var(--surface); padding:6px 20px; }
+  .level-ring { position:relative; width:140px; height:140px; animation:ringGlow 5s ease-in-out infinite; cursor:pointer; }
+  .level-ring svg { width:140px; height:140px; transform:rotate(-90deg); display:block; }
+  .ring-track { fill:none; stroke:rgba(255,255,255,0.09); stroke-width:3; }
+  .ring-prog  { fill:none; stroke:var(--green); stroke-width:3; stroke-linecap:round; stroke-dasharray:377; stroke-dashoffset:132; }
+  .ring-center { position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:5px; }
+  .ring-num   { font-family:'Cormorant Garamond',serif; font-size:38px; font-weight:300; color:var(--text); line-height:1; }
+  .ring-sub   { font-size:8px; letter-spacing:.22em; text-transform:uppercase; color:var(--muted); }
+
+  .symbol-row { display:flex; align-items:center; gap:18px; margin-top:20px; }
+  .rank-symbol { opacity:.85; animation:symbolPulse 5s ease-in-out infinite; }
+  .xp-block { text-align:center; }
+  .xp-val { font-family:'Cormorant Garamond',serif; font-size:24px; font-weight:300; color:var(--green2); line-height:1; }
+  .xp-key { font-size:8px; letter-spacing:.22em; text-transform:uppercase; color:var(--muted); margin-top:3px; }
+
+  /* ── CONTROLS ── */
+  .controls-card { width:100%; border:1px solid var(--border); border-radius:16px; background:var(--surface); padding:0 20px; flex-shrink:0; margin-top:18px; }
   .ctrl-row { display:flex; align-items:center; justify-content:space-between; padding:16px 0; }
   .ctrl-row + .ctrl-row { border-top:1px solid var(--border); }
   .ctrl-key { font-size:9px; letter-spacing:.18em; text-transform:uppercase; color:var(--muted); }
-  .stepper { display:flex; align-items:center; gap:14px; }
+  .stepper { display:flex; align-items:center; gap:12px; }
   .step-btn { width:34px; height:34px; border-radius:50%; border:1px solid rgba(126,184,164,.28); background:rgba(126,184,164,.06);
-    color:var(--green); font-size:17px; cursor:pointer; display:flex; align-items:center; justify-content:center; font-family:'DM Mono',monospace; transition:background .15s; }
+    color:var(--green); font-size:17px; cursor:pointer; display:flex; align-items:center; justify-content:center;
+    font-family:'DM Mono',monospace; transition:background .15s; user-select:none; }
   .step-btn:active { background:rgba(126,184,164,.2); }
-  .step-val { font-family:'Cormorant Garamond',serif; font-size:22px; color:var(--green2); min-width:74px; text-align:center; }
+  .step-val { font-family:'Cormorant Garamond',serif; font-size:22px; color:var(--green2); min-width:72px; text-align:center; }
 
-  .actions { margin-top:16px; display:flex; flex-direction:column; gap:11px; }
+  /* ── ACTIONS ── */
+  .actions { margin-top:14px; display:flex; flex-direction:column; gap:10px; flex-shrink:0; }
   .btn { width:100%; padding:17px; border-radius:13px; cursor:pointer; font-family:'DM Mono',monospace;
     font-size:11px; letter-spacing:.18em; text-transform:uppercase; transition:opacity .15s; }
   .btn.primary { background:var(--green); color:#07080d; border:none; }
   .btn.primary:active { opacity:.85; }
-  .btn.ghost { background:none; border:1px solid var(--border); color:var(--muted); font-size:10px; letter-spacing:.16em; }
+  .btn.ghost { background:none; border:1px solid var(--border); color:var(--muted); font-size:10px; }
 </style>
 </head>
 <body>
-  <div class="frame">
-    <!-- ══ BANNER ══ -->
-    <div class="banner">
-      <div class="banner-text">
-        <div class="banner-label">The Witness</div>
-        <div class="banner-title">Awareness</div>
-        <div class="banner-sub">Level 23 · The Lotus</div>
-      </div>
-      <div class="banner-glow"></div>
-      <div class="sigil-stack">
-        <div class="ripple"></div><div class="ripple"></div><div class="ripple"></div>
-        <div class="tickring">
-          <svg viewBox="0 0 140 140" fill="none" stroke="#7eb8a4" stroke-width="0.7" opacity="0.7">
-            <circle cx="70" cy="70" r="64"/>
-            <g stroke-width="1">
-              <line x1="70" y1="4" x2="70" y2="11"/><line x1="70" y1="129" x2="70" y2="136"/>
-              <line x1="4" y1="70" x2="11" y2="70"/><line x1="129" y1="70" x2="136" y2="70"/>
-            </g>
-          </svg>
-        </div>
-        <div class="rank-emblem">
-          <div class="rank-ring"><svg viewBox="0 0 56 56"><circle cx="28" cy="28" r="24" fill="none" stroke="rgba(255,255,255,0.1)" stroke-width="2"/><circle cx="28" cy="28" r="24" fill="none" stroke="#7eb8a4" stroke-width="2" stroke-linecap="round" stroke-dasharray="151" stroke-dashoffset="38"/></svg></div>
-          <div class="rank-logo">
-            <svg width="30" height="30" viewBox="0 0 100 100" fill="none">
-              <path d="M10 50 Q50 10 90 50 Q50 90 10 50Z" stroke="#c4e0d4" stroke-width="2.5" opacity="0.9"/>
-              <circle cx="50" cy="50" r="14" stroke="#c4e0d4" stroke-width="2"/>
-              <circle cx="50" cy="50" r="6" fill="#c4e0d4" opacity="0.9"/>
-            </svg>
-          </div>
-        </div>
-      </div>
-      <div class="dots-bg">
-        <i style="width:5px;height:5px;left:48%;top:28%;animation-delay:0s;"></i>
-        <i style="width:4px;height:4px;left:40%;top:64%;animation-delay:1.4s;"></i>
-        <i style="width:3px;height:3px;left:58%;top:72%;animation-delay:.7s;"></i>
-      </div>
+<div class="frame">
+
+  <!-- ══ BANNER ══ -->
+  <div class="banner">
+    <div class="banner-text">
+      <div class="banner-label">The Witness</div>
+      <div class="banner-title">Awareness</div>
     </div>
-
-    <!-- ══ BODY (fills page) ══ -->
-    <div class="body">
-      <div class="spacer"></div>
-      <div class="center-orb">
-        <div class="breath"><div class="breath-word">witness</div></div>
-      </div>
-      <div class="spacer"></div>
-
-      <div class="controls-card">
-        <div class="ctrl-row">
-          <span class="ctrl-key">session duration</span>
-          <div class="stepper">
-            <button class="step-btn" onclick="nudge('dur',-5)">&minus;</button>
-            <span class="step-val" id="durVal">30 min</span>
-            <button class="step-btn" onclick="nudge('dur',5)">+</button>
-          </div>
-        </div>
-        <div class="ctrl-row">
-          <span class="ctrl-key">reminder every</span>
-          <div class="stepper">
-            <button class="step-btn" onclick="nudge('int',-30)">&minus;</button>
-            <span class="step-val" id="intVal">2 min</span>
-            <button class="step-btn" onclick="nudge('int',30)">+</button>
-          </div>
-        </div>
-      </div>
-
-      <div class="actions">
-        <button class="btn primary">Begin Session</button>
-        <button class="btn ghost">View History</button>
-      </div>
+    <div class="banner-sigil-wrap">
+      <div class="banner-glow"></div>
+      <div class="ripple"></div><div class="ripple"></div><div class="ripple"></div>
+      <!-- eye of awareness — your existing eye symbol, rendered inline -->
+      <svg class="witness-eye" width="72" height="72" viewBox="0 0 100 100" fill="none" style="position:relative;z-index:3;">
+        <path d="M10 50 Q50 10 90 50 Q50 90 10 50Z" stroke="#c4e0d4" stroke-width="2" opacity="0.85"/>
+        <circle cx="50" cy="50" r="15" stroke="#c4e0d4" stroke-width="1.8"/>
+        <circle cx="50" cy="50" r="6" fill="#c4e0d4" opacity="0.85"/>
+        <line x1="50" y1="12" x2="50" y2="4" stroke="#c4e0d4" stroke-width="1.2" opacity="0.45"/>
+        <line x1="50" y1="88" x2="50" y2="96" stroke="#c4e0d4" stroke-width="1.2" opacity="0.45"/>
+      </svg>
+    </div>
+    <div class="dots-bg">
+      <i style="width:5px;height:5px;left:44%;top:26%;animation-delay:0s;"></i>
+      <i style="width:4px;height:4px;left:36%;top:64%;animation-delay:1.5s;"></i>
+      <i style="width:3px;height:3px;left:28%;top:48%;animation-delay:.8s;"></i>
     </div>
   </div>
 
+  <!-- ══ BODY ══ -->
+  <div class="body">
+    <div class="hero">
+      <!-- level ring -->
+      <div class="level-ring">
+        <svg viewBox="0 0 140 140">
+          <circle class="ring-track" cx="70" cy="70" r="60"/>
+          <circle class="ring-prog"  cx="70" cy="70" r="60"/>
+        </svg>
+        <div class="ring-center">
+          <div class="ring-num">23</div>
+          <div class="ring-sub">Level</div>
+        </div>
+      </div>
+      <!-- rank symbol + XP -->
+      <div class="symbol-row">
+        <div class="rank-symbol">
+          <!-- lotus symbol (your existing tier glyph for ~level 23) -->
+          <svg width="46" height="46" viewBox="0 0 100 100" fill="none" stroke="#7eb8a4" stroke-width="1.8">
+            <path d="M50 80 Q30 60 30 45 Q30 25 50 30 Q70 25 70 45 Q70 60 50 80Z" opacity="0.85"/>
+            <path d="M50 80 Q20 65 15 45 Q12 28 35 35" opacity="0.6"/>
+            <path d="M50 80 Q80 65 85 45 Q88 28 65 35" opacity="0.6"/>
+            <line x1="50" y1="80" x2="50" y2="94" opacity="0.4"/>
+            <circle cx="50" cy="45" r="5" fill="#7eb8a4" stroke="none" opacity="0.7"/>
+          </svg>
+        </div>
+        <div class="xp-block">
+          <div class="xp-val">4,820</div>
+          <div class="xp-key">xp</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- session controls -->
+    <div class="controls-card">
+      <div class="ctrl-row">
+        <span class="ctrl-key">session duration</span>
+        <div class="stepper">
+          <button class="step-btn" onclick="nudge('dur',-5)">−</button>
+          <span class="step-val" id="durVal">30 min</span>
+          <button class="step-btn" onclick="nudge('dur',5)">+</button>
+        </div>
+      </div>
+      <div class="ctrl-row">
+        <span class="ctrl-key">reminder every</span>
+        <div class="stepper">
+          <button class="step-btn" onclick="nudge('int',-30)">−</button>
+          <span class="step-val" id="intVal">2 min</span>
+          <button class="step-btn" onclick="nudge('int',30)">+</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="actions">
+      <button class="btn primary">Begin Session</button>
+      <button class="btn ghost">View History</button>
+    </div>
+  </div>
+</div>
+
 <script>
-  var dur=30, intv=120; // minutes, seconds
-  function fmtInt(s){ return s>=60 ? (s%60===0 ? (s/60)+' min' : (s/60).toFixed(1)+' min') : s+'s'; }
-  function nudge(which,delta){
-    if(which==='dur'){ dur=Math.max(5,Math.min(480,dur+delta)); document.getElementById('durVal').textContent=dur+' min'; }
-    else { intv=Math.max(30,Math.min(600,intv+delta)); document.getElementById('intVal').textContent=fmtInt(intv); }
+  var dur = 30, intv = 120;
+  function fmtInt(s) {
+    if (s < 60) return s + 's';
+    return (s % 60 === 0 ? (s/60) : (s/60).toFixed(1)) + ' min';
+  }
+  function nudge(which, delta) {
+    if (which === 'dur') {
+      dur = Math.max(5, Math.min(480, dur + delta));
+      document.getElementById('durVal').textContent = dur + ' min';
+    } else {
+      intv = Math.max(30, Math.min(600, intv + delta));
+      document.getElementById('intVal').textContent = fmtInt(intv);
+    }
   }
 </script>
 </body>
