@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Concentration — The Magician</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500&family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg:#07080d; --surface:#0e0f17; --border:rgba(255,255,255,0.07); --border2:rgba(255,255,255,0.12);
+    --text:#ddd8ce; --muted:rgba(221,216,206,0.38);
+    --copper:#d4956e; --gold:#d4b08e; --gold-soft:#e8c79c; --cream:#ffe8d4; --copper-dim:rgba(212,149,110,0.12);
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  html, body { height:100%; background:var(--bg); color:var(--text); font-family:'DM Mono',monospace; overflow-x:hidden; }
+  body { display:flex; justify-content:center; }
+  .frame { width:100%; max-width:430px; min-height:100vh; background:var(--bg); display:flex; flex-direction:column; padding:0 16px; }
+
+  @keyframes spin    { to { transform:rotate(360deg); } }
+  @keyframes spinRev { to { transform:rotate(-360deg); } }
+  @keyframes auraPulse { 0%,100%{ transform:translateY(-50%) scale(.9); opacity:.55; } 50%{ transform:translateY(-50%) scale(1.12); opacity:.95; } }
+  @keyframes heroFloat { 0%,100%{ transform:translateY(0); opacity:.55; } 50%{ transform:translateY(-9px); opacity:1; } }
+  @keyframes emblemPulse { 0%,100%{ filter:drop-shadow(0 0 5px rgba(232,199,156,.4)); } 50%{ filter:drop-shadow(0 0 11px rgba(232,199,156,.75)); } }
+
+  .banner { position:relative; flex-shrink:0; height:142px; margin:14px 0 4px; border-radius:18px;
+    background:linear-gradient(145deg,#241710 0%,#301d12 45%,#1c1410 100%); overflow:hidden;
+    display:flex; align-items:center; padding:0 24px; }
+  .banner::before { content:''; position:absolute; inset:0; pointer-events:none;
+    background:radial-gradient(ellipse 60% 74% at 76% 52%, rgba(212,149,110,.22) 0%, transparent 70%); }
+  .banner::after { content:''; position:absolute; inset:0; pointer-events:none;
+    background:radial-gradient(ellipse 40% 50% at 72% 46%, rgba(255,200,150,.10) 0%, transparent 60%); }
+
+  .banner-text { z-index:3; display:flex; flex-direction:column; gap:4px; }
+  .banner-label { font-size:8px; letter-spacing:.28em; text-transform:uppercase; color:rgba(212,168,130,.78); }
+  .banner-title { font-family:'Cormorant Garamond',serif; font-size:27px; font-weight:300; color:var(--cream); line-height:1.05; }
+  .banner-sub   { font-size:9px; letter-spacing:.12em; color:rgba(232,199,156,.55); margin-top:2px; }
+  .banner-sub b { color:rgba(232,199,156,.9); font-weight:500; }
+
+  .banner-glow { position:absolute; right:6px; top:50%; width:180px; height:180px; transform:translateY(-50%);
+    background:radial-gradient(circle, rgba(255,200,150,0.22) 0%, rgba(212,149,110,0.09) 42%, transparent 70%);
+    pointer-events:none; animation:auraPulse 5s ease-in-out infinite; }
+
+  /* large sigil + still rank emblem at its center */
+  .sigil-stack { position:absolute; right:18px; top:50%; transform:translateY(-50%); width:150px; height:150px; z-index:2; }
+  .sigil { position:absolute; inset:0; }
+  .sigil svg { width:100%; height:100%; display:block; }
+  .sigil-outer { transform-origin:75px 75px; animation:spin 56s linear infinite; }
+  .sigil-inner { transform-origin:75px 75px; animation:spinRev 40s linear infinite; }
+
+  .rank-emblem { position:absolute; left:50%; top:50%; transform:translate(-50%,-50%); width:58px; height:58px; z-index:3;
+    display:flex; align-items:center; justify-content:center; }
+  .rank-ring { position:absolute; inset:0; }
+  .rank-ring svg { width:100%; height:100%; transform:rotate(-90deg); }
+  .rank-logo { position:relative; z-index:2; animation:emblemPulse 4s ease-in-out infinite; }
+
+  .dots { position:absolute; inset:0; pointer-events:none; z-index:1; }
+  .dots > i { position:absolute; border-radius:50%; background:rgba(255,210,170,.5); animation:heroFloat 4s ease-in-out infinite; }
+
+  .scroll { flex:1; overflow-y:auto; padding:14px 0 40px; }
+  .tabs { display:flex; gap:8px; justify-content:center; padding:6px 0 18px; }
+  .tab { font-size:10px; letter-spacing:.16em; text-transform:uppercase; background:none; border:1px solid var(--border);
+         color:var(--muted); padding:7px 16px; border-radius:20px; cursor:pointer; font-family:'DM Mono',monospace; }
+  .tab.active { color:var(--gold); border-color:rgba(212,149,110,.4); background:var(--copper-dim); }
+  .grid { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+  .card { border:1px solid var(--border); border-radius:14px; padding:18px 16px; background:var(--surface);
+          cursor:pointer; transition:transform .18s; position:relative; overflow:hidden; }
+  .card:hover { transform:translateY(-3px); }
+  .card::before { content:''; position:absolute; top:0; left:0; right:0; height:2px; background:var(--c-accent,var(--copper)); opacity:.5; }
+  .card-icon { font-size:24px; margin-bottom:10px; filter:drop-shadow(0 0 6px var(--c-glow,transparent)); }
+  .card-name { font-family:'Cormorant Garamond',serif; font-size:19px; color:var(--c-name,var(--gold)); margin-bottom:5px; }
+  .card-desc { font-size:9.5px; line-height:1.6; color:var(--muted); }
+  .card.clock    { --c-accent:#d4956e; --c-name:#d4b08e; --c-glow:rgba(212,149,110,.5); border-color:rgba(212,149,110,.18); }
+  .card.thought  { --c-accent:#b08ed4; --c-name:#c2a8e0; --c-glow:rgba(176,142,212,.5); border-color:rgba(176,142,212,.18); }
+  .card.visual   { --c-accent:#6e9fd4; --c-name:#8ab8e0; --c-glow:rgba(110,159,212,.5); border-color:rgba(110,159,212,.18); }
+  .card.auditory { --c-accent:#6eb8a4; --c-name:#8eccc0; --c-glow:rgba(110,184,164,.5); border-color:rgba(110,184,164,.18); }
+  .card.asana    { --c-accent:#d4b08e; --c-name:#e0c79c; --c-glow:rgba(212,176,142,.5); border-color:rgba(212,176,142,.18); }
+  .card.mirror   { --c-accent:#a8b0c4; --c-name:#c0c6d6; --c-glow:rgba(168,176,196,.5); border-color:rgba(168,176,196,.18); }
+  .card.full     { grid-column:1 / -1; }
+  .footnote { text-align:center; font-size:9px; color:var(--muted); letter-spacing:.12em; margin-top:26px; line-height:1.8; }
+</style>
+</head>
+<body>
+  <div class="frame">
+    <div class="banner">
+      <div class="banner-text">
+        <div class="banner-label">The Magician</div>
+        <div class="banner-title">Concentration</div>
+        <div class="banner-sub">Level <b>7</b> · Adept</div>
+      </div>
+      <div class="banner-glow"></div>
+
+      <div class="sigil-stack">
+        <!-- large rotating astrolabe / compass sigil (neutral, no hexagram) -->
+        <div class="sigil">
+          <svg viewBox="0 0 150 150">
+            <g class="sigil-outer" fill="none" stroke="#d4956e" stroke-width="0.7" opacity="0.85">
+              <circle cx="75" cy="75" r="70"/>
+              <circle cx="75" cy="75" r="63"/>
+              <!-- 24 tick marks -->
+              <g stroke-width="1">
+                <line x1="75" y1="5"   x2="75" y2="13"/>  <line x1="75" y1="137" x2="75" y2="145"/>
+                <line x1="5"  y1="75"  x2="13" y2="75"/>   <line x1="137" y1="75" x2="145" y2="75"/>
+                <line x1="26" y1="26"  x2="32" y2="32"/>   <line x1="118" y1="118" x2="124" y2="124"/>
+                <line x1="118" y1="26" x2="124" y2="20"/>  <line x1="26" y1="124" x2="32" y2="118"/>
+                <line x1="45" y1="10"  x2="48" y2="17"/>   <line x1="105" y1="140" x2="102" y2="133"/>
+                <line x1="105" y1="10" x2="102" y2="17"/>  <line x1="45" y1="140" x2="48" y2="133"/>
+                <line x1="10" y1="45"  x2="17" y2="48"/>   <line x1="140" y1="105" x2="133" y2="102"/>
+                <line x1="10" y1="105" x2="17" y2="102"/>  <line x1="140" y1="45" x2="133" y2="48"/>
+              </g>
+            </g>
+            <g class="sigil-inner" fill="none" stroke="#e8c79c" stroke-width="0.6" opacity="0.6">
+              <circle cx="75" cy="75" r="48" stroke-dasharray="2 5"/>
+              <!-- 8 radial spokes -->
+              <g stroke-width="0.5" opacity="0.7">
+                <line x1="75" y1="27" x2="75" y2="123"/> <line x1="27" y1="75" x2="123" y2="75"/>
+                <line x1="41" y1="41" x2="109" y2="109"/> <line x1="109" y1="41" x2="41" y2="109"/>
+              </g>
+              <!-- 8-point compass star = two overlapping squares (neutral) -->
+              <rect x="52" y="52" width="46" height="46"/>
+              <rect x="52" y="52" width="46" height="46" transform="rotate(45 75 75)"/>
+            </g>
+          </svg>
+        </div>
+        <!-- still rank emblem: small ring + rank logo -->
+        <div class="rank-emblem">
+          <div class="rank-ring">
+            <svg viewBox="0 0 58 58">
+              <circle cx="29" cy="29" r="25" fill="none" stroke="rgba(255,255,255,0.1)" stroke-width="2"/>
+              <circle cx="29" cy="29" r="25" fill="none" stroke="#d4956e" stroke-width="2" stroke-linecap="round"
+                      stroke-dasharray="157" stroke-dashoffset="55"/>
+            </svg>
+          </div>
+          <div class="rank-logo">
+            <!-- magician rank glyph: flame of will -->
+            <svg width="26" height="26" viewBox="0 0 100 100" fill="none">
+              <path d="M50 8 C50 8 65 28 65 42 C65 52 58 58 58 58 C58 48 52 42 50 38 C48 42 42 48 42 58 C42 58 35 52 35 42 C35 28 50 8 50 8Z" stroke="#e8c79c" stroke-width="2" opacity="0.95"/>
+              <path d="M50 40 C50 40 58 50 58 60 C58 70 54 76 50 78 C46 76 42 70 42 60 C42 50 50 40 50 40Z" stroke="#e8c79c" stroke-width="2" opacity="0.65"/>
+              <circle cx="50" cy="72" r="5" fill="#ffe8d4" opacity="0.85"/>
+            </svg>
+          </div>
+        </div>
+      </div>
+
+      <div class="dots">
+        <i style="width:6px;height:6px;left:50%;top:30%;animation-delay:0s;"></i>
+        <i style="width:4px;height:4px;left:40%;top:62%;animation-delay:1.2s;"></i>
+        <i style="width:5px;height:5px;left:58%;top:70%;animation-delay:.6s;background:rgba(255,210,170,.35);"></i>
+      </div>
+    </div>
+
+    <div class="scroll">
+      <div class="tabs">
+        <button class="tab active">Beginner</button>
+        <button class="tab">Advanced</button>
+      </div>
+      <div class="grid">
+        <div class="card clock"><div class="card-icon">&#9200;</div><div class="card-name">Clock</div><div class="card-desc">Follow the seconds hand. Stop when focus breaks.</div></div>
+        <div class="card thought"><div class="card-icon">&#129504;</div><div class="card-name">Thought Control</div><div class="card-desc">Hold one thought. Tap when the mind wanders.</div></div>
+        <div class="card visual"><div class="card-icon">&#128065;</div><div class="card-name">Visualization</div><div class="card-desc">Hold a mental image with eyes closed.</div></div>
+        <div class="card auditory"><div class="card-icon">&#127911;</div><div class="card-name">Auditory</div><div class="card-desc">Sustain a single sound in the mind.</div></div>
+        <div class="card asana"><div class="card-icon">&#129496;</div><div class="card-name">Asana</div><div class="card-desc">Sit in perfect stillness.</div></div>
+        <div class="card mirror"><div class="card-icon">&#128376;</div><div class="card-name">Soul Mirror</div><div class="card-desc">Reflect. Make one honest edit today.</div></div>
+      </div>
+      <div class="footnote">Each gate forges a faculty of the magician.</div>
+    </div>
+  </div>
+</body>
+</html>

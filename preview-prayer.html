@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Prayer — The Mystic</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500&family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg:#07080d; --surface:#0e0f17; --border:rgba(255,255,255,0.07);
+    --text:#ddd8ce; --muted:rgba(221,216,206,0.38);
+    --violet:#c4a8d4; --violet2:#b8aae0; --violet-soft:#e6d8f4; --violet-dim:rgba(196,168,212,0.12);
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  html, body { height:100%; background:var(--bg); color:var(--text); font-family:'DM Mono',monospace; overflow-x:hidden; }
+  body { display:flex; justify-content:center; }
+  .frame { width:100%; max-width:430px; min-height:100vh; background:var(--bg); display:flex; flex-direction:column; padding:0 16px; }
+
+  @keyframes spin    { to { transform:rotate(360deg); } }
+  @keyframes rayPulse { 0%,100%{ opacity:.4; } 50%{ opacity:.85; } }
+  @keyframes auraPulse { 0%,100%{ transform:translateY(-50%) scale(.9); opacity:.5; } 50%{ transform:translateY(-50%) scale(1.12); opacity:.9; } }
+  @keyframes heroFloat { 0%,100%{ transform:translateY(0); opacity:.5; } 50%{ transform:translateY(-9px); opacity:1; } }
+  @keyframes emblemPulse { 0%,100%{ filter:drop-shadow(0 0 5px rgba(230,216,244,.4)); } 50%{ filter:drop-shadow(0 0 12px rgba(230,216,244,.8)); } }
+
+  .banner { position:relative; flex-shrink:0; height:142px; margin:14px 0 4px; border-radius:18px;
+    background:linear-gradient(145deg,#1a1426 0%,#241a36 45%,#171228 100%); overflow:hidden;
+    display:flex; align-items:center; padding:0 24px; }
+  .banner::before { content:''; position:absolute; inset:0; pointer-events:none;
+    background:radial-gradient(ellipse 60% 74% at 76% 52%, rgba(196,168,212,.22) 0%, transparent 70%); }
+  .banner::after { content:''; position:absolute; inset:0; pointer-events:none;
+    background:radial-gradient(ellipse 40% 50% at 72% 46%, rgba(220,200,255,.10) 0%, transparent 60%); }
+
+  .banner-text { z-index:3; display:flex; flex-direction:column; gap:4px; }
+  .banner-label { font-size:8px; letter-spacing:.28em; text-transform:uppercase; color:rgba(196,168,220,.78); }
+  .banner-title { font-family:'Cormorant Garamond',serif; font-size:27px; font-weight:300; color:var(--violet-soft); line-height:1.05; }
+  .banner-sub   { font-size:9px; letter-spacing:.12em; color:rgba(220,200,235,.55); margin-top:2px; }
+  .banner-sub b { color:rgba(220,200,235,.9); font-weight:500; }
+
+  .banner-glow { position:absolute; right:6px; top:50%; width:180px; height:180px; transform:translateY(-50%);
+    background:radial-gradient(circle, rgba(220,200,255,0.22) 0%, rgba(196,168,212,0.09) 42%, transparent 70%);
+    pointer-events:none; animation:auraPulse 5s ease-in-out infinite; }
+
+  .sigil-stack { position:absolute; right:18px; top:50%; transform:translateY(-50%); width:150px; height:150px; z-index:2; }
+  .sigil { position:absolute; inset:0; }
+  .sigil svg { width:100%; height:100%; display:block; }
+  .sigil-rays  { transform-origin:75px 75px; animation:spin 80s linear infinite; }
+  .sigil-rays line { animation:rayPulse 4s ease-in-out infinite; }
+
+  .rank-emblem { position:absolute; left:50%; top:50%; transform:translate(-50%,-50%); width:58px; height:58px; z-index:3;
+    display:flex; align-items:center; justify-content:center; }
+  .rank-ring { position:absolute; inset:0; }
+  .rank-ring svg { width:100%; height:100%; transform:rotate(-90deg); }
+  .rank-logo { position:relative; z-index:2; animation:emblemPulse 4s ease-in-out infinite; }
+
+  .dots { position:absolute; inset:0; pointer-events:none; z-index:1; }
+  .dots > i { position:absolute; border-radius:50%; background:rgba(220,200,255,.5); animation:heroFloat 4s ease-in-out infinite; }
+
+  .body-area { flex:1; overflow-y:auto; padding:18px 4px 40px; }
+  .pray-head { display:flex; align-items:center; justify-content:space-between; margin-bottom:14px; }
+  .pray-head h3 { font-family:'Cormorant Garamond',serif; font-weight:300; font-size:18px; color:var(--violet-soft); }
+  .pray-streak { font-size:9px; letter-spacing:.12em; color:var(--muted); }
+  .pray-streak b { color:var(--violet); }
+  .pray-row { display:flex; align-items:center; gap:12px; border:1px solid var(--border); border-radius:12px; padding:14px 16px; background:var(--surface); margin-bottom:10px; }
+  .pray-dot { width:9px; height:9px; border-radius:50%; flex-shrink:0; }
+  .pray-row.done .pray-dot { background:var(--violet); box-shadow:0 0 8px rgba(196,168,212,.6); }
+  .pray-row.todo .pray-dot { background:none; border:1px solid var(--border); }
+  .pray-time { font-family:'Cormorant Garamond',serif; font-size:17px; color:var(--text); }
+  .pray-name { font-size:9px; letter-spacing:.14em; text-transform:uppercase; color:var(--muted); margin-left:auto; }
+  .begin { width:100%; max-width:320px; margin:14px auto 0; padding:16px; border-radius:12px; border:none; cursor:pointer; display:block;
+    background:var(--violet); color:#07080d; font-family:'DM Mono',monospace; font-size:11px; letter-spacing:.18em; text-transform:uppercase; }
+</style>
+</head>
+<body>
+  <div class="frame">
+    <div class="banner">
+      <div class="banner-text">
+        <div class="banner-label">The Mystic</div>
+        <div class="banner-title">Prayer</div>
+        <div class="banner-sub">Day <b>12</b> · Devotion holds</div>
+      </div>
+      <div class="banner-glow"></div>
+
+      <div class="sigil-stack">
+        <div class="sigil">
+          <svg viewBox="0 0 150 150">
+            <g class="sigil-rays" stroke="#c4a8d4" stroke-width="0.8" opacity="0.7">
+              <line x1="75" y1="8"  x2="75" y2="30"/>  <line x1="75" y1="120" x2="75" y2="142"/>
+              <line x1="8"  y1="75" x2="30" y2="75"/>   <line x1="120" y1="75" x2="142" y2="75"/>
+              <line x1="28" y1="28" x2="44" y2="44"/>   <line x1="106" y1="106" x2="122" y2="122"/>
+              <line x1="122" y1="28" x2="106" y2="44"/> <line x1="44" y1="106" x2="28" y2="122"/>
+              <line x1="50" y1="14" x2="58" y2="34"/>   <line x1="100" y1="136" x2="92" y2="116"/>
+              <line x1="100" y1="14" x2="92" y2="34"/>  <line x1="50" y1="136" x2="58" y2="116"/>
+              <line x1="14" y1="50" x2="34" y2="58"/>   <line x1="136" y1="100" x2="116" y2="92"/>
+              <line x1="14" y1="100" x2="34" y2="92"/>  <line x1="136" y1="50" x2="116" y2="58"/>
+            </g>
+            <circle cx="75" cy="75" r="40" fill="none" stroke="#e6d8f4" stroke-width="0.6" opacity="0.45"/>
+          </svg>
+        </div>
+        <div class="rank-emblem">
+          <div class="rank-ring">
+            <svg viewBox="0 0 58 58">
+              <circle cx="29" cy="29" r="25" fill="none" stroke="rgba(255,255,255,0.1)" stroke-width="2"/>
+              <circle cx="29" cy="29" r="25" fill="none" stroke="#c4a8d4" stroke-width="2" stroke-linecap="round"
+                      stroke-dasharray="157" stroke-dashoffset="78"/>
+            </svg>
+          </div>
+          <div class="rank-logo">
+            <!-- mystic rank glyph: four-point radiant star (matches ✦) -->
+            <svg width="26" height="26" viewBox="0 0 100 100" fill="none">
+              <path d="M50 8 L58 42 L92 50 L58 58 L50 92 L42 58 L8 50 L42 42 Z" fill="#e6d8f4" opacity="0.92"/>
+              <circle cx="50" cy="50" r="4" fill="#fff" opacity="0.8"/>
+            </svg>
+          </div>
+        </div>
+      </div>
+
+      <div class="dots">
+        <i style="width:6px;height:6px;left:50%;top:30%;animation-delay:0s;"></i>
+        <i style="width:4px;height:4px;left:40%;top:62%;animation-delay:1.2s;"></i>
+        <i style="width:5px;height:5px;left:58%;top:70%;animation-delay:.6s;background:rgba(220,200,255,.35);"></i>
+      </div>
+    </div>
+
+    <div class="body-area">
+      <div class="pray-head">
+        <h3>Today's Prayers</h3>
+        <span class="pray-streak"><b>3</b> / 5 complete</span>
+      </div>
+      <div class="pray-row done"><span class="pray-dot"></span><span class="pray-time">5:30</span><span class="pray-name">Dawn</span></div>
+      <div class="pray-row done"><span class="pray-dot"></span><span class="pray-time">12:00</span><span class="pray-name">Midday</span></div>
+      <div class="pray-row done"><span class="pray-dot"></span><span class="pray-time">15:30</span><span class="pray-name">Afternoon</span></div>
+      <div class="pray-row todo"><span class="pray-dot"></span><span class="pray-time">18:45</span><span class="pray-name">Dusk</span></div>
+      <div class="pray-row todo"><span class="pray-dot"></span><span class="pray-time">21:00</span><span class="pray-name">Night</span></div>
+      <button class="begin">Begin Prayer</button>
+    </div>
+  </div>
+</body>
+</html>
