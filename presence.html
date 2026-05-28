@@ -3325,7 +3325,7 @@ body:not(.tut-live) #tutCorgi {
 
         <div id="audSoundsBlock" style="background:rgba(255,255,255,.03); border:1px solid var(--border); border-radius:10px; padding:16px 18px;">
           <div style="font-size:12px; color:var(--text); margin-bottom:4px;">Custom sounds</div>
-          <div style="font-size:10px; color:var(--muted); line-height:1.6; margin-bottom:14px;">Upload your own audio files or paste a direct audio link (.mp3, .ogg, .m4a) to use in Auditory sessions. They appear at the bottom of the sound selector.</div>
+          <div style="font-size:10px; color:var(--muted); line-height:1.6; margin-bottom:14px;">Upload audio files (up to 100 MB each) or paste a direct audio link (.mp3, .ogg, .m4a) to use in Auditory sessions. They appear at the bottom of the sound selector.</div>
           <label style="display:block; width:100%; box-sizing:border-box; text-align:center; padding:10px; border:1px solid rgba(110,184,164,.35); border-radius:6px; font-family:'DM Mono',monospace; font-size:9px; letter-spacing:.15em; text-transform:uppercase; color:#6eb8a4; cursor:pointer; margin-bottom:10px;">
             + Upload Sound
             <input type="file" id="customAudUpload" accept="audio/*" multiple style="display:none;"/>
@@ -6595,33 +6595,39 @@ document.getElementById('customVisUpload').addEventListener('change', function(e
   e.target.value = '';
 });
 
+function _isAudioFile(f) {
+  if (f.type && f.type.indexOf('audio/') === 0) return true;
+  return /\.(mp3|ogg|oga|m4a|aac|wav|flac|opus|weba|webm)$/i.test(f.name || '');
+}
 document.getElementById('customAudUpload').addEventListener('change', function(e) {
   var files = Array.from(e.target.files);
   if (!files.length) return;
-  var MAX_SIZE = 5 * 1024 * 1024; // 5 MB cap
+  var MAX_SIZE = 100 * 1024 * 1024; // 100 MB cap
   var oversized = files.filter(function(f) { return f.size > MAX_SIZE; });
-  files = files.filter(function(f) { return f.size <= MAX_SIZE && f.type.indexOf('audio/') === 0; });
-  if (oversized.length) showToast('Skipped ' + oversized.length + ' file(s) over 5 MB.', 3000);
+  files = files.filter(function(f) { return f.size <= MAX_SIZE && _isAudioFile(f); });
+  if (oversized.length) showToast('Skipped ' + oversized.length + ' file(s) over 100 MB.', 3000);
   if (!files.length) { e.target.value = ''; return; }
+  showToast(files.length === 1 ? 'Adding sound…' : 'Adding ' + files.length + ' sounds…');
   var sounds = loadCustomAudSounds();
-  var remaining = files.length;
+  var added = 0, failed = 0, remaining = files.length;
+  function finish() {
+    saveCustomAudSounds(sounds);
+    renderCustomAudSoundList();
+    if (document.getElementById('soundGrid')) buildSoundGrid();
+    if (added) showToast(added === 1 ? '1 sound added' : added + ' sounds added');
+    if (failed) showToast('Could not store ' + failed + ' file(s) — device storage may be full.', 3500);
+  }
   files.forEach(function(file) {
-    var reader = new FileReader();
-    reader.onload = function(ev) {
-      sounds.push({
-        id: 'custom_' + Date.now() + '_' + Math.random().toString(36).substr(2, 6),
-        name: file.name.replace(/\.[^/.]+$/, ''),
-        dataUrl: ev.target.result
-      });
+    var id = 'custom_' + Date.now() + '_' + Math.random().toString(36).substr(2, 6);
+    audDbPut(id, file).then(function() {
+      sounds.push({ id: id, name: file.name.replace(/\.[^/.]+$/, ''), kind: 'blob' });
+      added++;
+    }, function() {
+      failed++;
+    }).then(function() {
       remaining--;
-      if (remaining === 0) {
-        saveCustomAudSounds(sounds);
-        renderCustomAudSoundList();
-        if (document.getElementById('soundGrid')) buildSoundGrid();
-        showToast(files.length === 1 ? '1 sound added' : files.length + ' sounds added');
-      }
-    };
-    reader.readAsDataURL(file);
+      if (remaining === 0) finish();
+    });
   });
   e.target.value = '';
 });
@@ -9279,6 +9285,58 @@ var VIS_HOUSEHOLD = [
 ];
 
 // ── Custom Visualization Images ──────────────────────────
+// Uploaded audio blobs live in IndexedDB (localStorage is too small for
+// real-length tracks). Only lightweight metadata stays in localStorage so
+// the synchronous sound-grid/label code keeps working unchanged.
+var AUD_DB_NAME = 'presence_audio';
+var AUD_DB_STORE = 'sounds';
+var _audDbPromise = null;
+function audDb() {
+  if (_audDbPromise) return _audDbPromise;
+  _audDbPromise = new Promise(function(resolve, reject) {
+    if (!window.indexedDB) { reject(new Error('IndexedDB unavailable')); return; }
+    var req = indexedDB.open(AUD_DB_NAME, 1);
+    req.onupgradeneeded = function() {
+      var db = req.result;
+      if (!db.objectStoreNames.contains(AUD_DB_STORE)) db.createObjectStore(AUD_DB_STORE);
+    };
+    req.onsuccess = function() { resolve(req.result); };
+    req.onerror = function() { reject(req.error); };
+  });
+  return _audDbPromise;
+}
+function audDbPut(id, blob) {
+  return audDb().then(function(db) {
+    return new Promise(function(resolve, reject) {
+      var tx = db.transaction(AUD_DB_STORE, 'readwrite');
+      tx.objectStore(AUD_DB_STORE).put(blob, id);
+      tx.oncomplete = function() { resolve(); };
+      tx.onerror = function() { reject(tx.error); };
+      tx.onabort = function() { reject(tx.error || new Error('aborted')); };
+    });
+  });
+}
+function audDbGet(id) {
+  return audDb().then(function(db) {
+    return new Promise(function(resolve, reject) {
+      var tx = db.transaction(AUD_DB_STORE, 'readonly');
+      var rq = tx.objectStore(AUD_DB_STORE).get(id);
+      rq.onsuccess = function() { resolve(rq.result || null); };
+      rq.onerror = function() { reject(rq.error); };
+    });
+  });
+}
+function audDbDelete(id) {
+  return audDb().then(function(db) {
+    return new Promise(function(resolve) {
+      var tx = db.transaction(AUD_DB_STORE, 'readwrite');
+      tx.objectStore(AUD_DB_STORE).delete(id);
+      tx.oncomplete = function() { resolve(); };
+      tx.onerror = function() { resolve(); };
+    });
+  }).catch(function() {});
+}
+
 function loadCustomAudSounds() {
   try { var s = localStorage.getItem('presence_custom_aud'); return s ? JSON.parse(s) : []; } catch(e) { return []; }
 }
@@ -9287,6 +9345,7 @@ function saveCustomAudSounds(sounds) {
 }
 function deleteCustomAudSound(id) {
   saveCustomAudSounds(loadCustomAudSounds().filter(function(s) { return s.id !== id; }));
+  audDbDelete(id);
   renderCustomAudSoundList();
   if (document.getElementById('soundGrid')) buildSoundGrid();
 }
@@ -10853,6 +10912,8 @@ var audNodes = []; // active audio nodes to stop
 var audLoopHandle = null;
 var currentSound = 'bowl';
 var customAudElement = null; // <audio> element for custom uploaded sounds
+var customAudObjectUrl = null; // object URL for IndexedDB blob playback (must be revoked)
+var _customSoundToken = 0; // cancels stale async blob loads
 var audSessionStartTime = null;
 var audRepStartTime = null;
 var audTimerHandle = null;
@@ -10875,7 +10936,9 @@ function stopAllAudio() {
   audNodes.forEach(function(n) { try { n.stop(); } catch(e) {} });
   audNodes = [];
   if (audLoopHandle) { clearTimeout(audLoopHandle); audLoopHandle = null; }
+  _customSoundToken++; // cancel any in-flight blob load
   if (customAudElement) { customAudElement.pause(); customAudElement.src = ''; customAudElement = null; }
+  if (customAudObjectUrl) { try { URL.revokeObjectURL(customAudObjectUrl); } catch(e) {} customAudObjectUrl = null; }
 }
 
 function playGong(ctx, when, volume) {
@@ -11139,17 +11202,29 @@ function playPsychedelic(ctx, when) {
 // Sustained sounds need looping
 var SUSTAINED_SOUNDS = ['creek', 'rain', 'om', 'binaural', 'psychedelic'];
 
+function _startCustomAudio(src, isObjectUrl) {
+  var audio = new Audio(src);
+  audio.loop = true;
+  audio.volume = 0.75;
+  audio.play().catch(function() { showToast('Could not play that audio'); });
+  customAudElement = audio;
+  if (isObjectUrl) customAudObjectUrl = src;
+}
 function playCustomSound(id) {
   var sounds = loadCustomAudSounds();
   var sound = sounds.find(function(s) { return s.id === id; });
   if (!sound) return;
-  var src = sound.url || sound.dataUrl;
-  if (!src) return;
-  var audio = new Audio(src);
-  audio.loop = true;
-  audio.volume = 0.75;
-  audio.play().catch(function() { showToast('Could not play that audio link'); });
-  customAudElement = audio;
+  // Direct link or legacy inline data URL — play synchronously.
+  if (sound.url || sound.dataUrl) { _startCustomAudio(sound.url || sound.dataUrl, false); return; }
+  // Uploaded blob lives in IndexedDB — load it, then play if still current.
+  var token = ++_customSoundToken;
+  audDbGet(id).then(function(blob) {
+    if (token !== _customSoundToken) return; // superseded by another selection/stop
+    if (!blob) { showToast('Sound not found — try re-uploading'); return; }
+    _startCustomAudio(URL.createObjectURL(blob), true);
+  }).catch(function() {
+    if (token === _customSoundToken) showToast('Could not load that sound');
+  });
 }
 
 function playSound(soundId) {
