@@ -18,11 +18,9 @@
   body { display:flex; justify-content:center; }
   .frame { width:100%; max-width:430px; min-height:100vh; background:var(--bg); display:flex; flex-direction:column; padding:0 16px; }
 
-  @keyframes sigilSpin  { to { transform:rotate(360deg); } }
-  @keyframes sigilSpinR { to { transform:rotate(-360deg); } }
-  @keyframes corePulse  { 0%,100%{ transform:scale(.96); opacity:.65; } 50%{ transform:scale(1.07); opacity:1; } }
+  @keyframes ripple     { 0%{ transform:scale(.5); opacity:.5; } 70%{ opacity:.1; } 100%{ transform:scale(1.3); opacity:0; } }
+  @keyframes eyePulse   { 0%,100%{ opacity:.6; } 50%{ opacity:1; } }
   @keyframes glowPulse  { 0%,100%{ opacity:.45; } 50%{ opacity:.95; } }
-  @keyframes emberRise  { 0%{ transform:translateY(6px) scale(1); opacity:0; } 20%{ opacity:.9; } 100%{ transform:translateY(-56px) scale(.25); opacity:0; } }
   @keyframes heroFloat  { 0%,100%{ transform:translateY(0); opacity:.4; } 50%{ transform:translateY(-7px); opacity:.9; } }
   @keyframes breathe    { 0%,100%{ transform:scale(.82); opacity:.22; } 50%{ transform:scale(1.18); opacity:.75; } }
   @keyframes breathRng  { 0%,100%{ transform:scale(.9);  opacity:.28; } 50%{ transform:scale(1.07); opacity:.65; } }
@@ -44,27 +42,26 @@
   .banner-label { font-size:8px; letter-spacing:.28em; text-transform:uppercase; color:rgba(255,190,120,.75); }
   .banner-title { font-family:'Cormorant Garamond',serif; font-size:24px; font-weight:300; color:var(--cream); line-height:1.1; }
 
-  /* right side: sigil backdrop + clickable rank symbol + xp on top */
+  /* rank symbol + xp — below the title, clickable, off the image */
+  .banner-rank { display:inline-flex; align-items:center; gap:9px; margin-top:8px; cursor:pointer;
+    padding:5px 10px 5px 5px; border-radius:13px; transition:background .18s; align-self:flex-start; }
+  .banner-rank:hover { background:rgba(212,149,110,.12); }
+  .banner-rank .rank-sym { display:flex; animation:symPulse 5s ease-in-out infinite; }
+  .banner-rank .rank-xp { font-family:'Cormorant Garamond',serif; font-size:18px; color:rgba(255,220,170,.9); line-height:1; }
+  .banner-rank .rank-xp span { font-size:7.5px; letter-spacing:.18em; text-transform:uppercase; color:rgba(255,200,140,.5); margin-left:3px; }
+
+  /* right side: ripples + focus eye */
   .banner-right { position:relative; z-index:2; width:148px; height:148px; flex-shrink:0;
     display:flex; align-items:center; justify-content:center; }
   .banner-glow { position:absolute; inset:0; border-radius:50%;
     background:radial-gradient(circle, rgba(255,180,100,0.25) 0%, rgba(212,149,110,0.08) 42%, transparent 70%);
     animation:glowPulse 5s ease-in-out infinite; }
-  /* big faint rotating sigil as backdrop */
-  .sig-outer { animation:sigilSpin  52s linear infinite; transform-origin:74px 74px; }
-  .sig-inner { animation:sigilSpinR 38s linear infinite; transform-origin:74px 74px; }
-  .sig-core  { animation:corePulse  5s  ease-in-out infinite; transform-origin:74px 74px; }
-
-  /* rank symbol + xp — layered above sigil, clickable */
-  .rank-btn { position:absolute; z-index:4; display:flex; flex-direction:column; align-items:center; gap:6px;
-    cursor:pointer; padding:8px; border-radius:14px; transition:background .18s; }
-  .rank-btn:hover { background:rgba(212,149,110,.12); }
-  .rank-sym { animation:symPulse 5s ease-in-out infinite; }
-  .rank-xp { font-family:'Cormorant Garamond',serif; font-size:16px; color:rgba(255,220,170,.85); line-height:1; }
-  .rank-xp span { font-size:7.5px; letter-spacing:.18em; text-transform:uppercase; color:rgba(255,200,140,.5); display:block; text-align:center; margin-top:2px; }
-
-  .ember { position:absolute; bottom:26px; width:3px; height:3px; border-radius:50%;
-    background:#ffe8c0; box-shadow:0 0 5px #ffe8c0; z-index:3; opacity:0; animation:emberRise linear infinite; }
+  .ripple { position:absolute; left:50%; top:50%; border-radius:50%; border:1px solid rgba(232,199,156,.5);
+    animation:ripple 5s ease-out infinite; }
+  .ripple:nth-child(2){ width:110px; height:110px; margin:-55px 0 0 -55px; }
+  .ripple:nth-child(3){ width:110px; height:110px; margin:-55px 0 0 -55px; animation-delay:1.7s; }
+  .ripple:nth-child(4){ width:110px; height:110px; margin:-55px 0 0 -55px; animation-delay:3.4s; }
+  .focus-eye { position:relative; z-index:3; animation:eyePulse 5s ease-in-out infinite; }
   .dots-bg { position:absolute; inset:0; pointer-events:none; z-index:1; overflow:hidden; }
   .dots-bg > i { position:absolute; border-radius:50%; background:rgba(255,210,150,.45); animation:heroFloat 4.5s ease-in-out infinite; }
 
@@ -147,36 +144,11 @@
     <div class="banner-text">
       <div class="banner-label">The Magician</div>
       <div class="banner-title">Concentration</div>
-    </div>
-
-    <div class="banner-right">
-      <div class="banner-glow"></div>
-      <!-- faint rotating sigil backdrop -->
-      <svg width="148" height="148" viewBox="0 0 148 148" fill="none" style="position:absolute;inset:0;z-index:1;">
-        <g class="sig-outer" stroke="#d4956e" stroke-width="0.9" opacity="0.55">
-          <circle cx="74" cy="74" r="68"/>
-          <g stroke-width="1.1">
-            <line x1="74" y1="5"   x2="74" y2="14"/><line x1="74" y1="134" x2="74" y2="143"/>
-            <line x1="5"  y1="74"  x2="14" y2="74"/><line x1="134" y1="74" x2="143" y2="74"/>
-            <line x1="27" y1="27"  x2="34" y2="34"/><line x1="114" y1="114" x2="121" y2="121"/>
-            <line x1="121" y1="27" x2="114" y2="34"/><line x1="27" y1="121" x2="34" y2="114"/>
-          </g>
-        </g>
-        <g class="sig-inner" stroke="#e8c79c" stroke-width="0.6" opacity="0.35">
-          <circle cx="74" cy="74" r="50" stroke-dasharray="2 8"/>
-        </g>
-        <g class="sig-core" stroke="#f0d8a8" stroke-width="1.8" stroke-linejoin="round">
-          <path d="M74 42 L104 92 L44 92 Z"/>
-          <line x1="74" y1="92"  x2="74" y2="116"/>
-          <line x1="60" y1="104" x2="88" y2="104"/>
-          <circle cx="74" cy="42" r="2.8" fill="#fff8f0" stroke="none"/>
-        </g>
-      </svg>
-      <!-- rank symbol + xp — on top, clickable -->
-      <div class="rank-btn" title="Tap for rank details">
+      <!-- rank symbol + xp — below title, clickable -->
+      <div class="banner-rank" title="Tap for rank details">
         <div class="rank-sym">
           <!-- flame = active will (early-tier magician symbol) -->
-          <svg width="46" height="46" viewBox="0 0 100 100" fill="none" stroke="#e8c79c" stroke-width="2" stroke-linecap="round">
+          <svg width="30" height="30" viewBox="0 0 100 100" fill="none" stroke="#e8c79c" stroke-width="2.4" stroke-linecap="round">
             <path d="M50 8 C50 8 65 28 65 42 C65 52 58 58 58 58 C58 48 52 42 50 38 C48 42 42 48 42 58 C42 58 35 52 35 42 C35 28 50 8 50 8Z" opacity=".9"/>
             <path d="M50 40 C50 40 58 50 58 60 C58 70 54 76 50 78 C46 76 42 70 42 60 C42 50 50 40 50 40Z" opacity=".6"/>
             <circle cx="50" cy="72" r="4.5" fill="#ffe8d4" stroke="none" opacity=".85"/>
@@ -184,10 +156,19 @@
         </div>
         <div class="rank-xp">1,240<span>xp</span></div>
       </div>
-      <!-- embers -->
-      <div class="ember" style="left:44%; animation-duration:3.8s; animation-delay:0s;"></div>
-      <div class="ember" style="left:52%; animation-duration:5.0s; animation-delay:1.5s;"></div>
-      <div class="ember" style="left:48%; animation-duration:4.3s; animation-delay:2.8s;"></div>
+    </div>
+
+    <div class="banner-right">
+      <div class="banner-glow"></div>
+      <div class="ripple"></div><div class="ripple"></div><div class="ripple"></div>
+      <!-- focus eye — single-pointed gaze -->
+      <svg class="focus-eye" width="68" height="68" viewBox="0 0 100 100" fill="none">
+        <path d="M10 50 Q50 10 90 50 Q50 90 10 50Z" stroke="#fff0dc" stroke-width="2.2" opacity="0.9"/>
+        <circle cx="50" cy="50" r="15" stroke="#fff0dc" stroke-width="1.8"/>
+        <circle cx="50" cy="50" r="6" fill="#fff0dc" opacity="0.9"/>
+        <line x1="50" y1="12" x2="50" y2="4" stroke="#fff0dc" stroke-width="1.2" opacity="0.5"/>
+        <line x1="50" y1="88" x2="50" y2="96" stroke="#fff0dc" stroke-width="1.2" opacity="0.5"/>
+      </svg>
     </div>
 
     <div class="dots-bg">

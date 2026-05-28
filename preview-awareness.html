@@ -52,7 +52,7 @@
   .ripple:nth-child(2){ width:110px; height:110px; margin:-55px 0 0 -55px; }
   .ripple:nth-child(3){ width:110px; height:110px; margin:-55px 0 0 -55px; animation-delay:1.7s; }
   .ripple:nth-child(4){ width:110px; height:110px; margin:-55px 0 0 -55px; animation-delay:3.4s; }
-  .witness-eye { position:relative; z-index:3; animation:eyePulse 5s ease-in-out infinite; }
+  .pause-mark { position:relative; z-index:3; animation:eyePulse 5s ease-in-out infinite; }
   .dots-bg { position:absolute; inset:0; pointer-events:none; z-index:1; overflow:hidden; }
   .dots-bg > i { position:absolute; border-radius:50%; background:rgba(180,230,210,.48); animation:heroFloat 4.5s ease-in-out infinite; }
 
@@ -131,12 +131,11 @@
     <div class="banner-right">
       <div class="banner-glow"></div>
       <div class="ripple"></div><div class="ripple"></div><div class="ripple"></div>
-      <svg class="witness-eye" width="68" height="68" viewBox="0 0 100 100" fill="none" style="position:relative;z-index:3;">
-        <path d="M10 50 Q50 10 90 50 Q50 90 10 50Z" stroke="#c4e0d4" stroke-width="2.2" opacity="0.9"/>
-        <circle cx="50" cy="50" r="15" stroke="#c4e0d4" stroke-width="1.8"/>
-        <circle cx="50" cy="50" r="6" fill="#c4e0d4" opacity="0.9"/>
-        <line x1="50" y1="12" x2="50" y2="4" stroke="#c4e0d4" stroke-width="1.2" opacity="0.5"/>
-        <line x1="50" y1="88" x2="50" y2="96" stroke="#c4e0d4" stroke-width="1.2" opacity="0.5"/>
+      <!-- Eckhart Tolle pause mark — the stillness/gap between thoughts -->
+      <svg class="pause-mark" width="66" height="66" viewBox="0 0 100 100" fill="none">
+        <circle cx="50" cy="50" r="40" stroke="#c4e0d4" stroke-width="2" opacity="0.85"/>
+        <line x1="40" y1="34" x2="40" y2="66" stroke="#c4e0d4" stroke-width="6" stroke-linecap="round"/>
+        <line x1="60" y1="34" x2="60" y2="66" stroke="#c4e0d4" stroke-width="6" stroke-linecap="round"/>
       </svg>
     </div>
 
