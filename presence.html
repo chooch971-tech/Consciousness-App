@@ -15575,14 +15575,40 @@ function buildExperiencedGuideItems() {
   var fresh = pick && pick.day === dayKey && pick.v === 3 && Array.isArray(pick.ids);
   var ids = fresh ? pick.ids.filter(function(id) { return byId[id]; }) : [];
   if (!ids.length) {
-    // Pick the two most neglected concentration gates. Apply a repeat penalty
-    // so the pair shifts day-to-day: if yesterday's pair would appear again,
-    // skip the first candidate and take the next one down the priority list.
+    // Pick the two most genuinely neglected concentration gates.
+    // Rules:
+    //  1. Visualization and Auditory must never appear together — they develop
+    //     the same astral faculty and the user confirmed this feels redundant.
+    //     If both would be selected, keep the more-neglected one and replace
+    //     the other with the next candidate down the priority list.
+    //  2. Apply a same-pair repeat penalty so yesterday's pick doesn't reappear.
     var lastIds = (pick && Array.isArray(pick.ids)) ? pick.ids : [];
-    ids = candidates.slice(0, 2).map(function(c) { return c.ex.id; });
-    if (ids.slice().sort().join() === lastIds.slice().sort().join() && candidates.length > 2) {
-      ids = [candidates[1].ex.id, candidates[2].ex.id];
+    var pool = candidates.map(function(c) { return c.ex.id; });
+    ids = pool.slice(0, 2);
+
+    // Rule 1: Visual + Auditory anti-pairing
+    if (ids.indexOf('visual') !== -1 && ids.indexOf('auditory') !== -1) {
+      // Drop the less-neglected one (higher index = higher priority = less neglected)
+      var viIdx = pool.indexOf('visual'), auIdx = pool.indexOf('auditory');
+      var dropId = viIdx < auIdx ? 'auditory' : 'visual'; // lower index = more neglected, keep it
+      ids = ids.filter(function(id) { return id !== dropId; });
+      for (var pi = 2; pi < pool.length; pi++) {
+        if (pool[pi] !== 'visual' && pool[pi] !== 'auditory') { ids.push(pool[pi]); break; }
+      }
     }
+
+    // Rule 2: same-pair repeat penalty
+    if (ids.slice().sort().join() === lastIds.slice().sort().join() && pool.length > 2) {
+      ids = [pool[1], pool[2]];
+      // Re-check anti-pair rule after swap
+      if (ids.indexOf('visual') !== -1 && ids.indexOf('auditory') !== -1) {
+        ids = [pool[1]];
+        for (var pj = 2; pj < pool.length; pj++) {
+          if (pool[pj] !== ids[0]) { ids.push(pool[pj]); break; }
+        }
+      }
+    }
+
     ids = ids.filter(function(id, i, arr) { return id && arr.indexOf(id) === i; }).slice(0, 2);
     guideState._dailyPick = { day: dayKey, ids: ids, v: 3 };
     saveGuideState(guideState);
