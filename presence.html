@@ -3,7 +3,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8"/>
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://accounts.google.com https://www.youtube.com https://s.ytimg.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob: https:; media-src 'self' https:; connect-src 'self' https://presence-server-acik.onrender.com https://accounts.google.com https://www.youtube.com; frame-src https://accounts.google.com https://www.youtube.com; worker-src 'self'; base-uri 'self'; form-action 'none'"/>
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://accounts.google.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob: https:; media-src 'self' https:; connect-src 'self' https://presence-server-acik.onrender.com https://accounts.google.com; frame-src https://accounts.google.com; worker-src 'self'; base-uri 'self'; form-action 'none'"/>
   <link rel="icon" href="data:,"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"/>
   <meta name="apple-mobile-web-app-capable" content="yes"/>
@@ -3325,16 +3325,15 @@ body:not(.tut-live) #tutCorgi {
 
         <div id="audSoundsBlock" style="background:rgba(255,255,255,.03); border:1px solid var(--border); border-radius:10px; padding:16px 18px;">
           <div style="font-size:12px; color:var(--text); margin-bottom:4px;">Custom sounds</div>
-          <div style="font-size:10px; color:var(--muted); line-height:1.6; margin-bottom:14px;">Upload your own audio files or paste a YouTube link to use in Auditory sessions. They appear at the bottom of the sound selector.</div>
+          <div style="font-size:10px; color:var(--muted); line-height:1.6; margin-bottom:14px;">Upload your own audio files or paste a direct audio link (.mp3, .ogg, .m4a) to use in Auditory sessions. They appear at the bottom of the sound selector.</div>
           <label style="display:block; width:100%; box-sizing:border-box; text-align:center; padding:10px; border:1px solid rgba(110,184,164,.35); border-radius:6px; font-family:'DM Mono',monospace; font-size:9px; letter-spacing:.15em; text-transform:uppercase; color:#6eb8a4; cursor:pointer; margin-bottom:10px;">
             + Upload Sound
             <input type="file" id="customAudUpload" accept="audio/*" multiple style="display:none;"/>
           </label>
-          <div style="display:flex; gap:8px; margin-bottom:8px;">
-            <input type="text" id="ytLinkInput" placeholder="Paste YouTube link…" autocomplete="off" autocapitalize="off" spellcheck="false" style="flex:1; min-width:0; box-sizing:border-box; background:rgba(0,0,0,.25); border:1px solid var(--border); border-radius:6px; color:var(--text); font-family:'DM Mono',monospace; font-size:10px; padding:9px 10px; -webkit-appearance:none;"/>
-            <button id="ytLinkAddBtn" style="flex-shrink:0; padding:9px 14px; border:1px solid rgba(110,184,164,.35); border-radius:6px; background:none; font-family:'DM Mono',monospace; font-size:9px; letter-spacing:.15em; text-transform:uppercase; color:#6eb8a4; cursor:pointer;">Add</button>
+          <div style="display:flex; gap:8px; margin-bottom:14px;">
+            <input type="text" id="audUrlInput" placeholder="Paste audio link (.mp3)…" autocomplete="off" autocapitalize="off" spellcheck="false" style="flex:1; min-width:0; box-sizing:border-box; background:rgba(0,0,0,.25); border:1px solid var(--border); border-radius:6px; color:var(--text); font-family:'DM Mono',monospace; font-size:10px; padding:9px 10px; -webkit-appearance:none;"/>
+            <button id="audUrlAddBtn" style="flex-shrink:0; padding:9px 14px; border:1px solid rgba(110,184,164,.35); border-radius:6px; background:none; font-family:'DM Mono',monospace; font-size:9px; letter-spacing:.15em; text-transform:uppercase; color:#6eb8a4; cursor:pointer;">Add</button>
           </div>
-          <div style="font-size:9px; color:var(--muted); line-height:1.5; margin-bottom:14px; opacity:.7;">Note: YouTube audio pauses if your screen locks during a session.</div>
           <div id="customAudSoundList"></div>
         </div>
 
@@ -6627,48 +6626,34 @@ document.getElementById('customAudUpload').addEventListener('change', function(e
   e.target.value = '';
 });
 
-function parseYouTubeId(url) {
-  if (!url) return '';
-  url = String(url).trim();
-  if (/^[a-zA-Z0-9_-]{11}$/.test(url)) return url;
-  var m;
-  m = url.match(/[?&]v=([a-zA-Z0-9_-]{11})/); if (m) return m[1];
-  m = url.match(/youtu\.be\/([a-zA-Z0-9_-]{11})/); if (m) return m[1];
-  m = url.match(/youtube\.com\/(?:embed|shorts|live|v)\/([a-zA-Z0-9_-]{11})/); if (m) return m[1];
-  return '';
-}
-
-function addYouTubeSound() {
-  var inp = document.getElementById('ytLinkInput');
+function addAudioUrlSound() {
+  var inp = document.getElementById('audUrlInput');
   if (!inp) return;
   var url = (inp.value || '').trim();
   if (!url) return;
-  var vid = parseYouTubeId(url);
-  if (!vid) { showToast('Could not read that YouTube link'); return; }
+  if (/youtube\.com|youtu\.be/i.test(url)) { showToast('YouTube isn’t supported — paste a direct .mp3 link'); return; }
+  if (!/^https?:\/\//i.test(url)) { showToast('Enter a direct audio link (https://…)'); return; }
   var sounds = loadCustomAudSounds();
-  if (sounds.some(function(s) { return s.kind === 'youtube' && s.videoId === vid; })) {
-    showToast('That video is already added'); inp.value = ''; return;
+  if (sounds.some(function(s) { return s.kind === 'url' && s.url === url; })) {
+    showToast('That link is already added'); inp.value = ''; return;
   }
-  var entry = { id: 'custom_yt_' + Date.now() + '_' + Math.random().toString(36).substr(2, 6), name: 'YouTube audio', kind: 'youtube', videoId: vid };
+  var name = 'Audio link';
+  try {
+    var path = url.split('?')[0].split('#')[0];
+    var file = decodeURIComponent(path.substring(path.lastIndexOf('/') + 1));
+    if (file) name = file.replace(/\.[^/.]+$/, '');
+  } catch(e) {}
+  var entry = { id: 'custom_url_' + Date.now() + '_' + Math.random().toString(36).substr(2, 6), name: name || 'Audio link', kind: 'url', url: url };
   sounds.push(entry);
   saveCustomAudSounds(sounds);
   renderCustomAudSoundList();
   if (document.getElementById('soundGrid')) buildSoundGrid();
   inp.value = '';
-  showToast('YouTube sound added');
-  fetch('https://www.youtube.com/oembed?format=json&url=https://www.youtube.com/watch?v=' + vid)
-    .then(function(r) { return r.ok ? r.json() : null; })
-    .then(function(d) {
-      if (d && d.title) {
-        var all = loadCustomAudSounds();
-        var t = all.find(function(s) { return s.id === entry.id; });
-        if (t) { t.name = d.title; saveCustomAudSounds(all); renderCustomAudSoundList(); if (document.getElementById('soundGrid')) buildSoundGrid(); }
-      }
-    }).catch(function() {});
+  showToast('Sound added');
 }
-document.getElementById('ytLinkAddBtn').addEventListener('click', addYouTubeSound);
-document.getElementById('ytLinkInput').addEventListener('keydown', function(e) {
-  if (e.key === 'Enter') { e.preventDefault(); addYouTubeSound(); }
+document.getElementById('audUrlAddBtn').addEventListener('click', addAudioUrlSound);
+document.getElementById('audUrlInput').addEventListener('keydown', function(e) {
+  if (e.key === 'Enter') { e.preventDefault(); addAudioUrlSound(); }
 });
 
 document.getElementById('syncLogoutBtn').addEventListener('click', function() {
@@ -9309,12 +9294,15 @@ function renderCustomAudSoundList() {
   var list = document.getElementById('customAudSoundList');
   if (!list) return;
   var sounds = loadCustomAudSounds();
+  // Prune stale YouTube entries from the dropped YouTube feature.
+  var cleaned = sounds.filter(function(s) { return s.kind !== 'youtube'; });
+  if (cleaned.length !== sounds.length) { saveCustomAudSounds(cleaned); sounds = cleaned; }
   if (!sounds.length) {
     list.innerHTML = '<div style="font-size:10px;color:var(--muted);text-align:center;padding:4px 0;opacity:.6;">No sounds uploaded yet.</div>';
     return;
   }
   list.innerHTML = sounds.map(function(s) {
-    var icon = s.kind === 'youtube' ? '<span style="color:#e0584d;">&#9654;</span>' : '&#127911;';
+    var icon = s.kind === 'url' ? '<span style="color:#6eb8a4;">&#128279;</span>' : '&#127911;';
     return '<div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--border);">'
       + '<span style="font-size:18px;flex-shrink:0;">' + icon + '</span>'
       + '<span style="flex:1;font-size:10px;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + s.name.replace(/</g,'&lt;') + '</span>'
@@ -10888,7 +10876,6 @@ function stopAllAudio() {
   audNodes = [];
   if (audLoopHandle) { clearTimeout(audLoopHandle); audLoopHandle = null; }
   if (customAudElement) { customAudElement.pause(); customAudElement.src = ''; customAudElement = null; }
-  if (typeof stopYouTubeSound === 'function') stopYouTubeSound();
 }
 
 function playGong(ctx, when, volume) {
@@ -11156,84 +11143,13 @@ function playCustomSound(id) {
   var sounds = loadCustomAudSounds();
   var sound = sounds.find(function(s) { return s.id === id; });
   if (!sound) return;
-  if (sound.kind === 'youtube') { playYouTubeSound(sound.videoId); return; }
-  var audio = new Audio(sound.dataUrl);
+  var src = sound.url || sound.dataUrl;
+  if (!src) return;
+  var audio = new Audio(src);
   audio.loop = true;
   audio.volume = 0.75;
-  audio.play().catch(function() {});
+  audio.play().catch(function() { showToast('Could not play that audio link'); });
   customAudElement = audio;
-}
-
-// ── YouTube IFrame player (for custom YouTube sounds) ─────
-var _ytApiState = 0; // 0=not loaded, 1=loading, 2=ready
-var _ytReadyCbs = [];
-var ytPlayer = null;
-var ytPlayerReady = false;
-var ytPendingVideoId = null;
-
-function _ytEnsureApi(cb) {
-  if (window.YT && window.YT.Player) { cb(); return; }
-  _ytReadyCbs.push(cb);
-  if (_ytApiState === 0) {
-    _ytApiState = 1;
-    var tag = document.createElement('script');
-    tag.src = 'https://www.youtube.com/iframe_api';
-    document.head.appendChild(tag);
-  }
-}
-window.onYouTubeIframeAPIReady = function() {
-  _ytApiState = 2;
-  var cbs = _ytReadyCbs; _ytReadyCbs = [];
-  cbs.forEach(function(cb) { try { cb(); } catch(e) {} });
-};
-function _ytEnsureContainer() {
-  var d = document.getElementById('ytAudPlayer');
-  if (!d) {
-    d = document.createElement('div');
-    d.id = 'ytAudPlayer';
-    d.style.cssText = 'position:fixed;width:1px;height:1px;left:-9999px;top:-9999px;opacity:0;pointer-events:none;';
-    document.body.appendChild(d);
-  }
-  return d;
-}
-function playYouTubeSound(videoId) {
-  if (!videoId) return;
-  _ytEnsureApi(function() {
-    _ytEnsureContainer();
-    if (!ytPlayer) {
-      ytPlayer = new YT.Player('ytAudPlayer', {
-        height: '1', width: '1', videoId: videoId,
-        playerVars: { autoplay: 1, controls: 0, disablekb: 1, fs: 0, modestbranding: 1, playsinline: 1, rel: 0 },
-        events: {
-          onReady: function(e) {
-            ytPlayerReady = true;
-            e.target.setVolume(75);
-            if (ytPendingVideoId && ytPendingVideoId !== videoId) {
-              e.target.loadVideoById(ytPendingVideoId);
-            } else {
-              e.target.playVideo();
-            }
-            ytPendingVideoId = null;
-          },
-          onStateChange: function(e) {
-            if (e.data === YT.PlayerState.ENDED) {
-              try { ytPlayer.seekTo(0); ytPlayer.playVideo(); } catch(_) {}
-            }
-          }
-        }
-      });
-    } else if (ytPlayerReady) {
-      ytPlayer.loadVideoById(videoId);
-      ytPlayer.setVolume(75);
-      ytPlayer.playVideo();
-    } else {
-      ytPendingVideoId = videoId;
-    }
-  });
-}
-function stopYouTubeSound() {
-  ytPendingVideoId = null;
-  if (ytPlayer && ytPlayerReady) { try { ytPlayer.stopVideo(); } catch(e) {} }
 }
 
 function playSound(soundId) {
@@ -11300,11 +11216,11 @@ function stopWaveAnimation() {
 function buildSoundGrid() {
   var grid = document.getElementById('soundGrid');
   if (!grid) return;
-  var customSounds = loadCustomAudSounds();
+  var customSounds = loadCustomAudSounds().filter(function(s) { return s.kind !== 'youtube'; });
   var allSounds = SOUNDS.map(function(s) {
     return { id: s.id, label: s.label, icon: s.icon };
   }).concat(customSounds.map(function(s) {
-    return { id: s.id, label: s.name.replace(/</g, '&lt;'), icon: s.kind === 'youtube' ? '&#9654;' : '&#127911;' };
+    return { id: s.id, label: s.name.replace(/</g, '&lt;'), icon: s.kind === 'url' ? '&#128279;' : '&#127911;' };
   }));
   grid.innerHTML = allSounds.map(function(s) {
     var sel = s.id === currentSound ? ' selected' : '';
@@ -15573,14 +15489,33 @@ function buildExperiencedGuideItems() {
   // re-roll when the local calendar day changes.
   var dayKey = guideLocalDayKey();
   var pick = guideState._dailyPick;
-  var ids = (pick && pick.day === dayKey && Array.isArray(pick.ids))
-    ? pick.ids.filter(function(id) { return byId[id]; })
-    : [];
+  // v:2 introduces day-to-day rotation. A pick without it is from the old
+  // "always the two most neglected (+ forced Asana)" logic — treat it as
+  // stale so the rotation takes effect immediately, even mid-day.
+  var fresh = pick && pick.day === dayKey && pick.v === 2 && Array.isArray(pick.ids);
+  var ids = fresh ? pick.ids.filter(function(id) { return byId[id]; }) : [];
   if (!ids.length) {
-    ids = candidates.slice(0, 2).map(function(c) { return c.ex.id; });
-    if (ids.indexOf('asana') === -1) ids.push('asana');
-    ids = ids.slice(0, 3);
-    guideState._dailyPick = { day: dayKey, ids: ids };
+    // Rotate the day's pair through the priority-sorted list so the Guide
+    // surfaces variety across days instead of fixating on the same two
+    // "most neglected" gates (e.g. Soul Mirror never logs sessions, so it
+    // would otherwise rank lowest and reappear every single day). A step of
+    // two cycles through all six exercises over a three-day window while the
+    // list itself stays adaptive to recent practice.
+    var order = candidates.map(function(c) { return c.ex.id; });
+    var n = order.length;
+    var parts = dayKey.split('-');
+    var dayNum = Math.floor(Date.UTC(+parts[0], (+parts[1]) - 1, +parts[2]) / 86400000);
+    if (isNaN(dayNum)) dayNum = Math.floor(Date.now() / 86400000);
+    var start = ((dayNum * 2) % n + n) % n;
+    ids = [order[start], order[(start + 1) % n]];
+    // Rotate away from the previous pick so the pair visibly changes.
+    if (pick && Array.isArray(pick.ids) && pick.ids.length &&
+        pick.ids.slice().sort().join() === ids.slice().sort().join()) {
+      start = (start + 2) % n;
+      ids = [order[start], order[(start + 1) % n]];
+    }
+    ids = ids.filter(function(id, i, arr) { return id && arr.indexOf(id) === i; });
+    guideState._dailyPick = { day: dayKey, ids: ids, v: 2 };
     saveGuideState(guideState);
   }
 
