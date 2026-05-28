@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Concentration — Redesign Preview</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500&family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg:#07080d; --surface:#0e0f17; --surface2:#13141f;
+    --border:rgba(255,255,255,0.07); --border2:rgba(255,255,255,0.12);
+    --text:#ddd8ce; --muted:rgba(221,216,206,0.38);
+    /* Concentration palette — copper / gold */
+    --copper:#d4956e; --gold:#d4b08e; --gold-soft:#e8c79c;
+    --copper-dim:rgba(212,149,110,0.12);
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  html, body { height:100%; background:var(--bg); color:var(--text); font-family:'DM Mono',monospace; overflow-x:hidden; }
+  body { display:flex; justify-content:center; }
+
+  /* Phone frame so it previews like the app */
+  .frame {
+    width:100%; max-width:430px; min-height:100vh;
+    background:var(--bg); position:relative; overflow:hidden;
+    display:flex; flex-direction:column;
+  }
+
+  /* ─────────────────────────────────────────────────────────────
+     THE MAGICIAN BANNER
+     ───────────────────────────────────────────────────────────── */
+  .conc-banner {
+    position:relative; width:100%; height:230px; flex-shrink:0;
+    overflow:hidden;
+    background:
+      radial-gradient(ellipse 80% 90% at 50% 38%, rgba(212,149,110,0.20), transparent 70%),
+      radial-gradient(ellipse 120% 80% at 50% 120%, rgba(212,149,110,0.10), transparent 60%),
+      linear-gradient(180deg, #0b0a10 0%, #100c0e 55%, #07080d 100%);
+    display:flex; align-items:center; justify-content:center;
+    border-bottom:1px solid rgba(212,149,110,0.14);
+  }
+  /* vignette top + bottom so it melts into the page */
+  .conc-banner::after {
+    content:''; position:absolute; inset:0; pointer-events:none;
+    background:linear-gradient(180deg, rgba(7,8,13,0.55) 0%, transparent 25%, transparent 70%, rgba(7,8,13,0.92) 100%);
+  }
+
+  /* Rotating arcane circle (the summoning sigil) */
+  .arcane {
+    position:absolute; top:50%; left:50%;
+    width:300px; height:300px; transform:translate(-50%,-54%);
+    opacity:0.55;
+  }
+  .arcane svg { width:100%; height:100%; display:block; }
+  .arcane-outer { animation:spin 60s linear infinite; transform-origin:center; }
+  .arcane-inner { animation:spinRev 42s linear infinite; transform-origin:center; }
+  @keyframes spin    { to { transform:rotate(360deg); } }
+  @keyframes spinRev { to { transform:rotate(-360deg); } }
+
+  /* The conjured core — consciousness being forged */
+  .core-wrap {
+    position:relative; z-index:3;
+    display:flex; flex-direction:column; align-items:center;
+  }
+  .core {
+    position:relative; width:78px; height:78px;
+    display:flex; align-items:center; justify-content:center;
+    animation:bob 6s ease-in-out infinite;
+  }
+  @keyframes bob { 0%,100%{ transform:translateY(0); } 50%{ transform:translateY(-6px); } }
+
+  /* glowing aura behind the crystal */
+  .core-glow {
+    position:absolute; width:150px; height:150px; border-radius:50%;
+    background:radial-gradient(circle, rgba(232,199,156,0.45), rgba(212,149,110,0.18) 40%, transparent 70%);
+    animation:pulseGlow 4.5s ease-in-out infinite; filter:blur(2px);
+  }
+  @keyframes pulseGlow {
+    0%,100% { transform:scale(0.85); opacity:0.55; }
+    50%     { transform:scale(1.15); opacity:0.95; }
+  }
+
+  /* the crystal itself (octahedron-ish diamond) */
+  .crystal {
+    width:46px; height:46px; position:relative; z-index:2;
+    transform:rotate(45deg);
+    background:linear-gradient(135deg, var(--gold-soft), var(--copper) 60%, #a8633c);
+    box-shadow:0 0 22px rgba(232,199,156,0.7), inset 0 0 14px rgba(255,255,255,0.35);
+    border-radius:8px;
+    animation:shimmer 5s ease-in-out infinite;
+  }
+  .crystal::before {
+    content:''; position:absolute; inset:0; border-radius:8px;
+    background:linear-gradient(315deg, rgba(255,255,255,0.55), transparent 50%);
+    mix-blend-mode:screen;
+  }
+  @keyframes shimmer {
+    0%,100% { filter:brightness(1); }
+    50%     { filter:brightness(1.25); }
+  }
+
+  /* spark particles rising */
+  .spark {
+    position:absolute; bottom:40px; width:3px; height:3px; border-radius:50%;
+    background:var(--gold-soft); box-shadow:0 0 6px var(--gold-soft);
+    opacity:0; animation:rise linear infinite;
+  }
+  @keyframes rise {
+    0%   { transform:translateY(0) scale(1);   opacity:0; }
+    12%  { opacity:1; }
+    80%  { opacity:0.7; }
+    100% { transform:translateY(-150px) scale(0.2); opacity:0; }
+  }
+
+  /* Banner text */
+  .banner-text { position:absolute; z-index:4; bottom:22px; left:0; right:0; text-align:center; }
+  .banner-eyebrow {
+    font-family:'DM Mono',monospace; font-size:9px; letter-spacing:0.42em;
+    text-transform:uppercase; color:var(--copper); opacity:0.85; margin-bottom:5px;
+  }
+  .banner-title {
+    font-family:'Cormorant Garamond',serif; font-weight:300;
+    font-size:30px; letter-spacing:0.04em; color:var(--gold-soft);
+    line-height:1; text-shadow:0 2px 18px rgba(212,149,110,0.4);
+  }
+
+  /* ─────────────────────────────────────────────────────────────
+     HERO (level ring + stats) — consistent with existing app
+     ───────────────────────────────────────────────────────────── */
+  .hero { padding:22px 24px 10px; display:flex; flex-direction:column; align-items:center; }
+  .level-ring { position:relative; width:118px; height:118px; cursor:pointer; }
+  .level-ring svg { width:100%; height:100%; transform:rotate(-90deg); }
+  .ring-track { fill:none; stroke:var(--border2); stroke-width:3; }
+  .ring-prog  { fill:none; stroke:var(--copper); stroke-width:3; stroke-linecap:round;
+                stroke-dasharray:377; stroke-dashoffset:264; filter:drop-shadow(0 0 5px rgba(212,149,110,0.5)); }
+  .ring-center { position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; }
+  .ring-level-num { font-family:'Cormorant Garamond',serif; font-size:34px; font-weight:300; color:var(--text); line-height:1; }
+  .ring-level-sub { font-size:8px; letter-spacing:0.2em; text-transform:uppercase; color:var(--muted); margin-top:3px; }
+
+  .stats-row { display:flex; gap:34px; margin-top:18px; }
+  .stat { text-align:center; }
+  .stat-val { font-family:'Cormorant Garamond',serif; font-size:22px; font-weight:300; color:var(--gold); line-height:1; }
+  .stat-key { font-size:8px; letter-spacing:0.2em; text-transform:uppercase; color:var(--muted); margin-top:4px; }
+
+  /* ─────────────────────────────────────────────────────────────
+     EXERCISE GRID — consistent with existing app
+     ───────────────────────────────────────────────────────────── */
+  .scroll { flex:1; overflow-y:auto; padding:6px 20px 40px; }
+  .tabs { display:flex; gap:8px; align-items:center; justify-content:center; padding:14px 0 18px; }
+  .tab { font-family:'DM Mono',monospace; font-size:10px; letter-spacing:0.16em; text-transform:uppercase;
+         background:none; border:1px solid var(--border); color:var(--muted); padding:7px 16px; border-radius:20px; cursor:pointer; transition:all .2s; }
+  .tab.active { color:var(--gold); border-color:rgba(212,149,110,0.4); background:var(--copper-dim); }
+
+  .grid { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+  .card {
+    border:1px solid var(--border); border-radius:14px; padding:18px 16px;
+    background:var(--surface); cursor:pointer; transition:transform .18s, border-color .2s, box-shadow .2s;
+    position:relative; overflow:hidden;
+  }
+  .card:hover { transform:translateY(-3px); }
+  .card::before {
+    content:''; position:absolute; top:0; left:0; right:0; height:2px;
+    background:var(--c-accent, var(--copper)); opacity:0.5;
+  }
+  .card-icon { font-size:24px; margin-bottom:10px; filter:drop-shadow(0 0 6px var(--c-glow, transparent)); }
+  .card-name { font-family:'Cormorant Garamond',serif; font-size:19px; font-weight:400; color:var(--c-name,var(--gold)); margin-bottom:5px; }
+  .card-desc { font-size:9.5px; line-height:1.6; color:var(--muted); }
+
+  .card.clock    { --c-accent:#d4956e; --c-name:#d4b08e; --c-glow:rgba(212,149,110,0.5); border-color:rgba(212,149,110,0.18); }
+  .card.visual   { --c-accent:#6e9fd4; --c-name:#8ab8e0; --c-glow:rgba(110,159,212,0.5); border-color:rgba(110,159,212,0.18); }
+  .card.auditory { --c-accent:#6eb8a4; --c-name:#8eccc0; --c-glow:rgba(110,184,164,0.5); border-color:rgba(110,184,164,0.18); }
+  .card.thought  { --c-accent:#b08ed4; --c-name:#c2a8e0; --c-glow:rgba(176,142,212,0.5); border-color:rgba(176,142,212,0.18); }
+  .card.asana    { --c-accent:#d4b08e; --c-name:#e0c79c; --c-glow:rgba(212,176,142,0.5); border-color:rgba(212,176,142,0.18); }
+  .card.full     { grid-column:1 / -1; }
+
+  .footnote { text-align:center; font-size:9px; color:var(--muted); letter-spacing:0.12em; margin-top:26px; line-height:1.8; }
+</style>
+</head>
+<body>
+  <div class="frame">
+
+    <!-- ══════════ THE MAGICIAN BANNER ══════════ -->
+    <div class="conc-banner">
+      <!-- rotating arcane summoning circle -->
+      <div class="arcane">
+        <svg viewBox="0 0 300 300">
+          <g class="arcane-outer" fill="none" stroke="#d4956e" stroke-width="0.8" opacity="0.9">
+            <circle cx="150" cy="150" r="140"/>
+            <circle cx="150" cy="150" r="128"/>
+            <!-- tick runes around the outer ring -->
+            <g stroke-width="1.2">
+              <line x1="150" y1="10"  x2="150" y2="26"/>
+              <line x1="150" y1="274" x2="150" y2="290"/>
+              <line x1="10"  y1="150" x2="26"  y2="150"/>
+              <line x1="274" y1="150" x2="290" y2="150"/>
+              <line x1="51"  y1="51"  x2="62"  y2="62"/>
+              <line x1="238" y1="238" x2="249" y2="249"/>
+              <line x1="238" y1="62"  x2="249" y2="51"/>
+              <line x1="51"  y1="249" x2="62"  y2="238"/>
+            </g>
+          </g>
+          <g class="arcane-inner" fill="none" stroke="#e8c79c" stroke-width="0.7" opacity="0.7">
+            <circle cx="150" cy="150" r="96"/>
+            <!-- hermetic triangle + inverted triangle (the seal) -->
+            <polygon points="150,66 222,192 78,192"/>
+            <polygon points="150,234 78,108 222,108"/>
+            <circle cx="150" cy="150" r="58" stroke-dasharray="2 6"/>
+          </g>
+        </svg>
+      </div>
+
+      <!-- conjured consciousness core -->
+      <div class="core-wrap">
+        <div class="core">
+          <div class="core-glow"></div>
+          <div class="crystal"></div>
+        </div>
+      </div>
+
+      <!-- rising sparks (positioned via inline style) -->
+      <div class="spark" style="left:44%; animation-duration:3.8s; animation-delay:0s;"></div>
+      <div class="spark" style="left:52%; animation-duration:4.6s; animation-delay:0.9s;"></div>
+      <div class="spark" style="left:48%; animation-duration:3.2s; animation-delay:1.8s;"></div>
+      <div class="spark" style="left:57%; animation-duration:5.1s; animation-delay:2.4s;"></div>
+      <div class="spark" style="left:41%; animation-duration:4.2s; animation-delay:3.1s;"></div>
+      <div class="spark" style="left:54%; animation-duration:3.6s; animation-delay:1.2s;"></div>
+
+      <div class="banner-text">
+        <div class="banner-eyebrow">The Magician</div>
+        <div class="banner-title">Concentration</div>
+      </div>
+    </div>
+
+    <!-- ══════════ HERO ══════════ -->
+    <div class="hero">
+      <div class="level-ring">
+        <svg viewBox="0 0 140 140">
+          <circle class="ring-track" cx="70" cy="70" r="60"/>
+          <circle class="ring-prog"  cx="70" cy="70" r="60"/>
+        </svg>
+        <div class="ring-center">
+          <div class="ring-level-num">7</div>
+          <div class="ring-level-sub">Adept</div>
+        </div>
+      </div>
+      <div class="stats-row">
+        <div class="stat"><div class="stat-val">1,240</div><div class="stat-key">xp</div></div>
+        <div class="stat"><div class="stat-val">8m 12s</div><div class="stat-key">best</div></div>
+        <div class="stat"><div class="stat-val">54</div><div class="stat-key">sessions</div></div>
+      </div>
+    </div>
+
+    <!-- ══════════ EXERCISE GRID ══════════ -->
+    <div class="scroll">
+      <div class="tabs">
+        <button class="tab active">Beginner</button>
+        <button class="tab">Advanced</button>
+      </div>
+      <div class="grid">
+        <div class="card clock">
+          <div class="card-icon">&#9200;</div>
+          <div class="card-name">Clock</div>
+          <div class="card-desc">Follow the seconds hand. Stop when focus breaks.</div>
+        </div>
+        <div class="card thought">
+          <div class="card-icon">&#129504;</div>
+          <div class="card-name">Thought Control</div>
+          <div class="card-desc">Hold one thought. Tap when the mind wanders.</div>
+        </div>
+        <div class="card visual">
+          <div class="card-icon">&#128065;</div>
+          <div class="card-name">Visualization</div>
+          <div class="card-desc">Hold a mental image with eyes closed.</div>
+        </div>
+        <div class="card auditory">
+          <div class="card-icon">&#127911;</div>
+          <div class="card-name">Auditory</div>
+          <div class="card-desc">Sustain a single sound in the mind.</div>
+        </div>
+        <div class="card asana full">
+          <div class="card-icon">&#129496;</div>
+          <div class="card-name">Asana</div>
+          <div class="card-desc">Sit in perfect stillness. Build the physical body of will.</div>
+        </div>
+      </div>
+      <div class="footnote">
+        Omnia watches the will take form.<br>Each gate forges a faculty of the magician.
+      </div>
+    </div>
+
+  </div>
+</body>
+</html>
