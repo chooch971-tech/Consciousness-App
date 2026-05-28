@@ -15544,10 +15544,20 @@ function guideExerciseById(id) {
 function buildExperiencedGuideItems() {
   var stats = guideExerciseStats();
   var now = Date.now();
-  var candidates = GUIDE_EXERCISES.map(function(ex) {
-    var st = stats[ex.id] || { count:0, bestSec:0, lastMs:0 };
-    var score = guideMonitoredScore(ex.id, stats);
+
+  // Soul Mirror is never a concentration gate and never logs practice sessions,
+  // so excluding it from the rotation candidates prevents it from permanently
+  // occupying a slot as "most neglected". It appears as a fixed daily check-in
+  // at the bottom of the list (same as the foundational track).
+  var CONC_IDS = ['clock', 'visual', 'auditory', 'thought', 'asana'];
+  var candidates = CONC_IDS.map(function(id) {
+    var ex = guideExerciseById(id);
+    var st = stats[id] || { count:0, bestSec:0, lastMs:0 };
+    var score = guideMonitoredScore(id, stats);
     var daysSince = st.lastMs ? (now - st.lastMs) / 86400000 : 999;
+    // Lower priority = more neglected = gets picked first.
+    // Score and count raise priority (you've mastered it),
+    // daysSince lowers it (you haven't touched it recently).
     var priority = score * 10 + Math.min(st.count, 8) - Math.min(daysSince, 14) * 0.35;
     return { ex:ex, score:score, count:st.count, daysSince:daysSince, priority:priority };
   }).sort(function(a,b) {
@@ -15558,39 +15568,23 @@ function buildExperiencedGuideItems() {
   var byId = {};
   candidates.forEach(function(c) { byId[c.ex.id] = c; });
 
-  // Pin the day's exercise set so it doesn't churn mid-day. The priority above
-  // drifts with elapsed time and shifts as sessions are completed, which would
-  // otherwise swap exercises out (and reset "done") within the same day. Only
-  // re-roll when the local calendar day changes.
+  // Pin the day's pair so "done" state doesn't reset mid-day as the
+  // priority formula drifts with elapsed time. Re-roll each calendar day.
   var dayKey = guideLocalDayKey();
   var pick = guideState._dailyPick;
-  // v:2 introduces day-to-day rotation. A pick without it is from the old
-  // "always the two most neglected (+ forced Asana)" logic — treat it as
-  // stale so the rotation takes effect immediately, even mid-day.
-  var fresh = pick && pick.day === dayKey && pick.v === 2 && Array.isArray(pick.ids);
+  var fresh = pick && pick.day === dayKey && pick.v === 3 && Array.isArray(pick.ids);
   var ids = fresh ? pick.ids.filter(function(id) { return byId[id]; }) : [];
   if (!ids.length) {
-    // Rotate the day's pair through the priority-sorted list so the Guide
-    // surfaces variety across days instead of fixating on the same two
-    // "most neglected" gates (e.g. Soul Mirror never logs sessions, so it
-    // would otherwise rank lowest and reappear every single day). A step of
-    // two cycles through all six exercises over a three-day window while the
-    // list itself stays adaptive to recent practice.
-    var order = candidates.map(function(c) { return c.ex.id; });
-    var n = order.length;
-    var parts = dayKey.split('-');
-    var dayNum = Math.floor(Date.UTC(+parts[0], (+parts[1]) - 1, +parts[2]) / 86400000);
-    if (isNaN(dayNum)) dayNum = Math.floor(Date.now() / 86400000);
-    var start = ((dayNum * 2) % n + n) % n;
-    ids = [order[start], order[(start + 1) % n]];
-    // Rotate away from the previous pick so the pair visibly changes.
-    if (pick && Array.isArray(pick.ids) && pick.ids.length &&
-        pick.ids.slice().sort().join() === ids.slice().sort().join()) {
-      start = (start + 2) % n;
-      ids = [order[start], order[(start + 1) % n]];
+    // Pick the two most neglected concentration gates. Apply a repeat penalty
+    // so the pair shifts day-to-day: if yesterday's pair would appear again,
+    // skip the first candidate and take the next one down the priority list.
+    var lastIds = (pick && Array.isArray(pick.ids)) ? pick.ids : [];
+    ids = candidates.slice(0, 2).map(function(c) { return c.ex.id; });
+    if (ids.slice().sort().join() === lastIds.slice().sort().join() && candidates.length > 2) {
+      ids = [candidates[1].ex.id, candidates[2].ex.id];
     }
-    ids = ids.filter(function(id, i, arr) { return id && arr.indexOf(id) === i; });
-    guideState._dailyPick = { day: dayKey, ids: ids, v: 2 };
+    ids = ids.filter(function(id, i, arr) { return id && arr.indexOf(id) === i; }).slice(0, 2);
+    guideState._dailyPick = { day: dayKey, ids: ids, v: 3 };
     saveGuideState(guideState);
   }
 
@@ -15611,11 +15605,6 @@ function buildExperiencedGuideItems() {
     } else {
       tip = 'This is already strong. Use it as a stabilizing pillar, then notice what remains undeveloped.';
     }
-    if (id === 'soulmirror') {
-      tip = score === 0
-        ? 'Create the mirror: one honest weakness, one genuine strength. Do not decorate either one.'
-        : 'Review the mirror and revise what no longer feels exact. Then complete pore breathing if the body is dull.';
-    }
     return {
       id:id,
       name:c.ex.name,
@@ -15624,9 +15613,18 @@ function buildExperiencedGuideItems() {
       done:(stats[id] && stats[id].todayCount > 0) || false,
       progress:c.count ? c.count + ' recorded' : 'no completed sessions recorded',
       tip:tip + (c.count ? ' Omnia has recorded ' + c.count + ' completed session' + (c.count === 1 ? '' : 's') + ' here.' : ' Omnia has no completed sessions recorded here yet.'),
-      open:id === 'soulmirror' ? 'soulmirror' : id
+      open:id
     };
-  });
+  }).concat([{
+    id:'soulmirror',
+    name:'Soul Mirror',
+    duration:null,
+    durationLabel:'Reflection',
+    done:(function(){ var sm = loadSoulMirror(); return !!(sm._lastEditDate && sm._lastEditDate === guideLocalDayKey()); })(),
+    progress:'',
+    tip:'Open the mirror and make one honest edit — add a trait, revise one, or write a note. That is all Omnia asks today.',
+    open:'soulmirror'
+  }]);
 }
 
 function buildFoundationalGuideItems() {
@@ -15843,15 +15841,19 @@ function guideDetectAdaptedLevel(stats) {
 }
 
 function guideShouldUseExperiencedRegiment(stats) {
+  // Only leave the foundational track if the user explicitly chose experienced
+  // mode or has genuinely substantial practice — the old thresholds were far
+  // too easy (5 sessions across 4 exercises), which silently dropped users
+  // off the structured track they were relying on.
   if (guideState._pathModeV2 === 'experienced') return true;
-  if (guideSelfRatedExperienceCount() >= 2) return true;
+  if (guideSelfRatedExperienceCount() >= 4) return true; // rated 4+ exercises as experienced
 
   var detected = guideDetectAdaptedLevel(stats || guideExerciseStats());
-  if (detected.level === 'advanced' && detected.confidence >= 70) return true;
+  if (detected.level === 'advanced' && detected.confidence >= 85) return true; // raised from 70
 
   var profile = guideAdvancedPracticeProfile(stats || guideExerciseStats());
-  if (profile.strong >= 1 && (profile.active >= 2 || profile.recent >= 4 || profile.total >= 8)) return true;
-  if (guideExerciseBreadth(stats || guideExerciseStats()) >= 4 && profile.total >= 5) return true;
+  // Require breadth across all 5 concentration gates AND substantial history
+  if (guideExerciseBreadth(stats || guideExerciseStats()) >= 5 && profile.total >= 20) return true;
   return false;
 }
 
