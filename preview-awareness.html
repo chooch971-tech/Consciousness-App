@@ -27,19 +27,19 @@
   @keyframes ringGlow  { 0%,100%{ filter:drop-shadow(0 0 4px rgba(126,184,164,.4)); } 50%{ filter:drop-shadow(0 0 10px rgba(126,184,164,.75)); } }
   @keyframes symbolPls { 0%,100%{ opacity:.6; } 50%{ opacity:1; } }
 
-  /* ── BANNER — rich green, mirrors path-banner recipe ── */
+  /* ── BANNER — brighter, mirrors path-banner recipe ── */
   .banner { position:relative; flex-shrink:0; height:148px; margin:14px 0 0; border-radius:18px; overflow:hidden;
-    background:linear-gradient(145deg, #0c2a1e 0%, #113828 40%, #0c2218 100%);
+    background:linear-gradient(145deg, #0a2018 0%, #0d2e22 40%, #0a1c18 100%);
     display:flex; align-items:center; justify-content:space-between; padding:0 22px; }
   .banner::before { content:''; position:absolute; inset:0; pointer-events:none;
-    background:radial-gradient(ellipse 60% 70% at 72% 55%, rgba(80,210,150,.28) 0%, transparent 70%); }
+    background:radial-gradient(ellipse 60% 70% at 72% 55%, rgba(100,200,160,.22) 0%, transparent 70%); }
   .banner::after  { content:''; position:absolute; inset:0; pointer-events:none;
-    background:radial-gradient(ellipse 40% 50% at 68% 48%, rgba(160,255,210,.12) 0%, transparent 60%); }
+    background:radial-gradient(ellipse 40% 50% at 68% 48%, rgba(180,255,220,.10) 0%, transparent 60%); }
 
   .banner-text { z-index:3; display:flex; flex-direction:column; gap:3px; }
-  .banner-label { font-size:8px; letter-spacing:.28em; text-transform:uppercase; color:rgba(142,220,184,.78); }
+  .banner-label { font-size:8px; letter-spacing:.28em; text-transform:uppercase; color:rgba(142,220,184,.75); }
   .banner-title { font-family:'Cormorant Garamond',serif; font-size:24px; font-weight:300; color:#d8fff4; line-height:1.1; }
-  .banner-sub   { font-size:9px; letter-spacing:.1em; color:rgba(200,245,225,.48); margin-top:1px; }
+  .banner-sub   { font-size:9px; letter-spacing:.1em; color:rgba(200,245,225,.42); margin-top:4px; }
 
   /* right — ripples + eye */
   .banner-right { position:relative; z-index:2; width:148px; height:148px; flex-shrink:0;
@@ -52,49 +52,54 @@
   .ripple:nth-child(2){ width:110px; height:110px; margin:-55px 0 0 -55px; }
   .ripple:nth-child(3){ width:110px; height:110px; margin:-55px 0 0 -55px; animation-delay:1.7s; }
   .ripple:nth-child(4){ width:110px; height:110px; margin:-55px 0 0 -55px; animation-delay:3.4s; }
-  .pause-mark { position:relative; z-index:3; animation:eyePulse 5s ease-in-out infinite; }
+  .witness-eye { position:relative; z-index:3; animation:eyePulse 5s ease-in-out infinite; }
   .dots-bg { position:absolute; inset:0; pointer-events:none; z-index:1; overflow:hidden; }
   .dots-bg > i { position:absolute; border-radius:50%; background:rgba(180,230,210,.48); animation:heroFloat 4.5s ease-in-out infinite; }
 
-  /* (streak chip removed — streak lives in top nav bar) */
+  /* streak chip */
+  .streak-chip { position:absolute; top:14px; right:16px; z-index:4; display:flex; align-items:center; gap:5px;
+    padding:5px 10px; border-radius:14px; background:rgba(126,184,164,.12); border:1px solid rgba(126,184,164,.22); }
+  .streak-chip svg { width:13px; height:13px; }
+  .streak-chip b { font-family:'Cormorant Garamond',serif; font-size:15px; color:var(--green-soft); line-height:1; }
+  .streak-chip span { font-size:7px; letter-spacing:.16em; text-transform:uppercase; color:rgba(196,224,212,.6); }
 
   /* ── BODY ── */
   .body { flex:1; display:flex; flex-direction:column; min-height:0; padding-top:8px; }
   .hero { display:flex; flex-direction:column; align-items:center; flex:1; justify-content:center; }
 
-  /* ring with breathing aura — more saturated green */
+  /* ring with breathing aura */
   .ring-stack { position:relative; width:210px; height:210px; display:flex; align-items:center; justify-content:center; }
   .breath-aura { position:absolute; width:210px; height:210px; border-radius:50%;
-    background:radial-gradient(circle, rgba(126,184,164,.30), transparent 64%); animation:breathe 8s ease-in-out infinite; }
+    background:radial-gradient(circle, rgba(126,184,164,.20), transparent 64%); animation:breathe 8s ease-in-out infinite; }
   .breath-ring { position:absolute; width:176px; height:176px; border-radius:50%;
-    border:1px solid rgba(126,184,164,.32); animation:breathRng 8s ease-in-out infinite; }
+    border:1px solid rgba(126,184,164,.20); animation:breathRng 8s ease-in-out infinite; }
   .level-ring { position:relative; width:142px; height:142px; cursor:pointer; z-index:2; animation:ringGlow 5s ease-in-out infinite; }
   .level-ring svg { width:142px; height:142px; transform:rotate(-90deg); display:block; }
-  .ring-track { fill:none; stroke:rgba(126,184,164,0.18); stroke-width:3; }
-  .ring-prog  { fill:none; stroke:var(--green); stroke-width:3.5; stroke-linecap:round;
+  .ring-track { fill:none; stroke:rgba(255,255,255,0.09); stroke-width:3; }
+  .ring-prog  { fill:none; stroke:var(--green); stroke-width:3; stroke-linecap:round;
     stroke-dasharray:383; stroke-dashoffset:134; }
   .ring-center { position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:4px; }
   .ring-num { font-family:'Cormorant Garamond',serif; font-size:40px; font-weight:300; color:var(--text); line-height:1; }
   .ring-sub { font-size:8px; letter-spacing:.22em; text-transform:uppercase; color:var(--muted); }
 
-  /* rank symbol + xp */
+  /* rank symbol + xp — just the symbol and number, no rank name text */
   .symbol-row { display:flex; align-items:center; gap:20px; margin-top:18px; }
   .rank-symbol { animation:symbolPls 5s ease-in-out infinite; }
   .xp-block { text-align:center; }
-  .xp-val { font-family:'Cormorant Garamond',serif; font-size:24px; font-weight:300; color:#a4d4be; line-height:1; }
-  .xp-key { font-size:8px; letter-spacing:.22em; text-transform:uppercase; color:rgba(126,184,164,.6); margin-top:3px; }
+  .xp-val { font-family:'Cormorant Garamond',serif; font-size:24px; font-weight:300; color:var(--green2); line-height:1; }
+  .xp-key { font-size:8px; letter-spacing:.22em; text-transform:uppercase; color:var(--muted); margin-top:3px; }
 
   /* ── CONTROLS ── */
-  .controls-card { width:100%; border:1px solid rgba(126,184,164,.22); border-radius:16px; background:rgba(126,184,164,.04); padding:0 20px; flex-shrink:0; margin-top:14px; }
+  .controls-card { width:100%; border:1px solid var(--border); border-radius:16px; background:var(--surface); padding:0 20px; flex-shrink:0; margin-top:14px; }
   .ctrl-row { display:flex; align-items:center; justify-content:space-between; padding:14px 0; }
-  .ctrl-row + .ctrl-row { border-top:1px solid rgba(126,184,164,.12); }
-  .ctrl-key { font-size:9px; letter-spacing:.18em; text-transform:uppercase; color:rgba(126,184,164,.6); }
+  .ctrl-row + .ctrl-row { border-top:1px solid var(--border); }
+  .ctrl-key { font-size:9px; letter-spacing:.18em; text-transform:uppercase; color:var(--muted); }
   .stepper { display:flex; align-items:center; gap:12px; }
-  .step-btn { width:32px; height:32px; border-radius:50%; border:1px solid rgba(126,184,164,.38); background:rgba(126,184,164,.10);
+  .step-btn { width:32px; height:32px; border-radius:50%; border:1px solid rgba(126,184,164,.28); background:rgba(126,184,164,.06);
     color:var(--green); font-size:16px; cursor:pointer; display:flex; align-items:center; justify-content:center;
     font-family:'DM Mono',monospace; transition:background .15s; user-select:none; }
-  .step-btn:active { background:rgba(126,184,164,.25); }
-  .step-val { font-family:'Cormorant Garamond',serif; font-size:21px; color:#a4d4be; min-width:72px; text-align:center; }
+  .step-btn:active { background:rgba(126,184,164,.2); }
+  .step-val { font-family:'Cormorant Garamond',serif; font-size:21px; color:var(--green2); min-width:72px; text-align:center; }
 
   /* ── ACTIONS ── */
   .actions { margin-top:12px; display:flex; flex-direction:column; gap:9px; flex-shrink:0; }
@@ -102,7 +107,7 @@
     font-size:11px; letter-spacing:.18em; text-transform:uppercase; transition:opacity .15s; }
   .btn.primary { background:var(--green); color:#07080d; border:none; }
   .btn.primary:active { opacity:.85; }
-  .btn.ghost { background:none; border:1px solid rgba(126,184,164,.22); color:rgba(126,184,164,.65); font-size:10px; }
+  .btn.ghost { background:none; border:1px solid var(--border); color:var(--muted); font-size:10px; }
 </style>
 </head>
 <body>
@@ -116,15 +121,22 @@
       <div class="banner-sub">The Lotus · Level 23</div>
     </div>
 
+    <div class="streak-chip">
+      <svg viewBox="0 0 24 24" fill="none" stroke="#7eb8a4" stroke-width="1.6" stroke-linejoin="round">
+        <path d="M12 3 C12 3 17 8 17 13 A5 5 0 0 1 7 13 C7 10 9 9 9 9 C9 11 10 12 10 12 C10 9 12 3 12 3Z"/>
+      </svg>
+      <b>14</b><span>day</span>
+    </div>
+
     <div class="banner-right">
       <div class="banner-glow"></div>
       <div class="ripple"></div><div class="ripple"></div><div class="ripple"></div>
-      <!-- Eckhart Tolle calligraphic pause/presence mark — elongated S-curve with endpoint dots -->
-      <svg class="pause-mark" width="52" height="84" viewBox="0 0 52 84" fill="none">
-        <path d="M 34 8 C 44 12 46 26 36 34 C 26 42 20 56 28 68 C 32 74 40 78 36 82"
-              stroke="#c4e0d4" stroke-width="2.2" stroke-linecap="round"/>
-        <circle cx="22" cy="16" r="3.8" fill="#c4e0d4" opacity="0.9"/>
-        <circle cx="34" cy="75" r="3.8" fill="#c4e0d4" opacity="0.9"/>
+      <svg class="witness-eye" width="68" height="68" viewBox="0 0 100 100" fill="none" style="position:relative;z-index:3;">
+        <path d="M10 50 Q50 10 90 50 Q50 90 10 50Z" stroke="#c4e0d4" stroke-width="2.2" opacity="0.9"/>
+        <circle cx="50" cy="50" r="15" stroke="#c4e0d4" stroke-width="1.8"/>
+        <circle cx="50" cy="50" r="6" fill="#c4e0d4" opacity="0.9"/>
+        <line x1="50" y1="12" x2="50" y2="4" stroke="#c4e0d4" stroke-width="1.2" opacity="0.5"/>
+        <line x1="50" y1="88" x2="50" y2="96" stroke="#c4e0d4" stroke-width="1.2" opacity="0.5"/>
       </svg>
     </div>
 
@@ -155,12 +167,12 @@
 
       <div class="symbol-row">
         <div class="rank-symbol">
-          <svg width="44" height="44" viewBox="0 0 100 100" fill="none" stroke="#a4d4be" stroke-width="2">
-            <path d="M50 80 Q30 60 30 45 Q30 25 50 30 Q70 25 70 45 Q70 60 50 80Z" opacity="0.9"/>
-            <path d="M50 80 Q20 65 15 45 Q12 28 35 35" opacity="0.65"/>
-            <path d="M50 80 Q80 65 85 45 Q88 28 65 35" opacity="0.65"/>
-            <line x1="50" y1="80" x2="50" y2="94" opacity="0.45"/>
-            <circle cx="50" cy="45" r="5.5" fill="#a4d4be" stroke="none" opacity="0.85"/>
+          <svg width="44" height="44" viewBox="0 0 100 100" fill="none" stroke="#7eb8a4" stroke-width="1.8">
+            <path d="M50 80 Q30 60 30 45 Q30 25 50 30 Q70 25 70 45 Q70 60 50 80Z" opacity="0.85"/>
+            <path d="M50 80 Q20 65 15 45 Q12 28 35 35" opacity="0.6"/>
+            <path d="M50 80 Q80 65 85 45 Q88 28 65 35" opacity="0.6"/>
+            <line x1="50" y1="80" x2="50" y2="94" opacity="0.4"/>
+            <circle cx="50" cy="45" r="5" fill="#7eb8a4" stroke="none" opacity="0.7"/>
           </svg>
         </div>
         <div class="xp-block">
