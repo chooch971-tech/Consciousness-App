@@ -18,153 +18,205 @@
   body { display:flex; justify-content:center; }
   .frame { width:100%; max-width:430px; min-height:100vh; background:var(--bg); display:flex; flex-direction:column; padding:0 16px; }
 
-  @keyframes spin    { to { transform:rotate(360deg); } }
-  @keyframes spinRev { to { transform:rotate(-360deg); } }
-  @keyframes auraPulse { 0%,100%{ transform:translateY(-50%) scale(.9); opacity:.55; } 50%{ transform:translateY(-50%) scale(1.12); opacity:.95; } }
-  @keyframes heroFloat { 0%,100%{ transform:translateY(0); opacity:.55; } 50%{ transform:translateY(-9px); opacity:1; } }
-  @keyframes emblemPulse { 0%,100%{ filter:drop-shadow(0 0 5px rgba(232,199,156,.4)); } 50%{ filter:drop-shadow(0 0 11px rgba(232,199,156,.75)); } }
+  @keyframes auraPulse { 0%,100%{ transform:translateY(-50%) scale(.92); opacity:.5; } 50%{ transform:translateY(-50%) scale(1.1); opacity:.9; } }
+  @keyframes heroFloat { 0%,100%{ transform:translateY(0); opacity:.5; } 50%{ transform:translateY(-8px); opacity:1; } }
+  @keyframes twinkle { 0%,100%{ opacity:.35; transform:scale(.85); } 50%{ opacity:.9; transform:scale(1.1); } }
+  @keyframes ringGlow { 0%,100%{ filter:drop-shadow(0 0 3px rgba(212,149,110,.45)); } 50%{ filter:drop-shadow(0 0 8px rgba(212,149,110,.8)); } }
 
-  .banner { position:relative; flex-shrink:0; height:142px; margin:14px 0 4px; border-radius:18px;
+  /* ───────── BANNER ───────── */
+  .banner { position:relative; flex-shrink:0; height:138px; margin:14px 0 6px; border-radius:18px;
     background:linear-gradient(145deg,#241710 0%,#301d12 45%,#1c1410 100%); overflow:hidden;
-    display:flex; align-items:center; padding:0 24px; }
+    display:flex; align-items:center; justify-content:space-between; padding:0 26px 0 24px; }
   .banner::before { content:''; position:absolute; inset:0; pointer-events:none;
-    background:radial-gradient(ellipse 60% 74% at 76% 52%, rgba(212,149,110,.22) 0%, transparent 70%); }
-  .banner::after { content:''; position:absolute; inset:0; pointer-events:none;
-    background:radial-gradient(ellipse 40% 50% at 72% 46%, rgba(255,200,150,.10) 0%, transparent 60%); }
+    background:radial-gradient(ellipse 58% 72% at 80% 52%, rgba(212,149,110,.20) 0%, transparent 70%); }
 
-  .banner-text { z-index:3; display:flex; flex-direction:column; gap:4px; }
+  .banner-left { z-index:3; display:flex; align-items:center; gap:14px; }
+  .banner-logo { width:30px; height:30px; flex-shrink:0; animation:twinkle 5s ease-in-out infinite; }
+  .banner-text { display:flex; flex-direction:column; gap:4px; }
   .banner-label { font-size:8px; letter-spacing:.28em; text-transform:uppercase; color:rgba(212,168,130,.78); }
   .banner-title { font-family:'Cormorant Garamond',serif; font-size:27px; font-weight:300; color:var(--cream); line-height:1.05; }
-  .banner-sub   { font-size:9px; letter-spacing:.12em; color:rgba(232,199,156,.55); margin-top:2px; }
-  .banner-sub b { color:rgba(232,199,156,.9); font-weight:500; }
+  .banner-sub   { font-size:9px; letter-spacing:.14em; color:rgba(232,199,156,.6); margin-top:2px; }
 
-  .banner-glow { position:absolute; right:6px; top:50%; width:180px; height:180px; transform:translateY(-50%);
-    background:radial-gradient(circle, rgba(255,200,150,0.22) 0%, rgba(212,149,110,0.09) 42%, transparent 70%);
+  .banner-glow { position:absolute; right:18px; top:50%; width:150px; height:150px; transform:translateY(-50%);
+    background:radial-gradient(circle, rgba(255,200,150,0.18) 0%, rgba(212,149,110,0.07) 44%, transparent 70%);
     pointer-events:none; animation:auraPulse 5s ease-in-out infinite; }
 
-  /* large sigil + still rank emblem at its center */
-  .sigil-stack { position:absolute; right:18px; top:50%; transform:translateY(-50%); width:150px; height:150px; z-index:2; }
-  .sigil { position:absolute; inset:0; }
-  .sigil svg { width:100%; height:100%; display:block; }
-  .sigil-outer { transform-origin:75px 75px; animation:spin 56s linear infinite; }
-  .sigil-inner { transform-origin:75px 75px; animation:spinRev 40s linear infinite; }
+  /* clean level ring */
+  .level-ring { position:relative; z-index:3; width:84px; height:84px; flex-shrink:0; animation:ringGlow 5s ease-in-out infinite; }
+  .level-ring svg { width:100%; height:100%; transform:rotate(-90deg); }
+  .level-ring .lr-num { position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; }
+  .lr-num b { font-family:'Cormorant Garamond',serif; font-size:30px; font-weight:300; color:var(--cream); line-height:1; }
+  .lr-num span { font-size:7px; letter-spacing:.22em; text-transform:uppercase; color:rgba(232,199,156,.6); margin-top:3px; }
 
-  .rank-emblem { position:absolute; left:50%; top:50%; transform:translate(-50%,-50%); width:58px; height:58px; z-index:3;
-    display:flex; align-items:center; justify-content:center; }
-  .rank-ring { position:absolute; inset:0; }
-  .rank-ring svg { width:100%; height:100%; transform:rotate(-90deg); }
-  .rank-logo { position:relative; z-index:2; animation:emblemPulse 4s ease-in-out infinite; }
+  .dots-bg { position:absolute; inset:0; pointer-events:none; z-index:1; }
+  .dots-bg > i { position:absolute; border-radius:50%; background:rgba(255,210,170,.45); animation:heroFloat 4.5s ease-in-out infinite; }
 
-  .dots { position:absolute; inset:0; pointer-events:none; z-index:1; }
-  .dots > i { position:absolute; border-radius:50%; background:rgba(255,210,170,.5); animation:heroFloat 4s ease-in-out infinite; }
+  /* ───────── CONTROLS ROW ───────── */
+  .controls { display:flex; gap:8px; align-items:center; justify-content:center; padding:8px 0 16px; }
+  .seg { display:flex; border:1px solid var(--border); border-radius:20px; overflow:hidden; }
+  .seg button { font-family:'DM Mono',monospace; font-size:10px; letter-spacing:.14em; text-transform:uppercase;
+    background:none; border:none; color:var(--muted); padding:8px 16px; cursor:pointer; transition:all .2s; }
+  .seg button.active { color:var(--gold); background:var(--copper-dim); }
+  .view-toggle { width:34px; height:34px; border:1px solid var(--border); border-radius:10px; background:none; cursor:pointer;
+    color:var(--muted); display:flex; align-items:center; justify-content:center; transition:all .2s; }
+  .view-toggle.active { color:var(--gold); border-color:rgba(212,149,110,.4); background:var(--copper-dim); }
+  .view-toggle svg { width:16px; height:16px; }
 
-  .scroll { flex:1; overflow-y:auto; padding:14px 0 40px; }
-  .tabs { display:flex; gap:8px; justify-content:center; padding:6px 0 18px; }
-  .tab { font-size:10px; letter-spacing:.16em; text-transform:uppercase; background:none; border:1px solid var(--border);
-         color:var(--muted); padding:7px 16px; border-radius:20px; cursor:pointer; font-family:'DM Mono',monospace; }
-  .tab.active { color:var(--gold); border-color:rgba(212,149,110,.4); background:var(--copper-dim); }
-  .grid { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
-  .card { border:1px solid var(--border); border-radius:14px; padding:18px 16px; background:var(--surface);
-          cursor:pointer; transition:transform .18s; position:relative; overflow:hidden; }
-  .card:hover { transform:translateY(-3px); }
+  .scroll { flex:1; overflow-y:auto; padding-bottom:40px; }
+
+  /* CARD base */
+  .card { border:1px solid var(--border); border-radius:14px; background:var(--surface);
+          cursor:pointer; transition:transform .18s, border-color .2s; position:relative; overflow:hidden; }
   .card::before { content:''; position:absolute; top:0; left:0; right:0; height:2px; background:var(--c-accent,var(--copper)); opacity:.5; }
-  .card-icon { font-size:24px; margin-bottom:10px; filter:drop-shadow(0 0 6px var(--c-glow,transparent)); }
-  .card-name { font-family:'Cormorant Garamond',serif; font-size:19px; color:var(--c-name,var(--gold)); margin-bottom:5px; }
+  .card-ico { color:var(--c-name,var(--gold)); flex-shrink:0; }
+  .card-ico svg { display:block; }
+  .card-name { font-family:'Cormorant Garamond',serif; font-size:19px; color:var(--c-name,var(--gold)); }
   .card-desc { font-size:9.5px; line-height:1.6; color:var(--muted); }
-  .card.clock    { --c-accent:#d4956e; --c-name:#d4b08e; --c-glow:rgba(212,149,110,.5); border-color:rgba(212,149,110,.18); }
-  .card.thought  { --c-accent:#b08ed4; --c-name:#c2a8e0; --c-glow:rgba(176,142,212,.5); border-color:rgba(176,142,212,.18); }
-  .card.visual   { --c-accent:#6e9fd4; --c-name:#8ab8e0; --c-glow:rgba(110,159,212,.5); border-color:rgba(110,159,212,.18); }
-  .card.auditory { --c-accent:#6eb8a4; --c-name:#8eccc0; --c-glow:rgba(110,184,164,.5); border-color:rgba(110,184,164,.18); }
-  .card.asana    { --c-accent:#d4b08e; --c-name:#e0c79c; --c-glow:rgba(212,176,142,.5); border-color:rgba(212,176,142,.18); }
-  .card.mirror   { --c-accent:#a8b0c4; --c-name:#c0c6d6; --c-glow:rgba(168,176,196,.5); border-color:rgba(168,176,196,.18); }
-  .card.full     { grid-column:1 / -1; }
-  .footnote { text-align:center; font-size:9px; color:var(--muted); letter-spacing:.12em; margin-top:26px; line-height:1.8; }
+  .clock    { --c-accent:#d4956e; --c-name:#d4b08e; border-color:rgba(212,149,110,.18); }
+  .thought  { --c-accent:#b08ed4; --c-name:#c2a8e0; border-color:rgba(176,142,212,.18); }
+  .visual   { --c-accent:#6e9fd4; --c-name:#8ab8e0; border-color:rgba(110,159,212,.18); }
+  .auditory { --c-accent:#6eb8a4; --c-name:#8eccc0; border-color:rgba(110,184,164,.18); }
+  .asana    { --c-accent:#d4b08e; --c-name:#e0c79c; border-color:rgba(212,176,142,.18); }
+  .mirror   { --c-accent:#a8b0c4; --c-name:#c0c6d6; border-color:rgba(168,176,196,.18); }
+
+  /* VIEW A — carousel (horizontal snap) */
+  .carousel { display:flex; gap:12px; overflow-x:auto; scroll-snap-type:x mandatory; padding:4px 2px 14px; scrollbar-width:none; }
+  .carousel::-webkit-scrollbar { display:none; }
+  .carousel .card { scroll-snap-align:center; flex:0 0 72%; padding:22px 20px; display:flex; flex-direction:column; }
+  .carousel .card:hover { transform:translateY(-3px); }
+  .carousel .card-ico { margin-bottom:14px; }
+  .carousel .card-name { margin-bottom:6px; }
+  .cdots { display:flex; gap:6px; justify-content:center; padding-bottom:6px; }
+  .cdots i { width:6px; height:6px; border-radius:50%; background:var(--border2); transition:background .2s; }
+  .cdots i.on { background:var(--copper); }
+
+  /* VIEW B — expanded list */
+  .listview { display:none; flex-direction:column; gap:10px; padding:4px 0; }
+  .listview .card { display:flex; align-items:center; gap:16px; padding:16px 18px; }
+  .listview .card:hover { transform:translateX(3px); }
+  .listview .card-name { margin-bottom:3px; }
+  .listview .lv-body { display:flex; flex-direction:column; }
+
+  .frame.expanded .carousel, .frame.expanded .cdots { display:none; }
+  .frame.expanded .listview { display:flex; }
+
+  .footnote { text-align:center; font-size:9px; color:var(--muted); letter-spacing:.12em; margin-top:22px; line-height:1.8; }
 </style>
 </head>
 <body>
-  <div class="frame">
+  <div class="frame" id="frame">
+    <!-- ══ BANNER ══ -->
     <div class="banner">
-      <div class="banner-text">
-        <div class="banner-label">The Magician</div>
-        <div class="banner-title">Concentration</div>
-        <div class="banner-sub">Level <b>7</b> · Adept</div>
-      </div>
-      <div class="banner-glow"></div>
-
-      <div class="sigil-stack">
-        <!-- large rotating astrolabe / compass sigil (neutral, no hexagram) -->
-        <div class="sigil">
-          <svg viewBox="0 0 150 150">
-            <g class="sigil-outer" fill="none" stroke="#d4956e" stroke-width="0.7" opacity="0.85">
-              <circle cx="75" cy="75" r="70"/>
-              <circle cx="75" cy="75" r="63"/>
-              <!-- 24 tick marks -->
-              <g stroke-width="1">
-                <line x1="75" y1="5"   x2="75" y2="13"/>  <line x1="75" y1="137" x2="75" y2="145"/>
-                <line x1="5"  y1="75"  x2="13" y2="75"/>   <line x1="137" y1="75" x2="145" y2="75"/>
-                <line x1="26" y1="26"  x2="32" y2="32"/>   <line x1="118" y1="118" x2="124" y2="124"/>
-                <line x1="118" y1="26" x2="124" y2="20"/>  <line x1="26" y1="124" x2="32" y2="118"/>
-                <line x1="45" y1="10"  x2="48" y2="17"/>   <line x1="105" y1="140" x2="102" y2="133"/>
-                <line x1="105" y1="10" x2="102" y2="17"/>  <line x1="45" y1="140" x2="48" y2="133"/>
-                <line x1="10" y1="45"  x2="17" y2="48"/>   <line x1="140" y1="105" x2="133" y2="102"/>
-                <line x1="10" y1="105" x2="17" y2="102"/>  <line x1="140" y1="45" x2="133" y2="48"/>
-              </g>
-            </g>
-            <g class="sigil-inner" fill="none" stroke="#e8c79c" stroke-width="0.6" opacity="0.6">
-              <circle cx="75" cy="75" r="48" stroke-dasharray="2 5"/>
-              <!-- 8 radial spokes -->
-              <g stroke-width="0.5" opacity="0.7">
-                <line x1="75" y1="27" x2="75" y2="123"/> <line x1="27" y1="75" x2="123" y2="75"/>
-                <line x1="41" y1="41" x2="109" y2="109"/> <line x1="109" y1="41" x2="41" y2="109"/>
-              </g>
-              <!-- 8-point compass star = two overlapping squares (neutral) -->
-              <rect x="52" y="52" width="46" height="46"/>
-              <rect x="52" y="52" width="46" height="46" transform="rotate(45 75 75)"/>
-            </g>
+      <div class="banner-left">
+        <div class="banner-logo">
+          <!-- simple magician mark: a single 4-point star (the spark of will) -->
+          <svg viewBox="0 0 32 32" fill="none">
+            <path d="M16 3 L18.5 13.5 L29 16 L18.5 18.5 L16 29 L13.5 18.5 L3 16 L13.5 13.5 Z"
+                  fill="none" stroke="#e8c79c" stroke-width="1.4" stroke-linejoin="round"/>
+            <circle cx="16" cy="16" r="2" fill="#ffe8d4"/>
           </svg>
         </div>
-        <!-- still rank emblem: small ring + rank logo -->
-        <div class="rank-emblem">
-          <div class="rank-ring">
-            <svg viewBox="0 0 58 58">
-              <circle cx="29" cy="29" r="25" fill="none" stroke="rgba(255,255,255,0.1)" stroke-width="2"/>
-              <circle cx="29" cy="29" r="25" fill="none" stroke="#d4956e" stroke-width="2" stroke-linecap="round"
-                      stroke-dasharray="157" stroke-dashoffset="55"/>
-            </svg>
-          </div>
-          <div class="rank-logo">
-            <!-- magician rank glyph: flame of will -->
-            <svg width="26" height="26" viewBox="0 0 100 100" fill="none">
-              <path d="M50 8 C50 8 65 28 65 42 C65 52 58 58 58 58 C58 48 52 42 50 38 C48 42 42 48 42 58 C42 58 35 52 35 42 C35 28 50 8 50 8Z" stroke="#e8c79c" stroke-width="2" opacity="0.95"/>
-              <path d="M50 40 C50 40 58 50 58 60 C58 70 54 76 50 78 C46 76 42 70 42 60 C42 50 50 40 50 40Z" stroke="#e8c79c" stroke-width="2" opacity="0.65"/>
-              <circle cx="50" cy="72" r="5" fill="#ffe8d4" opacity="0.85"/>
-            </svg>
-          </div>
+        <div class="banner-text">
+          <div class="banner-label">The Magician</div>
+          <div class="banner-title">Concentration</div>
+          <div class="banner-sub">Adept</div>
         </div>
       </div>
 
-      <div class="dots">
-        <i style="width:6px;height:6px;left:50%;top:30%;animation-delay:0s;"></i>
-        <i style="width:4px;height:4px;left:40%;top:62%;animation-delay:1.2s;"></i>
-        <i style="width:5px;height:5px;left:58%;top:70%;animation-delay:.6s;background:rgba(255,210,170,.35);"></i>
+      <div class="banner-glow"></div>
+      <div class="level-ring">
+        <svg viewBox="0 0 84 84">
+          <circle cx="42" cy="42" r="36" fill="none" stroke="rgba(255,255,255,0.09)" stroke-width="3"/>
+          <circle cx="42" cy="42" r="36" fill="none" stroke="#d4956e" stroke-width="3" stroke-linecap="round"
+                  stroke-dasharray="226" stroke-dashoffset="79"/>
+        </svg>
+        <div class="lr-num"><b>7</b><span>Level</span></div>
+      </div>
+
+      <div class="dots-bg">
+        <i style="width:5px;height:5px;left:46%;top:28%;animation-delay:0s;"></i>
+        <i style="width:4px;height:4px;left:38%;top:64%;animation-delay:1.4s;"></i>
+        <i style="width:3px;height:3px;left:55%;top:72%;animation-delay:.7s;"></i>
       </div>
     </div>
 
-    <div class="scroll">
-      <div class="tabs">
-        <button class="tab active">Beginner</button>
-        <button class="tab">Advanced</button>
+    <!-- ══ CONTROLS ══ -->
+    <div class="controls">
+      <div class="seg">
+        <button class="active" data-level="beginner" onclick="setLevel('beginner',this)">Beginner</button>
+        <button data-level="advanced" onclick="setLevel('advanced',this)">Advanced</button>
       </div>
-      <div class="grid">
-        <div class="card clock"><div class="card-icon">&#9200;</div><div class="card-name">Clock</div><div class="card-desc">Follow the seconds hand. Stop when focus breaks.</div></div>
-        <div class="card thought"><div class="card-icon">&#129504;</div><div class="card-name">Thought Control</div><div class="card-desc">Hold one thought. Tap when the mind wanders.</div></div>
-        <div class="card visual"><div class="card-icon">&#128065;</div><div class="card-name">Visualization</div><div class="card-desc">Hold a mental image with eyes closed.</div></div>
-        <div class="card auditory"><div class="card-icon">&#127911;</div><div class="card-name">Auditory</div><div class="card-desc">Sustain a single sound in the mind.</div></div>
-        <div class="card asana"><div class="card-icon">&#129496;</div><div class="card-name">Asana</div><div class="card-desc">Sit in perfect stillness.</div></div>
-        <div class="card mirror"><div class="card-icon">&#128376;</div><div class="card-name">Soul Mirror</div><div class="card-desc">Reflect. Make one honest edit today.</div></div>
-      </div>
-      <div class="footnote">Each gate forges a faculty of the magician.</div>
+      <button class="view-toggle" id="viewBtn" onclick="toggleView(this)" title="Expanded view">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6">
+          <rect x="3" y="4" width="18" height="4" rx="1"/><rect x="3" y="10" width="18" height="4" rx="1"/><rect x="3" y="16" width="18" height="4" rx="1"/>
+        </svg>
+      </button>
     </div>
+
+    <!-- ══ EXERCISE VIEWS ══ -->
+    <div class="scroll" id="cardsRoot"></div>
   </div>
+
+<script>
+  // Custom line-art icons (no emoji)
+  var ICONS = {
+    clock:'<svg viewBox="0 0 32 32" width="30" height="30" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="16" cy="16" r="12"/><path d="M16 9v7l5 3" stroke-linecap="round"/></svg>',
+    thought:'<svg viewBox="0 0 32 32" width="30" height="30" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="16" cy="16" r="12"/><circle cx="16" cy="16" r="6.5"/><circle cx="16" cy="16" r="1.8" fill="currentColor" stroke="none"/></svg>',
+    visual:'<svg viewBox="0 0 32 32" width="30" height="30" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 16 Q16 5 29 16 Q16 27 3 16Z"/><circle cx="16" cy="16" r="4.5"/><circle cx="16" cy="16" r="1.4" fill="currentColor" stroke="none"/></svg>',
+    auditory:'<svg viewBox="0 0 32 32" width="30" height="30" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><circle cx="11" cy="16" r="2.6" fill="currentColor" stroke="none"/><path d="M17 11 Q20.5 16 17 21"/><path d="M21 8 Q26.5 16 21 24"/></svg>',
+    asana:'<svg viewBox="0 0 32 32" width="30" height="30" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"><circle cx="16" cy="8.5" r="3.4"/><path d="M16 13.5 L7 25 L25 25 Z"/></svg>',
+    mirror:'<svg viewBox="0 0 32 32" width="30" height="30" fill="none" stroke="currentColor" stroke-width="1.5"><ellipse cx="16" cy="16" rx="8" ry="12"/><path d="M12.5 9.5 L19.5 22" opacity="0.5"/></svg>'
+  };
+
+  var SETS = {
+    beginner:[
+      ['clock','Clock','Follow the seconds hand. Stop when focus breaks.'],
+      ['thought','Thought Control','Hold one thought. Tap when the mind wanders.'],
+      ['visual','Visualization','Hold a mental image with the eyes closed.'],
+      ['auditory','Auditory','Sustain a single sound within the mind.'],
+      ['asana','Asana','Sit in perfect stillness. Build the body of will.'],
+      ['mirror','Soul Mirror','Reflect. Make one honest edit today.']
+    ],
+    advanced:[
+      ['clock','Moving Clock','Hold the hand while walking. Will against motion.'],
+      ['visual','Living Image','Animate the image. Hold it changing without losing it.'],
+      ['auditory','Inner Voice','Compose a sustained phrase and hold its sound.'],
+      ['thought','Vacancy','Empty the mind entirely. Tap at the first intrusion.']
+    ]
+  };
+
+  function cardHTML(ex, expanded){
+    var ico = ICONS[ex[0]] || ICONS.clock;
+    if(expanded){
+      return '<div class="card '+ex[0]+'"><div class="card-ico">'+ico+'</div>'
+        + '<div class="lv-body"><div class="card-name">'+ex[1]+'</div><div class="card-desc">'+ex[2]+'</div></div></div>';
+    }
+    return '<div class="card '+ex[0]+'"><div class="card-ico">'+ico+'</div>'
+      + '<div class="card-name">'+ex[1]+'</div><div class="card-desc">'+ex[2]+'</div></div>';
+  }
+
+  var curLevel='beginner';
+  function render(){
+    var set=SETS[curLevel];
+    var carousel='<div class="carousel">'+set.map(function(e){return cardHTML(e,false);}).join('')+'</div>';
+    var dots='<div class="cdots">'+set.map(function(_,i){return '<i'+(i===0?' class="on"':'')+'></i>';}).join('')+'</div>';
+    var list='<div class="listview">'+set.map(function(e){return cardHTML(e,true);}).join('')+'</div>';
+    document.getElementById('cardsRoot').innerHTML = carousel+dots+list
+      + '<div class="footnote">Each gate forges a faculty of the magician.</div>';
+    wireDots();
+  }
+  function wireDots(){
+    var car=document.querySelector('.carousel'); if(!car) return;
+    var dots=document.querySelectorAll('.cdots i');
+    car.addEventListener('scroll',function(){
+      var cards=car.querySelectorAll('.card'); var idx=0, min=1e9;
+      cards.forEach(function(c,i){ var d=Math.abs(c.getBoundingClientRect().left - car.getBoundingClientRect().left - 20); if(d<min){min=d;idx=i;} });
+      dots.forEach(function(d,i){ d.classList.toggle('on', i===idx); });
+    });
+  }
+  function setLevel(lv,btn){ curLevel=lv; document.querySelectorAll('.seg button').forEach(function(b){b.classList.toggle('active',b===btn);}); render(); }
+  function toggleView(btn){ document.getElementById('frame').classList.toggle('expanded'); btn.classList.toggle('active'); }
+  render();
+</script>
 </body>
 </html>
