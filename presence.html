@@ -6857,7 +6857,7 @@ function renderProfileAchievements() {
 
 function _friendRingHtml(initial, pic) {
   if (pic) {
-    return '<div class="prof-friend__ring prof-friend__ring--filled" style="background-image:url(' + escHtml(pic) + ');color:transparent;font-size:0;"></div>';
+    return '<div class="prof-friend__ring prof-friend__ring--filled" style="background-image:url(' + escHtml(pic) + ');background-size:cover;background-position:center top;color:transparent;font-size:0;"></div>';
   }
   return '<div class="prof-friend__ring prof-friend__ring--filled">' + escHtml(String(initial || '?').toUpperCase()[0]) + '</div>';
 }
