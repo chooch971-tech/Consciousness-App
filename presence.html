@@ -3197,6 +3197,7 @@ body:not(.tut-live) #tutCorgi {
 @keyframes bannerGlow   { 0%,100%{opacity:.5} 50%{opacity:1} }
 @keyframes eyePulseGreen{ 0%,100%{transform:scale(.93);filter:drop-shadow(0 0 5px rgba(126,184,164,.38)) drop-shadow(0 0 14px rgba(126,184,164,.15))} 50%{transform:scale(1.05);filter:drop-shadow(0 0 12px rgba(126,184,164,.72)) drop-shadow(0 0 26px rgba(126,184,164,.30))} }
 @keyframes eyePulseAmber{ 0%,100%{transform:scale(.93);filter:drop-shadow(0 0 5px rgba(212,149,110,.38)) drop-shadow(0 0 14px rgba(212,149,110,.15))} 50%{transform:scale(1.05);filter:drop-shadow(0 0 12px rgba(212,149,110,.72)) drop-shadow(0 0 26px rgba(212,149,110,.30))} }
+@keyframes eyePulseViolet{ 0%,100%{transform:scale(.93);filter:drop-shadow(0 0 5px rgba(196,168,212,.40)) drop-shadow(0 0 14px rgba(196,168,212,.16))} 50%{transform:scale(1.06);filter:drop-shadow(0 0 13px rgba(230,216,244,.78)) drop-shadow(0 0 26px rgba(196,168,212,.32))} }
 @keyframes bnSymPulse   { 0%,100%{opacity:.7} 50%{opacity:1} }
 
 .screen-banner { position:relative; flex-shrink:0; height:134px; margin:0 0 8px; border-radius:18px; overflow:hidden;
@@ -3209,14 +3210,19 @@ body:not(.tut-live) #tutCorgi {
 .conc-banner{ background:linear-gradient(145deg,#2a1608 0%,#3a1e0a 40%,#221408 100%); }
 .conc-banner::before { background:radial-gradient(ellipse 60% 70% at 72% 55%,rgba(220,140,60,.22) 0%,transparent 70%); }
 .conc-banner::after  { background:radial-gradient(ellipse 40% 50% at 68% 48%,rgba(255,210,160,.10) 0%,transparent 60%); }
+.prayer-banner{ background:linear-gradient(145deg,#1a1426 0%,#241a36 45%,#171228 100%); }
+.prayer-banner::before { background:radial-gradient(ellipse 60% 70% at 72% 55%,rgba(196,168,212,.22) 0%,transparent 70%); }
+.prayer-banner::after  { background:radial-gradient(ellipse 40% 50% at 68% 48%,rgba(220,200,255,.11) 0%,transparent 60%); }
 
 .screen-banner .bn-text { z-index:3; display:flex; flex-direction:column; gap:3px; }
 .screen-banner .bn-label { font-size:8px; letter-spacing:.28em; text-transform:uppercase; }
 .aw-banner   .bn-label { color:rgba(142,220,184,.78); }
 .conc-banner .bn-label { color:rgba(255,190,120,.75); }
+.prayer-banner .bn-label { color:rgba(196,168,220,.78); }
 .screen-banner .bn-title { font-family:'Cormorant Garamond',serif; font-size:25px; font-weight:300; line-height:1.1; }
 .aw-banner   .bn-title { color:#d8fff4; }
 .conc-banner .bn-title { color:#fff8f0; }
+.prayer-banner .bn-title { color:#e6d8f4; }
 .screen-banner .bn-sub { display:inline-flex; align-items:center; gap:6px; margin-top:1px;
   font-size:9px; letter-spacing:.1em; cursor:pointer; padding:3px 6px 3px 0;
   border-radius:8px; transition:color .18s; align-self:flex-start; }
@@ -3224,24 +3230,30 @@ body:not(.tut-live) #tutCorgi {
 .aw-banner   .bn-sub:hover { color:rgba(200,255,230,.75); }
 .conc-banner .bn-sub { color:rgba(255,200,140,.48); }
 .conc-banner .bn-sub:hover { color:rgba(255,210,160,.75); }
+.prayer-banner .bn-sub { color:rgba(220,200,235,.55); }
+.prayer-banner .bn-sub:hover { color:rgba(230,216,244,.8); }
 .screen-banner .bn-sub svg { flex-shrink:0; animation:bnSymPulse 5s ease-in-out infinite; }
 
 .screen-banner .bn-right { position:relative; z-index:2; width:128px; height:134px; flex-shrink:0; display:flex; align-items:center; justify-content:center; }
 .bn-glow { position:absolute; inset:0; border-radius:50%; animation:bannerGlow 5s ease-in-out infinite; }
 .aw-banner   .bn-glow { background:radial-gradient(circle,rgba(126,220,180,.20) 0%,rgba(126,184,164,.07) 42%,transparent 70%); }
 .conc-banner .bn-glow { background:radial-gradient(circle,rgba(255,180,100,.25) 0%,rgba(212,149,110,.08) 42%,transparent 70%); }
+.prayer-banner .bn-glow { background:radial-gradient(circle,rgba(220,200,255,.22) 0%,rgba(196,168,212,.08) 44%,transparent 70%); }
 .bn-ripple { position:absolute; left:50%; top:50%; border-radius:50%; width:104px; height:104px; margin:-52px 0 0 -52px; animation:bannerRipple 5s ease-out infinite; }
 .aw-banner   .bn-ripple { border:1px solid rgba(164,210,184,.4); }
 .conc-banner .bn-ripple { border:1px solid rgba(232,199,156,.5); }
+.prayer-banner .bn-ripple { border:1px solid rgba(206,184,224,.45); }
 .bn-ripple:nth-child(3){ animation-delay:1.7s; }
 .bn-ripple:nth-child(4){ animation-delay:3.4s; }
 .bn-sym { position:relative; z-index:3; transform-origin:center; }
 .aw-banner   .bn-sym { animation:eyePulseGreen 5s ease-in-out infinite; }
 .conc-banner .bn-sym { animation:eyePulseAmber 5s ease-in-out infinite; }
+.prayer-banner .bn-sym { animation:eyePulseViolet 5s ease-in-out infinite; }
 .bn-dots { position:absolute; inset:0; pointer-events:none; z-index:1; overflow:hidden; }
 .bn-dots > i { position:absolute; border-radius:50%; animation:heroFloat 4.5s ease-in-out infinite; }
 .aw-banner   .bn-dots > i { background:rgba(180,230,210,.48); }
 .conc-banner .bn-dots > i { background:rgba(255,210,150,.45); }
+.prayer-banner .bn-dots > i { background:rgba(220,200,255,.45); }
 
 /* tighten layout now that banners carry rank/symbol info */
 .home-symbol { display:none !important; }
@@ -3629,7 +3641,6 @@ body:not(.tut-live) #tutCorgi {
           <polygon points="50,26 76,74 24,74" stroke="#c4e0d4" stroke-width="1" opacity="0.38"/>
           <circle cx="50" cy="58" r="10" stroke="#c4e0d4" stroke-width="1.8" opacity="0.8"/>
           <circle cx="50" cy="58" r="4.5" fill="#c4e0d4" opacity="0.92"/>
-          <line x1="50" y1="10" x2="50" y2="2" stroke="#c4e0d4" stroke-width="1.4" stroke-linecap="round" opacity="0.5"/>
         </svg>
         <div class="bn-dots">
           <i style="width:5px;height:5px;left:24%;top:24%;animation-delay:.3s;"></i>
@@ -3815,6 +3826,26 @@ body:not(.tut-live) #tutCorgi {
 
     <!-- PRAYER PANEL (inside homeScreen) -->
     <div id="prayerPanel" style="display:none; flex:1; flex-direction:column; overflow:hidden;">
+      <!-- Prayer banner -->
+      <div class="screen-banner prayer-banner">
+        <div class="bn-text">
+          <div class="bn-label">The Mystic</div>
+          <div class="bn-title">Prayer</div>
+          <div class="bn-sub"><span id="prayerBannerDay">Day 0</span><span id="prayerBannerPhrase"> · Begin the path</span></div>
+        </div>
+        <div class="bn-right">
+          <div class="bn-glow"></div>
+          <div class="bn-ripple"></div><div class="bn-ripple"></div><div class="bn-ripple"></div>
+          <svg class="bn-sym" width="62" height="62" viewBox="0 0 100 100" fill="none">
+            <path d="M50 8 L58 42 L92 50 L58 58 L50 92 L42 58 L8 50 L42 42 Z" fill="#e6d8f4" opacity="0.92"/>
+            <circle cx="50" cy="50" r="4" fill="#fff" opacity="0.85"/>
+          </svg>
+          <div class="bn-dots">
+            <i style="width:5px;height:5px;left:24%;top:26%;animation-delay:0s;"></i>
+            <i style="width:4px;height:4px;left:32%;top:68%;animation-delay:1.4s;"></i>
+          </div>
+        </div>
+      </div>
       <div style="display:flex; align-items:center; margin-bottom:4px;">
         <button class="history-back" style="color:#9b8ec4;" onclick="switchMode('awareness')">← back</button>
       </div>
@@ -12914,6 +12945,11 @@ function renderPrayerPanel() {
 
   document.getElementById('prayerDoneCount').textContent = done.length;
   document.getElementById('prayerTotalCount').textContent = count;
+  var pStreak = prayerState.streak || 0;
+  var prayerBannerDay = document.getElementById('prayerBannerDay');
+  var prayerBannerPhrase = document.getElementById('prayerBannerPhrase');
+  if (prayerBannerDay) prayerBannerDay.textContent = 'Day ' + pStreak;
+  if (prayerBannerPhrase) prayerBannerPhrase.textContent = pStreak > 0 ? ' · Devotion holds' : ' · Begin the path';
 
   // Progress bar
   var bar = document.getElementById('prayerProgressBar');
