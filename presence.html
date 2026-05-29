@@ -3256,7 +3256,8 @@ body:not(.tut-live) #tutCorgi {
 .prayer-banner .bn-dots > i { background:rgba(220,200,255,.45); }
 
 /* tighten layout now that banners carry rank/symbol info */
-#awarenessPanel .home-symbol { display:none !important; }
+#awarenessPanel .home-symbol,
+#concentrationPanel .home-symbol { display:none !important; }
 .hero { padding-top:8px; }
 .level-ring { margin-bottom:16px; }
 .home-actions { padding-bottom:24px; }
@@ -3704,11 +3705,7 @@ body:not(.tut-live) #tutCorgi {
           <div class="bn-label">The Magician</div>
           <div class="bn-title">Concentration</div>
           <div class="bn-sub">
-            <svg width="14" height="14" viewBox="0 0 100 100" fill="none" stroke="rgba(255,200,140,.7)" stroke-width="3" stroke-linecap="round">
-              <path d="M50 8 C50 8 65 28 65 42 C65 52 58 58 58 58 C58 48 52 42 50 38 C48 42 42 48 42 58 C42 58 35 52 35 42 C35 28 50 8 50 8Z"/>
-              <circle cx="50" cy="68" r="5" fill="rgba(255,220,170,.8)" stroke="none"/>
-            </svg>
-            <span id="concBannerRank">Initiate</span> · <span id="concBannerXP">0</span> xp
+            <span id="concBannerSymbol" style="display:inline-flex;align-items:center;vertical-align:middle;margin-right:5px;opacity:.85;"></span><span id="concBannerGroup">The Tao</span> · Level <span id="concBannerLevel">1</span>
           </div>
         </div>
         <div class="bn-right">
@@ -7884,8 +7881,15 @@ function renderConcHome() {
   document.getElementById('concLevelNum').textContent = concState.level;
   document.getElementById('concLevelTitle').textContent = getConcRank(concState.level);
   document.getElementById('concStatXP').textContent = concState.xp.toLocaleString();
-  var concBannerRank = document.getElementById('concBannerRank');
-  if (concBannerRank) { concBannerRank.textContent = getConcRank(concState.level); document.getElementById('concBannerXP').textContent = concState.xp.toLocaleString(); }
+  var concBannerGroup = document.getElementById('concBannerGroup');
+  var concBannerLevel = document.getElementById('concBannerLevel');
+  var concBannerSymbol = document.getElementById('concBannerSymbol');
+  if (concBannerGroup) {
+    var bGroup = getSymbolGroup(concState.level);
+    concBannerGroup.textContent = bGroup.name;
+    concBannerLevel.textContent = concState.level;
+    concBannerSymbol.innerHTML = renderSymbolSVG(bGroup.id, 'rgba(255,200,140,.75)', 16);
+  }
   document.getElementById('concStatBest').textContent = concState.bestSeconds + 's';
   document.getElementById('concStatSessions').textContent = concState.totalSessions;
   var concSym = document.getElementById('concHomeSymbol');
