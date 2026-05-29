@@ -188,6 +188,52 @@ function aiRateLimit(req, res, next) {
   next();
 }
 
+// ── Auth rate limiter — throttles login/register brute force ──
+const authRateBuckets = new Map();
+const AUTH_RATE_LIMIT = 10;            // attempts per window
+const AUTH_RATE_WINDOW_MS = 5 * 60 * 1000;
+function authRateLimit(req, res, next) {
+  const now = Date.now();
+  const key = (req.ip || req.headers['x-forwarded-for'] || 'unknown') + ':' + ((req.body && req.body.email) || '');
+  const bucket = authRateBuckets.get(key) || { count: 0, resetAt: now + AUTH_RATE_WINDOW_MS };
+  if (now > bucket.resetAt) { bucket.count = 0; bucket.resetAt = now + AUTH_RATE_WINDOW_MS; }
+  bucket.count++;
+  authRateBuckets.set(key, bucket);
+  if (bucket.count > AUTH_RATE_LIMIT) {
+    return res.status(429).json({ error: 'Too many attempts. Try again in a few minutes.' });
+  }
+  next();
+}
+
+// Periodically clear stale rate-limit + prompt buckets so the Maps don't grow unbounded.
+setInterval(() => {
+  const now = Date.now();
+  for (const [k, b] of aiRateBuckets) if (now > b.resetAt + AI_RATE_WINDOW_MS) aiRateBuckets.delete(k);
+  for (const [k, b] of authRateBuckets) if (now > b.resetAt + AUTH_RATE_WINDOW_MS) authRateBuckets.delete(k);
+  if (usedPrompts.size > 5000) usedPrompts.clear();
+}, 10 * 60 * 1000);
+
+// Server-derived report cache key — never trust a client-supplied periodKey.
+// Mirrors the client's omniaReportPeriodKey() but computed here so the once-per-period
+// cache can't be bypassed by sending arbitrary keys. offset is clamped to a sane range.
+function serverPeriodKey(period, offset) {
+  offset = parseInt(offset, 10);
+  if (!Number.isFinite(offset)) offset = 0;
+  offset = Math.max(-60, Math.min(0, offset)); // only current + recent past periods
+  const now = new Date();
+  if (period === 'daily') {
+    const d = new Date(now); d.setUTCDate(d.getUTCDate() + offset);
+    return d.toISOString().slice(0, 10);
+  }
+  if (period === 'weekly') {
+    const sun = new Date(now); sun.setUTCDate(now.getUTCDate() - now.getUTCDay() + offset * 7);
+    return 'w-' + sun.toISOString().slice(0, 10);
+  }
+  // monthly
+  const mo = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() + offset, 1));
+  return 'm-' + mo.getUTCFullYear() + '-' + String(mo.getUTCMonth() + 1).padStart(2, '0');
+}
+
 function clampText(value, max) {
   if (value === null || value === undefined) return '';
   return String(value).replace(/\s+/g, ' ').trim().slice(0, max);
@@ -368,10 +414,13 @@ setInterval(async () => {
 // ── CLOUD SYNC ROUTES ────────────────────────────────────
 
 // REGISTER
-app.post('/api/sync/auth/register', async (req, res) => {
+app.post('/api/sync/auth/register', authRateLimit, async (req, res) => {
   try {
     const { email, password, username } = req.body;
+    if (typeof email !== 'string' || typeof password !== 'string') return res.status(400).json({ error: 'Email and password required' });
     if (!email || !password) return res.status(400).json({ error: 'Email and password required' });
+    if (password.length < 8) return res.status(400).json({ error: 'Password must be at least 8 characters' });
+    if (username !== undefined && typeof username !== 'string') return res.status(400).json({ error: 'Invalid username' });
     const existingUser = await usersCollection.findOne({ email });
     if (existingUser) return res.status(400).json({ error: 'Email already in use' });
     if (username) {
@@ -391,9 +440,10 @@ app.post('/api/sync/auth/register', async (req, res) => {
 });
 
 // LOGIN
-app.post('/api/sync/auth/login', async (req, res) => {
+app.post('/api/sync/auth/login', authRateLimit, async (req, res) => {
   try {
     const { email, password } = req.body;
+    if (typeof email !== 'string' || typeof password !== 'string') return res.status(401).json({ error: 'Invalid credentials' });
     if (!email || !password) return res.status(400).json({ error: 'Email and password required' });
     const user = await usersCollection.findOne({ email });
     if (!user) return res.status(401).json({ error: 'Invalid credentials' });
@@ -633,7 +683,8 @@ app.get('/api/sync/sync/diagnose', verifyToken, async (req, res) => {
 
     res.json({ total: snapshots.length, snapshots: summary });
   } catch (err) {
-    res.status(500).json({ error: 'Diagnose failed', detail: err.message });
+    console.error('Diagnose error:', err.message);
+    res.status(500).json({ error: 'Diagnose failed' });
   }
 });
 
@@ -733,7 +784,7 @@ app.post('/api/sync/friends/request', verifyToken, async (req, res) => {
   try {
     const selfId = req.user.userId;
     const { username } = req.body;
-    if (!username) return res.status(400).json({ error: 'Username required' });
+    if (!username || typeof username !== 'string') return res.status(400).json({ error: 'Username required' });
     const target = await usersCollection.findOne({ username });
     if (!target) return res.status(404).json({ error: 'User not found' });
     const targetId = target._id.toString();
@@ -758,7 +809,7 @@ app.post('/api/sync/friends/accept', verifyToken, async (req, res) => {
   try {
     const selfId = req.user.userId;
     const { requesterId } = req.body;
-    if (!requesterId) return res.status(400).json({ error: 'requesterId required' });
+    if (!requesterId || typeof requesterId !== 'string') return res.status(400).json({ error: 'requesterId required' });
     const result = await friendsCollection.updateOne(
       { userId: requesterId, friendId: selfId, status: 'pending' },
       { $set: { status: 'accepted' } }
@@ -776,7 +827,7 @@ app.post('/api/sync/friends/decline', verifyToken, async (req, res) => {
   try {
     const selfId = req.user.userId;
     const { userId } = req.body;
-    if (!userId) return res.status(400).json({ error: 'userId required' });
+    if (!userId || typeof userId !== 'string') return res.status(400).json({ error: 'userId required' });
     await friendsCollection.deleteMany({
       $or: [
         { userId: selfId, friendId: userId },
@@ -867,7 +918,7 @@ app.post('/api/ai/progress-comment', aiRateLimit, async (req, res) => {
   }
 });
 
-app.post('/api/sync/omnia/report', async (req, res) => {
+app.post('/api/sync/omnia/report', aiRateLimit, async (req, res) => {
   const { period, context, deviceId } = req.body || {};
   if (!['daily','weekly','monthly'].includes(period)) {
     return res.status(400).json({ error: 'Invalid period' });
@@ -877,8 +928,7 @@ app.post('/api/sync/omnia/report', async (req, res) => {
   const authHeader = req.headers.authorization;
   if (authHeader && authHeader.startsWith('Bearer ')) {
     try {
-      const jwt = require('jsonwebtoken');
-      const decoded = jwt.verify(authHeader.slice(7), process.env.JWT_SECRET);
+      const decoded = jwt.verify(authHeader.slice(7), JWT_SECRET);
       userId = decoded.id || decoded.userId;
     } catch(e) { /* not logged in, use deviceId */ }
   }
@@ -886,28 +936,18 @@ app.post('/api/sync/omnia/report', async (req, res) => {
     if (!deviceId || typeof deviceId !== 'string' || deviceId.length < 8) {
       return res.status(400).json({ error: 'deviceId required' });
     }
-    userId = 'device_' + deviceId.slice(0, 64);
+    userId = 'device_' + deviceId.replace(/[^a-zA-Z0-9_-]/g, '').slice(0, 64);
   }
 
   try {
     const col = mongoClient.db('presence').collection('omnia_reports');
 
-    // Use the periodKey from the client context (offset-aware) if provided, otherwise compute from now
-    let periodKey = context && context.periodKey;
-    if (!periodKey) {
-      const now = new Date();
-      if (period === 'daily') {
-        periodKey = now.toISOString().slice(0, 10);
-      } else if (period === 'weekly') {
-        const sun = new Date(now);
-        sun.setDate(now.getDate() - now.getDay());
-        periodKey = 'w-' + sun.toISOString().slice(0, 10);
-      } else {
-        periodKey = 'm-' + now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0');
-      }
-    }
+    // Cache key is derived server-side from period + offset (never the client's raw
+    // periodKey string) so the once-per-period cache cannot be bypassed by abuse.
+    const offset = context && context.offset;
+    const periodKey = serverPeriodKey(period, offset);
 
-    // Return cached if fresh
+    // Return cached if fresh — this is the once-per-period guard
     const cached = await col.findOne({ userId, period, periodKey });
     if (cached && cached.commentary) {
       return res.json({ commentary: cached.commentary });
@@ -927,7 +967,7 @@ app.post('/api/sync/omnia/report', async (req, res) => {
     res.json({ commentary });
   } catch (err) {
     console.error('[Omnia] report error:', err.stack || err.message);
-    res.status(err.status || 500).json({ error: err.message || 'Omnia commentary unavailable' });
+    res.status(err.status || 500).json({ error: 'Omnia commentary unavailable' });
   }
 });
 
@@ -1007,8 +1047,8 @@ app.post('/notify', async (req, res) => {
   if (endpoint) {
     const sub = subscriptions.find(s => s.endpoint === endpoint);
     if (!sub) return res.status(404).json({ error: 'Not found' });
-    const prompt = body || randomPromptFor(endpoint);
-    const payload = JSON.stringify({ title: title || 'Presence', body: prompt, url: 'https://chooch971-tech.github.io/Consciousness-App/presence.html' });
+    const prompt = clampText(body, 140) || randomPromptFor(endpoint);
+    const payload = JSON.stringify({ title: clampText(title, 60) || 'Presence', body: prompt, url: 'https://chooch971-tech.github.io/Consciousness-App/presence.html' });
     try { await webpush.sendNotification(sub, payload); } catch(e) { console.error(e.message); }
     return res.json({ success: true });
   }
