@@ -7255,13 +7255,36 @@ document.getElementById('settingsEmailToggle').addEventListener('click', functio
   this.textContent = isOpen ? 'Continue with email →' : 'Hide email sign-in ↑';
 });
 
+// Live inline password-length check (create-account mode only; existing logins are unaffected).
+// Mirrors the server's 8-char minimum so the user is warned as they type, not after submit.
+function _liveCheckPassword(pwEl, errEl, getCreateMode, submitBtn) {
+  if (!pwEl || !errEl) return;
+  var v = pwEl.value || '';
+  if (getCreateMode() && v.length > 0 && v.length < 8) {
+    errEl.textContent = 'Password must be at least 8 characters (' + v.length + '/8)';
+    errEl.style.display = 'block';
+    if (submitBtn) submitBtn.disabled = true;
+  } else {
+    errEl.textContent = '';
+    errEl.style.display = 'none';
+    if (submitBtn) submitBtn.disabled = false;
+  }
+}
+
 // Settings email sign-in / create account
 var _settingsEmailMode = false; // false=sign-in, true=create-account
 document.getElementById('settingsEmailCreate').addEventListener('click', function() {
   _settingsEmailMode = !_settingsEmailMode;
   document.getElementById('settingsEmailSubmit').textContent = _settingsEmailMode ? 'Create Account' : 'Sign In';
   this.textContent = _settingsEmailMode ? 'Sign In Instead' : 'Create Account';
+  _liveCheckPassword(document.getElementById('settingsPasswordInput'), document.getElementById('settingsEmailError'), function() { return _settingsEmailMode; }, document.getElementById('settingsEmailSubmit'));
 });
+(function() {
+  var pwEl = document.getElementById('settingsPasswordInput');
+  if (pwEl) pwEl.addEventListener('input', function() {
+    _liveCheckPassword(pwEl, document.getElementById('settingsEmailError'), function() { return _settingsEmailMode; }, document.getElementById('settingsEmailSubmit'));
+  });
+})();
 document.getElementById('settingsEmailSubmit').addEventListener('click', async function() {
   var email = (document.getElementById('settingsEmailInput').value || '').trim();
   var password = document.getElementById('settingsPasswordInput').value;
@@ -9080,7 +9103,12 @@ function showTutorialAccountPrompt() {
       document.getElementById('tutAcctSubmit').textContent = tutEmailMode ? 'Create Account' : 'Sign In';
       document.getElementById('tutAcctPassword').autocomplete = tutEmailMode ? 'new-password' : 'current-password';
       this.textContent = tutEmailMode ? 'Already have an account? Sign in →' : 'No account yet? Create one →';
+      _liveCheckPassword(document.getElementById('tutAcctPassword'), document.getElementById('tutAcctErr'), function() { return tutEmailMode; }, document.getElementById('tutAcctSubmit'));
     };
+
+    document.getElementById('tutAcctPassword').addEventListener('input', function() {
+      _liveCheckPassword(this, document.getElementById('tutAcctErr'), function() { return tutEmailMode; }, document.getElementById('tutAcctSubmit'));
+    });
 
     // Submit
     document.getElementById('tutAcctSubmit').onclick = async function() {
