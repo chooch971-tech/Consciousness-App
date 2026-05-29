@@ -7446,10 +7446,18 @@ function syncProgressScore(key, obj) {
   if (!obj || typeof obj !== 'object') return 0;
   if (key === 'presence_omnia_v1') {
     var bodies = obj.bodies || {};
+    // Score body levels at their capped value so an artificially inflated snapshot
+    // can't out-score (and clobber) a genuinely richer one during conflict resolution.
+    var scStepNum = obj.bardonStep || 1;
+    var scStep = OMNIA_BARDON_STEPS.find(function(s) { return s.step === scStepNum; }) || OMNIA_BARDON_STEPS[0];
+    var capBody = function(b) {
+      var cap = (scStep && scStep.req && scStep.req[b]) || Infinity;
+      return Math.min(cap, Math.max(0, Number(bodies[b]) || 0));
+    };
     return (obj.totalAkashaEarned || 0)
       + (obj.akasha || 0)
       + (obj.reservoir || 0)
-      + ((bodies.physical || 0) + (bodies.astral || 0) + (bodies.mental || 0)) * 1000
+      + (capBody('physical') + capBody('astral') + capBody('mental')) * 1000
       + ((obj.bardonStep || 1) - 1) * 10000
       + ((obj.completedRecommended || 0) * 100);
   }
@@ -13576,6 +13584,39 @@ function clampOmniaBodies(stateObj) {
   return stateObj;
 }
 
+// Merge a cloud Omnia snapshot into local on sync-pull. Last-writer-wins fields
+// (akasha, reservoir, rec, recStreak, cosmetics, upgrades) follow the existing
+// conflict-resolution winner, but monotonic progress counters take the MAX of both
+// snapshots so a stale snapshot can never roll them backwards. Returns a JSON string
+// to store, or null to leave local untouched.
+function mergeOmniaPull(localStr, cloudStr) {
+  if (!cloudStr) return null;
+  if (!localStr) {
+    try { return JSON.stringify(clampOmniaBodies(JSON.parse(cloudStr))); } catch(e) { return cloudStr; }
+  }
+  var localObj, cloudObj;
+  try { localObj = JSON.parse(localStr); cloudObj = JSON.parse(cloudStr); } catch(e) { return null; }
+  var takeCloud = shouldTakeCloudValue('presence_omnia_v1', localStr, cloudStr);
+  var base  = takeCloud ? cloudObj : localObj;
+  var other = takeCloud ? localObj : cloudObj;
+  // Only fold monotonic progress across snapshots when neither side was deliberately
+  // reset relative to the other — otherwise honor the reset and keep base as-is.
+  var sameReset = ((localObj && localObj._resetAt) || 0) === ((cloudObj && cloudObj._resetAt) || 0);
+  if (sameReset) {
+    ['completedRecommended','totalAkashaEarned'].forEach(function(f) {
+      base[f] = Math.max(Number(base[f]) || 0, Number(other[f]) || 0);
+    });
+    base.bardonStep = Math.max(Number(base.bardonStep) || 1, Number(other.bardonStep) || 1);
+    base.bodies = base.bodies || {};
+    var ob = other.bodies || {};
+    ['physical','astral','mental'].forEach(function(b) {
+      base.bodies[b] = Math.max(Number(base.bodies[b]) || 1, Number(ob[b]) || 1);
+    });
+  }
+  clampOmniaBodies(base); // re-cap bodies to the (possibly advanced) step requirement
+  return JSON.stringify(base);
+}
+
 function loadOmniaState() {
   try {
     var s = localStorage.getItem('presence_omnia_v1');
@@ -18277,12 +18318,14 @@ async function syncPullData() {
     Object.entries(result.data).forEach(function([k, v]) {
       if (!v) return; // skip nulls
       var local = localStorage.getItem(k);
+      // Omnia is field-merged (monotonic counters take the max; bodies stay capped)
+      // rather than wholesale-replaced, so a stale snapshot can't roll back progress.
+      if (k === 'presence_omnia_v1') {
+        var mergedOmnia = mergeOmniaPull(local, v);
+        if (mergedOmnia !== null) localStorage.setItem(k, mergedOmnia);
+        return;
+      }
       if (shouldTakeCloudValue(k, local, v)) {
-        // Clamp body levels on inbound omnia snapshots so a stale/inflated cloud
-        // save can't push levels back above the current step cap.
-        if (k === 'presence_omnia_v1') {
-          try { v = JSON.stringify(clampOmniaBodies(JSON.parse(v))); } catch(e) {}
-        }
         localStorage.setItem(k, v);
       }
     });
