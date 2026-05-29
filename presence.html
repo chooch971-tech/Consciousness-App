@@ -418,13 +418,11 @@
 
     /* CONCENTRATION THEME */
     .conc-accent { color:#d4956e !important; }
-    .conc-ring .ring-prog { stroke:#d4956e !important; }
+    .conc-ring .ring-prog { stroke:url(#concRingGrad) !important; stroke-width:3 !important; filter:drop-shadow(0 0 5px rgba(212,149,110,.55)); }
     .conc-ring-wrap { position:relative; display:flex; align-items:center; justify-content:center; margin-bottom:10px; }
     .conc-ring-glow { position:absolute; width:220px; height:220px; border-radius:50%; background:radial-gradient(circle at 50% 50%, rgba(212,149,110,.18) 0%, rgba(212,149,110,.06) 45%, transparent 70%); pointer-events:none; animation:concGlowPulse 4s ease-in-out infinite; }
     @keyframes concGlowPulse { 0%,100%{opacity:.7; transform:scale(.95);} 50%{opacity:1; transform:scale(1.05);} }
-    .conc-xp-track { width:148px; height:2px; background:rgba(255,255,255,.07); border-radius:2px; margin:0 auto 7px; overflow:hidden; }
-    .conc-xp-bar { height:100%; background:linear-gradient(90deg,#c4844a,#e8b07a); border-radius:2px; transition:width 1.2s cubic-bezier(.4,0,.2,1); }
-    .conc-xp-hint { font-family:'DM Mono',monospace; font-size:9px; letter-spacing:.14em; color:var(--muted); text-align:center; margin-bottom:14px; opacity:.7; }
+    .conc-xp-hint { font-family:'DM Mono',monospace; font-size:9px; letter-spacing:.14em; color:#c89878; text-align:center; margin-bottom:14px; opacity:.8; }
     .conc-btn.primary { background:rgba(212,149,110,0.12) !important; border-color:rgba(212,149,110,.35) !important; color:#d4b08e !important; }
     .conc-btn.ghost { color:var(--muted) !important; }
 
@@ -3736,6 +3734,13 @@ body:not(.tut-live) #tutCorgi {
           <div class="conc-ring-glow"></div>
           <div class="level-ring conc-ring" id="concRingBtn" style="cursor:pointer;" title="Tap for rank details">
             <svg viewBox="0 0 140 140">
+              <defs>
+                <linearGradient id="concRingGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                  <stop offset="0%" stop-color="#a85f32"/>
+                  <stop offset="55%" stop-color="#d4956e"/>
+                  <stop offset="100%" stop-color="#f4d2a4"/>
+                </linearGradient>
+              </defs>
               <circle class="ring-track" cx="70" cy="70" r="60"/>
               <circle class="ring-prog" id="concLevelRingProg" cx="70" cy="70" r="60" stroke-dasharray="377" stroke-dashoffset="377"/>
             </svg>
@@ -3749,11 +3754,10 @@ body:not(.tut-live) #tutCorgi {
           <div id="concHomeSymbol" style="cursor:pointer;" title="Tap for rank details"></div>
           <div class="home-symbol-fill" id="concHomeSymbolFill" style="cursor:pointer;"></div>
         </div>
-        <div class="conc-xp-track"><div class="conc-xp-bar" id="concXPBar"></div></div>
-        <div class="conc-xp-hint" id="concXPHint"></div>
-        <div class="stats-row" style="margin-bottom:14px;">
+        <div class="stats-row" style="margin-bottom:6px;">
           <div class="stat"><div class="stat-val" id="concStatXP" style="color:#d4b08e; font-size:28px;">0</div><div class="stat-key">xp total</div></div>
         </div>
+        <div class="conc-xp-hint" id="concXPHint"></div>
       </div>
       <!-- Exercise grid -->
       <div style="padding-bottom:80px;" id="concScrollArea">
@@ -7899,15 +7903,13 @@ function renderConcHome() {
     concBannerLevel.textContent = concState.level;
     concBannerSymbol.innerHTML = renderSymbolSVG(bGroup.id, 'rgba(255,200,140,.75)', 16);
   }
-  var concXPBar = document.getElementById('concXPBar');
   var concXPHint = document.getElementById('concXPHint');
-  if (concXPBar) concXPBar.style.width = (prog * 100).toFixed(1) + '%';
   if (concXPHint) {
     if (concState.level >= 777) {
-      concXPHint.textContent = 'max level';
+      concXPHint.textContent = 'max level reached';
     } else {
       var toNext = xpNeeded - xpThis;
-      concXPHint.textContent = xpThis.toLocaleString() + ' / ' + xpNeeded.toLocaleString() + ' · ' + toNext.toLocaleString() + ' to next';
+      concXPHint.textContent = toNext.toLocaleString() + ' xp to level ' + (concState.level + 1);
     }
   }
   var concSym = document.getElementById('concHomeSymbol');
