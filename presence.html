@@ -13560,6 +13560,22 @@ function cloneOmniaDefault() {
   return JSON.parse(JSON.stringify(OMNIA_DEFAULT));
 }
 
+// Body levels must never exceed the current Bardon step's requirement.
+// Both gameplay paths (build button + recommended-exercise award) enforce this,
+// but data arriving via cloud sync / localStorage bypasses those guards — so we
+// re-clamp here on load, on save, and on sync-pull. Mutates and returns stateObj.
+function clampOmniaBodies(stateObj) {
+  if (!stateObj || typeof stateObj !== 'object' || !stateObj.bodies) return stateObj;
+  var stepNum = stateObj.bardonStep || 1;
+  var step = OMNIA_BARDON_STEPS.find(function(s) { return s.step === stepNum; }) || OMNIA_BARDON_STEPS[0];
+  ['physical','astral','mental'].forEach(function(body) {
+    var cap = (step && step.req && step.req[body]) || Infinity;
+    var v = Math.max(1, Number(stateObj.bodies[body]) || 1);
+    stateObj.bodies[body] = Math.min(cap, v);
+  });
+  return stateObj;
+}
+
 function loadOmniaState() {
   try {
     var s = localStorage.getItem('presence_omnia_v1');
@@ -13568,9 +13584,7 @@ function loadOmniaState() {
     var merged = cloneOmniaDefault();
     Object.assign(merged, parsed);
     merged.bodies = Object.assign(cloneOmniaDefault().bodies, parsed.bodies || {});
-    ['physical','astral','mental'].forEach(function(body) {
-      merged.bodies[body] = Math.max(1, Number(merged.bodies[body]) || 1);
-    });
+    clampOmniaBodies(merged);
     merged.upgrades = Object.assign(cloneOmniaDefault().upgrades, parsed.upgrades || {});
     merged.cosmetics = Object.assign(cloneOmniaDefault().cosmetics, parsed.cosmetics || {});
     merged.cosmetics.unlockedPalettes = merged.cosmetics.unlockedPalettes || ['aether'];
@@ -13582,6 +13596,7 @@ function loadOmniaState() {
 }
 
 function saveOmniaState() {
+  clampOmniaBodies(omniaState); // never persist or push body levels above the step cap
   try { localStorage.setItem('presence_omnia_v1', JSON.stringify(omniaState)); } catch(e) {}
   // Debounce sync so rapid omniaAccrue calls don't spam the network
   clearTimeout(saveOmniaState._syncTimer);
@@ -18263,6 +18278,11 @@ async function syncPullData() {
       if (!v) return; // skip nulls
       var local = localStorage.getItem(k);
       if (shouldTakeCloudValue(k, local, v)) {
+        // Clamp body levels on inbound omnia snapshots so a stale/inflated cloud
+        // save can't push levels back above the current step cap.
+        if (k === 'presence_omnia_v1') {
+          try { v = JSON.stringify(clampOmniaBodies(JSON.parse(v))); } catch(e) {}
+        }
         localStorage.setItem(k, v);
       }
     });
