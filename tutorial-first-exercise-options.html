@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Tutorial First-Exercise — Options</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300&family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#07080d; --surface:#0e0f17; --surface2:#13141f;
+    --border:rgba(255,255,255,.07); --border2:rgba(255,255,255,.12);
+    --text:#e8e0d0; --muted:#8a8678;
+    --accent:#7eb8a4; --copper:#d4956e; --violet:#c4a8d4; --blue:#7898b8;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0; background:
+      radial-gradient(ellipse 60% 50% at 70% 0%, rgba(196,168,212,.06), transparent 60%),
+      radial-gradient(ellipse 50% 40% at 10% 100%, rgba(126,184,164,.05), transparent 60%),
+      var(--bg);
+    color:var(--text); font-family:'Cormorant Garamond',serif; font-size:18px;
+    line-height:1.7; -webkit-font-smoothing:antialiased;
+    padding:48px 22px 80px; max-width:760px; margin:0 auto;
+  }
+  .kicker{font-family:'DM Mono',monospace; font-size:10px; letter-spacing:.28em;
+    text-transform:uppercase; color:var(--accent); opacity:.8; margin-bottom:14px;}
+  h1{font-weight:300; font-size:40px; line-height:1.1; margin:0 0 10px; letter-spacing:-.01em;}
+  .lede{color:var(--muted); font-size:18px; font-style:italic; margin:0 0 6px; max-width:60ch;}
+  h2{font-weight:400; font-size:27px; margin:46px 0 6px; letter-spacing:-.01em;
+    padding-top:26px; border-top:1px solid var(--border);}
+  h2 .opt{font-family:'DM Mono',monospace; font-size:12px; letter-spacing:.2em;
+    color:var(--copper); display:block; margin-bottom:6px; text-transform:uppercase;}
+  h3{font-family:'DM Mono',monospace; font-weight:500; font-size:11px; letter-spacing:.2em;
+    text-transform:uppercase; color:var(--muted); margin:24px 0 8px;}
+  p{margin:0 0 14px;}
+  .mono{font-family:'DM Mono',monospace; font-size:13px; line-height:1.65; letter-spacing:.01em;}
+  code{font-family:'DM Mono',monospace; font-size:.82em; background:var(--surface2);
+    border:1px solid var(--border); border-radius:5px; padding:1px 6px; color:var(--copper);}
+  ul{margin:0 0 14px; padding-left:0; list-style:none;}
+  li{position:relative; padding-left:20px; margin-bottom:8px;}
+  li::before{content:'·'; position:absolute; left:4px; color:var(--accent); font-size:22px; line-height:1.1;}
+  blockquote{margin:10px 0 16px; padding:12px 18px; border-left:2px solid rgba(126,184,164,.4);
+    background:rgba(126,184,164,.04); border-radius:0 10px 10px 0; color:var(--text);
+    font-style:italic; font-size:17px;}
+  .panel{background:var(--surface); border:1px solid var(--border); border-radius:16px;
+    padding:18px 22px; margin:18px 0;}
+  .panel.warn{border-color:rgba(212,149,110,.28); background:rgba(212,149,110,.05);}
+  .tag{display:inline-block; font-family:'DM Mono',monospace; font-size:9px; letter-spacing:.16em;
+    text-transform:uppercase; padding:3px 10px; border-radius:20px; margin:0 6px 6px 0;}
+  .tag.effort-low{background:rgba(126,184,164,.12); color:var(--accent);}
+  .tag.effort-med{background:rgba(212,149,110,.12); color:var(--copper);}
+  .tag.effort-high{background:rgba(196,120,120,.14); color:#d49898;}
+  table{width:100%; border-collapse:collapse; margin:16px 0 8px; font-family:'DM Mono',monospace;
+    font-size:11.5px;}
+  th,td{text-align:left; padding:11px 10px; border-bottom:1px solid var(--border); vertical-align:top;}
+  th{color:var(--muted); font-weight:400; letter-spacing:.12em; text-transform:uppercase; font-size:9px;}
+  td:first-child{color:var(--accent); font-weight:500;}
+  .foot{margin-top:40px; padding-top:22px; border-top:1px solid var(--border);
+    font-size:15px; color:var(--muted); font-style:italic;}
+  a.line{color:var(--blue); text-decoration:none; border-bottom:1px dotted rgba(120,152,184,.4);}
+</style>
+</head>
+<body>
+
+  <div class="kicker">Presence · Onboarding Design</div>
+  <h1>Tutorial First-Exercise</h1>
+  <p class="lede">Three options for the very first thing a new user does — grounded in the
+  actual code, not invented. Goal: maximize first-session retention without pretending Presence
+  is frictionless wellness. It's serious Bardon training; the opener has to respect that.</p>
+
+  <h2 style="border-top:none; padding-top:10px;">How it works today</h2>
+  <p class="mono">Verified in <code>presence.html</code>:</p>
+  <ul class="mono">
+    <li>Tutorial → <code>_tutorialFirstClock = true</code> → <code>currentExercise = 'clock'</code> → <code>startConcentration()</code> (~line 21354).</li>
+    <li>Beginner gets a <strong>stripped UI</strong> — only Begin → wait → Stop (line 7941).</li>
+    <li>Pre-instruction shown up front (line 7953):</li>
+  </ul>
+  <blockquote>"Focus on the tip of the seconds hand. Click Stop the second a thought appears.
+  Nothing must distract you inside or outside of your mind. The moment you are distracted you
+  MUST stop. For this first exercise, as a beginner, you will only go max 60 seconds."</blockquote>
+  <ul class="mono">
+    <li>Experienced path copy (line 7954): <em>"Be pitiless with yourself. No ego here…"</em></li>
+    <li>Begin → 5s countdown → clock runs. Beginner has a <strong>60s auto-stop</strong> (line 8030).</li>
+    <li>On stop: a single <strong>raw second count</strong> (line 8080) → save → reward → post-session overlay.</li>
+  </ul>
+  <div class="panel warn">
+    <strong style="font-style:normal;">The core problem.</strong> The hold is <em>inert</em>
+    (no interaction for up to 60s), the framing is <em>pitiless</em> ("you MUST stop"), and the
+    only output is a bare number that, for a cold beginner (~15–30s), reads as a failing grade.
+    Reordering the surrounding tutorial screens does nothing about the exercise itself.
+  </div>
+  <p class="mono">Full roster (concentration): <strong>Clock, Visualization, Auditory, Thought
+  Control, Asana</strong>. Plus <strong>Awareness</strong> (Tolle witness). Thought Control
+  already has a "tap each intrusion + running count" mechanic.</p>
+
+  <!-- OPTION A -->
+  <h2><span class="opt">Option A</span>Reframe the Clock run as "returns"</h2>
+  <span class="tag effort-med">Effort · Medium</span>
+  <span class="tag" style="background:rgba(126,184,164,.12);color:var(--accent);">Gentle win</span>
+  <p>Keep Clock and the existing 60s structure, but flip <strong>framing + scoring</strong> for
+  the tutorial run only.</p>
+  <h3>Changes</h3>
+  <ul>
+    <li>Replace <code>label60</code> with a returns-based frame:</li>
+  </ul>
+  <blockquote>"Rest your eyes on the tip of the seconds hand. The moment you notice your
+  attention has drifted, gently bring it back — and tap. Each return is one rep."</blockquote>
+  <ul>
+    <li>Add a <strong>tap-anywhere-to-count-returns</strong> interaction during the hold (reuse
+    Thought Control's tap → ripple + count + Akasha mote), counting <em>returns</em> positively.</li>
+    <li>Drop the self-stop-on-failure instruction; let the existing 60s cap run to completion.</li>
+    <li>Result: instead of raw seconds → <strong>"You returned N times — N reps of attention."</strong>
+    Award XP/Akasha off N (floor of 1).</li>
+    <li>Post-session Omnia: "Returning <em>is</em> the exercise. That muscle is what every step builds."</li>
+  </ul>
+  <h3>Why it works</h3>
+  <p>Can't-fail (every return scores), interactive, inoculates against the #1 beginner quit
+  reason ("my mind won't stop"). Stays inside the real Clock exercise.</p>
+  <h3>Risk</h3>
+  <p>The tutorial Clock now teaches the <em>opposite</em> rule from the real Clock met later
+  ("Stop when focus breaks"). Needs a bridge: <em>"That was training wheels — the real Clock
+  asks you to stop on the first thought. Ready?"</em></p>
+
+  <!-- OPTION B -->
+  <h2><span class="opt">Option B</span>Open with Thought Control instead</h2>
+  <span class="tag effort-high">Effort · Med-High</span>
+  <span class="tag" style="background:rgba(120,152,184,.14);color:var(--blue);">Forgiving by nature</span>
+  <p>Swap the tutorial opener from <code>clock</code> to <code>thought</code>.</p>
+  <h3>Changes</h3>
+  <ul>
+    <li>Launch thought-control in a new <code>_tutorialFirstThought</code> mode (60s cap, stripped UI, post-session hook).</li>
+    <li>Reframe first-run copy from "Think of nothing. Tap each intrusion." →</li>
+  </ul>
+  <blockquote>"Let your mind settle. Each time you notice a thought arrive, tap. Noticing it is
+  the skill — not silencing it."</blockquote>
+  <ul>
+    <li>It already <strong>doesn't end on failure</strong> and has tap-to-record + a live count.</li>
+    <li>Result: invert the count's meaning for run #1 only — <strong>"You noticed N thoughts —
+    N moments of awareness."</strong> (Normally more intrusions = worse, so the copy must flip it.)</li>
+    <li>Post-session Omnia explains real Thought Control + that noticing underlies all concentration.</li>
+  </ul>
+  <h3>Why it works</h3>
+  <p>Uses an exercise that's <em>already</em> forgiving (runs to time, counts rather than
+  terminates). The tap interaction is built in.</p>
+  <h3>Risk</h3>
+  <p>"Tap each intrusion" inherently scores weakness; inverting its meaning for one run then
+  flipping it back later can confuse. The tutorial scaffolding (60s cap, stripped UI, post-session)
+  is currently <strong>clock-specific</strong> — you'd add a parallel path or generalize it. More plumbing than A.</p>
+
+  <!-- OPTION C -->
+  <h2><span class="opt">Option C</span>Keep Clock, frame the number as a baseline</h2>
+  <span class="tag effort-low">Effort · Low</span>
+  <span class="tag" style="background:rgba(196,168,212,.14);color:var(--violet);">Honest training</span>
+  <p>Keep all mechanics as-is. Change <strong>only copy + post-session framing</strong>.</p>
+  <h3>Changes</h3>
+  <ul>
+    <li>Soften <code>label60</code> from "pitiless / you MUST stop" to a baseline frame:</li>
+  </ul>
+  <blockquote>"See how long you can rest on the tip of the seconds hand before a thought pulls
+  you away. However long you last is your starting line — we'll grow it together."</blockquote>
+  <ul>
+    <li>Result: present <code>rawSecs</code> as <strong>"Your baseline: N seconds"</strong> with a
+    forward note, not pass/fail.</li>
+    <li>Post-session Omnia: "Most people start near here. In a week this number climbs — that
+    climb is the practice." Tie to the streak/XP they're about to earn.</li>
+  </ul>
+  <h3>Why it works</h3>
+  <p>Honest, on-brand for a rigorous niche; reframes a weak first number as a hook ("watch it
+  grow") instead of a verdict. Zero new interaction risk.</p>
+  <h3>Risk</h3>
+  <p>Still an inert, non-interactive 60s stare. The "win" is purely narrative — does the least
+  to manufacture engagement, leans hardest on an audience that already wants rigor.</p>
+
+  <!-- TABLE -->
+  <h2>At a glance</h2>
+  <table>
+    <thead><tr><th></th><th>Exercise</th><th>Interaction</th><th>Win signal</th><th>Effort</th><th>Best if…</th></tr></thead>
+    <tbody>
+      <tr><td>A</td><td>Clock (reframed)</td><td>Tap = return</td><td>"N returns / reps"</td><td>Medium</td><td>you want a can't-fail interactive win inside Clock</td></tr>
+      <tr><td>B</td><td>Thought Control</td><td>Tap = noticing</td><td>"N moments noticed"</td><td>Med-High</td><td>you want a natively forgiving exercise as the door</td></tr>
+      <tr><td>C</td><td>Clock (as-is)</td><td>None</td><td>"Baseline: N sec"</td><td>Low</td><td>you trust the niche to value honest rigor over a manufactured win</td></tr>
+    </tbody>
+  </table>
+
+  <p class="foot">Cross-cutting note (all three): the current cold-open copy — "Be pitiless with
+  yourself", "you MUST stop" — is the most retention-hostile single element regardless of which
+  option you pick. A and B replace it; C softens it.</p>
+
+</body>
+</html>
