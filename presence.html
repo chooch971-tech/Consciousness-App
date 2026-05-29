@@ -3698,7 +3698,7 @@ body:not(.tut-live) #tutCorgi {
     </div>
     </div><!-- end awarenessPanel -->
 
-    <div id="concentrationPanel" style="display:none; flex:1; flex-direction:column; overflow:hidden; min-height:0;">
+    <div id="concentrationPanel" style="display:none; flex:1; flex-direction:column; overflow-y:auto; -webkit-overflow-scrolling:touch; min-height:0; scrollbar-width:none; -ms-overflow-style:none;">
       <!-- Concentration banner -->
       <div class="screen-banner conc-banner">
         <div class="bn-text">
@@ -3724,8 +3724,8 @@ body:not(.tut-live) #tutCorgi {
           </div>
         </div>
       </div>
-      <!-- Hero — mirrors awareness layout -->
-      <div class="hero" style="flex:0 0 auto; padding-bottom:8px;">
+      <!-- Hero -->
+      <div class="hero" style="padding-bottom:8px;">
         <div class="level-ring conc-ring" id="concRingBtn" style="cursor:pointer;" title="Tap for rank details">
           <svg viewBox="0 0 140 140">
             <circle class="ring-track" cx="70" cy="70" r="60"/>
@@ -3744,8 +3744,8 @@ body:not(.tut-live) #tutCorgi {
           <div class="stat"><div class="stat-val" id="concStatXP" style="color:#d4b08e;">0</div><div class="stat-key">xp</div></div>
         </div>
       </div>
-      <!-- Exercise grid — scrollable area below hero -->
-      <div style="flex:1; overflow-y:auto; -webkit-overflow-scrolling:touch; min-height:0; padding-bottom:80px; scrollbar-width:none; -ms-overflow-style:none;" id="concScrollArea">
+      <!-- Exercise grid -->
+      <div style="padding-bottom:80px;" id="concScrollArea">
         <!-- Level toggle -->
         <div style="display:flex; gap:8px; padding:0 0 16px 0; align-items:center; justify-content:center;">
           <button class="conc-level-tab active" id="concLevelBeginner">Beginner</button>
