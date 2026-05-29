@@ -3242,6 +3242,12 @@ body:not(.tut-live) #tutCorgi {
 .bn-dots > i { position:absolute; border-radius:50%; animation:heroFloat 4.5s ease-in-out infinite; }
 .aw-banner   .bn-dots > i { background:rgba(180,230,210,.48); }
 .conc-banner .bn-dots > i { background:rgba(255,210,150,.45); }
+
+/* tighten layout now that banners carry rank/symbol info */
+.home-symbol { display:none !important; }
+.hero { padding-top:8px; }
+.level-ring { margin-bottom:16px; }
+.home-actions { padding-bottom:24px; }
 </style>
 <script>
   // Set safe-area padding variables before first paint.
@@ -3631,7 +3637,7 @@ body:not(.tut-live) #tutCorgi {
         </div>
       </div>
     </div>
-    <div class="hero" style="flex:1; min-height:0;">
+    <div class="hero" style="flex:0 0 auto;">
       <div class="level-ring" id="awarenessRingBtn" style="cursor:pointer;" title="Tap for rank details">
         <svg viewBox="0 0 140 140">
           <circle class="ring-track" cx="70" cy="70" r="60"/>
@@ -3711,7 +3717,7 @@ body:not(.tut-live) #tutCorgi {
         </div>
       </div>
       <!-- Hero — mirrors awareness layout -->
-      <div class="hero" style="flex:1; min-height:0; padding-bottom:8px;">
+      <div class="hero" style="flex:0 0 auto; padding-bottom:8px;">
         <div class="level-ring conc-ring" id="concRingBtn" style="cursor:pointer;" title="Tap for rank details">
           <svg viewBox="0 0 140 140">
             <circle class="ring-track" cx="70" cy="70" r="60"/>
