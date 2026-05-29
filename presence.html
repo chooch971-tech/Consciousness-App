@@ -12353,7 +12353,7 @@ function initOmniaAnims(){
     }
     // If peek is already showing on the wrong side, snap it to the correct side
     if(current && current.id==='peek' && peekVisible && !peekShooting){
-      var shouldBe=(currentMode==='concentration')?'left':'right';
+      var shouldBe=(currentMode==='concentration')?'right':'left';
       if(peekSide!==shouldBe){
         clearTimeout(peekHideTimer);
         peek.style.transition='none';
@@ -12474,7 +12474,7 @@ function initOmniaAnims(){
       // After firing once, never show again this session
       current.cooldownShown=Infinity;
       current.cooldownClicked=Infinity;
-      var side=(currentMode==='concentration')?'left':'right';
+      var side=(currentMode==='concentration')?'right':'left';
       setPeekSide(side);
       peek.classList.add('peek-in');
       peekVisible=true;
