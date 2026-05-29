@@ -11,24 +11,25 @@
   :root {
     --bg:#07080d; --surface:#0e0f17; --border:rgba(255,255,255,0.07); --border2:rgba(255,255,255,0.12);
     --text:#ddd8ce; --muted:rgba(221,216,206,0.38);
-    --copper:#d4956e; --gold:#d4b08e; --gold-soft:#e8c79c; --cream:#fff8f0; --copper-dim:rgba(212,149,110,0.12);
+    --copper:#d4956e; --gold:#d4b08e; --cream:#fff8f0; --copper-dim:rgba(212,149,110,0.12);
   }
   * { margin:0; padding:0; box-sizing:border-box; }
   html, body { height:100%; background:var(--bg); color:var(--text); font-family:'DM Mono',monospace; overflow-x:hidden; }
   body { display:flex; justify-content:center; }
   .frame { width:100%; max-width:430px; min-height:100vh; background:var(--bg); display:flex; flex-direction:column; padding:0 16px; }
 
-  @keyframes sigilSpin  { to { transform:rotate(360deg); } }
-  @keyframes sigilSpinR { to { transform:rotate(-360deg); } }
-  @keyframes corePulse  { 0%,100%{ transform:scale(.96); opacity:.7; } 50%{ transform:scale(1.06); opacity:1; } }
-  @keyframes glowPulse  { 0%,100%{ opacity:.5; } 50%{ opacity:1; } }
-  @keyframes emberRise  { 0%{ transform:translateY(6px) scale(1); opacity:0; } 20%{ opacity:.9; } 100%{ transform:translateY(-56px) scale(.25); opacity:0; } }
+  @keyframes ripple     { 0%{ transform:scale(.5); opacity:.5; } 70%{ opacity:.1; } 100%{ transform:scale(1.3); opacity:0; } }
+  @keyframes eyePulse   { 0%,100%{ opacity:.6; } 50%{ opacity:1; } }
+  @keyframes glowPulse  { 0%,100%{ opacity:.45; } 50%{ opacity:.95; } }
   @keyframes heroFloat  { 0%,100%{ transform:translateY(0); opacity:.4; } 50%{ transform:translateY(-7px); opacity:.9; } }
+  @keyframes breathe    { 0%,100%{ transform:scale(.82); opacity:.22; } 50%{ transform:scale(1.18); opacity:.75; } }
+  @keyframes breathRng  { 0%,100%{ transform:scale(.9);  opacity:.28; } 50%{ transform:scale(1.07); opacity:.65; } }
+  @keyframes ringGlow   { 0%,100%{ filter:drop-shadow(0 0 4px rgba(212,149,110,.4)); } 50%{ filter:drop-shadow(0 0 10px rgba(212,149,110,.75)); } }
+  @keyframes symPulse   { 0%,100%{ opacity:.7; } 50%{ opacity:1; } }
 
-  /* ════ BANNER — mirrors path-banner brightness ════ */
+  /* ════ BANNER ════ */
   .banner {
     position:relative; flex-shrink:0; height:148px; margin:14px 0 0; border-radius:18px; overflow:hidden;
-    /* richer, more saturated amber — matches path-banner's luminosity */
     background:linear-gradient(145deg, #2a1608 0%, #3a1e0a 40%, #221408 100%);
     display:flex; align-items:center; justify-content:space-between; padding:0 22px;
   }
@@ -37,289 +38,279 @@
   .banner::after  { content:''; position:absolute; inset:0; pointer-events:none;
     background:radial-gradient(ellipse 40% 50% at 68% 48%, rgba(255,210,160,.10) 0%, transparent 60%); }
 
-  /* left text block */
   .banner-text { z-index:3; display:flex; flex-direction:column; gap:3px; }
   .banner-label { font-size:8px; letter-spacing:.28em; text-transform:uppercase; color:rgba(255,190,120,.75); }
-  /* 24px weight-300 — exact match to path-banner-title */
   .banner-title { font-family:'Cormorant Garamond',serif; font-size:24px; font-weight:300; color:var(--cream); line-height:1.1; }
-  .banner-meta  { display:flex; align-items:center; gap:8px; margin-top:6px; }
-  .meta-ring { position:relative; width:26px; height:26px; flex-shrink:0; }
-  .meta-ring svg { width:100%; height:100%; transform:rotate(-90deg); display:block; }
-  .meta-ring b { position:absolute; inset:0; display:flex; align-items:center; justify-content:center;
-    font-family:'Cormorant Garamond',serif; font-size:11px; color:var(--cream); line-height:1; }
-  .banner-sub { font-size:9px; letter-spacing:.1em; color:rgba(255,220,170,.5); }
+  /* sub-line: same spec as path-banner-sub — flame + rank inline, clickable */
+  .banner-sub { display:inline-flex; align-items:center; gap:6px; margin-top:1px;
+    font-size:9px; letter-spacing:.1em; color:rgba(255,200,140,.48); cursor:pointer;
+    padding:3px 6px 3px 0; border-radius:8px; transition:color .18s; align-self:flex-start; }
+  .banner-sub:hover { color:rgba(255,210,160,.75); }
+  .banner-sub svg { flex-shrink:0; animation:symPulse 5s ease-in-out infinite; }
 
-  /* right — sigil + glow */
+  /* right side: ripples + focus eye */
   .banner-right { position:relative; z-index:2; width:148px; height:148px; flex-shrink:0;
     display:flex; align-items:center; justify-content:center; }
   .banner-glow { position:absolute; inset:0; border-radius:50%;
-    background:radial-gradient(circle, rgba(255,180,100,0.28) 0%, rgba(212,149,110,0.10) 40%, transparent 72%);
+    background:radial-gradient(circle, rgba(255,180,100,0.25) 0%, rgba(212,149,110,0.08) 42%, transparent 70%);
     animation:glowPulse 5s ease-in-out infinite; }
-  .sig-outer { animation:sigilSpin  52s linear infinite; transform-origin:74px 74px; }
-  .sig-inner { animation:sigilSpinR 38s linear infinite; transform-origin:74px 74px; }
-  .sig-core  { animation:corePulse  5s  ease-in-out infinite; transform-origin:74px 74px; }
-  .ember { position:absolute; bottom:28px; width:3px; height:3px; border-radius:50%;
-    background:#ffe8c0; box-shadow:0 0 5px #ffe8c0; opacity:0; animation:emberRise linear infinite; }
+  .ripple { position:absolute; left:50%; top:50%; border-radius:50%; border:1px solid rgba(232,199,156,.5);
+    animation:ripple 5s ease-out infinite; }
+  .ripple:nth-child(2){ width:110px; height:110px; margin:-55px 0 0 -55px; }
+  .ripple:nth-child(3){ width:110px; height:110px; margin:-55px 0 0 -55px; animation-delay:1.7s; }
+  .ripple:nth-child(4){ width:110px; height:110px; margin:-55px 0 0 -55px; animation-delay:3.4s; }
+  .focus-eye { position:relative; z-index:3; animation:eyePulse 5s ease-in-out infinite; }
   .dots-bg { position:absolute; inset:0; pointer-events:none; z-index:1; overflow:hidden; }
-  .dots-bg > i { position:absolute; border-radius:50%; background:rgba(255,210,150,.5); animation:heroFloat 4.5s ease-in-out infinite; }
+  .dots-bg > i { position:absolute; border-radius:50%; background:rgba(255,210,150,.45); animation:heroFloat 4.5s ease-in-out infinite; }
 
-  /* ════ CONTROLS ════ */
-  .controls { display:flex; gap:8px; align-items:center; justify-content:center; padding:14px 0 14px; }
-  .seg { display:flex; border:1px solid var(--border); border-radius:20px; overflow:hidden; }
-  .seg button { font-family:'DM Mono',monospace; font-size:10px; letter-spacing:.14em; text-transform:uppercase;
-    background:none; border:none; color:var(--muted); padding:8px 16px; cursor:pointer; transition:all .2s; }
-  .seg button.active { color:var(--gold); background:var(--copper-dim); }
-  .view-toggle { width:34px; height:34px; border:1px solid var(--border); border-radius:10px; background:none; cursor:pointer;
-    color:var(--muted); display:flex; align-items:center; justify-content:center; transition:all .2s; }
-  .view-toggle.active { color:var(--gold); border-color:rgba(212,149,110,.4); background:var(--copper-dim); }
-  .view-toggle svg { width:16px; height:16px; }
+  /* ════ LEVEL RING (like Awareness) ════ */
+  .ring-wrap { display:flex; flex-direction:column; align-items:center; padding:18px 0 6px; }
+  .ring-stack { position:relative; width:190px; height:190px; display:flex; align-items:center; justify-content:center; }
+  .breath-aura { position:absolute; width:190px; height:190px; border-radius:50%;
+    background:radial-gradient(circle, rgba(212,149,110,.18), transparent 64%); animation:breathe 8s ease-in-out infinite; }
+  .breath-ring { position:absolute; width:162px; height:162px; border-radius:50%;
+    border:1px solid rgba(212,149,110,.18); animation:breathRng 8s ease-in-out infinite; }
+  .level-ring { position:relative; width:136px; height:136px; cursor:pointer; z-index:2; animation:ringGlow 5s ease-in-out infinite; }
+  .level-ring svg { width:136px; height:136px; transform:rotate(-90deg); display:block; }
+  .ring-track { fill:none; stroke:rgba(255,255,255,0.09); stroke-width:3; }
+  .ring-prog  { fill:none; stroke:var(--copper); stroke-width:3; stroke-linecap:round;
+    stroke-dasharray:367; stroke-dashoffset:183; /* ~50% */
+    filter:drop-shadow(0 0 4px rgba(212,149,110,.5)); }
+  .ring-center { position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:4px; }
+  .ring-num  { font-family:'Cormorant Garamond',serif; font-size:38px; font-weight:300; color:var(--text); line-height:1; }
+  .ring-sub  { font-size:8px; letter-spacing:.22em; text-transform:uppercase; color:var(--muted); }
 
-  .scroll { flex:1; overflow-y:auto; padding-bottom:40px; }
+  /* ════ OLD CONTROLS (exact match to app) ════ */
+  .conc-controls { display:flex; gap:8px; padding:10px 0 14px; align-items:center; justify-content:center; }
+  .conc-level-tab { font-size:9px; letter-spacing:.15em; text-transform:uppercase; padding:6px 16px;
+    border-radius:20px; border:1px solid var(--border); background:none; color:var(--muted);
+    cursor:pointer; font-family:'DM Mono',monospace; transition:all .2s; }
+  .conc-level-tab.active { background:rgba(212,149,110,.12); border-color:rgba(212,149,110,.4); color:#d4956e; }
+  .conc-view-btn { font-size:15px; background:none; border:1px solid var(--border); border-radius:6px;
+    color:var(--muted); cursor:pointer; padding:3px 8px; line-height:1; flex-shrink:0; transition:color .2s, border-color .2s; }
+  .conc-view-btn.active { color:var(--text); border-color:rgba(255,255,255,.25); }
 
-  /* ════ GRID — square 2-col ════ */
-  .grid { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
-  .card { border:1px solid var(--border); border-radius:14px; padding:18px 16px 14px; background:var(--surface);
-    cursor:pointer; transition:transform .18s, border-color .25s, box-shadow .25s;
-    position:relative; overflow:hidden; aspect-ratio:1; display:flex; flex-direction:column; }
-  .card:hover { transform:translateY(-2px); }
-  .card::before { content:''; position:absolute; top:0; left:0; right:0; height:2px; background:var(--c-accent,var(--copper)); opacity:.5; }
-  .card.full { aspect-ratio:auto; grid-column:1/-1; flex-direction:row; align-items:center; gap:16px; padding:16px 20px; }
-  .card-ico { color:var(--c-name,var(--gold)); flex-shrink:0; margin-bottom:auto; }
-  .card-ico svg { display:block; }
-  .card-name { font-family:'Cormorant Garamond',serif; font-size:18px; color:var(--c-name,var(--gold)); margin-top:auto; }
-  .card-desc { font-size:9px; line-height:1.55; color:var(--muted); margin-top:3px; }
-  .card.full .card-ico { margin-bottom:0; }
-  .card.full .card-name { margin-top:0; }
-  .card.full .lv-body { display:flex; flex-direction:column; }
-  /* recommended glow — no badge, no pips */
-  .card.rec { border-color:rgba(212,149,110,.5);
-    box-shadow:0 0 0 1px rgba(212,149,110,.22), 0 0 24px rgba(212,149,110,.11);
-    background:linear-gradient(160deg, rgba(212,149,110,.07), var(--surface)); }
+  /* ════ OLD EXERCISE GRID (exact match to app CSS) ════ */
+  .scroll { flex:1; overflow-y:auto; padding-bottom:80px; scrollbar-width:none; }
+  .scroll::-webkit-scrollbar { display:none; }
 
-  .clock    { --c-accent:#d4956e; --c-name:#d4b08e; border-color:rgba(212,149,110,.18); }
-  .thought  { --c-accent:#b08ed4; --c-name:#c2a8e0; border-color:rgba(176,142,212,.18); }
-  .visual   { --c-accent:#6e9fd4; --c-name:#8ab8e0; border-color:rgba(110,159,212,.18); }
-  .auditory { --c-accent:#6eb8a4; --c-name:#8eccc0; border-color:rgba(110,184,164,.18); }
-  .asana    { --c-accent:#d4b08e; --c-name:#e0c79c; border-color:rgba(212,176,142,.18); }
-  .mirror   { --c-accent:#a8b0c4; --c-name:#c0c6d6; border-color:rgba(168,176,196,.18); }
-  .coming   { --c-accent:#555; --c-name:rgba(221,216,206,.3); border-color:rgba(255,255,255,.05); opacity:.5; cursor:default; }
-  .coming:hover { transform:none; }
-  .coming-tag { font-size:7.5px; letter-spacing:.18em; text-transform:uppercase;
-    color:var(--muted); margin-top:auto; padding-top:8px; }
+  .exercise-grid { display:grid; grid-template-columns:1fr 1fr; gap:10px; width:100%; margin-bottom:4px; }
+  .exercise-card { background:var(--surface); border:1px solid var(--border); border-radius:12px;
+    padding:16px 14px; cursor:pointer; transition:all .2s; text-align:left;
+    display:flex; flex-direction:column; gap:6px; position:relative; overflow:hidden; }
+  .exercise-card:active { transform:scale(.97); }
+  .exercise-card::before { content:''; position:absolute; top:0; left:0; right:0; height:2px;
+    background:var(--conc-card-accent, #d4956e); opacity:0; transition:opacity .2s; }
+  .exercise-card:hover::before { opacity:.6; }
+  /* SVG icon slot — replaces .exercise-card-icon emoji */
+  .exercise-card-icon { display:flex; align-items:center; margin-bottom:2px; }
+  .exercise-card-name { font-size:10px; letter-spacing:.15em; text-transform:uppercase; color:var(--text); }
+  .exercise-card-desc { font-size:10px; color:var(--muted); line-height:1.5; }
 
-  /* ════ FOCUS VIEW (3-line button) — full-screen single card ════ */
-  .focus-view { display:none; flex-direction:column; min-height:0; }
-  .frame.expanded .grid { display:none; }
-  .frame.expanded .focus-view { display:flex; }
-  .fv-card { flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center;
-    border:1px solid var(--border); border-radius:18px; background:var(--surface); padding:32px 28px 28px;
-    position:relative; overflow:hidden; transition:opacity .22s; cursor:default; }
-  .fv-card::before { content:''; position:absolute; top:0; left:0; right:0; height:3px; background:var(--c-accent,var(--copper)); opacity:.6; }
-  .fv-card.rec { border-color:rgba(212,149,110,.45); box-shadow:0 0 32px rgba(212,149,110,.10); background:linear-gradient(180deg,rgba(212,149,110,.06),var(--surface)); }
-  .fv-ico { color:var(--c-name,var(--gold)); margin-bottom:28px; }
-  .fv-ico svg { display:block; }
-  .fv-name { font-family:'Cormorant Garamond',serif; font-size:34px; font-weight:300; color:var(--c-name,var(--gold)); text-align:center; margin-bottom:14px; }
-  .fv-desc { font-size:12px; line-height:1.7; color:rgba(221,216,206,.55); text-align:center; max-width:260px; }
-  .fv-nav { display:flex; align-items:center; justify-content:space-between; padding:14px 0 0; flex-shrink:0; }
-  .fv-btn { width:44px; height:44px; border-radius:12px; border:1px solid var(--border); background:none; cursor:pointer;
-    color:var(--muted); display:flex; align-items:center; justify-content:center; transition:all .18s; font-size:20px; }
-  .fv-btn:hover { border-color:rgba(212,149,110,.4); color:var(--gold); background:var(--copper-dim); }
-  .fv-dots { display:flex; gap:6px; align-items:center; }
-  .fv-dots i { width:6px; height:6px; border-radius:50%; background:var(--border2); transition:background .2s; }
-  .fv-dots i.on { background:var(--copper); }
+  /* carousel (expanded) mode */
+  .exercise-grid.carousel-mode { display:flex; overflow-x:auto; scroll-snap-type:x mandatory;
+    scrollbar-width:none; -ms-overflow-style:none; -webkit-overflow-scrolling:touch; gap:0; margin-bottom:0; }
+  .exercise-grid.carousel-mode::-webkit-scrollbar { display:none; }
+  .exercise-grid.carousel-mode .exercise-card { min-width:100%; scroll-snap-align:start; padding:32px 22px 28px; gap:14px; border-radius:14px; }
+  .exercise-grid.carousel-mode .exercise-card::before { opacity:.5; }
+  .exercise-grid.carousel-mode .exercise-card-icon { margin-bottom:4px; }
+  .exercise-grid.carousel-mode .exercise-card-icon svg { width:48px; height:48px; }
+  .exercise-grid.carousel-mode .exercise-card-name { font-size:13px; letter-spacing:.18em; }
+  .exercise-grid.carousel-mode .exercise-card-desc { font-size:11px; line-height:1.65; }
 
-  .footnote { text-align:center; font-size:9px; color:var(--muted); letter-spacing:.12em; margin-top:20px; line-height:1.8; }
+  .carousel-dots { display:none; justify-content:center; gap:7px; padding:12px 0 2px; }
+  .carousel-dots.visible { display:flex; }
+  .carousel-dots .dot { width:6px; height:6px; border-radius:50%; background:var(--border2); transition:background .2s; }
+  .carousel-dots .dot.on { background:var(--copper); }
+
+  /* Recommended glow (no badge) */
+  .exercise-card.rec { border-color:rgba(212,149,110,.45);
+    box-shadow:0 0 0 1px rgba(212,149,110,.18), 0 0 20px rgba(212,149,110,.09);
+    background:linear-gradient(160deg, rgba(212,149,110,.06), var(--surface)); }
+
+  .history-btn { width:100%; margin-top:10px; font-size:9px; padding:12px; border-radius:10px;
+    border:1px solid var(--border); background:none; color:var(--muted); cursor:pointer; font-family:'DM Mono',monospace;
+    letter-spacing:.14em; text-transform:uppercase; transition:border-color .2s, color .2s; }
+  .history-btn:hover { border-color:rgba(255,255,255,.2); color:var(--text); }
 </style>
 </head>
 <body>
-<div class="frame" id="frame">
+<div class="frame">
 
   <!-- ════ BANNER ════ -->
   <div class="banner">
     <div class="banner-text">
       <div class="banner-label">The Magician</div>
       <div class="banner-title">Concentration</div>
-      <div class="banner-meta">
-        <div class="meta-ring">
-          <svg viewBox="0 0 26 26">
-            <circle cx="13" cy="13" r="10" fill="none" stroke="rgba(255,255,255,0.12)" stroke-width="2"/>
-            <circle cx="13" cy="13" r="10" fill="none" stroke="#d4956e" stroke-width="2" stroke-linecap="round"
-                    stroke-dasharray="63" stroke-dashoffset="22"/>
-          </svg>
-          <b>7</b>
-        </div>
-        <span class="banner-sub">Adept · 1,240 xp</span>
+      <div class="banner-sub" title="Tap for rank details">
+        <svg width="14" height="14" viewBox="0 0 100 100" fill="none" stroke="rgba(255,200,140,.7)" stroke-width="3" stroke-linecap="round">
+          <path d="M50 8 C50 8 65 28 65 42 C65 52 58 58 58 58 C58 48 52 42 50 38 C48 42 42 48 42 58 C42 58 35 52 35 42 C35 28 50 8 50 8Z"/>
+          <circle cx="50" cy="68" r="5" fill="rgba(255,220,170,.8)" stroke="none"/>
+        </svg>
+        Adept · 1,240 xp
       </div>
     </div>
 
-    <!-- right: sigil -->
     <div class="banner-right">
       <div class="banner-glow"></div>
-      <svg width="148" height="148" viewBox="0 0 148 148" fill="none" style="position:relative;z-index:2;">
-        <g class="sig-outer" stroke="#d4956e" stroke-width="0.9" opacity="0.65">
-          <circle cx="74" cy="74" r="68"/>
-          <g stroke-width="1.1">
-            <line x1="74" y1="5"   x2="74" y2="14"/>  <line x1="74" y1="134" x2="74" y2="143"/>
-            <line x1="5"  y1="74"  x2="14" y2="74"/>   <line x1="134" y1="74" x2="143" y2="74"/>
-            <line x1="27" y1="27"  x2="34" y2="34"/>   <line x1="114" y1="114" x2="121" y2="121"/>
-            <line x1="121" y1="27" x2="114" y2="34"/>  <line x1="27" y1="121" x2="34" y2="114"/>
-          </g>
-        </g>
-        <g class="sig-inner" stroke="#e8c79c" stroke-width="0.65" opacity="0.45">
-          <circle cx="74" cy="74" r="50" stroke-dasharray="2 8"/>
-        </g>
-        <g class="sig-core" stroke="#f0d8a8" stroke-width="2" stroke-linejoin="round">
-          <path d="M74 42 L104 92 L44 92 Z"/>
-          <line x1="74" y1="92"  x2="74" y2="116"/>
-          <line x1="60" y1="104" x2="88" y2="104"/>
-          <circle cx="74" cy="42" r="3" fill="#fff8f0" stroke="none"/>
-        </g>
+      <div class="ripple"></div><div class="ripple"></div><div class="ripple"></div>
+      <!-- focus eye — single-pointed gaze -->
+      <svg class="focus-eye" width="68" height="68" viewBox="0 0 100 100" fill="none">
+        <path d="M10 50 Q50 10 90 50 Q50 90 10 50Z" stroke="#fff0dc" stroke-width="2.2" opacity="0.9"/>
+        <circle cx="50" cy="50" r="15" stroke="#fff0dc" stroke-width="1.8"/>
+        <circle cx="50" cy="50" r="6" fill="#fff0dc" opacity="0.9"/>
+        <line x1="50" y1="12" x2="50" y2="4" stroke="#fff0dc" stroke-width="1.2" opacity="0.5"/>
+        <line x1="50" y1="88" x2="50" y2="96" stroke="#fff0dc" stroke-width="1.2" opacity="0.5"/>
       </svg>
-      <div class="ember" style="left:50%; animation-duration:3.8s; animation-delay:0s;"></div>
-      <div class="ember" style="left:45%; animation-duration:5.0s; animation-delay:1.5s;"></div>
-      <div class="ember" style="left:55%; animation-duration:4.3s; animation-delay:2.8s;"></div>
     </div>
 
     <div class="dots-bg">
-      <i style="width:5px;height:5px;left:28%;top:26%;animation-delay:.3s;"></i>
-      <i style="width:4px;height:4px;left:34%;top:70%;animation-delay:1.8s;"></i>
-      <i style="width:3px;height:3px;left:42%;top:50%;animation-delay:.9s;"></i>
+      <i style="width:4px;height:4px;left:28%;top:28%;animation-delay:.3s;"></i>
+      <i style="width:3px;height:3px;left:36%;top:68%;animation-delay:1.8s;"></i>
+    </div>
+  </div>
+
+  <!-- ════ LEVEL RING ════ -->
+  <div class="ring-wrap">
+    <div class="ring-stack">
+      <div class="breath-aura"></div>
+      <div class="breath-ring"></div>
+      <div class="level-ring" title="Tap for rank details">
+        <svg viewBox="0 0 136 136">
+          <circle class="ring-track" cx="68" cy="68" r="58"/>
+          <circle class="ring-prog"  cx="68" cy="68" r="58"/>
+        </svg>
+        <div class="ring-center">
+          <div class="ring-num">7</div>
+          <div class="ring-sub">Adept</div>
+        </div>
+      </div>
     </div>
   </div>
 
   <!-- ════ CONTROLS ════ -->
-  <div class="controls">
-    <div class="seg">
-      <button class="active" onclick="setLevel('beginner',this)">Beginner</button>
-      <button onclick="setLevel('advanced',this)">Advanced</button>
-    </div>
-    <button class="view-toggle" id="viewBtn" onclick="toggleView(this)" title="Focus view">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6">
-        <rect x="3" y="4" width="18" height="4" rx="1"/><rect x="3" y="10" width="18" height="4" rx="1"/><rect x="3" y="16" width="18" height="4" rx="1"/>
-      </svg>
-    </button>
+  <div class="conc-controls">
+    <button class="conc-level-tab active" id="tabBeg" onclick="setLevel('beginner')">Beginner</button>
+    <button class="conc-level-tab"        id="tabAdv" onclick="setLevel('advanced')">Advanced</button>
+    <div style="width:1px;height:14px;background:var(--border);margin:0 2px;flex-shrink:0;"></div>
+    <button class="conc-view-btn" id="viewBtn" onclick="toggleCarousel(this)" title="Expanded view">⊞</button>
   </div>
 
-  <!-- ════ SCROLL AREA ════ -->
-  <div class="scroll" id="cardsRoot"></div>
+  <!-- ════ GRIDS ════ -->
+  <div class="scroll">
+    <div id="beginnerWrap">
+      <div class="carousel-dots" id="begDots"></div>
+      <div class="exercise-grid" id="beginnerGrid">
+
+        <div class="exercise-card rec" data-exercise="clock" style="--conc-card-accent:#d4956e; border-color:rgba(212,149,110,.2); background:rgba(212,149,110,.04);">
+          <div class="exercise-card-icon"><svg viewBox="0 0 32 32" width="24" height="24" fill="none" stroke="#d4b08e" stroke-width="1.5" stroke-linecap="round"><circle cx="16" cy="16" r="12"/><path d="M16 9v7l5 3"/></svg></div>
+          <div class="exercise-card-name" style="color:#d4b08e;">Clock</div>
+          <div class="exercise-card-desc">Follow the seconds hand. Stop when focus breaks.</div>
+        </div>
+
+        <div class="exercise-card" data-exercise="visual" style="--conc-card-accent:#6e9fd4; border-color:rgba(110,159,212,.2); background:rgba(110,159,212,.04);">
+          <div class="exercise-card-icon"><svg viewBox="0 0 32 32" width="24" height="24" fill="none" stroke="#8ab8e0" stroke-width="1.5" stroke-linecap="round"><path d="M3 16 Q16 5 29 16 Q16 27 3 16Z"/><circle cx="16" cy="16" r="4.5"/><circle cx="16" cy="16" r="1.4" fill="#8ab8e0" stroke="none"/></svg></div>
+          <div class="exercise-card-name" style="color:#8ab8e0;">Visualization</div>
+          <div class="exercise-card-desc">Hold a mental image with eyes closed.</div>
+        </div>
+
+        <div class="exercise-card" data-exercise="auditory" style="--conc-card-accent:#6eb8a4; border-color:rgba(110,184,164,.2); background:rgba(110,184,164,.04);">
+          <div class="exercise-card-icon"><svg viewBox="0 0 32 32" width="24" height="24" fill="none" stroke="#8eccc0" stroke-width="1.5" stroke-linecap="round"><circle cx="11" cy="16" r="2.6" fill="#8eccc0" stroke="none"/><path d="M17 11 Q21 16 17 21"/><path d="M21 8 Q27 16 21 24"/></svg></div>
+          <div class="exercise-card-name" style="color:#8eccc0;">Auditory</div>
+          <div class="exercise-card-desc">Listen to a sound with complete attention.</div>
+        </div>
+
+        <div class="exercise-card rec" data-exercise="thought" style="--conc-card-accent:#7898b8; border-color:rgba(120,152,184,.2); background:rgba(120,152,184,.04);">
+          <div class="exercise-card-icon"><svg viewBox="0 0 32 32" width="24" height="24" fill="none" stroke="#98b4cc" stroke-width="1.5"><circle cx="16" cy="16" r="12"/><circle cx="16" cy="16" r="6"/><circle cx="16" cy="16" r="1.8" fill="#98b4cc" stroke="none"/></svg></div>
+          <div class="exercise-card-name" style="color:#98b4cc;">Thought Control</div>
+          <div class="exercise-card-desc">Think of nothing. Tap each intrusion.</div>
+        </div>
+
+        <div class="exercise-card" data-exercise="asana" style="--conc-card-accent:#c47878; border-color:rgba(196,120,120,.2); background:rgba(196,120,120,.04);">
+          <div class="exercise-card-icon"><svg viewBox="0 0 32 32" width="24" height="24" fill="none" stroke="#d49898" stroke-width="1.5" stroke-linejoin="round"><circle cx="16" cy="8" r="3.5"/><path d="M16 13 L7 26 L25 26 Z"/></svg></div>
+          <div class="exercise-card-name" style="color:#d49898;">Asana</div>
+          <div class="exercise-card-desc">Sit completely motionless. Hold as long as possible.</div>
+        </div>
+
+        <div class="exercise-card" data-exercise="soulmirror" style="--conc-card-accent:#a47eb8; border-color:rgba(164,126,184,.2); background:rgba(164,126,184,.04);">
+          <div class="exercise-card-icon"><svg viewBox="0 0 32 32" width="24" height="24" fill="none" stroke="#c4a8d4" stroke-width="1.5" stroke-linecap="round"><ellipse cx="16" cy="15" rx="8" ry="11"/><line x1="16" y1="26" x2="16" y2="30"/><line x1="12" y1="30" x2="20" y2="30"/></svg></div>
+          <div class="exercise-card-name" style="color:#c4a8d4;">Soul Mirror</div>
+          <div class="exercise-card-desc">Track traits. Pore breathing.</div>
+        </div>
+
+      </div>
+    </div>
+
+    <div id="advancedWrap" style="display:none;">
+      <div class="carousel-dots" id="advDots"></div>
+      <div class="exercise-grid" id="advancedGrid">
+
+        <div class="exercise-card" data-exercise="multisense" style="--conc-card-accent:#d4b86e; border-color:rgba(212,184,110,.2); background:rgba(212,184,110,.04);">
+          <div class="exercise-card-icon"><svg viewBox="0 0 32 32" width="24" height="24" fill="none" stroke="#d4c88e" stroke-width="1.5" stroke-linecap="round"><path d="M3 16 Q16 5 29 16 Q16 27 3 16Z"/><circle cx="16" cy="16" r="3.5"/><path d="M22 11 Q26 16 22 21"/></svg></div>
+          <div class="exercise-card-name" style="color:#d4c88e;">Multi-Sense</div>
+          <div class="exercise-card-desc">Hold an object using sight, sound, texture, and weight simultaneously.</div>
+        </div>
+
+        <div class="exercise-card" data-exercise="allangles" style="--conc-card-accent:#88b87e; border-color:rgba(136,184,126,.2); background:rgba(136,184,126,.04);">
+          <div class="exercise-card-icon"><svg viewBox="0 0 32 32" width="24" height="24" fill="none" stroke="#a8c89e" stroke-width="1.5" stroke-linejoin="round"><rect x="10" y="10" width="12" height="12"/><line x1="16" y1="4" x2="16" y2="10"/><line x1="16" y1="22" x2="16" y2="28"/><line x1="4" y1="16" x2="10" y2="16"/><line x1="22" y1="16" x2="28" y2="16"/></svg></div>
+          <div class="exercise-card-name" style="color:#a8c89e;">All Angles</div>
+          <div class="exercise-card-desc">Rotate an object through every perspective. Mouni Sadhu's method.</div>
+        </div>
+
+        <div class="exercise-card" style="opacity:.4; pointer-events:none; border-color:rgba(255,255,255,.08);">
+          <div class="exercise-card-icon"><svg viewBox="0 0 32 32" width="24" height="24" fill="none" stroke="rgba(221,216,206,.3)" stroke-width="1.5"><path d="M16 5 L18 12 L25 12 L19.5 16.5 L21.5 23.5 L16 19 L10.5 23.5 L12.5 16.5 L7 12 L14 12 Z"/></svg></div>
+          <div class="exercise-card-name">Coming Soon</div>
+          <div class="exercise-card-desc">More advanced exercises in a future release.</div>
+        </div>
+
+      </div>
+    </div>
+
+    <button class="history-btn">View All Concentration History</button>
+  </div>
+
 </div>
-
 <script>
-var ICONS = {
-  clock:    '<svg viewBox="0 0 32 32" width="26" height="26" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><circle cx="16" cy="16" r="12"/><path d="M16 9v7l5 3"/></svg>',
-  thought:  '<svg viewBox="0 0 32 32" width="26" height="26" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="16" cy="16" r="12"/><circle cx="16" cy="16" r="6"/><circle cx="16" cy="16" r="1.8" fill="currentColor" stroke="none"/></svg>',
-  visual:   '<svg viewBox="0 0 32 32" width="26" height="26" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M3 16 Q16 5 29 16 Q16 27 3 16Z"/><circle cx="16" cy="16" r="4.5"/><circle cx="16" cy="16" r="1.4" fill="currentColor" stroke="none"/></svg>',
-  auditory: '<svg viewBox="0 0 32 32" width="26" height="26" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><circle cx="11" cy="16" r="2.6" fill="currentColor" stroke="none"/><path d="M17 11 Q21 16 17 21"/><path d="M21 8 Q27 16 21 24"/></svg>',
-  asana:    '<svg viewBox="0 0 32 32" width="26" height="26" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"><circle cx="16" cy="8" r="3.5"/><path d="M16 13 L7 26 L25 26 Z"/></svg>',
-  mirror:   '<svg viewBox="0 0 32 32" width="26" height="26" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><ellipse cx="16" cy="15" rx="8" ry="11"/><line x1="16" y1="26" x2="16" y2="30"/><line x1="12" y1="30" x2="20" y2="30"/></svg>',
-  multi:    '<svg viewBox="0 0 32 32" width="26" height="26" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M3 16 Q16 5 29 16 Q16 27 3 16Z"/><circle cx="16" cy="16" r="3.5"/><path d="M22 11 Q26 16 22 21"/></svg>',
-  angles:   '<svg viewBox="0 0 32 32" width="26" height="26" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"><rect x="10" y="10" width="12" height="12"/><line x1="16" y1="4" x2="16" y2="10"/><line x1="16" y1="22" x2="16" y2="28"/><line x1="4" y1="16" x2="10" y2="16"/><line x1="22" y1="16" x2="28" y2="16"/></svg>'
-};
-
-// [id, name, desc, recommended, isFull, isAdvanced, isComing]
-var SETS = {
-  beginner:[
-    ['clock',   'Clock',          'Follow the seconds hand. Stop when focus breaks.',    true,  false, false, false],
-    ['thought', 'Thought Control','Hold one thought. Tap when the mind wanders.',         true,  false, false, false],
-    ['visual',  'Visualization',  'Hold a mental image with the eyes closed.',            false, false, false, false],
-    ['auditory','Auditory',       'Sustain a single sound within the mind.',              false, false, false, false],
-    ['asana',   'Asana',          'Sit in perfect stillness. Build the body of will.',    false, false, false, false],
-    ['mirror',  'Soul Mirror',    'Reflect. Make one honest edit today.',                 false, true,  false, false]
-  ],
-  advanced:[
-    ['multi',   'Multi-Sense',    'Hold an image and a sound simultaneously. Two gates, one mind.',  false, false, true, false],
-    ['angles',  'All Angles',     'Rotate an object through all six perspectives without losing it.', false, false, true, false],
-    ['coming',  'Coming Soon',    'More advanced exercises are on their way.',              false, false, true, true]
-  ]
-};
-
+var carouselOn = false;
 var curLevel = 'beginner';
-var fvIdx = 0;
 
-function bigIcon(id) {
-  var i = ICONS[id] || ICONS.clock;
-  return i.replace(/width="26" height="26"/, 'width="52" height="52"');
+function setLevel(lv) {
+  curLevel = lv;
+  document.getElementById('tabBeg').classList.toggle('active', lv === 'beginner');
+  document.getElementById('tabAdv').classList.toggle('active', lv === 'advanced');
+  document.getElementById('beginnerWrap').style.display  = lv === 'beginner' ? '' : 'none';
+  document.getElementById('advancedWrap').style.display  = lv === 'advanced' ? '' : 'none';
+  if (carouselOn) applyCarousel();
 }
 
-function gridCardHTML(ex) {
-  var cls = 'card ' + ex[0] + (ex[1] ? ' rec' : '') + (ex[4] ? ' full' : '') + (ex[6] ? ' coming' : '');
-  var ico = ICONS[ex[0]] || ICONS.clock;
-  if (ex[4]) { // full-width (Soul Mirror)
-    return '<div class="' + cls + '"><div class="card-ico">' + ico + '</div>'
-      + '<div class="lv-body"><div class="card-name">' + ex[1] + '</div><div class="card-desc">' + ex[2] + '</div></div></div>';
-  }
-  if (ex[6]) { // coming soon
-    return '<div class="' + cls + '"><div class="card-ico">' + ico + '</div>'
-      + '<div class="card-name">' + ex[1] + '</div>'
-      + '<div class="coming-tag">Coming Soon</div></div>';
-  }
-  return '<div class="' + cls + '"><div class="card-ico">' + ico + '</div>'
-    + '<div class="card-name">' + ex[1] + '</div>'
-    + '<div class="card-desc">' + ex[2] + '</div></div>';
-}
-
-function renderFocusCard() {
-  var set = SETS[curLevel];
-  var ex = set[fvIdx];
-  var cls = 'fv-card ' + ex[0] + (ex[1] ? ' rec' : '') + (ex[6] ? ' coming' : '');
-  var dotsHTML = set.map(function(_, i) { return '<i' + (i === fvIdx ? ' class="on"' : '') + '></i>'; }).join('');
-  return '<div class="focus-view" id="focusView">'
-    + '<div class="' + cls + '">'
-    + '<div class="fv-ico">' + bigIcon(ex[0]) + '</div>'
-    + '<div class="fv-name">' + ex[1] + '</div>'
-    + '<div class="fv-desc">' + ex[2] + '</div>'
-    + (ex[6] ? '<div class="coming-tag" style="margin-top:18px;">Coming Soon</div>' : '')
-    + '</div>'
-    + '<div class="fv-nav">'
-    + '<button class="fv-btn" onclick="fvNav(-1)">&#8592;</button>'
-    + '<div class="fv-dots">' + dotsHTML + '</div>'
-    + '<button class="fv-btn" onclick="fvNav(1)">&#8594;</button>'
-    + '</div></div>';
-}
-
-function fvNav(dir) {
-  var set = SETS[curLevel];
-  fvIdx = (fvIdx + dir + set.length) % set.length;
-  var fv = document.getElementById('focusView');
-  if (fv) fv.outerHTML = renderFocusCard();
-  document.getElementById('focusView').id = 'focusView'; // reattach
-  // re-render properly
-  renderAll();
-}
-
-function renderAll() {
-  var set = SETS[curLevel];
-  var gridHTML = '<div class="grid">' + set.map(gridCardHTML).join('') + '</div>';
-  var fvHTML = renderFocusCard();
-  document.getElementById('cardsRoot').innerHTML = gridHTML + fvHTML
-    + '<div class="footnote">Each gate forges a faculty of the magician.</div>';
-  // re-wire swipe on focus card
-  wireSwipe();
-}
-
-function wireSwipe() {
-  var fv = document.querySelector('.fv-card');
-  if (!fv) return;
-  var tx = 0;
-  fv.addEventListener('touchstart', function(e){ tx = e.touches[0].clientX; }, {passive:true});
-  fv.addEventListener('touchend', function(e){
-    var dx = e.changedTouches[0].clientX - tx;
-    if (Math.abs(dx) > 40) fvNav(dx < 0 ? 1 : -1);
+function applyCarousel() {
+  var grids = [document.getElementById('beginnerGrid'), document.getElementById('advancedGrid')];
+  var dotContainers = [document.getElementById('begDots'), document.getElementById('advDots')];
+  grids.forEach(function(grid, gi) {
+    if (!grid) return;
+    var cards = grid.querySelectorAll('.exercise-card');
+    var dotsEl = dotContainers[gi];
+    if (carouselOn) {
+      grid.classList.add('carousel-mode');
+      dotsEl.innerHTML = Array.from(cards).map(function(_, i){ return '<span class="dot' + (i===0?' on':'') + '"></span>'; }).join('');
+      dotsEl.classList.add('visible');
+      grid.addEventListener('scroll', function() {
+        var idx = Math.round(grid.scrollLeft / grid.offsetWidth);
+        dotsEl.querySelectorAll('.dot').forEach(function(d,i){ d.classList.toggle('on', i===idx); });
+      });
+    } else {
+      grid.classList.remove('carousel-mode');
+      dotsEl.innerHTML = '';
+      dotsEl.classList.remove('visible');
+    }
   });
 }
 
-function setLevel(lv, btn) {
-  curLevel = lv; fvIdx = 0;
-  document.querySelectorAll('.seg button').forEach(function(b){ b.classList.toggle('active', b === btn); });
-  renderAll();
+function toggleCarousel(btn) {
+  carouselOn = !carouselOn;
+  btn.classList.toggle('active', carouselOn);
+  applyCarousel();
 }
-
-function toggleView(btn) {
-  document.getElementById('frame').classList.toggle('expanded');
-  btn.classList.toggle('active');
-}
-
-renderAll();
 </script>
 </body>
 </html>
