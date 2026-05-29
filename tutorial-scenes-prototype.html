@@ -1,0 +1,398 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Tutorial Scenes — Playable Prototype</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300;1,400&family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#07080d; --surface:#0e0f17;
+    --border:rgba(255,255,255,.07); --border2:rgba(255,255,255,.12);
+    --text:#e8e0d0; --muted:#8a8678;
+    --accent:#7eb8a4; --copper:#d4956e; --violet:#c4a8d4; --blue:#7898b8;
+  }
+  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
+  html,body{margin:0; height:100%;}
+  body{
+    background:#000; color:var(--text); font-family:'Cormorant Garamond',serif;
+    display:flex; align-items:center; justify-content:center; min-height:100dvh; padding:18px;
+    -webkit-font-smoothing:antialiased;
+  }
+  /* phone frame */
+  .phone{
+    position:relative; width:100%; max-width:400px; height:min(840px, 94dvh);
+    background:
+      radial-gradient(ellipse 70% 45% at 70% 0%, rgba(196,168,212,.07), transparent 60%),
+      radial-gradient(ellipse 60% 40% at 12% 100%, rgba(126,184,164,.06), transparent 60%),
+      var(--bg);
+    border:1px solid var(--border2); border-radius:34px; overflow:hidden;
+    box-shadow:0 30px 90px rgba(0,0,0,.7), inset 0 0 0 1px rgba(255,255,255,.03);
+  }
+  .screen{position:absolute; inset:0; display:none; flex-direction:column; padding:30px 26px 26px;
+    opacity:0; transition:opacity .45s ease;}
+  .screen.on{display:flex; opacity:1;}
+
+  .kicker{font-family:'DM Mono',monospace; font-size:9px; letter-spacing:.28em;
+    text-transform:uppercase; color:var(--accent); opacity:.8; text-align:center;}
+  .title{font-weight:300; font-size:30px; line-height:1.15; text-align:center; margin:6px 0;}
+  .sub{color:var(--muted); font-size:16px; font-style:italic; text-align:center; line-height:1.6;}
+  .mono-sm{font-family:'DM Mono',monospace; font-size:9px; letter-spacing:.2em;
+    text-transform:uppercase; color:var(--muted);}
+
+  /* ── menu ── */
+  #menu{justify-content:center; gap:0;}
+  .menu-card{display:block; width:100%; text-align:left; background:var(--surface);
+    border:1px solid var(--border); border-radius:16px; padding:18px 20px; margin-bottom:14px;
+    cursor:pointer; color:var(--text); font-family:inherit; transition:border-color .2s, transform .1s;}
+  .menu-card:active{transform:scale(.985);}
+  .menu-card .opt{font-family:'DM Mono',monospace; font-size:9px; letter-spacing:.22em;
+    text-transform:uppercase; color:var(--copper); margin-bottom:6px;}
+  .menu-card .nm{font-size:22px; font-weight:300; line-height:1.2;}
+  .menu-card .ds{color:var(--muted); font-size:14px; font-style:italic; margin-top:4px;}
+  .menu-card.A{border-left:3px solid var(--copper);}
+  .menu-card.B{border-left:3px solid var(--blue);}
+  .menu-card.C{border-left:3px solid var(--violet);}
+
+  /* ── Omnia crystal ── */
+  .crystal{width:62px; height:auto; display:block; margin:0 auto;
+    filter:drop-shadow(0 0 12px rgba(184,234,255,.5)) drop-shadow(0 0 4px rgba(184,234,255,.6));
+    animation:float 5s ease-in-out infinite; transform-origin:bottom center;}
+  .crystal.sm{width:40px;}
+  @keyframes float{0%,100%{transform:translateY(0) rotate(-1.5deg);}50%{transform:translateY(-9px) rotate(1.5deg);}}
+
+  .spacer{flex:1;}
+  .center{flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center;}
+
+  /* ── buttons ── */
+  .btn{width:100%; padding:15px; border-radius:11px; font-family:'DM Mono',monospace;
+    font-size:11px; letter-spacing:.2em; text-transform:uppercase; cursor:pointer; border:1px solid;
+    transition:transform .1s, background .2s;}
+  .btn:active{transform:scale(.98);}
+  .btn.primary{border-color:rgba(126,184,164,.4); background:rgba(126,184,164,.1); color:var(--accent);}
+  .btn.copper{border-color:rgba(212,149,110,.4); background:rgba(212,149,110,.1); color:var(--copper);}
+  .btn.ghost{border-color:var(--border2); background:transparent; color:var(--muted); margin-top:10px;}
+
+  /* ── clock ── */
+  .stage{flex:1; position:relative; display:flex; align-items:center; justify-content:center;
+    overflow:hidden; touch-action:manipulation;}
+  .clock{width:230px; height:230px; position:relative;}
+  .clock svg{width:100%; height:100%; overflow:visible;}
+  .hand{transform-box:fill-box; transform-origin:bottom center;}
+
+  /* tap ripple + mote */
+  .ripple{position:absolute; border:1.5px solid var(--accent); border-radius:50%;
+    width:14px; height:14px; margin:-7px 0 0 -7px; pointer-events:none; opacity:.9;
+    animation:ripple .7s ease-out forwards;}
+  @keyframes ripple{to{width:120px; height:120px; margin:-60px 0 0 -60px; opacity:0;}}
+  .mote{position:absolute; width:9px; height:9px; border-radius:50%; pointer-events:none;
+    background:radial-gradient(circle at 32% 28%,#f4ffff,#b8eaff 40%,var(--accent) 80%);
+    box-shadow:0 0 8px rgba(126,184,164,.8); animation:mote 1.3s ease-out forwards;}
+  @keyframes mote{0%{opacity:1; transform:translateY(0) scale(1);}
+    100%{opacity:0; transform:translateY(-90px) scale(.4);}}
+
+  /* counter */
+  .counter{position:absolute; top:14px; left:0; right:0; text-align:center;}
+  .counter .n{font-size:54px; font-weight:300; line-height:1; transition:transform .15s;}
+  .counter .n.pop{transform:scale(1.25);}
+  .counter .lbl{font-family:'DM Mono',monospace; font-size:9px; letter-spacing:.22em;
+    text-transform:uppercase; color:var(--muted); margin-top:4px;}
+  .timer{position:absolute; bottom:12px; left:0; right:0; text-align:center;
+    font-family:'DM Mono',monospace; font-size:10px; letter-spacing:.18em; color:var(--muted); opacity:.6;}
+
+  .instr{font-size:17px; font-style:italic; color:var(--text); text-align:center; line-height:1.65;
+    padding:0 6px; min-height:96px; display:flex; align-items:center; justify-content:center;}
+  .countdown{position:absolute; inset:0; display:flex; align-items:center; justify-content:center;
+    font-size:120px; font-weight:300; color:var(--accent); pointer-events:none;}
+
+  /* thought void (B) */
+  .void{width:200px; height:200px; border-radius:50%; position:relative;
+    background:radial-gradient(circle at 50% 45%, rgba(120,152,184,.18), rgba(120,152,184,.02) 70%);
+    border:1px solid rgba(120,152,184,.2); display:flex; align-items:center; justify-content:center;
+    animation:breathe 6s ease-in-out infinite;}
+  @keyframes breathe{0%,100%{transform:scale(.96); opacity:.85;}50%{transform:scale(1.04); opacity:1;}}
+  .void .dot{width:7px; height:7px; border-radius:50%; background:var(--blue); opacity:.6;
+    box-shadow:0 0 14px var(--blue);}
+  .thoughtword{position:absolute; font-family:'Cormorant Garamond',serif; font-style:italic;
+    font-size:15px; color:var(--blue); pointer-events:none; white-space:nowrap;
+    animation:tw 1.6s ease-out forwards;}
+  @keyframes tw{0%{opacity:0; transform:translateY(8px);}25%{opacity:.9;}100%{opacity:0; transform:translateY(-46px);}}
+
+  /* ── result ── */
+  .result-num{font-size:88px; font-weight:300; line-height:1; text-align:center;}
+  .result-cap{font-size:18px; font-style:italic; color:var(--text); text-align:center; line-height:1.6; margin-top:8px;}
+  .reward{display:flex; gap:10px; justify-content:center; margin:22px 0 4px;}
+  .chip{font-family:'DM Mono',monospace; font-size:11px; letter-spacing:.1em; padding:9px 16px;
+    border-radius:24px; border:1px solid;}
+  .chip.xp{border-color:rgba(212,180,100,.35); background:rgba(212,180,100,.08); color:#e6cd92;}
+  .chip.ak{border-color:rgba(126,184,164,.35); background:rgba(126,184,164,.08); color:var(--accent);}
+  .omnia-line{margin-top:20px; padding:14px 16px; border-left:2px solid rgba(126,184,164,.4);
+    background:rgba(126,184,164,.04); border-radius:0 12px 12px 0; font-style:italic;
+    font-size:15px; line-height:1.6; color:var(--text);}
+  .badge{position:absolute; top:18px; right:20px; font-family:'DM Mono',monospace; font-size:8px;
+    letter-spacing:.2em; text-transform:uppercase; color:var(--muted); opacity:.55;}
+  .fade-in{animation:fadein .8s ease both;}
+  @keyframes fadein{from{opacity:0;}to{opacity:1;}}
+</style>
+</head>
+<body>
+<div class="phone" id="phone">
+
+  <!-- MENU -->
+  <div class="screen on" id="menu">
+    <div class="kicker">Presence · Playable Prototype</div>
+    <div class="title" style="font-size:26px; margin-bottom:4px;">First Exercise — 3 Scenes</div>
+    <div class="sub" style="margin-bottom:26px;">Tap one to play it as the tutorial would run it.</div>
+    <button class="menu-card A" onclick="launch('A')">
+      <div class="opt">Option A · Gentle win</div>
+      <div class="nm">Clock — count your returns</div>
+      <div class="ds">Tap each time you catch your attention drifting. Every return scores.</div>
+    </button>
+    <button class="menu-card B" onclick="launch('B')">
+      <div class="opt">Option B · Forgiving by nature</div>
+      <div class="nm">Thought Control — notice each thought</div>
+      <div class="ds">Let the mind settle; tap each thought as it arrives.</div>
+    </button>
+    <button class="menu-card C" onclick="launch('C')">
+      <div class="opt">Option C · Honest baseline</div>
+      <div class="nm">Clock — find your starting line</div>
+      <div class="ds">Hold focus on the seconds hand. However long you last is your baseline.</div>
+    </button>
+  </div>
+
+  <!-- INTRO -->
+  <div class="screen" id="intro">
+    <div class="badge" id="introBadge"></div>
+    <div class="spacer"></div>
+    <div id="crystalHolder"></div>
+    <div class="kicker" style="margin-top:16px;">Omnia</div>
+    <div class="title" id="introTitle"></div>
+    <div class="instr" id="introInstr" style="min-height:auto; margin:6px 0 0;"></div>
+    <div class="spacer"></div>
+    <button class="btn primary" id="introBtn" onclick="beginScene()">Begin</button>
+    <button class="btn ghost" onclick="toMenu()">← Back to scenes</button>
+  </div>
+
+  <!-- ACTIVE -->
+  <div class="screen" id="active">
+    <div class="badge" id="activeBadge"></div>
+    <div class="stage" id="stage" onclick="stageTap(event)">
+      <div class="counter" id="counter" style="display:none;">
+        <div class="n" id="countN">0</div>
+        <div class="lbl" id="countLbl">returns</div>
+      </div>
+      <div id="stageInner"></div>
+      <div class="timer" id="timer">0:00</div>
+      <div class="countdown" id="countdown" style="display:none;"></div>
+    </div>
+    <div class="instr" id="activeInstr"></div>
+    <button class="btn copper" id="stopBtn" onclick="stopScene()">Done</button>
+  </div>
+
+  <!-- RESULT -->
+  <div class="screen" id="result">
+    <div class="badge" id="resultBadge"></div>
+    <div class="spacer"></div>
+    <div class="kicker">Session complete</div>
+    <div class="result-num fade-in" id="resultNum"></div>
+    <div class="result-cap fade-in" id="resultCap"></div>
+    <div class="reward fade-in">
+      <span class="chip xp" id="chipXp"></span>
+      <span class="chip ak" id="chipAk"></span>
+    </div>
+    <div class="omnia-line fade-in" id="omniaLine"></div>
+    <div class="spacer"></div>
+    <button class="btn primary" onclick="toMenu()">Try another scene →</button>
+  </div>
+
+</div>
+
+<script>
+// Simplified Omnia crystal (faceted, glowing)
+var CRYSTAL = '<svg class="crystal" viewBox="0 0 80 130" aria-hidden="true">'
+  + '<defs>'
+  + '<linearGradient id="g1" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#ddf0ff" stop-opacity=".92"/><stop offset="1" stop-color="#6ab8d8" stop-opacity=".48"/></linearGradient>'
+  + '<linearGradient id="g2" x1="1" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff" stop-opacity=".78"/><stop offset="1" stop-color="#4a9ec0" stop-opacity=".22"/></linearGradient>'
+  + '<radialGradient id="g3" cx=".5" cy=".38" r=".58"><stop offset="0" stop-color="#b8eaff" stop-opacity=".42"/><stop offset="1" stop-color="#2878a0" stop-opacity="0"/></radialGradient>'
+  + '</defs>'
+  + '<ellipse cx="40" cy="68" rx="28" ry="48" fill="url(#g3)" opacity=".62"/>'
+  + '<polygon points="40,3 54,14 40,25 26,14" fill="url(#g1)" stroke="#90cce8" stroke-width=".55"/>'
+  + '<polygon points="40,3 54,14 40,13" fill="#ceeaff" opacity=".72"/>'
+  + '<polygon points="40,25 60,36 64,58 40,70 16,58 20,36" fill="url(#g1)" stroke="#88c4e0" stroke-width=".55"/>'
+  + '<polygon points="40,25 60,36 40,44" fill="#d4ecff" opacity=".52"/>'
+  + '<polygon points="40,25 20,36 40,44" fill="#bce0f8" opacity=".32"/>'
+  + '<polygon points="16,58 64,58 40,70" fill="url(#g2)" opacity=".38"/>'
+  + '<polygon points="40,70 64,58 56,88 40,100 24,88 16,58" fill="url(#g1)" stroke="#88c4e0" stroke-width=".55" opacity=".88"/>'
+  + '<polygon points="40,100 56,88 40,114" fill="url(#g2)" stroke="#88c4e0" stroke-width=".48" opacity=".72"/>'
+  + '<polygon points="40,100 24,88 40,114" fill="#b4dcf4" stroke="#88c4e0" stroke-width=".48" opacity=".52"/>'
+  + '</svg>';
+
+// Clock face SVG with rotating hand (#id passed so we can target the hand)
+function clockSVG(color){
+  var ticks='';
+  for(var i=0;i<60;i++){
+    var lng=(i%5===0); var a=i*6*Math.PI/180;
+    var r1=lng?86:90, r2=96;
+    var x1=100+r1*Math.sin(a), y1=100-r1*Math.cos(a);
+    var x2=100+r2*Math.sin(a), y2=100-r2*Math.cos(a);
+    ticks+='<line x1="'+x1.toFixed(1)+'" y1="'+y1.toFixed(1)+'" x2="'+x2.toFixed(1)+'" y2="'+y2.toFixed(1)+'" stroke="rgba(255,255,255,'+(lng?'.35':'.12')+')" stroke-width="'+(lng?'2':'1')+'"/>';
+  }
+  return '<div class="clock"><svg viewBox="0 0 200 200">'
+    + '<circle cx="100" cy="100" r="97" fill="none" stroke="rgba(255,255,255,.08)" stroke-width="1"/>'
+    + '<circle cx="100" cy="100" r="78" fill="rgba(255,255,255,.015)"/>'
+    + ticks
+    + '<g id="handG" class="hand" style="transform:rotate(0deg);">'
+    +   '<line x1="100" y1="106" x2="100" y2="22" stroke="'+color+'" stroke-width="2.4" stroke-linecap="round"/>'
+    +   '<circle cx="100" cy="22" r="5" fill="'+color+'" stroke="#fff" stroke-opacity=".4"/>'
+    + '</g>'
+    + '<circle cx="100" cy="100" r="4" fill="'+color+'"/>'
+    + '</svg></div>';
+}
+
+var SCENES = {
+  A: {
+    badge:'Option A · Clock (returns)', accent:'#d4956e',
+    title:'Catch the drift',
+    intro:'Rest your eyes on the tip of the seconds hand. The moment you notice your attention has wandered, gently bring it back — and tap. Each return is one rep.',
+    activeInstr:'Tap anywhere each time you catch your mind wandering.',
+    countLbl:'returns', interactive:true, type:'clock',
+    result:function(n,sec){return {
+      num:n, cap:'You returned '+n+(n===1?' time':' times')+' — '+n+' rep'+(n===1?'':'s')+' of attention.',
+      xp:10+n*4, ak:n,
+      omnia:'Returning <em>is</em> the exercise. Every time you noticed, that was the muscle firing — the same one every step here is built on.'
+    };}
+  },
+  B: {
+    badge:'Option B · Thought Control', accent:'#7898b8',
+    title:'Let the mind settle',
+    intro:'Let your mind grow quiet. Each time you notice a thought arrive, tap. Noticing it is the skill — not silencing it.',
+    activeInstr:'Tap each time a thought arrives.',
+    countLbl:'noticed', interactive:true, type:'void',
+    result:function(n,sec){return {
+      num:n, cap:'You noticed '+n+' thought'+(n===1?'':'s')+' — '+n+' moment'+(n===1?'':'s')+' of awareness.',
+      xp:10+n*3, ak:n,
+      omnia:'Most beginners think a busy mind means failure. The opposite — each thought you caught was awareness waking up. That noticing underlies all the work ahead.'
+    };}
+  },
+  C: {
+    badge:'Option C · Clock (baseline)', accent:'#c4a8d4',
+    title:'Find your starting line',
+    intro:'See how long you can rest on the tip of the seconds hand before a thought pulls you away. However long you last is your starting line — we\'ll grow it together.',
+    activeInstr:'Hold your focus. Press Stop the moment a thought pulls you away.',
+    countLbl:'', interactive:false, type:'clock',
+    result:function(n,sec){return {
+      num:sec+'s', cap:'Your baseline: '+sec+' second'+(sec===1?'':'s')+'.',
+      xp:8+sec, ak:Math.max(1,Math.round(sec/4)),
+      omnia:'Most people start right around here. In a week this number climbs — and that climb is the practice. We\'ll track it together.'
+    };}
+  }
+};
+
+var cur=null, count=0, t0=0, raf=null, running=false, elapsed=0;
+
+function show(id){
+  document.querySelectorAll('.screen').forEach(function(s){s.classList.remove('on');});
+  setTimeout(function(){document.getElementById(id).classList.add('on');},30);
+}
+function setVar(c){document.documentElement.style.setProperty('--accent', c==='B'?'#7898b8':c==='C'?'#c4a8d4':'#7eb8a4');}
+
+function launch(key){
+  cur=SCENES[key]; count=0; elapsed=0; running=false;
+  document.documentElement.style.setProperty('--accent', cur.accent==='#7898b8'?'#7898b8':cur.accent==='#c4a8d4'?'#c4a8d4':'#7eb8a4');
+  document.getElementById('introBadge').textContent=cur.badge;
+  document.getElementById('crystalHolder').innerHTML=CRYSTAL;
+  document.getElementById('introTitle').textContent=cur.title;
+  document.getElementById('introInstr').textContent=cur.intro;
+  show('intro');
+}
+
+function beginScene(){
+  document.getElementById('activeBadge').textContent=cur.badge;
+  document.getElementById('activeInstr').textContent=cur.activeInstr;
+  document.getElementById('stopBtn').textContent=cur.interactive?'Done':'Stop';
+  // build stage
+  var inner=document.getElementById('stageInner');
+  if(cur.type==='clock'){ inner.innerHTML=clockSVG(cur.accent); }
+  else { inner.innerHTML='<div class="void"><div class="dot"></div></div>'; }
+  // counter
+  var counter=document.getElementById('counter');
+  if(cur.interactive){ counter.style.display='block'; document.getElementById('countN').textContent='0';
+    document.getElementById('countLbl').textContent=cur.countLbl; }
+  else counter.style.display='none';
+  count=0; elapsed=0; running=false;
+  document.getElementById('timer').textContent='0:00';
+  show('active');
+  // countdown 3-2-1 then run
+  var cd=document.getElementById('countdown'); cd.style.display='flex';
+  var n=3; cd.textContent=n;
+  var iv=setInterval(function(){
+    n--;
+    if(n<=0){ clearInterval(iv); cd.style.display='none'; startRun(); }
+    else cd.textContent=n;
+  },800);
+}
+
+function startRun(){
+  running=true; t0=Date.now();
+  loop();
+}
+function fmt(s){return Math.floor(s/60)+':'+('0'+(s%60)).slice(-2);}
+function loop(){
+  if(!running)return;
+  var ms=Date.now()-t0; elapsed=Math.floor(ms/1000);
+  document.getElementById('timer').textContent=fmt(elapsed);
+  if(cur.type==='clock'){
+    var hand=document.getElementById('handG');
+    if(hand) hand.style.transform='rotate('+((ms/1000)%60*6)+'deg)';
+  }
+  if(elapsed>=60){ stopScene(); return; } // 60s cap like the real tutorial
+  raf=requestAnimationFrame(loop);
+}
+
+var THOUGHTS=['…a memory','…tomorrow','…an itch','…a sound','…a worry','…a plan','…hunger','…a face'];
+function stageTap(e){
+  if(!running||!cur.interactive)return;
+  count++;
+  var n=document.getElementById('countN'); n.textContent=count;
+  n.classList.add('pop'); setTimeout(function(){n.classList.remove('pop');},150);
+  var st=document.getElementById('stage'); var r=st.getBoundingClientRect();
+  var x=(e.clientX||r.left+r.width/2)-r.left, y=(e.clientY||r.top+r.height/2)-r.top;
+  // ripple
+  var rip=document.createElement('div'); rip.className='ripple';
+  rip.style.left=x+'px'; rip.style.top=y+'px'; st.appendChild(rip);
+  setTimeout(function(){rip.remove();},700);
+  // mote
+  var m=document.createElement('div'); m.className='mote';
+  m.style.left=(x-4)+'px'; m.style.top=(y-4)+'px'; st.appendChild(m);
+  setTimeout(function(){m.remove();},1300);
+  // thought word for B
+  if(cur.type==='void'){
+    var w=document.createElement('div'); w.className='thoughtword';
+    w.textContent=THOUGHTS[count%THOUGHTS.length];
+    w.style.left=(x-30)+'px'; w.style.top=(y-10)+'px'; st.appendChild(w);
+    setTimeout(function(){w.remove();},1600);
+  }
+}
+
+function stopScene(){
+  running=false; if(raf)cancelAnimationFrame(raf);
+  var R=cur.result(count, Math.max(elapsed,1));
+  document.getElementById('resultBadge').textContent=cur.badge;
+  document.getElementById('resultNum').textContent=R.num;
+  document.getElementById('resultCap').textContent=R.cap;
+  document.getElementById('chipXp').textContent='+'+R.xp+' XP';
+  document.getElementById('chipAk').textContent='+'+R.ak+' Akasha';
+  document.getElementById('omniaLine').innerHTML=R.omnia;
+  show('result');
+}
+
+function toMenu(){
+  running=false; if(raf)cancelAnimationFrame(raf);
+  document.documentElement.style.setProperty('--accent','#7eb8a4');
+  show('menu');
+}
+</script>
+</body>
+</html>
