@@ -419,8 +419,8 @@
     /* CONCENTRATION THEME */
     .conc-accent { color:#d4956e !important; }
     .conc-ring .ring-prog { stroke:url(#concRingGrad) !important; stroke-width:3 !important; filter:drop-shadow(0 0 5px rgba(212,149,110,.55)); }
-    .conc-ring-wrap { position:relative; display:flex; align-items:center; justify-content:center; margin-bottom:10px; }
-    .conc-ring-glow { position:absolute; width:220px; height:220px; border-radius:50%; background:radial-gradient(circle at 50% 50%, rgba(212,149,110,.18) 0%, rgba(212,149,110,.06) 45%, transparent 70%); pointer-events:none; animation:concGlowPulse 4s ease-in-out infinite; }
+    .conc-ring-wrap { position:relative; display:flex; align-items:center; justify-content:center; margin-bottom:2px; }
+    .conc-ring-glow { position:absolute; width:180px; height:180px; border-radius:50%; background:radial-gradient(circle at 50% 50%, rgba(212,149,110,.18) 0%, rgba(212,149,110,.06) 45%, transparent 70%); pointer-events:none; animation:concGlowPulse 4s ease-in-out infinite; }
     @keyframes concGlowPulse { 0%,100%{opacity:.7; transform:scale(.95);} 50%{opacity:1; transform:scale(1.05);} }
     .conc-xp-hint { font-family:'DM Mono',monospace; font-size:9px; letter-spacing:.14em; color:#c89878; text-align:center; margin-bottom:14px; opacity:.8; }
     .conc-btn.primary { background:rgba(212,149,110,0.12) !important; border-color:rgba(212,149,110,.35) !important; color:#d4b08e !important; }
@@ -3264,6 +3264,7 @@ body:not(.tut-live) #tutCorgi {
 #concentrationPanel .home-symbol { display:none !important; }
 .hero { padding-top:8px; }
 .level-ring { margin-bottom:16px; }
+#concentrationPanel .level-ring { margin-bottom:6px; }
 .home-actions { padding-bottom:24px; }
 </style>
 <script>
