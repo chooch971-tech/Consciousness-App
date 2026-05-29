@@ -1170,7 +1170,7 @@
     .exercise-card { background:var(--surface); border:1px solid var(--border); border-radius:12px; padding:16px 14px; cursor:pointer; transition:all .2s; text-align:left; display:flex; flex-direction:column; gap:6px; position:relative; overflow:hidden; }
     .exercise-card:active { transform:scale(.97); }
     .exercise-card::before { content:''; position:absolute; top:0; left:0; right:0; height:2px; background:var(--conc-card-accent, #d4956e); opacity:0; transition:opacity .2s; }
-    .exercise-card:hover::before { opacity:.6; }
+    @media (hover:hover) { .exercise-card:hover::before { opacity:.6; } }
     .exercise-card-icon { font-size:22px; margin-bottom:2px; }
     .exercise-card-name { font-size:10px; letter-spacing:.15em; text-transform:uppercase; color:var(--text); }
     .exercise-card-desc { font-size:10px; color:var(--muted); line-height:1.5; }
