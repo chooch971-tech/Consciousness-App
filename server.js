@@ -351,6 +351,19 @@ setInterval(async () => {
     const interval = sub.intervalSec || 120;
 
     if (elapsed >= totalDuration) {
+      // Fire a final notification if one is due at the session boundary
+      // (e.g. a 10-min session with 2-min intervals — the cycle that lands
+      // exactly at 10:00 was always skipped because expiry ran first).
+      const finalCycle = Math.floor(totalDuration / interval);
+      const lastFired = sub.lastFiredCycle ?? -1;
+      if (finalCycle > lastFired && totalDuration >= interval) {
+        const prompt = randomPromptFor(sub.endpoint);
+        console.log(`[${new Date().toISOString()}] Final-cycle push at session end: cycle ${finalCycle}`);
+        const result = await pushTo(sub, prompt);
+        if (sub.pavlok && sub.pavlok.token) {
+          firePavlokServer(sub.pavlok.token, sub.pavlok.type, sub.pavlok.intensity);
+        }
+      }
       sub.sessionStart = null;
       sub.lastFiredCycle = -1;
       sub.pavlok = null;
