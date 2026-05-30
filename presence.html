@@ -322,6 +322,8 @@
     .aset-group { margin-bottom:30px; }
     .aset-header { font-size:9px; letter-spacing:.22em; text-transform:uppercase; color:var(--muted); margin:0 4px 10px; }
     .aset-card { background:rgba(255,255,255,.03); border:1px solid var(--border); border-radius:13px; overflow:hidden; }
+    #omniaCandorSlider::-webkit-slider-thumb { -webkit-appearance:none; appearance:none; width:18px; height:18px; border-radius:50%; background:#8eccc0; box-shadow:0 0 8px rgba(142,204,224,.55); cursor:pointer; }
+    #omniaCandorSlider::-moz-range-thumb { width:18px; height:18px; border:none; border-radius:50%; background:#8eccc0; box-shadow:0 0 8px rgba(142,204,224,.55); cursor:pointer; }
     .aset-row { display:flex; align-items:center; gap:13px; width:100%; padding:13px 15px; background:none; border:none; border-bottom:1px solid var(--border); color:var(--text); font-family:'DM Mono',monospace; font-size:12px; letter-spacing:.03em; text-align:left; cursor:pointer; box-sizing:border-box; transition:background .12s; }
     .aset-row:last-child { border-bottom:none; }
     .aset-row:active { background:rgba(255,255,255,.05); }
@@ -3340,6 +3342,24 @@ body:not(.tut-live) #tutCorgi {
       <div class="aset-group">
         <div class="aset-header">Practices</div>
         <div class="aset-card" id="settingsExPracticeCard"></div>
+      </div>
+
+      <!-- Omnia -->
+      <div class="aset-group">
+        <div class="aset-header">Omnia</div>
+        <div class="aset-card" style="padding:18px 18px 20px;">
+          <div style="display:flex; justify-content:space-between; align-items:baseline; margin-bottom:6px;">
+            <div style="font-size:12px; color:var(--text);">Omnia's Candor</div>
+            <div id="omniaCandorValue" style="font-family:Cormorant Garamond,serif; font-size:26px; color:#8eccc0; line-height:1;">1</div>
+          </div>
+          <div style="font-size:10px; color:var(--muted); line-height:1.6; margin-bottom:16px;">How frank Omnia is in your progress reflections. Higher means more pitiless, straightforward criticism. Applies to future reports only — past reflections stay as written.</div>
+          <input type="range" id="omniaCandorSlider" min="1" max="5" value="1" step="1" style="width:100%; -webkit-appearance:none; appearance:none; height:2px; background:rgba(142,204,224,.3); border-radius:1px; outline:none; cursor:pointer;"/>
+          <div style="display:flex; justify-content:space-between; margin-top:8px;">
+            <span style="font-size:8px; letter-spacing:.1em; text-transform:uppercase; color:var(--muted);">Gentle</span>
+            <span style="font-size:8px; letter-spacing:.1em; text-transform:uppercase; color:var(--muted);">Pitiless</span>
+          </div>
+          <div id="omniaCandorName" style="font-size:10px; letter-spacing:.06em; color:#8eccc0; opacity:.85; text-align:center; margin-top:12px; font-family:'DM Mono',monospace;">Encouraging mentor</div>
+        </div>
       </div>
 
       <!-- Backup & Restore -->
@@ -6743,6 +6763,7 @@ document.getElementById('drawerSettings').addEventListener('click', function() {
   renderSettingsExerciseList();
   renderCustomVisImageList();
   renderCustomAudSoundList();
+  syncOmniaCandorUI();
   showScreen('settingsScreen');
 });
 document.getElementById('drawerJournal').addEventListener('click',function(){
@@ -17278,7 +17299,8 @@ function buildOmniaReportContext(period, offset) {
     concentration_by_exercise: concByExercise,
     concentration_exercises_untried: untried,
     streak: state.streak,
-    clock_alltime_pb_sec: concState.bestSeconds || 0
+    clock_alltime_pb_sec: concState.bestSeconds || 0,
+    omnia_candor: getOmniaCandor()
   };
 }
 
@@ -21125,6 +21147,41 @@ document.getElementById('poreBreathSlider').addEventListener('input',function(){
   poreBreathTotal=parseInt(this.value);
   document.getElementById('poreBreathCountDisplay').textContent=poreBreathTotal;
 });
+
+// ── Omnia's Candor (1–5, default 1) ──────────────────────────────────────────
+var OMNIA_CANDOR_NAMES = {
+  1: 'Encouraging mentor',
+  2: 'Honest but kind',
+  3: 'Direct coach',
+  4: 'Demanding teacher',
+  5: 'Pitiless'
+};
+function getOmniaCandor() {
+  var v = parseInt(localStorage.getItem('presence_omnia_candor'), 10);
+  if (!Number.isFinite(v) || v < 1 || v > 5) v = 1;
+  return v;
+}
+function syncOmniaCandorUI() {
+  var v = getOmniaCandor();
+  var slider = document.getElementById('omniaCandorSlider');
+  var val = document.getElementById('omniaCandorValue');
+  var name = document.getElementById('omniaCandorName');
+  if (slider) slider.value = v;
+  if (val) val.textContent = v;
+  if (name) name.textContent = OMNIA_CANDOR_NAMES[v];
+}
+(function(){
+  var slider = document.getElementById('omniaCandorSlider');
+  if (!slider) return;
+  slider.addEventListener('input', function(){
+    var v = parseInt(this.value, 10) || 1;
+    try { localStorage.setItem('presence_omnia_candor', String(v)); } catch(e) {}
+    var val = document.getElementById('omniaCandorValue');
+    var name = document.getElementById('omniaCandorName');
+    if (val) val.textContent = v;
+    if (name) name.textContent = OMNIA_CANDOR_NAMES[v];
+  });
+})();
 
 function getPoreAudioCtx(){
   if(!poreBreathAudioCtx||poreBreathAudioCtx.state==='closed')
