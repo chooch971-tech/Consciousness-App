@@ -14437,7 +14437,7 @@ function getEntityCrystalSVG(id) {
     var rimEyes = '';
     for (var s = 0; s < 8; s++) {
       var a = s / 8 * Math.PI * 2 - Math.PI / 2;
-      rimEyes += eye((40 + Math.cos(a) * 17).toFixed(2), (65 + Math.sin(a) * 17).toFixed(2), 1.9);
+      rimEyes += eye(40 + Math.cos(a) * 17, 65 + Math.sin(a) * 17, 1.9);
     }
     return '<svg viewBox="0 0 80 130" width="72" height="118" xmlns="http://www.w3.org/2000/svg" style="overflow:visible;">'
       + '<defs>'
