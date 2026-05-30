@@ -1006,16 +1006,19 @@ app.post('/api/pavlok/link', async (req, res) => {
   const { email, password } = req.body || {};
   if (!email || !password) return res.status(400).json({ error: 'Email and password required' });
   try {
-    const r = await fetch(`${PAVLOK_API}/oauth/login`, {
+    const r = await fetch(`${PAVLOK_API}/users/login`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ email, password }),
     });
     const data = await r.json();
-    if (!r.ok || !data?.token) {
-      return res.status(401).json({ error: data?.message || 'Pavlok login failed' });
+    console.log('Pavlok login response status:', r.status, 'body:', JSON.stringify(data));
+    // Token field name varies — try all known variants
+    const token = data?.token || data?.access_token || data?.auth_token || data?.data?.token || data?.data?.access_token;
+    if (!r.ok || !token) {
+      return res.status(401).json({ error: data?.message || data?.error || data?.detail || 'Pavlok login failed' });
     }
-    res.json({ token: data.token });
+    res.json({ token });
   } catch (err) {
     console.error('Pavlok link error:', err);
     res.status(502).json({ error: 'Could not reach Pavlok servers' });
