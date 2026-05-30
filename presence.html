@@ -287,6 +287,12 @@
     .session-bottom { width:100%; text-align:center; }
     .reminder-count { font-size:10px; letter-spacing:.15em; color:var(--muted); margin-bottom:16px; }
     .reminder-count span { color:var(--accent2); }
+    .session-pvk-row { display:flex; align-items:center; gap:10px; padding:12px 20px 4px; }
+    .session-pvk-label { font-family:'DM Mono',monospace; font-size:9px; letter-spacing:.16em; text-transform:uppercase; color:var(--muted); white-space:nowrap; }
+    .session-pvk-slider { flex:1; -webkit-appearance:none; appearance:none; height:3px; border-radius:2px; background:linear-gradient(to right,rgba(155,142,196,.7) 0%,rgba(155,142,196,.7) var(--pct,50%),var(--border2) var(--pct,50%),var(--border2) 100%); outline:none; cursor:pointer; }
+    .session-pvk-slider::-webkit-slider-thumb { -webkit-appearance:none; width:20px; height:20px; border-radius:50%; background:#9b8ec4; border:2px solid rgba(155,142,196,.5); box-shadow:0 0 8px rgba(155,142,196,.4); cursor:pointer; }
+    .session-pvk-slider::-moz-range-thumb { width:20px; height:20px; border-radius:50%; background:#9b8ec4; border:2px solid rgba(155,142,196,.5); cursor:pointer; }
+    .session-pvk-val { font-family:'DM Mono',monospace; font-size:10px; color:#c4b8e8; min-width:24px; text-align:right; }
 
     /* SURVEY */
     #surveyScreen { justify-content:flex-start; overflow-y:auto; }
@@ -5064,6 +5070,12 @@ body:not(.tut-live) #tutCorgi {
     </div>
     <div class="session-bottom">
       <div class="reminder-count">reminders sent: <span id="reminderCount">0</span></div>
+      <div class="session-pvk-row" id="sessionPvkRow" style="display:none;">
+        <span class="session-pvk-label">⚡ Intensity</span>
+        <input type="range" min="1" max="100" class="session-pvk-slider" id="sessionPvkSlider"
+          oninput="sessionPvkInput(this)">
+        <span class="session-pvk-val" id="sessionPvkVal">50</span>
+      </div>
       <button id="sessionPrayerBtn" onclick="openPrayerDuringSession();" style="margin-top:14px; font-size:9px; letter-spacing:.2em; text-transform:uppercase; color:#9b8ec4; background:none; border:1px solid rgba(155,142,196,.2); border-radius:4px; padding:8px 20px; cursor:pointer; font-family:'DM Mono',monospace;">🙏 Open Prayer</button>
     </div>
   </div>
@@ -6336,6 +6348,7 @@ async function startSession() {
   showScreen('sessionScreen');
   updateSessionPrompt(randomPrompt(''));
   document.getElementById('reminderCount').textContent = 0;
+  initSessionPvkSlider();
   runLoop();
 
   // Tell server about the session (awaited so it happens before next tick)
@@ -6354,6 +6367,7 @@ function resumeSession(sess) {
   showScreen('sessionScreen');
   document.getElementById('reminderCount').textContent = sessionReminderCount;
   updateSessionPrompt(randomPrompt(''));
+  initSessionPvkSlider();
   runLoop();
   showToast('Session resumed');
 }
@@ -6404,6 +6418,29 @@ function fireReminder() {
   playReminderBell();
   var pvk = getPavlokPrefs();
   if (pvk.awareness.enabled) sendPavlokStimulus(pvk.awareness.type || 'vibe', pvk.awareness.intensity);
+}
+
+function initSessionPvkSlider() {
+  var row = document.getElementById('sessionPvkRow');
+  var slider = document.getElementById('sessionPvkSlider');
+  var valEl = document.getElementById('sessionPvkVal');
+  if (!row || !slider) return;
+  if (!getPavlokToken()) { row.style.display = 'none'; return; }
+  var val = (getPavlokPrefs().awareness.intensity) || 50;
+  slider.value = val;
+  slider.style.setProperty('--pct', val + '%');
+  valEl.textContent = val;
+  row.style.display = 'flex';
+}
+
+function sessionPvkInput(el) {
+  var val = +el.value;
+  el.style.setProperty('--pct', val + '%');
+  var valEl = document.getElementById('sessionPvkVal');
+  if (valEl) valEl.textContent = val;
+  var p = getPavlokPrefs();
+  p.awareness.intensity = val;
+  savePavlokPrefs(p);
 }
 
 function updateSessionPrompt(text) {
