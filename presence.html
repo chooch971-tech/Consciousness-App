@@ -322,6 +322,25 @@
     .aset-group { margin-bottom:30px; }
     .aset-header { font-size:9px; letter-spacing:.22em; text-transform:uppercase; color:var(--muted); margin:0 4px 10px; }
     .aset-card { background:rgba(255,255,255,.03); border:1px solid var(--border); border-radius:13px; overflow:hidden; }
+    /* Pavlok settings */
+    .pvk-input { width:100%; background:rgba(255,255,255,.03); border:1px solid var(--border2); border-radius:8px; color:var(--text); font-family:'DM Mono',monospace; font-size:11px; padding:10px 12px; box-sizing:border-box; outline:none; -webkit-appearance:none; }
+    .pvk-input:focus { border-color:rgba(155,142,196,.4); }
+    .pvk-row { display:flex; justify-content:space-between; align-items:center; padding:11px 0; border-bottom:1px solid var(--border); }
+    .pvk-row:last-of-type { border-bottom:none; }
+    .pvk-row-label { font-size:10px; color:var(--text); }
+    .pvk-row-sub { font-size:9px; color:var(--muted); margin-top:2px; }
+    .pvk-toggle { width:38px; height:22px; border-radius:11px; border:none; cursor:pointer; position:relative; transition:background .2s; flex-shrink:0; }
+    .pvk-toggle.on { background:rgba(155,142,196,.55); }
+    .pvk-toggle.off { background:rgba(255,255,255,.1); }
+    .pvk-toggle::after { content:''; position:absolute; top:3px; width:16px; height:16px; border-radius:50%; background:#fff; transition:left .2s; }
+    .pvk-toggle.on::after { left:19px; }
+    .pvk-toggle.off::after { left:3px; }
+    .pvk-intensity { display:flex; gap:6px; }
+    .pvk-lvl { padding:5px 12px; border-radius:6px; border:1px solid var(--border2); background:transparent; color:var(--muted); font-family:'DM Mono',monospace; font-size:9px; letter-spacing:.1em; cursor:pointer; transition:all .15s; }
+    .pvk-lvl.sel { background:rgba(155,142,196,.18); border-color:rgba(155,142,196,.45); color:#c4b8e8; }
+    .pvk-status { font-size:10px; color:var(--accent); margin-top:6px; min-height:16px; }
+    .pvk-connected-badge { display:inline-flex; align-items:center; gap:6px; font-family:'DM Mono',monospace; font-size:9px; letter-spacing:.14em; color:var(--accent); }
+    .pvk-connected-badge::before { content:''; width:7px; height:7px; border-radius:50%; background:var(--accent); display:block; }
     #omniaCandorSlider::-webkit-slider-thumb { -webkit-appearance:none; appearance:none; width:18px; height:18px; border-radius:50%; background:#8eccc0; box-shadow:0 0 8px rgba(142,204,224,.55); cursor:pointer; }
     #omniaCandorSlider::-moz-range-thumb { width:18px; height:18px; border:none; border-radius:50%; background:#8eccc0; box-shadow:0 0 8px rgba(142,204,224,.55); cursor:pointer; }
     .aset-row { display:flex; align-items:center; gap:13px; width:100%; padding:13px 15px; background:none; border:none; border-bottom:1px solid var(--border); color:var(--text); font-family:'DM Mono',monospace; font-size:12px; letter-spacing:.03em; text-align:left; cursor:pointer; box-sizing:border-box; transition:background .12s; }
@@ -3399,6 +3418,12 @@ body:not(.tut-live) #tutCorgi {
         </div>
       </div>
 
+      <!-- Pavlok -->
+      <div class="aset-group">
+        <div class="aset-header">Pavlok</div>
+        <div class="aset-card" id="pavlokSettingsCard" style="padding:18px 18px 16px;"></div>
+      </div>
+
       <!-- Backup & Restore -->
       <div class="aset-group">
         <div class="aset-header">Backup & Restore</div>
@@ -6270,6 +6295,8 @@ function fireReminder() {
   sessionReminderCount++;
   document.getElementById('reminderCount').textContent = sessionReminderCount;
   playReminderBell();
+  var pvk = getPavlokPrefs();
+  if (pvk.awareness.enabled) sendPavlokStimulus('vibe', pvk.awareness.intensity);
 }
 
 function updateSessionPrompt(text) {
@@ -6836,6 +6863,7 @@ document.getElementById('drawerSettings').addEventListener('click', function() {
   renderCustomVisImageList();
   renderCustomAudSoundList();
   syncOmniaCandorUI();
+  renderPavlokSettings();
   showScreen('settingsScreen');
 });
 document.getElementById('drawerJournal').addEventListener('click',function(){
@@ -8234,6 +8262,9 @@ function stopConcentration() {
   concSeconds = concStartTime ? Math.floor((Date.now() - concStartTime) / 1000) : 0;
   concStartTime = null;
   var rawSecs = Math.max(concSeconds, 1);
+  // Pavlok buzz on session end (only when a real session ran, not cancelled pre-start)
+  var pvkC = getPavlokPrefs();
+  if (pvkC.concentration.enabled && rawSecs > 2) sendPavlokStimulus('vibe', pvkC.concentration.intensity);
 
   // Tutorial first session: original single-rep flow
   if (window._tutorialFirstClock) {
@@ -13084,6 +13115,8 @@ function showPrayerModal(index) {
   document.getElementById('prayerModalSub').textContent = sub;
   document.getElementById('prayerModal').classList.add('show');
   sendPrayerPushNotification(index);
+  var pvk = getPavlokPrefs();
+  if (pvk.prayer.enabled) sendPavlokStimulus('vibe', pvk.prayer.intensity);
 }
 
 async function sendPrayerPushNotification(index) {
@@ -21092,6 +21125,139 @@ function syncOmniaCandorUI() {
     if (name) name.textContent = OMNIA_CANDOR_NAMES[v];
   });
 })();
+
+// ── Pavlok integration ────────────────────────────────────────────────────────
+var PAVLOK_TOKEN_KEY  = 'presence_pavlok_token';
+var PAVLOK_EMAIL_KEY  = 'presence_pavlok_email';
+var PAVLOK_PREFS_KEY  = 'presence_pavlok_prefs';
+var PAVLOK_DEFAULT_PREFS = {
+  awareness:     { enabled: true,  intensity: 50 },
+  prayer:        { enabled: true,  intensity: 40 },
+  concentration: { enabled: true,  intensity: 60 },
+};
+
+function getPavlokToken() { return localStorage.getItem(PAVLOK_TOKEN_KEY) || ''; }
+function getPavlokEmail() { return localStorage.getItem(PAVLOK_EMAIL_KEY) || ''; }
+function getPavlokPrefs() {
+  try { var p = JSON.parse(localStorage.getItem(PAVLOK_PREFS_KEY)); if (p) return p; } catch(e) {}
+  return JSON.parse(JSON.stringify(PAVLOK_DEFAULT_PREFS));
+}
+function savePavlokPrefs(prefs) { localStorage.setItem(PAVLOK_PREFS_KEY, JSON.stringify(prefs)); }
+
+function sendPavlokStimulus(type, intensity) {
+  var token = getPavlokToken();
+  if (!token) return;
+  var val = Math.max(1, Math.min(100, intensity || 50));
+  fetch(SERVER_URL + '/api/pavlok/stimulus', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ token: token, type: type, value: val }),
+  }).catch(function() {}); // fire-and-forget
+}
+
+function pavlokConnect(email, password, statusEl) {
+  if (statusEl) statusEl.textContent = 'Connecting…';
+  fetch(SERVER_URL + '/api/pavlok/link', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email: email, password: password }),
+  })
+  .then(function(r) { return r.json().then(function(d) { return { ok: r.ok, d: d }; }); })
+  .then(function(res) {
+    if (!res.ok || !res.d.token) {
+      if (statusEl) statusEl.textContent = res.d.error || 'Login failed — check your credentials';
+      return;
+    }
+    localStorage.setItem(PAVLOK_TOKEN_KEY, res.d.token);
+    localStorage.setItem(PAVLOK_EMAIL_KEY, email);
+    renderPavlokSettings();
+  })
+  .catch(function() { if (statusEl) statusEl.textContent = 'Network error — try again'; });
+}
+
+function pavlokDisconnect() {
+  localStorage.removeItem(PAVLOK_TOKEN_KEY);
+  localStorage.removeItem(PAVLOK_EMAIL_KEY);
+  renderPavlokSettings();
+}
+
+function pavlokTest() {
+  var p = getPavlokPrefs();
+  sendPavlokStimulus('vibe', p.awareness.intensity);
+}
+
+function renderPavlokSettings() {
+  var card = document.getElementById('pavlokSettingsCard');
+  if (!card) return;
+  var token = getPavlokToken();
+  var email = getPavlokEmail();
+  var p = getPavlokPrefs();
+
+  function intensityHtml(key) {
+    var lvls = [{ label: 'Light', v: 25 }, { label: 'Medium', v: 50 }, { label: 'Strong', v: 75 }];
+    return '<div class="pvk-intensity">' +
+      lvls.map(function(l) {
+        var sel = Math.abs((p[key].intensity || 50) - l.v) < 13 ? ' sel' : '';
+        return '<button class="pvk-lvl' + sel + '" onclick="pavlokSetIntensity(\'' + key + '\',' + l.v + ')">' + l.label + '</button>';
+      }).join('') + '</div>';
+  }
+
+  if (!token) {
+    card.innerHTML = ''
+      + '<div style="font-size:12px;color:var(--text);margin-bottom:4px;">Connect your Pavlok</div>'
+      + '<div style="font-size:10px;color:var(--muted);line-height:1.6;margin-bottom:14px;">Use your Pavlok account credentials. Your password is never stored — only the session token is saved locally.</div>'
+      + '<div class="pvk-connect-form" style="display:flex;flex-direction:column;gap:10px;">'
+      + '<input class="pvk-input" id="pvkEmail" type="email" placeholder="Pavlok account email" autocomplete="email"/>'
+      + '<input class="pvk-input" id="pvkPass" type="password" placeholder="Password" autocomplete="current-password"/>'
+      + '<button class="btn primary" style="background:rgba(155,142,196,.12);border-color:rgba(155,142,196,.35);color:#c4b8e8;" onclick="pavlokConnectFromForm()">Connect Pavlok</button>'
+      + '<div class="pvk-status" id="pvkStatus"></div>'
+      + '</div>';
+  } else {
+    card.innerHTML = ''
+      + '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">'
+      + '<span class="pvk-connected-badge">' + (email || 'Connected') + '</span>'
+      + '<button onclick="pavlokDisconnect()" style="background:none;border:none;font-family:\'DM Mono\',monospace;font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);cursor:pointer;padding:4px 0;">Disconnect</button>'
+      + '</div>'
+      + '<div class="pvk-row">'
+      + '<div><div class="pvk-row-label">Awareness reminder</div><div class="pvk-row-sub">Vibrate at each interval bell</div></div>'
+      + '<button class="pvk-toggle ' + (p.awareness.enabled ? 'on' : 'off') + '" onclick="pavlokToggle(\'awareness\')"></button>'
+      + '</div>'
+      + (p.awareness.enabled ? '<div style="padding:8px 0 4px;">' + intensityHtml('awareness') + '</div>' : '')
+      + '<div class="pvk-row">'
+      + '<div><div class="pvk-row-label">Prayer time</div><div class="pvk-row-sub">Vibrate when a prayer time fires</div></div>'
+      + '<button class="pvk-toggle ' + (p.prayer.enabled ? 'on' : 'off') + '" onclick="pavlokToggle(\'prayer\')"></button>'
+      + '</div>'
+      + (p.prayer.enabled ? '<div style="padding:8px 0 4px;">' + intensityHtml('prayer') + '</div>' : '')
+      + '<div class="pvk-row">'
+      + '<div><div class="pvk-row-label">Concentration end</div><div class="pvk-row-sub">Vibrate when a session completes</div></div>'
+      + '<button class="pvk-toggle ' + (p.concentration.enabled ? 'on' : 'off') + '" onclick="pavlokToggle(\'concentration\')"></button>'
+      + '</div>'
+      + (p.concentration.enabled ? '<div style="padding:8px 0 12px;">' + intensityHtml('concentration') + '</div>' : '')
+      + '<button onclick="pavlokTest()" style="margin-top:8px;width:100%;padding:10px;border-radius:8px;border:1px solid var(--border);background:none;color:var(--muted);font-family:\'DM Mono\',monospace;font-size:9px;letter-spacing:.18em;text-transform:uppercase;cursor:pointer;">Test vibration</button>';
+  }
+}
+
+function pavlokConnectFromForm() {
+  var email = (document.getElementById('pvkEmail') || {}).value || '';
+  var pass  = (document.getElementById('pvkPass')  || {}).value || '';
+  var status = document.getElementById('pvkStatus');
+  if (!email || !pass) { if (status) status.textContent = 'Enter your email and password'; return; }
+  pavlokConnect(email.trim(), pass, status);
+}
+
+function pavlokToggle(key) {
+  var p = getPavlokPrefs();
+  p[key].enabled = !p[key].enabled;
+  savePavlokPrefs(p);
+  renderPavlokSettings();
+}
+
+function pavlokSetIntensity(key, val) {
+  var p = getPavlokPrefs();
+  p[key].intensity = val;
+  savePavlokPrefs(p);
+  renderPavlokSettings();
+}
 
 function getPoreAudioCtx(){
   if(!poreBreathAudioCtx||poreBreathAudioCtx.state==='closed')

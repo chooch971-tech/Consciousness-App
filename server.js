@@ -996,6 +996,57 @@ app.post('/api/sync/omnia/report', aiRateLimit, async (req, res) => {
   }
 });
 
+// ── Pavlok integration ────────────────────────────────────────────────────────
+const PAVLOK_API = 'https://api.pavlok.com/api/v5';
+const PAVLOK_VALID_TYPES = new Set(['vibe', 'beep', 'zap']);
+
+// Exchange Pavlok email+password for a bearer token. Token is returned to the
+// client and stored in localStorage — we never persist Pavlok credentials.
+app.post('/api/pavlok/link', async (req, res) => {
+  const { email, password } = req.body || {};
+  if (!email || !password) return res.status(400).json({ error: 'Email and password required' });
+  try {
+    const r = await fetch(`${PAVLOK_API}/oauth/login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password }),
+    });
+    const data = await r.json();
+    if (!r.ok || !data?.token) {
+      return res.status(401).json({ error: data?.message || 'Pavlok login failed' });
+    }
+    res.json({ token: data.token });
+  } catch (err) {
+    console.error('Pavlok link error:', err);
+    res.status(502).json({ error: 'Could not reach Pavlok servers' });
+  }
+});
+
+// Proxy a stimulus to the Pavlok API.  Token comes from the client (stored
+// in localStorage) so no server-side credential storage is needed.
+app.post('/api/pavlok/stimulus', async (req, res) => {
+  const { token, type, value } = req.body || {};
+  if (!token) return res.status(400).json({ error: 'Token required' });
+  if (!PAVLOK_VALID_TYPES.has(type)) return res.status(400).json({ error: 'Invalid stimulus type' });
+  const intensity = Math.max(1, Math.min(100, parseInt(value, 10) || 50));
+  try {
+    const r = await fetch(`${PAVLOK_API}/stimulus/send`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`,
+      },
+      body: JSON.stringify({ stimulus: { stimulusType: type, stimulusValue: intensity } }),
+    });
+    const data = await r.json().catch(() => ({}));
+    if (!r.ok) return res.status(r.status).json({ error: data?.message || 'Pavlok stimulus failed' });
+    res.json({ ok: true });
+  } catch (err) {
+    console.error('Pavlok stimulus error:', err);
+    res.status(502).json({ error: 'Could not reach Pavlok servers' });
+  }
+});
+
 app.post('/subscribe', async (req, res) => {
   const subscription = req.body;
   if (!subscription?.endpoint) return res.status(400).json({ error: 'Invalid subscription' });
