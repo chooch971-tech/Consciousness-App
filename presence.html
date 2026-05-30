@@ -8579,7 +8579,7 @@ function saveConcSession() {
 
   var _tutPreAkasha = omniaState ? omniaState.akasha : 0;
   var _todayStr = new Date().toISOString().slice(0, 10);
-  var _clockToday = concState.history.filter(function(h) { return h.date && h.date.slice(0, 10) === _todayStr; }).length;
+  var _clockToday = concState.history.filter(function(h) { return h.date && h.date.slice(0, 10) === _todayStr && !h.type && !h.exercise; }).length;
   var _akashaCapped = _clockToday > 3;
   if (!_akashaCapped) {
     awardOmniaForExercise('clock', totalXP);
