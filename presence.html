@@ -10900,49 +10900,79 @@ var EXERCISE_DEFS = {
         if (s.exercise === 'asana' || s.type === 'visualization' || s.type === 'auditory' || s.type === 'thought') return b;
         return s.seconds > b ? s.seconds : b;
       }, 0);
-      var bestStr = best > 0
-        ? (best >= 60 ? Math.floor(best/60) + 'm ' + (best%60) + 's' : best + 's')
-        : 'No record yet';
-      var pct = best > 0 ? Math.min(100, Math.round(best / 600 * 1000) / 10) : null;
-      var pctDisplay = pct !== null ? (Number.isInteger(pct) ? pct : pct.toFixed(1)) : null;
       var mastered = best >= 900;
-      var pct15 = best >= 600 ? Math.min(100, Math.round(best / 900 * 1000) / 10) : null;
-      var pct15Display = pct15 !== null ? (Number.isInteger(pct15) ? pct15 : pct15.toFixed(1)) : null;
-      return '<button class="ex-omnia-explain" onclick="openExExplainer(\'clock\')">'
-          +   '<span class="ex-omnia-head">' + omniaHeadSVG(30, 49) + '</span>'
-          +   '<span class="ex-omnia-explain-text"><span class="eoe-title">How it works</span><span class="eoe-sub">Tap Omnia for a quick walkthrough</span></span>'
-          +   '<span class="eoe-arrow">&#8250;</span>'
-          + '</button>'
-          + '<span style="display:block; margin-top:20px; font-size:11px; letter-spacing:.15em; text-transform:uppercase; color:#d4956e;">Current Record &nbsp;·&nbsp; ' + bestStr + '</span>'
-        + (pctDisplay !== null
-          ? '<div style="margin-top:14px; padding:12px 14px; background:rgba(212,149,110,0.08); border:1px solid rgba(212,149,110,0.2); border-radius:8px;">'
-            + '<div style="display:flex; justify-content:space-between; align-items:baseline; margin-bottom:8px;">'
-            + '<span style="font-size:9px; letter-spacing:.18em; text-transform:uppercase; color:rgba(212,149,110,0.6);">Progress to 10 min</span>'
-            + '<span style="font-family:Cormorant Garamond,serif; font-size:26px; font-weight:300; color:#d4956e; line-height:1;">' + pctDisplay + '<span style="font-size:14px;">%</span></span>'
-            + '</div>'
-            + '<div style="height:4px; background:rgba(255,255,255,0.07); border-radius:2px; overflow:hidden;">'
-            + '<div style="height:100%; width:' + pctDisplay + '%; background:linear-gradient(90deg,#d4956e,#e8b88a); border-radius:2px;"></div>'
-            + '</div>'
-            + '</div>'
-          : '')
-        + (pct15Display !== null
-          ? '<div style="margin-top:10px; padding:12px 14px; background:rgba(180,40,40,0.07); border:1px solid rgba(180,40,40,0.2); border-radius:8px;">'
-            + '<div style="display:flex; justify-content:space-between; align-items:baseline; margin-bottom:8px;">'
-            + '<span style="font-size:9px; letter-spacing:.18em; text-transform:uppercase; color:rgba(180,60,60,0.65);">Progress to 15 min</span>'
-            + '<span style="font-family:Cormorant Garamond,serif; font-size:26px; font-weight:300; color:#c0403a; line-height:1;">' + pct15Display + '<span style="font-size:14px;">%</span></span>'
-            + '</div>'
-            + '<div style="height:4px; background:rgba(255,255,255,0.07); border-radius:2px; overflow:hidden;">'
-            + '<div style="height:100%; width:' + pct15Display + '%; background:linear-gradient(90deg,#b42828,#d94f4f); border-radius:2px;"></div>'
-            + '</div>'
-            + '</div>'
-          : '')
-        + (mastered
-          ? '<div style="margin-top:18px; padding:20px 18px; background:rgba(180,40,40,0.06); border:1px solid rgba(180,40,40,0.25); border-radius:10px; text-align:center;">'
-            + '<div style="font-family:Cormorant Garamond,serif; font-size:22px; font-weight:400; color:#c0403a; line-height:1.4; letter-spacing:.01em;">This exercise has been mastered.</div>'
-            + '<div style="margin-top:8px; font-size:10px; letter-spacing:.18em; text-transform:uppercase; color:rgba(180,60,60,0.5);">Fifteen minutes of unbroken focus</div>'
-            + '</div>'
-          : '')
-        + '<span onclick="concHistoryFrom=\'exSetupScreen\'; concHistoryFilter=\'clock\'; renderConcHistory(); showScreen(\'concHistoryScreen\');" style="display:block; margin-top:16px; font-size:9px; letter-spacing:.15em; text-transform:uppercase; color:var(--muted); cursor:pointer; text-decoration:underline;">View History</span>';
+
+      // ── Hero clock face (matches the in-session clock styling) ──
+      var ticks = '';
+      for (var t = 0; t < 12; t++) {
+        var ang = t * 30 * Math.PI / 180;
+        var x1 = (120 + Math.sin(ang) * 96).toFixed(1), y1 = (120 - Math.cos(ang) * 96).toFixed(1);
+        var x2 = (120 + Math.sin(ang) * 104).toFixed(1), y2 = (120 - Math.cos(ang) * 104).toFixed(1);
+        ticks += '<line x1="' + x1 + '" y1="' + y1 + '" x2="' + x2 + '" y2="' + y2 + '"/>';
+      }
+      var heroHtml = '<div class="clk-hero"><div class="clk-hero-glow"></div>'
+        + '<svg viewBox="0 0 240 240" width="172" height="172" aria-hidden="true">'
+        +   '<circle class="clk-rim" cx="120" cy="120" r="112"/>'
+        +   '<circle class="clk-rim-inner" cx="120" cy="120" r="104"/>'
+        +   '<circle class="clk-face" cx="120" cy="120" r="104"/>'
+        +   '<g class="clk-ticks">' + ticks + '</g>'
+        +   '<line class="clk-hand" x1="120" y1="120" x2="120" y2="30"/>'
+        +   '<circle class="clk-hub" cx="120" cy="120" r="6"/>'
+        + '</svg></div>';
+
+      // ── Record ──
+      var recordHtml = '<div class="clk-record"><div class="clk-record-label">Your Record</div>';
+      if (best > 0) {
+        var rTime = best >= 60
+          ? Math.floor(best / 60) + '<small>m</small> ' + (best % 60) + '<small>s</small>'
+          : best + '<small>s</small>';
+        recordHtml += '<div class="clk-record-time">' + rTime + '</div>';
+      } else {
+        recordHtml += '<div class="clk-record-none">Not set yet</div>';
+      }
+      recordHtml += '</div>';
+
+      // ── Progress track: a single 0 → 15 min arc with a 10 min waypoint ──
+      var fillPct = Math.min(100, best / 900 * 100);
+      var mark10 = 600 / 900 * 100; // 66.7%
+      var trackHtml;
+      if (mastered) {
+        trackHtml = '<div class="clk-mastered">'
+          + '<div class="clk-mastered-t">This exercise has been mastered</div>'
+          + '<div class="clk-mastered-s">Fifteen minutes of unbroken focus</div>'
+          + '</div>';
+      } else {
+        trackHtml = '<div class="clk-track-wrap">'
+          + '<div class="clk-track-top"><span class="l">Progress</span><span class="r">Goal · 15 min</span></div>'
+          + '<div class="clk-track">'
+          +   '<div class="clk-track-fill" style="width:' + fillPct.toFixed(1) + '%;"></div>'
+          +   '<div class="clk-track-mark" style="left:' + mark10.toFixed(1) + '%;"></div>'
+          + '</div>'
+          + '<div class="clk-track-foot">'
+          +   '<span style="left:0; transform:none;">0</span>'
+          +   '<span style="left:' + mark10.toFixed(1) + '%;">10 min</span>'
+          +   '<span style="right:0; left:auto; transform:none;">15 min</span>'
+          + '</div>'
+          + '</div>';
+      }
+
+      // ── Omnia inline explainer (expand on tap) ──
+      var steps = (EX_EXPLAINERS.clock && EX_EXPLAINERS.clock.steps) || [];
+      var stepsHtml = steps.map(function(s, i) {
+        return '<div class="clk-step"><span class="clk-step-num">' + (i + 1) + '</span><span class="clk-step-txt">' + s + '</span></div>';
+      }).join('');
+      var omniaHtml = '<div class="clk-omnia" id="clkOmnia">'
+        + '<button type="button" class="clk-omnia-head" onclick="toggleClkOmnia()">'
+        +   '<span class="clk-omnia-crystal">' + omniaHeadSVG(28, 46) + '</span>'
+        +   '<span class="clk-omnia-txt"><span class="clk-omnia-title">How it works</span><span class="clk-omnia-sub">Tap Omnia for a walkthrough</span></span>'
+        +   '<span class="clk-omnia-chev">&#9662;</span>'
+        + '</button>'
+        + '<div class="clk-omnia-body"><div class="clk-omnia-inner">' + stepsHtml + '</div></div>'
+        + '</div>';
+
+      var historyHtml = '<button type="button" class="clk-history-link" onclick="concHistoryFrom=\'exSetupScreen\'; concHistoryFilter=\'clock\'; renderConcHistory(); showScreen(\'concHistoryScreen\');">View History</button>';
+
+      return '<div class="clk-setup">' + heroHtml + recordHtml + trackHtml + omniaHtml + historyHtml + '</div>';
     },
     begin: function() { startConcentration(); }
   },
@@ -11144,6 +11174,13 @@ function openExExplainer(ex) {
 function closeExExplainer() {
   var overlay = document.getElementById('exExplainOverlay');
   if (overlay) overlay.classList.remove('show');
+}
+
+// Inline Omnia explainer on the Clock setup screen — expands the steps in place
+// with a gentle crystal pop, rather than opening a modal.
+function toggleClkOmnia() {
+  var el = document.getElementById('clkOmnia');
+  if (el) el.classList.toggle('open');
 }
 
 function openExerciseSetup(ex) {
