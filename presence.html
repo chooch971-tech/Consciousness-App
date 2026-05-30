@@ -5866,6 +5866,16 @@ function checkStreakStatus() {
     if (spend > 0) {
       state.streakFreezes -= spend;
       state.freezesUsed = (state.freezesUsed || 0) + spend;
+      if (broken === 0) {
+        // Freeze(s) protected the streak — clear any stale endedStreakInfo so
+        // the "Streak Ended" popup doesn't fire from an old value in state.
+        state.endedStreakInfo = null;
+        state.streakEndedPromptShown = true;
+        setTimeout(function() {
+          var left = state.streakFreezes || 0;
+          showToast('Streak freeze used · ' + left + ' freeze' + (left === 1 ? '' : 's') + ' remaining', 3200);
+        }, 800);
+      }
     }
     if (broken > 0) {
       state.endedStreakInfo = { days: state.streak, date: state.lastSessionDate };
