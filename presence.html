@@ -6397,6 +6397,9 @@ function runLoop() {
 
   document.getElementById('sessionTimer').textContent = fmt(remaining);
   document.getElementById('nextNotifLabel').textContent = 'next reminder in ' + fmtInterval(untilReminder);
+  // Derive count from elapsed time so it stays accurate when the app was backgrounded
+  sessionReminderCount = elapsed >= sessionIntervalSec ? Math.floor(elapsed / sessionIntervalSec) : 0;
+  document.getElementById('reminderCount').textContent = sessionReminderCount;
 
   if (remaining <= 0) { endSession(); return; }
 
@@ -6449,8 +6452,6 @@ function playReminderBell() {
 function fireReminder() {
   var p = randomPrompt(document.getElementById('sessionPrompt').textContent);
   updateSessionPrompt(p);
-  sessionReminderCount++;
-  document.getElementById('reminderCount').textContent = sessionReminderCount;
   playReminderBell();
   // Fallback: if the pre-fire window was skipped (iOS throttled timers while backgrounded),
   // fire Pavlok now rather than silently missing it. Skip when server is managing Pavlok.
