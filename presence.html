@@ -449,12 +449,12 @@
     .aw-xp-hint { font-family:'DM Mono',monospace; font-size:9px; letter-spacing:.14em; color:var(--accent); text-align:center; margin-bottom:14px; opacity:.7; }
 
     /* ── Awareness action buttons ── */
-    .aw-actions { display:flex; flex-direction:column; gap:8px; padding:0 0 calc(28px + env(safe-area-inset-bottom)); margin-top:auto; }
+    .aw-actions { display:flex; flex-direction:column; gap:11px; padding:0 0 calc(14px + env(safe-area-inset-bottom)); margin-top:auto; }
     .aw-btn-begin { width:100%; padding:17px 20px; border-radius:12px; border:1px solid rgba(126,184,164,.45); background:linear-gradient(145deg,rgba(30,80,60,.85) 0%,rgba(50,120,88,.9) 50%,rgba(28,74,56,.85) 100%); color:#c8f0dc; font-family:'DM Mono',monospace; font-size:11px; letter-spacing:.28em; text-transform:uppercase; cursor:pointer; transition:all .2s; box-shadow:0 0 22px rgba(126,184,164,.18), inset 0 1px 0 rgba(255,255,255,.07); }
     .aw-btn-begin:active { transform:scale(.97); box-shadow:0 0 10px rgba(126,184,164,.1); }
     .aw-btn-history { width:100%; padding:14px 20px; border-radius:10px; border:1px solid rgba(126,184,164,.28); background:rgba(126,184,164,.07); color:var(--accent); font-family:'DM Mono',monospace; font-size:10px; letter-spacing:.22em; text-transform:uppercase; cursor:pointer; transition:all .2s; }
     .aw-btn-history:active { transform:scale(.97); background:rgba(126,184,164,.12); }
-    .aw-btn-about { width:100%; padding:10px 20px; border-radius:8px; border:none; background:none; color:var(--muted); font-family:'DM Mono',monospace; font-size:9px; letter-spacing:.18em; text-transform:uppercase; cursor:pointer; opacity:.65; transition:opacity .2s; }
+    .aw-btn-about { width:100%; padding:10px 20px; border-radius:8px; border:none; background:none; color:var(--muted); font-family:'DM Mono',monospace; font-size:9px; letter-spacing:.18em; text-transform:uppercase; cursor:pointer; opacity:.65; transition:opacity .2s; margin-top:8px; }
     .aw-btn-about:active { opacity:1; }
     .conc-xp-hint { font-family:'DM Mono',monospace; font-size:9px; letter-spacing:.14em; color:#c89878; text-align:center; margin-bottom:14px; opacity:.8; }
     .conc-btn.primary { background:rgba(212,149,110,0.12) !important; border-color:rgba(212,149,110,.35) !important; color:#d4b08e !important; }
@@ -3676,7 +3676,7 @@ body:not(.tut-live) #tutCorgi {
       <span style="font-size:9px; letter-spacing:.2em; text-transform:uppercase; color:var(--accent);">● Session Running</span>
       <button onclick="showScreen('sessionScreen');" style="font-size:9px; letter-spacing:.15em; text-transform:uppercase; color:var(--accent); background:none; border:1px solid rgba(126,184,164,.3); border-radius:4px; padding:5px 12px; cursor:pointer; font-family:'DM Mono',monospace;">Return →</button>
     </div>
-    <div id="awarenessPanel" style="flex:1; display:none; flex-direction:column; overflow-y:auto; -webkit-overflow-scrolling:touch; min-height:0; scrollbar-width:none; -ms-overflow-style:none;">
+    <div id="awarenessPanel" style="flex:1; display:none; flex-direction:column; overflow:hidden; min-height:0; scrollbar-width:none; -ms-overflow-style:none;">
     <!-- Awareness banner -->
     <div class="screen-banner aw-banner">
       <div class="bn-text">
