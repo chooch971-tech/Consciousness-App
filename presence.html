@@ -14032,26 +14032,31 @@ var OMNIA_UPGRADES = [
   { id:'attunement', name:'Attunement', sub:'Cheapens cosmetics and engine upgrades', base:640, step:320 }
 ];
 
+// ── TESTING MODE: all cosmetic costs temporarily set to 0 ────────────────────
+// Original prices are preserved in each item's `_price` field. To restore paid
+// pricing, copy `_price` back into `cost` for every entry below (or delete the
+// cost:0 overrides). Nothing else needs to change.
 var OMNIA_PALETTES = [
-  { id:'aether', name:'Aether Blue', cost:0, color:'#b8eaff', filter:'none', sub:'Original crystalline guide-light' },
-  { id:'rose', name:'Rose Astral', cost:6800, color:'#ffc4d8', filter:'hue-rotate(128deg) saturate(1.28) brightness(1.08)', sub:'A softer astral radiance' },
-  { id:'solar', name:'Solar Gold', cost:9200, color:'#f0d39a', filter:'hue-rotate(182deg) saturate(1.2) brightness(1.1)', sub:'A warm body of will' },
-  { id:'violet', name:'Violet Mind', cost:11800, color:'#c4a8d4', filter:'hue-rotate(74deg) saturate(1.22) brightness(1.04)', sub:'A quiet mental flame' },
-  { id:'verdant', name:'Verdant Vessel', cost:14500, color:'#98d8bd', filter:'hue-rotate(246deg) saturate(1.12) brightness(1.02)', sub:'A healing green current' }
+  { id:'aether', name:'Aether Blue', cost:0, _price:0, color:'#b8eaff', filter:'none', sub:'Original crystalline guide-light' },
+  { id:'rose', name:'Rose Astral', cost:0, _price:6800, color:'#ffc4d8', filter:'hue-rotate(128deg) saturate(1.28) brightness(1.08)', sub:'A softer astral radiance' },
+  { id:'solar', name:'Solar Gold', cost:0, _price:9200, color:'#f0d39a', filter:'hue-rotate(182deg) saturate(1.2) brightness(1.1)', sub:'A warm body of will' },
+  { id:'violet', name:'Violet Mind', cost:0, _price:11800, color:'#c4a8d4', filter:'hue-rotate(74deg) saturate(1.22) brightness(1.04)', sub:'A quiet mental flame' },
+  { id:'verdant', name:'Verdant Vessel', cost:0, _price:14500, color:'#98d8bd', filter:'hue-rotate(246deg) saturate(1.12) brightness(1.02)', sub:'A healing green current' }
 ];
 
 var OMNIA_ENTITIES = [
-  { id:'omnia', name:'Omnia', cost:0, color:'#b8eaff', sub:'The first guide-form' },
-  { id:'noema', name:'Noema', cost:12000, color:'#98b4cc', sub:'A sharper mental entity design' },
-  { id:'aurel', name:'Aurel', cost:18000, color:'#f0d39a', sub:'A solar entity design for disciplined work' },
-  { id:'elys', name:'Elys', cost:26000, color:'#c4a8d4', sub:'An astral entity design for image and symbol' }
+  { id:'omnia', name:'Omnia', cost:0, _price:0, color:'#b8eaff', sub:'The first guide-form' },
+  { id:'noema', name:'Noema', cost:0, _price:12000, color:'#98b4cc', sub:'A sharper mental entity design' },
+  { id:'aurel', name:'Aurel', cost:0, _price:18000, color:'#f0d39a', sub:'A solar entity design for disciplined work' },
+  { id:'elys', name:'Elys', cost:0, _price:26000, color:'#c4a8d4', sub:'An astral entity design for image and symbol' },
+  { id:'seraph', name:'Seraph', cost:0, _price:34000, color:'#f3d486', sub:'A biblically accurate angel — wheels within wheels, eyes of flame' }
 ];
 
 var OMNIA_COMPANIONS = [
-  { id:'wisp', name:'Akashic Wisp', cost:5400, color:'#b8eaff', sub:'A small orbiting practice companion' },
-  { id:'ember', name:'Solar Ember', cost:7600, color:'#f0d39a', sub:'A warm companion for steady effort' },
-  { id:'mote', name:'Violet Mote', cost:9800, color:'#c4a8d4', sub:'A tiny watcher for mental work' },
-  { id:'corgi', name:'Astral Corgi', cost:14500, color:'#d9a069', sub:'A loyal little companion for returning to practice' }
+  { id:'wisp', name:'Akashic Wisp', cost:0, _price:5400, color:'#b8eaff', sub:'A small orbiting practice companion' },
+  { id:'ember', name:'Solar Ember', cost:0, _price:7600, color:'#f0d39a', sub:'A warm companion for steady effort' },
+  { id:'mote', name:'Violet Mote', cost:0, _price:9800, color:'#c4a8d4', sub:'A tiny watcher for mental work' },
+  { id:'corgi', name:'Astral Corgi', cost:0, _price:14500, color:'#d9a069', sub:'A loyal little companion for returning to practice' }
 ];
 
 var OMNIA_BARDON_STEPS = [
@@ -14272,6 +14277,31 @@ function renderOmniaEntityPreview(item) {
       + '<path d="M23 26c4-6 10-8 15-5-3 1-6 4-8 8-2 4-5 6-9 6 0-3 0-6 2-9Z" fill="' + color + '" opacity=".36"/>'
       + '</svg>';
   }
+  if (item.id === 'seraph') {
+    // Compact Ophanim: wheel-in-wheel core with rim eyes and three wing pairs
+    var sEye = function(cx, cy, r) {
+      return '<circle cx="' + cx + '" cy="' + cy + '" r="' + r + '" fill="rgba(20,12,2,.5)" stroke="' + color + '" stroke-width=".6"/>'
+        + '<circle cx="' + cx + '" cy="' + cy + '" r="' + (r * 0.4).toFixed(2) + '" fill="#fff4d0"/>';
+    };
+    var rim = '';
+    for (var k = 0; k < 6; k++) {
+      var ang = k / 6 * Math.PI * 2 - Math.PI / 2;
+      rim += sEye((28 + Math.cos(ang) * 9).toFixed(2), (29 + Math.sin(ang) * 9).toFixed(2), 1.3);
+    }
+    return '<svg viewBox="0 0 56 58" aria-hidden="true">'
+      + '<path d="M28 27 C18 20 10 21 6 29 C10 33 18 37 28 31 Z" fill="' + color + '" opacity=".14" stroke="' + color + '" stroke-width=".8"/>'
+      + '<path d="M28 27 C38 20 46 21 50 29 C46 33 38 37 28 31 Z" fill="' + color + '" opacity=".14" stroke="' + color + '" stroke-width=".8"/>'
+      + '<path d="M28 22 C22 13 19 7 21 2 C26 6 28 14 29 21 Z" fill="' + color + '" opacity=".12" stroke="' + color + '" stroke-width=".75"/>'
+      + '<path d="M28 22 C34 13 37 7 35 2 C30 6 28 14 27 21 Z" fill="' + color + '" opacity=".12" stroke="' + color + '" stroke-width=".75"/>'
+      + '<path d="M28 36 C22 45 19 51 22 56 C27 52 29 44 29 37 Z" fill="' + color + '" opacity=".1" stroke="' + color + '" stroke-width=".7"/>'
+      + '<path d="M28 36 C34 45 37 51 34 56 C29 52 27 44 27 37 Z" fill="' + color + '" opacity=".1" stroke="' + color + '" stroke-width=".7"/>'
+      + '<circle cx="28" cy="29" r="11" fill="' + color + '" opacity=".08" stroke="' + color + '" stroke-width="1"/>'
+      + '<ellipse cx="28" cy="29" rx="11" ry="4.4" fill="none" stroke="' + color + '" stroke-width=".55" opacity=".55"/>'
+      + '<ellipse cx="28" cy="29" rx="4.4" ry="11" fill="none" stroke="' + color + '" stroke-width=".55" opacity=".55"/>'
+      + rim
+      + sEye(28, 29, 2.8)
+      + '</svg>';
+  }
   return '<svg viewBox="0 0 48 58" aria-hidden="true">'
     + '<path d="M24 4 36 20 30 52H18L12 20Z" fill="rgba(255,255,255,.05)" stroke="' + color + '" stroke-width="1.4"/>'
     + '<path d="M24 5v47M13 20h22M18 52l6-32 6 32" fill="none" stroke="' + color + '" stroke-width=".85" opacity=".55"/>'
@@ -14391,6 +14421,59 @@ function getEntityCrystalSVG(id) {
       + '<g opacity=".65" filter="url(#aglow)"><line x1="4" y1="65" x2="10" y2="65" stroke="#f0d39a" stroke-width="1.1"/><line x1="7" y1="62" x2="7" y2="68" stroke="#f0d39a" stroke-width="1.1"/></g>'
       + '<g opacity=".45"><line x1="70" y1="36" x2="76" y2="36" stroke="#e8c870" stroke-width="0.9"/><line x1="73" y1="33" x2="73" y2="39" stroke="#e8c870" stroke-width="0.9"/></g>'
       + '<g opacity=".38"><line x1="5" y1="94" x2="10" y2="94" stroke="#e8c870" stroke-width="0.8"/><line x1="7.5" y1="91.5" x2="7.5" y2="96.5" stroke="#e8c870" stroke-width="0.8"/></g>'
+      + '</svg>';
+  }
+  if (id === 'seraph') {
+    // Biblically accurate angel: an Ophanim wheel-within-a-wheel core, ringed
+    // with eyes, wrapped by three pairs of wings (face / flight / feet) and
+    // licked with flame. Vertical 80x130 frame to match the other entities.
+    var eye = function(cx, cy, r) {
+      return '<circle cx="' + cx + '" cy="' + cy + '" r="' + r + '" fill="rgba(20,12,2,0.55)" stroke="#f3d486" stroke-width="0.7"/>'
+        + '<circle cx="' + cx + '" cy="' + cy + '" r="' + (r * 0.42).toFixed(2) + '" fill="#fff4d0"/>'
+        + '<circle cx="' + (cx + r * 0.18).toFixed(2) + '" cy="' + (cy - r * 0.18).toFixed(2) + '" r="' + (r * 0.16).toFixed(2) + '" fill="#1a1206"/>';
+    };
+    // Eyes ringing the wheel rim
+    var rimEyes = '';
+    for (var s = 0; s < 8; s++) {
+      var a = s / 8 * Math.PI * 2 - Math.PI / 2;
+      rimEyes += eye((40 + Math.cos(a) * 17).toFixed(2), (65 + Math.sin(a) * 17).toFixed(2), 1.9);
+    }
+    return '<svg viewBox="0 0 80 130" width="72" height="118" xmlns="http://www.w3.org/2000/svg" style="overflow:visible;">'
+      + '<defs>'
+      + '<radialGradient id="sgCore" cx="50%" cy="50%" r="50%"><stop offset="0%" stop-color="#fff6d8" stop-opacity="0.95"/><stop offset="100%" stop-color="#c89028" stop-opacity="0"/></radialGradient>'
+      + '<filter id="sglow" x="-45%" y="-45%" width="190%" height="190%"><feGaussianBlur stdDeviation="2.4" result="blur"/><feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge></filter>'
+      + '</defs>'
+      // ── Flight wings (middle, widest, spread horizontally) ──
+      + '<g opacity="0.82" filter="url(#sglow)">'
+      + '<path d="M40,62 C20,50 8,52 2,66 C8,72 20,78 40,70 Z" fill="rgba(243,212,134,0.10)" stroke="#f0c860" stroke-width="0.9"/>'
+      + '<path d="M40,62 C60,50 72,52 78,66 C72,72 60,78 40,70 Z" fill="rgba(243,212,134,0.10)" stroke="#f0c860" stroke-width="0.9"/>'
+      + '<path d="M34,64 C24,60 16,61 10,66 M30,68 C22,66 16,66 11,68" fill="none" stroke="#e8b84a" stroke-width="0.5" opacity="0.5"/>'
+      + '<path d="M46,64 C56,60 64,61 70,66 M50,68 C58,66 64,66 69,68" fill="none" stroke="#e8b84a" stroke-width="0.5" opacity="0.5"/>'
+      + '</g>'
+      // ── Face wings (upper pair, rising) ──
+      + '<g opacity="0.78">'
+      + '<path d="M40,48 C30,34 22,20 24,8 C34,14 40,28 42,44 Z" fill="rgba(243,212,134,0.09)" stroke="#f0c860" stroke-width="0.85"/>'
+      + '<path d="M40,48 C50,34 58,20 56,8 C46,14 40,28 38,44 Z" fill="rgba(243,212,134,0.09)" stroke="#f0c860" stroke-width="0.85"/>'
+      + '<path d="M36,44 C32,34 28,24 28,15 M44,44 C48,34 52,24 52,15" fill="none" stroke="#e8b84a" stroke-width="0.5" opacity="0.5"/>'
+      + '</g>'
+      // ── Feet wings (lower pair, descending) ──
+      + '<g opacity="0.72">'
+      + '<path d="M40,82 C30,96 22,108 26,122 C36,116 41,102 42,86 Z" fill="rgba(243,212,134,0.08)" stroke="#e8b84a" stroke-width="0.8"/>'
+      + '<path d="M40,82 C50,96 58,108 54,122 C44,116 39,102 38,86 Z" fill="rgba(243,212,134,0.08)" stroke="#e8b84a" stroke-width="0.8"/>'
+      + '</g>'
+      // ── Ophanim core: wheel within a wheel ──
+      + '<circle cx="40" cy="65" r="22" fill="url(#sgCore)" filter="url(#sglow)"/>'
+      + '<circle cx="40" cy="65" r="20" fill="rgba(243,212,134,0.06)" stroke="#f0c860" stroke-width="1.1" opacity="0.85"/>'
+      + '<ellipse cx="40" cy="65" rx="20" ry="8" fill="none" stroke="#e8c060" stroke-width="0.8" opacity="0.6"/>'
+      + '<ellipse cx="40" cy="65" rx="8" ry="20" fill="none" stroke="#e8c060" stroke-width="0.8" opacity="0.6"/>'
+      + '<circle cx="40" cy="65" r="11" fill="rgba(255,238,170,0.12)" stroke="#f3d486" stroke-width="0.9" opacity="0.9"/>'
+      + rimEyes
+      // ── Central great eye ──
+      + '<g filter="url(#sglow)">' + eye(40, 65, 5.2) + '</g>'
+      // ── Flame flickers ──
+      + '<path d="M40,40 c2,4 1,7 -1,9 c3,-1 5,-4 4,-8 Z" fill="#f3d486" opacity="0.5" filter="url(#sglow)"/>'
+      + '<g opacity=".6" filter="url(#sglow)"><line x1="5" y1="40" x2="11" y2="40" stroke="#f3d486" stroke-width="1.1"/><line x1="8" y1="37" x2="8" y2="43" stroke="#f3d486" stroke-width="1.1"/></g>'
+      + '<g opacity=".42"><line x1="69" y1="92" x2="75" y2="92" stroke="#e8c870" stroke-width="0.9"/><line x1="72" y1="89" x2="72" y2="95" stroke="#e8c870" stroke-width="0.9"/></g>'
       + '</svg>';
   }
   // Default: null = keep existing HTML (Omnia crystal)
@@ -14596,7 +14679,7 @@ function renderOmniaCosmeticSection(title, kind, items) {
       var unlocked = omniaCosmeticUnlocked(kind, item.id);
       var selected = omniaCosmeticSelected(kind, item.id);
       var liveCost = omniaCosmeticCost(item);
-      var label = selected ? 'Selected' : unlocked ? 'Select' : 'Unlock ' + liveCost;
+      var label = selected ? 'Selected' : unlocked ? 'Select' : liveCost > 0 ? 'Unlock ' + liveCost : 'Unlock';
       var disabled = !unlocked && (omniaState.akasha || 0) < liveCost;
       var sub = item.sub + (!unlocked && item.cost ? ' · ' + liveCost + ' akasha' : '');
       return '<div class="omnia-cosmetic-card' + (selected ? ' selected' : '') + '">'
@@ -15169,9 +15252,14 @@ var OMNIA_ENTITY_MORPH_SYMBOLS = {
     { id:'moon', label:'Astral Bloom', color:'#c4a8d4' },
     { id:'sun', label:'Ember Halo', color:'#d8b7e6' },
     { id:'triangle', label:'Veil Prism', color:'#b995ca' }
+  ],
+  seraph: [
+    { id:'eye', label:'Eye of Flame', color:'#f3d486' },
+    { id:'sun', label:'Wheel of Fire', color:'#f0c860' },
+    { id:'triangle', label:'Sixfold Wing', color:'#e8b84a' }
   ]
 };
-var omniaMorphIndexes = { omnia:0, noema:0, aurel:0, elys:0 };
+var omniaMorphIndexes = { omnia:0, noema:0, aurel:0, elys:0, seraph:0 };
 var omniaMorphTimer = null;
 var omniaMorphRaf = null;
 
