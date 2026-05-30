@@ -17597,6 +17597,21 @@ function buildOmniaReportContext(period, offset) {
     .filter(function(ex){ return !byEx[ex]; })
     .map(function(ex){ return EX_LABELS[ex]; });
 
+  // Concentration streak: consecutive calendar days ending on the last day of
+  // the period that had at least one concentration session. Computed from local
+  // history so it's never stale (unlike state.streak which tracks awareness).
+  var concStreakDays = 0;
+  var _streakDay = new Date(range.now);
+  _streakDay.setDate(_streakDay.getDate() - 1); // last calendar day inside range
+  _streakDay.setHours(0, 0, 0, 0);
+  for (var _si = 0; _si < 365; _si++) {
+    var _dStr = _streakDay.toISOString().slice(0, 10);
+    var _hadConc = concState.history.some(function(h) { return h.date && h.date.slice(0, 10) === _dStr; });
+    if (!_hadConc) break;
+    concStreakDays++;
+    _streakDay.setDate(_streakDay.getDate() - 1);
+  }
+
   return {
     period: period,
     offset: offset || 0,
@@ -17607,7 +17622,7 @@ function buildOmniaReportContext(period, offset) {
     concentration_best_sec: concBest,
     concentration_by_exercise: concByExercise,
     concentration_exercises_untried: untried,
-    streak: state.streak,
+    concentration_streak_days: concStreakDays,
     clock_alltime_pb_sec: concState.bestSeconds || 0,
     omnia_candor: getOmniaCandor()
   };
