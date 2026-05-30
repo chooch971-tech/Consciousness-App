@@ -365,12 +365,13 @@ setInterval(async () => {
     if (currentCycle > lastFired && elapsed >= interval) {
       const prompt = randomPromptFor(sub.endpoint);
       console.log(`[${new Date().toISOString()}] Attempting push: cycle ${currentCycle}, elapsed ${elapsed}s, interval ${interval}s`);
-      // Fire Pavlok in lockstep with the push so the buzz/zap lands with the
-      // notification regardless of whether the phone is locked.
+      // Send the push first, then fire Pavlok. The push has extra delivery
+      // latency through APNs/FCM after the request resolves, so firing Pavlok
+      // afterwards keeps the buzz/zap from landing a beat ahead of the banner.
+      const result = await pushTo(sub, prompt);
       if (sub.pavlok && sub.pavlok.token) {
         firePavlokServer(sub.pavlok.token, sub.pavlok.type, sub.pavlok.intensity);
       }
-      const result = await pushTo(sub, prompt);
       if (result === 'dead') {
         dead.push(sub.endpoint);
       } else if (result === true) {

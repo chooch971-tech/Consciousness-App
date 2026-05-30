@@ -8093,6 +8093,15 @@ document.addEventListener('visibilitychange', function() {
   if (document.visibilityState === 'hidden' && sessionStartTime) saveSessionState();
   if (document.visibilityState === 'visible') {
     scheduleGuidePathLayoutRefresh(false);
+    // Restore the active session screen if we returned to the app mid-session
+    // (iOS may have suspended the page or switched the visible screen).
+    if (sessionStartTime && getSecondsRemaining() > 0) {
+      var sessScreen = document.getElementById('sessionScreen');
+      if (sessScreen && !sessScreen.classList.contains('active')) {
+        showScreen('sessionScreen');
+        runLoop();
+      }
+    }
   }
   // When app becomes visible again, refresh token if needed, then pull
   if (document.visibilityState === 'visible' && syncEnabled && authToken) {
@@ -8112,7 +8121,10 @@ document.addEventListener('visibilitychange', function() {
         }
       });
       var surveyShowing = document.getElementById('surveyScreen') && document.getElementById('surveyScreen').classList.contains('active');
-      if (changed && !sessionStorage.getItem('_pullReloaded') && !surveyShowing && !sessionStorage.getItem('_sessionJustEnded')) {
+      // Never reload while an awareness session is running — it wipes the live
+      // session screen and drops the user on home with a frozen timer.
+      var sessionActive = sessionStartTime && getSecondsRemaining() > 0;
+      if (changed && !sessionActive && !sessionStorage.getItem('_pullReloaded') && !surveyShowing && !sessionStorage.getItem('_sessionJustEnded')) {
         sessionStorage.setItem('_pullReloaded', '1');
         console.log('[Sync] New cloud data detected — reloading');
         window.location.reload();
@@ -8168,7 +8180,10 @@ if (!localStorage.getItem('presence_auth_token')) {
       if (changed) {
         // Reload once with fresh data — sessionStorage flag prevents infinite loop
         var surveyShowing2 = document.getElementById('surveyScreen') && document.getElementById('surveyScreen').classList.contains('active');
-        if (!sessionStorage.getItem('_pullReloaded') && !surveyShowing2 && !sessionStorage.getItem('_sessionJustEnded')) {
+        var savedSess2 = localStorage.getItem('presence_session');
+        var sessionActive2 = false;
+        if (savedSess2) { try { var ss = JSON.parse(savedSess2); sessionActive2 = (ss.durationSec - Math.floor((Date.now() - ss.startTime) / 1000)) > 0; } catch(e) {} }
+        if (!sessionActive2 && !sessionStorage.getItem('_pullReloaded') && !surveyShowing2 && !sessionStorage.getItem('_sessionJustEnded')) {
           sessionStorage.setItem('_pullReloaded', '1');
           console.log('[Sync] Fresh data on startup — reloading');
           window.location.reload();
