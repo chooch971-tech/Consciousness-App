@@ -3298,7 +3298,7 @@ body:not(.tut-live) #tutCorgi {
 .clock-banner .bn-ripple { border:1px solid rgba(224,148,88,.45); }
 
 /* ── Exercise setup banner (per-exercise colour via CSS vars) ── */
-.ex-banner { position:relative; flex-shrink:0; height:154px; margin:var(--safe-top) 12px 6px; border-radius:18px; overflow:hidden;
+.ex-banner { position:relative; flex-shrink:0; height:154px; margin:8px 12px 6px; border-radius:18px; overflow:hidden;
   display:flex; align-items:center; padding:0 26px;
   background:linear-gradient(145deg, rgba(var(--exb-rgb),.13) 0%, rgba(var(--exb-rgb),.05) 46%, rgba(0,0,0,.25) 100%), #090a10; }
 .ex-banner::before { content:''; position:absolute; inset:0; pointer-events:none;
@@ -10867,8 +10867,8 @@ var EXERCISE_DEFS = {
 // (foreground symbol + faint background watermark) for depth.
 var EX_BANNER_CONFIG = {
   clock: {
-    rgb: '224,124,58', light: '#e8a070', label: 'Concentration · Clock',
-    tagline: 'Follow the second hand. Mind blank.',
+    rgb: '224,124,58', light: '#e8a070', label: 'Concentration', title: 'Clock',
+    tagline: 'Follow the seconds hand. No thoughts.',
     symInner:
       '<circle cx="50" cy="50" r="38" stroke="#e8a070" stroke-width="2.2" opacity="0.85"/>'
       + '<circle cx="50" cy="50" r="3.2" fill="#e8a070"/>'
@@ -10927,10 +10927,59 @@ function updateExSetupBanner(ex) {
   var sym   = document.getElementById('exBannerSym');
   var wm    = document.getElementById('exBannerWatermark');
   if (label) label.textContent = cfg.label || 'Concentration';
-  if (title) title.textContent = (EXERCISE_DEFS[ex] && EXERCISE_DEFS[ex].name) || cfg.title || '';
+  if (title) title.textContent = cfg.title || (EXERCISE_DEFS[ex] && EXERCISE_DEFS[ex].name) || '';
   if (tag)   tag.textContent = cfg.tagline || '';
   if (sym)   sym.innerHTML = '<svg width="96" height="96" viewBox="0 0 100 100" fill="none">' + cfg.symInner + '</svg>';
   if (wm)    wm.innerHTML = '<svg width="220" height="220" viewBox="0 0 100 100" fill="none">' + cfg.symInner + '</svg>';
+}
+
+// Omnia's crystal — used as the clickable "explain this exercise" head.
+function omniaHeadSVG(w, h) {
+  return '<svg width="' + w + '" height="' + h + '" viewBox="0 0 72 118" fill="none" xmlns="http://www.w3.org/2000/svg">'
+    + '<polygon points="36,2 50,14 36,26 22,14" fill="#ceeaff" stroke="#90cce8" stroke-width=".8" opacity=".95"/>'
+    + '<polygon points="36,2 50,14 36,13" fill="#e8f8ff" opacity=".55"/>'
+    + '<polygon points="36,2 22,14 36,13" fill="#b4daf5" opacity=".35"/>'
+    + '<polygon points="36,26 56,37 60,59 36,70 12,59 16,37" fill="#b8dcf5" stroke="#88c4e0" stroke-width=".7" opacity=".88"/>'
+    + '<polygon points="36,26 56,37 36,45" fill="#d4ecff" opacity=".44"/>'
+    + '<polygon points="36,26 16,37 36,45" fill="#a8d4f0" opacity=".28"/>'
+    + '<polygon points="36,70 60,59 52,88 36,100 20,88 12,59" fill="#a8d4f0" stroke="#88c4e0" stroke-width=".7" opacity=".82"/>'
+    + '<polygon points="36,100 52,88 36,116" fill="#98c8e8" stroke="#88c4e0" stroke-width=".6" opacity=".7"/>'
+    + '<polygon points="36,100 20,88 36,116" fill="#88c0e0" stroke="#88c4e0" stroke-width=".6" opacity=".52"/>'
+    + '</svg>';
+}
+
+// Condensed, Omnia-voiced walkthroughs shown in the explainer modal.
+var EX_EXPLAINERS = {
+  clock: {
+    title: 'The Clock',
+    steps: [
+      'Watch the <strong>second hand</strong> and keep your eyes and attention fixed on its sweep.',
+      'Let <strong>no other thought</strong> enter. The moving hand is the only thing in your mind.',
+      'The instant a thought slips in, <strong>tap the screen</strong> — the session ends there.',
+      'Your time is logged. Day by day, the gap before the first thought grows longer.'
+    ]
+  }
+};
+
+function openExExplainer(ex) {
+  var data = EX_EXPLAINERS[ex];
+  if (!data) return;
+  var omniaEl = document.getElementById('exExplainOmnia');
+  var titleEl = document.getElementById('exExplainTitle');
+  var stepsEl = document.getElementById('exExplainSteps');
+  if (omniaEl) omniaEl.innerHTML = omniaHeadSVG(54, 88);
+  if (titleEl) titleEl.textContent = data.title || 'How it works';
+  if (stepsEl) stepsEl.innerHTML = data.steps.map(function(s, i) {
+    return '<div class="ex-explain-step"><div class="ex-explain-step-num">' + (i + 1) + '</div>'
+      + '<div class="ex-explain-step-text">' + s + '</div></div>';
+  }).join('');
+  var overlay = document.getElementById('exExplainOverlay');
+  if (overlay) overlay.classList.add('show');
+}
+
+function closeExExplainer() {
+  var overlay = document.getElementById('exExplainOverlay');
+  if (overlay) overlay.classList.remove('show');
 }
 
 function openExerciseSetup(ex) {
@@ -10943,6 +10992,15 @@ function openExerciseSetup(ex) {
   document.getElementById('exSetupIcon').innerHTML = def.icon;
   document.getElementById('exSetupName').textContent = def.name;
   document.getElementById('exSetupDesc').innerHTML = typeof def.desc === 'function' ? def.desc() : def.desc;
+  // Exercises with an Omnia explainer drop the long inline description — the
+  // walkthrough lives behind the clickable Omnia head instead.
+  if (EX_EXPLAINERS[ex]) {
+    var descEl = document.getElementById('exSetupDesc');
+    descEl.innerHTML = '';
+    descEl.style.marginBottom = '0';
+  } else {
+    document.getElementById('exSetupDesc').style.marginBottom = '32px';
+  }
   if (ex === 'visual') {
     document.getElementById('exSetupDesc').innerHTML +=
       '<div style="margin-top:12px;">'
