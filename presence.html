@@ -3594,7 +3594,7 @@ body:not(.tut-live) #tutCorgi {
   </div>
 
   <!-- AWARENESS HOME -->
-  <div id="homeScreen" style="display:flex; flex-direction:column; height:100%; padding:var(--safe-top) 24px max(env(safe-area-inset-bottom),28px); background:var(--bg);">
+  <div id="homeScreen" style="display:flex; flex-direction:column; height:100%; padding:var(--safe-top) 24px 0; background:var(--bg);">
     <div class="top-bar">
       <button class="hamburger" id="hamburgerBtn" aria-label="Menu">
         <span></span><span></span><span></span>
@@ -3637,7 +3637,7 @@ body:not(.tut-live) #tutCorgi {
       <span style="font-size:9px; letter-spacing:.2em; text-transform:uppercase; color:var(--accent);">● Session Running</span>
       <button onclick="showScreen('sessionScreen');" style="font-size:9px; letter-spacing:.15em; text-transform:uppercase; color:var(--accent); background:none; border:1px solid rgba(126,184,164,.3); border-radius:4px; padding:5px 12px; cursor:pointer; font-family:'DM Mono',monospace;">Return →</button>
     </div>
-    <div id="awarenessPanel" style="flex:1; display:none; flex-direction:column; overflow-y:auto; -webkit-overflow-scrolling:touch; min-height:0;">
+    <div id="awarenessPanel" style="flex:1; display:none; flex-direction:column; overflow-y:auto; -webkit-overflow-scrolling:touch; min-height:0; padding-bottom:calc(20px + env(safe-area-inset-bottom));">
     <!-- Awareness banner -->
     <div class="screen-banner aw-banner">
       <div class="bn-text">
@@ -3787,7 +3787,7 @@ body:not(.tut-live) #tutCorgi {
         <div class="conc-xp-hint" id="concXPHint"></div>
       </div>
       <!-- Exercise grid -->
-      <div style="padding-bottom:80px;" id="concScrollArea">
+      <div style="padding-bottom:calc(80px + env(safe-area-inset-bottom));" id="concScrollArea">
         <!-- Level toggle -->
         <div style="display:flex; gap:8px; padding:0 0 16px 0; align-items:center; justify-content:center;">
           <button class="conc-level-tab active" id="concLevelBeginner">Beginner</button>
@@ -3953,7 +3953,7 @@ body:not(.tut-live) #tutCorgi {
       </div>
     </div>
     <!-- GUIDE PANEL (inside homeScreen) -->
-    <div id="guidePanel" style="display:flex; flex:1 1 auto; flex-direction:column; overflow-y:auto; overflow-x:hidden; -webkit-overflow-scrolling:touch; min-height:0; padding-bottom:60px;">
+    <div id="guidePanel" style="display:flex; flex:1 1 auto; flex-direction:column; overflow-y:auto; overflow-x:hidden; -webkit-overflow-scrolling:touch; min-height:0; padding-bottom:calc(60px + env(safe-area-inset-bottom));">
     <div class="guide-dots-nav">
       <div class="guide-dots">
         <button class="guide-dot active" id="guidePathTab" data-tab="path" aria-label="Path"></button>
