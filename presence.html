@@ -287,7 +287,11 @@
     .session-bottom { width:100%; text-align:center; }
     .reminder-count { font-size:10px; letter-spacing:.15em; color:var(--muted); margin-bottom:16px; }
     .reminder-count span { color:var(--accent2); }
-    .session-pvk-row { display:flex; align-items:center; gap:10px; padding:12px 20px 4px; }
+    .session-pvk-block { padding:10px 20px 6px; }
+    .session-pvk-types { display:flex; gap:6px; justify-content:center; margin-bottom:10px; }
+    .session-pvk-type { flex:1; padding:7px 4px; border-radius:7px; border:1px solid var(--border2); background:transparent; color:var(--muted); font-family:'DM Mono',monospace; font-size:9px; letter-spacing:.1em; cursor:pointer; transition:all .15s; }
+    .session-pvk-type.sel { background:rgba(155,142,196,.18); border-color:rgba(155,142,196,.45); color:#c4b8e8; }
+    .session-pvk-row { display:flex; align-items:center; gap:10px; padding:0; }
     .session-pvk-label { font-family:'DM Mono',monospace; font-size:9px; letter-spacing:.16em; text-transform:uppercase; color:var(--muted); white-space:nowrap; }
     .session-pvk-slider { flex:1; -webkit-appearance:none; appearance:none; height:3px; border-radius:2px; background:linear-gradient(to right,rgba(155,142,196,.7) 0%,rgba(155,142,196,.7) var(--pct,50%),var(--border2) var(--pct,50%),var(--border2) 100%); outline:none; cursor:pointer; }
     .session-pvk-slider::-webkit-slider-thumb { -webkit-appearance:none; width:20px; height:20px; border-radius:50%; background:#9b8ec4; border:2px solid rgba(155,142,196,.5); box-shadow:0 0 8px rgba(155,142,196,.4); cursor:pointer; }
@@ -5070,11 +5074,14 @@ body:not(.tut-live) #tutCorgi {
     </div>
     <div class="session-bottom">
       <div class="reminder-count">reminders sent: <span id="reminderCount">0</span></div>
-      <div class="session-pvk-row" id="sessionPvkRow" style="display:none;">
-        <span class="session-pvk-label">⚡ Intensity</span>
-        <input type="range" min="1" max="100" class="session-pvk-slider" id="sessionPvkSlider"
-          oninput="sessionPvkInput(this)">
-        <span class="session-pvk-val" id="sessionPvkVal">50</span>
+      <div class="session-pvk-block" id="sessionPvkRow" style="display:none;">
+        <div class="session-pvk-types" id="sessionPvkTypes"></div>
+        <div class="session-pvk-row">
+          <span class="session-pvk-label">Intensity</span>
+          <input type="range" min="1" max="100" class="session-pvk-slider" id="sessionPvkSlider"
+            oninput="sessionPvkInput(this)">
+          <span class="session-pvk-val" id="sessionPvkVal">50</span>
+        </div>
       </div>
       <button id="sessionPrayerBtn" onclick="openPrayerDuringSession();" style="margin-top:14px; font-size:9px; letter-spacing:.2em; text-transform:uppercase; color:#9b8ec4; background:none; border:1px solid rgba(155,142,196,.2); border-radius:4px; padding:8px 20px; cursor:pointer; font-family:'DM Mono',monospace;">🙏 Open Prayer</button>
     </div>
@@ -6421,16 +6428,33 @@ function fireReminder() {
 }
 
 function initSessionPvkSlider() {
-  var row = document.getElementById('sessionPvkRow');
+  var block = document.getElementById('sessionPvkRow');
   var slider = document.getElementById('sessionPvkSlider');
   var valEl = document.getElementById('sessionPvkVal');
-  if (!row || !slider) return;
-  if (!getPavlokToken()) { row.style.display = 'none'; return; }
-  var val = (getPavlokPrefs().awareness.intensity) || 50;
+  var typesEl = document.getElementById('sessionPvkTypes');
+  if (!block || !slider) return;
+  if (!getPavlokToken()) { block.style.display = 'none'; return; }
+  var p = getPavlokPrefs();
+  var val = p.awareness.intensity || 50;
+  var currentType = p.awareness.type || 'vibe';
   slider.value = val;
   slider.style.setProperty('--pct', val + '%');
   valEl.textContent = val;
-  row.style.display = 'flex';
+  typesEl.innerHTML = [['vibe','Vibrate'],['beep','Beep'],['zap','⚡ Zap']].map(function(t) {
+    return '<button class="session-pvk-type' + (currentType === t[0] ? ' sel' : '') + '" onclick="sessionPvkSetType(\'' + t[0] + '\')">' + t[1] + '</button>';
+  }).join('');
+  block.style.display = 'block';
+}
+
+function sessionPvkSetType(type) {
+  var p = getPavlokPrefs();
+  p.awareness.type = type;
+  savePavlokPrefs(p);
+  var btns = document.querySelectorAll('.session-pvk-type');
+  var types = ['vibe','beep','zap'];
+  btns.forEach(function(btn, i) {
+    btn.classList.toggle('sel', types[i] === type);
+  });
 }
 
 function sessionPvkInput(el) {
