@@ -10894,7 +10894,8 @@ var EXERCISE_DEFS = {
   clock: {
     icon: '&#9200;',
     name: 'Clock Exercise',
-    desc: function() {
+    desc: '',
+    setupHTML: function() {
       var best = (concState.history || []).reduce(function(b, s) {
         if (s.exercise === 'asana' || s.type === 'visualization' || s.type === 'auditory' || s.type === 'thought') return b;
         return s.seconds > b ? s.seconds : b;
@@ -10943,7 +10944,6 @@ var EXERCISE_DEFS = {
           : '')
         + '<span onclick="concHistoryFrom=\'exSetupScreen\'; concHistoryFilter=\'clock\'; renderConcHistory(); showScreen(\'concHistoryScreen\');" style="display:block; margin-top:16px; font-size:9px; letter-spacing:.15em; text-transform:uppercase; color:var(--muted); cursor:pointer; text-decoration:underline;">View History</span>';
     },
-    setupHTML: '',
     begin: function() { startConcentration(); }
   },
   visual: {
@@ -11155,8 +11155,11 @@ function openExerciseSetup(ex) {
   updateExSetupBanner(ex);
   document.getElementById('exSetupIcon').innerHTML = def.icon;
   document.getElementById('exSetupName').textContent = def.name;
-  document.getElementById('exSetupDesc').innerHTML = typeof def.desc === 'function' ? def.desc() : def.desc;
-  document.getElementById('exSetupDesc').style.marginBottom = '32px';
+  var _descEl = document.getElementById('exSetupDesc');
+  var _descHtml = typeof def.desc === 'function' ? def.desc() : (def.desc || '');
+  _descEl.innerHTML = _descHtml;
+  _descEl.style.display = _descHtml.trim() ? '' : 'none';
+  _descEl.style.marginBottom = _descHtml.trim() ? '32px' : '0';
   if (ex === 'visual') {
     document.getElementById('exSetupDesc').innerHTML +=
       '<div style="margin-top:12px;">'
