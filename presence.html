@@ -6296,7 +6296,7 @@ function fireReminder() {
   document.getElementById('reminderCount').textContent = sessionReminderCount;
   playReminderBell();
   var pvk = getPavlokPrefs();
-  if (pvk.awareness.enabled) sendPavlokStimulus('vibe', pvk.awareness.intensity);
+  if (pvk.awareness.enabled) sendPavlokStimulus(pvk.awareness.type || 'vibe', pvk.awareness.intensity);
 }
 
 function updateSessionPrompt(text) {
@@ -21131,7 +21131,7 @@ var PAVLOK_TOKEN_KEY  = 'presence_pavlok_token';
 var PAVLOK_EMAIL_KEY  = 'presence_pavlok_email';
 var PAVLOK_PREFS_KEY  = 'presence_pavlok_prefs';
 var PAVLOK_DEFAULT_PREFS = {
-  awareness:     { enabled: true,  intensity: 50 },
+  awareness:     { enabled: true,  intensity: 50, type: 'vibe' },
   prayer:        { enabled: true,  intensity: 40 },
   concentration: { enabled: true,  intensity: 60 },
 };
@@ -21183,7 +21183,7 @@ function pavlokDisconnect() {
 
 function pavlokTest() {
   var p = getPavlokPrefs();
-  sendPavlokStimulus('vibe', p.awareness.intensity);
+  sendPavlokStimulus(p.awareness.type || 'vibe', p.awareness.intensity);
 }
 
 function renderPavlokSettings() {
@@ -21219,10 +21219,16 @@ function renderPavlokSettings() {
       + '<button onclick="pavlokDisconnect()" style="background:none;border:none;font-family:\'DM Mono\',monospace;font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);cursor:pointer;padding:4px 0;">Disconnect</button>'
       + '</div>'
       + '<div class="pvk-row">'
-      + '<div><div class="pvk-row-label">Awareness reminder</div><div class="pvk-row-sub">Vibrate at each interval bell</div></div>'
+      + '<div><div class="pvk-row-label">Awareness reminder</div><div class="pvk-row-sub">' + (p.awareness.type === 'zap' ? 'Zap' : p.awareness.type === 'beep' ? 'Beep' : 'Vibrate') + ' at each interval bell</div></div>'
       + '<button class="pvk-toggle ' + (p.awareness.enabled ? 'on' : 'off') + '" onclick="pavlokToggle(\'awareness\')"></button>'
       + '</div>'
-      + (p.awareness.enabled ? '<div style="padding:8px 0 4px;">' + intensityHtml('awareness') + '</div>' : '')
+      + (p.awareness.enabled ? '<div style="padding:8px 0 2px;"><div class="pvk-intensity" style="margin-bottom:8px;">'
+        + ['vibe','beep','zap'].map(function(t) {
+            var sel = (p.awareness.type || 'vibe') === t ? ' sel' : '';
+            var label = t === 'vibe' ? 'Vibrate' : t === 'beep' ? 'Beep' : '⚡ Zap';
+            return '<button class="pvk-lvl' + sel + '" onclick="pavlokSetType(\'awareness\',\'' + t + '\')">' + label + '</button>';
+          }).join('')
+        + '</div>' + intensityHtml('awareness') + '</div>' : '')
       + '<div class="pvk-row">'
       + '<div><div class="pvk-row-label">Prayer time</div><div class="pvk-row-sub">Vibrate when a prayer time fires</div></div>'
       + '<button class="pvk-toggle ' + (p.prayer.enabled ? 'on' : 'off') + '" onclick="pavlokToggle(\'prayer\')"></button>'
@@ -21255,6 +21261,13 @@ function pavlokToggle(key) {
 function pavlokSetIntensity(key, val) {
   var p = getPavlokPrefs();
   p[key].intensity = val;
+  savePavlokPrefs(p);
+  renderPavlokSettings();
+}
+
+function pavlokSetType(key, type) {
+  var p = getPavlokPrefs();
+  p[key].type = type;
   savePavlokPrefs(p);
   renderPavlokSettings();
 }
