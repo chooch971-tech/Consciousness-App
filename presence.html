@@ -14425,55 +14425,39 @@ function getEntityCrystalSVG(id) {
       + '</svg>';
   }
   if (id === 'seraph') {
-    // Biblically accurate angel: an Ophanim wheel-within-a-wheel core, ringed
-    // with eyes, wrapped by three pairs of wings (face / flight / feet) and
-    // licked with flame. Vertical 80x130 frame to match the other entities.
     var eye = function(cx, cy, r) {
-      return '<circle cx="' + cx + '" cy="' + cy + '" r="' + r + '" fill="rgba(20,12,2,0.55)" stroke="#f3d486" stroke-width="0.7"/>'
-        + '<circle cx="' + cx + '" cy="' + cy + '" r="' + (r * 0.42).toFixed(2) + '" fill="#fff4d0"/>'
+      return '<circle cx="' + cx.toFixed(2) + '" cy="' + cy.toFixed(2) + '" r="' + r + '" fill="rgba(20,12,2,0.55)" stroke="#f3d486" stroke-width="0.7"/>'
+        + '<circle cx="' + cx.toFixed(2) + '" cy="' + cy.toFixed(2) + '" r="' + (r * 0.42).toFixed(2) + '" fill="#fff4d0"/>'
         + '<circle cx="' + (cx + r * 0.18).toFixed(2) + '" cy="' + (cy - r * 0.18).toFixed(2) + '" r="' + (r * 0.16).toFixed(2) + '" fill="#1a1206"/>';
     };
-    // Eyes ringing the wheel rim
     var rimEyes = '';
-    for (var s = 0; s < 8; s++) {
-      var a = s / 8 * Math.PI * 2 - Math.PI / 2;
-      rimEyes += eye(40 + Math.cos(a) * 17, 65 + Math.sin(a) * 17, 1.9);
+    for (var s = 0; s < 6; s++) {
+      var a = s / 6 * Math.PI * 2 - Math.PI / 2;
+      rimEyes += eye(40 + Math.cos(a) * 13, 65 + Math.sin(a) * 13, 2.1);
     }
     return '<svg viewBox="0 0 80 130" width="72" height="118" xmlns="http://www.w3.org/2000/svg" style="overflow:visible;">'
       + '<defs>'
       + '<radialGradient id="sgCore" cx="50%" cy="50%" r="50%"><stop offset="0%" stop-color="#fff6d8" stop-opacity="0.95"/><stop offset="100%" stop-color="#c89028" stop-opacity="0"/></radialGradient>'
       + '<filter id="sglow" x="-45%" y="-45%" width="190%" height="190%"><feGaussianBlur stdDeviation="2.4" result="blur"/><feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge></filter>'
       + '</defs>'
-      // ── Flight wings (middle, widest, spread horizontally) ──
-      + '<g opacity="0.82" filter="url(#sglow)">'
-      + '<path d="M40,62 C20,50 8,52 2,66 C8,72 20,78 40,70 Z" fill="rgba(243,212,134,0.10)" stroke="#f0c860" stroke-width="0.9"/>'
-      + '<path d="M40,62 C60,50 72,52 78,66 C72,72 60,78 40,70 Z" fill="rgba(243,212,134,0.10)" stroke="#f0c860" stroke-width="0.9"/>'
-      + '<path d="M34,64 C24,60 16,61 10,66 M30,68 C22,66 16,66 11,68" fill="none" stroke="#e8b84a" stroke-width="0.5" opacity="0.5"/>'
-      + '<path d="M46,64 C56,60 64,61 70,66 M50,68 C58,66 64,66 69,68" fill="none" stroke="#e8b84a" stroke-width="0.5" opacity="0.5"/>'
-      + '</g>'
-      // ── Face wings (upper pair, rising) ──
-      + '<g opacity="0.78">'
-      + '<path d="M40,48 C30,34 22,20 24,8 C34,14 40,28 42,44 Z" fill="rgba(243,212,134,0.09)" stroke="#f0c860" stroke-width="0.85"/>'
-      + '<path d="M40,48 C50,34 58,20 56,8 C46,14 40,28 38,44 Z" fill="rgba(243,212,134,0.09)" stroke="#f0c860" stroke-width="0.85"/>'
-      + '<path d="M36,44 C32,34 28,24 28,15 M44,44 C48,34 52,24 52,15" fill="none" stroke="#e8b84a" stroke-width="0.5" opacity="0.5"/>'
-      + '</g>'
-      // ── Feet wings (lower pair, descending) ──
-      + '<g opacity="0.72">'
-      + '<path d="M40,82 C30,96 22,108 26,122 C36,116 41,102 42,86 Z" fill="rgba(243,212,134,0.08)" stroke="#e8b84a" stroke-width="0.8"/>'
-      + '<path d="M40,82 C50,96 58,108 54,122 C44,116 39,102 38,86 Z" fill="rgba(243,212,134,0.08)" stroke="#e8b84a" stroke-width="0.8"/>'
-      + '</g>'
-      // ── Ophanim core: wheel within a wheel ──
-      + '<circle cx="40" cy="65" r="22" fill="url(#sgCore)" filter="url(#sglow)"/>'
-      + '<circle cx="40" cy="65" r="20" fill="rgba(243,212,134,0.06)" stroke="#f0c860" stroke-width="1.1" opacity="0.85"/>'
-      + '<ellipse cx="40" cy="65" rx="20" ry="8" fill="none" stroke="#e8c060" stroke-width="0.8" opacity="0.6"/>'
-      + '<ellipse cx="40" cy="65" rx="8" ry="20" fill="none" stroke="#e8c060" stroke-width="0.8" opacity="0.6"/>'
-      + '<circle cx="40" cy="65" r="11" fill="rgba(255,238,170,0.12)" stroke="#f3d486" stroke-width="0.9" opacity="0.9"/>'
+      + '<path d="M40,61 C25,45 13,47 7,65 C13,74 25,83 40,69 Z" fill="rgba(243,212,134,0.10)" stroke="#f0c860" stroke-width="0.9"/>'
+      + '<path d="M40,61 C55,45 67,47 73,65 C67,74 55,83 40,69 Z" fill="rgba(243,212,134,0.10)" stroke="#f0c860" stroke-width="0.9"/>'
+      + '<path d="M32,63 C22,59 14,60 8,65 M28,69 C19,67 13,67 8,69" fill="none" stroke="#e8b84a" stroke-width="0.5" opacity="0.5"/>'
+      + '<path d="M48,63 C58,59 66,60 72,65 M52,69 C61,67 67,67 72,69" fill="none" stroke="#e8b84a" stroke-width="0.5" opacity="0.5"/>'
+      + '<path d="M40,50 C31,30 26,17 28,6 C37,14 40,32 41,50 Z" fill="rgba(243,212,134,0.10)" stroke="#f0c860" stroke-width="0.85"/>'
+      + '<path d="M40,50 C49,30 54,17 52,6 C43,14 40,32 39,50 Z" fill="rgba(243,212,134,0.10)" stroke="#f0c860" stroke-width="0.85"/>'
+      + '<path d="M36,46 C30,32 26,20 26,12 M44,46 C50,32 54,20 54,12" fill="none" stroke="#e8b84a" stroke-width="0.5" opacity="0.5"/>'
+      + '<path d="M40,79 C31,95 26,108 31,119 C37,112 41,93 41,81 Z" fill="rgba(243,212,134,0.09)" stroke="#e8b84a" stroke-width="0.8"/>'
+      + '<path d="M40,79 C49,95 54,108 49,119 C43,112 39,93 39,81 Z" fill="rgba(243,212,134,0.09)" stroke="#e8b84a" stroke-width="0.8"/>'
+      + '<circle cx="40" cy="65" r="18" fill="url(#sgCore)" filter="url(#sglow)"/>'
+      + '<circle cx="40" cy="65" r="16" fill="rgba(243,212,134,0.06)" stroke="#f0c860" stroke-width="1.1" opacity="0.85"/>'
+      + '<ellipse cx="40" cy="65" rx="16" ry="6.4" fill="none" stroke="#e8c060" stroke-width="0.8" opacity="0.6"/>'
+      + '<ellipse cx="40" cy="65" rx="6.4" ry="16" fill="none" stroke="#e8c060" stroke-width="0.8" opacity="0.6"/>'
+      + '<circle cx="40" cy="65" r="9" fill="rgba(255,248,200,0.10)" stroke="#f3d486" stroke-width="0.9" opacity="0.9"/>'
       + rimEyes
-      // ── Central great eye ──
-      + '<g filter="url(#sglow)">' + eye(40, 65, 5.2) + '</g>'
-      // ── Flame flickers ──
-      + '<path d="M40,40 c2,4 1,7 -1,9 c3,-1 5,-4 4,-8 Z" fill="#f3d486" opacity="0.5" filter="url(#sglow)"/>'
-      + '<g opacity=".6" filter="url(#sglow)"><line x1="5" y1="40" x2="11" y2="40" stroke="#f3d486" stroke-width="1.1"/><line x1="8" y1="37" x2="8" y2="43" stroke="#f3d486" stroke-width="1.1"/></g>'
+      + '<g filter="url(#sglow)">' + eye(40, 65, 5) + '</g>'
+      + '<path d="M40,38 c2,4 1,7 -1,9 c3,-1 5,-4 4,-8 Z" fill="#f3d486" opacity="0.5" filter="url(#sglow)"/>'
+      + '<g opacity=".6" filter="url(#sglow)"><line x1="5" y1="38" x2="11" y2="38" stroke="#f3d486" stroke-width="1.1"/><line x1="8" y1="35" x2="8" y2="41" stroke="#f3d486" stroke-width="1.1"/></g>'
       + '<g opacity=".42"><line x1="69" y1="92" x2="75" y2="92" stroke="#e8c870" stroke-width="0.9"/><line x1="72" y1="89" x2="72" y2="95" stroke="#e8c870" stroke-width="0.9"/></g>'
       + '</svg>';
   }
