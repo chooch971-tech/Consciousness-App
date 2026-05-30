@@ -14639,27 +14639,31 @@ function applyOmniaCosmetics() {
   var palette = omniaFindCosmetic(OMNIA_PALETTES, omniaState.cosmetics.palette || 'aether');
   var entity = omniaFindCosmetic(OMNIA_ENTITIES, omniaState.cosmetics.entity || 'omnia');
   var companion = omniaState.cosmetics.companion ? omniaFindCosmetic(OMNIA_COMPANIONS, omniaState.cosmetics.companion) : null;
+  var entitySVG = getEntityCrystalSVG(entity.id);
+  var entityDropShadow = entitySVG ? 'drop-shadow(0 0 10px ' + entity.color + '88)' : '';
+  // Apply palette filter + entity SVG to all Omnia figure elements
+  ['guideOmniaFigure', 'omniaCenterFigure', 'pathBannerOmniaFigure'].forEach(function(figId) {
+    var f = document.getElementById(figId);
+    if (!f) return;
+    f.style.setProperty('--omnia-filter', palette.filter || 'none');
+    f.dataset.entity = entity.id;
+    f.setAttribute('aria-label', 'Reveal a ' + entity.name + ' symbol');
+    var crystalLayer = f.querySelector('.omnia-crystal-layer');
+    if (crystalLayer) {
+      if (entitySVG) {
+        crystalLayer.innerHTML = entitySVG;
+        f.style.filter = entityDropShadow;
+      } else {
+        f.style.filter = '';
+      }
+    }
+  });
   var fig = document.getElementById('guideOmniaFigure');
   var name = document.querySelector('.omnia-name');
   var comp = document.getElementById('guideOmniaCompanion');
   if (fig) {
-    fig.style.setProperty('--omnia-filter', palette.filter || 'none');
     fig.style.setProperty('--omnia-companion-color', companion ? companion.color : palette.color);
-    fig.dataset.entity = entity.id;
     fig.classList.toggle('has-companion', !!companion);
-    // Swap crystal layer SVG for non-default entities
-    var crystalLayer = fig.querySelector('.omnia-crystal-layer');
-    if (crystalLayer) {
-      var entitySVG = getEntityCrystalSVG(entity.id);
-      if (entitySVG) {
-        crystalLayer.innerHTML = entitySVG;
-        fig.style.filter = 'drop-shadow(0 0 10px ' + entity.color + '88)';
-      } else {
-        // Restore Omnia default — re-apply palette filter only
-        fig.style.filter = '';
-      }
-    }
-    fig.setAttribute('aria-label', 'Reveal a ' + entity.name + ' symbol');
   }
   if (name) {
     name.textContent = entity.name;
