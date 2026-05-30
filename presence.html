@@ -6184,7 +6184,7 @@ function getNextBestAction() {
 function currentParams() {
   var base = getSessionParams(state.level);
   var offset = state.intervalOffset || 0;
-  var adjustedInterval = Math.max(30, base.intervalSec + offset);
+  var adjustedInterval = Math.min(600, Math.max(30, base.intervalSec + offset));
   var dur = state.durationOverride != null ? state.durationOverride : base.durationMin;
   return { durationMin: Math.max(5, Math.min(480, dur)), intervalSec: adjustedInterval };
 }
@@ -7030,29 +7030,54 @@ document.getElementById('aboutBtn').addEventListener('click', function() {
 document.getElementById('aboutBackBtn').addEventListener('click', function() {
   renderHome(); showScreen('homeScreen');
 });
-document.getElementById('intervalNudgeMinus').addEventListener('click', function() {
-  state.intervalOffset = Math.max(-120, (state.intervalOffset || 0) - 5);
-  saveState();
-  renderHome();
+// Hold-to-repeat nudge: fires once immediately, then accelerates after a delay.
+function setupNudgeBtn(id, action) {
+  var el = document.getElementById(id);
+  if (!el) return;
+  var holdTimer = null, repeatTimer = null;
+  function fire() { action(); }
+  function startHold() {
+    fire();
+    holdTimer = setTimeout(function() {
+      repeatTimer = setInterval(fire, 120);
+    }, 450);
+  }
+  function stopHold() {
+    clearTimeout(holdTimer);
+    clearInterval(repeatTimer);
+    holdTimer = null; repeatTimer = null;
+  }
+  el.addEventListener('mousedown', function(e) { e.preventDefault(); startHold(); });
+  el.addEventListener('touchstart', function(e) { e.preventDefault(); startHold(); }, { passive: false });
+  el.addEventListener('mouseup', stopHold);
+  el.addEventListener('mouseleave', stopHold);
+  el.addEventListener('touchend', stopHold);
+  el.addEventListener('touchcancel', stopHold);
+}
+
+setupNudgeBtn('intervalNudgeMinus', function() {
+  var base = getSessionParams(state.level).intervalSec;
+  var maxNeg = 30 - base; // floor: resulting interval >= 30s
+  state.intervalOffset = Math.max(maxNeg, (state.intervalOffset || 0) - 5);
+  saveState(); renderHome();
 });
-document.getElementById('intervalNudgePlus').addEventListener('click', function() {
-  state.intervalOffset = Math.min(120, (state.intervalOffset || 0) + 5);
-  saveState();
-  renderHome();
+setupNudgeBtn('intervalNudgePlus', function() {
+  var base = getSessionParams(state.level).intervalSec;
+  var maxPos = 600 - base; // ceiling: resulting interval <= 600s (10 min)
+  state.intervalOffset = Math.min(maxPos, (state.intervalOffset || 0) + 5);
+  saveState(); renderHome();
 });
-document.getElementById('durationNudgeMinus').addEventListener('click', function() {
+setupNudgeBtn('durationNudgeMinus', function() {
   var base = getSessionParams(state.level).durationMin;
   var current = state.durationOverride != null ? state.durationOverride : base;
   state.durationOverride = Math.max(5, current - 5);
-  saveState();
-  renderHome();
+  saveState(); renderHome();
 });
-document.getElementById('durationNudgePlus').addEventListener('click', function() {
+setupNudgeBtn('durationNudgePlus', function() {
   var base = getSessionParams(state.level).durationMin;
   var current = state.durationOverride != null ? state.durationOverride : base;
   state.durationOverride = Math.min(480, current + 5);
-  saveState();
-  renderHome();
+  saveState(); renderHome();
 });
 document.getElementById('startBtn').addEventListener('click', async function() {
   // Register push first so server knows our subscription
