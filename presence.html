@@ -3288,6 +3288,14 @@ body:not(.tut-live) #tutCorgi {
 .prayer-banner{ background:linear-gradient(145deg,#1a1426 0%,#241a36 45%,#171228 100%); }
 .prayer-banner::before { background:radial-gradient(ellipse 60% 70% at 72% 55%,rgba(196,168,212,.22) 0%,transparent 70%); }
 .prayer-banner::after  { background:radial-gradient(ellipse 40% 50% at 68% 48%,rgba(220,200,255,.11) 0%,transparent 60%); }
+.clock-banner { background:linear-gradient(145deg,#1e0e04 0%,#2c1608 42%,#180b02 100%); }
+.clock-banner::before { background:radial-gradient(ellipse 60% 70% at 72% 55%,rgba(224,124,58,.24) 0%,transparent 70%); }
+.clock-banner::after  { background:radial-gradient(ellipse 40% 50% at 68% 48%,rgba(255,180,110,.10) 0%,transparent 60%); }
+.clock-banner .bn-label { color:rgba(255,185,120,.75); }
+.clock-banner .bn-title { color:#fff5ee; }
+.clock-banner .bn-sub   { color:rgba(255,185,120,.48); }
+.clock-banner .bn-glow  { background:radial-gradient(circle,rgba(224,124,58,.26) 0%,rgba(212,120,58,.08) 42%,transparent 70%); }
+.clock-banner .bn-ripple { border:1px solid rgba(224,148,88,.45); }
 
 .screen-banner .bn-text { z-index:3; display:flex; flex-direction:column; gap:3px; }
 .screen-banner .bn-label { font-size:8px; letter-spacing:.28em; text-transform:uppercase; }
@@ -4524,13 +4532,42 @@ body:not(.tut-live) #tutCorgi {
 
   <!-- EXERCISE SETUP SCREEN -->
   <div class="screen" id="exSetupScreen" style="padding:0;">
-    <div style="padding:var(--safe-top) 24px 0; flex-shrink:0; display:flex; justify-content:space-between; align-items:center;">
-      <button class="history-back" id="exSetupBack">&#8592; back</button>
-      <span style="font-size:9px; letter-spacing:.2em; text-transform:uppercase; color:#d4956e;">concentration</span>
+    <!-- Banner — populated by openExerciseSetup() -->
+    <div id="exSetupBanner" class="screen-banner clock-banner" style="margin:var(--safe-top) 12px 0; border-radius:16px;">
+      <div class="bn-text">
+        <div class="bn-label" id="exBannerLabel">Concentration</div>
+        <div class="bn-title" id="exBannerTitle">Clock</div>
+        <div class="bn-sub" id="exBannerSub" style="cursor:default;"></div>
+      </div>
+      <div class="bn-right">
+        <div class="bn-glow"></div>
+        <div class="bn-ripple"></div><div class="bn-ripple"></div><div class="bn-ripple"></div>
+        <svg id="exBannerSym" class="bn-sym" width="72" height="72" viewBox="0 0 100 100" fill="none">
+          <!-- Clock face -->
+          <circle cx="50" cy="50" r="38" stroke="#e8a070" stroke-width="2" opacity="0.82"/>
+          <circle cx="50" cy="50" r="3" fill="#e8a070" opacity="0.9"/>
+          <!-- Hour hand -->
+          <line x1="50" y1="50" x2="50" y2="22" stroke="#e8a070" stroke-width="2.5" stroke-linecap="round" opacity="0.85"/>
+          <!-- Minute hand -->
+          <line x1="50" y1="50" x2="72" y2="50" stroke="#e8a070" stroke-width="1.8" stroke-linecap="round" opacity="0.7"/>
+          <!-- Tick marks -->
+          <line x1="50" y1="14" x2="50" y2="18" stroke="#e8a070" stroke-width="2" opacity="0.5"/>
+          <line x1="50" y1="82" x2="50" y2="86" stroke="#e8a070" stroke-width="2" opacity="0.5"/>
+          <line x1="14" y1="50" x2="18" y2="50" stroke="#e8a070" stroke-width="2" opacity="0.5"/>
+          <line x1="82" y1="50" x2="86" y2="50" stroke="#e8a070" stroke-width="2" opacity="0.5"/>
+        </svg>
+        <div class="bn-dots">
+          <i style="width:4px;height:4px;left:26%;top:28%;animation-delay:.5s;"></i>
+          <i style="width:3px;height:3px;left:68%;top:70%;animation-delay:2s;"></i>
+        </div>
+      </div>
+      <div style="position:absolute;top:var(--safe-top);left:0;right:0;padding:10px 16px 0;display:flex;justify-content:space-between;align-items:center;z-index:4;">
+        <button class="history-back" id="exSetupBack" style="color:rgba(255,185,120,.7);">&#8592; back</button>
+      </div>
     </div>
-    <div style="flex:1; display:flex; flex-direction:column; overflow-y:auto; padding:24px 24px 0; scrollbar-width:none; -ms-overflow-style:none;" id="exSetupScrollArea">
-      <div class="ex-setup-icon" id="exSetupIcon" style="margin-bottom:8px;"></div>
-      <div class="ex-setup-name" id="exSetupName" style="margin-bottom:8px;"></div>
+    <div style="flex:1; display:flex; flex-direction:column; overflow-y:auto; padding:20px 24px 0; scrollbar-width:none; -ms-overflow-style:none;" id="exSetupScrollArea">
+      <div class="ex-setup-icon" id="exSetupIcon" style="display:none;"></div>
+      <div class="ex-setup-name" id="exSetupName" style="display:none;"></div>
       <div class="ex-setup-desc" id="exSetupDesc" style="margin-bottom:32px;"></div>
       <div id="exSetupContent"></div>
     </div>
@@ -10808,12 +10845,92 @@ var EXERCISE_DEFS = {
   }
 };
 
+var EX_BANNER_CONFIG = {
+  clock: {
+    bannerClass: 'clock-banner',
+    label: 'Concentration',
+    title: 'Clock',
+    backColor: 'rgba(255,185,120,.7)',
+    sym: '<svg class="bn-sym" width="72" height="72" viewBox="0 0 100 100" fill="none">'
+      + '<circle cx="50" cy="50" r="38" stroke="#e8a070" stroke-width="2" opacity="0.82"/>'
+      + '<circle cx="50" cy="50" r="3" fill="#e8a070" opacity="0.9"/>'
+      + '<line x1="50" y1="50" x2="50" y2="22" stroke="#e8a070" stroke-width="2.5" stroke-linecap="round" opacity="0.85"/>'
+      + '<line x1="50" y1="50" x2="72" y2="50" stroke="#e8a070" stroke-width="1.8" stroke-linecap="round" opacity="0.7"/>'
+      + '<line x1="50" y1="14" x2="50" y2="18" stroke="#e8a070" stroke-width="2" opacity="0.5"/>'
+      + '<line x1="50" y1="82" x2="50" y2="86" stroke="#e8a070" stroke-width="2" opacity="0.5"/>'
+      + '<line x1="14" y1="50" x2="18" y2="50" stroke="#e8a070" stroke-width="2" opacity="0.5"/>'
+      + '<line x1="82" y1="50" x2="86" y2="50" stroke="#e8a070" stroke-width="2" opacity="0.5"/>'
+      + '</svg>',
+  },
+  visual: {
+    bannerClass: 'conc-banner',
+    label: 'Concentration',
+    title: 'Visualization',
+    backColor: 'rgba(255,200,140,.7)',
+    sym: '<svg class="bn-sym" width="72" height="72" viewBox="0 0 100 100" fill="none">'
+      + '<ellipse cx="50" cy="50" rx="38" ry="24" stroke="#d4956e" stroke-width="2" opacity="0.75"/>'
+      + '<circle cx="50" cy="50" r="11" stroke="#d4956e" stroke-width="2" opacity="0.85"/>'
+      + '<circle cx="50" cy="50" r="4" fill="#d4956e" opacity="0.9"/>'
+      + '</svg>',
+  },
+  auditory: {
+    bannerClass: 'conc-banner',
+    label: 'Concentration',
+    title: 'Auditory',
+    backColor: 'rgba(255,200,140,.7)',
+    sym: '<svg class="bn-sym" width="72" height="72" viewBox="0 0 100 100" fill="none">'
+      + '<path d="M38 32 Q50 22 62 32 L62 68 Q50 78 38 68 Z" stroke="#d4956e" stroke-width="2" fill="none" opacity="0.8"/>'
+      + '<path d="M26 40 Q18 50 26 60" stroke="#d4956e" stroke-width="2" stroke-linecap="round" fill="none" opacity="0.55"/>'
+      + '<path d="M74 40 Q82 50 74 60" stroke="#d4956e" stroke-width="2" stroke-linecap="round" fill="none" opacity="0.55"/>'
+      + '</svg>',
+  },
+  thought: {
+    bannerClass: 'conc-banner',
+    label: 'Concentration',
+    title: 'Thought Control',
+    backColor: 'rgba(255,200,140,.7)',
+    sym: '<svg class="bn-sym" width="72" height="72" viewBox="0 0 100 100" fill="none">'
+      + '<circle cx="50" cy="46" r="24" stroke="#d4956e" stroke-width="2" opacity="0.8"/>'
+      + '<path d="M40 66 Q50 78 60 66" stroke="#d4956e" stroke-width="2" stroke-linecap="round" fill="none" opacity="0.6"/>'
+      + '<circle cx="50" cy="46" r="6" fill="#d4956e" opacity="0.5"/>'
+      + '</svg>',
+  },
+  asana: {
+    bannerClass: 'conc-banner',
+    label: 'Concentration',
+    title: 'Asana',
+    backColor: 'rgba(255,200,140,.7)',
+    sym: '<svg class="bn-sym" width="72" height="72" viewBox="0 0 100 100" fill="none">'
+      + '<circle cx="50" cy="28" r="9" stroke="#d4956e" stroke-width="2" opacity="0.85"/>'
+      + '<path d="M30 50 Q50 44 70 50" stroke="#d4956e" stroke-width="2" stroke-linecap="round" fill="none" opacity="0.7"/>'
+      + '<path d="M26 72 Q50 58 74 72" stroke="#d4956e" stroke-width="2" stroke-linecap="round" fill="none" opacity="0.55"/>'
+      + '</svg>',
+  },
+};
+
+function updateExSetupBanner(ex) {
+  var cfg = EX_BANNER_CONFIG[ex] || EX_BANNER_CONFIG.clock;
+  var banner = document.getElementById('exSetupBanner');
+  if (!banner) return;
+  // Swap banner class
+  banner.className = 'screen-banner ' + cfg.bannerClass;
+  var label = document.getElementById('exBannerLabel');
+  var title = document.getElementById('exBannerTitle');
+  var sym   = document.getElementById('exBannerSym');
+  var back  = document.getElementById('exSetupBack');
+  if (label) label.textContent = cfg.label || 'Concentration';
+  if (title) title.textContent = cfg.title || '';
+  if (sym)   sym.outerHTML = cfg.sym ? cfg.sym.replace('<svg ', '<svg id="exBannerSym" ') : '';
+  if (back)  back.style.color = cfg.backColor || 'rgba(255,200,140,.7)';
+}
+
 function openExerciseSetup(ex) {
   suppressTutorialForExerciseEntry();
   currentExercise = ex;
   stopAllAudio();
   var def = EXERCISE_DEFS[ex];
   if (!def) return;
+  updateExSetupBanner(ex);
   document.getElementById('exSetupIcon').innerHTML = def.icon;
   document.getElementById('exSetupName').textContent = def.name;
   document.getElementById('exSetupDesc').innerHTML = typeof def.desc === 'function' ? def.desc() : def.desc;
