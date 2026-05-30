@@ -955,13 +955,23 @@ app.post('/api/sync/omnia/report', aiRateLimit, async (req, res) => {
 
     const commentary = await generateAiMessage('omnia_report', context || {});
 
-    const ttlMs = period === 'daily' ? 86400000 : period === 'weekly' ? 7 * 86400000 : 31 * 86400000;
-    const expiresAt = new Date(Date.now() + ttlMs);
+    // A past period (offset < 0) is immutable — its data will never change, so
+    // cache it forever (no expiresAt) and never spend another API call on it.
+    // Only the current period (offset 0) gets a TTL so it can refresh as the
+    // period is still in progress.
+    const isPast = Number.isFinite(parseInt(offset, 10)) && parseInt(offset, 10) < 0;
+    const doc = { userId, period, periodKey, commentary, generatedAt: new Date() };
+    if (!isPast) {
+      const ttlMs = period === 'daily' ? 86400000 : period === 'weekly' ? 7 * 86400000 : 31 * 86400000;
+      doc.expiresAt = new Date(Date.now() + ttlMs);
+    }
     await col.updateOne(
       { userId, period, periodKey },
-      { $set: { userId, period, periodKey, commentary, generatedAt: new Date(), expiresAt } },
+      { $set: doc, $unset: isPast ? { expiresAt: '' } : {} },
       { upsert: true }
     );
+    // TTL index only affects docs that have an expiresAt field; permanent
+    // (past) docs omit it and are never auto-deleted.
     await col.createIndex({ expiresAt: 1 }, { expireAfterSeconds: 0 });
 
     res.json({ commentary });

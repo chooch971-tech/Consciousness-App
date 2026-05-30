@@ -17298,9 +17298,12 @@ function getOmniaDeviceId() {
 function fetchOmniaReport(period, offset, cb) {
   var cacheKey = omniaReportCacheKey(period, offset);
   var ttl = omniaReportTTL(period);
+  // A past period (offset < 0) is immutable — once cached, keep it forever so
+  // the commentary never changes and we never spend another API call on it.
+  var isPast = (offset || 0) < 0;
   try {
     var cached = JSON.parse(localStorage.getItem(cacheKey) || 'null');
-    if (cached && cached.ts && (Date.now() - cached.ts) < ttl) {
+    if (cached && cached.commentary && (isPast || (cached.ts && (Date.now() - cached.ts) < ttl))) {
       return cb(null, cached.commentary);
     }
   } catch(e) {}
@@ -17906,7 +17909,10 @@ function buildOmniaReportCardHtml(period) {
     var cacheKey = omniaReportCacheKey(period, reportOffset);
     var cachedEntry = null;
     try { cachedEntry = JSON.parse(localStorage.getItem(cacheKey) || 'null'); } catch(e) {}
-    var isFresh = cachedEntry && cachedEntry.ts && (Date.now() - cachedEntry.ts) < omniaReportTTL(period);
+    // Past periods are immutable: any cached commentary is permanently fresh.
+    var _isPastReport = reportOffset < 0;
+    var isFresh = cachedEntry && cachedEntry.commentary &&
+      (_isPastReport || (cachedEntry.ts && (Date.now() - cachedEntry.ts) < omniaReportTTL(period)));
 
     html += '<div class="rpt-omnia-card" id="omniaReportCard">'
       + '<div class="rpt-omnia-card__inner rpt-omnia-card__inner--row">';
