@@ -6323,6 +6323,7 @@ var sessionDurationSec = 0;
 var sessionIntervalSec = 0;
 var lastReminderCycle = -1;
 var lastPavlokFiredCycle = -1;
+var pavlokServerManaged = false;
 var sessionEndedEarly = false;
 
 function getSecondsRemaining() {
@@ -6374,10 +6375,16 @@ function resumeSession(sess) {
   lastPavlokFiredCycle = lastReminderCycle;
   sessionEndedEarly = false;
 
+  // Server is the Pavlok authority when push is registered — assume it's
+  // managing and confirm/sync via the update call (prevents double-zaps).
+  var pvkR = getPavlokPrefs();
+  pavlokServerManaged = !!(getPavlokToken() && pvkR.awareness.enabled);
+
   showScreen('sessionScreen');
   document.getElementById('reminderCount').textContent = sessionReminderCount;
   updateSessionPrompt(randomPrompt(''));
   initSessionPvkSlider();
+  if (pavlokServerManaged) notifyServerPavlokUpdate();
   runLoop();
   showToast('Session resumed');
 }
@@ -6403,7 +6410,8 @@ function runLoop() {
 
   // Pre-fire Pavlok up to 2 s before the bell — wider window handles iOS timer throttling.
   // Use lastPavlokFiredCycle so we never fire twice for the same cycle.
-  if (untilReminder <= 2 && remaining > 2 && getPavlokToken()) {
+  // Skip entirely when the server is firing Pavlok (avoids double-zaps).
+  if (!pavlokServerManaged && untilReminder <= 2 && remaining > 2 && getPavlokToken()) {
     var nextCycle = currentCycle + 1;
     if (lastPavlokFiredCycle < nextCycle) {
       lastPavlokFiredCycle = nextCycle;
@@ -6445,8 +6453,8 @@ function fireReminder() {
   document.getElementById('reminderCount').textContent = sessionReminderCount;
   playReminderBell();
   // Fallback: if the pre-fire window was skipped (iOS throttled timers while backgrounded),
-  // fire Pavlok now rather than silently missing it.
-  if (getPavlokToken() && lastPavlokFiredCycle < lastReminderCycle) {
+  // fire Pavlok now rather than silently missing it. Skip when server is managing Pavlok.
+  if (!pavlokServerManaged && getPavlokToken() && lastPavlokFiredCycle < lastReminderCycle) {
     lastPavlokFiredCycle = lastReminderCycle;
     var pvk = getPavlokPrefs();
     if (pvk.awareness.enabled) sendPavlokStimulus(pvk.awareness.type || 'vibe', pvk.awareness.intensity);
@@ -6481,8 +6489,10 @@ function sessionPvkSetType(type) {
   btns.forEach(function(btn, i) {
     btn.classList.toggle('sel', types[i] === type);
   });
+  notifyServerPavlokUpdate();
 }
 
+var sessionPvkUpdateTimer = null;
 function sessionPvkInput(el) {
   var val = +el.value;
   el.style.setProperty('--pct', val + '%');
@@ -6491,6 +6501,9 @@ function sessionPvkInput(el) {
   var p = getPavlokPrefs();
   p.awareness.intensity = val;
   savePavlokPrefs(p);
+  // Debounce server update so dragging doesn't spam the endpoint
+  clearTimeout(sessionPvkUpdateTimer);
+  sessionPvkUpdateTimer = setTimeout(notifyServerPavlokUpdate, 400);
 }
 
 function updateSessionPrompt(text) {
@@ -18933,16 +18946,44 @@ async function registerWebPush() {
 }
 
 async function notifyServerSessionStart() {
+  pavlokServerManaged = false;
   try {
     var sub = await getSubscription();
     if (!sub) { console.log('Push not registered — session running locally'); return; }
+    var pvk = getPavlokPrefs();
+    var pavlokPayload = null;
+    if (getPavlokToken() && pvk.awareness.enabled) {
+      pavlokPayload = { token: getPavlokToken(), enabled: true, type: pvk.awareness.type || 'vibe', intensity: pvk.awareness.intensity || 50 };
+    }
     var res = await fetch(SERVER_URL + '/session/start', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ endpoint: sub.endpoint, intervalSec: sessionIntervalSec, durationSec: sessionDurationSec })
+      body: JSON.stringify({ endpoint: sub.endpoint, intervalSec: sessionIntervalSec, durationSec: sessionDurationSec, pavlok: pavlokPayload })
     });
     var data = await res.json();
+    // When the server is firing Pavlok, the client must NOT also fire it (avoids double-zaps)
+    pavlokServerManaged = !!(data && data.pavlokManaged);
     console.log('Server session started:', JSON.stringify(data));
   } catch(e) { console.error('session/start error:', e); /* Server may be waking up, retry silently */ }
+}
+
+// Push the current awareness Pavlok prefs to the server mid-session (after the
+// user moves the intensity slider or switches type) so server-fired stimuli update.
+async function notifyServerPavlokUpdate() {
+  try {
+    var sub = await getSubscription();
+    if (!sub) return;
+    var pvk = getPavlokPrefs();
+    var pavlokPayload = null;
+    if (getPavlokToken() && pvk.awareness.enabled) {
+      pavlokPayload = { token: getPavlokToken(), enabled: true, type: pvk.awareness.type || 'vibe', intensity: pvk.awareness.intensity || 50 };
+    }
+    var res = await fetch(SERVER_URL + '/session/pavlok', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ endpoint: sub.endpoint, pavlok: pavlokPayload })
+    });
+    var data = await res.json();
+    pavlokServerManaged = !!(data && data.pavlokManaged);
+  } catch(e) { /* silent — client fallback still works */ }
 }
 
 async function notifyServerSessionEnd() {

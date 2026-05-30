@@ -353,6 +353,7 @@ setInterval(async () => {
     if (elapsed >= totalDuration) {
       sub.sessionStart = null;
       sub.lastFiredCycle = -1;
+      sub.pavlok = null;
       await saveSub(sub);
       console.log(`[${new Date().toISOString()}] Session expired after ${totalDuration}s`);
       continue;
@@ -364,6 +365,11 @@ setInterval(async () => {
     if (currentCycle > lastFired && elapsed >= interval) {
       const prompt = randomPromptFor(sub.endpoint);
       console.log(`[${new Date().toISOString()}] Attempting push: cycle ${currentCycle}, elapsed ${elapsed}s, interval ${interval}s`);
+      // Fire Pavlok in lockstep with the push so the buzz/zap lands with the
+      // notification regardless of whether the phone is locked.
+      if (sub.pavlok && sub.pavlok.token) {
+        firePavlokServer(sub.pavlok.token, sub.pavlok.type, sub.pavlok.intensity);
+      }
       const result = await pushTo(sub, prompt);
       if (result === 'dead') {
         dead.push(sub.endpoint);
@@ -1025,6 +1031,30 @@ app.post('/api/pavlok/link', async (req, res) => {
   }
 });
 
+// Fire a Pavlok stimulus directly from the server (used by the awareness
+// session loop so zaps stay in lockstep with push notifications even when the
+// phone is locked and the client JS timer is suspended).
+async function firePavlokServer(token, type, value) {
+  if (!token) return false;
+  const t = PAVLOK_VALID_TYPES.has(type) ? type : 'vibe';
+  const intensity = Math.max(1, Math.min(100, parseInt(value, 10) || 50));
+  try {
+    const r = await fetch(`${PAVLOK_API}/stimulus/send`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+      body: JSON.stringify({ stimulus: { stimulusType: t, stimulusValue: intensity } }),
+    });
+    if (!r.ok) {
+      console.log(`[Pavlok] Server stimulus failed: ${r.status}`);
+      return false;
+    }
+    return true;
+  } catch (err) {
+    console.error('[Pavlok] Server stimulus error:', err.message);
+    return false;
+  }
+}
+
 // Proxy a stimulus to the Pavlok API.  Token comes from the client (stored
 // in localStorage) so no server-side credential storage is needed.
 app.post('/api/pavlok/stimulus', async (req, res) => {
@@ -1070,15 +1100,45 @@ app.post('/unsubscribe', async (req, res) => {
 });
 
 app.post('/session/start', async (req, res) => {
-  const { endpoint, intervalSec, durationSec } = req.body;
+  const { endpoint, intervalSec, durationSec, pavlok } = req.body;
   let sub = subscriptions.find(s => s.endpoint === endpoint);
   if (!sub) return res.status(404).json({ error: 'Subscriber not found' });
   sub.sessionStart = Date.now();
   sub.intervalSec = Math.max(30, Math.min(3600, parseInt(intervalSec) || 120));
   sub.durationSec = Math.max(60, Math.min(14400, parseInt(durationSec) || 1800));
   sub.lastFiredCycle = -1;
+  // Optional Pavlok config so the server can fire the stimulus in lockstep
+  // with the push, even while the phone is locked.
+  if (pavlok && pavlok.token && pavlok.enabled) {
+    sub.pavlok = {
+      token: pavlok.token,
+      type: PAVLOK_VALID_TYPES.has(pavlok.type) ? pavlok.type : 'vibe',
+      intensity: Math.max(1, Math.min(100, parseInt(pavlok.intensity, 10) || 50)),
+    };
+  } else {
+    sub.pavlok = null;
+  }
   await saveSub(sub);
-  res.json({ success: true });
+  res.json({ success: true, pavlokManaged: !!sub.pavlok });
+});
+
+// Update the Pavlok config mid-session (e.g. user moves the intensity slider
+// or switches Vibrate/Beep/Zap while the session is running).
+app.post('/session/pavlok', async (req, res) => {
+  const { endpoint, pavlok } = req.body;
+  const sub = subscriptions.find(s => s.endpoint === endpoint);
+  if (!sub) return res.status(404).json({ error: 'Subscriber not found' });
+  if (pavlok && pavlok.token && pavlok.enabled) {
+    sub.pavlok = {
+      token: pavlok.token,
+      type: PAVLOK_VALID_TYPES.has(pavlok.type) ? pavlok.type : 'vibe',
+      intensity: Math.max(1, Math.min(100, parseInt(pavlok.intensity, 10) || 50)),
+    };
+  } else {
+    sub.pavlok = null;
+  }
+  await saveSub(sub);
+  res.json({ success: true, pavlokManaged: !!sub.pavlok });
 });
 
 app.post('/session/end', async (req, res) => {
@@ -1087,6 +1147,7 @@ app.post('/session/end', async (req, res) => {
   if (!sub) return res.status(404).json({ error: 'Subscriber not found' });
   sub.sessionStart = null;
   sub.lastFiredCycle = -1;
+  sub.pavlok = null;
   await saveSub(sub);
   res.json({ success: true });
 });
