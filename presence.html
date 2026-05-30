@@ -14279,34 +14279,29 @@ function renderOmniaEntityPreview(item) {
       + '</svg>';
   }
   if (item.id === 'seraph') {
-    // Compact winged seraph: 4-wing spread + eyed body, matching the crystal form
-    var hi = '#fff8e2';
-    var pD = function(a) { return a * Math.PI / 180; };
-    var pdx = function(a) { return Math.cos(pD(a)); };
-    var pdy = function(a) { return -Math.sin(pD(a)); };
+    // Compact seraph: radiant haloed head, robe of light, rising + draping
+    // wings, matching the crystal form.
+    var hi = '#fff6dc';
     var pf = function(n) { return n.toFixed(1); };
-    var pWing = function(rx, ry, a0, a1, n, Lmin, Lmax, w, curl, baseOp) {
-      var s = '', i, t, a, L, op;
-      for (i = 0; i < n; i++) {
-        t = i / (n - 1); a = a0 + (a1 - a0) * t;
-        L = Lmin + (Lmax - Lmin) * Math.pow(Math.sin(Math.PI * t), 0.7);
-        op = baseOp * (0.6 + 0.6 * Math.sin(Math.PI * t));
-        var dx = pdx(a), dy = pdy(a), tdx = pdx(a + curl), tdy = pdy(a + curl);
-        var tx = rx + tdx * L, ty = ry + tdy * L, mx = rx + dx * L * 0.55, my = ry + dy * L * 0.55;
-        var px = pdx(a + 90), py = pdy(a + 90);
-        s += '<path d="M' + pf(rx) + ',' + pf(ry) + ' Q' + pf(mx + px * w * 0.5) + ',' + pf(my + py * w * 0.5) + ' ' + pf(tx) + ',' + pf(ty) + ' Q' + pf(mx - px * w * 0.5) + ',' + pf(my - py * w * 0.5) + ' ' + pf(rx) + ',' + pf(ry) + ' Z" fill="' + color + '" opacity="' + op.toFixed(2) + '" stroke="' + color + '" stroke-width="0.3"/>';
-      }
-      return s;
+    var pWing = function(rx, ry, tx, ty, outerBow, innerBow, op) {
+      var mx = (rx + tx) / 2, my = (ry + ty) / 2, dx = tx - rx, dy = ty - ry, len = Math.sqrt(dx * dx + dy * dy) || 1;
+      dx /= len; dy /= len;
+      var px = -dy, py = dx;
+      var oOx = mx + px * outerBow, oOy = my + py * outerBow, oIx = mx + px * innerBow, oIy = my + py * innerBow;
+      return '<path d="M' + pf(rx) + ',' + pf(ry) + ' Q' + pf(oOx) + ',' + pf(oOy) + ' ' + pf(tx) + ',' + pf(ty) + ' Q' + pf(oIx) + ',' + pf(oIy) + ' ' + pf(rx) + ',' + pf(ry) + ' Z" fill="' + color + '" opacity="' + op + '" stroke="' + color + '" stroke-width="0.4" stroke-opacity=".6"/>'
+        + '<path d="M' + pf(rx) + ',' + pf(ry) + ' Q' + pf((oIx + oOx) / 2) + ',' + pf((oIy + oOy) / 2) + ' ' + pf(tx) + ',' + pf(ty) + '" fill="none" stroke="' + color + '" stroke-width="0.3" opacity="0.4"/>';
     };
     var pEye = function(cx, cy, r) {
-      return '<circle cx="' + pf(cx) + '" cy="' + pf(cy) + '" r="' + r + '" fill="rgba(18,10,2,.6)" stroke="' + color + '" stroke-width=".45"/>'
+      return '<circle cx="' + pf(cx) + '" cy="' + pf(cy) + '" r="' + r + '" fill="rgba(18,10,2,.55)" stroke="' + color + '" stroke-width=".4"/>'
         + '<circle cx="' + pf(cx) + '" cy="' + pf(cy) + '" r="' + (r * 0.42).toFixed(2) + '" fill="' + hi + '"/>';
     };
     return '<svg viewBox="0 0 56 58" aria-hidden="true">'
-      + pWing(28, 33, 258, 198, 8, 9, 17, 4, -20, 0.16) + '<g transform="translate(56,0) scale(-1,1)">' + pWing(28, 33, 258, 198, 8, 9, 17, 4, -20, 0.16) + '</g>'
-      + pWing(28.5, 26, 100, 163, 9, 12, 24, 4.5, 22, 0.18) + '<g transform="translate(56,0) scale(-1,1)">' + pWing(28.5, 26, 100, 163, 9, 12, 24, 4.5, 22, 0.18) + '</g>'
-      + '<ellipse cx="28" cy="29" rx="4" ry="10" fill="' + color + '" opacity=".12" stroke="' + color + '" stroke-width=".55"/>'
-      + pEye(28, 23, 1.3) + pEye(28, 29, 2.2) + pEye(28, 35, 1.3)
+      + pWing(26, 18, 4, 5, 14, 3, .18) + '<g transform="translate(56,0) scale(-1,1)">' + pWing(26, 18, 4, 5, 14, 3, .18) + '</g>'
+      + pWing(27, 27, 13, 46, 11, 3, .13) + '<g transform="translate(56,0) scale(-1,1)">' + pWing(27, 27, 13, 46, 11, 3, .13) + '</g>'
+      + '<circle cx="28" cy="13" r="6.5" fill="' + color + '" opacity=".12"/>'
+      + '<path d="M28,15 C33,30 32,44 28,54 C24,44 23,30 28,15 Z" fill="' + color + '" opacity=".13" stroke="' + color + '" stroke-width=".5"/>'
+      + '<circle cx="28" cy="13" r="3" fill="' + hi + '"/>'
+      + pEye(15, 14, 1.2) + pEye(41, 14, 1.2) + pEye(28, 30, 1.5)
       + '</svg>';
   }
   return '<svg viewBox="0 0 48 58" aria-hidden="true">'
@@ -14431,73 +14426,54 @@ function getEntityCrystalSVG(id) {
       + '</svg>';
   }
   if (id === 'seraph') {
-    // Biblically accurate seraph: a symmetric multi-winged form (large upper
-    // wings sweeping up-and-out, lower wings drooping down-and-out) framing a
-    // feathered central body studded with eyes. Engraving feel, gold on dark.
-    var C = '#f3d486', Cd = '#b8923e', Cl = '#fff8e2';
-    var D = function(a) { return a * Math.PI / 180; };
-    var dirx = function(a) { return Math.cos(D(a)); };
-    var diry = function(a) { return -Math.sin(D(a)); };
+    // A seraph imagined as a "burning one": a radiant haloed head over a robe
+    // of light, two wings rising and two draping, studded with watching eyes
+    // and trailing embers upward. Gold on dark.
+    var C = '#f3d486', Cd = '#c79a3c', Cl = '#fff6dc', Cw = '#ffe9b0';
     var f1 = function(n) { return n.toFixed(1); };
-    var feather = function(rx, ry, a, L, w, curl, opacity) {
-      var dx = dirx(a), dy = diry(a);
-      var tdx = dirx(a + curl), tdy = diry(a + curl);
-      var tx = rx + tdx * L, ty = ry + tdy * L;
-      var mx = rx + dx * L * 0.55, my = ry + dy * L * 0.55;
-      var px = dirx(a + 90), py = diry(a + 90);
-      var c1x = mx + px * w * 0.5, c1y = my + py * w * 0.5;
-      var c2x = mx - px * w * 0.5, c2y = my - py * w * 0.5;
-      return '<path d="M' + f1(rx) + ',' + f1(ry) + ' Q' + f1(c1x) + ',' + f1(c1y) + ' ' + f1(tx) + ',' + f1(ty) + ' Q' + f1(c2x) + ',' + f1(c2y) + ' ' + f1(rx) + ',' + f1(ry) + ' Z" fill="' + C + '" opacity="' + opacity.toFixed(2) + '" stroke="' + Cd + '" stroke-width="0.3" stroke-opacity="0.6"/>'
-        + '<path d="M' + f1(rx) + ',' + f1(ry) + ' Q' + f1(mx) + ',' + f1(my) + ' ' + f1(tx) + ',' + f1(ty) + '" fill="none" stroke="' + Cd + '" stroke-width="0.28" opacity="0.4"/>';
-    };
-    var wing = function(rx, ry, a0, a1, n, Lmin, Lmax, w, curl, baseOp, hiT) {
-      var s = '', i, t, a, L, op, tips = '';
-      for (i = 0; i < n; i++) {
-        t = i / (n - 1); a = a0 + (a1 - a0) * t;
-        L = Lmin + (Lmax - Lmin) * Math.pow(Math.sin(Math.PI * t), 0.7);
-        tips += 'L' + f1(rx + dirx(a + curl) * L) + ',' + f1(ry + diry(a + curl) * L) + ' ';
+    var swing = function(rx, ry, tx, ty, outerBow, innerBow, op, veins) {
+      var mx = (rx + tx) / 2, my = (ry + ty) / 2, dx = tx - rx, dy = ty - ry, len = Math.sqrt(dx * dx + dy * dy) || 1;
+      dx /= len; dy /= len;
+      var px = -dy, py = dx;
+      var oOx = mx + px * outerBow, oOy = my + py * outerBow, oIx = mx + px * innerBow, oIy = my + py * innerBow;
+      var s = '<path d="M' + f1(rx) + ',' + f1(ry) + ' Q' + f1(oOx) + ',' + f1(oOy) + ' ' + f1(tx) + ',' + f1(ty) + ' Q' + f1(oIx) + ',' + f1(oIy) + ' ' + f1(rx) + ',' + f1(ry) + ' Z" fill="' + C + '" opacity="' + op + '" stroke="' + Cw + '" stroke-width="0.45" stroke-opacity="0.5"/>';
+      for (var v = 1; v <= veins; v++) {
+        var k = v / (veins + 1), cx = oIx + (oOx - oIx) * k, cy = oIy + (oOy - oIy) * k;
+        s += '<path d="M' + f1(rx) + ',' + f1(ry) + ' Q' + f1(cx) + ',' + f1(cy) + ' ' + f1(tx) + ',' + f1(ty) + '" fill="none" stroke="' + Cd + '" stroke-width="0.32" opacity="0.42"/>';
       }
-      s += '<path d="M' + f1(rx) + ',' + f1(ry) + ' ' + tips + 'Z" fill="' + C + '" opacity="0.06"/>';
-      for (i = 0; i < n; i++) {
-        t = i / (n - 1); a = a0 + (a1 - a0) * t;
-        L = Lmin + (Lmax - Lmin) * Math.pow(Math.sin(Math.PI * t), 0.7);
-        op = baseOp * (0.65 + 0.55 * Math.sin(Math.PI * t));
-        s += feather(rx, ry, a, L, w, curl, op);
-      }
-      var ia = a0 + (a1 - a0) * hiT;
-      var hL = (Lmin + (Lmax - Lmin) * Math.pow(Math.sin(Math.PI * hiT), 0.7)) * 0.62;
-      var hx = rx + dirx(ia + curl) * hL, hy = ry + diry(ia + curl) * hL;
-      s += '<ellipse cx="' + f1(hx) + '" cy="' + f1(hy) + '" rx="5.5" ry="3" fill="' + Cl + '" opacity="0.32" transform="rotate(' + (-(ia + curl)).toFixed(1) + ' ' + f1(hx) + ' ' + f1(hy) + ')"/>';
       return s;
     };
     var seye = function(cx, cy, r) {
-      return '<circle cx="' + f1(cx) + '" cy="' + f1(cy) + '" r="' + r + '" fill="rgba(18,10,2,.7)" stroke="' + C + '" stroke-width="0.5"/>'
-        + '<circle cx="' + f1(cx) + '" cy="' + f1(cy) + '" r="' + (r * 0.4).toFixed(2) + '" fill="' + Cl + '"/>'
-        + '<circle cx="' + f1(cx + r * 0.2) + '" cy="' + f1(cy - r * 0.2) + '" r="' + (r * 0.16).toFixed(2) + '" fill="#140c04"/>';
+      return '<circle cx="' + f1(cx) + '" cy="' + f1(cy) + '" r="' + r + '" fill="rgba(18,10,2,.6)" stroke="' + Cw + '" stroke-width="0.4"/>'
+        + '<circle cx="' + f1(cx) + '" cy="' + f1(cy) + '" r="' + (r * 0.42).toFixed(2) + '" fill="' + Cl + '"/>';
     };
-    var bodyF = '';
-    for (var bi = 0; bi < 6; bi++) {
-      var byy = 50 + bi * 7;
-      bodyF += '<path d="M40,' + byy + ' Q33.5,' + (byy + 4) + ' 35.5,' + (byy + 8) + ' M40,' + byy + ' Q46.5,' + (byy + 4) + ' 44.5,' + (byy + 8) + '" fill="none" stroke="' + Cd + '" stroke-width="0.4" opacity="0.4"/>';
+    var embers = '', em = [[35, 46], [45, 48], [38, 17], [42, 15], [40, 7]];
+    for (var ei = 0; ei < em.length; ei++) {
+      embers += '<circle cx="' + em[ei][0] + '" cy="' + em[ei][1] + '" r="' + (0.85 - ei * 0.08).toFixed(1) + '" fill="' + Cw + '" opacity="' + (0.55 - ei * 0.07).toFixed(2) + '"/>';
     }
     return '<svg viewBox="0 0 80 130" width="72" height="118" xmlns="http://www.w3.org/2000/svg" style="overflow:visible;">'
       + '<defs>'
-      + '<radialGradient id="sgBod" cx="50%" cy="42%" r="58%"><stop offset="0%" stop-color="#fff6d8" stop-opacity=".55"/><stop offset="100%" stop-color="#c89028" stop-opacity="0"/></radialGradient>'
-      + '<filter id="sgGlow" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="1.3" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>'
+      + '<radialGradient id="srHd" cx="50%" cy="50%" r="50%"><stop offset="0%" stop-color="' + Cl + '" stop-opacity=".95"/><stop offset="100%" stop-color="' + C + '" stop-opacity="0"/></radialGradient>'
+      + '<linearGradient id="srRb" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="' + Cw + '" stop-opacity=".55"/><stop offset="100%" stop-color="' + C + '" stop-opacity=".05"/></linearGradient>'
+      + '<filter id="srGl" x="-60%" y="-60%" width="220%" height="220%"><feGaussianBlur stdDeviation="1.4" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>'
       + '</defs>'
-      // Lower wings (down & out), behind
-      + '<g>' + wing(40, 73, 258, 198, 13, 22, 40, 7, -20, 0.13, 0.5) + '</g>'
-      + '<g transform="translate(80,0) scale(-1,1)">' + wing(40, 73, 258, 198, 13, 22, 40, 7, -20, 0.13, 0.5) + '</g>'
-      // Upper wings (large, up & out, curling)
-      + '<g>' + wing(41, 61, 100, 163, 16, 28, 56, 8, 22, 0.15, 0.46) + '</g>'
-      + '<g transform="translate(80,0) scale(-1,1)">' + wing(41, 61, 100, 163, 16, 28, 56, 8, 22, 0.15, 0.46) + '</g>'
-      // Central feathered body
-      + '<ellipse cx="40" cy="65" rx="8.5" ry="22" fill="url(#sgBod)" filter="url(#sgGlow)"/>'
-      + '<ellipse cx="40" cy="65" rx="6.5" ry="19" fill="none" stroke="' + C + '" stroke-width="0.6" opacity="0.5"/>'
-      + bodyF
-      // Eyes
-      + seye(40, 52, 2.0) + seye(40, 65, 3.4) + seye(40, 78, 2.0)
-      + seye(34.5, 59, 1.5) + seye(45.5, 59, 1.5) + seye(35.5, 72, 1.4) + seye(44.5, 72, 1.4)
+      // Upper wings (rising up & out)
+      + '<g>' + swing(38, 40, 9, 12, 30, 7, 0.17, 3) + '</g>'
+      + '<g transform="translate(80,0) scale(-1,1)">' + swing(38, 40, 9, 12, 30, 7, 0.17, 3) + '</g>'
+      // Lower wings (draping out & down)
+      + '<g>' + swing(39, 58, 20, 100, 24, 6, 0.13, 3) + '</g>'
+      + '<g transform="translate(80,0) scale(-1,1)">' + swing(39, 58, 20, 100, 24, 6, 0.13, 3) + '</g>'
+      // Halo
+      + '<circle cx="40" cy="27" r="9.5" fill="none" stroke="' + Cw + '" stroke-width="0.7" opacity="0.45"/>'
+      + '<circle cx="40" cy="27" r="12" fill="url(#srHd)" opacity="0.55"/>'
+      // Robe / body of light
+      + '<path d="M40,33 C48,56 46,84 40,108 C34,84 32,56 40,33 Z" fill="url(#srRb)" filter="url(#srGl)"/>'
+      + '<path d="M40,35 C45,57 44,83 40,104 C36,83 35,57 40,35 Z" fill="none" stroke="' + Cw + '" stroke-width="0.55" opacity="0.5"/>'
+      // Radiant head
+      + '<g filter="url(#srGl)"><circle cx="40" cy="27" r="4.4" fill="url(#srHd)"/><circle cx="40" cy="27" r="2.8" fill="' + Cl + '"/></g>'
+      // Eyes (on wings + heart)
+      + seye(22, 30, 1.5) + seye(58, 30, 1.5) + seye(27, 66, 1.3) + seye(53, 66, 1.3) + seye(40, 62, 1.9)
+      + embers
       + '</svg>';
   }
   // Default: null = keep existing HTML (Omnia crystal)
