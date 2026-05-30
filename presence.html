@@ -16018,9 +16018,12 @@ function guideCurrentThoughtMode(thoughtStats) {
 }
 
 function guideThoughtTargetMinutes(mode, thoughtStats) {
-  var st = thoughtStats[mode] || { count:0 };
-  if (guideAllThoughtModesMastered(thoughtStats)) return guideClamp(10 + Math.floor(st.count / 6), 10, 15);
-  return guideClamp(5 + Math.floor(st.count / 2), 5, 10);
+  var st = thoughtStats[mode] || { count:0, todayCount:0 };
+  // Use count before today so completing a session mid-day doesn't raise the
+  // target above what was required when you started — keeps "done" stable.
+  var countForTarget = Math.max(0, (st.count || 0) - (st.todayCount || 0));
+  if (guideAllThoughtModesMastered(thoughtStats)) return guideClamp(10 + Math.floor(countForTarget / 6), 10, 15);
+  return guideClamp(5 + Math.floor(countForTarget / 2), 5, 10);
 }
 
 function guideClockTargetMinutes(clockStats) {
