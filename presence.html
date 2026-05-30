@@ -16495,6 +16495,7 @@ function buildFoundationalGuideItems() {
       duration:clockMinutes,
       durationLabel:clockMinutes + ' min' + (rounds > 1 ? ' x2' : ''),
       done:clock.todaySec >= clockDailyTarget,
+      todayCount:clock.todayCount || 0,
       progress:'today ' + guideFmtTime(clock.todaySec) + ' / ' + guideFmtTime(clockDailyTarget),
       tip:'Complete the full session to count toward the next tier. Two qualifying sessions unlock the next minute.' + tierProgress + attentionText,
       open:'clock',
