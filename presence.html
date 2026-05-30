@@ -338,6 +338,11 @@
     .pvk-intensity { display:flex; gap:6px; }
     .pvk-lvl { padding:5px 12px; border-radius:6px; border:1px solid var(--border2); background:transparent; color:var(--muted); font-family:'DM Mono',monospace; font-size:9px; letter-spacing:.1em; cursor:pointer; transition:all .15s; }
     .pvk-lvl.sel { background:rgba(155,142,196,.18); border-color:rgba(155,142,196,.45); color:#c4b8e8; }
+    .pvk-slider-row { display:flex; align-items:center; gap:10px; padding:6px 0 10px; }
+    .pvk-slider { flex:1; -webkit-appearance:none; appearance:none; height:3px; border-radius:2px; background:linear-gradient(to right,rgba(155,142,196,.7) 0%,rgba(155,142,196,.7) var(--pct,50%),var(--border2) var(--pct,50%),var(--border2) 100%); outline:none; cursor:pointer; }
+    .pvk-slider::-webkit-slider-thumb { -webkit-appearance:none; width:18px; height:18px; border-radius:50%; background:#9b8ec4; border:2px solid rgba(155,142,196,.5); box-shadow:0 0 8px rgba(155,142,196,.45); cursor:pointer; }
+    .pvk-slider::-moz-range-thumb { width:18px; height:18px; border-radius:50%; background:#9b8ec4; border:2px solid rgba(155,142,196,.5); cursor:pointer; }
+    .pvk-slider-val { font-family:'DM Mono',monospace; font-size:10px; color:#c4b8e8; min-width:26px; text-align:right; }
     .pvk-status { font-size:10px; color:var(--accent); margin-top:6px; min-height:16px; }
     .pvk-connected-badge { display:inline-flex; align-items:center; gap:6px; font-family:'DM Mono',monospace; font-size:9px; letter-spacing:.14em; color:var(--accent); }
     .pvk-connected-badge::before { content:''; width:7px; height:7px; border-radius:50%; background:var(--accent); display:block; }
@@ -3298,7 +3303,7 @@ body:not(.tut-live) #tutCorgi {
 .clock-banner .bn-ripple { border:1px solid rgba(224,148,88,.45); }
 
 /* ── Exercise setup banner (per-exercise colour via CSS vars) ── */
-.ex-banner { position:relative; flex-shrink:0; height:154px; margin:8px 12px 6px; border-radius:18px; overflow:hidden;
+.ex-banner { position:relative; flex-shrink:0; height:154px; margin:4px 12px 6px; border-radius:18px; overflow:hidden;
   display:flex; align-items:center; padding:0 26px;
   background:linear-gradient(145deg, rgba(var(--exb-rgb),.13) 0%, rgba(var(--exb-rgb),.05) 46%, rgba(0,0,0,.25) 100%), #090a10; }
 .ex-banner::before { content:''; position:absolute; inset:0; pointer-events:none;
@@ -3320,8 +3325,35 @@ body:not(.tut-live) #tutCorgi {
 .exb-watermark { position:absolute; right:-46px; bottom:-58px; z-index:0; opacity:.055; pointer-events:none; }
 .exb-motes { position:absolute; inset:0; z-index:1; pointer-events:none; }
 .exb-motes i { position:absolute; border-radius:50%; background:rgba(var(--exb-rgb),.55); animation:heroFloat 4.6s ease-in-out infinite; }
-.exb-back { position:absolute; top:12px; left:16px; z-index:5; background:none; border:none; cursor:pointer;
-  font-family:'DM Mono',monospace; font-size:9px; letter-spacing:.18em; text-transform:uppercase; padding:4px 0; color:rgba(var(--exb-rgb),.8); }
+
+.ex-omnia-explain { display:flex; align-items:center; gap:14px; width:100%; box-sizing:border-box; padding:14px 16px; margin-bottom:16px;
+  background:rgba(142,204,224,.05); border:1px solid rgba(142,204,224,.18); border-radius:13px; cursor:pointer; transition:background .2s; text-align:left; }
+.ex-omnia-explain:active { background:rgba(142,204,224,.1); border-color:rgba(142,204,224,.32); }
+.ex-omnia-head { flex-shrink:0; width:38px; height:48px; display:flex; align-items:center; justify-content:center;
+  filter:drop-shadow(0 0 8px rgba(142,204,224,.45)); animation:bnSymPulse 5s ease-in-out infinite; }
+.ex-omnia-explain-text { display:flex; flex-direction:column; gap:3px; flex:1; }
+.eoe-title { font-family:'Cormorant Garamond',serif; font-size:16px; font-weight:300; color:var(--text); line-height:1; }
+.eoe-sub { font-family:'DM Mono',monospace; font-size:9px; letter-spacing:.1em; color:var(--muted); }
+.eoe-arrow { color:rgba(142,204,224,.6); font-size:20px; flex-shrink:0; }
+
+.ex-explain-overlay { position:fixed; inset:0; z-index:9000; display:flex; align-items:center; justify-content:center; padding:24px;
+  background:rgba(5,6,12,.78); backdrop-filter:blur(6px); opacity:0; pointer-events:none; transition:opacity .3s; }
+.ex-explain-overlay.show { opacity:1; pointer-events:auto; }
+.ex-explain-card { width:100%; max-width:380px; max-height:84vh; overflow-y:auto; background:linear-gradient(160deg,#11131c 0%,#0c0d14 100%);
+  border:1px solid rgba(142,204,224,.2); border-radius:20px; padding:28px 24px 22px; transform:translateY(14px) scale(.97); transition:transform .3s; scrollbar-width:none; }
+.ex-explain-overlay.show .ex-explain-card { transform:translateY(0) scale(1); }
+.ex-explain-omnia { display:flex; justify-content:center; margin-bottom:14px; }
+.ex-explain-omnia svg { filter:drop-shadow(0 0 14px rgba(142,204,224,.55)); animation:bnSymPulse 4s ease-in-out infinite; }
+.ex-explain-title { text-align:center; font-family:'Cormorant Garamond',serif; font-size:24px; font-weight:300; color:var(--text); margin-bottom:4px; }
+.ex-explain-omnia-name { text-align:center; font-family:'DM Mono',monospace; font-size:8px; letter-spacing:.24em; text-transform:uppercase; color:rgba(142,204,224,.7); margin-bottom:22px; }
+.ex-explain-steps { display:flex; flex-direction:column; gap:16px; margin-bottom:24px; }
+.ex-explain-step { display:flex; gap:14px; align-items:flex-start; }
+.ex-explain-step-num { flex-shrink:0; width:26px; height:26px; border-radius:50%; border:1px solid rgba(142,204,224,.4);
+  display:flex; align-items:center; justify-content:center; font-family:'Cormorant Garamond',serif; font-size:14px; color:#8eccc0; }
+.ex-explain-step-text { font-size:12px; line-height:1.65; color:var(--muted); padding-top:3px; }
+.ex-explain-step-text strong { color:var(--text); font-weight:400; }
+.ex-explain-close { width:100%; padding:14px; border-radius:11px; border:1px solid rgba(142,204,224,.3); background:rgba(142,204,224,.1);
+  color:#a8dce8; font-family:'DM Mono',monospace; font-size:10px; letter-spacing:.2em; text-transform:uppercase; cursor:pointer; }
 
 .screen-banner .bn-text { z-index:3; display:flex; flex-direction:column; gap:3px; }
 .screen-banner .bn-label { font-size:8px; letter-spacing:.28em; text-transform:uppercase; }
@@ -4558,9 +4590,9 @@ body:not(.tut-live) #tutCorgi {
 
   <!-- EXERCISE SETUP SCREEN -->
   <div class="screen" id="exSetupScreen" style="padding:0;">
+    <div style="padding:var(--safe-top) 20px 0; flex-shrink:0;"><button class="history-back" id="exSetupBack">&#8592; back</button></div>
     <!-- Banner — populated by openExerciseSetup() -->
-    <div id="exSetupBanner" class="ex-banner" style="--exb-rgb:224,124,58; --exb-light:#e8a070;">
-      <button class="exb-back" id="exSetupBack">&#8592; back</button>
+    <div id="exSetupBanner" class="ex-banner" style="--exb-rgb:224,124,58; --exb-light:#e8a070; margin:4px 12px 6px;">
       <div class="exb-motes" aria-hidden="true">
         <i style="width:5px;height:5px;left:10%;top:30%;animation-delay:0s;animation-duration:4.3s;"></i>
         <i style="width:3px;height:3px;left:22%;top:64%;animation-delay:1.6s;animation-duration:5.1s;"></i>
@@ -4590,6 +4622,17 @@ body:not(.tut-live) #tutCorgi {
     </div>
     <div style="padding:16px 24px max(env(safe-area-inset-bottom),24px); flex-shrink:0;">
       <button class="btn primary conc-btn" id="exSetupBeginBtn">Begin</button>
+    </div>
+
+    <!-- Omnia exercise explainer modal -->
+    <div class="ex-explain-overlay" id="exExplainOverlay" onclick="if(event.target===this)closeExExplainer()">
+      <div class="ex-explain-card">
+        <div class="ex-explain-omnia" id="exExplainOmnia"></div>
+        <div class="ex-explain-title" id="exExplainTitle"></div>
+        <div class="ex-explain-omnia-name">Omnia explains</div>
+        <div class="ex-explain-steps" id="exExplainSteps"></div>
+        <button class="ex-explain-close" id="exExplainClose" onclick="closeExExplainer()">Got it</button>
+      </div>
     </div>
   </div>
 
@@ -10748,7 +10791,12 @@ var EXERCISE_DEFS = {
       var mastered = best >= 900;
       var pct15 = best >= 600 ? Math.min(100, Math.round(best / 900 * 1000) / 10) : null;
       var pct15Display = pct15 !== null ? (Number.isInteger(pct15) ? pct15 : pct15.toFixed(1)) : null;
-      return 'Fix your sight attentively and exclusively on the tip of the colored line moving around the dial. Do not think of anything else, just dispassionately watch the end of the hand steadily and incessantly revolving. At this moment you have no interest in the form, color, etc of the app or anything else, except the part you are watching intently.<br><br>Your eyes must not be distracted by anything and nothing in the world exists for you now, <em>except that moving colored line</em>.<br><br>Once a thought, word, or other kind of mental distraction forces its way in, you must immediately click &ldquo;Stop&rdquo; on the screen.<br><br>The goal of this exercise is to reach ten minutes of completely uninterrupted focus. The longer you can go, the better it will be for you. Do not be discouraged if building up this much concentration takes months. Everything will occur in due time. Lack of patience is the result of all human failures.<br><br><span style="display:block; margin-top:4px; font-size:11px; letter-spacing:.15em; text-transform:uppercase; color:#d4956e;">Current Record &nbsp;·&nbsp; ' + bestStr + '</span>'
+      return '<button class="ex-omnia-explain" onclick="openExExplainer(\'clock\')">'
+          +   '<span class="ex-omnia-head">' + omniaHeadSVG(30, 49) + '</span>'
+          +   '<span class="ex-omnia-explain-text"><span class="eoe-title">How it works</span><span class="eoe-sub">Tap Omnia for a quick walkthrough</span></span>'
+          +   '<span class="eoe-arrow">&#8250;</span>'
+          + '</button>'
+          + '<span style="display:block; margin-top:20px; font-size:11px; letter-spacing:.15em; text-transform:uppercase; color:#d4956e;">Current Record &nbsp;·&nbsp; ' + bestStr + '</span>'
         + (pctDisplay !== null
           ? '<div style="margin-top:14px; padding:12px 14px; background:rgba(212,149,110,0.08); border:1px solid rgba(212,149,110,0.2); border-radius:8px;">'
             + '<div style="display:flex; justify-content:space-between; align-items:baseline; margin-bottom:8px;">'
@@ -21412,12 +21460,14 @@ function renderPavlokSettings() {
   var p = getPavlokPrefs();
 
   function intensityHtml(key) {
-    var lvls = [{ label: 'Light', v: 25 }, { label: 'Medium', v: 50 }, { label: 'Strong', v: 75 }];
-    return '<div class="pvk-intensity">' +
-      lvls.map(function(l) {
-        var sel = Math.abs((p[key].intensity || 50) - l.v) < 13 ? ' sel' : '';
-        return '<button class="pvk-lvl' + sel + '" onclick="pavlokSetIntensity(\'' + key + '\',' + l.v + ')">' + l.label + '</button>';
-      }).join('') + '</div>';
+    var val = p[key].intensity || 50;
+    var pct = val + '%';
+    return '<div class="pvk-slider-row">'
+      + '<input type="range" min="1" max="100" value="' + val + '" class="pvk-slider" style="--pct:' + pct + ';"'
+      + ' oninput="pavlokSliderInput(this,\'' + key + '\')"'
+      + ' onchange="pavlokSetIntensity(\'' + key + '\',+this.value)">'
+      + '<span class="pvk-slider-val" id="pvkSliderVal_' + key + '">' + val + '</span>'
+      + '</div>';
   }
 
   if (!token) {
@@ -21476,11 +21526,17 @@ function pavlokToggle(key) {
   renderPavlokSettings();
 }
 
+function pavlokSliderInput(el, key) {
+  var val = +el.value;
+  el.style.setProperty('--pct', val + '%');
+  var label = document.getElementById('pvkSliderVal_' + key);
+  if (label) label.textContent = val;
+}
+
 function pavlokSetIntensity(key, val) {
   var p = getPavlokPrefs();
-  p[key].intensity = val;
+  p[key].intensity = +val;
   savePavlokPrefs(p);
-  renderPavlokSettings();
 }
 
 function pavlokSetType(key, type) {
