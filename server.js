@@ -1009,7 +1009,7 @@ app.post('/api/pavlok/link', async (req, res) => {
     const r = await fetch(`${PAVLOK_API}/users/login`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email, password }),
+      body: JSON.stringify({ user: { email, password } }),
     });
     const data = await r.json();
     console.log('Pavlok login response status:', r.status, 'body:', JSON.stringify(data));
