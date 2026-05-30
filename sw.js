@@ -1,10 +1,67 @@
 // Service Worker for Presence app
-// Handles background push notifications
-// Deploy trigger: 2026-05-17T02:24Z
+// Handles background push notifications + shell caching
+// Cache version — bump this string when you need to force-evict all clients
+const CACHE = 'presence-shell-v1';
 
-// Derive app URL from service worker's own scope (works from any repo path)
-const APP_URL = self.registration ? self.registration.scope + 'presence.html' : '/Consciousness-App/presence.html';
+const APP_URL = self.registration
+  ? self.registration.scope + 'presence.html'
+  : '/Consciousness-App/presence.html';
 
+// Assets to precache on install (small, stable files)
+const PRECACHE = [
+  'manifest.webmanifest',
+  'apple-touch-icon.png',
+];
+
+// ── Install: precache stable assets ──────────────────────────────────────────
+self.addEventListener('install', event => {
+  self.skipWaiting();
+  event.waitUntil(
+    caches.open(CACHE).then(cache => cache.addAll(PRECACHE).catch(() => {}))
+  );
+});
+
+// ── Activate: delete stale caches ────────────────────────────────────────────
+self.addEventListener('activate', event => {
+  event.waitUntil(
+    caches.keys().then(keys =>
+      Promise.all(keys.filter(k => k !== CACHE).map(k => caches.delete(k)))
+    ).then(() => clients.claim())
+  );
+});
+
+// ── Fetch: stale-while-revalidate for presence.html, cache-first for rest ────
+self.addEventListener('fetch', event => {
+  const url = new URL(event.request.url);
+
+  // Only handle same-origin GET requests
+  if (event.request.method !== 'GET' || url.origin !== self.location.origin) return;
+
+  // Skip API calls
+  if (url.pathname.startsWith('/api/')) return;
+
+  const isShell = url.pathname.endsWith('presence.html');
+
+  event.respondWith(
+    caches.open(CACHE).then(cache =>
+      cache.match(event.request).then(cached => {
+        const networkFetch = fetch(event.request).then(response => {
+          if (response && response.status === 200) {
+            cache.put(event.request, response.clone());
+          }
+          return response;
+        }).catch(() => cached); // offline: fall back to cached
+
+        // Stale-while-revalidate for the shell: return cached immediately,
+        // update in background so next launch gets the fresh version.
+        // Everything else: network first, fall back to cache.
+        return isShell && cached ? cached : networkFetch;
+      })
+    )
+  );
+});
+
+// ── Push notifications ────────────────────────────────────────────────────────
 self.addEventListener('push', event => {
   let data = {};
   try {
@@ -44,6 +101,3 @@ self.addEventListener('notificationclick', event => {
     })
   );
 });
-
-self.addEventListener('install', () => self.skipWaiting());
-self.addEventListener('activate', event => event.waitUntil(clients.claim()));
