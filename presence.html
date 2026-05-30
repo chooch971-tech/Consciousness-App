@@ -11156,15 +11156,7 @@ function openExerciseSetup(ex) {
   document.getElementById('exSetupIcon').innerHTML = def.icon;
   document.getElementById('exSetupName').textContent = def.name;
   document.getElementById('exSetupDesc').innerHTML = typeof def.desc === 'function' ? def.desc() : def.desc;
-  // Exercises with an Omnia explainer drop the long inline description — the
-  // walkthrough lives behind the clickable Omnia head instead.
-  if (EX_EXPLAINERS[ex]) {
-    var descEl = document.getElementById('exSetupDesc');
-    descEl.innerHTML = '';
-    descEl.style.marginBottom = '0';
-  } else {
-    document.getElementById('exSetupDesc').style.marginBottom = '32px';
-  }
+  document.getElementById('exSetupDesc').style.marginBottom = '32px';
   if (ex === 'visual') {
     document.getElementById('exSetupDesc').innerHTML +=
       '<div style="margin-top:12px;">'
