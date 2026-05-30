@@ -957,6 +957,24 @@
     .prayer-time-status.active { color:#9b8ec4; }
     .prayer-streak { font-size:9px; letter-spacing:.2em; text-transform:uppercase; color:var(--muted); text-align:center; margin-bottom:20px; }
     .prayer-streak span { color:#c4b8e8; }
+    .prayer-time-status.passed { color:rgba(196,184,224,.32); }
+    /* Next-prayer hero card */
+    .prayer-next-hero { position:relative; background:linear-gradient(150deg,rgba(40,30,58,.55) 0%,rgba(26,20,40,.45) 100%); border:1px solid rgba(155,142,196,.22); border-radius:16px; padding:22px 20px 20px; margin-bottom:16px; overflow:hidden; }
+    .prayer-next-hero::before { content:''; position:absolute; top:-45%; right:-22%; width:190px; height:190px; border-radius:50%; background:radial-gradient(circle,rgba(196,168,220,.16) 0%,transparent 70%); pointer-events:none; }
+    .pnh-eyebrow { position:relative; font-family:'DM Mono',monospace; font-size:9px; letter-spacing:.24em; text-transform:uppercase; color:rgba(196,168,220,.72); margin-bottom:9px; }
+    .pnh-time { position:relative; font-family:'Cormorant Garamond',serif; font-weight:300; font-size:40px; line-height:1; color:#e6d8f4; margin-bottom:7px; }
+    .pnh-count { position:relative; font-family:'DM Mono',monospace; font-size:11px; letter-spacing:.06em; color:rgba(220,200,235,.6); margin-bottom:18px; }
+    .pnh-cta { position:relative; width:100%; padding:15px; border-radius:11px; border:1px solid rgba(155,142,196,.42); background:linear-gradient(145deg,rgba(78,60,118,.55) 0%,rgba(112,90,160,.6) 50%,rgba(72,56,110,.55) 100%); color:#ede4fa; font-family:'DM Mono',monospace; font-size:11px; letter-spacing:.22em; text-transform:uppercase; cursor:pointer; transition:transform .15s, box-shadow .2s; box-shadow:0 0 22px rgba(155,142,196,.16),inset 0 1px 0 rgba(255,255,255,.06); }
+    .pnh-cta:active { transform:scale(.98); box-shadow:0 0 10px rgba(155,142,196,.1); }
+    .prayer-dots { display:flex; align-items:center; justify-content:center; gap:10px; margin-bottom:9px; }
+    .prayer-dots i { width:9px; height:9px; border-radius:50%; background:transparent; border:1.5px solid rgba(155,142,196,.32); transition:all .3s; }
+    .prayer-dots i.done { background:#9b8ec4; border-color:#9b8ec4; box-shadow:0 0 9px rgba(155,142,196,.5); }
+    .prayer-dots i.active { border-color:#c4b8e8; animation:prayerDotPulse 1.7s ease-in-out infinite; }
+    .prayer-dots i.passed { border-color:rgba(155,142,196,.18); opacity:.45; }
+    .prayer-dots i.skipped { border-color:rgba(155,142,196,.18); background:rgba(155,142,196,.12); opacity:.5; }
+    @keyframes prayerDotPulse { 0%,100%{ box-shadow:0 0 0 0 rgba(196,184,232,.5);} 50%{ box-shadow:0 0 0 5px rgba(196,184,232,0);} }
+    .prayer-dots-label { text-align:center; font-family:'DM Mono',monospace; font-size:9px; letter-spacing:.2em; text-transform:uppercase; color:var(--muted); margin-bottom:22px; }
+    .prayer-dots-label span { color:#c4b8e8; }
     /* PRAYER SESSION SCREEN */
     #prayerSessionScreen { justify-content:space-between; }
     .prayer-session-prompt { font-family:Cormorant Garamond,serif; font-size:22px; font-weight:300; font-style:italic; color:var(--text); line-height:1.6; text-align:center; max-width:300px; }
@@ -3947,14 +3965,12 @@ body:not(.tut-live) #tutCorgi {
       <div style="flex:1; overflow-y:auto; -webkit-overflow-scrolling:touch;">
         <div style="display:flex; flex-direction:column; padding-bottom:40px;">
 
-        <!-- Progress bar -->
-        <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:12px;">
-          <span style="font-size:9px; letter-spacing:.2em; text-transform:uppercase; color:var(--muted);">today</span>
-          <span class="prayer-streak"><span id="prayerDoneCount">0</span> / <span id="prayerTotalCount">5</span> complete</span>
-        </div>
-        <div style="height:2px; background:var(--border); border-radius:2px; margin-bottom:20px; overflow:hidden;">
-          <div id="prayerProgressBar" style="height:100%; background:#9b8ec4; border-radius:2px; width:0%; transition:width .5s;"></div>
-        </div>
+        <!-- Next-prayer hero -->
+        <div class="prayer-next-hero" id="prayerNextHero"></div>
+
+        <!-- Today's progress dots -->
+        <div class="prayer-dots" id="prayerDotsRow"></div>
+        <div class="prayer-dots-label"><span id="prayerDoneCount">0</span> of <span id="prayerTotalCount">5</span> kept today</div>
 
         <!-- Prayer times list -->
         <div class="prayer-times-list" id="prayerTimesList"></div>
@@ -4584,7 +4600,7 @@ body:not(.tut-live) #tutCorgi {
       </div>
       <div>
         <div style="font-size:9px; letter-spacing:.2em; text-transform:uppercase; color:#9b8ec4; margin-bottom:10px;">Reflection</div>
-        <div style="font-size:10px; color:var(--muted); line-height:1.5; margin-bottom:10px;">What came up? What did you bring? What did you receive? Anything is enough.</div>
+        <div id="prayerReflectPrompt" style="font-family:'Cormorant Garamond',serif; font-size:15px; font-style:italic; color:rgba(220,200,235,.8); line-height:1.55; margin-bottom:10px;"></div>
         <textarea id="prayerReflection" placeholder="Write freely…" style="width:100%; box-sizing:border-box; min-height:140px; background:rgba(255,255,255,.03); border:1px solid var(--border); border-radius:8px; padding:12px 14px; font-family:'DM Mono',monospace; font-size:11px; line-height:1.6; color:var(--text); resize:vertical;"></textarea>
       </div>
       <div style="display:flex; flex-direction:column; gap:10px; padding-bottom:max(env(safe-area-inset-bottom),28px);">
@@ -12726,6 +12742,26 @@ var PRAYER_ENCOURAGEMENTS = [
   "There is no wrong way to be here.",
 ];
 
+// Contemplative prompts shown above the reflection box after a prayer — these
+// give the reflection a focus and feed the journal / Omnia loop over time.
+var PRAYER_REFLECT_PROMPTS = [
+  "What did you carry in, and what are you setting down?",
+  "Where did your attention want to wander? What does that ask of you?",
+  "What were you grateful for in the silence?",
+  "What truth surfaced that you had been avoiding?",
+  "Who or what did you hold in your heart just now?",
+  "What did you receive that you did not expect?",
+  "What felt closest to the sacred in this time?",
+  "What are you being asked to release?",
+  "Where did you meet resistance, and where did you meet peace?",
+  "What would you say if nothing were withheld?",
+  "What small thing today is worthy of reverence?",
+  "What did stillness reveal that motion had hidden?",
+  "What are you ready to forgive — in another, or yourself?",
+  "What is the next faithful step, however small?",
+  "What did you bring honestly, and what did you hold back?",
+];
+
 var PRAYER_DEFAULT = {
   enabled: false,
   count: 5,
@@ -12816,14 +12852,25 @@ function renderPrayerPanel() {
   if (prayerBannerDay) prayerBannerDay.textContent = 'Day ' + pStreak;
   if (prayerBannerPhrase) prayerBannerPhrase.textContent = pStreak > 0 ? ' · Devotion holds' : ' · Begin the path';
 
-  // Progress bar
-  var bar = document.getElementById('prayerProgressBar');
-  if (bar) bar.style.width = Math.round((done.length / count) * 100) + '%';
-
   var list = document.getElementById('prayerTimesList');
   var times = prayerState.times.slice(0, count);
   var now = new Date();
 
+  // Progress dots — one per prayer, no shame language
+  var dotsRow = document.getElementById('prayerDotsRow');
+  if (dotsRow) {
+    dotsRow.innerHTML = times.map(function(t, i) {
+      var parts = t.split(':');
+      var pDate = new Date(); pDate.setHours(parseInt(parts[0]), parseInt(parts[1]), 0, 0);
+      var isDone = done.indexOf(i) !== -1;
+      var isSkipped = skipped.indexOf(i) !== -1;
+      var isActive = !isDone && !isSkipped && Math.abs(now - pDate) < 5 * 60 * 1000;
+      var cls = isDone ? 'done' : isActive ? 'active' : isSkipped ? 'skipped' : (now > pDate ? 'passed' : '');
+      return '<i class="' + cls + '"></i>';
+    }).join('');
+  }
+
+  // Detailed list — "missed" softened to "passed"
   list.innerHTML = times.map(function(t, i) {
     var parts = t.split(':');
     var h = parseInt(parts[0]), m = parseInt(parts[1]);
@@ -12832,8 +12879,8 @@ function renderPrayerPanel() {
     var isSkipped = skipped.indexOf(i) !== -1;
     var isPast = now > pDate;
     var isActive = !isDone && !isSkipped && Math.abs(now - pDate) < 5 * 60 * 1000;
-    var statusText = isDone ? '✓ done' : isSkipped ? '— skipped' : isActive ? '● now' : isPast ? 'missed' : 'upcoming';
-    var statusClass = isDone ? 'done' : isActive ? 'active' : 'pending';
+    var statusText = isDone ? '✓ kept' : isSkipped ? '— skipped' : isActive ? '● now' : isPast ? 'passed' : 'upcoming';
+    var statusClass = isDone ? 'done' : isActive ? 'active' : (isPast && !isSkipped ? 'passed' : 'pending');
     var ampm = h >= 12 ? 'pm' : 'am';
     var h12 = h % 12 || 12;
     var mStr = String(m).padStart(2,'0');
@@ -12844,6 +12891,10 @@ function renderPrayerPanel() {
       + '<span class="prayer-time-status ' + statusClass + '">' + statusText + '</span>'
       + '</div>';
   }).join('');
+
+  // Next-prayer hero + live countdown
+  renderPrayerNextHero();
+  startPrayerHeroTicker();
 
   // Sync settings UI
   renderPrayerTimesSettings();
@@ -12861,6 +12912,117 @@ function renderPrayerPanel() {
     toggleBtn.style.color = prayerState.enabled ? '#c4b8e8' : 'var(--muted)';
     toggleBtn.style.borderColor = prayerState.enabled ? 'rgba(155,142,196,.4)' : 'var(--border)';
   }
+}
+
+// ── Next-prayer hero: state machine + live countdown ──────────────────────────
+// Computes the "what's next" state so the panel leads with one clear action
+// instead of a column of "missed" labels.
+function getPrayerNextState() {
+  var count = prayerState.count;
+  var times = prayerState.times.slice(0, count);
+  var done = prayerState.todayDone;
+  var skipped = prayerState.todaySkipped;
+  var now = new Date();
+
+  // All scheduled prayers kept today
+  if (done.length >= count) return { kind: 'complete' };
+
+  // Active right now (within the 5-min window, not yet done/skipped)
+  for (var i = 0; i < times.length; i++) {
+    if (done.indexOf(i) !== -1 || skipped.indexOf(i) !== -1) continue;
+    var p = times[i].split(':');
+    var pd = new Date(); pd.setHours(parseInt(p[0]), parseInt(p[1]), 0, 0);
+    if (Math.abs(now - pd) < 5 * 60 * 1000) return { kind: 'now', index: i, time: times[i] };
+  }
+
+  // Next upcoming prayer still ahead today (not done/skipped)
+  var next = null;
+  for (var j = 0; j < times.length; j++) {
+    if (done.indexOf(j) !== -1 || skipped.indexOf(j) !== -1) continue;
+    var q = times[j].split(':');
+    var qd = new Date(); qd.setHours(parseInt(q[0]), parseInt(q[1]), 0, 0);
+    if (qd > now) { next = { kind: 'upcoming', index: j, time: times[j], at: qd }; break; }
+  }
+  if (next) return next;
+
+  // Nothing left today but not all kept — invite voluntary prayer
+  return { kind: 'open' };
+}
+
+function fmtPrayerClock(t) {
+  var p = t.split(':'); var h = parseInt(p[0]), m = parseInt(p[1]);
+  return (h % 12 || 12) + ':' + String(m).padStart(2, '0') + ' ' + (h >= 12 ? 'pm' : 'am');
+}
+
+function fmtCountdown(ms) {
+  var s = Math.max(0, Math.floor(ms / 1000));
+  var h = Math.floor(s / 3600), m = Math.floor((s % 3600) / 60), sec = s % 60;
+  if (h > 0) return 'in ' + h + 'h ' + m + 'm';
+  if (m > 0) return 'in ' + m + 'm ' + String(sec).padStart(2, '0') + 's';
+  return 'in ' + sec + 's';
+}
+
+function renderPrayerNextHero() {
+  var el = document.getElementById('prayerNextHero');
+  if (!el) return;
+  var st = getPrayerNextState();
+  var pStreak = prayerState.streak || 0;
+  var html = '';
+  if (st.kind === 'complete') {
+    html = '<div class="pnh-eyebrow">Today’s devotion</div>'
+      + '<div class="pnh-time">All kept ✧</div>'
+      + '<div class="pnh-count">' + (pStreak > 0 ? pStreak + '-day path held' : 'The path begins') + '</div>'
+      + '<button class="pnh-cta" onclick="enterPrayerFromHero()">Pray Again</button>';
+  } else if (st.kind === 'now') {
+    html = '<div class="pnh-eyebrow">● Prayer ' + (st.index + 1) + ' · Now</div>'
+      + '<div class="pnh-time">' + fmtPrayerClock(st.time) + '</div>'
+      + '<div class="pnh-count">The hour is here</div>'
+      + '<button class="pnh-cta" onclick="enterPrayerFromHero()">Enter Prayer</button>';
+  } else if (st.kind === 'upcoming') {
+    html = '<div class="pnh-eyebrow">Next · Prayer ' + (st.index + 1) + '</div>'
+      + '<div class="pnh-time">' + fmtPrayerClock(st.time) + '</div>'
+      + '<div class="pnh-count" id="pnhCountdown">' + fmtCountdown(st.at - new Date()) + '</div>'
+      + '<button class="pnh-cta" onclick="enterPrayerFromHero()">Enter Prayer Now</button>';
+  } else { // open
+    html = '<div class="pnh-eyebrow">Today’s devotion</div>'
+      + '<div class="pnh-time">When you are called</div>'
+      + '<div class="pnh-count">No scheduled prayers remain today</div>'
+      + '<button class="pnh-cta" onclick="enterPrayerFromHero()">Enter Prayer</button>';
+  }
+  el.innerHTML = html;
+}
+
+var _prayerHeroTicker = null;
+function startPrayerHeroTicker() {
+  stopPrayerHeroTicker();
+  _prayerHeroTicker = setInterval(function() {
+    var panel = document.getElementById('prayerPanel');
+    // Stop ticking if the prayer panel is no longer visible
+    if (!panel || panel.style.display === 'none' || panel.offsetParent === null) {
+      stopPrayerHeroTicker();
+      return;
+    }
+    var st = getPrayerNextState();
+    var cd = document.getElementById('pnhCountdown');
+    // Lightweight path: just update the countdown text while upcoming.
+    // On any state transition, re-render the whole hero (and dots).
+    if (st.kind === 'upcoming' && cd) {
+      cd.textContent = fmtCountdown(st.at - new Date());
+    } else {
+      renderPrayerNextHero();
+    }
+  }, 1000);
+}
+function stopPrayerHeroTicker() {
+  if (_prayerHeroTicker) { clearInterval(_prayerHeroTicker); _prayerHeroTicker = null; }
+}
+
+// Hero CTA — begins the active/next scheduled prayer (so it counts toward the
+// slot); falls back to a voluntary prayer when nothing is scheduled/remaining.
+function enterPrayerFromHero() {
+  var st = getPrayerNextState();
+  if (st.kind === 'now' || st.kind === 'upcoming') beginPrayer(st.index);
+  else beginPrayer(-1);
 }
 
 // Prayer scheduler — checks every 30 seconds
@@ -13044,6 +13206,8 @@ function showPrayerResultScreen() {
   document.getElementById('prayerResultPrompt').textContent = p.prompt;
   document.getElementById('prayerResultEncouragement').textContent = p.encouragement;
   document.getElementById('prayerReflection').value = '';
+  var rp = document.getElementById('prayerReflectPrompt');
+  if (rp) rp.textContent = PRAYER_REFLECT_PROMPTS[Math.floor(Math.random() * PRAYER_REFLECT_PROMPTS.length)];
   showScreen('prayerResultScreen');
 }
 
