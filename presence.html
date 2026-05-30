@@ -15943,7 +15943,12 @@ function guideClockStats() {
     if (ms && ms > out.lastMs) out.lastMs = ms;
     if (guideIsToday(h.date)) {
       out.todayCount++;
-      out.todaySec += sec;
+      // For multi-rep sessions, xpEarned = sum of all reps; seconds = best rep only.
+      // Use xpEarned (total) for the daily progress bar so accumulated reps count.
+      // Tier qualification still uses sec (bestRep) — you only earn a tier credit
+      // if you held that long in a single unbroken attempt.
+      var todayContrib = (h.xpEarned && h.xpEarned > sec) ? h.xpEarned : sec;
+      out.todaySec += todayContrib;
       if (sec > out.todayBestSec) out.todayBestSec = sec;
     }
     clockSessions.push({ sec:sec, ms:ms });
