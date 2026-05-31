@@ -14966,9 +14966,14 @@ function awardOmniaForExercise(exId, seconds) {
   var gain = omniaExerciseReward(exId, seconds || 0, recommended);
   omniaState.akasha = (omniaState.akasha || 0) + gain;
   omniaState.totalAkashaEarned = (omniaState.totalAkashaEarned || 0) + gain;
+  // Any exercise = 1 session credit, max once per hour
+  var now = Date.now();
+  if (now - (omniaState.lastSessionCreditMs || 0) >= 3600000) {
+    omniaState.completedRecommended = (omniaState.completedRecommended || 0) + 1;
+    omniaState.lastSessionCreditMs = now;
+  }
   if (recommended) {
     omniaState.recStreak = (omniaState.recStreak || 0) + 1;
-    omniaState.completedRecommended = (omniaState.completedRecommended || 0) + 1;
     if (!omniaBodyAtCap(meta.body)) {
       omniaState.bodies[meta.body] = (omniaState.bodies[meta.body] || 0) + 1;
     }
@@ -16181,7 +16186,7 @@ function guideClockStats() {
   clockSessions.sort(function(a, b) { return a.ms - b.ms; });
   var tier = 5, qualAtTier = 0;
   clockSessions.forEach(function(s) {
-    if (s.sec >= tier * 60) {
+    if (s.sec + 5 >= tier * 60) { // 5s grace for tap-timing variance
       qualAtTier++;
       if (tier === 10) out.qualTenCount++;
       if (qualAtTier >= 2 && tier < 10) { tier++; qualAtTier = 0; }
@@ -16400,7 +16405,7 @@ function buildExperiencedGuideItems() {
       duration:clockMinutes,
       durationLabel:clockDurLabel,
       done:clockStats.todaySec >= clockDailyTarget,
-      progress:'today ' + guideFmtTime(clockStats.todaySec) + ' / ' + guideFmtTime(clockDailyTarget),
+      progress:'today ' + guideFmtTime(clockStats.todaySec) + ' / ' + guideFmtTime(clockDailyTarget) + (atCap ? '' : ' · ' + (clockStats.qualAtTier || 0) + '/2 → ' + (clockMinutes + 1) + 'min'),
       tip:'Complete the full session to count toward the next tier. Two qualifying sessions unlock the next minute.' + tierProgress,
       open:'clock',
       clockExtra:clockExtra
@@ -16532,7 +16537,7 @@ function buildFoundationalGuideItems() {
       durationLabel:clockDurLabel2,
       done:clock.todaySec >= clockDailyTarget,
       todayCount:clock.todayCount || 0,
-      progress:'today ' + guideFmtTime(clock.todaySec) + ' / ' + guideFmtTime(clockDailyTarget),
+      progress:'today ' + guideFmtTime(clock.todaySec) + ' / ' + guideFmtTime(clockDailyTarget) + (atCap ? '' : ' · ' + (clock.qualAtTier || 0) + '/2 → ' + (clockMinutes + 1) + 'min'),
       tip:'Complete the full session to count toward the next tier. Two qualifying sessions unlock the next minute.' + tierProgress + attentionText,
       open:'clock',
       clockExtra:clockExtra
