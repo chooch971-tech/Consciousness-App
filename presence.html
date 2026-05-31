@@ -726,7 +726,7 @@
     .pq-menu-btn { flex-shrink:0; width:28px; height:28px; border-radius:6px; border:none; background:transparent; color:var(--muted); font-size:13px; cursor:pointer; display:flex; align-items:center; justify-content:center; letter-spacing:.05em; transition:background .18s, color .18s; }
     .pq-menu-btn:hover { background:rgba(255,255,255,.06); color:var(--text); }
     .pq-skip-menu { position:fixed; background:var(--surface); border:1px solid var(--border); border-radius:12px; z-index:600; min-width:160px; box-shadow:0 4px 20px rgba(0,0,0,.5); overflow:hidden; display:none; }
-    .pq-skip-item { display:block; width:100%; padding:12px 16px; border:none; background:none; color:var(--text); font-family:'DM Mono',monospace; font-size:9px; letter-spacing:.14em; text-transform:uppercase; cursor:pointer; text-align:left; }
+    .pq-skip-item { display:block; width:100%; padding:12px 16px; border:none; background:none; color:var(--text); font-family:'DM Mono',monospace; font-size:9px; letter-spacing:.14em; text-transform:uppercase; cursor:pointer; text-align:left; touch-action:manipulation; -webkit-tap-highlight-color:transparent; }
     .pq-skip-item:hover { background:rgba(255,255,255,.05); }
     .pq-skip-item.warn { color:#d49898; }
     .pq-skip-item.active { color:var(--accent); font-weight:600; }
@@ -3843,17 +3843,6 @@ body:not(.tut-live) #tutCorgi {
     <div id="awarenessSubMenu">
       <button class="awareness-sub-item" id="subMenuAwareness">Awareness</button>
       <button class="awareness-sub-item" id="subMenuPrayer">Prayer</button>
-    </div>
-    <div class="pq-skip-menu" id="pqSkipMenu">
-      <button class="pq-skip-item" id="pqSkipSwitch" style="display:none;"></button>
-      <div id="pqThoughtModes" style="display:none;">
-        <button class="pq-skip-item" data-thought-mode="observation">Thought Observation</button>
-        <button class="pq-skip-item" data-thought-mode="focus">Thought Focus</button>
-        <button class="pq-skip-item" data-thought-mode="vacancy">Vacancy of Mind</button>
-        <hr class="pq-thought-mode-divider">
-      </div>
-      <button class="pq-skip-item" id="pqSkipPostpone">Postpone 7 days</button>
-      <button class="pq-skip-item warn" id="pqSkipTellOmnia">Tell Omnia…</button>
     </div>
     <div id="pqTellOmniaOverlay" style="display:none;position:fixed;inset:0;z-index:700;background:rgba(0,0,0,.6);align-items:center;justify-content:center;padding:24px;">
       <div style="background:var(--surface);border:1px solid var(--border);border-radius:18px;padding:24px;width:100%;max-width:340px;">
@@ -24048,5 +24037,17 @@ document.getElementById('fpFriendsList').addEventListener('click', function(e) {
   setInterval(sendHeartbeat, 60000);
 })();
 </script>
+<!-- pqSkipMenu lives at top-level so position:fixed isn't clipped by any scroll parent -->
+<div class="pq-skip-menu" id="pqSkipMenu">
+  <button class="pq-skip-item" id="pqSkipSwitch" style="display:none;"></button>
+  <div id="pqThoughtModes" style="display:none;">
+    <button class="pq-skip-item" data-thought-mode="observation">Thought Observation</button>
+    <button class="pq-skip-item" data-thought-mode="focus">Thought Focus</button>
+    <button class="pq-skip-item" data-thought-mode="vacancy">Vacancy of Mind</button>
+    <hr class="pq-thought-mode-divider">
+  </div>
+  <button class="pq-skip-item" id="pqSkipPostpone">Postpone 7 days</button>
+  <button class="pq-skip-item warn" id="pqSkipTellOmnia">Tell Omnia…</button>
+</div>
 </body>
 </html>
