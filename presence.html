@@ -8183,14 +8183,15 @@ document.addEventListener('visibilitychange', function() {
   if (document.visibilityState === 'hidden' && sessionStartTime) saveSessionState();
   if (document.visibilityState === 'visible') {
     scheduleGuidePathLayoutRefresh(false);
-    // Restore the active session screen if we returned to the app mid-session
-    // (iOS may have suspended the page or switched the visible screen).
-    if (sessionStartTime && getSecondsRemaining() > 0) {
+    // Restore the active session screen when returning from background.
+    // Always restart runLoop so it can call endSession() if the timer
+    // expired while the page was suspended (iOS throttles JS timers).
+    if (sessionStartTime) {
       var sessScreen = document.getElementById('sessionScreen');
       if (sessScreen && !sessScreen.classList.contains('active')) {
         showScreen('sessionScreen');
-        runLoop();
       }
+      runLoop();
     }
   }
   // When app becomes visible again, refresh token if needed, then pull
@@ -8211,9 +8212,10 @@ document.addEventListener('visibilitychange', function() {
         }
       });
       var surveyShowing = document.getElementById('surveyScreen') && document.getElementById('surveyScreen').classList.contains('active');
-      // Never reload while an awareness session is running — it wipes the live
-      // session screen and drops the user on home with a frozen timer.
-      var sessionActive = sessionStartTime && getSecondsRemaining() > 0;
+      // Block reload for the entire lifetime of the session, including the
+      // moment the timer hits zero but endSession() hasn't fired yet (iOS
+      // can throttle the JS timer so the sync pull resolves first).
+      var sessionActive = !!sessionStartTime;
       if (changed && !sessionActive && !sessionStorage.getItem('_pullReloaded') && !surveyShowing && !sessionStorage.getItem('_sessionJustEnded')) {
         sessionStorage.setItem('_pullReloaded', '1');
         console.log('[Sync] New cloud data detected — reloading');
