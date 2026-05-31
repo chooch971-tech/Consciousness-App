@@ -5452,6 +5452,18 @@ body:not(.tut-live) #tutCorgi {
   <button class="btn ghost conc-btn" id="visRefreshCancelBtn" style="margin-top:8px; font-size:9px; max-width:200px;">Cancel</button>
 </div>
 <div class="toast" id="toast"></div>
+<!-- pqSkipMenu lives at top-level so position:fixed isn't clipped by any scroll parent -->
+<div class="pq-skip-menu" id="pqSkipMenu">
+  <button class="pq-skip-item" id="pqSkipSwitch" style="display:none;"></button>
+  <div id="pqThoughtModes" style="display:none;">
+    <button class="pq-skip-item" data-thought-mode="observation">Thought Observation</button>
+    <button class="pq-skip-item" data-thought-mode="focus">Thought Focus</button>
+    <button class="pq-skip-item" data-thought-mode="vacancy">Vacancy of Mind</button>
+    <hr class="pq-thought-mode-divider">
+  </div>
+  <button class="pq-skip-item" id="pqSkipPostpone">Postpone 7 days</button>
+  <button class="pq-skip-item warn" id="pqSkipTellOmnia">Tell Omnia…</button>
+</div>
 
 <script>
 function esc(str){ return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
@@ -24039,17 +24051,5 @@ document.getElementById('fpFriendsList').addEventListener('click', function(e) {
   setInterval(sendHeartbeat, 60000);
 })();
 </script>
-<!-- pqSkipMenu lives at top-level so position:fixed isn't clipped by any scroll parent -->
-<div class="pq-skip-menu" id="pqSkipMenu">
-  <button class="pq-skip-item" id="pqSkipSwitch" style="display:none;"></button>
-  <div id="pqThoughtModes" style="display:none;">
-    <button class="pq-skip-item" data-thought-mode="observation">Thought Observation</button>
-    <button class="pq-skip-item" data-thought-mode="focus">Thought Focus</button>
-    <button class="pq-skip-item" data-thought-mode="vacancy">Vacancy of Mind</button>
-    <hr class="pq-thought-mode-divider">
-  </div>
-  <button class="pq-skip-item" id="pqSkipPostpone">Postpone 7 days</button>
-  <button class="pq-skip-item warn" id="pqSkipTellOmnia">Tell Omnia…</button>
-</div>
 </body>
 </html>
