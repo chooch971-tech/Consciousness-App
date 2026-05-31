@@ -16378,11 +16378,15 @@ function buildExperiencedGuideItems() {
   var tierProgress = !atCap
     ? ' (' + (clockStats.qualAtTier || 0) + '/2 sessions toward ' + (clockMinutes + 1) + ' min)'
     : '';
+  var clockRoundsLeft = rounds > 1 ? Math.max(0, rounds - Math.floor(clockStats.todaySec / (clockMinutes * 60))) : 1;
+  var clockDurLabel = clockMinutes + ' min' + (clockRoundsLeft > 1 ? ' x' + clockRoundsLeft : '');
 
   var thoughtMode = guideState.thoughtModeForced || guideCurrentThoughtMode(thought);
   var thoughtModeStats = thought[thoughtMode] || { count:0, bestSec:0, todaySec:0 };
   var thoughtMinutes = guideThoughtTargetMinutes(thoughtMode, thought);
   var thoughtDailyTarget = thoughtMinutes * 60 * rounds;
+  var thoughtRoundsLeft = rounds > 1 ? Math.max(0, rounds - Math.floor(thoughtModeStats.todaySec / (thoughtMinutes * 60))) : 1;
+  var thoughtDurLabel = thoughtMinutes + ' min' + (thoughtRoundsLeft > 1 ? ' x' + thoughtRoundsLeft : '');
   var nextThought = thoughtMode === 'observation'
     ? 'When observation reaches a ten-minute gap, Omnia will move you to Thought Focus at five minutes.'
     : thoughtMode === 'focus'
@@ -16394,7 +16398,7 @@ function buildExperiencedGuideItems() {
       id:'clock',
       name:'Clock',
       duration:clockMinutes,
-      durationLabel:clockMinutes + ' min' + (rounds > 1 ? ' x2' : ''),
+      durationLabel:clockDurLabel,
       done:clockStats.todaySec >= clockDailyTarget,
       progress:'today ' + guideFmtTime(clockStats.todaySec) + ' / ' + guideFmtTime(clockDailyTarget),
       tip:'Complete the full session to count toward the next tier. Two qualifying sessions unlock the next minute.' + tierProgress,
@@ -16406,7 +16410,7 @@ function buildExperiencedGuideItems() {
       name:'Thought Control',
       mode:thoughtMode,
       duration:thoughtMinutes,
-      durationLabel:thoughtMinutes + ' min' + (rounds > 1 ? ' x2' : ''),
+      durationLabel:thoughtDurLabel,
       done:thoughtModeStats.todaySec >= thoughtDailyTarget,
       todayCount:thoughtModeStats.todayCount || 0,
       progress:'today ' + guideFmtTime(thoughtModeStats.todaySec) + ' / ' + guideFmtTime(thoughtDailyTarget) + ' · best gap ' + guideFmtTime(thoughtModeStats.bestSec || 0),
@@ -16515,13 +16519,17 @@ function buildFoundationalGuideItems() {
       : 'When vacancy reaches a ten-minute gap, Omnia will cycle all three forms instead of adding more volume.';
 
   var clockExtra = showUpsell ? 'upsell' : atCap ? 'stepper' : null;
+  var clockRoundsLeft2 = rounds > 1 ? Math.max(0, rounds - Math.floor(clock.todaySec / (clockMinutes * 60))) : 1;
+  var clockDurLabel2 = clockMinutes + ' min' + (clockRoundsLeft2 > 1 ? ' x' + clockRoundsLeft2 : '');
+  var thoughtRoundsLeft2 = rounds > 1 ? Math.max(0, rounds - Math.floor(modeStats.todaySec / (thoughtMinutes * 60))) : 1;
+  var thoughtDurLabel2 = thoughtMinutes + ' min' + (thoughtRoundsLeft2 > 1 ? ' x' + thoughtRoundsLeft2 : '');
 
   var items = [
     {
       id:'clock',
       name:'Clock',
       duration:clockMinutes,
-      durationLabel:clockMinutes + ' min' + (rounds > 1 ? ' x2' : ''),
+      durationLabel:clockDurLabel2,
       done:clock.todaySec >= clockDailyTarget,
       todayCount:clock.todayCount || 0,
       progress:'today ' + guideFmtTime(clock.todaySec) + ' / ' + guideFmtTime(clockDailyTarget),
@@ -16534,7 +16542,7 @@ function buildFoundationalGuideItems() {
       name:'Thought Control',
       mode:mode,
       duration:thoughtMinutes,
-      durationLabel:thoughtMinutes + ' min' + (rounds > 1 ? ' x2' : ''),
+      durationLabel:thoughtDurLabel2,
       done:modeStats.todaySec >= thoughtDailyTarget,
       todayCount:modeStats.todayCount || 0,
       progress:'today ' + guideFmtTime(modeStats.todaySec) + ' / ' + guideFmtTime(thoughtDailyTarget) + ' · best gap ' + guideFmtTime(modeStats.bestSec || 0),
