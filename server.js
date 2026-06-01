@@ -384,7 +384,10 @@ setInterval(async () => {
       // Also fire server-side as a belt-and-suspenders fallback.
       const result = await pushTo(sub, prompt);
       if (sub.pavlok && sub.pavlok.token) {
+        console.log(`[Pavlok] Firing server stimulus: type=${sub.pavlok.type} intensity=${sub.pavlok.intensity}`);
         firePavlokServer(sub.pavlok.token, sub.pavlok.type, sub.pavlok.intensity);
+      } else {
+        console.log(`[Pavlok] Skipped — sub.pavlok is ${sub.pavlok ? 'present but missing token' : 'null'} for this session`);
       }
       if (result === 'dead') {
         dead.push(sub.endpoint);
@@ -1134,6 +1137,7 @@ app.post('/session/start', async (req, res) => {
   } else {
     sub.pavlok = null;
   }
+  console.log(`[Pavlok] /session/start — payload received: ${JSON.stringify(pavlok)} | stored sub.pavlok: ${sub.pavlok ? sub.pavlok.type + '@' + sub.pavlok.intensity : 'null'}`);
   await saveSub(sub);
   res.json({ success: true, pavlokManaged: !!sub.pavlok });
 });
