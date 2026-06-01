@@ -938,8 +938,12 @@
     .oe-gen-res-row { display:flex; justify-content:space-between; align-items:baseline; margin-bottom:8px; }
     .oe-gen-res-label { font-size:8px; letter-spacing:.22em; text-transform:uppercase; color:rgba(200,230,245,.58); }
     .oe-gen-res-val { font-family:'DM Mono',monospace; font-size:11px; letter-spacing:.04em; color:#bfeaff; }
-    .oe-gen-bar { height:7px; border-radius:999px; background:rgba(255,255,255,.06); overflow:hidden; box-shadow:inset 0 0 4px rgba(0,0,0,.35); }
-    .oe-gen-bar-fill { height:100%; border-radius:999px; width:0%; background:linear-gradient(90deg,#3a9cc8,#8ecce0 58%,#e0f2ff); box-shadow:0 0 8px rgba(142,204,224,.55); transition:width .4s ease; }
+    .oe-gen-bar { height:10px; border-radius:999px; background:rgba(255,255,255,.06); overflow:hidden; box-shadow:inset 0 0 4px rgba(0,0,0,.35); }
+    .oe-gen-bar-fill { height:100%; border-radius:999px; width:0%; background:linear-gradient(90deg,#3a9cc8,#8ecce0 58%,#e0f2ff); box-shadow:0 0 10px rgba(142,204,224,.65); transition:width .4s ease; }
+    @keyframes akashaFloat { 0%{opacity:1;transform:translateX(-50%) translateY(0);} 25%{opacity:1;} 100%{opacity:0;transform:translateX(-50%) translateY(-64px);} }
+    @keyframes akashaCollectGlow { 0%{box-shadow:0 6px 26px rgba(16,80,140,.2),inset 0 1px 0 rgba(184,234,255,.09);} 35%{box-shadow:0 6px 40px rgba(90,184,224,.4),inset 0 1px 0 rgba(184,234,255,.22),0 0 36px rgba(142,204,224,.22);} 100%{box-shadow:0 6px 26px rgba(16,80,140,.2),inset 0 1px 0 rgba(184,234,255,.09);} }
+    .oe-collect-burst { position:fixed; transform:translateX(-50%); font-family:'Cormorant Garamond',serif; font-size:22px; font-weight:300; color:#bfeaff; pointer-events:none; white-space:nowrap; z-index:9999; text-shadow:0 0 16px rgba(142,204,224,.95); animation:akashaFloat 1s ease-out forwards; }
+    .oe-gen-card.collect-flash { animation:akashaCollectGlow .75s ease-out forwards; }
     .oe-gen-collect { width:100%; margin-top:15px; padding:12px; border-radius:11px; border:1px solid rgba(142,204,224,.42); background:linear-gradient(180deg,rgba(90,184,224,.2),rgba(58,156,200,.08)); color:#e0f2ff; font-family:'DM Mono',monospace; font-size:9px; letter-spacing:.22em; text-transform:uppercase; cursor:pointer; transition:background .2s,border-color .2s,box-shadow .2s; }
     .oe-gen-collect:hover:not(:disabled) { background:linear-gradient(180deg,rgba(90,184,224,.32),rgba(58,156,200,.16)); border-color:rgba(142,204,224,.65); box-shadow:0 0 16px rgba(90,184,224,.25); }
     .oe-gen-collect:disabled { opacity:.4; cursor:default; }
@@ -4365,7 +4369,7 @@ body:not(.tut-live) #tutCorgi {
                 </div>
                 <div class="oe-gen-titles">
                   <div class="oe-gen-title">Akasha Generator</div>
-                  <div class="oe-gen-sub">Passive Resonance</div>
+                  <div class="oe-gen-sub">Fills over time</div>
                 </div>
                 <div class="oe-gen-rate-badge">
                   <span class="oe-gen-rate-num" id="omniaGenRateNum">0</span>
@@ -15218,10 +15222,31 @@ function collectOmniaAkasha() {
   omniaState.reservoir = 0;
   saveOmniaState();
   renderOmniaEngine();
+
+  // floating "+N" burst
+  if (collected > 0) {
+    var btn = document.getElementById('omniaCollectBtn');
+    if (btn) {
+      var rect = btn.getBoundingClientRect();
+      var burst = document.createElement('div');
+      burst.className = 'oe-collect-burst';
+      burst.textContent = '+' + collected + ' akasha';
+      burst.style.left = (rect.left + rect.width / 2) + 'px';
+      burst.style.top = (rect.top - 4) + 'px';
+      document.body.appendChild(burst);
+      setTimeout(function() { burst.remove(); }, 1050);
+    }
+    var card = document.querySelector('.oe-gen-card');
+    if (card) {
+      card.classList.remove('collect-flash');
+      void card.offsetWidth; // force reflow so re-triggering the animation works
+      card.classList.add('collect-flash');
+      setTimeout(function() { card.classList.remove('collect-flash'); }, 750);
+    }
+  }
+
   if (collected < amount) {
-    showToast('Collected ' + collected + ' akasha · wallet full (' + cap.toLocaleString() + ' cap)');
-  } else {
-    showToast('Collected ' + collected + ' akasha');
+    showToast('Wallet full — ' + cap.toLocaleString() + ' akasha cap');
   }
 }
 
