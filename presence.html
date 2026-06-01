@@ -14580,6 +14580,7 @@ function getEntityCrystalSVG(id) {
 }
 
 var _drawerOmniaBtnOrigSVG = null;
+var _origCrystalHTML = {};
 function updateDrawerEntityBtn() {
   var btn = document.getElementById('drawerOmniaBtn');
   if (!btn) return;
@@ -14748,10 +14749,12 @@ function applyOmniaCosmetics() {
     f.setAttribute('aria-label', 'Reveal a ' + entity.name + ' symbol');
     var crystalLayer = f.querySelector('.omnia-crystal-layer');
     if (crystalLayer) {
+      if (!_origCrystalHTML[figId]) _origCrystalHTML[figId] = crystalLayer.innerHTML;
       if (entitySVG) {
         crystalLayer.innerHTML = entitySVG;
         f.style.filter = entityDropShadow;
       } else {
+        crystalLayer.innerHTML = _origCrystalHTML[figId] || '';
         f.style.filter = '';
       }
     }
