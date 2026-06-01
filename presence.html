@@ -821,7 +821,11 @@
     /* ── Upgrade screen v3: Omnia-as-centerpiece, bodies as focus ── */
     body.upgrade-stage .omnia-wrap { display:none; }
     .oe-v2 { display:flex; flex-direction:column; padding:0; background:none; border:none; box-shadow:none; position:relative; }
-    .oe-akasha-corner { position:absolute; top:8px; right:14px; z-index:5; display:flex; align-items:baseline; gap:5px; padding:7px 13px; border:1px solid rgba(212,180,142,.32); border-radius:999px; background:rgba(212,180,142,.06); pointer-events:none; }
+    .oe-akasha-corner { position:absolute; top:8px; right:14px; z-index:5; display:flex; align-items:baseline; gap:5px; padding:7px 13px; border:1px solid rgba(212,180,142,.32); border-radius:999px; background:rgba(212,180,142,.06); }
+    .oe-akasha-info-btn { background:none; border:none; color:rgba(142,204,224,.55); font-size:13px; cursor:pointer; padding:0 0 0 5px; line-height:1; -webkit-tap-highlight-color:transparent; touch-action:manipulation; }
+    .oe-akasha-info-btn:hover { color:#8ecce0; }
+    .oe-rec-popover { display:none; position:absolute; top:calc(100% + 8px); right:0; width:230px; background:var(--surface); border:1px solid rgba(212,149,110,.26); border-radius:14px; padding:14px; box-shadow:0 8px 28px rgba(0,0,0,.55); z-index:30; }
+    .oe-rec-popover.open { display:block; }
     .oe-akasha-corner-val { font-family:Cormorant Garamond,serif; font-size:18px; line-height:1; color:#e8c896; }
     .oe-akasha-corner-key { font-size:8px; letter-spacing:.2em; text-transform:uppercase; color:#d4b08e; }
 
@@ -4280,10 +4284,21 @@ body:not(.tut-live) #tutCorgi {
         </div>
       </div>
 
-      <!-- Top-right akasha total -->
+      <!-- Top-right akasha total + recommendation info -->
       <div class="oe-akasha-corner" id="omniaAkashaCorner">
         <span class="oe-akasha-corner-val" id="omniaAkashaWalletCorner">0</span>
         <span class="oe-akasha-corner-key">akasha</span>
+        <button class="oe-akasha-info-btn" id="omniaRecInfoBtn" aria-label="Omnia recommendation">ⓘ</button>
+        <div class="oe-rec-popover" id="omniaRecPopover">
+          <div class="oe-card-kicker">Omnia recommends</div>
+          <div class="oe-rec-name" id="omniaRecName"></div>
+          <div class="oe-rec-reward" id="omniaRecReward"></div>
+          <div class="oe-rec-text" id="omniaRecText"></div>
+          <div class="oe-rec-actions">
+            <button class="omnia-mini-btn" id="omniaBeginRecBtn">Begin</button>
+            <button class="omnia-mini-btn" id="omniaNewRecBtn">New Reading</button>
+          </div>
+        </div>
       </div>
 
       <!-- Body trio: the focus -->
@@ -4352,18 +4367,6 @@ body:not(.tut-live) #tutCorgi {
             <div class="omnia-upgrades" id="omniaUpgradeGrid"></div>
           </div>
         </details>
-
-        <!-- Today's Practice: always visible, no dropdown -->
-        <div class="oe-practice-card">
-          <div class="oe-card-kicker">Omnia recommends</div>
-          <div class="oe-rec-name" id="omniaRecName">Clock</div>
-          <div class="oe-rec-reward" id="omniaRecReward"></div>
-          <div class="oe-rec-text" id="omniaRecText"></div>
-          <div class="oe-rec-actions">
-            <button class="omnia-mini-btn" id="omniaBeginRecBtn">Begin</button>
-            <button class="omnia-mini-btn" id="omniaNewRecBtn">New Reading</button>
-          </div>
-        </div>
 
         <details class="oe-accordion">
           <summary>
@@ -17753,6 +17756,20 @@ function _hideGuideTabTip(el, tab) {
   panel.addEventListener('mouseleave', function() { startX = null; dragging = false; });
 })();
 document.getElementById('omniaCollectBtn').addEventListener('click', collectOmniaAkasha);
+(function() {
+  var btn = document.getElementById('omniaRecInfoBtn');
+  var pop = document.getElementById('omniaRecPopover');
+  if (!btn || !pop) return;
+  btn.addEventListener('click', function(e) {
+    e.stopPropagation();
+    pop.classList.toggle('open');
+  });
+  document.addEventListener('click', function(e) {
+    if (pop.classList.contains('open') && !pop.contains(e.target) && e.target !== btn) {
+      pop.classList.remove('open');
+    }
+  });
+})();
 document.getElementById('guideOmniaFigure').addEventListener('click', morphGuideOmnia);
 document.getElementById('guideOmniaFigure').addEventListener('keydown', function(e) {
   if (e.key === 'Enter' || e.key === ' ') {
