@@ -1,7 +1,7 @@
 // Service Worker for Presence app
 // Handles background push notifications + shell caching
 // Cache version — bump this string when you need to force-evict all clients
-const CACHE = 'presence-shell-v2';
+const CACHE = 'presence-shell-v3';
 
 const APP_URL = self.registration
   ? self.registration.scope + 'presence.html'
@@ -81,27 +81,12 @@ self.addEventListener('push', event => {
     data: { url: data.url || APP_URL }
   };
 
-  const tasks = [self.registration.showNotification(data.title || 'Presence', options)];
-
-  // Fire Pavlok directly from the service worker so the device's own IP is
-  // used — Pavlok's server allowlist blocks our Render IP but not the phone.
-  if (data.pavlok && data.pavlok.token) {
-    const pvk = data.pavlok;
-    tasks.push(
-      fetch('https://api.pavlok.com/api/v5/stimulus/send', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': 'Bearer ' + pvk.token,
-        },
-        body: JSON.stringify({
-          stimulus: { stimulusType: pvk.type || 'vibe', stimulusValue: pvk.intensity || 50 }
-        }),
-      }).catch(function() {}) // never block the notification
-    );
-  }
-
-  event.waitUntil(Promise.all(tasks));
+  // Pavlok is fired server-side (firePavlokServer) — exactly once per bell.
+  // The SW must NOT also fire it, or the duplicate trips Pavlok's rate limit
+  // and zaps go silent after a couple of hits. Just show the notification.
+  event.waitUntil(
+    self.registration.showNotification(data.title || 'Presence', options)
+  );
 });
 
 self.addEventListener('notificationclick', event => {

@@ -325,7 +325,10 @@ async function pushTo(sub, prompt, title) {
     title: title || 'Presence',
     body: prompt,
     url: 'https://chooch971-tech.github.io/Consciousness-App/presence.html',
-    pavlok: sub.pavlok || null,  // encrypted in transit via VAPID — safe to include
+    // NOTE: Pavlok is fired server-side via firePavlokServer() — exactly once
+    // per bell. Do NOT add pavlok creds to the payload; the service worker
+    // would then ALSO fire, double-stimulating and tripping Pavlok's rate
+    // limit (zaps land a couple times then go silent). Single source of truth.
   });
   try {
     await webpush.sendNotification(sub, payload);
