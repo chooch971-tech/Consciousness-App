@@ -916,8 +916,8 @@
     .oe-accordion[open] .oe-acc-chev { transform:rotate(45deg); color:#8ecce0; }
     .oe-engine-kicker { font-size:8px; letter-spacing:.24em; text-transform:uppercase; color:#8ecce0; margin-bottom:10px; }
     .oe-engine-divider { height:1px; background:var(--border); margin:14px 0; }
-    .oe-engine-graphic { margin:-14px -14px 14px; overflow:hidden; border-radius:10px 10px 0 0; border-bottom:1px solid rgba(142,204,224,.14); }
-    .oe-engine-svg { display:block; width:100%; height:auto; }
+    .oe-gen-card { position:relative; border:1px solid rgba(142,204,224,.28); border-radius:12px; background:linear-gradient(145deg,rgba(11,30,56,.95) 0%,rgba(7,15,30,.95) 100%); overflow:hidden; padding:14px; box-shadow:0 0 22px rgba(90,184,224,.1),inset 0 1px 0 rgba(184,234,255,.07); }
+    .oe-gen-deco { position:absolute; top:-12px; right:-12px; width:90px; height:90px; pointer-events:none; }
     @keyframes engRingPulse  { 0%,100%{opacity:.55;} 50%{opacity:.9;} }
     @keyframes engRingPulse2 { 0%,100%{opacity:.38;} 50%{opacity:.7;} }
     @keyframes engRingPulse3 { 0%,100%{opacity:.22;} 50%{opacity:.48;} }
@@ -4304,83 +4304,47 @@ body:not(.tut-live) #tutCorgi {
             <span class="oe-acc-chev">+</span>
           </summary>
           <div class="oe-acc-body">
-            <!-- Engine graphic -->
-            <div class="oe-engine-graphic">
-              <svg class="oe-engine-svg" viewBox="0 0 300 88" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+            <div class="oe-gen-card">
+              <!-- Orb+rings watermark, clipped to top-right corner -->
+              <svg class="oe-gen-deco" viewBox="0 0 90 90" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
                 <defs>
-                  <radialGradient id="engBg" cx="50%" cy="50%" r="60%">
-                    <stop offset="0%" stop-color="#0c2244" stop-opacity="0.98"/>
-                    <stop offset="100%" stop-color="#060c1a" stop-opacity="0.98"/>
-                  </radialGradient>
-                  <radialGradient id="engCore" cx="50%" cy="50%" r="50%">
-                    <stop offset="0%" stop-color="#c8ecff" stop-opacity="1"/>
-                    <stop offset="30%" stop-color="#5ab8e0" stop-opacity="0.8"/>
-                    <stop offset="65%" stop-color="#1a5888" stop-opacity="0.3"/>
+                  <radialGradient id="genDG" cx="50%" cy="50%" r="50%">
+                    <stop offset="0%" stop-color="#c8ecff" stop-opacity=".95"/>
+                    <stop offset="32%" stop-color="#5ab8e0" stop-opacity=".72"/>
+                    <stop offset="65%" stop-color="#1a5888" stop-opacity=".28"/>
                     <stop offset="100%" stop-color="#0a2040" stop-opacity="0"/>
                   </radialGradient>
-                  <filter id="engGlow" x="-60%" y="-60%" width="220%" height="220%">
-                    <feGaussianBlur stdDeviation="2.4" result="b"/>
+                  <filter id="genGlow" x="-60%" y="-60%" width="220%" height="220%">
+                    <feGaussianBlur stdDeviation="2.2" result="b"/>
                     <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
                   </filter>
                 </defs>
-                <!-- Background -->
-                <rect width="300" height="88" fill="url(#engBg)" rx="0"/>
-                <!-- Ambient glow -->
-                <circle cx="150" cy="44" r="42" fill="url(#engCore)" class="eng-glow-pulse"/>
-                <!-- Ring 3 outer -->
-                <circle cx="150" cy="44" r="36" fill="none" stroke="#3a9cc8" stroke-width="0.6" class="oe-engine-ring-3"/>
-                <!-- Ring 2 mid -->
-                <circle cx="150" cy="44" r="25" fill="none" stroke="#5ab8e0" stroke-width="0.8" class="oe-engine-ring-2"/>
-                <!-- Ring 1 inner -->
-                <circle cx="150" cy="44" r="15" fill="none" stroke="#8ecce0" stroke-width="1" class="oe-engine-ring-1"/>
-                <!-- 6 spokes: inner ring → mid ring -->
-                <line x1="165" y1="44" x2="175" y2="44" stroke="#5ab8e0" stroke-width="0.7" opacity="0.65"/>
-                <line x1="135" y1="44" x2="125" y2="44" stroke="#5ab8e0" stroke-width="0.7" opacity="0.65"/>
-                <line x1="157.5" y1="57" x2="162.5" y2="65.7" stroke="#5ab8e0" stroke-width="0.7" opacity="0.65"/>
-                <line x1="142.5" y1="57" x2="137.5" y2="65.7" stroke="#5ab8e0" stroke-width="0.7" opacity="0.65"/>
-                <line x1="157.5" y1="31" x2="162.5" y2="22.3" stroke="#5ab8e0" stroke-width="0.7" opacity="0.65"/>
-                <line x1="142.5" y1="31" x2="137.5" y2="22.3" stroke="#5ab8e0" stroke-width="0.7" opacity="0.65"/>
-                <!-- Spoke-end dots at mid ring -->
-                <circle cx="175" cy="44" r="1.8" fill="#8ecce0" class="oe-engine-ring-2"/>
-                <circle cx="125" cy="44" r="1.8" fill="#8ecce0" class="oe-engine-ring-2"/>
-                <circle cx="162.5" cy="65.7" r="1.8" fill="#8ecce0" class="oe-engine-ring-2"/>
-                <circle cx="137.5" cy="65.7" r="1.8" fill="#8ecce0" class="oe-engine-ring-2"/>
-                <circle cx="162.5" cy="22.3" r="1.8" fill="#8ecce0" class="oe-engine-ring-2"/>
-                <circle cx="137.5" cy="22.3" r="1.8" fill="#8ecce0" class="oe-engine-ring-2"/>
-                <!-- Energy beam left -->
-                <line x1="113" y1="44" x2="6" y2="44" stroke="#2a7eaa" stroke-width="0.7" opacity="0.5"/>
-                <!-- Energy beam right -->
-                <line x1="187" y1="44" x2="294" y2="44" stroke="#2a7eaa" stroke-width="0.7" opacity="0.5"/>
-                <!-- Beam tick marks -->
-                <line x1="72" y1="40.5" x2="72" y2="47.5" stroke="#3a9cc8" stroke-width="0.7" opacity="0.5"/>
-                <line x1="44" y1="41.5" x2="44" y2="46.5" stroke="#3a9cc8" stroke-width="0.6" opacity="0.35"/>
-                <line x1="228" y1="40.5" x2="228" y2="47.5" stroke="#3a9cc8" stroke-width="0.7" opacity="0.5"/>
-                <line x1="256" y1="41.5" x2="256" y2="46.5" stroke="#3a9cc8" stroke-width="0.6" opacity="0.35"/>
-                <!-- Ambient corner sparks -->
-                <circle cx="22" cy="18" r="1.1" fill="#5ab8e0" opacity="0.42"/>
-                <circle cx="278" cy="18" r="1.1" fill="#5ab8e0" opacity="0.42"/>
-                <circle cx="18" cy="70" r="0.9" fill="#3a9cc8" opacity="0.35"/>
-                <circle cx="282" cy="70" r="0.9" fill="#3a9cc8" opacity="0.35"/>
-                <circle cx="55" cy="13" r="0.7" fill="#8ecce0" opacity="0.3"/>
-                <circle cx="245" cy="75" r="0.7" fill="#8ecce0" opacity="0.3"/>
-                <!-- Core orb -->
-                <circle cx="150" cy="44" r="9" fill="#aad8f4" opacity="0.85" filter="url(#engGlow)" class="eng-core-pulse"/>
-                <circle cx="150" cy="44" r="4.5" fill="#e8f6ff" opacity="0.95" class="eng-core-pulse"/>
-                <circle cx="150" cy="44" r="2.2" fill="#ffffff"/>
-                <!-- Side labels -->
-                <text x="10" y="29" font-family="DM Mono,monospace" font-size="6.5" fill="#4ab0d8" letter-spacing="1.8" opacity="0.65">AKASHA</text>
-                <text x="10" y="62" font-family="DM Mono,monospace" font-size="6.5" fill="#4ab0d8" letter-spacing="1.4" opacity="0.45">FLOW</text>
-                <text x="290" y="29" font-family="DM Mono,monospace" font-size="6.5" fill="#4ab0d8" letter-spacing="1.4" opacity="0.65" text-anchor="end">GENERATOR</text>
-                <text x="290" y="62" font-family="DM Mono,monospace" font-size="6.5" fill="#4ab0d8" letter-spacing="1.8" opacity="0.45" text-anchor="end">ACTIVE</text>
+                <circle cx="45" cy="45" r="38" fill="url(#genDG)" class="eng-glow-pulse"/>
+                <circle cx="45" cy="45" r="34" fill="none" stroke="#3a9cc8" stroke-width="0.7" class="oe-engine-ring-3"/>
+                <circle cx="45" cy="45" r="24" fill="none" stroke="#5ab8e0" stroke-width="0.85" class="oe-engine-ring-2"/>
+                <circle cx="45" cy="45" r="14" fill="none" stroke="#8ecce0" stroke-width="1" class="oe-engine-ring-1"/>
+                <line x1="59" y1="45" x2="69" y2="45" stroke="#5ab8e0" stroke-width="0.7" opacity="0.65"/>
+                <line x1="31" y1="45" x2="21" y2="45" stroke="#5ab8e0" stroke-width="0.7" opacity="0.65"/>
+                <line x1="52" y1="57.1" x2="57" y2="65.8" stroke="#5ab8e0" stroke-width="0.7" opacity="0.65"/>
+                <line x1="38" y1="57.1" x2="33" y2="65.8" stroke="#5ab8e0" stroke-width="0.7" opacity="0.65"/>
+                <line x1="52" y1="32.9" x2="57" y2="24.2" stroke="#5ab8e0" stroke-width="0.7" opacity="0.65"/>
+                <line x1="38" y1="32.9" x2="33" y2="24.2" stroke="#5ab8e0" stroke-width="0.7" opacity="0.65"/>
+                <circle cx="69" cy="45" r="1.8" fill="#8ecce0" class="oe-engine-ring-2"/>
+                <circle cx="21" cy="45" r="1.8" fill="#8ecce0" class="oe-engine-ring-2"/>
+                <circle cx="57" cy="65.8" r="1.8" fill="#8ecce0" class="oe-engine-ring-2"/>
+                <circle cx="33" cy="65.8" r="1.8" fill="#8ecce0" class="oe-engine-ring-2"/>
+                <circle cx="57" cy="24.2" r="1.8" fill="#8ecce0" class="oe-engine-ring-2"/>
+                <circle cx="33" cy="24.2" r="1.8" fill="#8ecce0" class="oe-engine-ring-2"/>
+                <circle cx="45" cy="45" r="9" fill="#aad8f4" opacity="0.85" filter="url(#genGlow)" class="eng-core-pulse"/>
+                <circle cx="45" cy="45" r="4.5" fill="#e8f6ff" opacity="0.95" class="eng-core-pulse"/>
+                <circle cx="45" cy="45" r="2.2" fill="#ffffff"/>
               </svg>
-            </div>
-            <div class="oe-engine-kicker">Akasha Generator</div>
-            <div class="oe-reservoir-inner">
+              <div class="oe-engine-kicker">Akasha Generator</div>
               <div class="oe-reservoir-row">
                 <span>Reservoir</span>
                 <span id="omniaReservoirText">0 / 0</span>
               </div>
-              <div class="omnia-bar"><div class="omnia-bar-fill" id="omniaReservoirFill"></div></div>
+              <div class="omnia-bar" style="margin-bottom:9px;"><div class="omnia-bar-fill" id="omniaReservoirFill"></div></div>
               <button class="oe-collect-btn-mini" id="omniaCollectBtn">Collect Akasha</button>
               <div class="oe-rate" id="omniaRateText"></div>
             </div>
