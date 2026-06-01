@@ -821,8 +821,8 @@
     /* ── Upgrade screen v3: Omnia-as-centerpiece, bodies as focus ── */
     body.upgrade-stage .omnia-wrap { display:none; }
     .oe-v2 { display:flex; flex-direction:column; padding:0; background:none; border:none; box-shadow:none; position:relative; }
-    .oe-akasha-corner { position:absolute; top:8px; right:14px; z-index:5; display:flex; align-items:baseline; gap:5px; padding:7px 13px; border:1px solid rgba(212,180,142,.32); border-radius:999px; background:rgba(212,180,142,.06); }
-    .oe-akasha-info-btn { background:none; border:none; color:rgba(142,204,224,.55); font-size:13px; cursor:pointer; padding:0 0 0 5px; line-height:1; -webkit-tap-highlight-color:transparent; touch-action:manipulation; }
+    .oe-akasha-corner { display:flex; align-items:baseline; gap:5px; padding:7px 13px; border:1px solid rgba(212,180,142,.32); border-radius:999px; background:rgba(212,180,142,.06); }
+    .oe-akasha-info-btn { background:none; border:none; color:rgba(142,204,224,.55); font-size:13px; cursor:pointer; padding:0; line-height:1; -webkit-tap-highlight-color:transparent; touch-action:manipulation; }
     .oe-akasha-info-btn:hover { color:#8ecce0; }
     .oe-rec-popover { display:none; position:absolute; top:calc(100% + 8px); right:0; width:230px; background:var(--surface); border:1px solid rgba(212,149,110,.26); border-radius:14px; padding:14px; box-shadow:0 8px 28px rgba(0,0,0,.55); z-index:30; }
     .oe-rec-popover.open { display:block; }
@@ -921,7 +921,11 @@
     .oe-engine-kicker { font-size:8px; letter-spacing:.24em; text-transform:uppercase; color:#8ecce0; margin-bottom:10px; }
     .oe-engine-divider { height:1px; background:var(--border); margin:14px 0; }
     /* ── Akasha Generator card (rebuilt) ── */
-    .oe-gen-card { position:relative; border:1px solid rgba(142,204,224,.3); border-radius:16px; overflow:hidden; padding:16px; background:radial-gradient(130% 90% at 88% -10%, rgba(46,120,180,.26) 0%, rgba(11,30,56,0) 52%), linear-gradient(160deg,rgba(13,33,60,.97) 0%,rgba(7,15,30,.97) 100%); box-shadow:0 6px 26px rgba(16,80,140,.2), inset 0 1px 0 rgba(184,234,255,.09); }
+    .oe-gen-card { position:relative; border:1px solid rgba(142,204,224,.3); border-radius:16px 16px 0 0; border-bottom:none; overflow:hidden; padding:16px; background:radial-gradient(130% 90% at 88% -10%, rgba(46,120,180,.26) 0%, rgba(11,30,56,0) 52%), linear-gradient(160deg,rgba(13,33,60,.97) 0%,rgba(7,15,30,.97) 100%); box-shadow:0 6px 26px rgba(16,80,140,.2), inset 0 1px 0 rgba(184,234,255,.09); }
+    .oe-gen-upgrades { border:1px solid rgba(142,204,224,.3); border-top:1px solid rgba(142,204,224,.14); border-radius:0 0 16px 16px; padding:14px; background:rgba(7,18,40,.75); }
+    .oe-gen-upg-label { font-size:8px; letter-spacing:.24em; text-transform:uppercase; color:rgba(142,204,224,.65); margin-bottom:12px; }
+    .oe-gen-upgrades .omnia-upgrades { gap:10px; }
+    .oe-gen-upgrades .omnia-upgrade-row:first-child { border-top:none; padding-top:0; }
     .oe-gen-header { display:flex; align-items:center; gap:12px; margin-bottom:16px; }
     .oe-gen-icon { flex-shrink:0; width:46px; height:46px; border-radius:13px; display:flex; align-items:center; justify-content:center; background:linear-gradient(160deg,rgba(46,120,180,.4),rgba(10,26,50,.55)); border:1px solid rgba(142,204,224,.32); box-shadow:inset 0 0 14px rgba(90,184,224,.28); }
     .oe-gen-icon svg { width:36px; height:36px; display:block; overflow:visible; }
@@ -4303,19 +4307,23 @@ body:not(.tut-live) #tutCorgi {
       </div>
 
       <!-- Top-right akasha total + recommendation info -->
-      <div class="oe-akasha-corner" id="omniaAkashaCorner">
-        <span class="oe-akasha-corner-val" id="omniaAkashaWalletCorner">0</span>
-        <span class="oe-akasha-corner-key">akasha</span>
-        <button class="oe-akasha-info-btn" id="omniaRecInfoBtn" aria-label="Omnia recommendation">ⓘ</button>
-        <div class="oe-rec-popover" id="omniaRecPopover">
-          <div class="oe-card-kicker">Omnia recommends</div>
-          <div class="oe-rec-name" id="omniaRecName"></div>
-          <div class="oe-rec-reward" id="omniaRecReward"></div>
-          <div class="oe-rec-text" id="omniaRecText"></div>
-          <div class="oe-rec-actions">
-            <button class="omnia-mini-btn" id="omniaBeginRecBtn">Begin</button>
-            <button class="omnia-mini-btn" id="omniaNewRecBtn">New Reading</button>
+      <div style="position:absolute;top:8px;right:14px;z-index:5;display:flex;align-items:center;gap:8px;">
+        <div style="position:relative;">
+          <button class="oe-akasha-info-btn" id="omniaRecInfoBtn" aria-label="Omnia recommendation">ⓘ</button>
+          <div class="oe-rec-popover" id="omniaRecPopover">
+            <div class="oe-card-kicker">Omnia recommends</div>
+            <div class="oe-rec-name" id="omniaRecName"></div>
+            <div class="oe-rec-reward" id="omniaRecReward"></div>
+            <div class="oe-rec-text" id="omniaRecText"></div>
+            <div class="oe-rec-actions">
+              <button class="omnia-mini-btn" id="omniaBeginRecBtn">Begin</button>
+              <button class="omnia-mini-btn" id="omniaNewRecBtn">New Reading</button>
+            </div>
           </div>
+        </div>
+        <div class="oe-akasha-corner" id="omniaAkashaCorner">
+          <span class="oe-akasha-corner-val" id="omniaAkashaWalletCorner">0</span>
+          <span class="oe-akasha-corner-key">akasha</span>
         </div>
       </div>
 
@@ -4331,13 +4339,8 @@ body:not(.tut-live) #tutCorgi {
       <!-- Secondary sections -->
       <div class="oe-secondary">
 
-        <details class="oe-accordion" open>
-          <summary>
-            <span>Akashic Engine</span>
-            <span class="oe-acc-chev">+</span>
-          </summary>
-          <div class="oe-acc-body">
-            <div class="oe-gen-card">
+        <div>
+          <div class="oe-gen-card">
               <div class="oe-gen-header">
                 <div class="oe-gen-icon">
                   <svg viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
@@ -4377,10 +4380,11 @@ body:not(.tut-live) #tutCorgi {
               <button class="oe-gen-collect" id="omniaCollectBtn">Collect Akasha</button>
               <div class="oe-gen-rate" id="omniaRateText"></div>
             </div>
-            <div class="oe-engine-divider"></div>
+          <div class="oe-gen-upgrades">
+            <div class="oe-gen-upg-label">Generator Upgrades</div>
             <div class="omnia-upgrades" id="omniaUpgradeGrid"></div>
           </div>
-        </details>
+        </div>
 
         <details class="oe-accordion">
           <summary>
