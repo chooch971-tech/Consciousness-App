@@ -324,7 +324,8 @@ async function pushTo(sub, prompt, title) {
   const payload = JSON.stringify({
     title: title || 'Presence',
     body: prompt,
-    url: 'https://chooch971-tech.github.io/Consciousness-App/presence.html'
+    url: 'https://chooch971-tech.github.io/Consciousness-App/presence.html',
+    pavlok: sub.pavlok || null,  // encrypted in transit via VAPID — safe to include
   });
   try {
     await webpush.sendNotification(sub, payload);
@@ -360,9 +361,6 @@ setInterval(async () => {
         const prompt = randomPromptFor(sub.endpoint);
         console.log(`[${new Date().toISOString()}] Final-cycle push at session end: cycle ${finalCycle}`);
         const result = await pushTo(sub, prompt);
-        if (sub.pavlok && sub.pavlok.token) {
-          firePavlokServer(sub.pavlok.token, sub.pavlok.type, sub.pavlok.intensity);
-        }
       }
       sub.sessionStart = null;
       sub.lastFiredCycle = -1;
@@ -378,13 +376,9 @@ setInterval(async () => {
     if (currentCycle > lastFired && elapsed >= interval) {
       const prompt = randomPromptFor(sub.endpoint);
       console.log(`[${new Date().toISOString()}] Attempting push: cycle ${currentCycle}, elapsed ${elapsed}s, interval ${interval}s`);
-      // Send the push first, then fire Pavlok. The push has extra delivery
-      // latency through APNs/FCM after the request resolves, so firing Pavlok
-      // afterwards keeps the buzz/zap from landing a beat ahead of the banner.
+      // Pavlok now fires from the service worker on push arrival (device IP,
+      // not server IP) so the Pavlok credentials ride in the encrypted payload.
       const result = await pushTo(sub, prompt);
-      if (sub.pavlok && sub.pavlok.token) {
-        firePavlokServer(sub.pavlok.token, sub.pavlok.type, sub.pavlok.intensity);
-      }
       if (result === 'dead') {
         dead.push(sub.endpoint);
       } else if (result === true) {
