@@ -920,8 +920,26 @@
     .oe-accordion[open] .oe-acc-chev { transform:rotate(45deg); color:#8ecce0; }
     .oe-engine-kicker { font-size:8px; letter-spacing:.24em; text-transform:uppercase; color:#8ecce0; margin-bottom:10px; }
     .oe-engine-divider { height:1px; background:var(--border); margin:14px 0; }
-    .oe-gen-card { position:relative; border:1px solid rgba(142,204,224,.28); border-radius:12px; background:linear-gradient(145deg,rgba(11,30,56,.95) 0%,rgba(7,15,30,.95) 100%); overflow:hidden; padding:14px; box-shadow:0 0 22px rgba(90,184,224,.1),inset 0 1px 0 rgba(184,234,255,.07); }
-    .oe-gen-deco { position:absolute; top:-12px; right:-12px; width:90px; height:90px; pointer-events:none; }
+    /* ── Akasha Generator card (rebuilt) ── */
+    .oe-gen-card { position:relative; border:1px solid rgba(142,204,224,.3); border-radius:16px; overflow:hidden; padding:16px; background:radial-gradient(130% 90% at 88% -10%, rgba(46,120,180,.26) 0%, rgba(11,30,56,0) 52%), linear-gradient(160deg,rgba(13,33,60,.97) 0%,rgba(7,15,30,.97) 100%); box-shadow:0 6px 26px rgba(16,80,140,.2), inset 0 1px 0 rgba(184,234,255,.09); }
+    .oe-gen-header { display:flex; align-items:center; gap:12px; margin-bottom:16px; }
+    .oe-gen-icon { flex-shrink:0; width:46px; height:46px; border-radius:13px; display:flex; align-items:center; justify-content:center; background:linear-gradient(160deg,rgba(46,120,180,.4),rgba(10,26,50,.55)); border:1px solid rgba(142,204,224,.32); box-shadow:inset 0 0 14px rgba(90,184,224,.28); }
+    .oe-gen-icon svg { width:36px; height:36px; display:block; overflow:visible; }
+    .oe-gen-titles { flex:1; min-width:0; }
+    .oe-gen-title { font-family:'Space Grotesk',sans-serif; font-size:13px; font-weight:600; letter-spacing:.02em; color:#dcf2ff; line-height:1.2; }
+    .oe-gen-sub { font-size:8px; letter-spacing:.2em; text-transform:uppercase; color:rgba(142,204,224,.72); margin-top:4px; }
+    .oe-gen-rate-badge { flex-shrink:0; display:flex; flex-direction:column; align-items:flex-end; }
+    .oe-gen-rate-num { font-family:'Cormorant Garamond',serif; font-size:23px; font-weight:300; color:#bfeaff; line-height:.95; }
+    .oe-gen-rate-unit { font-size:7px; letter-spacing:.18em; text-transform:uppercase; color:rgba(142,204,224,.62); margin-top:3px; }
+    .oe-gen-res-row { display:flex; justify-content:space-between; align-items:baseline; margin-bottom:8px; }
+    .oe-gen-res-label { font-size:8px; letter-spacing:.22em; text-transform:uppercase; color:rgba(200,230,245,.58); }
+    .oe-gen-res-val { font-family:'DM Mono',monospace; font-size:11px; letter-spacing:.04em; color:#bfeaff; }
+    .oe-gen-bar { height:7px; border-radius:999px; background:rgba(255,255,255,.06); overflow:hidden; box-shadow:inset 0 0 4px rgba(0,0,0,.35); }
+    .oe-gen-bar-fill { height:100%; border-radius:999px; width:0%; background:linear-gradient(90deg,#3a9cc8,#8ecce0 58%,#e0f2ff); box-shadow:0 0 8px rgba(142,204,224,.55); transition:width .4s ease; }
+    .oe-gen-collect { width:100%; margin-top:15px; padding:12px; border-radius:11px; border:1px solid rgba(142,204,224,.42); background:linear-gradient(180deg,rgba(90,184,224,.2),rgba(58,156,200,.08)); color:#e0f2ff; font-family:'DM Mono',monospace; font-size:9px; letter-spacing:.22em; text-transform:uppercase; cursor:pointer; transition:background .2s,border-color .2s,box-shadow .2s; }
+    .oe-gen-collect:hover:not(:disabled) { background:linear-gradient(180deg,rgba(90,184,224,.32),rgba(58,156,200,.16)); border-color:rgba(142,204,224,.65); box-shadow:0 0 16px rgba(90,184,224,.25); }
+    .oe-gen-collect:disabled { opacity:.4; cursor:default; }
+    .oe-gen-rate { font-size:8px; color:rgba(142,204,224,.62); letter-spacing:.08em; margin-top:11px; text-align:center; line-height:1.55; }
     @keyframes engRingPulse  { 0%,100%{opacity:.55;} 50%{opacity:.9;} }
     @keyframes engRingPulse2 { 0%,100%{opacity:.38;} 50%{opacity:.7;} }
     @keyframes engRingPulse3 { 0%,100%{opacity:.22;} 50%{opacity:.48;} }
@@ -4320,48 +4338,44 @@ body:not(.tut-live) #tutCorgi {
           </summary>
           <div class="oe-acc-body">
             <div class="oe-gen-card">
-              <!-- Orb+rings watermark, clipped to top-right corner -->
-              <svg class="oe-gen-deco" viewBox="0 0 90 90" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-                <defs>
-                  <radialGradient id="genDG" cx="50%" cy="50%" r="50%">
-                    <stop offset="0%" stop-color="#c8ecff" stop-opacity=".95"/>
-                    <stop offset="32%" stop-color="#5ab8e0" stop-opacity=".72"/>
-                    <stop offset="65%" stop-color="#1a5888" stop-opacity=".28"/>
-                    <stop offset="100%" stop-color="#0a2040" stop-opacity="0"/>
-                  </radialGradient>
-                  <filter id="genGlow" x="-60%" y="-60%" width="220%" height="220%">
-                    <feGaussianBlur stdDeviation="2.2" result="b"/>
-                    <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
-                  </filter>
-                </defs>
-                <circle cx="45" cy="45" r="38" fill="url(#genDG)" class="eng-glow-pulse"/>
-                <circle cx="45" cy="45" r="34" fill="none" stroke="#3a9cc8" stroke-width="0.7" class="oe-engine-ring-3"/>
-                <circle cx="45" cy="45" r="24" fill="none" stroke="#5ab8e0" stroke-width="0.85" class="oe-engine-ring-2"/>
-                <circle cx="45" cy="45" r="14" fill="none" stroke="#8ecce0" stroke-width="1" class="oe-engine-ring-1"/>
-                <line x1="59" y1="45" x2="69" y2="45" stroke="#5ab8e0" stroke-width="0.7" opacity="0.65"/>
-                <line x1="31" y1="45" x2="21" y2="45" stroke="#5ab8e0" stroke-width="0.7" opacity="0.65"/>
-                <line x1="52" y1="57.1" x2="57" y2="65.8" stroke="#5ab8e0" stroke-width="0.7" opacity="0.65"/>
-                <line x1="38" y1="57.1" x2="33" y2="65.8" stroke="#5ab8e0" stroke-width="0.7" opacity="0.65"/>
-                <line x1="52" y1="32.9" x2="57" y2="24.2" stroke="#5ab8e0" stroke-width="0.7" opacity="0.65"/>
-                <line x1="38" y1="32.9" x2="33" y2="24.2" stroke="#5ab8e0" stroke-width="0.7" opacity="0.65"/>
-                <circle cx="69" cy="45" r="1.8" fill="#8ecce0" class="oe-engine-ring-2"/>
-                <circle cx="21" cy="45" r="1.8" fill="#8ecce0" class="oe-engine-ring-2"/>
-                <circle cx="57" cy="65.8" r="1.8" fill="#8ecce0" class="oe-engine-ring-2"/>
-                <circle cx="33" cy="65.8" r="1.8" fill="#8ecce0" class="oe-engine-ring-2"/>
-                <circle cx="57" cy="24.2" r="1.8" fill="#8ecce0" class="oe-engine-ring-2"/>
-                <circle cx="33" cy="24.2" r="1.8" fill="#8ecce0" class="oe-engine-ring-2"/>
-                <circle cx="45" cy="45" r="9" fill="#aad8f4" opacity="0.85" filter="url(#genGlow)" class="eng-core-pulse"/>
-                <circle cx="45" cy="45" r="4.5" fill="#e8f6ff" opacity="0.95" class="eng-core-pulse"/>
-                <circle cx="45" cy="45" r="2.2" fill="#ffffff"/>
-              </svg>
-              <div class="oe-engine-kicker">Akasha Generator</div>
-              <div class="oe-reservoir-row">
-                <span>Reservoir</span>
-                <span id="omniaReservoirText">0 / 0</span>
+              <div class="oe-gen-header">
+                <div class="oe-gen-icon">
+                  <svg viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                    <defs>
+                      <radialGradient id="genOrbG" cx="50%" cy="50%" r="50%">
+                        <stop offset="0%" stop-color="#e8f6ff" stop-opacity="1"/>
+                        <stop offset="38%" stop-color="#7cc8ea" stop-opacity=".85"/>
+                        <stop offset="100%" stop-color="#1a5888" stop-opacity="0"/>
+                      </radialGradient>
+                      <filter id="genOrbGlow" x="-60%" y="-60%" width="220%" height="220%">
+                        <feGaussianBlur stdDeviation="1.4" result="b"/>
+                        <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+                      </filter>
+                    </defs>
+                    <circle cx="24" cy="24" r="20" fill="url(#genOrbG)" class="eng-glow-pulse"/>
+                    <circle cx="24" cy="24" r="17" fill="none" stroke="#5ab8e0" stroke-width=".7" class="oe-engine-ring-3"/>
+                    <circle cx="24" cy="24" r="11" fill="none" stroke="#8ecce0" stroke-width=".9" class="oe-engine-ring-2"/>
+                    <circle cx="24" cy="24" r="6" fill="#aad8f4" opacity=".85" filter="url(#genOrbGlow)" class="eng-core-pulse"/>
+                    <circle cx="24" cy="24" r="3" fill="#e8f6ff" class="eng-core-pulse"/>
+                    <circle cx="24" cy="24" r="1.4" fill="#ffffff"/>
+                  </svg>
+                </div>
+                <div class="oe-gen-titles">
+                  <div class="oe-gen-title">Akasha Generator</div>
+                  <div class="oe-gen-sub">Passive Resonance</div>
+                </div>
+                <div class="oe-gen-rate-badge">
+                  <span class="oe-gen-rate-num" id="omniaGenRateNum">0</span>
+                  <span class="oe-gen-rate-unit">/ hour</span>
+                </div>
               </div>
-              <div class="omnia-bar" style="margin-bottom:9px;"><div class="omnia-bar-fill" id="omniaReservoirFill"></div></div>
-              <button class="oe-collect-btn-mini" id="omniaCollectBtn">Collect Akasha</button>
-              <div class="oe-rate" id="omniaRateText"></div>
+              <div class="oe-gen-res-row">
+                <span class="oe-gen-res-label">Reservoir</span>
+                <span class="oe-gen-res-val" id="omniaReservoirText">0 / 0</span>
+              </div>
+              <div class="oe-gen-bar"><div class="oe-gen-bar-fill" id="omniaReservoirFill"></div></div>
+              <button class="oe-gen-collect" id="omniaCollectBtn">Collect Akasha</button>
+              <div class="oe-gen-rate" id="omniaRateText"></div>
             </div>
             <div class="oe-engine-divider"></div>
             <div class="omnia-upgrades" id="omniaUpgradeGrid"></div>
@@ -15100,8 +15114,10 @@ function renderOmniaEngine() {
   if (resText) resText.textContent = Math.floor(reservoir) + ' / ' + cap;
   if (resFill) resFill.style.width = Math.min(100, reservoir / cap * 100) + '%';
   var stepNum2 = omniaState.bardonStep || 1;
-  var rateLabel = omniaRatePerHour() + ' akasha per hour · resonance ' + (omniaState.recStreak || 0);
-  if (stepNum2 >= 5) rateLabel += ' · dual generator';
+  var rateBadge = document.getElementById('omniaGenRateNum');
+  if (rateBadge) rateBadge.textContent = omniaRatePerHour();
+  var rateLabel = 'Resonance ' + (omniaState.recStreak || 0);
+  if (stepNum2 >= 5) rateLabel += ' · dual generator active';
   if (rateText) rateText.textContent = rateLabel;
 
   var stepName = document.getElementById('omniaStepName');
