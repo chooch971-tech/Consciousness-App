@@ -21927,6 +21927,7 @@ function pavlokConnect(email, password, statusEl) {
     localStorage.setItem(PAVLOK_EMAIL_KEY, email);
     localStorage.setItem(PAVLOK_PASS_KEY, password);
     renderPavlokSettings();
+    notifyServerPavlokUpdate();
   })
   .catch(function() { if (statusEl) statusEl.textContent = 'Network error — try again'; });
 }

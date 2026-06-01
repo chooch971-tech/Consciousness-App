@@ -361,6 +361,9 @@ setInterval(async () => {
         const prompt = randomPromptFor(sub.endpoint);
         console.log(`[${new Date().toISOString()}] Final-cycle push at session end: cycle ${finalCycle}`);
         const result = await pushTo(sub, prompt);
+        if (sub.pavlok && sub.pavlok.token) {
+          firePavlokServer(sub.pavlok.token, sub.pavlok.type, sub.pavlok.intensity);
+        }
       }
       sub.sessionStart = null;
       sub.lastFiredCycle = -1;
@@ -378,7 +381,11 @@ setInterval(async () => {
       console.log(`[${new Date().toISOString()}] Attempting push: cycle ${currentCycle}, elapsed ${elapsed}s, interval ${interval}s`);
       // Pavlok now fires from the service worker on push arrival (device IP,
       // not server IP) so the Pavlok credentials ride in the encrypted payload.
+      // Also fire server-side as a belt-and-suspenders fallback.
       const result = await pushTo(sub, prompt);
+      if (sub.pavlok && sub.pavlok.token) {
+        firePavlokServer(sub.pavlok.token, sub.pavlok.type, sub.pavlok.intensity);
+      }
       if (result === 'dead') {
         dead.push(sub.endpoint);
       } else if (result === true) {
