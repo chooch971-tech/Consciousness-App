@@ -1087,7 +1087,8 @@ app.post('/api/pavlok/stimulus', async (req, res) => {
       body: JSON.stringify({ stimulus: { stimulusType: type, stimulusValue: intensity } }),
     });
     const data = await r.json().catch(() => ({}));
-    if (!r.ok) return res.status(r.status).json({ error: data?.message || 'Pavlok stimulus failed' });
+    console.log(`[Pavlok] /stimulus/send status=${r.status} body=${JSON.stringify(data)}`);
+    if (!r.ok) return res.status(r.status).json({ error: data?.message || data?.error || JSON.stringify(data) || 'Pavlok stimulus failed', raw: data });
     res.json({ ok: true });
   } catch (err) {
     console.error('Pavlok stimulus error:', err);

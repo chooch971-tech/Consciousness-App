@@ -21940,8 +21940,30 @@ function pavlokDisconnect() {
 }
 
 function pavlokTest() {
+  var token = getPavlokToken();
+  if (!token) { showToast('No Pavlok token'); return; }
   var p = getPavlokPrefs();
-  sendPavlokStimulus(p.awareness.type || 'vibe', p.awareness.intensity);
+  var type = p.awareness.type || 'vibe';
+  var val = Math.max(1, Math.min(100, p.awareness.intensity || 50));
+  showToast('Sending test stimulus…');
+  fetch(SERVER_URL + '/api/pavlok/stimulus', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ token: token, type: type, value: val }),
+  }).then(function(r) {
+    return r.json().then(function(d) { return { status: r.status, d: d }; });
+  }).then(function(res) {
+    if (res.status === 200) {
+      showToast('Pavlok OK — stimulus sent');
+    } else if (res.status === 401) {
+      showToast('Token expired — re-link Pavlok in settings');
+    } else {
+      var msg = (res.d && (res.d.error || JSON.stringify(res.d))) || ('HTTP ' + res.status);
+      showToast('Pavlok error: ' + msg, 6000);
+    }
+  }).catch(function(e) {
+    showToast('Network error: ' + (e.message || e));
+  });
 }
 
 function renderPavlokSettings() {
