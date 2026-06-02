@@ -14539,33 +14539,62 @@ function getEntityCrystalSVG(id) {
       + '</svg>';
   }
   if (id === 'elys') {
-    // Astral entity of "image and symbol": a violet flame/teardrop body with
-    // nested echo contours (reflections), concentric ripples, and a central
-    // vertical mandorla eye. Lavender on dark.
+    // Astral entity of "image and symbol": a violet mandala — a central
+    // glowing eye in a vesica-petal aura, stacked mandorla eyes (a totem of
+    // astral vision), concentric rings with orbiting glyphs, flanking crescent
+    // moons, and sparkles. Lavender on dark.
+    var E = '#c4a8d4', El = '#e8d4f0', Ed = '#9b7fb8', Eh = '#f4ecfa';
+    var f1 = function(n) { return (+n).toFixed(1); };
+    var P = Math.PI, cx = 40, cy = 64;
+    var mandorla = function(x, y, w, h, fill, stroke, sw, op) {
+      return '<path d="M' + f1(x) + ',' + f1(y - h) + ' Q' + f1(x + w) + ',' + f1(y) + ' ' + f1(x) + ',' + f1(y + h) + ' Q' + f1(x - w) + ',' + f1(y) + ' ' + f1(x) + ',' + f1(y - h) + ' Z" fill="' + fill + '" stroke="' + stroke + '" stroke-width="' + sw + '" opacity="' + op + '"/>';
+    };
+    var crescent = function(x, y, r, rot) {
+      return '<g transform="translate(' + f1(x) + ',' + f1(y) + ') rotate(' + rot + ')"><path d="M0,' + f1(-r) + ' A' + f1(r) + ',' + f1(r) + ' 0 1 0 0,' + f1(r) + ' A' + f1(r * 0.72) + ',' + f1(r * 0.72) + ' 0 1 1 0,' + f1(-r) + ' Z" fill="' + El + '" opacity="0.55" stroke="' + Eh + '" stroke-width="0.4"/></g>';
+    };
+    var spark = function(x, y, s, op) {
+      return '<g opacity="' + op + '"><line x1="' + f1(x - s) + '" y1="' + f1(y) + '" x2="' + f1(x + s) + '" y2="' + f1(y) + '" stroke="' + El + '" stroke-width="0.8"/><line x1="' + f1(x) + '" y1="' + f1(y - s) + '" x2="' + f1(x) + '" y2="' + f1(y + s) + '" stroke="' + El + '" stroke-width="0.8"/></g>';
+    };
+    var svg = '';
+    // soft aura + outer flame body
+    svg += '<circle cx="' + cx + '" cy="' + cy + '" r="30" fill="url(#elg1)" opacity="0.5"/>';
+    svg += '<path d="M40,5 C61,42 59,90 40,124 C21,90 19,42 40,5 Z" fill="rgba(196,168,212,0.05)" stroke="' + E + '" stroke-width="1.0" opacity="0.7" filter="url(#elglow)"/>';
+    // vesica-petal aura radiating from center
+    var petals = 10;
+    for (var i = 0; i < petals; i++) {
+      var a = -P / 2 + i * (P * 2 / petals), pr = 26;
+      var ex = cx + Math.cos(a) * pr, ey = cy + Math.sin(a) * pr;
+      var mx = (cx + ex) / 2, my = (cy + ey) / 2, px = -Math.sin(a), py = Math.cos(a), w = 4.5;
+      svg += '<path d="M' + f1(cx) + ',' + f1(cy) + ' Q' + f1(mx + px * w) + ',' + f1(my + py * w) + ' ' + f1(ex) + ',' + f1(ey) + ' Q' + f1(mx - px * w) + ',' + f1(my - py * w) + ' ' + f1(cx) + ',' + f1(cy) + ' Z" fill="rgba(196,168,212,0.05)" stroke="' + E + '" stroke-width="0.4" opacity="0.4"/>';
+    }
+    // concentric rings + orbiting glyphs
+    svg += '<circle cx="' + cx + '" cy="' + cy + '" r="20" fill="none" stroke="' + E + '" stroke-width="0.5" opacity="0.35"/>';
+    svg += '<circle cx="' + cx + '" cy="' + cy + '" r="14" fill="none" stroke="' + El + '" stroke-width="0.5" opacity="0.45"/>';
+    var glyphN = 8;
+    for (var g = 0; g < glyphN; g++) {
+      var ga = -P / 2 + g * (P * 2 / glyphN);
+      var gx = cx + Math.cos(ga) * 20, gy = cy + Math.sin(ga) * 20;
+      if (g % 2 === 0) svg += '<circle cx="' + f1(gx) + '" cy="' + f1(gy) + '" r="1.5" fill="' + El + '" opacity="0.7"/>';
+      else svg += '<path d="M' + f1(gx) + ',' + f1(gy - 1.8) + ' L' + f1(gx + 1.6) + ',' + f1(gy + 1.2) + ' L' + f1(gx - 1.6) + ',' + f1(gy + 1.2) + ' Z" fill="none" stroke="' + El + '" stroke-width="0.5" opacity="0.6"/>';
+    }
+    // flanking crescent moons
+    svg += crescent(cx - 19, cy, 4, 90) + crescent(cx + 19, cy, 4, -90);
+    // stacked mandorla eyes (totem of astral vision)
+    svg += mandorla(cx, cy - 22, 3.2, 7, 'rgba(196,168,212,0.12)', El, 0.6, 0.7) + '<circle cx="' + cx + '" cy="' + f1(cy - 22) + '" r="1.4" fill="' + Ed + '"/>';
+    svg += mandorla(cx, cy + 22, 3.2, 7, 'rgba(196,168,212,0.12)', El, 0.6, 0.7) + '<circle cx="' + cx + '" cy="' + f1(cy + 22) + '" r="1.4" fill="' + Ed + '"/>';
+    // central big eye
+    svg += mandorla(cx, cy, 7, 13, 'rgba(196,168,212,0.16)', Eh, 1.0, 0.95);
+    svg += '<g filter="url(#elglow)"><circle cx="' + cx + '" cy="' + cy + '" r="4" fill="url(#elg1)"/></g>';
+    svg += '<circle cx="' + cx + '" cy="' + cy + '" r="3" fill="rgba(155,127,184,0.5)" stroke="' + El + '" stroke-width="0.6"/>';
+    svg += '<circle cx="' + f1(cx + 1.2) + '" cy="' + f1(cy - 1.2) + '" r="1.1" fill="' + Eh + '" opacity="0.85"/>';
+    // sparkles
+    svg += spark(8, 58, 3, 0.6) + spark(72, 46, 3, 0.5) + spark(70, 86, 2.5, 0.45) + spark(12, 92, 2.2, 0.4) + spark(40, 14, 2.4, 0.55);
     return '<svg viewBox="0 0 80 130" width="72" height="118" xmlns="http://www.w3.org/2000/svg" style="overflow:visible;">'
       + '<defs>'
-      + '<radialGradient id="elg1" cx="50%" cy="50%" r="50%"><stop offset="0%" stop-color="#f0e0f8" stop-opacity="0.85"/><stop offset="100%" stop-color="#9b7fb8" stop-opacity="0"/></radialGradient>'
-      + '<filter id="elglow" x="-40%" y="-40%" width="180%" height="180%"><feGaussianBlur stdDeviation="2.2" result="blur"/><feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge></filter>'
+      + '<radialGradient id="elg1" cx="50%" cy="50%" r="50%"><stop offset="0%" stop-color="' + Eh + '" stop-opacity="0.9"/><stop offset="55%" stop-color="' + E + '" stop-opacity="0.32"/><stop offset="100%" stop-color="' + Ed + '" stop-opacity="0"/></radialGradient>'
+      + '<filter id="elglow" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="1.6" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>'
       + '</defs>'
-      // Outer astral flame / teardrop body
-      + '<path d="M40,6 C60,42 58,90 40,122 C22,90 20,42 40,6 Z" fill="rgba(196,168,212,0.07)" stroke="#c4a8d4" stroke-width="1.1" opacity="0.82" filter="url(#elglow)"/>'
-      // Nested echo contours (the "image / reflection" theme)
-      + '<path d="M40,20 C52,46 51,86 40,110 C29,86 28,46 40,20 Z" fill="rgba(196,168,212,0.05)" stroke="#c4a8d4" stroke-width="0.6" opacity="0.5"/>'
-      + '<path d="M40,34 C46,52 46,80 40,98 C34,80 34,52 40,34 Z" fill="rgba(196,168,212,0.08)" stroke="#d4b8e4" stroke-width="0.5" opacity="0.46"/>'
-      // Vertical axis
-      + '<line x1="40" y1="6" x2="40" y2="122" stroke="#c4a8d4" stroke-width="0.4" opacity="0.24"/>'
-      // Core ripples
-      + '<circle cx="40" cy="64" r="20" fill="url(#elg1)" filter="url(#elglow)"/>'
-      + '<circle cx="40" cy="64" r="15" fill="none" stroke="#c4a8d4" stroke-width="0.5" opacity="0.38"/>'
-      + '<circle cx="40" cy="64" r="11" fill="rgba(196,168,212,0.1)" stroke="#d4b8e4" stroke-width="0.9" opacity="0.7"/>'
-      // Central vertical mandorla eye (image / symbol)
-      + '<path d="M40,52 Q50,64 40,76 Q30,64 40,52 Z" fill="rgba(196,168,212,0.18)" stroke="#e8d4f0" stroke-width="0.9" filter="url(#elglow)"/>'
-      + '<circle cx="40" cy="64" r="3.2" fill="rgba(155,127,184,0.5)" stroke="#d4b8e4" stroke-width="0.7"/>'
-      + '<circle cx="41.3" cy="62.6" r="1.3" fill="#f4ecfa" opacity="0.82"/>'
-      // Symbol motes / sparkles
-      + '<g opacity=".6" filter="url(#elglow)"><line x1="5" y1="60" x2="11" y2="60" stroke="#d4b8e4" stroke-width="1"/><line x1="8" y1="57" x2="8" y2="63" stroke="#d4b8e4" stroke-width="1"/></g>'
-      + '<g opacity=".45"><line x1="69" y1="44" x2="75" y2="44" stroke="#c4a8d4" stroke-width="0.9"/><line x1="72" y1="41" x2="72" y2="47" stroke="#c4a8d4" stroke-width="0.9"/></g>'
-      + '<g opacity=".4"><line x1="67" y1="88" x2="73" y2="88" stroke="#c4a8d4" stroke-width="0.8"/><line x1="70" y1="85" x2="70" y2="91" stroke="#c4a8d4" stroke-width="0.8"/></g>'
+      + svg
       + '</svg>';
   }
   if (id === 'seraph') {
