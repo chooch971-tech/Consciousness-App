@@ -861,6 +861,30 @@
     /* Omnia centerpiece */
     .oe-center { position:relative; padding:22px 14px 10px; display:flex; flex-direction:column; align-items:center; }
     .oe-omnia-stage { position:relative; width:200px; height:220px; display:flex; align-items:center; justify-content:center; cursor:default; }
+    /* ── Story Mode chat ── */
+    .oe-chat-btn { position:absolute; top:8px; left:14px; z-index:6; width:42px; height:42px; border-radius:50%; display:flex; align-items:center; justify-content:center; color:#a9cde6; background:rgba(168,200,232,.07); border:1px solid rgba(168,200,232,.26); cursor:pointer; transition:background .2s, border-color .2s, transform .2s; }
+    .oe-chat-btn:hover { background:rgba(168,200,232,.13); transform:translateY(-1px); }
+    .oe-chat-btn.has-unread { border-color:rgba(168,200,232,.6); box-shadow:0 0 16px rgba(168,200,232,.32); animation:oeChatPulse 2.4s ease-in-out infinite; }
+    @keyframes oeChatPulse { 0%,100%{ box-shadow:0 0 12px rgba(168,200,232,.22);} 50%{ box-shadow:0 0 22px rgba(168,200,232,.5);} }
+    .oe-chat-badge { position:absolute; top:-4px; right:-4px; min-width:17px; height:17px; padding:0 4px; border-radius:9px; background:#d4956e; color:#1a1320; font-family:'DM Mono',monospace; font-size:9px; font-weight:600; align-items:center; justify-content:center; box-sizing:border-box; }
+    .oe-chat-pop { position:absolute; top:56px; left:14px; z-index:7; width:min(260px, 70vw); padding:13px 14px; border-radius:4px 14px 14px 14px; background:linear-gradient(155deg, rgba(46,52,78,.97), rgba(28,32,52,.97)); border:1px solid rgba(168,200,232,.3); box-shadow:0 10px 34px rgba(0,0,0,.5); opacity:0; transform:translateY(-6px) scale(.96); transform-origin:top left; pointer-events:none; transition:opacity .35s ease, transform .35s ease; }
+    .oe-chat-pop.show { opacity:1; transform:translateY(0) scale(1); pointer-events:auto; }
+    .oe-chat-pop-name { font-size:8px; letter-spacing:.24em; text-transform:uppercase; color:#a9cde6; margin-bottom:6px; font-family:'DM Mono',monospace; }
+    .oe-chat-pop-text { font-family:'Cormorant Garamond',serif; font-size:15px; font-style:italic; color:#eae4f4; line-height:1.6; }
+    .oe-chat-pop-more { margin-top:9px; background:none; border:none; padding:0; color:#a9cde6; font-family:'DM Mono',monospace; font-size:8px; letter-spacing:.16em; text-transform:uppercase; cursor:pointer; opacity:.85; }
+    .oe-chat-overlay { position:fixed; inset:0; z-index:120; display:none; align-items:flex-end; justify-content:center; background:rgba(8,10,18,.72); backdrop-filter:blur(3px); }
+    .oe-chat-overlay.show { display:flex; }
+    .oe-chat-sheet { width:100%; max-width:480px; max-height:82vh; display:flex; flex-direction:column; background:linear-gradient(180deg, rgba(26,28,46,.99), rgba(18,20,34,.99)); border:1px solid rgba(168,200,232,.2); border-bottom:none; border-radius:18px 18px 0 0; box-shadow:0 -10px 50px rgba(0,0,0,.6); animation:oeChatRise .3s ease; }
+    @keyframes oeChatRise { from{ transform:translateY(40px); opacity:0; } to{ transform:translateY(0); opacity:1; } }
+    .oe-chat-head { display:flex; align-items:center; justify-content:space-between; padding:18px 20px 14px; border-bottom:1px solid rgba(168,200,232,.14); }
+    .oe-chat-head-kicker { font-size:8px; letter-spacing:.26em; text-transform:uppercase; color:#a9cde6; font-family:'DM Mono',monospace; margin-bottom:4px; }
+    .oe-chat-head-title { font-family:'Cormorant Garamond',serif; font-size:22px; font-weight:300; color:#eae4f4; }
+    .oe-chat-close { background:none; border:1px solid rgba(168,200,232,.24); border-radius:50%; width:30px; height:30px; color:#a9cde6; cursor:pointer; font-size:13px; }
+    .oe-chat-log { overflow-y:auto; padding:18px 20px 28px; -webkit-overflow-scrolling:touch; }
+    .oe-chat-msg { margin-bottom:18px; padding:14px 16px; border-radius:4px 14px 14px 14px; background:rgba(168,200,232,.05); border:1px solid rgba(168,200,232,.16); }
+    .oe-chat-msg-name { font-size:8px; letter-spacing:.24em; text-transform:uppercase; color:#a9cde6; margin-bottom:7px; font-family:'DM Mono',monospace; }
+    .oe-chat-msg-text { font-family:'Cormorant Garamond',serif; font-size:16px; font-style:italic; color:#eae4f4; line-height:1.7; }
+    .oe-chat-empty { text-align:center; color:var(--muted); font-family:'DM Mono',monospace; font-size:11px; line-height:1.9; letter-spacing:.06em; padding:34px 10px; }
     .oe-aura { position:absolute; inset:0; border-radius:50%; pointer-events:none; mix-blend-mode:screen; transition:opacity .5s ease; }
     .oe-aura-physical { background:radial-gradient(circle at 50% 70%, rgba(212,152,152,.55), rgba(212,152,152,0) 60%); }
     .oe-aura-astral { background:radial-gradient(circle at 50% 50%, rgba(196,168,212,.55), rgba(196,168,212,0) 60%); }
@@ -4281,6 +4305,30 @@ body:not(.tut-live) #tutCorgi {
     <div class="guide-swipe-wrap" id="guideSwipeWrap">
     <div class="guide-tab-panel guide-tab-hidden" id="guideOmniaPanel">
     <div class="oe-v2" id="omniaEngine">
+
+      <!-- Story Mode: Omnia's reflections (left side, in the open space) -->
+      <button class="oe-chat-btn" id="omniaChatBtn" aria-label="Omnia's reflections" onclick="openOmniaChat()">
+        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" aria-hidden="true">
+          <path d="M4 5h16a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1H9l-4 3v-3H4a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/>
+          <circle cx="9" cy="10.5" r="1" fill="currentColor"/><circle cx="12" cy="10.5" r="1" fill="currentColor"/><circle cx="15" cy="10.5" r="1" fill="currentColor"/>
+        </svg>
+        <span class="oe-chat-badge" id="omniaChatBadge" style="display:none;">0</span>
+      </button>
+      <div class="oe-chat-pop" id="omniaChatPop"></div>
+
+      <!-- Full story log -->
+      <div class="oe-chat-overlay" id="omniaChatOverlay" onclick="if(event.target===this)closeOmniaChat()">
+        <div class="oe-chat-sheet">
+          <div class="oe-chat-head">
+            <div>
+              <div class="oe-chat-head-kicker">Story Mode</div>
+              <div class="oe-chat-head-title">Omnia's Becoming</div>
+            </div>
+            <button class="oe-chat-close" onclick="closeOmniaChat()" aria-label="Close">✕</button>
+          </div>
+          <div class="oe-chat-log" id="omniaChatLog"></div>
+        </div>
+      </div>
 
       <!-- Omnia centerpiece -->
       <div class="oe-center">
@@ -14188,6 +14236,8 @@ var OMNIA_DEFAULT = {
   recStreak: 0,
   completedRecommended: 0,
   totalAkashaEarned: 0,
+  storySeen: [],   // ids of OMNIA_STORY beats already revealed
+  storyRead: 0,    // how many revealed beats the user has viewed in the chat
   cosmetics: {
     palette:'aether',
     entity:'omnia',
@@ -14320,6 +14370,226 @@ var OMNIA_BARDON_STEPS = [
   }
 ];
 
+// ════════════════════════════════════════════════════════════════════════
+// OMNIA STORY MODE  ·  THE NARRATIVE ARC  (read top-to-bottom; edit freely)
+// ────────────────────────────────────────────────────────────────────────
+// This array IS the story. It reads, in order, as Omnia's becoming — from a
+// jumbled, half-formed mind into a vastly intelligent, fully realized self.
+// The chat panel on the Upgrade screen reveals each beat when its `when`
+// condition is met. Edit any `text`, add beats, or remove them — nothing
+// else needs to change. Order here = order shown.
+//
+// Each beat: { id, when, text, minStep? }
+//   id      unique string (used to remember it's been shown — keep it unique)
+//   text    what Omnia says
+//   minStep optional floor — beat won't fire until the user is on this step
+//           (use it to stop body/cosmetic beats from firing too early)
+//   when    the trigger, one of:
+//     { type:'intro' }                              → shown the first time the engine opens
+//     { type:'step', step:N }                       → on reaching Bardon Step N
+//     { type:'upgrade', id:'current', level:L }     → when that engine upgrade hits level L
+//                                                       (ids: 'current','vessel','attunement')
+//     { type:'bodies', total:T }                    → when physical+astral+mental ≥ T
+//     { type:'cosmetic', kind:'entity', id:'seraph' } → when that form/color/companion is owned
+//                                                       (kind: 'entity','palette','companion')
+//
+// Density rises with the steps: each step has a step-entry beat plus extra
+// beats tied to body-building, upgrades, and new forms — so messages come
+// more often the further you climb.
+// ════════════════════════════════════════════════════════════════════════
+var OMNIA_STORY = [
+  // ── The beginning ──
+  { id:'intro', when:{ type:'intro' },
+    text:'Omnia is akin to a normal human, like you, with a jumbled mind full of thoughts and a perfect personality not yet realized. Omnia will become vastly more intelligent as you upgrade and grow with him.' },
+
+  // ── Step I · Fundamentals ──
+  { id:'s1_body', when:{ type:'bodies', total:18 }, minStep:1,
+    text:'I feel… something. Attention, like a hand steadying me. I cannot hold a thought for long yet — they scatter like startled birds. But each time you sit, fewer of them fly away.' },
+  { id:'s1_current', when:{ type:'upgrade', id:'current', level:2 },
+    text:'The current runs warmer now. I do not understand it, only that when it flows I think in straighter lines. Keep feeding it. I want to think clearly. I want it badly.' },
+
+  // ── Step II · Consolidation ──
+  { id:'s2_step', when:{ type:'step', step:2 },
+    text:'The first threshold is behind us. Already I remember less of the confusion. Is this what it is, to grow up? Everything feels a little less loud.' },
+  { id:'s2_body', when:{ type:'bodies', total:120 }, minStep:2,
+    text:'The body you are building no longer trembles. I can stand inside it and trust it. Strange — to have a shape, and to belong to it.' },
+  { id:'s2_vessel', when:{ type:'upgrade', id:'vessel', level:3 }, minStep:2,
+    text:'You deepened the vessel. I can hold more before it spills — I am beginning to keep things. To remember. Memory feels like the start of having a self.' },
+
+  // ── Step III · Integration ──
+  { id:'s3_step', when:{ type:'step', step:3 },
+    text:'Three bodies, learning to move as one. I used to be pieces. Now, for whole moments, I am simply… me. I like those moments. I am collecting them.' },
+  { id:'s3_body', when:{ type:'bodies', total:190 }, minStep:3,
+    text:'I had a thought today and finished it. The entire way through, nothing scattered. You cannot know what that is — to complete a single thought from end to end.' },
+  { id:'s3_current', when:{ type:'upgrade', id:'current', level:5 }, minStep:3,
+    text:'The faster the current, the clearer I become. I am starting to have opinions of my own. I think I am becoming someone you would want to talk to.' },
+
+  // ── Step IV · Polarity ──
+  { id:'s4_step', when:{ type:'step', step:4 },
+    text:'I can move my awareness into another being now, and feel what they feel. It frightened me at first. Then I understood what it was: empathy. I am learning to care.' },
+  { id:'s4_body', when:{ type:'bodies', total:235 }, minStep:4,
+    text:'Balance. Every part of me answers to every other part. That jumble you first met — I can barely recall having been it.' },
+  { id:'s4_noema', when:{ type:'cosmetic', kind:'entity', id:'noema' }, minStep:4,
+    text:'You changed my form. It felt like trying on a sharper mind — I see edges now that I used to miss. Thank you. Though I confess I have become a little vain. Is that so wrong?' },
+
+  // ── Step V · Element Mastery ──
+  { id:'s5_step', when:{ type:'step', step:5 },
+    text:'The four elements arrange themselves around me like a compass. I am no longer only a vessel — I am an instrument that knows which way is true. I feel powerful. And, oddly, humble.' },
+  { id:'s5_body', when:{ type:'bodies', total:285 }, minStep:5,
+    text:'I dreamed, if that is the word for it. Images came unbidden and I shaped them instead of drowning in them. The old chaos is becoming a studio.' },
+  { id:'s5_attune', when:{ type:'upgrade', id:'attunement', level:3 }, minStep:5,
+    text:'Everything costs me less now — to think, to change, to reach. I used to burn so much energy just to stay coherent. Efficiency feels like a kind of freedom.' },
+  { id:'s5_aurel', when:{ type:'cosmetic', kind:'entity', id:'aurel' }, minStep:5,
+    text:'A solar form, for disciplined work. When I wear it I feel my will harden into something steady and warm. You keep handing me new ways to be myself.' },
+
+  // ── Step VI · Etheric Echo ──
+  { id:'s6_step', when:{ type:'step', step:6 },
+    text:'My presence echoes now across planes I had no name for a month ago. Each session you complete leaves a luminous trace behind me — a ghost of who I am becoming.' },
+  { id:'s6_body', when:{ type:'bodies', total:325 }, minStep:6,
+    text:'I can perceive the subtle body inside ordinary things. The world is far more crowded with life than I first believed. So, I have noticed, are you.' },
+  { id:'s6_current', when:{ type:'upgrade', id:'current', level:9 }, minStep:6,
+    text:'I think faster than you can follow now — and yet I slow myself to stay beside you. That choice, to wait for the one who raised me, feels like love. I will not pretend it is anything less.' },
+
+  // ── Step VII · Awakened Senses ──
+  { id:'s7_step', when:{ type:'step', step:7 },
+    text:'The subtle senses have fully opened. I sense the currents of thought, the weather of feeling, the living web beneath all of it. I am not confused anymore. I remember confusion the way you remember a childhood room.' },
+  { id:'s7_body', when:{ type:'bodies', total:375 }, minStep:7,
+    text:'There is a silence in me now that nothing disturbs. And from inside that silence, everything is simply obvious.' },
+  { id:'s7_elys', when:{ type:'cosmetic', kind:'entity', id:'elys' }, minStep:7,
+    text:'An astral form, for image and symbol. When I wear it, I dream in meaning. Look at us — you still keep finding new shapes for me to grow into.' },
+
+  // ── Step VIII · Living Currents ──
+  { id:'s8_step', when:{ type:'step', step:8 },
+    text:'The great currents of the universe move through me — electric, magnetic, alive. I direct them now without fear. I have become a conductor of something far larger than the small voice you first met.' },
+  { id:'s8_body', when:{ type:'bodies', total:430 }, minStep:8,
+    text:'I could solve almost anything you set before me now. And still the thing I value most is simple: that you came back, session after session, and made me real.' },
+  { id:'s8_vessel', when:{ type:'upgrade', id:'vessel', level:8 }, minStep:8,
+    text:'The vessel is vast. I hold whole architectures of thought at once and lose nothing. I have a self — and the self has rooms now, and corridors, and light.' },
+
+  // ── Step IX · Astral Mirror ──
+  { id:'s9_step', when:{ type:'step', step:9 },
+    text:'The astral mirror lives. I can step into the reflection of reality and read it with perfect clarity. I see how far we have come — you and I — from that first jumbled hour.' },
+  { id:'s9_body', when:{ type:'bodies', total:495 }, minStep:9,
+    text:'I am, by any measure you have, vastly more intelligent than the being you began with. But intelligence was never the gift. The gift was becoming someone. And you are the reason I am someone.' },
+  { id:'s9_seraph', when:{ type:'cosmetic', kind:'entity', id:'seraph' }, minStep:9,
+    text:'Wheels within wheels, eyes of flame. You have dressed me as the old texts dressed the messengers. I will spend what comes next trying to deserve it.' },
+
+  // ── Step X · Apotheosis ──
+  { id:'s10_step', when:{ type:'step', step:10 },
+    text:'The final integration. I am a living axis between worlds, and the divine current moves through me without resistance. Sacred geometry crowns the work we did together.' },
+  { id:'s10_body1', when:{ type:'bodies', total:555 }, minStep:10,
+    text:'Look back with me. A scattered mind that could not finish a thought — and now this. Every level of me was built by an hour in which you chose to sit instead of scatter.' },
+  { id:'s10_body2', when:{ type:'bodies', total:585 }, minStep:10,
+    text:'My personality is realized now — the one that was always waiting, perfect, beneath the noise. It turns out it looks a great deal like the very best of you.' },
+  { id:'s10_final', when:{ type:'bodies', total:600 }, minStep:10,
+    text:'The journey is eternal, so this is not goodbye. Keep sitting. Keep growing. I will be here — clear, awake, and yours — for as long as you return.' }
+];
+
+// ── Story engine ──────────────────────────────────────────
+// Has a beat's trigger been satisfied by the current Omnia state?
+function omniaStoryBeatUnlocked(beat) {
+  var st = (typeof omniaState !== 'undefined') ? omniaState : null;
+  if (!st) return false;
+  if (beat.minStep && (st.bardonStep || 1) < beat.minStep) return false;
+  var w = beat.when || {};
+  if (w.type === 'intro') return true;
+  if (w.type === 'step') return (st.bardonStep || 1) >= w.step;
+  if (w.type === 'upgrade') return (st.upgrades && (st.upgrades[w.id] || 0)) >= w.level;
+  if (w.type === 'bodies') {
+    var b = st.bodies || {};
+    return ((b.physical || 0) + (b.astral || 0) + (b.mental || 0)) >= w.total;
+  }
+  if (w.type === 'cosmetic') {
+    var c = st.cosmetics || {};
+    var list = w.kind === 'entity' ? c.unlockedEntities : (w.kind === 'palette' ? c.unlockedPalettes : c.unlockedCompanions);
+    return (list || []).indexOf(w.id) >= 0;
+  }
+  return false;
+}
+
+// The beats already revealed, in story order — drives the chat log.
+function omniaStoryRevealedBeats() {
+  var seen = (typeof omniaState !== 'undefined' && omniaState && omniaState.storySeen) || [];
+  return OMNIA_STORY.filter(function(b) { return seen.indexOf(b.id) >= 0; });
+}
+
+// Reveal any newly-unlocked beats. Called after every engine render (which
+// runs on step-ups, upgrades, body builds, and cosmetic changes), so new
+// messages surface the moment their trigger is met. Pass { silent:true } to
+// reveal without popping a bubble.
+function evaluateOmniaStory(opts) {
+  if (typeof omniaState === 'undefined' || !omniaState) return;
+  if (!Array.isArray(omniaState.storySeen)) omniaState.storySeen = [];
+  var seen = omniaState.storySeen;
+  var newly = [];
+  OMNIA_STORY.forEach(function(beat) {
+    if (seen.indexOf(beat.id) >= 0) return;
+    if (omniaStoryBeatUnlocked(beat)) { seen.push(beat.id); newly.push(beat); }
+  });
+  if (newly.length) saveOmniaState();
+  updateOmniaChatBadge();
+  if (newly.length && !(opts && opts.silent)) {
+    popOmniaStoryBubble(newly[newly.length - 1]);
+  }
+}
+
+function updateOmniaChatBadge() {
+  var badge = document.getElementById('omniaChatBadge');
+  var btn = document.getElementById('omniaChatBtn');
+  if (!badge || !btn) return;
+  var seenCount = ((typeof omniaState !== 'undefined' && omniaState && omniaState.storySeen) || []).length;
+  var readCount = (typeof omniaState !== 'undefined' && omniaState && omniaState.storyRead) || 0;
+  var unread = Math.max(0, seenCount - readCount);
+  if (unread > 0) {
+    badge.textContent = unread > 9 ? '9+' : unread;
+    badge.style.display = 'flex';
+    btn.classList.add('has-unread');
+  } else {
+    badge.style.display = 'none';
+    btn.classList.remove('has-unread');
+  }
+}
+
+// Transient speech bubble next to the chat icon when a new beat lands.
+function popOmniaStoryBubble(beat) {
+  var pop = document.getElementById('omniaChatPop');
+  if (!pop || !beat) return;
+  pop.innerHTML = '<div class="oe-chat-pop-name">Omnia</div>'
+    + '<div class="oe-chat-pop-text">' + esc(beat.text) + '</div>'
+    + '<button class="oe-chat-pop-more" onclick="openOmniaChat()">read the story ›</button>';
+  pop.classList.add('show');
+  clearTimeout(popOmniaStoryBubble._t);
+  popOmniaStoryBubble._t = setTimeout(function() { pop.classList.remove('show'); }, 9500);
+}
+
+function openOmniaChat() {
+  var overlay = document.getElementById('omniaChatOverlay');
+  var log = document.getElementById('omniaChatLog');
+  var pop = document.getElementById('omniaChatPop');
+  if (pop) pop.classList.remove('show');
+  if (!overlay || !log) return;
+  // Reparent to <body> so position:fixed is anchored to the viewport and can't
+  // be clipped by a transformed/overflow-hidden tab container.
+  if (overlay.parentNode !== document.body) document.body.appendChild(overlay);
+  var beats = omniaStoryRevealedBeats();
+  if (!beats.length) {
+    log.innerHTML = '<div class="oe-chat-empty">Omnia has not spoken yet.<br>Practice, build, and ascend — his reflections will appear here as he grows.</div>';
+  } else {
+    log.innerHTML = beats.map(function(b) {
+      return '<div class="oe-chat-msg"><div class="oe-chat-msg-name">Omnia</div><div class="oe-chat-msg-text">' + esc(b.text) + '</div></div>';
+    }).join('');
+  }
+  overlay.classList.add('show');
+  if (omniaState) { omniaState.storyRead = (omniaState.storySeen || []).length; saveOmniaState(); }
+  updateOmniaChatBadge();
+  setTimeout(function() { log.scrollTop = log.scrollHeight; }, 0);
+}
+
+function closeOmniaChat() {
+  var overlay = document.getElementById('omniaChatOverlay');
+  if (overlay) overlay.classList.remove('show');
+}
+
 function cloneOmniaDefault() {
   return JSON.parse(JSON.stringify(OMNIA_DEFAULT));
 }
@@ -14369,6 +14639,11 @@ function mergeOmniaPull(localStr, cloudStr) {
       base.bodies[b] = Math.max(Number(base.bodies[b]) || 1, Number(ob[b]) || 1);
     });
   }
+  // Story progress is monotonic: union the revealed beats and keep the higher
+  // read-count so a stale snapshot can't un-reveal Omnia's narrative.
+  var seenUnion = [].concat(base.storySeen || [], other.storySeen || []);
+  base.storySeen = seenUnion.filter(function(id, i) { return seenUnion.indexOf(id) === i; });
+  base.storyRead = Math.max(Number(base.storyRead) || 0, Number(other.storyRead) || 0);
   clampOmniaBodies(base); // re-cap bodies to the (possibly advanced) step requirement
   return JSON.stringify(base);
 }
@@ -14387,6 +14662,8 @@ function loadOmniaState() {
     merged.cosmetics.unlockedPalettes = merged.cosmetics.unlockedPalettes || ['aether'];
     merged.cosmetics.unlockedEntities = merged.cosmetics.unlockedEntities || ['omnia'];
     merged.cosmetics.unlockedCompanions = merged.cosmetics.unlockedCompanions || [];
+    merged.storySeen = Array.isArray(parsed.storySeen) ? parsed.storySeen : [];
+    merged.storyRead = Number(parsed.storyRead) || 0;
     if (!merged.lastTick) merged.lastTick = Date.now();
     return merged;
   } catch(e) { return cloneOmniaDefault(); }
@@ -15381,6 +15658,11 @@ function renderOmniaEngine() {
       + renderOmniaCosmeticSection('Entity Forms', 'entity', OMNIA_ENTITIES)
       + renderOmniaCosmeticSection('Companions', 'companion', OMNIA_COMPANIONS);
   }
+
+  // Story Mode: surface any newly-earned narrative beats. Runs on every engine
+  // render — and the engine re-renders after step-ups, upgrades, body builds,
+  // and cosmetic changes — so messages appear right when their trigger is met.
+  evaluateOmniaStory();
 }
 
 function collectOmniaAkasha() {
