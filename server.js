@@ -236,7 +236,13 @@ function serverPeriodKey(period, offset) {
 
 function clampText(value, max) {
   if (value === null || value === undefined) return '';
-  return String(value).replace(/\s+/g, ' ').trim().slice(0, max);
+  const s = String(value).replace(/\s+/g, ' ').trim();
+  if (s.length <= max) return s;
+  // Cut on a word boundary so we never truncate mid-word (e.g. "pushing yo").
+  const slice = s.slice(0, max);
+  const lastSpace = slice.lastIndexOf(' ');
+  const cut = lastSpace > max * 0.6 ? slice.slice(0, lastSpace) : slice;
+  return cut.replace(/[\s,;:—-]+$/, '') + '…';
 }
 
 function compactContext(value, depth = 0) {
@@ -310,7 +316,9 @@ async function generateAiMessage(feature, context) {
   }
 
   const text = (data.choices && data.choices[0] && data.choices[0].message && data.choices[0].message.content) || '';
-  const message = clampText(text.trim(), 360);
+  // 60-word reflections can run ~400 chars; clamp generously and on a word
+  // boundary so the message is never sliced mid-word.
+  const message = clampText(text.trim(), 600);
   if (!message) {
     const err = new Error('OpenAI returned an empty message');
     err.status = 502;

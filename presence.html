@@ -1189,8 +1189,13 @@
     .jl-pr__text { font-size:11.5px; color:#e6cd92; line-height:1.4; }
 
     /* ── Progress Report: Omnia card ─────────────────────── */
-    .rpt-omnia-card { margin-bottom:20px; overflow:hidden; position:relative; }
-    .rpt-omnia-card__inner { display:flex; flex-direction:column; align-items:center; padding:20px 20px 18px; }
+    .rpt-omnia-card { margin-bottom:20px; overflow:hidden; position:relative; border-radius:16px;
+      background:linear-gradient(150deg, rgba(46,40,82,.55) 0%, rgba(30,32,58,.42) 48%, rgba(38,32,58,.5) 100%);
+      border:1px solid rgba(170,152,214,.24);
+      box-shadow:0 0 34px rgba(120,100,180,.12), inset 0 1px 0 rgba(255,255,255,.05); }
+    .rpt-omnia-card::before { content:''; position:absolute; inset:0; pointer-events:none;
+      background:radial-gradient(ellipse 60% 80% at 16% 50%, rgba(168,200,232,.12) 0%, transparent 62%); }
+    .rpt-omnia-card__inner { display:flex; flex-direction:column; align-items:center; padding:20px 20px 18px; position:relative; z-index:1; }
     .rpt-omnia-stage { position:relative; width:160px; height:120px; display:flex; align-items:flex-end; justify-content:center; margin-bottom:10px; flex-shrink:0; }
     .rpt-omnia-crystal { width:52px; position:relative; z-index:2; transform-origin:bottom center; will-change:transform; animation:rptOmniaFloat 5s ease-in-out infinite; filter:drop-shadow(0 0 12px rgba(184,234,255,.45)) drop-shadow(0 0 4px rgba(184,234,255,.6)); }
     .rpt-omnia-crystal--loading { animation:rptOmniaBounce 1.5s linear infinite; }
@@ -1227,7 +1232,7 @@
     .rpt-omnia-bubble { flex:1; position:relative; background:rgba(255,255,255,.04); border:1px solid rgba(168,210,235,.2); border-radius:12px; padding:12px 14px; }
     .rpt-omnia-bubble::before { content:''; position:absolute; left:-9px; top:50%; transform:translateY(-50%); border:8px solid transparent; border-right-color:rgba(168,210,235,.2); border-left-width:0; }
     .rpt-omnia-bubble::after { content:''; position:absolute; left:-7px; top:50%; transform:translateY(-50%); border:6px solid transparent; border-right-color:rgba(10,11,18,1); border-left-width:0; }
-    .rpt-omnia-bubble-text { font-family:'Cormorant Garamond',serif; font-size:13.5px; font-style:italic; color:var(--text); line-height:1.72; }
+    .rpt-omnia-bubble-text { font-family:'Cormorant Garamond',serif; font-size:15px; font-style:italic; color:#eae4f4; line-height:1.8; }
     .rpt-omnia-bubble-text--dim { color:var(--muted); font-size:12px; }
     .rpt-omnia-bubble-meta { margin-top:8px; font-size:8px; letter-spacing:.16em; text-transform:uppercase; color:var(--muted); font-family:'DM Mono',monospace; }
     .rpt-omnia-bubble-refresh { display:inline-block; margin-top:5px; background:none; border:none; font-size:8px; letter-spacing:.13em; text-transform:uppercase; color:var(--muted); font-family:'DM Mono',monospace; cursor:pointer; opacity:.5; padding:0; }
@@ -1245,6 +1250,9 @@
     /* 3-column summary bar at top of report */
     .rpt-summary { display:grid; grid-template-columns:1fr 1fr 1fr; gap:8px; margin:16px 0 22px; }
     .rpt-summary-card { background:var(--surface); border:1px solid var(--border); border-radius:10px; padding:17px 10px 14px; display:flex; flex-direction:column; align-items:center; text-align:center; }
+    .rpt-summary-card:nth-child(1) { background:linear-gradient(162deg, rgba(126,184,164,.12) 0%, rgba(126,184,164,.02) 70%); border-color:rgba(126,184,164,.26); }
+    .rpt-summary-card:nth-child(2) { background:linear-gradient(162deg, rgba(168,200,232,.11) 0%, rgba(168,200,232,.02) 70%); border-color:rgba(168,200,232,.24); }
+    .rpt-summary-card:nth-child(3) { background:linear-gradient(162deg, rgba(216,184,106,.12) 0%, rgba(216,184,106,.02) 70%); border-color:rgba(216,184,106,.26); }
     .rpt-summary-val { font-family:'Cormorant Garamond',serif; font-size:33px; font-weight:400; line-height:1; color:var(--text); margin-bottom:6px; text-shadow:0 1px 18px rgba(255,255,255,.07); }
     .rpt-summary-val--green { color:var(--accent); text-shadow:0 1px 18px rgba(126,184,164,.22); }
     .rpt-summary-val--gold { color:#d8b86a; text-shadow:0 1px 18px rgba(216,184,106,.2); }
@@ -1279,7 +1287,7 @@
     .rpt-signal--milestone .rpt-signal__label { color:#d4b064; }
     .rpt-signal__text { font-family:'Cormorant Garamond',serif; font-size:15px; font-weight:300; color:var(--text); line-height:1.35; }
     .rpt-signal__val { font-family:'Cormorant Garamond',serif; font-size:23px; font-weight:300; color:var(--text); flex-shrink:0; line-height:1; }
-    .rpt-strip { display:flex; background:var(--surface); border:1px solid var(--border); border-radius:12px; overflow:hidden; margin-bottom:10px; }
+    .rpt-strip { display:flex; background:linear-gradient(160deg, rgba(255,255,255,.035), rgba(255,255,255,.008)); border:1px solid var(--border); border-radius:12px; overflow:hidden; margin-bottom:10px; }
     .rpt-strip__cell { flex:1; padding:14px 8px 12px; text-align:center; border-right:1px solid var(--border); }
     .rpt-strip__cell:last-child { border-right:none; }
     .rpt-strip__val { font-family:'Cormorant Garamond',serif; font-size:23px; font-weight:300; line-height:1; margin-bottom:5px; color:var(--text); }
@@ -1292,6 +1300,15 @@
     .rpt-cap { font-size:9px; color:var(--muted); font-family:'DM Mono',monospace; letter-spacing:.04em; margin:-2px 0 16px; padding:0 2px; }
     .rpt-block { margin-bottom:26px; }
     .rpt-empty { text-align:center; color:var(--muted); font-size:11px; font-family:'DM Mono',monospace; letter-spacing:.06em; line-height:2; padding:40px 20px; }
+    /* Desktop: the report is designed as a phone-width column. Without a max-width
+       it stretches edge-to-edge into wide, sparse, dark slabs. Center it. */
+    @media (min-width: 720px) {
+      #reportsScreen .rpt-banner,
+      #reportsScreen .rpt-navrow,
+      #reportsScreen #reportContent,
+      #reportsScreen #reportShareBtn { max-width:660px; margin-left:auto; margin-right:auto; }
+      #reportsScreen .rpt-banner { width:100%; box-sizing:border-box; }
+    }
 
     /* EXERCISE GRID */
     .exercise-grid { display:grid; grid-template-columns:1fr 1fr; gap:10px; width:100%; margin-bottom:4px; }
@@ -5281,7 +5298,7 @@ body:not(.tut-live) #tutCorgi {
         <div style="position:absolute;width:3px;height:3px;border-radius:50%;background:rgba(200,188,255,.3);left:58%;top:70%;animation:heroFloat 4s ease-in-out infinite;animation-delay:.7s;"></div>
       </div>
     </div>
-    <div style="display:flex;align-items:center;gap:8px;padding:8px 20px 10px;flex-shrink:0;border-bottom:1px solid var(--border);position:relative;">
+    <div class="rpt-navrow" style="display:flex;align-items:center;gap:8px;padding:8px 20px 10px;flex-shrink:0;border-bottom:1px solid var(--border);position:relative;">
       <button id="reportNavPrev" style="width:32px;height:32px;display:flex;align-items:center;justify-content:center;background:none;border:none;color:var(--text);font-size:20px;cursor:pointer;opacity:.7;flex-shrink:0;">‹</button>
       <span id="reportNavLabel" style="flex:1;text-align:center;font-family:'DM Mono',monospace;font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:var(--muted);">Today</span>
       <button id="reportNavNext" style="width:32px;height:32px;display:flex;align-items:center;justify-content:center;background:none;border:none;color:var(--text);font-size:20px;cursor:pointer;opacity:.25;pointer-events:none;flex-shrink:0;">›</button>
