@@ -14591,7 +14591,7 @@ function updateDrawerEntityBtn() {
   var color = entity.id === 'omnia' ? palette.color : entity.color;
   if (entity.id === 'omnia') {
     btn.innerHTML = _drawerOmniaBtnOrigSVG;
-    btn.style.filter = '';
+    btn.style.filter = (palette.filter && palette.filter !== 'none') ? palette.filter : '';
     btn.title = 'Meet Omnia';
     btn.setAttribute('aria-label', 'Open guide tutorial');
   } else {
