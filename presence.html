@@ -7187,6 +7187,12 @@ function openDrawer() {
       drawerLevelEl.textContent = 'Level ' + state.level + ' · ' + getRankTitle(state.level);
     }
   }
+  // Keep the header guide icon in sync with the chosen entity/palette/step,
+  // even on a fresh load or when the user hasn't opened the Upgrade screen yet.
+  // updateDrawerEntityBtn resets the icon's base SVG, so re-apply step visuals
+  // afterwards to restore the orbiting tier decorations.
+  if (typeof updateDrawerEntityBtn === 'function') updateDrawerEntityBtn();
+  if (typeof applyOmniaStepVisuals === 'function') applyOmniaStepVisuals();
   document.getElementById('drawerOverlay').classList.add('show');
 }
 function closeDrawer() {
