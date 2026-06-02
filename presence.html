@@ -6335,6 +6335,9 @@ document.addEventListener('DOMContentLoaded', function() {
   setTimeout(clearStaleInteractionLocks, 1000);
   if (typeof checkStreakStatus === 'function') checkStreakStatus();
   if (typeof checkRemindersOnLoad === 'function') checkRemindersOnLoad();
+  // Apply saved entity/palette cosmetics to the guide banner and drawer icon
+  // on every page load so Seraph/etc. show immediately without visiting Upgrade.
+  if (typeof applyOmniaCosmetics === 'function') applyOmniaCosmetics();
   // Warm the Omnia report cache in the background so it's instant when the
   // user opens Progress Reports. Targets yesterday's daily report — the first
   // eligible daily view. fetchOmniaReport no-ops if already cached/fresh.
@@ -14658,9 +14661,9 @@ function getEntityCrystalSVG(id) {
       + '<linearGradient id="srWing" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="' + Cw + '" stop-opacity=".7"/><stop offset="100%" stop-color="' + C + '" stop-opacity=".12"/></linearGradient>'
       + '<filter id="srGl" x="-60%" y="-60%" width="220%" height="220%"><feGaussianBlur stdDeviation="1.3" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>'
       + '</defs>'
-      // Scaled up 1.85x about center — the radial design otherwise reads small
+      // Scaled up 2.1x about center — the radial design otherwise reads small
       // in the guide orb. overflow:visible lets the wings extend past the box.
-      + '<g transform="translate(40,62) scale(1.85) translate(-40,-62)">' + svg + '</g>'
+      + '<g transform="translate(40,62) scale(2.1) translate(-40,-62)">' + svg + '</g>'
       + '</svg>';
   }
   // Default: null = keep existing HTML (Omnia crystal)
@@ -14683,8 +14686,14 @@ function updateDrawerEntityBtn() {
     btn.title = 'Meet Omnia';
     btn.setAttribute('aria-label', 'Open guide tutorial');
   } else {
-    var _seraphHamSize = entity.id === 'seraph' ? 'width="44" height="62" ' : 'width="26" height="38" ';
-    var previewSVG = renderOmniaEntityPreview(entity).replace('<svg ', '<svg ' + _seraphHamSize);
+    var crystalSVG = getEntityCrystalSVG(entity.id);
+    var previewSVG;
+    if (crystalSVG) {
+      // Use the full crystal design (Ophanim, mandorla, etc.) scaled down for the drawer
+      previewSVG = crystalSVG.replace(/width="[^"]*"/, 'width="48"').replace(/height="[^"]*"/, 'height="78"');
+    } else {
+      previewSVG = renderOmniaEntityPreview(entity).replace('<svg ', '<svg width="26" height="38" ');
+    }
     btn.innerHTML = previewSVG;
     btn.style.filter = 'drop-shadow(0 0 6px ' + color + '99)';
     btn.title = entity.name;
@@ -17060,7 +17069,7 @@ function renderGuidePlan(mode, skipScroll) {
       + '<div class="path-ex-icon" style="background:' + accentColor + '1e;border:1px solid ' + accentColor + '38;color:' + accentColor + ';">' + icon + '</div>'
       + '<div class="path-ex-info">'
       + '<div class="path-ex-name" style="color:' + accentColor + ';">' + item.name + modeLabel + '</div>'
-      + '<div class="path-ex-meta">' + durLabel + (item.id === 'clock' && concState.totalSessions >= 4 && concState.bestSeconds > 0 && concState.bestSeconds < 900 ? ' · target ' + fmtSecs(Math.min(concState.bestSeconds * 3, 900)) : '') + (item.progress ? ' · ' + item.progress : '') + '</div>'
+      + '<div class="path-ex-meta">' + durLabel + (item.progress ? ' · ' + item.progress : '') + '</div>'
       + '</div>'
       + '<div class="path-ex-right">' + checkHtml + beginHtml + '</div>'
       + '<button class="pq-menu-btn" data-ex-id="' + item.id + '"' + (item.mode ? ' data-ex-mode="' + item.mode + '"' : '') + ' title="Options">···</button>'
