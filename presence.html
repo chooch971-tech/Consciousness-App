@@ -3933,6 +3933,10 @@ body:not(.tut-live) #tutCorgi {
       <span style="font-size:9px; letter-spacing:.2em; text-transform:uppercase; color:var(--accent);">● Session Running</span>
       <button onclick="showScreen('sessionScreen');" style="font-size:9px; letter-spacing:.15em; text-transform:uppercase; color:var(--accent); background:none; border:1px solid rgba(126,184,164,.3); border-radius:4px; padding:5px 12px; cursor:pointer; font-family:'DM Mono',monospace;">Return →</button>
     </div>
+    <div id="remoteSessionBanner" style="display:none; background:rgba(168,200,232,0.06); border:1px solid rgba(168,200,232,.18); border-radius:8px; padding:10px 16px; margin-bottom:12px; align-items:center; gap:10px;">
+      <span style="font-size:13px; line-height:1; opacity:.8;">📡</span>
+      <span id="remoteSessionText" style="font-size:9px; letter-spacing:.14em; text-transform:uppercase; color:#a9cde6; line-height:1.5;"></span>
+    </div>
     <div id="awarenessPanel" style="flex:1; display:none; flex-direction:column; overflow:hidden; min-height:0; scrollbar-width:none; -ms-overflow-style:none;">
     <!-- Awareness banner -->
     <div class="screen-banner aw-banner">
@@ -6458,6 +6462,8 @@ function renderHome() {
   // Show/hide the active session banner
   var banner = document.getElementById('activeSessionBanner');
   if (banner) banner.style.display = sessionStartTime ? 'flex' : 'none';
+  // Reflect any session running on another signed-in device
+  refreshRemoteSessionBanner();
 
   // ── Idle game UI ──
   // Residue glow on ring
@@ -6535,6 +6541,7 @@ async function startSession() {
   lastPavlokFiredCycle = -1;
   sessionEndedEarly = false;
   saveSessionState();
+  startPresenceBeacon(currentMode === 'prayer' ? 'prayer' : 'awareness', '');
 
   // Show session screen immediately — don't block on push
   showScreen('sessionScreen');
@@ -6561,6 +6568,7 @@ function resumeSession(sess) {
   // managing and confirm/sync via the update call (prevents double-zaps).
   var pvkR = getPavlokPrefs();
   pavlokServerManaged = !!(getPavlokToken() && pvkR.awareness.enabled);
+  startPresenceBeacon(currentMode === 'prayer' ? 'prayer' : 'awareness', '');
 
   showScreen('sessionScreen');
   document.getElementById('reminderCount').textContent = sessionReminderCount;
@@ -6740,6 +6748,7 @@ function endSession() {
   clearTimeout(sessionTimerHandle);
   localStorage.removeItem('presence_session');
   notifyServerSessionEnd();
+  clearPresenceBeacon();
   var actualDuration = Math.max(1, Math.round((Date.now() - sessionStartTime) / 60000));
   var targetDuration = Math.round(sessionDurationSec / 60);
   // Clamp to a sane maximum (target duration + 5 min buffer)
@@ -8321,6 +8330,7 @@ document.addEventListener('visibilitychange', function() {
   // When app becomes visible again, refresh token if needed, then pull
   if (document.visibilityState === 'visible' && syncEnabled && authToken) {
     maybeRefreshToken();
+    refreshRemoteSessionBanner();
     fetch(SYNC_API_URL + '/sync/pull', {
       headers: { 'Authorization': 'Bearer ' + authToken }
     }).then(function(r) { return r.json(); }).then(function(result) {
@@ -8355,6 +8365,16 @@ document.addEventListener('visibilitychange', function() {
 window.addEventListener('pagehide', function() {
   if (sessionStartTime) saveSessionState();
 });
+
+// Poll for a session running on another device — only while sitting on the
+// home screen with the tab visible, so it costs nothing in the background.
+setInterval(function() {
+  if (document.visibilityState !== 'visible') return;
+  if (sessionStartTime) return;
+  var home = document.getElementById('homeScreen');
+  if (!home || home.style.display === 'none') return;
+  refreshRemoteSessionBanner();
+}, 30000);
 
 // Initial screen — all users go home; tutorial auto-fires for new users via __tutBoot
 if (!localStorage.getItem('presence_auth_token')) {
@@ -19312,6 +19332,71 @@ async function syncPullData() {
     window._syncPullPending = false;
     console.warn('[Sync] Pull failed:', err.message);
   }
+}
+
+// ── Live session beacon ───────────────────────────────────
+// Tells the server "a session is running on this device" at start, refreshes
+// it on a heartbeat, and clears it at the end. Other signed-in devices read
+// this to show a "session in progress elsewhere" banner. Fire-and-forget:
+// a failed beacon never disrupts the local session, which stays authoritative.
+var _beaconHeartbeat = null;
+
+function pushPresenceBeacon(mode, exercise) {
+  if (!syncEnabled || !authToken) return;
+  fetch(SYNC_API_URL + '/presence/beacon', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + authToken },
+    body: JSON.stringify({
+      deviceId: getOmniaDeviceId(),
+      mode: mode || 'awareness',
+      exercise: exercise || '',
+      startedAt: sessionStartTime || Date.now(),
+      device: detectDevice()
+    })
+  }).catch(function() {});
+}
+
+function startPresenceBeacon(mode, exercise) {
+  if (!syncEnabled || !authToken) return;
+  pushPresenceBeacon(mode, exercise);
+  if (_beaconHeartbeat) clearInterval(_beaconHeartbeat);
+  // Heartbeat well inside the 90s server TTL so the beacon never goes stale mid-session
+  _beaconHeartbeat = setInterval(function() { pushPresenceBeacon(mode, exercise); }, 30000);
+}
+
+function clearPresenceBeacon() {
+  if (_beaconHeartbeat) { clearInterval(_beaconHeartbeat); _beaconHeartbeat = null; }
+  if (!syncEnabled || !authToken) return;
+  fetch(SYNC_API_URL + '/presence/clear', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + authToken },
+    body: JSON.stringify({ deviceId: getOmniaDeviceId() })
+  }).catch(function() {});
+}
+
+// Read whether another device has a live session, and reflect it on the home banner
+function refreshRemoteSessionBanner() {
+  var banner = document.getElementById('remoteSessionBanner');
+  if (!banner) return;
+  // Never show on the device that's actually running a session
+  if (!syncEnabled || !authToken || sessionStartTime) { banner.style.display = 'none'; return; }
+  fetch(SYNC_API_URL + '/presence/active?exclude=' + encodeURIComponent(getOmniaDeviceId()), {
+    headers: { 'Authorization': 'Bearer ' + authToken }
+  }).then(function(r) { return r.ok ? r.json() : null; }).then(function(res) {
+    if (sessionStartTime) { banner.style.display = 'none'; return; } // a local session started while we waited
+    var a = res && res.active;
+    var txt = document.getElementById('remoteSessionText');
+    if (a && txt) {
+      var label = a.mode === 'concentration' ? 'Concentration' : a.mode === 'prayer' ? 'Prayer' : 'Awareness';
+      var mins = a.startedAt ? Math.max(0, Math.round((Date.now() - a.startedAt) / 60000)) : 0;
+      var ago = mins <= 0 ? 'just now' : 'started ' + mins + 'm ago';
+      var dev = (!a.device || a.device === 'Unknown') ? 'another device' : 'your ' + a.device + ' device';
+      txt.textContent = label + ' session in progress on ' + dev + ' · ' + ago;
+      banner.style.display = 'flex';
+    } else {
+      banner.style.display = 'none';
+    }
+  }).catch(function() {});
 }
 
 function _refreshSettingsSyncCard() {

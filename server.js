@@ -60,6 +60,7 @@ let prayerCollection;
 let usersCollection;
 let syncDataCollection;
 let friendsCollection;
+let beaconsCollection;
 let subscriptions = [];
 let prayerSchedules = [];
 
@@ -74,7 +75,10 @@ async function connectDB() {
     usersCollection = db.collection('users');
     syncDataCollection = db.collection('sync_data');
     friendsCollection = db.collection('friends');
-    
+    beaconsCollection = db.collection('presence_beacons');
+    // TTL: let MongoDB sweep stale beacons automatically (reads also guard on expiresAt)
+    try { await beaconsCollection.createIndex({ expiresAt: 1 }, { expireAfterSeconds: 0 }); } catch(e) {}
+
     subscriptions = await subsCollection.find({}).toArray();
     const cutoff = Date.now() - 24 * 60 * 60 * 1000;
     const now = Date.now();
@@ -735,6 +739,66 @@ app.get('/api/sync/sync/diagnose', verifyToken, async (req, res) => {
   } catch (err) {
     console.error('Diagnose error:', err.message);
     res.status(500).json({ error: 'Diagnose failed' });
+  }
+});
+
+// ── LIVE SESSION BEACON ─────────────────────────────────
+// A lightweight, TTL'd marker of an in-progress session so OTHER signed-in
+// devices can show "a session is running elsewhere". This is deliberately
+// separate from the snapshot sync: a live session stays local-first and
+// authoritative on its own device; the beacon is just a fresh-or-gone signal.
+// Considered active only while its heartbeat is fresh (BEACON_TTL_MS).
+const BEACON_TTL_MS = 90 * 1000;
+
+// POST a beacon (also the heartbeat — called every ~30s while a session runs)
+app.post('/api/sync/presence/beacon', verifyToken, async (req, res) => {
+  try {
+    const { deviceId, mode, exercise, startedAt, device } = req.body || {};
+    if (!deviceId) return res.status(400).json({ error: 'deviceId required' });
+    const now = Date.now();
+    await beaconsCollection.updateOne(
+      { userId: new ObjectId(req.user.userId), deviceId: String(deviceId) },
+      { $set: {
+          mode: typeof mode === 'string' ? mode.slice(0, 24) : 'awareness',
+          exercise: typeof exercise === 'string' ? exercise.slice(0, 48) : '',
+          device: typeof device === 'string' ? device.slice(0, 24) : 'a device',
+          startedAt: Number(startedAt) || now,
+          updatedAt: new Date(now),
+          // expiresAt drives the MongoDB TTL index; reads also check it directly
+          expiresAt: new Date(now + BEACON_TTL_MS),
+      } },
+      { upsert: true }
+    );
+    res.json({ ok: true });
+  } catch (err) {
+    console.error('Beacon error:', err.message);
+    res.status(500).json({ error: 'Beacon failed' });
+  }
+});
+
+// Clear this device's beacon when its session ends
+app.post('/api/sync/presence/clear', verifyToken, async (req, res) => {
+  try {
+    const { deviceId } = req.body || {};
+    if (!deviceId) return res.status(400).json({ error: 'deviceId required' });
+    await beaconsCollection.deleteOne({ userId: new ObjectId(req.user.userId), deviceId: String(deviceId) });
+    res.json({ ok: true });
+  } catch (err) {
+    res.status(500).json({ error: 'Clear failed' });
+  }
+});
+
+// Read the most recent fresh beacon from a DIFFERENT device
+app.get('/api/sync/presence/active', verifyToken, async (req, res) => {
+  try {
+    const exclude = req.query.exclude ? String(req.query.exclude) : null;
+    const query = { userId: new ObjectId(req.user.userId), expiresAt: { $gt: new Date() } };
+    if (exclude) query.deviceId = { $ne: exclude };
+    const b = await beaconsCollection.find(query).sort({ updatedAt: -1 }).limit(1).next();
+    if (!b) return res.json({ active: null });
+    res.json({ active: { mode: b.mode, exercise: b.exercise, device: b.device, startedAt: b.startedAt } });
+  } catch (err) {
+    res.status(500).json({ error: 'Active lookup failed' });
   }
 });
 
