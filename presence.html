@@ -17487,10 +17487,6 @@ function renderPathQuests() {
         metaParts.push('×2 sessions');
       }
     }
-    if (item.id === 'clock' && concState.totalSessions >= 4 && concState.bestSeconds > 0 && concState.bestSeconds < 900) {
-      var _ct = Math.min(concState.bestSeconds * 3, 900);
-      metaParts.push('target ' + fmtSecs(_ct));
-    }
     if (item.done) metaParts.push('completed');
     var meta = metaParts.join(' · ') || 'Open-ended';
 
@@ -17734,6 +17730,9 @@ function renderPathQuests() {
       guideState.thoughtModeForced = next.mode;
     } else {
       guideState.gateForced = next.exId;
+      // buildExperiencedGuideItems reads _dailyPick, not gateForced — update
+      // both so the experienced-path rendering immediately shows the new gate.
+      guideState._dailyPick = { day: guideLocalDayKey(), ids: [next.exId], v: 4 };
     }
     saveGuideState(guideState);
     renderPathQuests();
