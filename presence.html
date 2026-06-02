@@ -6530,6 +6530,12 @@ function saveSessionState() {
 }
 
 async function startSession() {
+  // Hard cross-device lock: don't start if another device is mid-session.
+  var _remote = remoteSessionActive();
+  if (_remote) {
+    showToast(remoteSessionLabel(_remote) + '. Finish it before starting another.', 4200);
+    return;
+  }
   var params = customSessionParams || currentParams();
   customSessionParams = null;
   localStorage.removeItem('presence_session');
@@ -8568,6 +8574,17 @@ var concSessionStartTime = null;
 var concRepTimerInterval = null;
 
 function startConcentration() {
+  // Hard cross-device lock: only one session may run across a user's devices.
+  // Block entry if another device has a live session right now.
+  var _remote = remoteSessionActive();
+  if (_remote) {
+    showToast(remoteSessionLabel(_remote) + '. Finish it before starting another.', 4200);
+    if (typeof renderHome === 'function') renderHome();
+    showScreen('homeScreen');
+    return;
+  }
+  // Refresh the beacon view so the Begin-button gate below is decided on fresh data.
+  refreshRemoteSessionBanner();
   if (!concInSession) {
     concReps = [];
     concInSession = true;
@@ -8621,6 +8638,16 @@ function startConcentration() {
 
 function beginCountdown() {
   if (!concPendingBegin) return;
+  // Re-check the cross-device lock at the actual start moment (the entry
+  // gate kicked off a fresh beacon read, which has landed by now).
+  var _remote = remoteSessionActive();
+  if (_remote) {
+    showToast(remoteSessionLabel(_remote) + '. Finish it before starting another.', 4200);
+    concInSession = false;
+    if (typeof renderHome === 'function') renderHome();
+    showScreen('homeScreen');
+    return;
+  }
   concPendingBegin = false;
   var isTutorialFirst = window._tutorialFirstClock === true;
 
@@ -19374,17 +19401,44 @@ function clearPresenceBeacon() {
   }).catch(function() {});
 }
 
+// Cached view of whether another device has a live session. The hard
+// cross-device lock reads this synchronously at session-start; it's only
+// trusted while fresh (REMOTE_ACTIVE_TTL) so a stale cache fails OPEN —
+// we never wrongly block practice.
+var _remoteActive = { active: null, checkedAt: 0 };
+var REMOTE_ACTIVE_TTL = 45000;
+
+// True (with the beacon payload) only when a *fresh* beacon from another
+// device is active and this device isn't itself mid-session.
+function remoteSessionActive() {
+  if (sessionStartTime) return null;
+  if (!_remoteActive.active) return null;
+  if (Date.now() - _remoteActive.checkedAt > REMOTE_ACTIVE_TTL) return null;
+  return _remoteActive.active;
+}
+
+function remoteSessionLabel(a) {
+  var label = a.mode === 'concentration' ? 'Concentration' : a.mode === 'prayer' ? 'Prayer' : 'Awareness';
+  var dev = (!a.device || a.device === 'Unknown') ? 'another device' : 'your ' + a.device;
+  return label + ' session is running on ' + dev;
+}
+
 // Read whether another device has a live session, and reflect it on the home banner
 function refreshRemoteSessionBanner() {
   var banner = document.getElementById('remoteSessionBanner');
-  if (!banner) return;
-  // Never show on the device that's actually running a session
-  if (!syncEnabled || !authToken || sessionStartTime) { banner.style.display = 'none'; return; }
+  // Never show / never block on the device that's actually running a session
+  if (!syncEnabled || !authToken || sessionStartTime) {
+    _remoteActive = { active: null, checkedAt: Date.now() };
+    if (banner) banner.style.display = 'none';
+    return;
+  }
   fetch(SYNC_API_URL + '/presence/active?exclude=' + encodeURIComponent(getOmniaDeviceId()), {
     headers: { 'Authorization': 'Bearer ' + authToken }
   }).then(function(r) { return r.ok ? r.json() : null; }).then(function(res) {
-    if (sessionStartTime) { banner.style.display = 'none'; return; } // a local session started while we waited
-    var a = res && res.active;
+    var a = (res && res.active) || null;
+    _remoteActive = { active: a, checkedAt: Date.now() };
+    if (sessionStartTime) a = null; // a local session started while we waited
+    if (!banner) return;
     var txt = document.getElementById('remoteSessionText');
     if (a && txt) {
       var label = a.mode === 'concentration' ? 'Concentration' : a.mode === 'prayer' ? 'Prayer' : 'Awareness';
