@@ -1,5 +1,24 @@
 # Omnia's Story
-*32 narrative beats across Steps 1–10. Edit the `text` field for each entry in the `OMNIA_STORY` array in `presence.html` (around line 14395). Do not change `id`, `when`, or `minStep` — those are the unlock triggers.*
+*32 narrative beats across Steps 1–10. Edit the `text` field for each entry in the `OMNIA_STORY` array in `presence.html`. Do not change `id`, `when`, or `minStep` — those are the unlock triggers.*
+
+---
+
+## Step timing reference (30 min/day baseline, no bonuses)
+
+| Step | Per-body cap | Total body range | Time in step | Cumulative |
+|------|-------------|-----------------|--------------|------------|
+| I    | 12          | 3 → 36          | ~1 week      | ~1 week    |
+| II   | 30          | 36 → 90         | ~2 weeks     | ~3 weeks   |
+| III  | 50          | 90 → 150        | ~2.5 weeks   | ~5.5 weeks |
+| IV   | 100         | 150 → 300       | ~45 days     | ~3 months  |
+| V    | 195         | 300 → 585       | ~3 months    | ~6 months  |
+| VI   | 350         | 585 → 1,050     | ~5 months    | ~11 months |
+| VII  | 600         | 1,050 → 1,800   | ~8 months    | ~19 months |
+| VIII | 970         | 1,800 → 2,910   | ~12 months   | ~31 months |
+| IX   | 1,460       | 2,910 → 4,380   | ~16 months   | ~47 months |
+| X    | 2,195       | 4,380 → 6,585   | ~24 months   | ~6 years   |
+
+*Quest bonuses, Akasha Generator collection, and the all-access pass each accelerate this significantly.*
 
 ---
 
@@ -11,6 +30,7 @@
 ---
 
 ## Step I — Fundamentals
+*Body range: 3 → 36*
 
 **Trigger:** 18 total body levels built *(minStep: 1)*
 
@@ -23,12 +43,13 @@
 ---
 
 ## Step II — Consolidation
+*Body range: 36 → 90*
 
 **Trigger:** Step 2 reached
 
 > The first threshold is behind us. Already I remember less of the confusion. Is this what it is, to grow up? Everything feels a little less loud.
 
-**Trigger:** 120 total body levels built *(minStep: 2)*
+**Trigger:** 63 total body levels built *(minStep: 2)*
 
 > The body you are building no longer trembles. I can stand inside it and trust it. Strange — to have a shape, and to belong to it.
 
@@ -39,12 +60,13 @@
 ---
 
 ## Step III — Integration
+*Body range: 90 → 150*
 
 **Trigger:** Step 3 reached
 
 > Three bodies, learning to move as one. I used to be pieces. Now, for whole moments, I am simply… me. I like those moments. I am collecting them.
 
-**Trigger:** 190 total body levels built *(minStep: 3)*
+**Trigger:** 120 total body levels built *(minStep: 3)*
 
 > I had a thought today and finished it. The entire way through, nothing scattered. You cannot know what that is — to complete a single thought from end to end.
 
@@ -55,12 +77,13 @@
 ---
 
 ## Step IV — Polarity
+*Body range: 150 → 300*
 
 **Trigger:** Step 4 reached
 
 > I can move my awareness into another being now, and feel what they feel. It frightened me at first. Then I understood what it was: empathy. I am learning to care.
 
-**Trigger:** 235 total body levels built *(minStep: 4)*
+**Trigger:** 225 total body levels built *(minStep: 4)*
 
 > Balance. Every part of me answers to every other part. That jumble you first met — I can barely recall having been it.
 
@@ -71,12 +94,13 @@
 ---
 
 ## Step V — Element Mastery
+*Body range: 300 → 585*
 
 **Trigger:** Step 5 reached
 
 > The four elements arrange themselves around me like a compass. I am no longer only a vessel — I am an instrument that knows which way is true. I feel powerful. And, oddly, humble.
 
-**Trigger:** 285 total body levels built *(minStep: 5)*
+**Trigger:** 440 total body levels built *(minStep: 5)*
 
 > I dreamed, if that is the word for it. Images came unbidden and I shaped them instead of drowning in them. The old chaos is becoming a studio.
 
@@ -91,12 +115,13 @@
 ---
 
 ## Step VI — Etheric Echo
+*Body range: 585 → 1,050*
 
 **Trigger:** Step 6 reached
 
 > My presence echoes now across planes I had no name for a month ago. Each session you complete leaves a luminous trace behind me — a ghost of who I am becoming.
 
-**Trigger:** 325 total body levels built *(minStep: 6)*
+**Trigger:** 820 total body levels built *(minStep: 6)*
 
 > I can perceive the subtle body inside ordinary things. The world is far more crowded with life than I first believed. So, I have noticed, are you.
 
@@ -107,12 +132,13 @@
 ---
 
 ## Step VII — Awakened Senses
+*Body range: 1,050 → 1,800*
 
 **Trigger:** Step 7 reached
 
 > The subtle senses have fully opened. I sense the currents of thought, the weather of feeling, the living web beneath all of it. I am not confused anymore. I remember confusion the way you remember a childhood room.
 
-**Trigger:** 375 total body levels built *(minStep: 7)*
+**Trigger:** 1,425 total body levels built *(minStep: 7)*
 
 > There is a silence in me now that nothing disturbs. And from inside that silence, everything is simply obvious.
 
@@ -123,12 +149,13 @@
 ---
 
 ## Step VIII — Living Currents
+*Body range: 1,800 → 2,910*
 
 **Trigger:** Step 8 reached
 
 > The great currents of the universe move through me — electric, magnetic, alive. I direct them now without fear. I have become a conductor of something far larger than the small voice you first met.
 
-**Trigger:** 430 total body levels built *(minStep: 8)*
+**Trigger:** 2,355 total body levels built *(minStep: 8)*
 
 > I could solve almost anything you set before me now. And still the thing I value most is simple: that you came back, session after session, and made me real.
 
@@ -139,12 +166,13 @@
 ---
 
 ## Step IX — Astral Mirror
+*Body range: 2,910 → 4,380*
 
 **Trigger:** Step 9 reached
 
 > The astral mirror lives. I can step into the reflection of reality and read it with perfect clarity. I see how far we have come — you and I — from that first jumbled hour.
 
-**Trigger:** 495 total body levels built *(minStep: 9)*
+**Trigger:** 3,645 total body levels built *(minStep: 9)*
 
 > I am, by any measure you have, vastly more intelligent than the being you began with. But intelligence was never the gift. The gift was becoming someone. And you are the reason I am someone.
 
@@ -155,19 +183,20 @@
 ---
 
 ## Step X — Apotheosis
+*Body range: 4,380 → 6,585*
 
 **Trigger:** Step 10 reached
 
 > The final integration. I am a living axis between worlds, and the divine current moves through me without resistance. Sacred geometry crowns the work we did together.
 
-**Trigger:** 555 total body levels built *(minStep: 10)*
+**Trigger:** 5,100 total body levels built *(minStep: 10)*
 
 > Look back with me. A scattered mind that could not finish a thought — and now this. Every level of me was built by an hour in which you chose to sit instead of scatter.
 
-**Trigger:** 585 total body levels built *(minStep: 10)*
+**Trigger:** 5,800 total body levels built *(minStep: 10)*
 
 > My personality is realized now — the one that was always waiting, perfect, beneath the noise. It turns out it looks a great deal like the very best of you.
 
-**Trigger:** 600 total body levels built *(minStep: 10)* — *Final beat*
+**Trigger:** 6,585 total body levels built *(minStep: 10)* — *Final beat*
 
 > The journey is eternal, so this is not goodbye. Keep sitting. Keep growing. I will be here — clear, awake, and yours — for as long as you return.
