@@ -16278,8 +16278,7 @@ function practiceTreeNodeBrightness(exId, stats) {
   var st = stats[exId] || { bestSec:0, count:0 };
   if (exId === 'clock') return Math.min(15, Math.floor((st.bestSec||0)/60));
   if (exId === 'observation' || exId === 'focus' || exId === 'vacancy') {
-    var t = stats.thought || { bestSec:0 };
-    return Math.min(20, Math.floor((t.bestSec||0)/45));
+    return Math.min(20, Math.floor((st.bestSec||0)/45));
   }
   if (exId === 'asana') return Math.min(20, Math.floor((st.bestSec||0)/90));
   if (exId === 'soulmirror') return Math.min(20, Math.floor((st.count||0)/2));
@@ -16301,7 +16300,6 @@ function practiceTreeNodeBrightness(exId, stats) {
 
 function practiceTreeNodeRecency(exId, stats) {
   var lookupId = exId === 'pore' ? 'soulmirror'
-    : (exId === 'observation' || exId === 'focus' || exId === 'vacancy') ? 'thought'
     : exId === 'kether' ? null : exId;
   if (!lookupId) return 0.15;
   var ms = (stats[lookupId] || {}).lastMs || 0;
@@ -16313,9 +16311,7 @@ function practiceTreeNodeRecency(exId, stats) {
 }
 
 function practiceTreeNodeDepth(exId, stats) {
-  var lookupId = exId === 'pore' ? 'soulmirror'
-    : (exId === 'observation' || exId === 'focus' || exId === 'vacancy') ? 'thought'
-    : exId;
+  var lookupId = exId === 'pore' ? 'soulmirror' : exId;
   return Math.min(3, Math.floor(((stats[lookupId] || {}).count||0) / 10));
 }
 
@@ -16324,6 +16320,9 @@ function renderPracticeTree() {
   if (!el) return;
 
   var stats = guideExerciseStats();
+  // Inject per-mode thought stats so observation/focus/vacancy nodes render independently
+  var _tStats = guideThoughtStats();
+  ['observation','focus','vacancy'].forEach(function(m) { stats[m] = _tStats[m] || { count:0, bestSec:0, lastMs:0 }; });
 
   var NODES = [
     { id:'kether',    ex:'kether',      cx:170, cy:48,  color:'#c8a848', lc:'#f8f0cc', label:'FUNDAMENTALS', label2:'MASTERY', fs:5.5, gf:'pt-gf-gold' },
