@@ -3502,6 +3502,9 @@ body:not(.tut-live) #tutCorgi {
 .clk-mastered-t { font-family:'Cormorant Garamond',serif; font-size:19px; font-weight:400; color:#e8b88a; letter-spacing:.02em; }
 .clk-mastered-s { margin-top:5px; font-family:'DM Mono',monospace; font-size:8.5px; letter-spacing:.2em; text-transform:uppercase; color:rgba(232,160,112,.55); }
 
+.asana-dur-btn { flex:1; padding:10px 4px; border:1px solid var(--border); border-radius:7px; background:transparent; color:var(--muted); font-family:'DM Mono',monospace; font-size:9px; letter-spacing:.14em; text-transform:uppercase; cursor:pointer; transition:all .18s; }
+.asana-dur-btn.active { border-color:rgba(126,184,164,.5); background:rgba(126,184,164,.1); color:#7eb8a4; }
+
 .clk-omnia { width:100%; border:1px solid rgba(142,204,224,.18); border-radius:14px; background:rgba(142,204,224,.04);
   overflow:hidden; transition:border-color .3s, background .3s; }
 .clk-omnia.open { border-color:rgba(142,204,224,.34); background:rgba(142,204,224,.06); }
@@ -11346,8 +11349,19 @@ var EXERCISE_DEFS = {
   asana: {
     icon: '&#129485;',
     name: 'Asana',
-    desc: 'Sit completely motionless for as long as possible. No fidgeting, no adjusting, no scratching. End the session when you can no longer maintain stillness.',
-    setupHTML: '<div style="text-align:center; padding:8px 0; font-size:11px; color:var(--muted); line-height:1.6; font-family:\'Cormorant Garamond\',serif; font-style:italic;">Settle into your posture before beginning.<br>Once you tap Begin, do not move.</div>',
+    desc: 'Sit completely motionless for the full duration. No fidgeting, no adjusting, no scratching. An alarm will sound when the session ends.',
+    setupHTML: function() {
+      var saved = parseInt(localStorage.getItem('presence_asana_duration'), 10) || 5;
+      var opts = [5, 10, 15, 20];
+      var btns = opts.map(function(m) {
+        return '<button class="asana-dur-btn' + (m === saved ? ' active' : '') + '" onclick="setAsanaDuration(' + m + ')" data-min="' + m + '">' + m + ' min</button>';
+      }).join('');
+      return '<div style="margin-bottom:20px;">'
+        + '<div style="font-size:9px; letter-spacing:.2em; text-transform:uppercase; color:var(--muted); margin-bottom:10px; font-family:\'DM Mono\',monospace;">Duration</div>'
+        + '<div style="display:flex; gap:6px;">' + btns + '</div>'
+        + '</div>'
+        + '<div style="text-align:center; padding:8px 0; font-size:11px; color:var(--muted); line-height:1.6; font-family:\'Cormorant Garamond\',serif; font-style:italic;">Settle into your posture before beginning.<br>An alarm will sound when the time is up.</div>';
+    },
     begin: function() { startAsana(); }
   }
 };
@@ -11531,6 +11545,13 @@ function openExerciseSetup(ex) {
   if (ex === 'auditory') { buildSoundGrid(); }
 }
 
+function setAsanaDuration(min) {
+  localStorage.setItem('presence_asana_duration', min);
+  document.querySelectorAll('.asana-dur-btn').forEach(function(b) {
+    b.classList.toggle('active', parseInt(b.dataset.min, 10) === min);
+  });
+}
+
 // Exercise card clicks
 document.getElementById('concBeginnerGrid').addEventListener('click', function(e) {
   var card = e.target.closest('.exercise-card');
@@ -11628,6 +11649,7 @@ function discardSession(type) {
       clearTimeout(asanaTimerHandle);
       asanaTimerHandle = null;
       asanaStartTime = null;
+      if (asanaWakeLock) { asanaWakeLock.release().catch(function() {}); asanaWakeLock = null; }
       showScreen('homeScreen');
       switchMode('concentration');
       break;
@@ -12971,6 +12993,8 @@ document.getElementById('tcViewHistoryBtn').addEventListener('click', function()
 var asanaStartTime = null;
 var asanaTimerHandle = null;
 var asanaSeconds = 0;
+var asanaTargetSeconds = 300;
+var asanaWakeLock = null;
 var currentAsanaPosture = 'seated';
 
 function fmtAsanaTime(sec) {
@@ -12978,33 +13002,73 @@ function fmtAsanaTime(sec) {
   return m + ':' + (s < 10 ? '0' : '') + s;
 }
 
+function playAsanaAlarm() {
+  try {
+    var ctx = new (window.AudioContext || window.webkitAudioContext)();
+    // Three gentle singing-bowl tones
+    [[528, 0], [660, 1.6], [528, 3.2]].forEach(function(pair) {
+      var freq = pair[0], delay = pair[1];
+      var osc = ctx.createOscillator();
+      var osc2 = ctx.createOscillator();
+      var gain = ctx.createGain();
+      var gain2 = ctx.createGain();
+      osc.connect(gain); osc2.connect(gain2);
+      gain.connect(ctx.destination); gain2.connect(ctx.destination);
+      osc.type = 'sine'; osc.frequency.value = freq;
+      osc2.type = 'sine'; osc2.frequency.value = freq * 2.756;
+      var t = ctx.currentTime + delay;
+      gain.gain.setValueAtTime(0, t);
+      gain.gain.linearRampToValueAtTime(0.32, t + 0.01);
+      gain.gain.exponentialRampToValueAtTime(0.001, t + 3.5);
+      gain2.gain.setValueAtTime(0, t);
+      gain2.gain.linearRampToValueAtTime(0.09, t + 0.01);
+      gain2.gain.exponentialRampToValueAtTime(0.001, t + 1.8);
+      osc.start(t); osc.stop(t + 4);
+      osc2.start(t); osc2.stop(t + 2);
+    });
+  } catch(e) {}
+  if (navigator.vibrate) navigator.vibrate([400, 250, 400, 250, 800]);
+}
+
 function startAsana() {
+  asanaTargetSeconds = (parseInt(localStorage.getItem('presence_asana_duration'), 10) || 5) * 60;
   asanaSeconds = 0;
   asanaStartTime = Date.now();
-  document.getElementById('asanaTimerDisplay').textContent = '0:00';
-  document.getElementById('asanaStateLabel').textContent = 'be still';
+  var el = document.getElementById('asanaTimerDisplay');
+  if (el) el.textContent = fmtAsanaTime(asanaTargetSeconds);
+  var stateEl = document.getElementById('asanaStateLabel');
+  if (stateEl) stateEl.textContent = 'be still';
   showScreen('asanaSessionScreen');
+  // Keep screen on so the alarm fires reliably
+  if ('wakeLock' in navigator) {
+    navigator.wakeLock.request('screen').then(function(wl) { asanaWakeLock = wl; }).catch(function() {});
+  }
   tickAsana();
 }
 
 function tickAsana() {
   asanaSeconds = Math.floor((Date.now() - asanaStartTime) / 1000);
+  var remaining = Math.max(0, asanaTargetSeconds - asanaSeconds);
   var el = document.getElementById('asanaTimerDisplay');
-  if (el) el.textContent = fmtAsanaTime(asanaSeconds);
-  // Subtle state label progression
-  var label = 'be still';
-  if (asanaSeconds >= 600) label = 'iron stillness';
-  else if (asanaSeconds >= 300) label = 'holding';
-  else if (asanaSeconds >= 120) label = 'settling';
-  else if (asanaSeconds >= 30) label = 'be still';
+  if (el) el.textContent = fmtAsanaTime(remaining);
+  var pct = asanaTargetSeconds > 0 ? remaining / asanaTargetSeconds : 0;
+  var label = pct > 0.75 ? 'be still' : pct > 0.5 ? 'settling' : pct > 0.25 ? 'holding' : 'iron stillness';
   var stateEl = document.getElementById('asanaStateLabel');
   if (stateEl) stateEl.textContent = label;
+  if (remaining === 0) {
+    clearTimeout(asanaTimerHandle);
+    asanaTimerHandle = null;
+    playAsanaAlarm();
+    endAsana();
+    return;
+  }
   asanaTimerHandle = setTimeout(tickAsana, 1000);
 }
 
 function endAsana() {
   clearTimeout(asanaTimerHandle);
   asanaTimerHandle = null;
+  if (asanaWakeLock) { asanaWakeLock.release().catch(function() {}); asanaWakeLock = null; }
   showAsanaResult(asanaSeconds);
 }
 
