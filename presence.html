@@ -16732,11 +16732,12 @@ function guideClockStats() {
     }
     clockSessions.push({ sec:sec, ms:ms });
   });
-  // Simulate tier progression: +1 min per 2 qualifying sessions, cap at 10
+  // Simulate tier progression: +1 min per 2 sessions >= 1 min, cap at 10
+  // (Any genuine session counts, matching how Thought Control advances)
   clockSessions.sort(function(a, b) { return a.ms - b.ms; });
   var tier = 5, qualAtTier = 0;
   clockSessions.forEach(function(s) {
-    if (s.sec + 5 >= tier * 60) { // 5s grace for tap-timing variance
+    if (s.sec >= 60) { // any session at least 1 minute counts
       qualAtTier++;
       if (tier === 10) out.qualTenCount++;
       if (qualAtTier >= 2 && tier < 10) { tier++; qualAtTier = 0; }
@@ -16744,21 +16745,6 @@ function guideClockStats() {
   });
   out.qualTarget = tier;
   out.qualAtTier = qualAtTier; // sessions completed at current tier (0 or 1)
-  // Cross-reference: if Thought Control Vacancy best gap >= Clock tier in minutes,
-  // promote the recommendation — both exercises measure the same skill.
-  var thoughtHistory = history; // already have concState.history in scope
-  var vacancyBestSec = 0;
-  thoughtHistory.forEach(function(h) {
-    if (h && h.type === 'thought' && h.tcMode === 'vacancy') {
-      var gs = Math.max(0, parseInt(h.seconds, 10) || 0);
-      if (gs > vacancyBestSec) vacancyBestSec = gs;
-    }
-  });
-  var vacancyMinutes = Math.min(10, Math.floor(vacancyBestSec / 60));
-  if (vacancyMinutes > out.qualTarget) {
-    out.qualTarget = vacancyMinutes;
-    out.qualAtTier = 0;
-  }
   return out;
 }
 
@@ -16971,7 +16957,7 @@ function buildExperiencedGuideItems() {
       durationLabel:clockDurLabel,
       done:clockStats.todaySec >= clockDailyTarget,
       progress:'today ' + guideFmtTime(clockStats.todaySec) + ' / ' + guideFmtTime(clockDailyTarget) + (atCap ? '' : ' · ' + (clockStats.qualAtTier || 0) + '/2 → ' + (clockMinutes + 1) + 'min'),
-      tip:'Complete the full session to count toward the next tier. Two qualifying sessions unlock the next minute.' + tierProgress,
+      tip:'Any session of one minute or more counts. Two sessions advance the recommendation by one minute.' + tierProgress,
       open:'clock',
       clockExtra:clockExtra
     },
@@ -17103,7 +17089,7 @@ function buildFoundationalGuideItems() {
       done:clock.todaySec >= clockDailyTarget,
       todayCount:clock.todayCount || 0,
       progress:'today ' + guideFmtTime(clock.todaySec) + ' / ' + guideFmtTime(clockDailyTarget) + (atCap ? '' : ' · ' + (clock.qualAtTier || 0) + '/2 → ' + (clockMinutes + 1) + 'min'),
-      tip:'Complete the full session to count toward the next tier. Two qualifying sessions unlock the next minute.' + tierProgress + attentionText,
+      tip:'Any session of one minute or more counts. Two sessions advance the recommendation by one minute.' + tierProgress + attentionText,
       open:'clock',
       clockExtra:clockExtra
     },
