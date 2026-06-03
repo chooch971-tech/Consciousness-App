@@ -16732,12 +16732,11 @@ function guideClockStats() {
     }
     clockSessions.push({ sec:sec, ms:ms });
   });
-  // Simulate tier progression: +1 min per 2 sessions >= 1 min, cap at 10
-  // (Any genuine session counts, matching how Thought Control advances)
+  // Simulate tier progression: +1 min per 2 qualifying sessions, cap at 10
   clockSessions.sort(function(a, b) { return a.ms - b.ms; });
   var tier = 5, qualAtTier = 0;
   clockSessions.forEach(function(s) {
-    if (s.sec >= 60) { // any session at least 1 minute counts
+    if (s.sec + 5 >= tier * 60) { // 5s grace for tap-timing variance
       qualAtTier++;
       if (tier === 10) out.qualTenCount++;
       if (qualAtTier >= 2 && tier < 10) { tier++; qualAtTier = 0; }
@@ -16957,7 +16956,7 @@ function buildExperiencedGuideItems() {
       durationLabel:clockDurLabel,
       done:clockStats.todaySec >= clockDailyTarget,
       progress:'today ' + guideFmtTime(clockStats.todaySec) + ' / ' + guideFmtTime(clockDailyTarget) + (atCap ? '' : ' · ' + (clockStats.qualAtTier || 0) + '/2 → ' + (clockMinutes + 1) + 'min'),
-      tip:'Any session of one minute or more counts. Two sessions advance the recommendation by one minute.' + tierProgress,
+      tip:'Complete the full session to count toward the next tier. Two qualifying sessions unlock the next minute.' + tierProgress,
       open:'clock',
       clockExtra:clockExtra
     },
@@ -17089,7 +17088,7 @@ function buildFoundationalGuideItems() {
       done:clock.todaySec >= clockDailyTarget,
       todayCount:clock.todayCount || 0,
       progress:'today ' + guideFmtTime(clock.todaySec) + ' / ' + guideFmtTime(clockDailyTarget) + (atCap ? '' : ' · ' + (clock.qualAtTier || 0) + '/2 → ' + (clockMinutes + 1) + 'min'),
-      tip:'Any session of one minute or more counts. Two sessions advance the recommendation by one minute.' + tierProgress + attentionText,
+      tip:'Complete the full session to count toward the next tier. Two qualifying sessions unlock the next minute.' + tierProgress + attentionText,
       open:'clock',
       clockExtra:clockExtra
     },
