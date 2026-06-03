@@ -3502,8 +3502,15 @@ body:not(.tut-live) #tutCorgi {
 .clk-mastered-t { font-family:'Cormorant Garamond',serif; font-size:19px; font-weight:400; color:#e8b88a; letter-spacing:.02em; }
 .clk-mastered-s { margin-top:5px; font-family:'DM Mono',monospace; font-size:8.5px; letter-spacing:.2em; text-transform:uppercase; color:rgba(232,160,112,.55); }
 
-.asana-dur-btn { flex:1; padding:10px 4px; border:1px solid var(--border); border-radius:7px; background:transparent; color:var(--muted); font-family:'DM Mono',monospace; font-size:9px; letter-spacing:.14em; text-transform:uppercase; cursor:pointer; transition:all .18s; }
-.asana-dur-btn.active { border-color:rgba(126,184,164,.5); background:rgba(126,184,164,.1); color:#7eb8a4; }
+.asana-tier-block { text-align:center; padding:16px 0 12px; }
+.asana-tier-num { font-family:'Cormorant Garamond',serif; font-size:48px; font-weight:300; line-height:1; color:var(--text); }
+.asana-tier-unit { font-size:9px; letter-spacing:.22em; text-transform:uppercase; color:var(--muted); font-family:'DM Mono',monospace; margin-top:4px; }
+.asana-tier-prog { margin-top:14px; font-size:9px; color:var(--muted); font-family:'DM Mono',monospace; letter-spacing:.06em; }
+.asana-tier-bar { height:2px; background:var(--border); border-radius:2px; margin:8px 24px 0; }
+.asana-tier-bar-fill { height:100%; border-radius:2px; background:rgba(126,184,164,.55); }
+.asana-stepper { display:flex; align-items:center; justify-content:center; gap:24px; padding:12px 0 4px; }
+.asana-step-btn { width:36px; height:36px; border-radius:50%; border:1px solid var(--border); background:transparent; color:var(--text); font-size:20px; line-height:1; cursor:pointer; }
+.asana-step-val { font-family:'Cormorant Garamond',serif; font-size:36px; font-weight:300; min-width:90px; text-align:center; }
 
 .clk-omnia { width:100%; border:1px solid rgba(142,204,224,.18); border-radius:14px; background:rgba(142,204,224,.04);
   overflow:hidden; transition:border-color .3s, background .3s; }
@@ -11359,16 +11366,32 @@ var EXERCISE_DEFS = {
     name: 'Asana',
     desc: 'Sit completely motionless for the full duration. No fidgeting, no adjusting, no scratching. An alarm will sound when the session ends.',
     setupHTML: function() {
-      var saved = parseInt(localStorage.getItem('presence_asana_duration'), 10) || 5;
-      var opts = [5, 10, 15, 20];
-      var btns = opts.map(function(m) {
-        return '<button class="asana-dur-btn' + (m === saved ? ' active' : '') + '" onclick="setAsanaDuration(' + m + ')" data-min="' + m + '">' + m + ' min</button>';
-      }).join('');
-      return '<div style="margin-bottom:20px;">'
-        + '<div style="font-size:9px; letter-spacing:.2em; text-transform:uppercase; color:var(--muted); margin-bottom:10px; font-family:\'DM Mono\',monospace;">Duration</div>'
-        + '<div style="display:flex; gap:6px;">' + btns + '</div>'
-        + '</div>'
+      var as = guideAsanaStats();
+      var html = '<div style="margin-bottom:20px;">'
+        + '<div style="font-size:9px; letter-spacing:.2em; text-transform:uppercase; color:var(--muted); margin-bottom:2px; font-family:\'DM Mono\',monospace;">Session Target</div>';
+      if (as.atCap) {
+        var capVal = parseInt(localStorage.getItem('presence_asana_duration'), 10) || 30;
+        html += '<div class="asana-stepper">'
+          + '<button class="asana-step-btn" onclick="adjustAsanaDuration(-1)">&#8722;</button>'
+          + '<div class="asana-step-val" id="asanaStepperVal">' + capVal + ' min</div>'
+          + '<button class="asana-step-btn" onclick="adjustAsanaDuration(1)">&#43;</button>'
+          + '</div>'
+          + '<div style="text-align:center; font-size:9px; color:var(--muted); font-family:\'DM Mono\',monospace; letter-spacing:.08em; margin-top:6px;">30 min reached · adjust freely</div>';
+      } else {
+        var pct = Math.round((as.qualAtTier / as.tierRequired) * 100);
+        var sessWord = as.tierRequired === 1 ? 'session' : 'sessions';
+        var remaining = as.tierRequired - as.qualAtTier;
+        var nextTier = as.qualTarget + 1;
+        html += '<div class="asana-tier-block">'
+          + '<div class="asana-tier-num">' + as.qualTarget + '</div>'
+          + '<div class="asana-tier-unit">min</div>'
+          + '</div>'
+          + '<div class="asana-tier-bar"><div class="asana-tier-bar-fill" style="width:' + pct + '%;"></div></div>'
+          + '<div class="asana-tier-prog" style="text-align:center; margin-top:8px;">' + as.qualAtTier + ' / ' + as.tierRequired + ' ' + sessWord + ' · ' + remaining + ' more to reach ' + nextTier + ' min</div>';
+      }
+      html += '</div>'
         + '<div style="text-align:center; padding:8px 0; font-size:11px; color:var(--muted); line-height:1.6; font-family:\'Cormorant Garamond\',serif; font-style:italic;">Settle into your posture before beginning.<br>An alarm will sound when the time is up.</div>';
+      return html;
     },
     begin: function() { startAsana(); }
   }
@@ -11555,9 +11578,14 @@ function openExerciseSetup(ex) {
 
 function setAsanaDuration(min) {
   localStorage.setItem('presence_asana_duration', min);
-  document.querySelectorAll('.asana-dur-btn').forEach(function(b) {
-    b.classList.toggle('active', parseInt(b.dataset.min, 10) === min);
-  });
+}
+
+function adjustAsanaDuration(delta) {
+  var current = parseInt(localStorage.getItem('presence_asana_duration'), 10) || 30;
+  var next = Math.max(1, current + delta);
+  localStorage.setItem('presence_asana_duration', next);
+  var el = document.getElementById('asanaStepperVal');
+  if (el) el.textContent = next + ' min';
 }
 
 // Exercise card clicks
@@ -13058,7 +13086,9 @@ function playAsanaAlarm() {
 }
 
 function startAsana() {
-  asanaTargetSeconds = (parseInt(localStorage.getItem('presence_asana_duration'), 10) || 5) * 60;
+  var as = guideAsanaStats();
+  var durMin = as.atCap ? (parseInt(localStorage.getItem('presence_asana_duration'), 10) || 30) : as.qualTarget;
+  asanaTargetSeconds = durMin * 60;
   asanaSeconds = 0;
   asanaStartTime = Date.now();
   var el = document.getElementById('asanaTimerDisplay');
@@ -16833,6 +16863,41 @@ function guideClockStats() {
   return out;
 }
 
+function asanaTierRequired(tier) {
+  return tier % 5 === 0 ? 7 : 1;
+}
+
+function guideAsanaStats() {
+  var out = { count:0, totalSec:0, bestSec:0, todaySec:0, todayCount:0, qualTarget:5, qualAtTier:0, atCap:false, tierRequired:7 };
+  var history = (typeof concState !== 'undefined' && concState.history) ? concState.history : [];
+  var sessions = [];
+  history.forEach(function(h) {
+    if (!h || h.exercise !== 'asana') return;
+    var sec = Math.max(0, parseInt(h.seconds, 10) || 0);
+    var ms = h.date ? new Date(h.date).getTime() : 0;
+    out.count++;
+    out.totalSec += sec;
+    if (sec > out.bestSec) out.bestSec = sec;
+    if (guideIsToday(h.date)) { out.todayCount++; out.todaySec += sec; }
+    sessions.push({ sec:sec, ms:ms });
+  });
+  sessions.sort(function(a, b) { return a.ms - b.ms; });
+  var tier = 5, qualAtTier = 0;
+  sessions.forEach(function(s) {
+    if (tier >= 30) return;
+    var required = asanaTierRequired(tier);
+    if (s.sec + 5 >= tier * 60) {
+      qualAtTier++;
+      if (qualAtTier >= required) { tier++; qualAtTier = 0; }
+    }
+  });
+  out.qualTarget = tier;
+  out.qualAtTier = qualAtTier;
+  out.atCap = tier >= 30;
+  out.tierRequired = asanaTierRequired(Math.min(tier, 29));
+  return out;
+}
+
 function guideThoughtStats() {
   var out = {};
   GUIDE_FOUNDATION_THOUGHT_ORDER.forEach(function(mode) {
@@ -17098,10 +17163,9 @@ function buildExperiencedGuideItems() {
   var gc = gateById[gateId] || { ex:guideExerciseById(gateId), score:guideExperienceScore(gateId), count:0 };
   var gScore = gc.score;
   var gDur = guideDurationForScore(gScore);
-  // For Asana the saved timer duration is the right recommendation — bestSec just
-  // reflects the countdown the user chose, not a raw performance ceiling.
   if (gateId === 'asana') {
-    gDur = parseInt(localStorage.getItem('presence_asana_duration'), 10) || 5;
+    var _as = guideAsanaStats();
+    gDur = _as.atCap ? (parseInt(localStorage.getItem('presence_asana_duration'), 10) || 30) : _as.qualTarget;
   }
   var gTip;
   if (gScore === 0) {
@@ -17114,12 +17178,21 @@ function buildExperiencedGuideItems() {
     gTip = 'This is already strong. Use it as a stabilizing pillar, then notice what remains undeveloped.';
   }
 
+  var gateProgress = gc.count ? gc.count + ' recorded' : 'no completed sessions recorded';
+  if (gateId === 'asana') {
+    var _asp = guideAsanaStats();
+    if (_asp.atCap) {
+      gateProgress = 'tier cap reached · ' + gc.count + ' recorded';
+    } else {
+      gateProgress = _asp.qualAtTier + ' / ' + _asp.tierRequired + ' sessions at ' + _asp.qualTarget + ' min';
+    }
+  }
   var gateItem = {
     id:gateId,
     name:gc.ex.name,
     duration:gDur,
     done:(stats[gateId] && stats[gateId].todayCount > 0) || false,
-    progress:gc.count ? gc.count + ' recorded' : 'no completed sessions recorded',
+    progress:gateProgress,
     tip:gTip + (gc.count ? ' Omnia has recorded ' + gc.count + ' completed session' + (gc.count === 1 ? '' : 's') + ' here.' : ' Omnia has no completed sessions recorded here yet.'),
     open:gateId
   };
@@ -17213,7 +17286,7 @@ function buildFoundationalGuideItems() {
   if (gateForced && (!gate || gate.id !== gateForced)) {
     var dailyTarget5 = 5 * 60 * rounds;
     var forcedGateItems = {
-      asana: (function() { var _ad = parseInt(localStorage.getItem('presence_asana_duration'), 10) || 5; var _at = _ad * 60 * rounds; return { id:'asana', name:'Asana', duration:_ad, durationLabel:_ad + ' min' + (rounds > 1 ? ' x2' : ''), done:(stats.asana||{}).todaySec >= _at, progress:'physical body gate · ' + ((stats.asana||{}).count||0) + ' recorded', tip:'Begin building stillness. Sit upright and complete the whole period without negotiating with each impulse.', open:'asana' }; })(),
+      asana: (function() { var _asp2 = guideAsanaStats(); var _ad = _asp2.atCap ? (parseInt(localStorage.getItem('presence_asana_duration'), 10) || 30) : _asp2.qualTarget; var _at = _ad * 60 * rounds; var _prog = _asp2.atCap ? 'tier cap reached · ' + ((_asp2.count||0)) + ' recorded' : _asp2.qualAtTier + ' / ' + _asp2.tierRequired + ' sessions at ' + _asp2.qualTarget + ' min'; return { id:'asana', name:'Asana', duration:_ad, durationLabel:_ad + ' min' + (rounds > 1 ? ' x2' : ''), done:(stats.asana||{}).todaySec >= _at, progress:_prog, tip:'Begin building stillness. Sit upright and complete the whole period without negotiating with each impulse.', open:'asana' }; })(),
       visual: { id:'visual', name:'Visualization', duration:5, durationLabel:'5 min' + (rounds > 1 ? ' x2' : ''), done:(stats.visual||{}).todaySec >= dailyTarget5, progress:'new gate · ' + ((stats.visual||{}).count||0) + ' recorded', tip:'Hold a simple mental image clearly. Clarity matters more than complexity.', open:'visual' },
       auditory: { id:'auditory', name:'Auditory', duration:5, durationLabel:'5 min' + (rounds > 1 ? ' x2' : ''), done:(stats.auditory||{}).todaySec >= dailyTarget5, progress:'astral refinement gate · ' + ((stats.auditory||{}).count||0) + ' recorded', tip:'Focused listening on a single sound. Broaden the astral body steadily.', open:'auditory' }
     };
@@ -17252,12 +17325,14 @@ function guideFoundationNewGate(stats, thoughtStats, rounds) {
     };
   }
   if (asana.count < 3 && clock.bestSec >= 300 && focus.bestSec >= 300) {
+    var _asNew = guideAsanaStats();
+    var _adNew = _asNew.atCap ? (parseInt(localStorage.getItem('presence_asana_duration'), 10) || 30) : _asNew.qualTarget;
     return {
       id:'asana',
       name:'Asana',
-      duration:5,
-      durationLabel:'5 min',
-      done:asana.todaySec >= 300,
+      duration:_adNew,
+      durationLabel:_adNew + ' min',
+      done:asana.todaySec >= _adNew * 60,
       progress:'physical body gate · ' + asana.count + ' recorded',
       tip:'Begin building Omnia\'s physical body through stillness. Sit upright and complete the whole period without negotiating with each impulse.',
       open:'asana'
