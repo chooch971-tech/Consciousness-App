@@ -16744,6 +16744,21 @@ function guideClockStats() {
   });
   out.qualTarget = tier;
   out.qualAtTier = qualAtTier; // sessions completed at current tier (0 or 1)
+  // Cross-reference: if Thought Control Vacancy best gap >= Clock tier in minutes,
+  // promote the recommendation — both exercises measure the same skill.
+  var thoughtHistory = history; // already have concState.history in scope
+  var vacancyBestSec = 0;
+  thoughtHistory.forEach(function(h) {
+    if (h && h.type === 'thought' && h.tcMode === 'vacancy') {
+      var gs = Math.max(0, parseInt(h.seconds, 10) || 0);
+      if (gs > vacancyBestSec) vacancyBestSec = gs;
+    }
+  });
+  var vacancyMinutes = Math.min(10, Math.floor(vacancyBestSec / 60));
+  if (vacancyMinutes > out.qualTarget) {
+    out.qualTarget = vacancyMinutes;
+    out.qualAtTier = 0;
+  }
   return out;
 }
 
