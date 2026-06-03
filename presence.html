@@ -6588,6 +6588,7 @@ async function startSession() {
 
   // Show session screen immediately — don't block on push
   showScreen('sessionScreen');
+  requestExerciseWakeLock();
   updateSessionPrompt(randomPrompt(''));
   document.getElementById('reminderCount').textContent = 0;
   initSessionPvkSlider();
@@ -6614,6 +6615,7 @@ function resumeSession(sess) {
   startPresenceBeacon(currentMode === 'prayer' ? 'prayer' : 'awareness', '');
 
   showScreen('sessionScreen');
+  requestExerciseWakeLock();
   document.getElementById('reminderCount').textContent = sessionReminderCount;
   updateSessionPrompt(randomPrompt(''));
   initSessionPvkSlider();
@@ -6788,6 +6790,7 @@ function returnToSessionFromPrayer() {
 
 function endSession() {
   if (!sessionStartTime) return; // Guard against double-call
+  releaseExerciseWakeLock();
   clearTimeout(sessionTimerHandle);
   localStorage.removeItem('presence_session');
   notifyServerSessionEnd();
@@ -8633,6 +8636,7 @@ function startConcentration() {
   buildClockSVG();
   updateClockHand(0);
   showScreen('concSessionScreen');
+  requestExerciseWakeLock();
 
   // Tutorial first-session gets a 60s auto-cap (retention) and a stripped-down
   // header (no top-left ✕, no top-right Stop) so the user can only press Begin
@@ -8848,6 +8852,7 @@ function fmtSecs(s) {
 
 function saveConcSession() {
   concInSession = false;
+  releaseExerciseWakeLock();
   var validReps = concReps.filter(function(r) { return r.seconds >= 10; });
   concReps = [];
   if (validReps.length === 0) {
@@ -8937,6 +8942,7 @@ function showConcResult(seconds) {
 
 function saveConcResult(repeatAfter) {
   repeatAfter = repeatAfter === true;
+  releaseExerciseWakeLock();
   if (concResultSaved) {
     if (repeatAfter) startConcentration();
     return;
@@ -10946,6 +10952,7 @@ function beginVisSession() {
   }
 
   showScreen('visSessionScreen');
+  requestExerciseWakeLock();
   startVisRep();
   tickVisDualTimer();
 }
@@ -11130,6 +11137,7 @@ function showVisSessionResult() {
 }
 
 function saveVisSessionResult() {
+  releaseExerciseWakeLock();
   var notes = document.getElementById('visNotes').value.trim();
   var totalXP = visReps.reduce(function(a,r) { return a + r.seconds; }, 0);
   var bestSec = visReps.reduce(function(a,r) { return r.seconds > a ? r.seconds : a; }, 0);
@@ -11600,12 +11608,14 @@ function discardSession(type) {
   if (!confirm('Discard this session? No data will be saved.')) return;
   switch (type) {
     case 'awareness':
+      releaseExerciseWakeLock();
       clearTimeout(sessionTimerHandle);
       sessionStartTime = null;
       renderHome();
       showScreen('homeScreen');
       break;
     case 'clock':
+      releaseExerciseWakeLock();
       if (concCountInterval) { clearInterval(concCountInterval); concCountInterval = null; }
       if (concAutoStopTimer) { clearTimeout(concAutoStopTimer); concAutoStopTimer = null; }
       cancelAnimationFrame(concTimerHandle);
@@ -11617,6 +11627,7 @@ function discardSession(type) {
       switchMode('concentration');
       break;
     case 'vis':
+      releaseExerciseWakeLock();
       cancelAnimationFrame(visTimerHandle);
       visTimerHandle = null;
       visSessionStartTime = null;
@@ -11625,6 +11636,7 @@ function discardSession(type) {
       switchMode('concentration');
       break;
     case 'auditory':
+      releaseExerciseWakeLock();
       cancelAnimationFrame(audTimerHandle);
       stopAllAudio();
       stopWaveAnimation();
@@ -11634,6 +11646,7 @@ function discardSession(type) {
       switchMode('concentration');
       break;
     case 'tc':
+      releaseExerciseWakeLock();
       cancelAnimationFrame(tcTimerHandle);
       clearInterval(_tcAlarmInterval);
       _tcAlarmInterval = null;
@@ -11649,11 +11662,12 @@ function discardSession(type) {
       clearTimeout(asanaTimerHandle);
       asanaTimerHandle = null;
       asanaStartTime = null;
-      if (asanaWakeLock) { asanaWakeLock.release().catch(function() {}); asanaWakeLock = null; }
+      releaseExerciseWakeLock();
       showScreen('homeScreen');
       switchMode('concentration');
       break;
     case 'prayer':
+      releaseExerciseWakeLock();
       cancelAnimationFrame(prayerSessionTimerHandle);
       prayerSessionTimerHandle = null;
       prayerSessionStart = null;
@@ -12386,6 +12400,7 @@ function startAuditorySession() {
   document.getElementById('audNextRepBtn').style.display = 'none';
 
   showScreen('audSessionScreen');
+  requestExerciseWakeLock();
   playSound(currentSound);
   startWaveAnimation();
   // Don't start timer or rep yet — wait for user to tap Start
@@ -12475,6 +12490,7 @@ function audRecordHalt() {
 }
 
 function endAuditorySession() {
+  releaseExerciseWakeLock();
   cancelAnimationFrame(audTimerHandle);
   stopAllAudio();
   stopWaveAnimation();
@@ -12801,6 +12817,7 @@ function startThoughtControl() {
   document.getElementById('tcStateLabel').textContent = 'Tap when a thought enters.';
 
   showScreen('tcSessionScreen');
+  requestExerciseWakeLock();
 
   // 3-second countdown before session starts
   var overlay = document.getElementById('tcCountdownOverlay');
@@ -12865,6 +12882,7 @@ function recordThought() {
 }
 
 function endThoughtControl(completed) {
+  releaseExerciseWakeLock();
   cancelAnimationFrame(tcTimerHandle);
   var elapsed = Math.floor((Date.now() - tcStartTime) / 1000);
   // Under 1 minute and stopped early — no XP, just return to Concentration
@@ -12990,11 +13008,20 @@ document.getElementById('tcViewHistoryBtn').addEventListener('click', function()
 // ASANA EXERCISE
 // ══════════════════════════════════════════
 
+// ── Shared Screen Wake Lock for all exercises ──────────────────────────────
+var _exerciseWakeLock = null;
+function requestExerciseWakeLock() {
+  if (!('wakeLock' in navigator)) return;
+  navigator.wakeLock.request('screen').then(function(wl) { _exerciseWakeLock = wl; }).catch(function() {});
+}
+function releaseExerciseWakeLock() {
+  if (_exerciseWakeLock) { _exerciseWakeLock.release().catch(function() {}); _exerciseWakeLock = null; }
+}
+
 var asanaStartTime = null;
 var asanaTimerHandle = null;
 var asanaSeconds = 0;
 var asanaTargetSeconds = 300;
-var asanaWakeLock = null;
 var currentAsanaPosture = 'seated';
 
 function fmtAsanaTime(sec) {
@@ -13039,10 +13066,7 @@ function startAsana() {
   var stateEl = document.getElementById('asanaStateLabel');
   if (stateEl) stateEl.textContent = 'be still';
   showScreen('asanaSessionScreen');
-  // Keep screen on so the alarm fires reliably
-  if ('wakeLock' in navigator) {
-    navigator.wakeLock.request('screen').then(function(wl) { asanaWakeLock = wl; }).catch(function() {});
-  }
+  requestExerciseWakeLock();
   tickAsana();
 }
 
@@ -13068,7 +13092,7 @@ function tickAsana() {
 function endAsana() {
   clearTimeout(asanaTimerHandle);
   asanaTimerHandle = null;
-  if (asanaWakeLock) { asanaWakeLock.release().catch(function() {}); asanaWakeLock = null; }
+  releaseExerciseWakeLock();
   showAsanaResult(asanaSeconds);
 }
 
@@ -13906,6 +13930,7 @@ function beginPrayer(index) {
   document.getElementById('prayerSessionTimer').textContent = '0:00';
   prayerSessionStart = Date.now();
   showScreen('prayerSessionScreen');
+  requestExerciseWakeLock();
   // No timer tick — prayer length is at user's discretion
 }
 
@@ -13921,6 +13946,7 @@ function tickPrayerTimer() {
 var _pendingPrayer = null;
 
 function concludePrayer() {
+  releaseExerciseWakeLock();
   cancelAnimationFrame(prayerSessionTimerHandle);
   var elapsed = Math.floor((Date.now() - prayerSessionStart) / 1000);
   var idx = currentPrayerIndex;
