@@ -17098,6 +17098,11 @@ function buildExperiencedGuideItems() {
   var gc = gateById[gateId] || { ex:guideExerciseById(gateId), score:guideExperienceScore(gateId), count:0 };
   var gScore = gc.score;
   var gDur = guideDurationForScore(gScore);
+  // For Asana the saved timer duration is the right recommendation — bestSec just
+  // reflects the countdown the user chose, not a raw performance ceiling.
+  if (gateId === 'asana') {
+    gDur = parseInt(localStorage.getItem('presence_asana_duration'), 10) || 5;
+  }
   var gTip;
   if (gScore === 0) {
     gTip = 'This is the neglected gate. Begin modestly and let accuracy matter more than duration.';
@@ -17208,7 +17213,7 @@ function buildFoundationalGuideItems() {
   if (gateForced && (!gate || gate.id !== gateForced)) {
     var dailyTarget5 = 5 * 60 * rounds;
     var forcedGateItems = {
-      asana: { id:'asana', name:'Asana', duration:5, durationLabel:'5 min' + (rounds > 1 ? ' x2' : ''), done:(stats.asana||{}).todaySec >= dailyTarget5, progress:'physical body gate · ' + ((stats.asana||{}).count||0) + ' recorded', tip:'Begin building stillness. Sit upright and complete the whole period without negotiating with each impulse.', open:'asana' },
+      asana: (function() { var _ad = parseInt(localStorage.getItem('presence_asana_duration'), 10) || 5; var _at = _ad * 60 * rounds; return { id:'asana', name:'Asana', duration:_ad, durationLabel:_ad + ' min' + (rounds > 1 ? ' x2' : ''), done:(stats.asana||{}).todaySec >= _at, progress:'physical body gate · ' + ((stats.asana||{}).count||0) + ' recorded', tip:'Begin building stillness. Sit upright and complete the whole period without negotiating with each impulse.', open:'asana' }; })(),
       visual: { id:'visual', name:'Visualization', duration:5, durationLabel:'5 min' + (rounds > 1 ? ' x2' : ''), done:(stats.visual||{}).todaySec >= dailyTarget5, progress:'new gate · ' + ((stats.visual||{}).count||0) + ' recorded', tip:'Hold a simple mental image clearly. Clarity matters more than complexity.', open:'visual' },
       auditory: { id:'auditory', name:'Auditory', duration:5, durationLabel:'5 min' + (rounds > 1 ? ' x2' : ''), done:(stats.auditory||{}).todaySec >= dailyTarget5, progress:'astral refinement gate · ' + ((stats.auditory||{}).count||0) + ' recorded', tip:'Focused listening on a single sound. Broaden the astral body steadily.', open:'auditory' }
     };
