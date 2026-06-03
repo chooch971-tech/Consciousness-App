@@ -871,9 +871,23 @@
     .oe-chat-head-kicker { font-size:8px; letter-spacing:.26em; text-transform:uppercase; color:#a9cde6; font-family:'DM Mono',monospace; margin-bottom:4px; }
     .oe-chat-head-title { font-family:'Cormorant Garamond',serif; font-size:22px; font-weight:300; color:#eae4f4; }
     .oe-chat-close { background:none; border:1px solid rgba(168,200,232,.24); border-radius:50%; width:30px; height:30px; color:#a9cde6; cursor:pointer; font-size:13px; }
-    .oe-chat-log { overflow-y:auto; padding:18px 20px 28px; -webkit-overflow-scrolling:touch; }
-    .oe-chat-msg { margin-bottom:18px; padding:14px 16px; border-radius:4px 14px 14px 14px; background:rgba(168,200,232,.05); border:1px solid rgba(168,200,232,.16); }
-    .oe-chat-msg-name { font-size:8px; letter-spacing:.24em; text-transform:uppercase; color:#a9cde6; margin-bottom:7px; font-family:'DM Mono',monospace; }
+    .oe-chat-log { overflow-y:auto; padding:8px 20px 28px; -webkit-overflow-scrolling:touch; }
+    /* Chapter divider between Step groups */
+    .oe-story-chapter { display:flex; align-items:center; gap:11px; margin:24px 0 16px; }
+    .oe-story-chapter:first-child { margin-top:8px; }
+    .oe-story-chapter-rule { flex:1; height:1px; background:linear-gradient(90deg, transparent, rgba(168,200,232,.26), transparent); }
+    .oe-story-chapter-badge { flex-shrink:0; min-width:26px; height:26px; padding:0 7px; display:flex; align-items:center; justify-content:center; border-radius:50%; border:1px solid rgba(168,200,232,.4); background:radial-gradient(circle at 50% 35%, rgba(168,200,232,.2), rgba(168,200,232,.05)); color:#cfe3f4; font-family:'Cormorant Garamond',serif; font-size:13px; letter-spacing:.05em; box-shadow:0 0 14px rgba(168,200,232,.2); }
+    .oe-story-chapter-name { flex-shrink:0; font-family:'DM Mono',monospace; font-size:8px; letter-spacing:.24em; text-transform:uppercase; color:#a9cde6; }
+    /* Story message: avatar + bubble on a timeline spine */
+    .oe-chat-msg { position:relative; display:flex; gap:11px; margin-bottom:16px; padding-left:2px; }
+    .oe-chat-msg::before { content:''; position:absolute; left:14px; top:30px; bottom:-16px; width:1px; background:rgba(168,200,232,.14); }
+    .oe-chat-msg:last-child::before { display:none; }
+    .oe-chat-msg-avatar { position:relative; z-index:1; flex-shrink:0; width:28px; height:28px; display:flex; align-items:center; justify-content:center; border-radius:50%; border:1px solid rgba(168,200,232,.3); background:radial-gradient(circle at 50% 35%, rgba(168,200,232,.22), rgba(20,24,40,.95)); color:#bcd9ef; font-size:11px; box-shadow:0 0 12px rgba(168,200,232,.18); }
+    .oe-chat-msg-body { flex:1; min-width:0; padding:13px 16px; border-radius:4px 14px 14px 14px; background:rgba(168,200,232,.05); border:1px solid rgba(168,200,232,.16); }
+    .oe-chat-msg-head { display:flex; align-items:center; justify-content:space-between; gap:8px; margin-bottom:8px; }
+    .oe-chat-msg-name { font-size:8px; letter-spacing:.24em; text-transform:uppercase; color:#a9cde6; font-family:'DM Mono',monospace; }
+    .oe-chat-msg-tag { display:inline-flex; align-items:center; gap:5px; font-size:7.5px; letter-spacing:.18em; text-transform:uppercase; color:#8fb0cc; font-family:'DM Mono',monospace; padding:3px 8px; border-radius:20px; background:rgba(168,200,232,.06); border:1px solid rgba(168,200,232,.14); white-space:nowrap; }
+    .oe-chat-msg-tag-glyph { font-size:9px; color:#bcd9ef; }
     .oe-chat-msg-text { font-family:'Cormorant Garamond',serif; font-size:16px; font-style:italic; color:#eae4f4; line-height:1.7; }
     .oe-chat-empty { text-align:center; color:var(--muted); font-family:'DM Mono',monospace; font-size:11px; line-height:1.9; letter-spacing:.06em; padding:34px 10px; }
     .oe-aura { position:absolute; inset:0; border-radius:50%; pointer-events:none; mix-blend-mode:screen; transition:opacity .5s ease; }
@@ -14519,6 +14533,26 @@ function updateOmniaChatBadge() {
   }
 }
 
+// Which Bardon step a story beat belongs to (0 = the prologue/intro).
+function omniaStoryBeatStep(beat) {
+  if (beat.minStep) return beat.minStep;
+  if (beat.when && beat.when.type === 'step') return beat.when.step;
+  var m = /^s(\d+)_/.exec(beat.id || '');
+  if (m) return parseInt(m[1], 10);
+  return 0;
+}
+
+// A short trigger label + glyph for the moment that unlocked a beat.
+function omniaStoryBeatTag(beat) {
+  var w = (beat && beat.when) || {};
+  if (w.type === 'intro')    return { glyph:'✦', label:'Awakening' };
+  if (w.type === 'step')     return { glyph:'⬆', label:'Ascension' };
+  if (w.type === 'bodies')   return { glyph:'◈', label:'Embodiment' };
+  if (w.type === 'upgrade')  return { glyph:'⟡', label:'Attunement' };
+  if (w.type === 'cosmetic') return { glyph:'✧', label:'New Form' };
+  return { glyph:'◈', label:'Reflection' };
+}
+
 function openOmniaChat() {
   var overlay = document.getElementById('omniaChatOverlay');
   var log = document.getElementById('omniaChatLog');
@@ -14530,9 +14564,43 @@ function openOmniaChat() {
   if (!beats.length) {
     log.innerHTML = '<div class="oe-chat-empty">Omnia has not spoken yet.<br>Practice, build, and ascend — his reflections will appear here as he grows.</div>';
   } else {
-    log.innerHTML = beats.map(function(b) {
-      return '<div class="oe-chat-msg"><div class="oe-chat-msg-name">Omnia</div><div class="oe-chat-msg-text">' + esc(b.text) + '</div></div>';
-    }).join('');
+    var html = '';
+    var lastStep = -1;
+    beats.forEach(function(b) {
+      var stepNum = omniaStoryBeatStep(b);
+      if (stepNum !== lastStep) {
+        var stepDef = OMNIA_BARDON_STEPS.find(function(s) { return s.step === stepNum; });
+        var roman, title;
+        if (stepNum === 0 || !stepDef) {
+          roman = '✦';
+          title = 'Prologue';
+        } else {
+          roman = stepDef.roman;
+          // OMNIA_BARDON_STEPS name is "Step I · Fundamentals" — take the subtitle.
+          var parts = (stepDef.name || '').split('·');
+          title = (parts[1] || stepDef.name || '').trim();
+        }
+        html += '<div class="oe-story-chapter">'
+          + '<span class="oe-story-chapter-rule"></span>'
+          + '<span class="oe-story-chapter-badge">' + esc(roman) + '</span>'
+          + '<span class="oe-story-chapter-name">' + esc(title) + '</span>'
+          + '<span class="oe-story-chapter-rule"></span>'
+          + '</div>';
+        lastStep = stepNum;
+      }
+      var tag = omniaStoryBeatTag(b);
+      html += '<div class="oe-chat-msg">'
+        + '<div class="oe-chat-msg-avatar" aria-hidden="true">◈</div>'
+        + '<div class="oe-chat-msg-body">'
+        + '<div class="oe-chat-msg-head">'
+        + '<span class="oe-chat-msg-name">Omnia</span>'
+        + '<span class="oe-chat-msg-tag"><span class="oe-chat-msg-tag-glyph">' + tag.glyph + '</span>' + esc(tag.label) + '</span>'
+        + '</div>'
+        + '<div class="oe-chat-msg-text">' + esc(b.text) + '</div>'
+        + '</div>'
+        + '</div>';
+    });
+    log.innerHTML = html;
   }
   overlay.classList.add('show');
   if (omniaState) { omniaState.storyRead = (omniaState.storySeen || []).length; saveOmniaState(); }
