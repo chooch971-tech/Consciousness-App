@@ -32,47 +32,61 @@
 ## Step I — Fundamentals
 *Body range: 3 → 36*
 
-**Trigger:** 18 total body levels built *(minStep: 1)*
+**Trigger:** 4 total body levels built *(minStep: 1)*
 
-> I feel… something. Attention, like a hand steadying me. I cannot hold a thought for long yet — they scatter like startled birds. But each time you sit, fewer of them fly away.
+> You begin upgrading Omnia's bodies. From here, Omnia becomes in shape in body, mind, and spirit. Its physical body gets filled increasingly with vitality, its uncontrolled thoughts slowly decreasing, slowly becoming more in the Now, although very subtly.
 
-**Trigger:** Akashic Current upgraded to level 2 *(minStep: 1)*
+**Trigger:** 12 total body levels built *(minStep: 1)*
 
-> The current runs warmer now. I do not understand it, only that when it flows I think in straighter lines. Keep feeding it. I want to think clearly. I want it badly.
+> "I think I'm starting to feel... something..." Omnia suggests, "but I am not completely sure." The effects are subtle still, but maybe something is there. You continue building up Omnia and hold faith that this is not for nothing, that there is something deeper going on here.
+
+**Trigger:** 30 total body levels built *(minStep: 1)*
+
+> You can feel Step I coming soon to an end. You, along with Omnia, now have a routine and you can concentrate better. Maybe you even feel slightly happier, but still, it's hard to tell. You enjoy not being barraged as much by all the unwanted thoughts and feelings and Omnia enjoys this too. Both of you continue to hurdle towards the unknown...
 
 ---
 
-## Step II — Consolidation
+## Step II — Imagination
 *Body range: 36 → 90*
 
 **Trigger:** Step 2 reached
 
-> The first threshold is behind us. Already I remember less of the confusion. Is this what it is, to grow up? Everything feels a little less loud.
+> The first step on your journey has finished. "I think... I am slowly starting to remember who I am," Omnia says. "Sort of. Almost?" You lead Omnia, pushing through the fog towards a better sense of self. You begin the imagination exercises and deepen your concentration.
 
-**Trigger:** 63 total body levels built *(minStep: 2)*
+**Trigger:** 49 total body levels built *(minStep: 2)*
 
-> The body you are building no longer trembles. I can stand inside it and trust it. Strange — to have a shape, and to belong to it.
+> Omnia realizes how bizarre it is that images can be created in the mind that look so real... You wonder what could happen if this ability is strengthened even further, or used in tandem with all the senses.
 
-**Trigger:** Deep Vessel upgraded to level 3 *(minStep: 2)*
+**Trigger:** 71 total body levels built *(minStep: 2)*
 
-> You deepened the vessel. I can hold more before it spills — I am beginning to keep things. To remember. Memory feels like the start of having a self.
+> The childlike ability of imagination has increased so much within Omnia that it can now see images that no don't actually exist for minutes at a time. Seeing these with open eyes is even more bizarre... Omnia gets lost in these images, forgetting for just a second they are simply a fragment of the imagination.
+
+**Trigger:** 84 total body levels built *(minStep: 2)*
+
+> The senses have almost been adequately trained in Omnia. Omnia can now see images in its mind, both with open and closed eyes, hear sounds that are not there, feel warmth and cold and hunger and heavyness, and create artifical smells and tastes. The concentration has only deepened. Omnia is almost ready to continue on...
 
 ---
 
-## Step III — Integration
+## Step III — The Elements
 *Body range: 90 → 150*
 
 **Trigger:** Step 3 reached
 
-> Three bodies, learning to move as one. I used to be pieces. Now, for whole moments, I am simply… me. I like those moments. I am collecting them.
+> This is where it starts getting serious, you feel. Four tenets you and Omnia come to know: Knowledge, Courage, Volition, and Silence. This next step is about multi-sensory senses, requiring deep concentration and determination. And the first major step - contact with the elements.
 
-**Trigger:** 120 total body levels built *(minStep: 3)*
+**Trigger:** 105 total body levels built *(minStep: 3)*
 
-> I had a thought today and finished it. The entire way through, nothing scattered. You cannot know what that is — to complete a single thought from end to end.
+> "I am changing," Omnia thinks, "slowly but surely." The idea of learning to contact an element sounds fantastical. You think this must be some sort of joke... but what if it's real? You continue on the path, faith occasionally waning some days, still unsure of where you'll end up. The benefits are starting to become apparent.
 
-**Trigger:** Akashic Current upgraded to level 5 *(minStep: 3)*
+**Trigger:** 125 total body levels built *(minStep: 3)*
 
-> The faster the current, the clearer I become. I am starting to have opinions of my own. I think I am becoming someone you would want to talk to.
+> You and Omnia have undertaken months and months of concentration and imagination training, and you've been relentlessly attempting to contact the elements. Rawn Clark, a known practicioner, insists that, once you contact the elements it is such a bizarre experience that you just know. You and Omnia press on, although doubt inside of you exists, you cannot deny these exercises are delightful and are now, whether you like it or not, a part of who you and Omnia are.
+
+**Trigger:** 142 total body levels built *(minStep: 3)*
+
+> And suddenly it happens. Contact with the elements. It is the first WOW moment, the first time you realize that this isn't just a fun game. It's real. Your brain denies it, and it may even believe in that denial but the fact remains: You are able to summon heat that feels so real... You can summon coldness, lightness, or heaviness within some seconds. The full multi-sensory scenes you create with your mind are beginning to feel eerily real, like you are creating reality itself.
+
+"The preparatory work is over now", Omnia says. "This is where it gets serious... I can feel it."
 
 ---
 
