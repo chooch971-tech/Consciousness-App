@@ -555,6 +555,11 @@
     .guide-opt-row { display:flex; gap:6px; flex-wrap:wrap; justify-content:flex-end; }
     .guide-opt { font-size:8px; letter-spacing:.1em; text-transform:uppercase; font-family:'DM Mono',monospace; padding:5px 9px; border-radius:4px; border:1px solid var(--border); background:none; color:var(--muted); cursor:pointer; transition:all .15s; white-space:nowrap; }
     .guide-opt.sel { background:rgba(212,149,110,.12); border-color:rgba(212,149,110,.4); color:#d4b08e; }
+    .guide-adv-check { display:flex; align-items:flex-start; gap:11px; padding:16px 0 2px; margin-top:8px; border-top:1px solid var(--border); cursor:pointer; }
+    .guide-adv-box { width:18px; height:18px; border-radius:4px; border:1px solid var(--border); flex-shrink:0; margin-top:1px; display:flex; align-items:center; justify-content:center; font-size:11px; color:transparent; transition:all .15s; }
+    .guide-adv-check.on .guide-adv-box { background:rgba(142,204,224,.16); border-color:rgba(142,204,224,.5); color:#8ecce0; }
+    .guide-adv-label { font-size:10px; letter-spacing:.04em; color:var(--text); line-height:1.5; }
+    .guide-adv-label small { display:block; font-size:9px; color:var(--muted); margin-top:3px; letter-spacing:.02em; font-style:italic; }
     .guide-plan-card { background:var(--surface); border:1px solid var(--border); border-radius:10px; padding:16px 18px; margin-bottom:10px; transition:opacity .2s, border-color .2s, background .2s; }
     .guide-plan-card.done { opacity:.62; border-color:rgba(142,204,224,.24); background:rgba(142,204,224,.035); }
     .guide-plan-card.done .guide-plan-exname, .guide-plan-card.done .guide-plan-dur { text-decoration:line-through; text-decoration-thickness:1px; text-underline-offset:3px; }
@@ -3962,6 +3967,26 @@ body:not(.tut-live) #tutCorgi {
         </div>
       </div>
     </div>
+    <div id="pqAdvancedOverlay" style="display:none;position:fixed;inset:0;z-index:700;background:rgba(0,0,0,.6);align-items:center;justify-content:center;padding:24px;">
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:18px;padding:24px;width:100%;max-width:340px;" id="pqAdvancedCard">
+        <div style="font-family:'Cormorant Garamond',serif;font-size:20px;font-weight:300;color:var(--text);margin-bottom:4px;" id="pqAdvancedTitle">I'm Advanced</div>
+        <div id="pqAdvancedSub" style="font-size:9px;color:var(--muted);letter-spacing:.1em;margin-bottom:18px;text-transform:uppercase;font-family:'DM Mono',monospace;">Tell Omnia where to start its suggestions.</div>
+        <div class="asana-stepper" style="padding:4px 0 2px;">
+          <button class="asana-step-btn" id="pqAdvMinus">&#8722;</button>
+          <div class="asana-step-val" id="pqAdvVal">5 min</div>
+          <button class="asana-step-btn" id="pqAdvPlus">&#43;</button>
+        </div>
+        <div style="text-align:center;font-size:8px;color:var(--muted);letter-spacing:.16em;text-transform:uppercase;font-family:'DM Mono',monospace;margin-top:4px;">1 – 120 min</div>
+        <div class="guide-adv-check" id="pqAdvAutoToggle" style="margin-top:14px;">
+          <div class="guide-adv-box">&#10003;</div>
+          <div class="guide-adv-label">Let Omnia keep raising the bar<small>On: this number is a floor Omnia slowly raises as you practice. Off: it holds steady until you change it.</small></div>
+        </div>
+        <div style="display:flex;gap:10px;margin-top:18px;">
+          <button id="pqAdvClear" style="flex:1;padding:10px;border-radius:8px;border:1px solid var(--border);background:none;color:var(--muted);font-family:'DM Mono',monospace;font-size:9px;letter-spacing:.16em;text-transform:uppercase;cursor:pointer;">Automatic</button>
+          <button id="pqAdvSave" style="flex:1;padding:10px;border-radius:8px;border:1px solid rgba(142,204,224,.3);background:rgba(142,204,224,.08);color:#8ecce0;font-family:'DM Mono',monospace;font-size:9px;letter-spacing:.16em;text-transform:uppercase;cursor:pointer;">Save</button>
+        </div>
+      </div>
+    </div>
     <div id="activeSessionBanner" style="display:none; background:rgba(126,184,164,0.07); border:1px solid rgba(126,184,164,.18); border-radius:8px; padding:10px 16px; margin-bottom:12px; display:none; justify-content:space-between; align-items:center;">
       <span style="font-size:9px; letter-spacing:.2em; text-transform:uppercase; color:var(--accent);">● Session Running</span>
       <button onclick="showScreen('sessionScreen');" style="font-size:9px; letter-spacing:.15em; text-transform:uppercase; color:var(--accent); background:none; border:1px solid rgba(126,184,164,.3); border-radius:4px; padding:5px 12px; cursor:pointer; font-family:'DM Mono',monospace;">Return →</button>
@@ -5612,6 +5637,7 @@ body:not(.tut-live) #tutCorgi {
     <button class="pq-skip-item" data-thought-mode="vacancy">Vacancy of Mind</button>
     <hr class="pq-thought-mode-divider">
   </div>
+  <button class="pq-skip-item" id="pqSkipAdvanced" style="display:none;">I'm advanced…</button>
   <button class="pq-skip-item" id="pqSkipPostpone">Postpone 7 days</button>
   <button class="pq-skip-item warn" id="pqSkipTellOmnia">Tell Omnia…</button>
 </div>
@@ -11369,14 +11395,17 @@ var EXERCISE_DEFS = {
       var as = guideAsanaStats();
       var html = '<div style="margin-bottom:20px;">'
         + '<div style="font-size:9px; letter-spacing:.2em; text-transform:uppercase; color:var(--muted); margin-bottom:2px; font-family:\'DM Mono\',monospace;">Session Target</div>';
-      if (as.atCap) {
-        var capVal = parseInt(localStorage.getItem('presence_asana_duration'), 10) || 30;
+      if (as.showStepper) {
+        var stepVal = as.qualTarget;
+        var capNote = as.locked
+          ? 'your chosen start · auto-advance off'
+          : (as.cap || 30) + ' min reached · adjust freely';
         html += '<div class="asana-stepper">'
           + '<button class="asana-step-btn" onclick="adjustAsanaDuration(-1)">&#8722;</button>'
-          + '<div class="asana-step-val" id="asanaStepperVal">' + capVal + ' min</div>'
+          + '<div class="asana-step-val" id="asanaStepperVal">' + stepVal + ' min</div>'
           + '<button class="asana-step-btn" onclick="adjustAsanaDuration(1)">&#43;</button>'
           + '</div>'
-          + '<div style="text-align:center; font-size:9px; color:var(--muted); font-family:\'DM Mono\',monospace; letter-spacing:.08em; margin-top:6px;">30 min reached · adjust freely</div>';
+          + '<div style="text-align:center; font-size:9px; color:var(--muted); font-family:\'DM Mono\',monospace; letter-spacing:.08em; margin-top:6px;">' + capNote + '</div>';
       } else {
         var pct = Math.round((as.qualAtTier / as.tierRequired) * 100);
         var sessWord = as.tierRequired === 1 ? 'session' : 'sessions';
@@ -11581,9 +11610,20 @@ function setAsanaDuration(min) {
 }
 
 function adjustAsanaDuration(delta) {
-  var current = parseInt(localStorage.getItem('presence_asana_duration'), 10) || 30;
-  var next = Math.max(1, current + delta);
-  localStorage.setItem('presence_asana_duration', next);
+  var next;
+  var floor = (typeof guideFloorMin === 'function') ? guideFloorMin('asana') : 0;
+  if (floor) {
+    // Advanced override active → the stepper edits that starting floor.
+    next = guideClamp(floor + delta, 1, GUIDE_FLOOR_CAP);
+    if (!guideState._advancedFloors) guideState._advancedFloors = {};
+    guideState._advancedFloors.asana = next;
+    saveGuideState(guideState);
+  } else {
+    // Foundational ceiling → free manual duration.
+    var current = parseInt(localStorage.getItem('presence_asana_duration'), 10) || 30;
+    next = Math.max(1, Math.min(GUIDE_FLOOR_CAP, current + delta));
+    localStorage.setItem('presence_asana_duration', next);
+  }
   var el = document.getElementById('asanaStepperVal');
   if (el) el.textContent = next + ' min';
 }
@@ -13086,8 +13126,9 @@ function playAsanaAlarm() {
 }
 
 function startAsana() {
-  var as = guideAsanaStats();
-  var durMin = as.atCap ? (parseInt(localStorage.getItem('presence_asana_duration'), 10) || 30) : as.qualTarget;
+  // qualTarget already folds in the advanced floor, auto-advance state, and the
+  // manual ceiling override, so it is the single source of truth here.
+  var durMin = guideAsanaStats().qualTarget || 5;
   asanaTargetSeconds = durMin * 60;
   asanaSeconds = 0;
   asanaStartTime = Date.now();
@@ -16660,18 +16701,20 @@ function renderGuideExRows() {
       + '<div class="guide-opt-row">' + opts + '</div>'
       + '</div>';
   }).join('');
-  // Delegate clicks
-  container.addEventListener('click', function(e) {
-    var btn = e.target.closest('.guide-opt');
-    if (!btn) return;
-    var exId = btn.dataset.ex;
-    var opt  = btn.dataset.opt;
-    guideState[exId] = opt;
-    saveGuideState(guideState);
-    container.querySelectorAll('.guide-opt[data-ex="' + exId + '"]').forEach(function(b) {
-      b.classList.toggle('sel', b.dataset.opt === opt);
+  if (!container._advWired) {
+    container._advWired = true;
+    container.addEventListener('click', function(e) {
+      var btn = e.target.closest('.guide-opt');
+      if (!btn) return;
+      var exId = btn.dataset.ex;
+      var opt  = btn.dataset.opt;
+      guideState[exId] = opt;
+      saveGuideState(guideState);
+      container.querySelectorAll('.guide-opt[data-ex="' + exId + '"]').forEach(function(b) {
+        b.classList.toggle('sel', b.dataset.opt === opt);
+      });
     });
-  }, { once: false });
+  }
 }
 
 function setGuidePathMode(mode, lockChoice) {
@@ -16868,7 +16911,7 @@ function asanaTierRequired(tier) {
 }
 
 function guideAsanaStats() {
-  var out = { count:0, totalSec:0, bestSec:0, todaySec:0, todayCount:0, qualTarget:5, qualAtTier:0, atCap:false, tierRequired:7 };
+  var out = { count:0, totalSec:0, bestSec:0, todaySec:0, todayCount:0, qualTarget:5, qualAtTier:0, atCap:false, tierRequired:7, locked:false, showStepper:false };
   var history = (typeof concState !== 'undefined' && concState.history) ? concState.history : [];
   var sessions = [];
   history.forEach(function(h) {
@@ -16882,19 +16925,44 @@ function guideAsanaStats() {
     sessions.push({ sec:sec, ms:ms });
   });
   sessions.sort(function(a, b) { return a.ms - b.ms; });
-  var tier = 5, qualAtTier = 0;
+
+  var floor = guideFloorMin('asana');
+  var auto = guideAutoAdvanceOn('asana');
+
+  // Advanced floor with auto-advance OFF → suggestion is locked at the floor;
+  // the setup screen shows a manual stepper editing that floor.
+  if (floor > 0 && !auto) {
+    out.qualTarget = floor;
+    out.locked = true;
+    out.showStepper = true;
+    out.cap = GUIDE_FLOOR_CAP;
+    return out;
+  }
+
+  // Otherwise climb the tier ladder. Floor (when set) raises both the starting
+  // rung and the ceiling (to 120); without a floor it's the standard 5→30 ladder.
+  var cap = floor > 0 ? GUIDE_FLOOR_CAP : 30;
+  var tier = floor > 0 ? floor : 5, qualAtTier = 0;
   sessions.forEach(function(s) {
-    if (tier >= 30) return;
+    if (tier >= cap) return;
     var required = asanaTierRequired(tier);
     if (s.sec + 5 >= tier * 60) {
       qualAtTier++;
       if (qualAtTier >= required) { tier++; qualAtTier = 0; }
     }
   });
-  out.qualTarget = tier;
+  out.atCap = tier >= cap;
+  out.cap = cap;
   out.qualAtTier = qualAtTier;
-  out.atCap = tier >= 30;
-  out.tierRequired = asanaTierRequired(Math.min(tier, 29));
+  out.tierRequired = asanaTierRequired(Math.min(tier, cap - 1));
+  // At the foundational 30-min ceiling the user picks any duration manually.
+  if (out.atCap && floor === 0) {
+    out.qualTarget = guideClamp(parseInt(localStorage.getItem('presence_asana_duration'), 10) || cap, cap, GUIDE_FLOOR_CAP);
+    out.showStepper = true;
+  } else {
+    out.qualTarget = tier;
+    out.showStepper = out.atCap;
+  }
   return out;
 }
 
@@ -16952,8 +17020,10 @@ function guideThoughtTargetMinutes(mode, thoughtStats) {
   // Use count before today so completing a session mid-day doesn't raise the
   // target above what was required when you started — keeps "done" stable.
   var countForTarget = Math.max(0, (st.count || 0) - (st.todayCount || 0));
-  if (guideAllThoughtModesMastered(thoughtStats)) return guideClamp(10 + Math.floor(countForTarget / 6), 10, 15);
-  return guideClamp(5 + Math.floor(countForTarget / 2), 5, 10);
+  var natural = guideAllThoughtModesMastered(thoughtStats)
+    ? guideClamp(10 + Math.floor(countForTarget / 6), 10, 15)
+    : guideClamp(5 + Math.floor(countForTarget / 2), 5, 10);
+  return guideAdvancedTarget('thought', natural);
 }
 
 function guideClockTargetMinutes(clockStats) {
@@ -16963,9 +17033,10 @@ function guideClockTargetMinutes(clockStats) {
 function guideClockFinalTarget(clockStats) {
   var auto = guideClockTargetMinutes(clockStats);
   if (auto >= 10 && guideState.clockUserTarget != null) {
-    return guideClamp(guideState.clockUserTarget, 10, 15);
+    auto = guideClamp(guideState.clockUserTarget, 10, 15);
   }
-  return auto;
+  // An advanced starting floor overrides/raises the natural clock target.
+  return guideAdvancedTarget('clock', auto);
 }
 
 function guideClockAtCap(clockStats) {
@@ -16973,6 +17044,8 @@ function guideClockAtCap(clockStats) {
 }
 
 function guideClockShowUpsell(clockStats) {
+  // The 10→15 upsell is moot once an advanced floor governs the clock target.
+  if (guideFloorMin('clock')) return false;
   // Show upsell after 14 qualifying 10-min sessions and user hasn't set a manual target yet
   return guideClockAtCap(clockStats) && (clockStats.qualTenCount || 0) >= 14 && guideState.clockUserTarget == null;
 }
@@ -16995,6 +17068,71 @@ function guideIsExperienced(exId) {
   var sel = guideState[exId];
   if (!sel || sel === 'New to me') return false;
   return true;
+}
+
+// ── "I'm Advanced" per-exercise override ──────────────────────────────────────
+// From a Path card's ··· menu, a practitioner can set where Omnia's suggestions
+// START for that one discipline (capped at 120 min) and whether Omnia should
+// keep raising the bar from there. This is opt-in per exercise and independent
+// of the beginner/experienced path: an exercise has an override only once the
+// user sets one. Without an override, the exercise climbs naturally as before.
+var GUIDE_TIMED_EXERCISES = ['clock','visual','auditory','thought','asana'];
+var GUIDE_FLOOR_CAP = 120;
+
+function guideFloorMin(exId) {
+  var f = guideState && guideState._advancedFloors && guideState._advancedFloors[exId];
+  return (typeof f === 'number' && f >= 1) ? f : 0;
+}
+
+function guideAutoAdvanceOn(exId) {
+  // No override → natural progression always climbs. Override → per-exercise
+  // checkbox, default OFF (hold steady at the chosen start).
+  if (!guideFloorMin(exId)) return true;
+  return !!(guideState._advanceAuto && guideState._advanceAuto[exId]);
+}
+
+function guideAdvancedActive(exId) {
+  return guideFloorMin(exId) > 0;
+}
+
+function guideSetAdvanced(exId, minutes, autoOn) {
+  if (!guideState._advancedFloors || typeof guideState._advancedFloors !== 'object') guideState._advancedFloors = {};
+  if (!guideState._advanceAuto || typeof guideState._advanceAuto !== 'object') guideState._advanceAuto = {};
+  guideState._advancedFloors[exId] = guideClamp(parseInt(minutes, 10) || 5, 1, GUIDE_FLOOR_CAP);
+  guideState._advanceAuto[exId] = !!autoOn;
+  saveGuideState(guideState);
+}
+
+function guideClearAdvanced(exId) {
+  if (guideState._advancedFloors) delete guideState._advancedFloors[exId];
+  if (guideState._advanceAuto) delete guideState._advanceAuto[exId];
+  saveGuideState(guideState);
+}
+
+// Apply any advanced override to a naturally-computed minute target. No override
+// → unchanged. Override + auto off → locked at the floor. Override + auto on →
+// never below the floor, but may climb past it.
+function guideAdvancedTarget(exId, naturalMin) {
+  var floor = guideFloorMin(exId);
+  if (!floor) return naturalMin;
+  if (!guideAutoAdvanceOn(exId)) return floor;
+  return Math.max(floor, naturalMin || 0);
+}
+
+// Current recommended minutes for an exercise (already folds in any override).
+// Used to seed the "I'm Advanced" dialog with a sensible default.
+function guideRecommendedMinutes(exId) {
+  try {
+    if (exId === 'asana') return guideAsanaStats().qualTarget || 5;
+    if (exId === 'clock') return guideClockFinalTarget(guideClockStats()) || 5;
+    if (exId === 'thought') {
+      var ts = guideThoughtStats();
+      var mode = guideState.thoughtModeForced || guideCurrentThoughtMode(ts);
+      return guideThoughtTargetMinutes(mode, ts) || 5;
+    }
+    var st = guideExerciseStats();
+    return guideDurationForScore(guideMonitoredScore(exId, st)) || 5;
+  } catch (e) { return 5; }
 }
 
 function guideExperienceScore(exId) {
@@ -17162,10 +17300,9 @@ function buildExperiencedGuideItems() {
 
   var gc = gateById[gateId] || { ex:guideExerciseById(gateId), score:guideExperienceScore(gateId), count:0 };
   var gScore = gc.score;
-  var gDur = guideDurationForScore(gScore);
+  var gDur = guideAdvancedTarget(gateId, guideDurationForScore(gScore));
   if (gateId === 'asana') {
-    var _as = guideAsanaStats();
-    gDur = _as.atCap ? (parseInt(localStorage.getItem('presence_asana_duration'), 10) || 30) : _as.qualTarget;
+    gDur = guideAsanaStats().qualTarget;
   }
   var gTip;
   if (gScore === 0) {
@@ -17181,8 +17318,10 @@ function buildExperiencedGuideItems() {
   var gateProgress = gc.count ? gc.count + ' recorded' : 'no completed sessions recorded';
   if (gateId === 'asana') {
     var _asp = guideAsanaStats();
-    if (_asp.atCap) {
-      gateProgress = 'tier cap reached · ' + gc.count + ' recorded';
+    if (_asp.locked) {
+      gateProgress = 'held at ' + _asp.qualTarget + ' min · ' + gc.count + ' recorded';
+    } else if (_asp.atCap) {
+      gateProgress = 'ceiling reached · ' + gc.count + ' recorded';
     } else {
       gateProgress = _asp.qualAtTier + ' / ' + _asp.tierRequired + ' sessions at ' + _asp.qualTarget + ' min';
     }
@@ -17286,7 +17425,7 @@ function buildFoundationalGuideItems() {
   if (gateForced && (!gate || gate.id !== gateForced)) {
     var dailyTarget5 = 5 * 60 * rounds;
     var forcedGateItems = {
-      asana: (function() { var _asp2 = guideAsanaStats(); var _ad = _asp2.atCap ? (parseInt(localStorage.getItem('presence_asana_duration'), 10) || 30) : _asp2.qualTarget; var _at = _ad * 60 * rounds; var _prog = _asp2.atCap ? 'tier cap reached · ' + ((_asp2.count||0)) + ' recorded' : _asp2.qualAtTier + ' / ' + _asp2.tierRequired + ' sessions at ' + _asp2.qualTarget + ' min'; return { id:'asana', name:'Asana', duration:_ad, durationLabel:_ad + ' min' + (rounds > 1 ? ' x2' : ''), done:(stats.asana||{}).todaySec >= _at, progress:_prog, tip:'Begin building stillness. Sit upright and complete the whole period without negotiating with each impulse.', open:'asana' }; })(),
+      asana: (function() { var _asp2 = guideAsanaStats(); var _ad = _asp2.qualTarget; var _at = _ad * 60 * rounds; var _prog = _asp2.locked ? ('held at ' + _ad + ' min · ' + (_asp2.count||0) + ' recorded') : _asp2.atCap ? ('ceiling reached · ' + (_asp2.count||0) + ' recorded') : (_asp2.qualAtTier + ' / ' + _asp2.tierRequired + ' sessions at ' + _asp2.qualTarget + ' min'); return { id:'asana', name:'Asana', duration:_ad, durationLabel:_ad + ' min' + (rounds > 1 ? ' x2' : ''), done:(stats.asana||{}).todaySec >= _at, progress:_prog, tip:'Begin building stillness. Sit upright and complete the whole period without negotiating with each impulse.', open:'asana' }; })(),
       visual: { id:'visual', name:'Visualization', duration:5, durationLabel:'5 min' + (rounds > 1 ? ' x2' : ''), done:(stats.visual||{}).todaySec >= dailyTarget5, progress:'new gate · ' + ((stats.visual||{}).count||0) + ' recorded', tip:'Hold a simple mental image clearly. Clarity matters more than complexity.', open:'visual' },
       auditory: { id:'auditory', name:'Auditory', duration:5, durationLabel:'5 min' + (rounds > 1 ? ' x2' : ''), done:(stats.auditory||{}).todaySec >= dailyTarget5, progress:'astral refinement gate · ' + ((stats.auditory||{}).count||0) + ' recorded', tip:'Focused listening on a single sound. Broaden the astral body steadily.', open:'auditory' }
     };
@@ -17325,8 +17464,7 @@ function guideFoundationNewGate(stats, thoughtStats, rounds) {
     };
   }
   if (asana.count < 3 && clock.bestSec >= 300 && focus.bestSec >= 300) {
-    var _asNew = guideAsanaStats();
-    var _adNew = _asNew.atCap ? (parseInt(localStorage.getItem('presence_asana_duration'), 10) || 30) : _asNew.qualTarget;
+    var _adNew = guideAsanaStats().qualTarget;
     return {
       id:'asana',
       name:'Asana',
@@ -18193,6 +18331,12 @@ function renderPathQuests() {
   var overlay = document.getElementById('pqTellOmniaOverlay');
   var switchBtn = document.getElementById('pqSkipSwitch');
   var thoughtModesEl = document.getElementById('pqThoughtModes');
+  var advItem = document.getElementById('pqSkipAdvanced');
+  var advOverlay = document.getElementById('pqAdvancedOverlay');
+  var advMinutes = 5;        // working value while the dialog is open
+  var advAuto = false;
+  var EX_DISPLAY_NAMES = { clock:'Clock', visual:'Visualization', auditory:'Auditory', thought:'Thought Control', asana:'Asana' };
+  function isTimedEx(id) { return GUIDE_TIMED_EXERCISES.indexOf(id) !== -1; }
 
   // Progression: what exercise/mode comes next after each exercise
   function pqSwitchNext(exId, thoughtMode) {
@@ -18225,6 +18369,15 @@ function renderPathQuests() {
         switchBtn.style.display = 'block';
       }
     }
+    if (advItem) {
+      if (isTimedEx(activeExId)) {
+        var floor = guideFloorMin(activeExId);
+        advItem.textContent = floor ? ('Advanced · ' + floor + ' min') : 'I\'m advanced…';
+        advItem.style.display = 'block';
+      } else {
+        advItem.style.display = 'none';
+      }
+    }
     var r = btn.getBoundingClientRect();
     menu.style.top = (r.bottom + 4) + 'px';
     menu.style.right = (window.innerWidth - r.right) + 'px';
@@ -18232,6 +18385,25 @@ function renderPathQuests() {
     menu.style.display = 'block';
   }
   function closeSkipMenu() { if (menu) menu.style.display = 'none'; }
+
+  // ── "I'm Advanced" per-exercise dialog ──
+  function renderAdvDialog() {
+    var valEl = document.getElementById('pqAdvVal');
+    if (valEl) valEl.textContent = advMinutes + ' min';
+    var toggle = document.getElementById('pqAdvAutoToggle');
+    if (toggle) toggle.classList.toggle('on', advAuto);
+  }
+  function openAdvDialog() {
+    if (!activeExId || !isTimedEx(activeExId)) return;
+    var floor = guideFloorMin(activeExId);
+    advMinutes = floor || guideClamp(guideRecommendedMinutes(activeExId), 1, GUIDE_FLOOR_CAP);
+    advAuto = guideAutoAdvanceOn(activeExId) && !!floor;
+    var titleEl = document.getElementById('pqAdvancedTitle');
+    if (titleEl) titleEl.textContent = 'I\'m Advanced · ' + (EX_DISPLAY_NAMES[activeExId] || '');
+    renderAdvDialog();
+    if (advOverlay) advOverlay.style.display = 'flex';
+  }
+  function closeAdvDialog() { if (advOverlay) advOverlay.style.display = 'none'; }
 
   document.getElementById('pathQuestRoot').addEventListener('click', function(e) {
     var btn = e.target.closest('.pq-menu-btn');
@@ -18279,6 +18451,38 @@ function renderPathQuests() {
     overlay.style.display = 'flex';
     var ta = document.getElementById('pqTellOmniaText');
     if (ta) { ta.value = ''; setTimeout(function() { ta.focus(); }, 80); }
+  });
+
+  if (advItem) advItem.addEventListener('click', function() {
+    closeSkipMenu();
+    openAdvDialog();
+  });
+  var advMinusBtn = document.getElementById('pqAdvMinus');
+  var advPlusBtn = document.getElementById('pqAdvPlus');
+  if (advMinusBtn) advMinusBtn.addEventListener('click', function() {
+    advMinutes = guideClamp(advMinutes - 1, 1, GUIDE_FLOOR_CAP); renderAdvDialog();
+  });
+  if (advPlusBtn) advPlusBtn.addEventListener('click', function() {
+    advMinutes = guideClamp(advMinutes + 1, 1, GUIDE_FLOOR_CAP); renderAdvDialog();
+  });
+  var advToggleEl = document.getElementById('pqAdvAutoToggle');
+  if (advToggleEl) advToggleEl.addEventListener('click', function() {
+    advAuto = !advAuto; renderAdvDialog();
+  });
+  var advSaveBtn = document.getElementById('pqAdvSave');
+  if (advSaveBtn) advSaveBtn.addEventListener('click', function() {
+    if (activeExId) guideSetAdvanced(activeExId, advMinutes, advAuto);
+    closeAdvDialog();
+    renderPathQuests();
+  });
+  var advClearBtn = document.getElementById('pqAdvClear');
+  if (advClearBtn) advClearBtn.addEventListener('click', function() {
+    if (activeExId) guideClearAdvanced(activeExId);
+    closeAdvDialog();
+    renderPathQuests();
+  });
+  if (advOverlay) advOverlay.addEventListener('click', function(e) {
+    if (e.target === advOverlay) closeAdvDialog();
   });
 
   document.getElementById('pqTellOmniaCancel').addEventListener('click', function() {
