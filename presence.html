@@ -822,10 +822,6 @@
     body.upgrade-stage .omnia-wrap { display:none; }
     .oe-v2 { display:flex; flex-direction:column; padding:0; background:none; border:none; box-shadow:none; position:relative; }
     .oe-akasha-corner { display:flex; align-items:baseline; gap:5px; padding:7px 13px; border:1px solid rgba(212,180,142,.32); border-radius:999px; background:rgba(212,180,142,.06); }
-    .oe-akasha-info-btn { background:none; border:none; color:rgba(142,204,224,.55); font-size:13px; cursor:pointer; padding:0; line-height:1; -webkit-tap-highlight-color:transparent; touch-action:manipulation; }
-    .oe-akasha-info-btn:hover { color:#8ecce0; }
-    .oe-rec-popover { display:none; position:absolute; top:calc(100% + 8px); right:0; width:230px; background:var(--surface); border:1px solid rgba(212,149,110,.26); border-radius:14px; padding:14px; box-shadow:0 8px 28px rgba(0,0,0,.55); z-index:30; }
-    .oe-rec-popover.open { display:block; }
     .oe-akasha-corner-val { font-family:Cormorant Garamond,serif; font-size:18px; line-height:1; color:#e8c896; }
     .oe-akasha-corner-key { font-size:8px; letter-spacing:.2em; text-transform:uppercase; color:#d4b08e; }
 
@@ -990,12 +986,6 @@
     .oe-step-meta-text { font-size:9px; color:var(--muted); line-height:1.6; margin-bottom:11px; }
     .oe-advance-btn { width:100%; padding:10px; border-radius:7px; border:1px solid rgba(142,204,224,.32); background:rgba(142,204,224,.1); color:#b8eaff; font-family:'DM Mono',monospace; font-size:9px; letter-spacing:.2em; text-transform:uppercase; cursor:pointer; }
     .oe-advance-btn:disabled { opacity:.42; cursor:default; }
-    .oe-practice-card { border:1px solid rgba(212,149,110,.22); background:rgba(212,149,110,.05); padding:13px 14px; border-radius:10px; }
-    .oe-practice-card .oe-card-kicker { font-size:8px; letter-spacing:.24em; text-transform:uppercase; color:#d4b08e; margin-bottom:6px; }
-    .oe-practice-card .oe-rec-name { font-size:11px; letter-spacing:.14em; text-transform:uppercase; color:var(--text); margin-bottom:4px; }
-    .oe-practice-card .oe-rec-reward { font-size:8px; letter-spacing:.12em; color:#d4b08e; margin-bottom:8px; }
-    .oe-practice-card .oe-rec-text { font-size:9px; color:var(--muted); line-height:1.6; margin-bottom:11px; }
-    .oe-practice-card .oe-rec-actions { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
 
     .conc-history-item { background:var(--surface); border:1px solid var(--border); border-radius:8px; padding:16px; margin-bottom:10px; }
     .conc-history-top { display:flex; justify-content:space-between; align-items:center; margin-bottom:4px; }
@@ -4389,21 +4379,8 @@ body:not(.tut-live) #tutCorgi {
         </div>
       </div>
 
-      <!-- Top-right akasha total + recommendation info -->
+      <!-- Top-right akasha total -->
       <div style="position:absolute;top:8px;right:14px;z-index:5;display:flex;align-items:center;gap:8px;">
-        <div style="position:relative;">
-          <button class="oe-akasha-info-btn" id="omniaRecInfoBtn" aria-label="Omnia recommendation">ⓘ</button>
-          <div class="oe-rec-popover" id="omniaRecPopover">
-            <div class="oe-card-kicker">Omnia recommends</div>
-            <div class="oe-rec-name" id="omniaRecName"></div>
-            <div class="oe-rec-reward" id="omniaRecReward"></div>
-            <div class="oe-rec-text" id="omniaRecText"></div>
-            <div class="oe-rec-actions">
-              <button class="omnia-mini-btn" id="omniaBeginRecBtn">Begin</button>
-              <button class="omnia-mini-btn" id="omniaNewRecBtn">New Reading</button>
-            </div>
-          </div>
-        </div>
         <div class="oe-akasha-corner" id="omniaAkashaCorner">
           <span class="oe-akasha-corner-val" id="omniaAkashaWalletCorner">0</span>
           <span class="oe-akasha-corner-key">akasha</span>
@@ -15453,6 +15430,7 @@ function awardOmniaForExercise(exId, seconds) {
     omniaState.recStreak = (omniaState.recStreak || 0) + 1;
     if (!omniaBodyAtCap(meta.body)) {
       omniaState.bodies[meta.body] = (omniaState.bodies[meta.body] || 0) + 1;
+      omniaState.lastBodyAward = { body: meta.body, exercise: activityName };
     }
     omniaPickRecommendation(true);
   } else {
@@ -15473,8 +15451,13 @@ function renderOmniaEngine() {
   var canAdvance = omniaStepReady(step);
   var cap = omniaReservoirCap();
   var reservoir = Math.min(cap, omniaState.reservoir || 0);
-  var rec = omniaPickRecommendation(false);
-  var recMeta = OMNIA_EXERCISE_META[rec.id] || OMNIA_EXERCISE_META.clock;
+  if (omniaState.lastBodyAward) {
+    var lba = omniaState.lastBodyAward;
+    var lbaMeta = OMNIA_BODY_META[lba.body];
+    if (lbaMeta) showToast('+1 ' + lbaMeta.name + (lba.exercise ? ' from ' + lba.exercise : ''), 3500);
+    omniaState.lastBodyAward = null;
+    saveOmniaState();
+  }
 
   var stageName = document.getElementById('omniaStageName');
   var stageSub = document.getElementById('omniaStageSub');
@@ -15578,12 +15561,6 @@ function renderOmniaEngine() {
     }).join('');
   }
 
-  var recName = document.getElementById('omniaRecName');
-  var recText = document.getElementById('omniaRecText');
-  var recReward = document.getElementById('omniaRecReward');
-  if (recName) recName.textContent = recMeta.name;
-  if (recText) recText.textContent = recMeta.text;
-  if (recReward) recReward.textContent = 'bonus +' + OMNIA_BODY_META[recMeta.body].name.replace(' Body','').toLowerCase();
 
   var upGrid = document.getElementById('omniaUpgradeGrid');
   if (upGrid) {
@@ -18208,20 +18185,6 @@ function _hideGuideTabTip(el, tab) {
   panel.addEventListener('mouseleave', function() { startX = null; dragging = false; });
 })();
 document.getElementById('omniaCollectBtn').addEventListener('click', collectOmniaAkasha);
-(function() {
-  var btn = document.getElementById('omniaRecInfoBtn');
-  var pop = document.getElementById('omniaRecPopover');
-  if (!btn || !pop) return;
-  btn.addEventListener('click', function(e) {
-    e.stopPropagation();
-    pop.classList.toggle('open');
-  });
-  document.addEventListener('click', function(e) {
-    if (pop.classList.contains('open') && !pop.contains(e.target) && e.target !== btn) {
-      pop.classList.remove('open');
-    }
-  });
-})();
 document.getElementById('guideOmniaFigure').addEventListener('click', morphGuideOmnia);
 document.getElementById('guideOmniaFigure').addEventListener('keydown', function(e) {
   if (e.key === 'Enter' || e.key === ' ') {
@@ -18243,11 +18206,6 @@ document.getElementById('omniaCenterFigure').addEventListener('keydown', functio
   if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); morphOmniaCenter(); }
 });
 document.getElementById('omniaAdvanceBtn').addEventListener('click', advanceOmniaStep);
-document.getElementById('omniaBeginRecBtn').addEventListener('click', beginOmniaRecommendation);
-document.getElementById('omniaNewRecBtn').addEventListener('click', function() {
-  omniaPickRecommendation(true);
-  renderOmniaEngine();
-});
 document.getElementById('omniaEngine').addEventListener('click', function(e) {
   var cosmeticBtn = e.target.closest('[data-omnia-cosmetic-kind]');
   if (cosmeticBtn) {
