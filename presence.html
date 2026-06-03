@@ -14721,32 +14721,7 @@ function renderOmniaEntityPreview(item) {
       + '</svg>';
   }
   if (item.id === 'seraph') {
-    // Compact seraph: radiant haloed head, robe of light, rising + draping
-    // wings, matching the crystal form.
-    var hi = '#fff6dc';
-    var pf = function(n) { return n.toFixed(1); };
-    var pWing = function(rx, ry, tx, ty, outerBow, innerBow, op) {
-      var mx = (rx + tx) / 2, my = (ry + ty) / 2, dx = tx - rx, dy = ty - ry, len = Math.sqrt(dx * dx + dy * dy) || 1;
-      dx /= len; dy /= len;
-      var px = -dy, py = dx;
-      var oOx = mx + px * outerBow, oOy = my + py * outerBow, oIx = mx + px * innerBow, oIy = my + py * innerBow;
-      return '<path d="M' + pf(rx) + ',' + pf(ry) + ' Q' + pf(oOx) + ',' + pf(oOy) + ' ' + pf(tx) + ',' + pf(ty) + ' Q' + pf(oIx) + ',' + pf(oIy) + ' ' + pf(rx) + ',' + pf(ry) + ' Z" fill="' + color + '" opacity="' + op + '" stroke="' + color + '" stroke-width="0.4" stroke-opacity=".6"/>'
-        + '<path d="M' + pf(rx) + ',' + pf(ry) + ' Q' + pf((oIx + oOx) / 2) + ',' + pf((oIy + oOy) / 2) + ' ' + pf(tx) + ',' + pf(ty) + '" fill="none" stroke="' + color + '" stroke-width="0.3" opacity="0.4"/>';
-    };
-    var pEye = function(cx, cy, r) {
-      return '<circle cx="' + pf(cx) + '" cy="' + pf(cy) + '" r="' + r + '" fill="rgba(18,10,2,.55)" stroke="' + color + '" stroke-width=".4"/>'
-        + '<circle cx="' + pf(cx) + '" cy="' + pf(cy) + '" r="' + (r * 0.42).toFixed(2) + '" fill="' + hi + '"/>';
-    };
-    return '<svg viewBox="0 0 56 58" aria-hidden="true">'
-      + '<g transform="scale(1.45) translate(-8,-8)">'
-      + pWing(26, 18, 4, 5, 14, 3, .18) + '<g transform="translate(56,0) scale(-1,1)">' + pWing(26, 18, 4, 5, 14, 3, .18) + '</g>'
-      + pWing(27, 27, 13, 46, 11, 3, .13) + '<g transform="translate(56,0) scale(-1,1)">' + pWing(27, 27, 13, 46, 11, 3, .13) + '</g>'
-      + '<circle cx="28" cy="13" r="6.5" fill="' + color + '" opacity=".12"/>'
-      + '<path d="M28,15 C33,30 32,44 28,54 C24,44 23,30 28,15 Z" fill="' + color + '" opacity=".13" stroke="' + color + '" stroke-width=".5"/>'
-      + '<circle cx="28" cy="13" r="3" fill="' + hi + '"/>'
-      + pEye(15, 14, 1.2) + pEye(41, 14, 1.2) + pEye(28, 30, 1.5)
-      + '</g>'
-      + '</svg>';
+    return getEntityCrystalSVG('seraph');
   }
   return '<svg viewBox="0 0 48 58" aria-hidden="true">'
     + '<path d="M24 4 36 20 30 52H18L12 20Z" fill="rgba(255,255,255,.05)" stroke="' + color + '" stroke-width="1.4"/>'
