@@ -16720,17 +16720,13 @@ function guideClockStats() {
     if (sec > out.bestSec) out.bestSec = sec;
     if (ms && (!out.firstMs || ms < out.firstMs)) out.firstMs = ms;
     if (ms && ms > out.lastMs) out.lastMs = ms;
+    var sessionSec = (h.xpEarned && h.xpEarned > sec) ? h.xpEarned : sec;
     if (guideIsToday(h.date)) {
       out.todayCount++;
-      // For multi-rep sessions, xpEarned = sum of all reps; seconds = best rep only.
-      // Use xpEarned (total) for the daily progress bar so accumulated reps count.
-      // Tier qualification still uses sec (bestRep) — you only earn a tier credit
-      // if you held that long in a single unbroken attempt.
-      var todayContrib = (h.xpEarned && h.xpEarned > sec) ? h.xpEarned : sec;
-      out.todaySec += todayContrib;
+      out.todaySec += sessionSec;
       if (sec > out.todayBestSec) out.todayBestSec = sec;
     }
-    clockSessions.push({ sec:sec, ms:ms });
+    clockSessions.push({ sec:sessionSec, ms:ms });
   });
   // Simulate tier progression: +1 min per 2 qualifying sessions, cap at 10
   clockSessions.sort(function(a, b) { return a.ms - b.ms; });
