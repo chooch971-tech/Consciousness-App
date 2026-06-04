@@ -9438,10 +9438,8 @@ function showSessionComplete(opts) {
     + (opts.onRepeat ? '<button class="sc-repeat-btn" id="scRepeatBtn">Repeat ↺</button>' : '');
   document.getElementById('scDoneBtn').onclick = function() {
     el.classList.remove('sc-vis');
-    setTimeout(function() {
-      el.classList.remove('sc-show');
-      if (opts.onDone) opts.onDone();
-    }, 420);
+    if (opts.onDone) opts.onDone();
+    setTimeout(function() { el.classList.remove('sc-show'); }, 420);
   };
   if (opts.onRepeat) {
     document.getElementById('scRepeatBtn').onclick = function() {
