@@ -5355,7 +5355,6 @@ body:not(.tut-live) #tutCorgi {
       <div class="rpt-banner-text">
         <div class="rpt-banner-label">Your Practice</div>
         <div class="rpt-banner-title">Progress Reports</div>
-        <div class="rpt-banner-sub" id="reportsBannerSub">&nbsp;</div>
       </div>
       <div class="rpt-banner-glow"></div>
       <div class="rpt-banner-figure">
@@ -5641,6 +5640,7 @@ body:not(.tut-live) #tutCorgi {
   </div>
   <button class="pq-skip-item" id="pqSkipAdvanced" style="display:none;">I'm advanced…</button>
   <button class="pq-skip-item" id="pqSkipPostpone">Postpone 7 days</button>
+  <button class="pq-skip-item warn" id="pqSkipRemove" style="display:none;">Remove from path</button>
   <button class="pq-skip-item warn" id="pqSkipTellOmnia">Tell Omnia…</button>
 </div>
 <!-- pqAddMenu: lists exercises the user can manually add to their path -->
@@ -18259,7 +18259,7 @@ function renderPathQuests() {
     }
 
     var cardPadding = extraHtml ? 'padding:13px 14px 10px;' : 'padding:13px 14px;';
-    var menuBtn = '<button class="pq-menu-btn" data-ex-id="' + item.id + '"' + (item.mode ? ' data-ex-mode="' + item.mode + '"' : '') + ' title="Options">···</button>';
+    var menuBtn = '<button class="pq-menu-btn" data-ex-id="' + item.id + '"' + (item.mode ? ' data-ex-mode="' + item.mode + '"' : '') + (item.added ? ' data-ex-added="1"' : '') + ' title="Options">···</button>';
     var badgeStyle = 'position:relative;width:48px;height:48px;border-radius:12px;background:' + color + '1e;border:1px solid ' + color + '38;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0;font-family:\'DM Mono\',monospace;line-height:1;color:' + color + ';';
     return '<div style="display:flex;flex-direction:column;background:var(--surface);border:1px solid var(--border);border-radius:14px;' + cardPadding + (item.done ? 'opacity:.5;' : '') + '">'
       + '<div style="display:flex;align-items:center;gap:14px;">'
@@ -18459,6 +18459,8 @@ function renderPathQuests() {
         advItem.style.display = 'none';
       }
     }
+    var removeItem = document.getElementById('pqSkipRemove');
+    if (removeItem) removeItem.style.display = (btn.dataset.exAdded === '1') ? 'block' : 'none';
     var r = btn.getBoundingClientRect();
     menu.style.top = (r.bottom + 4) + 'px';
     menu.style.right = (window.innerWidth - r.right) + 'px';
@@ -18525,6 +18527,18 @@ function renderPathQuests() {
     guideState.postponed[activeExId] = until;
     saveGuideState(guideState);
     renderPathQuests();
+  });
+
+  var removeItemBtn = document.getElementById('pqSkipRemove');
+  if (removeItemBtn) removeItemBtn.addEventListener('click', function() {
+    if (!activeExId) return;
+    closeSkipMenu();
+    if (Array.isArray(guideState._pathAdded)) {
+      guideState._pathAdded = guideState._pathAdded.filter(function(id) { return id !== activeExId; });
+    }
+    saveGuideState(guideState);
+    renderPathQuests();
+    if (typeof showToast === 'function') showToast('Removed from your path');
   });
 
   document.getElementById('pqSkipTellOmnia').addEventListener('click', function() {
@@ -18869,6 +18883,24 @@ function buildOmniaReportContext(period, offset) {
     .filter(function(ex){ return !byEx[ex]; })
     .map(function(ex){ return EX_LABELS[ex]; });
 
+  // Foundation gate: don't suggest moving on to the later exercises
+  // (Visualization, Auditory, Asana) until the user has reached a 10-minute
+  // interval on either Clock (longest hold) or Thought Control (longest gap),
+  // measured all-time so a past achievement still counts.
+  var clockPB = concState.bestSeconds || 0;
+  var thoughtBest = 0;
+  try {
+    var _ts = guideThoughtStats();
+    ['observation','focus','vacancy'].forEach(function(m){
+      if (_ts[m] && _ts[m].bestSec > thoughtBest) thoughtBest = _ts[m].bestSec;
+    });
+  } catch(e) {}
+  var readyForNewExercises = clockPB >= 600 || thoughtBest >= 600;
+  if (!readyForNewExercises) {
+    var GATED = { Visualization:1, Auditory:1, Asana:1 };
+    untried = untried.filter(function(name){ return !GATED[name]; });
+  }
+
   // Concentration streak: consecutive calendar days ending on the last day of
   // the period that had at least one concentration session. Computed from local
   // history so it's never stale (unlike state.streak which tracks awareness).
@@ -18894,6 +18926,7 @@ function buildOmniaReportContext(period, offset) {
     concentration_best_sec: concBest,
     concentration_by_exercise: concByExercise,
     concentration_exercises_untried: untried,
+    ready_for_new_exercises: readyForNewExercises,
     concentration_streak_days: concStreakDays,
     clock_alltime_pb_sec: concState.bestSeconds || 0,
     omnia_candor: getOmniaCandor()
@@ -19013,13 +19046,6 @@ function updateReportTabStyles() {
 function showReports() {
   currentReportPeriod = 'daily';
   reportOffset = 0;
-  var sub = document.getElementById('reportsBannerSub');
-  if (sub) {
-    var s = state.streak || 0;
-    sub.textContent = s > 0
-      ? s + ' day streak'
-      : 'Awareness Lv ' + (state.level || 1) + ' · Concentration Lv ' + (concState.level || 1);
-  }
   updateReportTabStyles();
   showScreen('reportsScreen');
   renderReport('daily');
