@@ -9495,14 +9495,20 @@ function showSessionComplete(opts) {
     + '<button class="sc-done-btn" id="scDoneBtn">Done →</button>'
     + (opts.onRepeat ? '<button class="sc-repeat-btn" id="scRepeatBtn">Repeat ↺</button>' : '');
   document.getElementById('scDoneBtn').onclick = function() {
-    el.classList.remove('sc-vis');
+    // Switch the screen behind FIRST while the overlay is still fully opaque,
+    // so the exercise screen is replaced under cover. Only once the new screen
+    // has painted do we fade the overlay out — this guarantees no flash of the
+    // exercise clock between the legend and the home menu.
     if (opts.onDone) opts.onDone();
-    setTimeout(function() { el.classList.remove('sc-show'); }, 420);
+    requestAnimationFrame(function() {
+      el.classList.remove('sc-vis');
+      setTimeout(function() { el.classList.remove('sc-show'); }, 560);
+    });
   };
   if (opts.onRepeat) {
     document.getElementById('scRepeatBtn').onclick = function() {
       el.classList.remove('sc-vis');
-      setTimeout(function() { el.classList.remove('sc-show'); opts.onRepeat(); }, 420);
+      setTimeout(function() { el.classList.remove('sc-show'); opts.onRepeat(); }, 560);
     };
   }
   el.classList.add('sc-show');
