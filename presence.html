@@ -8229,6 +8229,60 @@ function shouldTakeCloudValue(key, local, cloud) {
   }
 }
 
+// Union two session-history arrays, deduping by the entry's ISO `date` (unique
+// per session, millisecond precision). Keeps newest-first ordering and caps the
+// result so storage stays bounded. This is what lets sessions recorded on
+// different devices all appear together in Progress Reports.
+function mergeSyncHistoryArrays(a, b, cap) {
+  a = Array.isArray(a) ? a : [];
+  b = Array.isArray(b) ? b : [];
+  var seen = {}, out = [];
+  a.concat(b).forEach(function(h) {
+    if (!h || typeof h !== 'object') return;
+    var id = h.date || JSON.stringify(h);
+    if (seen[id]) return;
+    seen[id] = true;
+    out.push(h);
+  });
+  out.sort(function(x, y) {
+    return (y.date ? new Date(y.date).getTime() : 0) - (x.date ? new Date(x.date).getTime() : 0);
+  });
+  if (cap && out.length > cap) out = out.slice(0, cap);
+  return out;
+}
+
+// Per-key spec for which arrays to union and which scalar counters to keep
+// monotonic (max) when merging a cloud snapshot into local on pull.
+var SYNC_HISTORY_MERGE = {
+  presence_conc_v1: { arrays:['history'], maxNums:['xp','totalSessions','bestSeconds','bestAsanaSeconds','level'] },
+  presence_v3:      { arrays:['history','weeklyScores'], maxNums:['xp','totalSessions','streak','longestStreak','level'] }
+};
+
+// Field-merge a history-bearing key (concentration / awareness) so no device's
+// sessions are ever lost. Returns a JSON string to store, or null to skip.
+function mergeHistoryPull(key, localStr, cloudStr) {
+  var spec = SYNC_HISTORY_MERGE[key];
+  if (!spec) return shouldTakeCloudValue(key, localStr, cloudStr) ? cloudStr : null;
+  if (!cloudStr) return null;
+  if (!localStr) return cloudStr;
+  var localObj, cloudObj;
+  try { localObj = JSON.parse(localStr); cloudObj = JSON.parse(cloudStr); } catch(e) { return null; }
+  // Honor a deliberate reset on either side — don't merge across a reset boundary.
+  var lr = (localObj && localObj._resetAt) || 0;
+  var cr = (cloudObj && cloudObj._resetAt) || 0;
+  if (lr !== cr) return shouldTakeCloudValue(key, localStr, cloudStr) ? cloudStr : null;
+  // Base = higher-scoring snapshot (keeps its other scalar fields); fold the
+  // other side's histories and monotonic counters in.
+  var takeCloud = syncProgressScore(key, cloudObj) >= syncProgressScore(key, localObj);
+  var base = takeCloud ? cloudObj : localObj;
+  var other = takeCloud ? localObj : cloudObj;
+  spec.arrays.forEach(function(f) { base[f] = mergeSyncHistoryArrays(base[f], other[f], 100); });
+  spec.maxNums.forEach(function(f) {
+    if (base[f] != null || other[f] != null) base[f] = Math.max(Number(base[f]) || 0, Number(other[f]) || 0);
+  });
+  return JSON.stringify(base);
+}
+
 (function preserveTutorialVisitedAfterReset() {
   if (localStorage.getItem('presence_visited')) return;
   var resetKeys = ['presence_v3','presence_conc_v1','presence_omnia_v1','bardon_rpg_v2'];
@@ -20122,6 +20176,14 @@ async function syncPullData() {
       if (k === 'presence_omnia_v1') {
         var mergedOmnia = mergeOmniaPull(local, v);
         if (mergedOmnia !== null) localStorage.setItem(k, mergedOmnia);
+        return;
+      }
+      // Concentration & awareness carry the session histories that Progress
+      // Reports read from — union them so every device's sessions show up,
+      // rather than one device's snapshot clobbering the other's.
+      if (k === 'presence_conc_v1' || k === 'presence_v3') {
+        var mergedHist = mergeHistoryPull(k, local, v);
+        if (mergedHist !== null) localStorage.setItem(k, mergedHist);
         return;
       }
       if (shouldTakeCloudValue(k, local, v)) {
