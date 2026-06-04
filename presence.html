@@ -718,6 +718,8 @@
     .guide-cadence-toggle { border:none; background:transparent; color:var(--text); border-radius:4px; padding:4px 6px; font-family:'DM Mono',monospace; font-size:8px; letter-spacing:.14em; text-transform:uppercase; cursor:pointer; white-space:nowrap; opacity:.85; transition:opacity .15s, color .15s; }
     .guide-cadence-toggle:hover { opacity:.8; color:var(--text); }
     .guide-cadence-toggle.off { opacity:.32; }
+    .pq-add-ex-btn { flex-shrink:0; width:22px; height:22px; border-radius:50%; border:1px solid var(--border); background:transparent; color:var(--text); font-size:14px; line-height:1; cursor:pointer; display:flex; align-items:center; justify-content:center; padding:0; opacity:.7; transition:opacity .15s, border-color .15s, background .15s; }
+    .pq-add-ex-btn:hover { opacity:1; border-color:rgba(142,204,224,.5); background:rgba(142,204,224,.08); }
     .guide-plan-controls { display:none; justify-content:space-between; align-items:center; gap:10px; border:1px solid rgba(142,204,224,.12); background:rgba(255,255,255,.025); border-radius:8px; padding:9px 10px; margin-bottom:12px; }
     .guide-dots-nav { display:flex; flex-direction:column; align-items:center; padding:12px 0 10px; }
     .guide-dots { display:flex; gap:0; align-items:center; }
@@ -5641,6 +5643,8 @@ body:not(.tut-live) #tutCorgi {
   <button class="pq-skip-item" id="pqSkipPostpone">Postpone 7 days</button>
   <button class="pq-skip-item warn" id="pqSkipTellOmnia">Tell Omnia…</button>
 </div>
+<!-- pqAddMenu: lists exercises the user can manually add to their path -->
+<div class="pq-skip-menu" id="pqAddMenu"></div>
 
 <script>
 function esc(str){ return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
@@ -17624,7 +17628,78 @@ function guideMaybeNoticeAdaptation(info) {
 
 function buildGuideRegimentItems(mode) {
   var info = guideCurrentRegimentInfo(mode);
-  return info.mode === 'experienced' ? buildExperiencedGuideItems() : buildFoundationalGuideItems();
+  var items = info.mode === 'experienced' ? buildExperiencedGuideItems() : buildFoundationalGuideItems();
+  return guideMergeAddedItems(items);
+}
+
+// ── Manually-added exercises ("+" on the Path) ──────────────
+// The user can pull an exercise into their daily path before Omnia gates it.
+// These persist in guideState._pathAdded and are scaled by the normal
+// per-exercise progression (start at 5 min, climb over sessions).
+function guideBuildAddedItem(exId, rounds) {
+  rounds = rounds || 1;
+  var stats = guideExerciseStats();
+  if (exId === 'asana') {
+    var asp = guideAsanaStats();
+    var ad = asp.qualTarget;
+    var at = ad * 60 * rounds;
+    var prog = asp.locked ? ('held at ' + ad + ' min · ' + (asp.count || 0) + ' recorded')
+      : asp.atCap ? ('ceiling reached · ' + (asp.count || 0) + ' recorded')
+      : (asp.qualAtTier + ' / ' + asp.tierRequired + ' sessions at ' + ad + ' min');
+    return { id:'asana', name:'Asana', duration:ad, durationLabel:ad + ' min' + (rounds > 1 ? ' x2' : ''), done:(stats.asana || {}).todaySec >= at, progress:prog, tip:'Added by you. Sit upright and complete the whole period without negotiating with each impulse.', open:'asana', added:true };
+  }
+  if (exId === 'visual' || exId === 'auditory') {
+    var min = guideClamp(guideRecommendedMinutes(exId), 1, GUIDE_FLOOR_CAP);
+    var target = min * 60 * rounds;
+    var st = stats[exId] || { count:0, todaySec:0 };
+    var names = { visual:'Visualization', auditory:'Auditory' };
+    var tips = { visual:'Added by you. Hold a simple mental image clearly — clarity matters more than complexity.', auditory:'Added by you. Focused listening on a single sound; broaden the astral body steadily.' };
+    return { id:exId, name:names[exId], duration:min, durationLabel:min + ' min' + (rounds > 1 ? ' x2' : ''), done:st.todaySec >= target, progress:'added · ' + (st.count || 0) + ' recorded', tip:tips[exId], open:exId, added:true };
+  }
+  if (exId === 'soulmirror') {
+    return { id:'soulmirror', name:'Soul Mirror', duration:null, durationLabel:'Reflection', done:(function(){ var sm = loadSoulMirror(); return !!(sm._lastEditDate && sm._lastEditDate === guideLocalDayKey()); })(), progress:'', tip:'Added by you. Open the mirror and make one honest edit — add a trait, revise one, or write a note.', open:'soulmirror', added:true };
+  }
+  if (exId === 'clock') {
+    var c = guideClockStats();
+    var cm = guideClockFinalTarget(c);
+    var ct = cm * 60 * rounds;
+    return { id:'clock', name:'Clock', duration:cm, durationLabel:cm + ' min' + (rounds > 1 ? ' x2' : ''), done:c.todaySec >= ct, progress:'added · today ' + guideFmtTime(c.todaySec), tip:'Added by you. Attention on the seconds hand; complete the full session.', open:'clock', added:true };
+  }
+  if (exId === 'thought') {
+    var ts = guideThoughtStats();
+    var m = guideState.thoughtModeForced || guideCurrentThoughtMode(ts);
+    var tm = guideThoughtTargetMinutes(m, ts);
+    var ms = ts[m] || { todaySec:0 };
+    var tt = tm * 60 * rounds;
+    return { id:'thought', name:'Thought Control', mode:m, duration:tm, durationLabel:tm + ' min' + (rounds > 1 ? ' x2' : ''), done:ms.todaySec >= tt, progress:'added', tip:(GUIDE_FOUNDATION_THOUGHT_TIPS[m] || 'Practice thought control.'), open:'thought', added:true };
+  }
+  return null;
+}
+
+function guideMergeAddedItems(items) {
+  var added = (guideState && Array.isArray(guideState._pathAdded)) ? guideState._pathAdded : [];
+  if (!added.length) return items;
+  var rounds = guideTwoADayEnabled() ? 2 : 1;
+  var present = {};
+  items.forEach(function(it) { present[it.id] = true; });
+  var postponed = guideState.postponed || {};
+  var now = Date.now();
+  added.forEach(function(exId) {
+    if (present[exId]) return;
+    var until = postponed[exId];
+    if (until && now < until) return;
+    var it = guideBuildAddedItem(exId, rounds);
+    if (it) { items.push(it); present[exId] = true; }
+  });
+  return items;
+}
+
+// Exercises the user could still add (not already on today's path).
+function guidePathAddableExercises() {
+  var items = buildGuideRegimentItems();
+  var present = {};
+  items.forEach(function(it) { present[it.id] = true; });
+  return GUIDE_EXERCISES.filter(function(ex) { return !present[ex.id]; });
 }
 
 function guideApplyTutorialPathChoice(mode, experienceBars, launchChoice, goal) {
@@ -18118,10 +18193,14 @@ function renderPathQuests() {
 
   // ── Section label with cadence toggle inline ──
   var _twoOn = guideTwoADayEnabled();
+  var _canAdd = (typeof guidePathAddableExercises === 'function') && guidePathAddableExercises().length > 0;
   html += '<div>';
   html += '<div style="display:flex;align-items:center;justify-content:space-between;margin:0 2px 6px;">'
     + '<span style="font-size:8px;letter-spacing:.26em;text-transform:uppercase;color:var(--text);">Exercises</span>'
+    + '<div style="display:flex;align-items:center;gap:9px;">'
+    + (_canAdd ? '<button id="pqAddExBtn" class="pq-add-ex-btn" title="Add an exercise to your path">+</button>' : '')
     + '<button id="pqTwoADayBtn" class="guide-cadence-toggle' + (_twoOn ? '' : ' off') + '">' + (_twoOn ? '2× / day' : '1× / day') + '</button>'
+    + '</div>'
     + '</div>';
   html += '<div style="display:flex;flex-direction:column;gap:8px;">';
   html += items.map(function(item) {
@@ -18282,6 +18361,11 @@ function renderPathQuests() {
   var pqTwoADayBtn = root.querySelector('#pqTwoADayBtn');
   if (pqTwoADayBtn) {
     pqTwoADayBtn.onclick = function(e) { e.stopPropagation(); toggleGuideTwoADay(); };
+  }
+
+  var pqAddExBtn = root.querySelector('#pqAddExBtn');
+  if (pqAddExBtn) {
+    pqAddExBtn.onclick = function(e) { e.stopPropagation(); if (typeof pqOpenAddMenu === 'function') pqOpenAddMenu(pqAddExBtn); };
   }
 
   root.querySelectorAll('.pq-claim').forEach(function(btn) {
@@ -18498,6 +18582,45 @@ function renderPathQuests() {
 
   document.addEventListener('click', function(e) {
     if (!e.target.closest('#pqSkipMenu') && !e.target.closest('.pq-menu-btn')) closeSkipMenu();
+  });
+})();
+
+// ── Path "+" add-exercise menu ─────────────────────────────
+(function() {
+  var menu = document.getElementById('pqAddMenu');
+  if (!menu) return;
+  var ADD_NAMES = { clock:'Clock', visual:'Visualization', auditory:'Auditory', thought:'Thought Control', asana:'Asana', soulmirror:'Soul Mirror' };
+
+  window.pqOpenAddMenu = function(btn) {
+    var addable = (typeof guidePathAddableExercises === 'function') ? guidePathAddableExercises() : [];
+    if (!addable.length) { menu.style.display = 'none'; return; }
+    menu.innerHTML = addable.map(function(ex) {
+      return '<button class="pq-skip-item" data-add-ex="' + ex.id + '">' + (ADD_NAMES[ex.id] || ex.name) + '</button>';
+    }).join('');
+    var r = btn.getBoundingClientRect();
+    menu.style.top = (r.bottom + 4) + 'px';
+    menu.style.right = (window.innerWidth - r.right) + 'px';
+    menu.style.left = 'auto';
+    menu.style.display = 'block';
+  };
+  function closeAddMenu() { menu.style.display = 'none'; }
+
+  menu.addEventListener('click', function(e) {
+    var b = e.target.closest('[data-add-ex]');
+    if (!b) return;
+    var exId = b.dataset.addEx;
+    closeAddMenu();
+    if (!Array.isArray(guideState._pathAdded)) guideState._pathAdded = [];
+    if (guideState._pathAdded.indexOf(exId) === -1) guideState._pathAdded.push(exId);
+    // Clear any active postpone so the freshly-added exercise shows right away.
+    if (guideState.postponed && guideState.postponed[exId]) delete guideState.postponed[exId];
+    saveGuideState(guideState);
+    renderPathQuests();
+    if (typeof showToast === 'function') showToast((ADD_NAMES[exId] || exId) + ' added to your path');
+  });
+
+  document.addEventListener('click', function(e) {
+    if (!e.target.closest('#pqAddMenu') && !e.target.closest('#pqAddExBtn')) closeAddMenu();
   });
 })();
 
