@@ -17727,6 +17727,14 @@ function guideBuildAddedItem(exId, rounds) {
     var tt = tm * 60 * rounds;
     return { id:'thought', name:'Thought Control', mode:m, duration:tm, durationLabel:tm + ' min' + (rounds > 1 ? ' x2' : ''), done:ms.todaySec >= tt, progress:'added', tip:(GUIDE_FOUNDATION_THOUGHT_TIPS[m] || 'Practice thought control.'), open:'thought', added:true };
   }
+  if (exId === 'observation' || exId === 'focus' || exId === 'vacancy') {
+    var ts2 = guideThoughtStats();
+    var tm2 = guideThoughtTargetMinutes(exId, ts2);
+    var ms2 = ts2[exId] || { todaySec:0 };
+    var tt2 = tm2 * 60 * rounds;
+    var modeNames = { observation:'Thought Observation', focus:'Thought Focus', vacancy:'Vacancy of Mind' };
+    return { id:exId, name:modeNames[exId], mode:exId, duration:tm2, durationLabel:tm2 + ' min' + (rounds > 1 ? ' x2' : ''), done:ms2.todaySec >= tt2, progress:'added · ' + (ms2.count || 0) + ' recorded', tip:(GUIDE_FOUNDATION_THOUGHT_TIPS[exId] || 'Practice thought control.'), open:'thought', tcMode:exId, added:true };
+  }
   return null;
 }
 
@@ -17753,7 +17761,20 @@ function guidePathAddableExercises() {
   var items = buildGuideRegimentItems();
   var present = {};
   items.forEach(function(it) { present[it.id] = true; });
-  return GUIDE_EXERCISES.filter(function(ex) { return !present[ex.id]; });
+  var addable = GUIDE_EXERCISES.filter(function(ex) { return !present[ex.id]; });
+  // Also offer individual thought sub-modes the user hasn't practiced yet.
+  var thoughtStats = guideThoughtStats();
+  GUIDE_FOUNDATION_THOUGHT_ORDER.forEach(function(mode) {
+    if (present[mode]) return; // already on path
+    var st = thoughtStats[mode] || { count: 0 };
+    if (st.count > 0) return; // already practiced
+    // Don't add if already in _pathAdded (guideMergeAddedItems will render it)
+    // but we still want to surface it so the user can tap it — if it's already
+    // in _pathAdded it will be rendered by guideMergeAddedItems, meaning
+    // present[mode] would be true above. So if we reach here it's truly absent.
+    addable.push({ id: mode });
+  });
+  return addable;
 }
 
 function guideApplyTutorialPathChoice(mode, experienceBars, launchChoice, goal) {
@@ -17807,7 +17828,7 @@ function renderGuidePlan(mode, skipScroll) {
   renderGuideCadenceControl();
 
   // Exercise icons by type
-  var exIcon = { clock:'⊙', visual:'◉', auditory:'◈', thought:'◌', asana:'✦', soulmirror:'◆' };
+  var exIcon = { clock:'⊙', visual:'◉', auditory:'◈', thought:'◌', observation:'◌', focus:'◌', vacancy:'◌', asana:'✦', soulmirror:'◆' };
 
   var doneCount = items.filter(function(i){ return i.done; }).length;
   var totalCount = items.length;
@@ -17831,10 +17852,10 @@ function renderGuidePlan(mode, skipScroll) {
     var accentColor = item.id === 'clock' ? '#d4b08e'
       : item.id === 'visual'   ? '#8ab8e0'
       : item.id === 'auditory' ? '#8eccc0'
-      : item.id === 'thought'  ? '#98b4cc'
+      : (item.id === 'thought' || item.id === 'observation' || item.id === 'focus' || item.id === 'vacancy') ? '#98b4cc'
       : item.id === 'asana'    ? '#d49898'
       : '#c4a8d4';
-    var icon = exIcon[item.id] || '◆';
+    var icon = exIcon[item.id] || exIcon['thought'] || '◆';
     var startAttrs = item.open
       ? ' data-guide-start="' + item.open + '"'
         + (item.mode ? ' data-guide-mode="' + item.mode + '"' : '')
@@ -18218,8 +18239,8 @@ function renderPathQuests() {
   var awarenessDone = awarenessMinutes >= awarenessTarget, awarenessClaimed = !!q.awareness.claimed;
   var awarenessReward = pathQuestReward('awareness');
 
-  var exIcon = { clock:'⊙', visual:'◉', auditory:'◈', thought:'◌', asana:'✦', soulmirror:'◆' };
-  var exColor = { clock:'#d4b08e', visual:'#8ab8e0', auditory:'#8eccc0', thought:'#98b4cc', asana:'#d49898', soulmirror:'#c4a8d4' };
+  var exIcon = { clock:'⊙', visual:'◉', auditory:'◈', thought:'◌', observation:'◌', focus:'◌', vacancy:'◌', asana:'✦', soulmirror:'◆' };
+  var exColor = { clock:'#d4b08e', visual:'#8ab8e0', auditory:'#8eccc0', thought:'#98b4cc', observation:'#98b4cc', focus:'#98b4cc', vacancy:'#98b4cc', asana:'#d49898', soulmirror:'#c4a8d4' };
 
   var dayNames = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
   var monthNames = ['January','February','March','April','May','June','July','August','September','October','November','December'];
@@ -18657,7 +18678,7 @@ function renderPathQuests() {
 (function() {
   var menu = document.getElementById('pqAddMenu');
   if (!menu) return;
-  var ADD_NAMES = { clock:'Clock', visual:'Visualization', auditory:'Auditory', thought:'Thought Control', asana:'Asana', soulmirror:'Soul Mirror' };
+  var ADD_NAMES = { clock:'Clock', visual:'Visualization', auditory:'Auditory', thought:'Thought Control', asana:'Asana', soulmirror:'Soul Mirror', observation:'Thought Observation', focus:'Thought Focus', vacancy:'Vacancy of Mind' };
 
   window.pqOpenAddMenu = function(btn) {
     var addable = (typeof guidePathAddableExercises === 'function') ? guidePathAddableExercises() : [];
