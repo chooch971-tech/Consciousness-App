@@ -18433,11 +18433,21 @@ function renderPathQuests() {
     + '</div>'
     + '</div>';
   html += '<div style="display:flex;flex-direction:column;gap:8px;">';
-  html += items.map(function(item) {
+  var _isTC = function(id) { return id === 'thought' || id === 'observation' || id === 'focus' || id === 'vacancy'; };
+  // Cluster all thought-family items together at the first one's position.
+  (function() {
+    var seen = false, ordered = [];
+    items.forEach(function(it) {
+      if (_isTC(it.id)) { if (!seen) { seen = true; items.forEach(function(t) { if (_isTC(t.id)) ordered.push(t); }); } }
+      else ordered.push(it);
+    });
+    items = ordered;
+  })();
+  var _pqBuildCard = function(item, grouped, last) {
     var rounds = (item.durationLabel && item.durationLabel.indexOf('x2') !== -1) ? 2 : 1;
     var modeText = item.mode ? (GUIDE_FOUNDATION_THOUGHT_LABELS[item.mode] || item.mode) : '';
     var metaParts = [];
-    if (item.id === 'thought' && modeText) metaParts.push(modeText);
+    if (modeText && _isTC(item.id)) metaParts.push(modeText);
     if (item.duration) metaParts.push(item.duration + ' min');
     else if (item.durationLabel) metaParts.push(item.durationLabel.replace(/\s*x2\s*$/, ''));
     if (rounds > 1) {
@@ -18491,7 +18501,9 @@ function renderPathQuests() {
     var cardPadding = extraHtml ? 'padding:13px 14px 10px;' : 'padding:13px 14px;';
     var menuBtn = '<button class="pq-menu-btn" data-ex-id="' + item.id + '"' + (item.mode ? ' data-ex-mode="' + item.mode + '"' : '') + (item.added ? ' data-ex-added="1"' : '') + ' title="Options">···</button>';
     var badgeStyle = 'position:relative;width:48px;height:48px;border-radius:12px;background:' + color + '1e;border:1px solid ' + color + '38;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0;font-family:\'DM Mono\',monospace;line-height:1;color:' + color + ';';
-    return '<div style="display:flex;flex-direction:column;background:var(--surface);border:1px solid var(--border);border-radius:14px;' + cardPadding + (item.done ? 'opacity:.5;' : '') + '">'
+    var outerStyle = 'display:flex;flex-direction:column;background:var(--surface);' + cardPadding + (item.done ? 'opacity:.5;' : '');
+    outerStyle += grouped ? (last ? '' : 'border-bottom:1px solid var(--border);') : 'border:1px solid var(--border);border-radius:14px;';
+    return '<div style="' + outerStyle + '">'
       + '<div style="display:flex;align-items:center;gap:14px;">'
       + '<div style="' + badgeStyle + '">' + icon + '</div>'
       + '<div style="flex:1;min-width:0;">'
@@ -18503,7 +18515,27 @@ function renderPathQuests() {
       + '</div>'
       + (extraHtml ? '<div style="padding:8px 0 0;">' + extraHtml + '</div>' : '')
       + '</div>';
-  }).join('');
+  };
+  // Render cards, wrapping each run of thought-family cards in one grouped frame.
+  (function() {
+    var i = 0;
+    while (i < items.length) {
+      if (_isTC(items[i].id)) {
+        var run = [];
+        while (i < items.length && _isTC(items[i].id)) { run.push(items[i]); i++; }
+        if (run.length > 1) {
+          html += '<div style="display:flex;flex-direction:column;border:1px solid var(--border);border-radius:14px;overflow:hidden;">';
+          run.forEach(function(it, idx) { html += _pqBuildCard(it, true, idx === run.length - 1); });
+          html += '</div>';
+        } else {
+          html += _pqBuildCard(run[0], false, false);
+        }
+      } else {
+        html += _pqBuildCard(items[i], false, false);
+        i++;
+      }
+    }
+  })();
   html += '</div>';  // close cards container
   html += '</div>';  // close label+cards wrapper
 
