@@ -8657,10 +8657,8 @@ function buildClockSVG() {
   if (!svg) return;
   var theme = getClockTheme();
   var html = '';
-  // Editable background face fill (drawn first, behind everything)
-  if (theme.bg && theme.bg !== 'none') {
-    html += '<circle cx="100" cy="100" r="90" fill="' + theme.bg + '"/>';
-  }
+  // The clock face stays transparent so the screen background (set via the
+  // background control) shows through inside the clock as well.
   // Outer border ring
   html += '<circle cx="100" cy="100" r="90" fill="none" stroke="var(--border2)" stroke-width="1"/>';
   // Tick marks — major full strength, minor dimmed, both in the chosen tick colour
@@ -8688,7 +8686,14 @@ function buildClockSVG() {
 // ── Clock colour theming ──────────────────────────────────
 var CLOCK_PALETTE = ['#d4956e','#d4b86a','#7eb8a4','#8eccc0','#8ab8e0','#98b4cc','#9b8ec4','#c4a8d4','#d49898','#c46a6a','#e8e6e0','#8a8a9a'];
 var CLOCK_THEME_DEFAULT = { hand:'#d4956e', ticks:'#ddd8ce', bg:'none', scale:1 };
-var CLOCK_SCALE_MIN = 0.7, CLOCK_SCALE_MAX = 1.2;
+var CLOCK_SCALE_MIN = 0.7;
+// Max scale adapts to the viewport so desktop can go big while mobile stays
+// within bounds. Base clock is 320px; leave room for chrome and controls.
+function clockScaleMax() {
+  var w = ((window.innerWidth || 360) - 24) / 320;
+  var h = ((window.innerHeight || 640) * 0.6) / 320;
+  return Math.max(1.2, Math.min(2.5, Math.min(w, h)));
+}
 var activeClockEditPart = null;
 
 function getClockTheme() {
@@ -8699,7 +8704,7 @@ function getClockTheme() {
     hand: t.hand || CLOCK_THEME_DEFAULT.hand,
     ticks: t.ticks || CLOCK_THEME_DEFAULT.ticks,
     bg: t.bg || CLOCK_THEME_DEFAULT.bg,
-    scale: Math.max(CLOCK_SCALE_MIN, Math.min(CLOCK_SCALE_MAX, sc))
+    scale: Math.max(CLOCK_SCALE_MIN, Math.min(clockScaleMax(), sc))
   };
 }
 
@@ -8711,8 +8716,6 @@ function applyHeroClockTheme() {
   var hand = svg.querySelector('.clk-hand'); if (hand) hand.setAttribute('stroke', theme.hand);
   var hub = svg.querySelector('.clk-hub'); if (hub) hub.setAttribute('fill', theme.hand);
   var ticks = svg.querySelector('.clk-ticks'); if (ticks) ticks.setAttribute('stroke', theme.ticks);
-  var face = svg.querySelector('.clk-face');
-  if (face) face.setAttribute('fill', theme.bg === 'none' ? 'rgba(224,124,58,.045)' : theme.bg);
 }
 
 function openClockPalette(part) {
@@ -8787,6 +8790,14 @@ function applyClockScale() {
   wrap.style.transformOrigin = 'center center';
 }
 
+// Background = the whole session screen around the clock (not the clock face).
+function applyClockScreenBg() {
+  var screen = document.getElementById('concSessionScreen');
+  if (!screen) return;
+  var bg = getClockTheme().bg;
+  screen.style.background = (bg && bg !== 'none') ? bg : '';
+}
+
 function renderClockSetupControls() {
   var theme = getClockTheme();
   // Background swatches (with a "none" option first)
@@ -8807,14 +8818,14 @@ function setClockBg(color) {
   concState.clockTheme.bg = color;
   saveConcState();
   if (typeof syncEnabled !== 'undefined' && syncEnabled && authToken) syncPushData();
-  buildClockSVG();
+  applyClockScreenBg();
   renderClockSetupControls();
 }
 
 function adjustClockScale(delta) {
   var cur = getClockTheme().scale;
   var next = Math.round((cur + delta) * 10) / 10;
-  next = Math.max(CLOCK_SCALE_MIN, Math.min(CLOCK_SCALE_MAX, next));
+  next = Math.max(CLOCK_SCALE_MIN, Math.min(clockScaleMax(), next));
   if (!concState.clockTheme) concState.clockTheme = {};
   concState.clockTheme.scale = next;
   saveConcState();
@@ -8971,9 +8982,10 @@ function startConcentration() {
   if (countdown) { countdown.classList.remove('show'); countdown.textContent = ''; }
 
   concPendingBegin = true;
-  // Apply the saved scale and surface the background + scale controls while
-  // instructions are up (skip during the stripped-down first tutorial session).
+  // Apply the saved scale + screen background, and surface the background +
+  // scale controls while instructions are up (skip the first tutorial session).
   applyClockScale();
+  applyClockScreenBg();
   showClockSetupControls(!isTutorialFirst);
 }
 
@@ -11525,7 +11537,7 @@ var EXERCISE_DEFS = {
         ticks += '<line x1="' + x1 + '" y1="' + y1 + '" x2="' + x2 + '" y2="' + y2 + '"/>';
       }
       var _ct = getClockTheme();
-      var _faceFill = _ct.bg === 'none' ? 'rgba(224,124,58,.045)' : _ct.bg;
+      var _faceFill = 'rgba(224,124,58,.045)'; // decorative tint; bg is the screen, set later
       var heroHtml = '<div class="clk-hero" id="clkHero"><div class="clk-hero-glow"></div>'
         + '<svg viewBox="0 0 240 240" width="172" height="172" id="clkHeroSvg">'
         +   '<circle class="clk-rim" cx="120" cy="120" r="112"/>'
