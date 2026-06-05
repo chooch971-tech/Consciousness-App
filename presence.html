@@ -508,7 +508,7 @@
     .clock-center-dot { fill:#d4956e; }
     .clock-elapsed { position:absolute; bottom:-32px; left:50%; transform:translateX(-50%); font-family:Cormorant Garamond,serif; font-size:48px; font-weight:300; color:var(--text); line-height:1; }
     /* Clock colour editing */
-    .clk-customize-btn { display:block; width:100%; box-sizing:border-box; align-self:stretch; font-family:'DM Mono',monospace; font-size:9px; letter-spacing:.18em; text-transform:uppercase; color:rgba(224,158,110,.85); background:none; border:1px solid rgba(224,158,110,.18); border-radius:8px; padding:14px 20px; cursor:pointer; text-align:center; margin-top:8px; }
+    .clk-customize-btn { display:block; width:100%; box-sizing:border-box; align-self:stretch; font-family:'DM Mono',monospace; font-size:9px; letter-spacing:.18em; text-transform:uppercase; color:rgba(224,158,110,.85); background:rgba(7,8,13,.72); border:1px solid rgba(224,158,110,.18); border-radius:8px; padding:14px 20px; cursor:pointer; text-align:center; margin-top:8px; }
     .clk-sess-scale { display:flex; align-items:center; gap:12px; }
     .clk-scale-btn { width:28px; height:28px; border-radius:8px; border:1px solid var(--border2); background:rgba(255,255,255,.04); color:var(--text); font-size:16px; line-height:1; cursor:pointer; display:flex; align-items:center; justify-content:center; padding:0; }
     .clk-scale-btn:active { transform:scale(.92); }
@@ -8735,12 +8735,8 @@ function applyHeroClockTheme() {
   var ticks = svg.querySelector('.clk-ticks'); if (ticks) ticks.setAttribute('stroke', theme.ticks);
   var face = svg.querySelector('.clk-face');
   if (face) face.setAttribute('fill', (theme.face && theme.face !== 'none') ? theme.face : '#07080d');
-  var hero = document.getElementById('clkHero');
-  if (hero) {
-    var heroBg = (theme.bg && theme.bg !== 'none') ? theme.bg : '';
-    hero.style.background = heroBg;
-    hero.style.borderRadius = heroBg ? '50%' : '';
-  }
+  var card = document.getElementById('clkHeroCard');
+  if (card) card.style.background = (theme.bg && theme.bg !== 'none') ? theme.bg : '';
 }
 
 // ── Clock settings screen ────────────────────────────────────────────
@@ -11623,8 +11619,8 @@ var EXERCISE_DEFS = {
       var _ct = getClockTheme();
       var _faceFill = (_ct.face && _ct.face !== 'none') ? _ct.face : 'rgba(224,124,58,.045)';
       var _heroBg = (_ct.bg && _ct.bg !== 'none') ? _ct.bg : '';
-      var heroHtml = '<div class="clk-hero-card" id="clkHeroCard">'
-        + '<div class="clk-hero" id="clkHero"' + (_heroBg ? ' style="background:' + _heroBg + ';border-radius:50%;"' : '') + '><div class="clk-hero-glow"></div>'
+      var heroHtml = '<div class="clk-hero-card" id="clkHeroCard"' + (_heroBg ? ' style="background:' + _heroBg + ';"' : '') + '>'
+        + '<div class="clk-hero" id="clkHero"><div class="clk-hero-glow"></div>'
         + '<svg viewBox="0 0 240 240" width="172" height="172" id="clkHeroSvg">'
         +   '<circle class="clk-face" cx="120" cy="120" r="112" fill="' + _faceFill + '"/>'
         +   '<circle class="clk-rim" cx="120" cy="120" r="112"/>'
