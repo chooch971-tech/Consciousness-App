@@ -508,9 +508,8 @@
     .clock-center-dot { fill:#d4956e; }
     .clock-elapsed { position:absolute; bottom:-32px; left:50%; transform:translateX(-50%); font-family:Cormorant Garamond,serif; font-size:48px; font-weight:300; color:var(--text); line-height:1; }
     /* Clock colour editing (pre-session) */
-    .clock-edit-hint { display:none; width:fit-content; margin:16px auto 8px; padding:9px 20px; border-radius:999px; border:1px solid var(--border2); background:rgba(255,255,255,.05); color:var(--text); font-family:'DM Mono',monospace; font-size:10px; letter-spacing:.1em; text-align:center; cursor:pointer; transition:background .15s, border-color .15s; }
+    .clock-edit-hint { display:none; text-align:center; font-family:'DM Mono',monospace; font-size:9px; letter-spacing:.2em; text-transform:uppercase; color:rgba(224,158,110,.75); margin:14px auto 2px; }
     .clock-edit-hint.show { display:block; }
-    .clock-edit-hint:hover { background:rgba(255,255,255,.08); border-color:rgba(255,255,255,.2); }
     .clock-palette { position:absolute; top:55%; left:50%; transform:translateX(-50%); width:238px; background:rgba(20,21,30,.96); border:1px solid var(--border); border-radius:16px; padding:13px 15px; box-shadow:0 12px 40px rgba(0,0,0,.6); backdrop-filter:blur(4px); z-index:40; display:none; }
     .clock-palette.show { display:block; }
     .clock-palette-inline { position:static; left:auto; top:auto; transform:none; margin:2px auto 16px; }
@@ -3498,7 +3497,8 @@ body:not(.tut-live) #tutCorgi {
 
 /* ── Clock setup redesign ─────────────────────────────────────────────── */
 .clk-setup { display:flex; flex-direction:column; align-items:center; }
-.clk-hero { position:relative; width:172px; height:172px; margin:6px auto 4px; display:flex; align-items:center; justify-content:center; }
+.clk-hero-card { width:100%; box-sizing:border-box; background:rgba(224,124,58,.06); border:1px solid rgba(224,124,58,.14); border-radius:18px; padding:28px 16px 20px; margin-bottom:24px; display:flex; flex-direction:column; align-items:center; }
+.clk-hero { position:relative; width:172px; height:172px; margin:0 auto 4px; display:flex; align-items:center; justify-content:center; }
 .clk-hero-glow { position:absolute; inset:-22%; border-radius:50%;
   background:radial-gradient(circle, rgba(224,124,58,.20) 0%, rgba(224,124,58,.06) 45%, transparent 70%);
   animation:clkGlow 5.5s ease-in-out infinite; }
@@ -8658,10 +8658,8 @@ function buildClockSVG() {
   if (!svg) return;
   var theme = getClockTheme();
   var html = '';
-  // The clock face stays transparent so the screen background (set via the
-  // background control) shows through inside the clock as well.
-  // Outer border ring
-  html += '<circle cx="100" cy="100" r="90" fill="none" stroke="var(--border2)" stroke-width="1"/>';
+  // Face fill blocks the screen background; only the area around the clock shows the chosen bg color.
+  html += '<circle cx="100" cy="100" r="90" fill="var(--bg)" stroke="var(--border2)" stroke-width="1"/>';
   // Tick marks — major full strength, minor dimmed, both in the chosen tick colour
   for (var i = 0; i < 60; i++) {
     var angle = (i * 6 - 90) * Math.PI / 180;
@@ -11539,7 +11537,8 @@ var EXERCISE_DEFS = {
       }
       var _ct = getClockTheme();
       var _faceFill = 'rgba(224,124,58,.045)'; // decorative tint; bg is the screen, set later
-      var heroHtml = '<div class="clk-hero" id="clkHero"><div class="clk-hero-glow"></div>'
+      var heroHtml = '<div class="clk-hero-card">'
+        + '<div class="clk-hero" id="clkHero"><div class="clk-hero-glow"></div>'
         + '<svg viewBox="0 0 240 240" width="172" height="172" id="clkHeroSvg">'
         +   '<circle class="clk-rim" cx="120" cy="120" r="112"/>'
         +   '<circle class="clk-rim-inner" cx="120" cy="120" r="104"/>'
@@ -11551,10 +11550,11 @@ var EXERCISE_DEFS = {
         +   '<circle r="100" cx="120" cy="120" fill="none" stroke="transparent" stroke-width="24" data-clock-edit="ticks" style="cursor:pointer"/>'
         +   '<line x1="120" y1="120" x2="120" y2="30" stroke="transparent" stroke-width="28" stroke-linecap="round" data-clock-edit="hand" style="cursor:pointer"/>'
         + '</svg></div>'
-        + '<button type="button" class="clock-edit-hint show" id="clockEditHint">Tap parts of the clock to customize</button>'
+        + '<div class="clock-edit-hint show" id="clockEditHint">Tap parts of the clock to customize</div>'
         + '<div class="clock-palette clock-palette-inline" id="clockPalette">'
         +   '<div class="clock-palette-title" id="clockPaletteTitle"></div>'
         +   '<div class="clock-palette-swatches" id="clockPaletteSwatches"></div>'
+        + '</div>'
         + '</div>';
 
       // ── Record ──
