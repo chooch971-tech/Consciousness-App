@@ -522,7 +522,7 @@
     .clk-cfg-hdr { display:flex; align-items:center; justify-content:space-between; padding:var(--safe-top) 20px 4px; flex-shrink:0; background:rgba(7,8,13,.55); backdrop-filter:blur(8px); -webkit-backdrop-filter:blur(8px); }
     .clk-cfg-title { font-family:'Cormorant Garamond',serif; font-size:22px; font-weight:300; color:var(--text); }
     .clk-cfg-body { padding:8px 20px 40px; }
-    .clk-cfg-preview { display:flex; align-items:center; justify-content:center; padding:28px 0 0; }
+    .clk-cfg-preview { display:flex; align-items:center; justify-content:center; padding:40px 0 24px; }
     .clk-cfg-hint { text-align:center; font-family:'DM Mono',monospace; font-size:9px; letter-spacing:.18em; text-transform:uppercase; color:rgba(224,158,110,.55); padding:16px 20px 20px; }
     .clk-cfg-section { background:rgba(20,21,30,.92); border:1px solid var(--border); border-radius:14px; overflow:hidden; margin-bottom:14px; backdrop-filter:blur(4px); -webkit-backdrop-filter:blur(4px); }
     .clk-cfg-row { padding:14px 16px; display:flex; flex-direction:column; gap:10px; }
@@ -8786,9 +8786,11 @@ function renderClockSettings() {
       var x2 = (120 + Math.sin(ang) * 104).toFixed(1), y2 = (120 - Math.cos(ang) * 104).toFixed(1);
       tks += '<line x1="' + x1 + '" y1="' + y1 + '" x2="' + x2 + '" y2="' + y2 + '"/>';
     }
-    var pFace = (theme.face && theme.face !== 'none') ? theme.face : 'rgba(224,124,58,.045)';
-    // Preview size tracks the scale so the user can see it change
-    var sz = Math.min(230, Math.max(90, Math.round(165 * theme.scale)));
+    // Solid dark face by default so the background shows AROUND the clock, not through it
+    var pFace = (theme.face && theme.face !== 'none') ? theme.face : '#07080d';
+    // Match the session clock size (320px base), scaled by theme.scale, capped to screen
+    var base = Math.min(300, (window.innerWidth || 390) - 40);
+    var sz = Math.max(120, Math.min(Math.round(base * theme.scale), (window.innerWidth || 390) - 20));
     previewEl.innerHTML = '<div class="clk-hero" style="margin:0;">'
       + '<div class="clk-hero-glow"></div>'
       + '<svg viewBox="0 0 240 240" width="' + sz + '" height="' + sz + '" id="clkCfgHeroSvg">'
@@ -8865,7 +8867,7 @@ function setClockColor(part, color) {
   if (typeof syncEnabled !== 'undefined' && syncEnabled && authToken) syncPushData();
   // Update the preview clock in-place (no full re-render, keeps scroll)
   var theme = getClockTheme();
-  var pFace = (theme.face && theme.face !== 'none') ? theme.face : 'rgba(224,124,58,.045)';
+  var pFace = (theme.face && theme.face !== 'none') ? theme.face : '#07080d';
   var faceEl  = document.getElementById('clkCfgFaceEl');
   var ticksEl = document.getElementById('clkCfgTicksEl');
   var handEl  = document.getElementById('clkCfgHandEl');
