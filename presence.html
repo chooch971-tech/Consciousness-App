@@ -8659,7 +8659,8 @@ function buildClockSVG() {
   var theme = getClockTheme();
   var html = '';
   // Face fill blocks the screen background; only the area around the clock shows the chosen bg color.
-  html += '<circle cx="100" cy="100" r="90" fill="var(--bg)" stroke="var(--border2)" stroke-width="1"/>';
+  var faceFill = (theme.face && theme.face !== 'none') ? theme.face : 'var(--bg)';
+  html += '<circle cx="100" cy="100" r="90" fill="' + faceFill + '" stroke="var(--border2)" stroke-width="1"/>';
   // Tick marks — major full strength, minor dimmed, both in the chosen tick colour
   for (var i = 0; i < 60; i++) {
     var angle = (i * 6 - 90) * Math.PI / 180;
@@ -8684,7 +8685,7 @@ function buildClockSVG() {
 
 // ── Clock colour theming ──────────────────────────────────
 var CLOCK_PALETTE = ['#d4956e','#d4b86a','#7eb8a4','#8eccc0','#8ab8e0','#98b4cc','#9b8ec4','#c4a8d4','#d49898','#c46a6a','#e8e6e0','#8a8a9a'];
-var CLOCK_THEME_DEFAULT = { hand:'#d4956e', ticks:'#ddd8ce', bg:'none', scale:1 };
+var CLOCK_THEME_DEFAULT = { hand:'#d4956e', ticks:'#ddd8ce', face:'none', bg:'none', scale:1 };
 var CLOCK_SCALE_MIN = 0.7;
 // Max scale adapts to the viewport so desktop can go big while mobile stays
 // within bounds. Base clock is 320px; leave room for chrome and controls.
@@ -8702,6 +8703,7 @@ function getClockTheme() {
   return {
     hand: t.hand || CLOCK_THEME_DEFAULT.hand,
     ticks: t.ticks || CLOCK_THEME_DEFAULT.ticks,
+    face: t.face || CLOCK_THEME_DEFAULT.face,
     bg: t.bg || CLOCK_THEME_DEFAULT.bg,
     scale: Math.max(CLOCK_SCALE_MIN, Math.min(clockScaleMax(), sc))
   };
@@ -8715,17 +8717,19 @@ function applyHeroClockTheme() {
   var hand = svg.querySelector('.clk-hand'); if (hand) hand.setAttribute('stroke', theme.hand);
   var hub = svg.querySelector('.clk-hub'); if (hub) hub.setAttribute('fill', theme.hand);
   var ticks = svg.querySelector('.clk-ticks'); if (ticks) ticks.setAttribute('stroke', theme.ticks);
+  var face = svg.querySelector('.clk-face');
+  if (face) face.setAttribute('fill', (theme.face && theme.face !== 'none') ? theme.face : 'rgba(224,124,58,.045)');
 }
 
 function openClockPalette(part) {
-  var titles = { hand:'Seconds hand', ticks:'Tick marks', bg:'Clock face' };
+  var titles = { hand:'Seconds hand', ticks:'Tick marks', face:'Clock face', bg:'Background' };
   activeClockEditPart = part;
   var titleEl = document.getElementById('clockPaletteTitle');
   if (titleEl) titleEl.textContent = titles[part] || '';
   var current = getClockTheme()[part];
   var html = '';
-  if (part === 'bg') {
-    html += '<button class="clock-swatch clock-swatch-none' + (current === 'none' ? ' sel' : '') + '" data-color="none" title="No fill"></button>';
+  if (part === 'bg' || part === 'face') {
+    html += '<button class="clock-swatch clock-swatch-none' + (current === 'none' ? ' sel' : '') + '" data-color="none" title="Default"></button>';
   }
   CLOCK_PALETTE.forEach(function(c) {
     html += '<button class="clock-swatch' + (current === c ? ' sel' : '') + '" data-color="' + c + '" style="background:' + c + '"></button>';
@@ -11536,7 +11540,7 @@ var EXERCISE_DEFS = {
         ticks += '<line x1="' + x1 + '" y1="' + y1 + '" x2="' + x2 + '" y2="' + y2 + '"/>';
       }
       var _ct = getClockTheme();
-      var _faceFill = 'rgba(224,124,58,.045)'; // decorative tint; bg is the screen, set later
+      var _faceFill = (_ct.face && _ct.face !== 'none') ? _ct.face : 'rgba(224,124,58,.045)';
       var heroHtml = '<div class="clk-hero-card">'
         + '<div class="clk-hero" id="clkHero"><div class="clk-hero-glow"></div>'
         + '<svg viewBox="0 0 240 240" width="172" height="172" id="clkHeroSvg">'
@@ -11546,7 +11550,8 @@ var EXERCISE_DEFS = {
         +   '<g class="clk-ticks" stroke="' + _ct.ticks + '">' + ticks + '</g>'
         +   '<line class="clk-hand" x1="120" y1="120" x2="120" y2="30" stroke="' + _ct.hand + '" style="animation:none;"/>'
         +   '<circle class="clk-hub" cx="120" cy="120" r="6" fill="' + _ct.hand + '"/>'
-        // Invisible tap targets for colour — ticks ring, then hand strip on top.
+        // Invisible tap targets — face inner area first (lowest z), then ticks ring, then hand on top.
+        +   '<circle r="74" cx="120" cy="120" fill="transparent" data-clock-edit="face" style="cursor:pointer"/>'
         +   '<circle r="100" cx="120" cy="120" fill="none" stroke="transparent" stroke-width="24" data-clock-edit="ticks" style="cursor:pointer"/>'
         +   '<line x1="120" y1="120" x2="120" y2="30" stroke="transparent" stroke-width="28" stroke-linecap="round" data-clock-edit="hand" style="cursor:pointer"/>'
         + '</svg></div>'
