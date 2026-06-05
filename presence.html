@@ -508,8 +508,9 @@
     .clock-center-dot { fill:#d4956e; }
     .clock-elapsed { position:absolute; bottom:-32px; left:50%; transform:translateX(-50%); font-family:Cormorant Garamond,serif; font-size:48px; font-weight:300; color:var(--text); line-height:1; }
     /* Clock colour editing (pre-session) */
-    .clock-edit-hint { font-size:11px; letter-spacing:.04em; color:var(--text); font-family:'DM Mono',monospace; text-align:center; margin:16px auto 4px; max-width:280px; line-height:1.85; display:none; }
+    .clock-edit-hint { display:none; width:fit-content; margin:16px auto 8px; padding:9px 20px; border-radius:999px; border:1px solid var(--border2); background:rgba(255,255,255,.05); color:var(--text); font-family:'DM Mono',monospace; font-size:10px; letter-spacing:.1em; text-align:center; cursor:pointer; transition:background .15s, border-color .15s; }
     .clock-edit-hint.show { display:block; }
+    .clock-edit-hint:hover { background:rgba(255,255,255,.08); border-color:rgba(255,255,255,.2); }
     .clock-palette { position:absolute; top:55%; left:50%; transform:translateX(-50%); width:238px; background:rgba(20,21,30,.96); border:1px solid var(--border); border-radius:16px; padding:13px 15px; box-shadow:0 12px 40px rgba(0,0,0,.6); backdrop-filter:blur(4px); z-index:40; display:none; }
     .clock-palette.show { display:block; }
     .clock-palette-inline { position:static; left:auto; top:auto; transform:none; margin:2px auto 16px; }
@@ -11550,7 +11551,7 @@ var EXERCISE_DEFS = {
         +   '<circle r="100" cx="120" cy="120" fill="none" stroke="transparent" stroke-width="24" data-clock-edit="ticks" style="cursor:pointer"/>'
         +   '<line x1="120" y1="120" x2="120" y2="30" stroke="transparent" stroke-width="28" stroke-linecap="round" data-clock-edit="hand" style="cursor:pointer"/>'
         + '</svg></div>'
-        + '<div class="clock-edit-hint show" id="clockEditHint">Tap the parts of the clock to change their color.<br>Set the background and scale on the following screen.</div>'
+        + '<button type="button" class="clock-edit-hint show" id="clockEditHint">Tap parts of the clock to customize</button>'
         + '<div class="clock-palette clock-palette-inline" id="clockPalette">'
         +   '<div class="clock-palette-title" id="clockPaletteTitle"></div>'
         +   '<div class="clock-palette-swatches" id="clockPaletteSwatches"></div>'
