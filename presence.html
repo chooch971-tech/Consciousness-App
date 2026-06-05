@@ -508,11 +508,22 @@
     .clock-center-dot { fill:#d4956e; }
     .clock-elapsed { position:absolute; bottom:-32px; left:50%; transform:translateX(-50%); font-family:Cormorant Garamond,serif; font-size:48px; font-weight:300; color:var(--text); line-height:1; }
     /* Clock colour editing (pre-session) */
-    .clock-edit-hint { font-size:9px; letter-spacing:.16em; text-transform:uppercase; color:var(--muted); font-family:'DM Mono',monospace; text-align:center; margin-top:18px; opacity:.65; display:none; }
+    .clock-edit-hint { font-size:11px; letter-spacing:.04em; color:var(--text); font-family:'DM Mono',monospace; text-align:center; margin:16px auto 4px; max-width:280px; line-height:1.85; display:none; }
     .clock-edit-hint.show { display:block; }
     .clock-palette { position:absolute; top:55%; left:50%; transform:translateX(-50%); width:238px; background:rgba(20,21,30,.96); border:1px solid var(--border); border-radius:16px; padding:13px 15px; box-shadow:0 12px 40px rgba(0,0,0,.6); backdrop-filter:blur(4px); z-index:40; display:none; }
     .clock-palette.show { display:block; }
     .clock-palette-inline { position:static; left:auto; top:auto; transform:none; margin:2px auto 16px; }
+    /* Background + scale controls on the live clock screen (pre-session) */
+    .clk-sess-controls { display:none; flex-direction:column; gap:14px; width:calc(100% - 48px); max-width:320px; margin:0 auto 18px; padding:14px 16px; background:rgba(20,21,30,.6); border:1px solid var(--border); border-radius:14px; }
+    .clk-sess-controls.show { display:flex; }
+    .clk-sess-row { display:flex; align-items:center; justify-content:space-between; gap:12px; }
+    .clk-sess-label { font-size:10px; letter-spacing:.18em; text-transform:uppercase; color:var(--text); font-family:'DM Mono',monospace; flex-shrink:0; }
+    .clk-sess-swatches { display:flex; gap:7px; flex-wrap:wrap; justify-content:flex-end; }
+    .clk-sess-swatches .clock-swatch { width:22px; height:22px; }
+    .clk-sess-scale { display:flex; align-items:center; gap:12px; }
+    .clk-scale-btn { width:28px; height:28px; border-radius:8px; border:1px solid var(--border2); background:rgba(255,255,255,.04); color:var(--text); font-size:16px; line-height:1; cursor:pointer; display:flex; align-items:center; justify-content:center; padding:0; }
+    .clk-scale-btn:active { transform:scale(.92); }
+    .clk-scale-val { font-family:'DM Mono',monospace; font-size:11px; color:var(--text); min-width:42px; text-align:center; }
     .clock-palette-title { font-size:9px; letter-spacing:.22em; text-transform:uppercase; color:var(--text); font-family:'DM Mono',monospace; text-align:center; margin-bottom:12px; }
     .clock-palette-swatches { display:grid; grid-template-columns:repeat(6,1fr); gap:9px; justify-items:center; }
     .clock-swatch { width:27px; height:27px; border-radius:50%; border:2px solid transparent; cursor:pointer; padding:0; transition:transform .1s; }
@@ -5030,11 +5041,25 @@ body:not(.tut-live) #tutCorgi {
     </div>
     <div style="flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center;">
       <div class="conc-session-label" id="concSessionLabel">focus on the tip of the seconds hand</div>
-      <div class="clock-wrap">
+      <div class="clock-wrap" id="clockWrap">
         <svg class="clock-face" viewBox="0 0 200 200" id="concClock">
           <circle cx="100" cy="100" r="90" fill="none" stroke="var(--border2)" stroke-width="1"/>
         </svg>
         <div class="clock-countdown" id="clockCountdown"></div>
+      </div>
+    </div>
+    <div id="clockSetupControls" class="clk-sess-controls">
+      <div class="clk-sess-row">
+        <span class="clk-sess-label">Background</span>
+        <div class="clk-sess-swatches" id="clockBgSwatches"></div>
+      </div>
+      <div class="clk-sess-row">
+        <span class="clk-sess-label">Scale</span>
+        <div class="clk-sess-scale">
+          <button id="clockScaleDown" class="clk-scale-btn" type="button">−</button>
+          <span id="clockScaleVal" class="clk-scale-val">100%</span>
+          <button id="clockScaleUp" class="clk-scale-btn" type="button">+</button>
+        </div>
       </div>
     </div>
     <div style="text-align:center; padding-bottom:16px;">
@@ -8662,15 +8687,19 @@ function buildClockSVG() {
 
 // ── Clock colour theming ──────────────────────────────────
 var CLOCK_PALETTE = ['#d4956e','#d4b86a','#7eb8a4','#8eccc0','#8ab8e0','#98b4cc','#9b8ec4','#c4a8d4','#d49898','#c46a6a','#e8e6e0','#8a8a9a'];
-var CLOCK_THEME_DEFAULT = { hand:'#d4956e', ticks:'#ddd8ce', bg:'none' };
+var CLOCK_THEME_DEFAULT = { hand:'#d4956e', ticks:'#ddd8ce', bg:'none', scale:1 };
+var CLOCK_SCALE_MIN = 0.7, CLOCK_SCALE_MAX = 1.2;
 var activeClockEditPart = null;
 
 function getClockTheme() {
   var t = (typeof concState !== 'undefined' && concState.clockTheme) || {};
+  var sc = parseFloat(t.scale);
+  if (!(sc > 0)) sc = CLOCK_THEME_DEFAULT.scale;
   return {
     hand: t.hand || CLOCK_THEME_DEFAULT.hand,
     ticks: t.ticks || CLOCK_THEME_DEFAULT.ticks,
-    bg: t.bg || CLOCK_THEME_DEFAULT.bg
+    bg: t.bg || CLOCK_THEME_DEFAULT.bg,
+    scale: Math.max(CLOCK_SCALE_MIN, Math.min(CLOCK_SCALE_MAX, sc))
   };
 }
 
@@ -8746,6 +8775,67 @@ function applyClockColor(color) {
     if (pal && pal.classList.contains('show') && !e.target.closest('#clockPalette')) {
       closeClockPalette();
     }
+  });
+})();
+
+// ── Live-clock screen: background colour + scale controls (pre-session) ──
+function applyClockScale() {
+  var wrap = document.getElementById('clockWrap');
+  if (!wrap) return;
+  var s = getClockTheme().scale;
+  wrap.style.transform = 'scale(' + s + ')';
+  wrap.style.transformOrigin = 'center center';
+}
+
+function renderClockSetupControls() {
+  var theme = getClockTheme();
+  // Background swatches (with a "none" option first)
+  var bgEl = document.getElementById('clockBgSwatches');
+  if (bgEl) {
+    var html = '<button class="clock-swatch clock-swatch-none' + (theme.bg === 'none' ? ' sel' : '') + '" data-clock-bg="none" title="No fill"></button>';
+    CLOCK_PALETTE.forEach(function(c) {
+      html += '<button class="clock-swatch' + (theme.bg === c ? ' sel' : '') + '" data-clock-bg="' + c + '" style="background:' + c + '"></button>';
+    });
+    bgEl.innerHTML = html;
+  }
+  var valEl = document.getElementById('clockScaleVal');
+  if (valEl) valEl.textContent = Math.round(theme.scale * 100) + '%';
+}
+
+function setClockBg(color) {
+  if (!concState.clockTheme) concState.clockTheme = {};
+  concState.clockTheme.bg = color;
+  saveConcState();
+  if (typeof syncEnabled !== 'undefined' && syncEnabled && authToken) syncPushData();
+  buildClockSVG();
+  renderClockSetupControls();
+}
+
+function adjustClockScale(delta) {
+  var cur = getClockTheme().scale;
+  var next = Math.round((cur + delta) * 10) / 10;
+  next = Math.max(CLOCK_SCALE_MIN, Math.min(CLOCK_SCALE_MAX, next));
+  if (!concState.clockTheme) concState.clockTheme = {};
+  concState.clockTheme.scale = next;
+  saveConcState();
+  if (typeof syncEnabled !== 'undefined' && syncEnabled && authToken) syncPushData();
+  applyClockScale();
+  renderClockSetupControls();
+}
+
+function showClockSetupControls(show) {
+  var panel = document.getElementById('clockSetupControls');
+  if (!panel) return;
+  if (show) { renderClockSetupControls(); panel.classList.add('show'); }
+  else panel.classList.remove('show');
+}
+
+(function initClockSetupControls() {
+  document.addEventListener('click', function(e) {
+    var bg = e.target.closest('#clockBgSwatches [data-clock-bg]');
+    if (bg) { setClockBg(bg.getAttribute('data-clock-bg')); return; }
+    if (e.target.closest('#clockScaleDown')) { adjustClockScale(-0.1); return; }
+    if (e.target.closest('#clockScaleUp')) { adjustClockScale(0.1); return; }
   });
 })();
 
@@ -8881,6 +8971,10 @@ function startConcentration() {
   if (countdown) { countdown.classList.remove('show'); countdown.textContent = ''; }
 
   concPendingBegin = true;
+  // Apply the saved scale and surface the background + scale controls while
+  // instructions are up (skip during the stripped-down first tutorial session).
+  applyClockScale();
+  showClockSetupControls(!isTutorialFirst);
 }
 
 function beginCountdown() {
@@ -8897,6 +8991,9 @@ function beginCountdown() {
   }
   concPendingBegin = false;
   var isTutorialFirst = window._tutorialFirstClock === true;
+
+  // Editing is over — hide the background + scale controls for the live session.
+  showClockSetupControls(false);
 
   // Swap instructions to the brief flashing label that fades after countdown.
   var sessionLabel = document.getElementById('concSessionLabel');
@@ -11437,12 +11534,11 @@ var EXERCISE_DEFS = {
         +   '<g class="clk-ticks" stroke="' + _ct.ticks + '">' + ticks + '</g>'
         +   '<line class="clk-hand" x1="120" y1="120" x2="120" y2="30" stroke="' + _ct.hand + '" style="animation:none;"/>'
         +   '<circle class="clk-hub" cx="120" cy="120" r="6" fill="' + _ct.hand + '"/>'
-        // Invisible tap targets — stacked face → ticks ring → hand strip (top)
-        +   '<circle r="88" cx="120" cy="120" fill="transparent" data-clock-edit="bg" style="cursor:pointer"/>'
+        // Invisible tap targets for colour — ticks ring, then hand strip on top.
         +   '<circle r="100" cx="120" cy="120" fill="none" stroke="transparent" stroke-width="24" data-clock-edit="ticks" style="cursor:pointer"/>'
         +   '<line x1="120" y1="120" x2="120" y2="30" stroke="transparent" stroke-width="28" stroke-linecap="round" data-clock-edit="hand" style="cursor:pointer"/>'
         + '</svg></div>'
-        + '<div class="clock-edit-hint show" id="clockEditHint">tap the hand · ticks · or face to recolour</div>'
+        + '<div class="clock-edit-hint show" id="clockEditHint">Tap the parts of the clock to change their color.<br>Set the background and scale on the following screen.</div>'
         + '<div class="clock-palette clock-palette-inline" id="clockPalette">'
         +   '<div class="clock-palette-title" id="clockPaletteTitle"></div>'
         +   '<div class="clock-palette-swatches" id="clockPaletteSwatches"></div>'
@@ -11878,6 +11974,7 @@ function discardSession(type) {
       cancelAnimationFrame(concTimerHandle);
       concStartTime = null;
       concPendingBegin = false;
+      if (typeof showClockSetupControls === 'function') showClockSetupControls(false);
       var cd = document.getElementById('clockCountdown');
       if (cd) { cd.classList.remove('show'); cd.textContent = ''; }
       showScreen('homeScreen');
