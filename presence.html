@@ -16121,8 +16121,8 @@ function renderOmniaEngine() {
   // Inline session progress + advance button
   var sessionProgress = document.getElementById('omniaSessionProgress');
   var advanceBtn = document.getElementById('omniaAdvanceBtn');
-  var sessCompleted = omniaState.completedRecommended || 0;
   var sessNeeded = step.req.recommended || 0;
+  var sessCompleted = Math.min(omniaState.completedRecommended || 0, sessNeeded);
   if (sessionProgress) {
     sessionProgress.innerHTML = 'Meditation sessions: <strong>' + sessCompleted + ' / ' + sessNeeded + '</strong> for Step ' + step.roman;
   }
