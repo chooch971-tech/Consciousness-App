@@ -507,6 +507,17 @@
     .clock-hand-tail { stroke:#d4956e; stroke-width:1.5; stroke-linecap:round; opacity:0.4; }
     .clock-center-dot { fill:#d4956e; }
     .clock-elapsed { position:absolute; bottom:-32px; left:50%; transform:translateX(-50%); font-family:Cormorant Garamond,serif; font-size:48px; font-weight:300; color:var(--text); line-height:1; }
+    /* Clock colour editing (pre-session) */
+    .clock-edit-hint { font-size:9px; letter-spacing:.16em; text-transform:uppercase; color:var(--muted); font-family:'DM Mono',monospace; text-align:center; margin-top:18px; opacity:.65; display:none; }
+    .clock-edit-hint.show { display:block; }
+    .clock-palette { position:absolute; top:55%; left:50%; transform:translateX(-50%); width:238px; background:rgba(20,21,30,.96); border:1px solid var(--border); border-radius:16px; padding:13px 15px; box-shadow:0 12px 40px rgba(0,0,0,.6); backdrop-filter:blur(4px); z-index:40; display:none; }
+    .clock-palette.show { display:block; }
+    .clock-palette-title { font-size:9px; letter-spacing:.22em; text-transform:uppercase; color:var(--text); font-family:'DM Mono',monospace; text-align:center; margin-bottom:12px; }
+    .clock-palette-swatches { display:grid; grid-template-columns:repeat(6,1fr); gap:9px; justify-items:center; }
+    .clock-swatch { width:27px; height:27px; border-radius:50%; border:2px solid transparent; cursor:pointer; padding:0; transition:transform .1s; }
+    .clock-swatch:active { transform:scale(.88); }
+    .clock-swatch.sel { box-shadow:0 0 0 2px var(--bg), 0 0 0 4px var(--text); }
+    .clock-swatch-none { background:repeating-linear-gradient(45deg,#2a2a33,#2a2a33 4px,#474752 4px,#474752 8px); }
 
     /* CONCENTRATION HOME */
     #concHomeScreen { justify-content:space-between; }
@@ -5021,7 +5032,12 @@ body:not(.tut-live) #tutCorgi {
           <circle cx="100" cy="100" r="90" fill="none" stroke="var(--border2)" stroke-width="1"/>
         </svg>
         <div class="clock-countdown" id="clockCountdown"></div>
+        <div class="clock-palette" id="clockPalette">
+          <div class="clock-palette-title" id="clockPaletteTitle">Seconds hand</div>
+          <div class="clock-palette-swatches" id="clockPaletteSwatches"></div>
+        </div>
       </div>
+      <div class="clock-edit-hint" id="clockEditHint">tap the hand · ticks · or face to recolour</div>
     </div>
     <div style="text-align:center; padding-bottom:16px;">
       <button class="btn primary conc-btn" id="concStopBtn2" style="max-width:300px; margin:0 auto;">Stop</button>
@@ -8283,6 +8299,8 @@ function mergeHistoryPull(key, localStr, cloudStr) {
   spec.maxNums.forEach(function(f) {
     if (base[f] != null || other[f] != null) base[f] = Math.max(Number(base[f]) || 0, Number(other[f]) || 0);
   });
+  // Preserve a customised clock theme even when the base snapshot lacks one.
+  if (key === 'presence_conc_v1' && !base.clockTheme && other.clockTheme) base.clockTheme = other.clockTheme;
   return JSON.stringify(base);
 }
 
@@ -8614,8 +8632,16 @@ if (!localStorage.getItem('presence_auth_token')) {
 function buildClockSVG() {
   var svg = document.getElementById('concClock');
   if (!svg) return;
-  var html = '<circle cx="100" cy="100" r="90" fill="none" stroke="var(--border2)" stroke-width="1"/>';
-  // Tick marks
+  var theme = getClockTheme();
+  var editable = concPendingBegin === true;
+  var html = '';
+  // Editable background face fill (drawn first, behind everything)
+  if (theme.bg && theme.bg !== 'none') {
+    html += '<circle cx="100" cy="100" r="90" fill="' + theme.bg + '"/>';
+  }
+  // Outer border ring
+  html += '<circle cx="100" cy="100" r="90" fill="none" stroke="var(--border2)" stroke-width="1"/>';
+  // Tick marks — major full strength, minor dimmed, both in the chosen tick colour
   for (var i = 0; i < 60; i++) {
     var angle = (i * 6 - 90) * Math.PI / 180;
     var isMajor = i % 5 === 0;
@@ -8625,17 +8651,111 @@ function buildClockSVG() {
     var y1 = 100 + r1 * Math.sin(angle);
     var x2 = 100 + r2 * Math.cos(angle);
     var y2 = 100 + r2 * Math.sin(angle);
-    html += '<line x1="' + x1 + '" y1="' + y1 + '" x2="' + x2 + '" y2="' + y2 + '" class="' + (isMajor ? 'clock-tick-major' : 'clock-tick') + '"/>';
+    html += '<line x1="' + x1 + '" y1="' + y1 + '" x2="' + x2 + '" y2="' + y2 + '" stroke="' + theme.ticks + '" stroke-width="' + (isMajor ? 1.5 : 1) + '"' + (isMajor ? '' : ' opacity="0.55"') + '/>';
   }
   // Hand group — rotates as a unit for smooth sliding
   html += '<g id="concHandGroup" class="clock-hand-group">';
-  html += '<line x1="100" y1="100" x2="100" y2="24" class="clock-hand-sec"/>'; // main hand
-  html += '<line x1="100" y1="100" x2="100" y2="114" class="clock-hand-tail"/>'; // tail
+  html += '<line x1="100" y1="100" x2="100" y2="24" stroke="' + theme.hand + '" stroke-width="2" stroke-linecap="round"/>'; // main hand
+  html += '<line x1="100" y1="100" x2="100" y2="114" stroke="' + theme.hand + '" stroke-width="1.5" stroke-linecap="round" opacity="0.4"/>'; // tail
   html += '</g>';
   // Center dot on top
-  html += '<circle cx="100" cy="100" r="4" class="clock-center-dot"/>';
+  html += '<circle cx="100" cy="100" r="4" fill="' + theme.hand + '"/>';
+  // Invisible hit targets for tap-to-recolour — only before the session starts.
+  // Stacked bottom→top: face area, tick ring band, then the hand strip on top.
+  if (editable) {
+    html += '<circle cx="100" cy="100" r="72" fill="transparent" data-clock-edit="bg" style="cursor:pointer"/>';
+    html += '<circle cx="100" cy="100" r="83" fill="none" stroke="transparent" stroke-width="18" data-clock-edit="ticks" style="cursor:pointer"/>';
+    html += '<line x1="100" y1="100" x2="100" y2="24" stroke="transparent" stroke-width="22" stroke-linecap="round" data-clock-edit="hand" style="cursor:pointer"/>';
+  }
   svg.innerHTML = html;
 }
+
+// ── Clock colour theming ──────────────────────────────────
+var CLOCK_PALETTE = ['#d4956e','#d4b86a','#7eb8a4','#8eccc0','#8ab8e0','#98b4cc','#9b8ec4','#c4a8d4','#d49898','#c46a6a','#e8e6e0','#8a8a9a'];
+var CLOCK_THEME_DEFAULT = { hand:'#d4956e', ticks:'#ddd8ce', bg:'none' };
+var activeClockEditPart = null;
+
+function getClockTheme() {
+  var t = (typeof concState !== 'undefined' && concState.clockTheme) || {};
+  return {
+    hand: t.hand || CLOCK_THEME_DEFAULT.hand,
+    ticks: t.ticks || CLOCK_THEME_DEFAULT.ticks,
+    bg: t.bg || CLOCK_THEME_DEFAULT.bg
+  };
+}
+
+function openClockPalette(part) {
+  if (!concPendingBegin) return;
+  var titles = { hand:'Seconds hand', ticks:'Tick marks', bg:'Clock face' };
+  activeClockEditPart = part;
+  var titleEl = document.getElementById('clockPaletteTitle');
+  if (titleEl) titleEl.textContent = titles[part] || '';
+  var current = getClockTheme()[part];
+  var html = '';
+  if (part === 'bg') {
+    html += '<button class="clock-swatch clock-swatch-none' + (current === 'none' ? ' sel' : '') + '" data-color="none" title="No fill"></button>';
+  }
+  CLOCK_PALETTE.forEach(function(c) {
+    html += '<button class="clock-swatch' + (current === c ? ' sel' : '') + '" data-color="' + c + '" style="background:' + c + '"></button>';
+  });
+  var sw = document.getElementById('clockPaletteSwatches');
+  if (sw) sw.innerHTML = html;
+  var pal = document.getElementById('clockPalette');
+  if (pal) pal.classList.add('show');
+  var hint = document.getElementById('clockEditHint');
+  if (hint) hint.classList.remove('show');
+}
+
+function closeClockPalette() {
+  activeClockEditPart = null;
+  var pal = document.getElementById('clockPalette');
+  if (pal) pal.classList.remove('show');
+  if (concPendingBegin) {
+    var hint = document.getElementById('clockEditHint');
+    if (hint) hint.classList.add('show');
+  }
+}
+
+function applyClockColor(color) {
+  if (!activeClockEditPart) return;
+  if (!concState.clockTheme) concState.clockTheme = {};
+  concState.clockTheme[activeClockEditPart] = color;
+  saveConcState();
+  if (typeof syncEnabled !== 'undefined' && syncEnabled && authToken) syncPushData();
+  var part = activeClockEditPart;
+  buildClockSVG();
+  openClockPalette(part); // refresh selected-state highlight
+}
+
+(function initClockPalette() {
+  var svg = document.getElementById('concClock');
+  if (svg) {
+    svg.addEventListener('click', function(e) {
+      if (!concPendingBegin) return;
+      var t = e.target.closest('[data-clock-edit]');
+      if (!t) return;
+      e.stopPropagation();
+      openClockPalette(t.getAttribute('data-clock-edit'));
+    });
+  }
+  var sw = document.getElementById('clockPaletteSwatches');
+  if (sw) {
+    sw.addEventListener('click', function(e) {
+      var b = e.target.closest('[data-color]');
+      if (!b) return;
+      e.stopPropagation();
+      applyClockColor(b.getAttribute('data-color'));
+    });
+  }
+  // Tap anywhere outside the palette / clock parts closes it.
+  document.addEventListener('click', function(e) {
+    var pal = document.getElementById('clockPalette');
+    if (!pal || !pal.classList.contains('show')) return;
+    if (e.target.closest('#clockPalette')) return;
+    if (e.target.closest('[data-clock-edit]')) return;
+    closeClockPalette();
+  });
+})();
 
 function updateClockHand(elapsedMs) {
   var group = document.getElementById('concHandGroup');
@@ -8769,6 +8889,13 @@ function startConcentration() {
   if (countdown) { countdown.classList.remove('show'); countdown.textContent = ''; }
 
   concPendingBegin = true;
+  // Rebuild with tap-to-recolour hit targets now that editing is allowed, and
+  // surface the hint. (buildClockSVG above ran before the flag was set.)
+  buildClockSVG();
+  updateClockHand(0);
+  closeClockPalette();
+  var editHint = document.getElementById('clockEditHint');
+  if (editHint) editHint.classList.add('show');
 }
 
 function beginCountdown() {
@@ -8785,6 +8912,14 @@ function beginCountdown() {
   }
   concPendingBegin = false;
   var isTutorialFirst = window._tutorialFirstClock === true;
+
+  // Editing is over — close the palette, hide the hint, and rebuild the clock
+  // without the tap targets so the live session stays distraction-free.
+  closeClockPalette();
+  var editHint = document.getElementById('clockEditHint');
+  if (editHint) editHint.classList.remove('show');
+  buildClockSVG();
+  updateClockHand(0);
 
   // Swap instructions to the brief flashing label that fades after countdown.
   var sessionLabel = document.getElementById('concSessionLabel');
@@ -11754,6 +11889,7 @@ function discardSession(type) {
       cancelAnimationFrame(concTimerHandle);
       concStartTime = null;
       concPendingBegin = false;
+      if (typeof closeClockPalette === 'function') closeClockPalette();
       var cd = document.getElementById('clockCountdown');
       if (cd) { cd.classList.remove('show'); cd.textContent = ''; }
       showScreen('homeScreen');
