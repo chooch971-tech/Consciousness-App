@@ -522,12 +522,14 @@
     .clk-cfg-hdr { display:flex; align-items:center; justify-content:space-between; padding:var(--safe-top) 20px 4px; flex-shrink:0; }
     .clk-cfg-title { font-family:'Cormorant Garamond',serif; font-size:22px; font-weight:300; color:var(--text); }
     .clk-cfg-body { padding:8px 20px 40px; }
-    .clk-cfg-preview { display:flex; align-items:center; justify-content:center; padding:24px 0 20px; }
+    .clk-cfg-preview { display:flex; align-items:center; justify-content:center; padding:28px 0 0; }
+    .clk-cfg-hint { text-align:center; font-family:'DM Mono',monospace; font-size:9px; letter-spacing:.18em; text-transform:uppercase; color:rgba(224,158,110,.55); padding:16px 20px 20px; }
     .clk-cfg-section { background:var(--surface); border:1px solid var(--border); border-radius:14px; overflow:hidden; margin-bottom:14px; }
     .clk-cfg-row { padding:14px 16px; display:flex; flex-direction:column; gap:10px; }
     .clk-cfg-row.row-inline { flex-direction:row; justify-content:space-between; align-items:center; }
     .clk-cfg-row + .clk-cfg-row { border-top:1px solid var(--border); }
     .clk-cfg-row-label { font-size:9px; letter-spacing:.2em; text-transform:uppercase; color:var(--muted); font-family:'DM Mono',monospace; }
+    .clk-cfg-row-label.active { color:rgba(224,158,110,.9); }
     .clk-cfg-swatches { display:flex; gap:8px; flex-wrap:wrap; }
     .clk-cfg-swatches .clock-swatch { width:26px; height:26px; }
 
@@ -4920,32 +4922,19 @@ body:not(.tut-live) #tutCorgi {
   <!-- CLOCK SETTINGS SCREEN -->
   <div class="screen" id="clockSettingsScreen">
     <div class="clk-cfg-hdr">
-      <button class="history-back" onclick="applyHeroClockTheme(); showScreen('exSetupScreen');">&#8592; back</button>
+      <button class="history-back" id="clkCfgBack">&#8592; back</button>
       <span class="clk-cfg-title">Clock</span>
       <span style="width:60px;"></span>
     </div>
     <div style="flex:1; overflow-y:auto; -webkit-overflow-scrolling:touch; scrollbar-width:none; -ms-overflow-style:none;">
       <div class="clk-cfg-body">
         <div class="clk-cfg-preview" id="clkCfgPreview"></div>
+        <div id="clkCfgPaletteArea"></div>
         <div class="clk-cfg-section">
-          <div class="clk-cfg-row">
-            <div class="clk-cfg-row-label">Hand</div>
-            <div class="clk-cfg-swatches" id="clkCfg_hand"></div>
-          </div>
-          <div class="clk-cfg-row">
-            <div class="clk-cfg-row-label">Ticks</div>
-            <div class="clk-cfg-swatches" id="clkCfg_ticks"></div>
-          </div>
-          <div class="clk-cfg-row">
-            <div class="clk-cfg-row-label">Face</div>
-            <div class="clk-cfg-swatches" id="clkCfg_face"></div>
-          </div>
           <div class="clk-cfg-row">
             <div class="clk-cfg-row-label">Background</div>
             <div class="clk-cfg-swatches" id="clkCfg_bg"></div>
           </div>
-        </div>
-        <div class="clk-cfg-section">
           <div class="clk-cfg-row row-inline">
             <div class="clk-cfg-row-label">Scale</div>
             <div class="clk-sess-scale">
@@ -7942,6 +7931,7 @@ document.getElementById('profBadgesMore').addEventListener('click', function() {
 document.getElementById('profAchMore').addEventListener('click', function() { showToast('Achievements coming soon'); });
 
 function openExerciseSettings(id) {
+  if (id === 'clock') { openClockSettings('exerciseSettingsScreen'); return; }
   var ex = EXERCISE_SETTINGS_LIST.find(function(e){ return e.id === id; });
   if (!ex) return;
   _parkSettingsBlocks();
@@ -8748,14 +8738,33 @@ function applyHeroClockTheme() {
 }
 
 // ── Clock settings screen ────────────────────────────────────────────
-function openClockSettings() {
+var _clkSettingsFrom = 'exSetupScreen'; // tracks navigation origin for back button
+var _activeCfgPart = null;             // which part (hand/ticks/face) is selected
+
+document.addEventListener('DOMContentLoaded', function() {
+  var backBtn = document.getElementById('clkCfgBack');
+  if (backBtn) backBtn.addEventListener('click', function() {
+    _activeCfgPart = null;
+    if (_clkSettingsFrom === 'exerciseSettingsScreen') {
+      showScreen('exerciseSettingsScreen');
+    } else {
+      applyHeroClockTheme();
+      showScreen('exSetupScreen');
+    }
+  });
+});
+
+function openClockSettings(from) {
+  _clkSettingsFrom = from || 'exSetupScreen';
+  _activeCfgPart = null;
   renderClockSettings();
   showScreen('clockSettingsScreen');
 }
 
 function renderClockSettings() {
   var theme = getClockTheme();
-  // Preview clock
+
+  // Interactive preview clock with tap targets
   var previewEl = document.getElementById('clkCfgPreview');
   if (previewEl) {
     var tks = '';
@@ -8766,34 +8775,66 @@ function renderClockSettings() {
       tks += '<line x1="' + x1 + '" y1="' + y1 + '" x2="' + x2 + '" y2="' + y2 + '"/>';
     }
     var pFace = (theme.face && theme.face !== 'none') ? theme.face : 'rgba(224,124,58,.045)';
-    var pBg = (theme.bg && theme.bg !== 'none') ? theme.bg : '';
-    previewEl.innerHTML = '<div class="clk-hero" style="margin:0;' + (pBg ? 'border-radius:50%;background:' + pBg + ';' : '') + '">'
+    previewEl.innerHTML = '<div class="clk-hero" style="margin:0;">'
       + '<div class="clk-hero-glow"></div>'
-      + '<svg viewBox="0 0 240 240" width="140" height="140" id="clkCfgHeroSvg">'
+      + '<svg viewBox="0 0 240 240" width="180" height="180" id="clkCfgHeroSvg">'
       +   '<circle class="clk-rim" cx="120" cy="120" r="112"/>'
       +   '<circle class="clk-rim-inner" cx="120" cy="120" r="104"/>'
-      +   '<circle cx="120" cy="120" r="104" fill="' + pFace + '"/>'
-      +   '<g stroke="' + theme.ticks + '" class="clk-ticks">' + tks + '</g>'
-      +   '<line x1="120" y1="120" x2="120" y2="30" stroke="' + theme.hand + '" stroke-width="2.6" stroke-linecap="round" style="animation:none; transform-origin:120px 120px;"/>'
-      +   '<circle cx="120" cy="120" r="6" fill="' + theme.hand + '"/>'
+      +   '<circle cx="120" cy="120" r="104" fill="' + pFace + '" id="clkCfgFaceEl"/>'
+      +   '<g stroke="' + theme.ticks + '" class="clk-ticks" id="clkCfgTicksEl">' + tks + '</g>'
+      +   '<line x1="120" y1="120" x2="120" y2="30" stroke="' + theme.hand + '" stroke-width="2.6" stroke-linecap="round" style="animation:none; transform-origin:120px 120px;" id="clkCfgHandEl"/>'
+      +   '<circle cx="120" cy="120" r="6" fill="' + theme.hand + '" id="clkCfgHubEl"/>'
+      // Tap targets: face inner, ticks ring, hand strip
+      +   '<circle r="74" cx="120" cy="120" fill="transparent" data-clk-edit="face" style="cursor:pointer"/>'
+      +   '<circle r="100" cx="120" cy="120" fill="none" stroke="transparent" stroke-width="24" data-clk-edit="ticks" style="cursor:pointer"/>'
+      +   '<line x1="120" y1="120" x2="120" y2="30" stroke="transparent" stroke-width="28" stroke-linecap="round" data-clk-edit="hand" style="cursor:pointer"/>'
       + '</svg>'
       + '</div>';
   }
-  _renderClkCfgSwatches('hand', false);
-  _renderClkCfgSwatches('ticks', false);
-  _renderClkCfgSwatches('face', true);
-  _renderClkCfgSwatches('bg', true);
+
+  // Palette area: hint or active swatches
+  _renderClkCfgPaletteArea();
+
+  // Background + scale (always visible)
+  _renderClkCfgSwatches('bg', 'clkCfg_bg', true);
   var sv = document.getElementById('clkCfgScaleVal');
   if (sv) sv.textContent = Math.round(theme.scale * 100) + '%';
 }
 
-function _renderClkCfgSwatches(part, showNone) {
-  var el = document.getElementById('clkCfg_' + part);
+function _renderClkCfgPaletteArea() {
+  var area = document.getElementById('clkCfgPaletteArea');
+  if (!area) return;
+  if (!_activeCfgPart) {
+    area.innerHTML = '<div class="clk-cfg-hint">Tap parts of the clock to customize</div>';
+    return;
+  }
+  var labels = { hand:'Hand', ticks:'Ticks', face:'Face' };
+  var showNone = (_activeCfgPart === 'face');
+  var theme = getClockTheme();
+  var current = theme[_activeCfgPart];
+  var swatchHtml = '';
+  if (showNone) {
+    swatchHtml += '<button class="clock-swatch clock-swatch-none' + (current === 'none' ? ' sel' : '')
+                + '" data-clk-part="' + _activeCfgPart + '" data-clk-color="none" title="Default"></button>';
+  }
+  CLOCK_PALETTE.forEach(function(c) {
+    swatchHtml += '<button class="clock-swatch' + (current === c ? ' sel' : '')
+                + '" data-clk-part="' + _activeCfgPart + '" data-clk-color="' + c + '" style="background:' + c + '"></button>';
+  });
+  area.innerHTML = '<div class="clk-cfg-section" style="margin-bottom:14px;">'
+    + '<div class="clk-cfg-row">'
+    + '<div class="clk-cfg-row-label active">' + (labels[_activeCfgPart] || _activeCfgPart) + '</div>'
+    + '<div class="clk-cfg-swatches">' + swatchHtml + '</div>'
+    + '</div></div>';
+}
+
+function _renderClkCfgSwatches(part, elId, showNone) {
+  var el = document.getElementById(elId);
   if (!el) return;
   var current = getClockTheme()[part];
   var html = '';
   if (showNone) {
-    html += '<button class="clock-swatch clock-swatch-none clk-cfg-swatches' + (current === 'none' ? ' sel' : '')
+    html += '<button class="clock-swatch clock-swatch-none' + (current === 'none' ? ' sel' : '')
           + '" data-clk-part="' + part + '" data-clk-color="none" title="Default"></button>';
   }
   CLOCK_PALETTE.forEach(function(c) {
@@ -8808,13 +8849,38 @@ function setClockColor(part, color) {
   concState.clockTheme[part] = color;
   saveConcState();
   if (typeof syncEnabled !== 'undefined' && syncEnabled && authToken) syncPushData();
-  renderClockSettings();
+  // Update the preview clock in-place (no full re-render, keeps scroll)
+  var theme = getClockTheme();
+  var pFace = (theme.face && theme.face !== 'none') ? theme.face : 'rgba(224,124,58,.045)';
+  var faceEl = document.getElementById('clkCfgFaceEl');
+  var ticksEl = document.getElementById('clkCfgTicksEl');
+  var handEl = document.getElementById('clkCfgHandEl');
+  var hubEl = document.getElementById('clkCfgHubEl');
+  if (faceEl) faceEl.setAttribute('fill', pFace);
+  if (ticksEl) ticksEl.setAttribute('stroke', theme.ticks);
+  if (handEl) handEl.setAttribute('stroke', theme.hand);
+  if (hubEl) hubEl.setAttribute('fill', theme.hand);
+  // Refresh the palette area (selected-state highlight) + bg row
+  _renderClkCfgPaletteArea();
+  _renderClkCfgSwatches('bg', 'clkCfg_bg', true);
+  // Keep session clock in sync if it's live
   if (document.getElementById('concClock')) buildClockSVG();
   applyClockScreenBg();
 }
 
 (function initClockSettings() {
   document.addEventListener('click', function(e) {
+    // Tap target on the settings-screen clock: select part
+    var editPart = e.target.closest('[data-clk-edit]');
+    if (editPart) {
+      var cfgScreen = document.getElementById('clockSettingsScreen');
+      if (cfgScreen && cfgScreen.classList.contains('active')) {
+        _activeCfgPart = editPart.getAttribute('data-clk-edit');
+        _renderClkCfgPaletteArea();
+        return;
+      }
+    }
+    // Swatch pick (in palette area or bg row)
     var sw = e.target.closest('[data-clk-part][data-clk-color]');
     if (sw) { setClockColor(sw.getAttribute('data-clk-part'), sw.getAttribute('data-clk-color')); return; }
     if (e.target.closest('#clkCfgScaleDown')) { adjustClockScale(-0.1); return; }
@@ -11542,7 +11608,7 @@ var EXERCISE_DEFS = {
         +   '<line class="clk-hand" x1="120" y1="120" x2="120" y2="30" stroke="' + _ct.hand + '" style="animation:none;"/>'
         +   '<circle class="clk-hub" cx="120" cy="120" r="6" fill="' + _ct.hand + '"/>'
         + '</svg></div>'
-        + '<button type="button" class="clk-customize-btn" onclick="openClockSettings()">Customize in Settings &#8594;</button>'
+        + '<button type="button" class="clk-customize-btn" onclick="openClockSettings(\'exSetupScreen\')">Customize in Settings &#8594;</button>'
         + '</div>';
 
       // ── Record ──
