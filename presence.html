@@ -8734,7 +8734,9 @@ function applyHeroClockTheme() {
   var hub = svg.querySelector('.clk-hub'); if (hub) hub.setAttribute('fill', theme.hand);
   var ticks = svg.querySelector('.clk-ticks'); if (ticks) ticks.setAttribute('stroke', theme.ticks);
   var face = svg.querySelector('.clk-face');
-  if (face) face.setAttribute('fill', (theme.face && theme.face !== 'none') ? theme.face : 'rgba(224,124,58,.045)');
+  if (face) face.setAttribute('fill', (theme.face && theme.face !== 'none') ? theme.face : '#07080d');
+  var card = document.getElementById('clkHeroCard');
+  if (card) card.style.background = (theme.bg && theme.bg !== 'none') ? theme.bg : '';
 }
 
 // ── Clock settings screen ────────────────────────────────────────────
@@ -11616,7 +11618,8 @@ var EXERCISE_DEFS = {
       }
       var _ct = getClockTheme();
       var _faceFill = (_ct.face && _ct.face !== 'none') ? _ct.face : 'rgba(224,124,58,.045)';
-      var heroHtml = '<div class="clk-hero-card">'
+      var _heroBg = (_ct.bg && _ct.bg !== 'none') ? _ct.bg : '';
+      var heroHtml = '<div class="clk-hero-card" id="clkHeroCard"' + (_heroBg ? ' style="background:' + _heroBg + ';"' : '') + '>'
         + '<div class="clk-hero" id="clkHero"><div class="clk-hero-glow"></div>'
         + '<svg viewBox="0 0 240 240" width="172" height="172" id="clkHeroSvg">'
         +   '<circle class="clk-face" cx="120" cy="120" r="112" fill="' + _faceFill + '"/>'
