@@ -519,12 +519,12 @@
     .clock-swatch-none { background:repeating-linear-gradient(45deg,#2a2a33,#2a2a33 4px,#474752 4px,#474752 8px); }
     /* Clock settings screen */
     #clockSettingsScreen { overflow-y:auto; }
-    .clk-cfg-hdr { display:flex; align-items:center; justify-content:space-between; padding:var(--safe-top) 20px 4px; flex-shrink:0; }
+    .clk-cfg-hdr { display:flex; align-items:center; justify-content:space-between; padding:var(--safe-top) 20px 4px; flex-shrink:0; background:rgba(7,8,13,.55); backdrop-filter:blur(8px); -webkit-backdrop-filter:blur(8px); }
     .clk-cfg-title { font-family:'Cormorant Garamond',serif; font-size:22px; font-weight:300; color:var(--text); }
     .clk-cfg-body { padding:8px 20px 40px; }
     .clk-cfg-preview { display:flex; align-items:center; justify-content:center; padding:28px 0 0; }
     .clk-cfg-hint { text-align:center; font-family:'DM Mono',monospace; font-size:9px; letter-spacing:.18em; text-transform:uppercase; color:rgba(224,158,110,.55); padding:16px 20px 20px; }
-    .clk-cfg-section { background:var(--surface); border:1px solid var(--border); border-radius:14px; overflow:hidden; margin-bottom:14px; }
+    .clk-cfg-section { background:rgba(20,21,30,.92); border:1px solid var(--border); border-radius:14px; overflow:hidden; margin-bottom:14px; backdrop-filter:blur(4px); -webkit-backdrop-filter:blur(4px); }
     .clk-cfg-row { padding:14px 16px; display:flex; flex-direction:column; gap:10px; }
     .clk-cfg-row.row-inline { flex-direction:row; justify-content:space-between; align-items:center; }
     .clk-cfg-row + .clk-cfg-row { border-top:1px solid var(--border); }
@@ -8745,6 +8745,8 @@ document.addEventListener('DOMContentLoaded', function() {
   var backBtn = document.getElementById('clkCfgBack');
   if (backBtn) backBtn.addEventListener('click', function() {
     _activeCfgPart = null;
+    var screen = document.getElementById('clockSettingsScreen');
+    if (screen) screen.style.background = '';
     if (_clkSettingsFrom === 'exerciseSettingsScreen') {
       showScreen('exerciseSettingsScreen');
     } else {
@@ -8761,10 +8763,20 @@ function openClockSettings(from) {
   showScreen('clockSettingsScreen');
 }
 
+function _applyClkCfgBg() {
+  var screen = document.getElementById('clockSettingsScreen');
+  if (!screen) return;
+  var bg = getClockTheme().bg;
+  screen.style.background = (bg && bg !== 'none') ? bg : '';
+}
+
 function renderClockSettings() {
   var theme = getClockTheme();
 
-  // Interactive preview clock with tap targets
+  // Apply background to the whole screen so it shows around the clock
+  _applyClkCfgBg();
+
+  // Interactive preview clock — size scales with the theme scale value
   var previewEl = document.getElementById('clkCfgPreview');
   if (previewEl) {
     var tks = '';
@@ -8775,11 +8787,11 @@ function renderClockSettings() {
       tks += '<line x1="' + x1 + '" y1="' + y1 + '" x2="' + x2 + '" y2="' + y2 + '"/>';
     }
     var pFace = (theme.face && theme.face !== 'none') ? theme.face : 'rgba(224,124,58,.045)';
-    var pBg   = (theme.bg   && theme.bg   !== 'none') ? theme.bg   : 'transparent';
+    // Preview size tracks the scale so the user can see it change
+    var sz = Math.min(230, Math.max(90, Math.round(165 * theme.scale)));
     previewEl.innerHTML = '<div class="clk-hero" style="margin:0;">'
       + '<div class="clk-hero-glow"></div>'
-      + '<svg viewBox="0 0 240 240" width="180" height="180" id="clkCfgHeroSvg">'
-      +   '<rect x="0" y="0" width="240" height="240" fill="' + pBg + '" id="clkCfgBgEl"/>'
+      + '<svg viewBox="0 0 240 240" width="' + sz + '" height="' + sz + '" id="clkCfgHeroSvg">'
       +   '<circle cx="120" cy="120" r="112" fill="' + pFace + '" id="clkCfgFaceEl"/>'
       +   '<circle class="clk-rim" cx="120" cy="120" r="112"/>'
       +   '<circle class="clk-rim-inner" cx="120" cy="120" r="104"/>'
@@ -8854,17 +8866,16 @@ function setClockColor(part, color) {
   // Update the preview clock in-place (no full re-render, keeps scroll)
   var theme = getClockTheme();
   var pFace = (theme.face && theme.face !== 'none') ? theme.face : 'rgba(224,124,58,.045)';
-  var pBg   = (theme.bg   && theme.bg   !== 'none') ? theme.bg   : 'transparent';
-  var faceEl = document.getElementById('clkCfgFaceEl');
+  var faceEl  = document.getElementById('clkCfgFaceEl');
   var ticksEl = document.getElementById('clkCfgTicksEl');
-  var handEl = document.getElementById('clkCfgHandEl');
-  var hubEl = document.getElementById('clkCfgHubEl');
-  var bgEl  = document.getElementById('clkCfgBgEl');
+  var handEl  = document.getElementById('clkCfgHandEl');
+  var hubEl   = document.getElementById('clkCfgHubEl');
   if (faceEl)  faceEl.setAttribute('fill', pFace);
   if (ticksEl) ticksEl.setAttribute('stroke', theme.ticks);
   if (handEl)  handEl.setAttribute('stroke', theme.hand);
   if (hubEl)   hubEl.setAttribute('fill', theme.hand);
-  if (bgEl)    bgEl.setAttribute('fill', pBg);
+  // Background is the screen itself, not an SVG element
+  _applyClkCfgBg();
   // Refresh the palette area (selected-state highlight) + bg row
   _renderClkCfgPaletteArea();
   _renderClkCfgSwatches('bg', 'clkCfg_bg', true);
