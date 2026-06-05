@@ -8775,12 +8775,14 @@ function renderClockSettings() {
       tks += '<line x1="' + x1 + '" y1="' + y1 + '" x2="' + x2 + '" y2="' + y2 + '"/>';
     }
     var pFace = (theme.face && theme.face !== 'none') ? theme.face : 'rgba(224,124,58,.045)';
+    var pBg   = (theme.bg   && theme.bg   !== 'none') ? theme.bg   : 'transparent';
     previewEl.innerHTML = '<div class="clk-hero" style="margin:0;">'
       + '<div class="clk-hero-glow"></div>'
       + '<svg viewBox="0 0 240 240" width="180" height="180" id="clkCfgHeroSvg">'
+      +   '<rect x="0" y="0" width="240" height="240" fill="' + pBg + '" id="clkCfgBgEl"/>'
+      +   '<circle cx="120" cy="120" r="112" fill="' + pFace + '" id="clkCfgFaceEl"/>'
       +   '<circle class="clk-rim" cx="120" cy="120" r="112"/>'
       +   '<circle class="clk-rim-inner" cx="120" cy="120" r="104"/>'
-      +   '<circle cx="120" cy="120" r="104" fill="' + pFace + '" id="clkCfgFaceEl"/>'
       +   '<g stroke="' + theme.ticks + '" class="clk-ticks" id="clkCfgTicksEl">' + tks + '</g>'
       +   '<line x1="120" y1="120" x2="120" y2="30" stroke="' + theme.hand + '" stroke-width="2.6" stroke-linecap="round" style="animation:none; transform-origin:120px 120px;" id="clkCfgHandEl"/>'
       +   '<circle cx="120" cy="120" r="6" fill="' + theme.hand + '" id="clkCfgHubEl"/>'
@@ -8852,14 +8854,17 @@ function setClockColor(part, color) {
   // Update the preview clock in-place (no full re-render, keeps scroll)
   var theme = getClockTheme();
   var pFace = (theme.face && theme.face !== 'none') ? theme.face : 'rgba(224,124,58,.045)';
+  var pBg   = (theme.bg   && theme.bg   !== 'none') ? theme.bg   : 'transparent';
   var faceEl = document.getElementById('clkCfgFaceEl');
   var ticksEl = document.getElementById('clkCfgTicksEl');
   var handEl = document.getElementById('clkCfgHandEl');
   var hubEl = document.getElementById('clkCfgHubEl');
-  if (faceEl) faceEl.setAttribute('fill', pFace);
+  var bgEl  = document.getElementById('clkCfgBgEl');
+  if (faceEl)  faceEl.setAttribute('fill', pFace);
   if (ticksEl) ticksEl.setAttribute('stroke', theme.ticks);
-  if (handEl) handEl.setAttribute('stroke', theme.hand);
-  if (hubEl) hubEl.setAttribute('fill', theme.hand);
+  if (handEl)  handEl.setAttribute('stroke', theme.hand);
+  if (hubEl)   hubEl.setAttribute('fill', theme.hand);
+  if (bgEl)    bgEl.setAttribute('fill', pBg);
   // Refresh the palette area (selected-state highlight) + bg row
   _renderClkCfgPaletteArea();
   _renderClkCfgSwatches('bg', 'clkCfg_bg', true);
@@ -11601,9 +11606,9 @@ var EXERCISE_DEFS = {
       var heroHtml = '<div class="clk-hero-card">'
         + '<div class="clk-hero" id="clkHero"><div class="clk-hero-glow"></div>'
         + '<svg viewBox="0 0 240 240" width="172" height="172" id="clkHeroSvg">'
+        +   '<circle class="clk-face" cx="120" cy="120" r="112" fill="' + _faceFill + '"/>'
         +   '<circle class="clk-rim" cx="120" cy="120" r="112"/>'
         +   '<circle class="clk-rim-inner" cx="120" cy="120" r="104"/>'
-        +   '<circle class="clk-face" cx="120" cy="120" r="104" fill="' + _faceFill + '"/>'
         +   '<g class="clk-ticks" stroke="' + _ct.ticks + '">' + ticks + '</g>'
         +   '<line class="clk-hand" x1="120" y1="120" x2="120" y2="30" stroke="' + _ct.hand + '" style="animation:none;"/>'
         +   '<circle class="clk-hub" cx="120" cy="120" r="6" fill="' + _ct.hand + '"/>'
