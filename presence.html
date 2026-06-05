@@ -17768,14 +17768,12 @@ function guidePathAddableExercises() {
   var present = {};
   items.forEach(function(it) { present[it.id] = true; });
   var addable = GUIDE_EXERCISES.filter(function(ex) { return !present[ex.id]; });
-  // Also offer individual thought sub-modes the user hasn't practiced yet.
-  // Use a strict tcMode match (no fallback) so old sessions without tcMode
-  // don't falsely mark observation as already practiced.
-  var history = (typeof concState !== 'undefined' && concState.history) ? concState.history : [];
+  // Offer thought sub-modes that are NOT the current active mode (already on
+  // the path under the 'thought' item) and NOT already added independently.
+  var activeMode = guideState.thoughtModeForced || guideCurrentThoughtMode(guideThoughtStats());
   GUIDE_FOUNDATION_THOUGHT_ORDER.forEach(function(mode) {
-    if (present[mode]) return; // already on path
-    var hasPracticed = history.some(function(h) { return h && h.type === 'thought' && h.tcMode === mode; });
-    if (hasPracticed) return;
+    if (present[mode]) return;   // already an independent card on the path
+    if (mode === activeMode) return; // already covered by the 'thought' item
     addable.push({ id: mode });
   });
   return addable;
