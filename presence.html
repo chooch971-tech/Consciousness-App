@@ -17769,15 +17769,13 @@ function guidePathAddableExercises() {
   items.forEach(function(it) { present[it.id] = true; });
   var addable = GUIDE_EXERCISES.filter(function(ex) { return !present[ex.id]; });
   // Also offer individual thought sub-modes the user hasn't practiced yet.
-  var thoughtStats = guideThoughtStats();
+  // Use a strict tcMode match (no fallback) so old sessions without tcMode
+  // don't falsely mark observation as already practiced.
+  var history = (typeof concState !== 'undefined' && concState.history) ? concState.history : [];
   GUIDE_FOUNDATION_THOUGHT_ORDER.forEach(function(mode) {
     if (present[mode]) return; // already on path
-    var st = thoughtStats[mode] || { count: 0 };
-    if (st.count > 0) return; // already practiced
-    // Don't add if already in _pathAdded (guideMergeAddedItems will render it)
-    // but we still want to surface it so the user can tap it — if it's already
-    // in _pathAdded it will be rendered by guideMergeAddedItems, meaning
-    // present[mode] would be true above. So if we reach here it's truly absent.
+    var hasPracticed = history.some(function(h) { return h && h.type === 'thought' && h.tcMode === mode; });
+    if (hasPracticed) return;
     addable.push({ id: mode });
   });
   return addable;
