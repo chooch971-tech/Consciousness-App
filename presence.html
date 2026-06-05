@@ -522,7 +522,7 @@
     .clk-cfg-hdr { display:flex; align-items:center; justify-content:space-between; padding:var(--safe-top) 20px 4px; flex-shrink:0; background:rgba(7,8,13,.55); backdrop-filter:blur(8px); -webkit-backdrop-filter:blur(8px); }
     .clk-cfg-title { font-family:'Cormorant Garamond',serif; font-size:22px; font-weight:300; color:var(--text); }
     .clk-cfg-body { padding:8px 20px 40px; }
-    .clk-cfg-preview { display:flex; align-items:center; justify-content:center; padding:40px 0 24px; }
+    .clk-cfg-preview { display:flex; align-items:center; justify-content:center; padding:40px 0 24px; margin:0 -20px; }
     .clk-cfg-hint { text-align:center; font-family:'DM Mono',monospace; font-size:9px; letter-spacing:.18em; text-transform:uppercase; color:rgba(224,158,110,.55); padding:16px 20px 20px; }
     .clk-cfg-section { background:rgba(20,21,30,.92); border:1px solid var(--border); border-radius:14px; overflow:hidden; margin-bottom:14px; backdrop-filter:blur(4px); -webkit-backdrop-filter:blur(4px); }
     .clk-cfg-row { padding:14px 16px; display:flex; flex-direction:column; gap:10px; }
@@ -7931,7 +7931,7 @@ document.getElementById('profBadgesMore').addEventListener('click', function() {
 document.getElementById('profAchMore').addEventListener('click', function() { showToast('Achievements coming soon'); });
 
 function openExerciseSettings(id) {
-  if (id === 'clock') { openClockSettings('exerciseSettingsScreen'); return; }
+  if (id === 'clock') { openClockSettings('settingsScreen'); return; }
   var ex = EXERCISE_SETTINGS_LIST.find(function(e){ return e.id === id; });
   if (!ex) return;
   _parkSettingsBlocks();
@@ -8747,8 +8747,8 @@ document.addEventListener('DOMContentLoaded', function() {
     _activeCfgPart = null;
     var screen = document.getElementById('clockSettingsScreen');
     if (screen) screen.style.background = '';
-    if (_clkSettingsFrom === 'exerciseSettingsScreen') {
-      showScreen('exerciseSettingsScreen');
+    if (_clkSettingsFrom && _clkSettingsFrom !== 'exSetupScreen') {
+      showScreen(_clkSettingsFrom);
     } else {
       applyHeroClockTheme();
       showScreen('exSetupScreen');
