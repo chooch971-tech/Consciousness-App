@@ -519,7 +519,7 @@
     .clock-swatch-none { background:repeating-linear-gradient(45deg,#2a2a33,#2a2a33 4px,#474752 4px,#474752 8px); }
     /* Clock settings screen */
     #clockSettingsScreen { overflow-y:auto; }
-    .clk-cfg-hdr { display:flex; align-items:center; justify-content:space-between; padding:var(--safe-top) 20px 4px; flex-shrink:0; background:rgba(7,8,13,.55); backdrop-filter:blur(8px); -webkit-backdrop-filter:blur(8px); }
+    .clk-cfg-hdr { display:flex; align-items:center; padding:var(--safe-top) 20px 4px; flex-shrink:0; background:var(--bg); border-bottom:1px solid var(--border); }
     .clk-cfg-title { font-family:'Cormorant Garamond',serif; font-size:22px; font-weight:300; color:var(--text); }
     .clk-cfg-body { flex:1; display:flex; flex-direction:column; padding:0 20px 24px; }
     .clk-cfg-preview { flex:1; display:flex; align-items:center; justify-content:center; margin:0 -20px; min-height:200px; }
@@ -4923,8 +4923,6 @@ body:not(.tut-live) #tutCorgi {
   <div class="screen" id="clockSettingsScreen">
     <div class="clk-cfg-hdr">
       <button class="history-back" id="clkCfgBack">&#8592; back</button>
-      <span class="clk-cfg-title">Clock</span>
-      <span style="width:60px;"></span>
     </div>
     <div style="flex:1; overflow-y:auto; -webkit-overflow-scrolling:touch; scrollbar-width:none; -ms-overflow-style:none; display:flex; flex-direction:column;">
       <div class="clk-cfg-body">
@@ -8819,11 +8817,22 @@ function renderClockSettings() {
   if (sv) sv.textContent = Math.round(theme.scale * 100) + '%';
 }
 
+function _bgIsLight(colorStr) {
+  if (!colorStr || colorStr === 'none') return false;
+  var hex = colorStr.replace('#', '');
+  if (hex.length === 6) {
+    var r = parseInt(hex.substr(0,2),16), g = parseInt(hex.substr(2,2),16), b = parseInt(hex.substr(4,2),16);
+    return (0.299*r + 0.587*g + 0.114*b) > 128;
+  }
+  return false;
+}
+
 function _renderClkCfgPaletteArea() {
   var area = document.getElementById('clkCfgPaletteArea');
   if (!area) return;
   if (!_activeCfgPart) {
-    area.innerHTML = '<div class="clk-cfg-hint">Tap parts of the clock to customize</div>';
+    var hintColor = _bgIsLight(getClockTheme().bg) ? 'rgba(30,20,10,.6)' : 'rgba(224,158,110,.55)';
+    area.innerHTML = '<div class="clk-cfg-hint" style="color:' + hintColor + '">Tap parts of the clock to customize</div>';
     return;
   }
   var labels = { hand:'Hand', ticks:'Ticks', face:'Face' };
