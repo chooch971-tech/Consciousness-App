@@ -17660,9 +17660,15 @@ function buildExperiencedGuideItems() {
   if (!gateId || !gateById[gateId]) {
     var pool = gateCandidates.map(function(c) { return c.ex.id; });
     var lastGateId = (pick && Array.isArray(pick.ids) && pick.ids.length === 1) ? pick.ids[0] : null;
-    gateId = pool[0];
-    // Same-gate repeat penalty: if it's the same as yesterday's, pick the next
-    if (gateId === lastGateId && pool.length > 1) gateId = pool[1];
+    // Respect a manually forced gate (set via "Switch to X" button) if it's still a valid candidate
+    var forced = guideState.gateForced;
+    if (forced && gateById[forced]) {
+      gateId = forced;
+    } else {
+      gateId = pool[0];
+      // Same-gate repeat penalty: if it's the same as yesterday's, pick the next
+      if (gateId === lastGateId && pool.length > 1) gateId = pool[1];
+    }
     guideState._dailyPick = { day: dayKey, ids: [gateId], v: 4 };
     saveGuideState(guideState);
   }
