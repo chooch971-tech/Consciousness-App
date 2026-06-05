@@ -1135,6 +1135,8 @@
     .sound-btn { padding:10px 8px; border-radius:8px; border:1px solid var(--border); background:var(--surface); color:var(--muted); font-family:'DM Mono',monospace; font-size:9px; letter-spacing:.1em; text-transform:uppercase; cursor:pointer; transition:all .2s; text-align:center; line-height:1.4; }
     .sound-btn.selected { background:rgba(212,149,110,0.12); border-color:rgba(212,149,110,.4); color:#d4b08e; }
     .sound-btn .sound-icon { font-size:18px; display:block; margin-bottom:4px; }
+    .sound-btn--freeplay { grid-column:1 / -1; border-style:dashed; display:flex; align-items:center; justify-content:center; gap:10px; padding:12px 16px; }
+    .sound-btn--freeplay .sound-icon { font-size:16px; display:inline; margin-bottom:0; }
     #audSessionScreen { justify-content:space-between; }
     .aud-wave { display:flex; align-items:flex-end; justify-content:center; gap:3px; height:48px; margin:20px auto; }
     .aud-bar { width:4px; border-radius:2px; background:#d4956e; opacity:0.7; transition:height 0.15s ease; }
@@ -12407,6 +12409,7 @@ var SOUNDS = [
   { id:'binaural',     label:'Binaural',      icon:'&#127911;' },
   { id:'pulse',        label:'Soft Pulse',    icon:'&#11835;'  },
   { id:'psychedelic',  label:'Psychedelic',   icon:'&#127775;' },
+  { id:'freeplay',    label:'My Music — Stopwatch Mode', icon:'&#9836;' },
 ];
 
 var audCtx = null;
@@ -12730,6 +12733,7 @@ function playCustomSound(id) {
 }
 
 function playSound(soundId) {
+  if (soundId === 'freeplay') return;
   stopAllAudio();
   if (soundId.indexOf('custom_') === 0) {
     playCustomSound(soundId);
@@ -12801,7 +12805,8 @@ function buildSoundGrid() {
   }));
   grid.innerHTML = allSounds.map(function(s) {
     var sel = s.id === currentSound ? ' selected' : '';
-    return '<button class="sound-btn' + sel + '" data-sound="' + s.id + '">'
+    var extra = s.id === 'freeplay' ? ' sound-btn--freeplay' : '';
+    return '<button class="sound-btn' + extra + sel + '" data-sound="' + s.id + '">'
       + '<span class="sound-icon">' + s.icon + '</span>' + s.label + '</button>';
   }).join('');
   grid.querySelectorAll('.sound-btn').forEach(function(btn) {
@@ -12814,10 +12819,13 @@ function selectSound(id) {
   document.querySelectorAll('.sound-btn').forEach(function(b) { b.classList.remove('selected'); });
   var btn = document.querySelector('.sound-btn[data-sound="' + id + '"]');
   if (btn) btn.classList.add('selected');
-  // Preview the sound briefly
-  playSound(id);
-  // Auto-stop preview after 3 seconds (except sustained)
-  if (SUSTAINED_SOUNDS.indexOf(id) === -1 && id.indexOf('custom_') !== 0) {
+  // Preview the sound briefly (no preview for freeplay mode)
+  if (id !== 'freeplay') {
+    stopAllAudio();
+    playSound(id);
+  }
+  // Auto-stop preview after 3 seconds (except sustained / freeplay)
+  if (id !== 'freeplay' && SUSTAINED_SOUNDS.indexOf(id) === -1 && id.indexOf('custom_') !== 0) {
     setTimeout(function() {
       // Only stop if still on home (not in session)
       if (document.getElementById('audSessionScreen').style.display === 'none' ||
@@ -12835,8 +12843,14 @@ function startAuditorySession() {
   audRepActive = false;
   audSessionStartTime = null; // will be set when user clicks Start
 
+  var isFreePlay = currentSound === 'freeplay';
+  var waveEl = document.getElementById('audWave');
+  if (waveEl) waveEl.style.visibility = isFreePlay ? 'hidden' : '';
+
   document.getElementById('audSoundName').textContent = getAudSoundLabel(currentSound);
-  document.getElementById('audStateLabel').textContent = 'Listen to the sound.\nTap Start when ready to concentrate.';
+  document.getElementById('audStateLabel').textContent = isFreePlay
+    ? 'Play your own music.\nTap Start when ready to focus.'
+    : 'Listen to the sound.\nTap Start when ready to concentrate.';
   document.getElementById('audRepCount').textContent = '';
   document.getElementById('audHaltCount').textContent = '';
   document.getElementById('audSessionTimer').textContent = '0:00';
@@ -12848,8 +12862,10 @@ function startAuditorySession() {
 
   showScreen('audSessionScreen');
   requestExerciseWakeLock();
-  playSound(currentSound);
-  startWaveAnimation();
+  if (!isFreePlay) {
+    playSound(currentSound);
+    startWaveAnimation();
+  }
   // Don't start timer or rep yet — wait for user to tap Start
 }
 
@@ -12857,6 +12873,8 @@ function beginAudRep() {
   // User tapped Start — stop sound and begin concentration
   stopAllAudio();
   stopWaveAnimation();
+  var waveEl = document.getElementById('audWave');
+  if (waveEl) waveEl.style.visibility = '';
   audSessionStartTime = Date.now();
   audRepStartTime = Date.now();
   document.getElementById('audStartRepBtn').style.display = 'none';
