@@ -615,6 +615,9 @@
     .path-day-frac { font-size:9px; color:var(--text); letter-spacing:.05em; }
     .path-day-frac strong { color:var(--text); }
     .path-ex-list { display:flex; flex-direction:column; gap:8px; margin-top:10px; }
+    .path-ex-group { display:flex; flex-direction:column; border-radius:14px; overflow:hidden; border:1px solid var(--border); }
+    .path-ex-group .path-ex-card { border-radius:0; border:none; border-bottom:1px solid var(--border); }
+    .path-ex-group .path-ex-card:last-child { border-bottom:none; }
     .path-ex-card { display:flex; align-items:center; gap:14px; background:var(--surface); border:1px solid var(--border); border-radius:14px; padding:13px 14px; overflow:visible; transition:border-color .2s; cursor:pointer; }
     .path-ex-card:hover { border-color:rgba(255,255,255,.12); }
     .path-ex-card.done { opacity:.55; }
@@ -17738,8 +17741,7 @@ function guideBuildAddedItem(exId, rounds) {
     var tm2 = guideThoughtTargetMinutes(exId, ts2);
     var ms2 = ts2[exId] || { todaySec:0 };
     var tt2 = tm2 * 60 * rounds;
-    var modeNames = { observation:'Thought Observation', focus:'Thought Focus', vacancy:'Vacancy of Mind' };
-    return { id:exId, name:modeNames[exId], mode:exId, duration:tm2, durationLabel:tm2 + ' min' + (rounds > 1 ? ' x2' : ''), done:ms2.todaySec >= tt2, progress:'added · ' + (ms2.count || 0) + ' recorded', tip:(GUIDE_FOUNDATION_THOUGHT_TIPS[exId] || 'Practice thought control.'), open:'thought', tcMode:exId, added:true };
+    return { id:exId, name:'Thought Control', mode:exId, duration:tm2, durationLabel:tm2 + ' min' + (rounds > 1 ? ' x2' : ''), done:ms2.todaySec >= tt2, progress:'added · ' + (ms2.count || 0) + ' recorded', tip:(GUIDE_FOUNDATION_THOUGHT_TIPS[exId] || 'Practice thought control.'), open:'thought', tcMode:exId, added:true };
   }
   return null;
 }
@@ -17848,13 +17850,23 @@ function renderGuidePlan(mode, skipScroll) {
   var bannerSub = document.getElementById('pathBannerSub');
   if (bannerSub) bannerSub.textContent = focus;
 
-  var cardsHTML = items.map(function(item) {
+  var _isTC = function(id) { return id === 'thought' || id === 'observation' || id === 'focus' || id === 'vacancy'; };
+  // Sort: gather all thought-family items together at the position of the first one
+  var _firstTCIdx = -1;
+  items.forEach(function(it, i) { if (_firstTCIdx < 0 && _isTC(it.id)) _firstTCIdx = i; });
+  if (_firstTCIdx >= 0) {
+    var _tcItems = items.filter(function(it) { return _isTC(it.id); });
+    var _otherItems = items.filter(function(it) { return !_isTC(it.id); });
+    items = _otherItems.slice(0, _firstTCIdx).concat(_tcItems).concat(_otherItems.slice(_firstTCIdx));
+  }
+
+  function _buildCardHtml(item) {
     var durLabel = item.durationLabel || (item.duration ? item.duration + ' min' : 'Open-ended');
     var modeLabel = item.mode ? ' · ' + (GUIDE_FOUNDATION_THOUGHT_LABELS[item.mode] || item.mode) : '';
     var accentColor = item.id === 'clock' ? '#d4b08e'
       : item.id === 'visual'   ? '#8ab8e0'
       : item.id === 'auditory' ? '#8eccc0'
-      : (item.id === 'thought' || item.id === 'observation' || item.id === 'focus' || item.id === 'vacancy') ? '#98b4cc'
+      : _isTC(item.id) ? '#98b4cc'
       : item.id === 'asana'    ? '#d49898'
       : '#c4a8d4';
     var icon = exIcon[item.id] || exIcon['thought'] || '◆';
@@ -17876,9 +17888,26 @@ function renderGuidePlan(mode, skipScroll) {
       + '<div class="path-ex-meta">' + durLabel + (item.progress ? ' · ' + item.progress : '') + '</div>'
       + '</div>'
       + '<div class="path-ex-right">' + checkHtml + beginHtml + '</div>'
-      + '<button class="pq-menu-btn" data-ex-id="' + item.id + '"' + (item.mode ? ' data-ex-mode="' + item.mode + '"' : '') + ' title="Options">···</button>'
+      + '<button class="pq-menu-btn" data-ex-id="' + item.id + '"' + (item.mode ? ' data-ex-mode="' + item.mode + '"' : '') + (item.added ? ' data-ex-added="1"' : '') + ' title="Options">···</button>'
       + '</div>';
-  }).join('');
+  }
+
+  var cardsHTML = '';
+  var _ci = 0;
+  while (_ci < items.length) {
+    if (_isTC(items[_ci].id)) {
+      var _tcRun = [];
+      while (_ci < items.length && _isTC(items[_ci].id)) { _tcRun.push(items[_ci]); _ci++; }
+      if (_tcRun.length > 1) {
+        cardsHTML += '<div class="path-ex-group">' + _tcRun.map(_buildCardHtml).join('') + '</div>';
+      } else {
+        cardsHTML += _buildCardHtml(_tcRun[0]);
+      }
+    } else {
+      cardsHTML += _buildCardHtml(items[_ci]);
+      _ci++;
+    }
+  }
 
   var note = mode === 'beginner' ? guideFoundationalNote() : '';
   document.getElementById('guidePlanCards').innerHTML = cardsHTML
