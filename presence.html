@@ -17705,7 +17705,8 @@ function buildExperiencedGuideItems() {
     id:gateId,
     name:gc.ex.name,
     duration:gDur,
-    done:(stats[gateId] && stats[gateId].todayCount > 0) || false,
+    durationLabel:gDur + ' min' + (rounds > 1 ? ' x' + rounds : ''),
+    done:(stats[gateId] && stats[gateId].todaySec >= gDur * 60 * rounds) || false,
     progress:gateProgress,
     tip:gTip + (gc.count ? ' Omnia has recorded ' + gc.count + ' completed session' + (gc.count === 1 ? '' : 's') + ' here.' : ' Omnia has no completed sessions recorded here yet.'),
     open:gateId
