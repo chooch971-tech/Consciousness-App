@@ -3564,6 +3564,8 @@ body:not(.tut-live) #tutCorgi {
 .clk-omnia-sub { font-family:'DM Mono',monospace; font-size:9px; letter-spacing:.1em; color:var(--muted); }
 .clk-omnia-chev { color:rgba(142,204,224,.6); font-size:12px; flex-shrink:0; transition:transform .35s ease; }
 .clk-omnia.open .clk-omnia-chev { transform:rotate(180deg); }
+.clk-omnia--btn:active { background:rgba(142,204,224,.08); border-color:rgba(142,204,224,.34); }
+.clk-omnia--btn:hover .clk-omnia-chev, .clk-omnia--btn:active .clk-omnia-chev { transform:translateX(4px); }
 .clk-omnia-body { max-height:0; overflow:hidden; transition:max-height .45s ease; }
 .clk-omnia.open .clk-omnia-body { max-height:360px; }
 .clk-omnia-inner { padding:2px 18px 18px; }
@@ -11676,18 +11678,13 @@ var EXERCISE_DEFS = {
           + '</div>';
       }
 
-      // ── Omnia inline explainer (expand on tap) ──
-      var steps = (EX_EXPLAINERS.clock && EX_EXPLAINERS.clock.steps) || [];
-      var stepsHtml = steps.map(function(s, i) {
-        return '<div class="clk-step"><span class="clk-step-num">' + (i + 1) + '</span><span class="clk-step-txt">' + s + '</span></div>';
-      }).join('');
-      var omniaHtml = '<div class="clk-omnia" id="clkOmnia">'
-        + '<button type="button" class="clk-omnia-head" onclick="toggleClkOmnia()">'
-        +   '<span class="clk-omnia-crystal">' + omniaHeadSVG(28, 46) + '</span>'
-        +   '<span class="clk-omnia-txt"><span class="clk-omnia-title">How it works</span><span class="clk-omnia-sub">Tap Omnia for a walkthrough</span></span>'
-        +   '<span class="clk-omnia-chev">&#9662;</span>'
+      // ── Omnia tap-to-open explainer (opens full-screen dialogue) ──
+      var omniaHtml = '<div class="clk-omnia clk-omnia--btn" id="clkOmnia">'
+        + '<button type="button" class="clk-omnia-head" onclick="openExExplainer(\'clock\')">'
+        +   '<span class="clk-omnia-crystal">' + omniaHeadSVG(30, 50) + '</span>'
+        +   '<span class="clk-omnia-txt"><span class="clk-omnia-title">Ask Omnia</span><span class="clk-omnia-sub">Tap for a walkthrough</span></span>'
+        +   '<span class="clk-omnia-chev">&#8594;</span>'
         + '</button>'
-        + '<div class="clk-omnia-body"><div class="clk-omnia-inner">' + stepsHtml + '</div></div>'
         + '</div>';
 
       var historyHtml = '<button type="button" class="clk-history-link" onclick="concHistoryFrom=\'exSetupScreen\'; concHistoryFilter=\'clock\'; renderConcHistory(); showScreen(\'concHistoryScreen\');">View History</button>';
