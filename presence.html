@@ -3502,13 +3502,14 @@ body:not(.tut-live) #tutCorgi {
 .clk-setup { position:relative; display:flex; flex-direction:column; align-items:center; }
 .clk-hero-card { width:100%; box-sizing:border-box; background:rgba(224,124,58,.06); border:1px solid rgba(224,124,58,.14); border-radius:18px; padding:22px 16px 18px; margin-bottom:20px; display:flex; flex-direction:column; align-items:center; }
 .clk-hero { position:relative; width:148px; height:148px; margin:0 auto 4px; display:flex; align-items:center; justify-content:center; }
-.clk-omnia-fab { align-self:flex-end; display:flex; flex-direction:row; align-items:center; gap:8px;
-  background:rgba(142,204,224,.06); border:1px solid rgba(142,204,224,.18); border-radius:11px; cursor:pointer;
-  padding:6px 12px 6px 9px; margin-bottom:14px; transition:transform .15s ease, background .2s; }
-.clk-omnia-fab:active { transform:scale(.95); background:rgba(142,204,224,.1); }
-.clk-omnia-fab-crystal { width:22px; height:36px; display:flex; align-items:center; justify-content:center;
-  filter:drop-shadow(0 0 7px rgba(142,204,224,.5)); animation:bnSymPulse 4s ease-in-out infinite; }
-.clk-omnia-fab-label { font-family:'DM Mono',monospace; font-size:9px; letter-spacing:.14em; text-transform:uppercase; color:rgba(142,204,224,.85); white-space:nowrap; }
+.clk-omnia-fab { position:absolute; top:10px; right:10px; z-index:6; display:flex; flex-direction:row; align-items:center; gap:7px;
+  background:rgba(9,11,17,.72); backdrop-filter:blur(7px); -webkit-backdrop-filter:blur(7px);
+  border:1px solid rgba(142,204,224,.32); border-radius:11px; cursor:pointer;
+  padding:5px 11px 5px 8px; transition:transform .15s ease, background .2s; }
+.clk-omnia-fab:active { transform:scale(.95); background:rgba(9,11,17,.85); }
+.clk-omnia-fab-crystal { width:21px; height:34px; display:flex; align-items:center; justify-content:center;
+  filter:drop-shadow(0 0 7px rgba(142,204,224,.55)); animation:bnSymPulse 4s ease-in-out infinite; }
+.clk-omnia-fab-label { font-family:'DM Mono',monospace; font-size:9px; letter-spacing:.14em; text-transform:uppercase; color:rgba(206,234,242,.9); white-space:nowrap; }
 .clk-hero-glow { position:absolute; inset:-22%; border-radius:50%;
   background:radial-gradient(circle, rgba(224,124,58,.20) 0%, rgba(224,124,58,.06) 45%, transparent 70%);
   animation:clkGlow 5.5s ease-in-out infinite; }
@@ -11687,7 +11688,7 @@ var EXERCISE_DEFS = {
 
       // ── Omnia tap-to-open explainer (floats top-right, opens full-screen dialogue) ──
       var omniaHtml = '<button type="button" class="clk-omnia-fab" onclick="openExExplainer(\'clock\')" aria-label="Ask Omnia for instructions">'
-        + '<span class="clk-omnia-fab-crystal">' + omniaHeadSVG(22, 36) + '</span>'
+        + '<span class="clk-omnia-fab-crystal">' + omniaHeadSVG(21, 34) + '</span>'
         + '<span class="clk-omnia-fab-label">Ask Omnia</span>'
         + '</button>';
 
