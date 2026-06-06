@@ -17561,7 +17561,7 @@ function guideExerciseStats() {
   var stats = {};
   var recentCutoff = Date.now() - 14 * 86400000;
   GUIDE_EXERCISES.forEach(function(ex) {
-    stats[ex.id] = { count:0, bestSec:0, totalSec:0, todaySec:0, todayCount:0, lastMs:0, recentCount:0, recentSec:0 };
+    stats[ex.id] = { count:0, bestSec:0, preTodayBestSec:0, totalSec:0, todaySec:0, todayCount:0, lastMs:0, recentCount:0, recentSec:0 };
   });
   var history = (typeof concState !== 'undefined' && concState.history) ? concState.history : [];
   history.forEach(function(h) {
@@ -17573,6 +17573,7 @@ function guideExerciseStats() {
     stats[id].count++;
     stats[id].totalSec += sec;
     if (bestSec > stats[id].bestSec) stats[id].bestSec = bestSec;
+    if (!guideIsToday(h.date) && bestSec > stats[id].preTodayBestSec) stats[id].preTodayBestSec = bestSec;
     if (guideIsToday(h.date)) {
       stats[id].todayCount++;
       stats[id].todaySec += sec;
@@ -17643,6 +17644,7 @@ function buildExperiencedGuideItems() {
       duration:clockMinutes,
       durationLabel:clockDurLabel,
       done:clockStats.todaySec >= clockDailyTarget,
+      todayCount:clockStats.todayCount || 0,
       progress:'today ' + guideFmtTime(clockStats.todaySec) + ' / ' + guideFmtTime(clockDailyTarget) + (atCap ? '' : ' · ' + (clockStats.qualAtTier || 0) + '/2 → ' + (clockMinutes + 1) + 'min'),
       tip:'Complete the full session to count toward the next tier. Two qualifying sessions unlock the next minute.' + tierProgress,
       open:'clock',
@@ -17705,7 +17707,14 @@ function buildExperiencedGuideItems() {
 
   var gc = gateById[gateId] || { ex:guideExerciseById(gateId), score:guideExperienceScore(gateId), count:0 };
   var gScore = gc.score;
-  var gDur = guideAdvancedTarget(gateId, guideDurationForScore(gScore));
+  // Use pre-today bestSec so the target doesn't jump mid-day after completing a session
+  var gSt = stats[gateId] || {};
+  var gStableBest = typeof gSt.preTodayBestSec === 'number' ? gSt.preTodayBestSec : (gSt.bestSec || 0);
+  var gStableScore = guideExperienceScore(gateId);
+  if ((gSt.count || 0) >= 3) gStableScore = Math.max(gStableScore, 1);
+  if (gStableBest >= 600) gStableScore = Math.max(gStableScore, 2);
+  if (gStableBest >= 900 || (gSt.count || 0) >= 10) gStableScore = Math.max(gStableScore, 3);
+  var gDur = guideAdvancedTarget(gateId, guideDurationForScore(gStableScore));
   if (gateId === 'asana') {
     gDur = guideAsanaStats().qualTarget;
   }
@@ -17737,6 +17746,7 @@ function buildExperiencedGuideItems() {
     duration:gDur,
     durationLabel:gDur + ' min' + (rounds > 1 ? ' x' + rounds : ''),
     done:(stats[gateId] && stats[gateId].todaySec >= gDur * 60 * rounds) || false,
+    todayCount:stats[gateId] ? (stats[gateId].todayCount || 0) : 0,
     progress:gateProgress,
     tip:gTip + (gc.count ? ' Omnia has recorded ' + gc.count + ' completed session' + (gc.count === 1 ? '' : 's') + ' here.' : ' Omnia has no completed sessions recorded here yet.'),
     open:gateId
@@ -18666,13 +18676,9 @@ function renderPathQuests() {
     if (modeText && _isTC(item.id)) metaParts.push(modeText);
     if (item.duration) metaParts.push(item.duration + ' min');
     else if (item.durationLabel) metaParts.push(item.durationLabel.replace(/\s*x2\s*$/, ''));
-    if (rounds > 1) {
+    if (rounds > 1 && !item.done) {
       var completedToday = item.todayCount || 0;
-      if (completedToday >= 1 && !item.done) {
-        metaParts.push('×1 remaining');
-      } else {
-        metaParts.push('×2 sessions');
-      }
+      metaParts.push(completedToday >= 1 ? '×1 remaining' : '×2 sessions');
     }
     if (item.done) metaParts.push('completed');
     var meta = metaParts.join(' · ') || 'Open-ended';
