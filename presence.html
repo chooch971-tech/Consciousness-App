@@ -3499,9 +3499,15 @@ body:not(.tut-live) #tutCorgi {
   color:#a8dce8; font-family:'DM Mono',monospace; font-size:10px; letter-spacing:.2em; text-transform:uppercase; cursor:pointer; }
 
 /* ── Clock setup redesign ─────────────────────────────────────────────── */
-.clk-setup { display:flex; flex-direction:column; align-items:center; }
-.clk-hero-card { width:100%; box-sizing:border-box; background:rgba(224,124,58,.06); border:1px solid rgba(224,124,58,.14); border-radius:18px; padding:28px 16px 20px; margin-bottom:24px; display:flex; flex-direction:column; align-items:center; }
-.clk-hero { position:relative; width:172px; height:172px; margin:0 auto 4px; display:flex; align-items:center; justify-content:center; }
+.clk-setup { position:relative; display:flex; flex-direction:column; align-items:center; }
+.clk-hero-card { width:100%; box-sizing:border-box; background:rgba(224,124,58,.06); border:1px solid rgba(224,124,58,.14); border-radius:18px; padding:22px 16px 18px; margin-bottom:20px; display:flex; flex-direction:column; align-items:center; }
+.clk-hero { position:relative; width:148px; height:148px; margin:0 auto 4px; display:flex; align-items:center; justify-content:center; }
+.clk-omnia-fab { position:absolute; top:0; right:0; z-index:5; display:flex; flex-direction:column; align-items:center; gap:5px;
+  background:none; border:none; cursor:pointer; padding:6px 4px; transition:transform .15s ease; }
+.clk-omnia-fab:active { transform:scale(.93); }
+.clk-omnia-fab-crystal { width:28px; height:46px; display:flex; align-items:center; justify-content:center;
+  filter:drop-shadow(0 0 8px rgba(142,204,224,.5)); animation:bnSymPulse 4s ease-in-out infinite; }
+.clk-omnia-fab-label { font-family:'DM Mono',monospace; font-size:8px; letter-spacing:.14em; text-transform:uppercase; color:rgba(142,204,224,.82); white-space:nowrap; }
 .clk-hero-glow { position:absolute; inset:-22%; border-radius:50%;
   background:radial-gradient(circle, rgba(224,124,58,.20) 0%, rgba(224,124,58,.06) 45%, transparent 70%);
   animation:clkGlow 5.5s ease-in-out infinite; }
@@ -11631,7 +11637,7 @@ var EXERCISE_DEFS = {
       var _heroBg = (_ct.bg && _ct.bg !== 'none') ? _ct.bg : '';
       var heroHtml = '<div class="clk-hero-card" id="clkHeroCard"' + (_heroBg ? ' style="background:' + _heroBg + ';"' : '') + '>'
         + '<div class="clk-hero" id="clkHero"><div class="clk-hero-glow"></div>'
-        + '<svg viewBox="0 0 240 240" width="172" height="172" id="clkHeroSvg">'
+        + '<svg viewBox="0 0 240 240" width="148" height="148" id="clkHeroSvg">'
         +   '<circle class="clk-face" cx="120" cy="120" r="112" fill="' + _faceFill + '"/>'
         +   '<circle class="clk-rim" cx="120" cy="120" r="112"/>'
         +   '<circle class="clk-rim-inner" cx="120" cy="120" r="104"/>'
@@ -11678,18 +11684,15 @@ var EXERCISE_DEFS = {
           + '</div>';
       }
 
-      // ── Omnia tap-to-open explainer (opens full-screen dialogue) ──
-      var omniaHtml = '<div class="clk-omnia clk-omnia--btn" id="clkOmnia">'
-        + '<button type="button" class="clk-omnia-head" onclick="openExExplainer(\'clock\')">'
-        +   '<span class="clk-omnia-crystal">' + omniaHeadSVG(30, 50) + '</span>'
-        +   '<span class="clk-omnia-txt"><span class="clk-omnia-title">Ask Omnia</span><span class="clk-omnia-sub">Tap for a walkthrough</span></span>'
-        +   '<span class="clk-omnia-chev">&#8594;</span>'
-        + '</button>'
-        + '</div>';
+      // ── Omnia tap-to-open explainer (floats top-right, opens full-screen dialogue) ──
+      var omniaHtml = '<button type="button" class="clk-omnia-fab" onclick="openExExplainer(\'clock\')" aria-label="Ask Omnia for instructions">'
+        + '<span class="clk-omnia-fab-crystal">' + omniaHeadSVG(28, 46) + '</span>'
+        + '<span class="clk-omnia-fab-label">Ask Omnia</span>'
+        + '</button>';
 
       var historyHtml = '<button type="button" class="clk-history-link" onclick="concHistoryFrom=\'exSetupScreen\'; concHistoryFilter=\'clock\'; renderConcHistory(); showScreen(\'concHistoryScreen\');">View History</button>';
 
-      return '<div class="clk-setup">' + heroHtml + omniaHtml + recordHtml + trackHtml + historyHtml + '</div>';
+      return '<div class="clk-setup">' + omniaHtml + heroHtml + recordHtml + trackHtml + historyHtml + '</div>';
     },
     begin: function() { startConcentration(); }
   },
