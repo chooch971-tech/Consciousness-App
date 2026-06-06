@@ -16042,13 +16042,23 @@ function omniaExerciseReward(exId, seconds, recommended) {
   return Math.max(42, Math.floor(base * progressionSoftCap * stepPenalty * catchup * streakMult * recMult));
 }
 
+function getActiveAkashaBoost() {
+  var now = Date.now();
+  var boosts = omniaState.akashaBoosts || [];
+  var active = boosts.filter(function(b) { return b.expiresAt > now; });
+  if (active.length !== boosts.length) { omniaState.akashaBoosts = active; saveOmniaState(); }
+  if (!active.length) return 1;
+  return active.reduce(function(acc, b) { return acc * b.mult; }, 1);
+}
+
 function awardOmniaForExercise(exId, seconds) {
   omniaAccrue();
   var rec = omniaPickRecommendation(false);
   var recommended = rec && rec.id === exId;
   if (!recommended && omniaExerciseIsGuidedAgenda(exId)) recommended = true;
   var meta = OMNIA_EXERCISE_META[exId] || OMNIA_EXERCISE_META.clock;
-  var gain = omniaExerciseReward(exId, seconds || 0, recommended);
+  var boost = getActiveAkashaBoost();
+  var gain = Math.round(omniaExerciseReward(exId, seconds || 0, recommended) * boost);
   omniaState.akasha = (omniaState.akasha || 0) + gain;
   omniaState.totalAkashaEarned = (omniaState.totalAkashaEarned || 0) + gain;
   // Any exercise = 1 session credit, max once per hour
@@ -16070,7 +16080,8 @@ function awardOmniaForExercise(exId, seconds) {
   saveOmniaState();
   var bodyName = OMNIA_BODY_META[meta.body] ? OMNIA_BODY_META[meta.body].name.replace(' Body','') : 'Omnia';
   var activityName = meta && meta.name ? meta.name : 'Exercise';
-  showToast(activityName + ' complete · +' + gain + ' akasha' + (recommended ? ' · ' + bodyName + ' +1' : ''), 3200);
+  var boostLabel = boost > 1 ? ' · +' + Math.round((boost - 1) * 100) + '% boost' : '';
+  showToast(activityName + ' complete · +' + gain + ' akasha' + (recommended ? ' · ' + bodyName + ' +1' : '') + boostLabel, 3200);
 }
 
 function renderOmniaEngine() {
@@ -18392,6 +18403,11 @@ function claimPathQuestReward(type) {
   var amount = pathQuestReward(type);
   if (typeof omniaState !== 'undefined') {
     omniaState.akasha = (omniaState.akasha || 0) + amount;
+    var boostMult = type === 'weekend' ? 1.3 : 1.2;
+    var boostDuration = type === 'weekend' ? 8 * 3600000 : 4 * 3600000;
+    var now = Date.now();
+    omniaState.akashaBoosts = (omniaState.akashaBoosts || []).filter(function(b) { return b.expiresAt > now; });
+    omniaState.akashaBoosts.push({ mult: boostMult, expiresAt: now + boostDuration });
     if (typeof saveOmniaState === 'function') saveOmniaState();
   }
   data.claimed = true;
