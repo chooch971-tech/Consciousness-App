@@ -17618,15 +17618,13 @@ function buildExperiencedGuideItems() {
   var tierProgress = !atCap
     ? ' (' + (clockStats.qualAtTier || 0) + '/2 sessions toward ' + (clockMinutes + 1) + ' min)'
     : '';
-  var clockRoundsLeft = rounds > 1 ? Math.max(0, rounds - Math.floor(clockStats.todaySec / (clockMinutes * 60))) : 1;
-  var clockDurLabel = clockMinutes + ' min' + (clockRoundsLeft > 1 ? ' x' + clockRoundsLeft : '');
+  var clockDurLabel = clockMinutes + ' min' + (rounds > 1 ? ' x2' : '');
 
   var thoughtMode = guideState.thoughtModeForced || guideCurrentThoughtMode(thought);
   var thoughtModeStats = thought[thoughtMode] || { count:0, bestSec:0, todaySec:0 };
   var thoughtMinutes = guideThoughtTargetMinutes(thoughtMode, thought);
   var thoughtDailyTarget = thoughtMinutes * 60 * rounds;
-  var thoughtRoundsLeft = rounds > 1 ? Math.max(0, rounds - Math.floor(thoughtModeStats.todaySec / (thoughtMinutes * 60))) : 1;
-  var thoughtDurLabel = thoughtMinutes + ' min' + (thoughtRoundsLeft > 1 ? ' x' + thoughtRoundsLeft : '');
+  var thoughtDurLabel = thoughtMinutes + ' min' + (rounds > 1 ? ' x2' : '');
   var nextThought = thoughtMode === 'observation'
     ? 'When observation reaches a ten-minute gap, Omnia will move you to Thought Focus at five minutes.'
     : thoughtMode === 'focus'
@@ -17780,10 +17778,8 @@ function buildFoundationalGuideItems() {
       : 'When vacancy reaches a ten-minute gap, Omnia will cycle all three forms instead of adding more volume.';
 
   var clockExtra = showUpsell ? 'upsell' : atCap ? 'stepper' : null;
-  var clockRoundsLeft2 = rounds > 1 ? Math.max(0, rounds - Math.floor(clock.todaySec / (clockMinutes * 60))) : 1;
-  var clockDurLabel2 = clockMinutes + ' min' + (clockRoundsLeft2 > 1 ? ' x' + clockRoundsLeft2 : '');
-  var thoughtRoundsLeft2 = rounds > 1 ? Math.max(0, rounds - Math.floor(modeStats.todaySec / (thoughtMinutes * 60))) : 1;
-  var thoughtDurLabel2 = thoughtMinutes + ' min' + (thoughtRoundsLeft2 > 1 ? ' x' + thoughtRoundsLeft2 : '');
+  var clockDurLabel2 = clockMinutes + ' min' + (rounds > 1 ? ' x2' : '');
+  var thoughtDurLabel2 = thoughtMinutes + ' min' + (rounds > 1 ? ' x2' : '');
 
   var items = [
     {
