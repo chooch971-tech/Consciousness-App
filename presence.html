@@ -995,6 +995,7 @@
     .oe-gen-titles { flex:1; min-width:0; }
     .oe-gen-title { font-family:'Space Grotesk',sans-serif; font-size:13px; font-weight:600; letter-spacing:.02em; color:#dcf2ff; line-height:1.2; }
     .oe-gen-sub { font-size:8px; letter-spacing:.2em; text-transform:uppercase; color:rgba(142,204,224,.72); margin-top:4px; }
+    .oe-gen-boost { display:none; align-items:center; gap:3px; margin-top:5px; font-size:8px; letter-spacing:.14em; text-transform:uppercase; color:#e8c87a; }
     .oe-gen-rate-badge { flex-shrink:0; display:flex; flex-direction:column; align-items:flex-end; }
     .oe-gen-rate-num { font-family:'Cormorant Garamond',serif; font-size:23px; font-weight:300; color:#bfeaff; line-height:.95; }
     .oe-gen-rate-unit { font-size:7px; letter-spacing:.18em; text-transform:uppercase; color:rgba(142,204,224,.62); margin-top:3px; }
@@ -4529,6 +4530,7 @@ body:not(.tut-live) #tutCorgi {
                 <div class="oe-gen-titles">
                   <div class="oe-gen-title">Akasha Generator</div>
                   <div class="oe-gen-sub">Fills over time</div>
+                  <div class="oe-gen-boost" id="omniaGenBoost"><span>⚡</span><span>+<span id="omniaGenBoostPct">0</span>% boost</span></div>
                 </div>
                 <div class="oe-gen-rate-badge">
                   <span class="oe-gen-rate-num" id="omniaGenRateNum">0</span>
@@ -15854,7 +15856,9 @@ function omniaRatePerHour() {
   var stepTax = Math.max(0, stepNum - 1) * 16;
   var bodyBonus = Math.floor(Math.sqrt(Math.max(0, total)) * 9);
   var secondGen = stepNum >= 5 ? Math.floor(18 + currentLvl * 8) : 0;
-  return Math.max(10, Math.floor(10 + currentLvl * 12 + Math.floor(bodyBonus * 0.5) + Math.floor(earlyBoost * 0.3) - stepTax + secondGen));
+  var base = 10 + currentLvl * 12 + Math.floor(bodyBonus * 0.5) + Math.floor(earlyBoost * 0.3) - stepTax + secondGen;
+  var boost = (typeof getActiveAkashaBoost === 'function' && typeof omniaState !== 'undefined' && omniaState) ? getActiveAkashaBoost() : 1;
+  return Math.max(10, Math.floor(base * boost));
 }
 
 function omniaReservoirCap() {
@@ -16177,6 +16181,18 @@ function renderOmniaEngine() {
   var stepNum2 = omniaState.bardonStep || 1;
   var rateBadge = document.getElementById('omniaGenRateNum');
   if (rateBadge) rateBadge.textContent = omniaRatePerHour();
+  var genBoostEl = document.getElementById('omniaGenBoost');
+  if (genBoostEl) {
+    var genBoostMult = getActiveAkashaBoost();
+    var genBoostPct = Math.round((genBoostMult - 1) * 100);
+    if (genBoostPct > 0) {
+      genBoostEl.style.display = 'inline-flex';
+      var genBoostPctEl = document.getElementById('omniaGenBoostPct');
+      if (genBoostPctEl) genBoostPctEl.textContent = genBoostPct;
+    } else {
+      genBoostEl.style.display = 'none';
+    }
+  }
   var rateLabel = 'Resonance ' + (omniaState.recStreak || 0);
   if (stepNum2 >= 5) rateLabel += ' · dual generator active';
   if (rateText) rateText.textContent = rateLabel;
