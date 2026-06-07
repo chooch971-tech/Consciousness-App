@@ -3426,6 +3426,11 @@ body:not(.tut-live) #tutCorgi {
 .screen-banner { position:relative; flex-shrink:0; height:134px; margin:0 0 8px; border-radius:18px; overflow:hidden;
   display:flex; align-items:center; justify-content:space-between; padding:0 22px; }
 .screen-banner::before,.screen-banner::after { content:''; position:absolute; inset:0; pointer-events:none; }
+.boost-badge { position:absolute; top:12px; right:14px; z-index:6; display:none; align-items:center; gap:4px;
+  background:rgba(212,180,100,.14); border:1px solid rgba(212,180,100,.4); border-radius:20px;
+  padding:4px 10px; font-family:'DM Mono',monospace; font-size:8px; letter-spacing:.1em; text-transform:uppercase;
+  color:#e8c87a; backdrop-filter:blur(4px); }
+.boost-badge__icon { font-size:10px; line-height:1; }
 
 .aw-banner  { background:linear-gradient(145deg,#0c2a1e 0%,#113828 42%,#0c2218 100%); }
 .aw-banner::before { background:radial-gradient(ellipse 60% 70% at 72% 55%,rgba(90,210,150,.26) 0%,transparent 70%); }
@@ -4045,6 +4050,7 @@ body:not(.tut-live) #tutCorgi {
     <div id="awarenessPanel" style="flex:1; display:none; flex-direction:column; overflow:hidden; min-height:0; scrollbar-width:none; -ms-overflow-style:none;">
     <!-- Awareness banner -->
     <div class="screen-banner aw-banner">
+      <div class="boost-badge" id="awBoostBadge" title="Akasha generation boost from completed challenges"><span class="boost-badge__icon">⚡</span><span>boost <span class="boost-badge__pct">0</span>%</span></div>
       <div class="bn-text">
         <div class="bn-label">The Witness</div>
         <div class="bn-title">Awareness</div>
@@ -4144,6 +4150,7 @@ body:not(.tut-live) #tutCorgi {
     <div id="concentrationPanel" style="display:none; flex:1; flex-direction:column; overflow-y:auto; -webkit-overflow-scrolling:touch; min-height:0; scrollbar-width:none; -ms-overflow-style:none;">
       <!-- Concentration banner -->
       <div class="screen-banner conc-banner">
+        <div class="boost-badge" id="concBoostBadge" title="Akasha generation boost from completed challenges"><span class="boost-badge__icon">⚡</span><span>boost <span class="boost-badge__pct">0</span>%</span></div>
         <div class="bn-text">
           <div class="bn-label">The Magician</div>
           <div class="bn-title">Concentration</div>
@@ -6565,6 +6572,7 @@ function renderHome() {
     awBannerLevel.textContent = state.level;
     awBannerSymbol.innerHTML = renderSymbolSVG(awBGroup.id, 'rgba(180,240,210,.75)', 16);
   }
+  if (typeof renderAkashaBoostBadge === 'function') renderAkashaBoostBadge();
   var awXPHint = document.getElementById('awXPHint');
   if (awXPHint) {
     if (state.level >= 777) {
@@ -8984,6 +8992,7 @@ function renderConcHome() {
     concBannerLevel.textContent = concState.level;
     concBannerSymbol.innerHTML = renderSymbolSVG(bGroup.id, 'rgba(255,200,140,.75)', 16);
   }
+  if (typeof renderAkashaBoostBadge === 'function') renderAkashaBoostBadge();
   var concXPHint = document.getElementById('concXPHint');
   if (concXPHint) {
     if (concState.level >= 777) {
@@ -14859,7 +14868,7 @@ var OMNIA_BARDON_STEPS = [
     roman:'II',
     name:'Step II · Imagination',
     text:'Omnia now has all the fundamentals to begin more advanced work: training the imagination and deepening the concentration.',
-    req:{ physical:30, astral:30, mental:30, recommended:12 }
+    req:{ physical:25, astral:25, mental:25, recommended:12 }
   },
   {
     step:3,
@@ -16049,6 +16058,22 @@ function getActiveAkashaBoost() {
   if (active.length !== boosts.length) { omniaState.akashaBoosts = active; saveOmniaState(); }
   if (!active.length) return 1;
   return active.reduce(function(acc, b) { return acc * b.mult; }, 1);
+}
+
+function renderAkashaBoostBadge() {
+  var mult = (typeof omniaState !== 'undefined' && omniaState) ? getActiveAkashaBoost() : 1;
+  var pct = Math.round((mult - 1) * 100);
+  ['awBoostBadge', 'concBoostBadge'].forEach(function(id) {
+    var el = document.getElementById(id);
+    if (!el) return;
+    if (pct > 0) {
+      el.style.display = 'flex';
+      var pctEl = el.querySelector('.boost-badge__pct');
+      if (pctEl) pctEl.textContent = pct;
+    } else {
+      el.style.display = 'none';
+    }
+  });
 }
 
 function awardOmniaForExercise(exId, seconds) {
