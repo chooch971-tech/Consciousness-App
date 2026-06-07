@@ -4051,7 +4051,7 @@ body:not(.tut-live) #tutCorgi {
     <div id="awarenessPanel" style="flex:1; display:none; flex-direction:column; overflow:hidden; min-height:0; scrollbar-width:none; -ms-overflow-style:none;">
     <!-- Awareness banner -->
     <div class="screen-banner aw-banner">
-      <div class="boost-badge" id="awBoostBadge" title="Akasha generation boost from completed challenges"><span class="boost-badge__icon">⚡</span><span>boost <span class="boost-badge__pct">0</span>%</span></div>
+      <div class="boost-badge" id="awBoostBadge" title="Akasha generation boost from completed challenges"><span class="boost-badge__icon">⚡</span><span>boost <span class="boost-badge__pct">0</span>% · <span class="boost-badge__time"></span></span></div>
       <div class="bn-text">
         <div class="bn-label">The Witness</div>
         <div class="bn-title">Awareness</div>
@@ -4151,7 +4151,7 @@ body:not(.tut-live) #tutCorgi {
     <div id="concentrationPanel" style="display:none; flex:1; flex-direction:column; overflow-y:auto; -webkit-overflow-scrolling:touch; min-height:0; scrollbar-width:none; -ms-overflow-style:none;">
       <!-- Concentration banner -->
       <div class="screen-banner conc-banner">
-        <div class="boost-badge" id="concBoostBadge" title="Akasha generation boost from completed challenges"><span class="boost-badge__icon">⚡</span><span>boost <span class="boost-badge__pct">0</span>%</span></div>
+        <div class="boost-badge" id="concBoostBadge" title="Akasha generation boost from completed challenges"><span class="boost-badge__icon">⚡</span><span>boost <span class="boost-badge__pct">0</span>% · <span class="boost-badge__time"></span></span></div>
         <div class="bn-text">
           <div class="bn-label">The Magician</div>
           <div class="bn-title">Concentration</div>
@@ -4530,7 +4530,7 @@ body:not(.tut-live) #tutCorgi {
                 <div class="oe-gen-titles">
                   <div class="oe-gen-title">Akasha Generator</div>
                   <div class="oe-gen-sub">Fills over time</div>
-                  <div class="oe-gen-boost" id="omniaGenBoost"><span>⚡</span><span>+<span id="omniaGenBoostPct">0</span>% boost</span></div>
+                  <div class="oe-gen-boost" id="omniaGenBoost"><span>⚡</span><span>+<span id="omniaGenBoostPct">0</span>% boost · <span id="omniaGenBoostTime"></span></span></div>
                 </div>
                 <div class="oe-gen-rate-badge">
                   <span class="oe-gen-rate-num" id="omniaGenRateNum">0</span>
@@ -16064,9 +16064,19 @@ function getActiveAkashaBoost() {
   return active.reduce(function(acc, b) { return acc * b.mult; }, 1);
 }
 
+// Minutes until the soonest-expiring active boost ends (when the combined % will next drop).
+function getAkashaBoostRemainingMin() {
+  var now = Date.now();
+  var active = (omniaState.akashaBoosts || []).filter(function(b) { return b.expiresAt > now; });
+  if (!active.length) return 0;
+  var soonest = active.reduce(function(min, b) { return Math.min(min, b.expiresAt); }, Infinity);
+  return Math.max(1, Math.ceil((soonest - now) / 60000));
+}
+
 function renderAkashaBoostBadge() {
   var mult = (typeof omniaState !== 'undefined' && omniaState) ? getActiveAkashaBoost() : 1;
   var pct = Math.round((mult - 1) * 100);
+  var remainLabel = pct > 0 ? fmtDuration(getAkashaBoostRemainingMin()) + ' left' : '';
   ['awBoostBadge', 'concBoostBadge'].forEach(function(id) {
     var el = document.getElementById(id);
     if (!el) return;
@@ -16074,6 +16084,8 @@ function renderAkashaBoostBadge() {
       el.style.display = 'flex';
       var pctEl = el.querySelector('.boost-badge__pct');
       if (pctEl) pctEl.textContent = pct;
+      var timeEl = el.querySelector('.boost-badge__time');
+      if (timeEl) timeEl.textContent = remainLabel;
     } else {
       el.style.display = 'none';
     }
@@ -16189,6 +16201,8 @@ function renderOmniaEngine() {
       genBoostEl.style.display = 'inline-flex';
       var genBoostPctEl = document.getElementById('omniaGenBoostPct');
       if (genBoostPctEl) genBoostPctEl.textContent = genBoostPct;
+      var genBoostTimeEl = document.getElementById('omniaGenBoostTime');
+      if (genBoostTimeEl) genBoostTimeEl.textContent = fmtDuration(getAkashaBoostRemainingMin()) + ' left';
     } else {
       genBoostEl.style.display = 'none';
     }
