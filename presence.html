@@ -17403,6 +17403,48 @@ function guideAsanaStats() {
   return out;
 }
 
+// Auditory's own minute-by-minute ladder: plateau at 5 min for 6 sessions,
+// climb 6→9 (2 sessions/min), plateau at 10 for 24, climb 11→14, plateau at
+// 15 for 24, climb 16→19, cap at 20.
+function auditoryTierRequired(tier) {
+  if (tier === 5) return 6;
+  if (tier === 10 || tier === 15 || tier === 20) return 24;
+  return 2;
+}
+
+function guideAuditoryStats() {
+  var out = { count:0, totalSec:0, bestSec:0, todaySec:0, todayCount:0, qualTarget:5, qualAtTier:0, atCap:false, tierRequired:6 };
+  var history = (typeof concState !== 'undefined' && concState.history) ? concState.history : [];
+  var sessions = [];
+  history.forEach(function(h) {
+    if (!h || h.type !== 'auditory') return;
+    var sec = Math.max(0, parseInt(h.seconds, 10) || 0);
+    var ms = h.date ? new Date(h.date).getTime() : 0;
+    out.count++;
+    out.totalSec += sec;
+    if (sec > out.bestSec) out.bestSec = sec;
+    if (guideIsToday(h.date)) { out.todayCount++; out.todaySec += sec; }
+    sessions.push({ sec:sec, ms:ms });
+  });
+  sessions.sort(function(a, b) { return a.ms - b.ms; });
+
+  var cap = 20;
+  var tier = 5, qualAtTier = 0;
+  sessions.forEach(function(s) {
+    if (tier >= cap) return;
+    var required = auditoryTierRequired(tier);
+    if (s.sec + 5 >= tier * 60) { // 5s grace for tap-timing variance
+      qualAtTier++;
+      if (qualAtTier >= required) { tier++; qualAtTier = 0; }
+    }
+  });
+  out.atCap = tier >= cap;
+  out.qualTarget = tier;
+  out.qualAtTier = qualAtTier;
+  out.tierRequired = auditoryTierRequired(Math.min(tier, cap));
+  return out;
+}
+
 function guideThoughtStats() {
   var out = {};
   GUIDE_FOUNDATION_THOUGHT_ORDER.forEach(function(mode) {
@@ -17561,6 +17603,7 @@ function guideAdvancedTarget(exId, naturalMin) {
 function guideRecommendedMinutes(exId) {
   try {
     if (exId === 'asana') return guideAsanaStats().qualTarget || 5;
+    if (exId === 'auditory') return guideAuditoryStats().qualTarget || 5;
     if (exId === 'clock') return guideClockFinalTarget(guideClockStats()) || 5;
     if (exId === 'thought') {
       var ts = guideThoughtStats();
@@ -17753,6 +17796,8 @@ function buildExperiencedGuideItems() {
   var gDur = guideAdvancedTarget(gateId, guideDurationForScore(gStableScore));
   if (gateId === 'asana') {
     gDur = guideAsanaStats().qualTarget;
+  } else if (gateId === 'auditory') {
+    gDur = guideAuditoryStats().qualTarget;
   }
   var gTip;
   if (gScore === 0) {
@@ -17766,7 +17811,14 @@ function buildExperiencedGuideItems() {
   }
 
   var gateProgress = gc.count ? gc.count + ' recorded' : 'no completed sessions recorded';
-  if (gateId === 'asana') {
+  if (gateId === 'auditory') {
+    var _aup = guideAuditoryStats();
+    if (_aup.atCap) {
+      gateProgress = 'ceiling reached · ' + gc.count + ' recorded';
+    } else {
+      gateProgress = _aup.qualAtTier + ' / ' + _aup.tierRequired + ' sessions at ' + _aup.qualTarget + ' min';
+    }
+  } else if (gateId === 'asana') {
     var _asp = guideAsanaStats();
     if (_asp.locked) {
       gateProgress = 'held at ' + _asp.qualTarget + ' min · ' + gc.count + ' recorded';
