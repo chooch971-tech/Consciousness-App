@@ -19252,12 +19252,27 @@ function renderPathQuests() {
   var menu = document.getElementById('pqAddMenu');
   if (!menu) return;
   var ADD_NAMES = { clock:'Clock', visual:'Visualization', auditory:'Auditory', thought:'Thought Control', asana:'Asana', soulmirror:'Soul Mirror', observation:'Thought Observation', focus:'Thought Focus', vacancy:'Vacancy of Mind' };
+  var ADD_ICONS = {
+    clock:       { icon:'&#9200;',   color:'#d4b08e' },
+    visual:      { icon:'&#128065;', color:'#8ab8e0' },
+    auditory:    { icon:'&#127911;', color:'#8eccc0' },
+    thought:     { icon:'&#9711;',   color:'#98b4cc' },
+    observation: { icon:'&#9711;',   color:'#98b4cc' },
+    focus:       { icon:'&#9711;',   color:'#98b4cc' },
+    vacancy:     { icon:'&#9711;',   color:'#98b4cc' },
+    asana:       { icon:'&#129485;', color:'#d49898' },
+    soulmirror:  { icon:'&#128290;', color:'#c4a8d4' }
+  };
 
   window.pqOpenAddMenu = function(btn) {
     var addable = (typeof guidePathAddableExercises === 'function') ? guidePathAddableExercises() : [];
     if (!addable.length) { menu.style.display = 'none'; return; }
     menu.innerHTML = addable.map(function(ex) {
-      return '<button class="pq-skip-item" data-add-ex="' + ex.id + '">' + (ADD_NAMES[ex.id] || ex.name) + '</button>';
+      var meta = ADD_ICONS[ex.id] || { icon:'✦', color:'var(--muted)' };
+      return '<button class="pq-skip-item" data-add-ex="' + ex.id + '" style="display:flex;align-items:center;gap:10px;">'
+        + '<span style="font-size:14px;color:' + meta.color + ';flex-shrink:0;opacity:.9;">' + meta.icon + '</span>'
+        + '<span style="color:' + meta.color + ';">' + (ADD_NAMES[ex.id] || ex.name) + '</span>'
+        + '</button>';
     }).join('');
     var r = btn.getBoundingClientRect();
     menu.style.top = (r.bottom + 4) + 'px';
