@@ -17459,7 +17459,7 @@ function auditoryTierRequired(tier) {
 }
 
 function guideAuditoryStats() {
-  var out = { count:0, totalSec:0, bestSec:0, todaySec:0, todayCount:0, qualTarget:5, qualAtTier:0, atCap:false, tierRequired:6 };
+  var out = { count:0, totalSec:0, bestSec:0, todaySec:0, todayCount:0, qualTarget:5, qualAtTier:0, atCap:false, tierRequired:6, locked:false };
   var history = (typeof concState !== 'undefined' && concState.history) ? concState.history : [];
   var sessions = [];
   history.forEach(function(h) {
@@ -17474,8 +17474,17 @@ function guideAuditoryStats() {
   });
   sessions.sort(function(a, b) { return a.ms - b.ms; });
 
-  var cap = 20;
-  var tier = 5, qualAtTier = 0;
+  var floor = guideFloorMin('auditory');
+  var auto = guideAutoAdvanceOn('auditory');
+
+  if (floor > 0 && !auto) {
+    out.qualTarget = floor;
+    out.locked = true;
+    return out;
+  }
+
+  var cap = floor > 0 ? GUIDE_FLOOR_CAP : 20;
+  var tier = floor > 0 ? floor : 5, qualAtTier = 0;
   sessions.forEach(function(s) {
     if (tier >= cap) return;
     var required = auditoryTierRequired(tier);
@@ -17859,7 +17868,9 @@ function buildExperiencedGuideItems() {
   var gateProgress = gc.count ? gc.count + ' recorded' : 'no completed sessions recorded';
   if (gateId === 'auditory') {
     var _aup = guideAuditoryStats();
-    if (_aup.atCap) {
+    if (_aup.locked) {
+      gateProgress = 'held at ' + _aup.qualTarget + ' min · ' + gc.count + ' recorded';
+    } else if (_aup.atCap) {
       gateProgress = 'ceiling reached · ' + gc.count + ' recorded';
     } else {
       gateProgress = _aup.qualAtTier + ' / ' + _aup.tierRequired + ' sessions at ' + _aup.qualTarget + ' min';
