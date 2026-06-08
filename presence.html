@@ -9292,6 +9292,10 @@ function saveConcSession() {
   var totalXP = validReps.reduce(function(s, r) { return s + r.seconds; }, 0);
   var bestRep = validReps.reduce(function(a, r) { return r.seconds > a ? r.seconds : a; }, 0);
   var isNewBest = bestRep > concState.bestSeconds;
+  // Total time spent in the session (covers all reps + restarts), used to judge
+  // whether a session "qualifies" toward the next Clock tier — a player who
+  // spends the full target duration should qualify even if focus broke mid-way.
+  var sessionDurationSec = concSessionStartTime ? Math.floor((Date.now() - concSessionStartTime) / 1000) : totalXP;
 
   concState.xp += totalXP;
   if (isConcNewSession()) concState.totalSessions++;
@@ -9304,7 +9308,7 @@ function saveConcSession() {
   }
   var didLevelUp = concState.level > concPrevLevel;
 
-  concState.history.unshift({ date: new Date().toISOString(), seconds: bestRep, xpEarned: totalXP, notes: '' });
+  concState.history.unshift({ date: new Date().toISOString(), seconds: bestRep, xpEarned: totalXP, sessionDurationSec: sessionDurationSec, notes: '' });
   if (concState.history.length > 100) concState.history = concState.history.slice(0, 100);
   saveConcState();
 
@@ -17336,6 +17340,18 @@ function guideThoughtDuration(h) {
   );
 }
 
+// A Clock session "qualifies" toward the next tier based on the total time
+// spent in the session (covering restarts/breaks), not just unbroken focus —
+// players whose attention resets mid-session still get credit for showing up
+// and putting in the full duration. Falls back to best-rep/XP for older
+// history entries recorded before sessionDurationSec was tracked.
+function guideClockSessionSec(h) {
+  var sec = guideHistorySeconds(h);
+  var legacy = (h && h.xpEarned && h.xpEarned > sec) ? h.xpEarned : sec;
+  var dur = parseInt(h && h.sessionDurationSec, 10) || 0;
+  return Math.max(dur, legacy);
+}
+
 function guideClockStats() {
   var out = { count:0, totalSec:0, bestSec:0, todaySec:0, todayBestSec:0, todayCount:0, firstMs:0, lastMs:0, qualTarget:5, qualTenCount:0 };
   var history = (typeof concState !== 'undefined' && concState.history) ? concState.history : [];
@@ -17350,7 +17366,7 @@ function guideClockStats() {
     if (sec > out.bestSec) out.bestSec = sec;
     if (ms && (!out.firstMs || ms < out.firstMs)) out.firstMs = ms;
     if (ms && ms > out.lastMs) out.lastMs = ms;
-    var sessionSec = (h.xpEarned && h.xpEarned > sec) ? h.xpEarned : sec;
+    var sessionSec = guideClockSessionSec(h);
     if (guideIsToday(h.date)) {
       out.todayCount++;
       out.todaySec += sessionSec;
