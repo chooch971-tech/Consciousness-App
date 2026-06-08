@@ -17531,6 +17531,16 @@ function guideAllThoughtModesMastered(thoughtStats) {
   });
 }
 
+// Returns true once the student has completed ≥2 thought control sessions
+// (any mode), meaning they have advanced past the initial 5-min tier.
+function guideThoughtFirstTierMastered() {
+  var ts = guideThoughtStats();
+  var total = GUIDE_FOUNDATION_THOUGHT_ORDER.reduce(function(acc, mode) {
+    return acc + ((ts[mode] && ts[mode].count) || 0);
+  }, 0);
+  return total >= 2;
+}
+
 function guideLeastRecentThoughtMode(thoughtStats) {
   return GUIDE_FOUNDATION_THOUGHT_ORDER.slice().sort(function(a, b) {
     var aa = thoughtStats[a] || { lastMs:0, count:0 };
@@ -19266,13 +19276,24 @@ function renderPathQuests() {
     if (!b) return;
     var exId = b.dataset.addEx;
     closeAddMenu();
-    if (!Array.isArray(guideState._pathAdded)) guideState._pathAdded = [];
-    if (guideState._pathAdded.indexOf(exId) === -1) guideState._pathAdded.push(exId);
-    // Clear any active postpone so the freshly-added exercise shows right away.
-    if (guideState.postponed && guideState.postponed[exId]) delete guideState.postponed[exId];
-    saveGuideState(guideState);
-    renderPathQuests();
-    if (typeof showToast === 'function') showToast((ADD_NAMES[exId] || exId) + ' added to your path');
+    function doAdd() {
+      if (!Array.isArray(guideState._pathAdded)) guideState._pathAdded = [];
+      if (guideState._pathAdded.indexOf(exId) === -1) guideState._pathAdded.push(exId);
+      // Clear any active postpone so the freshly-added exercise shows right away.
+      if (guideState.postponed && guideState.postponed[exId]) delete guideState.postponed[exId];
+      saveGuideState(guideState);
+      renderPathQuests();
+      if (typeof showToast === 'function') showToast((ADD_NAMES[exId] || exId) + ' added to your path');
+    }
+    if ((exId === 'visual' || exId === 'auditory') && !guideThoughtFirstTierMastered()) {
+      showConfirm(
+        'Not yet recommended',
+        'It is not recommended that a student add a Visualization or Auditory exercise until they\'ve mastered the first tier of Thought Control. Proceed anyway?',
+        doAdd
+      );
+      return;
+    }
+    doAdd();
   });
 
   document.addEventListener('click', function(e) {
