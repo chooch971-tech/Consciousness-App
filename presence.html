@@ -19100,6 +19100,10 @@ function renderPathQuests() {
     menu.style.right = (window.innerWidth - r.right) + 'px';
     menu.style.left = 'auto';
     menu.style.display = 'block';
+    var mRect = menu.getBoundingClientRect();
+    if (mRect.bottom > window.innerHeight - 8) {
+      menu.style.top = Math.max(8, r.top - mRect.height - 4) + 'px';
+    }
   }
   function closeSkipMenu() { if (menu) menu.style.display = 'none'; }
 
@@ -19250,6 +19254,10 @@ function renderPathQuests() {
     menu.style.right = (window.innerWidth - r.right) + 'px';
     menu.style.left = 'auto';
     menu.style.display = 'block';
+    var mRect = menu.getBoundingClientRect();
+    if (mRect.bottom > window.innerHeight - 8) {
+      menu.style.top = Math.max(8, r.top - mRect.height - 4) + 'px';
+    }
   };
   function closeAddMenu() { menu.style.display = 'none'; }
 
