@@ -5710,17 +5710,8 @@ body:not(.tut-live) #tutCorgi {
 <div class="toast" id="toast"></div>
 <!-- pqSkipMenu lives at top-level so position:fixed isn't clipped by any scroll parent -->
 <div class="pq-skip-menu" id="pqSkipMenu">
-  <button class="pq-skip-item" id="pqSkipSwitch" style="display:none;"></button>
-  <div id="pqThoughtModes" style="display:none;">
-    <button class="pq-skip-item" data-thought-mode="observation">Thought Observation</button>
-    <button class="pq-skip-item" data-thought-mode="focus">Thought Focus</button>
-    <button class="pq-skip-item" data-thought-mode="vacancy">Vacancy of Mind</button>
-    <hr class="pq-thought-mode-divider">
-  </div>
-  <button class="pq-skip-item" id="pqSkipAdvanced" style="display:none;">I'm advanced…</button>
-  <button class="pq-skip-item" id="pqSkipPostpone">Postpone 7 days</button>
-  <button class="pq-skip-item warn" id="pqSkipRemove" style="display:none;">Remove from path</button>
-  <button class="pq-skip-item warn" id="pqSkipTellOmnia">Tell Omnia…</button>
+  <button class="pq-skip-item" id="pqSkipAdvanced" style="display:none;">I'm Advanced</button>
+  <button class="pq-skip-item warn" id="pqSkipRemove">Remove Exercise</button>
 </div>
 <!-- pqAddMenu: lists exercises the user can manually add to their path -->
 <div class="pq-skip-menu" id="pqAddMenu"></div>
@@ -19053,9 +19044,6 @@ function renderPathQuests() {
   var activeExId = null;
   var activeExMode = null;
   var menu = document.getElementById('pqSkipMenu');
-  var overlay = document.getElementById('pqTellOmniaOverlay');
-  var switchBtn = document.getElementById('pqSkipSwitch');
-  var thoughtModesEl = document.getElementById('pqThoughtModes');
   var advItem = document.getElementById('pqSkipAdvanced');
   var advOverlay = document.getElementById('pqAdvancedOverlay');
   var advMinutes = 5;        // working value while the dialog is open
@@ -19063,48 +19051,18 @@ function renderPathQuests() {
   var EX_DISPLAY_NAMES = { clock:'Clock', visual:'Visualization', auditory:'Auditory', thought:'Thought Control', asana:'Asana' };
   function isTimedEx(id) { return GUIDE_TIMED_EXERCISES.indexOf(id) !== -1; }
 
-  // Progression: what exercise/mode comes next after each exercise
-  function pqSwitchNext(exId, thoughtMode) {
-    if (exId === 'thought') {
-      var order = GUIDE_FOUNDATION_THOUGHT_ORDER; // ['observation','focus','vacancy']
-      var cur = thoughtMode || 'observation';
-      var idx = order.indexOf(cur);
-      if (idx < order.length - 1) return { exId:'thought', mode: order[idx+1], label: GUIDE_FOUNDATION_THOUGHT_LABELS[order[idx+1]] };
-      return null;
-    }
-    var map = { soulmirror:{ exId:'asana', label:'Asana' }, asana:{ exId:'visual', label:'Visualization' }, visual:{ exId:'auditory', label:'Auditory' } };
-    return map[exId] || null;
-  }
-
   function openSkipMenu(btn) {
     activeExId = btn.dataset.exId;
     activeExMode = btn.dataset.exMode || null;
-    var isThought = activeExId === 'thought';
-    if (switchBtn) switchBtn.style.display = 'none';
-    if (thoughtModesEl) thoughtModesEl.style.display = isThought ? 'block' : 'none';
-    if (isThought) {
-      var curMode = guideState.thoughtModeForced || activeExMode || 'observation';
-      thoughtModesEl.querySelectorAll('[data-thought-mode]').forEach(function(b) {
-        b.classList.toggle('active', b.dataset.thoughtMode === curMode);
-      });
-    } else {
-      var next = pqSwitchNext(activeExId, activeExMode);
-      if (switchBtn && next) {
-        switchBtn.textContent = 'Switch to ' + next.label + ' →';
-        switchBtn.style.display = 'block';
-      }
-    }
     if (advItem) {
       if (isTimedEx(activeExId)) {
         var floor = guideFloorMin(activeExId);
-        advItem.textContent = floor ? ('Advanced · ' + floor + ' min') : 'I\'m advanced…';
+        advItem.textContent = floor ? ('Advanced · ' + floor + ' min') : 'I\'m Advanced';
         advItem.style.display = 'block';
       } else {
         advItem.style.display = 'none';
       }
     }
-    var removeItem = document.getElementById('pqSkipRemove');
-    if (removeItem) removeItem.style.display = (btn.dataset.exAdded === '1') ? 'block' : 'none';
     var r = btn.getBoundingClientRect();
     menu.style.top = (r.bottom + 4) + 'px';
     menu.style.right = (window.innerWidth - r.right) + 'px';
@@ -19141,59 +19099,20 @@ function renderPathQuests() {
     if (btn) { e.stopPropagation(); openSkipMenu(btn); return; }
   });
 
-  if (switchBtn) switchBtn.addEventListener('click', function() {
-    if (!activeExId) return;
-    var next = pqSwitchNext(activeExId, activeExMode);
-    if (!next) return;
-    closeSkipMenu();
-    if (next.exId === 'thought') {
-      guideState.thoughtModeForced = next.mode;
-    } else {
-      guideState.gateForced = next.exId;
-      // buildExperiencedGuideItems reads _dailyPick, not gateForced — update
-      // both so the experienced-path rendering immediately shows the new gate.
-      guideState._dailyPick = { day: guideLocalDayKey(), ids: [next.exId], v: 4 };
-    }
-    saveGuideState(guideState);
-    renderPathQuests();
-  });
-
-  if (thoughtModesEl) thoughtModesEl.addEventListener('click', function(e) {
-    var b = e.target.closest('[data-thought-mode]');
-    if (!b) return;
-    closeSkipMenu();
-    guideState.thoughtModeForced = b.dataset.thoughtMode;
-    saveGuideState(guideState);
-    renderPathQuests();
-  });
-
-  document.getElementById('pqSkipPostpone').addEventListener('click', function() {
-    if (!activeExId) return;
-    closeSkipMenu();
-    if (!guideState.postponed) guideState.postponed = {};
-    var until = Date.now() + 7 * 86400000;
-    guideState.postponed[activeExId] = until;
-    saveGuideState(guideState);
-    renderPathQuests();
-  });
-
   var removeItemBtn = document.getElementById('pqSkipRemove');
   if (removeItemBtn) removeItemBtn.addEventListener('click', function() {
     if (!activeExId) return;
     closeSkipMenu();
-    if (Array.isArray(guideState._pathAdded)) {
+    var inAdded = Array.isArray(guideState._pathAdded) && guideState._pathAdded.indexOf(activeExId) !== -1;
+    if (inAdded) {
       guideState._pathAdded = guideState._pathAdded.filter(function(id) { return id !== activeExId; });
+    } else {
+      if (!guideState.postponed) guideState.postponed = {};
+      guideState.postponed[activeExId] = Date.now() + 7 * 86400000;
     }
     saveGuideState(guideState);
     renderPathQuests();
     if (typeof showToast === 'function') showToast('Removed from your path');
-  });
-
-  document.getElementById('pqSkipTellOmnia').addEventListener('click', function() {
-    closeSkipMenu();
-    overlay.style.display = 'flex';
-    var ta = document.getElementById('pqTellOmniaText');
-    if (ta) { ta.value = ''; setTimeout(function() { ta.focus(); }, 80); }
   });
 
   if (advItem) advItem.addEventListener('click', function() {
