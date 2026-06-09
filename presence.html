@@ -1012,6 +1012,34 @@
     .oe-gen-collect:hover:not(:disabled) { background:linear-gradient(180deg,rgba(90,184,224,.32),rgba(58,156,200,.16)); border-color:rgba(142,204,224,.65); box-shadow:0 0 16px rgba(90,184,224,.25); }
     .oe-gen-collect:disabled { opacity:.4; cursor:default; }
     .oe-gen-rate { font-size:8px; color:rgba(142,204,224,.62); letter-spacing:.08em; margin-top:11px; text-align:center; line-height:1.55; }
+    /* ── Akasha Well: tappable liquid-orb reservoir ───────────────── */
+    .oe-well-stage { display:flex; justify-content:center; padding:4px 0 12px; }
+    .oe-well { position:relative; width:158px; height:158px; cursor:pointer; outline:none; -webkit-tap-highlight-color:transparent; transition:transform .15s ease; }
+    .oe-well:active { transform:scale(.95); }
+    .oe-well:focus-visible { filter:drop-shadow(0 0 14px rgba(184,234,255,.75)); }
+    .oe-well-svg { width:100%; height:100%; display:block; overflow:visible; }
+    .oe-well-orbit { transform-origin:75px 75px; animation:oeWellOrbit 30s linear infinite; }
+    @keyframes oeWellOrbit { from{transform:rotate(0deg);} to{transform:rotate(360deg);} }
+    .oe-well-fluid { transition:transform .9s cubic-bezier(.22,.8,.4,1); will-change:transform; }
+    .oe-well-drift { animation:oeWellDrift 4.5s linear infinite; }
+    .oe-well-drift2 { animation-duration:7s; animation-direction:reverse; }
+    @keyframes oeWellDrift { from{transform:translateX(0);} to{transform:translateX(-75px);} }
+    .oe-bub { fill:rgba(232,246,255,.75); animation:oeBubRise 4.4s ease-in infinite; }
+    .oe-bub.b2 { animation-delay:1.2s; animation-duration:5.2s; }
+    .oe-bub.b3 { animation-delay:2.4s; animation-duration:3.8s; }
+    .oe-bub.b4 { animation-delay:3.1s; animation-duration:6s; }
+    @keyframes oeBubRise { 0%{transform:translateY(0); opacity:0;} 18%{opacity:.7;} 100%{transform:translateY(-72px); opacity:0;} }
+    .oe-well-rim { transition:stroke .4s ease; }
+    .oe-well.full { animation:oeWellFullGlow 2.2s ease-in-out infinite; }
+    .oe-well.full .oe-well-rim { stroke:rgba(220,245,255,.85); }
+    @keyframes oeWellFullGlow { 0%,100%{filter:drop-shadow(0 0 8px rgba(142,204,224,.3));} 50%{filter:drop-shadow(0 0 24px rgba(142,204,224,.8));} }
+    .oe-well.shake { animation:oeWellShake .32s ease; }
+    @keyframes oeWellShake { 0%,100%{transform:translateX(0);} 25%{transform:translateX(-5px);} 75%{transform:translateX(5px);} }
+    .oe-well-label { position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; pointer-events:none; }
+    .oe-well-amt { font-family:'Cormorant Garamond',serif; font-size:36px; font-weight:300; color:#eef9ff; line-height:1; text-shadow:0 0 16px rgba(16,56,96,.9), 0 1px 3px rgba(0,0,0,.55); }
+    .oe-well-sub { margin-top:5px; font-family:'DM Mono',monospace; font-size:7px; letter-spacing:.22em; text-transform:uppercase; color:rgba(224,242,255,.78); text-shadow:0 1px 3px rgba(0,0,0,.6); }
+    .oe-well-spark { position:fixed; width:7px; height:7px; margin:-3.5px 0 0 -3.5px; border-radius:50%; background:radial-gradient(circle at 32% 28%, #f4ffff 0%, #b8eaff 42%, #5ab8e0 100%); box-shadow:0 0 9px rgba(142,204,224,.9); pointer-events:none; z-index:9999; animation:oeWellSpark .9s cubic-bezier(.2,.7,.3,1) forwards; }
+    @keyframes oeWellSpark { from{transform:translate(0,0) scale(1); opacity:1;} to{transform:translate(var(--dx,0px), var(--dy,-80px)) scale(.35); opacity:0;} }
     @keyframes engRingPulse  { 0%,100%{opacity:.55;} 50%{opacity:.9;} }
     @keyframes engRingPulse2 { 0%,100%{opacity:.38;} 50%{opacity:.7;} }
     @keyframes engRingPulse3 { 0%,100%{opacity:.22;} 50%{opacity:.48;} }
@@ -4512,27 +4540,6 @@ body:not(.tut-live) #tutCorgi {
         <div>
           <div class="oe-gen-card">
               <div class="oe-gen-header">
-                <div class="oe-gen-icon">
-                  <svg viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-                    <defs>
-                      <radialGradient id="genOrbG" cx="50%" cy="50%" r="50%">
-                        <stop offset="0%" stop-color="#e8f6ff" stop-opacity="1"/>
-                        <stop offset="38%" stop-color="#7cc8ea" stop-opacity=".85"/>
-                        <stop offset="100%" stop-color="#1a5888" stop-opacity="0"/>
-                      </radialGradient>
-                      <filter id="genOrbGlow" x="-60%" y="-60%" width="220%" height="220%">
-                        <feGaussianBlur stdDeviation="1.4" result="b"/>
-                        <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
-                      </filter>
-                    </defs>
-                    <circle cx="24" cy="24" r="20" fill="url(#genOrbG)" class="eng-glow-pulse"/>
-                    <circle cx="24" cy="24" r="17" fill="none" stroke="#5ab8e0" stroke-width=".7" class="oe-engine-ring-3"/>
-                    <circle cx="24" cy="24" r="11" fill="none" stroke="#8ecce0" stroke-width=".9" class="oe-engine-ring-2"/>
-                    <circle cx="24" cy="24" r="6" fill="#aad8f4" opacity=".85" filter="url(#genOrbGlow)" class="eng-core-pulse"/>
-                    <circle cx="24" cy="24" r="3" fill="#e8f6ff" class="eng-core-pulse"/>
-                    <circle cx="24" cy="24" r="1.4" fill="#ffffff"/>
-                  </svg>
-                </div>
                 <div class="oe-gen-titles">
                   <div class="oe-gen-title">Akasha Generator</div>
                   <div class="oe-gen-sub">Fills over time</div>
@@ -4543,11 +4550,54 @@ body:not(.tut-live) #tutCorgi {
                   <span class="oe-gen-rate-unit">/ hour</span>
                 </div>
               </div>
+              <div class="oe-well-stage">
+                <div class="oe-well" id="omniaWell" role="button" tabindex="0" aria-label="Collect akasha from the reservoir">
+                  <svg class="oe-well-svg" viewBox="0 0 150 150" xmlns="http://www.w3.org/2000/svg">
+                    <defs>
+                      <clipPath id="oeWellClip"><circle cx="75" cy="75" r="61"/></clipPath>
+                      <linearGradient id="oeWellFluidG" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stop-color="#9adcff" stop-opacity=".95"/>
+                        <stop offset="55%" stop-color="#3a9cc8" stop-opacity=".85"/>
+                        <stop offset="100%" stop-color="#15527e" stop-opacity=".92"/>
+                      </linearGradient>
+                      <radialGradient id="oeWellGlassG" cx="50%" cy="36%" r="68%">
+                        <stop offset="0%" stop-color="#b8eaff" stop-opacity=".13"/>
+                        <stop offset="70%" stop-color="#2878a0" stop-opacity=".05"/>
+                        <stop offset="100%" stop-color="#0a2138" stop-opacity=".28"/>
+                      </radialGradient>
+                    </defs>
+                    <g class="oe-well-orbit">
+                      <circle cx="75" cy="75" r="70" fill="none" stroke="rgba(142,204,224,.42)" stroke-width="1" stroke-dasharray="3 9" stroke-linecap="round"/>
+                    </g>
+                    <circle cx="75" cy="75" r="61" fill="url(#oeWellGlassG)"/>
+                    <g clip-path="url(#oeWellClip)">
+                      <g class="oe-well-fluid" id="omniaWellFluid" style="transform:translateY(125px);">
+                        <g class="oe-well-drift">
+                          <path d="M0,14 Q18.75,22 37.5,14 T75,14 T112.5,14 T150,14 T187.5,14 T225,14 T262.5,14 T300,14 V175 H0 Z" fill="#5ab8e0" opacity=".42"/>
+                        </g>
+                        <g class="oe-well-drift oe-well-drift2">
+                          <path d="M0,12 Q18.75,4 37.5,12 T75,12 T112.5,12 T150,12 T187.5,12 T225,12 T262.5,12 T300,12 V175 H0 Z" fill="url(#oeWellFluidG)"/>
+                        </g>
+                        <g>
+                          <circle class="oe-bub" cx="52" cy="72" r="2.2"/>
+                          <circle class="oe-bub b2" cx="78" cy="94" r="1.6"/>
+                          <circle class="oe-bub b3" cx="98" cy="76" r="2.6"/>
+                          <circle class="oe-bub b4" cx="65" cy="106" r="1.4"/>
+                        </g>
+                      </g>
+                    </g>
+                    <circle cx="75" cy="75" r="61" fill="none" stroke="rgba(184,234,255,.5)" stroke-width="1.2" class="oe-well-rim"/>
+                  </svg>
+                  <div class="oe-well-label">
+                    <div class="oe-well-amt" id="omniaWellAmt">0</div>
+                    <div class="oe-well-sub" id="omniaWellSub">filling…</div>
+                  </div>
+                </div>
+              </div>
               <div class="oe-gen-res-row">
                 <span class="oe-gen-res-label">Reservoir</span>
                 <span class="oe-gen-res-val" id="omniaReservoirText">0 / 0</span>
               </div>
-              <div class="oe-gen-bar"><div class="oe-gen-bar-fill" id="omniaReservoirFill"></div></div>
               <button class="oe-gen-collect" id="omniaCollectBtn">Collect Akasha</button>
               <div class="oe-gen-rate" id="omniaRateText"></div>
             </div>
@@ -16193,6 +16243,20 @@ function renderOmniaEngine() {
   if (gM) gM.style.opacity = auraFor(mLvl);
   if (resText) resText.textContent = Math.floor(reservoir) + ' / ' + cap;
   if (resFill) resFill.style.width = Math.min(100, reservoir / cap * 100) + '%';
+  // Akasha Well: fluid level rises inside the orb (wave surface sits at y≈12
+  // in the fluid group's coords; orb spans y 14–136, so empty=125, full=1).
+  var wellFluid = document.getElementById('omniaWellFluid');
+  if (wellFluid) {
+    var fillFrac = cap > 0 ? Math.min(1, reservoir / cap) : 0;
+    wellFluid.style.transform = 'translateY(' + (125 - fillFrac * 124).toFixed(1) + 'px)';
+  }
+  var wellAmt = document.getElementById('omniaWellAmt');
+  if (wellAmt) wellAmt.textContent = Math.floor(reservoir);
+  var wellEl = document.getElementById('omniaWell');
+  var wellFull = reservoir >= cap - 0.5;
+  if (wellEl) wellEl.classList.toggle('full', wellFull);
+  var wellSub = document.getElementById('omniaWellSub');
+  if (wellSub) wellSub.textContent = reservoir >= 1 ? (wellFull ? 'full · tap to collect' : 'tap to collect') : 'filling…';
   var stepNum2 = omniaState.bardonStep || 1;
   var rateBadge = document.getElementById('omniaGenRateNum');
   if (rateBadge) rateBadge.textContent = omniaRatePerHour();
@@ -16308,18 +16372,31 @@ function collectOmniaAkasha() {
   saveOmniaState();
   renderOmniaEngine();
 
-  // floating "+N" burst
+  // floating "+N" burst + spark shower from the well
   if (collected > 0) {
-    var btn = document.getElementById('omniaCollectBtn');
-    if (btn) {
-      var rect = btn.getBoundingClientRect();
+    var anchor = document.getElementById('omniaWell') || document.getElementById('omniaCollectBtn');
+    if (anchor) {
+      var rect = anchor.getBoundingClientRect();
+      var cx = rect.left + rect.width / 2;
+      var cy = rect.top + rect.height / 2;
       var burst = document.createElement('div');
       burst.className = 'oe-collect-burst';
       burst.textContent = '+' + collected + ' akasha';
-      burst.style.left = (rect.left + rect.width / 2) + 'px';
+      burst.style.left = cx + 'px';
       burst.style.top = (rect.top - 4) + 'px';
       document.body.appendChild(burst);
       setTimeout(function() { burst.remove(); }, 1050);
+      for (var si = 0; si < 9; si++) {
+        var sp = document.createElement('div');
+        sp.className = 'oe-well-spark';
+        sp.style.left = cx + 'px';
+        sp.style.top = cy + 'px';
+        sp.style.setProperty('--dx', ((Math.random() * 2 - 1) * 90).toFixed(0) + 'px');
+        sp.style.setProperty('--dy', (-(40 + Math.random() * 100)).toFixed(0) + 'px');
+        sp.style.animationDelay = (Math.random() * 0.12).toFixed(2) + 's';
+        document.body.appendChild(sp);
+        (function(n) { setTimeout(function() { n.remove(); }, 1100); })(sp);
+      }
     }
     var card = document.querySelector('.oe-gen-card');
     if (card) {
@@ -19402,6 +19479,24 @@ function _hideGuideTabTip(el, tab) {
   panel.addEventListener('mouseleave', function() { startX = null; dragging = false; });
 })();
 document.getElementById('omniaCollectBtn').addEventListener('click', collectOmniaAkasha);
+(function() {
+  var well = document.getElementById('omniaWell');
+  if (!well) return;
+  well.addEventListener('click', function() {
+    omniaAccrue();
+    if (Math.floor(omniaState.reservoir || 0) < 1) {
+      well.classList.remove('shake');
+      void well.offsetWidth;
+      well.classList.add('shake');
+      setTimeout(function() { well.classList.remove('shake'); }, 350);
+      return;
+    }
+    collectOmniaAkasha();
+  });
+  well.addEventListener('keydown', function(e) {
+    if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); well.click(); }
+  });
+})();
 document.getElementById('guideOmniaFigure').addEventListener('click', morphGuideOmnia);
 document.getElementById('guideOmniaFigure').addEventListener('keydown', function(e) {
   if (e.key === 'Enter' || e.key === ' ') {
