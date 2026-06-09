@@ -1559,6 +1559,12 @@
   50%     { filter:brightness(1.6)  saturate(1.2)  opacity(.82) drop-shadow(0 0 18px rgba(184,234,255,.95)); }
 }
 .omnia-spectral .omnia-crystal-layer { animation:omniaSpectralPulse 5s ease-in-out infinite; }
+/* Aurora Veil: full-spectrum hue cycle, only active when this palette is selected */
+@keyframes omniaAuroraShift {
+  from { filter:hue-rotate(0deg)   saturate(1.35) brightness(1.12); }
+  to   { filter:hue-rotate(360deg) saturate(1.35) brightness(1.12); }
+}
+.omnia-aurora .omnia-crystal-layer { animation:omniaAuroraShift 8s linear infinite; }
 .omnia-shard-layer { opacity:0; overflow:visible; }
 .omnia-figure.morphing .omnia-shard-layer { opacity:1; }
 .omnia-symbol-layer { opacity:0; color:#b8eaff; }
@@ -14837,7 +14843,8 @@ var OMNIA_PALETTES = [
   { id:'solar', name:'Solar Gold', cost:0, _price:9200, color:'#f0d39a', filter:'hue-rotate(182deg) saturate(1.2) brightness(1.1)', sub:'A warm body of will' },
   { id:'violet', name:'Violet Mind', cost:0, _price:11800, color:'#c4a8d4', filter:'hue-rotate(74deg) saturate(1.22) brightness(1.04)', sub:'A quiet mental flame' },
   { id:'verdant', name:'Verdant Vessel', cost:0, _price:14500, color:'#98d8bd', filter:'hue-rotate(246deg) saturate(1.12) brightness(1.02)', sub:'A healing green current' },
-  { id:'spectral', name:'Spectral Veil', cost:0, _price:14500, color:'rgba(216,236,255,0.42)', filter:'brightness(1.5) saturate(1.15) opacity(0.5) drop-shadow(0 0 7px rgba(184,234,255,.75))', sub:'A near-invisible ghost — only the glowing edges pulse into view' }
+  { id:'spectral', name:'Spectral Veil', cost:0, _price:14500, color:'rgba(216,236,255,0.42)', filter:'brightness(1.5) saturate(1.15) opacity(0.5) drop-shadow(0 0 7px rgba(184,234,255,.75))', sub:'A near-invisible ghost — only the glowing edges pulse into view' },
+  { id:'aurora', name:'Aurora Veil', cost:0, _price:0, color:'#a8e8c8', filter:'none', sub:'A living prism — the full spectrum cycling endlessly' }
 ];
 
 var OMNIA_ENTITIES = [
@@ -15762,6 +15769,7 @@ function applyOmniaCosmetics() {
     if (!f) return;
     f.style.setProperty('--omnia-filter', palette.filter || 'none');
     f.classList.toggle('omnia-spectral', palette.id === 'spectral');
+    f.classList.toggle('omnia-aurora', palette.id === 'aurora');
     f.dataset.entity = entity.id;
     f.setAttribute('aria-label', 'Reveal a ' + entity.name + ' symbol');
     var crystalLayer = f.querySelector('.omnia-crystal-layer');
