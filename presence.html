@@ -1619,12 +1619,13 @@
 .omnia-symbol-layer { opacity:0; color:#b8eaff; }
 .omnia-symbol-layer svg { width:88px; height:88px; overflow:visible; opacity:.55; }
 .omnia-morph-ring { opacity:0; border:1px solid rgba(184,234,255,.45); border-radius:50%; width:82px; height:82px; margin:auto; box-shadow:0 0 18px rgba(142,204,224,.24), inset 0 0 20px rgba(142,204,224,.12); }
-.omnia-companion { position:absolute; right:-1px; top:35px; width:27px; height:27px; opacity:0; pointer-events:none; }
+/* Companion sits on the ground beside the entity's base, with a gentle bob */
+.omnia-companion { position:absolute; right:-16px; bottom:2px; width:46px; height:46px; opacity:0; pointer-events:none; }
 .omnia-companion svg { width:100%; height:100%; overflow:visible; filter:drop-shadow(0 0 9px var(--omnia-companion-color,#b8eaff)); }
-@keyframes omniaCompanionDrift { 0%,100%{transform:translate(0,0) scale(.9);} 50%{transform:translate(8px,-13px) scale(1.08);} }
-.omnia-figure.has-companion .omnia-companion { opacity:.95; animation:omniaCompanionDrift 3.8s ease-in-out infinite; }
-.oe-omnia-figure .omnia-companion { width:40px; height:40px; right:0; top:54px; }
-.path-banner-figure .omnia-companion { width:24px; height:24px; right:-5px; top:30px; }
+@keyframes omniaCompanionBob { 0%,100%{transform:translateY(0);} 50%{transform:translateY(-4px);} }
+.omnia-figure.has-companion .omnia-companion { opacity:.95; animation:omniaCompanionBob 3.2s ease-in-out infinite; }
+.oe-omnia-figure .omnia-companion { width:68px; height:68px; right:-28px; bottom:6px; }
+.path-banner-figure .omnia-companion { width:36px; height:36px; right:-15px; bottom:2px; }
 .omnia-figure.morphing .omnia-crystal-layer { opacity:.12; transform:scale(.82) rotate(10deg); filter:blur(3px); }
 .omnia-figure.morphing .omnia-symbol-layer { opacity:0; }
 .omnia-figure.morphing .omnia-morph-ring { animation:omniaRingTurn 1.9s ease both; }
@@ -4648,7 +4649,7 @@ body:not(.tut-live) #tutCorgi {
           </div>
         </div>
 
-        <details class="oe-accordion">
+        <details class="oe-accordion" open>
           <summary>
             <span>Appearance</span>
             <span class="oe-acc-chev">+</span>
@@ -15458,32 +15459,37 @@ function renderOmniaCompanionPreview(item) {
       + '</svg>';
   }
   if (item.id === 'corgi') {
+    // Crystalline corgi: translucent glass fills + light facet strokes, like Omnia
     return '<svg viewBox="0 0 58 46" aria-hidden="true">'
       // fluffy curled tail
-      + '<path d="M10 28c-5 0-8-3-7-7 2 2 5 3 8 2 1 2 1 4-1 5Z" fill="#f0c08a" stroke="#c97f44" stroke-width=".9" stroke-linejoin="round"/>'
-      // loaf body + white belly
-      + '<ellipse cx="23" cy="33" rx="14" ry="8.5" fill="#e8a35c" stroke="#c97f44" stroke-width=".9"/>'
-      + '<ellipse cx="25" cy="37" rx="9.5" ry="4.5" fill="#fff1d5"/>'
+      + '<path d="M10 28c-5 0-8-3-7-7 2 2 5 3 8 2 1 2 1 4-1 5Z" fill="' + color + '" fill-opacity=".12" stroke="#f0d8b8" stroke-width=".9" stroke-linejoin="round"/>'
+      // loaf body + belly glass highlight
+      + '<ellipse cx="23" cy="33" rx="14" ry="8.5" fill="' + color + '" fill-opacity=".14" stroke="#f0d8b8" stroke-width="1"/>'
+      + '<ellipse cx="25" cy="37" rx="9.5" ry="4.5" fill="#ffffff" fill-opacity=".1"/>'
+      // body facet lines
+      + '<path d="M12 30 23 26l11 5M23 26v15" fill="none" stroke="#f0d8b8" stroke-width=".5" opacity=".4"/>'
       // stubby front legs
-      + '<rect x="14" y="39" width="4.2" height="6" rx="2.1" fill="#e8a35c"/>'
-      + '<rect x="27" y="39" width="4.2" height="6" rx="2.1" fill="#e8a35c"/>'
-      // big upright ears with pink inner
-      + '<path d="M33 13 30 2l9 6Z" fill="#e8a35c" stroke="#c97f44" stroke-width=".9" stroke-linejoin="round"/>'
-      + '<path d="M49 13l3-11-9 6Z" fill="#e8a35c" stroke="#c97f44" stroke-width=".9" stroke-linejoin="round"/>'
-      + '<path d="M34.5 10.5 33 5.5l4.5 3Z" fill="#d97f6a"/>'
-      + '<path d="M47.5 10.5l1.5-5-4.5 3Z" fill="#d97f6a"/>'
-      // head with white blaze + muzzle
-      + '<circle cx="41" cy="20" r="10.5" fill="#e8a35c" stroke="#c97f44" stroke-width=".9"/>'
-      + '<path d="M41 11c1.8 3 1.8 6 .9 8.6h-1.8c-.9-2.6-.9-5.6.9-8.6Z" fill="#fff1d5" opacity=".95"/>'
-      + '<ellipse cx="41" cy="25.5" rx="6.2" ry="4.6" fill="#fff1d5"/>'
-      // eyes with glints
-      + '<circle cx="36.8" cy="19" r="1.7" fill="#2a1c12"/><circle cx="45.2" cy="19" r="1.7" fill="#2a1c12"/>'
-      + '<circle cx="37.3" cy="18.4" r=".55" fill="#fff"/><circle cx="45.7" cy="18.4" r=".55" fill="#fff"/>'
-      // nose + smile
-      + '<path d="M39.6 23h2.8l-1.4 1.6Z" fill="#2a1c12"/>'
-      + '<path d="M41 24.6c-.8 1.4-2.2 1.8-3.4 1M41 24.6c.8 1.4 2.2 1.8 3.4 1" fill="none" stroke="#2a1c12" stroke-width=".9" stroke-linecap="round"/>'
+      + '<rect x="14" y="39" width="4.2" height="6" rx="2.1" fill="' + color + '" fill-opacity=".16" stroke="#f0d8b8" stroke-width=".7"/>'
+      + '<rect x="27" y="39" width="4.2" height="6" rx="2.1" fill="' + color + '" fill-opacity=".16" stroke="#f0d8b8" stroke-width=".7"/>'
+      // big upright ears with warm inner facet
+      + '<path d="M33 13 30 2l9 6Z" fill="' + color + '" fill-opacity=".15" stroke="#f0d8b8" stroke-width=".9" stroke-linejoin="round"/>'
+      + '<path d="M49 13l3-11-9 6Z" fill="' + color + '" fill-opacity=".15" stroke="#f0d8b8" stroke-width=".9" stroke-linejoin="round"/>'
+      + '<path d="M34.5 10.5 33 5.5l4.5 3Z" fill="#ffd9c4" fill-opacity=".3"/>'
+      + '<path d="M47.5 10.5l1.5-5-4.5 3Z" fill="#ffd9c4" fill-opacity=".3"/>'
+      // head with blaze + muzzle as glass highlights
+      + '<circle cx="41" cy="20" r="10.5" fill="' + color + '" fill-opacity=".14" stroke="#f0d8b8" stroke-width="1"/>'
+      + '<path d="M41 11c1.8 3 1.8 6 .9 8.6h-1.8c-.9-2.6-.9-5.6.9-8.6Z" fill="#ffffff" fill-opacity=".16"/>'
+      + '<ellipse cx="41" cy="25.5" rx="6.2" ry="4.6" fill="#ffffff" fill-opacity=".12"/>'
+      // head facet lines
+      + '<path d="M33 14l8 6 8-6M41 20v10" fill="none" stroke="#f0d8b8" stroke-width=".5" opacity=".35"/>'
+      // glowing crystal eyes
+      + '<circle cx="36.8" cy="19" r="1.7" fill="#eaf6ff" opacity=".95"/><circle cx="45.2" cy="19" r="1.7" fill="#eaf6ff" opacity=".95"/>'
+      + '<circle cx="36.8" cy="19" r=".7" fill="#5a8ca8"/><circle cx="45.2" cy="19" r=".7" fill="#5a8ca8"/>'
+      // nose + smile etched in light
+      + '<path d="M39.6 23h2.8l-1.4 1.6Z" fill="#f0d8b8" opacity=".8"/>'
+      + '<path d="M41 24.6c-.8 1.4-2.2 1.8-3.4 1M41 24.6c.8 1.4 2.2 1.8 3.4 1" fill="none" stroke="#f0d8b8" stroke-width=".9" stroke-linecap="round" opacity=".7"/>'
       // astral sparkles
-      + '<g stroke="' + color + '" stroke-width="1" stroke-linecap="round" opacity=".85">'
+      + '<g stroke="#f4ffff" stroke-width="1" stroke-linecap="round" opacity=".8">'
       + '<path d="M7 12h5M9.5 9.5v5"/>'
       + '<path d="M52 33h4M54 31v4"/>'
       + '</g>'
