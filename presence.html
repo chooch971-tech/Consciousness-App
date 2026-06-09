@@ -854,7 +854,7 @@
 
     /* ── Upgrade screen v3: Omnia-as-centerpiece, bodies as focus ── */
     body.upgrade-stage .omnia-wrap { display:none; }
-    .oe-v2 { display:flex; flex-direction:column; padding:0; background:none; border:none; box-shadow:none; position:relative; }
+    .oe-v2 { display:flex; flex-direction:column; padding:0; background:none; border:none; box-shadow:none; position:relative; --muted:rgba(255,255,255,.72); }
     .oe-akasha-corner { display:flex; align-items:baseline; gap:5px; padding:7px 13px; border:1px solid rgba(212,180,142,.32); border-radius:999px; background:rgba(212,180,142,.06); }
     .oe-akasha-corner-val { font-family:Cormorant Garamond,serif; font-size:18px; line-height:1; color:#e8c896; }
     .oe-akasha-corner-key { font-size:8px; letter-spacing:.2em; text-transform:uppercase; color:#d4b08e; }
@@ -930,7 +930,6 @@
     .oe-aura-mental { background:radial-gradient(circle at 50% 32%, rgba(152,180,204,.6), rgba(152,180,204,0) 58%); }
     .oe-omnia-figure { position:relative; width:130px; height:190px; display:flex; align-items:center; justify-content:center; animation:omniaFloat 4.5s ease-in-out infinite; filter:drop-shadow(0 0 16px rgba(160,210,240,.45)); z-index:2; cursor:pointer; }
     .oe-omnia-figure svg { width:100%; height:auto; overflow:visible; }
-    .omnia-engine { --muted: rgba(255,255,255,.72); }
     .oe-flash { position:absolute; inset:-10px; border-radius:50%; pointer-events:none; opacity:0; z-index:3; }
     .oe-flash.firing { animation:oeBurst .85s ease-out; }
     @keyframes oeBurst {
