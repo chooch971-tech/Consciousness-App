@@ -993,11 +993,11 @@
     .oe-gen-icon { flex-shrink:0; width:46px; height:46px; border-radius:13px; display:flex; align-items:center; justify-content:center; background:linear-gradient(160deg,rgba(46,120,180,.4),rgba(10,26,50,.55)); border:1px solid rgba(142,204,224,.32); box-shadow:inset 0 0 14px rgba(90,184,224,.28); }
     .oe-gen-icon svg { width:36px; height:36px; display:block; overflow:visible; }
     .oe-gen-titles { flex:1; min-width:0; }
-    .oe-gen-title { font-family:'Space Grotesk',sans-serif; font-size:13px; font-weight:600; letter-spacing:.02em; color:#dcf2ff; line-height:1.2; }
+    .oe-gen-title { font-family:'IM Fell English',serif; font-size:16px; font-weight:400; letter-spacing:.02em; color:#dcf2ff; line-height:1.2; }
     .oe-gen-sub { font-size:8px; letter-spacing:.2em; text-transform:uppercase; color:rgba(142,204,224,.72); margin-top:4px; }
     .oe-gen-boost { display:none; align-items:center; gap:3px; margin-top:5px; font-size:8px; letter-spacing:.14em; text-transform:uppercase; color:#e8c87a; }
     .oe-gen-rate-badge { flex-shrink:0; display:flex; flex-direction:column; align-items:flex-end; }
-    .oe-gen-rate-num { font-family:'Cormorant Garamond',serif; font-size:23px; font-weight:300; color:#bfeaff; line-height:.95; }
+    .oe-gen-rate-num { font-family:'IM Fell English',serif; font-size:21px; font-weight:400; color:#bfeaff; line-height:.95; }
     .oe-gen-rate-unit { font-size:7px; letter-spacing:.18em; text-transform:uppercase; color:rgba(142,204,224,.62); margin-top:3px; }
     .oe-gen-res-row { display:flex; justify-content:space-between; align-items:baseline; margin-bottom:8px; }
     .oe-gen-res-label { font-size:8px; letter-spacing:.22em; text-transform:uppercase; color:rgba(200,230,245,.58); }
@@ -1018,8 +1018,11 @@
     .oe-well:active { transform:scale(.95); }
     .oe-well:focus-visible { filter:drop-shadow(0 0 14px rgba(184,234,255,.75)); }
     .oe-well-svg { width:100%; height:100%; display:block; overflow:visible; }
-    .oe-well-orbit { transform-origin:75px 75px; animation:oeWellOrbit 30s linear infinite; }
-    @keyframes oeWellOrbit { from{transform:rotate(0deg);} to{transform:rotate(360deg);} }
+    .oe-seal-spin { transform-origin:75px 75px; animation:oeSealSpin 60s linear infinite; }
+    .oe-seal-spin2 { transform-origin:75px 75px; animation:oeSealSpin 90s linear infinite reverse; }
+    @keyframes oeSealSpin { from{transform:rotate(0deg);} to{transform:rotate(360deg);} }
+    .oe-seal-glyph { fill:rgba(232,200,122,.12); stroke:rgba(232,200,122,.6); stroke-width:.8; }
+    .oe-seal-node { fill:rgba(232,200,122,.45); }
     .oe-well-fluid { transition:transform .9s cubic-bezier(.22,.8,.4,1); will-change:transform; }
     .oe-well-drift { animation:oeWellDrift 4.5s linear infinite; }
     .oe-well-drift2 { animation-duration:7s; animation-direction:reverse; }
@@ -1036,10 +1039,30 @@
     .oe-well.shake { animation:oeWellShake .32s ease; }
     @keyframes oeWellShake { 0%,100%{transform:translateX(0);} 25%{transform:translateX(-5px);} 75%{transform:translateX(5px);} }
     .oe-well-label { position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; pointer-events:none; }
-    .oe-well-amt { font-family:'Cormorant Garamond',serif; font-size:36px; font-weight:300; color:#eef9ff; line-height:1; text-shadow:0 0 16px rgba(16,56,96,.9), 0 1px 3px rgba(0,0,0,.55); }
+    .oe-well-amt { font-family:'IM Fell English',serif; font-size:34px; font-weight:400; color:#eef9ff; line-height:1; text-shadow:0 0 16px rgba(16,56,96,.9), 0 1px 3px rgba(0,0,0,.55); }
     .oe-well-sub { margin-top:5px; font-family:'DM Mono',monospace; font-size:7px; letter-spacing:.22em; text-transform:uppercase; color:rgba(224,242,255,.78); text-shadow:0 1px 3px rgba(0,0,0,.6); }
     .oe-well-spark { position:fixed; width:7px; height:7px; margin:-3.5px 0 0 -3.5px; border-radius:50%; background:radial-gradient(circle at 32% 28%, #f4ffff 0%, #b8eaff 42%, #5ab8e0 100%); box-shadow:0 0 9px rgba(142,204,224,.9); pointer-events:none; z-index:9999; animation:oeWellSpark .9s cubic-bezier(.2,.7,.3,1) forwards; }
     @keyframes oeWellSpark { from{transform:translate(0,0) scale(1); opacity:1;} to{transform:translate(var(--dx,0px), var(--dy,-80px)) scale(.35); opacity:0;} }
+    /* ── Appearance: tabbed wardrobe (swatch strip + card grid) ────── */
+    .oe-cos-tabs { display:flex; gap:4px; margin-bottom:14px; }
+    .oe-cos-tab { flex:1; padding:8px 4px; border-radius:7px; border:1px solid var(--border); background:rgba(255,255,255,.02); color:var(--muted); font-family:'DM Mono',monospace; font-size:8px; letter-spacing:.16em; text-transform:uppercase; cursor:pointer; transition:all .2s; }
+    .oe-cos-tab.active { border-color:rgba(142,204,224,.45); background:rgba(142,204,224,.1); color:#bfeaff; }
+    .oe-swatch-strip { display:flex; gap:11px; flex-wrap:wrap; padding:4px 2px 14px; }
+    .oe-swatch { position:relative; width:34px; height:34px; border-radius:50%; cursor:pointer; border:1px solid rgba(255,255,255,.25); background:var(--swatch,#8ecce0); box-shadow:0 0 10px color-mix(in srgb, var(--swatch,#8ecce0) 45%, transparent); }
+    .oe-swatch.sel::after { content:''; position:absolute; inset:-5px; border-radius:50%; border:1.5px solid #bfeaff; box-shadow:0 0 8px rgba(142,204,224,.6); }
+    .oe-swatch.locked { opacity:.38; border-style:dashed; box-shadow:none; }
+    .oe-swatch.focus { outline:1.5px solid rgba(232,200,122,.7); outline-offset:3px; }
+    .oe-cos-detail { border:1px solid var(--border); border-radius:10px; padding:11px 12px; display:flex; justify-content:space-between; align-items:center; gap:12px; background:rgba(255,255,255,.025); }
+    .oe-cos-detail-name { font-size:11px; color:var(--text); font-family:'Space Grotesk',sans-serif; font-weight:500; }
+    .oe-cos-detail-sub { font-size:9px; color:var(--muted); margin-top:3px; line-height:1.5; }
+    .oe-cos-grid { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+    .oe-cos-card { border:1px solid var(--border); border-radius:10px; padding:12px 10px 10px; display:flex; flex-direction:column; align-items:center; gap:7px; cursor:pointer; background:rgba(255,255,255,.02); text-align:center; transition:border-color .2s; }
+    .oe-cos-card.sel { border-color:rgba(142,204,224,.55); background:rgba(142,204,224,.07); }
+    .oe-cos-card.locked { opacity:.55; }
+    .oe-cos-card-name { font-size:10px; color:var(--text); font-family:'Space Grotesk',sans-serif; font-weight:500; }
+    .oe-cos-card-tag { font-size:8px; letter-spacing:.12em; text-transform:uppercase; font-family:'DM Mono',monospace; color:var(--muted); }
+    .oe-cos-card-tag.sel { color:#8ecce0; }
+    .oe-cos-dismiss { margin-top:10px; width:100%; }
     @keyframes engRingPulse  { 0%,100%{opacity:.55;} 50%{opacity:.9;} }
     @keyframes engRingPulse2 { 0%,100%{opacity:.38;} 50%{opacity:.7;} }
     @keyframes engRingPulse3 { 0%,100%{opacity:.22;} 50%{opacity:.48;} }
@@ -4566,8 +4589,22 @@ body:not(.tut-live) #tutCorgi {
                         <stop offset="100%" stop-color="#0a2138" stop-opacity=".28"/>
                       </radialGradient>
                     </defs>
-                    <g class="oe-well-orbit">
-                      <circle cx="75" cy="75" r="70" fill="none" stroke="rgba(142,204,224,.42)" stroke-width="1" stroke-dasharray="3 9" stroke-linecap="round"/>
+                    <g class="oe-well-seal">
+                      <circle cx="75" cy="75" r="71.5" fill="none" stroke="rgba(184,224,244,.3)" stroke-width=".6"/>
+                      <circle cx="75" cy="75" r="65.5" fill="none" stroke="rgba(184,224,244,.18)" stroke-width=".5"/>
+                      <g class="oe-seal-spin">
+                        <circle cx="75" cy="75" r="68.5" fill="none" stroke="rgba(142,204,224,.45)" stroke-width="2.2" stroke-dasharray=".7 13.65" stroke-linecap="round"/>
+                      </g>
+                      <g class="oe-seal-spin2">
+                        <path class="oe-seal-glyph" d="M75,2 L77.8,6.5 L75,11 L72.2,6.5 Z"/>
+                        <path class="oe-seal-glyph" transform="rotate(90 75 75)" d="M75,2 L77.8,6.5 L75,11 L72.2,6.5 Z"/>
+                        <path class="oe-seal-glyph" transform="rotate(180 75 75)" d="M75,2 L77.8,6.5 L75,11 L72.2,6.5 Z"/>
+                        <path class="oe-seal-glyph" transform="rotate(270 75 75)" d="M75,2 L77.8,6.5 L75,11 L72.2,6.5 Z"/>
+                        <circle class="oe-seal-node" cx="123.4" cy="26.6" r="1.7"/>
+                        <circle class="oe-seal-node" cx="123.4" cy="123.4" r="1.7"/>
+                        <circle class="oe-seal-node" cx="26.6" cy="123.4" r="1.7"/>
+                        <circle class="oe-seal-node" cx="26.6" cy="26.6" r="1.7"/>
+                      </g>
                     </g>
                     <circle cx="75" cy="75" r="61" fill="url(#oeWellGlassG)"/>
                     <g clip-path="url(#oeWellClip)">
@@ -15849,27 +15886,83 @@ function applyOmniaCosmetics() {
   updateDrawerEntityBtn();
 }
 
-function renderOmniaCosmeticSection(title, kind, items) {
-  var c = omniaState.cosmetics || cloneOmniaDefault().cosmetics;
-  return '<div class="omnia-cosmetic-section">'
-    + '<div class="omnia-cosmetic-title">' + title + '</div>'
-    + items.map(function(item) {
-      var unlocked = omniaCosmeticUnlocked(kind, item.id);
-      var selected = omniaCosmeticSelected(kind, item.id);
-      var liveCost = omniaCosmeticCost(item);
-      var label = selected ? 'Selected' : unlocked ? 'Select' : liveCost > 0 ? 'Unlock ' + liveCost : 'Unlock';
-      var disabled = !unlocked && (omniaState.akasha || 0) < liveCost;
-      var sub = item.sub + (!unlocked && item.cost ? ' · ' + liveCost + ' akasha' : '');
-      return '<div class="omnia-cosmetic-card' + (selected ? ' selected' : '') + '">'
-        + '<div class="omnia-cosmetic-main">'
-        + renderOmniaCosmeticPreview(kind, item)
-        + '<div><div class="omnia-cosmetic-name">' + item.name + '</div><div class="omnia-cosmetic-sub">' + sub + '</div></div>'
-        + '</div>'
-        + '<button class="omnia-mini-btn" data-omnia-cosmetic-kind="' + kind + '" data-omnia-cosmetic-id="' + item.id + '"' + (selected || disabled ? ' disabled' : '') + '>' + label + '</button>'
-        + '</div>';
-    }).join('')
-    + (kind === 'companion' && c.companion ? '<button class="omnia-mini-btn" data-omnia-cosmetic-kind="companion" data-omnia-cosmetic-id="none">Dismiss Companion</button>' : '')
+// ── Appearance wardrobe: sub-tabs + swatch strip (colors) / card grid ──
+// Owned items select on tap; locked items focus a detail card whose Unlock
+// button does the purchase, so nobody buys by accident.
+var _omniaCosTab = 'palette';
+var _omniaCosFocus = {};
+
+function renderOmniaCosDetail(kind, item) {
+  var unlocked = omniaCosmeticUnlocked(kind, item.id);
+  var selected = omniaCosmeticSelected(kind, item.id);
+  var liveCost = omniaCosmeticCost(item);
+  var label = selected ? 'Selected' : unlocked ? 'Select' : liveCost > 0 ? 'Unlock ' + liveCost : 'Unlock';
+  var disabled = selected || (!unlocked && (omniaState.akasha || 0) < liveCost);
+  return '<div class="oe-cos-detail">'
+    + '<div><div class="oe-cos-detail-name">' + item.name + '</div><div class="oe-cos-detail-sub">' + item.sub + (!unlocked && liveCost > 0 ? ' · ' + liveCost + ' akasha' : '') + '</div></div>'
+    + '<button class="omnia-mini-btn" data-omnia-cosmetic-kind="' + kind + '" data-omnia-cosmetic-id="' + item.id + '"' + (disabled ? ' disabled' : '') + '>' + label + '</button>'
     + '</div>';
+}
+
+function omniaSwatchStyle(item) {
+  var s = '--swatch:' + item.color + ';';
+  if (item.id === 'aurora') s += 'background:conic-gradient(from 0deg,#ff9d9d,#ffd79d,#b8ff9d,#9dd9ff,#c89dff,#ff9d9d);';
+  if (item.id === 'spectral') s += 'background:linear-gradient(135deg, rgba(216,236,255,.55), rgba(216,236,255,.1));';
+  return s;
+}
+
+function renderOmniaAppearance() {
+  var c = omniaState.cosmetics || cloneOmniaDefault().cosmetics;
+  var kinds = [
+    { kind:'palette', label:'Colors', items:OMNIA_PALETTES },
+    { kind:'entity', label:'Forms', items:OMNIA_ENTITIES },
+    { kind:'companion', label:'Companions', items:OMNIA_COMPANIONS }
+  ];
+  var tab = kinds.find(function(k) { return k.kind === _omniaCosTab; }) || kinds[0];
+  var html = '<div class="oe-cos-tabs">' + kinds.map(function(k) {
+    return '<button class="oe-cos-tab' + (k.kind === tab.kind ? ' active' : '') + '" data-omnia-cos-tab="' + k.kind + '">' + k.label + '</button>';
+  }).join('') + '</div>';
+
+  var focusItem = _omniaCosFocus[tab.kind] ? omniaFindCosmetic(tab.items, _omniaCosFocus[tab.kind]) : null;
+  if (!focusItem) {
+    var selId = tab.kind === 'palette' ? (c.palette || 'aether') : tab.kind === 'entity' ? (c.entity || 'omnia') : c.companion;
+    focusItem = selId ? omniaFindCosmetic(tab.items, selId) : null;
+  }
+
+  if (tab.kind === 'palette') {
+    html += '<div class="oe-swatch-strip">' + tab.items.map(function(item) {
+      var unlocked = omniaCosmeticUnlocked('palette', item.id);
+      var selected = omniaCosmeticSelected('palette', item.id);
+      var isFocus = focusItem && focusItem.id === item.id;
+      var attrs = unlocked
+        ? 'data-omnia-cosmetic-kind="palette" data-omnia-cosmetic-id="' + item.id + '"'
+        : 'data-omnia-cos-focus="' + item.id + '" data-omnia-cos-kind="palette"';
+      return '<div class="oe-swatch' + (selected ? ' sel' : '') + (unlocked ? '' : ' locked') + (isFocus && !unlocked ? ' focus' : '') + '" style="' + omniaSwatchStyle(item) + '" title="' + item.name + '" ' + attrs + '></div>';
+    }).join('') + '</div>';
+    if (focusItem) html += renderOmniaCosDetail('palette', focusItem);
+  } else {
+    html += '<div class="oe-cos-grid">' + tab.items.map(function(item) {
+      var unlocked = omniaCosmeticUnlocked(tab.kind, item.id);
+      var selected = omniaCosmeticSelected(tab.kind, item.id);
+      var liveCost = omniaCosmeticCost(item);
+      var tag = selected ? 'Selected' : unlocked ? 'Owned' : liveCost > 0 ? liveCost.toLocaleString() + ' akasha' : 'Locked';
+      var attrs = unlocked
+        ? 'data-omnia-cosmetic-kind="' + tab.kind + '" data-omnia-cosmetic-id="' + item.id + '"'
+        : 'data-omnia-cos-focus="' + item.id + '" data-omnia-cos-kind="' + tab.kind + '"';
+      return '<div class="oe-cos-card' + (selected ? ' sel' : '') + (unlocked ? '' : ' locked') + '" ' + attrs + '>'
+        + renderOmniaCosmeticPreview(tab.kind, item)
+        + '<div class="oe-cos-card-name">' + item.name + '</div>'
+        + '<div class="oe-cos-card-tag' + (selected ? ' sel' : '') + '">' + tag + '</div>'
+        + '</div>';
+    }).join('') + '</div>';
+    if (focusItem && !omniaCosmeticUnlocked(tab.kind, focusItem.id)) {
+      html += '<div style="margin-top:10px;">' + renderOmniaCosDetail(tab.kind, focusItem) + '</div>';
+    }
+    if (tab.kind === 'companion' && c.companion) {
+      html += '<button class="omnia-mini-btn oe-cos-dismiss" data-omnia-cosmetic-kind="companion" data-omnia-cosmetic-id="none">Dismiss Companion</button>';
+    }
+  }
+  return html;
 }
 
 function unlockOrSelectOmniaCosmetic(kind, id) {
@@ -16346,12 +16439,7 @@ function renderOmniaEngine() {
   }
 
   var cosmeticGrid = document.getElementById('omniaCosmeticGrid');
-  if (cosmeticGrid) {
-    cosmeticGrid.innerHTML =
-      renderOmniaCosmeticSection('Omnia Colors', 'palette', OMNIA_PALETTES)
-      + renderOmniaCosmeticSection('Entity Forms', 'entity', OMNIA_ENTITIES)
-      + renderOmniaCosmeticSection('Companions', 'companion', OMNIA_COMPANIONS);
-  }
+  if (cosmeticGrid) cosmeticGrid.innerHTML = renderOmniaAppearance();
 
   // Story Mode: surface any newly-earned narrative beats. Runs on every engine
   // render — and the engine re-renders after step-ups, upgrades, body builds,
@@ -19519,6 +19607,14 @@ document.getElementById('omniaCenterFigure').addEventListener('keydown', functio
 });
 document.getElementById('omniaAdvanceBtn').addEventListener('click', advanceOmniaStep);
 document.getElementById('omniaEngine').addEventListener('click', function(e) {
+  var cosTab = e.target.closest('[data-omnia-cos-tab]');
+  if (cosTab) { _omniaCosTab = cosTab.dataset.omniaCosTab; renderOmniaEngine(); return; }
+  var cosFocus = e.target.closest('[data-omnia-cos-focus]');
+  if (cosFocus) {
+    _omniaCosFocus[cosFocus.dataset.omniaCosKind] = cosFocus.dataset.omniaCosFocus;
+    renderOmniaEngine();
+    return;
+  }
   var cosmeticBtn = e.target.closest('[data-omnia-cosmetic-kind]');
   if (cosmeticBtn) {
     unlockOrSelectOmniaCosmetic(cosmeticBtn.dataset.omniaCosmeticKind, cosmeticBtn.dataset.omniaCosmeticId);
