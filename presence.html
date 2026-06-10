@@ -1626,6 +1626,14 @@
 .omnia-figure.has-companion .omnia-companion { opacity:.95; animation:omniaCompanionBob 3.2s ease-in-out infinite; }
 .oe-omnia-figure .omnia-companion { width:68px; height:68px; right:-28px; bottom:6px; }
 .path-banner-figure .omnia-companion { width:36px; height:36px; right:-15px; bottom:2px; }
+/* Corgi faces in toward his entity: he sits on its right, so mirror the art
+   (head is drawn on the right of the sprite). Tail wags; tapping makes him hop. */
+.omnia-companion.companion-corgi svg { transform:scaleX(-1); }
+.corgi-tail { transform-origin:11px 27px; animation:corgiTailWag .5s ease-in-out infinite alternate; }
+@keyframes corgiTailWag { 0%{transform:rotate(-12deg);} 100%{transform:rotate(14deg);} }
+.omnia-figure.has-companion .omnia-companion.companion-corgi { pointer-events:auto; cursor:pointer; }
+@keyframes omniaCorgiJump { 0%{transform:translateY(0) rotate(0deg);} 32%{transform:translateY(-20px) rotate(4deg);} 55%{transform:translateY(-20px) rotate(-3deg);} 80%{transform:translateY(2px) rotate(0deg);} 100%{transform:translateY(0) rotate(0deg);} }
+.omnia-figure.has-companion .omnia-companion.corgi-jumping { animation:omniaCorgiJump .65s cubic-bezier(.34,1.2,.5,1) both; }
 .omnia-figure.morphing .omnia-crystal-layer { opacity:.12; transform:scale(.82) rotate(10deg); filter:blur(3px); }
 .omnia-figure.morphing .omnia-symbol-layer { opacity:0; }
 .omnia-figure.morphing .omnia-morph-ring { animation:omniaRingTurn 1.9s ease both; }
@@ -15462,8 +15470,8 @@ function renderOmniaCompanionPreview(item) {
     // Warm solid corgi with a gem-polish finish: facet glints and a cool rim
     // light suggest crystal without going translucent/ghostly.
     return '<svg viewBox="0 0 58 46" aria-hidden="true">'
-      // fluffy curled tail
-      + '<path d="M10 28c-5 0-8-3-7-7 2 2 5 3 8 2 1 2 1 4-1 5Z" fill="#f0c08a" stroke="#c97f44" stroke-width=".9" stroke-linejoin="round"/>'
+      // fluffy curled tail (wags via .corgi-tail CSS)
+      + '<path class="corgi-tail" d="M10 28c-5 0-8-3-7-7 2 2 5 3 8 2 1 2 1 4-1 5Z" fill="#f0c08a" stroke="#c97f44" stroke-width=".9" stroke-linejoin="round"/>'
       // loaf body + white belly
       + '<ellipse cx="23" cy="33" rx="14" ry="8.5" fill="#e8a35c" stroke="#c97f44" stroke-width=".9"/>'
       + '<ellipse cx="25" cy="37" rx="9.5" ry="4.5" fill="#fff1d5"/>'
@@ -15896,6 +15904,7 @@ function applyOmniaCosmetics() {
     if (compSlot) {
       compSlot.innerHTML = companion ? renderOmniaCompanionPreview(companion) : '';
       compSlot.style.display = companion ? 'block' : 'none';
+      compSlot.classList.toggle('companion-corgi', !!companion && companion.id === 'corgi');
     }
     f.dataset.entity = entity.id;
     f.setAttribute('aria-label', 'Reveal a ' + entity.name + ' symbol');
@@ -19624,6 +19633,21 @@ document.getElementById('guideOmniaFigure').addEventListener('keydown', function
     e.preventDefault();
     morphGuideOmnia();
   }
+});
+// Corgi hop: tapping him plays a jump without morphing the entity behind him
+['guideOmniaCompanion', 'omniaCenterCompanion', 'pathBannerOmniaCompanion'].forEach(function(id) {
+  var comp = document.getElementById(id);
+  if (!comp) return;
+  comp.addEventListener('click', function(e) {
+    if (!comp.classList.contains('companion-corgi')) return;
+    e.stopPropagation();
+    comp.classList.remove('corgi-jumping');
+    void comp.offsetWidth; // restart the animation on rapid taps
+    comp.classList.add('corgi-jumping');
+  });
+  comp.addEventListener('animationend', function(e) {
+    if (e.animationName === 'omniaCorgiJump') comp.classList.remove('corgi-jumping');
+  });
 });
 document.getElementById('omniaCenterFigure').addEventListener('click', morphOmniaCenter);
 (function(){

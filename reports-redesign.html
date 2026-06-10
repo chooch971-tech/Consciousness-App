@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=390, initial-scale=1"/>
+<title>Presence — Progress Report Redesign</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300;1,400&family=DM+Mono:wght@300;400&display=swap" rel="stylesheet"/>
+<style>
+*, *::before, *::after { box-sizing:border-box; margin:0; padding:0; }
+
+:root {
+  --bg:      #07080d;
+  --surface: #0d0f18;
+  --border:  rgba(255,255,255,.07);
+  --border2: rgba(255,255,255,.13);
+  --text:    #e8e0d0;
+  --muted:   #5a5960;
+  --teal:    #7eb8a4;
+  --amber:   #d4956e;
+  --purple:  #9b8ec4;
+  --gold:    #d4b464;
+}
+
+html, body { height:100%; }
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'DM Mono', monospace;
+  max-width: 390px;
+  margin: 0 auto;
+  min-height: 100vh;
+  overflow-x: hidden;
+  padding-bottom: 48px;
+}
+
+/* ── Nav ─────────────────────────────── */
+.nav { display:flex; align-items:center; justify-content:space-between; padding:16px 22px 0; }
+.nav-menu { display:flex; flex-direction:column; gap:5px; cursor:pointer; }
+.nav-menu span { display:block; width:20px; height:1.5px; background:var(--muted); border-radius:2px; }
+.nav-wordmark { font-family:'Cormorant Garamond',serif; font-size:11px; font-weight:300; letter-spacing:.38em; text-transform:uppercase; color:var(--teal); }
+.nav-streak { font-size:9px; letter-spacing:.14em; color:var(--muted); }
+.nav-streak strong { color:var(--text); font-weight:400; }
+
+/* ── Title + period nav ──────────────── */
+.title-row { display:flex; align-items:baseline; justify-content:space-between; padding:26px 22px 0; }
+.title { font-family:'Cormorant Garamond',serif; font-size:24px; font-weight:300; }
+.range-nav { display:flex; align-items:center; gap:10px; }
+.range-arrow { background:none; border:none; color:var(--muted); font-size:14px; cursor:pointer; padding:4px 6px; }
+.range-arrow:disabled { opacity:.25; cursor:default; }
+.range-label { font-size:9px; letter-spacing:.14em; text-transform:uppercase; color:var(--muted); }
+
+/* ── Pill tabs ───────────────────────── */
+.tabs { display:flex; gap:4px; margin:16px 22px 0; }
+.tab { flex:1; padding:9px 0 8px; text-align:center; font-family:'DM Mono',monospace; font-size:9px; letter-spacing:.2em; text-transform:uppercase; color:var(--muted); background:var(--surface); border:1px solid var(--border); border-radius:8px; cursor:pointer; transition:all .2s ease; }
+.tab.active { color:var(--teal); border-color:rgba(126,184,164,.35); background:rgba(126,184,164,.08); }
+
+/* ── Omnia insight ───────────────────── */
+.omnia-card { display:flex; align-items:center; gap:14px; margin:20px 22px 0; padding:16px 16px 15px; border:1px solid rgba(126,184,164,.18); border-radius:14px; background:rgba(126,184,164,.04); }
+.omnia-crystal { flex-shrink:0; width:38px; animation:crystalFloat 4.5s ease-in-out infinite; filter:drop-shadow(0 0 8px rgba(160,210,240,.4)); }
+@keyframes crystalFloat { 0%,100%{transform:translateY(0);} 50%{transform:translateY(-5px);} }
+.omnia-text { font-family:'Cormorant Garamond',serif; font-size:14.5px; font-style:italic; line-height:1.6; color:var(--text); }
+.omnia-meta { margin-top:6px; font-size:8px; letter-spacing:.18em; text-transform:uppercase; color:var(--muted); font-style:normal; font-family:'DM Mono',monospace; }
+
+/* ── Hero numbers ────────────────────── */
+.hero { display:flex; margin:22px 22px 0; border:1px solid var(--border); border-radius:14px; background:var(--surface); }
+.hero-cell { flex:1; padding:18px 8px 15px; text-align:center; }
+.hero-cell + .hero-cell { border-left:1px solid var(--border); }
+.hero-val { font-family:'Cormorant Garamond',serif; font-size:27px; font-weight:300; line-height:1; }
+.hero-val.green { color:var(--teal); }
+.hero-val.amber { color:var(--amber); }
+.hero-label { margin-top:7px; font-size:8px; letter-spacing:.16em; text-transform:uppercase; color:var(--muted); }
+.hero-delta { margin-top:4px; font-size:8.5px; color:var(--teal); }
+.hero-delta.down { color:rgba(212,120,100,.8); }
+.hero-delta.flat { color:var(--muted); }
+
+/* ── Highlight chips ─────────────────── */
+.chips { display:flex; flex-direction:column; gap:6px; margin:14px 22px 0; }
+.chip { display:flex; align-items:center; gap:10px; padding:9px 13px; border-radius:9px; background:rgba(212,180,100,.05); border:1px solid rgba(212,180,100,.16); }
+.chip-icon { font-size:11px; color:var(--gold); flex-shrink:0; }
+.chip-text { font-size:10px; line-height:1.45; color:var(--text); letter-spacing:.02em; }
+
+/* ── Chart ───────────────────────────── */
+.chart-card { margin:18px 22px 0; padding:15px 15px 11px; border:1px solid var(--border); border-radius:14px; background:var(--surface); }
+.chart-title { font-size:8px; letter-spacing:.2em; text-transform:uppercase; color:var(--muted); margin-bottom:13px; display:flex; justify-content:space-between; }
+.chart-title span:last-child { letter-spacing:.05em; text-transform:none; }
+.bars { display:flex; align-items:flex-end; gap:5px; height:62px; }
+.bar-col { flex:1; display:flex; flex-direction:column; align-items:center; gap:6px; height:100%; justify-content:flex-end; }
+.bar { width:100%; border-radius:3px 3px 1px 1px; background:linear-gradient(to top, rgba(126,184,164,.25), rgba(126,184,164,.7)); min-height:2px; transition:height .45s cubic-bezier(.3,.9,.4,1); }
+.bar.zero { background:rgba(255,255,255,.05); }
+.bar-lbl { font-size:7.5px; color:var(--muted); letter-spacing:.05em; }
+
+/* ── Accordion sections ──────────────── */
+.acc { margin:18px 22px 0; border:1px solid var(--border); border-radius:14px; background:var(--surface); overflow:hidden; }
+.acc-row + .acc-row { border-top:1px solid var(--border); }
+.acc-head { display:flex; align-items:center; gap:11px; padding:15px 16px; cursor:pointer; -webkit-tap-highlight-color:transparent; }
+.acc-dot { width:6px; height:6px; border-radius:50%; flex-shrink:0; }
+.acc-dot.green  { background:var(--teal);   box-shadow:0 0 6px rgba(126,184,164,.6); }
+.acc-dot.amber  { background:var(--amber);  box-shadow:0 0 6px rgba(212,149,110,.6); }
+.acc-dot.purple { background:var(--purple); box-shadow:0 0 6px rgba(155,142,196,.6); }
+.acc-dot.gold   { background:var(--gold);   box-shadow:0 0 6px rgba(212,180,100,.6); }
+.acc-name { font-size:9.5px; letter-spacing:.2em; text-transform:uppercase; color:var(--text); }
+.acc-sum { margin-left:auto; font-size:10px; color:var(--muted); letter-spacing:.04em; }
+.acc-chev { color:var(--muted); font-size:10px; transition:transform .25s ease; margin-left:2px; }
+.acc-row.open .acc-chev { transform:rotate(90deg); }
+.acc-body { max-height:0; overflow:hidden; transition:max-height .35s ease; }
+.acc-row.open .acc-body { max-height:320px; }
+.acc-inner { padding:2px 16px 16px; }
+
+.strip { display:flex; border:1px solid var(--border); border-radius:10px; overflow:hidden; }
+.strip-cell { flex:1; padding:12px 6px 10px; text-align:center; }
+.strip-cell + .strip-cell { border-left:1px solid var(--border); }
+.strip-val { font-family:'Cormorant Garamond',serif; font-size:19px; font-weight:300; }
+.strip-lbl { margin-top:4px; font-size:7.5px; letter-spacing:.14em; text-transform:uppercase; color:var(--muted); }
+.strip-delta { font-size:8px; color:var(--teal); margin-top:3px; }
+.acc-note { margin-top:10px; font-size:9px; color:var(--muted); letter-spacing:.05em; line-height:1.6; }
+
+.progressbar { margin-top:12px; }
+.progressbar-lbl { display:flex; justify-content:space-between; font-size:8px; letter-spacing:.12em; text-transform:uppercase; color:var(--muted); margin-bottom:6px; }
+.progressbar-track { height:4px; border-radius:2px; background:rgba(255,255,255,.06); overflow:hidden; }
+.progressbar-fill { height:100%; border-radius:2px; background:linear-gradient(90deg, rgba(212,149,110,.5), var(--amber)); }
+
+/* ── Share ───────────────────────────── */
+.share { display:block; width:calc(100% - 44px); margin:22px 22px 0; padding:14px; border-radius:10px; border:1px solid rgba(126,184,164,.25); background:transparent; color:var(--teal); font-family:'DM Mono',monospace; font-size:9px; letter-spacing:.22em; text-transform:uppercase; cursor:pointer; }
+
+.fade { animation:fadeSwap .35s ease; }
+@keyframes fadeSwap { from{opacity:0; transform:translateY(4px);} to{opacity:1; transform:none;} }
+</style>
+</head>
+<body>
+
+<div class="nav">
+  <div class="nav-menu"><span></span><span></span><span></span></div>
+  <div class="nav-wordmark">Presence</div>
+  <div class="nav-streak"><strong>12</strong> day streak</div>
+</div>
+
+<div class="title-row">
+  <div class="title">Progress</div>
+  <div class="range-nav">
+    <button class="range-arrow">‹</button>
+    <span class="range-label" id="rangeLabel">Jun 8 – 14</span>
+    <button class="range-arrow" disabled>›</button>
+  </div>
+</div>
+
+<div class="tabs">
+  <button class="tab" data-period="day">Day</button>
+  <button class="tab active" data-period="week">Week</button>
+  <button class="tab" data-period="month">Month</button>
+</div>
+
+<!-- Omnia: the single headline insight -->
+<div class="omnia-card" id="omniaCard">
+  <svg class="omnia-crystal" viewBox="0 0 80 130" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+    <defs>
+      <linearGradient id="g1" x1="0%" y1="0%" x2="100%" y2="100%">
+        <stop offset="0%" stop-color="#ddf0ff" stop-opacity="0.92"/>
+        <stop offset="100%" stop-color="#6ab8d8" stop-opacity="0.48"/>
+      </linearGradient>
+    </defs>
+    <polygon points="40,3 54,14 40,25 26,14" fill="url(#g1)" stroke="#90cce8" stroke-width="0.55"/>
+    <polygon points="40,25 60,36 64,58 40,70 16,58 20,36" fill="url(#g1)" stroke="#88c4e0" stroke-width="0.55"/>
+    <polygon points="40,70 64,58 56,88 40,100 24,88 16,58" fill="url(#g1)" stroke="#88c4e0" stroke-width="0.55" opacity="0.88"/>
+    <polygon points="40,100 56,88 40,114" fill="url(#g1)" stroke="#88c4e0" stroke-width="0.48" opacity="0.72"/>
+    <polygon points="40,100 24,88 40,114" fill="#b4dcf4" stroke="#88c4e0" stroke-width="0.48" opacity="0.52"/>
+  </svg>
+  <div>
+    <div class="omnia-text" id="omniaText">Your focus holds are climbing — 4:32 is a new best — but awareness slipped on the weekend. Guard Saturday.</div>
+    <div class="omnia-meta" id="omniaMeta">Omnia · this week</div>
+  </div>
+</div>
+
+<!-- Hero: only three numbers -->
+<div class="hero" id="hero"></div>
+
+<!-- Milestones: max two -->
+<div class="chips" id="chips"></div>
+
+<!-- One chart, always visible -->
+<div class="chart-card">
+  <div class="chart-title"><span>Minutes practiced</span><span id="chartSub">daily</span></div>
+  <div class="bars" id="bars"></div>
+</div>
+
+<!-- Everything else folds away -->
+<div class="acc" id="acc">
+
+  <div class="acc-row" data-acc>
+    <div class="acc-head">
+      <span class="acc-dot green"></span>
+      <span class="acc-name">Awareness</span>
+      <span class="acc-sum" id="awSum">6 sessions · 1h 22m</span>
+      <span class="acc-chev">›</span>
+    </div>
+    <div class="acc-body"><div class="acc-inner">
+      <div class="strip">
+        <div class="strip-cell"><div class="strip-val">6</div><div class="strip-lbl">Sessions</div><div class="strip-delta">+2</div></div>
+        <div class="strip-cell"><div class="strip-val">1h 22m</div><div class="strip-lbl">Time</div><div class="strip-delta">+18%</div></div>
+        <div class="strip-cell"><div class="strip-val">7.4</div><div class="strip-lbl">Avg Score</div><div class="strip-delta">+0.6</div></div>
+      </div>
+      <div class="acc-note">Best day Tuesday · longest sit 24 min · most common tag: morning</div>
+    </div></div>
+  </div>
+
+  <div class="acc-row" data-acc>
+    <div class="acc-head">
+      <span class="acc-dot amber"></span>
+      <span class="acc-name">Concentration</span>
+      <span class="acc-sum" id="concSum">3 sessions · best 4:32</span>
+      <span class="acc-chev">›</span>
+    </div>
+    <div class="acc-body"><div class="acc-inner">
+      <div class="strip">
+        <div class="strip-cell"><div class="strip-val">3</div><div class="strip-lbl">Sessions</div><div class="strip-delta">+1</div></div>
+        <div class="strip-cell"><div class="strip-val">4:32</div><div class="strip-lbl">Best Hold</div><div class="strip-delta">new ✦</div></div>
+        <div class="strip-cell"><div class="strip-val">9:48</div><div class="strip-lbl">Total Held</div><div class="strip-delta">+31%</div></div>
+      </div>
+      <div class="progressbar">
+        <div class="progressbar-lbl"><span>Clock · toward 10 min</span><span>45.3%</span></div>
+        <div class="progressbar-track"><div class="progressbar-fill" style="width:45.3%"></div></div>
+      </div>
+    </div></div>
+  </div>
+
+  <div class="acc-row" data-acc>
+    <div class="acc-head">
+      <span class="acc-dot purple"></span>
+      <span class="acc-name">Prayer</span>
+      <span class="acc-sum">5 of 7 days</span>
+      <span class="acc-chev">›</span>
+    </div>
+    <div class="acc-body"><div class="acc-inner">
+      <div class="strip">
+        <div class="strip-cell"><div class="strip-val">5/7</div><div class="strip-lbl">Days Kept</div></div>
+        <div class="strip-cell"><div class="strip-val">9d</div><div class="strip-lbl">Streak</div></div>
+      </div>
+    </div></div>
+  </div>
+
+  <div class="acc-row" data-acc>
+    <div class="acc-head">
+      <span class="acc-dot gold"></span>
+      <span class="acc-name">Standing</span>
+      <span class="acc-sum">Lvl 7 · 14,210 XP</span>
+      <span class="acc-chev">›</span>
+    </div>
+    <div class="acc-body"><div class="acc-inner">
+      <div class="strip">
+        <div class="strip-cell"><div class="strip-val">7</div><div class="strip-lbl">Awareness Lvl</div></div>
+        <div class="strip-cell"><div class="strip-val">5</div><div class="strip-lbl">Focus Lvl</div></div>
+        <div class="strip-cell"><div class="strip-val">14,210</div><div class="strip-lbl">Total XP</div></div>
+      </div>
+    </div></div>
+  </div>
+
+</div>
+
+<button class="share">Share Report</button>
+
+<script>
+// ── Mock data per period ─────────────────────────────────────
+var DATA = {
+  day: {
+    range: 'Mon, Jun 8',
+    omnia: 'A strong morning sit — 24 minutes, your longest this month. The afternoon lapse is the same one as last Monday.',
+    meta: 'Omnia · yesterday',
+    hero: [
+      { val:'38m', cls:'green', label:'Practiced', delta:'+12m vs avg', dir:'up' },
+      { val:'2',   cls:'',      label:'Sessions',  delta:'typical',    dir:'flat' },
+      { val:'3:51',cls:'amber', label:'Best Hold', delta:'−0:41',      dir:'down' }
+    ],
+    chips: [ '✦  Longest awareness sit this month — 24 min' ],
+    chartSub: 'by hour',
+    bars: { labels:['6a','9a','12p','3p','6p','9p'], values:[24,0,0,8,0,6] },
+    awSum: '1 session · 24m', concSum: '1 session · best 3:51'
+  },
+  week: {
+    range: 'Jun 8 – 14',
+    omnia: 'Your focus holds are climbing — 4:32 is a new best — but awareness slipped on the weekend. Guard Saturday.',
+    meta: 'Omnia · this week',
+    hero: [
+      { val:'2h 14m', cls:'green', label:'Practiced', delta:'+18%',  dir:'up' },
+      { val:'9',      cls:'',      label:'Sessions',  delta:'+3',    dir:'up' },
+      { val:'4:32',   cls:'amber', label:'Best Hold', delta:'new ✦', dir:'up' }
+    ],
+    chips: [
+      '✦  New concentration record — 4:32 clock hold',
+      '✦  First 6-session awareness week'
+    ],
+    chartSub: 'daily',
+    bars: { labels:['M','T','W','T','F','S','S'], values:[22,38,18,24,30,0,12] },
+    awSum: '6 sessions · 1h 22m', concSum: '3 sessions · best 4:32'
+  },
+  month: {
+    range: 'June 2026',
+    omnia: 'Twenty-two practice days in June — your most consistent month yet. The second week dip is your pattern to break in July.',
+    meta: 'Omnia · this month',
+    hero: [
+      { val:'9h 40m', cls:'green', label:'Practiced', delta:'+22%',     dir:'up' },
+      { val:'34',     cls:'',      label:'Sessions',  delta:'+9',       dir:'up' },
+      { val:'22d',    cls:'amber', label:'Days Kept', delta:'best yet', dir:'up' }
+    ],
+    chips: [ '✦  Most consistent month on record — 22 of 30 days' ],
+    chartSub: 'by week',
+    bars: { labels:['Wk 1','Wk 2','Wk 3','Wk 4','Wk 5'], values:[160,90,148,134,48] },
+    awSum: '22 sessions · 6h 10m', concSum: '12 sessions · best 4:32'
+  }
+};
+
+function render(period) {
+  var d = DATA[period];
+  document.getElementById('rangeLabel').textContent = d.range;
+
+  var omniaText = document.getElementById('omniaText');
+  omniaText.textContent = d.omnia;
+  document.getElementById('omniaMeta').textContent = d.meta;
+  omniaText.classList.remove('fade'); void omniaText.offsetWidth; omniaText.classList.add('fade');
+
+  var hero = document.getElementById('hero');
+  hero.innerHTML = d.hero.map(function(h) {
+    var dirCls = h.dir === 'down' ? ' down' : h.dir === 'flat' ? ' flat' : '';
+    return '<div class="hero-cell fade"><div class="hero-val ' + h.cls + '">' + h.val + '</div>'
+      + '<div class="hero-label">' + h.label + '</div>'
+      + '<div class="hero-delta' + dirCls + '">' + h.delta + '</div></div>';
+  }).join('');
+
+  document.getElementById('chips').innerHTML = d.chips.map(function(c) {
+    return '<div class="chip fade"><span class="chip-icon">✦</span><span class="chip-text">' + c.replace('✦  ','') + '</span></div>';
+  }).join('');
+
+  document.getElementById('chartSub').textContent = d.chartSub;
+  var max = Math.max.apply(null, d.bars.values) || 1;
+  document.getElementById('bars').innerHTML = d.bars.values.map(function(v, i) {
+    var h = Math.round(v / max * 100);
+    return '<div class="bar-col"><div class="bar' + (v === 0 ? ' zero' : '') + '" style="height:' + Math.max(h, 3) + '%"></div>'
+      + '<div class="bar-lbl">' + d.bars.labels[i] + '</div></div>';
+  }).join('');
+
+  document.getElementById('awSum').textContent = d.awSum;
+  document.getElementById('concSum').textContent = d.concSum;
+}
+
+document.querySelectorAll('.tab').forEach(function(tab) {
+  tab.addEventListener('click', function() {
+    document.querySelectorAll('.tab').forEach(function(t) { t.classList.remove('active'); });
+    tab.classList.add('active');
+    render(tab.dataset.period);
+  });
+});
+
+document.querySelectorAll('[data-acc] .acc-head').forEach(function(head) {
+  head.addEventListener('click', function() {
+    head.parentElement.classList.toggle('open');
+  });
+});
+
+render('week');
+</script>
+</body>
+</html>
