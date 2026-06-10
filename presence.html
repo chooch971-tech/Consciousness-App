@@ -1648,7 +1648,7 @@
    while walking, then turns to face the entity when he arrives (the sprite's
    head is drawn on the right; .corgi-flip mirrors it to face left).
    Tail wags continuously; tapping makes him hop. */
-.omnia-companion.companion-corgi { right:auto; left:calc(100% - 12px); bottom:0; width:46px; height:36px; transition:left 2.6s cubic-bezier(.42,.05,.58,.95); }
+.omnia-companion.companion-corgi { right:auto; left:calc(100% - 12px); bottom:0; width:46px; height:36px; transition:left 1.5s cubic-bezier(.42,.05,.58,.95); }
 .omnia-companion.companion-corgi.corgi-left { left:-34px; }
 .oe-omnia-figure .omnia-companion.companion-corgi { width:60px; height:48px; left:calc(100% - 14px); bottom:2px; }
 .oe-omnia-figure .omnia-companion.companion-corgi.corgi-left { left:-46px; }
@@ -19677,13 +19677,25 @@ document.getElementById('guideOmniaFigure').addEventListener('keydown', function
     comp.classList.add('corgi-jumping');
   });
   comp.addEventListener('animationend', function(e) {
-    if (e.animationName === 'omniaCorgiJump') comp.classList.remove('corgi-jumping');
+    if (e.animationName !== 'omniaCorgiJump') return;
+    comp.classList.remove('corgi-jumping');
+    if (comp.dataset.jumpsLeft && parseInt(comp.dataset.jumpsLeft, 10) > 0) {
+      comp.dataset.jumpsLeft = String(parseInt(comp.dataset.jumpsLeft, 10) - 1);
+      void comp.offsetWidth;
+      comp.classList.add('corgi-jumping');
+    } else {
+      delete comp.dataset.jumpsLeft;
+    }
   });
-  // Arrival at the far side: stop waddling, turn to face the entity
+  // Arrival at the far side: stop waddling, turn to face the entity, hop twice
   comp.addEventListener('transitionend', function(e) {
     if (e.propertyName !== 'left' || !comp.classList.contains('companion-corgi')) return;
     comp.classList.remove('corgi-walking');
     comp.classList.toggle('corgi-flip', !comp.classList.contains('corgi-left'));
+    comp.dataset.jumpsLeft = '1';
+    comp.classList.remove('corgi-jumping');
+    void comp.offsetWidth;
+    comp.classList.add('corgi-jumping');
   });
 });
 
