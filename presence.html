@@ -1419,6 +1419,23 @@
     .rpt-cap { font-size:9px; color:var(--muted); font-family:'DM Mono',monospace; letter-spacing:.04em; margin:-2px 0 16px; padding:0 2px; }
     .rpt-block { margin-bottom:26px; }
     .rpt-empty { text-align:center; color:var(--muted); font-size:11px; font-family:'DM Mono',monospace; letter-spacing:.06em; line-height:2; padding:40px 20px; }
+    /* ── Condensed report: hero deltas + collapsible detail rows ── */
+    .rpt-summary-delta { font-size:8.5px; margin-top:5px; font-family:'DM Mono',monospace; }
+    .rpt-acc { border:1px solid var(--border); border-radius:14px; background:var(--surface); overflow:hidden; margin-bottom:18px; }
+    .rpt-acc-row + .rpt-acc-row { border-top:1px solid var(--border); }
+    .rpt-acc-head { display:flex; align-items:center; gap:11px; padding:15px 16px; cursor:pointer; -webkit-tap-highlight-color:transparent; }
+    .rpt-acc-dot { width:6px; height:6px; border-radius:50%; flex-shrink:0; }
+    .rpt-acc-dot--green { background:var(--accent); box-shadow:0 0 6px rgba(126,184,164,.6); }
+    .rpt-acc-dot--amber { background:#d4956e; box-shadow:0 0 6px rgba(212,149,110,.6); }
+    .rpt-acc-dot--purple { background:#9b8ec4; box-shadow:0 0 6px rgba(155,142,196,.6); }
+    .rpt-acc-dot--gold { background:#d4b464; box-shadow:0 0 6px rgba(212,180,100,.6); }
+    .rpt-acc-name { font-size:9.5px; letter-spacing:.2em; text-transform:uppercase; color:var(--text); font-family:'DM Mono',monospace; }
+    .rpt-acc-sum { margin-left:auto; font-size:9.5px; color:var(--muted); letter-spacing:.04em; font-family:'DM Mono',monospace; text-align:right; }
+    .rpt-acc-chev { color:var(--muted); font-size:13px; transition:transform .25s ease; flex-shrink:0; line-height:1; }
+    .rpt-acc-row.open .rpt-acc-chev { transform:rotate(90deg); }
+    .rpt-acc-body { max-height:0; overflow:hidden; transition:max-height .4s ease; }
+    .rpt-acc-row.open .rpt-acc-body { max-height:680px; }
+    .rpt-acc-inner { padding:2px 14px 14px; }
     /* Desktop: the report is designed as a phone-width column. Without a max-width
        it stretches edge-to-edge into wide, sparse, dark slabs. Center it. */
     @media (min-width: 720px) {
@@ -20354,6 +20371,22 @@ function rptStripCell(val, lbl, deltaHtml) {
     + (deltaHtml ? '<div class="rpt-strip__delta">' + deltaHtml + '</div>' : '') + '</div>';
 }
 
+function rptAccRow(dot, name, summary, body) {
+  return '<div class="rpt-acc-row">'
+    + '<div class="rpt-acc-head" onclick="rptToggleAcc(this)">'
+    + '<span class="rpt-acc-dot rpt-acc-dot--' + dot + '"></span>'
+    + '<span class="rpt-acc-name">' + name + '</span>'
+    + '<span class="rpt-acc-sum">' + summary + '</span>'
+    + '<span class="rpt-acc-chev">›</span>'
+    + '</div>'
+    + '<div class="rpt-acc-body"><div class="rpt-acc-inner">' + body + '</div></div>'
+    + '</div>';
+}
+
+function rptToggleAcc(head) {
+  head.parentElement.classList.toggle('open');
+}
+
 // Derive readable "best pattern" insights from the period's sessions.
 function buildSignals(awNow, concNow, period) {
   var signals = [];
@@ -20481,124 +20514,126 @@ function renderReport(period) {
   var concPrev = filterHistory(concState.history, range.prevStart, range.prevEnd);
   var html = '';
 
-  // ── Omnia commentary — above all data ──
+  // ── Omnia commentary — kept above all data ──
   html += buildOmniaReportCardHtml(period);
 
   var totalSessions = awarenessNow.length + concNow.length;
-
-  // ── Records (daily only) ──
-  if (period === 'daily') {
-    var records = buildRecords(awarenessNow, concNow);
-    if (records.length) {
-      html += '<div class="report-section">';
-      html += '<div class="report-section-title">Today\'s Records</div>';
-      records.forEach(function(r) {
-        html += '<div class="report-record"><span class="report-record-icon">' + r.icon + '</span><span class="report-record-text">' + esc(r.text) + '</span></div>';
-      });
-      html += '</div>';
-    }
-  }
+  var concSecNow = concNow.reduce(function(a, h) { return a + (h.seconds || 0); }, 0);
+  var concSecPrev = concPrev.reduce(function(a, h) { return a + (h.seconds || 0); }, 0);
+  var totalMinNow = sumMinutes(awarenessNow) + Math.round(concSecNow / 60);
+  var totalMinPrev = sumMinutes(awarenessPrev) + Math.round(concSecPrev / 60);
 
   if (totalSessions === 0) {
     html += '<div class="rpt-empty">No practice recorded in this period.<br>Your standing so far is below.</div>';
+  } else {
+    // ── Hero: the whole summary is three numbers ──
+    var bestHoldNow = concNow.length ? Math.max.apply(null, concNow.map(function(h) { return h.seconds || 0; })) : 0;
+    var bestHoldPrev = concPrev.length ? Math.max.apply(null, concPrev.map(function(h) { return h.seconds || 0; })) : 0;
+    var practicedStr = totalMinNow >= 60 ? Math.floor(totalMinNow / 60) + 'h ' + (totalMinNow % 60) + 'm' : totalMinNow + 'm';
+    html += '<div class="rpt-summary">';
+    html += '<div class="rpt-summary-card"><div class="rpt-summary-val rpt-summary-val--green">' + practicedStr + '</div><div class="rpt-summary-label">Practiced</div><div class="rpt-summary-delta">' + deltaMini(totalMinNow, totalMinPrev) + '</div></div>';
+    html += '<div class="rpt-summary-card"><div class="rpt-summary-val">' + totalSessions + '</div><div class="rpt-summary-label">Sessions</div><div class="rpt-summary-delta">' + deltaMini(totalSessions, awarenessPrev.length + concPrev.length) + '</div></div>';
+    if (bestHoldNow > 0) {
+      html += '<div class="rpt-summary-card"><div class="rpt-summary-val rpt-summary-val--gold">' + fmtTimer(bestHoldNow) + '</div><div class="rpt-summary-label">Best Hold</div><div class="rpt-summary-delta">' + deltaMini(bestHoldNow, bestHoldPrev) + '</div></div>';
+    } else {
+      html += '<div class="rpt-summary-card"><div class="rpt-summary-val rpt-summary-val--gold">' + state.streak + 'd</div><div class="rpt-summary-label">Streak</div></div>';
+    }
+    html += '</div>';
+
+    // ── Highlights: at most two, milestones before patterns ──
+    var records = buildRecords(awarenessNow, concNow);
+    var chips = records.map(function(r) { return { icon: r.icon, text: r.text }; });
+    if (chips.length < 2) {
+      buildSignals(awarenessNow, concNow, period).slice(0, 2 - chips.length).forEach(function(s) {
+        chips.push({ icon: '✦', text: s.text + (s.val ? ' — ' + s.val : '') });
+      });
+    }
+    chips.slice(0, 2).forEach(function(c) {
+      html += '<div class="report-record"><span class="report-record-icon">' + c.icon + '</span><span class="report-record-text">' + esc(c.text) + '</span></div>';
+    });
+
+    // ── One chart: combined minutes across both practices ──
+    var awChart = buildChartData(state.history, period, 'minutes');
+    var concChart = buildChartData(concState.history, period, 'seconds');
+    var combined = awChart.values.map(function(v, i) { return v + Math.round((concChart.values[i] || 0) / 60); });
+    if (combined.some(function(v) { return v > 0; })) {
+      html += '<div class="report-chart" style="margin-top:14px;"><div class="report-chart-title">Minutes Practiced</div>' + renderBarChart(combined, awChart.labels, '#7eb8a4', 56) + '</div>';
+    }
   }
 
-  // ── Awareness stats ──
+  // ── Detail: everything else folds away ──
+  var accHtml = '';
+
   if (awarenessNow.length > 0) {
     var awMinNow = sumMinutes(awarenessNow);
     var awMinPrev = sumMinutes(awarenessPrev);
     var awScoreNow = avgScore(awarenessNow);
     var awScorePrev = avgScore(awarenessPrev);
-
-    html += '<div class="report-section">';
-    html += '<div class="report-section-title report-section-title--green">Awareness</div>';
-    html += '<div class="report-cards">';
-    html += '<div class="report-card report-card--green"><div class="report-card-val" style="color:#9fd0bd;">' + awarenessNow.length + '</div><div class="report-card-label">Sessions</div><div class="report-card-delta">' + delta(awarenessNow.length, awarenessPrev.length) + '</div></div>';
-    html += '<div class="report-card report-card--green"><div class="report-card-val" style="color:#9fd0bd;">' + fmtDuration(awMinNow) + '</div><div class="report-card-label">Time Practiced</div><div class="report-card-delta">' + delta(awMinNow, awMinPrev) + '</div></div>';
-    if (awScoreNow) {
-      html += '<div class="report-card report-card--green"><div class="report-card-val" style="color:#9fd0bd;">' + awScoreNow + '</div><div class="report-card-label">Avg Score</div><div class="report-card-delta">' + delta(parseFloat(awScoreNow), parseFloat(awScorePrev || 0)) + '</div></div>';
-    }
-    html += '<div class="report-card report-card--green"><div class="report-card-val" style="color:#9fd0bd;">' + state.streak + 'd</div><div class="report-card-label">Streak</div></div>';
-    html += '</div>';
-
+    var awBody = '<div class="rpt-strip">'
+      + rptStripCell(awarenessNow.length, 'Sessions', deltaMini(awarenessNow.length, awarenessPrev.length))
+      + rptStripCell(fmtDuration(awMinNow), 'Time', deltaMini(awMinNow, awMinPrev))
+      + (awScoreNow
+          ? rptStripCell(awScoreNow, 'Avg Score', deltaMini(parseFloat(awScoreNow), parseFloat(awScorePrev || 0)))
+          : rptStripCell(state.streak + 'd', 'Streak', ''))
+      + '</div>';
     var awChartData = buildChartData(state.history, period, 'minutes');
-    if (awChartData.values.some(function(v) { return v > 0; })) {
-      html += '<div class="report-chart"><div class="report-chart-title">Minutes Practiced</div>' + renderBarChart(awChartData.values, awChartData.labels, '#7eb8a4', 56) + '</div>';
-    }
     if (awChartData.values.length >= 3 && awChartData.scoreValues && awChartData.scoreValues.some(function(v) { return v > 0; })) {
-      html += '<div class="report-chart"><div class="report-chart-title">Session Score Trend</div>' + renderLineChart(awChartData.scoreValues, '#7eb8a4', 48) + '</div>';
+      awBody += '<div class="report-chart"><div class="report-chart-title">Session Score Trend</div>' + renderLineChart(awChartData.scoreValues, '#7eb8a4', 48) + '</div>';
     }
-    html += '</div>';
+    accHtml += rptAccRow('green', 'Awareness', awarenessNow.length + ' sessions · ' + fmtDuration(awMinNow), awBody);
   }
 
-  // ── Concentration stats ──
-  if (concNow.length > 0) {
-    var concSecNow = concNow.reduce(function(a, h) { return a + (h.seconds || 0); }, 0);
-    var concSecPrev = concPrev.reduce(function(a, h) { return a + (h.seconds || 0); }, 0);
-    var typeBreakdown = {};
-    concNow.forEach(function(h) { var t = h.type || 'clock'; typeBreakdown[t] = (typeBreakdown[t] || 0) + 1; });
-
-    html += '<div class="report-section">';
-    html += '<div class="report-section-title report-section-title--amber">Concentration</div>';
-    html += '<div class="report-cards">';
-    html += '<div class="report-card report-card--amber"><div class="report-card-val" style="color:#e0a87f;">' + concNow.length + '</div><div class="report-card-label">Sessions</div><div class="report-card-delta">' + delta(concNow.length, concPrev.length) + '</div></div>';
-    html += '<div class="report-card report-card--amber"><div class="report-card-val" style="color:#e0a87f;">' + fmtTimer(concSecNow) + '</div><div class="report-card-label">Total Held</div><div class="report-card-delta">' + delta(concSecNow, concSecPrev) + '</div></div>';
-    if (Object.keys(typeBreakdown).length) {
-      var breakdown = Object.keys(typeBreakdown).map(function(k) { return k + ':' + typeBreakdown[k]; }).join(' · ');
-      html += '<div class="report-card report-card--amber" style="grid-column:span 2;"><div class="report-card-label" style="margin-bottom:6px;">Exercise Breakdown</div><div style="font-size:11px;color:var(--muted);">' + esc(breakdown) + '</div></div>';
-    }
-    html += '</div>';
-
-    var concChartData = buildChartData(concState.history, period, 'seconds');
-    if (concChartData.values.some(function(v) { return v > 0; })) {
-      html += '<div class="report-chart"><div class="report-chart-title">Best Hold Per Session (sec)</div>' + renderBarChart(concChartData.values, concChartData.labels, '#d4956e', 56) + '</div>';
-    }
-    html += '</div>';
-  }
-
-  // ── Clock Progress (all-time trend) ──
   var clockSessions = (concState.history || []).filter(function(s) {
     return s.exercise !== 'asana' && s.type !== 'visualization' && s.type !== 'auditory' && s.type !== 'thought';
   }).slice().reverse().slice(-50);
-  if (clockSessions.length >= 1) {
-    var clockBest = Math.max.apply(null, clockSessions.map(function(s) { return s.seconds || 0; }));
-    var clockPct = Math.min(100, Math.round(clockBest / 600 * 1000) / 10);
-    html += '<div class="report-section">';
-    html += '<div class="report-section-title report-section-title--amber">Clock Exercise</div>';
-    html += '<div class="report-cards">';
-    html += '<div class="report-card report-card--amber"><div class="report-card-val" style="color:#e0a87f;">' + clockSessions.length + '</div><div class="report-card-label">Total Sessions</div></div>';
-    html += '<div class="report-card report-card--amber"><div class="report-card-val" style="color:#e0a87f;">' + (clockBest >= 60 ? Math.floor(clockBest/60) + 'm ' + (clockBest%60) + 's' : clockBest + 's') + '</div><div class="report-card-label">Personal Best</div></div>';
-    html += '<div class="report-card report-card--amber" style="grid-column:span 2;"><div class="report-card-label" style="margin-bottom:6px;">Progress to 10 minutes</div>';
-    html += '<div style="height:4px;background:var(--border);border-radius:2px;overflow:hidden;margin-bottom:4px;"><div style="height:100%;width:' + clockPct + '%;background:linear-gradient(90deg,#d4956e,#e8b88a);border-radius:2px;transition:width .6s ease;"></div></div>';
-    html += '<div style="font-size:9px;color:var(--muted);">' + (Number.isInteger(clockPct) ? clockPct : clockPct.toFixed(1)) + '% of goal</div>';
-    html += '</div></div>';
-    if (clockSessions.length >= 2) {
-      html += '<div class="report-chart"><div class="report-chart-title">Hold Time Per Session</div>' + renderClockProgressChart(clockSessions) + '</div>';
+  if (concNow.length > 0 || clockSessions.length > 0) {
+    var concBody = '';
+    var concSum = '—';
+    if (concNow.length > 0) {
+      var concBestNow = Math.max.apply(null, concNow.map(function(h) { return h.seconds || 0; }));
+      concSum = concNow.length + (concNow.length === 1 ? ' session' : ' sessions') + ' · best ' + fmtTimer(concBestNow);
+      concBody += '<div class="rpt-strip">'
+        + rptStripCell(concNow.length, 'Sessions', deltaMini(concNow.length, concPrev.length))
+        + rptStripCell(fmtTimer(concBestNow), 'Best Hold', '')
+        + rptStripCell(fmtTimer(concSecNow), 'Total Held', deltaMini(concSecNow, concSecPrev))
+        + '</div>';
+      var typeBreakdown = {};
+      concNow.forEach(function(h) { var t = h.type || 'clock'; typeBreakdown[t] = (typeBreakdown[t] || 0) + 1; });
+      if (Object.keys(typeBreakdown).length > 1) {
+        concBody += '<div class="rpt-cap">' + esc(Object.keys(typeBreakdown).map(function(k) { return k + ' ' + typeBreakdown[k]; }).join('   ·   ')) + '</div>';
+      }
     }
-    html += '</div>';
+    if (clockSessions.length >= 1) {
+      var clockBest = Math.max.apply(null, clockSessions.map(function(s) { return s.seconds || 0; }));
+      var clockPct = Math.min(100, Math.round(clockBest / 600 * 1000) / 10);
+      concBody += '<div class="rpt-clockbar">'
+        + '<div class="rpt-clockbar__lbl"><span>Clock · toward 10 min</span><span>' + (Number.isInteger(clockPct) ? clockPct : clockPct.toFixed(1)) + '%</span></div>'
+        + '<div class="rpt-clockbar__track"><div class="rpt-clockbar__fill" style="width:' + clockPct + '%;"></div></div>'
+        + '</div>';
+      if (clockSessions.length >= 2) {
+        concBody += '<div class="report-chart"><div class="report-chart-title">Hold Time Per Session</div>' + renderClockProgressChart(clockSessions) + '</div>';
+      }
+    }
+    accHtml += rptAccRow('amber', 'Concentration', concSum, concBody);
   }
 
-  // ── Prayer stats ──
   if (prayerState.enabled && prayerState.count > 0) {
     var prayerDone = prayerState.todayDone ? prayerState.todayDone.length : 0;
-    html += '<div class="report-section">';
-    html += '<div class="report-section-title report-section-title--purple">Prayer</div>';
-    html += '<div class="report-cards">';
-    html += '<div class="report-card report-card--purple"><div class="report-card-val" style="color:#c4b8e8;">' + prayerDone + '/' + prayerState.count + '</div><div class="report-card-label">Today\'s Prayers</div></div>';
-    html += '<div class="report-card report-card--purple"><div class="report-card-val" style="color:#c4b8e8;">' + (prayerState.streak || 0) + 'd</div><div class="report-card-label">Prayer Streak</div></div>';
-    html += '</div>';
-    html += '</div>';
+    var prayerBody = '<div class="rpt-strip">'
+      + rptStripCell(prayerDone + '/' + prayerState.count, 'Today', '')
+      + rptStripCell((prayerState.streak || 0) + 'd', 'Streak', '')
+      + '</div>';
+    accHtml += rptAccRow('purple', 'Prayer', prayerDone + ' of ' + prayerState.count + ' today', prayerBody);
   }
 
-  // ── Overall standing ──
-  html += '<div class="report-section">';
-  html += '<div class="report-section-title">Overall</div>';
-  html += '<div class="report-cards">';
-  html += '<div class="report-card report-card--gold"><div class="report-card-val">' + state.level + '</div><div class="report-card-label">Awareness Level</div></div>';
-  html += '<div class="report-card report-card--gold"><div class="report-card-val">' + concState.level + '</div><div class="report-card-label">Concentration Level</div></div>';
-  html += '<div class="report-card report-card--gold" style="grid-column:span 2;"><div class="report-card-val">' + (state.xp + concState.xp).toLocaleString() + '</div><div class="report-card-label">Total XP All Time</div></div>';
-  html += '</div>';
-  html += '</div>';
+  var standingBody = '<div class="rpt-strip">'
+    + rptStripCell(state.level, 'Awareness Lvl', '')
+    + rptStripCell(concState.level, 'Focus Lvl', '')
+    + rptStripCell((state.xp + concState.xp).toLocaleString(), 'Total XP', '')
+    + '</div>';
+  accHtml += rptAccRow('gold', 'Standing', 'Lvl ' + state.level + ' · ' + (state.xp + concState.xp).toLocaleString() + ' XP', standingBody);
+
+  html += '<div class="rpt-acc">' + accHtml + '</div>';
 
   document.getElementById('reportContent').innerHTML = html;
 }
