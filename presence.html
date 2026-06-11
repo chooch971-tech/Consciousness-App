@@ -15038,6 +15038,10 @@ var OMNIA_HUE_FROM_BLUE = {
 // color choice here so the swatch and the rendered figure always agree.
 var OMNIA_ENTITY_NATIVE_PALETTE = { omnia:'aether', noema:'aether', aurel:'solar', elys:'violet', seraph:'solar' };
 
+// Forms whose signature palette is auto-unlocked and applied the moment
+// they're chosen, instead of just snapping to an already-owned native palette.
+var OMNIA_ENTITY_AUTO_PALETTE = { noema:'violet', aurel:'solar', elys:'crimson', seraph:'solar' };
+
 // The CSS filter that makes `entity` wear `palette`, relative to the
 // entity's own base color. Spectral/aurora aren't hue-based and pass through.
 function omniaPaletteFilterFor(palette, entity) {
@@ -16223,11 +16227,12 @@ function unlockOrSelectOmniaCosmetic(kind, id) {
   if (kind === 'palette') omniaState.cosmetics.palette = id;
   if (kind === 'entity') {
     omniaState.cosmetics.entity = id;
-    if (id === 'elys') {
-      // Archangel Michael comes with his own warrior-red palette, free and
-      // selected the moment he's chosen.
-      if (omniaUnlockList('palette').indexOf('crimson') === -1) omniaUnlockList('palette').push('crimson');
-      omniaState.cosmetics.palette = 'crimson';
+    var autoPal = OMNIA_ENTITY_AUTO_PALETTE[id];
+    if (autoPal) {
+      // These forms come with their own signature palette, free and
+      // selected the moment they're chosen.
+      if (omniaUnlockList('palette').indexOf(autoPal) === -1) omniaUnlockList('palette').push(autoPal);
+      omniaState.cosmetics.palette = autoPal;
     } else {
       // Snap the color to the form's native palette so the selected swatch
       // matches how the entity actually renders (only if that palette is owned).
