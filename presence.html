@@ -1643,6 +1643,14 @@
 .omnia-figure.has-companion .omnia-companion { opacity:.95; animation:omniaCompanionBob 3.2s ease-in-out infinite; }
 .oe-omnia-figure .omnia-companion { width:68px; height:68px; right:-50px; bottom:6px; }
 .path-banner-figure .omnia-companion { width:36px; height:36px; right:-27px; bottom:2px; }
+/* Seraph and Elys are drawn with wings/forms that spread well past the base
+   crystal's silhouette, so push their companions further out to clear them. */
+.omnia-figure[data-entity="seraph"] .omnia-companion:not(.companion-corgi),
+.omnia-figure[data-entity="elys"] .omnia-companion:not(.companion-corgi) { right:-44px; bottom:-6px; }
+.oe-omnia-figure[data-entity="seraph"] .omnia-companion:not(.companion-corgi),
+.oe-omnia-figure[data-entity="elys"] .omnia-companion:not(.companion-corgi) { right:-66px; bottom:-8px; }
+.path-banner-figure[data-entity="seraph"] .omnia-companion:not(.companion-corgi),
+.path-banner-figure[data-entity="elys"] .omnia-companion:not(.companion-corgi) { right:-36px; bottom:-4px; }
 /* Corgi: lives on the ground beside his entity, clear of the crystal, and
    every so often trots to the other side. He faces his direction of travel
    while walking, then turns to face the entity when he arrives (the sprite's
