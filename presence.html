@@ -4994,9 +4994,13 @@ body:not(.tut-live) #tutCorgi {
       <button class="history-back" id="soulMirrorBack">← back</button>
     </div>
     <!-- Tab bar -->
-    <div style="display:flex; border-bottom:1px solid var(--border); padding:0 24px; margin-top:12px; flex-shrink:0;" id="soulMirrorTabs">
-      <button class="soul-tab active" data-tab="mirror" style="flex:1; background:none; border:none; border-bottom:2px solid #a47eb8; padding:10px 0; font-family:'DM Mono',monospace; font-size:9px; letter-spacing:.2em; text-transform:uppercase; color:#c4a8d4; cursor:pointer;">Mirror</button>
+    <div style="display:flex; border-bottom:1px solid var(--border); padding:0 24px; margin-top:12px; flex-shrink:0; position:relative;" id="soulMirrorTabs">
+      <button class="soul-tab active" data-tab="mirror" style="flex:1; background:none; border:none; border-bottom:2px solid #a47eb8; padding:10px 0; font-family:'DM Mono',monospace; font-size:9px; letter-spacing:.2em; text-transform:uppercase; color:#c4a8d4; cursor:pointer;"><span id="soulMirrorTabLabel">Mirror</span> <span style="font-size:8px; opacity:.7;">▾</span></button>
       <button class="soul-tab" data-tab="breathing" style="flex:1; background:none; border:none; border-bottom:2px solid transparent; padding:10px 0; font-family:'DM Mono',monospace; font-size:9px; letter-spacing:.2em; text-transform:uppercase; color:var(--muted); cursor:pointer;">Pore Breathing</button>
+      <div id="soulMirrorDropdown" style="display:none; position:absolute; top:100%; left:24px; width:210px; background:var(--surface2); border:1px solid var(--border); border-radius:10px; z-index:40; overflow:hidden; box-shadow:0 10px 28px rgba(0,0,0,.5);">
+        <button class="soul-mode-opt" data-mode="mirror" style="display:block; width:100%; text-align:left; background:none; border:none; border-bottom:1px solid var(--border); padding:12px 16px; font-family:'DM Mono',monospace; font-size:9px; letter-spacing:.2em; text-transform:uppercase; color:#c4a8d4; cursor:pointer;">Mirror</button>
+        <button class="soul-mode-opt" data-mode="autosug" style="display:block; width:100%; text-align:left; background:none; border:none; padding:12px 16px; font-family:'DM Mono',monospace; font-size:9px; letter-spacing:.2em; text-transform:uppercase; color:#c4a8d4; cursor:pointer;">Autosuggestion</button>
+      </div>
     </div>
     <!-- Mirror panel -->
     <div id="soulMirrorPanel" style="flex:1; overflow-y:auto; -webkit-overflow-scrolling:touch; padding:20px 24px 120px;">
@@ -5033,6 +5037,10 @@ body:not(.tut-live) #tutCorgi {
         <textarea id="soulMirrorNotes" placeholder="Reflections, observations, progress…" style="width:100%; background:rgba(255,255,255,.03); border:1px solid var(--border); border-radius:8px; color:var(--text); font-family:'DM Mono',monospace; font-size:11px; padding:12px; resize:none; height:100px; box-sizing:border-box;"></textarea>
         <button id="soulMirrorSaveNotes" class="btn ghost" style="width:100%; margin-top:8px; font-size:9px; color:#a47eb8; border-color:rgba(164,126,184,.25);">Save Notes</button>
       </div>
+    </div>
+    <!-- Autosuggestion panel -->
+    <div id="soulAutosugPanel" style="display:none; flex:1; overflow-y:auto; -webkit-overflow-scrolling:touch; padding:20px 24px 120px;">
+      <div id="autosugBody"></div>
     </div>
     <!-- Pore breathing panel -->
     <div id="soulBreathingPanel" style="display:none; flex:1; flex-direction:column; overflow:hidden; position:relative;">
@@ -10576,7 +10584,7 @@ function renderConcHistory() {
   var allHistory = concState.history;
   var filtered = concHistoryFilter === 'clock'
     ? allHistory.map(function(h, i) { return { h: h, i: i }; }).filter(function(x) {
-        return x.h.exercise !== 'asana' && x.h.type !== 'visualization' && x.h.type !== 'auditory' && x.h.type !== 'thought';
+        return !x.h.exercise && x.h.type !== 'visualization' && x.h.type !== 'auditory' && x.h.type !== 'thought';
       })
     : concHistoryFilter === 'thought'
     ? allHistory.map(function(h, i) { return { h: h, i: i }; }).filter(function(x) { return x.h.type === 'thought'; })
@@ -10608,11 +10616,15 @@ function renderConcHistory() {
       var timeStr = d.toLocaleTimeString('en-US', { hour:'numeric', minute:'2-digit' });
       var notesHtml = h.notes ? '<div class="history-notes">' + h.notes.replace(/</g,'&lt;').replace(/>/g,'&gt;') + '</div>' : '';
       var typeStr = h.exercise === 'asana' ? ('Asana' + (h.posture ? ' · ' + h.posture.replace(/</g,'&lt;').replace(/>/g,'&gt;') : ''))
+        : h.exercise === 'pore_breathing' ? 'Pore Breathing'
+        : h.exercise === 'autosuggestion' ? 'Autosuggestion'
         : h.type === 'visualization' ? (h.object ? h.object.replace(/</g,'&lt;').replace(/>/g,'&gt;') : 'Visualization')
         : h.type === 'auditory' ? (h.object ? h.object.replace(/</g,'&lt;').replace(/>/g,'&gt;') : 'Auditory')
         : h.type === 'thought' ? (h.object ? h.object.replace(/</g,'&lt;').replace(/>/g,'&gt;') : 'Thought Control')
         : 'Clock';
-      var holdStr = h.exercise === 'asana'
+      var holdStr = h.exercise === 'autosuggestion'
+        ? ((h.taps || 40) + ' taps')
+        : h.exercise === 'asana'
         ? (Math.floor(h.seconds/60) + ':' + (h.seconds%60 < 10 ? '0' : '') + (h.seconds%60))
         : h.seconds + 's';
       var isClockEntry = !h.type && !h.exercise;
@@ -12238,15 +12250,16 @@ document.getElementById('exerciseGrid').addEventListener('click', function(e) {
   if (!card || !card.dataset.exercise) return;
   if (card.dataset.exercise === 'soulmirror') {
     suppressTutorialForExerciseEntry();
-    // Reset to mirror tab
+    // Reset to mirror tab (in whichever mirror mode was last used)
     document.querySelectorAll('.soul-tab').forEach(function(t) {
       t.style.borderBottomColor = 'transparent';
       t.style.color = 'var(--muted)';
     });
     var mt = document.querySelector('.soul-tab[data-tab="mirror"]');
     if (mt) { mt.style.borderBottomColor = '#a47eb8'; mt.style.color = '#c4a8d4'; }
-    document.getElementById('soulMirrorPanel').style.display = 'block';
-    document.getElementById('soulBreathingPanel').style.display = 'none';
+    var smDd = document.getElementById('soulMirrorDropdown');
+    if (smDd) smDd.style.display = 'none';
+    soulMirrorShowPanel('mirror');
     renderSoulMirrorTraits();
     showScreen('soulMirrorScreen');
   } else if (card.dataset.exercise === 'multisense' || card.dataset.exercise === 'allangles') {
@@ -18259,6 +18272,7 @@ function guideHistoryExerciseId(h) {
   if (!h) return 'clock';
   if (h.exercise === 'asana') return 'asana';
   if (h.exercise === 'pore_breathing') return 'soulmirror';
+  if (h.exercise === 'autosuggestion') return 'soulmirror';
   if (h.type === 'visualization') return 'visual';
   if (h.type === 'all-angles' || h.type === 'multi-sense') return 'visual';
   if (h.type === 'auditory') return 'auditory';
@@ -23530,7 +23544,7 @@ function getJournalKey(date){
 
 var JOURNAL_EMPTY_ICON='<svg width="58" height="94" viewBox="0 0 80 130" xmlns="http://www.w3.org/2000/svg"><polygon points="40,3 54,14 40,25 26,14" fill="#9fd0ec" opacity=".55"/><polygon points="40,25 60,36 64,58 40,70 16,58 20,36" fill="#7fb8d8" opacity=".5"/><polygon points="40,70 64,58 56,88 40,100 24,88 16,58" fill="#6aa6c8" opacity=".42"/><polygon points="40,100 56,88 40,114" fill="#5e9ac0" opacity=".4"/><polygon points="40,100 24,88 40,114" fill="#5290b8" opacity=".32"/></svg>';
 
-var JOURNAL_CONC_ICONS={clock:'⊙',visualization:'◉',auditory:'◈',thought:'◌',asana:'✦',pore_breathing:'❂',soulmirror:'◆'};
+var JOURNAL_CONC_ICONS={clock:'⊙',visualization:'◉',auditory:'◈',thought:'◌',asana:'✦',pore_breathing:'❂',soulmirror:'◆',autosuggestion:'✱'};
 
 function dateFromKey(k){var p=k.split('-');return new Date(+p[0],+p[1]-1,+p[2]);}
 
@@ -23575,9 +23589,9 @@ function journalSessionInfo(s){
     var name=h.mode==='vacancy'?'Vacancy of Mind':h.mode==='thought'?'Thought Observation':'Awareness';
     return {type:'aw',icon:'◎',name:name,val:fmtDuration(h.durationMin||0),sub:(h.score?parseFloat(h.score).toFixed(1)+'/5':''),pb:false};
   }
-  var key=h.exercise==='asana'?'asana':h.exercise==='pore_breathing'?'pore_breathing':(h.type||'clock');
-  var name2=key==='asana'?'Asana':key==='pore_breathing'?'Pore Breathing':key==='visualization'?'Visualization':key==='auditory'?'Auditory':key==='thought'?'Thought Control':'Clock';
-  var val2=(key==='asana'||key==='pore_breathing')?fmtAsanaTime(h.seconds||0):fmtTimer(h.seconds||0);
+  var key=h.exercise==='asana'?'asana':h.exercise==='pore_breathing'?'pore_breathing':h.exercise==='autosuggestion'?'autosuggestion':(h.type||'clock');
+  var name2=key==='asana'?'Asana':key==='pore_breathing'?'Pore Breathing':key==='autosuggestion'?'Autosuggestion':key==='visualization'?'Visualization':key==='auditory'?'Auditory':key==='thought'?'Thought Control':'Clock';
+  var val2=key==='autosuggestion'?((h.taps||40)+' taps'):(key==='asana'||key==='pore_breathing')?fmtAsanaTime(h.seconds||0):fmtTimer(h.seconds||0);
   var isBest=h.seconds&&concState.bestSeconds&&h.seconds>=concState.bestSeconds;
   return {type:'conc',icon:(JOURNAL_CONC_ICONS[key]||'⊙'),name:name2,val:val2,sub:'',pb:isBest};
 }
@@ -24131,8 +24145,16 @@ document.getElementById('journalBodyInput').addEventListener('input',journalAuto
 // ══════════════════════════════════════════════════════
 
 function loadSoulMirror(){
-  try{var s=localStorage.getItem('presence_soul_mirror_v1');return s?JSON.parse(s):{positive:[],negative:[],notes:''};}
-  catch(e){return{positive:[],negative:[],notes:''};}
+  var data;
+  try{var s=localStorage.getItem('presence_soul_mirror_v1');data=s?JSON.parse(s):{positive:[],negative:[],notes:''};}
+  catch(e){data={positive:[],negative:[],notes:''};}
+  // Traits were once stored as plain strings; normalize to objects so they can
+  // carry completion state ("done" traits darken in the mirror) for the
+  // Autosuggestion practice.
+  ['positive','negative'].forEach(function(k){
+    data[k]=(data[k]||[]).map(function(t){return typeof t==='string'?{text:t,done:false}:t;});
+  });
+  return data;
 }
 function saveSoulMirror(data){
   data._lastEditDate = guideLocalDayKey();
@@ -24147,8 +24169,8 @@ function renderSoulMirrorTraits(){
       posList.innerHTML='<div style="font-size:11px;color:var(--muted);font-style:italic;padding:8px 0;">No positive traits added yet.</div>';
     } else {
       posList.innerHTML=data.positive.map(function(t,i){
-        return '<div style="display:flex;justify-content:space-between;align-items:center;padding:10px 12px;background:rgba(126,184,164,.05);border:1px solid rgba(126,184,164,.1);border-radius:8px;margin-bottom:6px;">'
-          +'<div style="font-size:11px;color:var(--text);">'+esc(t)+'</div>'
+        return '<div style="display:flex;justify-content:space-between;align-items:center;padding:10px 12px;background:rgba(126,184,164,.05);border:1px solid rgba(126,184,164,.1);border-radius:8px;margin-bottom:6px;'+(t.done?'opacity:.32;':'')+'">'
+          +'<div style="font-size:11px;color:var(--text);'+(t.done?'text-decoration:line-through;':'')+'">'+esc(t.text)+(t.done?' <span style="color:#a47eb8;font-size:9px;">✓ transformed</span>':'')+'</div>'
           +'<button onclick="deletePositiveTrait('+i+')" style="background:none;border:none;color:rgba(255,100,100,.3);font-size:12px;cursor:pointer;padding:0 4px;">✕</button>'
           +'</div>';
       }).join('');
@@ -24160,8 +24182,8 @@ function renderSoulMirrorTraits(){
       negList.innerHTML='<div style="font-size:11px;color:var(--muted);font-style:italic;padding:8px 0;">No negative traits added yet.</div>';
     } else {
       negList.innerHTML=data.negative.map(function(t,i){
-        return '<div style="display:flex;justify-content:space-between;align-items:center;padding:10px 12px;background:rgba(196,120,140,.05);border:1px solid rgba(196,120,140,.1);border-radius:8px;margin-bottom:6px;">'
-          +'<div style="font-size:11px;color:var(--text);">'+esc(t)+'</div>'
+        return '<div style="display:flex;justify-content:space-between;align-items:center;padding:10px 12px;background:rgba(196,120,140,.05);border:1px solid rgba(196,120,140,.1);border-radius:8px;margin-bottom:6px;'+(t.done?'opacity:.32;':'')+'">'
+          +'<div style="font-size:11px;color:var(--text);'+(t.done?'text-decoration:line-through;':'')+'">'+esc(t.text)+(t.done?' <span style="color:#a47eb8;font-size:9px;">✓ transformed</span>':'')+'</div>'
           +'<button onclick="deleteNegativeTrait('+i+')" style="background:none;border:none;color:rgba(255,100,100,.3);font-size:12px;cursor:pointer;padding:0 4px;">✕</button>'
           +'</div>';
       }).join('');
@@ -24173,12 +24195,18 @@ function renderSoulMirrorTraits(){
 
 function deletePositiveTrait(i){
   showConfirm('Remove trait','This positive trait will be permanently removed.',function(){
-    var data=loadSoulMirror();data.positive.splice(i,1);saveSoulMirror(data);renderSoulMirrorTraits();
+    var data=loadSoulMirror();
+    var removed=data.positive.splice(i,1)[0];
+    if(data.autosug&&removed&&data.autosug.kind==='positive'&&data.autosug.text===removed.text)delete data.autosug;
+    saveSoulMirror(data);renderSoulMirrorTraits();renderAutosug();
   });
 }
 function deleteNegativeTrait(i){
   showConfirm('Remove trait','This negative trait will be permanently removed.',function(){
-    var data=loadSoulMirror();data.negative.splice(i,1);saveSoulMirror(data);renderSoulMirrorTraits();
+    var data=loadSoulMirror();
+    var removed=data.negative.splice(i,1)[0];
+    if(data.autosug&&removed&&data.autosug.kind==='negative'&&data.autosug.text===removed.text)delete data.autosug;
+    saveSoulMirror(data);renderSoulMirrorTraits();renderAutosug();
   });
 }
 
@@ -24194,7 +24222,7 @@ document.getElementById('positiveTraitCancel').addEventListener('click',function
 document.getElementById('positiveTraitSave').addEventListener('click',function(){
   var val=document.getElementById('positiveTraitInput').value.trim();
   if(!val)return;
-  var data=loadSoulMirror();data.positive.push(val);saveSoulMirror(data);
+  var data=loadSoulMirror();data.positive.push({text:val,done:false});saveSoulMirror(data);
   document.getElementById('positiveTraitInput').value='';
   document.getElementById('positiveAddForm').style.display='none';
   renderSoulMirrorTraits();
@@ -24210,7 +24238,7 @@ document.getElementById('negativeTraitCancel').addEventListener('click',function
 document.getElementById('negativeTraitSave').addEventListener('click',function(){
   var val=document.getElementById('negativeTraitInput').value.trim();
   if(!val)return;
-  var data=loadSoulMirror();data.negative.push(val);saveSoulMirror(data);
+  var data=loadSoulMirror();data.negative.push({text:val,done:false});saveSoulMirror(data);
   document.getElementById('negativeTraitInput').value='';
   document.getElementById('negativeAddForm').style.display='none';
   renderSoulMirrorTraits();
@@ -24223,21 +24251,275 @@ document.getElementById('soulMirrorSaveNotes').addEventListener('click',function
   saveSoulMirror(data);showToast('Notes saved');
 });
 
-// Tab switching
+// Tab switching. The Mirror tab is a dropdown holding two modes: the classic
+// trait mirror and the Autosuggestion practice.
+var soulMirrorMode='mirror'; // 'mirror' | 'autosug'
+
+function soulMirrorShowPanel(tab){
+  var isMirror=tab==='mirror';
+  document.getElementById('soulMirrorPanel').style.display=(isMirror&&soulMirrorMode==='mirror')?'block':'none';
+  document.getElementById('soulAutosugPanel').style.display=(isMirror&&soulMirrorMode==='autosug')?'block':'none';
+  document.getElementById('soulBreathingPanel').style.display=tab==='breathing'?'flex':'none';
+  var label=document.getElementById('soulMirrorTabLabel');
+  if(label)label.textContent=soulMirrorMode==='autosug'?'Autosuggestion':'Mirror';
+  if(isMirror&&soulMirrorMode==='autosug'){renderAutosug();autosugAcquireWakeLock();}
+  else autosugReleaseWakeLock();
+}
+
 document.getElementById('soulMirrorTabs').addEventListener('click',function(e){
+  var dd=document.getElementById('soulMirrorDropdown');
+  var opt=e.target.closest('.soul-mode-opt');
+  if(opt){
+    soulMirrorMode=opt.dataset.mode;
+    dd.style.display='none';
+    soulMirrorShowPanel('mirror');
+    return;
+  }
   var btn=e.target.closest('.soul-tab');if(!btn)return;
   var tab=btn.dataset.tab;
   document.querySelectorAll('.soul-tab').forEach(function(t){t.style.borderBottomColor='transparent';t.style.color='var(--muted)';});
   btn.style.borderBottomColor='#a47eb8';btn.style.color='#c4a8d4';
-  document.getElementById('soulMirrorPanel').style.display=tab==='mirror'?'block':'none';
-  document.getElementById('soulBreathingPanel').style.display=tab==='breathing'?'flex':'none';
+  if(tab==='mirror'){
+    // toggle the mode dropdown; the current mode's panel shows underneath
+    dd.style.display=dd.style.display==='none'?'block':'none';
+    soulMirrorShowPanel('mirror');
+    return;
+  }
+  dd.style.display='none';
+  soulMirrorShowPanel(tab);
 });
 
 document.getElementById('soulMirrorBack').addEventListener('click',function(){
   stopPoreBreath();
+  autosugReleaseWakeLock();
+  var dd=document.getElementById('soulMirrorDropdown');
+  if(dd)dd.style.display='none';
   showScreen('homeScreen');
   switchMode('concentration');
 });
+
+// ══════════════════════════════════════════════════════
+// AUTOSUGGESTION (Soul Mirror · second mode)
+// Pick one trait from the mirror, then tap once for every
+// silent repetition of the formula — forty in a sitting.
+// ══════════════════════════════════════════════════════
+
+var AUTOSUG_TAPS=40;
+var AUTOSUG_XP=30;
+var autosugCount=0;
+var autosugStartTime=null;
+var autosugWakeLock=null;
+
+// Keep the phone awake during the practice (Screen Wake Lock API — works in
+// installed/HTTPS contexts; harmlessly does nothing where unsupported).
+function autosugAcquireWakeLock(){
+  if(!('wakeLock' in navigator))return;
+  try{
+    navigator.wakeLock.request('screen').then(function(lock){autosugWakeLock=lock;}).catch(function(){});
+  }catch(e){}
+}
+function autosugReleaseWakeLock(){
+  if(autosugWakeLock){try{autosugWakeLock.release();}catch(e){}autosugWakeLock=null;}
+}
+document.addEventListener('visibilitychange',function(){
+  // The browser drops wake locks when the tab is hidden — re-acquire if the
+  // user comes back mid-practice.
+  if(document.visibilityState!=='visible')return;
+  var screenEl=document.getElementById('soulMirrorScreen');
+  var panel=document.getElementById('soulAutosugPanel');
+  if(screenEl&&screenEl.classList.contains('active')&&panel&&panel.style.display!=='none')autosugAcquireWakeLock();
+});
+
+function autosugSelection(data){
+  var a=data.autosug;
+  if(!a||!a.text)return null;
+  var list=a.kind==='positive'?data.positive:data.negative;
+  var t=list.find(function(x){return x.text===a.text;});
+  return (t&&!t.done)?a:null;
+}
+
+function autosugDayCount(startKey){
+  var p=(startKey||'').split('-');
+  if(p.length!==3)return 1;
+  var s=new Date(+p[0],+p[1]-1,+p[2]);
+  var n=new Date();n.setHours(0,0,0,0);
+  return Math.max(1,Math.round((n-s)/86400000)+1);
+}
+
+function autosugPick(kind,i){
+  var data=loadSoulMirror();
+  var t=(kind==='positive'?data.positive:data.negative)[i];
+  if(!t||t.done)return;
+  data.autosug={kind:kind,text:t.text,start:guideLocalDayKey()};
+  saveSoulMirror(data);
+  autosugCount=0;autosugStartTime=null;
+  renderAutosug();
+}
+
+function autosugChangeTrait(){
+  var data=loadSoulMirror();
+  delete data.autosug;
+  saveSoulMirror(data);
+  autosugCount=0;autosugStartTime=null;
+  renderAutosug();
+}
+
+function autosugMarkComplete(){
+  showConfirm('Trait transformed?','This trait will be marked complete and darkened in your Soul Mirror.',function(){
+    var data=loadSoulMirror();
+    var a=data.autosug;
+    if(a){
+      var list=a.kind==='positive'?data.positive:data.negative;
+      var t=list.find(function(x){return x.text===a.text;});
+      if(t)t.done=true;
+      delete data.autosug;
+    }
+    saveSoulMirror(data);
+    autosugCount=0;autosugStartTime=null;
+    renderSoulMirrorTraits();
+    renderAutosug();
+    showToast('Trait transformed');
+  });
+}
+
+// A clear, unmissable completion sound: three rising bell strikes.
+function playAutosugComplete(){
+  try{
+    var Ctx=window.AudioContext||window.webkitAudioContext;
+    if(!Ctx)return;
+    var ctx=new Ctx();
+    var t0=ctx.currentTime+0.05;
+    [0,0.25,0.5].forEach(function(off,k){
+      [660,990,1485].forEach(function(f,i){
+        var o=ctx.createOscillator();o.type='sine';
+        o.frequency.value=f*(1+k*0.06);
+        var g=ctx.createGain();
+        g.gain.setValueAtTime(0.55/(i+1),t0+off);
+        g.gain.exponentialRampToValueAtTime(0.001,t0+off+2.4);
+        o.connect(g);g.connect(ctx.destination);
+        o.start(t0+off);o.stop(t0+off+2.5);
+      });
+    });
+    setTimeout(function(){try{ctx.close();}catch(e){}},3600);
+  }catch(e){}
+}
+
+function autosugTap(){
+  if(autosugCount>=AUTOSUG_TAPS)return;
+  if(autosugCount===0)autosugStartTime=Date.now();
+  autosugCount++;
+  var num=document.getElementById('autosugCountNum');
+  if(num)num.textContent=autosugCount;
+  var bar=document.getElementById('autosugBar');
+  if(bar)bar.style.width=(autosugCount/AUTOSUG_TAPS*100)+'%';
+  if(navigator.vibrate){try{navigator.vibrate(8);}catch(e){}}
+  var pad=document.getElementById('autosugPad');
+  if(pad){
+    pad.style.borderColor='rgba(164,126,184,.55)';
+    setTimeout(function(){if(pad)pad.style.borderColor='rgba(164,126,184,.25)';},120);
+  }
+  if(autosugCount>=AUTOSUG_TAPS)autosugFinish();
+}
+
+function autosugFinish(){
+  playAutosugComplete();
+  if(navigator.vibrate){try{navigator.vibrate([70,50,70]);}catch(e){}}
+  // A little XP only — deliberately no akasha for this practice.
+  var xpEarned=AUTOSUG_XP;
+  var prevLevel=concState.level;
+  concState.xp+=xpEarned;
+  if(isConcNewSession())concState.totalSessions++;
+  while(concState.level<777){
+    var xpThis=concState.xp-concSumXpToLevel(concState.level);
+    if(xpThis>=concXpForLevel(concState.level)){concState.level++;}else{break;}
+  }
+  var didLevelUp=concState.level>prevLevel;
+  var secs=autosugStartTime?Math.floor((Date.now()-autosugStartTime)/1000):0;
+  concState.history.unshift({
+    date:new Date().toISOString(),
+    exercise:'autosuggestion',
+    taps:AUTOSUG_TAPS,
+    seconds:secs,
+    xpEarned:xpEarned
+  });
+  if(concState.history.length>100)concState.history=concState.history.slice(0,100);
+  saveConcState();
+  if(syncEnabled&&authToken)syncPushData();
+  showToast('Autosuggestion complete · +'+xpEarned+' XP');
+  if(didLevelUp)setTimeout(function(){showConcLevelUp(concState.level);},800);
+  renderConcHome();
+  renderAutosug();
+}
+
+function autosugBeginAgain(){
+  autosugCount=0;autosugStartTime=null;
+  renderAutosug();
+}
+
+function renderAutosug(){
+  var body=document.getElementById('autosugBody');
+  if(!body)return;
+  var data=loadSoulMirror();
+  var sel=autosugSelection(data);
+
+  if(!sel){
+    var negAvail=data.negative.map(function(t,i){return{t:t,i:i};}).filter(function(x){return !x.t.done;});
+    var posAvail=data.positive.map(function(t,i){return{t:t,i:i};}).filter(function(x){return !x.t.done;});
+    var html='<div style="font-size:14px; color:var(--muted); line-height:1.8; margin-bottom:24px; font-family:Cormorant Garamond,serif; font-style:italic;">'
+      +'Choose one trait from your mirror to transform. Each sitting, tap once for every silent repetition of your formula — forty taps, spoken with full conviction.'
+      +'</div>';
+    if(!negAvail.length&&!posAvail.length){
+      html+='<div style="font-size:11px;color:var(--muted);font-style:italic;padding:8px 0;">Your mirror is empty. Add traits in the Mirror mode first.</div>';
+    }else{
+      if(negAvail.length){
+        html+='<div style="font-size:9px; letter-spacing:.25em; text-transform:uppercase; color:#c4788c; margin-bottom:12px;">Negative Traits</div>';
+        html+=negAvail.map(function(x){
+          return '<button onclick="autosugPick(\'negative\','+x.i+')" style="display:block;width:100%;text-align:left;padding:12px 14px;background:rgba(196,120,140,.05);border:1px solid rgba(196,120,140,.18);border-radius:8px;margin-bottom:6px;color:var(--text);font-family:\'DM Mono\',monospace;font-size:11px;cursor:pointer;">'+esc(x.t.text)+'</button>';
+        }).join('');
+      }
+      if(posAvail.length){
+        html+='<div style="font-size:9px; letter-spacing:.25em; text-transform:uppercase; color:var(--accent); margin:20px 0 12px;">Positive Traits</div>';
+        html+=posAvail.map(function(x){
+          return '<button onclick="autosugPick(\'positive\','+x.i+')" style="display:block;width:100%;text-align:left;padding:12px 14px;background:rgba(126,184,164,.05);border:1px solid rgba(126,184,164,.18);border-radius:8px;margin-bottom:6px;color:var(--text);font-family:\'DM Mono\',monospace;font-size:11px;cursor:pointer;">'+esc(x.t.text)+'</button>';
+        }).join('');
+      }
+    }
+    body.innerHTML=html;
+    return;
+  }
+
+  var day=autosugDayCount(sel.start);
+  var done=autosugCount>=AUTOSUG_TAPS;
+  body.innerHTML=
+    '<div style="border:1px solid rgba(164,126,184,.25); border-radius:12px; padding:16px; margin-bottom:18px; background:rgba(164,126,184,.05);">'
+      +'<div style="display:flex; justify-content:space-between; align-items:center; gap:12px;">'
+        +'<div style="min-width:0;">'
+          +'<div style="font-size:9px; letter-spacing:.25em; text-transform:uppercase; color:var(--muted); margin-bottom:6px;">Working On</div>'
+          +'<div style="font-family:Cormorant Garamond,serif; font-size:22px; font-weight:300; color:var(--text); overflow-wrap:break-word;">'+esc(sel.text)+'</div>'
+        +'</div>'
+        +'<div style="text-align:right; flex-shrink:0;">'
+          +'<div style="font-family:Cormorant Garamond,serif; font-size:34px; color:#c4a8d4; line-height:1;">Day '+day+'</div>'
+          +'<div style="font-size:9px; color:var(--muted); letter-spacing:.1em; margin-top:4px;">since '+esc(sel.start)+'</div>'
+        +'</div>'
+      +'</div>'
+    +'</div>'
+    +'<div id="autosugPad" onclick="autosugTap()" style="border:1px solid rgba(164,126,184,.25); border-radius:16px; min-height:300px; display:flex; flex-direction:column; align-items:center; justify-content:center; cursor:pointer; -webkit-tap-highlight-color:transparent; user-select:none; -webkit-user-select:none; background:radial-gradient(circle at 50% 38%, rgba(164,126,184,.07), rgba(164,126,184,.02)); transition:border-color .12s;">'
+      +(done
+        ?'<div style="font-family:Cormorant Garamond,serif; font-size:30px; color:#c4a8d4;">Complete</div>'
+         +'<div style="font-size:10px; color:var(--muted); letter-spacing:.15em; margin-top:8px;">+'+AUTOSUG_XP+' XP</div>'
+        :'<div style="font-family:Cormorant Garamond,serif; font-size:72px; font-weight:300; color:var(--text); line-height:1;"><span id="autosugCountNum">'+autosugCount+'</span><span style="font-size:26px; color:var(--muted);"> / '+AUTOSUG_TAPS+'</span></div>'
+         +'<div style="font-size:9px; color:var(--muted); letter-spacing:.2em; text-transform:uppercase; margin-top:14px;">Tap with each repetition</div>')
+    +'</div>'
+    +'<div style="height:4px; border-radius:2px; background:rgba(164,126,184,.12); margin-top:14px; overflow:hidden;">'
+      +'<div id="autosugBar" style="height:100%; width:'+(autosugCount/AUTOSUG_TAPS*100)+'%; background:#a47eb8; border-radius:2px; transition:width .15s;"></div>'
+    +'</div>'
+    +'<div style="display:flex; gap:8px; margin-top:18px;">'
+      +(done
+        ?'<button onclick="autosugBeginAgain()" class="btn primary" style="flex:1; font-size:9px; background:rgba(164,126,184,.12); border-color:rgba(164,126,184,.35); color:#c4a8d4;">Begin Again</button>'
+        :'<button onclick="autosugChangeTrait()" class="btn ghost" style="flex:1; font-size:9px;">Change Trait</button>')
+      +'<button onclick="autosugMarkComplete()" class="btn ghost" style="flex:1; font-size:9px; color:#a47eb8; border-color:rgba(164,126,184,.3);">Trait Complete</button>'
+    +'</div>';
+}
 
 // ══════════════════════════════════════════════════════
 // PORE BREATHING
