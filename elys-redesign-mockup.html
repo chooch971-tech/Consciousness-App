@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Elys — Redesign Candidates</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;1,400&family=DM+Mono:wght@300;400&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg:#07080d; --surface:#0e0f17; --border:rgba(255,255,255,.07);
+    --text:#ddd8ce; --muted:rgba(221,216,206,.38);
+    --E:#c4a8d4; --El:#e8d4f0; --Ed:#9b7fb8; --Eh:#f4ecfa;
+  }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--bg); color:var(--text); font-family:'DM Mono',monospace; padding:28px 18px 60px; }
+  h1 { font-family:'Cormorant Garamond',serif; font-weight:300; font-size:30px; text-align:center; margin:0 0 4px; color:#ece6f4; }
+  .sub { text-align:center; font-size:9px; letter-spacing:.22em; text-transform:uppercase; color:var(--muted); margin-bottom:34px; }
+  .grid { display:flex; flex-wrap:wrap; gap:16px; justify-content:center; max-width:980px; margin:0 auto; }
+  .card { width:225px; background:var(--surface); border:1px solid var(--border); border-radius:16px; padding:20px 16px 18px; display:flex; flex-direction:column; align-items:center; }
+  .card--current { opacity:.78; }
+  .stage { width:130px; height:190px; display:flex; align-items:center; justify-content:center; cursor:pointer; animation:floaty 4.5s ease-in-out infinite; filter:drop-shadow(0 0 16px rgba(196,168,212,.35)); -webkit-tap-highlight-color:transparent; }
+  .stage svg { overflow:visible; }
+  @keyframes floaty { 0%,100%{transform:translateY(0);} 50%{transform:translateY(-5px);} }
+  .name { font-family:'Cormorant Garamond',serif; font-size:20px; font-weight:300; color:#ece6f4; margin-top:14px; }
+  .concept { font-size:10px; color:var(--muted); line-height:1.6; text-align:center; margin-top:6px; min-height:48px; }
+  .hint { font-size:8px; letter-spacing:.18em; text-transform:uppercase; color:var(--Ed); margin-top:10px; opacity:.8; }
+
+  /* ── A · Veiled Dreamer ── */
+  .va-eye { transform:scaleY(.1); transform-origin:40px 52px; transform-box:view-box; transition:transform .55s cubic-bezier(.3,1.3,.5,1); }
+  .va-glow { opacity:0; transition:opacity .55s; }
+  .stage.awake .va-eye { transform:scaleY(1); }
+  .stage.awake .va-glow { opacity:1; }
+  .va-star { animation:none; }
+  .stage.awake .va-star { animation:twinkle 1.1s ease-in-out infinite alternate; }
+  @keyframes twinkle { from{opacity:.25;} to{opacity:1;} }
+
+  /* ── B · Astral Moth ── */
+  .mw { transform-origin:40px 60px; transform-box:view-box; }
+  .stage.flutter .mw { animation:flap .32s ease-in-out 4; }
+  @keyframes flap { 0%,100%{transform:scaleX(1);} 50%{transform:scaleX(.5);} }
+  .mo-mote { animation:moteDrift 3.4s ease-in-out infinite; }
+  @keyframes moteDrift { 0%,100%{transform:translateY(0);opacity:.55;} 50%{transform:translateY(-4px);opacity:.95;} }
+
+  /* ── C · Dream Mirror ── */
+  .dm-sym { opacity:0; transform:rotate(-24deg) scale(.6); transform-origin:40px 64px; transform-box:view-box; transition:opacity .45s ease, transform .45s cubic-bezier(.3,1.25,.5,1); }
+  .dm-sym.on { opacity:1; transform:rotate(0) scale(1); }
+</style>
+</head>
+<body>
+
+<h1>Elys</h1>
+<div class="sub">redesign candidates &middot; tap each figure</div>
+
+<div class="grid">
+
+  <!-- Current (for comparison) -->
+  <div class="card card--current">
+    <div class="stage" id="stCurrent" title="Current design"></div>
+    <div class="name">Current</div>
+    <div class="concept">Violet mandala-flame: central eye in a vesica-petal aura, orbiting glyphs, twin crescents.</div>
+    <div class="hint">reference only</div>
+  </div>
+
+  <!-- A · The Veiled Dreamer -->
+  <div class="card">
+    <div class="stage" id="stA">
+      <svg viewBox="0 0 80 130" width="72" height="118" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <radialGradient id="vaAura" cx="50%" cy="50%" r="50%">
+            <stop offset="0%" stop-color="#f4ecfa" stop-opacity=".55"/>
+            <stop offset="55%" stop-color="#c4a8d4" stop-opacity=".18"/>
+            <stop offset="100%" stop-color="#9b7fb8" stop-opacity="0"/>
+          </radialGradient>
+          <filter id="vaGl" x="-50%" y="-50%" width="200%" height="200%">
+            <feGaussianBlur stdDeviation="1.6" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+          </filter>
+        </defs>
+        <ellipse cx="40" cy="64" rx="30" ry="46" fill="url(#vaAura)" opacity=".4"/>
+        <!-- veil body -->
+        <path d="M40,10 C57,22 61,48 59,78 C58,103 51,118 40,123 C29,118 22,103 21,78 C19,48 23,22 40,10 Z"
+              fill="rgba(196,168,212,.07)" stroke="#c4a8d4" stroke-width="1.1" opacity=".9" filter="url(#vaGl)"/>
+        <!-- fold lines -->
+        <path d="M30,32 C27,56 27,86 32,112" fill="none" stroke="#c4a8d4" stroke-width=".5" opacity=".32"/>
+        <path d="M50,32 C53,56 53,86 48,112" fill="none" stroke="#c4a8d4" stroke-width=".5" opacity=".32"/>
+        <path d="M35,26 C33,52 33,88 36,116" fill="none" stroke="#c4a8d4" stroke-width=".4" opacity=".2"/>
+        <path d="M45,26 C47,52 47,88 44,116" fill="none" stroke="#c4a8d4" stroke-width=".4" opacity=".2"/>
+        <!-- hood opening: night sky within -->
+        <path d="M40,22 C49,29 52,44 51,58 C50,70 46,78 40,80 C34,78 30,70 29,58 C28,44 31,29 40,22 Z"
+              fill="#0d0716" stroke="#e8d4f0" stroke-width=".6" opacity=".95"/>
+        <circle class="va-star" cx="35" cy="36" r=".9" fill="#e8d4f0" opacity=".8"/>
+        <circle class="va-star" cx="45" cy="42" r=".7" fill="#e8d4f0" opacity=".6"/>
+        <circle class="va-star" cx="37" cy="68" r=".8" fill="#e8d4f0" opacity=".7"/>
+        <circle class="va-star" cx="44" cy="31" r=".6" fill="#e8d4f0" opacity=".5"/>
+        <circle class="va-star" cx="33" cy="48" r=".6" fill="#e8d4f0" opacity=".55"/>
+        <circle class="va-star" cx="46" cy="62" r=".55" fill="#e8d4f0" opacity=".5"/>
+        <!-- the dreaming eye -->
+        <circle class="va-glow" cx="40" cy="52" r="8" fill="url(#vaAura)" filter="url(#vaGl)"/>
+        <g class="va-eye">
+          <path d="M30,52 Q40,44 50,52 Q40,60 30,52 Z" fill="rgba(196,168,212,.16)" stroke="#f4ecfa" stroke-width="1"/>
+          <circle cx="40" cy="52" r="4" fill="rgba(155,127,184,.55)" stroke="#e8d4f0" stroke-width=".6"/>
+          <circle cx="40" cy="52" r="1.8" fill="#f4ecfa"/>
+        </g>
+        <!-- crescent diadem (horns up) -->
+        <path d="M32,9 A8,8 0 0 0 48,9 A11.5,11.5 0 0 1 32,9 Z" fill="#e8d4f0" opacity=".75" stroke="#f4ecfa" stroke-width=".4"/>
+        <circle cx="40" cy="4" r="1" fill="#f4ecfa" opacity=".9"/>
+        <!-- hem wisps -->
+        <path d="M32,121 C30,126 27,128 24,128 M48,121 C50,126 53,128 56,128" fill="none" stroke="#c4a8d4" stroke-width=".8" opacity=".45" stroke-linecap="round"/>
+        <!-- sparkles -->
+        <g opacity=".6"><line x1="9" y1="42" x2="15" y2="42" stroke="#e8d4f0" stroke-width=".9"/><line x1="12" y1="39" x2="12" y2="45" stroke="#e8d4f0" stroke-width=".9"/></g>
+        <g opacity=".45"><line x1="65" y1="60" x2="71" y2="60" stroke="#e8d4f0" stroke-width=".8"/><line x1="68" y1="57" x2="68" y2="63" stroke="#e8d4f0" stroke-width=".8"/></g>
+        <g opacity=".4"><line x1="14" y1="98" x2="19" y2="98" stroke="#e8d4f0" stroke-width=".8"/><line x1="16.5" y1="95.5" x2="16.5" y2="100.5" stroke="#e8d4f0" stroke-width=".8"/></g>
+      </svg>
+    </div>
+    <div class="name">A &middot; The Veiled Dreamer</div>
+    <div class="concept">A tall star-filled veil under a crescent diadem. The night inside holds one sleeping eye.</div>
+    <div class="hint">tap — the eye wakes</div>
+  </div>
+
+  <!-- B · The Astral Moth -->
+  <div class="card">
+    <div class="stage" id="stB">
+      <svg viewBox="0 0 80 130" width="72" height="118" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <radialGradient id="moAura" cx="50%" cy="50%" r="50%">
+            <stop offset="0%" stop-color="#f4ecfa" stop-opacity=".5"/>
+            <stop offset="55%" stop-color="#c4a8d4" stop-opacity=".16"/>
+            <stop offset="100%" stop-color="#9b7fb8" stop-opacity="0"/>
+          </radialGradient>
+          <linearGradient id="moWing" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0%" stop-color="#e8d4f0" stop-opacity=".4"/>
+            <stop offset="100%" stop-color="#9b7fb8" stop-opacity=".1"/>
+          </linearGradient>
+          <filter id="moGl" x="-50%" y="-50%" width="200%" height="200%">
+            <feGaussianBlur stdDeviation="1.4" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+          </filter>
+        </defs>
+        <ellipse cx="40" cy="60" rx="32" ry="34" fill="url(#moAura)" opacity=".38"/>
+        <!-- upper wings -->
+        <g class="mw">
+          <path d="M39,58 C27,42 13,33 8,43 C3,55 15,70 37,68 Z" fill="url(#moWing)" stroke="#c4a8d4" stroke-width=".9" stroke-linejoin="round" filter="url(#moGl)"/>
+          <path d="M41,58 C53,42 67,33 72,43 C77,55 65,70 43,68 Z" fill="url(#moWing)" stroke="#c4a8d4" stroke-width=".9" stroke-linejoin="round" filter="url(#moGl)"/>
+          <!-- wing veins -->
+          <path d="M38,60 C30,52 22,46 14,44 M38,63 C30,60 22,58 13,58" fill="none" stroke="#c4a8d4" stroke-width=".4" opacity=".5"/>
+          <path d="M42,60 C50,52 58,46 66,44 M42,63 C50,60 58,58 67,58" fill="none" stroke="#c4a8d4" stroke-width=".4" opacity=".5"/>
+          <!-- eye-spots -->
+          <circle cx="21" cy="52" r="5.5" fill="rgba(196,168,212,.14)" stroke="#e8d4f0" stroke-width=".7"/>
+          <circle cx="21" cy="52" r="2.8" fill="#9b7fb8" opacity=".8"/>
+          <circle cx="22" cy="51" r=".9" fill="#f4ecfa"/>
+          <circle cx="59" cy="52" r="5.5" fill="rgba(196,168,212,.14)" stroke="#e8d4f0" stroke-width=".7"/>
+          <circle cx="59" cy="52" r="2.8" fill="#9b7fb8" opacity=".8"/>
+          <circle cx="60" cy="51" r=".9" fill="#f4ecfa"/>
+          <!-- lower wings -->
+          <path d="M39,66 C30,75 23,88 29,93 C36,98 41,86 41,71 Z" fill="url(#moWing)" stroke="#c4a8d4" stroke-width=".8" stroke-linejoin="round" opacity=".9"/>
+          <path d="M41,66 C50,75 57,88 51,93 C44,98 39,86 39,71 Z" fill="url(#moWing)" stroke="#c4a8d4" stroke-width=".8" stroke-linejoin="round" opacity=".9"/>
+          <!-- lower-wing moon marks (horns up) -->
+          <path d="M30,84 A3.4,3.4 0 0 0 36.8,84 A4.9,4.9 0 0 1 30,84 Z" fill="#e8d4f0" opacity=".6"/>
+          <path d="M43.2,84 A3.4,3.4 0 0 0 50,84 A4.9,4.9 0 0 1 43.2,84 Z" fill="#e8d4f0" opacity=".6"/>
+        </g>
+        <!-- body -->
+        <circle cx="40" cy="49" r="3" fill="#e8d4f0" opacity=".9" stroke="#9b7fb8" stroke-width=".5"/>
+        <path d="M40,52 C43.2,58 43.2,74 40,82 C36.8,74 36.8,58 40,52 Z" fill="#e8d4f0" opacity=".85" stroke="#9b7fb8" stroke-width=".5"/>
+        <path d="M37.2,60 H42.8 M36.9,66 H43.1 M37.3,72 H42.7" stroke="#9b7fb8" stroke-width=".5" opacity=".7"/>
+        <!-- antennae with star tips -->
+        <path d="M38,47 C34,40 30,36 26,34.5 M42,47 C46,40 50,36 54,34.5" fill="none" stroke="#e8d4f0" stroke-width=".8" stroke-linecap="round" opacity=".85"/>
+        <g opacity=".9"><line x1="23.5" y1="34" x2="28.5" y2="34" stroke="#f4ecfa" stroke-width=".8"/><line x1="26" y1="31.5" x2="26" y2="36.5" stroke="#f4ecfa" stroke-width=".8"/></g>
+        <g opacity=".9"><line x1="51.5" y1="34" x2="56.5" y2="34" stroke="#f4ecfa" stroke-width=".8"/><line x1="54" y1="31.5" x2="54" y2="36.5" stroke="#f4ecfa" stroke-width=".8"/></g>
+        <!-- trailing dream-dust -->
+        <circle class="mo-mote" cx="36" cy="98" r=".95" fill="#e8d4f0"/>
+        <circle class="mo-mote" cx="44" cy="104" r=".75" fill="#e8d4f0" style="animation-delay:.7s"/>
+        <circle class="mo-mote" cx="40" cy="112" r=".6" fill="#e8d4f0" style="animation-delay:1.4s"/>
+        <circle class="mo-mote" cx="37" cy="119" r=".5" fill="#e8d4f0" style="animation-delay:2.1s"/>
+        <!-- sparkles -->
+        <g opacity=".55"><line x1="8" y1="80" x2="14" y2="80" stroke="#e8d4f0" stroke-width=".9"/><line x1="11" y1="77" x2="11" y2="83" stroke="#e8d4f0" stroke-width=".9"/></g>
+        <g opacity=".45"><line x1="66" y1="86" x2="72" y2="86" stroke="#e8d4f0" stroke-width=".8"/><line x1="69" y1="83" x2="69" y2="89" stroke="#e8d4f0" stroke-width=".8"/></g>
+        <g opacity=".5"><line x1="40" y1="18" x2="40" y2="24" stroke="#e8d4f0" stroke-width=".8"/><line x1="37" y1="21" x2="43" y2="21" stroke="#e8d4f0" stroke-width=".8"/></g>
+      </svg>
+    </div>
+    <div class="name">B &middot; The Astral Moth</div>
+    <div class="concept">A great dream-moth: eye-spotted wings, crescent marks, star-tipped antennae, dust drifting beneath.</div>
+    <div class="hint">tap — wings flutter</div>
+  </div>
+
+  <!-- C · The Dream Mirror -->
+  <div class="card">
+    <div class="stage" id="stC">
+      <svg viewBox="0 0 80 130" width="72" height="118" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <radialGradient id="dmIn" cx="50%" cy="42%" r="65%">
+            <stop offset="0%" stop-color="#2a1840" stop-opacity=".95"/>
+            <stop offset="70%" stop-color="#150b24" stop-opacity=".95"/>
+            <stop offset="100%" stop-color="#0d0716" stop-opacity=".98"/>
+          </radialGradient>
+          <radialGradient id="dmGlow" cx="50%" cy="50%" r="50%">
+            <stop offset="0%" stop-color="#f4ecfa" stop-opacity=".85"/>
+            <stop offset="55%" stop-color="#c4a8d4" stop-opacity=".3"/>
+            <stop offset="100%" stop-color="#9b7fb8" stop-opacity="0"/>
+          </radialGradient>
+          <filter id="dmGl" x="-50%" y="-50%" width="200%" height="200%">
+            <feGaussianBlur stdDeviation="1.6" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+          </filter>
+        </defs>
+        <!-- outer frame + bead ring -->
+        <path d="M40,8 Q66,64 40,120 Q14,64 40,8 Z" fill="none" stroke="#c4a8d4" stroke-width=".6" opacity=".45"/>
+        <g fill="#e8d4f0" opacity=".7">
+          <circle cx="40" cy="8" r="1.1"/><circle cx="51" cy="27" r=".8"/><circle cx="58" cy="46" r=".8"/>
+          <circle cx="60.5" cy="64" r="1.1"/><circle cx="58" cy="82" r=".8"/><circle cx="51" cy="101" r=".8"/>
+          <circle cx="40" cy="120" r="1.1"/><circle cx="29" cy="101" r=".8"/><circle cx="22" cy="82" r=".8"/>
+          <circle cx="19.5" cy="64" r="1.1"/><circle cx="22" cy="46" r=".8"/><circle cx="29" cy="27" r=".8"/>
+        </g>
+        <!-- the mirror -->
+        <path d="M40,14 Q61,64 40,114 Q19,64 40,14 Z" fill="url(#dmIn)" stroke="#c4a8d4" stroke-width="1.2" filter="url(#dmGl)"/>
+        <!-- stars within -->
+        <circle cx="34" cy="34" r=".7" fill="#e8d4f0" opacity=".6"/>
+        <circle cx="47" cy="44" r=".6" fill="#e8d4f0" opacity=".5"/>
+        <circle cx="31" cy="78" r=".7" fill="#e8d4f0" opacity=".55"/>
+        <circle cx="46" cy="92" r=".6" fill="#e8d4f0" opacity=".5"/>
+        <circle cx="40" cy="26" r=".55" fill="#e8d4f0" opacity=".45"/>
+        <!-- symbol glow -->
+        <circle cx="40" cy="64" r="11" fill="url(#dmGlow)" opacity=".55" filter="url(#dmGl)"/>
+        <!-- the three dream symbols (click to cycle) -->
+        <g class="dm-sym on" id="dmSym0">
+          <path d="M33,64 A9,9 0 1 0 47.5,57 A7,7 0 1 1 33,64 Z" fill="#e8d4f0" opacity=".85" stroke="#f4ecfa" stroke-width=".5"/>
+        </g>
+        <g class="dm-sym" id="dmSym1">
+          <path d="M29,64 Q40,55 51,64 Q40,73 29,64 Z" fill="rgba(196,168,212,.18)" stroke="#f4ecfa" stroke-width="1"/>
+          <circle cx="40" cy="64" r="3.6" fill="rgba(155,127,184,.6)" stroke="#e8d4f0" stroke-width=".6"/>
+          <circle cx="40" cy="64" r="1.5" fill="#f4ecfa"/>
+        </g>
+        <g class="dm-sym" id="dmSym2">
+          <path d="M40,54 L50,72 L30,72 Z" fill="rgba(196,168,212,.16)" stroke="#f4ecfa" stroke-width="1" stroke-linejoin="round"/>
+          <circle cx="40" cy="66.5" r="1.6" fill="#e8d4f0"/>
+        </g>
+        <!-- flanking crescents (horns up) -->
+        <path d="M18,106 A5,5 0 0 0 28,106 A7.2,7.2 0 0 1 18,106 Z" fill="#e8d4f0" opacity=".55"/>
+        <path d="M52,106 A5,5 0 0 0 62,106 A7.2,7.2 0 0 1 52,106 Z" fill="#e8d4f0" opacity=".55"/>
+        <!-- light pedestal -->
+        <ellipse cx="40" cy="123" rx="11" ry="2.4" fill="#e8d4f0" opacity=".22"/>
+        <!-- sparkles -->
+        <g opacity=".6"><line x1="8" y1="50" x2="14" y2="50" stroke="#e8d4f0" stroke-width=".9"/><line x1="11" y1="47" x2="11" y2="53" stroke="#e8d4f0" stroke-width=".9"/></g>
+        <g opacity=".45"><line x1="66" y1="38" x2="72" y2="38" stroke="#e8d4f0" stroke-width=".8"/><line x1="69" y1="35" x2="69" y2="41" stroke="#e8d4f0" stroke-width=".8"/></g>
+        <g opacity=".4"><line x1="67" y1="98" x2="72" y2="98" stroke="#e8d4f0" stroke-width=".8"/><line x1="69.5" y1="95.5" x2="69.5" y2="100.5" stroke="#e8d4f0" stroke-width=".8"/></g>
+      </svg>
+    </div>
+    <div class="name">C &middot; The Dream Mirror</div>
+    <div class="concept">A standing vesica portal ringed with pearls. Inside its night, a symbol dreams itself into the next.</div>
+    <div class="hint">tap — moon &rarr; eye &rarr; sigil</div>
+  </div>
+
+</div>
+
+<script>
+// ── Current design, ported verbatim from presence.html for comparison ──
+(function renderCurrent() {
+  var E = '#c4a8d4', El = '#e8d4f0', Ed = '#9b7fb8', Eh = '#f4ecfa';
+  var f1 = function(n) { return (+n).toFixed(1); };
+  var P = Math.PI, cx = 40, cy = 64;
+  var mandorla = function(x, y, w, h, fill, stroke, sw, op) {
+    return '<path d="M' + f1(x) + ',' + f1(y - h) + ' Q' + f1(x + w) + ',' + f1(y) + ' ' + f1(x) + ',' + f1(y + h) + ' Q' + f1(x - w) + ',' + f1(y) + ' ' + f1(x) + ',' + f1(y - h) + ' Z" fill="' + fill + '" stroke="' + stroke + '" stroke-width="' + sw + '" opacity="' + op + '"/>';
+  };
+  var crescent = function(x, y, r, rot) {
+    return '<g transform="translate(' + f1(x) + ',' + f1(y) + ') rotate(' + rot + ')"><path d="M0,' + f1(-r) + ' A' + f1(r) + ',' + f1(r) + ' 0 1 0 0,' + f1(r) + ' A' + f1(r * 0.72) + ',' + f1(r * 0.72) + ' 0 1 1 0,' + f1(-r) + ' Z" fill="' + El + '" opacity="0.55" stroke="' + Eh + '" stroke-width="0.4"/></g>';
+  };
+  var spark = function(x, y, s, op) {
+    return '<g opacity="' + op + '"><line x1="' + f1(x - s) + '" y1="' + f1(y) + '" x2="' + f1(x + s) + '" y2="' + f1(y) + '" stroke="' + El + '" stroke-width="0.8"/><line x1="' + f1(x) + '" y1="' + f1(y - s) + '" x2="' + f1(x) + '" y2="' + f1(y + s) + '" stroke="' + El + '" stroke-width="0.8"/></g>';
+  };
+  var svg = '';
+  svg += '<circle cx="' + cx + '" cy="' + cy + '" r="30" fill="url(#elg1)" opacity="0.5"/>';
+  svg += '<path d="M40,5 C61,42 59,90 40,124 C21,90 19,42 40,5 Z" fill="rgba(196,168,212,0.05)" stroke="' + E + '" stroke-width="1.0" opacity="0.7" filter="url(#elglow)"/>';
+  var petals = 10;
+  for (var i = 0; i < petals; i++) {
+    var a = -P / 2 + i * (P * 2 / petals), pr = 26;
+    var ex = cx + Math.cos(a) * pr, ey = cy + Math.sin(a) * pr;
+    var mx = (cx + ex) / 2, my = (cy + ey) / 2, px = -Math.sin(a), py = Math.cos(a), w = 4.5;
+    svg += '<path d="M' + f1(cx) + ',' + f1(cy) + ' Q' + f1(mx + px * w) + ',' + f1(my + py * w) + ' ' + f1(ex) + ',' + f1(ey) + ' Q' + f1(mx - px * w) + ',' + f1(my - py * w) + ' ' + f1(cx) + ',' + f1(cy) + ' Z" fill="rgba(196,168,212,0.05)" stroke="' + E + '" stroke-width="0.4" opacity="0.4"/>';
+  }
+  svg += '<circle cx="' + cx + '" cy="' + cy + '" r="20" fill="none" stroke="' + E + '" stroke-width="0.5" opacity="0.35"/>';
+  svg += '<circle cx="' + cx + '" cy="' + cy + '" r="14" fill="none" stroke="' + El + '" stroke-width="0.5" opacity="0.45"/>';
+  var glyphN = 8;
+  for (var g = 0; g < glyphN; g++) {
+    var ga = -P / 2 + g * (P * 2 / glyphN);
+    var gx = cx + Math.cos(ga) * 20, gy = cy + Math.sin(ga) * 20;
+    if (g % 2 === 0) svg += '<circle cx="' + f1(gx) + '" cy="' + f1(gy) + '" r="1.5" fill="' + El + '" opacity="0.7"/>';
+    else svg += '<path d="M' + f1(gx) + ',' + f1(gy - 1.8) + ' L' + f1(gx + 1.6) + ',' + f1(gy + 1.2) + ' L' + f1(gx - 1.6) + ',' + f1(gy + 1.2) + ' Z" fill="none" stroke="' + El + '" stroke-width="0.5" opacity="0.6"/>';
+  }
+  svg += crescent(cx - 19, cy, 4, 90) + crescent(cx + 19, cy, 4, -90);
+  svg += mandorla(cx, cy - 22, 3.2, 7, 'rgba(196,168,212,0.12)', El, 0.6, 0.7) + '<circle cx="' + cx + '" cy="' + f1(cy - 22) + '" r="1.4" fill="' + Ed + '"/>';
+  svg += mandorla(cx, cy + 22, 3.2, 7, 'rgba(196,168,212,0.12)', El, 0.6, 0.7) + '<circle cx="' + cx + '" cy="' + f1(cy + 22) + '" r="1.4" fill="' + Ed + '"/>';
+  svg += mandorla(cx, cy, 7, 13, 'rgba(196,168,212,0.16)', Eh, 1.0, 0.95);
+  svg += '<g filter="url(#elglow)"><circle cx="' + cx + '" cy="' + cy + '" r="4" fill="url(#elg1)"/></g>';
+  svg += '<circle cx="' + cx + '" cy="' + cy + '" r="3" fill="rgba(155,127,184,0.5)" stroke="' + El + '" stroke-width="0.6"/>';
+  svg += '<circle cx="' + f1(cx + 1.2) + '" cy="' + f1(cy - 1.2) + '" r="1.1" fill="' + Eh + '" opacity="0.85"/>';
+  svg += spark(8, 58, 3, 0.6) + spark(72, 46, 3, 0.5) + spark(70, 86, 2.5, 0.45) + spark(12, 92, 2.2, 0.4) + spark(40, 14, 2.4, 0.55);
+  document.getElementById('stCurrent').innerHTML =
+    '<svg viewBox="0 0 80 130" width="72" height="118" xmlns="http://www.w3.org/2000/svg" style="overflow:visible;">'
+    + '<defs>'
+    + '<radialGradient id="elg1" cx="50%" cy="50%" r="50%"><stop offset="0%" stop-color="' + Eh + '" stop-opacity="0.9"/><stop offset="55%" stop-color="' + E + '" stop-opacity="0.32"/><stop offset="100%" stop-color="' + Ed + '" stop-opacity="0"/></radialGradient>'
+    + '<filter id="elglow" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="1.6" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>'
+    + '</defs>' + svg + '</svg>';
+})();
+
+// A — wake the dreaming eye for a few seconds
+(function() {
+  var st = document.getElementById('stA'), t = null;
+  st.addEventListener('click', function() {
+    st.classList.add('awake');
+    clearTimeout(t);
+    t = setTimeout(function() { st.classList.remove('awake'); }, 2600);
+  });
+})();
+
+// B — flutter
+(function() {
+  var st = document.getElementById('stB');
+  st.addEventListener('click', function() {
+    st.classList.remove('flutter');
+    void st.offsetWidth;
+    st.classList.add('flutter');
+  });
+})();
+
+// C — cycle moon → eye → sigil
+(function() {
+  var st = document.getElementById('stC'), idx = 0;
+  var syms = [document.getElementById('dmSym0'), document.getElementById('dmSym1'), document.getElementById('dmSym2')];
+  st.addEventListener('click', function() {
+    syms[idx].classList.remove('on');
+    idx = (idx + 1) % syms.length;
+    syms[idx].classList.add('on');
+  });
+})();
+</script>
+</body>
+</html>
