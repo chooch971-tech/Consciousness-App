@@ -129,7 +129,7 @@ function shell(inner, seed) {
 function card1() {
   // Dark particle field; wordmark up top mirrors the loading screen
   // (Cormorant caps, wide tracking, accent green) and the text pops bright.
-  const cy = 1450;
+  const cy = 1560;
   // colored glow particles scattered around the field
   let s = 99, dust = '';
   const rnd = () => (s = (s * 16807) % 2147483647) / 2147483647;
@@ -146,8 +146,6 @@ function card1() {
   <text x="${W / 2}" y="430" font-family="${SERIF}" font-weight="400" font-size="92" fill="#ffffff" letter-spacing="38" text-anchor="middle" filter="url(#soft)">PRESENCE</text>
   ${crystalAt('c1', W / 2, cy, 600)}
   <ellipse cx="${W / 2}" cy="${cy + 620}" rx="300" ry="36" fill="#8ecce0" opacity="0.08"/>
-  <text x="${W / 2}" y="2380" font-family="${SERIF}" font-weight="400" font-size="150" fill="#ffffff" text-anchor="middle" filter="url(#soft)">Enlightenment</text>
-  <text x="${W / 2}" y="2560" font-family="${SERIF}" font-weight="400" font-size="150" fill="#ffffff" text-anchor="middle" filter="url(#soft)">Now</text>
   `, 7);
 }
 
