@@ -143,12 +143,9 @@ function card1() {
   <ellipse cx="${W / 2}" cy="${cy}" rx="640" ry="700" fill="url(#glow)"/>
   ${stars(31, 90, 0, H)}
   ${dust}
-  <text x="${W / 2}" y="430" font-family="${SERIF}" font-weight="400" font-size="92" fill="#a8e2cb" letter-spacing="38" text-anchor="middle" filter="url(#soft)">PRESENCE</text>
-  <rect x="${W / 2 - 32}" y="500" width="64" height="3" fill="#a8e2cb" opacity="0.7"/>
+  <text x="${W / 2}" y="430" font-family="${SERIF}" font-weight="400" font-size="92" fill="#ffffff" letter-spacing="38" text-anchor="middle" filter="url(#soft)">PRESENCE</text>
   ${crystalAt('c1', W / 2, cy, 600)}
   <ellipse cx="${W / 2}" cy="${cy + 620}" rx="300" ry="36" fill="#8ecce0" opacity="0.08"/>
-  <text x="${W / 2}" y="2370" font-family="${SERIF}" font-weight="500" font-size="158" fill="#ffffff" text-anchor="middle">Enlightenment</text>
-  <text x="${W / 2}" y="2550" font-family="${SERIF}" font-weight="300" font-size="158" fill="#ffffff" font-style="italic" text-anchor="middle">Now</text>
   `, 7);
 }
 
