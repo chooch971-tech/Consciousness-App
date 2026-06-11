@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Elys — Winged Spirit</title>
+<title>Elys — Ophan of the Veil</title>
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;1,400&family=DM+Mono:wght@300;400&display=swap" rel="stylesheet">
 <style>
   :root {
@@ -19,7 +19,7 @@
   .card { background:var(--surface); border:1px solid var(--border); border-radius:16px; padding:24px 22px 20px; display:flex; flex-direction:column; align-items:center; }
   .card--main { width:330px; }
   .card--icon { width:230px; justify-content:center; }
-  .stage { width:170px; height:230px; display:flex; align-items:center; justify-content:center; cursor:pointer; animation:floaty 4.5s ease-in-out infinite; filter:drop-shadow(0 0 18px rgba(196,168,212,.4)); -webkit-tap-highlight-color:transparent; }
+  .stage { width:170px; height:230px; display:flex; align-items:center; justify-content:center; cursor:pointer; animation:floaty 4.5s ease-in-out infinite; filter:drop-shadow(0 0 18px rgba(196,168,212,.45)); -webkit-tap-highlight-color:transparent; }
   .stage svg { overflow:visible; }
   @keyframes floaty { 0%,100%{transform:translateY(0);} 50%{transform:translateY(-5px);} }
   .name { font-family:'Cormorant Garamond',serif; font-size:20px; font-weight:300; color:#ece6f4; margin-top:14px; }
@@ -28,29 +28,33 @@
   .iconbox { width:74px; height:78px; display:flex; align-items:center; justify-content:center; background:rgba(196,168,212,.06); border:1px solid rgba(196,168,212,.18); border-radius:14px; }
   .iconbox svg { width:56px; height:58px; overflow:visible; }
 
-  /* idle: wings breathe slowly */
-  .wgl { transform-origin:97% 33%; transform-box:fill-box; animation:breatheL 5s ease-in-out infinite; }
-  .wgr { transform-origin:3% 33%; transform-box:fill-box; animation:breatheR 5s ease-in-out infinite; }
-  @keyframes breatheL { 0%,100%{transform:rotate(0);} 50%{transform:rotate(-2.5deg);} }
-  @keyframes breatheR { 0%,100%{transform:rotate(0);} 50%{transform:rotate(2.5deg);} }
-  /* tap: full wing beats + happy blink + core glow */
-  .stage.alive .wgl { animation:flapL .55s ease-in-out 3; }
-  .stage.alive .wgr { animation:flapR .55s ease-in-out 3; }
-  @keyframes flapL { 0%,100%{transform:rotate(0);} 50%{transform:rotate(-11deg);} }
-  @keyframes flapR { 0%,100%{transform:rotate(0);} 50%{transform:rotate(11deg);} }
-  .eyes-happy { opacity:0; }
-  .stage.alive .eyes-open { opacity:0; }
-  .stage.alive .eyes-happy { opacity:1; }
-  .core { animation:coreIdle 4s ease-in-out infinite; }
-  @keyframes coreIdle { 0%,100%{opacity:.55;} 50%{opacity:.8;} }
-  .stage.alive .core { animation:corePop 1.6s ease-in-out; }
-  @keyframes corePop { 0%,100%{opacity:.55;} 40%{opacity:1;} }
+  /* the wheels never stop turning */
+  .ringA { transform-origin:40px 62px; transform-box:view-box; animation:spin 44s linear infinite; }
+  .ringB { transform-origin:40px 62px; transform-box:view-box; animation:spinBack 30s linear infinite; }
+  .ringC { transform-origin:40px 62px; transform-box:view-box; animation:spin 36s linear infinite; }
+  @keyframes spin { from{transform:rotate(0);} to{transform:rotate(360deg);} }
+  @keyframes spinBack { from{transform:rotate(0);} to{transform:rotate(-360deg);} }
+  /* tap: each wheel makes one swift full revolution, the core flares */
+  .rsA, .rsB, .rsC { transform-origin:40px 62px; transform-box:view-box; }
+  .stage.alive .rsA { animation:rev 1.7s cubic-bezier(.35,.65,.3,1); }
+  .stage.alive .rsB { animation:revBack 1.7s cubic-bezier(.35,.65,.3,1); }
+  .stage.alive .rsC { animation:rev 1.7s cubic-bezier(.4,.6,.35,1); }
+  @keyframes rev { from{transform:rotate(0);} to{transform:rotate(360deg);} }
+  @keyframes revBack { from{transform:rotate(0);} to{transform:rotate(-360deg);} }
+  .core-glow { animation:coreIdle 4.2s ease-in-out infinite; }
+  @keyframes coreIdle { 0%,100%{opacity:.5;} 50%{opacity:.78;} }
+  .stage.alive .core-glow { animation:coreFlare 1.7s ease-in-out; }
+  @keyframes coreFlare { 0%,100%{opacity:.5;} 40%{opacity:1;} }
+  .fire { animation:fireIdle 3.2s ease-in-out infinite; }
+  @keyframes fireIdle { 0%,100%{opacity:.4;} 50%{opacity:.7;} }
+  .stage.alive .fire { animation:fireFlare 1.7s ease-in-out; }
+  @keyframes fireFlare { 0%,100%{opacity:.4;} 40%{opacity:1;} }
 </style>
 </head>
 <body>
 
 <h1>Elys</h1>
-<div class="sub">winged spirit &middot; bigger wings, a face &middot; tap the figure</div>
+<div class="sub">ophan of the veil &middot; the wheel-form &middot; tap the figure</div>
 
 <div class="wrap">
 
@@ -59,139 +63,138 @@
     <div class="stage" id="stMain">
       <svg viewBox="0 0 80 130" width="92" height="149" xmlns="http://www.w3.org/2000/svg">
         <defs>
-          <radialGradient id="wsAura" cx="50%" cy="44%" r="55%">
-            <stop offset="0%" stop-color="#f4ecfa" stop-opacity=".38"/>
-            <stop offset="55%" stop-color="#c4a8d4" stop-opacity=".13"/>
+          <radialGradient id="opAura" cx="50%" cy="48%" r="55%">
+            <stop offset="0%" stop-color="#f4ecfa" stop-opacity=".4"/>
+            <stop offset="55%" stop-color="#c4a8d4" stop-opacity=".14"/>
             <stop offset="100%" stop-color="#9b7fb8" stop-opacity="0"/>
           </radialGradient>
-          <linearGradient id="wsBody" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stop-color="#e8d4f0" stop-opacity=".35"/>
-            <stop offset="60%" stop-color="#c4a8d4" stop-opacity=".18"/>
-            <stop offset="100%" stop-color="#9b7fb8" stop-opacity=".1"/>
-          </linearGradient>
-          <linearGradient id="wsWing" x1="1" y1="0" x2="0" y2="1">
-            <stop offset="0%" stop-color="#e8d4f0" stop-opacity=".5"/>
-            <stop offset="100%" stop-color="#9b7fb8" stop-opacity=".12"/>
-          </linearGradient>
-          <linearGradient id="wsWingR" x1="0" y1="0" x2="1" y2="1">
-            <stop offset="0%" stop-color="#e8d4f0" stop-opacity=".5"/>
-            <stop offset="100%" stop-color="#9b7fb8" stop-opacity=".12"/>
-          </linearGradient>
-          <radialGradient id="wsCore" cx="50%" cy="50%" r="50%">
-            <stop offset="0%" stop-color="#f4ecfa" stop-opacity=".9"/>
-            <stop offset="100%" stop-color="#c4a8d4" stop-opacity="0"/>
+          <radialGradient id="opCore" cx="50%" cy="50%" r="50%">
+            <stop offset="0%" stop-color="#f4ecfa" stop-opacity=".95"/>
+            <stop offset="55%" stop-color="#c4a8d4" stop-opacity=".4"/>
+            <stop offset="100%" stop-color="#9b7fb8" stop-opacity="0"/>
           </radialGradient>
-          <filter id="wsGl" x="-50%" y="-50%" width="200%" height="200%">
-            <feGaussianBlur stdDeviation="1.4" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+          <filter id="opGl" x="-50%" y="-50%" width="200%" height="200%">
+            <feGaussianBlur stdDeviation="1.3" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
           </filter>
         </defs>
 
         <!-- glow field -->
-        <ellipse cx="40" cy="56" rx="36" ry="46" fill="url(#wsAura)" opacity=".5"/>
+        <circle cx="40" cy="62" r="38" fill="url(#opAura)" opacity=".55"/>
 
-        <!-- LEFT WING: three sweeping plumes -->
-        <g class="wgl">
-          <path d="M31,45 C20,34 7,32 2,42 C9,46 17,50 25,56 C16,54 8,57 4,64 C12,67 21,66 28,62 Z"
-                fill="url(#wsWing)" stroke="#c4a8d4" stroke-width=".8" stroke-linejoin="round" filter="url(#wsGl)"/>
-          <path d="M30,53 C21,52 11,56 7,65 C14,69 23,67 30,61 Z"
-                fill="url(#wsWing)" stroke="#c4a8d4" stroke-width=".7" stroke-linejoin="round" opacity=".85"/>
-          <path d="M30,60 C23,62 16,68 13,76 C20,78 27,73 31,66 Z"
-                fill="url(#wsWing)" stroke="#c4a8d4" stroke-width=".7" stroke-linejoin="round" opacity=".7"/>
-          <path d="M29,47 C19,40 9,38 4,43 M29,55 C20,55 12,58 8,64 M29,62 C23,64 17,69 15,74"
-                fill="none" stroke="#9b7fb8" stroke-width=".4" opacity=".55"/>
+        <!-- ring of fire: radial flame ticks just outside the outer wheel -->
+        <g class="fire" stroke="#e8d4f0" stroke-width=".9" stroke-linecap="round">
+          <line x1="40" y1="27" x2="40" y2="22"/>
+          <line x1="57.5" y1="31.7" x2="60.3" y2="27.4" opacity=".7"/>
+          <line x1="70.3" y1="44.5" x2="74.6" y2="41.7" opacity=".8"/>
+          <line x1="75" y1="62" x2="80" y2="62" opacity=".7"/>
+          <line x1="70.3" y1="79.5" x2="74.6" y2="82.3" opacity=".8"/>
+          <line x1="57.5" y1="92.3" x2="60.3" y2="96.6" opacity=".7"/>
+          <line x1="40" y1="97" x2="40" y2="102"/>
+          <line x1="22.5" y1="92.3" x2="19.7" y2="96.6" opacity=".7"/>
+          <line x1="9.7" y1="79.5" x2="5.4" y2="82.3" opacity=".8"/>
+          <line x1="5" y1="62" x2="0" y2="62" opacity=".7"/>
+          <line x1="9.7" y1="44.5" x2="5.4" y2="41.7" opacity=".8"/>
+          <line x1="22.5" y1="31.7" x2="19.7" y2="27.4" opacity=".7"/>
         </g>
 
-        <!-- RIGHT WING: mirrored -->
-        <g class="wgr">
-          <path d="M49,45 C60,34 73,32 78,42 C71,46 63,50 55,56 C64,54 72,57 76,64 C68,67 59,66 52,62 Z"
-                fill="url(#wsWingR)" stroke="#c4a8d4" stroke-width=".8" stroke-linejoin="round" filter="url(#wsGl)"/>
-          <path d="M50,53 C59,52 69,56 73,65 C66,69 57,67 50,61 Z"
-                fill="url(#wsWingR)" stroke="#c4a8d4" stroke-width=".7" stroke-linejoin="round" opacity=".85"/>
-          <path d="M50,60 C57,62 64,68 67,76 C60,78 53,73 49,66 Z"
-                fill="url(#wsWingR)" stroke="#c4a8d4" stroke-width=".7" stroke-linejoin="round" opacity=".7"/>
-          <path d="M51,47 C61,40 71,38 76,43 M51,55 C60,55 68,58 72,64 M51,62 C57,64 63,69 65,74"
-                fill="none" stroke="#9b7fb8" stroke-width=".4" opacity=".55"/>
-        </g>
+        <!-- OUTER WHEEL: double-rimmed, studded with eyes -->
+        <g class="rsA"><g class="ringA">
+          <circle cx="40" cy="62" r="33" fill="none" stroke="#c4a8d4" stroke-width="1.1" opacity=".85" filter="url(#opGl)"/>
+          <circle cx="40" cy="62" r="28.5" fill="none" stroke="#c4a8d4" stroke-width=".8" opacity=".6"/>
+          <!-- rim spokes between the two rims -->
+          <g stroke="#9b7fb8" stroke-width=".4" opacity=".5">
+            <line x1="40" y1="29" x2="40" y2="33.5"/><line x1="62.3" y1="38.4" x2="59.1" y2="41.6"/>
+            <line x1="73" y1="62" x2="68.5" y2="62"/><line x1="62.3" y1="85.6" x2="59.1" y2="82.4"/>
+            <line x1="40" y1="95" x2="40" y2="90.5"/><line x1="17.7" y1="85.6" x2="20.9" y2="82.4"/>
+            <line x1="7" y1="62" x2="11.5" y2="62"/><line x1="17.7" y1="38.4" x2="20.9" y2="41.6"/>
+          </g>
+          <!-- eight eyes on the band, each following the rim -->
+          <g id="rimEyes"></g>
+        </g></g>
 
-        <!-- BODY: the flame-teardrop from the current preview -->
-        <path d="M40,18 C28,27 23,42 25,58 C27,74 34,84 40,88 C46,84 53,74 55,58 C57,42 52,27 40,18 Z"
-              fill="url(#wsBody)" stroke="#c4a8d4" stroke-width="1.2" filter="url(#wsGl)"/>
+        <!-- INNER WHEEL B: seen edge-on (vertical), turning against the first -->
+        <g class="rsB"><g class="ringB">
+          <ellipse cx="40" cy="62" rx="11" ry="30.5" fill="none" stroke="#e8d4f0" stroke-width=".9" opacity=".6"/>
+          <ellipse cx="40" cy="62" rx="8" ry="27" fill="none" stroke="#e8d4f0" stroke-width=".5" opacity=".4"/>
+        </g></g>
 
-        <!-- FACE -->
-        <g class="eyes-open">
-          <ellipse cx="34" cy="44" rx="2" ry="2.9" fill="#f4ecfa" opacity=".95"/>
-          <ellipse cx="46" cy="44" rx="2" ry="2.9" fill="#f4ecfa" opacity=".95"/>
-          <circle cx="34" cy="44.6" r=".8" fill="#9b7fb8"/>
-          <circle cx="46" cy="44.6" r=".8" fill="#9b7fb8"/>
-          <circle cx="34.6" cy="43.4" r=".45" fill="#fff"/>
-          <circle cx="46.6" cy="43.4" r=".45" fill="#fff"/>
-        </g>
-        <g class="eyes-happy">
-          <path d="M31.4,44.6 Q34,41.6 36.6,44.6" fill="none" stroke="#f4ecfa" stroke-width="1.1" stroke-linecap="round"/>
-          <path d="M43.4,44.6 Q46,41.6 48.6,44.6" fill="none" stroke="#f4ecfa" stroke-width="1.1" stroke-linecap="round"/>
-        </g>
-        <!-- gentle smile -->
-        <path d="M37.6,51.5 Q40,53.4 42.4,51.5" fill="none" stroke="#e8d4f0" stroke-width=".9" stroke-linecap="round" opacity=".85"/>
-        <!-- cheek lights -->
-        <ellipse cx="30.5" cy="48.5" rx="1.6" ry="1" fill="#e8d4f0" opacity=".3"/>
-        <ellipse cx="49.5" cy="48.5" rx="1.6" ry="1" fill="#e8d4f0" opacity=".3"/>
-        <!-- brow gem -->
-        <path d="M40,33 L41.6,35.4 L40,37.8 L38.4,35.4 Z" fill="#e8d4f0" opacity=".75" stroke="#f4ecfa" stroke-width=".4"/>
+        <!-- INNER WHEEL C: seen edge-on (horizontal) -->
+        <g class="rsC"><g class="ringC">
+          <ellipse cx="40" cy="62" rx="30.5" ry="10" fill="none" stroke="#c4a8d4" stroke-width=".9" opacity=".55"/>
+          <ellipse cx="40" cy="62" rx="27" ry="7.4" fill="none" stroke="#c4a8d4" stroke-width=".5" opacity=".38"/>
+        </g></g>
 
-        <!-- chest core -->
-        <circle class="core" cx="40" cy="66" r="7.5" fill="url(#wsCore)"/>
-        <circle cx="40" cy="66" r="1.6" fill="#f4ecfa" opacity=".9"/>
+        <!-- THE CORE: a still eye inside the turning -->
+        <circle class="core-glow" cx="40" cy="62" r="11" fill="url(#opCore)" filter="url(#opGl)"/>
+        <path d="M32.5,62 Q40,55.5 47.5,62 Q40,68.5 32.5,62 Z" fill="rgba(13,7,22,.7)" stroke="#f4ecfa" stroke-width=".9"/>
+        <circle cx="40" cy="62" r="3.2" fill="rgba(155,127,184,.7)" stroke="#e8d4f0" stroke-width=".6"/>
+        <circle cx="40" cy="62" r="1.4" fill="#f4ecfa"/>
+        <circle cx="41" cy="61" r=".55" fill="#fff"/>
 
-        <!-- tail wisp -->
-        <path d="M40,88 C37,95 43,100 40,108" fill="none" stroke="#c4a8d4" stroke-width="1" opacity=".55" stroke-linecap="round"/>
-        <path d="M40,108 C39,112 41,114 40,117" fill="none" stroke="#c4a8d4" stroke-width=".7" opacity=".35" stroke-linecap="round"/>
-
-        <!-- drifting motes -->
-        <circle cx="20" cy="92" r=".8" fill="#e8d4f0" opacity=".5"/>
-        <circle cx="60" cy="90" r=".8" fill="#e8d4f0" opacity=".5"/>
-        <circle cx="48" cy="112" r=".6" fill="#e8d4f0" opacity=".4"/>
-        <circle cx="31" cy="116" r=".6" fill="#e8d4f0" opacity=".4"/>
+        <!-- attendant motes -->
+        <circle cx="40" cy="14" r="1" fill="#f4ecfa" opacity=".8"/>
+        <circle cx="40" cy="112" r=".9" fill="#e8d4f0" opacity=".6"/>
+        <circle cx="13" cy="20" r=".6" fill="#e8d4f0" opacity=".45"/>
+        <circle cx="67" cy="106" r=".6" fill="#e8d4f0" opacity=".45"/>
 
         <!-- sparkles -->
-        <g opacity=".6"><line x1="11" y1="24" x2="17" y2="24" stroke="#e8d4f0" stroke-width=".9"/><line x1="14" y1="21" x2="14" y2="27" stroke="#e8d4f0" stroke-width=".9"/></g>
-        <g opacity=".45"><line x1="64" y1="20" x2="70" y2="20" stroke="#e8d4f0" stroke-width=".8"/><line x1="67" y1="17" x2="67" y2="23" stroke="#e8d4f0" stroke-width=".8"/></g>
-        <g opacity=".4"><line x1="70" y1="84" x2="75" y2="84" stroke="#e8d4f0" stroke-width=".8"/><line x1="72.5" y1="81.5" x2="72.5" y2="86.5" stroke="#e8d4f0" stroke-width=".8"/></g>
-        <g opacity=".4"><line x1="6" y1="88" x2="11" y2="88" stroke="#e8d4f0" stroke-width=".8"/><line x1="8.5" y1="85.5" x2="8.5" y2="90.5" stroke="#e8d4f0" stroke-width=".8"/></g>
+        <g opacity=".6"><line x1="9" y1="16" x2="15" y2="16" stroke="#e8d4f0" stroke-width=".9"/><line x1="12" y1="13" x2="12" y2="19" stroke="#e8d4f0" stroke-width=".9"/></g>
+        <g opacity=".45"><line x1="65" y1="14" x2="71" y2="14" stroke="#e8d4f0" stroke-width=".8"/><line x1="68" y1="11" x2="68" y2="17" stroke="#e8d4f0" stroke-width=".8"/></g>
+        <g opacity=".45"><line x1="68" y1="116" x2="73" y2="116" stroke="#e8d4f0" stroke-width=".8"/><line x1="70.5" y1="113.5" x2="70.5" y2="118.5" stroke="#e8d4f0" stroke-width=".8"/></g>
+        <g opacity=".4"><line x1="7" y1="110" x2="12" y2="110" stroke="#e8d4f0" stroke-width=".8"/><line x1="9.5" y1="107.5" x2="9.5" y2="112.5" stroke="#e8d4f0" stroke-width=".8"/></g>
       </svg>
     </div>
-    <div class="name">Elys &middot; Winged Spirit</div>
-    <div class="concept">The flame-teardrop body from the current preview, grown into a creature: three-plume wings spread wide, luminous eyes, a small smile, a brow gem, and a glowing chest core trailing off into a wisp.</div>
-    <div class="hint">tap — it beats its wings and smiles</div>
+    <div class="name">Elys &middot; Ophan of the Veil</div>
+    <div class="concept">The wheel-form: an armillary of three turning rings — the outer wheel rimmed with watching eyes, two edge-on wheels gyring inside it, a ring of pale fire outside, and one still eye at the center of all the motion.</div>
+    <div class="hint">tap — the wheels make a swift revolution</div>
   </div>
 
   <!-- Shop icon version -->
   <div class="card card--icon">
     <div class="iconbox">
       <svg viewBox="0 0 56 58" xmlns="http://www.w3.org/2000/svg">
-        <!-- wings (two plumes per side at icon scale) -->
-        <path d="M22,21 C14,13 5,12 2,19 C8,22 14,25 19,29 Z" fill="#c4a8d4" opacity=".45" stroke="#c4a8d4" stroke-width=".8" stroke-linejoin="round"/>
-        <path d="M21,27 C14,27 7,30 4,36 C10,39 17,37 22,32 Z" fill="#c4a8d4" opacity=".35" stroke="#c4a8d4" stroke-width=".7" stroke-linejoin="round"/>
-        <path d="M34,21 C42,13 51,12 54,19 C48,22 42,25 37,29 Z" fill="#c4a8d4" opacity=".45" stroke="#c4a8d4" stroke-width=".8" stroke-linejoin="round"/>
-        <path d="M35,27 C42,27 49,30 52,36 C46,39 39,37 34,32 Z" fill="#c4a8d4" opacity=".35" stroke="#c4a8d4" stroke-width=".7" stroke-linejoin="round"/>
-        <!-- body: the current preview's teardrop -->
-        <path d="M28 8C20 14 17 23 18.5 33 C20 43 25 49 28 51.5 C31 49 36 43 37.5 33 C39 23 36 14 28 8Z"
-              fill="rgba(255,255,255,.05)" stroke="#c4a8d4" stroke-width="1.35"/>
-        <!-- face -->
-        <ellipse cx="24.5" cy="24" rx="1.4" ry="2" fill="#f4ecfa" opacity=".95"/>
-        <ellipse cx="31.5" cy="24" rx="1.4" ry="2" fill="#f4ecfa" opacity=".95"/>
-        <path d="M26.4,29 Q28,30.3 29.6,29" fill="none" stroke="#e8d4f0" stroke-width=".8" stroke-linecap="round" opacity=".85"/>
-        <!-- chest core -->
-        <circle cx="28" cy="38" r="3.4" fill="#e8d4f0" opacity=".3"/>
-        <circle cx="28" cy="38" r="1.1" fill="#f4ecfa" opacity=".9"/>
+        <!-- outer wheel + eye studs -->
+        <circle cx="28" cy="29" r="21" fill="none" stroke="#c4a8d4" stroke-width="1.2" opacity=".85"/>
+        <circle cx="28" cy="29" r="17.5" fill="none" stroke="#c4a8d4" stroke-width=".7" opacity=".55"/>
+        <g fill="#e8d4f0" opacity=".85">
+          <circle cx="28" cy="9.8" r="1.2"/><circle cx="44.6" cy="19.4" r="1.2"/>
+          <circle cx="44.6" cy="38.6" r="1.2"/><circle cx="28" cy="48.2" r="1.2"/>
+          <circle cx="11.4" cy="38.6" r="1.2"/><circle cx="11.4" cy="19.4" r="1.2"/>
+        </g>
+        <!-- inner edge-on wheels -->
+        <ellipse cx="28" cy="29" rx="7" ry="19" fill="none" stroke="#e8d4f0" stroke-width=".7" opacity=".55"/>
+        <ellipse cx="28" cy="29" rx="19" ry="6.4" fill="none" stroke="#c4a8d4" stroke-width=".7" opacity=".5"/>
+        <!-- core eye -->
+        <circle cx="28" cy="29" r="5.5" fill="rgba(196,168,212,.18)"/>
+        <path d="M23.4,29 Q28,25.2 32.6,29 Q28,32.8 23.4,29 Z" fill="rgba(13,7,22,.7)" stroke="#f4ecfa" stroke-width=".7"/>
+        <circle cx="28" cy="29" r="1.8" fill="rgba(155,127,184,.75)"/>
+        <circle cx="28" cy="29" r=".8" fill="#f4ecfa"/>
       </svg>
     </div>
     <div class="name" style="font-size:16px;">Shop icon</div>
-    <div class="concept">Teardrop body with the same face and core, two wing plumes per side.</div>
+    <div class="concept">The wheel with its eye-studs, both inner gyres, and the still core eye.</div>
   </div>
 
 </div>
 
 <script>
+// Eyes along the outer rim, each rotated to lie tangent to the band
+(function() {
+  var g = document.getElementById('rimEyes');
+  var cx = 40, cy = 62, r = 30.75, n = 8, html = '';
+  for (var i = 0; i < n; i++) {
+    var a = -90 + i * (360 / n);
+    var rad = a * Math.PI / 180;
+    var x = cx + Math.cos(rad) * r, y = cy + Math.sin(rad) * r;
+    html += '<g transform="translate(' + x.toFixed(1) + ',' + y.toFixed(1) + ') rotate(' + (a + 90) + ')">'
+      + '<path d="M-2.6,0 Q0,-2 2.6,0 Q0,2 -2.6,0 Z" fill="rgba(13,7,22,.65)" stroke="#e8d4f0" stroke-width=".5"/>'
+      + '<circle r="1" fill="#c4a8d4"/>'
+      + '<circle r=".45" fill="#f4ecfa"/>'
+      + '</g>';
+  }
+  g.innerHTML = html;
+})();
+
 (function() {
   var st = document.getElementById('stMain'), t = null;
   st.addEventListener('click', function() {
@@ -199,7 +202,7 @@
     void st.offsetWidth;
     st.classList.add('alive');
     clearTimeout(t);
-    t = setTimeout(function() { st.classList.remove('alive'); }, 1750);
+    t = setTimeout(function() { st.classList.remove('alive'); }, 1800);
   });
 })();
 </script>
