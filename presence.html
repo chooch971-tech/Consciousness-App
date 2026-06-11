@@ -18136,9 +18136,10 @@ function guideFloorMin(exId) {
 
 function guideAutoAdvanceOn(exId) {
   // No override → natural progression always climbs. Override → per-exercise
-  // checkbox, default OFF (hold steady at the chosen start).
+  // checkbox, default ON (climbs past the chosen start) unless explicitly turned off.
   if (!guideFloorMin(exId)) return true;
-  return !!(guideState._advanceAuto && guideState._advanceAuto[exId]);
+  var auto = guideState._advanceAuto && guideState._advanceAuto[exId];
+  return auto === undefined ? true : !!auto;
 }
 
 function guideAdvancedActive(exId) {
@@ -19580,7 +19581,7 @@ function renderPathQuests() {
   var advItem = document.getElementById('pqSkipAdvanced');
   var advOverlay = document.getElementById('pqAdvancedOverlay');
   var advMinutes = 5;        // working value while the dialog is open
-  var advAuto = false;
+  var advAuto = true;
   var EX_DISPLAY_NAMES = { clock:'Clock', visual:'Visualization', auditory:'Auditory', thought:'Thought Control', asana:'Asana' };
   function isTimedEx(id) { return GUIDE_TIMED_EXERCISES.indexOf(id) !== -1; }
 
@@ -19619,7 +19620,8 @@ function renderPathQuests() {
     if (!activeExId || !isTimedEx(activeExId)) return;
     var floor = guideFloorMin(activeExId);
     advMinutes = floor || guideClamp(guideRecommendedMinutes(activeExId), 1, GUIDE_FLOOR_CAP);
-    advAuto = guideAutoAdvanceOn(activeExId) && !!floor;
+    // New overrides default to auto-advance on; existing ones keep their saved choice.
+    advAuto = floor ? guideAutoAdvanceOn(activeExId) : true;
     var titleEl = document.getElementById('pqAdvancedTitle');
     if (titleEl) titleEl.textContent = 'I\'m Advanced · ' + (EX_DISPLAY_NAMES[activeExId] || '');
     renderAdvDialog();
