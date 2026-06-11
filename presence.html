@@ -19715,7 +19715,13 @@ function setupCorgiWander(comp, active) {
     var goingLeft = !comp.classList.contains('corgi-left');
     comp.classList.toggle('corgi-left', goingLeft);
     comp.classList.toggle('corgi-flip', goingLeft);
-  }, 15000);
+    // Double-jump on each side-switch
+    comp.classList.remove('corgi-jumping'); void comp.offsetWidth; comp.classList.add('corgi-jumping');
+    setTimeout(function() {
+      comp.classList.remove('corgi-jumping'); void comp.offsetWidth; comp.classList.add('corgi-jumping');
+      setTimeout(function() { comp.classList.remove('corgi-jumping'); }, 650);
+    }, 650);
+  }, 10000);
 }
 document.getElementById('omniaCenterFigure').addEventListener('click', morphOmniaCenter);
 (function(){
