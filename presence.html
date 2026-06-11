@@ -1088,11 +1088,16 @@
     .oe-advance-btn { width:100%; padding:10px; border-radius:7px; border:1px solid rgba(142,204,224,.32); background:rgba(142,204,224,.1); color:#b8eaff; font-family:'DM Mono',monospace; font-size:9px; letter-spacing:.2em; text-transform:uppercase; cursor:pointer; }
     .oe-advance-btn:disabled { opacity:.42; cursor:default; }
 
-    .conc-history-item { background:var(--surface); border:1px solid var(--border); border-radius:8px; padding:16px; margin-bottom:10px; }
-    .conc-history-top { display:flex; justify-content:space-between; align-items:center; margin-bottom:4px; }
-    .conc-history-date { font-size:10px; letter-spacing:.15em; color:var(--muted); }
+    .conc-history-item { background:var(--surface); border:1px solid var(--border); border-radius:10px; padding:16px 16px 14px; margin-bottom:12px; }
+    .conc-history-top { display:flex; justify-content:space-between; align-items:baseline; margin-bottom:10px; }
+    .conc-history-date { font-size:11px; letter-spacing:.15em; color:var(--muted); font-family:'DM Mono',monospace; }
     .conc-history-time { font-size:13px; color:#d4b08e; }
-    .conc-history-xp { font-size:9px; color:#d4956e; }
+    .conc-history-xp { font-size:10px; color:#d4956e; }
+    .conc-history-stats { display:flex; gap:20px; flex-wrap:wrap; padding:10px 0; margin-bottom:8px; border-top:1px solid var(--border); border-bottom:1px solid var(--border); }
+    .conc-history-stat { display:flex; flex-direction:column; gap:3px; }
+    .conc-history-stat-label { font-size:8px; letter-spacing:.18em; text-transform:uppercase; color:var(--muted); font-family:'DM Mono',monospace; }
+    .conc-history-stat-value { font-size:18px; color:var(--text); font-family:'Cormorant Garamond',serif; font-weight:300; line-height:1; }
+    .conc-history-foot { display:flex; gap:14px; align-items:center; }
 
     /* EXERCISE SELECTOR */
     .exercise-tabs { display:flex; gap:8px; margin-bottom:20px; justify-content:center; }
@@ -10606,13 +10611,23 @@ function renderConcHistory() {
       var holdStr = h.exercise === 'asana'
         ? (Math.floor(h.seconds/60) + ':' + (h.seconds%60 < 10 ? '0' : '') + (h.seconds%60))
         : h.seconds + 's';
+      var isClockEntry = !h.type && !h.exercise;
+      var statsHtml = '';
+      if (isClockEntry) {
+        var totalSessionSec = guideSessionSec(h);
+        statsHtml = '<div class="conc-history-stats">'
+          + '<div class="conc-history-stat"><span class="conc-history-stat-label">Total Session</span><span class="conc-history-stat-value">' + fmtSecs(totalSessionSec) + '</span></div>'
+          + '<div class="conc-history-stat"><span class="conc-history-stat-label">Personal Best Rep</span><span class="conc-history-stat-value">' + fmtSecs(h.seconds || 0) + '</span></div>'
+          + '</div>';
+      }
       return '<div class="conc-history-item" style="position:relative;">'
         + '<button class="history-delete-btn" onclick="deleteConcSession(' + idx + ')">✕</button>'
         + '<div class="conc-history-top" style="padding-right:28px;">'
         + '<span class="conc-history-date">' + timeStr + '</span>'
-        + '<span class="conc-history-time">' + holdStr + '</span>'
+        + (isClockEntry ? '' : '<span class="conc-history-time">' + holdStr + '</span>')
         + '</div>'
-        + '<div style="display:flex;gap:12px;align-items:center;">'
+        + statsHtml
+        + '<div class="conc-history-foot">'
         + '<span class="conc-history-xp">+' + h.xpEarned + ' xp</span>'
         + '<span style="font-size:9px;color:var(--muted);letter-spacing:.1em;">' + typeStr + '</span>'
         + '</div>'
