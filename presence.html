@@ -15012,6 +15012,7 @@ var OMNIA_PALETTES = [
   { id:'solar', name:'Solar Gold', cost:0, _price:9200, color:'#f0d39a', filter:'hue-rotate(182deg) saturate(1.2) brightness(1.1)', sub:'A warm body of will' },
   { id:'violet', name:'Violet Mind', cost:0, _price:11800, color:'#c4a8d4', filter:'hue-rotate(74deg) saturate(1.22) brightness(1.04)', sub:'A quiet mental flame' },
   { id:'verdant', name:'Verdant Vessel', cost:0, _price:14500, color:'#98d8bd', filter:'hue-rotate(246deg) saturate(1.12) brightness(1.02)', sub:'A healing green current' },
+  { id:'crimson', name:'Crimson Flame', cost:0, _price:13500, color:'#e8554f', filter:'hue-rotate(162deg) saturate(1.3) brightness(1.05)', sub:"Archangel Michael's own warrior-fire" },
   { id:'spectral', name:'Spectral Veil', cost:0, _price:14500, color:'rgba(216,236,255,0.42)', filter:'brightness(1.5) saturate(1.15) opacity(0.5) drop-shadow(0 0 7px rgba(184,234,255,.75))', sub:'A near-invisible ghost — only the glowing edges pulse into view' },
   { id:'aurora', name:'Aurora Veil', cost:0, _price:0, color:'#a8e8c8', filter:'none', sub:'A living prism — the full spectrum cycling endlessly' }
 ];
@@ -15030,8 +15031,8 @@ var OMNIA_ENTITIES = [
 // gold Aurel spins him right around the wheel to blue. Each value below is
 // "the tuned rotation that turns crystal-blue into this thing's base color".
 var OMNIA_HUE_FROM_BLUE = {
-  aether:0, rose:128, solar:182, violet:74, verdant:246,        // palettes
-  omnia:0, noema:0, aurel:182, elys:74, seraph:182              // entities
+  aether:0, rose:128, solar:182, violet:74, verdant:246, crimson:162, // palettes
+  omnia:0, noema:0, aurel:182, elys:74, seraph:182                    // entities
 };
 // The palette each entity is natively drawn in. Selecting a form snaps the
 // color choice here so the swatch and the rendered figure always agree.
@@ -16222,11 +16223,18 @@ function unlockOrSelectOmniaCosmetic(kind, id) {
   if (kind === 'palette') omniaState.cosmetics.palette = id;
   if (kind === 'entity') {
     omniaState.cosmetics.entity = id;
-    // Snap the color to the form's native palette so the selected swatch
-    // matches how the entity actually renders (only if that palette is owned).
-    var nativePal = OMNIA_ENTITY_NATIVE_PALETTE[id] || 'aether';
-    if (omniaState.cosmetics.palette !== nativePal && omniaCosmeticUnlocked('palette', nativePal)) {
-      omniaState.cosmetics.palette = nativePal;
+    if (id === 'elys') {
+      // Archangel Michael comes with his own warrior-red palette, free and
+      // selected the moment he's chosen.
+      if (omniaUnlockList('palette').indexOf('crimson') === -1) omniaUnlockList('palette').push('crimson');
+      omniaState.cosmetics.palette = 'crimson';
+    } else {
+      // Snap the color to the form's native palette so the selected swatch
+      // matches how the entity actually renders (only if that palette is owned).
+      var nativePal = OMNIA_ENTITY_NATIVE_PALETTE[id] || 'aether';
+      if (omniaState.cosmetics.palette !== nativePal && omniaCosmeticUnlocked('palette', nativePal)) {
+        omniaState.cosmetics.palette = nativePal;
+      }
     }
   }
   if (kind === 'companion') omniaState.cosmetics.companion = id;
