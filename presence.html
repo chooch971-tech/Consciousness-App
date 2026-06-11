@@ -1669,7 +1669,28 @@
 @keyframes amHaloIdle { 0%,100%{opacity:.6;} 50%{opacity:.9;} }
 .am-orb-glow { animation:amOrbIdle 3.6s ease-in-out infinite; }
 @keyframes amOrbIdle { 0%,100%{opacity:.4;} 50%{opacity:.75;} }
-.omnia-figure.has-companion .omnia-companion.companion-corgi { pointer-events:auto; cursor:pointer; }
+.omnia-figure.has-companion .omnia-companion { pointer-events:auto; cursor:pointer; }
+/* Wisp: every 10s it dashes a little loop through the air; tapped, it spins and flares */
+@keyframes wispLoop { 0%,100%{transform:translate(0,0);} 25%{transform:translate(-11px,-8px);} 50%{transform:translate(-2px,-16px);} 75%{transform:translate(8px,-7px);} }
+.omnia-companion.wisp-loop svg { animation:wispLoop 1.7s ease-in-out both; }
+@keyframes wispSpin { 0%{transform:rotate(0) scale(1);} 60%{transform:rotate(320deg) scale(1.28);} 100%{transform:rotate(360deg) scale(1);} }
+.omnia-companion.wisp-spin svg { animation:wispSpin .9s cubic-bezier(.4,.2,.3,1) both; }
+/* Ember: every 10s the flame flares tall and spits sparks; tapped, it crackle-pops */
+@keyframes emberFlare { 0%,100%{transform:scale(1,1);} 30%{transform:scale(.92,1.35);} 60%{transform:scale(1,1.12);} }
+.omnia-companion.ember-flare svg { animation:emberFlare 1.4s ease-in-out both; transform-origin:50% 88%; }
+@keyframes emberPop { 0%,100%{transform:scale(1,1);} 30%{transform:scale(1.25,.72);} 60%{transform:scale(.85,1.28);} }
+.omnia-companion.ember-pop svg { animation:emberPop .6s ease-in-out both; transform-origin:50% 88%; }
+.ember-spark { opacity:0; }
+.omnia-companion.ember-flare .ember-spark { animation:emberSparkRise 1.3s ease-out both; }
+.omnia-companion.ember-pop .ember-spark { animation:emberSparkRise .7s ease-out both; }
+@keyframes emberSparkRise { 0%{opacity:0; transform:translateY(2px);} 25%{opacity:1;} 100%{opacity:0; transform:translateY(-12px);} }
+/* Mote: every 10s the eye scans its surroundings; tapped, it winks while the star twirls */
+@keyframes moteScan { 0%,100%{transform:translateX(0);} 30%{transform:translateX(-2.6px);} 65%{transform:translateX(2.6px);} }
+.omnia-companion.mote-scan .mote-pupil { animation:moteScan 1.9s ease-in-out both; }
+@keyframes moteWink { 0%,100%{transform:scaleY(1);} 35%{transform:scaleY(.07);} 65%{transform:scaleY(.07);} }
+.omnia-companion.mote-wink .mote-eye { animation:moteWink .75s ease-in-out both; transform-box:fill-box; transform-origin:center; }
+@keyframes moteTwirl { from{transform:rotate(0);} to{transform:rotate(360deg);} }
+.omnia-companion.mote-wink .mote-star { animation:moteTwirl .85s cubic-bezier(.4,.2,.3,1) both; transform-box:fill-box; transform-origin:center; }
 @keyframes corgiWaddle { 0%,100%{transform:translateY(0) rotate(0deg);} 25%{transform:translateY(-2.5px) rotate(2.5deg);} 75%{transform:translateY(-2.5px) rotate(-2.5deg);} }
 .omnia-figure.has-companion .omnia-companion.companion-corgi.corgi-walking { animation:corgiWaddle .45s ease-in-out infinite; }
 @keyframes omniaCorgiJump { 0%{transform:translateY(0) rotate(0deg);} 32%{transform:translateY(-20px) rotate(4deg);} 55%{transform:translateY(-20px) rotate(-3deg);} 80%{transform:translateY(2px) rotate(0deg);} 100%{transform:translateY(0) rotate(0deg);} }
@@ -15543,16 +15564,51 @@ function renderOmniaEntityPreview(item) {
 
 function renderOmniaCompanionPreview(item) {
   var color = item.color || '#b8eaff';
-  if (item.id === 'ember') {
+  if (item.id === 'wisp') {
+    // A small spirit-comet: glowing head orb with sleepy eyes, a curling
+    // ribbon tail, and trailing sparkles. Loops the air every so often.
     return '<svg viewBox="0 0 46 46" aria-hidden="true">'
-      + '<path d="M24 4c5 8 12 13 12 24 0 8-6 14-13 14S10 36 10 28c0-7 4-11 8-16-1 7 3 10 6 12 4-6 2-12 0-20Z" fill="' + color + '" opacity=".34" stroke="' + color + '" stroke-width="1.2"/>'
-      + '<path d="M24 25c3 4 5 7 5 10 0 4-3 7-6 7s-6-3-6-7c0-3 2-6 7-10Z" fill="#fff2cf" opacity=".5"/>'
+      + '<path d="M22 23 C16 29 9 31 4 29 C9 27 12 23 13 18 C16 21 19 23 22 23 Z" fill="' + color + '" opacity=".3" stroke="' + color + '" stroke-width=".8"/>'
+      + '<circle cx="27" cy="18" r="7.5" fill="' + color + '" opacity=".4" stroke="' + color + '" stroke-width="1.1"/>'
+      + '<circle cx="26" cy="15.5" r="2.8" fill="#fff" opacity=".55"/>'
+      + '<ellipse cx="24.5" cy="18.5" rx="1" ry="1.4" fill="#1c3344" opacity=".85"/>'
+      + '<ellipse cx="29.5" cy="18.5" rx="1" ry="1.4" fill="#1c3344" opacity=".85"/>'
+      + '<circle cx="24.8" cy="18" r=".35" fill="#fff"/><circle cx="29.8" cy="18" r=".35" fill="#fff"/>'
+      + '<path d="M25.4 22.4 Q27 23.6 28.6 22.4" fill="none" stroke="#1c3344" stroke-width=".7" stroke-linecap="round" opacity=".7"/>'
+      + '<g stroke="' + color + '" stroke-width=".9" stroke-linecap="round" opacity=".8">'
+      + '<path d="M7 37h4M9 35v4"/>'
+      + '<path d="M14 41h3M15.5 39.5v3"/>'
+      + '</g>'
+      + '</svg>';
+  }
+  if (item.id === 'ember') {
+    // A calm little fire spirit: contented closed eyes on the inner flame,
+    // spark motes that rise when it flares or is tapped.
+    return '<svg viewBox="0 0 46 46" aria-hidden="true">'
+      + '<path d="M23 5c4 7 10 11 10 21 0 8-5 14-10 14S13 34 13 26c0-6 3-10 7-14-1 6 2 9 5 11 3-5 1-10-2-18Z" fill="' + color + '" opacity=".38" stroke="' + color + '" stroke-width="1.2"/>'
+      + '<path d="M23 23c3 4 5 7 5 10 0 4-2.5 6.5-5 6.5s-5-2.5-5-6.5c0-3 2-6 5-10Z" fill="#fff2cf" opacity=".6"/>'
+      + '<path d="M19.4 32 q1.5-1.7 3 0 M23.6 32 q1.5-1.7 3 0" fill="none" stroke="#8a5a20" stroke-width=".85" stroke-linecap="round" opacity=".9"/>'
+      + '<circle class="ember-spark" cx="15" cy="14" r="1.1" fill="#ffe9b0"/>'
+      + '<circle class="ember-spark" style="animation-delay:.2s" cx="29" cy="10" r=".9" fill="#ffe9b0"/>'
+      + '<circle class="ember-spark" style="animation-delay:.45s" cx="33" cy="19" r=".8" fill="#ffe9b0"/>'
       + '</svg>';
   }
   if (item.id === 'mote') {
+    // The tiny watcher: a four-point star holding one attentive eye that
+    // scans its surroundings and winks when tapped.
     return '<svg viewBox="0 0 46 46" aria-hidden="true">'
-      + '<path d="M23 4l4 14 14 5-14 5-4 14-5-14-13-5 13-5Z" fill="' + color + '" opacity=".42" stroke="' + color + '" stroke-width="1.1"/>'
-      + '<circle cx="23" cy="23" r="4.5" fill="#fff" opacity=".42"/>'
+      + '<g class="mote-star">'
+      + '<path d="M23 4l3.5 13L40 23l-13.5 6L23 42l-3.5-13L6 23l13.5-6Z" fill="' + color + '" opacity=".35" stroke="' + color + '" stroke-width="1"/>'
+      + '</g>'
+      + '<g class="mote-eye">'
+      + '<path d="M16.5 23 Q23 17.5 29.5 23 Q23 28.5 16.5 23 Z" fill="#f6f0fa" stroke="#9b7fb8" stroke-width=".5"/>'
+      + '<g class="mote-pupil">'
+      + '<circle cx="23" cy="23" r="3" fill="#9b7fb8"/>'
+      + '<circle cx="23" cy="23" r="1.5" fill="#1c1126"/>'
+      + '<circle cx="23.8" cy="22.2" r=".6" fill="#fff" opacity=".95"/>'
+      + '</g>'
+      + '</g>'
+      + '<circle cx="37" cy="10" r="1.2" fill="' + color + '" opacity=".8"/>'
       + '</svg>';
   }
   if (item.id === 'corgi') {
@@ -16031,7 +16087,9 @@ function applyOmniaCosmetics() {
       compSlot.innerHTML = companion ? renderOmniaCompanionPreview(companion) : '';
       compSlot.style.display = companion ? 'block' : 'none';
       compSlot.classList.toggle('companion-corgi', isCorgi);
+      compSlot.dataset.companion = companion ? companion.id : '';
       setupCorgiWander(compSlot, isCorgi);
+      setupCompanionIdle(compSlot, companion && !isCorgi ? companion.id : null);
     }
     f.dataset.entity = entity.id;
     f.setAttribute('aria-label', 'Reveal a ' + entity.name + ' symbol');
@@ -19821,18 +19879,36 @@ document.getElementById('guideOmniaFigure').addEventListener('keydown', function
     morphGuideOmnia();
   }
 });
-// Corgi hop: tapping him plays a jump without morphing the entity behind him
+// Companion taps: the corgi jumps; the wisp spins; the ember crackle-pops;
+// the mote winks. None of them morph the entity behind them.
+var COMPANION_TAP_CLASS = { wisp:'wisp-spin', ember:'ember-pop', mote:'mote-wink' };
+var COMPANION_IDLE_CLASS = { wisp:'wisp-loop', ember:'ember-flare', mote:'mote-scan' };
 ['guideOmniaCompanion', 'omniaCenterCompanion', 'pathBannerOmniaCompanion'].forEach(function(id) {
   var comp = document.getElementById(id);
   if (!comp) return;
   comp.addEventListener('click', function(e) {
-    if (!comp.classList.contains('companion-corgi')) return;
+    if (comp.classList.contains('companion-corgi')) {
+      e.stopPropagation();
+      comp.classList.remove('corgi-jumping');
+      void comp.offsetWidth; // restart the animation on rapid taps
+      comp.classList.add('corgi-jumping');
+      return;
+    }
+    var tap = COMPANION_TAP_CLASS[comp.dataset.companion];
+    if (!tap) return;
     e.stopPropagation();
-    comp.classList.remove('corgi-jumping');
-    void comp.offsetWidth; // restart the animation on rapid taps
-    comp.classList.add('corgi-jumping');
+    comp.classList.remove(tap, COMPANION_IDLE_CLASS[comp.dataset.companion]);
+    void comp.offsetWidth;
+    comp.classList.add(tap);
   });
   comp.addEventListener('animationend', function(e) {
+    // Drop one-shot action classes so idle and tap animations can re-trigger
+    if (e.animationName === 'wispSpin') comp.classList.remove('wisp-spin');
+    if (e.animationName === 'wispLoop') comp.classList.remove('wisp-loop');
+    if (e.animationName === 'emberPop') comp.classList.remove('ember-pop');
+    if (e.animationName === 'emberFlare') comp.classList.remove('ember-flare');
+    if (e.animationName === 'moteWink') comp.classList.remove('mote-wink');
+    if (e.animationName === 'moteScan') comp.classList.remove('mote-scan');
     if (e.animationName !== 'omniaCorgiJump') return;
     comp.classList.remove('corgi-jumping');
     if (comp.dataset.jumpsLeft && parseInt(comp.dataset.jumpsLeft, 10) > 0) {
@@ -19875,6 +19951,22 @@ function setupCorgiWander(comp, active) {
       comp.classList.remove('corgi-jumping'); void comp.offsetWidth; comp.classList.add('corgi-jumping');
       setTimeout(function() { comp.classList.remove('corgi-jumping'); }, 650);
     }, 650);
+  }, 10000);
+}
+
+// Non-corgi companion idle: every 10s the wisp loops the air, the ember
+// flares and spits sparks, the mote's eye scans its surroundings.
+var _companionIdleTimers = {};
+function setupCompanionIdle(comp, companionId) {
+  if (_companionIdleTimers[comp.id]) { clearInterval(_companionIdleTimers[comp.id]); delete _companionIdleTimers[comp.id]; }
+  comp.classList.remove('wisp-loop', 'wisp-spin', 'ember-flare', 'ember-pop', 'mote-scan', 'mote-wink');
+  var idleClass = COMPANION_IDLE_CLASS[companionId];
+  if (!idleClass) return;
+  _companionIdleTimers[comp.id] = setInterval(function() {
+    if (comp.dataset.companion !== companionId) return;
+    comp.classList.remove(idleClass);
+    void comp.offsetWidth;
+    comp.classList.add(idleClass);
   }, 10000);
 }
 document.getElementById('omniaCenterFigure').addEventListener('click', morphOmniaCenter);
