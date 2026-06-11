@@ -217,8 +217,9 @@ function card2() {
   });
   return shell(`
   ${mono(W / 2, 300, 36, '#ffffff', 'P R E S E N C E', 14)}
-  ${serif(W / 2, 580, 124, '#ffffff', 'Better Concentration')}
-  ${mono(W / 2, 800, 36, '#ffffff', 'CLASSICAL CONCENTRATION TRAINING, MADE DAILY', 5)}
+  ${serif(W / 2, 580, 106, '#ffffff', `Strengthen <tspan fill="${ACCENT}">Concentration</tspan>`)}
+  ${mono(W / 2, 760, 34, '#ffffff', 'HERMETICISM-STYLE CONCENTRATION EXERCISES;', 4)}
+  ${mono(W / 2, 820, 34, '#ffffff', 'AN APP FIRST OF ITS KIND.', 4)}
   ${g}
   ${mono(W / 2, 2370 + 90, 34, '#ffffff', 'EACH SESSION MEASURED · EVERY REP COUNTS', 6)}
   `, 19);
