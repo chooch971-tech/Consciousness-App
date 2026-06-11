@@ -13190,6 +13190,9 @@ function saveAudResult() {
   var notes = document.getElementById('audNotes').value.trim();
   var totalXP = audReps.reduce(function(a,r) { return a + r.seconds; }, 0);
   var bestSec = audReps.reduce(function(a,r) { return r.seconds > a ? r.seconds : a; }, 0);
+  // Actual wall-clock length of the session, so daily progress counts the whole
+  // sit (and the sum of multiple sits), not just the best unbroken rep.
+  var audSessionDurationSec = audSessionStartTime ? Math.floor((Date.now() - audSessionStartTime) / 1000) : totalXP;
   concState.xp += totalXP;
   if (isConcNewSession()) concState.totalSessions++;
   if (bestSec > concState.bestSeconds) concState.bestSeconds = bestSec;
@@ -13205,6 +13208,7 @@ function saveAudResult() {
     date: new Date().toISOString(),
     seconds: bestSec,
     xpEarned: totalXP,
+    sessionDurationSec: audSessionDurationSec,
     reps: audReps.length,
     notes: notes,
     type: 'auditory',
@@ -17820,10 +17824,18 @@ function guideThoughtDuration(h) {
 // and putting in the full duration. Falls back to best-rep/XP for older
 // history entries recorded before sessionDurationSec was tracked.
 function guideClockSessionSec(h) {
+  return guideSessionSec(h);
+}
+
+// Generalized "time actually practiced" for one session: prefers the recorded
+// wall-clock duration, then summed active reps (xpEarned), then the stored
+// seconds. Lets rep-based exercises (auditory) get credit for the whole sit —
+// and for the sum of several sits in a day — instead of only the best rep.
+function guideSessionSec(h) {
   var sec = guideHistorySeconds(h);
-  var legacy = (h && h.xpEarned && h.xpEarned > sec) ? h.xpEarned : sec;
+  var xp = parseInt(h && h.xpEarned, 10) || 0;
   var dur = parseInt(h && h.sessionDurationSec, 10) || 0;
-  return Math.max(dur, legacy);
+  return Math.max(dur, xp, sec);
 }
 
 function guideClockStats() {
@@ -17848,18 +17860,22 @@ function guideClockStats() {
     }
     clockSessions.push({ sec:sessionSec, ms:ms });
   });
-  // Simulate tier progression: +1 min per 2 qualifying sessions, cap at 10
-  clockSessions.sort(function(a, b) { return a.ms - b.ms; });
-  var tier = 5, qualAtTier = 0;
-  clockSessions.forEach(function(s) {
-    if (s.sec + 5 >= tier * 60) { // 5s grace for tap-timing variance
-      qualAtTier++;
-      if (tier === 10) out.qualTenCount++;
-      if (qualAtTier >= 2 && tier < 10) { tier++; qualAtTier = 0; }
+  // Recommendation rule: completing TWO sessions at a given length earns the
+  // next minute. The target is therefore the lowest minute (>=5) at which the
+  // player has fewer than two qualifying sessions — two 6-min sits recommend 7,
+  // two 7-min recommend 8, and so on, capped at 10. (5s grace for tap timing.)
+  function clockQualCount(min) {
+    var n = 0;
+    for (var i = 0; i < clockSessions.length; i++) {
+      if (clockSessions[i].sec + 5 >= min * 60) n++;
     }
-  });
+    return n;
+  }
+  var tier = 5;
+  while (tier < 10 && clockQualCount(tier) >= 2) tier++;
   out.qualTarget = tier;
-  out.qualAtTier = qualAtTier; // sessions completed at current tier (0 or 1)
+  out.qualAtTier = Math.min(clockQualCount(tier), 2); // sessions toward the next minute
+  out.qualTenCount = clockQualCount(10);
   return out;
 }
 
@@ -17938,11 +17954,12 @@ function guideAuditoryStats() {
   var sessions = [];
   history.forEach(function(h) {
     if (!h || h.type !== 'auditory') return;
-    var sec = Math.max(0, parseInt(h.seconds, 10) || 0);
+    var sec = guideSessionSec(h);                            // time practiced (whole sit)
+    var repSec = Math.max(0, parseInt(h.seconds, 10) || 0);  // best unbroken rep
     var ms = h.date ? new Date(h.date).getTime() : 0;
     out.count++;
     out.totalSec += sec;
-    if (sec > out.bestSec) out.bestSec = sec;
+    if (repSec > out.bestSec) out.bestSec = repSec;
     if (guideIsToday(h.date)) { out.todayCount++; out.todaySec += sec; }
     sessions.push({ sec:sec, ms:ms });
   });
@@ -18185,7 +18202,9 @@ function guideExerciseStats() {
   history.forEach(function(h) {
     var id = guideHistoryExerciseId(h);
     if (!stats[id]) return;
-    var sec = id === 'thought' ? guideThoughtDuration(h) : (h.seconds || 0);
+    var sec = id === 'thought' ? guideThoughtDuration(h)
+            : (id === 'auditory' || id === 'clock') ? guideSessionSec(h)
+            : (h.seconds || 0);
     var bestSec = h.seconds || sec;
     var ms = h.date ? new Date(h.date).getTime() : 0;
     stats[id].count++;
