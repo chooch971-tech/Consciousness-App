@@ -1064,6 +1064,10 @@
     .oe-cos-card-tag { font-size:8px; letter-spacing:.12em; text-transform:uppercase; font-family:'DM Mono',monospace; color:var(--muted); }
     .oe-cos-card-tag.sel { color:#8ecce0; }
     .oe-cos-dismiss { margin-top:10px; width:100%; }
+    .oe-veil-section { margin-top:14px; padding-top:14px; border-top:1px solid var(--border); }
+    .oe-veil-card { flex-direction:row; justify-content:flex-start; gap:10px; padding:10px 12px; }
+    .oe-veil-card .omnia-cosmetic-preview { width:30px; height:30px; flex-shrink:0; }
+    .oe-veil-card .oe-cos-card-name { flex:1; text-align:left; }
     @keyframes engRingPulse  { 0%,100%{opacity:.55;} 50%{opacity:.9;} }
     @keyframes engRingPulse2 { 0%,100%{opacity:.38;} 50%{opacity:.7;} }
     @keyframes engRingPulse3 { 0%,100%{opacity:.22;} 50%{opacity:.48;} }
@@ -1626,8 +1630,8 @@
    Animates the FILTER's opacity() (not the element opacity) so tap-to-morph
    still works. */
 @keyframes omniaSpectralPulse {
-  0%,100% { filter:brightness(1.55) saturate(1.05) opacity(.1)  drop-shadow(0 0 5px rgba(184,234,255,.45)); }
-  50%     { filter:brightness(1.6)  saturate(1.2)  opacity(.82) drop-shadow(0 0 18px rgba(184,234,255,.95)); }
+  0%,100% { filter:var(--omnia-filter, none) brightness(1.55) saturate(1.05) opacity(.1)  drop-shadow(0 0 5px rgba(184,234,255,.45)); }
+  50%     { filter:var(--omnia-filter, none) brightness(1.6)  saturate(1.2)  opacity(.82) drop-shadow(0 0 18px rgba(184,234,255,.95)); }
 }
 .omnia-spectral .omnia-crystal-layer { animation:omniaSpectralPulse 5s ease-in-out infinite; }
 /* Aurora Veil: full-spectrum hue cycle, only active when this palette is selected */
@@ -14994,9 +14998,11 @@ var OMNIA_DEFAULT = {
     palette:'aether',
     entity:'omnia',
     companion:null,
+    veil:null,
     unlockedPalettes:['aether'],
     unlockedEntities:['omnia'],
-    unlockedCompanions:[]
+    unlockedCompanions:[],
+    unlockedVeils:[]
   }
 };
 
@@ -15032,8 +15038,13 @@ var OMNIA_PALETTES = [
   { id:'violet', name:'Violet Mind', cost:0, _price:11800, color:'#c4a8d4', filter:'hue-rotate(74deg) saturate(1.22) brightness(1.04)', sub:'A quiet mental flame' },
   { id:'verdant', name:'Verdant Vessel', cost:0, _price:14500, color:'#98d8bd', filter:'hue-rotate(246deg) saturate(1.12) brightness(1.02)', sub:'A healing green current' },
   { id:'crimson', name:'Crimson Flame', cost:0, _price:13500, color:'#e8554f', filter:'hue-rotate(162deg) saturate(1.3) brightness(1.05)', sub:"Archangel Michael's own warrior-fire" },
-  { id:'spectral', name:'Spectral Veil', cost:0, _price:14500, color:'rgba(216,236,255,0.42)', filter:'brightness(1.5) saturate(1.15) opacity(0.5) drop-shadow(0 0 7px rgba(184,234,255,.75))', sub:'A near-invisible ghost — only the glowing edges pulse into view' },
   { id:'aurora', name:'Aurora Veil', cost:0, _price:0, color:'#a8e8c8', filter:'none', sub:'A living prism — the full spectrum cycling endlessly' }
+];
+
+// Veils are overlay effects layered on top of whichever palette color is
+// selected, rather than competing color choices of their own.
+var OMNIA_VEILS = [
+  { id:'spectral', name:'Spectral Veil', cost:0, _price:14500, color:'rgba(216,236,255,0.42)', sub:'A near-invisible ghost — only the glowing edges pulse into view, over any color' }
 ];
 
 var OMNIA_ENTITIES = [
@@ -15492,6 +15503,20 @@ function loadOmniaState() {
     merged.cosmetics.unlockedPalettes = merged.cosmetics.unlockedPalettes || ['aether'];
     merged.cosmetics.unlockedEntities = merged.cosmetics.unlockedEntities || ['omnia'];
     merged.cosmetics.unlockedCompanions = merged.cosmetics.unlockedCompanions || [];
+    merged.cosmetics.unlockedVeils = merged.cosmetics.unlockedVeils || [];
+    // Migrate Spectral Veil from a standalone color into a stackable overlay:
+    // anyone who owned/selected it as a palette keeps it, now layered on
+    // whichever color they actually have selected.
+    if (merged.cosmetics.unlockedPalettes.indexOf('spectral') !== -1) {
+      merged.cosmetics.unlockedPalettes = merged.cosmetics.unlockedPalettes.filter(function(id) { return id !== 'spectral'; });
+      if (merged.cosmetics.unlockedVeils.indexOf('spectral') === -1) merged.cosmetics.unlockedVeils.push('spectral');
+    }
+    if (merged.cosmetics.palette === 'spectral') {
+      merged.cosmetics.veil = 'spectral';
+      if (merged.cosmetics.unlockedVeils.indexOf('spectral') === -1) merged.cosmetics.unlockedVeils.push('spectral');
+      var nativePal = OMNIA_ENTITY_NATIVE_PALETTE[merged.cosmetics.entity] || 'aether';
+      merged.cosmetics.palette = merged.cosmetics.unlockedPalettes.indexOf(nativePal) !== -1 ? nativePal : 'aether';
+    }
     merged.storySeen = Array.isArray(parsed.storySeen) ? parsed.storySeen : [];
     merged.storyRead = Number(parsed.storyRead) || 0;
     if (!merged.lastTick) merged.lastTick = Date.now();
@@ -15522,6 +15547,7 @@ function omniaCosmeticUnlocked(kind, id) {
   if (kind === 'palette') return (c.unlockedPalettes || []).indexOf(id) !== -1;
   if (kind === 'entity') return (c.unlockedEntities || []).indexOf(id) !== -1;
   if (kind === 'companion') return (c.unlockedCompanions || []).indexOf(id) !== -1;
+  if (kind === 'veil') return (c.unlockedVeils || []).indexOf(id) !== -1;
   return false;
 }
 
@@ -15530,6 +15556,7 @@ function omniaCosmeticSelected(kind, id) {
   if (kind === 'palette') return c.palette === id;
   if (kind === 'entity') return c.entity === id;
   if (kind === 'companion') return c.companion === id;
+  if (kind === 'veil') return c.veil === id;
   return false;
 }
 
@@ -15537,6 +15564,7 @@ function omniaUnlockList(kind) {
   if (!omniaState.cosmetics) omniaState.cosmetics = cloneOmniaDefault().cosmetics;
   if (kind === 'palette') return omniaState.cosmetics.unlockedPalettes;
   if (kind === 'entity') return omniaState.cosmetics.unlockedEntities;
+  if (kind === 'veil') return omniaState.cosmetics.unlockedVeils;
   return omniaState.cosmetics.unlockedCompanions;
 }
 
@@ -15699,7 +15727,7 @@ function renderOmniaCosmeticPreview(kind, item) {
   if (kind === 'companion') {
     return '<div class="omnia-cosmetic-preview" style="--swatch:' + item.color + ';">' + renderOmniaCompanionPreview(item) + '</div>';
   }
-  return '<div class="omnia-cosmetic-preview" style="--swatch:' + item.color + ';"><div class="omnia-cosmetic-swatch" style="--swatch:' + item.color + ';"></div></div>';
+  return '<div class="omnia-cosmetic-preview" style="' + omniaSwatchStyle(item) + '"><div class="omnia-cosmetic-swatch" style="--swatch:' + item.color + ';"></div></div>';
 }
 
 function getEntityCrystalSVG(id) {
@@ -16111,7 +16139,7 @@ function applyOmniaCosmetics() {
     var f = document.getElementById(figId);
     if (!f) return;
     f.style.setProperty('--omnia-filter', omniaPaletteFilterFor(palette, entity));
-    f.classList.toggle('omnia-spectral', palette.id === 'spectral');
+    f.classList.toggle('omnia-spectral', omniaState.cosmetics.veil === 'spectral');
     f.classList.toggle('omnia-aurora', palette.id === 'aurora');
     f.style.setProperty('--omnia-companion-color', companion ? companion.color : palette.color);
     f.classList.toggle('has-companion', !!companion);
@@ -16201,6 +16229,26 @@ function renderOmniaAppearance() {
       return '<div class="oe-swatch' + (selected ? ' sel' : '') + (unlocked ? '' : ' locked') + (isFocus && !unlocked ? ' focus' : '') + '" style="' + omniaSwatchStyle(item) + '" title="' + item.name + '" ' + attrs + '></div>';
     }).join('') + '</div>';
     if (focusItem) html += renderOmniaCosDetail('palette', focusItem);
+    // Veils are overlay effects that stack on top of whichever color above
+    // is selected — toggle independently rather than picking one.
+    html += '<div class="oe-veil-section">' + OMNIA_VEILS.map(function(item) {
+      var unlocked = omniaCosmeticUnlocked('veil', item.id);
+      var selected = omniaCosmeticSelected('veil', item.id);
+      var liveCost = omniaCosmeticCost(item);
+      var tag = selected ? 'On' : unlocked ? 'Off' : liveCost > 0 ? liveCost.toLocaleString() + ' akasha' : 'Locked';
+      var attrs = unlocked
+        ? 'data-omnia-cosmetic-kind="veil" data-omnia-cosmetic-id="' + item.id + '"'
+        : 'data-omnia-cos-focus="' + item.id + '" data-omnia-cos-kind="veil"';
+      return '<div class="oe-cos-card oe-veil-card' + (selected ? ' sel' : '') + (unlocked ? '' : ' locked') + '" ' + attrs + '>'
+        + renderOmniaCosmeticPreview('veil', item)
+        + '<div class="oe-cos-card-name">' + item.name + '</div>'
+        + '<div class="oe-cos-card-tag' + (selected ? ' sel' : '') + '">' + tag + '</div>'
+        + '</div>';
+    }).join('') + '</div>';
+    var veilFocus = _omniaCosFocus.veil ? omniaFindCosmetic(OMNIA_VEILS, _omniaCosFocus.veil) : null;
+    if (veilFocus && !omniaCosmeticUnlocked('veil', veilFocus.id)) {
+      html += '<div style="margin-top:10px;">' + renderOmniaCosDetail('veil', veilFocus) + '</div>';
+    }
   } else {
     html += '<div class="oe-cos-grid">' + tab.items.map(function(item) {
       var unlocked = omniaCosmeticUnlocked(tab.kind, item.id);
@@ -16234,9 +16282,18 @@ function unlockOrSelectOmniaCosmetic(kind, id) {
     renderOmniaEngine();
     return;
   }
-  var list = kind === 'palette' ? OMNIA_PALETTES : kind === 'entity' ? OMNIA_ENTITIES : OMNIA_COMPANIONS;
+  var list = kind === 'palette' ? OMNIA_PALETTES : kind === 'entity' ? OMNIA_ENTITIES : kind === 'veil' ? OMNIA_VEILS : OMNIA_COMPANIONS;
   var item = omniaFindCosmetic(list, id);
   var unlocked = omniaCosmeticUnlocked(kind, id);
+  // Veils toggle on/off and layer over the active palette, rather than
+  // replacing one another like palettes/entities/companions do.
+  if (kind === 'veil' && unlocked && omniaState.cosmetics.veil === id) {
+    omniaState.cosmetics.veil = null;
+    saveOmniaState();
+    renderOmniaEngine();
+    showToast(item.name + ' removed');
+    return;
+  }
   if (!unlocked) {
     var liveCost = omniaCosmeticCost(item);
     if ((omniaState.akasha || 0) < liveCost) return;
@@ -16244,6 +16301,7 @@ function unlockOrSelectOmniaCosmetic(kind, id) {
     omniaUnlockList(kind).push(id);
   }
   if (kind === 'palette') omniaState.cosmetics.palette = id;
+  if (kind === 'veil') omniaState.cosmetics.veil = id;
   if (kind === 'entity') {
     omniaState.cosmetics.entity = id;
     var autoPal = OMNIA_ENTITY_AUTO_PALETTE[id];
