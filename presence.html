@@ -1652,8 +1652,10 @@
 .omnia-companion.companion-corgi.corgi-left { left:-34px; }
 .oe-omnia-figure .omnia-companion.companion-corgi { width:60px; height:48px; left:calc(100% - 14px); bottom:2px; }
 .oe-omnia-figure .omnia-companion.companion-corgi.corgi-left { left:-46px; }
-.path-banner-figure .omnia-companion.companion-corgi { width:36px; height:28px; left:calc(100% - 10px); bottom:0; }
-.path-banner-figure .omnia-companion.companion-corgi.corgi-left { left:-26px; }
+.path-banner-figure .omnia-companion.companion-corgi { width:52px; height:40px; left:calc(100% - 14px); bottom:0; }
+.path-banner-figure .omnia-companion.companion-corgi.corgi-left { left:-40px; }
+.drawer-btn-companion { position:absolute; bottom:-4px; right:-10px; width:30px; height:23px; pointer-events:none; }
+.drawer-btn-companion svg { width:100%; height:100%; }
 .omnia-companion.companion-corgi svg { transition:transform .3s ease; }
 .omnia-companion.companion-corgi.corgi-flip svg { transform:scaleX(-1); }
 .corgi-tail { transform-origin:11px 27px; animation:corgiTailWag .5s ease-in-out infinite alternate; }
@@ -15782,6 +15784,20 @@ function updateDrawerEntityBtn() {
     btn.style.filter = 'drop-shadow(0 0 6px ' + color + '99)';
     btn.title = entity.name;
     btn.setAttribute('aria-label', 'Open ' + entity.name + ' guide');
+  }
+  // Companion (e.g. Corgi) — rendered as a small positioned element inside the button
+  var existing = btn.querySelector('.drawer-btn-companion');
+  if (existing) existing.remove();
+  var compId = omniaState && omniaState.cosmetics && omniaState.cosmetics.companion;
+  if (compId) {
+    var comp = omniaFindCosmetic(OMNIA_COMPANIONS, compId);
+    if (comp) {
+      var cEl = document.createElement('div');
+      cEl.className = 'drawer-btn-companion';
+      cEl.setAttribute('aria-hidden', 'true');
+      cEl.innerHTML = renderOmniaCompanionPreview(comp);
+      btn.appendChild(cEl);
+    }
   }
 }
 
