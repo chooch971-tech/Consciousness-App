@@ -6655,10 +6655,12 @@ document.addEventListener('DOMContentLoaded', function() {
 function prefetchOmniaReport() {
   try {
     if (typeof fetchOmniaReport !== 'function') return;
-    // Only bother if there's any practice history to reflect on.
+    // Only bother if there's any practice history to reflect on, and only if
+    // "yesterday" actually falls on or after the user's first-ever session.
     var hasData = (state.history && state.history.length) ||
                   (concState.history && concState.history.length);
     if (!hasData) return;
+    if (getDateRange('daily', -1).now.getTime() <= getFirstUseDate()) return;
     fetchOmniaReport('daily', -1, function(){ /* cache warmed; ignore result */ });
   } catch (e) {}
 }
@@ -19787,6 +19789,16 @@ function isOmniaReportDay(period) {
   return false;
 }
 
+// Earliest timestamp the user has ever logged a session — Omnia has nothing
+// to reflect on before this, so reports/API calls for earlier periods are blocked.
+function getFirstUseDate() {
+  var dates = [];
+  (state.history || []).forEach(function(h) { if (h.date) dates.push(new Date(h.date).getTime()); });
+  (concState.history || []).forEach(function(h) { if (h.date) dates.push(new Date(h.date).getTime()); });
+  if (!dates.length) return Date.now();
+  return Math.min.apply(null, dates);
+}
+
 function omniaReportPeriodKey(period, offset) {
   offset = offset || 0;
   var now = new Date();
@@ -20402,7 +20414,8 @@ function updateReportNav() {
   var next = document.getElementById('reportNavNext');
   var isYearly = currentReportPeriod === 'yearly';
   if (lbl) lbl.textContent = reportNavLabel(currentReportPeriod, reportOffset);
-  if (prev) { prev.style.opacity = isYearly ? '.15' : '.7'; prev.style.pointerEvents = isYearly ? 'none' : ''; prev.style.visibility = ''; }
+  var atStart = !isYearly && getDateRange(currentReportPeriod, reportOffset - 1).now.getTime() <= getFirstUseDate();
+  if (prev) { prev.style.opacity = (isYearly || atStart) ? '.15' : '.7'; prev.style.pointerEvents = (isYearly || atStart) ? 'none' : ''; prev.style.visibility = ''; }
   if (next) { next.style.opacity = (isYearly || reportOffset >= 0) ? '.15' : '1'; next.style.pointerEvents = (isYearly || reportOffset >= 0) ? 'none' : ''; }
 }
 
@@ -20496,6 +20509,12 @@ function buildSignals(awNow, concNow, period) {
 
 function buildOmniaReportCardHtml(period) {
   if (period !== 'daily' && period !== 'weekly' && period !== 'monthly') return '';
+  // Nothing to reflect on before the user's first-ever logged session — don't
+  // render a card or spend an API call on periods that predate that.
+  if (reportOffset < 0) {
+    var _range = getDateRange(period, reportOffset);
+    if (_range.now.getTime() <= getFirstUseDate()) return '';
+  }
   var html = '';
   // Past periods are always eligible; current period depends on the day
   var isEligible = reportOffset < 0 ? true : isOmniaReportDay(period);
@@ -20855,6 +20874,7 @@ function copyToClipboard(text) {
 
 document.getElementById('reportNavPrev').addEventListener('click', function() {
   if (currentReportPeriod === 'yearly') return;
+  if (getDateRange(currentReportPeriod, reportOffset - 1).now.getTime() <= getFirstUseDate()) return;
   reportOffset--;
   renderReport(currentReportPeriod);
 });
