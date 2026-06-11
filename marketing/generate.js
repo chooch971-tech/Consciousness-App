@@ -143,7 +143,7 @@ function card1() {
   <ellipse cx="${W / 2}" cy="${cy}" rx="640" ry="700" fill="url(#glow)"/>
   ${stars(31, 90, 0, H)}
   ${dust}
-  <text x="${W / 2}" y="430" font-family="${SERIF}" font-weight="400" font-size="92" fill="#ffffff" letter-spacing="38" text-anchor="middle" filter="url(#soft)">PRESENCE</text>
+  <text x="${W / 2}" y="430" font-family="${SERIF}" font-weight="400" font-size="92" fill="#ffffff" letter-spacing="38" text-anchor="middle">PRESENCE</text>
   ${crystalAt('c1', W / 2, cy, 600)}
   <ellipse cx="${W / 2}" cy="${cy + 620}" rx="300" ry="36" fill="#8ecce0" opacity="0.08"/>
   `, 7);
@@ -313,7 +313,11 @@ function card5() {
     ['05-progress.png', card5()],
   ];
   for (const [name, svg] of cards) {
-    await sharp(Buffer.from(svg), { density: 72 }).png().toFile(path.join(OUT, name));
+    // Supersample at 2x then downscale for crisper edges and text.
+    await sharp(Buffer.from(svg), { density: 144 })
+      .resize(W, H)
+      .png()
+      .toFile(path.join(OUT, name));
     console.log('wrote', name);
   }
 })();
