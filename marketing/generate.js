@@ -152,34 +152,76 @@ function card1() {
 // ── card 2: six disciplines ──────────────────────────────────────────────────
 
 function card2() {
+  // The app's six concentration exercises as vivid filled tiles, each with
+  // decorative artwork hinting at the practice (Headspace-card style).
   const tiles = [
-    { name: 'Awareness', sub: 'RETURN TO NOW', c: ACCENT },
-    { name: 'The Clock', sub: 'UNBROKEN FOCUS', c: AMBER },
-    { name: 'Visualization', sub: 'THE INNER EYE', c: PURPLE },
-    { name: 'Auditory', sub: 'THE INNER EAR', c: '#d4b08e' },
-    { name: 'Thought Control', sub: 'MASTER THE MIND', c: '#8ecce0' },
-    { name: 'Asana', sub: 'STILL THE BODY', c: ROSE },
+    { name: 'Clock', c: '#b35a2e', deco: 'clock' },
+    { name: 'Visualization', c: '#473a7d', deco: 'shapes' },
+    { name: 'Auditory', c: '#b8862f', deco: 'waves' },
+    { name: 'Thought Control', c: '#2d5cb8', deco: 'bubbles' },
+    { name: 'Asana', c: '#b65490', deco: 'lotus' },
+    { name: 'Pore Breathing', c: '#2c7a58', deco: 'pores' },
   ];
-  const gx = 120, gw = W - gx * 2, gap = 36;
-  const tw = (gw - gap) / 2, th = 360;
+  const gx = 100, gw = W - gx * 2, gap = 36;
+  const tw = (gw - gap) / 2, th = 420;
   let g = '';
   tiles.forEach((t, i) => {
     const col = i % 2, row = (i / 2) | 0;
-    const x = gx + col * (tw + gap), y = 950 + row * (th + gap);
+    const x = gx + col * (tw + gap), y = 920 + row * (th + gap);
+    const clip = `t${i}clip`;
+    let deco = '';
+    if (t.deco === 'clock') {
+      // big clock ring peeking from the corner
+      deco = `<circle cx="${x + tw - 60}" cy="${y + th - 40}" r="160" fill="none" stroke="#ffffff" stroke-opacity="0.18" stroke-width="14"/>
+        <circle cx="${x + tw - 60}" cy="${y + th - 40}" r="110" fill="#ffffff" fill-opacity="0.08"/>
+        <line x1="${x + tw - 60}" y1="${y + th - 40}" x2="${x + tw - 60}" y2="${y + th - 150}" stroke="#ffffff" stroke-opacity="0.3" stroke-width="12" stroke-linecap="round"/>
+        <line x1="${x + tw - 60}" y1="${y + th - 40}" x2="${x + tw + 20}" y2="${y + th - 40}" stroke="#ffffff" stroke-opacity="0.3" stroke-width="12" stroke-linecap="round"/>`;
+    } else if (t.deco === 'shapes') {
+      // the visualization drill's colored shapes, ghosted
+      deco = `<circle cx="${x + 110}" cy="${y + th - 80}" r="85" fill="#ffffff" fill-opacity="0.10"/>
+        <polygon points="${x + tw - 150},${y + th - 190} ${x + tw - 60},${y + th - 30} ${x + tw - 240},${y + th - 30}" fill="#ffffff" fill-opacity="0.10"/>
+        <rect x="${x + tw - 140}" y="${y + 40}" width="100" height="100" rx="16" fill="#ffffff" fill-opacity="0.08" transform="rotate(14 ${x + tw - 90} ${y + 90})"/>`;
+    } else if (t.deco === 'waves') {
+      // sound rings radiating from the corner (clipped to the tile)
+      deco = `<circle cx="${x + 30}" cy="${y + th - 30}" r="48" fill="#ffffff" fill-opacity="0.16"/>`
+        + [120, 200, 280].map((r, k) =>
+        `<circle cx="${x + 30}" cy="${y + th - 30}" r="${r}" fill="none" stroke="#ffffff" stroke-opacity="${0.2 - k * 0.05}" stroke-width="14"/>`).join('');
+    } else if (t.deco === 'bubbles') {
+      // drifting thought bubbles
+      deco = `<circle cx="${x + tw - 90}" cy="${y + 90}" r="56" fill="#ffffff" fill-opacity="0.12"/>
+        <circle cx="${x + tw - 190}" cy="${y + 170}" r="30" fill="#ffffff" fill-opacity="0.10"/>
+        <circle cx="${x + tw - 250}" cy="${y + 226}" r="16" fill="#ffffff" fill-opacity="0.09"/>
+        <circle cx="${x + 90}" cy="${y + th - 80}" r="44" fill="#ffffff" fill-opacity="0.10"/>
+        <circle cx="${x + 170}" cy="${y + th - 140}" r="22" fill="#ffffff" fill-opacity="0.08"/>`;
+    } else if (t.deco === 'lotus') {
+      // seated figure: head over folded base
+      deco = `<circle cx="${x + tw / 2}" cy="${y + th - 200}" r="52" fill="#ffffff" fill-opacity="0.12"/>
+        <path d="M ${x + tw / 2 - 150} ${y + th - 40} Q ${x + tw / 2} ${y + th - 190} ${x + tw / 2 + 150} ${y + th - 40} Z" fill="#ffffff" fill-opacity="0.12"/>`;
+    } else if (t.deco === 'pores') {
+      // light entering through every pore: dotted radiance
+      let dots = '';
+      for (let ring = 1; ring <= 3; ring++) {
+        const rr = 70 + ring * 58, count = 6 + ring * 4;
+        for (let k = 0; k < count; k++) {
+          const a = (k / count) * Math.PI * 2 + ring * 0.35;
+          dots += `<circle cx="${(x + tw - 80 + Math.cos(a) * rr).toFixed(0)}" cy="${(y + 80 + Math.sin(a) * rr).toFixed(0)}" r="${10 - ring * 2}" fill="#ffffff" fill-opacity="${0.2 - ring * 0.04}"/>`;
+        }
+      }
+      deco = `<circle cx="${x + tw - 80}" cy="${y + 80}" r="46" fill="#ffffff" fill-opacity="0.14"/>` + dots;
+    }
     g += `
-    <rect x="${x}" y="${y}" width="${tw}" height="${th}" rx="30" fill="${t.c}" opacity="0.07"/>
-    <rect x="${x}" y="${y}" width="${tw}" height="${th}" rx="30" fill="none" stroke="${t.c}" stroke-opacity="0.34" stroke-width="2"/>
-    <circle cx="${x + tw / 2}" cy="${y + 118}" r="10" fill="${t.c}" opacity="0.85" filter="url(#soft)"/>
-    ${serif(x + tw / 2, y + 235, 64, TEXT, t.name)}
-    ${mono(x + tw / 2, y + 300, 26, MUTED, t.sub, 6)}`;
+    <clipPath id="${clip}"><rect x="${x}" y="${y}" width="${tw}" height="${th}" rx="34"/></clipPath>
+    <rect x="${x}" y="${y}" width="${tw}" height="${th}" rx="34" fill="${t.c}"/>
+    <g clip-path="url(#${clip})">${deco}</g>
+    <text x="${x + tw / 2}" y="${y + th / 2 + 18}" font-family="Space Grotesk" font-weight="500" font-size="${t.name.length > 12 ? 46 : 54}" fill="#ffffff" text-anchor="middle">${t.name}</text>`;
   });
   return shell(`
   ${wordmark(300)}
-  ${serif(W / 2, 530, 116, TEXT, 'Six disciplines.')}
+  ${serif(W / 2, 530, 116, '#ffffff', 'Six disciplines.')}
   ${serif(W / 2, 670, 116, ACCENT, 'One path.', 'middle', 'font-style="italic"')}
   ${mono(W / 2, 800, 36, MUTED, 'CLASSICAL CONCENTRATION TRAINING, MADE DAILY', 5)}
   ${g}
-  ${mono(W / 2, 2280 + 90, 34, FAINT, 'EACH SESSION MEASURED · EVERY REP COUNTS', 6)}
+  ${mono(W / 2, 2370 + 90, 34, FAINT, 'EACH SESSION MEASURED · EVERY REP COUNTS', 6)}
   `, 19);
 }
 
