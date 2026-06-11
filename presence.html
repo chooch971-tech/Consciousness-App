@@ -1660,6 +1660,13 @@
 .omnia-companion.companion-corgi.corgi-flip svg { transform:scaleX(-1); }
 .corgi-tail { transform-origin:11px 27px; animation:corgiTailWag .5s ease-in-out infinite alternate; }
 @keyframes corgiTailWag { 0%{transform:rotate(-12deg);} 100%{transform:rotate(14deg);} }
+/* Elys twin gyres: the two wheels rock against each other; the fire breathes */
+.ely-rock1 { transform-origin:40px 65px; transform-box:view-box; animation:elyRock1 5.5s ease-in-out infinite; }
+.ely-rock2 { transform-origin:40px 65px; transform-box:view-box; animation:elyRock2 5.5s ease-in-out infinite; }
+@keyframes elyRock1 { 0%,100%{transform:rotate(-4deg);} 50%{transform:rotate(4deg);} }
+@keyframes elyRock2 { 0%,100%{transform:rotate(4deg);} 50%{transform:rotate(-4deg);} }
+.ely-fl { animation:elyFire 3s ease-in-out infinite; }
+@keyframes elyFire { 0%,100%{opacity:.7;} 50%{opacity:1;} }
 .omnia-figure.has-companion .omnia-companion.companion-corgi { pointer-events:auto; cursor:pointer; }
 @keyframes corgiWaddle { 0%,100%{transform:translateY(0) rotate(0deg);} 25%{transform:translateY(-2.5px) rotate(2.5deg);} 75%{transform:translateY(-2.5px) rotate(-2.5deg);} }
 .omnia-figure.has-companion .omnia-companion.companion-corgi.corgi-walking { animation:corgiWaddle .45s ease-in-out infinite; }
@@ -14982,7 +14989,7 @@ var OMNIA_ENTITIES = [
   { id:'omnia', name:'Omnia', cost:0, _price:0, color:'#b8eaff', sub:'The first guide-form' },
   { id:'noema', name:'Noema', cost:0, _price:12000, color:'#98b4cc', sub:'A sharper mental entity design' },
   { id:'aurel', name:'Aurel', cost:0, _price:18000, color:'#f0d39a', sub:'A solar entity design for disciplined work' },
-  { id:'elys', name:'Elys', cost:0, _price:26000, color:'#c4a8d4', sub:'An astral entity design for image and symbol' },
+  { id:'elys', name:'Elys', cost:0, _price:26000, color:'#c4a8d4', sub:'Twin gyring wheels of eyes and pale fire' },
   { id:'seraph', name:'Seraph', cost:0, _price:34000, color:'#f3d486', sub:'A biblically accurate angel — wheels within wheels, eyes of flame' }
 ];
 
@@ -15443,6 +15450,57 @@ function omniaUnlockList(kind) {
   return omniaState.cosmetics.unlockedCompanions;
 }
 
+// One band of Elys's twin gyres, centered at (0,0): a fire fringe licking
+// out from the rim, the broad band between two ellipses, and watching eyes
+// seated tangent to the band. Shared by the entity figure and shop preview.
+function elysGyreBand(o) {
+  var E = '#c4a8d4', El = '#e8d4f0', Ed = '#9b7fb8', Eh = '#f4ecfa';
+  var f1 = function(n) { return (+n).toFixed(1); };
+  var rxO = o.rxO, ryO = o.ryO, rxI = o.rxI, ryI = o.ryI;
+  var rxM = (rxO + rxI) / 2, ryM = (ryO + ryI) / 2;
+  var s = '', flames = '';
+  for (var i = 0; i < o.flames; i++) {
+    var t = (i / o.flames) * Math.PI * 2, dt = 0.13;
+    var ox = rxO * Math.cos(t), oy = ryO * Math.sin(t);
+    var b1x = rxO * Math.cos(t - dt), b1y = ryO * Math.sin(t - dt);
+    var b2x = rxO * Math.cos(t + dt), b2y = ryO * Math.sin(t + dt);
+    // outward ellipse normal, with a sideways lick so the fire looks alive
+    var nx = Math.cos(t) / rxO, ny = Math.sin(t) / ryO;
+    var nl = Math.sqrt(nx * nx + ny * ny); nx /= nl; ny /= nl;
+    var len = o.flameLen * (0.65 + 0.5 * Math.abs(Math.sin(i * 2.7 + o.seed)));
+    var lick = 0.18 * len * Math.sin(i * 1.9 + o.seed);
+    var px = -ny, py = nx;
+    flames += '<path d="M' + f1(b1x) + ',' + f1(b1y)
+      + ' Q' + f1(ox + nx * len + px * lick) + ',' + f1(oy + ny * len + py * lick)
+      + ' ' + f1(b2x) + ',' + f1(b2y) + ' Z" fill="' + El + '" opacity=".55"/>'
+      + '<path d="M' + f1(b1x) + ',' + f1(b1y)
+      + ' Q' + f1(ox + nx * len * 0.55 + px * lick * 0.5) + ',' + f1(oy + ny * len * 0.55 + py * lick * 0.5)
+      + ' ' + f1(b2x) + ',' + f1(b2y) + ' Z" fill="' + Eh + '" opacity=".7"/>';
+  }
+  s += '<g class="ely-fl">' + flames + '</g>';
+  s += '<path fill-rule="evenodd" d="M' + rxO + ',0'
+    + ' A' + rxO + ',' + ryO + ' 0 1 0 -' + rxO + ',0'
+    + ' A' + rxO + ',' + ryO + ' 0 1 0 ' + rxO + ',0 Z'
+    + ' M' + rxI + ',0'
+    + ' A' + rxI + ',' + ryI + ' 0 1 1 -' + rxI + ',0'
+    + ' A' + rxI + ',' + ryI + ' 0 1 1 ' + rxI + ',0 Z" fill="rgba(196,168,212,.13)"/>';
+  s += '<ellipse rx="' + rxO + '" ry="' + ryO + '" fill="none" stroke="' + E + '" stroke-width="1" opacity=".85"/>';
+  s += '<ellipse rx="' + rxI + '" ry="' + ryI + '" fill="none" stroke="' + E + '" stroke-width=".7" opacity=".6"/>';
+  for (var e = 0; e < o.eyes; e++) {
+    var te = (e / o.eyes) * Math.PI * 2 + (o.eyePhase || 0);
+    var ex = rxM * Math.cos(te), ey = ryM * Math.sin(te);
+    var tang = Math.atan2(ryM * Math.cos(te), -rxM * Math.sin(te)) * 180 / Math.PI;
+    var iris = (e % 2 === 0) ? Ed : '#7d96c8';
+    s += '<g transform="translate(' + f1(ex) + ',' + f1(ey) + ') rotate(' + f1(tang) + ') scale(' + o.eyeScale + ')">'
+      + '<path d="M-3.6,0 Q0,-2.7 3.6,0 Q0,2.7 -3.6,0 Z" fill="#f6f0fa" stroke="' + Ed + '" stroke-width=".35"/>'
+      + '<circle r="1.6" fill="' + iris + '"/>'
+      + '<circle r=".85" fill="#1c1126"/>'
+      + '<circle cx=".45" cy="-.45" r=".4" fill="#fff" opacity=".95"/>'
+      + '</g>';
+  }
+  return s;
+}
+
 function renderOmniaEntityPreview(item) {
   var color = item.color || '#b8eaff';
   if (item.id === 'noema') {
@@ -15468,11 +15526,12 @@ function renderOmniaEntityPreview(item) {
       + '</svg>';
   }
   if (item.id === 'elys') {
-    return '<svg viewBox="0 0 56 58" aria-hidden="true">'
-      + '<path d="M28 5C18 12 14 23 16 35c2 11 9 17 12 19 3-2 10-8 12-19 2-12-2-23-12-30Z" fill="rgba(255,255,255,.05)" stroke="' + color + '" stroke-width="1.35"/>'
-      + '<path d="M17 23c-6 3-9 9-9 16 6-1 12-5 16-12M39 23c6 3 9 9 9 16-6-1-12-5-16-12" fill="none" stroke="' + color + '" stroke-width="1.2" opacity=".62"/>'
-      + '<path d="M28 12c-6 9-6 25 0 36 6-11 6-27 0-36Z" fill="' + color + '" opacity=".24"/>'
-      + '<path d="M23 26c4-6 10-8 15-5-3 1-6 4-8 8-2 4-5 6-9 6 0-3 0-6 2-9Z" fill="' + color + '" opacity=".36"/>'
+    // Twin gyres at icon scale: two interlocked eye-lined wheels with fire
+    var gb1 = elysGyreBand({ rxO:23, ryO:8.5, rxI:17, ryI:4.2, eyes:8, eyeScale:.55, flames:14, flameLen:4.5, seed:0.9 });
+    var gb2 = elysGyreBand({ rxO:23, ryO:8.5, rxI:17, ryI:4.2, eyes:8, eyeScale:.55, flames:14, flameLen:4.5, seed:2.6, eyePhase:0.3 });
+    return '<svg viewBox="0 0 56 58" aria-hidden="true" style="overflow:visible;">'
+      + '<g transform="translate(28,29) rotate(-30)">' + gb1 + '</g>'
+      + '<g transform="translate(28,29) rotate(30)">' + gb2 + '</g>'
       + '</svg>';
   }
   if (item.id === 'seraph') {
@@ -15630,62 +15689,28 @@ function getEntityCrystalSVG(id) {
       + '</svg>';
   }
   if (id === 'elys') {
-    // Astral entity of "image and symbol": a violet mandala — a central
-    // glowing eye in a vesica-petal aura, stacked mandorla eyes (a totem of
-    // astral vision), concentric rings with orbiting glyphs, flanking crescent
-    // moons, and sparkles. Lavender on dark.
-    var E = '#c4a8d4', El = '#e8d4f0', Ed = '#9b7fb8', Eh = '#f4ecfa';
-    var f1 = function(n) { return (+n).toFixed(1); };
-    var P = Math.PI, cx = 40, cy = 64;
-    var mandorla = function(x, y, w, h, fill, stroke, sw, op) {
-      return '<path d="M' + f1(x) + ',' + f1(y - h) + ' Q' + f1(x + w) + ',' + f1(y) + ' ' + f1(x) + ',' + f1(y + h) + ' Q' + f1(x - w) + ',' + f1(y) + ' ' + f1(x) + ',' + f1(y - h) + ' Z" fill="' + fill + '" stroke="' + stroke + '" stroke-width="' + sw + '" opacity="' + op + '"/>';
-    };
-    var crescent = function(x, y, r, rot) {
-      return '<g transform="translate(' + f1(x) + ',' + f1(y) + ') rotate(' + rot + ')"><path d="M0,' + f1(-r) + ' A' + f1(r) + ',' + f1(r) + ' 0 1 0 0,' + f1(r) + ' A' + f1(r * 0.72) + ',' + f1(r * 0.72) + ' 0 1 1 0,' + f1(-r) + ' Z" fill="' + El + '" opacity="0.55" stroke="' + Eh + '" stroke-width="0.4"/></g>';
-    };
-    var spark = function(x, y, s, op) {
-      return '<g opacity="' + op + '"><line x1="' + f1(x - s) + '" y1="' + f1(y) + '" x2="' + f1(x + s) + '" y2="' + f1(y) + '" stroke="' + El + '" stroke-width="0.8"/><line x1="' + f1(x) + '" y1="' + f1(y - s) + '" x2="' + f1(x) + '" y2="' + f1(y + s) + '" stroke="' + El + '" stroke-width="0.8"/></g>';
-    };
-    var svg = '';
-    // soft aura + outer flame body
-    svg += '<circle cx="' + cx + '" cy="' + cy + '" r="30" fill="url(#elg1)" opacity="0.5"/>';
-    svg += '<path d="M40,5 C61,42 59,90 40,124 C21,90 19,42 40,5 Z" fill="rgba(196,168,212,0.05)" stroke="' + E + '" stroke-width="1.0" opacity="0.7" filter="url(#elglow)"/>';
-    // vesica-petal aura radiating from center
-    var petals = 10;
-    for (var i = 0; i < petals; i++) {
-      var a = -P / 2 + i * (P * 2 / petals), pr = 26;
-      var ex = cx + Math.cos(a) * pr, ey = cy + Math.sin(a) * pr;
-      var mx = (cx + ex) / 2, my = (cy + ey) / 2, px = -Math.sin(a), py = Math.cos(a), w = 4.5;
-      svg += '<path d="M' + f1(cx) + ',' + f1(cy) + ' Q' + f1(mx + px * w) + ',' + f1(my + py * w) + ' ' + f1(ex) + ',' + f1(ey) + ' Q' + f1(mx - px * w) + ',' + f1(my - py * w) + ' ' + f1(cx) + ',' + f1(cy) + ' Z" fill="rgba(196,168,212,0.05)" stroke="' + E + '" stroke-width="0.4" opacity="0.4"/>';
-    }
-    // concentric rings + orbiting glyphs
-    svg += '<circle cx="' + cx + '" cy="' + cy + '" r="20" fill="none" stroke="' + E + '" stroke-width="0.5" opacity="0.35"/>';
-    svg += '<circle cx="' + cx + '" cy="' + cy + '" r="14" fill="none" stroke="' + El + '" stroke-width="0.5" opacity="0.45"/>';
-    var glyphN = 8;
-    for (var g = 0; g < glyphN; g++) {
-      var ga = -P / 2 + g * (P * 2 / glyphN);
-      var gx = cx + Math.cos(ga) * 20, gy = cy + Math.sin(ga) * 20;
-      if (g % 2 === 0) svg += '<circle cx="' + f1(gx) + '" cy="' + f1(gy) + '" r="1.5" fill="' + El + '" opacity="0.7"/>';
-      else svg += '<path d="M' + f1(gx) + ',' + f1(gy - 1.8) + ' L' + f1(gx + 1.6) + ',' + f1(gy + 1.2) + ' L' + f1(gx - 1.6) + ',' + f1(gy + 1.2) + ' Z" fill="none" stroke="' + El + '" stroke-width="0.5" opacity="0.6"/>';
-    }
-    // flanking crescent moons
-    svg += crescent(cx - 19, cy, 4, 90) + crescent(cx + 19, cy, 4, -90);
-    // stacked mandorla eyes (totem of astral vision)
-    svg += mandorla(cx, cy - 22, 3.2, 7, 'rgba(196,168,212,0.12)', El, 0.6, 0.7) + '<circle cx="' + cx + '" cy="' + f1(cy - 22) + '" r="1.4" fill="' + Ed + '"/>';
-    svg += mandorla(cx, cy + 22, 3.2, 7, 'rgba(196,168,212,0.12)', El, 0.6, 0.7) + '<circle cx="' + cx + '" cy="' + f1(cy + 22) + '" r="1.4" fill="' + Ed + '"/>';
-    // central big eye
-    svg += mandorla(cx, cy, 7, 13, 'rgba(196,168,212,0.16)', Eh, 1.0, 0.95);
-    svg += '<g filter="url(#elglow)"><circle cx="' + cx + '" cy="' + cy + '" r="4" fill="url(#elg1)"/></g>';
-    svg += '<circle cx="' + cx + '" cy="' + cy + '" r="3" fill="rgba(155,127,184,0.5)" stroke="' + El + '" stroke-width="0.6"/>';
-    svg += '<circle cx="' + f1(cx + 1.2) + '" cy="' + f1(cy - 1.2) + '" r="1.1" fill="' + Eh + '" opacity="0.85"/>';
-    // sparkles
-    svg += spark(8, 58, 3, 0.6) + spark(72, 46, 3, 0.5) + spark(70, 86, 2.5, 0.45) + spark(12, 92, 2.2, 0.4) + spark(40, 14, 2.4, 0.55);
+    // Twin Gyres: two interlocked ophanim wheels — broad lavender bands lined
+    // with watching eyes, pale fire licking every rim. They rock in counter-
+    // motion via .ely-rock1/.ely-rock2. The clipped re-draw at the right
+    // crossing keeps the bands woven: band 1 passes over there, under on the
+    // left. After the classical "wheel within a wheel, full of eyes".
+    var gyre = { rxO:42, ryO:16, rxI:32, ryI:8.5, eyes:12, eyeScale:1, flames:24, flameLen:9 };
+    var b1 = elysGyreBand(Object.assign({ seed:0.4 }, gyre));
+    var b2 = elysGyreBand(Object.assign({ seed:2.1, eyePhase:0.26 }, gyre));
+    var wrap1 = '<g class="ely-rock1"><g transform="translate(40,65) rotate(-30)">' + b1 + '</g></g>';
     return '<svg viewBox="0 0 80 130" width="72" height="118" xmlns="http://www.w3.org/2000/svg" style="overflow:visible;">'
       + '<defs>'
-      + '<radialGradient id="elg1" cx="50%" cy="50%" r="50%"><stop offset="0%" stop-color="' + Eh + '" stop-opacity="0.9"/><stop offset="55%" stop-color="' + E + '" stop-opacity="0.32"/><stop offset="100%" stop-color="' + Ed + '" stop-opacity="0"/></radialGradient>'
-      + '<filter id="elglow" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="1.6" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>'
+      + '<radialGradient id="elyAu" cx="50%" cy="50%" r="50%"><stop offset="0%" stop-color="#f4ecfa" stop-opacity=".4"/><stop offset="55%" stop-color="#c4a8d4" stop-opacity=".14"/><stop offset="100%" stop-color="#9b7fb8" stop-opacity="0"/></radialGradient>'
+      + '<clipPath id="elyClipR"><rect x="50" y="47" width="24" height="36"/></clipPath>'
       + '</defs>'
-      + svg
+      + '<circle cx="40" cy="65" r="44" fill="url(#elyAu)" opacity=".55"/>'
+      + wrap1
+      + '<g class="ely-rock2"><g transform="translate(40,65) rotate(30)">' + b2 + '</g></g>'
+      + '<g clip-path="url(#elyClipR)">' + wrap1 + '</g>'
+      + '<g opacity=".55"><line x1="6" y1="22" x2="12" y2="22" stroke="#e8d4f0" stroke-width=".9"/><line x1="9" y1="19" x2="9" y2="25" stroke="#e8d4f0" stroke-width=".9"/></g>'
+      + '<g opacity=".45"><line x1="68" y1="18" x2="74" y2="18" stroke="#e8d4f0" stroke-width=".8"/><line x1="71" y1="15" x2="71" y2="21" stroke="#e8d4f0" stroke-width=".8"/></g>'
+      + '<g opacity=".45"><line x1="70" y1="110" x2="75" y2="110" stroke="#e8d4f0" stroke-width=".8"/><line x1="72.5" y1="107.5" x2="72.5" y2="112.5" stroke="#e8d4f0" stroke-width=".8"/></g>'
+      + '<g opacity=".4"><line x1="6" y1="106" x2="11" y2="106" stroke="#e8d4f0" stroke-width=".8"/><line x1="8.5" y1="103.5" x2="8.5" y2="108.5" stroke="#e8d4f0" stroke-width=".8"/></g>'
       + '</svg>';
   }
   if (id === 'seraph') {
@@ -16721,9 +16746,9 @@ var OMNIA_ENTITY_MORPH_SYMBOLS = {
     { id:'eye', label:'Golden Watch', color:'#f2d8a8' }
   ],
   elys: [
-    { id:'moon', label:'Astral Bloom', color:'#c4a8d4' },
-    { id:'sun', label:'Ember Halo', color:'#d8b7e6' },
-    { id:'triangle', label:'Veil Prism', color:'#b995ca' }
+    { id:'moon', label:'Watchful Gyre', color:'#c4a8d4' },
+    { id:'sun', label:'Ring of Fire', color:'#d8b7e6' },
+    { id:'triangle', label:'Still Center', color:'#b995ca' }
   ],
   seraph: [
     { id:'eye', label:'Eye of Flame', color:'#f3d486' },
