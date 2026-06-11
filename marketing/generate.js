@@ -127,18 +127,34 @@ function shell(inner, seed) {
 // ── card 1: hero ─────────────────────────────────────────────────────────────
 
 function card1() {
-  const cy = 1310;
-  return shell(`
-  <ellipse cx="${W / 2}" cy="${cy}" rx="620" ry="680" fill="url(#glow)"/>
-  ${wordmark(330)}
-  ${divider(390)}
-  ${serif(W / 2, 600, 132, TEXT, `Be here, <tspan fill="${ACCENT}" font-style="italic">fully</tspan>.`)}
-  ${mono(W / 2, 700, 38, MUTED, 'AWARENESS  ·  CONCENTRATION  ·  PRESENCE', 6)}
-  ${crystalAt('c1', W / 2, cy + 120, 560)}
-  <ellipse cx="${W / 2}" cy="${cy + 600}" rx="300" ry="36" fill="#8ecce0" opacity="0.06"/>
-  ${serif(W / 2, 2330, 76, TEXT, 'A quiet companion for the inner work.', 'middle', 'font-style="italic"')}
-  ${mono(W / 2, 2480, 34, FAINT, 'NO NOISE · NO FEEDS · JUST PRACTICE', 7)}
-  `, 7);
+  // Brighter, Headspace-style layered bands in the app's green palette.
+  // Wordmark up top mirrors the loading screen: Cormorant caps, wide tracking.
+  const cy = 1480;
+  const DARKINK = '#16302a';
+  return `<svg width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="h1top" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#cdeadd"/>
+      <stop offset="1" stop-color="#b2dccb"/>
+    </linearGradient>
+    <radialGradient id="h1disc" cx="0.5" cy="0.42" r="0.62">
+      <stop offset="0" stop-color="#33635a"/>
+      <stop offset="1" stop-color="#1c3d36"/>
+    </radialGradient>
+  </defs>
+  <rect width="${W}" height="${H}" fill="url(#h1top)"/>
+  <path d="M0,${cy - 320} C ${W * 0.28},${cy - 440} ${W * 0.62},${cy - 220} ${W},${cy - 360} L ${W},${H} L 0,${H} Z" fill="#8ec4ae"/>
+  <path d="M0,${cy + 330} C ${W * 0.3},${cy + 210} ${W * 0.7},${cy + 440} ${W},${cy + 280} L ${W},${H} L 0,${H} Z" fill="#5e9c86"/>
+  <path d="M0,${H - 760} C ${W * 0.32},${H - 880} ${W * 0.66},${H - 660} ${W},${H - 800} L ${W},${H} L 0,${H} Z" fill="#3c7361"/>
+  <text x="${W / 2}" y="430" font-family="${SERIF}" font-weight="300" font-size="96" fill="${DARKINK}" letter-spacing="38" text-anchor="middle">PRESENCE</text>
+  <rect x="${W / 2 - 32}" y="500" width="64" height="3" fill="${DARKINK}" opacity="0.45"/>
+  <circle cx="${W / 2}" cy="${cy}" r="478" fill="#16302a" opacity="0.18"/>
+  <circle cx="${W / 2}" cy="${cy}" r="450" fill="url(#h1disc)"/>
+  ${crystalAt('c1', W / 2, cy, 520)}
+  <ellipse cx="${W / 2}" cy="${cy + 560}" rx="290" ry="34" fill="#16302a" opacity="0.14"/>
+  <text x="${W / 2}" y="2370" font-family="${SERIF}" font-weight="500" font-size="160" fill="#ffffff" text-anchor="middle">Enlightenment</text>
+  <text x="${W / 2}" y="2550" font-family="${SERIF}" font-weight="300" font-size="160" fill="#ffffff" font-style="italic" text-anchor="middle">Now</text>
+</svg>`;
 }
 
 // ── card 2: six disciplines ──────────────────────────────────────────────────
