@@ -14995,6 +14995,41 @@ var OMNIA_ENTITIES = [
   { id:'seraph', name:'Seraph', cost:0, _price:34000, color:'#f3d486', sub:'A biblically accurate angel — wheels within wheels, eyes of flame' }
 ];
 
+// Palette hue-rotate filters are hand-tuned against the blue Omnia crystal
+// (#b8eaff). Entities drawn in their own base colors need the rotation taken
+// relative to that base — otherwise a gold palette applied to the already-
+// gold Aurel spins him right around the wheel to blue. Each value below is
+// "the tuned rotation that turns crystal-blue into this thing's base color".
+var OMNIA_HUE_FROM_BLUE = {
+  aether:0, rose:128, solar:182, violet:74, verdant:246,        // palettes
+  omnia:0, noema:0, aurel:182, elys:74, seraph:182              // entities
+};
+// The palette each entity is natively drawn in. Selecting a form snaps the
+// color choice here so the swatch and the rendered figure always agree.
+var OMNIA_ENTITY_NATIVE_PALETTE = { omnia:'aether', noema:'aether', aurel:'solar', elys:'violet', seraph:'solar' };
+
+// The CSS filter that makes `entity` wear `palette`, relative to the
+// entity's own base color. Spectral/aurora aren't hue-based and pass through.
+function omniaPaletteFilterFor(palette, entity) {
+  var pHue = OMNIA_HUE_FROM_BLUE[palette.id];
+  if (pHue === undefined) return palette.filter || 'none';
+  var eHue = OMNIA_HUE_FROM_BLUE[(entity && entity.id)] || 0;
+  var rot = ((pHue - eHue) % 360 + 360) % 360;
+  if (rot === 0) return 'none'; // native color: leave the artwork untouched
+  var polish = (palette.filter || '').replace(/hue-rotate\([^)]*\)\s*/, '').trim();
+  if (polish === 'none') polish = '';
+  return ('hue-rotate(' + rot + 'deg) ' + polish).trim();
+}
+
+// The flat color the current palette+entity combination reads as — for the
+// name, glows, etc. Falls back to the entity's own color for non-hex palette
+// colors (spectral's rgba ghost tint).
+function omniaDisplayColor(palette, entity) {
+  if (entity.id !== 'omnia' && palette.id === (OMNIA_ENTITY_NATIVE_PALETTE[entity.id] || 'aether')) return entity.color;
+  if ((palette.color || '').charAt(0) !== '#') return entity.id === 'omnia' ? palette.color : entity.color;
+  return palette.color;
+}
+
 var OMNIA_COMPANIONS = [
   { id:'wisp', name:'Akashic Wisp', cost:0, _price:5400, color:'#b8eaff', sub:'A small orbiting practice companion' },
   { id:'ember', name:'Solar Ember', cost:0, _price:7600, color:'#f0d39a', sub:'A warm companion for steady effort' },
@@ -15803,10 +15838,12 @@ function updateDrawerEntityBtn() {
   if (!_drawerOmniaBtnOrigSVG) _drawerOmniaBtnOrigSVG = btn.innerHTML;
   var entity = omniaFindCosmetic(OMNIA_ENTITIES, (omniaState && omniaState.cosmetics && omniaState.cosmetics.entity) || 'omnia');
   var palette = omniaFindCosmetic(OMNIA_PALETTES, (omniaState && omniaState.cosmetics && omniaState.cosmetics.palette) || 'aether');
-  var color = entity.id === 'omnia' ? palette.color : entity.color;
+  var relFilter = omniaPaletteFilterFor(palette, entity);
+  var color = omniaDisplayColor(palette, entity);
+  if (color.charAt(0) !== '#') color = entity.color;
   if (entity.id === 'omnia') {
     btn.innerHTML = _drawerOmniaBtnOrigSVG;
-    btn.style.filter = (palette.filter && palette.filter !== 'none') ? palette.filter : '';
+    btn.style.filter = relFilter !== 'none' ? relFilter : '';
     btn.title = 'Meet Omnia';
     btn.setAttribute('aria-label', 'Open guide tutorial');
   } else {
@@ -15819,7 +15856,7 @@ function updateDrawerEntityBtn() {
       previewSVG = renderOmniaEntityPreview(entity).replace('<svg ', '<svg width="26" height="38" ');
     }
     btn.innerHTML = previewSVG;
-    btn.style.filter = 'drop-shadow(0 0 6px ' + color + '99)';
+    btn.style.filter = (relFilter !== 'none' ? relFilter + ' ' : '') + 'drop-shadow(0 0 6px ' + color + '99)';
     btn.title = entity.name;
     btn.setAttribute('aria-label', 'Open ' + entity.name + ' guide');
   }
@@ -15975,12 +16012,15 @@ function applyOmniaCosmetics() {
   var entity = omniaFindCosmetic(OMNIA_ENTITIES, omniaState.cosmetics.entity || 'omnia');
   var companion = omniaState.cosmetics.companion ? omniaFindCosmetic(OMNIA_COMPANIONS, omniaState.cosmetics.companion) : null;
   var entitySVG = getEntityCrystalSVG(entity.id);
-  var entityDropShadow = entitySVG ? 'drop-shadow(0 0 10px ' + entity.color + '88)' : '';
-  // Apply palette filter + entity SVG to all Omnia figure elements
+  var displayColor = omniaDisplayColor(palette, entity);
+  var entityDropShadow = entitySVG ? 'drop-shadow(0 0 10px ' + (displayColor.charAt(0) === '#' ? displayColor : entity.color) + '88)' : '';
+  // Apply palette filter + entity SVG to all Omnia figure elements. The
+  // filter is computed relative to the entity's base color so a palette
+  // reads as the same color on every form.
   ['guideOmniaFigure', 'omniaCenterFigure', 'pathBannerOmniaFigure'].forEach(function(figId) {
     var f = document.getElementById(figId);
     if (!f) return;
-    f.style.setProperty('--omnia-filter', palette.filter || 'none');
+    f.style.setProperty('--omnia-filter', omniaPaletteFilterFor(palette, entity));
     f.classList.toggle('omnia-spectral', palette.id === 'spectral');
     f.classList.toggle('omnia-aurora', palette.id === 'aurora');
     f.style.setProperty('--omnia-companion-color', companion ? companion.color : palette.color);
@@ -16010,7 +16050,7 @@ function applyOmniaCosmetics() {
   var name = document.querySelector('.omnia-name');
   if (name) {
     name.textContent = entity.name;
-    name.style.color = entity.id === 'omnia' ? palette.color : entity.color;
+    name.style.color = displayColor;
   }
   updateDrawerEntityBtn();
 }
@@ -16112,7 +16152,15 @@ function unlockOrSelectOmniaCosmetic(kind, id) {
     omniaUnlockList(kind).push(id);
   }
   if (kind === 'palette') omniaState.cosmetics.palette = id;
-  if (kind === 'entity') omniaState.cosmetics.entity = id;
+  if (kind === 'entity') {
+    omniaState.cosmetics.entity = id;
+    // Snap the color to the form's native palette so the selected swatch
+    // matches how the entity actually renders (only if that palette is owned).
+    var nativePal = OMNIA_ENTITY_NATIVE_PALETTE[id] || 'aether';
+    if (omniaState.cosmetics.palette !== nativePal && omniaCosmeticUnlocked('palette', nativePal)) {
+      omniaState.cosmetics.palette = nativePal;
+    }
+  }
   if (kind === 'companion') omniaState.cosmetics.companion = id;
   saveOmniaState();
   renderOmniaEngine();
