@@ -216,12 +216,11 @@ function card2() {
     <text x="${x + tw / 2}" y="${y + th / 2 + 18}" font-family="Space Grotesk" font-weight="500" font-size="${t.name.length > 12 ? 46 : 54}" fill="#ffffff" text-anchor="middle">${t.name}</text>`;
   });
   return shell(`
-  ${wordmark(300)}
-  ${serif(W / 2, 530, 116, '#ffffff', 'Six disciplines.')}
-  ${serif(W / 2, 670, 116, ACCENT, 'One path.', 'middle', 'font-style="italic"')}
-  ${mono(W / 2, 800, 36, MUTED, 'CLASSICAL CONCENTRATION TRAINING, MADE DAILY', 5)}
+  ${mono(W / 2, 300, 36, '#ffffff', 'P R E S E N C E', 14)}
+  ${serif(W / 2, 580, 124, '#ffffff', 'Better Concentration')}
+  ${mono(W / 2, 800, 36, '#ffffff', 'CLASSICAL CONCENTRATION TRAINING, MADE DAILY', 5)}
   ${g}
-  ${mono(W / 2, 2370 + 90, 34, FAINT, 'EACH SESSION MEASURED · EVERY REP COUNTS', 6)}
+  ${mono(W / 2, 2370 + 90, 34, '#ffffff', 'EACH SESSION MEASURED · EVERY REP COUNTS', 6)}
   `, 19);
 }
 
