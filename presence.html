@@ -16833,6 +16833,57 @@ var OMNIA_CRYSTAL_MORPH_SHARDS = [
   [[66,18],[80,70],[74,45],[50,32]]
 ];
 
+// Per-entity morph origins: rough shard silhouettes of each form, so a
+// tapped entity bursts out of its own shape instead of flashing the Omnia
+// crystal before the symbol appears. Same shard count and point count as
+// the crystal set so the lerp into OMNIA_MORPH_TARGETS stays index-aligned.
+var OMNIA_ENTITY_MORPH_SHARDS = {
+  noema: [ // hexagonal prism: caps, column halves, central diamond, eye core
+    [[50,12],[70,23],[50,43],[30,23]],
+    [[30,23],[30,65],[50,65],[50,43]],
+    [[70,23],[70,65],[50,65],[50,43]],
+    [[30,65],[30,87],[50,87],[50,65]],
+    [[70,65],[70,87],[50,87],[50,65]],
+    [[30,87],[70,87],[55,107],[45,107]],
+    [[45,107],[55,107],[50,117],[50,117]],
+    [[50,51],[66,65],[50,79],[34,65]],
+    [[44,60],[56,60],[56,70],[44,70]]
+  ],
+  aurel: [ // hexagram star: triangle tips and legs, central diamond, core
+    [[50,10],[59,33],[50,42],[41,33]],
+    [[41,33],[23,82],[34,82],[47,44]],
+    [[59,33],[77,82],[66,82],[53,44]],
+    [[50,119],[41,96],[50,86],[59,96]],
+    [[23,47],[34,47],[46,86],[38,92]],
+    [[77,47],[66,47],[54,86],[62,92]],
+    [[50,53],[68,65],[50,70],[32,65]],
+    [[32,65],[68,65],[56,82],[44,82]],
+    [[50,58],[57,65],[50,72],[43,65]]
+  ],
+  elys: [ // archangel: halo+head, wing halves, torso, robe, spear, orb
+    [[50,15],[58,24],[50,33],[42,24]],
+    [[42,35],[17,27],[20,49],[40,46]],
+    [[20,49],[17,86],[33,72],[38,50]],
+    [[58,35],[83,27],[80,49],[60,46]],
+    [[80,49],[83,86],[67,72],[62,50]],
+    [[42,33],[58,33],[59,60],[41,60]],
+    [[41,60],[59,60],[61,96],[39,96]],
+    [[36,16],[39,16],[38,97],[35,97]],
+    [[63,53],[70,60],[63,67],[56,60]]
+  ],
+  seraph: [ // ophanim: outer wheel quarters, inner wheel, core, wing fans
+    [[50,25],[72,42],[50,50],[28,42]],
+    [[72,42],[86,62],[72,82],[62,62]],
+    [[72,82],[50,99],[28,82],[50,74]],
+    [[28,82],[14,62],[28,42],[38,62]],
+    [[50,40],[72,62],[50,84],[28,62]],
+    [[50,53],[59,62],[50,71],[41,62]],
+    [[34,18],[66,18],[58,38],[42,38]],
+    [[12,96],[30,106],[42,84],[28,76]],
+    [[88,96],[70,106],[58,84],[72,76]]
+  ]
+};
+
 var OMNIA_MORPH_TARGETS = {
   eye: [
     [[50,34],[64,50],[50,66],[36,50]],
@@ -16932,7 +16983,8 @@ function animateOmniaShardMorph(sym, figId, svgId) {
   var svg = document.getElementById(svgId || 'guideOmniaShardSvg');
   if (!fig || !svg) return;
   if (omniaMorphRaf) cancelAnimationFrame(omniaMorphRaf);
-  var from = OMNIA_CRYSTAL_MORPH_SHARDS;
+  var entityId = (omniaState && omniaState.cosmetics && omniaState.cosmetics.entity) || 'omnia';
+  var from = OMNIA_ENTITY_MORPH_SHARDS[entityId] || OMNIA_CRYSTAL_MORPH_SHARDS;
   var to = OMNIA_MORPH_TARGETS[sym.id] || OMNIA_MORPH_TARGETS.eye;
   var color = sym.color || '#b8eaff';
   svg.innerHTML = '<defs><filter id="omniaShardGlow" x="-40%" y="-40%" width="180%" height="180%"><feGaussianBlur stdDeviation="2.2" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter></defs>';
