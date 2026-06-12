@@ -16267,6 +16267,15 @@ function applyOmniaCosmetics() {
     name.textContent = entity.name;
     name.style.color = displayColor;
   }
+  var peekInner = document.getElementById('omniaTabPeekInner');
+  if (peekInner) {
+    if (!_origCrystalHTML.omniaTabPeekInner) _origCrystalHTML.omniaTabPeekInner = peekInner.innerHTML;
+    if (entitySVG) {
+      peekInner.innerHTML = entitySVG.replace(/width="[^"]*"/, 'width="110"').replace(/height="[^"]*"/, 'height="178"');
+    } else {
+      peekInner.innerHTML = _origCrystalHTML.omniaTabPeekInner;
+    }
+  }
   updateDrawerEntityBtn();
 }
 
