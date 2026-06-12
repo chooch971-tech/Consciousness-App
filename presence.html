@@ -5598,6 +5598,7 @@ body:not(.tut-live) #tutCorgi {
     </div>
     <div style="padding:0 24px max(env(safe-area-inset-bottom),28px); display:flex; flex-direction:column; gap:10px;">
       <button class="btn primary conc-btn" id="audStartRepBtn">Start — I'm Ready</button>
+      <button class="btn ghost conc-btn" id="audSwitchSoundBtn">&#9836; Switch Sound</button>
       <button class="btn primary conc-btn" id="audLostBtn" style="display:none;">Lost Focus</button>
       <button class="btn ghost conc-btn" id="audNextRepBtn" style="display:none;">Ready — Begin Next Rep</button>
     </div>
@@ -13308,6 +13309,34 @@ function selectSound(id) {
   }
 }
 
+// Sounds the in-session "Switch Sound" button can cycle through: the built-in
+// sounds (minus freeplay, which is a different mode) plus any custom uploads.
+function audSwitchableSounds() {
+  var ids = SOUNDS.filter(function(s) { return s.id !== 'freeplay'; }).map(function(s) { return s.id; });
+  loadCustomAudSounds().filter(function(s) { return s.kind !== 'youtube'; }).forEach(function(s) { ids.push(s.id); });
+  return ids;
+}
+
+// Cycle to the next sound mid-listen, previewing it immediately. Only available
+// before the concentration rep starts (the sound is silenced once focus begins).
+function audSwitchSound() {
+  var ids = audSwitchableSounds();
+  if (ids.length < 2) return;
+  var idx = ids.indexOf(currentSound);
+  currentSound = ids[(idx + 1) % ids.length]; // from -1 (e.g. freeplay) → first
+  var nameEl = document.getElementById('audSoundName');
+  if (nameEl) nameEl.textContent = getAudSoundLabel(currentSound);
+  // A real sound is now selected — make sure the wave shows and the prompt
+  // matches a listening (not freeplay) session.
+  var waveEl = document.getElementById('audWave');
+  if (waveEl) waveEl.style.visibility = '';
+  var stateEl = document.getElementById('audStateLabel');
+  if (stateEl) stateEl.textContent = 'Listen to the sound.\nTap Start when ready to concentrate.';
+  stopAllAudio();
+  playSound(currentSound);
+  startWaveAnimation();
+}
+
 // ── Session logic ─────────────────────────────────────────
 function startAuditorySession() {
   audReps = [];
@@ -13331,6 +13360,10 @@ function startAuditorySession() {
   document.getElementById('audStartRepBtn').style.display = '';
   document.getElementById('audLostBtn').style.display = 'none';
   document.getElementById('audNextRepBtn').style.display = 'none';
+  // Switching sounds only makes sense while listening, before focus begins —
+  // and only when more than one sound is available.
+  var switchBtn = document.getElementById('audSwitchSoundBtn');
+  if (switchBtn) switchBtn.style.display = audSwitchableSounds().length > 1 ? '' : 'none';
 
   showScreen('audSessionScreen');
   requestExerciseWakeLock();
@@ -13350,6 +13383,8 @@ function beginAudRep() {
   audSessionStartTime = Date.now();
   audRepStartTime = Date.now();
   document.getElementById('audStartRepBtn').style.display = 'none';
+  var _switchBtn = document.getElementById('audSwitchSoundBtn');
+  if (_switchBtn) _switchBtn.style.display = 'none';
   document.getElementById('audStateLabel').textContent = 'Concentrate.';
   document.getElementById('audRepCount').textContent = 'rep 1';
   startAudRep();
@@ -13538,6 +13573,7 @@ document.getElementById('audNextRepBtn').addEventListener('click', function() {
   startAudRep();
 });
 document.getElementById('audStartRepBtn').addEventListener('click', beginAudRep);
+document.getElementById('audSwitchSoundBtn').addEventListener('click', audSwitchSound);
 document.getElementById('audEndBtn').addEventListener('click', endAuditorySession);
 document.getElementById('audSaveBtn').addEventListener('click', saveAudResult);
 document.getElementById('audViewHistoryBtn').addEventListener('click', function() {
