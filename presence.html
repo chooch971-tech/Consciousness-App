@@ -1320,13 +1320,9 @@
     .jl-pr__text { font-size:11.5px; color:#e6cd92; line-height:1.4; }
 
     /* ── Progress Report: Omnia card ─────────────────────── */
-    .rpt-omnia-card { margin-bottom:20px; overflow:hidden; position:relative; border-radius:16px;
-      background:linear-gradient(150deg, rgba(46,40,82,.55) 0%, rgba(30,32,58,.42) 48%, rgba(38,32,58,.5) 100%);
-      border:1px solid rgba(170,152,214,.24);
-      box-shadow:0 0 34px rgba(120,100,180,.12), inset 0 1px 0 rgba(255,255,255,.05); }
-    .rpt-omnia-card::before { content:''; position:absolute; inset:0; pointer-events:none;
-      background:radial-gradient(ellipse 60% 80% at 16% 50%, rgba(168,200,232,.12) 0%, transparent 62%); }
-    .rpt-omnia-card__inner { display:flex; flex-direction:column; align-items:center; padding:20px 20px 18px; position:relative; z-index:1; }
+    /* Boxless: Omnia + bubble float directly on the page */
+    .rpt-omnia-card { margin-bottom:20px; position:relative; }
+    .rpt-omnia-card__inner { display:flex; flex-direction:column; align-items:center; padding:12px 4px 10px; position:relative; z-index:1; }
     .rpt-omnia-stage { position:relative; width:160px; height:120px; display:flex; align-items:flex-end; justify-content:center; margin-bottom:10px; flex-shrink:0; }
     .rpt-omnia-crystal { width:52px; position:relative; z-index:2; transform-origin:bottom center; will-change:transform; animation:rptOmniaFloat 5s ease-in-out infinite; filter:drop-shadow(0 0 12px rgba(184,234,255,.45)) drop-shadow(0 0 4px rgba(184,234,255,.6)); }
     .rpt-omnia-crystal--loading { animation:rptOmniaBounce 1.5s linear infinite; }
@@ -1356,7 +1352,7 @@
     .rpt-omnia-refresh { margin-top:10px; background:none; border:none; font-size:8px; letter-spacing:.15em; text-transform:uppercase; color:var(--muted); font-family:'DM Mono',monospace; cursor:pointer; opacity:.5; }
     .rpt-omnia-refresh:hover { opacity:.9; }
     /* Bubble row layout */
-    .rpt-omnia-card__inner--row { display:flex; flex-direction:row; align-items:center; padding:14px 16px; gap:14px; }
+    .rpt-omnia-card__inner--row { display:flex; flex-direction:row; align-items:center; padding:10px 0; gap:12px; }
     .rpt-omnia-stage--sm { width:70px; height:78px; margin-bottom:0; flex-shrink:0; }
     .rpt-omnia-crystal--sm { width:32px; }
     .rpt-omnia-clipboard--sm { width:24px; right:4px; }
@@ -5709,6 +5705,7 @@ body:not(.tut-live) #tutCorgi {
       <div class="rpt-banner-text">
         <div class="rpt-banner-label">Your Practice</div>
         <div class="rpt-banner-title">Progress Reports</div>
+        <div class="rpt-banner-sub" id="reportsBannerSub"></div>
       </div>
       <div class="rpt-banner-glow"></div>
       <div class="rpt-banner-figure">
@@ -20695,24 +20692,47 @@ function avgScore(sessions) {
 
 // ── SVG Chart renderers ────────────────────────────────────
 
+var _barChartUid = 0;
 function renderBarChart(data, labels, color, height) {
-  color = color || 'var(--accent)';
+  color = color || '#7eb8a4';
   height = height || 60;
   if (!data.length) return '<div style="text-align:center;color:var(--muted);font-size:11px;padding:20px 0;">No data yet</div>';
   var max = Math.max.apply(null, data) || 1;
-  var w = 100 / data.length;
-  var bars = data.map(function(v, i) {
-    var h = Math.max(2, Math.round((v / max) * height));
-    var x = i * w + w * 0.1;
-    var bw = w * 0.8;
+  // Fixed-width viewBox (no preserveAspectRatio:none) so label text isn't stretched
+  var uid = ++_barChartUid;
+  var vbW = 300, vbH = height + 18;
+  var n = data.length;
+  var slot = vbW / n;
+  var bw = Math.min(16, slot * 0.5);
+  var maxIdx = data.indexOf(max);
+  var parts = [];
+  parts.push('<defs><linearGradient id="rptBar' + uid + '" x1="0" y1="0" x2="0" y2="1">'
+    + '<stop offset="0%" stop-color="' + color + '"/>'
+    + '<stop offset="100%" stop-color="' + color + '" stop-opacity=".22"/>'
+    + '</linearGradient></defs>');
+  parts.push('<line x1="0" y1="' + height + '" x2="' + vbW + '" y2="' + height + '" stroke="rgba(221,216,206,.14)" stroke-width="1"/>');
+  data.forEach(function(v, i) {
+    var cx = i * slot + slot / 2;
+    if (v <= 0) {
+      // Empty slot: a faint dot on the baseline instead of a stub bar
+      parts.push('<circle cx="' + cx.toFixed(1) + '" cy="' + height + '" r="1.4" fill="rgba(221,216,206,.18)"/>');
+      return;
+    }
+    var h = Math.max(3, (v / max) * (height - 16));
     var y = height - h;
-    return '<rect x="' + x + '%" y="' + y + '" width="' + bw + '%" height="' + h + '" fill="' + color + '" rx="2" opacity="0.8"/>';
-  }).join('');
-  var labelsSVG = labels.map(function(l, i) {
-    var x = i * w + w / 2;
-    return '<text x="' + x + '%" y="' + (height + 12) + '" text-anchor="middle" fill="rgba(221,216,206,.35)" font-size="7" font-family="DM Mono,monospace">' + l + '</text>';
-  }).join('');
-  return '<svg width="100%" height="' + (height + 18) + '" viewBox="0 0 100 ' + (height + 18) + '" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">' + bars + labelsSVG + '</svg>';
+    var isMax = i === maxIdx;
+    parts.push('<rect x="' + (cx - bw / 2).toFixed(1) + '" y="' + y.toFixed(1) + '" width="' + bw.toFixed(1) + '" height="' + h.toFixed(1) + '" rx="' + Math.min(4, bw / 2).toFixed(1) + '" fill="url(#rptBar' + uid + ')"' + (isMax ? '' : ' opacity=".6"') + '/>');
+    if (isMax) {
+      parts.push('<text x="' + cx.toFixed(1) + '" y="' + (y - 5).toFixed(1) + '" text-anchor="middle" fill="' + color + '" font-size="8.5" font-family="DM Mono,monospace">' + fmtDuration(Math.round(v)) + '</text>');
+    }
+  });
+  var every = n > 9 ? 2 : 1;
+  labels.forEach(function(l, i) {
+    if (i % every !== 0) return;
+    var cx = i * slot + slot / 2;
+    parts.push('<text x="' + cx.toFixed(1) + '" y="' + (height + 13) + '" text-anchor="middle" fill="rgba(221,216,206,.4)" font-size="7.5" font-family="DM Mono,monospace">' + l + '</text>');
+  });
+  return '<svg width="100%" height="' + vbH + '" viewBox="0 0 ' + vbW + ' ' + vbH + '" xmlns="http://www.w3.org/2000/svg">' + parts.join('') + '</svg>';
 }
 
 function renderClockProgressChart(sessions) {
@@ -21111,7 +21131,7 @@ function buildOmniaReportCardHtml(period) {
   var html = '';
   // Past periods are always eligible; current period depends on the day
   var isEligible = reportOffset < 0 ? true : isOmniaReportDay(period);
-  var periodLabel = period === 'daily' ? 'today' : period === 'weekly' ? 'this week' : 'this month';
+  var periodLabel = reportNavLabel(period, reportOffset).toLowerCase();
   var stageHtml = buildRptOmniaStage(!isEligible); // loading bounce if not eligible yet
   if (!isEligible) {
     var _now = new Date();
@@ -21169,6 +21189,15 @@ function buildOmniaReportCardHtml(period) {
 function renderReport(period) {
   var range = getDateRange(period, reportOffset);
   updateReportNav();
+  // Banner sub-line: lifetime totals across both practices
+  var bannerSub = document.getElementById('reportsBannerSub');
+  if (bannerSub) {
+    var lifeSessions = state.history.length + (concState.history || []).length;
+    var lifeMin = sumMinutes(state.history) + Math.round((concState.history || []).reduce(function(a, h) { return a + (h.seconds || 0); }, 0) / 60);
+    bannerSub.textContent = lifeSessions > 0
+      ? lifeSessions + ' sessions · ' + fmtDuration(lifeMin) + ' all time'
+      : 'Your practice, in numbers';
+  }
   var awarenessNow = filterHistory(state.history, range.start, range.now);
   var awarenessPrev = filterHistory(state.history, range.prevStart, range.prevEnd);
   var concNow = filterHistory(concState.history, range.start, range.now);
@@ -21185,7 +21214,7 @@ function renderReport(period) {
   var totalMinPrev = sumMinutes(awarenessPrev) + Math.round(concSecPrev / 60);
 
   if (totalSessions === 0) {
-    html += '<div class="rpt-empty">No practice recorded in this period.<br>Your standing so far is below.</div>';
+    html += '<div class="rpt-empty">No practice recorded in this period.<br>Your overall rank is below.</div>';
   } else {
     // ── Hero: the whole summary is three numbers ──
     var bestHoldNow = concNow.length ? Math.max.apply(null, concNow.map(function(h) { return h.seconds || 0; })) : 0;
@@ -21202,10 +21231,15 @@ function renderReport(period) {
     html += '</div>';
 
     // ── Highlights: at most two, milestones before patterns ──
-    var records = buildRecords(awarenessNow, concNow);
+    var records = buildRecords(awarenessNow, concNow, range);
     var chips = records.map(function(r) { return { icon: r.icon, text: r.text }; });
     if (chips.length < 2) {
-      buildSignals(awarenessNow, concNow, period).slice(0, 2 - chips.length).forEach(function(s) {
+      // Don't pad with signals that restate a record chip already shown
+      var recordKeys = records.map(function(r) { return r.key; });
+      var dupOf = { 'Sharpest Focus': 'hold', 'Clearest Reflection': 'score' };
+      buildSignals(awarenessNow, concNow, period).filter(function(s) {
+        return recordKeys.indexOf(dupOf[s.label]) === -1;
+      }).slice(0, 2 - chips.length).forEach(function(s) {
         chips.push({ icon: '✦', text: s.text + (s.val ? ' — ' + s.val : '') });
       });
     }
@@ -21214,11 +21248,13 @@ function renderReport(period) {
     });
 
     // ── One chart: combined minutes across both practices ──
-    var awChart = buildChartData(state.history, period, 'minutes');
+    var awChart = buildChartData(state.history, period, 'durationMin');
     var concChart = buildChartData(concState.history, period, 'seconds');
     var combined = awChart.values.map(function(v, i) { return v + Math.round((concChart.values[i] || 0) / 60); });
     if (combined.some(function(v) { return v > 0; })) {
-      html += '<div class="report-chart" style="margin-top:14px;"><div class="report-chart-title">Minutes Practiced</div>' + renderBarChart(combined, awChart.labels, '#7eb8a4', 56) + '</div>';
+      html += '<div class="report-chart" style="margin-top:14px;">'
+        + '<div class="report-chart-title" style="display:flex;justify-content:space-between;align-items:baseline;"><span>Minutes Practiced</span><span style="color:var(--accent);letter-spacing:.08em;">' + practicedStr + ' total</span></div>'
+        + renderBarChart(combined, awChart.labels, '#7eb8a4', 56) + '</div>';
     }
   }
 
@@ -21237,7 +21273,7 @@ function renderReport(period) {
           ? rptStripCell(awScoreNow, 'Avg Score', deltaMini(parseFloat(awScoreNow), parseFloat(awScorePrev || 0)))
           : rptStripCell(state.streak + 'd', 'Streak', ''))
       + '</div>';
-    var awChartData = buildChartData(state.history, period, 'minutes');
+    var awChartData = buildChartData(state.history, period, 'durationMin');
     if (awChartData.values.length >= 3 && awChartData.scoreValues && awChartData.scoreValues.some(function(v) { return v > 0; })) {
       awBody += '<div class="report-chart"><div class="report-chart-title">Session Score Trend</div>' + renderLineChart(awChartData.scoreValues, '#7eb8a4', 48) + '</div>';
     }
@@ -21287,12 +21323,12 @@ function renderReport(period) {
     accHtml += rptAccRow('purple', 'Prayer', prayerDone + ' of ' + prayerState.count + ' today', prayerBody);
   }
 
-  var standingBody = '<div class="rpt-strip">'
+  var rankBody = '<div class="rpt-strip">'
     + rptStripCell(state.level, 'Awareness Lvl', '')
     + rptStripCell(concState.level, 'Focus Lvl', '')
     + rptStripCell((state.xp + concState.xp).toLocaleString(), 'Total XP', '')
     + '</div>';
-  accHtml += rptAccRow('gold', 'Standing', 'Lvl ' + state.level + ' · ' + (state.xp + concState.xp).toLocaleString() + ' XP', standingBody);
+  accHtml += rptAccRow('gold', 'Rank', getRankTitle(state.level) + ' · ' + (state.xp + concState.xp).toLocaleString() + ' XP', rankBody);
 
   html += '<div class="rpt-acc">' + accHtml + '</div>';
 
@@ -21311,7 +21347,7 @@ function loadOmniaReportInto(period, offset) {
     if (!card) return;
     var inner = card.querySelector('.rpt-omnia-card__inner');
     if (!inner) return;
-    var periodLabel = period === 'daily' ? 'today' : period === 'weekly' ? 'this week' : 'this month';
+    var periodLabel = reportNavLabel(period, offset).toLowerCase();
     if (err || !commentary) return;
     inner.className = 'rpt-omnia-card__inner rpt-omnia-card__inner--row';
     inner.innerHTML = buildRptOmniaStage(false, true)
@@ -21377,30 +21413,38 @@ function buildChartData(history, period, valueKey) {
   return { labels: labels, values: values, scoreValues: scoreValues };
 }
 
-function buildRecords(awarenessToday, concToday) {
+function buildRecords(awarenessNow, concNow, range) {
   var records = [];
-  // Check personal bests
-  if (awarenessToday.length > 0) {
-    var best = awarenessToday.reduce(function(a, h) { return parseFloat(h.score || 0) > parseFloat(a.score || 0) ? h : a; }, awarenessToday[0]);
-    var allScores = state.history.filter(function(h) { return h.score; }).map(function(h) { return parseFloat(h.score); });
-    var maxEver = allScores.length ? Math.max.apply(null, allScores) : 0;
-    if (parseFloat(best.score) >= maxEver && parseFloat(best.score) > 0) {
-      records.push({ icon: '⭐', text: 'Personal best session score: ' + best.score + '/5' });
+  // A "record" means this period beat everything that came BEFORE it — comparing
+  // against all-time maxima (which include the period itself) made these chips
+  // fire on every period that merely contained the all-time best.
+  var startTs = range && range.start ? range.start.getTime() : 0;
+  function isPrior(h) { var d = new Date(h.date); return !isNaN(d) && d.getTime() < startTs; }
+  if (awarenessNow.length > 0) {
+    var best = awarenessNow.reduce(function(a, h) { return parseFloat(h.score || 0) > parseFloat(a.score || 0) ? h : a; }, awarenessNow[0]);
+    var priorScores = state.history.filter(function(h) { return h.score && isPrior(h); }).map(function(h) { return parseFloat(h.score); });
+    var maxPrior = priorScores.length ? Math.max.apply(null, priorScores) : 0;
+    if (parseFloat(best.score || 0) > maxPrior && parseFloat(best.score) > 0) {
+      records.push({ key: 'score', icon: '⭐', text: 'Personal best session score: ' + best.score + '/5' });
     }
-    var longestToday = Math.max.apply(null, awarenessToday.map(function(h) { return h.durationMin || 0; }));
-    var longestEver = Math.max.apply(null, state.history.map(function(h) { return h.durationMin || 0; }));
-    if (longestToday >= longestEver && longestToday > 0) {
-      records.push({ icon: '⏱', text: 'Longest session ever: ' + fmtDuration(longestToday) });
+    var longestNow = Math.max.apply(null, awarenessNow.map(function(h) { return h.durationMin || 0; }));
+    var priorDurations = state.history.filter(isPrior).map(function(h) { return h.durationMin || 0; });
+    var longestPrior = priorDurations.length ? Math.max.apply(null, priorDurations) : 0;
+    if (longestNow > longestPrior && longestNow > 0) {
+      records.push({ key: 'duration', icon: '⏱', text: 'Longest session yet: ' + fmtDuration(longestNow) });
     }
   }
-  if (concToday.length > 0) {
-    var bestHold = Math.max.apply(null, concToday.map(function(h) { return h.seconds || 0; }));
-    if (bestHold >= concState.bestSeconds && bestHold > 0) {
-      records.push({ icon: '🎯', text: 'New concentration record: ' + fmtTimer(bestHold) });
+  if (concNow.length > 0) {
+    var bestHold = Math.max.apply(null, concNow.map(function(h) { return h.seconds || 0; }));
+    var priorHolds = (concState.history || []).filter(isPrior).map(function(h) { return h.seconds || 0; });
+    var bestPrior = priorHolds.length ? Math.max.apply(null, priorHolds) : 0;
+    if (bestHold > bestPrior && bestHold > 0) {
+      records.push({ key: 'hold', icon: '🎯', text: 'New concentration record: ' + fmtTimer(bestHold) });
     }
   }
-  if (state.streak > 0 && state.streak % 7 === 0) {
-    records.push({ icon: '🔥', text: state.streak + '-day streak milestone reached!' });
+  // Streak milestones only make sense on the current day's report
+  if (currentReportPeriod === 'daily' && reportOffset === 0 && state.streak > 0 && state.streak % 7 === 0) {
+    records.push({ key: 'streak', icon: '🔥', text: state.streak + '-day streak milestone reached!' });
   }
   return records;
 }
