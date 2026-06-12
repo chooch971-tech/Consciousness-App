@@ -17050,24 +17050,24 @@ var OMNIA_ENTITY_MORPH_SYMBOLS = {
     { id:'moon', label:'Lunar Vessel', color:'#c4a8d4' }
   ],
   noema: [
-    { id:'eye', label:'Noema Lens', color:'#98b4cc' },
-    { id:'triangle', label:'Noetic Prism', color:'#9fbfd8' },
-    { id:'sun', label:'Cognitive Core', color:'#b7cee0' }
+    { id:'prism', label:'Noema Lens', color:'#98b4cc' },
+    { id:'eye', label:'Cognitive Core', color:'#9fbfd8' },
+    { id:'triangle', label:'Noetic Prism', color:'#b7cee0' }
   ],
   aurel: [
+    { id:'hexagram', label:'Will Sigil', color:'#e3b97f' },
     { id:'sun', label:'Solar Forge', color:'#f0d39a' },
-    { id:'triangle', label:'Will Sigil', color:'#e3b97f' },
     { id:'eye', label:'Golden Watch', color:'#f2d8a8' }
   ],
   elys: [
-    { id:'moon', label:'The Halo', color:'#c4a8d4' },
-    { id:'sun', label:'Spear of Light', color:'#d8b7e6' },
-    { id:'triangle', label:'The Orb', color:'#b995ca' }
+    { id:'halo', label:'Halo & Spear', color:'#c4a8d4' },
+    { id:'moon', label:'The Halo', color:'#d8b7e6' },
+    { id:'sun', label:'Spear of Light', color:'#b995ca' }
   ],
   seraph: [
+    { id:'wheel', label:'Wheel of Fire', color:'#f0c860' },
     { id:'eye', label:'Eye of Flame', color:'#f3d486' },
-    { id:'sun', label:'Wheel of Fire', color:'#f0c860' },
-    { id:'triangle', label:'Sixfold Wing', color:'#e8b84a' }
+    { id:'sun', label:'Burning Round', color:'#e8b84a' }
   ]
 };
 var omniaMorphIndexes = { omnia:0, noema:0, aurel:0, elys:0, seraph:0 };
@@ -17181,6 +17181,50 @@ var OMNIA_MORPH_TARGETS = {
     [[39,68],[29,72],[27,49],[43,50]],
     [[43,50],[27,49],[37,27],[52,31]],
     [[52,31],[37,27],[63,13],[63,13]]
+  ],
+  prism: [ // Noema: hexagonal lens, six edge facets around an eye core
+    [[50,25],[85,45],[71,53],[50,41]],
+    [[85,45],[85,85],[71,77],[71,53]],
+    [[85,85],[50,105],[50,89],[71,77]],
+    [[50,105],[15,85],[29,77],[50,89]],
+    [[15,85],[15,45],[29,53],[29,77]],
+    [[15,45],[50,25],[50,41],[29,53]],
+    [[50,49],[64,65],[50,81],[36,65]],
+    [[44,59],[56,59],[56,71],[44,71]],
+    [[47,30],[53,30],[53,36],[47,36]]
+  ],
+  hexagram: [ // Aurel: interlocked triangles, six points around a core
+    [[50,15],[61,38],[50,45],[39,38]],
+    [[15,90],[35,90],[42,76],[26,70]],
+    [[85,90],[65,90],[58,76],[74,70]],
+    [[50,115],[39,92],[50,85],[61,92]],
+    [[15,40],[35,40],[42,54],[26,60]],
+    [[85,40],[65,40],[58,54],[74,60]],
+    [[38,52],[62,52],[66,65],[34,65]],
+    [[34,65],[66,65],[62,78],[38,78]],
+    [[50,57],[58,65],[50,73],[42,65]]
+  ],
+  halo: [ // Michael: halo ring quarters, spearhead and shaft, the orb
+    [[50,12],[66,28],[58,28],[50,20]],
+    [[66,28],[50,44],[50,36],[58,28]],
+    [[50,44],[34,28],[42,28],[50,36]],
+    [[34,28],[50,12],[50,20],[42,28]],
+    [[50,48],[58,62],[50,58],[42,62]],
+    [[47,58],[53,58],[53,86],[47,86]],
+    [[47,86],[53,86],[53,114],[47,114]],
+    [[72,78],[82,88],[72,98],[62,88]],
+    [[70,82],[76,82],[76,88],[70,88]]
+  ],
+  wheel: [ // Seraph: wheel within a wheel, crossed spokes, burning core
+    [[50,23],[92,65],[80,65],[50,35]],
+    [[92,65],[50,107],[50,95],[80,65]],
+    [[50,107],[8,65],[20,65],[50,95]],
+    [[8,65],[50,23],[50,35],[20,65]],
+    [[50,40],[75,65],[50,90],[25,65]],
+    [[50,53],[62,65],[50,77],[38,65]],
+    [[20,62],[80,62],[80,68],[20,68]],
+    [[47,35],[53,35],[53,95],[47,95]],
+    [[46,61],[54,61],[54,69],[46,69]]
   ]
 };
 
@@ -17221,6 +17265,39 @@ function omniaMorphOutline(sym, color) {
       + '<path d="M63 13 C40 19 27 37 30 58 C34 80 54 91 76 82 C61 77 51 63 53 47 C55 31 65 20 80 15 C74 12 68 11 63 13 Z" stroke-width="2.25"/>'
       + '<path d="M38 27 C29 44 31 72 45 88" stroke-width="1" opacity=".48"/>'
       + '<path d="M36 24 L35 29 M24 50 L29 50 M43 82 L47 86" stroke-width="1" opacity=".58"/>'
+      + '</g>';
+  }
+  if (sym.id === 'prism') {
+    return '<g id="omniaShardOutline" opacity="0" fill="none" stroke="' + color + '" stroke-linecap="round" stroke-linejoin="round">'
+      + '<path d="M50 25 L85 45 L85 85 L50 105 L15 85 L15 45 Z" stroke-width="2.2"/>'
+      + '<path d="M50 41 L71 53 L71 77 L50 89 L29 77 L29 53 Z" stroke-width="1" opacity=".55"/>'
+      + '<ellipse cx="50" cy="65" rx="14" ry="9" stroke-width="1.2" opacity=".78"/>'
+      + '<circle cx="50" cy="65" r="3.5" stroke-width="1.1" opacity=".85"/>'
+      + '</g>';
+  }
+  if (sym.id === 'hexagram') {
+    return '<g id="omniaShardOutline" opacity="0" fill="none" stroke="' + color + '" stroke-linecap="round" stroke-linejoin="round">'
+      + '<path d="M50 15 L85 90 L15 90 Z" stroke-width="2.2"/>'
+      + '<path d="M50 115 L15 40 L85 40 Z" stroke-width="2.2"/>'
+      + '<circle cx="50" cy="65" r="9" stroke-width="1.1" opacity=".72"/>'
+      + '</g>';
+  }
+  if (sym.id === 'halo') {
+    return '<g id="omniaShardOutline" opacity="0" fill="none" stroke="' + color + '" stroke-linecap="round" stroke-linejoin="round">'
+      + '<circle cx="50" cy="28" r="16" stroke-width="2.2"/>'
+      + '<path d="M50 48 L58 62 L50 58 L42 62 Z" stroke-width="1.4"/>'
+      + '<line x1="50" y1="58" x2="50" y2="114" stroke-width="2"/>'
+      + '<circle cx="72" cy="88" r="10" stroke-width="1.5" opacity=".8"/>'
+      + '</g>';
+  }
+  if (sym.id === 'wheel') {
+    return '<g id="omniaShardOutline" opacity="0" fill="none" stroke="' + color + '" stroke-linecap="round" stroke-linejoin="round">'
+      + '<circle cx="50" cy="65" r="42" stroke-width="2.2"/>'
+      + '<circle cx="50" cy="65" r="25" stroke-width="1.4" opacity=".75"/>'
+      + '<path d="M50 23 V107 M8 65 H92" stroke-width="1" opacity=".5"/>'
+      + '<circle cx="50" cy="65" r="6" stroke-width="1.2" opacity=".85"/>'
+      + '<circle cx="50" cy="40" r="2.2" stroke-width="1" opacity=".6"/><circle cx="75" cy="65" r="2.2" stroke-width="1" opacity=".6"/>'
+      + '<circle cx="50" cy="90" r="2.2" stroke-width="1" opacity=".6"/><circle cx="25" cy="65" r="2.2" stroke-width="1" opacity=".6"/>'
       + '</g>';
   }
   return '<g id="omniaShardOutline" opacity="0" fill="none" stroke="' + color + '" stroke-linecap="round" stroke-linejoin="round">'
@@ -17322,6 +17399,48 @@ function renderOmniaMorphSymbol(sym) {
       + '<defs><filter id="omMoonGlow"><feGaussianBlur stdDeviation="2.4" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter></defs>'
       + '<path d="M63 13 C40 19 27 37 30 58 C34 80 54 91 76 82 C61 77 51 63 53 47 C55 31 65 20 80 15 C74 12 68 11 63 13 Z" fill="rgba(196,168,212,.11)" stroke="' + color + '" stroke-width="2.2" filter="url(#omMoonGlow)"/>'
       + '<circle cx="35" cy="25" r="2" fill="' + color + '" opacity=".72"/><circle cx="24" cy="50" r="1.6" fill="' + color + '" opacity=".5"/><circle cx="43" cy="82" r="1.8" fill="' + color + '" opacity=".58"/>'
+      + '</svg>';
+  }
+  if (sym.id === 'prism') {
+    return '<svg viewBox="0 0 100 100" aria-hidden="true" xmlns="http://www.w3.org/2000/svg">'
+      + '<defs><filter id="omPrismGlow"><feGaussianBlur stdDeviation="2.4" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter></defs>'
+      + '<path d="M50 12 L82 31 L82 69 L50 88 L18 69 L18 31 Z" fill="rgba(152,180,204,.08)" stroke="' + color + '" stroke-width="2.2" filter="url(#omPrismGlow)"/>'
+      + '<path d="M50 26 L69 38 L69 62 L50 74 L31 62 L31 38 Z" fill="none" stroke="' + color + '" stroke-width="1" opacity=".55"/>'
+      + '<ellipse cx="50" cy="50" rx="13" ry="8.5" fill="rgba(184,220,245,.1)" stroke="' + color + '" stroke-width="1.2" opacity=".85"/>'
+      + '<circle cx="50" cy="50" r="3.4" fill="' + color + '" opacity=".9"/>'
+      + '<circle cx="51.4" cy="48.4" r="1.1" fill="#fff" opacity=".8"/>'
+      + '</svg>';
+  }
+  if (sym.id === 'hexagram') {
+    return '<svg viewBox="0 0 100 100" aria-hidden="true" xmlns="http://www.w3.org/2000/svg">'
+      + '<defs><filter id="omHexGlow"><feGaussianBlur stdDeviation="2.4" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter></defs>'
+      + '<path d="M50 8 L78 66 L22 66 Z" fill="rgba(240,211,154,.07)" stroke="' + color + '" stroke-width="2" filter="url(#omHexGlow)"/>'
+      + '<path d="M50 92 L22 34 L78 34 Z" fill="rgba(240,211,154,.07)" stroke="' + color + '" stroke-width="2" filter="url(#omHexGlow)"/>'
+      + '<circle cx="50" cy="50" r="8" fill="none" stroke="' + color + '" stroke-width="1.2" opacity=".8"/>'
+      + '<circle cx="50" cy="50" r="2.6" fill="' + color + '" opacity=".85"/>'
+      + '</svg>';
+  }
+  if (sym.id === 'halo') {
+    return '<svg viewBox="0 0 100 100" aria-hidden="true" xmlns="http://www.w3.org/2000/svg">'
+      + '<defs><filter id="omHaloGlow"><feGaussianBlur stdDeviation="2.4" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter></defs>'
+      + '<circle cx="50" cy="22" r="13" fill="none" stroke="' + color + '" stroke-width="2.2" filter="url(#omHaloGlow)"/>'
+      + '<path d="M50 40 L56 51 L50 48 L44 51 Z" fill="rgba(196,168,212,.16)" stroke="' + color + '" stroke-width="1.2"/>'
+      + '<line x1="50" y1="48" x2="50" y2="92" stroke="' + color + '" stroke-width="2" stroke-linecap="round"/>'
+      + '<circle cx="68" cy="72" r="8" fill="rgba(196,168,212,.12)" stroke="' + color + '" stroke-width="1.4" opacity=".9"/>'
+      + '<circle cx="70.5" cy="69.5" r="1.6" fill="#fff" opacity=".7"/>'
+      + '</svg>';
+  }
+  if (sym.id === 'wheel') {
+    return '<svg viewBox="0 0 100 100" aria-hidden="true" xmlns="http://www.w3.org/2000/svg">'
+      + '<defs><filter id="omWheelGlow"><feGaussianBlur stdDeviation="2.4" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter></defs>'
+      + '<circle cx="50" cy="50" r="36" fill="rgba(240,200,96,.05)" stroke="' + color + '" stroke-width="2.2" filter="url(#omWheelGlow)"/>'
+      + '<circle cx="50" cy="50" r="21" fill="none" stroke="' + color + '" stroke-width="1.4" opacity=".8"/>'
+      + '<path d="M50 14 V86 M14 50 H86" stroke="' + color + '" stroke-width=".9" opacity=".45"/>'
+      + '<circle cx="50" cy="50" r="5" fill="' + color + '" opacity=".85"/>'
+      + '<g fill="' + color + '" opacity=".75">'
+      + '<circle cx="50" cy="29" r="2.2"/><circle cx="71" cy="50" r="2.2"/><circle cx="50" cy="71" r="2.2"/><circle cx="29" cy="50" r="2.2"/>'
+      + '</g>'
+      + '<circle cx="51.6" cy="48.4" r="1.4" fill="#fff" opacity=".75"/>'
       + '</svg>';
   }
   return '<svg viewBox="0 0 100 100" aria-hidden="true" xmlns="http://www.w3.org/2000/svg">'
