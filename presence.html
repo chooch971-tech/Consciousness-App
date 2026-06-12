@@ -1105,12 +1105,15 @@
     .oe-cos-detail { border:1px solid var(--border); border-radius:10px; padding:11px 12px; display:flex; justify-content:space-between; align-items:center; gap:12px; background:rgba(255,255,255,.025); }
     .oe-cos-detail-name { font-size:11px; color:var(--text); font-family:'Space Grotesk',sans-serif; font-weight:500; }
     .oe-cos-detail-sub { font-size:9px; color:var(--muted); margin-top:3px; line-height:1.5; }
+    .oe-cos-summary { font-size:10px; color:var(--muted); line-height:1.6; padding:2px 2px 12px; }
+    .oe-cos-summary strong { color:#d4b464; font-weight:600; }
     .oe-cos-grid { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
     .oe-cos-card { border:1px solid var(--border); border-radius:10px; padding:12px 10px 10px; display:flex; flex-direction:column; align-items:center; gap:7px; cursor:pointer; background:rgba(255,255,255,.02); text-align:center; transition:border-color .2s; }
     .oe-cos-card.sel { border-color:rgba(142,204,224,.55); background:rgba(142,204,224,.07); }
     .oe-cos-card.locked { opacity:.55; }
     .oe-cos-card:nth-child(odd):last-child { grid-column:span 2; }
     .oe-cos-card-name { font-size:10px; color:var(--text); font-family:'Space Grotesk',sans-serif; font-weight:500; }
+    .oe-cos-card-bonus { font-size:8px; letter-spacing:.1em; font-family:'DM Mono',monospace; color:#d4b464; background:rgba(212,180,100,.1); border:1px solid rgba(212,180,100,.22); border-radius:5px; padding:2px 7px; margin-top:-2px; }
     .oe-cos-card-tag { font-size:8px; letter-spacing:.12em; text-transform:uppercase; font-family:'DM Mono',monospace; color:var(--muted); }
     .oe-cos-card-tag.sel { color:#8ecce0; }
     .oe-cos-dismiss { margin-top:10px; width:100%; }
@@ -16527,6 +16530,11 @@ function renderOmniaAppearance() {
     focusItem = selId ? omniaFindCosmetic(tab.items, selId) : null;
   }
 
+  if (tab.kind === 'entity' || tab.kind === 'companion') {
+    var totalBonusPct = Math.round((getOmniaCosmeticBoost() - 1) * 100);
+    html += '<div class="oe-cos-summary">Equipped form + companion bonuses stack — currently <strong>+' + totalBonusPct + '% Akasha</strong> from all training.</div>';
+  }
+
   if (tab.kind === 'palette') {
     html += '<div class="oe-swatch-strip">' + tab.items.map(function(item) {
       var unlocked = omniaCosmeticUnlocked('palette', item.id);
@@ -16567,9 +16575,12 @@ function renderOmniaAppearance() {
       var attrs = unlocked
         ? 'data-omnia-cosmetic-kind="' + tab.kind + '" data-omnia-cosmetic-id="' + item.id + '"'
         : 'data-omnia-cos-focus="' + item.id + '" data-omnia-cos-kind="' + tab.kind + '"';
+      var bonusPct = omniaCosmeticBonusPct(item);
+      var bonusHtml = bonusPct > 0 ? '<div class="oe-cos-card-bonus">+' + bonusPct + '% Akasha</div>' : '';
       return '<div class="oe-cos-card' + (selected ? ' sel' : '') + (unlocked ? '' : ' locked') + '" ' + attrs + '>'
         + renderOmniaCosmeticPreview(tab.kind, item)
         + '<div class="oe-cos-card-name">' + item.name + '</div>'
+        + bonusHtml
         + '<div class="oe-cos-card-tag' + (selected ? ' sel' : '') + '">' + tag + '</div>'
         + '</div>';
     }).join('') + '</div>';
@@ -16902,6 +16913,27 @@ function omniaExerciseReward(exId, seconds, recommended) {
   return Math.max(42, Math.floor(base * progressionSoftCap * stepPenalty * catchup * streakMult * recMult));
 }
 
+// Equipped entities/companions grant a small permanent Akasha bonus scaled to
+// each item's real price tier (_price), so pricier cosmetics stay desirable
+// without overshadowing the existing temporary akashaBoosts.
+function omniaCosmeticBonusPct(item) {
+  return Math.round((item && item._price || 0) / 2000);
+}
+
+// Entity bonus and companion bonus stack additively, then combine multiplicatively
+// with any active temporary boost.
+function getOmniaCosmeticBoost() {
+  if (!omniaState.cosmetics) return 1;
+  var pct = 0;
+  var entity = omniaFindCosmetic(OMNIA_ENTITIES, omniaState.cosmetics.entity || 'omnia');
+  if (entity) pct += omniaCosmeticBonusPct(entity);
+  if (omniaState.cosmetics.companion) {
+    var companion = omniaFindCosmetic(OMNIA_COMPANIONS, omniaState.cosmetics.companion);
+    if (companion) pct += omniaCosmeticBonusPct(companion);
+  }
+  return 1 + pct / 100;
+}
+
 function getActiveAkashaBoost() {
   var now = Date.now();
   var boosts = omniaState.akashaBoosts || [];
@@ -16945,7 +16977,7 @@ function awardOmniaForExercise(exId, seconds) {
   var recommended = rec && rec.id === exId;
   if (!recommended && omniaExerciseIsGuidedAgenda(exId)) recommended = true;
   var meta = OMNIA_EXERCISE_META[exId] || OMNIA_EXERCISE_META.clock;
-  var boost = getActiveAkashaBoost();
+  var boost = getActiveAkashaBoost() * getOmniaCosmeticBoost();
   var gain = Math.round(omniaExerciseReward(exId, seconds || 0, recommended) * boost);
   omniaState.akasha = (omniaState.akasha || 0) + gain;
   omniaState.totalAkashaEarned = (omniaState.totalAkashaEarned || 0) + gain;
