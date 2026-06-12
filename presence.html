@@ -9302,6 +9302,13 @@ function isClockSession(h) {
   return !!h && !h.exercise && !h.type;
 }
 
+// "Best Hold" counts only exercises whose `seconds` is a genuine unbroken hold:
+// Clock, Thought Control, and Visualization. Auditory, asana, pore breathing,
+// and autosuggestion either aren't holds or store a full session duration.
+function isHoldSession(h) {
+  return isClockSession(h) || (!!h && (h.type === 'thought' || h.type === 'visualization'));
+}
+
 // Readable name for any concentration-history entry, keyed off whichever tag
 // it carries (exercise or type). Pore breathing / autosuggestion live under
 // `exercise`, so a plain `h.type` lookup mislabels them as "Clock".
@@ -20496,7 +20503,8 @@ function buildOmniaReportContext(period, offset) {
   var concNow = filterHistory(concState.history, range.start, range.now);
   var awMin = sumMinutes(awNow);
   var concSec = concNow.reduce(function(a,h){return a+(h.seconds||0);},0);
-  var concBest = concNow.length ? Math.max.apply(null,concNow.map(function(h){return h.seconds||0;})) : 0;
+  var _concHold = concNow.filter(isHoldSession);
+  var concBest = _concHold.length ? Math.max.apply(null,_concHold.map(function(h){return h.seconds||0;})) : 0;
 
   // Per-exercise concentration breakdown (clock entries have no `type` field)
   var EX_LABELS = { clock:'Clock', visualization:'Visualization', auditory:'Auditory', thought:'Thought Control', asana:'Asana' };
@@ -21226,9 +21234,10 @@ function buildSignals(awNow, concNow, period) {
     }
   }
 
-  // Sharpest Focus — longest concentration hold
-  if (concNow.length) {
-    var bestHold = Math.max.apply(null, concNow.map(function(h) { return h.seconds || 0; }));
+  // Sharpest Focus — longest concentration hold (Clock / Thought / Visualization)
+  var sharpHold = concNow.filter(isHoldSession);
+  if (sharpHold.length) {
+    var bestHold = Math.max.apply(null, sharpHold.map(function(h) { return h.seconds || 0; }));
     if (bestHold > 0) signals.push({ label: 'Sharpest Focus', text: 'Your longest unbroken hold.', val: fmtTimer(bestHold) });
   }
 
@@ -21370,8 +21379,10 @@ function renderReport(period) {
     html += weekHtml;
   } else {
     // ── Hero: the whole summary is three numbers ──
-    var bestHoldNow = concNow.length ? Math.max.apply(null, concNow.map(function(h) { return h.seconds || 0; })) : 0;
-    var bestHoldPrev = concPrev.length ? Math.max.apply(null, concPrev.map(function(h) { return h.seconds || 0; })) : 0;
+    var holdNow = concNow.filter(isHoldSession);
+    var holdPrev = concPrev.filter(isHoldSession);
+    var bestHoldNow = holdNow.length ? Math.max.apply(null, holdNow.map(function(h) { return h.seconds || 0; })) : 0;
+    var bestHoldPrev = holdPrev.length ? Math.max.apply(null, holdPrev.map(function(h) { return h.seconds || 0; })) : 0;
     var practicedStr = totalMinNow >= 60 ? Math.floor(totalMinNow / 60) + 'h ' + (totalMinNow % 60) + 'm' : totalMinNow + 'm';
     html += '<div class="rpt-summary">';
     html += '<div class="rpt-summary-card"><div class="rpt-summary-ico">◷</div><div class="rpt-summary-val rpt-summary-val--green">' + practicedStr + '</div><div class="rpt-summary-label">Practiced</div><div class="rpt-summary-delta">' + deltaMini(totalMinNow, totalMinPrev) + '</div></div>';
@@ -21453,11 +21464,12 @@ function renderReport(period) {
     var concBody = '';
     var concSum = '—';
     if (concNow.length > 0) {
-      var concBestNow = Math.max.apply(null, concNow.map(function(h) { return h.seconds || 0; }));
-      concSum = concNow.length + (concNow.length === 1 ? ' session' : ' sessions') + ' · best ' + fmtTimer(concBestNow);
+      var concHoldNow = concNow.filter(isHoldSession);
+      var concBestNow = concHoldNow.length ? Math.max.apply(null, concHoldNow.map(function(h) { return h.seconds || 0; })) : 0;
+      concSum = concNow.length + (concNow.length === 1 ? ' session' : ' sessions') + (concBestNow > 0 ? ' · best ' + fmtTimer(concBestNow) : '');
       concBody += '<div class="rpt-strip">'
         + rptStripCell(concNow.length, 'Sessions', deltaMini(concNow.length, concPrev.length))
-        + rptStripCell(fmtTimer(concBestNow), 'Best Hold', '')
+        + rptStripCell(concBestNow > 0 ? fmtTimer(concBestNow) : '—', 'Best Hold', '')
         + rptStripCell(fmtTimer(concSecNow), 'Total Held', deltaMini(concSecNow, concSecPrev))
         + '</div>';
       var typeBreakdown = {};
@@ -21600,9 +21612,10 @@ function buildRecords(awarenessNow, concNow, range) {
       records.push({ key: 'duration', icon: '⏱', text: 'Longest session yet: ' + fmtDuration(longestNow) });
     }
   }
-  if (concNow.length > 0) {
-    var bestHold = Math.max.apply(null, concNow.map(function(h) { return h.seconds || 0; }));
-    var priorHolds = (concState.history || []).filter(isPrior).map(function(h) { return h.seconds || 0; });
+  var concHoldNow2 = concNow.filter(isHoldSession);
+  if (concHoldNow2.length > 0) {
+    var bestHold = Math.max.apply(null, concHoldNow2.map(function(h) { return h.seconds || 0; }));
+    var priorHolds = (concState.history || []).filter(function(h) { return isPrior(h) && isHoldSession(h); }).map(function(h) { return h.seconds || 0; });
     var bestPrior = priorHolds.length ? Math.max.apply(null, priorHolds) : 0;
     if (bestHold > bestPrior && bestHold > 0) {
       records.push({ key: 'hold', icon: '🎯', text: 'New concentration record: ' + fmtTimer(bestHold) });
