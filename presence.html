@@ -182,19 +182,37 @@
     .so-ended-overlay { display:none; position:fixed; inset:0; z-index:9800; background:rgba(7,8,13,0.93); flex-direction:column; align-items:center; justify-content:center; padding:24px; opacity:0; transition:opacity 0.35s ease; }
     .so-ended-overlay.seo-show { display:flex; }
     .so-ended-overlay.seo-vis { opacity:1; }
-    .so-ended-card { background:var(--surface); border:1px solid var(--border); border-radius:20px; padding:30px 22px; max-width:340px; width:100%; text-align:center; }
-    .so-ended-flame { font-size:44px; margin-bottom:10px; }
-    .so-ended-title { font-family:Cormorant Garamond,serif; font-size:26px; color:#d4956e; margin-bottom:7px; }
+    .so-ended-card { position:relative; overflow:hidden; background:linear-gradient(168deg,#1e1410 0%,#141019 52%,#100c16 100%); border:1px solid rgba(228,152,94,.35); border-radius:20px; padding:26px 22px 24px; max-width:340px; width:100%; text-align:center; box-shadow:0 0 54px rgba(228,140,70,.16), inset 0 1px 0 rgba(255,255,255,.06); }
+    .so-ended-card::before { content:''; position:absolute; top:0; left:14%; right:14%; height:1px; background:linear-gradient(90deg,transparent,rgba(255,212,160,.55),transparent); }
+    .so-ended-flame-wrap { position:relative; width:92px; height:92px; margin:0 auto 4px; display:flex; align-items:center; justify-content:center; }
+    .so-ended-flame-glow { position:absolute; inset:-16px; border-radius:50%; background:radial-gradient(circle, rgba(255,150,60,.32) 0%, rgba(255,120,40,.12) 45%, transparent 70%); animation:seoGlowPulse 2.4s ease-in-out infinite; }
+    .so-ended-flame { font-size:50px; position:relative; z-index:2; animation:seoFlameBob 2.4s ease-in-out infinite; filter:drop-shadow(0 0 18px rgba(255,140,50,.55)); }
+    .so-ended-ember { position:absolute; bottom:10px; width:4px; height:4px; border-radius:50%; background:#ffc080; box-shadow:0 0 6px #ff9850, 0 0 12px rgba(255,140,60,.6); opacity:0; animation:seoEmber 2.8s ease-in infinite; }
+    @keyframes seoGlowPulse { 0%,100%{transform:scale(1);opacity:.8;} 50%{transform:scale(1.18);opacity:1;} }
+    @keyframes seoFlameBob { 0%,100%{transform:translateY(0) scale(1);} 50%{transform:translateY(-5px) scale(1.05);} }
+    @keyframes seoEmber { 0%{transform:translateY(0) scale(1);opacity:0;} 15%{opacity:.95;} 100%{transform:translateY(-74px) scale(.25);opacity:0;} }
+    .so-ended-title { font-family:Cormorant Garamond,serif; font-size:30px; background:linear-gradient(100deg,#ffb070,#ffe2b8 48%,#e8945e); -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent; margin-bottom:7px; }
     .so-ended-sub { font-size:12px; color:var(--muted); line-height:1.7; margin-bottom:18px; }
-    .so-ended-commits { display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:18px; }
-    .so-ended-commit-card { border:1.5px solid var(--border); border-radius:12px; padding:13px 10px; text-align:center; cursor:pointer; transition:border-color .2s,background .2s; position:relative; }
-    .so-ended-commit-card.selected { border-color:#d4956e; background:rgba(212,149,110,0.09); }
-    .so-ended-commit-card.selected::after { content:'✓'; position:absolute; top:8px; right:10px; font-size:10px; color:#d4956e; }
-    .so-ended-commit-days { font-family:Cormorant Garamond,serif; font-size:32px; color:#d4956e; line-height:1; }
+    .so-ended-sub .seo-days { color:#ffc890; text-shadow:0 0 14px rgba(255,160,90,.4); }
+    .so-ended-commits { display:grid; grid-template-columns:1fr 1fr; gap:9px; margin-bottom:18px; }
+    .so-ended-commit-card { --tc:#d4956e; --tcl:#e8b88a; border:1.5px solid var(--border); border-radius:14px; padding:14px 10px 12px; text-align:center; cursor:pointer; transition:transform .22s ease, border-color .22s ease, box-shadow .22s ease, background .22s ease; position:relative; overflow:hidden; background:rgba(255,255,255,.025); animation:rptRise .45s ease both; }
+    .so-ended-commit-card::before { content:''; position:absolute; top:0; left:14%; right:14%; height:1px; background:linear-gradient(90deg,transparent,rgba(255,255,255,.18),transparent); }
+    .so-ended-commit-card:nth-child(1) { animation-delay:.08s; }
+    .so-ended-commit-card:nth-child(2) { animation-delay:.16s; }
+    .so-ended-commit-card:nth-child(3) { animation-delay:.24s; }
+    .so-ended-commit-card:nth-child(4) { animation-delay:.32s; }
+    .seo-t0 { --tc:#7eb8a4; --tcl:#9ed8c0; }
+    .seo-t1 { --tc:#a8c8e8; --tcl:#bcd8f2; }
+    .seo-t2 { --tc:#b8a8e0; --tcl:#cdbcf0; }
+    .seo-t3 { --tc:#d8b86a; --tcl:#e8cd8e; }
+    .so-ended-commit-card.selected { border-color:var(--tc); background:rgba(255,255,255,.055); transform:scale(1.045); box-shadow:0 0 22px -2px var(--tc), inset 0 0 18px -10px var(--tc); }
+    .so-ended-commit-card.selected::after { content:'✓'; position:absolute; top:8px; right:10px; font-size:10px; color:var(--tcl); text-shadow:0 0 8px var(--tc); }
+    .so-ended-commit-days { font-family:Cormorant Garamond,serif; font-size:32px; color:var(--tcl); text-shadow:0 0 18px var(--tc); line-height:1; }
     .so-ended-commit-unit { font-size:7px; letter-spacing:.22em; text-transform:uppercase; color:var(--muted); margin:3px 0; }
-    .so-ended-commit-xp { font-size:10px; color:#d4956e; font-family:'DM Mono',monospace; }
+    .so-ended-commit-xp { font-size:10px; color:var(--tcl); font-family:'DM Mono',monospace; }
     .so-ended-commit-akasha { font-size:9px; color:#7eb8a4; font-family:'DM Mono',monospace; }
-    .so-ended-start { font-family:'DM Mono',monospace; font-size:11px; letter-spacing:.16em; text-transform:uppercase; background:#d4956e; color:#07080d; border:none; border-radius:10px; padding:14px 28px; cursor:pointer; width:100%; margin-bottom:8px; }
+    .so-ended-start { font-family:'DM Mono',monospace; font-size:11px; letter-spacing:.16em; text-transform:uppercase; background:linear-gradient(100deg,#e8a06a,#ffc88e); color:#160d06; border:none; border-radius:10px; padding:14px 28px; cursor:pointer; width:100%; margin-bottom:8px; box-shadow:0 4px 24px rgba(232,160,106,.35), inset 0 1px 0 rgba(255,255,255,.35); }
+    .so-ended-start:active { transform:scale(.985); }
     .so-ended-dismiss { font-family:'DM Mono',monospace; font-size:10px; color:var(--muted); background:none; border:none; cursor:pointer; }
     /* ── Streak celebration overlay ── */
     #streakCelebOverlay { display:none; position:fixed; inset:0; z-index:9750; background:rgba(7,8,13,0.97); flex-direction:column; align-items:center; justify-content:center; padding:32px 28px max(env(safe-area-inset-bottom),40px); opacity:0; transition:opacity 0.4s ease; }
@@ -6578,6 +6596,37 @@ function touchPracticeStreak() {
       state.practicedDates.push(todayISO);
       if (state.practicedDates.length > 90) state.practicedDates = state.practicedDates.slice(-90);
     }
+    // Award the committed streak goal's XP + Akasha when the streak reaches it.
+    // Keyed by (streak start, goal days) so each goal pays out exactly once per
+    // streak — and picking a longer goal afterwards can still pay out later.
+    var commitDays = state.streakCommit || 7;
+    if (state.streak >= commitDays) {
+      var awardKey = (state.streakStartDate || 'legacy') + ':' + commitDays;
+      if (state.streakCommitAwardedKey !== awardKey) {
+        state.streakCommitAwardedKey = awardKey;
+        var commitDef = null;
+        for (var _ci = 0; _ci < STREAK_COMMITS.length; _ci++) {
+          if (STREAK_COMMITS[_ci].days === commitDays) { commitDef = STREAK_COMMITS[_ci]; break; }
+        }
+        if (commitDef) {
+          state.xp += commitDef.xp;
+          var _scPrevLevel = state.level;
+          while (state.level < 777) {
+            var _scXpThis = state.xp - sumXpToLevel(state.level);
+            if (_scXpThis >= xpForLevel(state.level)) { state.level++; } else { break; }
+          }
+          var _scLeveled = state.level > _scPrevLevel;
+          if (typeof omniaState !== 'undefined' && omniaState) {
+            omniaState.akasha += commitDef.akasha;
+            if (typeof saveOmniaState === 'function') saveOmniaState();
+          }
+          setTimeout(function() {
+            showToast('🔥 ' + commitDays + '-day goal complete! +' + commitDef.xp.toLocaleString() + ' XP · +' + commitDef.akasha + ' Akasha', 4500);
+          }, 2600);
+          if (_scLeveled) setTimeout(function() { showLevelUp(state.level); }, 3400);
+        }
+      }
+    }
     saveState();
     if (syncEnabled && authToken) syncPushData();
     var el = document.getElementById('streakCount');
@@ -6652,12 +6701,25 @@ function checkStreakStatus() {
     }
     saveState();
   }
+  // Keep the header badge in sync — a reset above used to leave the old
+  // number on screen until something else happened to re-render it.
+  var _scEl = document.getElementById('streakCount');
+  if (_scEl) _scEl.textContent = state.streak || 0;
   if (state.endedStreakInfo && !state.streakEndedPromptShown) {
     state.streakEndedPromptShown = true;
     saveState();
     setTimeout(showStreakEndedPrompt, 2200);
   }
 }
+
+// Re-check whenever the app is resumed from the background (the standalone
+// PWA isn't reloaded on reopen, so the load-time check alone left a stale
+// streak count — and a delayed "Streak Ended" prompt — until the next launch).
+document.addEventListener('visibilitychange', function() {
+  if (document.visibilityState === 'visible' && typeof state !== 'undefined') {
+    try { checkStreakStatus(); } catch(e) {}
+  }
+});
 
 // Collect pending residue into XP
 function collectResidue() {
@@ -10076,19 +10138,22 @@ function showStreakEndedPrompt() {
   var overlay = document.createElement('div');
   overlay.className = 'so-ended-overlay';
   overlay.id = 'streakEndedOverlay';
-  var cardsHTML = STREAK_COMMITS.map(function(c) {
+  var cardsHTML = STREAK_COMMITS.map(function(c, ti) {
     var sel = (state.streakCommit || 7) === c.days ? ' selected' : '';
-    return '<div class="so-ended-commit-card' + sel + '" data-days="' + c.days + '">'
+    return '<div class="so-ended-commit-card seo-t' + ti + sel + '" data-days="' + c.days + '">'
       + '<div class="so-ended-commit-days">' + c.days + '</div>'
       + '<div class="so-ended-commit-unit">days</div>'
       + '<div class="so-ended-commit-xp">+' + c.xp.toLocaleString() + ' XP</div>'
       + '<div class="so-ended-commit-akasha">+' + c.akasha + ' Akasha</div>'
       + '</div>';
   }).join('');
+  var embersHTML = [[18,0],[36,.7],[52,1.3],[68,.4],[80,1.9]].map(function(e) {
+    return '<span class="so-ended-ember" style="left:' + e[0] + '%;animation-delay:' + e[1] + 's;"></span>';
+  }).join('');
   overlay.innerHTML = '<div class="so-ended-card">'
-    + '<div class="so-ended-flame">🔥</div>'
+    + '<div class="so-ended-flame-wrap"><div class="so-ended-flame-glow"></div><div class="so-ended-flame">🔥</div>' + embersHTML + '</div>'
     + '<div class="so-ended-title">Streak Ended</div>'
-    + '<div class="so-ended-sub">Your ' + (info ? info.days : 0) + ' day streak ended. Every master has fallen — and risen. Commit to a new goal and begin again.</div>'
+    + '<div class="so-ended-sub">Your <span class="seo-days">' + (info ? info.days : 0) + ' day</span> streak ended. Every master has fallen — and risen. Commit to a new goal and begin again.</div>'
     + '<div class="so-ended-commits">' + cardsHTML + '</div>'
     + '<button class="so-ended-start" id="seoPrimaryBtn">Begin Again →</button>'
     + '<button class="so-ended-dismiss" id="seoDismissBtn">Maybe later</button>'
