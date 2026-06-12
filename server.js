@@ -617,11 +617,57 @@ app.post('/api/sync/auth/google', async (req, res) => {
   }
 });
 
+// Plausibility clamp for Omnia progression in incoming sync snapshots.
+// Honest play tops out around ~15k akasha and ~12 body levels per day, so a
+// generous 50k/day and 25 levels/day ceiling never touches real users but
+// stops console-cheated values from leaking into friend profiles via sync.
+function clampOmniaSnapshot(incomingStr, prevSnap) {
+  if (!incomingStr || !prevSnap || !prevSnap.presence_omnia_v1) return { str: incomingStr, clamped: false };
+  try {
+    const incoming = JSON.parse(incomingStr);
+    const prev = JSON.parse(prevSnap.presence_omnia_v1);
+    const elapsedDays = Math.max(1 / 24, (Date.now() - new Date(prevSnap.syncedAt).getTime()) / 86400000);
+    let clamped = false;
+    const maxAkashaGain = Math.ceil(elapsedDays * 50000);
+    const prevEarned = prev.totalAkashaEarned || 0;
+    if ((incoming.totalAkashaEarned || 0) > prevEarned + maxAkashaGain) {
+      incoming.totalAkashaEarned = prevEarned + maxAkashaGain;
+      clamped = true;
+    }
+    const prevAkasha = prev.akasha || 0;
+    if ((incoming.akasha || 0) > prevAkasha + maxAkashaGain) {
+      incoming.akasha = prevAkasha + maxAkashaGain;
+      clamped = true;
+    }
+    const maxLevels = Math.ceil(elapsedDays * 25);
+    const total = (b) => b ? (b.physical || 0) + (b.astral || 0) + (b.mental || 0) : 0;
+    if (incoming.bodies && total(incoming.bodies) > total(prev.bodies) + maxLevels) {
+      const scale = (total(prev.bodies) + maxLevels) / total(incoming.bodies);
+      ['physical', 'astral', 'mental'].forEach((b) => {
+        incoming.bodies[b] = Math.max(prev.bodies && prev.bodies[b] || 1, Math.floor((incoming.bodies[b] || 0) * scale));
+      });
+      clamped = true;
+    }
+    return { str: clamped ? JSON.stringify(incoming) : incomingStr, clamped };
+  } catch (e) {
+    return { str: incomingStr, clamped: false };
+  }
+}
+
 // PUSH DATA
 app.post('/api/sync/sync/push', verifyToken, async (req, res) => {
   try {
     const { data, deviceInfo } = req.body;
     if (!data) return res.status(400).json({ error: 'No data to sync' });
+    let omniaClamped = false;
+    if (data.presence_omnia_v1) {
+      const prevSnap = await syncDataCollection.find({ userId: new ObjectId(req.user.userId) })
+        .sort({ syncedAt: -1 }).limit(1).next();
+      const r = clampOmniaSnapshot(data.presence_omnia_v1, prevSnap);
+      data.presence_omnia_v1 = r.str;
+      omniaClamped = r.clamped;
+      if (omniaClamped) console.warn(`[Sync] Clamped implausible Omnia progression for user ${req.user.userId}`);
+    }
     const syncData = {
       userId: new ObjectId(req.user.userId),
       presence_v3: data.presence_v3,
@@ -639,7 +685,7 @@ app.post('/api/sync/sync/push', verifyToken, async (req, res) => {
     };
     const result = await syncDataCollection.insertOne(syncData);
     await usersCollection.updateOne({ _id: new ObjectId(req.user.userId) }, { $set: { lastSync: new Date() } });
-    res.json({ message: 'Data synced', syncId: result.insertedId });
+    res.json({ message: 'Data synced', syncId: result.insertedId, omniaClamped });
   } catch (err) {
     console.error('Push sync error:', err);
     res.status(500).json({ error: 'Sync push failed' });

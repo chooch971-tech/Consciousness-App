@@ -16536,7 +16536,7 @@ function renderOmniaAppearance() {
 
   if (tab.kind === 'entity' || tab.kind === 'companion') {
     var totalBonusPct = Math.round((getOmniaCosmeticBoost() - 1) * 100);
-    html += '<div class="oe-cos-summary">Equipped form + companion bonuses stack — currently <strong>+' + totalBonusPct + '% Akasha</strong> from all training.</div>';
+    html += '<div class="oe-cos-summary">Every form and companion you unlock adds its bonus permanently — no need to equip. Currently <strong>+' + totalBonusPct + '% Akasha</strong> from all training.</div>';
   }
 
   if (tab.kind === 'palette') {
@@ -16653,6 +16653,13 @@ function omniaBodyTotal() {
   return (omniaState.bodies.physical || 0) + (omniaState.bodies.astral || 0) + (omniaState.bodies.mental || 0);
 }
 
+// Sessions completed today — feeds the generator's practice multiplier.
+function omniaSessionsToday() {
+  var todayStr = new Date().toISOString().slice(0, 10);
+  if (omniaState.sessionsTodayDate !== todayStr) return 0;
+  return omniaState.sessionsTodayCount || 0;
+}
+
 function omniaRatePerHour() {
   var total = omniaBodyTotal();
   var currentLvl = omniaState.upgrades.current || 1;
@@ -16662,8 +16669,11 @@ function omniaRatePerHour() {
   var bodyBonus = Math.floor(Math.sqrt(Math.max(0, total)) * 9);
   var secondGen = stepNum >= 5 ? Math.floor(18 + currentLvl * 8) : 0;
   var base = 10 + currentLvl * 12 + Math.floor(bodyBonus * 0.5) + Math.floor(earlyBoost * 0.3) - stepTax + secondGen;
+  // The generator hums when you practice: idle days trickle at 55%, and each
+  // session today restores 15%, reaching full flow at 3 sessions.
+  var practiceMult = Math.min(1, 0.55 + 0.15 * Math.min(3, omniaSessionsToday()));
   var boost = (typeof getActiveAkashaBoost === 'function' && typeof omniaState !== 'undefined' && omniaState) ? getActiveAkashaBoost() : 1;
-  return Math.max(10, Math.floor(base * boost));
+  return Math.max(10, Math.floor(base * practiceMult * boost));
 }
 
 function omniaReservoirCap() {
@@ -16713,8 +16723,10 @@ function omniaBodyCost(body) {
   var lvl = Math.max(1, omniaState.bodies[body] || 1);
   var built = Math.max(0, lvl - 1);
   var stepNum = omniaState.bardonStep || 1;
-  var base = 78 + built * 15 + Math.floor(Math.pow(built, 1.55) * 3.2);
-  var stepMult = 1 + Math.max(0, stepNum - 1) * 0.16;
+  // Flattened curve (was built*15 + built^1.55*3.2) so buying levels stays the
+  // primary akasha sink at every rank instead of outrunning income by Step VII.
+  var base = 78 + built * 0.7 + Math.floor(Math.pow(built, 1.12) * 0.48);
+  var stepMult = 1 + Math.max(0, stepNum - 1) * 0.10;
   return Math.floor(base * stepMult * omniaDiscountMult());
 }
 
@@ -16842,13 +16854,18 @@ function omniaExerciseIsGuidedAgenda(exId) {
 }
 
 // ── Daily body-level budget ───────────────────────────────────────────────
-// A player can earn at most BODY_AWARDS_PER_DAY body levels in a calendar day.
-var BODY_AWARDS_PER_DAY = 2;
+// A player can earn at most omniaBodyAwardsPerDay() free body levels per
+// calendar day (1 per recommended session). The budget grows with rank —
+// 3/day at Step I up to 6/day at Step IX+ — so deeper practice keeps paying.
+function omniaBodyAwardsPerDay() {
+  var step = (omniaState && omniaState.bardonStep) || 1;
+  return 3 + Math.floor(step / 3);
+}
 function omniaBodyAwardsRemaining() {
   if (!omniaState) return 0;
   var todayStr = new Date().toISOString().slice(0, 10);
-  if (omniaState.bodyAwardsDate !== todayStr) return BODY_AWARDS_PER_DAY;
-  return Math.max(0, BODY_AWARDS_PER_DAY - (omniaState.bodyAwardsToday || 0));
+  if (omniaState.bodyAwardsDate !== todayStr) return omniaBodyAwardsPerDay();
+  return Math.max(0, omniaBodyAwardsPerDay() - (omniaState.bodyAwardsToday || 0));
 }
 function omniaConsumeBodyAward() {
   var todayStr = new Date().toISOString().slice(0, 10);
@@ -16908,33 +16925,37 @@ function omniaHistoryMatches(id, h) {
 function omniaExerciseReward(exId, seconds, recommended) {
   var total = omniaBodyTotal();
   var stepNum = omniaState.bardonStep || 1;
-  var base = Math.max(95, Math.min(760, Math.floor((seconds || 0) * 0.4) + 120));
-  var progressionSoftCap = 1 / (1 + Math.max(0, total - 36) / 95);
+  // Base cap rewards sessions up to ~40 min, so longer honest practice pays more.
+  var base = Math.max(95, Math.min(1100, Math.floor((seconds || 0) * 0.4) + 120));
+  // The soft cap decays with body total, but a step-scaled mastery floor keeps
+  // sessions paying a meaningful fraction of a body level at every rank — this
+  // is what makes practice volume matter all game (tuned: ~2yr casual / ~1.4yr
+  // dedicated to finish Step X at 1-2h/day).
+  var progressionSoftCap = 1 / (1 + Math.max(0, total - 36) / 420);
+  var effMult = Math.max(progressionSoftCap, stepNum * 0.102);
   var stepPenalty = 1 - Math.min(0.24, Math.max(0, stepNum - 1) * 0.07);
   var catchup = total < 42 ? 1 + (42 - total) / 120 : 1;
   var streakMult = 1 + Math.min(0.45, (omniaState.recStreak || 0) * 0.08);
   var recMult = recommended ? 1.75 : 1;
-  return Math.max(42, Math.floor(base * progressionSoftCap * stepPenalty * catchup * streakMult * recMult));
+  return Math.max(42, Math.floor(base * effMult * stepPenalty * catchup * streakMult * recMult));
 }
 
-// Equipped entities/companions grant a small permanent Akasha bonus scaled to
-// each item's real price tier (_price), so pricier cosmetics stay desirable
-// without overshadowing the existing temporary akashaBoosts.
+// Unlocked entities/companions grant a permanent Akasha bonus scaled to each
+// item's real price tier (_price). Owning is enough — no need to equip — and
+// every unlocked item stacks, so the full collection reaches +64%.
 function omniaCosmeticBonusPct(item) {
   return Math.round((item && item._price || 0) / 2000);
 }
 
-// Entity bonus and companion bonus stack additively, then combine multiplicatively
-// with any active temporary boost.
+// Sum the bonus of every unlocked entity and companion, then combine
+// multiplicatively with any active temporary boost.
 function getOmniaCosmeticBoost() {
   if (!omniaState.cosmetics) return 1;
   var pct = 0;
-  var entity = omniaFindCosmetic(OMNIA_ENTITIES, omniaState.cosmetics.entity || 'omnia');
-  if (entity) pct += omniaCosmeticBonusPct(entity);
-  if (omniaState.cosmetics.companion) {
-    var companion = omniaFindCosmetic(OMNIA_COMPANIONS, omniaState.cosmetics.companion);
-    if (companion) pct += omniaCosmeticBonusPct(companion);
-  }
+  var ownedE = omniaState.cosmetics.unlockedEntities || [];
+  var ownedC = omniaState.cosmetics.unlockedCompanions || [];
+  OMNIA_ENTITIES.forEach(function(e) { if (ownedE.indexOf(e.id) !== -1) pct += omniaCosmeticBonusPct(e); });
+  OMNIA_COMPANIONS.forEach(function(c) { if (ownedC.indexOf(c.id) !== -1) pct += omniaCosmeticBonusPct(c); });
   return 1 + pct / 100;
 }
 
@@ -16977,6 +16998,24 @@ function renderAkashaBoostBadge() {
 
 function awardOmniaForExercise(exId, seconds) {
   omniaAccrue();
+  // ── Plausibility clamps ──────────────────────────────────────────────────
+  // Awards can't arrive faster than real practice: ignore calls < 30s apart,
+  // and a session can't claim more time than has actually elapsed since the
+  // previous award (with 5 min grace), nor more than 3 hours total.
+  var nowClamp = Date.now();
+  var sinceLast = nowClamp - (omniaState.lastAwardMs || 0);
+  if (omniaState.lastAwardMs && sinceLast < 30000) return;
+  var maxSec = omniaState.lastAwardMs ? Math.min(3 * 3600, sinceLast / 1000 + 300) : 3 * 3600;
+  seconds = Math.max(0, Math.min(seconds || 0, maxSec));
+  omniaState.lastAwardMs = nowClamp;
+  // Track sessions completed today — feeds the generator practice multiplier.
+  var todayStr = new Date().toISOString().slice(0, 10);
+  if (omniaState.sessionsTodayDate !== todayStr) {
+    omniaState.sessionsTodayDate = todayStr;
+    omniaState.sessionsTodayCount = 0;
+  }
+  omniaState.sessionsTodayCount = (omniaState.sessionsTodayCount || 0) + 1;
+
   var rec = omniaPickRecommendation(false);
   var recommended = rec && rec.id === exId;
   if (!recommended && omniaExerciseIsGuidedAgenda(exId)) recommended = true;
@@ -16998,9 +17037,9 @@ function awardOmniaForExercise(exId, seconds) {
   var awardedBody = false;
   if (recommended) {
     omniaState.recStreak = (omniaState.recStreak || 0) + 1;
-    // Up to BODY_AWARDS_PER_DAY body levels per day. The natural body is raised
-    // unless it's capped, in which case the level cascades to the next uncapped
-    // body (mental → astral → physical).
+    // Up to omniaBodyAwardsPerDay() free body levels per day. The natural body
+    // is raised unless it's capped, in which case the level cascades to the
+    // next uncapped body (mental → astral → physical).
     if (omniaBodyAwardsRemaining() > 0) {
       var targetBody = omniaPickAwardBody(meta.body);
       if (targetBody) {
@@ -19659,6 +19698,12 @@ function pathQuestReward(type) {
   if (type === 'awareness') return 35 + step * 15;
   return 0;
 }
+// Weekend quest target scales with rank so 2-3 session/day players can claim
+// it early on, while power users keep a real goal later.
+function pathQuestWeekendTarget() {
+  var step = (typeof omniaState !== 'undefined' && omniaState.bardonStep) || 1;
+  return step <= 4 ? 6 : step <= 7 ? 9 : 12;
+}
 function pathQuestFormatTime(targetDate) {
   var ms = targetDate.getTime() - Date.now();
   if (ms <= 0) return '0M';
@@ -19698,7 +19743,7 @@ function claimPathQuestReward(type) {
   var q = pathQuestState();
   var data = q[type];
   if (!data || data.claimed) return;
-  var target = type === 'daily' ? 2 : type === 'awareness' ? 15 : 12;
+  var target = type === 'daily' ? 2 : type === 'awareness' ? 15 : pathQuestWeekendTarget();
   var progress = type === 'awareness' ? (data.minutes || 0) : (data.count || 0);
   if (progress < target) return;
   var amount = pathQuestReward(type);
@@ -19926,7 +19971,7 @@ function renderPathQuests() {
   var dailyReward = pathQuestReward('daily');
 
   var weekendVisible = isPathQuestWeekendWindow();
-  var weekendCount = q.weekend.count || 0, weekendTarget = 12;
+  var weekendCount = q.weekend.count || 0, weekendTarget = pathQuestWeekendTarget();
   var weekendClamp = Math.min(weekendCount, weekendTarget);
   var weekendDone = weekendCount >= weekendTarget, weekendClaimed = !!q.weekend.claimed;
   var weekendReward = pathQuestReward('weekend');
@@ -20142,7 +20187,7 @@ function renderPathQuests() {
   if (weekendVisible) {
     html += questCardHTML({
       label:'Weekend Quest', labelColor:'rgba(196,168,212,.6)',
-      timerText:pathQuestWeekendTimeLeft(), title:'Complete 12 exercises',
+      timerText:pathQuestWeekendTimeLeft(), title:'Complete ' + weekendTarget + ' exercises',
       progressNumerator:weekendClamp, progressDenominator:weekendTarget, progressUnit:'',
       pct:weekendClamp / weekendTarget * 100,
       fillGrad:'linear-gradient(90deg,#c4a8d4 0%,#b88dc8 100%)',
