@@ -20507,7 +20507,10 @@ function buildOmniaReportContext(period, offset) {
   var concBest = _concHold.length ? Math.max.apply(null,_concHold.map(function(h){return h.seconds||0;})) : 0;
 
   // Per-exercise concentration breakdown (clock entries have no `type` field)
-  var EX_LABELS = { clock:'Clock', visualization:'Visualization', auditory:'Auditory', thought:'Thought Control', asana:'Asana' };
+  var EX_LABELS = { clock:'Clock', visualization:'Visualization', auditory:'Auditory', thought:'Thought Control', asana:'Asana', pore_breathing:'Pore Breathing', autosuggestion:'Autosuggestion', 'all-angles':'All Angles', 'multi-sense':'Multi-Sense' };
+  // Only the five core Bardon exercises are candidates for "try this next" —
+  // the rest are unlockable extras Omnia shouldn't push.
+  var CORE_EX = ['clock', 'visualization', 'auditory', 'thought', 'asana'];
   var byEx = {};
   concNow.forEach(function(h){
     var ex = h.type || h.exercise || 'clock';
@@ -20520,8 +20523,8 @@ function buildOmniaReportContext(period, offset) {
   Object.keys(byEx).forEach(function(ex){
     concByExercise[EX_LABELS[ex] || ex] = byEx[ex];
   });
-  // Which exercises has the user never touched this period?
-  var untried = Object.keys(EX_LABELS)
+  // Which core exercises has the user never touched this period?
+  var untried = CORE_EX
     .filter(function(ex){ return !byEx[ex]; })
     .map(function(ex){ return EX_LABELS[ex]; });
 
@@ -20558,6 +20561,24 @@ function buildOmniaReportContext(period, offset) {
     _streakDay.setDate(_streakDay.getDate() - 1);
   }
 
+  // Previous period, so the model can make TRUTHFUL trend claims (without
+  // this it has fabricated "no progress" on record-setting days).
+  var awPrevC = filterHistory(state.history, range.prevStart, range.prevEnd);
+  var concPrevC = filterHistory(concState.history, range.prevStart, range.prevEnd);
+  var concSecPrevC = concPrevC.reduce(function(a,h){return a+(h.seconds||0);},0);
+  var _concHoldPrev = concPrevC.filter(isHoldSession);
+  var concBestPrevC = _concHoldPrev.length ? Math.max.apply(null,_concHoldPrev.map(function(h){return h.seconds||0;})) : 0;
+
+  // Did this period set the all-time best hold?
+  var isNewBestHold = concBest > 0 && concBest >= (concState.bestSeconds || 0);
+
+  // Deterministic per-report hint so the streak gets woven in occasionally —
+  // not every single report, and not never.
+  var _pk = omniaReportPeriodKey(period, offset || 0);
+  var _pkHash = 0;
+  for (var _pi = 0; _pi < _pk.length; _pi++) { _pkHash = (_pkHash * 31 + _pk.charCodeAt(_pi)) | 0; }
+  var streakWorthMentioning = Math.abs(_pkHash) % 2 === 0;
+
   return {
     period: period,
     offset: offset || 0,
@@ -20570,7 +20591,18 @@ function buildOmniaReportContext(period, offset) {
     concentration_exercises_untried: untried,
     ready_for_new_exercises: readyForNewExercises,
     concentration_streak_days: concStreakDays,
+    practice_streak_days: state.streak || 0,
     clock_alltime_pb_sec: concState.bestSeconds || 0,
+    is_new_best_hold: isNewBestHold,
+    previous_period: {
+      awareness_sessions: awPrevC.length,
+      awareness_minutes: sumMinutes(awPrevC),
+      concentration_sessions: concPrevC.length,
+      concentration_total_sec: concSecPrevC,
+      concentration_best_hold_sec: concBestPrevC
+    },
+    has_previous_data: (awPrevC.length + concPrevC.length) > 0,
+    streak_worth_mentioning: streakWorthMentioning,
     omnia_candor: getOmniaCandor()
   };
 }
