@@ -3703,6 +3703,52 @@ body:not(.tut-live) #tutCorgi {
 .clock-banner .bn-glow  { background:radial-gradient(circle,rgba(224,124,58,.26) 0%,rgba(212,120,58,.08) 42%,transparent 70%); }
 .clock-banner .bn-ripple { border:1px solid rgba(224,148,88,.45); }
 
+/* ── Playground: lab banner + coming-soon cards ───────────────────────── */
+.pg-scroll { flex:1; overflow-y:auto; padding:4px 16px 28px; scrollbar-width:none; -ms-overflow-style:none; }
+.pg-scroll::-webkit-scrollbar { display:none; }
+.pg-banner { position:relative; height:150px; border-radius:20px; overflow:hidden; margin-bottom:24px;
+  display:flex; align-items:center; padding:0 24px;
+  background:linear-gradient(145deg,#1b1430 0%,#241a3e 44%,#141026 100%);
+  border:1px solid rgba(170,140,230,.16); }
+.pg-banner::before { content:''; position:absolute; inset:0; pointer-events:none;
+  background:radial-gradient(ellipse 55% 70% at 80% 52%,rgba(150,110,230,.30) 0%,transparent 68%); }
+.pg-banner::after { content:''; position:absolute; inset:0; pointer-events:none;
+  background:radial-gradient(ellipse 42% 55% at 72% 46%,rgba(120,200,230,.16) 0%,transparent 60%); }
+.pg-banner-text { position:relative; z-index:3; display:flex; flex-direction:column; gap:5px; }
+.pg-banner-label { font-size:8px; letter-spacing:.28em; text-transform:uppercase; color:rgba(198,170,234,.82); font-family:'DM Mono',monospace; }
+.pg-banner-title { font-family:'Cormorant Garamond',serif; font-size:30px; font-weight:300; line-height:1; color:#ece3ff; }
+.pg-banner-sub { font-size:9px; color:rgba(206,192,232,.62); line-height:1.55; max-width:184px; letter-spacing:.02em; }
+.pg-banner-flask { position:relative; z-index:2; margin-left:auto; font-size:46px;
+  filter:drop-shadow(0 0 16px rgba(150,110,230,.5)); animation:pgFlaskFloat 5s ease-in-out infinite; }
+@keyframes pgFlaskFloat { 0%,100%{transform:translateY(0) rotate(-4deg);} 50%{transform:translateY(-7px) rotate(4deg);} }
+.pg-bubble { position:absolute; border-radius:50%; opacity:0; pointer-events:none; z-index:1;
+  background:radial-gradient(circle at 35% 30%, rgba(222,204,255,.55), rgba(150,110,230,.12));
+  animation:pgBubble 6.5s ease-in infinite; }
+@keyframes pgBubble { 0%{transform:translateY(0) scale(1); opacity:0;} 12%{opacity:.85;} 100%{transform:translateY(-118px) scale(.4); opacity:0;} }
+.pg-section-label { font-size:8px; letter-spacing:.3em; text-transform:uppercase; color:var(--muted);
+  font-family:'DM Mono',monospace; margin:0 4px 13px; display:flex; align-items:center; gap:11px; }
+.pg-section-label::after { content:''; flex:1; height:1px; background:var(--border); }
+.pg-grid { display:flex; flex-direction:column; gap:10px; }
+.pg-card { position:relative; display:flex; align-items:center; gap:14px; width:100%; text-align:left;
+  padding:15px 16px; border-radius:14px; cursor:pointer; font-family:inherit;
+  border:1px solid var(--border); background:rgba(255,255,255,.02);
+  transition:border-color .2s, background .2s, transform .12s; }
+.pg-card:hover { border-color:color-mix(in srgb, var(--pg-accent) 48%, transparent);
+  background:color-mix(in srgb, var(--pg-accent) 6%, transparent); }
+.pg-card:active { transform:scale(.985); }
+.pg-card-icon { flex-shrink:0; width:46px; height:46px; border-radius:13px; display:flex; align-items:center;
+  justify-content:center; font-size:22px; line-height:1;
+  background:color-mix(in srgb, var(--pg-accent) 14%, transparent);
+  border:1px solid color-mix(in srgb, var(--pg-accent) 32%, transparent); }
+.pg-card-body { flex:1; min-width:0; }
+.pg-card-title { font-family:'Space Grotesk',sans-serif; font-size:14px; font-weight:600; color:var(--text);
+  margin-bottom:3px; letter-spacing:.01em; }
+.pg-card-desc { font-size:10px; color:var(--muted); line-height:1.5; }
+.pg-card-tag { flex-shrink:0; align-self:flex-start; font-size:7px; letter-spacing:.18em; text-transform:uppercase;
+  font-family:'DM Mono',monospace; color:var(--pg-accent); border-radius:20px; padding:4px 8px;
+  border:1px solid color-mix(in srgb, var(--pg-accent) 35%, transparent);
+  background:color-mix(in srgb, var(--pg-accent) 10%, transparent); }
+
 /* ── Exercise setup banner (per-exercise colour via CSS vars) ── */
 .ex-banner { position:relative; flex-shrink:0; height:154px; margin:4px 12px 6px; border-radius:18px; overflow:hidden;
   display:flex; align-items:center; padding:0 26px;
@@ -4196,10 +4242,63 @@ body:not(.tut-live) #tutCorgi {
       <div class="history-title">Playground</div>
       <button class="history-back" id="playgroundBack">← back</button>
     </div>
-    <div style="flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:40px 24px; text-align:center;">
-      <div style="font-size:36px; margin-bottom:24px; opacity:.28;">🧪</div>
-      <div style="font-family:Cormorant Garamond,serif; font-size:26px; font-weight:300; color:var(--text); margin-bottom:10px; opacity:.55; letter-spacing:.04em;">Under Construction</div>
-      <div style="font-size:8px; letter-spacing:.32em; text-transform:uppercase; color:var(--muted); opacity:.6;">Coming Soon</div>
+    <div class="pg-scroll">
+      <div class="pg-banner">
+        <i class="pg-bubble" style="width:10px;height:10px;left:58%;bottom:18px;animation-delay:0s;"></i>
+        <i class="pg-bubble" style="width:7px;height:7px;left:66%;bottom:12px;animation-delay:1.4s;"></i>
+        <i class="pg-bubble" style="width:13px;height:13px;left:73%;bottom:24px;animation-delay:2.6s;"></i>
+        <i class="pg-bubble" style="width:6px;height:6px;left:80%;bottom:16px;animation-delay:3.8s;"></i>
+        <div class="pg-banner-text">
+          <div class="pg-banner-label">The Laboratory</div>
+          <div class="pg-banner-title">Playground</div>
+          <div class="pg-banner-sub">Experiments in consciousness — new practices brewing</div>
+        </div>
+        <div class="pg-banner-flask">🧪</div>
+      </div>
+
+      <div class="pg-section-label">Coming Soon</div>
+      <div class="pg-grid">
+        <button class="pg-card" data-pg-soon="Frequencies" style="--pg-accent:#6fd0e0;">
+          <div class="pg-card-icon">🎵</div>
+          <div class="pg-card-body">
+            <div class="pg-card-title">Frequencies</div>
+            <div class="pg-card-desc">Tune to Solfeggio tones, binaural beats, and resonance for focus and calm.</div>
+          </div>
+          <div class="pg-card-tag">Soon</div>
+        </button>
+        <button class="pg-card" data-pg-soon="Dream Journaling" style="--pg-accent:#b58ed8;">
+          <div class="pg-card-icon">🌙</div>
+          <div class="pg-card-body">
+            <div class="pg-card-title">Dream Journaling</div>
+            <div class="pg-card-desc">Capture dreams on waking. Track lucidity, patterns, and recurring symbols.</div>
+          </div>
+          <div class="pg-card-tag">Soon</div>
+        </button>
+        <button class="pg-card" data-pg-soon="Manifestation" style="--pg-accent:#e8c87a;">
+          <div class="pg-card-icon">✨</div>
+          <div class="pg-card-body">
+            <div class="pg-card-title">Manifestation</div>
+            <div class="pg-card-desc">Scripting, visualization, and daily alignment toward what you're calling in.</div>
+          </div>
+          <div class="pg-card-tag">Soon</div>
+        </button>
+        <button class="pg-card" data-pg-soon="Sleep" style="--pg-accent:#7e9fe0;">
+          <div class="pg-card-icon">😴</div>
+          <div class="pg-card-body">
+            <div class="pg-card-title">Sleep</div>
+            <div class="pg-card-desc">Wind-down sessions, soundscapes, and stories to carry you into deep rest.</div>
+          </div>
+          <div class="pg-card-tag">Soon</div>
+        </button>
+        <button class="pg-card" data-pg-soon="Memory Palace" style="--pg-accent:#d99a6c;">
+          <div class="pg-card-icon">🏛️</div>
+          <div class="pg-card-body">
+            <div class="pg-card-title">Memory Palace</div>
+            <div class="pg-card-desc">Build the method of loci — train spatial memory and recall vast sequences.</div>
+          </div>
+          <div class="pg-card-tag">Soon</div>
+        </button>
+      </div>
     </div>
   </div>
 
@@ -8568,6 +8667,12 @@ document.getElementById('drawerPlayground').addEventListener('click', function()
 });
 document.getElementById('playgroundBack').addEventListener('click', function() {
   showScreen('homeScreen');
+});
+document.querySelectorAll('#playgroundScreen .pg-card').forEach(function(card) {
+  card.addEventListener('click', function() {
+    var name = card.getAttribute('data-pg-soon');
+    showToast('✨ ' + name + ' is coming soon', 2600);
+  });
 });
 document.getElementById('drawerFaq').addEventListener('click', function() {
   closeDrawer();
