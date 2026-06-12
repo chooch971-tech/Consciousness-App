@@ -214,6 +214,24 @@
     .so-ended-start { font-family:'DM Mono',monospace; font-size:11px; letter-spacing:.16em; text-transform:uppercase; background:linear-gradient(100deg,#e8a06a,#ffc88e); color:#160d06; border:none; border-radius:10px; padding:14px 28px; cursor:pointer; width:100%; margin-bottom:8px; box-shadow:0 4px 24px rgba(232,160,106,.35), inset 0 1px 0 rgba(255,255,255,.35); }
     .so-ended-start:active { transform:scale(.985); }
     .so-ended-dismiss { font-family:'DM Mono',monospace; font-size:10px; color:var(--muted); background:none; border:none; cursor:pointer; }
+    /* ── Body level award acknowledgment ── */
+    .bla-overlay { display:none; position:fixed; inset:0; z-index:9900; background:rgba(7,8,13,.92); flex-direction:column; align-items:center; justify-content:center; padding:24px; opacity:0; transition:opacity .35s ease; }
+    .bla-overlay.bla-show { display:flex; }
+    .bla-overlay.bla-vis { opacity:1; }
+    .bla-card { position:relative; overflow:hidden; background:linear-gradient(168deg, rgba(30,28,42,.96) 0%, rgba(16,15,26,.97) 100%); border:1px solid var(--bla-c, #98b4cc); border-radius:20px; padding:30px 26px 24px; max-width:320px; width:100%; text-align:center; box-shadow:0 0 54px -8px var(--bla-c, #98b4cc), inset 0 1px 0 rgba(255,255,255,.07); animation:rptRise .45s ease both; }
+    .bla-card::before { content:''; position:absolute; top:0; left:14%; right:14%; height:1px; background:linear-gradient(90deg,transparent,rgba(255,255,255,.4),transparent); }
+    .bla-aura { position:relative; width:96px; height:96px; margin:0 auto 12px; display:flex; align-items:center; justify-content:center; }
+    .bla-aura::before { content:''; position:absolute; inset:-14px; border-radius:50%; background:radial-gradient(circle, var(--bla-c, #98b4cc) 0%, transparent 68%); opacity:.32; animation:seoGlowPulse 2.4s ease-in-out infinite; }
+    .bla-ring { position:absolute; inset:6px; border-radius:50%; border:1.5px solid var(--bla-c, #98b4cc); opacity:.55; animation:blaRingSpin 9s linear infinite; }
+    .bla-ring::after { content:''; position:absolute; top:-3px; left:50%; width:5px; height:5px; margin-left:-2.5px; border-radius:50%; background:var(--bla-c, #98b4cc); box-shadow:0 0 8px var(--bla-c, #98b4cc); }
+    @keyframes blaRingSpin { from{transform:rotate(0);} to{transform:rotate(360deg);} }
+    .bla-plus { position:relative; z-index:2; font-family:Cormorant Garamond,serif; font-size:42px; color:var(--bla-cl, #cfe2f2); text-shadow:0 0 24px var(--bla-c, #98b4cc); line-height:1; }
+    .bla-kicker { font-size:8px; letter-spacing:.26em; text-transform:uppercase; color:var(--muted); font-family:'DM Mono',monospace; margin-bottom:6px; }
+    .bla-title { font-family:Cormorant Garamond,serif; font-size:25px; color:var(--bla-cl, #cfe2f2); text-shadow:0 0 22px var(--bla-c, #98b4cc); margin-bottom:6px; line-height:1.15; }
+    .bla-sub { font-size:11px; color:var(--muted); line-height:1.7; margin-bottom:6px; font-family:'DM Mono',monospace; letter-spacing:.04em; }
+    .bla-desc { font-family:Cormorant Garamond,serif; font-size:14px; font-style:italic; color:var(--text); opacity:.8; margin-bottom:18px; }
+    .bla-btn { font-family:'DM Mono',monospace; font-size:10px; letter-spacing:.18em; text-transform:uppercase; background:rgba(255,255,255,.05); color:var(--bla-cl, #cfe2f2); border:1px solid var(--bla-c, #98b4cc); border-radius:10px; padding:13px 28px; cursor:pointer; width:100%; box-shadow:0 0 18px -6px var(--bla-c, #98b4cc); }
+    .bla-btn:active { transform:scale(.985); }
     /* ── Streak celebration overlay ── */
     #streakCelebOverlay { display:none; position:fixed; inset:0; z-index:9750; background:rgba(7,8,13,0.97); flex-direction:column; align-items:center; justify-content:center; padding:32px 28px max(env(safe-area-inset-bottom),40px); opacity:0; transition:opacity 0.4s ease; }
     #streakCelebOverlay.sco-show { display:flex; }
@@ -6896,6 +6914,11 @@ document.addEventListener('DOMContentLoaded', function() {
   // Apply saved entity/palette cosmetics to the guide banner and drawer icon
   // on every page load so Seraph/etc. show immediately without visiting Upgrade.
   if (typeof applyOmniaCosmetics === 'function') applyOmniaCosmetics();
+  // If a body level was earned but never acknowledged (app closed first),
+  // surface the acknowledgment screen on next launch.
+  setTimeout(function() {
+    if (typeof maybeShowBodyLevelAward === 'function') { try { maybeShowBodyLevelAward(); } catch(e) {} }
+  }, 2800);
   // Warm the Omnia report cache in the background so it's instant when the
   // user opens Progress Reports. Targets yesterday's daily report — the first
   // eligible daily view. fetchOmniaReport no-ops if already cached/fresh.
@@ -16835,21 +16858,70 @@ function awardOmniaForExercise(exId, seconds) {
     omniaState.completedRecommended = (omniaState.completedRecommended || 0) + 1;
     omniaState.lastSessionCreditMs = now;
   }
+  // Names must be computed BEFORE the award below — this used to read
+  // activityName ahead of its declaration, leaving lastBodyAward.exercise
+  // permanently undefined.
+  var activityName = meta && meta.name ? meta.name : 'Exercise';
+  var awardedBody = false;
   if (recommended) {
     omniaState.recStreak = (omniaState.recStreak || 0) + 1;
     if (!omniaBodyAtCap(meta.body)) {
       omniaState.bodies[meta.body] = (omniaState.bodies[meta.body] || 0) + 1;
-      omniaState.lastBodyAward = { body: meta.body, exercise: activityName };
+      omniaState.lastBodyAward = { body: meta.body, exercise: activityName, level: omniaState.bodies[meta.body] };
+      awardedBody = true;
     }
     omniaPickRecommendation(true);
   } else {
     omniaState.recStreak = Math.max(0, (omniaState.recStreak || 0) - 1);
   }
   saveOmniaState();
-  var bodyName = OMNIA_BODY_META[meta.body] ? OMNIA_BODY_META[meta.body].name.replace(' Body','') : 'Omnia';
-  var activityName = meta && meta.name ? meta.name : 'Exercise';
   var boostLabel = boost > 1 ? ' · +' + Math.round((boost - 1) * 100) + '% boost' : '';
-  showToast(activityName + ' complete · +' + gain + ' akasha' + (recommended ? ' · ' + bodyName + ' +1' : '') + boostLabel, 3200);
+  showToast(activityName + ' complete · +' + gain + ' akasha' + boostLabel, 3200);
+  // The body level gets a real acknowledgment screen, not just a toast —
+  // shown once the session-complete legend has been dismissed.
+  if (awardedBody) setTimeout(maybeShowBodyLevelAward, 1200);
+}
+
+// Show the pending body-level award as soon as no session-complete legend is
+// covering the screen; the player dismisses it explicitly.
+function maybeShowBodyLevelAward() {
+  if (!omniaState || !omniaState.lastBodyAward) return;
+  var sc = document.getElementById('sessionComplete');
+  if (sc && sc.classList.contains('sc-show')) {
+    setTimeout(maybeShowBodyLevelAward, 700);
+    return;
+  }
+  showBodyLevelAward(omniaState.lastBodyAward);
+}
+
+function showBodyLevelAward(award) {
+  if (document.getElementById('bodyLevelAwardOverlay')) return;
+  var bodyMeta = OMNIA_BODY_META[award.body];
+  if (!bodyMeta) { omniaState.lastBodyAward = null; saveOmniaState(); return; }
+  var color = bodyMeta.color;
+  var lvl = award.level || (omniaState.bodies && omniaState.bodies[award.body]) || 1;
+  var overlay = document.createElement('div');
+  overlay.className = 'bla-overlay';
+  overlay.id = 'bodyLevelAwardOverlay';
+  overlay.innerHTML = '<div class="bla-card" style="--bla-c:' + color + ';--bla-cl:' + color + ';">'
+    + '<div class="bla-aura"><div class="bla-ring"></div><div class="bla-plus">+1</div></div>'
+    + '<div class="bla-kicker">Omnia grows</div>'
+    + '<div class="bla-title">' + bodyMeta.name + ' · Lvl ' + lvl + '</div>'
+    + (award.exercise ? '<div class="bla-sub">earned from ' + award.exercise + '</div>' : '')
+    + '<div class="bla-desc">' + bodyMeta.desc + '</div>'
+    + '<button class="bla-btn" id="blaAckBtn">Continue →</button>'
+    + '</div>';
+  document.body.appendChild(overlay);
+  document.getElementById('blaAckBtn').onclick = function() {
+    omniaState.lastBodyAward = null;
+    saveOmniaState();
+    overlay.classList.remove('bla-vis');
+    setTimeout(function() { if (overlay.parentNode) overlay.parentNode.removeChild(overlay); }, 360);
+  };
+  requestAnimationFrame(function() {
+    overlay.classList.add('bla-show');
+    requestAnimationFrame(function() { overlay.classList.add('bla-vis'); });
+  });
 }
 
 function renderOmniaEngine() {
@@ -16861,13 +16933,9 @@ function renderOmniaEngine() {
   var canAdvance = omniaStepReady(step);
   var cap = omniaReservoirCap();
   var reservoir = Math.min(cap, omniaState.reservoir || 0);
-  if (omniaState.lastBodyAward) {
-    var lba = omniaState.lastBodyAward;
-    var lbaMeta = OMNIA_BODY_META[lba.body];
-    if (lbaMeta) showToast('+1 ' + lbaMeta.name + (lba.exercise ? ' from ' + lba.exercise : ''), 3500);
-    omniaState.lastBodyAward = null;
-    saveOmniaState();
-  }
+  // A pending (unacknowledged) body award gets the full acknowledgment
+  // screen — it stays pending until the player dismisses it.
+  if (omniaState.lastBodyAward) maybeShowBodyLevelAward();
 
   var stageName = document.getElementById('omniaStageName');
   var stageSub = document.getElementById('omniaStageSub');
