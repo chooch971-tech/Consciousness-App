@@ -705,6 +705,10 @@
     .path-ex-begin { padding:8px 14px; border-radius:8px; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.04); color:var(--text); font-family:'DM Mono',monospace; font-size:9px; letter-spacing:.2em; text-transform:uppercase; cursor:pointer; }
     .path-ex-begin:hover { border-color:rgba(255,255,255,.2); background:rgba(255,255,255,.07); }
     .path-ex-begin:disabled { opacity:.35; cursor:default; }
+    /* Card that will grant a body level when completed now */
+    .pq-grants-body { animation:pebGlow 2.6s ease-in-out infinite; }
+    @keyframes pebGlow { 0%,100%{box-shadow:0 0 0 1px rgba(216,184,106,.16), 0 0 18px -8px rgba(216,184,106,.4);} 50%{box-shadow:0 0 0 1px rgba(216,184,106,.32), 0 0 26px -4px rgba(216,184,106,.72);} }
+    .pq-ex-bodybadge { display:inline-flex; align-items:center; gap:4px; margin-top:6px; font-family:'DM Mono',monospace; font-size:8px; letter-spacing:.12em; text-transform:uppercase; color:#e8cd8e; background:rgba(216,184,106,.13); border:1px solid rgba(216,184,106,.32); border-radius:5px; padding:3px 7px; text-shadow:0 0 8px rgba(216,184,106,.4); }
     .path-streak-nudge { display:flex; align-items:center; gap:12px; margin-top:12px; border:1px solid var(--border); border-radius:12px; background:rgba(255,255,255,.02); padding:12px 16px; }
     .path-streak-icon { font-size:20px; }
     .path-streak-body { flex:1; }
@@ -16769,10 +16773,67 @@ function omniaPickGuidedPathRecommendation(forceNew) {
   return omniaState.rec;
 }
 
+// Map a guided-path card id to the OMNIA_EXERCISE_META key whose body it
+// trains. Thought sub-modes all feed the mental body via Thought Control;
+// Soul Mirror and the advanced visual drills don't grant body levels.
+function omniaMetaIdForExercise(id) {
+  if (id === 'observation' || id === 'focus' || id === 'vacancy') return 'thought';
+  if (OMNIA_EXERCISE_META[id]) return id;
+  return null;
+}
+
 function omniaExerciseIsGuidedAgenda(exId) {
   if (typeof guideState === 'undefined' || typeof buildGuideRegimentItems !== 'function') return false;
   if (!guideState._pathLockedV2) return false;
-  return buildGuideRegimentItems().some(function(item) { return item.id === exId; });
+  return buildGuideRegimentItems().some(function(item) {
+    return omniaMetaIdForExercise(item.id) === exId;
+  });
+}
+
+// ── Daily body-level budget ───────────────────────────────────────────────
+// A player can earn at most BODY_AWARDS_PER_DAY body levels in a calendar day.
+var BODY_AWARDS_PER_DAY = 2;
+function omniaBodyAwardsRemaining() {
+  if (!omniaState) return 0;
+  var todayStr = new Date().toISOString().slice(0, 10);
+  if (omniaState.bodyAwardsDate !== todayStr) return BODY_AWARDS_PER_DAY;
+  return Math.max(0, BODY_AWARDS_PER_DAY - (omniaState.bodyAwardsToday || 0));
+}
+function omniaConsumeBodyAward() {
+  var todayStr = new Date().toISOString().slice(0, 10);
+  if (omniaState.bodyAwardsDate !== todayStr) {
+    omniaState.bodyAwardsDate = todayStr;
+    omniaState.bodyAwardsToday = 0;
+  }
+  omniaState.bodyAwardsToday = (omniaState.bodyAwardsToday || 0) + 1;
+}
+// The body a given exercise will actually raise: its natural body, or — if that
+// one is already capped for the current step — the next uncapped body, in the
+// order mental → astral → physical. Returns null when all three are capped.
+function omniaPickAwardBody(preferred) {
+  var order = [preferred, 'mental', 'astral', 'physical'];
+  for (var i = 0; i < order.length; i++) {
+    if (order[i] && !omniaBodyAtCap(order[i])) return order[i];
+  }
+  return null;
+}
+// Is this exercise currently eligible to grant a body level (recommended free
+// pick, or on the locked guided agenda)? Mirrors the award logic exactly.
+function omniaExerciseIsBodyEligible(metaId) {
+  if (!OMNIA_EXERCISE_META[metaId]) return false;
+  if (omniaState && omniaState.rec && omniaState.rec.id === metaId) return true;
+  return omniaExerciseIsGuidedAgenda(metaId);
+}
+// Would completing this path card right now grant a body level? Used to
+// highlight the card. Honours the daily budget, eligibility, and the cap
+// cascade (so a capped mental body still highlights when astral can take it).
+function omniaCardGrantsBodyLevel(cardId, isDone) {
+  if (isDone) return null;
+  if (omniaBodyAwardsRemaining() <= 0) return null;
+  var metaId = omniaMetaIdForExercise(cardId);
+  if (!metaId) return null;
+  if (!omniaExerciseIsBodyEligible(metaId)) return null;
+  return omniaPickAwardBody(OMNIA_EXERCISE_META[metaId].body); // body name or null
 }
 
 function omniaLastDoneIndex(id, history) {
@@ -16865,10 +16926,17 @@ function awardOmniaForExercise(exId, seconds) {
   var awardedBody = false;
   if (recommended) {
     omniaState.recStreak = (omniaState.recStreak || 0) + 1;
-    if (!omniaBodyAtCap(meta.body)) {
-      omniaState.bodies[meta.body] = (omniaState.bodies[meta.body] || 0) + 1;
-      omniaState.lastBodyAward = { body: meta.body, exercise: activityName, level: omniaState.bodies[meta.body] };
-      awardedBody = true;
+    // Up to BODY_AWARDS_PER_DAY body levels per day. The natural body is raised
+    // unless it's capped, in which case the level cascades to the next uncapped
+    // body (mental → astral → physical).
+    if (omniaBodyAwardsRemaining() > 0) {
+      var targetBody = omniaPickAwardBody(meta.body);
+      if (targetBody) {
+        omniaState.bodies[targetBody] = (omniaState.bodies[targetBody] || 0) + 1;
+        omniaConsumeBodyAward();
+        omniaState.lastBodyAward = { body: targetBody, exercise: activityName, level: omniaState.bodies[targetBody] };
+        awardedBody = true;
+      }
     }
     omniaPickRecommendation(true);
   } else {
@@ -19900,14 +19968,23 @@ function renderPathQuests() {
     var cardPadding = extraHtml ? 'padding:13px 14px 10px;' : 'padding:13px 14px;';
     var menuBtn = '<button class="pq-menu-btn" data-ex-id="' + item.id + '"' + (item.mode ? ' data-ex-mode="' + item.mode + '"' : '') + (item.added ? ' data-ex-added="1"' : '') + ' title="Options">···</button>';
     var badgeStyle = 'position:relative;width:48px;height:48px;border-radius:12px;background:' + color + '1e;border:1px solid ' + color + '38;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0;font-family:\'DM Mono\',monospace;line-height:1;color:' + color + ';';
+    // Highlight cards that will grant a body level if completed right now.
+    var grantsBodyName = (typeof omniaCardGrantsBodyLevel === 'function') ? omniaCardGrantsBodyLevel(item.id, item.done) : null;
+    var bodyBadgeHtml = '';
+    if (grantsBodyName) {
+      var _bm = (typeof OMNIA_BODY_META !== 'undefined' && OMNIA_BODY_META[grantsBodyName]) ? OMNIA_BODY_META[grantsBodyName].name.replace(' Body', '') : grantsBodyName;
+      bodyBadgeHtml = '<div class="pq-ex-bodybadge">✦ +1 ' + _bm + '</div>';
+    }
     var outerStyle = 'display:flex;flex-direction:column;background:var(--surface);' + cardPadding + (item.done ? 'opacity:.5;' : '');
     outerStyle += grouped ? (last ? '' : 'border-bottom:1px solid var(--border);') : 'border:1px solid var(--border);border-radius:14px;';
-    return '<div style="' + outerStyle + '">'
+    if (grantsBodyName) outerStyle += 'border-color:rgba(216,184,106,.5);';
+    return '<div' + (grantsBodyName ? ' class="pq-grants-body"' : '') + ' style="' + outerStyle + '">'
       + '<div style="display:flex;align-items:center;gap:14px;">'
       + '<div style="' + badgeStyle + '">' + icon + '</div>'
       + '<div style="flex:1;min-width:0;">'
       + '<div style="font-family:\'Space Grotesk\',sans-serif;font-size:12px;font-weight:600;letter-spacing:.01em;color:' + color + ';margin-bottom:3px;line-height:1.25;">' + displayName + '</div>'
       + '<div style="font-size:9px;color:var(--text);letter-spacing:.06em;">' + meta + '</div>'
+      + bodyBadgeHtml
       + '</div>'
       + '<div style="display:flex;align-items:center;gap:10px;flex-shrink:0;">' + checkHtml + beginHtml + '</div>'
       + menuBtn
