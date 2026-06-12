@@ -20141,7 +20141,7 @@ function renderPathQuests() {
   // budget can exceed 2 (it scales with rank), but only 2 glow at a time to
   // keep the list calm; more reveal as completed ones drop off.
   var _bodyHighlightsLeft = Math.min(2, (typeof omniaBodyAwardsRemaining === 'function') ? omniaBodyAwardsRemaining() : 0);
-  var _pqBuildCard = function(item, grouped, last) {
+  var _pqBuildCard = function(item, grouped, last, first) {
     var rounds = (item.durationLabel && item.durationLabel.indexOf('x2') !== -1) ? 2 : 1;
     var modeText = item.mode ? (GUIDE_FOUNDATION_THOUGHT_LABELS[item.mode] || item.mode) : '';
     var metaParts = [];
@@ -20212,7 +20212,10 @@ function renderPathQuests() {
     // glow gets clipped and a border-color only tints the divider line. Tint the
     // background and switch to an inset ring so the whole row reads as highlighted.
     if (grantsBodyName) {
-      outerStyle += grouped ? 'background:linear-gradient(0deg,rgba(216,184,106,.07),rgba(216,184,106,.07)),var(--surface);position:relative;z-index:1;' : 'border-color:rgba(216,184,106,.5);';
+      outerStyle += grouped
+        ? 'background:linear-gradient(0deg,rgba(216,184,106,.07),rgba(216,184,106,.07)),var(--surface);position:relative;z-index:1;'
+          + (first ? 'border-radius:14px 14px 0 0;' : (last ? 'border-radius:0 0 14px 14px;' : ''))
+        : 'border-color:rgba(216,184,106,.5);';
     }
     var grantsClass = grantsBodyName ? (grouped ? 'pq-grants-body-inset' : 'pq-grants-body') : '';
     return '<div' + (grantsClass ? ' class="' + grantsClass + '"' : '') + ' style="' + outerStyle + '">'
@@ -20238,7 +20241,7 @@ function renderPathQuests() {
         while (i < items.length && _isTC(items[i].id)) { run.push(items[i]); i++; }
         if (run.length > 1) {
           html += '<div style="display:flex;flex-direction:column;border:1px solid var(--border);border-radius:14px;overflow:hidden;">';
-          run.forEach(function(it, idx) { html += _pqBuildCard(it, true, idx === run.length - 1); });
+          run.forEach(function(it, idx) { html += _pqBuildCard(it, true, idx === run.length - 1, idx === 0); });
           html += '</div>';
         } else {
           html += _pqBuildCard(run[0], false, false);
