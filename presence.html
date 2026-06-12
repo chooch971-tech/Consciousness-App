@@ -1382,15 +1382,31 @@
     .delta-down { color:#b87070; }
     .delta-same { color:var(--muted); }
     /* 3-column summary bar at top of report */
-    .rpt-summary { display:grid; grid-template-columns:1fr 1fr 1fr; gap:8px; margin:16px 0 22px; }
-    .rpt-summary-card { background:var(--surface); border:1px solid var(--border); border-radius:10px; padding:17px 10px 14px; display:flex; flex-direction:column; align-items:center; text-align:center; }
-    .rpt-summary-card:nth-child(1) { background:linear-gradient(162deg, rgba(126,184,164,.12) 0%, rgba(126,184,164,.02) 70%); border-color:rgba(126,184,164,.26); }
-    .rpt-summary-card:nth-child(2) { background:linear-gradient(162deg, rgba(168,200,232,.11) 0%, rgba(168,200,232,.02) 70%); border-color:rgba(168,200,232,.24); }
-    .rpt-summary-card:nth-child(3) { background:linear-gradient(162deg, rgba(216,184,106,.12) 0%, rgba(216,184,106,.02) 70%); border-color:rgba(216,184,106,.26); }
-    .rpt-summary-val { font-family:'Cormorant Garamond',serif; font-size:33px; font-weight:400; line-height:1; color:var(--text); margin-bottom:6px; text-shadow:0 1px 18px rgba(255,255,255,.07); }
-    .rpt-summary-val--green { color:var(--accent); text-shadow:0 1px 18px rgba(126,184,164,.22); }
-    .rpt-summary-val--gold { color:#d8b86a; text-shadow:0 1px 18px rgba(216,184,106,.2); }
+    .rpt-summary { display:grid; grid-template-columns:1fr 1fr 1fr; gap:8px; margin:16px 0 14px; }
+    .rpt-summary-card { position:relative; overflow:hidden; background:var(--surface); border:1px solid var(--border); border-radius:12px; padding:14px 8px 13px; display:flex; flex-direction:column; align-items:center; text-align:center; }
+    .rpt-summary-card::before { content:''; position:absolute; top:0; left:12%; right:12%; height:1px; background:linear-gradient(90deg, transparent, rgba(255,255,255,.22), transparent); }
+    .rpt-summary-card:nth-child(1) { background:linear-gradient(162deg, rgba(126,184,164,.16) 0%, rgba(126,184,164,.03) 70%); border-color:rgba(126,184,164,.32); box-shadow:0 4px 26px rgba(126,184,164,.10); }
+    .rpt-summary-card:nth-child(2) { background:linear-gradient(162deg, rgba(168,200,232,.15) 0%, rgba(168,200,232,.03) 70%); border-color:rgba(168,200,232,.3); box-shadow:0 4px 26px rgba(168,200,232,.09); }
+    .rpt-summary-card:nth-child(3) { background:linear-gradient(162deg, rgba(216,184,106,.16) 0%, rgba(216,184,106,.03) 70%); border-color:rgba(216,184,106,.32); box-shadow:0 4px 26px rgba(216,184,106,.10); }
+    .rpt-summary-ico { width:24px; height:24px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:11px; margin-bottom:8px; }
+    .rpt-summary-card:nth-child(1) .rpt-summary-ico { color:#9ed8c0; background:rgba(126,184,164,.16); box-shadow:0 0 12px rgba(126,184,164,.35); }
+    .rpt-summary-card:nth-child(2) .rpt-summary-ico { color:#bcd8f2; background:rgba(168,200,232,.16); box-shadow:0 0 12px rgba(168,200,232,.32); }
+    .rpt-summary-card:nth-child(3) .rpt-summary-ico { color:#e8cd8e; background:rgba(216,184,106,.16); box-shadow:0 0 12px rgba(216,184,106,.35); }
+    .rpt-summary-val { font-family:'Cormorant Garamond',serif; font-size:32px; font-weight:400; line-height:1; color:var(--text); margin-bottom:6px; text-shadow:0 1px 18px rgba(255,255,255,.07); }
+    .rpt-summary-val--green { color:#9ed8c0; text-shadow:0 0 22px rgba(126,184,164,.45); }
+    .rpt-summary-val--blue { color:#bcd8f2; text-shadow:0 0 22px rgba(168,200,232,.4); }
+    .rpt-summary-val--gold { color:#e8cd8e; text-shadow:0 0 22px rgba(216,184,106,.45); }
     .rpt-summary-label { font-size:8px; letter-spacing:.18em; text-transform:uppercase; color:rgba(221,216,206,.55); font-family:'DM Mono',monospace; }
+    /* ── 7-day activity strip ── */
+    .rpt-week { display:flex; gap:5px; margin:0 0 20px; }
+    .rpt-week-day { flex:1; display:flex; flex-direction:column; align-items:center; gap:6px; padding:9px 0 8px; border-radius:10px; background:var(--surface); border:1px solid var(--border); }
+    .rpt-week-day__l { font-size:7.5px; letter-spacing:.1em; color:var(--muted); font-family:'DM Mono',monospace; }
+    .rpt-week-day__d { width:15px; height:15px; border-radius:50%; background:rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.07); display:flex; align-items:center; justify-content:center; font-size:8px; line-height:1; color:#0a1410; }
+    .rpt-week-day.lit { background:linear-gradient(165deg, rgba(126,184,164,.18), rgba(126,184,164,.04)); border-color:rgba(126,184,164,.38); }
+    .rpt-week-day.lit .rpt-week-day__l { color:#9ed8c0; }
+    .rpt-week-day.lit .rpt-week-day__d { background:radial-gradient(circle at 35% 30%, #e2fff2, #7eb8a4 75%); border-color:transparent; box-shadow:0 0 9px rgba(126,184,164,.85), 0 0 18px rgba(126,184,164,.4); }
+    .rpt-week-day.today { border-color:rgba(216,184,106,.45); }
+    .rpt-week-day.today .rpt-week-day__l { color:#e8cd8e; }
     /* Level + record highlight cards */
     .rpt-highlight { display:flex; align-items:center; gap:12px; background:var(--surface); border:1px solid var(--border); border-radius:10px; padding:12px 14px; margin-bottom:8px; }
     .rpt-highlight__icon { width:32px; height:32px; border-radius:8px; background:rgba(212,149,110,.12); border:1px solid rgba(212,149,110,.2); display:flex; align-items:center; justify-content:center; flex-shrink:0; font-size:14px; }
@@ -1403,9 +1419,36 @@
     .report-chart-title { font-size:8px; letter-spacing:.15em; text-transform:uppercase; color:var(--muted); margin-bottom:10px; }
     .report-motivational { background:var(--surface); border:1px solid rgba(126,184,164,.2); border-radius:8px; padding:14px 16px; margin-bottom:12px; }
     .report-motivational-text { font-family:Cormorant Garamond,serif; font-size:16px; font-style:italic; color:var(--text); line-height:1.6; }
-    .report-record { background:rgba(212,180,100,.08); border:1px solid rgba(212,180,100,.2); border-radius:8px; padding:12px 14px; margin-bottom:8px; display:flex; align-items:center; gap:10px; }
-    .report-record-icon { font-size:16px; }
-    .report-record-text { font-size:11px; color:var(--text); line-height:1.4; }
+    .report-record { border-radius:12px; padding:10px 13px; margin-bottom:8px; display:flex; align-items:center; gap:11px; border:1px solid; position:relative; overflow:hidden; }
+    .report-record::before { content:''; position:absolute; top:0; left:12%; right:12%; height:1px; background:linear-gradient(90deg, transparent, rgba(255,255,255,.16), transparent); }
+    .report-record-icon { width:30px; height:30px; border-radius:9px; display:flex; align-items:center; justify-content:center; font-size:14px; flex-shrink:0; }
+    .report-record-text { flex:1; font-size:11px; color:var(--text); line-height:1.45; }
+    .report-record-val { font-family:'Cormorant Garamond',serif; font-size:22px; font-weight:300; line-height:1; flex-shrink:0; }
+    .report-record--gold { background:linear-gradient(135deg, rgba(212,180,100,.13), rgba(212,180,100,.025)); border-color:rgba(212,180,100,.32); }
+    .report-record--gold .report-record-icon { background:rgba(212,180,100,.15); color:#e8cd8e; box-shadow:0 0 12px rgba(212,180,100,.3); }
+    .report-record--gold .report-record-val { color:#e8cd8e; }
+    .report-record--teal { background:linear-gradient(135deg, rgba(126,184,164,.12), rgba(126,184,164,.02)); border-color:rgba(126,184,164,.3); }
+    .report-record--teal .report-record-icon { background:rgba(126,184,164,.14); color:#9ed8c0; box-shadow:0 0 12px rgba(126,184,164,.28); }
+    .report-record--teal .report-record-val { color:#9ed8c0; }
+    .report-record--blue { background:linear-gradient(135deg, rgba(168,200,232,.12), rgba(168,200,232,.02)); border-color:rgba(168,200,232,.28); }
+    .report-record--blue .report-record-icon { background:rgba(168,200,232,.14); color:#bcd8f2; box-shadow:0 0 12px rgba(168,200,232,.26); }
+    .report-record--blue .report-record-val { color:#bcd8f2; }
+    .report-record--amber { background:linear-gradient(135deg, rgba(212,149,110,.12), rgba(212,149,110,.02)); border-color:rgba(212,149,110,.3); }
+    .report-record--amber .report-record-icon { background:rgba(212,149,110,.14); color:#e8b88a; box-shadow:0 0 12px rgba(212,149,110,.28); }
+    .report-record--amber .report-record-val { color:#e8b88a; }
+    .report-record--purple { background:linear-gradient(135deg, rgba(184,168,224,.12), rgba(184,168,224,.02)); border-color:rgba(184,168,224,.28); }
+    .report-record--purple .report-record-icon { background:rgba(184,168,224,.14); color:#cdbcf0; box-shadow:0 0 12px rgba(184,168,224,.26); }
+    .report-record--purple .report-record-val { color:#cdbcf0; }
+    /* ── Staggered rise-in: a little reward each time the report renders ── */
+    @keyframes rptRise { from { opacity:0; transform:translateY(12px); } to { opacity:1; transform:none; } }
+    #reportContent .rpt-omnia-card { animation:rptRise .45s ease both; }
+    #reportContent .rpt-summary-card:nth-child(1) { animation:rptRise .45s .06s ease both; }
+    #reportContent .rpt-summary-card:nth-child(2) { animation:rptRise .45s .13s ease both; }
+    #reportContent .rpt-summary-card:nth-child(3) { animation:rptRise .45s .2s ease both; }
+    #reportContent .rpt-week { animation:rptRise .45s .27s ease both; }
+    #reportContent .report-record { animation:rptRise .45s .34s ease both; }
+    #reportContent .report-chart { animation:rptRise .45s .41s ease both; }
+    #reportContent .rpt-acc { animation:rptRise .45s .48s ease both; }
     .report-share-btn { width:100%; padding:14px; border-radius:6px; border:1px solid rgba(126,184,164,.25); background:rgba(126,184,164,.08); color:var(--accent); font-family:'DM Mono',monospace; font-size:10px; letter-spacing:.2em; text-transform:uppercase; cursor:pointer; margin-top:8px; }
     /* ── Report redesign: section headings, signals, compact strips ── */
     .rpt-h { font-size:9px; letter-spacing:.24em; text-transform:uppercase; font-family:'DM Mono',monospace; color:var(--muted); margin:0 0 11px; display:flex; align-items:center; gap:10px; }
@@ -1439,11 +1482,15 @@
     .rpt-acc { border:1px solid var(--border); border-radius:14px; background:var(--surface); overflow:hidden; margin-bottom:18px; }
     .rpt-acc-row + .rpt-acc-row { border-top:1px solid var(--border); }
     .rpt-acc-head { display:flex; align-items:center; gap:11px; padding:15px 16px; cursor:pointer; -webkit-tap-highlight-color:transparent; }
-    .rpt-acc-dot { width:6px; height:6px; border-radius:50%; flex-shrink:0; }
-    .rpt-acc-dot--green { background:var(--accent); box-shadow:0 0 6px rgba(126,184,164,.6); }
-    .rpt-acc-dot--amber { background:#d4956e; box-shadow:0 0 6px rgba(212,149,110,.6); }
-    .rpt-acc-dot--purple { background:#9b8ec4; box-shadow:0 0 6px rgba(155,142,196,.6); }
-    .rpt-acc-dot--gold { background:#d4b464; box-shadow:0 0 6px rgba(212,180,100,.6); }
+    .rpt-acc-dot { width:28px; height:28px; border-radius:9px; flex-shrink:0; display:flex; align-items:center; justify-content:center; font-size:13px; border:1px solid; }
+    .rpt-acc-dot--green { color:#9ed8c0; background:rgba(126,184,164,.11); border-color:rgba(126,184,164,.3); box-shadow:0 0 10px rgba(126,184,164,.22); }
+    .rpt-acc-dot--amber { color:#e8b88a; background:rgba(212,149,110,.11); border-color:rgba(212,149,110,.3); box-shadow:0 0 10px rgba(212,149,110,.22); }
+    .rpt-acc-dot--purple { color:#cdbcf0; background:rgba(155,142,196,.12); border-color:rgba(155,142,196,.3); box-shadow:0 0 10px rgba(155,142,196,.22); }
+    .rpt-acc-dot--gold { color:#e8cd8e; background:rgba(212,180,100,.11); border-color:rgba(212,180,100,.3); box-shadow:0 0 10px rgba(212,180,100,.22); }
+    .rpt-acc-row--green .rpt-acc-sum { color:rgba(158,216,192,.78); }
+    .rpt-acc-row--amber .rpt-acc-sum { color:rgba(232,184,138,.78); }
+    .rpt-acc-row--purple .rpt-acc-sum { color:rgba(205,188,240,.78); }
+    .rpt-acc-row--gold .rpt-acc-sum { color:rgba(232,205,142,.78); }
     .rpt-acc-name { font-size:9.5px; letter-spacing:.2em; text-transform:uppercase; color:var(--text); font-family:'DM Mono',monospace; }
     .rpt-acc-sum { margin-left:auto; font-size:9.5px; color:var(--muted); letter-spacing:.04em; font-family:'DM Mono',monospace; text-align:right; }
     .rpt-acc-chev { color:var(--muted); font-size:13px; transition:transform .25s ease; flex-shrink:0; line-height:1; }
@@ -20706,9 +20753,14 @@ function renderBarChart(data, labels, color, height) {
   var bw = Math.min(16, slot * 0.5);
   var maxIdx = data.indexOf(max);
   var parts = [];
+  var peak = '#e8cd8e';
   parts.push('<defs><linearGradient id="rptBar' + uid + '" x1="0" y1="0" x2="0" y2="1">'
     + '<stop offset="0%" stop-color="' + color + '"/>'
     + '<stop offset="100%" stop-color="' + color + '" stop-opacity=".22"/>'
+    + '</linearGradient>'
+    + '<linearGradient id="rptBarPk' + uid + '" x1="0" y1="0" x2="0" y2="1">'
+    + '<stop offset="0%" stop-color="' + peak + '"/>'
+    + '<stop offset="100%" stop-color="' + peak + '" stop-opacity=".3"/>'
     + '</linearGradient></defs>');
   parts.push('<line x1="0" y1="' + height + '" x2="' + vbW + '" y2="' + height + '" stroke="rgba(221,216,206,.14)" stroke-width="1"/>');
   data.forEach(function(v, i) {
@@ -20721,9 +20773,13 @@ function renderBarChart(data, labels, color, height) {
     var h = Math.max(3, (v / max) * (height - 16));
     var y = height - h;
     var isMax = i === maxIdx;
-    parts.push('<rect x="' + (cx - bw / 2).toFixed(1) + '" y="' + y.toFixed(1) + '" width="' + bw.toFixed(1) + '" height="' + h.toFixed(1) + '" rx="' + Math.min(4, bw / 2).toFixed(1) + '" fill="url(#rptBar' + uid + ')"' + (isMax ? '' : ' opacity=".6"') + '/>');
     if (isMax) {
-      parts.push('<text x="' + cx.toFixed(1) + '" y="' + (y - 5).toFixed(1) + '" text-anchor="middle" fill="' + color + '" font-size="8.5" font-family="DM Mono,monospace">' + fmtDuration(Math.round(v)) + '</text>');
+      // Soft glow pooled under the best bar
+      parts.push('<ellipse cx="' + cx.toFixed(1) + '" cy="' + height + '" rx="' + (bw * 1.6).toFixed(1) + '" ry="4.5" fill="' + peak + '" opacity=".22"/>');
+    }
+    parts.push('<rect x="' + (cx - bw / 2).toFixed(1) + '" y="' + y.toFixed(1) + '" width="' + bw.toFixed(1) + '" height="' + h.toFixed(1) + '" rx="' + Math.min(4, bw / 2).toFixed(1) + '" fill="url(#rptBar' + (isMax ? 'Pk' : '') + uid + ')"' + (isMax ? '' : ' opacity=".62"') + '/>');
+    if (isMax) {
+      parts.push('<text x="' + cx.toFixed(1) + '" y="' + (y - 5).toFixed(1) + '" text-anchor="middle" fill="' + peak + '" font-size="8.5" font-family="DM Mono,monospace">' + fmtDuration(Math.round(v)) + '</text>');
     }
   });
   var every = n > 9 ? 2 : 1;
@@ -21046,10 +21102,10 @@ function rptStripCell(val, lbl, deltaHtml) {
     + (deltaHtml ? '<div class="rpt-strip__delta">' + deltaHtml + '</div>' : '') + '</div>';
 }
 
-function rptAccRow(dot, name, summary, body) {
-  return '<div class="rpt-acc-row">'
+function rptAccRow(dot, name, summary, body, icon) {
+  return '<div class="rpt-acc-row rpt-acc-row--' + dot + '">'
     + '<div class="rpt-acc-head" onclick="rptToggleAcc(this)">'
-    + '<span class="rpt-acc-dot rpt-acc-dot--' + dot + '"></span>'
+    + '<span class="rpt-acc-dot rpt-acc-dot--' + dot + '">' + (icon || '') + '</span>'
     + '<span class="rpt-acc-name">' + name + '</span>'
     + '<span class="rpt-acc-sum">' + summary + '</span>'
     + '<span class="rpt-acc-chev">›</span>'
@@ -21213,26 +21269,57 @@ function renderReport(period) {
   var totalMinNow = sumMinutes(awarenessNow) + Math.round(concSecNow / 60);
   var totalMinPrev = sumMinutes(awarenessPrev) + Math.round(concSecPrev / 60);
 
+  // 7-day activity strip — only on current periods (it's anchored to today)
+  var weekHtml = '';
+  if (reportOffset === 0) {
+    var dayLetters = ['S','M','T','W','T','F','S'];
+    var todayD = new Date(); todayD.setHours(0, 0, 0, 0);
+    var activeDays = {};
+    state.history.concat(concState.history || []).forEach(function(h) {
+      var hd = new Date(h.date); if (isNaN(hd)) return;
+      hd.setHours(0, 0, 0, 0);
+      activeDays[hd.getTime()] = 1;
+    });
+    weekHtml = '<div class="rpt-week">';
+    for (var wi = 6; wi >= 0; wi--) {
+      var wd = new Date(todayD); wd.setDate(wd.getDate() - wi);
+      var lit = !!activeDays[wd.getTime()];
+      weekHtml += '<div class="rpt-week-day' + (lit ? ' lit' : '') + (wi === 0 ? ' today' : '') + '">'
+        + '<span class="rpt-week-day__l">' + dayLetters[wd.getDay()] + '</span>'
+        + '<span class="rpt-week-day__d">' + (lit ? '✓' : '') + '</span></div>';
+    }
+    weekHtml += '</div>';
+  }
+
   if (totalSessions === 0) {
     html += '<div class="rpt-empty">No practice recorded in this period.<br>Your overall rank is below.</div>';
+    html += weekHtml;
   } else {
     // ── Hero: the whole summary is three numbers ──
     var bestHoldNow = concNow.length ? Math.max.apply(null, concNow.map(function(h) { return h.seconds || 0; })) : 0;
     var bestHoldPrev = concPrev.length ? Math.max.apply(null, concPrev.map(function(h) { return h.seconds || 0; })) : 0;
     var practicedStr = totalMinNow >= 60 ? Math.floor(totalMinNow / 60) + 'h ' + (totalMinNow % 60) + 'm' : totalMinNow + 'm';
     html += '<div class="rpt-summary">';
-    html += '<div class="rpt-summary-card"><div class="rpt-summary-val rpt-summary-val--green">' + practicedStr + '</div><div class="rpt-summary-label">Practiced</div><div class="rpt-summary-delta">' + deltaMini(totalMinNow, totalMinPrev) + '</div></div>';
-    html += '<div class="rpt-summary-card"><div class="rpt-summary-val">' + totalSessions + '</div><div class="rpt-summary-label">Sessions</div><div class="rpt-summary-delta">' + deltaMini(totalSessions, awarenessPrev.length + concPrev.length) + '</div></div>';
+    html += '<div class="rpt-summary-card"><div class="rpt-summary-ico">◷</div><div class="rpt-summary-val rpt-summary-val--green">' + practicedStr + '</div><div class="rpt-summary-label">Practiced</div><div class="rpt-summary-delta">' + deltaMini(totalMinNow, totalMinPrev) + '</div></div>';
+    html += '<div class="rpt-summary-card"><div class="rpt-summary-ico">❖</div><div class="rpt-summary-val rpt-summary-val--blue">' + totalSessions + '</div><div class="rpt-summary-label">Sessions</div><div class="rpt-summary-delta">' + deltaMini(totalSessions, awarenessPrev.length + concPrev.length) + '</div></div>';
     if (bestHoldNow > 0) {
-      html += '<div class="rpt-summary-card"><div class="rpt-summary-val rpt-summary-val--gold">' + fmtTimer(bestHoldNow) + '</div><div class="rpt-summary-label">Best Hold</div><div class="rpt-summary-delta">' + deltaMini(bestHoldNow, bestHoldPrev) + '</div></div>';
+      html += '<div class="rpt-summary-card"><div class="rpt-summary-ico">◎</div><div class="rpt-summary-val rpt-summary-val--gold">' + fmtTimer(bestHoldNow) + '</div><div class="rpt-summary-label">Best Hold</div><div class="rpt-summary-delta">' + deltaMini(bestHoldNow, bestHoldPrev) + '</div></div>';
     } else {
-      html += '<div class="rpt-summary-card"><div class="rpt-summary-val rpt-summary-val--gold">' + state.streak + 'd</div><div class="rpt-summary-label">Streak</div></div>';
+      html += '<div class="rpt-summary-card"><div class="rpt-summary-ico">✶</div><div class="rpt-summary-val rpt-summary-val--gold">' + state.streak + 'd</div><div class="rpt-summary-label">Streak</div></div>';
     }
     html += '</div>';
+    html += weekHtml;
 
     // ── Highlights: at most two, milestones before patterns ──
+    var signalStyle = {
+      'Best Rhythm':         { color: 'teal',   icon: '☀' },
+      'Deepest Day':         { color: 'blue',   icon: '◆' },
+      'Sharpest Focus':      { color: 'amber',  icon: '◎' },
+      'Clearest Reflection': { color: 'purple', icon: '☾' },
+      'Cadence':             { color: 'teal',   icon: '✦' }
+    };
     var records = buildRecords(awarenessNow, concNow, range);
-    var chips = records.map(function(r) { return { icon: r.icon, text: r.text }; });
+    var chips = records.map(function(r) { return { icon: r.icon, text: r.text, color: 'gold' }; });
     if (chips.length < 2) {
       // Don't pad with signals that restate a record chip already shown
       var recordKeys = records.map(function(r) { return r.key; });
@@ -21240,11 +21327,16 @@ function renderReport(period) {
       buildSignals(awarenessNow, concNow, period).filter(function(s) {
         return recordKeys.indexOf(dupOf[s.label]) === -1;
       }).slice(0, 2 - chips.length).forEach(function(s) {
-        chips.push({ icon: '✦', text: s.text + (s.val ? ' — ' + s.val : '') });
+        var st = signalStyle[s.label] || { color: 'teal', icon: '✦' };
+        chips.push({ icon: st.icon, text: s.text, val: s.val, color: st.color });
       });
     }
     chips.slice(0, 2).forEach(function(c) {
-      html += '<div class="report-record"><span class="report-record-icon">' + c.icon + '</span><span class="report-record-text">' + esc(c.text) + '</span></div>';
+      html += '<div class="report-record report-record--' + c.color + '">'
+        + '<span class="report-record-icon">' + c.icon + '</span>'
+        + '<span class="report-record-text">' + esc(c.text) + '</span>'
+        + (c.val ? '<span class="report-record-val">' + esc(String(c.val)) + '</span>' : '')
+        + '</div>';
     });
 
     // ── One chart: combined minutes across both practices ──
@@ -21277,7 +21369,7 @@ function renderReport(period) {
     if (awChartData.values.length >= 3 && awChartData.scoreValues && awChartData.scoreValues.some(function(v) { return v > 0; })) {
       awBody += '<div class="report-chart"><div class="report-chart-title">Session Score Trend</div>' + renderLineChart(awChartData.scoreValues, '#7eb8a4', 48) + '</div>';
     }
-    accHtml += rptAccRow('green', 'Awareness', awarenessNow.length + ' sessions · ' + fmtDuration(awMinNow), awBody);
+    accHtml += rptAccRow('green', 'Awareness', awarenessNow.length + ' sessions · ' + fmtDuration(awMinNow), awBody, '◎');
   }
 
   var clockSessions = (concState.history || []).filter(function(s) {
@@ -21311,7 +21403,7 @@ function renderReport(period) {
         concBody += '<div class="report-chart"><div class="report-chart-title">Hold Time Per Session</div>' + renderClockProgressChart(clockSessions) + '</div>';
       }
     }
-    accHtml += rptAccRow('amber', 'Concentration', concSum, concBody);
+    accHtml += rptAccRow('amber', 'Concentration', concSum, concBody, '◉');
   }
 
   if (prayerState.enabled && prayerState.count > 0) {
@@ -21320,7 +21412,7 @@ function renderReport(period) {
       + rptStripCell(prayerDone + '/' + prayerState.count, 'Today', '')
       + rptStripCell((prayerState.streak || 0) + 'd', 'Streak', '')
       + '</div>';
-    accHtml += rptAccRow('purple', 'Prayer', prayerDone + ' of ' + prayerState.count + ' today', prayerBody);
+    accHtml += rptAccRow('purple', 'Prayer', prayerDone + ' of ' + prayerState.count + ' today', prayerBody, '☽');
   }
 
   var rankBody = '<div class="rpt-strip">'
@@ -21328,7 +21420,7 @@ function renderReport(period) {
     + rptStripCell(concState.level, 'Focus Lvl', '')
     + rptStripCell((state.xp + concState.xp).toLocaleString(), 'Total XP', '')
     + '</div>';
-  accHtml += rptAccRow('gold', 'Rank', getRankTitle(state.level) + ' · ' + (state.xp + concState.xp).toLocaleString() + ' XP', rankBody);
+  accHtml += rptAccRow('gold', 'Rank', getRankTitle(state.level) + ' · ' + (state.xp + concState.xp).toLocaleString() + ' XP', rankBody, '✦');
 
   html += '<div class="rpt-acc">' + accHtml + '</div>';
 
