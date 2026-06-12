@@ -708,6 +708,10 @@
     /* Card that will grant a body level when completed now */
     .pq-grants-body { animation:pebGlow 2.6s ease-in-out infinite; }
     @keyframes pebGlow { 0%,100%{box-shadow:0 0 0 1px rgba(216,184,106,.16), 0 0 18px -8px rgba(216,184,106,.4);} 50%{box-shadow:0 0 0 1px rgba(216,184,106,.32), 0 0 26px -4px rgba(216,184,106,.72);} }
+    /* Same highlight for a card inside a grouped (overflow:hidden) frame — uses an
+       inset ring so it isn't clipped by the parent and wraps the full row. */
+    .pq-grants-body-inset { animation:pebGlowInset 2.6s ease-in-out infinite; }
+    @keyframes pebGlowInset { 0%,100%{box-shadow:inset 0 0 0 1.5px rgba(216,184,106,.34), inset 0 0 18px -6px rgba(216,184,106,.4);} 50%{box-shadow:inset 0 0 0 1.5px rgba(216,184,106,.55), inset 0 0 26px -2px rgba(216,184,106,.62);} }
     .pq-ex-bodybadge { display:inline-flex; align-items:center; gap:4px; margin-top:6px; font-family:'DM Mono',monospace; font-size:8px; letter-spacing:.12em; text-transform:uppercase; color:#e8cd8e; background:rgba(216,184,106,.13); border:1px solid rgba(216,184,106,.32); border-radius:5px; padding:3px 7px; text-shadow:0 0 8px rgba(216,184,106,.4); }
     .path-streak-nudge { display:flex; align-items:center; gap:12px; margin-top:12px; border:1px solid var(--border); border-radius:12px; background:rgba(255,255,255,.02); padding:12px 16px; }
     .path-streak-icon { font-size:20px; }
@@ -20052,8 +20056,14 @@ function renderPathQuests() {
     }
     var outerStyle = 'display:flex;flex-direction:column;background:var(--surface);' + cardPadding + (item.done ? 'opacity:.5;' : '');
     outerStyle += grouped ? (last ? '' : 'border-bottom:1px solid var(--border);') : 'border:1px solid var(--border);border-radius:14px;';
-    if (grantsBodyName) outerStyle += 'border-color:rgba(216,184,106,.5);';
-    return '<div' + (grantsBodyName ? ' class="pq-grants-body"' : '') + ' style="' + outerStyle + '">'
+    // Grouped cards live inside an overflow:hidden frame, so the standalone outer
+    // glow gets clipped and a border-color only tints the divider line. Tint the
+    // background and switch to an inset ring so the whole row reads as highlighted.
+    if (grantsBodyName) {
+      outerStyle += grouped ? 'background:linear-gradient(0deg,rgba(216,184,106,.07),rgba(216,184,106,.07)),var(--surface);position:relative;z-index:1;' : 'border-color:rgba(216,184,106,.5);';
+    }
+    var grantsClass = grantsBodyName ? (grouped ? 'pq-grants-body-inset' : 'pq-grants-body') : '';
+    return '<div' + (grantsClass ? ' class="' + grantsClass + '"' : '') + ' style="' + outerStyle + '">'
       + '<div style="display:flex;align-items:center;gap:14px;">'
       + '<div style="' + badgeStyle + '">' + icon + '</div>'
       + '<div style="flex:1;min-width:0;">'
