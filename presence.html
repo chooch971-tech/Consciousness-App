@@ -1417,6 +1417,11 @@
     .rpt-highlight--record .rpt-highlight__icon { background:rgba(212,180,100,.12); border-color:rgba(212,180,100,.25); }
     .report-chart { background:var(--surface); border:1px solid var(--border); border-radius:8px; padding:14px; margin-bottom:12px; }
     .report-chart-title { font-size:8px; letter-spacing:.15em; text-transform:uppercase; color:var(--muted); margin-bottom:10px; }
+    .rpt-legend { display:flex; gap:16px; margin:-3px 0 10px; }
+    .rpt-legend__i { font-size:8px; letter-spacing:.1em; text-transform:uppercase; color:var(--muted); font-family:'DM Mono',monospace; display:flex; align-items:center; gap:5px; }
+    .rpt-legend__i::before { content:''; width:8px; height:8px; border-radius:2px; }
+    .rpt-legend__i--green::before { background:#7eb8a4; box-shadow:0 0 6px rgba(126,184,164,.65); }
+    .rpt-legend__i--gold::before { background:#e8cd8e; box-shadow:0 0 6px rgba(216,184,106,.65); }
     .report-motivational { background:var(--surface); border:1px solid rgba(126,184,164,.2); border-radius:8px; padding:14px 16px; margin-bottom:12px; }
     .report-motivational-text { font-family:Cormorant Garamond,serif; font-size:16px; font-style:italic; color:var(--text); line-height:1.6; }
     .report-record { border-radius:12px; padding:10px 13px; margin-bottom:8px; display:flex; align-items:center; gap:11px; border:1px solid; position:relative; overflow:hidden; }
@@ -9295,6 +9300,20 @@ function updateClockHand(elapsedMs) {
 // record inflated it with times the user never actually held on the clock.
 function isClockSession(h) {
   return !!h && !h.exercise && !h.type;
+}
+
+// Readable name for any concentration-history entry, keyed off whichever tag
+// it carries (exercise or type). Pore breathing / autosuggestion live under
+// `exercise`, so a plain `h.type` lookup mislabels them as "Clock".
+function concEntryLabel(h) {
+  var key = (h && (h.exercise || h.type)) || 'clock';
+  var names = {
+    clock: 'Clock', asana: 'Asana', pore_breathing: 'Pore Breathing',
+    autosuggestion: 'Autosuggestion', visualization: 'Visualization',
+    auditory: 'Auditory', thought: 'Thought Control',
+    'all-angles': 'All Angles', 'multi-sense': 'Multi-Sense'
+  };
+  return names[key] || 'Clock';
 }
 
 function renderConcHome() {
@@ -20798,6 +20817,54 @@ function renderBarChart(data, labels, color, height) {
   return '<svg width="100%" height="' + vbH + '" viewBox="0 0 ' + vbW + ' ' + vbH + '" xmlns="http://www.w3.org/2000/svg">' + parts.join('') + '</svg>';
 }
 
+// Grouped bars per time-bucket: a green Awareness column beside a gold
+// Concentration column. Both series are minutes.
+function renderDualBarChart(aw, conc, labels, height) {
+  height = height || 56;
+  var n = Math.max(aw.length, conc.length, labels.length);
+  if (!n) return '<div style="text-align:center;color:var(--muted);font-size:11px;padding:20px 0;">No data yet</div>';
+  var green = '#7eb8a4', gold = '#e8cd8e';
+  var uid = ++_barChartUid;
+  var vbW = 300, vbH = height + 18;
+  var slot = vbW / n;
+  var bw = Math.max(2.5, Math.min(8, slot * 0.28));
+  var gap = Math.max(1.5, bw * 0.3);
+  var groupW = bw * 2 + gap;
+  var max = 1;
+  for (var k = 0; k < n; k++) { max = Math.max(max, aw[k] || 0, conc[k] || 0); }
+  var parts = [];
+  parts.push('<defs>'
+    + '<linearGradient id="dbG' + uid + '" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="' + green + '"/><stop offset="100%" stop-color="' + green + '" stop-opacity=".25"/></linearGradient>'
+    + '<linearGradient id="dbA' + uid + '" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="' + gold + '"/><stop offset="100%" stop-color="' + gold + '" stop-opacity=".25"/></linearGradient>'
+    + '</defs>');
+  parts.push('<line x1="0" y1="' + height + '" x2="' + vbW + '" y2="' + height + '" stroke="rgba(221,216,206,.14)" stroke-width="1"/>');
+  for (var j = 0; j < n; j++) {
+    var cx = j * slot + slot / 2;
+    var av = aw[j] || 0, cv = conc[j] || 0;
+    var leftX = cx - groupW / 2;
+    var goldX = leftX + bw + gap;
+    if (av <= 0 && cv <= 0) {
+      parts.push('<circle cx="' + cx.toFixed(1) + '" cy="' + height + '" r="1.4" fill="rgba(221,216,206,.18)"/>');
+      continue;
+    }
+    if (av > 0) {
+      var ah = Math.max(3, (av / max) * (height - 10));
+      parts.push('<rect x="' + leftX.toFixed(1) + '" y="' + (height - ah).toFixed(1) + '" width="' + bw.toFixed(1) + '" height="' + ah.toFixed(1) + '" rx="' + Math.min(3, bw / 2).toFixed(1) + '" fill="url(#dbG' + uid + ')"/>');
+    }
+    if (cv > 0) {
+      var ch = Math.max(3, (cv / max) * (height - 10));
+      parts.push('<rect x="' + goldX.toFixed(1) + '" y="' + (height - ch).toFixed(1) + '" width="' + bw.toFixed(1) + '" height="' + ch.toFixed(1) + '" rx="' + Math.min(3, bw / 2).toFixed(1) + '" fill="url(#dbA' + uid + ')"/>');
+    }
+  }
+  var every = n > 9 ? 2 : 1;
+  labels.forEach(function(l, i) {
+    if (i % every !== 0) return;
+    var cx = i * slot + slot / 2;
+    parts.push('<text x="' + cx.toFixed(1) + '" y="' + (height + 13) + '" text-anchor="middle" fill="rgba(221,216,206,.4)" font-size="7.5" font-family="DM Mono,monospace">' + l + '</text>');
+  });
+  return '<svg width="100%" height="' + vbH + '" viewBox="0 0 ' + vbW + ' ' + vbH + '" xmlns="http://www.w3.org/2000/svg">' + parts.join('') + '</svg>';
+}
+
 function renderClockProgressChart(sessions) {
   if (!sessions.length) return '<div style="text-align:center;color:var(--muted);font-size:11px;padding:20px 0;">No clock sessions yet.</div>';
   if (sessions.length < 2) return '<div style="text-align:center;color:var(--muted);font-size:11px;padding:20px 0;">Complete more sessions to see your trend.</div>';
@@ -21346,14 +21413,16 @@ function renderReport(period) {
         + '</div>';
     });
 
-    // ── One chart: combined minutes across both practices ──
+    // ── One chart: Awareness (green) beside Concentration (gold) per bucket ──
     var awChart = buildChartData(state.history, period, 'durationMin');
     var concChart = buildChartData(concState.history, period, 'seconds');
-    var combined = awChart.values.map(function(v, i) { return v + Math.round((concChart.values[i] || 0) / 60); });
-    if (combined.some(function(v) { return v > 0; })) {
+    var awMinSeries = awChart.values.map(function(v) { return Math.round(v); });
+    var concMinSeries = concChart.values.map(function(v) { return Math.round((v || 0) / 60); });
+    if (awMinSeries.some(function(v) { return v > 0; }) || concMinSeries.some(function(v) { return v > 0; })) {
       html += '<div class="report-chart" style="margin-top:14px;">'
         + '<div class="report-chart-title" style="display:flex;justify-content:space-between;align-items:baseline;"><span>Minutes Practiced</span><span style="color:var(--accent);letter-spacing:.08em;">' + practicedStr + ' total</span></div>'
-        + renderBarChart(combined, awChart.labels, '#7eb8a4', 56) + '</div>';
+        + '<div class="rpt-legend"><span class="rpt-legend__i rpt-legend__i--green">Awareness</span><span class="rpt-legend__i rpt-legend__i--gold">Concentration</span></div>'
+        + renderDualBarChart(awMinSeries, concMinSeries, awChart.labels, 56) + '</div>';
     }
   }
 
@@ -21392,7 +21461,7 @@ function renderReport(period) {
         + rptStripCell(fmtTimer(concSecNow), 'Total Held', deltaMini(concSecNow, concSecPrev))
         + '</div>';
       var typeBreakdown = {};
-      concNow.forEach(function(h) { var t = h.type || 'clock'; typeBreakdown[t] = (typeBreakdown[t] || 0) + 1; });
+      concNow.forEach(function(h) { var t = concEntryLabel(h); typeBreakdown[t] = (typeBreakdown[t] || 0) + 1; });
       if (Object.keys(typeBreakdown).length > 1) {
         concBody += '<div class="rpt-cap">' + esc(Object.keys(typeBreakdown).map(function(k) { return k + ' ' + typeBreakdown[k]; }).join('   ·   ')) + '</div>';
       }
