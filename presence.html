@@ -9288,6 +9288,15 @@ function updateClockHand(elapsedMs) {
   group.style.transform = 'rotate(' + angle + 'deg)';
 }
 
+// A "pure" Clock session carries neither an `exercise` tag (asana,
+// autosuggestion, pore_breathing) nor a `type` tag (visualization, auditory,
+// thought, all-angles, multi-sense). Those other exercises store a full
+// session DURATION in `seconds`, so counting them toward the Clock's best-rep
+// record inflated it with times the user never actually held on the clock.
+function isClockSession(h) {
+  return !!h && !h.exercise && !h.type;
+}
+
 function renderConcHome() {
   var xpNeeded = concXpForLevel(concState.level);
   var xpThis = concState.xp - concSumXpToLevel(concState.level);
@@ -9325,8 +9334,7 @@ function renderConcHome() {
   }
   // Show mastered asterisk on Clock card if clock-only best >= 15 min
   var clockBest = (concState.history || []).reduce(function(b, s) {
-    if (s.exercise === 'asana' || s.type === 'visualization' || s.type === 'auditory' || s.type === 'thought') return b;
-    return s.seconds > b ? s.seconds : b;
+    return isClockSession(s) && s.seconds > b ? s.seconds : b;
   }, 0);
   var star = document.getElementById('clockMasteredStar');
   if (star) star.style.display = clockBest >= 900 ? 'inline' : 'none';
@@ -10710,7 +10718,7 @@ function renderConcHistory() {
   var allHistory = concState.history;
   var filtered = concHistoryFilter === 'clock'
     ? allHistory.map(function(h, i) { return { h: h, i: i }; }).filter(function(x) {
-        return !x.h.exercise && x.h.type !== 'visualization' && x.h.type !== 'auditory' && x.h.type !== 'thought';
+        return isClockSession(x.h);
       })
     : concHistoryFilter === 'thought'
     ? allHistory.map(function(h, i) { return { h: h, i: i }; }).filter(function(x) { return x.h.type === 'thought'; })
@@ -11965,8 +11973,7 @@ var EXERCISE_DEFS = {
     desc: '',
     setupHTML: function() {
       var best = (concState.history || []).reduce(function(b, s) {
-        if (s.exercise === 'asana' || s.type === 'visualization' || s.type === 'auditory' || s.type === 'thought') return b;
-        return s.seconds > b ? s.seconds : b;
+        return isClockSession(s) && s.seconds > b ? s.seconds : b;
       }, 0);
       var mastered = best >= 900;
 
@@ -21372,9 +21379,7 @@ function renderReport(period) {
     accHtml += rptAccRow('green', 'Awareness', awarenessNow.length + ' sessions · ' + fmtDuration(awMinNow), awBody, '◎');
   }
 
-  var clockSessions = (concState.history || []).filter(function(s) {
-    return s.exercise !== 'asana' && s.type !== 'visualization' && s.type !== 'auditory' && s.type !== 'thought';
-  }).slice().reverse().slice(-50);
+  var clockSessions = (concState.history || []).filter(isClockSession).slice().reverse().slice(-50);
   if (concNow.length > 0 || clockSessions.length > 0) {
     var concBody = '';
     var concSum = '—';
