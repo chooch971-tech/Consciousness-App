@@ -20136,9 +20136,11 @@ function renderPathQuests() {
     });
     items = ordered;
   })();
-  // At most the remaining daily budget (≤ 2) of cards may be highlighted for a
-  // body level at once, so the glow never promises more levels than are left.
-  var _bodyHighlightsLeft = (typeof omniaBodyAwardsRemaining === 'function') ? omniaBodyAwardsRemaining() : 0;
+  // Highlight at most 2 cards at once — and never more than the remaining daily
+  // budget, so the glow never promises more levels than are left. The daily
+  // budget can exceed 2 (it scales with rank), but only 2 glow at a time to
+  // keep the list calm; more reveal as completed ones drop off.
+  var _bodyHighlightsLeft = Math.min(2, (typeof omniaBodyAwardsRemaining === 'function') ? omniaBodyAwardsRemaining() : 0);
   var _pqBuildCard = function(item, grouped, last) {
     var rounds = (item.durationLabel && item.durationLabel.indexOf('x2') !== -1) ? 2 : 1;
     var modeText = item.mode ? (GUIDE_FOUNDATION_THOUGHT_LABELS[item.mode] || item.mode) : '';
