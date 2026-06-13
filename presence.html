@@ -821,6 +821,12 @@
     .pq-thought-mode-divider { border:none; border-top:1px solid var(--border); margin:4px 0; }
     .ptree-wrap { padding:10px 0 0; position:relative; }
     .ptree-svg { display:block; width:100%; }
+    /* Desktop: the star map's viewBox is tall and narrow (340x540). At full
+       window width that scales up into a huge, mostly-empty SVG that reads
+       as "zoomed in". Cap its width so the whole tree fits on screen. */
+    @media (min-width:600px) {
+      .ptree-wrap { max-width:420px; margin:0 auto; }
+    }
     .ptree-legend { display:flex; align-items:center; justify-content:center; gap:14px; padding:12px 20px 18px; border-top:1px solid var(--border); }
     .ptree-legend-item { display:flex; align-items:center; gap:6px; font-size:8px; letter-spacing:.12em; color:var(--text); }
     .ptree-sheet-backdrop { display:none; position:fixed; inset:0; z-index:199; background:rgba(7,8,13,.6); backdrop-filter:blur(3px); -webkit-backdrop-filter:blur(3px); }
@@ -841,13 +847,6 @@
     .ptree-sheet-begin:active { opacity:.7; }
     .ptree-sheet-begin:hover { background:rgba(255,255,255,.05); }
     .ptree-sheet-begin[disabled] { opacity:.3; cursor:default; }
-    .ptree-first-visit { position:absolute; inset:0; z-index:30; display:flex; align-items:center; justify-content:center; padding:32px 24px; background:rgba(8,10,16,.78); backdrop-filter:blur(3px); cursor:pointer; }
-    .ptree-first-bubble { background:rgba(10,12,18,.97); border:1px solid rgba(200,168,72,.18); border-radius:22px; padding:36px 28px 28px; max-width:268px; text-align:center; box-shadow:0 16px 56px rgba(0,0,0,.75), 0 0 48px rgba(200,168,72,.05); }
-    .ptree-first-star { font-size:18px; color:#c8a848; opacity:.75; margin-bottom:20px; letter-spacing:.3em; }
-    .ptree-first-bubble p { font-family:'Cormorant Garamond',serif; font-size:21px; font-weight:300; color:var(--text); line-height:1.5; letter-spacing:.02em; margin-bottom:12px; }
-    .ptree-first-desc { font-size:10px; color:var(--muted); line-height:1.7; letter-spacing:.04em; margin-bottom:24px; }
-    .ptree-first-bubble span { display:block; font-size:7px; letter-spacing:.3em; text-transform:uppercase; color:rgba(200,168,72,.45); padding-top:18px; border-top:1px solid rgba(255,255,255,.05); }
-    @keyframes ptreeFadeIn { from { opacity:0; transform:translateY(4px); } to { opacity:1; transform:translateY(0); } }
     .omnia-engine { margin:0 0 20px; background:rgba(142,204,224,.045); border:1px solid rgba(142,204,224,.16); border-radius:12px; padding:16px; box-shadow:0 0 24px rgba(80,160,190,.04) inset; }
     .omnia-engine-top { display:flex; justify-content:space-between; align-items:flex-start; gap:14px; margin-bottom:14px; }
     .omnia-engine-kicker { font-size:8px; letter-spacing:.25em; text-transform:uppercase; color:#8ecce0; margin-bottom:5px; }
@@ -5151,14 +5150,6 @@ body:not(.tut-live) #tutCorgi {
     <div class="guide-tab-panel guide-tab-hidden" id="guideTreePanel">
       <div class="ptree-wrap" style="position:relative;">
         <div id="guideTreeSVGWrap"></div>
-        <div class="ptree-first-visit" id="ptreeFirstVisit" style="display:none;">
-          <div class="ptree-first-bubble">
-            <div class="ptree-first-star">✦ ✦ ✦</div>
-            <p>master the exercises to illuminate the tree.</p>
-            <div class="ptree-first-desc">the more you practice, the brighter each star becomes. your progress is written in light.</div>
-            <span>tap anywhere to begin</span>
-          </div>
-        </div>
       </div>
       <div class="ptree-legend">
         <div class="ptree-legend-item">
@@ -18172,17 +18163,6 @@ function renderPracticeTree() {
     + '</svg>';
 
   el.innerHTML = svg;
-
-  // First-visit overlay
-  var fvKey = 'ptree_intro_seen';
-  var fvEl = document.getElementById('ptreeFirstVisit');
-  if (fvEl && !localStorage.getItem(fvKey)) {
-    fvEl.style.display = 'flex';
-    fvEl.addEventListener('click', function() {
-      fvEl.style.display = 'none';
-      localStorage.setItem(fvKey, '1');
-    }, { once: true });
-  }
 
   // Node info data
   var nameMap = {
