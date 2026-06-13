@@ -3858,17 +3858,21 @@ body:not(.tut-live) #tutCorgi {
 .clk-hero-card { width:100%; box-sizing:border-box; background:rgba(224,124,58,.06); border:1px solid rgba(224,124,58,.14); border-radius:18px; padding:22px 16px 18px; margin-bottom:20px; display:flex; flex-direction:column; align-items:center;
   box-shadow:0 -1px 0 0 rgba(224,124,58,.18), 0 8px 32px rgba(180,80,20,.12); }
 .clk-hero { position:relative; width:148px; height:148px; margin:0 auto 4px; display:flex; align-items:center; justify-content:center; }
-/* Omnia peeks over the top edge of the clock preview card and beckons the
-   user to tap her for the tutorial — bigger than a normal icon, with a
-   gentle bob + glow pulse so the eye is drawn to it. */
-.clk-omnia-peek { position:absolute; top:-58px; left:50%; transform:translateX(-50%); z-index:7;
-  display:flex; flex-direction:column; align-items:center; gap:4px;
+/* Omnia peeks over the top-right edge of the clock preview card and
+   beckons the user to tap her for the tutorial — a shimmering head with a
+   gentle bob, glow pulse, and sparkle twinkles to draw the eye. */
+.clk-omnia-peek { position:absolute; top:-50px; right:6px; z-index:7;
+  display:flex; align-items:center; justify-content:center;
   background:none; border:none; cursor:pointer; padding:0; }
-.clk-omnia-peek-head { display:flex; align-items:center; justify-content:center;
+.clk-omnia-peek-head { position:relative; display:flex; align-items:center; justify-content:center;
   animation:clkOmniaBeckon 1.9s ease-in-out infinite; }
-.clk-omnia-peek-hint { font-family:'DM Mono',monospace; font-size:8px; letter-spacing:.22em; text-transform:uppercase;
-  color:rgba(168,216,236,.95); animation:clkOmniaHintBlink 1.9s ease-in-out infinite; }
+.clk-omnia-peek-head::before, .clk-omnia-peek-head::after {
+  content:''; position:absolute; border-radius:50%; pointer-events:none;
+  background:radial-gradient(circle, rgba(255,255,255,.95) 0%, rgba(200,236,255,0) 70%); }
+.clk-omnia-peek-head::before { width:9px; height:9px; top:4px; right:-3px; animation:clkOmniaSparkle 1.9s ease-in-out infinite; }
+.clk-omnia-peek-head::after { width:6px; height:6px; bottom:18px; left:-5px; animation:clkOmniaSparkle 1.9s ease-in-out infinite .65s; }
 .clk-omnia-peek:active .clk-omnia-peek-head { animation:none; transform:scale(.9); }
+@keyframes clkOmniaSparkle { 0%,100% { opacity:0; transform:scale(.3); } 50% { opacity:1; transform:scale(1); } }
 @keyframes clkOmniaBeckon {
   0%,100% { transform:translateY(0) scale(1); filter:drop-shadow(0 0 6px rgba(142,204,224,.45)); }
   50% { transform:translateY(-5px) scale(1.07); filter:drop-shadow(0 0 18px rgba(142,204,224,.95)); }
@@ -12365,10 +12369,9 @@ var EXERCISE_DEFS = {
           + '</div>';
       }
 
-      // ── Omnia peeks over the top of the preview card and beckons a tap to
-      //    open the full-screen tutorial. ──
+      // ── Omnia's head peeks over the top-right of the preview card and
+      //    beckons a tap to open the full-screen tutorial. ──
       var omniaHtml = '<button type="button" class="clk-omnia-peek" onclick="openExExplainer(\'clock\')" aria-label="Open tutorial">'
-        + '<span class="clk-omnia-peek-hint">Tap me</span>'
         + '<span class="clk-omnia-peek-head">' + omniaHeadSVG(38, 62) + '</span>'
         + '</button>';
 
