@@ -589,6 +589,17 @@
     .conc-elapsed-label { font-size:9px; letter-spacing:.2em; text-transform:uppercase; color:var(--muted); text-align:center; margin-top:28px; }
     @keyframes concLabelFlash { 0%,100% { opacity:1; } 50% { opacity:0; } }
     .conc-label-flash { animation: concLabelFlash .9s ease-in-out infinite; }
+    /* The session screen can take a user-chosen background colour, which may
+       match the button's translucent fill and swallow it. Give the in-session
+       button an opaque dark chip + blur so it stays readable on any colour. */
+    #concSessionScreen #concStopBtn2 {
+      background:rgba(12,14,20,.82) !important;
+      border:1px solid rgba(232,160,112,.6) !important;
+      color:#f0c79c !important;
+      backdrop-filter:blur(8px); -webkit-backdrop-filter:blur(8px);
+      box-shadow:0 6px 22px rgba(0,0,0,.55), inset 0 1px 0 rgba(255,255,255,.06);
+    }
+    #concSessionScreen #concStopBtn2:disabled { color:rgba(240,199,156,.45) !important; }
 
     /* CONCENTRATION RESULT */
     #concResultScreen { justify-content:flex-start; overflow-y:auto; }
@@ -1158,6 +1169,13 @@
     .conc-history-stat-label { font-size:8px; letter-spacing:.18em; text-transform:uppercase; color:var(--muted); font-family:'DM Mono',monospace; }
     .conc-history-stat-value { font-size:18px; color:var(--text); font-family:'Cormorant Garamond',serif; font-weight:300; line-height:1; }
     .conc-history-foot { display:flex; gap:14px; align-items:center; }
+    /* The default --muted (~38% alpha) renders these labels almost invisible
+       on the dark history cards. Brighten the date, group headers, stat labels
+       and delete affordance so the screen is legible. */
+    #concHistoryScreen .history-date-group { color:rgba(221,216,206,.62); opacity:1; }
+    #concHistoryScreen .conc-history-date { color:rgba(232,205,180,.9); }
+    #concHistoryScreen .conc-history-stat-label { color:rgba(221,216,206,.62); }
+    #concHistoryScreen .history-delete-btn { opacity:.65; }
 
     /* EXERCISE SELECTOR */
     .exercise-tabs { display:flex; gap:8px; margin-bottom:20px; justify-content:center; }
@@ -3808,14 +3826,22 @@ body:not(.tut-live) #tutCorgi {
 .clk-hero-card { width:100%; box-sizing:border-box; background:rgba(224,124,58,.06); border:1px solid rgba(224,124,58,.14); border-radius:18px; padding:22px 16px 18px; margin-bottom:20px; display:flex; flex-direction:column; align-items:center;
   box-shadow:0 -1px 0 0 rgba(224,124,58,.18), 0 8px 32px rgba(180,80,20,.12); }
 .clk-hero { position:relative; width:148px; height:148px; margin:0 auto 4px; display:flex; align-items:center; justify-content:center; }
-.clk-omnia-fab { position:absolute; top:10px; right:10px; z-index:6; display:flex; flex-direction:row; align-items:center; gap:7px;
-  background:rgba(9,11,17,.72); backdrop-filter:blur(7px); -webkit-backdrop-filter:blur(7px);
-  border:1px solid rgba(142,204,224,.32); border-radius:11px; cursor:pointer;
-  padding:5px 11px 5px 8px; transition:transform .15s ease, background .2s; }
-.clk-omnia-fab:active { transform:scale(.95); background:rgba(9,11,17,.85); }
-.clk-omnia-fab-crystal { width:21px; height:34px; display:flex; align-items:center; justify-content:center;
-  filter:drop-shadow(0 0 7px rgba(142,204,224,.55)); animation:bnSymPulse 4s ease-in-out infinite; }
-.clk-omnia-fab-label { font-family:'DM Mono',monospace; font-size:9px; letter-spacing:.14em; text-transform:uppercase; color:rgba(206,234,242,.9); white-space:nowrap; }
+/* Omnia peeks over the top edge of the clock preview card and beckons the
+   user to tap her for the tutorial — bigger than a normal icon, with a
+   gentle bob + glow pulse so the eye is drawn to it. */
+.clk-omnia-peek { position:absolute; top:-58px; left:50%; transform:translateX(-50%); z-index:7;
+  display:flex; flex-direction:column; align-items:center; gap:4px;
+  background:none; border:none; cursor:pointer; padding:0; }
+.clk-omnia-peek-head { display:flex; align-items:center; justify-content:center;
+  animation:clkOmniaBeckon 1.9s ease-in-out infinite; }
+.clk-omnia-peek-hint { font-family:'DM Mono',monospace; font-size:8px; letter-spacing:.22em; text-transform:uppercase;
+  color:rgba(168,216,236,.95); animation:clkOmniaHintBlink 1.9s ease-in-out infinite; }
+.clk-omnia-peek:active .clk-omnia-peek-head { animation:none; transform:scale(.9); }
+@keyframes clkOmniaBeckon {
+  0%,100% { transform:translateY(0) scale(1); filter:drop-shadow(0 0 6px rgba(142,204,224,.45)); }
+  50% { transform:translateY(-5px) scale(1.07); filter:drop-shadow(0 0 18px rgba(142,204,224,.95)); }
+}
+@keyframes clkOmniaHintBlink { 0%,100% { opacity:.35; } 50% { opacity:1; } }
 .clk-hero-glow { position:absolute; inset:-22%; border-radius:50%;
   background:radial-gradient(circle, rgba(224,124,58,.20) 0%, rgba(224,124,58,.06) 45%, transparent 70%);
   animation:clkGlow 5.5s ease-in-out infinite; }
@@ -3833,7 +3859,7 @@ body:not(.tut-live) #tutCorgi {
 @keyframes clkGlow { 0%,100% { opacity:.45; transform:scale(.98); } 50% { opacity:.95; transform:scale(1.03); } }
 
 .clk-record { text-align:center; margin-bottom:26px; }
-.clk-record-label { font-family:'DM Mono',monospace; font-size:9px; letter-spacing:.28em; text-transform:uppercase; color:#7eb8a4; margin-bottom:8px; }
+.clk-record-label { font-family:'DM Mono',monospace; font-size:9px; letter-spacing:.28em; text-transform:uppercase; color:#e3aa72; margin-bottom:8px; }
 .clk-record-time { font-family:'Cormorant Garamond',serif; font-size:48px; font-weight:300; color:#fff; line-height:.95; }
 .clk-record-time small { font-size:19px; color:rgba(255,255,255,.45); margin:0 1px 0 1px; }
 .clk-record-none { font-family:'Cormorant Garamond',serif; font-size:24px; font-style:italic; font-weight:300; color:var(--muted); }
@@ -3899,8 +3925,8 @@ body:not(.tut-live) #tutCorgi {
 @keyframes clkCrystalPop { 0% { transform:scale(1); } 40% { transform:scale(1.18) rotate(-5deg); } 70% { transform:scale(.95) rotate(3deg); } 100% { transform:scale(1); } }
 
 .clk-history-link { margin-top:18px; background:none; border:none; cursor:pointer;
-  font-family:'DM Mono',monospace; font-size:9px; letter-spacing:.2em; text-transform:uppercase; color:var(--muted);
-  text-decoration:underline; text-underline-offset:4px; padding:4px 0; }
+  font-family:'DM Mono',monospace; font-size:9px; letter-spacing:.2em; text-transform:uppercase; color:rgba(255,255,255,.9);
+  text-decoration:underline; text-decoration-color:rgba(255,255,255,.3); text-underline-offset:4px; padding:4px 0; }
 
 .screen-banner .bn-text { z-index:3; display:flex; flex-direction:column; gap:3px; }
 .screen-banner .bn-label { font-size:8px; letter-spacing:.28em; text-transform:uppercase; }
@@ -9613,23 +9639,18 @@ function startConcentration() {
   var titleEl = document.querySelector('#concSessionScreen .session-title');
   if (titleEl) titleEl.style.visibility = isTutorialFirst ? 'hidden' : '';
 
-  // Instructions are shown up front; user has as long as they need to read.
+  // The instruction text above the clock is removed for a clean exercise
+  // screen — the walkthrough lives in Omnia's tutorial on the setup screen.
   var sessionLabel = document.getElementById('concSessionLabel');
-  var isTutorialBeginner = isTutorialFirst && (guidePathMode !== 'experienced');
   if (sessionLabel) {
-    var label60 = 'Focus on the tip of the seconds hand. Click Stop the second a thought appears. Nothing must distract you inside or outside of your mind. The moment you are distracted you MUST stop. For this first exercise, as a beginner, you will only go max 60 seconds.';
-    var labelExp = 'Focus on the tip of the seconds hand. Stop the moment a thought appears. Be pitiless with yourself. No ego here. End when a thought appears, no matter the size.';
-    var labelVet = 'Focus on the tip of the seconds hand. Stop the moment a thought appears. The clock continues until you press Stop.';
-    sessionLabel.textContent = isTutorialBeginner ? label60 : isTutorialFirst ? labelExp : labelVet;
-    sessionLabel.style.opacity = '1';
-    sessionLabel.classList.remove('conc-label-flash');
-    sessionLabel.classList.add('conc-label-instructions');
+    sessionLabel.textContent = '';
+    sessionLabel.style.display = 'none';
   }
 
-  // Bottom button becomes Begin; top stop disabled until the clock is running.
+  // Bottom button invites the first tap; top stop disabled until running.
   var bottomBtn = document.getElementById('concStopBtn2');
   if (bottomBtn) {
-    bottomBtn.textContent = 'Begin';
+    bottomBtn.textContent = 'Tap to Begin';
     bottomBtn.disabled = false;
     bottomBtn.style.opacity = '';
   }
@@ -9658,13 +9679,11 @@ function beginCountdown() {
   concPendingBegin = false;
   var isTutorialFirst = window._tutorialFirstClock === true;
 
-  // Swap instructions to the brief flashing label that fades after countdown.
+  // No text above the clock — keep the label hidden through the countdown.
   var sessionLabel = document.getElementById('concSessionLabel');
   if (sessionLabel) {
-    sessionLabel.textContent = 'focus on the tip of the seconds hand';
-    sessionLabel.style.opacity = '1';
-    sessionLabel.classList.remove('conc-label-instructions');
-    sessionLabel.classList.add('conc-label-flash');
+    sessionLabel.textContent = '';
+    sessionLabel.style.display = 'none';
   }
 
   // Bottom button now means Stop; disable during countdown.
@@ -12259,10 +12278,11 @@ var EXERCISE_DEFS = {
           + '</div>';
       }
 
-      // ── Omnia tap-to-open explainer (floats top-right, opens full-screen dialogue) ──
-      var omniaHtml = '<button type="button" class="clk-omnia-fab" onclick="openExExplainer(\'clock\')" aria-label="Open tutorial">'
-        + '<span class="clk-omnia-fab-crystal">' + omniaHeadSVG(21, 34) + '</span>'
-        + '<span class="clk-omnia-fab-label">Tutorial</span>'
+      // ── Omnia peeks over the top of the preview card and beckons a tap to
+      //    open the full-screen tutorial. ──
+      var omniaHtml = '<button type="button" class="clk-omnia-peek" onclick="openExExplainer(\'clock\')" aria-label="Open tutorial">'
+        + '<span class="clk-omnia-peek-hint">Tap me</span>'
+        + '<span class="clk-omnia-peek-head">' + omniaHeadSVG(38, 62) + '</span>'
         + '</button>';
 
       var historyHtml = '<button type="button" class="clk-history-link" onclick="concHistoryFrom=\'exSetupScreen\'; concHistoryFilter=\'clock\'; renderConcHistory(); showScreen(\'concHistoryScreen\');">View History</button>';
@@ -17112,6 +17132,22 @@ function awardOmniaForExercise(exId, seconds) {
   var meta = OMNIA_EXERCISE_META[exId] || OMNIA_EXERCISE_META.clock;
   var boost = getActiveAkashaBoost() * getOmniaCosmeticBoost();
   var gain = Math.round(omniaExerciseReward(exId, seconds || 0, recommended) * boost);
+  // The Clock can be repeated endlessly, so it only pays akasha for the first
+  // two qualifying sessions each day (sessions under 10s are dropped earlier in
+  // saveConcResult). Further clock sessions still log time/XP but earn nothing.
+  var clockAkashaCapped = false;
+  if (exId === 'clock') {
+    if (omniaState.clockAkashaDate !== todayStr) {
+      omniaState.clockAkashaDate = todayStr;
+      omniaState.clockAkashaCount = 0;
+    }
+    if ((omniaState.clockAkashaCount || 0) >= 2) {
+      gain = 0;
+      clockAkashaCapped = true;
+    } else {
+      omniaState.clockAkashaCount = (omniaState.clockAkashaCount || 0) + 1;
+    }
+  }
   omniaState.akasha = (omniaState.akasha || 0) + gain;
   omniaState.totalAkashaEarned = (omniaState.totalAkashaEarned || 0) + gain;
   // Any exercise = 1 session credit, max once per hour
@@ -17129,8 +17165,9 @@ function awardOmniaForExercise(exId, seconds) {
     omniaState.recStreak = (omniaState.recStreak || 0) + 1;
     // Up to omniaBodyAwardsPerDay() free body levels per day. The natural body
     // is raised unless it's capped, in which case the level cascades to the
-    // next uncapped body (mental → astral → physical).
-    if (omniaBodyAwardsRemaining() > 0) {
+    // next uncapped body (mental → astral → physical). A clock session past its
+    // daily akasha cap earns no body level either, so it can't be farmed.
+    if (!clockAkashaCapped && omniaBodyAwardsRemaining() > 0) {
       var targetBody = omniaPickAwardBody(meta.body);
       if (targetBody) {
         omniaState.bodies[targetBody] = (omniaState.bodies[targetBody] || 0) + 1;
@@ -17145,7 +17182,11 @@ function awardOmniaForExercise(exId, seconds) {
   }
   saveOmniaState();
   var boostLabel = boost > 1 ? ' · +' + Math.round((boost - 1) * 100) + '% boost' : '';
-  showToast(activityName + ' complete · +' + gain + ' akasha' + boostLabel, 3200);
+  if (clockAkashaCapped) {
+    showToast(activityName + ' complete · daily akasha reached — return tomorrow', 3600);
+  } else {
+    showToast(activityName + ' complete · +' + gain + ' akasha' + boostLabel, 3200);
+  }
   // The body level gets a real acknowledgment screen, not just a toast —
   // shown once the session-complete legend has been dismissed.
   if (awardedBody) setTimeout(maybeShowBodyLevelAward, 1200);
