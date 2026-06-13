@@ -316,6 +316,13 @@
     #concSessionScreen .session-discard-btn,
     #concSessionScreen #concStopBtn { display:none; }
     #concSessionScreen .session-header { justify-content:center; }
+    /* Small, faint back affordance — an escape before the clock starts. It's
+       hidden once the hand is moving so the running screen stays clean. */
+    .conc-sess-back { position:absolute; top:max(env(safe-area-inset-top),12px); left:16px; z-index:12;
+      background:rgba(7,8,13,.4); border:1px solid rgba(255,255,255,.08); border-radius:8px; padding:6px 12px;
+      color:var(--muted); font-family:'DM Mono',monospace; font-size:14px; line-height:1; cursor:pointer;
+      opacity:.5; transition:opacity .2s; }
+    .conc-sess-back:active { opacity:1; }
     .session-main { flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; }
     .session-timer { font-family:Cormorant Garamond,serif; font-size:64px; font-weight:300; color:var(--text); letter-spacing:-.02em; line-height:1; margin-bottom:8px; }
     .session-timer-label { font-size:9px; letter-spacing:.2em; text-transform:uppercase; color:var(--muted); margin-bottom:40px; }
@@ -782,6 +789,7 @@
     .chest-akasha.show { opacity:1; transform:translateY(0); }
     .chest-akasha__amt { font-family:'Cormorant Garamond',serif; font-size:30px; font-weight:300; color:#f3cd66; text-shadow:0 0 16px rgba(240,199,94,.55); line-height:1; }
     .chest-akasha__lbl { margin-top:5px; font-family:'DM Mono',monospace; font-size:9px; letter-spacing:.28em; text-transform:uppercase; color:rgba(243,205,102,.7); }
+    .chest-akasha__boost { margin-top:8px; font-family:'DM Mono',monospace; font-size:9px; letter-spacing:.16em; text-transform:uppercase; color:#8ecce0; text-shadow:0 0 10px rgba(142,204,224,.45); }
     .chest-tap-hint { position:absolute; bottom:-14px; left:0; right:0; text-align:center; font-family:'DM Mono',monospace; font-size:8px; letter-spacing:.22em; text-transform:uppercase; color:var(--muted); opacity:0; transition:opacity .4s ease; }
     .chest-akasha.show + .chest-tap-hint, .chest-scene.done .chest-tap-hint { opacity:.55; }
     .pq-exercises { margin-top:18px; padding-top:14px; border-top:1px solid rgba(255,255,255,0.06); display:flex; flex-direction:column; gap:10px; }
@@ -5402,7 +5410,7 @@ body:not(.tut-live) #tutCorgi {
 
   <!-- EXERCISE SETUP SCREEN -->
   <div class="screen" id="exSetupScreen" style="padding:0; overflow-y:auto; scrollbar-width:none; -ms-overflow-style:none; -webkit-overflow-scrolling:touch;">
-    <div style="padding:var(--safe-top) 20px 0;"><button class="history-back" id="exSetupBack">&#8592; back</button></div>
+    <div style="position:sticky; top:0; z-index:30; padding:var(--safe-top) 20px 8px; background:var(--bg);"><button class="history-back" id="exSetupBack">&#8592; back</button></div>
     <!-- Banner — populated by openExerciseSetup() -->
     <div id="exSetupBanner" class="ex-banner" style="--exb-rgb:224,124,58; --exb-light:#e8a070; margin:4px 12px 6px;">
       <div class="exb-motes" aria-hidden="true">
@@ -5595,6 +5603,7 @@ body:not(.tut-live) #tutCorgi {
 
   <!-- CONCENTRATION SESSION -->
   <div class="screen" id="concSessionScreen">
+    <button class="conc-sess-back" id="concSessBack" onclick="stopConcentration()" aria-label="Back">&#8592;</button>
     <div class="session-header">
       <button class="session-discard-btn" onclick="discardSession('clock')" title="Discard session">✕</button>
       <span class="session-title" style="color:#d4956e;">concentration</span>
@@ -9680,6 +9689,10 @@ function startConcentration() {
   if (topStopBtn) topStopBtn.style.visibility = isTutorialFirst ? 'hidden' : '';
   var titleEl = document.querySelector('#concSessionScreen .session-title');
   if (titleEl) titleEl.style.visibility = isTutorialFirst ? 'hidden' : '';
+  // Show the small back affordance while awaiting Begin (hidden for the
+  // committed tutorial run); it's hidden again once the hand starts moving.
+  var sessBackBtn = document.getElementById('concSessBack');
+  if (sessBackBtn) sessBackBtn.style.display = isTutorialFirst ? 'none' : '';
 
   // A single short hint sits above the clock until the hand starts moving,
   // then fades so the running exercise is text-free. It's tinted with the
@@ -9753,6 +9766,9 @@ function beginCountdown() {
   // out now so it doesn't linger on the clock face.
   var tip = document.getElementById('tutClockTip');
   if (tip) tip.classList.remove('tut-ct-show');
+  // Past the point of no return — hide the back affordance for a clean run.
+  var sessBackBtn = document.getElementById('concSessBack');
+  if (sessBackBtn) sessBackBtn.style.display = 'none';
 
   // 5-second countdown before hand starts moving.
   var countdown = document.getElementById('clockCountdown');
@@ -19946,12 +19962,18 @@ function claimPathQuestReward(type) {
   data.claimed = true;
   saveGuideState(guideState);
   if (typeof playSessionCompleteSound === 'function') playSessionCompleteSound();
+  // Re-render now so the card already reads "Claimed" (and the tapped button,
+  // with its lingering press highlight, is gone) the instant the chest overlay
+  // lifts — otherwise the old highlighted Claim button flashes for a moment.
+  renderPathQuests();
   function afterClaim() {
     renderPathQuests();
     if (typeof renderOmniaEngine === 'function') renderOmniaEngine();
   }
+  var boostPct = Math.round(((boostMult || 1) - 1) * 100);
+  var boostHrs = Math.round((boostDuration || 0) / 3600000);
   if (typeof playChestOpenAnimation === 'function') {
-    playChestOpenAnimation(amount, afterClaim);
+    playChestOpenAnimation(amount, afterClaim, { pct: boostPct, hours: boostHrs });
   } else {
     afterClaim();
   }
@@ -20026,7 +20048,7 @@ function pathQuestChestSVG(unlocked) {
 }
 
 // Omnia opens a treasure chest — celebratory reward animation
-function playChestOpenAnimation(amount, onDone) {
+function playChestOpenAnimation(amount, onDone, bonus) {
   var done = false;
   function finish() {
     if (done) return;
@@ -20113,7 +20135,9 @@ function playChestOpenAnimation(amount, onDone) {
     + lidSVG
     + coins
     + '</div>'
-    + '<div class="chest-akasha" id="chestAkasha"><div class="chest-akasha__amt">+' + amount + '</div><div class="chest-akasha__lbl">Akasha</div></div>'
+    + '<div class="chest-akasha" id="chestAkasha"><div class="chest-akasha__amt">+' + amount + '</div><div class="chest-akasha__lbl">Akasha</div>'
+    +   (bonus && bonus.pct > 0 ? '<div class="chest-akasha__boost">+' + bonus.pct + '% akasha boost · ' + bonus.hours + 'h</div>' : '')
+    + '</div>'
     + '<div class="chest-tap-hint">tap to continue</div>'
     + '</div>';
   document.body.appendChild(overlay);
@@ -20352,7 +20376,10 @@ function renderPathQuests() {
       + '<div style="font-size:9px;color:var(--text);letter-spacing:.08em;position:relative;"><strong style="color:var(--text);">' + opts.progressNumerator + '</strong> / ' + opts.progressDenominator + (opts.progressUnit ? ' ' + opts.progressUnit : '') + '</div>'
       + '<div style="display:flex;align-items:center;gap:12px;margin-top:14px;position:relative;">'
       + '<div class="pq-reward-icon">' + pathQuestChestSVG(opts.done) + '</div>'
-      + '<div style="flex:1;font-family:\'DM Mono\',monospace;font-size:11px;letter-spacing:.1em;color:#d4a874;">+' + opts.reward + ' Akasha</div>'
+      + '<div style="flex:1;">'
+      +   '<div style="font-family:\'DM Mono\',monospace;font-size:11px;letter-spacing:.1em;color:#d4a874;">+' + opts.reward + ' Akasha</div>'
+      +   (opts.boostPct ? '<div style="font-family:\'DM Mono\',monospace;font-size:8.5px;letter-spacing:.14em;text-transform:uppercase;color:#8ecce0;margin-top:4px;">+' + opts.boostPct + '% boost · ' + opts.boostHours + 'h</div>' : '')
+      + '</div>'
       + (opts.done && !opts.claimed ? '<button class="pq-claim" data-quest="' + opts.dataQuest + '">Claim</button>' : opts.claimed ? '<div class="pq-claimed">Claimed</div>' : '')
       + '</div></div>';
   }
@@ -20368,6 +20395,7 @@ function renderPathQuests() {
       pct:awarenessClamp / awarenessTarget * 100,
       fillGrad:'linear-gradient(90deg,#9b8ec4 0%,#8ecce0 100%)',
       reward:awarenessReward, done:awarenessDone, claimed:awarenessClaimed, dataQuest:'awareness',
+      boostPct:20, boostHours:4,
       borderColor:'rgba(155,142,196,.18)',
       bgGrad:'linear-gradient(135deg,rgba(155,142,196,.06) 0%,rgba(142,204,224,.04) 100%)',
       glowColor:'rgba(155,142,196,.1)'
@@ -20383,6 +20411,7 @@ function renderPathQuests() {
       pct:weekendClamp / weekendTarget * 100,
       fillGrad:'linear-gradient(90deg,#c4a8d4 0%,#b88dc8 100%)',
       reward:weekendReward, done:weekendDone, claimed:weekendClaimed, dataQuest:'weekend',
+      boostPct:30, boostHours:8,
       borderColor:'rgba(196,168,212,.18)',
       bgGrad:'linear-gradient(135deg,rgba(196,168,212,.06) 0%,rgba(155,142,196,.04) 100%)',
       glowColor:'rgba(196,168,212,.1)'
@@ -20397,6 +20426,7 @@ function renderPathQuests() {
     pct:dailyClamp / dailyTarget * 100,
     fillGrad:'linear-gradient(90deg,#8ecce0 0%,#7eb8a4 100%)',
     reward:dailyReward, done:dailyDone, claimed:dailyClaimed, dataQuest:'daily',
+    boostPct:20, boostHours:4,
     borderColor:'rgba(142,204,224,.18)',
     bgGrad:'linear-gradient(135deg,rgba(142,204,224,.06) 0%,rgba(126,184,164,.04) 100%)',
     glowColor:'rgba(142,204,224,.1)'
