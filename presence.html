@@ -3861,18 +3861,19 @@ body:not(.tut-live) #tutCorgi {
 /* Omnia peeks over the top-right edge of the clock preview card and
    beckons the user to tap her for the tutorial — a shimmering head with a
    gentle bob, glow pulse, and sparkle twinkles to draw the eye. */
-.clk-omnia-peek { position:absolute; top:-62px; left:50%; transform:translateX(-50%); z-index:7;
+.clk-omnia-peek { position:absolute; top:-62px; right:20px; z-index:7;
   display:flex; align-items:center; justify-content:center;
   background:none; border:none; cursor:pointer; padding:0; }
 .clk-omnia-peek-head { position:relative; display:flex; align-items:center; justify-content:center;
   animation:clkOmniaBeckon 3.2s ease-in-out infinite; }
-.clk-omnia-peek-head::before, .clk-omnia-peek-head::after {
-  content:''; position:absolute; border-radius:50%; pointer-events:none;
-  background:radial-gradient(circle, rgba(255,255,255,1) 0%, rgba(210,240,255,.5) 45%, rgba(200,236,255,0) 75%); }
-.clk-omnia-peek-head::before { width:11px; height:11px; top:2px; right:2px; animation:clkOmniaSparkle 2.1s ease-in-out infinite; }
-.clk-omnia-peek-head::after { width:7px; height:7px; bottom:14px; left:2px; animation:clkOmniaSparkle 2.1s ease-in-out infinite .7s; }
 .clk-omnia-peek:active .clk-omnia-peek-head { animation:none; transform:scale(.92); }
-@keyframes clkOmniaSparkle { 0%,100% { opacity:0; transform:scale(.3) rotate(0deg); } 50% { opacity:1; transform:scale(1) rotate(45deg); } }
+/* A light streak sweeps across the crystal every few seconds — clipped to the
+   diamond shape inside the SVG so the shine only shows on the gem itself. */
+.clk-omnia-shine { transform:translateX(-26px) skewX(-22deg); animation:clkOmniaShine 4.2s ease-in-out infinite; }
+@keyframes clkOmniaShine {
+  0% { transform:translateX(-26px) skewX(-22deg); }
+  16%,100% { transform:translateX(70px) skewX(-22deg); }
+}
 @keyframes clkOmniaBeckon {
   0%,100% { transform:translateY(0) scale(1); filter:drop-shadow(0 0 7px rgba(142,204,224,.5)); }
   50% { transform:translateY(-7px) scale(1.04); filter:drop-shadow(0 0 20px rgba(170,222,244,1)); }
@@ -12567,11 +12568,20 @@ function updateExSetupBanner(ex) {
 // want a large, clear head-only beacon (e.g. the Clock tutorial peek).
 function omniaHeadOnlySVG(w, h) {
   return '<svg width="' + w + '" height="' + h + '" viewBox="0 0 56 52" fill="none" xmlns="http://www.w3.org/2000/svg">'
+    + '<defs>'
+    +   '<clipPath id="omniaHeadClip"><polygon points="28,3 53,24 28,49 3,24"/></clipPath>'
+    +   '<linearGradient id="omniaShineGrad" x1="0" y1="0" x2="1" y2="0">'
+    +     '<stop offset="0" stop-color="#ffffff" stop-opacity="0"/>'
+    +     '<stop offset="0.5" stop-color="#ffffff" stop-opacity="0.9"/>'
+    +     '<stop offset="1" stop-color="#ffffff" stop-opacity="0"/>'
+    +   '</linearGradient>'
+    + '</defs>'
     + '<polygon points="28,3 53,24 28,49 3,24" fill="#ceeaff" stroke="#90cce8" stroke-width="1" opacity=".95"/>'
     + '<polygon points="28,3 53,24 28,24" fill="#e8f8ff" opacity=".55"/>'
     + '<polygon points="28,3 3,24 28,24" fill="#b4daf5" opacity=".35"/>'
     + '<polygon points="28,49 53,24 28,24" fill="#a8d4f0" opacity=".42"/>'
     + '<polygon points="28,49 3,24 28,24" fill="#9ccdf0" opacity=".55"/>'
+    + '<g clip-path="url(#omniaHeadClip)"><rect class="clk-omnia-shine" x="-4" y="-6" width="14" height="64" fill="url(#omniaShineGrad)"/></g>'
     + '</svg>';
 }
 
