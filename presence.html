@@ -12372,7 +12372,7 @@ var EXERCISE_DEFS = {
       // ── Omnia's head peeks over the top-right of the preview card and
       //    beckons a tap to open the full-screen tutorial. ──
       var omniaHtml = '<button type="button" class="clk-omnia-peek" onclick="openExExplainer(\'clock\')" aria-label="Open tutorial">'
-        + '<span class="clk-omnia-peek-head">' + omniaHeadSVG(38, 62) + '</span>'
+        + '<span class="clk-omnia-peek-head">' + omniaHeadOnlySVG(60, 56) + '</span>'
         + '</button>';
 
       var historyHtml = '<button type="button" class="clk-history-link" onclick="concHistoryFrom=\'exSetupScreen\'; concHistoryFilter=\'clock\'; renderConcHistory(); showScreen(\'concHistoryScreen\');">View History</button>';
@@ -12563,6 +12563,18 @@ function updateExSetupBanner(ex) {
 }
 
 // Omnia's crystal — used as the clickable "explain this exercise" head.
+// Just Omnia's crystalline head (the top diamond) — no body. Used where we
+// want a large, clear head-only beacon (e.g. the Clock tutorial peek).
+function omniaHeadOnlySVG(w, h) {
+  return '<svg width="' + w + '" height="' + h + '" viewBox="0 0 56 52" fill="none" xmlns="http://www.w3.org/2000/svg">'
+    + '<polygon points="28,3 53,24 28,49 3,24" fill="#ceeaff" stroke="#90cce8" stroke-width="1" opacity=".95"/>'
+    + '<polygon points="28,3 53,24 28,24" fill="#e8f8ff" opacity=".55"/>'
+    + '<polygon points="28,3 3,24 28,24" fill="#b4daf5" opacity=".35"/>'
+    + '<polygon points="28,49 53,24 28,24" fill="#a8d4f0" opacity=".42"/>'
+    + '<polygon points="28,49 3,24 28,24" fill="#9ccdf0" opacity=".55"/>'
+    + '</svg>';
+}
+
 function omniaHeadSVG(w, h) {
   return '<svg width="' + w + '" height="' + h + '" viewBox="0 0 72 118" fill="none" xmlns="http://www.w3.org/2000/svg">'
     + '<polygon points="36,2 50,14 36,26 22,14" fill="#ceeaff" stroke="#90cce8" stroke-width=".8" opacity=".95"/>'
