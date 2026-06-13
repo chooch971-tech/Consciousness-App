@@ -311,6 +311,11 @@
     .session-end-btn { font-size:9px; letter-spacing:.15em; text-transform:uppercase; color:var(--danger); background:none; border:1px solid rgba(184,112,112,.2); padding:6px 14px; border-radius:4px; cursor:pointer; font-family:'DM Mono',monospace; }
     .session-discard-btn { background:none; border:none; color:var(--danger); font-size:16px; cursor:pointer; padding:4px 8px; opacity:0.45; transition:opacity .2s; line-height:1; font-family:'DM Mono',monospace; flex-shrink:0; }
     .session-discard-btn:hover { opacity:1; }
+    /* Clock session: no top-corner Stop / discard buttons — the bottom button
+       is the only control. Keep the centered title. */
+    #concSessionScreen .session-discard-btn,
+    #concSessionScreen #concStopBtn { display:none; }
+    #concSessionScreen .session-header { justify-content:center; }
     .session-main { flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; }
     .session-timer { font-family:Cormorant Garamond,serif; font-size:64px; font-weight:300; color:var(--text); letter-spacing:-.02em; line-height:1; margin-bottom:8px; }
     .session-timer-label { font-size:9px; letter-spacing:.2em; text-transform:uppercase; color:var(--muted); margin-bottom:40px; }
@@ -567,6 +572,8 @@
     .clk-cfg-row-label.active { color:rgba(224,158,110,.9); }
     .clk-cfg-swatches { display:flex; gap:8px; flex-wrap:wrap; }
     .clk-cfg-swatches .clock-swatch { width:26px; height:26px; }
+    .clk-hint-toggle { font-family:'DM Mono',monospace; font-size:9px; letter-spacing:.16em; text-transform:uppercase; padding:7px 16px; border-radius:100px; cursor:pointer; border:1px solid rgba(224,158,110,.4); background:rgba(224,158,110,.1); color:rgba(224,158,110,.9); transition:all .18s; }
+    .clk-hint-toggle.off { border-color:var(--border); background:none; color:var(--muted); }
 
     /* CONCENTRATION HOME */
     #concHomeScreen { justify-content:space-between; }
@@ -2574,6 +2581,19 @@ body.tut-live #omniaTabPeek { display:none !important; }
   text-transform:uppercase; cursor:pointer; transition:border-color .15s, color .15s;
 }
 .sc-repeat-btn:hover { border-color:rgba(255,255,255,.22); color:var(--text); }
+/* End-session CTA on the rep-complete overlay — the tutorial's white/blue
+   gradient pill (#tutPS-btn) so it reads as the primary finish action. */
+.sc-end-btn {
+  margin-top:16px; padding:16px 48px; min-height:54px;
+  background:linear-gradient(135deg,#7eb8a4 0%,#8ecce0 100%); border:none;
+  border-radius:14px; color:#07080d;
+  font-family:'DM Mono',monospace; font-size:13px; letter-spacing:.22em;
+  text-transform:uppercase; cursor:pointer;
+  box-shadow:0 4px 24px rgba(126,184,164,0.28), 0 0 0 1px rgba(142,204,224,0.14);
+  transition:background 0.2s, transform 0.18s;
+}
+.sc-end-btn:hover { background:linear-gradient(135deg,#8cc4b0 0%,#a0d4e8 100%); }
+.sc-end-btn:active { transform:scale(0.96); }
 .tut-ps-secs {
   font-family:'DM Mono',monospace; font-size:76px; letter-spacing:-.02em;
   line-height:1; color:#d4956e; margin-bottom:8px;
@@ -5447,6 +5467,10 @@ body:not(.tut-live) #tutCorgi {
               <span id="clkCfgScaleVal" class="clk-scale-val">100%</span>
               <button id="clkCfgScaleUp" class="clk-scale-btn" type="button">+</button>
             </div>
+          </div>
+          <div class="clk-cfg-row row-inline">
+            <div class="clk-cfg-row-label">Focus hint</div>
+            <button id="clkCfgHintToggle" class="clk-hint-toggle" type="button">Shown</button>
           </div>
         </div>
       </div>
@@ -9373,6 +9397,7 @@ function renderClockSettings() {
   _renderClkCfgSwatches('bg', 'clkCfg_bg', true);
   var sv = document.getElementById('clkCfgScaleVal');
   if (sv) sv.textContent = Math.round(theme.scale * 100) + '%';
+  _renderClkCfgHintToggle();
 }
 
 function _bgIsLight(colorStr) {
@@ -9472,8 +9497,25 @@ function setClockColor(part, color) {
     if (sw) { setClockColor(sw.getAttribute('data-clk-part'), sw.getAttribute('data-clk-color')); return; }
     if (e.target.closest('#clkCfgScaleDown')) { adjustClockScale(-0.1); return; }
     if (e.target.closest('#clkCfgScaleUp')) { adjustClockScale(0.1); return; }
+    if (e.target.closest('#clkCfgHintToggle')) { toggleClockHint(); return; }
   });
 })();
+
+// Show/hide the "focus on the tip of the seconds hand" hint over the session clock.
+function toggleClockHint() {
+  if (!concState.clockTheme) concState.clockTheme = {};
+  concState.clockTheme.hideHint = !concState.clockTheme.hideHint;
+  saveConcState();
+  if (typeof syncEnabled !== 'undefined' && syncEnabled && authToken) syncPushData();
+  _renderClkCfgHintToggle();
+}
+function _renderClkCfgHintToggle() {
+  var btn = document.getElementById('clkCfgHintToggle');
+  if (!btn) return;
+  var hidden = !!(concState.clockTheme && concState.clockTheme.hideHint);
+  btn.textContent = hidden ? 'Hidden' : 'Shown';
+  btn.classList.toggle('off', hidden);
+}
 
 // ── Scale + screen background (applied to the live session clock) ────
 function applyClockScale() {
@@ -9639,12 +9681,23 @@ function startConcentration() {
   var titleEl = document.querySelector('#concSessionScreen .session-title');
   if (titleEl) titleEl.style.visibility = isTutorialFirst ? 'hidden' : '';
 
-  // The instruction text above the clock is removed for a clean exercise
-  // screen — the walkthrough lives in Omnia's tutorial on the setup screen.
+  // A single short hint sits above the clock until the hand starts moving,
+  // then fades so the running exercise is text-free. It's tinted with the
+  // clock's hand colour so it coordinates with any chosen background, and can
+  // be turned off entirely from Clock settings.
   var sessionLabel = document.getElementById('concSessionLabel');
   if (sessionLabel) {
-    sessionLabel.textContent = '';
-    sessionLabel.style.display = 'none';
+    var _hintHidden = !!(concState.clockTheme && concState.clockTheme.hideHint);
+    if (_hintHidden) {
+      sessionLabel.textContent = '';
+      sessionLabel.style.display = 'none';
+    } else {
+      sessionLabel.textContent = 'focus on the tip of the seconds hand';
+      sessionLabel.style.display = '';
+      sessionLabel.style.color = getClockTheme().hand;
+      sessionLabel.style.opacity = '1';
+      sessionLabel.classList.remove('conc-label-instructions', 'conc-label-flash');
+    }
   }
 
   // Bottom button invites the first tap; top stop disabled until running.
@@ -9679,11 +9732,11 @@ function beginCountdown() {
   concPendingBegin = false;
   var isTutorialFirst = window._tutorialFirstClock === true;
 
-  // No text above the clock — keep the label hidden through the countdown.
+  // Gently flash the focus hint through the countdown (unless it's turned off),
+  // then it fades out below when the hand starts moving.
   var sessionLabel = document.getElementById('concSessionLabel');
-  if (sessionLabel) {
-    sessionLabel.textContent = '';
-    sessionLabel.style.display = 'none';
+  if (sessionLabel && sessionLabel.style.display !== 'none') {
+    sessionLabel.classList.add('conc-label-flash');
   }
 
   // Bottom button now means Stop; disable during countdown.
@@ -9800,13 +9853,14 @@ function showConcRepOverlay(repSecs) {
   var repNum = concReps.length;
   var tooShort = repSecs < 10;
 
+  el.style.zIndex = '';
   el.innerHTML =
-    '<div style="font-family:\'DM Mono\',monospace;font-size:9px;letter-spacing:.18em;text-transform:uppercase;color:var(--muted);margin-bottom:6px;">'
+    '<div style="font-family:\'DM Mono\',monospace;font-size:9px;letter-spacing:.18em;text-transform:uppercase;color:var(--text);margin-bottom:6px;">'
     + (tooShort ? 'Too short to record' : 'Rep ' + repNum + ' complete') + '</div>'
     + '<div style="font-family:\'Cormorant Garamond\',serif;font-size:64px;font-weight:300;color:var(--text);line-height:1;">' + fmtSecs(repSecs) + '</div>'
-    + '<div style="margin-top:16px;font-family:\'DM Mono\',monospace;font-size:10px;letter-spacing:.22em;text-transform:uppercase;color:var(--muted);">Session · <span id="concSessionTimer">0:00</span></div>'
+    + '<div style="margin-top:16px;font-family:\'DM Mono\',monospace;font-size:10px;letter-spacing:.22em;text-transform:uppercase;color:var(--text);">Session · <span id="concSessionTimer">0:00</span></div>'
     + '<button id="concRepNextBtn" class="sc-done-btn" style="margin-top:28px;">Rep ' + (repNum + 1) + ' →</button>'
-    + '<button id="concEndSessionBtn" class="sc-repeat-btn">End Session</button>';
+    + '<button id="concEndSessionBtn" class="sc-end-btn">End Session</button>';
 
   function updateTimer() {
     var t = document.getElementById('concSessionTimer');
@@ -9821,7 +9875,20 @@ function showConcRepOverlay(repSecs) {
     setTimeout(function() { el.classList.remove('cro-show'); cb(); }, 320);
   }
   document.getElementById('concRepNextBtn').onclick = function() { dismiss(startConcentration); };
-  document.getElementById('concEndSessionBtn').onclick = function() { dismiss(saveConcSession); };
+  document.getElementById('concEndSessionBtn').onclick = function() {
+    if (concRepTimerInterval) { clearInterval(concRepTimerInterval); concRepTimerInterval = null; }
+    // Drop this overlay just behind the session-complete legend (z-9800) and
+    // let the legend fade in on top of it. This opaque overlay keeps covering
+    // the clock the entire time, so the clock never flashes through between
+    // the two screens. Remove the overlay once the legend has fully arrived.
+    el.style.zIndex = '9799';
+    saveConcSession();
+    setTimeout(function() {
+      el.classList.remove('cro-vis');
+      el.classList.remove('cro-show');
+      el.style.zIndex = '';
+    }, 700);
+  };
 
   el.classList.add('cro-show');
   requestAnimationFrame(function() {
