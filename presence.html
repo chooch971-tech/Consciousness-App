@@ -4682,15 +4682,15 @@ body:not(.tut-live) #tutCorgi {
               <div class="exercise-card-name" style="color:#d4c88e;">Multi-Sense</div>
               <div class="exercise-card-desc">Hold an object using sight, sound, texture, and weight simultaneously.</div>
             </div>
-            <div class="exercise-card" data-exercise="allangles" style="--conc-card-accent:#88b87e; border-color:rgba(136,184,126,.55); background:rgba(136,184,126,.08);">
+            <div class="exercise-card" style="--conc-card-accent:#88b87e; border-color:rgba(136,184,126,.2); background:rgba(136,184,126,.04); opacity:.5; pointer-events:none;">
               <div class="exercise-card-icon"><svg width="22" height="22" viewBox="0 0 100 100" fill="none"><rect x="30" y="30" width="40" height="40" stroke="#88b87e" stroke-width="4" opacity=".9"/><line x1="30" y1="30" x2="18" y2="18" stroke="#88b87e" stroke-width="3" stroke-linecap="round" opacity=".6"/><line x1="70" y1="30" x2="82" y2="18" stroke="#88b87e" stroke-width="3" stroke-linecap="round" opacity=".6"/><line x1="70" y1="70" x2="82" y2="82" stroke="#88b87e" stroke-width="3" stroke-linecap="round" opacity=".6"/><line x1="30" y1="70" x2="18" y2="82" stroke="#88b87e" stroke-width="3" stroke-linecap="round" opacity=".6"/></svg></div>
-              <div class="exercise-card-name" style="color:#a8c89e;">All Angles</div>
+              <div class="exercise-card-name" style="color:#a8c89e;">All Angles<span style="font-size:8px; letter-spacing:.15em; text-transform:uppercase; color:var(--muted); margin-left:6px;">· Coming Soon</span></div>
               <div class="exercise-card-desc">Rotate an object through every perspective. Mouni Sadhu&#39;s method.</div>
             </div>
-            <div class="exercise-card" style="opacity:.4; pointer-events:none; border-color:rgba(255,255,255,.08);">
-              <div class="exercise-card-icon">✦</div>
-              <div class="exercise-card-name">Coming Soon</div>
-              <div class="exercise-card-desc">More advanced exercises in a future release.</div>
+            <div class="exercise-card" style="--conc-card-accent:#6e9fd4; border-color:rgba(110,159,212,.2); background:rgba(110,159,212,.04); opacity:.5; pointer-events:none;">
+              <div class="exercise-card-icon"><svg width="22" height="22" viewBox="0 0 100 100" fill="none"><path d="M30 18 L42 40 L18 40 Z" stroke="#6e9fd4" stroke-width="3" stroke-linejoin="round"/><path d="M70 18 L82 40 L58 40 Z" stroke="#6e9fd4" stroke-width="3" stroke-linejoin="round"/><line x1="62" y1="33" x2="78" y2="33" stroke="#6e9fd4" stroke-width="3" stroke-linecap="round"/><path d="M18 56 L42 56 L30 78 Z" stroke="#6e9fd4" stroke-width="3" stroke-linejoin="round"/><path d="M58 56 L82 56 L70 78 Z" stroke="#6e9fd4" stroke-width="3" stroke-linejoin="round"/><line x1="62" y1="64" x2="78" y2="64" stroke="#6e9fd4" stroke-width="3" stroke-linecap="round"/></svg></div>
+              <div class="exercise-card-name" style="color:#9ec4e0;">Elemental Work<span style="font-size:8px; letter-spacing:.15em; text-transform:uppercase; color:var(--muted); margin-left:6px;">· Coming Soon</span></div>
+              <div class="exercise-card-desc">Charge and condense the four elements through the body. Bardon&#39;s method.</div>
             </div>
           </div>
         </div>
@@ -19678,7 +19678,8 @@ function guidePathAddableExercises() {
     addable.push({ id: mode });
   });
   // Advanced concentration exercises — offered last so they appear at the bottom.
-  ['multisense', 'allangles'].forEach(function(id) {
+  // All Angles is currently shown as "coming soon", so only Multi-Sense is addable.
+  ['multisense'].forEach(function(id) {
     if (!present[id]) addable.push({ id: id });
   });
   return addable;
