@@ -3859,12 +3859,16 @@ body:not(.tut-live) #tutCorgi {
 /* Omnia peeks over the top-right edge of the clock preview card and
    beckons the user to tap her for the tutorial — a shimmering head with a
    gentle bob, glow pulse, and sparkle twinkles to draw the eye. */
-.clk-omnia-peek { position:absolute; top:-8px; right:14px; z-index:7;
+.clk-omnia-peek { position:absolute; top:12px; right:12px; z-index:7;
   display:flex; align-items:center; justify-content:center;
   background:none; border:none; cursor:pointer; padding:0; }
 .clk-omnia-peek-head { position:relative; display:flex; align-items:center; justify-content:center;
   animation:clkOmniaBeckon 3.2s ease-in-out infinite; }
 .clk-omnia-peek:active .clk-omnia-peek-head { animation:none; transform:scale(.92); }
+/* Every 10s the crystal spins a full turn — a separate wrapper so the
+   rotation doesn't fight the bob/scale animation on the head itself. */
+.clk-omnia-spin { display:flex; transform-origin:50% 50%; animation:clkOmniaSpin 10s ease-in-out infinite; }
+@keyframes clkOmniaSpin { 0%, 80% { transform:rotate(0deg); } 100% { transform:rotate(360deg); } }
 /* A light streak sweeps across the crystal every few seconds — clipped to the
    diamond shape inside the SVG so the shine only shows on the gem itself. */
 .clk-omnia-shine { transform:translateX(-26px) skewX(-22deg); animation:clkOmniaShine 4.2s ease-in-out infinite; }
@@ -12342,7 +12346,7 @@ var EXERCISE_DEFS = {
       // ── Omnia's head peeks over the top-right of the preview card and
       //    beckons a tap to open the full-screen tutorial. ──
       var omniaHtml = '<button type="button" class="clk-omnia-peek" onclick="openExExplainer(\'clock\')" aria-label="Open tutorial">'
-        + '<span class="clk-omnia-peek-head">' + omniaHeadOnlySVG(34, 32) + '</span>'
+        + '<span class="clk-omnia-peek-head"><span class="clk-omnia-spin">' + omniaHeadOnlySVG(34, 32) + '</span></span>'
         + '</button>';
 
       var historyHtml = '<button type="button" class="clk-history-link" onclick="concHistoryFrom=\'exSetupScreen\'; concHistoryFilter=\'clock\'; renderConcHistory(); showScreen(\'concHistoryScreen\');">View History</button>';
