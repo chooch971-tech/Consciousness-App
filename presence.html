@@ -953,9 +953,12 @@
     /* ── Upgrade screen v3: Omnia-as-centerpiece, bodies as focus ── */
     body.upgrade-stage .omnia-wrap { display:none; }
     .oe-v2 { display:flex; flex-direction:column; padding:0; background:none; border:none; box-shadow:none; position:relative; --muted:rgba(255,255,255,.72); }
-    .oe-akasha-corner { display:flex; align-items:baseline; gap:5px; padding:7px 13px; border:1px solid rgba(212,180,142,.32); border-radius:999px; background:rgba(212,180,142,.06); }
+    .oe-akasha-corner { display:flex; align-items:baseline; gap:5px; padding:7px 13px; border:1px solid rgba(212,180,142,.32); border-radius:999px; background:rgba(212,180,142,.06); transition:background .2s, border-color .2s; }
     .oe-akasha-corner-val { font-family:Cormorant Garamond,serif; font-size:18px; line-height:1; color:#e8c896; }
     .oe-akasha-corner-key { font-size:8px; letter-spacing:.2em; text-transform:uppercase; color:#d4b08e; }
+    .oe-akasha-corner--capped { border-color:rgba(224,90,90,.5); background:rgba(224,90,90,.16); cursor:pointer; }
+    .oe-akasha-corner--capped .oe-akasha-corner-val { color:#f0a8a8; }
+    .oe-akasha-corner--capped .oe-akasha-corner-key { color:#e89494; }
 
     /* Slim sticky stage strip */
     .oe-strip { padding:12px 14px 10px; background:rgba(255,255,255,.025); border:1px solid var(--border); border-radius:14px; margin:0 14px 4px; }
@@ -17401,7 +17404,14 @@ function renderOmniaEngine() {
   var walletCorner = document.getElementById('omniaAkashaWalletCorner');
   if (walletCorner) walletCorner.textContent = akashaAmt.toLocaleString();
   var walletCornerParent = walletCorner && walletCorner.parentElement;
-  if (walletCornerParent) walletCornerParent.title = akashaAmt.toLocaleString() + ' / ' + akashaCap.toLocaleString() + ' akasha';
+  if (walletCornerParent) {
+    walletCornerParent.title = akashaAmt.toLocaleString() + ' / ' + akashaCap.toLocaleString() + ' akasha';
+    var akashaCapped = akashaAmt >= akashaCap;
+    walletCornerParent.classList.toggle('oe-akasha-corner--capped', akashaCapped);
+    walletCornerParent.onclick = akashaCapped
+      ? function() { showToast('You\'ve reached the Akasha cap for your Step!', 3200); }
+      : null;
+  }
   if (stripStep) stripStep.textContent = 'Step ' + step.roman;
   var bardonTrack = document.getElementById('omniaBardonTrack');
   if (bardonTrack) {
