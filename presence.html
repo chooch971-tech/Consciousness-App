@@ -25010,15 +25010,17 @@ document.getElementById('journalBodyInput').addEventListener('input',journalAuto
   window.addEventListener('resize', function() { W = Math.max(window.innerWidth || 375, 320); });
 
   // Session screens: swipe suppressed (no back button, but listed explicitly for safety)
+  // concSessionScreen is allowed — but only while on the pre-session "Tap to
+  // Begin" screen (concPendingBegin), gated in the touchstart handler below.
   var NOSW = {
-    concSessionScreen:1, tcSessionScreen:1, visSessionScreen:1,
+    tcSessionScreen:1, visSessionScreen:1,
     audSessionScreen:1, asanaSessionScreen:1, prayerSessionScreen:1,
     sessionScreen:1, homeScreen:1, bardonScreen:1
   };
 
   // Which screen sits behind each sub-screen during swipe
   // (unlisted screens reveal homeScreen)
-  var PREV_SCREEN = { journalEntryScreen: 'journalScreen', exerciseSettingsScreen: 'settingsScreen', accountSettingsScreen: 'settingsScreen', friendProfileScreen: 'profileScreen' };
+  var PREV_SCREEN = { journalEntryScreen: 'journalScreen', exerciseSettingsScreen: 'settingsScreen', accountSettingsScreen: 'settingsScreen', friendProfileScreen: 'profileScreen', concSessionScreen: 'exSetupScreen' };
 
   var EASE = 'cubic-bezier(0.25,0.46,0.45,0.94)';
 
@@ -25191,7 +25193,12 @@ document.getElementById('journalBodyInput').addEventListener('input',journalAuto
     var screenEl = document.querySelector('.screen.active');
     if (!screenEl || NOSW[screenEl.id]) return;
 
-    var backBtn = screenEl.querySelector('.history-back, .jl-editor-back');
+    // The Clock session screen only swipes back from its pre-session
+    // "Tap to Begin" state — once the focus session itself is running,
+    // an accidental edge swipe shouldn't exit it.
+    if (screenEl.id === 'concSessionScreen' && !concPendingBegin) return;
+
+    var backBtn = screenEl.querySelector('.history-back, .jl-editor-back, .conc-sess-back');
     if (!backBtn) return;
 
     sw._pending = { screenEl: screenEl, backBtn: backBtn, x: t.clientX, y: t.clientY };
