@@ -61,8 +61,10 @@ let usersCollection;
 let syncDataCollection;
 let friendsCollection;
 let beaconsCollection;
+let practiceCollection;
 let subscriptions = [];
 let prayerSchedules = [];
+let practiceSchedules = [];
 
 let mongoClient;
 async function connectDB() {
@@ -76,6 +78,7 @@ async function connectDB() {
     syncDataCollection = db.collection('sync_data');
     friendsCollection = db.collection('friends');
     beaconsCollection = db.collection('presence_beacons');
+    practiceCollection = db.collection('practice_schedules');
     // TTL: let MongoDB sweep stale beacons automatically (reads also guard on expiresAt)
     try { await beaconsCollection.createIndex({ expiresAt: 1 }, { expireAfterSeconds: 0 }); } catch(e) {}
 
@@ -98,7 +101,8 @@ async function connectDB() {
       }
     }
     prayerSchedules = await prayerCollection.find({}).toArray();
-    console.log(`Connected to MongoDB. ${subscriptions.length} subscribers, ${prayerSchedules.length} prayer schedules.`);
+    practiceSchedules = await practiceCollection.find({}).toArray();
+    console.log(`Connected to MongoDB. ${subscriptions.length} subscribers, ${prayerSchedules.length} prayer schedules, ${practiceSchedules.length} practice schedules.`);
   } catch(err) {
     console.error('MongoDB connection failed:', err.message);
   }
@@ -121,6 +125,13 @@ async function savePrayerSchedule(schedule) {
     const { _id, ...data } = schedule;
     await prayerCollection.updateOne({ endpoint: schedule.endpoint }, { $set: data }, { upsert: true });
   } catch(e) { console.error('Save prayer schedule error:', e.message); }
+}
+
+async function savePracticeSchedule(schedule) {
+  try {
+    const { _id, ...data } = schedule;
+    await practiceCollection.updateOne({ endpoint: schedule.endpoint }, { $set: data }, { upsert: true });
+  } catch(e) { console.error('Save practice schedule error:', e.message); }
 }
 
 // ── Cloud Sync Middleware ────────────────────────────────
@@ -466,6 +477,52 @@ setInterval(async () => {
       }
     }
     await savePrayerSchedule(schedule);
+  }
+}, 60000);
+
+// Omnia's practice-reminder copy. One is picked per nudge so the reminders
+// don't read identically every day.
+const PRACTICE_REMINDER_MESSAGES = [
+  'Time to train. Even a few minutes keeps the thread unbroken.',
+  'Your mind is waiting. Sit with me for a session.',
+  'A quiet moment now is worth an hour later. Shall we practice?',
+  'The work compounds. Come, let\'s sharpen your attention.',
+  'I\'m here when you\'re ready. One session keeps the streak alive.',
+  'Stillness is a skill. Let\'s practice it together.',
+];
+
+// ── Practice reminder loop (every 60s) ───────────────────
+// Fires a real push at each scheduled local time so users are reminded to
+// practice even when the app is closed. Mirrors the prayer loop, but fires
+// once per time per day (a single 15-minute window, one notification).
+setInterval(async () => {
+  if (!practiceSchedules.length) return;
+  const nowUtc = new Date();
+  for (const schedule of practiceSchedules) {
+    if (!schedule.enabled) continue;
+    if (!schedule.times || !schedule.times.length) continue;
+    const tzOffset = schedule.tzOffset || 0;
+    const localNow = new Date(nowUtc.getTime() + tzOffset * 60000);
+    const todayStr = localNow.toDateString();
+    const nowTotalMin = localNow.getUTCHours() * 60 + localNow.getUTCMinutes();
+    if (!schedule.firedToday || schedule.firedToday.date !== todayStr) {
+      schedule.firedToday = { date: todayStr, fired: {} };
+    }
+    const fired = schedule.firedToday.fired || {};
+    for (let i = 0; i < schedule.times.length; i++) {
+      const parts = schedule.times[i].split(':');
+      const tTotalMin = parseInt(parts[0]) * 60 + parseInt(parts[1]);
+      // 15-minute catch-up window; fire only once per time per day.
+      if (nowTotalMin >= tTotalMin && nowTotalMin < tTotalMin + 15 && !fired[i]) {
+        const sub = subscriptions.find(s => s.endpoint === schedule.endpoint);
+        if (sub) {
+          const msg = PRACTICE_REMINDER_MESSAGES[Math.floor(Math.random() * PRACTICE_REMINDER_MESSAGES.length)];
+          const result = await pushTo(sub, msg, 'Omnia');
+          if (result === true) fired[i] = true;
+        }
+      }
+    }
+    await savePracticeSchedule(schedule);
   }
 }, 60000);
 
@@ -1052,6 +1109,7 @@ app.get('/ping', (req, res) => {
     subscribers: subscriptions.length,
     activeSessions: active,
     prayerSchedules: prayerSchedules.length,
+    practiceSchedules: practiceSchedules.length,
     time: new Date().toISOString()
   });
 });
@@ -1310,6 +1368,23 @@ app.post('/prayer/schedule', async (req, res) => {
     const newSchedule = { endpoint, times: times || ['06:00','09:00','12:00','15:00','18:00'], enabled: enabled !== undefined ? enabled : true, tzOffset: tzOffset || 0, firedToday: { date: '', fired: {} } };
     prayerSchedules.push(newSchedule);
     await savePrayerSchedule(newSchedule);
+  }
+  res.json({ success: true });
+});
+
+app.post('/practice/schedule', async (req, res) => {
+  const { endpoint, times, enabled, tzOffset } = req.body;
+  if (!endpoint) return res.status(400).json({ error: 'endpoint required' });
+  const existing = practiceSchedules.find(s => s.endpoint === endpoint);
+  if (existing) {
+    if (times !== undefined) existing.times = times;
+    if (enabled !== undefined) existing.enabled = enabled;
+    if (tzOffset !== undefined) existing.tzOffset = tzOffset;
+    await savePracticeSchedule(existing);
+  } else {
+    const newSchedule = { endpoint, times: times || ['07:00','20:00'], enabled: enabled !== undefined ? enabled : true, tzOffset: tzOffset || 0, firedToday: { date: '', fired: {} } };
+    practiceSchedules.push(newSchedule);
+    await savePracticeSchedule(newSchedule);
   }
   res.json({ success: true });
 });
