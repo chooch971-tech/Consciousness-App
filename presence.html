@@ -17161,8 +17161,10 @@ function omniaHistoryMatches(id, h) {
 function omniaExerciseReward(exId, seconds, recommended, extraBoost) {
   var total = omniaBodyTotal();
   var stepNum = omniaState.bardonStep || 1;
-  // Base cap rewards sessions up to ~40 min, so longer honest practice pays more.
-  var base = Math.max(95, Math.min(1100, Math.floor((seconds || 0) * 0.4) + 120));
+  // Akasha only rewards the first 15 minutes of a session — beyond that is
+  // unnecessary for the economy, though XP/time still tracks the full length.
+  var akashaSeconds = Math.min(seconds || 0, 900);
+  var base = Math.max(95, Math.min(1100, Math.floor(akashaSeconds * 0.4) + 120));
   // The soft cap decays with body total, but a step-scaled mastery floor keeps
   // sessions paying a meaningful fraction of a body level at every rank — this
   // is what makes practice volume matter all game (tuned: ~2yr casual / ~1.4yr
