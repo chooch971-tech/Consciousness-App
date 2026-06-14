@@ -9819,8 +9819,8 @@ function stopConcentration() {
   // If we're still on the Begin screen (no countdown, no clock), bail to home.
   if (concPendingBegin) {
     concPendingBegin = false;
-    showScreen('homeScreen');
-    switchMode('concentration');
+    openExerciseSetup(currentExercise);
+    showScreen('exSetupScreen');
     return;
   }
   // If still in countdown, cancel it and go back home
