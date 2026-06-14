@@ -228,8 +228,7 @@
     .bla-plus { position:relative; z-index:2; font-family:Cormorant Garamond,serif; font-size:42px; color:var(--bla-cl, #cfe2f2); text-shadow:0 0 24px var(--bla-c, #98b4cc); line-height:1; }
     .bla-kicker { font-size:8px; letter-spacing:.26em; text-transform:uppercase; color:var(--muted); font-family:'DM Mono',monospace; margin-bottom:6px; }
     .bla-title { font-family:Cormorant Garamond,serif; font-size:25px; color:var(--bla-cl, #cfe2f2); text-shadow:0 0 22px var(--bla-c, #98b4cc); margin-bottom:6px; line-height:1.15; }
-    .bla-sub { font-size:11px; color:var(--muted); line-height:1.7; margin-bottom:6px; font-family:'DM Mono',monospace; letter-spacing:.04em; }
-    .bla-desc { font-family:Cormorant Garamond,serif; font-size:14px; font-style:italic; color:var(--text); opacity:.8; margin-bottom:18px; }
+    .bla-sub { font-size:11px; color:rgba(255,255,255,.7); line-height:1.7; margin-bottom:18px; font-family:'DM Mono',monospace; letter-spacing:.04em; }
     .bla-btn { font-family:'DM Mono',monospace; font-size:10px; letter-spacing:.18em; text-transform:uppercase; background:rgba(255,255,255,.05); color:var(--bla-cl, #cfe2f2); border:1px solid var(--bla-c, #98b4cc); border-radius:10px; padding:13px 28px; cursor:pointer; width:100%; box-shadow:0 0 18px -6px var(--bla-c, #98b4cc); }
     .bla-btn:active { transform:scale(.985); }
     /* ── Streak celebration overlay ── */
@@ -1999,6 +1998,7 @@ body.omnia-tier-apotheosis .omnia-figure { filter:drop-shadow(0 0 22px rgba(255,
 
 .omnia-name { font-family:Cormorant Garamond,serif; font-size:11px; letter-spacing:.42em; text-transform:uppercase; color:#8ecce0; margin-top:10px; opacity:.85; }
 .omnia-speak { font-size:12px; color:var(--muted); line-height:1.85; text-align:center; padding:0 4px; margin-top:10px; font-style:italic; }
+#sessionComplete .omnia-speak { color:rgba(255,255,255,.85); }
 .omnia-speak em { color:#a8d8ec; font-style:normal; }
 .omnia-speak.left { text-align:left; padding:0; }
 .entity-preview-card { margin:18px auto 24px; width:100%; max-width:340px; border:1px solid rgba(212,149,110,.28); background:rgba(212,149,110,.06); border-radius:12px; padding:14px 16px; }
@@ -3396,7 +3396,7 @@ body.tut-post  .tut-back-btn { display:block; }
 }
 .tut-legend-sub {
   font-family:'DM Mono',monospace; font-size:12px; letter-spacing:.16em;
-  text-transform:uppercase; color:rgba(184,234,255,0.5); text-align:center; margin-bottom:4px;
+  text-transform:uppercase; color:rgba(255,255,255,.85); text-align:center; margin-bottom:4px;
   width:100%; max-width:calc(100vw - 44px); line-height:1.6;
 }
 .tut-legend-cards {
@@ -3885,7 +3885,7 @@ body:not(.tut-live) #tutCorgi {
 .clk-omnia-peek:active .clk-omnia-peek-head { animation:none; transform:scale(.92); }
 /* Every 10s the crystal spins a full turn — a separate wrapper so the
    rotation doesn't fight the bob/scale animation on the head itself. */
-.clk-omnia-spin { display:flex; transform-origin:50% 50%; animation:clkOmniaSpin 10s ease-in-out infinite; }
+.clk-omnia-spin { display:flex; transform-origin:50% 50%; animation:clkOmniaSpin 4s ease-in-out infinite; }
 @keyframes clkOmniaSpin { 0%, 80% { transform:rotate(0deg); } 100% { transform:rotate(360deg); } }
 /* A light streak sweeps across the crystal every few seconds — clipped to the
    diamond shape inside the SVG so the shine only shows on the gem itself. */
@@ -12503,7 +12503,7 @@ var EXERCISE_DEFS = {
 var EX_BANNER_CONFIG = {
   clock: {
     rgb: '224,124,58', light: '#e8a070', label: 'Concentration', title: 'Clock',
-    tagline: 'Follow the seconds hand. No thoughts.',
+    tagline: 'Follow the seconds hand',
     symInner:
       '<circle cx="50" cy="50" r="38" stroke="#e8a070" stroke-width="2.2" opacity="0.85"/>'
       + '<circle cx="50" cy="50" r="3.2" fill="#e8a070"/>'
@@ -17353,10 +17353,9 @@ function showBodyLevelAward(award) {
   overlay.id = 'bodyLevelAwardOverlay';
   overlay.innerHTML = '<div class="bla-card" style="--bla-c:' + color + ';--bla-cl:' + color + ';">'
     + '<div class="bla-aura"><div class="bla-ring"></div><div class="bla-plus">+1</div></div>'
-    + '<div class="bla-kicker">Omnia grows</div>'
-    + '<div class="bla-title">' + bodyMeta.name + ' · Lvl ' + lvl + '</div>'
-    + (award.exercise ? '<div class="bla-sub">earned from ' + award.exercise + '</div>' : '')
-    + '<div class="bla-desc">' + bodyMeta.desc + '</div>'
+    + '<div class="bla-kicker">You received a body level!</div>'
+    + '<div class="bla-title">' + bodyMeta.name + ' +1</div>'
+    + '<div class="bla-sub">Now Lvl ' + lvl + (award.exercise ? ' · earned from ' + award.exercise : '') + '</div>'
     + '<button class="bla-btn" id="blaAckBtn">Continue →</button>'
     + '</div>';
   document.body.appendChild(overlay);
