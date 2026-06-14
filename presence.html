@@ -612,6 +612,24 @@
       box-shadow:0 6px 22px rgba(0,0,0,.55), inset 0 1px 0 rgba(255,255,255,.06);
     }
     #concSessionScreen #concStopBtn2:disabled { color:rgba(240,199,156,.45) !important; }
+    /* Same idea for the back affordance, the "concentration" title chip, and
+       the focus hint — a custom Clock background shouldn't be able to wash
+       these out, so give each an opaque dark backing + blur. */
+    #concSessionScreen .conc-sess-back {
+      background:rgba(12,14,20,.7) !important;
+      border:1px solid rgba(255,255,255,.14) !important;
+      color:rgba(255,255,255,.85) !important;
+      opacity:1; backdrop-filter:blur(8px); -webkit-backdrop-filter:blur(8px);
+    }
+    #concSessionScreen .session-title {
+      background:rgba(12,14,20,.7); border:1px solid rgba(232,160,112,.3);
+      border-radius:8px; padding:6px 14px; backdrop-filter:blur(8px); -webkit-backdrop-filter:blur(8px);
+    }
+    #concSessionScreen .conc-session-label:not(.conc-label-instructions) {
+      background:rgba(12,14,20,.7); border:1px solid rgba(232,160,112,.3);
+      border-radius:8px; padding:8px 16px; display:inline-block;
+      backdrop-filter:blur(8px); -webkit-backdrop-filter:blur(8px);
+    }
 
     /* CONCENTRATION RESULT */
     #concResultScreen { justify-content:flex-start; overflow-y:auto; }
