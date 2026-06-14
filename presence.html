@@ -17160,8 +17160,12 @@ function omniaClusterGuideItems(items) {
   return ordered;
 }
 // The set of OMNIA_EXERCISE_META ids that currently grant a body level if
-// completed right now — the ✦ glow on guided-path cards and the actual
-// award in awardOmniaForExercise both consult this, so they always agree.
+// completed right now, mapped to the specific path-card id that earns it —
+// the ✦ glow on guided-path cards and the actual award in
+// awardOmniaForExercise both consult this, so they always agree. Several
+// cards (e.g. Vacancy of Mind, Thought Observation) can share a metaId
+// ('thought'); only the first such card is marked, so the glow never lights
+// up more cards than the body level they'd actually grant.
 function omniaHighlightedExerciseIds() {
   var result = {};
   var remaining = omniaBodyAwardsRemaining();
@@ -17177,14 +17181,14 @@ function omniaHighlightedExerciseIds() {
       if (items[i].done) continue;
       var metaId = omniaMetaIdForExercise(items[i].id);
       if (!metaId || result[metaId]) continue;
-      result[metaId] = true;
+      result[metaId] = items[i].id;
       cap--;
     }
     return result;
   }
   // No locked path — the single rotating recommendation is the only candidate.
   var rec = omniaPickRecommendation(false);
-  if (rec && OMNIA_EXERCISE_META[rec.id]) result[rec.id] = true;
+  if (rec && OMNIA_EXERCISE_META[rec.id]) result[rec.id] = rec.id;
   return result;
 }
 // Would completing this path card right now grant a body level? Used to
@@ -17194,7 +17198,7 @@ function omniaCardGrantsBodyLevel(cardId, isDone, highlighted) {
   if (isDone) return null;
   var metaId = omniaMetaIdForExercise(cardId);
   if (!metaId) return null;
-  if (!highlighted[metaId]) return null;
+  if (highlighted[metaId] !== cardId) return null;
   return omniaPickAwardBody(OMNIA_EXERCISE_META[metaId].body); // body name or null
 }
 
