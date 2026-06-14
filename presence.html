@@ -4002,6 +4002,16 @@ body:not(.tut-live) #tutCorgi {
   50% { box-shadow:0 4px 30px rgba(224,124,58,.48), inset 0 1px 0 rgba(255,255,255,.12); }
 }
 
+/* The Clock title gets the same glowing copper treatment as its Begin button. */
+.exb-title.clk-title-glow {
+  text-shadow:0 0 14px rgba(224,124,58,.55), 0 0 28px rgba(224,124,58,.28);
+  animation:clkTitlePulse 4s ease-in-out infinite;
+}
+@keyframes clkTitlePulse {
+  0%,100% { text-shadow:0 0 14px rgba(224,124,58,.55), 0 0 28px rgba(224,124,58,.28); }
+  50% { text-shadow:0 0 20px rgba(224,124,58,.8), 0 0 40px rgba(224,124,58,.45); }
+}
+
 .screen-banner .bn-text { z-index:3; display:flex; flex-direction:column; gap:3px; }
 .screen-banner .bn-label { font-size:8px; letter-spacing:.28em; text-transform:uppercase; }
 .aw-banner   .bn-label { color:rgba(142,220,184,.78); }
@@ -12565,7 +12575,10 @@ function updateExSetupBanner(ex) {
   var sym   = document.getElementById('exBannerSym');
   var wm    = document.getElementById('exBannerWatermark');
   if (label) label.textContent = cfg.label || 'Concentration';
-  if (title) title.textContent = cfg.title || (EXERCISE_DEFS[ex] && EXERCISE_DEFS[ex].name) || '';
+  if (title) {
+    title.textContent = cfg.title || (EXERCISE_DEFS[ex] && EXERCISE_DEFS[ex].name) || '';
+    title.classList.toggle('clk-title-glow', ex === 'clock');
+  }
   if (tag)   tag.textContent = cfg.tagline || '';
   if (sym)   sym.innerHTML = '<svg width="96" height="96" viewBox="0 0 100 100" fill="none">' + cfg.symInner + '</svg>';
   if (wm)    wm.innerHTML = '<svg width="220" height="220" viewBox="0 0 100 100" fill="none">' + cfg.symInner + '</svg>';
