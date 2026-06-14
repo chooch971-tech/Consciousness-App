@@ -4002,6 +4002,10 @@ body:not(.tut-live) #tutCorgi {
   50% { box-shadow:0 4px 30px rgba(224,124,58,.48), inset 0 1px 0 rgba(255,255,255,.12); }
 }
 
+/* The Clock symbol is already a circle, so hide the expanding ripple rings —
+   they read as a redundant ring around the clock face. Scoped to the Clock. */
+.ex-banner--no-ripple .exb-ripple { display:none; }
+
 /* The Clock title gets the same glowing copper treatment as its Begin button. */
 .exb-title.clk-title-glow {
   text-shadow:0 0 14px rgba(224,124,58,.55), 0 0 28px rgba(224,124,58,.28);
@@ -12569,6 +12573,7 @@ function updateExSetupBanner(ex) {
   if (!banner) return;
   banner.style.setProperty('--exb-rgb', cfg.rgb);
   banner.style.setProperty('--exb-light', cfg.light);
+  banner.classList.toggle('ex-banner--no-ripple', ex === 'clock');
   var label = document.getElementById('exBannerLabel');
   var title = document.getElementById('exBannerTitle');
   var tag   = document.getElementById('exBannerTagline');
