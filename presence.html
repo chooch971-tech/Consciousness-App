@@ -4473,6 +4473,9 @@ body:not(.tut-live) #tutCorgi {
       <button class="awareness-sub-item" id="subMenuAwareness">Awareness</button>
       <button class="awareness-sub-item" id="subMenuPrayer">Prayer</button>
     </div>
+    <!-- Shown only while an Awareness session is running in the background
+         and the player browsed away to Guide or Prayer. -->
+    <button id="sessionReturnBanner" onclick="returnToSessionFromPrayer()" style="display:none; width:100%; padding:10px; margin-bottom:10px; flex-shrink:0; background:none; border:1px solid rgba(126,184,164,.2); border-radius:6px; color:var(--accent); font-family:'DM Mono',monospace; font-size:9px; letter-spacing:.2em; text-transform:uppercase; cursor:pointer;">← Return to Session</button>
     <div id="pqTellOmniaOverlay" style="display:none;position:fixed;inset:0;z-index:700;background:rgba(0,0,0,.6);align-items:center;justify-content:center;padding:24px;">
       <div style="background:var(--surface);border:1px solid var(--border);border-radius:18px;padding:24px;width:100%;max-width:340px;">
         <div style="font-family:'Cormorant Garamond',serif;font-size:20px;font-weight:300;color:var(--text);margin-bottom:6px;">Tell Omnia</div>
@@ -4840,10 +4843,6 @@ body:not(.tut-live) #tutCorgi {
         </div>
 
         </div>
-      </div>
-      <!-- Return to session button (shown only during active awareness session) -->
-      <div style="padding:0 24px 16px; flex-shrink:0;">
-        <button id="sessionPrayerReturnBtn" onclick="returnToSessionFromPrayer()" style="display:none; width:100%; padding:10px; background:none; border:1px solid rgba(126,184,164,.2); border-radius:6px; color:var(--accent); font-family:'DM Mono',monospace; font-size:9px; letter-spacing:.2em; text-transform:uppercase; cursor:pointer;">← Return to Session</button>
       </div>
     </div>
     <!-- GUIDE PANEL (inside homeScreen) -->
@@ -5980,7 +5979,10 @@ body:not(.tut-live) #tutCorgi {
           <span class="session-pvk-val" id="sessionPvkVal">50</span>
         </div>
       </div>
-      <button id="sessionPrayerBtn" onclick="openPrayerDuringSession();" style="margin-top:14px; font-size:9px; letter-spacing:.2em; text-transform:uppercase; color:#9b8ec4; background:none; border:1px solid rgba(155,142,196,.2); border-radius:4px; padding:8px 20px; cursor:pointer; font-family:'DM Mono',monospace;">🙏 Open Prayer</button>
+      <div style="margin-top:14px; display:flex; gap:8px; justify-content:center;">
+        <button id="sessionGuideBtn" onclick="openModeDuringSession('guide');" style="font-size:9px; letter-spacing:.2em; text-transform:uppercase; color:#8ecce0; background:none; border:1px solid rgba(142,204,224,.2); border-radius:4px; padding:8px 16px; cursor:pointer; font-family:'DM Mono',monospace;">🧭 Open Guide</button>
+        <button id="sessionPrayerBtn" onclick="openModeDuringSession('prayer');" style="font-size:9px; letter-spacing:.2em; text-transform:uppercase; color:#9b8ec4; background:none; border:1px solid rgba(155,142,196,.2); border-radius:4px; padding:8px 16px; cursor:pointer; font-family:'DM Mono',monospace;">🙏 Open Prayer</button>
+      </div>
     </div>
   </div>
 
@@ -7484,43 +7486,19 @@ function updateSessionPrompt(text) {
   setTimeout(function() { el.textContent = text; el.classList.remove('fade'); }, 400);
 }
 
-function openPrayerDuringSession() {
-  // Use showScreen to properly make homeScreen visible
+// Lets the player check Guide or Prayer while an Awareness session keeps
+// running in the background. The Return banner brings them back to the
+// session screen; switchMode() handles all the panel/tab bookkeeping.
+function openModeDuringSession(mode) {
   showScreen('homeScreen');
-  // Switch to prayer tab only, disable awareness and concentration tabs temporarily
-  var awTab = document.getElementById('modeAwareness');
-  var coTab = document.getElementById('modeConcentration');
-  var prTab = document.getElementById('modePrayer');
-  var awPanel = document.getElementById('awarenessPanel');
-  var coPanel = document.getElementById('concentrationPanel');
-  var prPanel = document.getElementById('prayerPanel');
-  if (awTab) { awTab.classList.remove('active'); awTab.style.pointerEvents = 'none'; awTab.style.opacity = '.35'; }
-  if (coTab) { coTab.classList.remove('active'); coTab.style.pointerEvents = 'none'; coTab.style.opacity = '.35'; }
-  if (prTab) { prTab.classList.add('active'); prTab.style.opacity = ''; }
-  if (awPanel) awPanel.style.display = 'none';
-  if (coPanel) coPanel.style.display = 'none';
-  if (prPanel) { prPanel.style.display = 'flex'; prPanel.style.flexDirection = 'column'; }
-  renderPrayerPanel();
-  // Show the return-to-session button
-  var returnBtn = document.getElementById('sessionPrayerReturnBtn');
-  if (returnBtn) returnBtn.style.display = 'block';
+  switchMode(mode);
+  var returnBanner = document.getElementById('sessionReturnBanner');
+  if (returnBanner) returnBanner.style.display = 'block';
 }
 
 function returnToSessionFromPrayer() {
-  // Hide the return button and re-enable tabs
-  var returnBtn = document.getElementById('sessionPrayerReturnBtn');
-  if (returnBtn) returnBtn.style.display = 'none';
-  var awTab = document.getElementById('modeAwareness');
-  var coTab = document.getElementById('modeConcentration');
-  if (awTab) { awTab.style.pointerEvents = ''; awTab.style.opacity = ''; }
-  if (coTab) { coTab.style.pointerEvents = ''; coTab.style.opacity = ''; }
-  // Restore panels to their normal state
-  var awPanel = document.getElementById('awarenessPanel');
-  var coPanel = document.getElementById('concentrationPanel');
-  var prPanel = document.getElementById('prayerPanel');
-  if (awPanel) awPanel.style.display = '';
-  if (coPanel) coPanel.style.display = '';
-  if (prPanel) prPanel.style.display = '';
+  var returnBanner = document.getElementById('sessionReturnBanner');
+  if (returnBanner) returnBanner.style.display = 'none';
   showScreen('sessionScreen');
 }
 
@@ -7684,13 +7662,9 @@ function submitSurvey() {
   var submitBtn = document.getElementById('submitSurveyBtn');
   submitBtn.textContent = 'Done';
   submitBtn.onclick = function() {
-    // Restore any locked tabs from prayer-during-session
-    var awTab = document.getElementById('modeAwareness');
-    var coTab = document.getElementById('modeConcentration');
-    var returnBtn = document.getElementById('sessionPrayerReturnBtn');
-    if (awTab) { awTab.style.pointerEvents = ''; awTab.style.opacity = ''; }
-    if (coTab) { coTab.style.pointerEvents = ''; coTab.style.opacity = ''; }
-    if (returnBtn) returnBtn.style.display = 'none';
+    // Hide the "return to session" banner left over from Guide/Prayer-during-session
+    var returnBanner = document.getElementById('sessionReturnBanner');
+    if (returnBanner) returnBanner.style.display = 'none';
     renderHome(); showScreen('homeScreen');
   };
 
@@ -19965,6 +19939,12 @@ function renderGuidePlan(mode, skipScroll) {
 
 function beginGuidePlanItem(btn) {
   if (!btn || btn.disabled) return;
+  // Don't let a player launch a fresh exercise from Omnia's Path while an
+  // Awareness session is still running in the background.
+  if (sessionStartTime) {
+    showToast('Finish your current session first', 2600);
+    return;
+  }
   var ex = btn.dataset.guideStart;
   var duration = parseInt(btn.dataset.guideDuration, 10);
   var mode = btn.dataset.guideMode;
