@@ -17127,22 +17127,62 @@ function omniaPickAwardBody(preferred) {
   }
   return null;
 }
-// Is this exercise currently eligible to grant a body level (recommended free
-// pick, or on the locked guided agenda)? Mirrors the award logic exactly.
-function omniaExerciseIsBodyEligible(metaId) {
-  if (!OMNIA_EXERCISE_META[metaId]) return false;
-  if (omniaState && omniaState.rec && omniaState.rec.id === metaId) return true;
-  return omniaExerciseIsGuidedAgenda(metaId);
+// How many exercises can glow with a body-level highlight (and therefore
+// actually grant one) at once. Starts low and rises with rank alongside
+// the daily budget, but never exceeds it.
+function omniaHighlightCap() {
+  var step = (omniaState && omniaState.bardonStep) || 1;
+  var byStep = step <= 3 ? 2 : step <= 5 ? 3 : step <= 7 ? 4 : step <= 9 ? 5 : 6;
+  return Math.min(byStep, omniaBodyAwardsPerDay());
+}
+// Cluster all thought-family items together at the first one's position —
+// shared by the guided-path render and the highlight calculation below so
+// their orderings always match.
+function omniaClusterGuideItems(items) {
+  var isTC = function(id) { return id === 'thought' || id === 'observation' || id === 'focus' || id === 'vacancy'; };
+  var seen = false, ordered = [];
+  items.forEach(function(it) {
+    if (isTC(it.id)) { if (!seen) { seen = true; items.forEach(function(t) { if (isTC(t.id)) ordered.push(t); }); } }
+    else ordered.push(it);
+  });
+  return ordered;
+}
+// The set of OMNIA_EXERCISE_META ids that currently grant a body level if
+// completed right now — the ✦ glow on guided-path cards and the actual
+// award in awardOmniaForExercise both consult this, so they always agree.
+function omniaHighlightedExerciseIds() {
+  var result = {};
+  var remaining = omniaBodyAwardsRemaining();
+  if (remaining <= 0) return result;
+  var cap = Math.min(omniaHighlightCap(), remaining);
+  if (cap <= 0) return result;
+
+  if (typeof guideState !== 'undefined' && guideState._pathLockedV2 && typeof buildGuideRegimentItems === 'function') {
+    var items = omniaClusterGuideItems(buildGuideRegimentItems().filter(function(item) {
+      return item && omniaMetaIdForExercise(item.id);
+    }));
+    for (var i = 0; i < items.length && cap > 0; i++) {
+      if (items[i].done) continue;
+      var metaId = omniaMetaIdForExercise(items[i].id);
+      if (!metaId || result[metaId]) continue;
+      result[metaId] = true;
+      cap--;
+    }
+    return result;
+  }
+  // No locked path — the single rotating recommendation is the only candidate.
+  var rec = omniaPickRecommendation(false);
+  if (rec && OMNIA_EXERCISE_META[rec.id]) result[rec.id] = true;
+  return result;
 }
 // Would completing this path card right now grant a body level? Used to
 // highlight the card. Honours the daily budget, eligibility, and the cap
 // cascade (so a capped mental body still highlights when astral can take it).
-function omniaCardGrantsBodyLevel(cardId, isDone) {
+function omniaCardGrantsBodyLevel(cardId, isDone, highlighted) {
   if (isDone) return null;
-  if (omniaBodyAwardsRemaining() <= 0) return null;
   var metaId = omniaMetaIdForExercise(cardId);
   if (!metaId) return null;
-  if (!omniaExerciseIsBodyEligible(metaId)) return null;
+  if (!highlighted[metaId]) return null;
   return omniaPickAwardBody(OMNIA_EXERCISE_META[metaId].body); // body name or null
 }
 
@@ -17312,11 +17352,13 @@ function awardOmniaForExercise(exId, seconds) {
   var awardedBody = false;
   if (recommended) {
     omniaState.recStreak = (omniaState.recStreak || 0) + 1;
-    // Up to omniaBodyAwardsPerDay() free body levels per day. The natural body
-    // is raised unless it's capped, in which case the level cascades to the
-    // next uncapped body (mental → astral → physical). A clock session past its
-    // daily akasha cap earns no body level either, so it can't be farmed.
-    if (!clockAkashaCapped && omniaBodyAwardsRemaining() > 0) {
+    // A body level is only granted if this exercise is currently one of the
+    // ✦-highlighted cards (omniaHighlightedExerciseIds) — so the award and
+    // the highlight the player saw before starting always agree. The natural
+    // body is raised unless it's capped, in which case the level cascades to
+    // the next uncapped body (mental → astral → physical). A clock session
+    // past its daily akasha cap earns no body level either, so it can't be farmed.
+    if (!clockAkashaCapped && omniaHighlightedExerciseIds()[exId]) {
       var targetBody = omniaPickAwardBody(meta.body);
       if (targetBody) {
         omniaState.bodies[targetBody] = (omniaState.bodies[targetBody] || 0) + 1;
@@ -20307,19 +20349,10 @@ function renderPathQuests() {
   html += '<div style="display:flex;flex-direction:column;gap:8px;">';
   var _isTC = function(id) { return id === 'thought' || id === 'observation' || id === 'focus' || id === 'vacancy'; };
   // Cluster all thought-family items together at the first one's position.
-  (function() {
-    var seen = false, ordered = [];
-    items.forEach(function(it) {
-      if (_isTC(it.id)) { if (!seen) { seen = true; items.forEach(function(t) { if (_isTC(t.id)) ordered.push(t); }); } }
-      else ordered.push(it);
-    });
-    items = ordered;
-  })();
-  // Highlight at most 2 cards at once — and never more than the remaining daily
-  // budget, so the glow never promises more levels than are left. The daily
-  // budget can exceed 2 (it scales with rank), but only 2 glow at a time to
-  // keep the list calm; more reveal as completed ones drop off.
-  var _bodyHighlightsLeft = Math.min(2, (typeof omniaBodyAwardsRemaining === 'function') ? omniaBodyAwardsRemaining() : 0);
+  items = omniaClusterGuideItems(items);
+  // Exercises that currently grant a body level if completed — the glow
+  // below and the actual award in awardOmniaForExercise always agree.
+  var _highlighted = (typeof omniaHighlightedExerciseIds === 'function') ? omniaHighlightedExerciseIds() : {};
   var _pqBuildCard = function(item, grouped, last) {
     var rounds = (item.durationLabel && item.durationLabel.indexOf('x2') !== -1) ? 2 : 1;
     var modeText = item.mode ? (GUIDE_FOUNDATION_THOUGHT_LABELS[item.mode] || item.mode) : '';
@@ -20375,11 +20408,9 @@ function renderPathQuests() {
     var menuBtn = '<button class="pq-menu-btn" data-ex-id="' + item.id + '"' + (item.mode ? ' data-ex-mode="' + item.mode + '"' : '') + (item.added ? ' data-ex-added="1"' : '') + ' title="Options">···</button>';
     var badgeStyle = 'position:relative;width:48px;height:48px;border-radius:12px;background:' + color + '1e;border:1px solid ' + color + '38;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0;font-family:\'DM Mono\',monospace;line-height:1;color:' + color + ';';
     // Highlight cards that will grant a body level if completed right now.
-    var grantsBodyName = null;
-    if (_bodyHighlightsLeft > 0 && typeof omniaCardGrantsBodyLevel === 'function') {
-      grantsBodyName = omniaCardGrantsBodyLevel(item.id, item.done);
-      if (grantsBodyName) _bodyHighlightsLeft--; // cap concurrent highlights at the daily budget
-    }
+    var grantsBodyName = (typeof omniaCardGrantsBodyLevel === 'function')
+      ? omniaCardGrantsBodyLevel(item.id, item.done, _highlighted)
+      : null;
     var bodyBadgeHtml = '';
     if (grantsBodyName) {
       var _bm = (typeof OMNIA_BODY_META !== 'undefined' && OMNIA_BODY_META[grantsBodyName]) ? OMNIA_BODY_META[grantsBodyName].name.replace(' Body', '') : grantsBodyName;
