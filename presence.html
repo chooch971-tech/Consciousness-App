@@ -3862,8 +3862,8 @@ body:not(.tut-live) #tutCorgi {
 .ex-explain-step { display:flex; gap:14px; align-items:flex-start; }
 .ex-explain-step-num { flex-shrink:0; width:26px; height:26px; border-radius:50%; border:1px solid rgba(142,204,224,.4);
   display:flex; align-items:center; justify-content:center; font-family:'Cormorant Garamond',serif; font-size:14px; color:#8eccc0; }
-.ex-explain-step-text { font-size:12px; line-height:1.65; color:var(--muted); padding-top:3px; }
-.ex-explain-step-text strong { color:var(--text); font-weight:400; }
+.ex-explain-step-text { font-size:12px; line-height:1.65; color:rgba(255,255,255,.85); padding-top:3px; }
+.ex-explain-step-text strong { color:#8ecce0; font-weight:400; }
 .ex-explain-close { width:100%; padding:14px; border-radius:11px; border:1px solid rgba(142,204,224,.3); background:rgba(142,204,224,.1);
   color:#a8dce8; font-family:'DM Mono',monospace; font-size:10px; letter-spacing:.2em; text-transform:uppercase; cursor:pointer; }
 
@@ -5478,7 +5478,7 @@ body:not(.tut-live) #tutCorgi {
       <div class="ex-explain-card">
         <div class="ex-explain-omnia" id="exExplainOmnia"></div>
         <div class="ex-explain-title" id="exExplainTitle"></div>
-        <div class="ex-explain-omnia-name">Omnia explains</div>
+        <div class="ex-explain-omnia-name">Tutorial</div>
         <div class="ex-explain-steps" id="exExplainSteps"></div>
         <button class="ex-explain-close" id="exExplainClose" onclick="closeExExplainer()">Got it</button>
       </div>
@@ -12593,7 +12593,7 @@ function omniaHeadSVG(w, h) {
 // Condensed, Omnia-voiced walkthroughs shown in the explainer modal.
 var EX_EXPLAINERS = {
   clock: {
-    title: 'The Clock',
+    title: 'Clock',
     steps: [
       'Watch the <strong>second hand</strong> and keep your eyes and attention fixed on its sweep.',
       'Let <strong>no other thought</strong> enter. The moving hand is the only thing in your mind.',
