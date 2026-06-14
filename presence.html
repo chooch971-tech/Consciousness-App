@@ -5297,9 +5297,8 @@ body:not(.tut-live) #tutCorgi {
 
   <!-- SOUL MIRROR SCREEN -->
   <div class="screen" id="soulMirrorScreen" style="padding:0; flex-direction:column;">
-    <div style="padding:var(--safe-top) 24px 0; display:flex; justify-content:space-between; align-items:center; flex-shrink:0; background:var(--bg);">
-      <div style="font-family:Cormorant Garamond,serif; font-size:24px; font-weight:300; color:#c4a8d4;">Soul Mirror</div>
-      <button class="history-back" id="soulMirrorBack">← back</button>
+    <div style="padding:var(--safe-top) 24px 0; display:flex; justify-content:flex-start; align-items:center; flex-shrink:0; background:var(--bg);">
+      <button class="history-back" id="soulMirrorBack" aria-label="Back">←</button>
     </div>
     <!-- Tab bar -->
     <div style="display:flex; border-bottom:1px solid var(--border); padding:0 24px; margin-top:12px; flex-shrink:0; position:relative;" id="soulMirrorTabs">
@@ -5335,9 +5334,18 @@ body:not(.tut-live) #tutCorgi {
           </svg>
         </div>
       </div>
+      <!-- Search across all traits -->
+      <div style="position:relative; margin-bottom:22px;">
+        <input id="soulMirrorSearch" type="text" placeholder="Search traits…" autocomplete="off" style="width:100%; background:rgba(255,255,255,.05); border:1px solid var(--border); border-radius:10px; color:var(--text); font-family:'DM Mono',monospace; font-size:11px; padding:11px 34px 11px 36px; box-sizing:border-box; outline:none;"/>
+        <span style="position:absolute; left:13px; top:50%; transform:translateY(-50%); color:var(--muted); font-size:13px; pointer-events:none;">⌕</span>
+        <button id="soulMirrorSearchClear" style="display:none; position:absolute; right:8px; top:50%; transform:translateY(-50%); background:none; border:none; color:var(--muted); font-size:14px; cursor:pointer; padding:4px 6px;">✕</button>
+      </div>
       <div style="margin-bottom:28px;">
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
-          <div style="font-size:9px; letter-spacing:.25em; text-transform:uppercase; color:var(--accent);">Positive Traits</div>
+          <div style="display:flex; align-items:center; gap:8px;">
+            <span style="font-size:10px; letter-spacing:.22em; text-transform:uppercase; color:var(--accent);">Positive Traits</span>
+            <span id="positiveCount" style="font-size:9px; color:var(--muted); background:rgba(126,184,164,.1); border-radius:10px; padding:2px 8px; font-family:'DM Mono',monospace;">0</span>
+          </div>
           <button id="addPositiveBtn" style="background:rgba(126,184,164,.08); border:1px solid rgba(126,184,164,.2); border-radius:4px; color:var(--accent); font-size:12px; padding:4px 12px; cursor:pointer; font-family:'DM Mono',monospace;">+</button>
         </div>
         <div id="positiveTraitsList"></div>
@@ -5351,7 +5359,10 @@ body:not(.tut-live) #tutCorgi {
       </div>
       <div style="margin-bottom:28px;">
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
-          <div style="font-size:9px; letter-spacing:.25em; text-transform:uppercase; color:#c4788c;">Negative Traits</div>
+          <div style="display:flex; align-items:center; gap:8px;">
+            <span style="font-size:10px; letter-spacing:.22em; text-transform:uppercase; color:#c4788c;">Negative Traits</span>
+            <span id="negativeCount" style="font-size:9px; color:var(--muted); background:rgba(196,120,140,.1); border-radius:10px; padding:2px 8px; font-family:'DM Mono',monospace;">0</span>
+          </div>
           <button id="addNegativeBtn" style="background:rgba(196,120,140,.08); border:1px solid rgba(196,120,140,.2); border-radius:4px; color:#c4788c; font-size:12px; padding:4px 12px; cursor:pointer; font-family:'DM Mono',monospace;">+</button>
         </div>
         <div id="negativeTraitsList"></div>
@@ -25309,34 +25320,40 @@ function saveSoulMirror(data){
   localStorage.setItem('presence_soul_mirror_v1',JSON.stringify(data));
 }
 
+var soulMirrorQuery='';
+// One trait card. `kind` drives the colour; the colored left bar plus larger
+// text makes each trait far easier to scan than the old flat rows.
+function soulMirrorTraitCard(t,i,kind){
+  var accent=kind==='positive'?'126,184,164':'196,120,140';
+  var done=!!t.done;
+  return '<div style="display:flex;align-items:center;gap:12px;padding:13px 14px;background:rgba('+accent+',.06);border:1px solid rgba('+accent+',.18);border-left:3px solid rgba('+accent+','+(done?'.3':'.85')+');border-radius:10px;margin-bottom:8px;'+(done?'opacity:.42;':'')+'">'
+    +'<div style="flex:1;min-width:0;">'
+      +'<div style="font-size:13px;color:var(--text);line-height:1.3;'+(done?'text-decoration:line-through;':'')+'">'+esc(t.text)+'</div>'
+      +(done?'<div style="font-size:8px;letter-spacing:.18em;text-transform:uppercase;color:#a47eb8;margin-top:4px;">✓ Transformed</div>':'')
+    +'</div>'
+    +'<button onclick="delete'+(kind==='positive'?'Positive':'Negative')+'Trait('+i+')" aria-label="Remove trait" style="flex-shrink:0;background:none;border:none;color:rgba(255,255,255,.28);font-size:14px;cursor:pointer;padding:4px 6px;line-height:1;">✕</button>'
+    +'</div>';
+}
 function renderSoulMirrorTraits(){
   var data=loadSoulMirror();
-  var posList=document.getElementById('positiveTraitsList');
-  if(posList){
-    if(!data.positive.length){
-      posList.innerHTML='<div style="font-size:11px;color:var(--muted);font-style:italic;padding:8px 0;">No positive traits added yet.</div>';
+  var q=soulMirrorQuery.trim().toLowerCase();
+  var matches=function(t){return !q || (t.text||'').toLowerCase().indexOf(q)!==-1;};
+  // Keep each trait's original index so delete/transform still target the
+  // right entry even when the list is filtered by the search query.
+  var renderList=function(listEl,countEl,arr,kind,emptyMsg){
+    if(!listEl)return;
+    var shown=arr.map(function(t,i){return {t:t,i:i};}).filter(function(o){return matches(o.t);});
+    if(countEl)countEl.textContent=arr.length;
+    if(!arr.length){
+      listEl.innerHTML='<div style="font-size:11px;color:var(--muted);font-style:italic;padding:8px 0;">'+emptyMsg+'</div>';
+    } else if(!shown.length){
+      listEl.innerHTML='<div style="font-size:11px;color:var(--muted);font-style:italic;padding:8px 0;">No matches for "'+esc(soulMirrorQuery.trim())+'".</div>';
     } else {
-      posList.innerHTML=data.positive.map(function(t,i){
-        return '<div style="display:flex;justify-content:space-between;align-items:center;padding:10px 12px;background:rgba(126,184,164,.05);border:1px solid rgba(126,184,164,.1);border-radius:8px;margin-bottom:6px;'+(t.done?'opacity:.32;':'')+'">'
-          +'<div style="font-size:11px;color:var(--text);'+(t.done?'text-decoration:line-through;':'')+'">'+esc(t.text)+(t.done?' <span style="color:#a47eb8;font-size:9px;">✓ transformed</span>':'')+'</div>'
-          +'<button onclick="deletePositiveTrait('+i+')" style="background:none;border:none;color:rgba(255,100,100,.3);font-size:12px;cursor:pointer;padding:0 4px;">✕</button>'
-          +'</div>';
-      }).join('');
+      listEl.innerHTML=shown.map(function(o){return soulMirrorTraitCard(o.t,o.i,kind);}).join('');
     }
-  }
-  var negList=document.getElementById('negativeTraitsList');
-  if(negList){
-    if(!data.negative.length){
-      negList.innerHTML='<div style="font-size:11px;color:var(--muted);font-style:italic;padding:8px 0;">No negative traits added yet.</div>';
-    } else {
-      negList.innerHTML=data.negative.map(function(t,i){
-        return '<div style="display:flex;justify-content:space-between;align-items:center;padding:10px 12px;background:rgba(196,120,140,.05);border:1px solid rgba(196,120,140,.1);border-radius:8px;margin-bottom:6px;'+(t.done?'opacity:.32;':'')+'">'
-          +'<div style="font-size:11px;color:var(--text);'+(t.done?'text-decoration:line-through;':'')+'">'+esc(t.text)+(t.done?' <span style="color:#a47eb8;font-size:9px;">✓ transformed</span>':'')+'</div>'
-          +'<button onclick="deleteNegativeTrait('+i+')" style="background:none;border:none;color:rgba(255,100,100,.3);font-size:12px;cursor:pointer;padding:0 4px;">✕</button>'
-          +'</div>';
-      }).join('');
-    }
-  }
+  };
+  renderList(document.getElementById('positiveTraitsList'),document.getElementById('positiveCount'),data.positive,'positive','No positive traits added yet.');
+  renderList(document.getElementById('negativeTraitsList'),document.getElementById('negativeCount'),data.negative,'negative','No negative traits added yet.');
   var notesEl=document.getElementById('soulMirrorNotes');
   if(notesEl) notesEl.value=data.notes||'';
 }
@@ -25391,6 +25408,27 @@ document.getElementById('negativeTraitSave').addEventListener('click',function()
   document.getElementById('negativeAddForm').style.display='none';
   renderSoulMirrorTraits();
 });
+// Search filters both trait lists live as you type.
+(function(){
+  var search=document.getElementById('soulMirrorSearch');
+  var clear=document.getElementById('soulMirrorSearchClear');
+  if(search){
+    search.addEventListener('input',function(){
+      soulMirrorQuery=search.value;
+      if(clear)clear.style.display=search.value?'block':'none';
+      renderSoulMirrorTraits();
+    });
+  }
+  if(clear){
+    clear.addEventListener('click',function(){
+      soulMirrorQuery='';
+      if(search)search.value='';
+      clear.style.display='none';
+      renderSoulMirrorTraits();
+      if(search)search.focus();
+    });
+  }
+})();
 document.getElementById('positiveTraitInput').addEventListener('keydown',function(e){if(e.key==='Enter')document.getElementById('positiveTraitSave').click();});
 document.getElementById('negativeTraitInput').addEventListener('keydown',function(e){if(e.key==='Enter')document.getElementById('negativeTraitSave').click();});
 document.getElementById('soulMirrorSaveNotes').addEventListener('click',function(){
