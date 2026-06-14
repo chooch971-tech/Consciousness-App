@@ -3826,11 +3826,6 @@ body:not(.tut-live) #tutCorgi {
 .ex-banner::after { content:''; position:absolute; inset:0; pointer-events:none;
   background:radial-gradient(ellipse 44% 54% at 73% 46%, rgba(var(--exb-rgb),.16) 0%, transparent 62%); }
 .exb-text { position:relative; z-index:3; display:flex; flex-direction:column; gap:6px; max-width:60%; }
-/* Clock's cleaner banner: drop the "Concentration" eyebrow and centre the
-   title + tagline. Scoped to the Clock so other exercises keep their layout. */
-.ex-banner--clean { justify-content:center; }
-.ex-banner--clean .exb-text { max-width:78%; align-items:center; text-align:center; }
-.ex-banner--clean .exb-label { display:none; }
 .exb-label { font-family:'DM Mono',monospace; font-size:8px; letter-spacing:.26em; text-transform:uppercase; color:rgba(var(--exb-rgb),.9); }
 .exb-title { font-family:'Cormorant Garamond',serif; font-size:36px; font-weight:300; line-height:.98; color:var(--exb-light); }
 .exb-tagline { font-family:'Cormorant Garamond',serif; font-style:italic; font-size:13px; line-height:1.45; color:rgba(255,255,255,.88); }
@@ -12511,7 +12506,7 @@ var EXERCISE_DEFS = {
 var EX_BANNER_CONFIG = {
   clock: {
     rgb: '224,124,58', light: '#e8a070', label: 'Concentration', title: 'Clock',
-    tagline: 'Follow the seconds hand',
+    tagline: '',
     symInner:
       '<circle cx="50" cy="50" r="38" stroke="#e8a070" stroke-width="2.2" opacity="0.85"/>'
       + '<circle cx="50" cy="50" r="3.2" fill="#e8a070"/>'
@@ -12564,7 +12559,6 @@ function updateExSetupBanner(ex) {
   if (!banner) return;
   banner.style.setProperty('--exb-rgb', cfg.rgb);
   banner.style.setProperty('--exb-light', cfg.light);
-  banner.classList.toggle('ex-banner--clean', ex === 'clock');
   var label = document.getElementById('exBannerLabel');
   var title = document.getElementById('exBannerTitle');
   var tag   = document.getElementById('exBannerTagline');
