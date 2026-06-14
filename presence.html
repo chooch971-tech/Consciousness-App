@@ -7336,7 +7336,7 @@ async function startSession() {
   try { await notifyServerSessionStart(); } catch(e) { console.log('Server notify skipped:', e); }
 }
 
-function resumeSession(sess) {
+async function resumeSession(sess) {
   sessionStartTime = sess.startTime;
   sessionDurationSec = sess.durationSec;
   sessionIntervalSec = sess.intervalSec;
@@ -7346,8 +7346,10 @@ function resumeSession(sess) {
   lastPavlokFiredCycle = lastReminderCycle;
   sessionEndedEarly = false;
 
-  // Server is the Pavlok authority when push is registered — assume it's
-  // managing and confirm/sync via the update call (prevents double-zaps).
+  // Server is the Pavlok authority when push is registered. Assume it's
+  // managing (so the client stays suppressed during the uncertain window),
+  // then confirm the real status with the server BEFORE the loop can fire —
+  // guessing wrong here was a source of double/surprise zaps on reopen.
   var pvkR = getPavlokPrefs();
   pavlokServerManaged = !!(getPavlokToken() && pvkR.awareness.enabled);
   startPresenceBeacon(currentMode === 'prayer' ? 'prayer' : 'awareness', '');
@@ -7357,7 +7359,9 @@ function resumeSession(sess) {
   document.getElementById('reminderCount').textContent = sessionReminderCount;
   updateSessionPrompt(randomPrompt(''));
   initSessionPvkSlider();
-  if (pavlokServerManaged) notifyServerPavlokUpdate();
+  // notifyServerPavlokUpdate() sets pavlokServerManaged from the server's reply
+  // without resetting the session clock. Await it so runLoop sees the truth.
+  if (pavlokServerManaged) { try { await notifyServerPavlokUpdate(); } catch(e) {} }
   runLoop();
   showToast('Session resumed');
 }
@@ -7397,8 +7401,16 @@ function runLoop() {
   }
 
   if (currentCycle > lastReminderCycle && elapsed >= sessionIntervalSec) {
+    // A bell is "on time" only when exactly one cycle has turned over and we're
+    // still within a few seconds of its boundary. If the app was backgrounded
+    // across one or more cycles (iOS throttles JS timers), this loop reconciles
+    // them on return — that's a catch-up, not a live bell, and must NOT fire
+    // Pavlok: the stimulus would land late, with no matching notification, as a
+    // surprise shock on app-open.
+    var sinceBoundary = elapsed % sessionIntervalSec;
+    var onTime = (currentCycle - lastReminderCycle === 1) && sinceBoundary <= 3;
     lastReminderCycle = currentCycle;
-    fireReminder();
+    fireReminder(onTime);
   }
 
   saveSessionState();
@@ -7422,13 +7434,16 @@ function playReminderBell() {
   } catch(e) {}
 }
 
-function fireReminder() {
+function fireReminder(onTime) {
   var p = randomPrompt(document.getElementById('sessionPrompt').textContent);
   updateSessionPrompt(p);
   playReminderBell();
-  // Fallback: if the pre-fire window was skipped (iOS throttled timers while backgrounded),
-  // fire Pavlok now rather than silently missing it. Skip when server is managing Pavlok.
-  if (!pavlokServerManaged && getPavlokToken() && lastPavlokFiredCycle < lastReminderCycle) {
+  // Fallback: if the pre-fire window was skipped (iOS throttled timers while
+  // briefly backgrounded), fire Pavlok now rather than silently missing it.
+  // Only for an on-time bell — a catch-up after the app was backgrounded would
+  // zap late, outside the notification, as a surprise shock. Also skip when the
+  // server is managing Pavlok (avoids a double zap alongside the push).
+  if (onTime && !pavlokServerManaged && getPavlokToken() && lastPavlokFiredCycle < lastReminderCycle) {
     lastPavlokFiredCycle = lastReminderCycle;
     var pvk = getPavlokPrefs();
     if (pvk.awareness.enabled) sendPavlokStimulus(pvk.awareness.type || 'vibe', pvk.awareness.intensity);
