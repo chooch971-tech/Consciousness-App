@@ -567,20 +567,18 @@
     .clock-swatch-none { background:repeating-linear-gradient(45deg,#2a2a33,#2a2a33 4px,#474752 4px,#474752 8px); }
     /* Clock settings screen */
     #clockSettingsScreen { overflow-y:auto; padding-top:0; position:relative; }
-    .clk-cfg-back { position:absolute; top:max(env(safe-area-inset-top),12px); left:16px; z-index:10; background:rgba(7,8,13,.55); backdrop-filter:blur(6px); -webkit-backdrop-filter:blur(6px); border:1px solid rgba(255,255,255,.1); border-radius:8px; padding:7px 12px; color:var(--muted); font-family:'DM Mono',monospace; font-size:11px; letter-spacing:.06em; cursor:pointer; }
+    .clk-cfg-back { position:absolute; top:max(env(safe-area-inset-top),12px); left:16px; z-index:10; background:rgba(7,8,13,.8); backdrop-filter:blur(6px); -webkit-backdrop-filter:blur(6px); border:1px solid rgba(255,255,255,.28); border-radius:8px; padding:8px 14px; color:rgba(255,255,255,.92); font-family:'DM Mono',monospace; font-size:11px; letter-spacing:.06em; cursor:pointer; }
     .clk-cfg-body { flex:1; display:flex; flex-direction:column; padding:calc(max(env(safe-area-inset-top),12px) + 48px) 20px 24px; }
     .clk-cfg-preview { flex:1; display:flex; align-items:center; justify-content:center; margin:0 -20px; min-height:200px; }
-    .clk-cfg-hint { text-align:center; font-family:'DM Mono',monospace; font-size:9px; letter-spacing:.18em; text-transform:uppercase; color:rgba(224,158,110,.55); padding:16px 20px 20px; }
+    .clk-cfg-hint { text-align:center; font-family:'DM Mono',monospace; font-size:9px; letter-spacing:.18em; text-transform:uppercase; color:rgba(224,158,110,.9); padding:16px 20px 20px; }
     .clk-cfg-section { background:rgba(20,21,30,.92); border:1px solid var(--border); border-radius:14px; overflow:hidden; margin-bottom:14px; backdrop-filter:blur(4px); -webkit-backdrop-filter:blur(4px); }
     .clk-cfg-row { padding:14px 16px; display:flex; flex-direction:column; gap:10px; }
     .clk-cfg-row.row-inline { flex-direction:row; justify-content:space-between; align-items:center; }
     .clk-cfg-row + .clk-cfg-row { border-top:1px solid var(--border); }
-    .clk-cfg-row-label { font-size:9px; letter-spacing:.2em; text-transform:uppercase; color:var(--muted); font-family:'DM Mono',monospace; }
+    .clk-cfg-row-label { font-size:9px; letter-spacing:.2em; text-transform:uppercase; color:rgba(255,255,255,.85); font-family:'DM Mono',monospace; }
     .clk-cfg-row-label.active { color:rgba(224,158,110,.9); }
     .clk-cfg-swatches { display:flex; gap:8px; flex-wrap:wrap; }
     .clk-cfg-swatches .clock-swatch { width:26px; height:26px; }
-    .clk-hint-toggle { font-family:'DM Mono',monospace; font-size:9px; letter-spacing:.16em; text-transform:uppercase; padding:7px 16px; border-radius:100px; cursor:pointer; border:1px solid rgba(224,158,110,.4); background:rgba(224,158,110,.1); color:rgba(224,158,110,.9); transition:all .18s; }
-    .clk-hint-toggle.off { border-color:var(--border); background:none; color:var(--muted); }
 
     /* CONCENTRATION HOME */
     #concHomeScreen { justify-content:space-between; }
@@ -5485,10 +5483,6 @@ body:not(.tut-live) #tutCorgi {
               <button id="clkCfgScaleUp" class="clk-scale-btn" type="button">+</button>
             </div>
           </div>
-          <div class="clk-cfg-row row-inline">
-            <div class="clk-cfg-row-label">Focus hint</div>
-            <button id="clkCfgHintToggle" class="clk-hint-toggle" type="button">Shown</button>
-          </div>
         </div>
       </div>
     </div>
@@ -9415,7 +9409,6 @@ function renderClockSettings() {
   _renderClkCfgSwatches('bg', 'clkCfg_bg', true);
   var sv = document.getElementById('clkCfgScaleVal');
   if (sv) sv.textContent = Math.round(theme.scale * 100) + '%';
-  _renderClkCfgHintToggle();
 }
 
 function _bgIsLight(colorStr) {
@@ -9432,7 +9425,7 @@ function _renderClkCfgPaletteArea() {
   var area = document.getElementById('clkCfgPaletteArea');
   if (!area) return;
   if (!_activeCfgPart) {
-    var hintColor = _bgIsLight(getClockTheme().bg) ? 'rgba(30,20,10,.6)' : 'rgba(224,158,110,.55)';
+    var hintColor = _bgIsLight(getClockTheme().bg) ? 'rgba(30,20,10,.85)' : 'rgba(224,158,110,.9)';
     area.innerHTML = '<div class="clk-cfg-hint" style="color:' + hintColor + '">Tap parts of the clock to customize</div>';
     return;
   }
@@ -9515,25 +9508,8 @@ function setClockColor(part, color) {
     if (sw) { setClockColor(sw.getAttribute('data-clk-part'), sw.getAttribute('data-clk-color')); return; }
     if (e.target.closest('#clkCfgScaleDown')) { adjustClockScale(-0.1); return; }
     if (e.target.closest('#clkCfgScaleUp')) { adjustClockScale(0.1); return; }
-    if (e.target.closest('#clkCfgHintToggle')) { toggleClockHint(); return; }
   });
 })();
-
-// Show/hide the "focus on the tip of the seconds hand" hint over the session clock.
-function toggleClockHint() {
-  if (!concState.clockTheme) concState.clockTheme = {};
-  concState.clockTheme.hideHint = !concState.clockTheme.hideHint;
-  saveConcState();
-  if (typeof syncEnabled !== 'undefined' && syncEnabled && authToken) syncPushData();
-  _renderClkCfgHintToggle();
-}
-function _renderClkCfgHintToggle() {
-  var btn = document.getElementById('clkCfgHintToggle');
-  if (!btn) return;
-  var hidden = !!(concState.clockTheme && concState.clockTheme.hideHint);
-  btn.textContent = hidden ? 'Hidden' : 'Shown';
-  btn.classList.toggle('off', hidden);
-}
 
 // ── Scale + screen background (applied to the live session clock) ────
 function applyClockScale() {
@@ -9705,21 +9681,14 @@ function startConcentration() {
 
   // A single short hint sits above the clock until the hand starts moving,
   // then fades so the running exercise is text-free. It's tinted with the
-  // clock's hand colour so it coordinates with any chosen background, and can
-  // be turned off entirely from Clock settings.
+  // clock's hand colour so it coordinates with any chosen background.
   var sessionLabel = document.getElementById('concSessionLabel');
   if (sessionLabel) {
-    var _hintHidden = !!(concState.clockTheme && concState.clockTheme.hideHint);
-    if (_hintHidden) {
-      sessionLabel.textContent = '';
-      sessionLabel.style.display = 'none';
-    } else {
-      sessionLabel.textContent = 'focus on the tip of the seconds hand';
-      sessionLabel.style.display = '';
-      sessionLabel.style.color = getClockTheme().hand;
-      sessionLabel.style.opacity = '1';
-      sessionLabel.classList.remove('conc-label-instructions', 'conc-label-flash');
-    }
+    sessionLabel.textContent = 'focus on the tip of the seconds hand';
+    sessionLabel.style.display = '';
+    sessionLabel.style.color = getClockTheme().hand;
+    sessionLabel.style.opacity = '1';
+    sessionLabel.classList.remove('conc-label-instructions', 'conc-label-flash');
   }
 
   // Bottom button invites the first tap; top stop disabled until running.
