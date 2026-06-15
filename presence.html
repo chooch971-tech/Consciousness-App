@@ -16649,9 +16649,15 @@ function updateDrawerEntityBtn() {
   var relFilter = omniaPaletteFilterFor(palette, entity);
   var color = omniaDisplayColor(palette, entity);
   if (color.charAt(0) !== '#') color = entity.color;
+  // The palette recolor filter must apply ONLY to the entity art — never to
+  // the button as a whole, or it bleeds onto the appended companion and the
+  // element wheel and hue-shifts them (e.g. the gold Fire companion turning
+  // green in the drawer). So wrap the art and filter the wrapper, leaving
+  // btn.style.filter clear for companion/elements to keep their true colors.
+  btn.style.filter = '';
   if (entity.id === 'omnia') {
-    btn.innerHTML = _drawerOmniaBtnOrigSVG;
-    btn.style.filter = relFilter !== 'none' ? relFilter : '';
+    var omniaArtFilter = relFilter !== 'none' ? 'filter:' + relFilter + ';' : '';
+    btn.innerHTML = '<div class="drawer-omnia-art" style="line-height:0;' + omniaArtFilter + '">' + _drawerOmniaBtnOrigSVG + '</div>';
     btn.title = 'Meet Omnia';
     btn.setAttribute('aria-label', 'Open guide tutorial');
   } else {
@@ -16663,8 +16669,8 @@ function updateDrawerEntityBtn() {
     } else {
       previewSVG = renderOmniaEntityPreview(entity).replace('<svg ', '<svg width="26" height="38" ');
     }
-    btn.innerHTML = previewSVG;
-    btn.style.filter = (relFilter !== 'none' ? relFilter + ' ' : '') + 'drop-shadow(0 0 6px ' + color + '99)';
+    var artFilter = (relFilter !== 'none' ? relFilter + ' ' : '') + 'drop-shadow(0 0 6px ' + color + '99)';
+    btn.innerHTML = '<div class="drawer-omnia-art" style="line-height:0;filter:' + artFilter + ';">' + previewSVG + '</div>';
     btn.title = entity.name;
     btn.setAttribute('aria-label', 'Open ' + entity.name + ' guide');
   }
