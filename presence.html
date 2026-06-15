@@ -721,6 +721,17 @@
     .soul-banner-sub { font-size:9px; letter-spacing:.1em; color:rgba(216,200,232,.46); font-family:'DM Mono',monospace; line-height:1.5; }
     .soul-banner-art { position:relative; z-index:2; width:86px; height:94px; display:flex; align-items:center; justify-content:center; flex-shrink:0; animation:omniaFloat 5s ease-in-out infinite; filter:drop-shadow(0 0 12px rgba(164,126,184,.42)); }
     .soul-banner-art svg { width:100%; height:100%; overflow:visible; }
+    /* Group-by control + element/severity editor for negative traits */
+    .soul-group-btn { background:rgba(255,255,255,.04); border:1px solid var(--border); border-radius:20px; color:var(--muted); font-family:'DM Mono',monospace; font-size:8px; letter-spacing:.12em; text-transform:uppercase; padding:5px 11px; cursor:pointer; transition:all .15s; }
+    .soul-group-btn.sel { background:rgba(196,120,140,.16); border-color:rgba(196,120,140,.45); color:#e0a0b0; }
+    .soul-group-head { display:flex; align-items:center; gap:8px; margin:14px 0 8px; }
+    .soul-group-head:first-child { margin-top:2px; }
+    .soul-group-head-label { font-size:8px; letter-spacing:.2em; text-transform:uppercase; font-family:'DM Mono',monospace; }
+    .soul-group-head-count { font-size:8px; color:var(--muted); font-family:'DM Mono',monospace; }
+    .soul-group-head-rule { flex:1; height:1px; background:var(--border); }
+    .soul-elem-pill { display:inline-flex; align-items:center; gap:4px; font-size:8px; letter-spacing:.08em; text-transform:uppercase; font-family:'DM Mono',monospace; border-radius:20px; padding:2px 8px; }
+    .soul-sev-pill { font-size:8px; letter-spacing:.08em; text-transform:uppercase; font-family:'DM Mono',monospace; border-radius:20px; padding:2px 8px; color:var(--muted); background:rgba(255,255,255,.05); border:1px solid var(--border); }
+    .soul-edit-chip { background:rgba(255,255,255,.03); border:1px solid var(--border); border-radius:7px; color:var(--muted); font-family:'DM Mono',monospace; font-size:8px; letter-spacing:.08em; text-transform:uppercase; padding:6px 9px; cursor:pointer; transition:all .15s; }
     .path-quest-root { display:flex; flex-direction:column; gap:18px; padding:20px 2px 28px; }
     /* ── Guide redesign: day strip + exercise cards ── */
     .path-day-strip { display:flex; align-items:center; justify-content:space-between; margin:14px 0 0; padding:0 2px; }
@@ -5348,35 +5359,48 @@ body:not(.tut-live) #tutCorgi {
       </div>
       <div style="margin-bottom:28px;">
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
-          <div style="display:flex; align-items:center; gap:8px;">
+          <button id="positiveToggle" style="display:flex; align-items:center; gap:8px; background:none; border:none; padding:0; cursor:pointer;">
+            <span id="positiveChevron" style="color:var(--accent); font-size:10px; transition:transform .18s; display:inline-block;">▾</span>
             <span style="font-size:10px; letter-spacing:.22em; text-transform:uppercase; color:var(--accent);">Positive Traits</span>
             <span id="positiveCount" style="font-size:9px; color:var(--muted); background:rgba(126,184,164,.1); border-radius:10px; padding:2px 8px; font-family:'DM Mono',monospace;">0</span>
-          </div>
+          </button>
           <button id="addPositiveBtn" style="background:rgba(126,184,164,.08); border:1px solid rgba(126,184,164,.2); border-radius:4px; color:var(--accent); font-size:12px; padding:4px 12px; cursor:pointer; font-family:'DM Mono',monospace;">+</button>
         </div>
-        <div id="positiveTraitsList"></div>
-        <div id="positiveAddForm" style="display:none; margin-top:8px;">
-          <input id="positiveTraitInput" type="text" placeholder="e.g. patience, compassion…" style="width:100%; background:rgba(255,255,255,.04); border:1px solid rgba(126,184,164,.25); border-radius:8px; color:var(--text); font-family:'DM Mono',monospace; font-size:11px; padding:10px 12px; box-sizing:border-box; outline:none;"/>
-          <div style="display:flex; gap:8px; margin-top:8px;">
-            <button id="positiveTraitSave" class="btn primary" style="flex:1; font-size:9px; background:rgba(126,184,164,.1); border-color:rgba(126,184,164,.3); color:var(--accent);">Save</button>
-            <button id="positiveTraitCancel" class="btn ghost" style="flex:1; font-size:9px;">Cancel</button>
+        <div id="positiveSection">
+          <div id="positiveTraitsList"></div>
+          <div id="positiveAddForm" style="display:none; margin-top:8px;">
+            <input id="positiveTraitInput" type="text" placeholder="e.g. patience, compassion…" style="width:100%; background:rgba(255,255,255,.04); border:1px solid rgba(126,184,164,.25); border-radius:8px; color:var(--text); font-family:'DM Mono',monospace; font-size:11px; padding:10px 12px; box-sizing:border-box; outline:none;"/>
+            <div style="display:flex; gap:8px; margin-top:8px;">
+              <button id="positiveTraitSave" class="btn primary" style="flex:1; font-size:9px; background:rgba(126,184,164,.1); border-color:rgba(126,184,164,.3); color:var(--accent);">Save</button>
+              <button id="positiveTraitCancel" class="btn ghost" style="flex:1; font-size:9px;">Cancel</button>
+            </div>
           </div>
         </div>
       </div>
       <div style="margin-bottom:28px;">
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
-          <div style="display:flex; align-items:center; gap:8px;">
+          <button id="negativeToggle" style="display:flex; align-items:center; gap:8px; background:none; border:none; padding:0; cursor:pointer;">
+            <span id="negativeChevron" style="color:#c4788c; font-size:10px; transition:transform .18s; display:inline-block;">▾</span>
             <span style="font-size:10px; letter-spacing:.22em; text-transform:uppercase; color:#c4788c;">Negative Traits</span>
             <span id="negativeCount" style="font-size:9px; color:var(--muted); background:rgba(196,120,140,.1); border-radius:10px; padding:2px 8px; font-family:'DM Mono',monospace;">0</span>
-          </div>
+          </button>
           <button id="addNegativeBtn" style="background:rgba(196,120,140,.08); border:1px solid rgba(196,120,140,.2); border-radius:4px; color:#c4788c; font-size:12px; padding:4px 12px; cursor:pointer; font-family:'DM Mono',monospace;">+</button>
         </div>
-        <div id="negativeTraitsList"></div>
-        <div id="negativeAddForm" style="display:none; margin-top:8px;">
-          <input id="negativeTraitInput" type="text" placeholder="e.g. impatience, distraction…" style="width:100%; background:rgba(255,255,255,.04); border:1px solid rgba(196,120,140,.25); border-radius:8px; color:var(--text); font-family:'DM Mono',monospace; font-size:11px; padding:10px 12px; box-sizing:border-box; outline:none;"/>
-          <div style="display:flex; gap:8px; margin-top:8px;">
-            <button id="negativeTraitSave" class="btn primary" style="flex:1; font-size:9px; background:rgba(196,120,140,.1); border-color:rgba(196,120,140,.3); color:#c4788c;">Save</button>
-            <button id="negativeTraitCancel" class="btn ghost" style="flex:1; font-size:9px;">Cancel</button>
+        <div id="negativeSection">
+          <!-- Group-by control (element/severity) — Bardon-style sorting -->
+          <div id="negativeGroupBar" style="display:flex; align-items:center; gap:6px; margin-bottom:12px;">
+            <span style="font-size:8px; letter-spacing:.16em; text-transform:uppercase; color:var(--muted); margin-right:2px;">Group</span>
+            <button class="soul-group-btn" data-group="none">None</button>
+            <button class="soul-group-btn" data-group="severity">Severity</button>
+            <button class="soul-group-btn" data-group="element">Element</button>
+          </div>
+          <div id="negativeTraitsList"></div>
+          <div id="negativeAddForm" style="display:none; margin-top:8px;">
+            <input id="negativeTraitInput" type="text" placeholder="e.g. impatience, distraction…" style="width:100%; background:rgba(255,255,255,.04); border:1px solid rgba(196,120,140,.25); border-radius:8px; color:var(--text); font-family:'DM Mono',monospace; font-size:11px; padding:10px 12px; box-sizing:border-box; outline:none;"/>
+            <div style="display:flex; gap:8px; margin-top:8px;">
+              <button id="negativeTraitSave" class="btn primary" style="flex:1; font-size:9px; background:rgba(196,120,140,.1); border-color:rgba(196,120,140,.3); color:#c4788c;">Save</button>
+              <button id="negativeTraitCancel" class="btn ghost" style="flex:1; font-size:9px;">Cancel</button>
+            </div>
           </div>
         </div>
       </div>
@@ -25430,41 +25454,182 @@ function saveSoulMirror(data){
 }
 
 var soulMirrorQuery='';
-// One trait card. `kind` drives the colour; the colored left bar plus larger
-// text makes each trait far easier to scan than the old flat rows.
-function soulMirrorTraitCard(t,i,kind){
-  var accent=kind==='positive'?'126,184,164':'196,120,140';
+
+// ── Bardon-style classification of negative traits ──────────────
+// Each negative trait can carry an element (the four temperaments) and a
+// severity (how strongly it grips). Both are optional; users assign them by
+// tapping a trait to open its editor, and can group the list by either.
+var SOUL_ELEMENTS = {
+  fire:  { label:'Fire',  color:'224,122,74'  },
+  water: { label:'Water', color:'90,159,212'  },
+  air:   { label:'Air',   color:'216,196,90'  },
+  earth: { label:'Earth', color:'126,184,126' },
+};
+var SOUL_ELEMENT_ORDER = ['fire','water','air','earth'];
+var SOUL_SEVERITY = {
+  3: { label:'Major',    color:'224,90,90'   },
+  2: { label:'Moderate', color:'224,168,90'  },
+  1: { label:'Minor',    color:'168,184,120' },
+};
+var SOUL_SEVERITY_ORDER = [3,2,1];
+
+function loadSoulSections(){
+  var d={posOpen:true,negOpen:true,negGroup:'none'};
+  try{var s=JSON.parse(localStorage.getItem('presence_soul_sections'));if(s)return Object.assign(d,s);}catch(e){}
+  return d;
+}
+function saveSoulSections(s){localStorage.setItem('presence_soul_sections',JSON.stringify(s));}
+var soulSections=loadSoulSections();
+var soulExpandedNeg=null; // index of the negative trait whose editor is open
+
+function soulEmpty(msg){return '<div style="font-size:11px;color:var(--muted);font-style:italic;padding:8px 0;">'+msg+'</div>';}
+function soulNoMatch(){return '<div style="font-size:11px;color:var(--muted);font-style:italic;padding:8px 0;">No matches for "'+esc(soulMirrorQuery.trim())+'".</div>';}
+
+// A positive trait card — clean and simple (no element/severity).
+function soulPosCard(t,i){
+  var accent='126,184,164';
   var done=!!t.done;
   return '<div style="display:flex;align-items:center;gap:12px;padding:13px 14px;background:rgba('+accent+',.06);border:1px solid rgba('+accent+',.18);border-left:3px solid rgba('+accent+','+(done?'.3':'.85')+');border-radius:10px;margin-bottom:8px;'+(done?'opacity:.42;':'')+'">'
     +'<div style="flex:1;min-width:0;">'
       +'<div style="font-size:13px;color:var(--text);line-height:1.3;'+(done?'text-decoration:line-through;':'')+'">'+esc(t.text)+'</div>'
       +(done?'<div style="font-size:8px;letter-spacing:.18em;text-transform:uppercase;color:#a47eb8;margin-top:4px;">✓ Transformed</div>':'')
     +'</div>'
-    +'<button onclick="delete'+(kind==='positive'?'Positive':'Negative')+'Trait('+i+')" aria-label="Remove trait" style="flex-shrink:0;background:none;border:none;color:rgba(255,255,255,.28);font-size:14px;cursor:pointer;padding:4px 6px;line-height:1;">✕</button>'
+    +'<button onclick="deletePositiveTrait('+i+')" aria-label="Remove trait" style="flex-shrink:0;background:none;border:none;color:rgba(255,255,255,.28);font-size:14px;cursor:pointer;padding:4px 6px;line-height:1;">✕</button>'
     +'</div>';
 }
+
+// A negative trait card — shows element/severity badges, tap to open editor.
+function soulNegCard(t,i){
+  var done=!!t.done;
+  var el=(t.element&&SOUL_ELEMENTS[t.element])?t.element:null;
+  var border=el?SOUL_ELEMENTS[el].color:'196,120,140';
+  var expanded=soulExpandedNeg===i;
+
+  var badges='';
+  if(el){var e=SOUL_ELEMENTS[el];badges+='<span class="soul-elem-pill" style="color:rgb('+e.color+');background:rgba('+e.color+',.13);border:1px solid rgba('+e.color+',.4);">'+e.label+'</span>';}
+  if(t.severity&&SOUL_SEVERITY[t.severity]){var sv=SOUL_SEVERITY[t.severity];badges+='<span class="soul-sev-pill" style="color:rgb('+sv.color+');background:rgba('+sv.color+',.12);border-color:rgba('+sv.color+',.35);">'+sv.label+'</span>';}
+  if(!el&&!t.severity)badges+='<span style="font-size:8px;color:var(--muted);letter-spacing:.06em;">tap to classify</span>';
+
+  var head='<div style="display:flex;align-items:center;gap:12px;padding:13px 14px;">'
+    +'<div onclick="soulToggleNegEditor('+i+')" style="flex:1;min-width:0;cursor:pointer;">'
+      +'<div style="font-size:13px;color:var(--text);line-height:1.3;'+(done?'text-decoration:line-through;':'')+'">'+esc(t.text)+'</div>'
+      +'<div style="display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-top:6px;">'+badges+'</div>'
+      +(done?'<div style="font-size:8px;letter-spacing:.18em;text-transform:uppercase;color:#a47eb8;margin-top:4px;">✓ Transformed</div>':'')
+    +'</div>'
+    +'<button onclick="deleteNegativeTrait('+i+')" aria-label="Remove trait" style="flex-shrink:0;background:none;border:none;color:rgba(255,255,255,.28);font-size:14px;cursor:pointer;padding:4px 6px;line-height:1;">✕</button>'
+    +'</div>';
+
+  var editor='';
+  if(expanded){
+    var elemBtns=SOUL_ELEMENT_ORDER.map(function(k){
+      var e=SOUL_ELEMENTS[k];var sel=t.element===k;
+      return '<button class="soul-edit-chip" onclick="soulSetNegElement('+i+',\''+k+'\')" style="'+(sel?'color:rgb('+e.color+');background:rgba('+e.color+',.16);border-color:rgba('+e.color+',.5);':'')+'">'+e.label+'</button>';
+    }).join('');
+    var sevBtns=SOUL_SEVERITY_ORDER.map(function(s){
+      var sv=SOUL_SEVERITY[s];var sel=t.severity===s;
+      return '<button class="soul-edit-chip" onclick="soulSetNegSeverity('+i+','+s+')" style="'+(sel?'color:rgb('+sv.color+');background:rgba('+sv.color+',.16);border-color:rgba('+sv.color+',.5);':'')+'">'+sv.label+'</button>';
+    }).join('');
+    editor='<div style="padding:12px 14px 13px;border-top:1px solid rgba(255,255,255,.06);">'
+      +'<div style="font-size:8px;letter-spacing:.18em;text-transform:uppercase;color:var(--muted);margin-bottom:7px;">Element</div>'
+      +'<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:13px;">'+elemBtns+'</div>'
+      +'<div style="font-size:8px;letter-spacing:.18em;text-transform:uppercase;color:var(--muted);margin-bottom:7px;">Severity</div>'
+      +'<div style="display:flex;gap:6px;flex-wrap:wrap;">'+sevBtns+'</div>'
+      +'</div>';
+  }
+
+  return '<div style="background:rgba('+border+',.06);border:1px solid rgba('+border+',.18);border-left:3px solid rgba('+border+','+(done?'.3':'.85')+');border-radius:10px;margin-bottom:8px;'+(done?'opacity:.42;':'')+'">'+head+editor+'</div>';
+}
+
+function soulGroupHead(label,count,color){
+  return '<div class="soul-group-head"><span class="soul-group-head-label" style="color:rgb('+color+');">'+label+'</span><span class="soul-group-head-count">'+count+'</span><span class="soul-group-head-rule"></span></div>';
+}
+// Render negative cards grouped into ordered buckets, with an "Unassigned" tail.
+function soulRenderNegBy(shown,groups,keyFn){
+  var html='';
+  groups.forEach(function(g){
+    var items=shown.filter(function(o){return keyFn(o)===g.key;});
+    if(!items.length)return;
+    html+=soulGroupHead(g.label,items.length,g.color);
+    html+=items.map(function(o){return soulNegCard(o.t,o.i);}).join('');
+  });
+  var un=shown.filter(function(o){return keyFn(o)==null;});
+  if(un.length){
+    html+=soulGroupHead('Unassigned',un.length,'150,150,160');
+    html+=un.map(function(o){return soulNegCard(o.t,o.i);}).join('');
+  }
+  return html;
+}
+function soulRenderNegGrouped(shown,group){
+  if(group==='element')return soulRenderNegBy(shown,
+    SOUL_ELEMENT_ORDER.map(function(k){return {key:k,label:SOUL_ELEMENTS[k].label,color:SOUL_ELEMENTS[k].color};}),
+    function(o){return (o.t.element&&SOUL_ELEMENTS[o.t.element])?o.t.element:null;});
+  if(group==='severity')return soulRenderNegBy(shown,
+    SOUL_SEVERITY_ORDER.map(function(s){return {key:s,label:SOUL_SEVERITY[s].label,color:SOUL_SEVERITY[s].color};}),
+    function(o){return (o.t.severity&&SOUL_SEVERITY[o.t.severity])?o.t.severity:null;});
+  return shown.map(function(o){return soulNegCard(o.t,o.i);}).join('');
+}
+
+function soulSyncGroupButtons(){
+  document.querySelectorAll('.soul-group-btn').forEach(function(b){
+    b.classList.toggle('sel',b.dataset.group===soulSections.negGroup);
+  });
+}
+function soulApplyCollapse(){
+  var ps=document.getElementById('positiveSection');
+  var ns=document.getElementById('negativeSection');
+  var pc=document.getElementById('positiveChevron');
+  var nc=document.getElementById('negativeChevron');
+  if(ps)ps.style.display=soulSections.posOpen?'':'none';
+  if(ns)ns.style.display=soulSections.negOpen?'':'none';
+  if(pc)pc.style.transform=soulSections.posOpen?'':'rotate(-90deg)';
+  if(nc)nc.style.transform=soulSections.negOpen?'':'rotate(-90deg)';
+}
+
 function renderSoulMirrorTraits(){
   var data=loadSoulMirror();
   var q=soulMirrorQuery.trim().toLowerCase();
   var matches=function(t){return !q || (t.text||'').toLowerCase().indexOf(q)!==-1;};
-  // Keep each trait's original index so delete/transform still target the
-  // right entry even when the list is filtered by the search query.
-  var renderList=function(listEl,countEl,arr,kind,emptyMsg){
-    if(!listEl)return;
-    var shown=arr.map(function(t,i){return {t:t,i:i};}).filter(function(o){return matches(o.t);});
-    if(countEl)countEl.textContent=arr.length;
-    if(!arr.length){
-      listEl.innerHTML='<div style="font-size:11px;color:var(--muted);font-style:italic;padding:8px 0;">'+emptyMsg+'</div>';
-    } else if(!shown.length){
-      listEl.innerHTML='<div style="font-size:11px;color:var(--muted);font-style:italic;padding:8px 0;">No matches for "'+esc(soulMirrorQuery.trim())+'".</div>';
-    } else {
-      listEl.innerHTML=shown.map(function(o){return soulMirrorTraitCard(o.t,o.i,kind);}).join('');
-    }
-  };
-  renderList(document.getElementById('positiveTraitsList'),document.getElementById('positiveCount'),data.positive,'positive','No positive traits added yet.');
-  renderList(document.getElementById('negativeTraitsList'),document.getElementById('negativeCount'),data.negative,'negative','No negative traits added yet.');
+
+  // Positive list — never grouped.
+  var posEl=document.getElementById('positiveTraitsList');
+  var posCount=document.getElementById('positiveCount');
+  if(posCount)posCount.textContent=data.positive.length;
+  if(posEl){
+    var posShown=data.positive.map(function(t,i){return {t:t,i:i};}).filter(function(o){return matches(o.t);});
+    if(!data.positive.length)posEl.innerHTML=soulEmpty('No positive traits added yet.');
+    else if(!posShown.length)posEl.innerHTML=soulNoMatch();
+    else posEl.innerHTML=posShown.map(function(o){return soulPosCard(o.t,o.i);}).join('');
+  }
+
+  // Negative list — optionally grouped by element or severity. Original
+  // indices are preserved so edit/delete still target the right entry.
+  var negEl=document.getElementById('negativeTraitsList');
+  var negCount=document.getElementById('negativeCount');
+  if(negCount)negCount.textContent=data.negative.length;
+  if(negEl){
+    var negShown=data.negative.map(function(t,i){return {t:t,i:i};}).filter(function(o){return matches(o.t);});
+    if(!data.negative.length)negEl.innerHTML=soulEmpty('No negative traits added yet.');
+    else if(!negShown.length)negEl.innerHTML=soulNoMatch();
+    else negEl.innerHTML=soulRenderNegGrouped(negShown,soulSections.negGroup);
+  }
+
   var notesEl=document.getElementById('soulMirrorNotes');
   if(notesEl) notesEl.value=data.notes||'';
+  soulSyncGroupButtons();
+  soulApplyCollapse();
+}
+
+// Editor / classification setters for negative traits.
+function soulToggleNegEditor(i){ soulExpandedNeg=(soulExpandedNeg===i)?null:i; renderSoulMirrorTraits(); }
+function soulSetNegElement(i,el){
+  var data=loadSoulMirror();var t=data.negative[i];if(!t)return;
+  t.element=(t.element===el)?null:el; // tap again to clear
+  saveSoulMirror(data);renderSoulMirrorTraits();
+}
+function soulSetNegSeverity(i,s){
+  var data=loadSoulMirror();var t=data.negative[i];if(!t)return;
+  t.severity=(t.severity===s)?null:s; // tap again to clear
+  saveSoulMirror(data);renderSoulMirrorTraits();
 }
 
 function deletePositiveTrait(i){
@@ -25480,12 +25645,28 @@ function deleteNegativeTrait(i){
     var data=loadSoulMirror();
     var removed=data.negative.splice(i,1)[0];
     if(data.autosug&&removed&&data.autosug.kind==='negative'&&data.autosug.text===removed.text)delete data.autosug;
+    soulExpandedNeg=null; // indices shifted — close any open editor
     saveSoulMirror(data);renderSoulMirrorTraits();renderAutosug();
   });
 }
 
+// Collapse toggles (sections are open by default; state persists).
+document.getElementById('positiveToggle').addEventListener('click',function(){
+  soulSections.posOpen=!soulSections.posOpen;saveSoulSections(soulSections);soulApplyCollapse();
+});
+document.getElementById('negativeToggle').addEventListener('click',function(){
+  soulSections.negOpen=!soulSections.negOpen;saveSoulSections(soulSections);soulApplyCollapse();
+});
+// Group-by control for negative traits.
+document.querySelectorAll('.soul-group-btn').forEach(function(btn){
+  btn.addEventListener('click',function(){
+    soulSections.negGroup=btn.dataset.group;saveSoulSections(soulSections);renderSoulMirrorTraits();
+  });
+});
+
 // Trait add/cancel wiring
 document.getElementById('addPositiveBtn').addEventListener('click',function(){
+  if(!soulSections.posOpen){soulSections.posOpen=true;saveSoulSections(soulSections);soulApplyCollapse();}
   document.getElementById('positiveAddForm').style.display='block';
   document.getElementById('positiveTraitInput').focus();
 });
@@ -25502,6 +25683,7 @@ document.getElementById('positiveTraitSave').addEventListener('click',function()
   renderSoulMirrorTraits();
 });
 document.getElementById('addNegativeBtn').addEventListener('click',function(){
+  if(!soulSections.negOpen){soulSections.negOpen=true;saveSoulSections(soulSections);soulApplyCollapse();}
   document.getElementById('negativeAddForm').style.display='block';
   document.getElementById('negativeTraitInput').focus();
 });
