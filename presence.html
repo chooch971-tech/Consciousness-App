@@ -25778,6 +25778,7 @@ function soulMirrorShowPanel(tab){
   var label=document.getElementById('soulMirrorTabLabel');
   if(label)label.textContent=soulMirrorMode==='autosug'?'Autosuggestion':'Mirror';
   if(isMirror&&soulMirrorMode==='autosug'){renderAutosug();autosugAcquireWakeLock();}
+  else if(isMirror&&soulMirrorMode==='mirror'){renderSoulMirrorTraits();autosugReleaseWakeLock();}
   else autosugReleaseWakeLock();
 }
 
