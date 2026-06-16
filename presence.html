@@ -732,6 +732,10 @@
     .soul-elem-pill { display:inline-flex; align-items:center; gap:4px; font-size:8px; letter-spacing:.08em; text-transform:uppercase; font-family:'DM Mono',monospace; border-radius:20px; padding:2px 8px; }
     .soul-sev-pill { font-size:8px; letter-spacing:.08em; text-transform:uppercase; font-family:'DM Mono',monospace; border-radius:20px; padding:2px 8px; color:var(--muted); background:rgba(255,255,255,.05); border:1px solid var(--border); }
     .soul-edit-chip { background:rgba(255,255,255,.03); border:1px solid var(--border); border-radius:7px; color:var(--muted); font-family:'DM Mono',monospace; font-size:8px; letter-spacing:.08em; text-transform:uppercase; padding:6px 9px; cursor:pointer; transition:all .15s; }
+    /* "Finished with Mirror" milestone button — flashes to invite the user to graduate to Pore Breathing */
+    .soul-finish-btn { width:100%; padding:14px; border-radius:12px; border:1px solid rgba(212,180,100,.6); background:rgba(212,180,100,.1); color:rgb(236,206,128); font-family:'DM Mono',monospace; font-size:10px; letter-spacing:.2em; text-transform:uppercase; cursor:pointer; margin-bottom:22px; animation:soulFinishFlash 1.5s ease-in-out infinite; }
+    @keyframes soulFinishFlash { 0%,100% { box-shadow:0 0 0 rgba(212,180,100,0); border-color:rgba(212,180,100,.4); } 50% { box-shadow:0 0 18px rgba(212,180,100,.45); border-color:rgba(212,180,100,.95); } }
+    .soul-finished-banner { display:flex; align-items:center; gap:9px; padding:12px 14px; border-radius:12px; border:1px solid rgba(142,204,224,.3); background:rgba(142,204,224,.07); color:#9fd4e4; font-family:'DM Mono',monospace; font-size:9px; letter-spacing:.1em; line-height:1.5; margin-bottom:22px; }
     .path-quest-root { display:flex; flex-direction:column; gap:18px; padding:20px 2px 28px; }
     /* ── Guide redesign: day strip + exercise cards ── */
     .path-day-strip { display:flex; align-items:center; justify-content:space-between; margin:14px 0 0; padding:0 2px; }
@@ -5357,6 +5361,7 @@ body:not(.tut-live) #tutCorgi {
         <span style="position:absolute; left:13px; top:50%; transform:translateY(-50%); color:var(--muted); font-size:13px; pointer-events:none;">⌕</span>
         <button id="soulMirrorSearchClear" style="display:none; position:absolute; right:8px; top:50%; transform:translateY(-50%); background:none; border:none; color:var(--muted); font-size:14px; cursor:pointer; padding:4px 6px;">✕</button>
       </div>
+      <div id="soulMirrorFinishWrap"></div>
       <div style="margin-bottom:28px;">
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
           <button id="positiveToggle" style="display:flex; align-items:center; gap:8px; background:none; border:none; padding:0; cursor:pointer;">
@@ -17244,6 +17249,7 @@ function omniaPickGuidedPathRecommendation(forceNew) {
 // Soul Mirror and the advanced visual drills don't grant body levels.
 function omniaMetaIdForExercise(id) {
   if (id === 'observation' || id === 'focus' || id === 'vacancy') return 'thought';
+  if (id === 'pore') return 'pore_breathing';
   if (OMNIA_EXERCISE_META[id]) return id;
   return null;
 }
@@ -19859,7 +19865,37 @@ function guideMaybeNoticeAdaptation(info) {
 function buildGuideRegimentItems(mode) {
   var info = guideCurrentRegimentInfo(mode);
   var items = info.mode === 'experienced' ? buildExperiencedGuideItems() : buildFoundationalGuideItems();
-  return guideMergeAddedItems(items);
+  return guideMirrorToPore(guideMergeAddedItems(items));
+}
+
+// Has a Pore Breathing session been logged today?
+function guidePoreDoneToday() {
+  var history = (typeof concState !== 'undefined' && concState.history) ? concState.history : [];
+  var today = guideLocalDayKey();
+  return history.some(function(h) {
+    return h && h.exercise === 'pore_breathing' && guideLocalDayKey(h.date) === today;
+  });
+}
+
+// A Pore Breathing path card — open-ended like Soul Mirror reflection (the
+// breath count is chosen on its own screen), opens the breathing tab.
+function guidePoreItem(added) {
+  return {
+    id:'pore', name:'Pore Breathing', duration:null, durationLabel:'Breathwork',
+    done:guidePoreDoneToday(), progress:'', open:'pore', added:!!added,
+    tip:'Draw vital force through the whole body. Pore breathing transforms what the mirror revealed — let the breath fill every pore.'
+  };
+}
+
+// Once the user has finished with the Mirror, the daily Soul Mirror reflection
+// card becomes Pore Breathing. The Mirror stays editable; only the recommended
+// path item changes.
+function guideMirrorToPore(items) {
+  if (!soulMirrorIsFinished()) return items;
+  return items.map(function(it) {
+    if (it && it.id === 'soulmirror' && it.open === 'soulmirror') return guidePoreItem(it.added);
+    return it;
+  });
 }
 
 // ── Manually-added exercises ("+" on the Path) ──────────────
@@ -19895,6 +19931,9 @@ function guideBuildAddedItem(exId, rounds) {
   }
   if (exId === 'soulmirror') {
     return { id:'soulmirror', name:'Soul Mirror', duration:null, durationLabel:'Reflection', done:(function(){ var sm = loadSoulMirror(); return !!(sm._lastEditDate && sm._lastEditDate === guideLocalDayKey()); })(), progress:'', tip:'Added by you. Open the mirror and make one honest edit — add a trait, revise one, or write a note.', open:'soulmirror', added:true };
+  }
+  if (exId === 'pore') {
+    return guidePoreItem(true);
   }
   if (exId === 'clock') {
     var c = guideClockStats();
@@ -19952,6 +19991,8 @@ function guidePathAddableExercises() {
     if (mode === activeMode) return; // already covered by the 'thought' item
     addable.push({ id: mode });
   });
+  // Pore Breathing — addable any time it isn't already on the path.
+  if (!present['pore']) addable.push({ id: 'pore' });
   // Advanced concentration exercises — offered last so they appear at the bottom.
   // All Angles is currently shown as "coming soon", so only Multi-Sense is addable.
   ['multisense'].forEach(function(id) {
@@ -20011,7 +20052,7 @@ function renderGuidePlan(mode, skipScroll) {
   renderGuideCadenceControl();
 
   // Exercise icons by type
-  var exIcon = { clock:'⊙', visual:'◉', auditory:'◈', thought:'◌', observation:'◌', focus:'◌', vacancy:'◌', asana:'✦', soulmirror:'◆' };
+  var exIcon = { clock:'⊙', visual:'◉', auditory:'◈', thought:'◌', observation:'◌', focus:'◌', vacancy:'◌', asana:'✦', soulmirror:'◆', pore:'≋' };
 
   var doneCount = items.filter(function(i){ return i.done; }).length;
   var totalCount = items.length;
@@ -20047,6 +20088,7 @@ function renderGuidePlan(mode, skipScroll) {
       : item.id === 'auditory' ? '#8eccc0'
       : _isTC(item.id) ? '#98b4cc'
       : item.id === 'asana'    ? '#d49898'
+      : item.id === 'pore'     ? '#8ecce0'
       : '#c4a8d4';
     var icon = exIcon[item.id] || exIcon['thought'] || '◆';
     var startAttrs = item.open
@@ -20132,6 +20174,15 @@ function beginGuidePlanItem(btn) {
     suppressTutorialForExerciseEntry();
     renderSoulMirrorTraits();
     showScreen('soulMirrorScreen');
+    return;
+  }
+  if (ex === 'pore') {
+    switchMode('concentration');
+    suppressTutorialForExerciseEntry();
+    renderSoulMirrorTraits();
+    showScreen('soulMirrorScreen');
+    var pbTab = document.querySelector('#soulMirrorTabs [data-tab="breathing"]');
+    if (pbTab) pbTab.click();
     return;
   }
   if (ex === 'multisense' || ex === 'allangles') {
@@ -20479,8 +20530,8 @@ function renderPathQuests() {
   var awarenessDone = awarenessMinutes >= awarenessTarget, awarenessClaimed = !!q.awareness.claimed;
   var awarenessReward = pathQuestReward('awareness');
 
-  var exIcon = { clock:'⊙', visual:'◉', auditory:'◈', thought:'◌', observation:'◌', focus:'◌', vacancy:'◌', asana:'✦', soulmirror:'◆' };
-  var exColor = { clock:'#d4b08e', visual:'#8ab8e0', auditory:'#8eccc0', thought:'#98b4cc', observation:'#98b4cc', focus:'#98b4cc', vacancy:'#98b4cc', asana:'#d49898', soulmirror:'#c4a8d4' };
+  var exIcon = { clock:'⊙', visual:'◉', auditory:'◈', thought:'◌', observation:'◌', focus:'◌', vacancy:'◌', asana:'✦', soulmirror:'◆', pore:'≋' };
+  var exColor = { clock:'#d4b08e', visual:'#8ab8e0', auditory:'#8eccc0', thought:'#98b4cc', observation:'#98b4cc', focus:'#98b4cc', vacancy:'#98b4cc', asana:'#d49898', soulmirror:'#c4a8d4', pore:'#8ecce0' };
 
   var dayNames = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
   var monthNames = ['January','February','March','April','May','June','July','August','September','October','November','December'];
@@ -20900,7 +20951,7 @@ function renderPathQuests() {
 (function() {
   var menu = document.getElementById('pqAddMenu');
   if (!menu) return;
-  var ADD_NAMES = { clock:'Clock', visual:'Visualization', auditory:'Auditory', thought:'Thought Control', asana:'Asana', soulmirror:'Soul Mirror', observation:'Thought Observation', focus:'Thought Focus', vacancy:'Vacancy of Mind', multisense:'Multi-Sense', allangles:'All Angles' };
+  var ADD_NAMES = { clock:'Clock', visual:'Visualization', auditory:'Auditory', thought:'Thought Control', asana:'Asana', soulmirror:'Soul Mirror', pore:'Pore Breathing', observation:'Thought Observation', focus:'Thought Focus', vacancy:'Vacancy of Mind', multisense:'Multi-Sense', allangles:'All Angles' };
   var ADD_ICONS = {
     clock:       { icon:'&#9200;',   color:'#d4b08e' },
     visual:      { icon:'&#128065;', color:'#8ab8e0' },
@@ -20911,6 +20962,7 @@ function renderPathQuests() {
     vacancy:     { icon:'&#9711;',   color:'#98b4cc' },
     asana:       { icon:'&#129485;', color:'#d49898' },
     soulmirror:  { icon:'&#128290;', color:'#c4a8d4' },
+    pore:        { icon:'&#8779;',   color:'#8ecce0' },
     multisense:  { icon:'&#127925;', color:'#d4c88e' },
     allangles:   { icon:'&#128260;', color:'#a8c89e' }
   };
@@ -25471,6 +25523,35 @@ function saveSoulMirror(data){
   localStorage.setItem('presence_soul_mirror_v1',JSON.stringify(data));
 }
 
+// ── "Finished with the Mirror" milestone ────────────────────────────────
+// Once the soul-mirror inventory is thorough enough (Bardon asks for an
+// exhaustive list), Omnia stops prompting daily reflection and shifts the
+// recommended practice to Pore Breathing — the energetic transformation work.
+// The Mirror itself stays fully editable; this only changes the recommendation.
+var SOUL_MIRROR_NEG_GOAL = 100;
+var SOUL_MIRROR_POS_GOAL = 30;
+function soulMirrorThresholdMet(data){
+  data = data || loadSoulMirror();
+  return (data.negative||[]).length >= SOUL_MIRROR_NEG_GOAL
+      && (data.positive||[]).length >= SOUL_MIRROR_POS_GOAL;
+}
+function soulMirrorIsFinished(){
+  try { return !!loadSoulMirror().mirrorFinished; } catch(e){ return false; }
+}
+function soulMirrorFinish(){
+  showConfirm('Finished with the Mirror?',
+    'Your soul-mirror inventory is complete. Omnia will shift your recommended reflection to Pore Breathing — the work of transformation. You can still edit the Mirror anytime.',
+    function(){
+      var data=loadSoulMirror();
+      data.mirrorFinished=true;
+      saveSoulMirror(data);
+      renderSoulMirrorTraits();
+      if(typeof renderPathQuests==='function'){ try{renderPathQuests();}catch(e){} }
+      if(typeof omniaPickRecommendation==='function'){ try{omniaPickRecommendation(true);}catch(e){} }
+      showToast('Mirror complete · Pore Breathing is now your path');
+    });
+}
+
 var soulMirrorQuery='';
 
 // ── Bardon-style classification of negative traits ──────────────
@@ -25627,6 +25708,19 @@ function renderSoulMirrorTraits(){
   soulAutoSugState=data.autosug||null;
   var q=soulMirrorQuery.trim().toLowerCase();
   var matches=function(t){return !q || (t.text||'').toLowerCase().indexOf(q)!==-1;};
+
+  // "Finished with the Mirror" milestone — flashing invite once the inventory
+  // is deep enough, then a quiet confirmation banner after the user accepts.
+  var finishWrap=document.getElementById('soulMirrorFinishWrap');
+  if(finishWrap){
+    if(data.mirrorFinished){
+      finishWrap.innerHTML='<div class="soul-finished-banner"><span style="font-size:13px;flex-shrink:0;">≋</span><span>Mirror complete · Omnia now guides you to Pore Breathing. Edit the Mirror anytime.</span></div>';
+    } else if(soulMirrorThresholdMet(data)){
+      finishWrap.innerHTML='<button onclick="soulMirrorFinish()" class="soul-finish-btn">✦ Finished with Mirror</button>';
+    } else {
+      finishWrap.innerHTML='';
+    }
+  }
 
   // Positive list — never grouped.
   var posEl=document.getElementById('positiveTraitsList');
