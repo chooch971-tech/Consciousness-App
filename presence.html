@@ -8514,8 +8514,8 @@ document.getElementById('audUrlInput').addEventListener('keydown', function(e) {
 });
 
 document.getElementById('syncLogoutBtn').addEventListener('click', function() {
-  if (confirm('Sign out of cloud sync?')) {
-    authLogout({ clearLocalProgress: false, stayOnSettings: true });
+  if (confirm('Sign out? Your progress is saved to the cloud and will be restored when you sign back in.')) {
+    authLogout({ clearLocalProgress: true });
   }
 });
 
@@ -23474,8 +23474,15 @@ function _refreshSettingsSyncCardSignedIn() {
   if (uc) uc.style.display = authUsername ? 'none' : 'block';
 }
 
-function authLogout(options) {
+async function authLogout(options) {
   options = options || {};
+  // For a deliberate sign-out, flush any unsynced local progress to the cloud
+  // FIRST — while the token is still valid — so clearing local data below can't
+  // lose work. (Involuntary 401 expiries don't pass clearLocalProgress, so we
+  // never risk wiping unsynced data when the server just rejected the token.)
+  if (options.clearLocalProgress && syncEnabled && authToken) {
+    try { await syncPushData(); } catch(e) {}
+  }
   authToken = null;
   authEmail = null;
   authUsername = null;
@@ -23483,6 +23490,17 @@ function authLogout(options) {
   localStorage.removeItem('presence_auth_email');
   localStorage.removeItem('presence_auth_username');
   syncEnabled = false;
+  // Deliberate sign-out: wipe local progress so a signed-out device shows a
+  // clean slate instead of the previous account's data. The data is safe in the
+  // cloud (pushed above) and restored on next sign-in via shouldTakeCloudValue.
+  // Re-arm the welcome screen so the user lands there, then reload to apply.
+  if (options.clearLocalProgress) {
+    resetLocalProgressForSignedOut();
+    localStorage.removeItem('presence_welcome_seen');
+    if (options.message) localStorage.setItem('presence_sync_warning', options.message);
+    window.location.reload();
+    return;
+  }
   _refreshSettingsSyncCard();
   // Persist a warning so the user sees it next time they open Settings
   if (options.message) {
