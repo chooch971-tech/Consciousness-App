@@ -4336,9 +4336,13 @@ body:not(.tut-live) #tutCorgi {
     }
   }
 
-  // Show after splash fades if first-time user
+  // Mount the welcome screen IMMEDIATELY for first-time users. It sits at
+  // z-index 9998 — behind the splash (9999) but above the app — so it's
+  // already painted underneath the splash. When the splash fades out, the
+  // welcome screen is revealed directly, with no flash of the home screen
+  // (or booting tutorial) in the gap between splash-fade and mount.
   if (!localStorage.getItem('presence_auth_token') && !localStorage.getItem('presence_welcome_seen')) {
-    setTimeout(showWelcome, 2100);
+    showWelcome();
   }
 
   document.getElementById('welcomeBeginBtn').addEventListener('click', function() {
