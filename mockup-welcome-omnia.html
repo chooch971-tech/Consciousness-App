@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"/>
-<title>Presence · Welcome (mockup)</title>
+<title>Presence · Welcome — Omnia (mockup)</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"/>
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300&family=DM+Mono:wght@300;400&display=swap" rel="stylesheet"/>
@@ -13,69 +13,66 @@
     --border:rgba(255,255,255,0.07); --border2:rgba(255,255,255,0.12);
     --text:#ddd8ce; --muted:rgba(221,216,206,0.38);
     --accent:#7eb8a4; --accent2:#a4c4b8; --accent-dim:rgba(126,184,164,0.12);
-    --crystal:#b8eaff;
   }
   *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
   html,body{height:100%;}
   body{
     margin:0; background:var(--bg); color:var(--text);
     font-family:'DM Mono',monospace;
-    display:flex; align-items:center; justify-content:center;
-    overflow:hidden;
+    display:flex; align-items:center; justify-content:center; overflow:hidden;
   }
-  /* phone frame just for the mockup — not part of the real screen */
   .phone{
     position:relative; width:min(420px,100vw); height:min(900px,100vh);
-    background:radial-gradient(120% 80% at 50% 22%, #0c0e17 0%, var(--bg) 62%);
+    background:radial-gradient(ellipse 60% 40% at 50% 40%, rgba(126,184,164,0.07) 0%, var(--bg) 70%);
     display:flex; flex-direction:column;
-    padding:0 30px env(safe-area-inset-bottom) 30px;
-    overflow:hidden;
+    padding:0 30px env(safe-area-inset-bottom) 30px; overflow:hidden;
   }
-
-  /* soft ambient glow behind the crystal */
   .ambient{
-    position:absolute; top:30%; left:50%; transform:translate(-50%,-50%);
-    width:340px; height:340px; pointer-events:none;
-    background:radial-gradient(circle, rgba(126,184,164,0.10) 0%, rgba(184,234,255,0.05) 35%, transparent 70%);
-    filter:blur(6px);
-    animation:breathe 7s ease-in-out infinite;
+    position:absolute; top:34%; left:50%; transform:translate(-50%,-50%);
+    width:320px; height:320px; pointer-events:none;
+    background:radial-gradient(circle, rgba(184,234,255,0.10) 0%, rgba(126,184,164,0.05) 38%, transparent 70%);
+    filter:blur(6px); animation:breathe 7s ease-in-out infinite;
   }
   @keyframes breathe{
     0%,100%{ transform:translate(-50%,-50%) scale(1); opacity:.85; }
     50%{ transform:translate(-50%,-50%) scale(1.12); opacity:1; }
   }
 
-  .hero{ flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:0; }
+  .hero{ flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; }
 
-  .crystal-wrap{
-    position:relative; width:128px; height:150px;
+  /* crystal stage with floating beads, as in-app */
+  .crystal-stage{
+    position:relative; width:140px; height:200px;
     display:flex; align-items:center; justify-content:center;
-    animation:float 6s ease-in-out infinite;
-    margin-bottom:34px;
+    animation:float 6s ease-in-out infinite; margin-bottom:30px;
   }
-  @keyframes float{
-    0%,100%{ transform:translateY(0); }
-    50%{ transform:translateY(-9px); }
+  @keyframes float{ 0%,100%{transform:translateY(0);} 50%{transform:translateY(-9px);} }
+  .omnia-crystal{
+    width:112px; height:auto; overflow:visible; position:relative; z-index:2;
+    filter:drop-shadow(0 0 16px rgba(184,234,255,0.40)) drop-shadow(0 0 5px rgba(184,234,255,0.5));
   }
-  .crystal-wrap svg{ filter:drop-shadow(0 0 18px rgba(184,234,255,0.35)); }
+  .bead{
+    position:absolute; border-radius:50%; background:#cdeeff;
+    box-shadow:0 0 6px rgba(184,234,255,.8);
+    opacity:0; animation:beadFloat 4s ease-in-out infinite;
+  }
+  @keyframes beadFloat{
+    0%,100%{ transform:translateY(4px); opacity:0; }
+    35%,65%{ transform:translateY(-6px); opacity:.85; }
+  }
 
+  /* exact Presence wordmark styling from the app splash */
   .wordmark{
-    font-family:'Cormorant Garamond',serif;
-    font-weight:300; font-size:54px; letter-spacing:.02em;
-    color:var(--text); line-height:1; margin:0;
+    font-family:'Cormorant Garamond',serif; font-weight:300; font-size:52px;
+    letter-spacing:0.14em; color:#e8e0d0; line-height:1; margin:0;
+    padding-left:0.14em; /* optical centering for tracked text */
   }
   .tagline{
-    margin-top:16px;
-    font-family:'Cormorant Garamond',serif; font-style:italic; font-weight:300;
-    font-size:20px; color:var(--accent2); letter-spacing:.01em;
-  }
-  .sub{
-    margin-top:10px; font-size:10px; letter-spacing:.28em; text-transform:uppercase;
-    color:var(--muted);
+    margin-top:18px; font-family:'DM Mono',monospace; font-size:9px;
+    letter-spacing:0.32em; text-transform:uppercase; color:rgba(221,216,206,0.58);
   }
 
   .actions{ display:flex; flex-direction:column; gap:12px; padding-bottom:8px; }
-
   .btn{
     width:100%; padding:18px 24px; border-radius:16px; cursor:pointer;
     font-family:'DM Mono',monospace; font-size:12px; letter-spacing:.18em;
@@ -83,32 +80,20 @@
     border:1px solid transparent;
   }
   .btn:active{ transform:scale(0.985); }
-
   .btn--primary{
     background:linear-gradient(180deg, rgba(126,184,164,0.18), rgba(126,184,164,0.10));
     border-color:rgba(126,184,164,0.40); color:var(--accent2);
-    box-shadow:0 0 0 rgba(126,184,164,0);
     animation:glow 3.4s ease-in-out infinite;
   }
-  @keyframes glow{
-    0%,100%{ box-shadow:0 0 0 rgba(126,184,164,0); }
-    50%{ box-shadow:0 0 22px rgba(126,184,164,0.22); }
-  }
+  @keyframes glow{ 0%,100%{box-shadow:0 0 0 rgba(126,184,164,0);} 50%{box-shadow:0 0 22px rgba(126,184,164,0.22);} }
   .btn--primary:hover{ background:rgba(126,184,164,0.20); }
-
-  .btn--ghost{
-    background:transparent; border-color:var(--border2); color:var(--muted);
-  }
+  .btn--ghost{ background:transparent; border-color:var(--border2); color:var(--muted); }
   .btn--ghost:hover{ border-color:rgba(126,184,164,0.3); color:var(--accent2); }
 
-  /* tiny faux status bar so it reads like a phone */
   .statusbar{
     display:flex; justify-content:space-between; align-items:center;
-    padding:14px 4px 0; font-size:12px; color:var(--text); opacity:.65;
-    font-variant-numeric:tabular-nums;
+    padding:14px 4px 0; font-size:12px; color:var(--text); opacity:.65; font-variant-numeric:tabular-nums;
   }
-
-  /* clicked-state overlay (so the mockup feels alive) */
   .toast{
     position:absolute; left:50%; bottom:132px; transform:translateX(-50%) translateY(12px);
     background:var(--surface); border:1px solid var(--border2); color:var(--text);
@@ -122,47 +107,37 @@
 </head>
 <body>
   <div class="phone">
-    <div class="statusbar">
-      <span>3:58</span>
-      <span>● ● ● ●  ⌃  20</span>
-    </div>
-
+    <div class="statusbar"><span>3:58</span><span>● ● ● ●  ⌃  20</span></div>
     <div class="ambient"></div>
 
     <div class="hero">
-      <div class="crystal-wrap">
-        <!-- Omnia crystal — faceted gem in the app's signature blue -->
-        <svg width="128" height="150" viewBox="0 0 128 150" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <div class="crystal-stage" id="stage">
+        <!-- The real Omnia crystal, lifted straight from the app -->
+        <svg class="omnia-crystal" viewBox="0 0 72 118" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
           <defs>
-            <linearGradient id="cFace" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0" stop-color="#e8f8ff"/>
-              <stop offset="1" stop-color="#b8eaff"/>
-            </linearGradient>
-            <linearGradient id="cSide" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0" stop-color="#9fd6ee"/>
-              <stop offset="1" stop-color="#6fa9c4"/>
-            </linearGradient>
-            <linearGradient id="cDark" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0" stop-color="#7fb8d6"/>
-              <stop offset="1" stop-color="#4d7e98"/>
-            </linearGradient>
+            <radialGradient id="tpg3" cx="50%" cy="40%" r="60%">
+              <stop offset="0%" stop-color="#e8f8ff" stop-opacity=".55"/>
+              <stop offset="100%" stop-color="#8ecce0" stop-opacity="0"/>
+            </radialGradient>
+            <filter id="tpgl"><feGaussianBlur stdDeviation="2.5" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
           </defs>
-          <!-- crown -->
-          <polygon points="64,8 40,46 64,58 88,46" fill="url(#cFace)"/>
-          <polygon points="40,46 22,58 64,82 64,58" fill="url(#cSide)"/>
-          <polygon points="88,46 106,58 64,82 64,58" fill="url(#cDark)"/>
-          <!-- pavilion -->
-          <polygon points="22,58 64,82 64,142" fill="url(#cSide)" opacity="0.92"/>
-          <polygon points="106,58 64,82 64,142" fill="url(#cDark)" opacity="0.92"/>
-          <polygon points="40,46 64,58 64,82 22,58" fill="url(#cFace)" opacity="0.35"/>
-          <!-- inner light -->
-          <polygon points="64,58 76,66 64,82 52,66" fill="#ffffff" opacity="0.55"/>
+          <ellipse cx="36" cy="62" rx="24" ry="42" fill="url(#tpg3)" filter="url(#tpgl)" opacity=".55"/>
+          <polygon points="36,2 50,14 36,26 22,14" fill="#ceeaff" stroke="#90cce8" stroke-width=".8" opacity=".95"/>
+          <polygon points="36,2 50,14 36,13" fill="#e8f8ff" opacity=".55"/>
+          <polygon points="36,2 22,14 36,13" fill="#b4daf5" opacity=".35"/>
+          <line x1="36" y1="2" x2="36" y2="26" stroke="#b8e0f8" stroke-width=".5" opacity=".4"/>
+          <polygon points="36,26 56,37 60,59 36,70 12,59 16,37" fill="#b8dcf5" stroke="#88c4e0" stroke-width=".7" opacity=".88"/>
+          <polygon points="36,26 56,37 36,45" fill="#d4ecff" opacity=".44"/>
+          <polygon points="36,26 16,37 36,45" fill="#a8d4f0" opacity=".28"/>
+          <line x1="36" y1="26" x2="36" y2="70" stroke="#a8d8f2" stroke-width=".5" opacity=".38"/>
+          <polygon points="36,70 60,59 52,88 36,100 20,88 12,59" fill="#a8d4f0" stroke="#88c4e0" stroke-width=".7" opacity=".82"/>
+          <polygon points="36,100 52,88 36,116" fill="#98c8e8" stroke="#88c4e0" stroke-width=".6" opacity=".7"/>
+          <polygon points="36,100 20,88 36,116" fill="#88c0e0" stroke="#88c4e0" stroke-width=".6" opacity=".52"/>
         </svg>
       </div>
 
       <h1 class="wordmark">Presence</h1>
-      <div class="tagline">Be here, now.</div>
-      <div class="sub">A practice, not an app</div>
+      <div class="tagline">Enlightenment now</div>
     </div>
 
     <div class="actions">
@@ -174,14 +149,30 @@
   </div>
 
 <script>
-  var t = document.getElementById('toast');
-  var timer;
+  // scatter the floating beads around the crystal, as in-app
+  var beads=[
+    [24,18,0,6],[37,10,.22,5],[52,14,.44,8],[68,8,.66,5],
+    [78,24,.88,7],[18,35,1.1,5],[34,30,1.32,7],[58,34,1.54,6],
+    [72,42,1.76,5],[27,50,1.98,8],[46,46,2.2,5],[64,56,2.42,7]
+  ];
+  var stage=document.getElementById('stage');
+  beads.forEach(function(p){
+    var b=document.createElement('span');
+    b.className='bead';
+    b.style.left=p[0]+'%'; b.style.top=p[1]+'%';
+    b.style.width=p[3]+'px'; b.style.height=p[3]+'px';
+    b.style.animationDelay=p[2]+'s';
+    stage.appendChild(b);
+  });
+
+  var t=document.getElementById('toast'), timer;
   function tap(which){
-    if (which === 'Begin') t.innerHTML = '→ Would open the <b>tutorial / first session</b>';
-    else t.innerHTML = '→ Would open <b>Continue with Google</b>';
+    t.innerHTML = which==='Begin'
+      ? '→ Would open the <b>tutorial / first session</b>'
+      : '→ Would open <b>Continue with Google</b>';
     t.classList.add('show');
     clearTimeout(timer);
-    timer = setTimeout(function(){ t.classList.remove('show'); }, 2200);
+    timer=setTimeout(function(){ t.classList.remove('show'); }, 2200);
   }
 </script>
 </body>

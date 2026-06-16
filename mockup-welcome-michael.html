@@ -47,15 +47,16 @@
   @keyframes float{ 0%,100%{transform:translateY(0);} 50%{transform:translateY(-7px);} }
   .fig svg{ filter:drop-shadow(0 0 16px rgba(196,168,212,0.30)); }
 
+  /* exact Presence wordmark styling from the app splash */
   .wordmark{
-    font-family:'Cormorant Garamond',serif; font-weight:300; font-size:54px;
-    letter-spacing:.02em; color:var(--text); line-height:1; margin:0;
+    font-family:'Cormorant Garamond',serif; font-weight:300; font-size:52px;
+    letter-spacing:0.14em; color:#e8e0d0; line-height:1; margin:0;
+    padding-left:0.14em; /* optical centering for tracked text */
   }
   .tagline{
-    margin-top:16px; font-family:'Cormorant Garamond',serif; font-style:italic;
-    font-weight:300; font-size:20px; color:var(--accent2); letter-spacing:.01em;
+    margin-top:18px; font-family:'DM Mono',monospace; font-size:9px;
+    letter-spacing:0.32em; text-transform:uppercase; color:rgba(221,216,206,0.58);
   }
-  .sub{ margin-top:10px; font-size:10px; letter-spacing:.28em; text-transform:uppercase; color:var(--muted); }
 
   .actions{ display:flex; flex-direction:column; gap:12px; padding-bottom:8px; }
   .btn{
@@ -167,8 +168,7 @@
       </div>
 
       <h1 class="wordmark">Presence</h1>
-      <div class="tagline">Stand guard over your attention.</div>
-      <div class="sub">A practice, not an app</div>
+      <div class="tagline">Enlightenment now</div>
     </div>
 
     <div class="actions">
