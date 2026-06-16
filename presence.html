@@ -6336,6 +6336,10 @@ body:not(.tut-live) #tutCorgi {
 <!-- pqSkipMenu lives at top-level so position:fixed isn't clipped by any scroll parent -->
 <div class="pq-skip-menu" id="pqSkipMenu">
   <button class="pq-skip-item" id="pqSkipAdvanced" style="display:none;">I'm Advanced</button>
+  <hr class="pq-thought-mode-divider" id="pqFreqDivider" style="display:none;">
+  <button class="pq-skip-item" id="pqFreq1x" style="display:none;">Once a day</button>
+  <button class="pq-skip-item" id="pqFreq2x" style="display:none;">Twice a day</button>
+  <hr class="pq-thought-mode-divider">
   <button class="pq-skip-item warn" id="pqSkipRemove">Remove Exercise</button>
 </div>
 <!-- pqAddMenu: lists exercises the user can manually add to their path -->
@@ -18957,6 +18961,43 @@ function guideTwoADayEnabled() {
   return guideState._twoADayV1 !== false;
 }
 
+// Per-exercise rounds override — returns 1 or 2, consulting the per-exercise
+// setting first then falling back to the global 2x/day toggle.
+function guideExRounds(exId) {
+  var ov = guideState._exRounds && guideState._exRounds[exId];
+  if (ov === 1 || ov === 2) return ov;
+  return guideTwoADayEnabled() ? 2 : 1;
+}
+
+// Post-process items: if an exercise has a per-exercise rounds override that
+// differs from the global setting, re-derive done and durationLabel from it.
+// Called last in buildGuideRegimentItems so it also fixes added items.
+function guideApplyExRounds(items) {
+  if (!guideState._exRounds || !Object.keys(guideState._exRounds).length) return items;
+  var globalR = guideTwoADayEnabled() ? 2 : 1;
+  // Lazy-load stats only if needed (avoids scanning history when nothing is overridden)
+  var _stats = null, _ts = null;
+  function getStats() { if (!_stats) _stats = guideExerciseStats(); return _stats; }
+  function getTS()    { if (!_ts)   _ts   = guideThoughtStats();    return _ts;   }
+  return items.map(function(it) {
+    var ov = guideState._exRounds && guideState._exRounds[it.id];
+    if (ov !== 1 && ov !== 2) return it;
+    if (ov === globalR) return it;           // override matches global — no change
+    if (!it.duration && it.duration !== 0) return it; // open-ended (soulmirror, pore)
+    var todaySec;
+    var isThought = (it.id === 'thought' || it.id === 'observation' || it.id === 'focus' || it.id === 'vacancy');
+    if (isThought) {
+      var mode = it.mode || it.id;
+      todaySec = (getTS()[mode] || {}).todaySec || 0;
+    } else {
+      todaySec = (getStats()[it.id] || {}).todaySec || 0;
+    }
+    var done = todaySec >= it.duration * 60 * ov;
+    var durationLabel = it.duration + ' min' + (ov > 1 ? ' x2' : '');
+    return Object.assign({}, it, { done: done, durationLabel: durationLabel });
+  });
+}
+
 function renderGuideCadenceControl() {
   var on = guideTwoADayEnabled();
   ['guideTwoADayBtn','guideConfirmTwoADayBtn','guidePlanTwoADayBtn'].forEach(function(id) {
@@ -19865,7 +19906,7 @@ function guideMaybeNoticeAdaptation(info) {
 function buildGuideRegimentItems(mode) {
   var info = guideCurrentRegimentInfo(mode);
   var items = info.mode === 'experienced' ? buildExperiencedGuideItems() : buildFoundationalGuideItems();
-  return guideMirrorToPore(guideMergeAddedItems(items));
+  return guideMirrorToPore(guideApplyExRounds(guideMergeAddedItems(items)));
 }
 
 // Has a Pore Breathing session been logged today?
@@ -20831,6 +20872,12 @@ function renderPathQuests() {
   var EX_DISPLAY_NAMES = { clock:'Clock', visual:'Visualization', auditory:'Auditory', thought:'Thought Control', asana:'Asana' };
   function isTimedEx(id) { return GUIDE_TIMED_EXERCISES.indexOf(id) !== -1; }
 
+  var freq1Btn = document.getElementById('pqFreq1x');
+  var freq2Btn = document.getElementById('pqFreq2x');
+  var freqDiv  = document.getElementById('pqFreqDivider');
+  // Exercises that have no "rounds" concept — hide frequency controls for these.
+  var OPEN_ENDED_EX = { soulmirror:1, pore:1 };
+
   function openSkipMenu(btn) {
     activeExId = btn.dataset.exId;
     activeExMode = btn.dataset.exMode || null;
@@ -20842,6 +20889,17 @@ function renderPathQuests() {
       } else {
         advItem.style.display = 'none';
       }
+    }
+    // Per-exercise frequency controls (hidden for open-ended exercises)
+    var showFreq = !OPEN_ENDED_EX[activeExId];
+    if (freqDiv)  freqDiv.style.display  = showFreq ? '' : 'none';
+    if (freq1Btn) {
+      freq1Btn.style.display = showFreq ? '' : 'none';
+      freq1Btn.classList.toggle('active', showFreq && guideExRounds(activeExId) === 1);
+    }
+    if (freq2Btn) {
+      freq2Btn.style.display = showFreq ? '' : 'none';
+      freq2Btn.classList.toggle('active', showFreq && guideExRounds(activeExId) === 2);
     }
     var r = btn.getBoundingClientRect();
     menu.style.top = (r.bottom + 4) + 'px';
@@ -20899,6 +20957,24 @@ function renderPathQuests() {
   if (advItem) advItem.addEventListener('click', function() {
     closeSkipMenu();
     openAdvDialog();
+  });
+  if (freq1Btn) freq1Btn.addEventListener('click', function() {
+    if (!activeExId) return;
+    if (!guideState._exRounds) guideState._exRounds = {};
+    guideState._exRounds[activeExId] = 1;
+    saveGuideState(guideState);
+    closeSkipMenu();
+    renderPathQuests();
+    if (typeof renderGuidePlan === 'function' && guideState._pathLockedV2) renderGuidePlan(guidePathMode);
+  });
+  if (freq2Btn) freq2Btn.addEventListener('click', function() {
+    if (!activeExId) return;
+    if (!guideState._exRounds) guideState._exRounds = {};
+    guideState._exRounds[activeExId] = 2;
+    saveGuideState(guideState);
+    closeSkipMenu();
+    renderPathQuests();
+    if (typeof renderGuidePlan === 'function' && guideState._pathLockedV2) renderGuidePlan(guidePathMode);
   });
   var advMinusBtn = document.getElementById('pqAdvMinus');
   var advPlusBtn = document.getElementById('pqAdvPlus');
