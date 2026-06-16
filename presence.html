@@ -17128,10 +17128,10 @@ function omniaReservoirCap() {
   // upgrade and body total so late-game collections become large and rewarding.
   // Deliberately does NOT touch the earning rate, body costs, or wallet cap, so
   // the core economy stays balanced; this only governs the idle buffer size.
-  // Start ≈ 70 · Step IV ≈ 2,900 · Step X ≈ 80,000 (was 318 / 3,000 / 42,330).
+  // Start ≈ 130 · Step IV ≈ 3,000 · Step X ≈ 80,000 (was 318 / 3,000 / 42,330).
   var vessel = omniaState.upgrades.vessel || 1;
   var bodyTotal = Math.max(0, omniaBodyTotal());
-  return Math.floor(60 + Math.pow(vessel - 1, 2) * 30 + Math.pow(bodyTotal, 1.15) * 3);
+  return Math.floor(120 + Math.pow(vessel - 1, 2) * 30 + Math.pow(bodyTotal, 1.15) * 3);
 }
 
 function omniaAkashaCap() {
