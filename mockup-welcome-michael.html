@@ -47,9 +47,9 @@
   @keyframes float{ 0%,100%{transform:translateY(0);} 50%{transform:translateY(-7px);} }
   .fig svg{ filter:drop-shadow(0 0 16px rgba(196,168,212,0.30)); }
 
-  /* identical to the in-app #splash .splash-wordmark */
+  /* matches the in-app #splash wordmark, at the app's fuller weight */
   .wordmark{
-    font-family:'Cormorant Garamond',serif; font-weight:300; font-size:48px;
+    font-family:'Cormorant Garamond',serif; font-weight:400; font-size:48px;
     letter-spacing:0.14em; color:#e8e0d0; line-height:1; margin:0;
   }
   .tagline{
@@ -75,10 +75,6 @@
   .btn--ghost{ background:transparent; border-color:var(--border2); color:var(--muted); }
   .btn--ghost:hover{ border-color:rgba(196,168,212,0.32); color:var(--accent2); }
 
-  .statusbar{
-    display:flex; justify-content:space-between; align-items:center;
-    padding:14px 4px 0; font-size:12px; color:var(--text); opacity:.65; font-variant-numeric:tabular-nums;
-  }
   .toast{
     position:absolute; left:50%; bottom:132px; transform:translateX(-50%) translateY(12px);
     background:var(--surface); border:1px solid var(--border2); color:var(--text);
@@ -136,7 +132,6 @@
 </head>
 <body>
   <div class="phone">
-    <div class="statusbar"><span>3:58</span><span>● ● ● ●  ⌃  20</span></div>
     <div class="ambient"></div>
 
     <div class="hero">
