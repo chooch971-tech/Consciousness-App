@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"/>
+<title>Presence · Welcome — Archangel Michael (mockup)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300&family=DM+Mono:wght@300;400&display=swap" rel="stylesheet"/>
+<style>
+  :root{
+    --bg:#07080d; --surface:#0e0f17;
+    --border:rgba(255,255,255,0.07); --border2:rgba(255,255,255,0.12);
+    --text:#ddd8ce; --muted:rgba(221,216,206,0.38);
+    --accent:#c4a8d4; --accent2:#d4b8e0; --accent-dim:rgba(196,168,212,0.12);
+  }
+  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
+  html,body{height:100%;}
+  body{
+    margin:0; background:var(--bg); color:var(--text);
+    font-family:'DM Mono',monospace;
+    display:flex; align-items:center; justify-content:center; overflow:hidden;
+  }
+  .phone{
+    position:relative; width:min(420px,100vw); height:min(900px,100vh);
+    background:radial-gradient(120% 80% at 50% 24%, #110d18 0%, var(--bg) 62%);
+    display:flex; flex-direction:column;
+    padding:0 30px env(safe-area-inset-bottom) 30px; overflow:hidden;
+  }
+  .ambient{
+    position:absolute; top:32%; left:50%; transform:translate(-50%,-50%);
+    width:360px; height:360px; pointer-events:none;
+    background:radial-gradient(circle, rgba(196,168,212,0.12) 0%, rgba(244,236,250,0.05) 38%, transparent 70%);
+    filter:blur(6px); animation:breathe 7s ease-in-out infinite;
+  }
+  @keyframes breathe{
+    0%,100%{ transform:translate(-50%,-50%) scale(1); opacity:.85; }
+    50%{ transform:translate(-50%,-50%) scale(1.1); opacity:1; }
+  }
+
+  .hero{ flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; }
+
+  .fig{
+    width:150px; height:230px; display:flex; align-items:center; justify-content:center;
+    animation:float 6.5s ease-in-out infinite; margin-bottom:24px;
+  }
+  @keyframes float{ 0%,100%{transform:translateY(0);} 50%{transform:translateY(-7px);} }
+  .fig svg{ filter:drop-shadow(0 0 16px rgba(196,168,212,0.30)); }
+
+  .wordmark{
+    font-family:'Cormorant Garamond',serif; font-weight:300; font-size:54px;
+    letter-spacing:.02em; color:var(--text); line-height:1; margin:0;
+  }
+  .tagline{
+    margin-top:16px; font-family:'Cormorant Garamond',serif; font-style:italic;
+    font-weight:300; font-size:20px; color:var(--accent2); letter-spacing:.01em;
+  }
+  .sub{ margin-top:10px; font-size:10px; letter-spacing:.28em; text-transform:uppercase; color:var(--muted); }
+
+  .actions{ display:flex; flex-direction:column; gap:12px; padding-bottom:8px; }
+  .btn{
+    width:100%; padding:18px 24px; border-radius:16px; cursor:pointer;
+    font-family:'DM Mono',monospace; font-size:12px; letter-spacing:.18em;
+    text-transform:uppercase; transition:transform .12s ease, background .2s, border-color .2s, box-shadow .3s;
+    border:1px solid transparent;
+  }
+  .btn:active{ transform:scale(0.985); }
+  .btn--primary{
+    background:linear-gradient(180deg, rgba(196,168,212,0.18), rgba(196,168,212,0.10));
+    border-color:rgba(196,168,212,0.42); color:var(--accent2);
+    animation:glow 3.4s ease-in-out infinite;
+  }
+  @keyframes glow{ 0%,100%{box-shadow:0 0 0 rgba(196,168,212,0);} 50%{box-shadow:0 0 22px rgba(196,168,212,0.24);} }
+  .btn--primary:hover{ background:rgba(196,168,212,0.20); }
+  .btn--ghost{ background:transparent; border-color:var(--border2); color:var(--muted); }
+  .btn--ghost:hover{ border-color:rgba(196,168,212,0.32); color:var(--accent2); }
+
+  .statusbar{
+    display:flex; justify-content:space-between; align-items:center;
+    padding:14px 4px 0; font-size:12px; color:var(--text); opacity:.65; font-variant-numeric:tabular-nums;
+  }
+  .toast{
+    position:absolute; left:50%; bottom:132px; transform:translateX(-50%) translateY(12px);
+    background:var(--surface); border:1px solid var(--border2); color:var(--text);
+    padding:12px 18px; border-radius:12px; font-size:11px; letter-spacing:.06em;
+    opacity:0; pointer-events:none; transition:opacity .3s, transform .3s; white-space:nowrap;
+    box-shadow:0 8px 30px rgba(0,0,0,.5);
+  }
+  .toast.show{ opacity:1; transform:translateX(-50%) translateY(0); }
+  .toast b{ color:var(--accent2); font-weight:400; }
+
+  /* Archangel idle motion (from the app's .am-* keyframes) */
+  .am-wing-l{ transform-origin:100% 19%; transform-box:fill-box; animation:amBreL 5.5s ease-in-out infinite; }
+  .am-wing-r{ transform-origin:0% 19%; transform-box:fill-box; animation:amBreR 5.5s ease-in-out infinite; }
+  @keyframes amBreL{ 0%,100%{transform:rotate(0);} 50%{transform:rotate(-1.6deg);} }
+  @keyframes amBreR{ 0%,100%{transform:rotate(0);} 50%{transform:rotate(1.6deg);} }
+  .am-halo{ animation:amHaloIdle 4.5s ease-in-out infinite; }
+  @keyframes amHaloIdle{ 0%,100%{opacity:.6;} 50%{opacity:.9;} }
+  .am-orb-glow{ animation:amOrbIdle 3.6s ease-in-out infinite; }
+  @keyframes amOrbIdle{ 0%,100%{opacity:.4;} 50%{opacity:.75;} }
+</style>
+</head>
+<body>
+  <div class="phone">
+    <div class="statusbar"><span>3:58</span><span>● ● ● ●  ⌃  20</span></div>
+    <div class="ambient"></div>
+
+    <div class="hero">
+      <div class="fig">
+        <!-- Archangel Michael — the exact artwork from Presence's entity engine -->
+        <svg viewBox="0 0 80 130" width="138" height="224" xmlns="http://www.w3.org/2000/svg" style="overflow:visible;">
+          <defs>
+            <radialGradient id="amAura" cx="50%" cy="40%" r="55%"><stop offset="0%" stop-color="#f4ecfa" stop-opacity=".36"/><stop offset="55%" stop-color="#c4a8d4" stop-opacity=".12"/><stop offset="100%" stop-color="#9b7fb8" stop-opacity="0"/></radialGradient>
+            <radialGradient id="amHalo" cx="50%" cy="50%" r="50%"><stop offset="0%" stop-color="#f4ecfa" stop-opacity=".5"/><stop offset="70%" stop-color="#e8d4f0" stop-opacity=".18"/><stop offset="100%" stop-color="#c4a8d4" stop-opacity="0"/></radialGradient>
+            <linearGradient id="amWing" x1="1" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#9b7fb8" stop-opacity=".55"/><stop offset="100%" stop-color="#4a3a60" stop-opacity=".5"/></linearGradient>
+            <linearGradient id="amWingR" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#9b7fb8" stop-opacity=".55"/><stop offset="100%" stop-color="#4a3a60" stop-opacity=".5"/></linearGradient>
+            <linearGradient id="amRobe" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#d4a8c0" stop-opacity=".5"/><stop offset="100%" stop-color="#b08aa8" stop-opacity=".28"/></linearGradient>
+            <radialGradient id="amOrb" cx="42%" cy="38%" r="60%"><stop offset="0%" stop-color="#f4ecfa" stop-opacity=".5"/><stop offset="100%" stop-color="#c4a8d4" stop-opacity=".12"/></radialGradient>
+            <filter id="amGl" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="1.2" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+          </defs>
+          <ellipse cx="40" cy="56" rx="36" ry="50" fill="url(#amAura)" opacity=".55"/>
+          <g class="am-wing-l">
+            <path d="M34,30 C24,16 12,18 8,26 C12,30 13,38 12,48 C11,64 9,76 8,88 C16,80 22,66 25,52 C27,42 30,34 34,32 Z" fill="url(#amWing)" stroke="#9b7fb8" stroke-width=".7" stroke-linejoin="round" filter="url(#amGl)"/>
+            <path d="M11,46 C16,42 20,36 23,30 M10,60 C16,55 20,48 23,40 M9,74 C15,68 19,60 22,50 M9,85 C14,79 18,71 21,61" fill="none" stroke="#a8bce0" stroke-width=".55" opacity=".6"/>
+            <path d="M30,32 C26,26 20,22 14,22" fill="none" stroke="#e8d4f0" stroke-width=".5" opacity=".5"/>
+          </g>
+          <g class="am-wing-r">
+            <path d="M46,30 C56,16 68,18 72,26 C68,30 67,38 68,48 C69,64 71,76 72,88 C64,80 58,66 55,52 C53,42 50,34 46,32 Z" fill="url(#amWingR)" stroke="#9b7fb8" stroke-width=".7" stroke-linejoin="round" filter="url(#amGl)"/>
+            <path d="M69,46 C64,42 60,36 57,30 M70,60 C64,55 60,48 57,40 M71,74 C65,68 61,60 58,50 M71,85 C66,79 62,71 59,61" fill="none" stroke="#a8bce0" stroke-width=".55" opacity=".6"/>
+            <path d="M50,32 C54,26 60,22 66,22" fill="none" stroke="#e8d4f0" stroke-width=".5" opacity=".5"/>
+          </g>
+          <circle class="am-halo" cx="40" cy="21" r="9.5" fill="url(#amHalo)" filter="url(#amGl)"/>
+          <circle cx="40" cy="21" r="8.5" fill="none" stroke="#e8d4f0" stroke-width=".7" opacity=".75"/>
+          <line x1="28.2" y1="12" x2="27.4" y2="100" stroke="#9b7fb8" stroke-width="1" opacity=".85"/>
+          <path d="M25.7,9.5 h5 M28.2,7 v5" stroke="#e8d4f0" stroke-width=".8" stroke-linecap="round" opacity=".9"/>
+          <path d="M33,30 C31,44 30,70 29,99 L51,99 C50,70 49,44 47,30 C44,28 36,28 33,30 Z" fill="url(#amRobe)" stroke="#c4a8d4" stroke-width=".9" filter="url(#amGl)"/>
+          <path d="M35,42 C34.5,60 34,80 33.5,97 M45,42 C45.5,60 46,80 46.5,97 M40,64 C40,74 40,86 40,97" fill="none" stroke="#b08aa8" stroke-width=".4" opacity=".55"/>
+          <path d="M37,72 C36.7,82 36.2,92 35.6,99 L44.4,99 C43.8,92 43.3,82 43,72 Q40,70.4 37,72 Z" fill="#7d96c8" opacity=".45"/>
+          <path d="M38.6,76 C38.5,84 38.4,92 38.2,98 M41.4,76 C41.5,84 41.6,92 41.8,98" fill="none" stroke="#a8bce0" stroke-width=".35" opacity=".55"/>
+          <path d="M33.4,37.5 L46.6,34.5 L46.6,38 L33.4,41 Z" fill="#7d96c8" opacity=".55"/>
+          <path d="M33.8,50 L46.2,50 L46,52.6 L34,52.6 Z" fill="#7d96c8" opacity=".4"/>
+          <path d="M37.5,29.5 L40,32.5 L42.5,29.5" fill="none" stroke="#e8d4f0" stroke-width=".6" opacity=".7"/>
+          <path d="M34,33.5 C31.5,39 29.8,45 29,51 L32.4,52.6 C33.4,47 34.6,40 36.4,35.5 Z" fill="url(#amRobe)" stroke="#c4a8d4" stroke-width=".6" opacity=".95"/>
+          <circle cx="29.6" cy="53" r="1.7" fill="#e8d4f0" opacity=".9"/>
+          <path d="M46,33.5 C48.5,39 50.2,45 51,51 L47.6,52.6 C46.6,47 45.4,40 43.6,35.5 Z" fill="url(#amRobe)" stroke="#c4a8d4" stroke-width=".6" opacity=".95"/>
+          <circle cx="50.4" cy="53" r="1.7" fill="#e8d4f0" opacity=".9"/>
+          <circle class="am-orb-glow" cx="53" cy="59.5" r="8" fill="url(#amOrb)" filter="url(#amGl)"/>
+          <circle cx="53" cy="59.5" r="5.6" fill="rgba(244,236,250,.14)" stroke="#f4ecfa" stroke-width=".7"/>
+          <path d="M50.2,57 A4,4 0 0 1 53,55.6" fill="none" stroke="#fff" stroke-width=".5" opacity=".7"/>
+          <path d="M53,56.7 V62.3 M50.2,59.5 H55.8 M51,57.5 L55,61.5 M55,57.5 L51,61.5" stroke="#e8d4f0" stroke-width=".5" opacity=".9"/>
+          <circle cx="53" cy="59.5" r=".8" fill="#f4ecfa"/>
+          <rect x="38.9" y="26" width="2.2" height="3.4" fill="#e0c8d8" opacity=".85"/>
+          <circle cx="40" cy="21.5" r="5.2" fill="#e8d0e0" opacity=".92" stroke="#c4a8d4" stroke-width=".5"/>
+          <path d="M35.3,20.2 C35.3,16.6 37.8,15 40,15 C42.2,15 44.7,16.6 44.7,20.2 C43.2,18.9 41.6,18.5 40,18.5 C38.4,18.5 36.8,18.9 35.3,20.2 Z" fill="#6a5480" opacity=".9"/>
+          <path d="M40,15.2 V18.4" stroke="#4a3a60" stroke-width=".3" opacity=".6"/>
+          <path d="M36.4,99 h2.6 v2.6 a1.3,1.3 0 0 1 -2.6,0 Z M41,99 h2.6 v2.6 a1.3,1.3 0 0 1 -2.6,0 Z" fill="#9b7fb8" opacity=".85"/>
+          <path d="M27,104 A13,5.5 0 0 1 53,104 L53,106.5 A13,4 0 0 1 27,106.5 Z" fill="rgba(232,212,240,.12)" stroke="#c4a8d4" stroke-width=".5" opacity=".8"/>
+          <ellipse cx="40" cy="104" rx="13" ry="5.5" fill="rgba(244,236,250,.1)" stroke="#e8d4f0" stroke-width=".4" opacity=".7"/>
+          <g stroke="#7d96c8" stroke-width=".5" opacity=".6"><path d="M14,108 v-3.5 M12.6,105.5 l1.4,1 1.4,-1"/><path d="M66,108 v-3.5 M64.6,105.5 l1.4,1 1.4,-1"/></g>
+          <circle cx="14" cy="103.6" r=".7" fill="#a8bce0" opacity=".8"/>
+          <circle cx="66" cy="103.6" r=".7" fill="#a8bce0" opacity=".8"/>
+          <g opacity=".55"><line x1="8" y1="14" x2="14" y2="14" stroke="#e8d4f0" stroke-width=".9"/><line x1="11" y1="11" x2="11" y2="17" stroke="#e8d4f0" stroke-width=".9"/></g>
+          <g opacity=".45"><line x1="66" y1="10" x2="72" y2="10" stroke="#e8d4f0" stroke-width=".8"/><line x1="69" y1="7" x2="69" y2="13" stroke="#e8d4f0" stroke-width=".8"/></g>
+          <g opacity=".4"><line x1="70" y1="120" x2="75" y2="120" stroke="#e8d4f0" stroke-width=".8"/><line x1="72.5" y1="117.5" x2="72.5" y2="122.5" stroke="#e8d4f0" stroke-width=".8"/></g>
+          <g opacity=".4"><line x1="5" y1="118" x2="10" y2="118" stroke="#e8d4f0" stroke-width=".8"/><line x1="7.5" y1="115.5" x2="7.5" y2="120.5" stroke="#e8d4f0" stroke-width=".8"/></g>
+        </svg>
+      </div>
+
+      <h1 class="wordmark">Presence</h1>
+      <div class="tagline">Stand guard over your attention.</div>
+      <div class="sub">A practice, not an app</div>
+    </div>
+
+    <div class="actions">
+      <button class="btn btn--primary" onclick="tap('Begin')">Begin the Practice</button>
+      <button class="btn btn--ghost" onclick="tap('Sign in')">I already have an account</button>
+    </div>
+
+    <div class="toast" id="toast"></div>
+  </div>
+
+<script>
+  var t = document.getElementById('toast'), timer;
+  function tap(which){
+    t.innerHTML = which === 'Begin'
+      ? '→ Would open the <b>tutorial / first session</b>'
+      : '→ Would open <b>Continue with Google</b>';
+    t.classList.add('show');
+    clearTimeout(timer);
+    timer = setTimeout(function(){ t.classList.remove('show'); }, 2200);
+  }
+</script>
+</body>
+</html>
