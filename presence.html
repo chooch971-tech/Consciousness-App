@@ -17122,7 +17122,16 @@ function omniaRatePerHour() {
 }
 
 function omniaReservoirCap() {
-  return Math.floor(120 + (omniaState.upgrades.vessel || 1) * 180 + omniaBodyTotal() * 6);
+  // Idle buffer: akasha trickles in at the hourly rate and fills this well until
+  // you collect. Tuned to start small — so early passive banking is weak and you
+  // must actually show up to collect — then scale steeply with the Deep Vessel
+  // upgrade and body total so late-game collections become large and rewarding.
+  // Deliberately does NOT touch the earning rate, body costs, or wallet cap, so
+  // the core economy stays balanced; this only governs the idle buffer size.
+  // Start ≈ 70 · Step IV ≈ 2,900 · Step X ≈ 80,000 (was 318 / 3,000 / 42,330).
+  var vessel = omniaState.upgrades.vessel || 1;
+  var bodyTotal = Math.max(0, omniaBodyTotal());
+  return Math.floor(60 + Math.pow(vessel - 1, 2) * 30 + Math.pow(bodyTotal, 1.15) * 3);
 }
 
 function omniaAkashaCap() {
