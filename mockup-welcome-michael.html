@@ -47,11 +47,10 @@
   @keyframes float{ 0%,100%{transform:translateY(0);} 50%{transform:translateY(-7px);} }
   .fig svg{ filter:drop-shadow(0 0 16px rgba(196,168,212,0.30)); }
 
-  /* exact Presence wordmark styling from the app splash */
+  /* identical to the in-app #splash .splash-wordmark */
   .wordmark{
-    font-family:'Cormorant Garamond',serif; font-weight:300; font-size:52px;
+    font-family:'Cormorant Garamond',serif; font-weight:300; font-size:48px;
     letter-spacing:0.14em; color:#e8e0d0; line-height:1; margin:0;
-    padding-left:0.14em; /* optical centering for tracked text */
   }
   .tagline{
     margin-top:18px; font-family:'DM Mono',monospace; font-size:9px;
@@ -90,15 +89,27 @@
   .toast.show{ opacity:1; transform:translateX(-50%) translateY(0); }
   .toast b{ color:var(--accent2); font-weight:400; }
 
-  /* Archangel idle motion (from the app's .am-* keyframes) */
-  .am-wing-l{ transform-origin:100% 19%; transform-box:fill-box; animation:amBreL 5.5s ease-in-out infinite; }
-  .am-wing-r{ transform-origin:0% 19%; transform-box:fill-box; animation:amBreR 5.5s ease-in-out infinite; }
-  @keyframes amBreL{ 0%,100%{transform:rotate(0);} 50%{transform:rotate(-1.6deg);} }
-  @keyframes amBreR{ 0%,100%{transform:rotate(0);} 50%{transform:rotate(1.6deg);} }
+  /* Archangel motion — wings flap broadly, staff brandishes, sparks rise */
+  .am-wing-l{ transform-origin:100% 19%; transform-box:fill-box; animation:amFlapL 1.5s ease-in-out infinite; }
+  .am-wing-r{ transform-origin:0% 19%; transform-box:fill-box; animation:amFlapR 1.5s ease-in-out infinite; }
+  @keyframes amFlapL{ 0%,100%{transform:rotate(7deg);} 50%{transform:rotate(-14deg);} }
+  @keyframes amFlapR{ 0%,100%{transform:rotate(-7deg);} 50%{transform:rotate(14deg);} }
   .am-halo{ animation:amHaloIdle 4.5s ease-in-out infinite; }
-  @keyframes amHaloIdle{ 0%,100%{opacity:.6;} 50%{opacity:.9;} }
+  @keyframes amHaloIdle{ 0%,100%{opacity:.6;} 50%{opacity:.95;} }
   .am-orb-glow{ animation:amOrbIdle 3.6s ease-in-out infinite; }
-  @keyframes amOrbIdle{ 0%,100%{opacity:.4;} 50%{opacity:.75;} }
+  @keyframes amOrbIdle{ 0%,100%{opacity:.4;} 50%{opacity:.8;} }
+  /* staff brandish: a slow tilt-and-lift around the grip */
+  .am-spear{ transform-origin:50% 50%; transform-box:fill-box; animation:amStaff 3.4s ease-in-out infinite; }
+  @keyframes amStaff{ 0%,100%{transform:rotate(-2.5deg) translateY(0);} 50%{transform:rotate(3.5deg) translateY(-2px);} }
+  /* sparks drift up off the spear tip on a loop */
+  .am-spark{ transform-box:fill-box; opacity:0; filter:drop-shadow(0 0 3px rgba(244,236,250,.9)); animation:amSpark 3.2s ease-out infinite; }
+  .am-spark.b{ animation-delay:1.6s; r:1; }
+  @keyframes amSpark{
+    0%{ transform:translate(0,0) scale(.4); opacity:0; }
+    14%{ opacity:1; }
+    60%{ opacity:.65; }
+    100%{ transform:translate(-7px,-30px) scale(1.15); opacity:0; }
+  }
 </style>
 </head>
 <body>
@@ -132,8 +143,13 @@
           </g>
           <circle class="am-halo" cx="40" cy="21" r="9.5" fill="url(#amHalo)" filter="url(#amGl)"/>
           <circle cx="40" cy="21" r="8.5" fill="none" stroke="#e8d4f0" stroke-width=".7" opacity=".75"/>
-          <line x1="28.2" y1="12" x2="27.4" y2="100" stroke="#9b7fb8" stroke-width="1" opacity=".85"/>
-          <path d="M25.7,9.5 h5 M28.2,7 v5" stroke="#e8d4f0" stroke-width=".8" stroke-linecap="round" opacity=".9"/>
+          <g class="am-spear">
+            <line x1="28.2" y1="12" x2="27.4" y2="100" stroke="#9b7fb8" stroke-width="1" opacity=".85"/>
+            <path d="M25.7,9.5 h5 M28.2,7 v5" stroke="#e8d4f0" stroke-width=".8" stroke-linecap="round" opacity=".9"/>
+          </g>
+          <!-- sparks cast off the spear tip -->
+          <circle class="am-spark" cx="28" cy="8" r="1.4" fill="#f4ecfa"/>
+          <circle class="am-spark b" cx="28" cy="8" r="1.4" fill="#e8d4f0"/>
           <path d="M33,30 C31,44 30,70 29,99 L51,99 C50,70 49,44 47,30 C44,28 36,28 33,30 Z" fill="url(#amRobe)" stroke="#c4a8d4" stroke-width=".9" filter="url(#amGl)"/>
           <path d="M35,42 C34.5,60 34,80 33.5,97 M45,42 C45.5,60 46,80 46.5,97 M40,64 C40,74 40,86 40,97" fill="none" stroke="#b08aa8" stroke-width=".4" opacity=".55"/>
           <path d="M37,72 C36.7,82 36.2,92 35.6,99 L44.4,99 C43.8,92 43.3,82 43,72 Q40,70.4 37,72 Z" fill="#7d96c8" opacity=".45"/>
