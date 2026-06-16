@@ -9031,6 +9031,59 @@ function mergeHistoryPull(key, localStr, cloudStr) {
   return JSON.stringify(base);
 }
 
+// Did a merge produce materially new progress (vs just re-serialised bytes)?
+// Used so the pull paths only trigger a reload when something actually advanced,
+// not when a merge merely reordered JSON keys.
+function syncMeaningfulDelta(key, localStr, mergedStr) {
+  if (localStr === mergedStr) return false;
+  if (!localStr) return true;
+  try {
+    var a = JSON.parse(localStr), b = JSON.parse(mergedStr);
+    if (key === 'presence_conc_v1' || key === 'presence_v3') {
+      if ((b.history || []).length !== (a.history || []).length) return true;
+      return syncProgressScore(key, b) !== syncProgressScore(key, a);
+    }
+    if (key === 'presence_omnia_v1') {
+      if (syncProgressScore(key, b) !== syncProgressScore(key, a)) return true;
+      // Entity / cosmetic selection is a preference, not progress — still worth refreshing.
+      var ac = a.cosmetics || {}, bc = b.cosmetics || {};
+      return ac.entity !== bc.entity || ac.palette !== bc.palette || ac.companion !== bc.companion || ac.veil !== bc.veil;
+    }
+    return true;
+  } catch (e) { return true; }
+}
+
+// Apply a pulled cloud payload to localStorage using the same field-merge
+// semantics everywhere, so a stale snapshot can never roll back local progress.
+// Returns true if the merge advanced anything worth re-rendering for.
+function applyPulledData(data) {
+  if (!data) return false;
+  var changed = false;
+  Object.entries(data).forEach(function([k, v]) {
+    if (!v) return;
+    var local = localStorage.getItem(k);
+    if (k === 'presence_omnia_v1') {
+      var mergedOmnia = mergeOmniaPull(local, v);
+      if (mergedOmnia !== null) {
+        if (syncMeaningfulDelta(k, local, mergedOmnia)) changed = true;
+        localStorage.setItem(k, mergedOmnia);
+      }
+      return;
+    }
+    if (k === 'presence_conc_v1' || k === 'presence_v3') {
+      var mergedHist = mergeHistoryPull(k, local, v);
+      if (mergedHist !== null) {
+        if (syncMeaningfulDelta(k, local, mergedHist)) changed = true;
+        localStorage.setItem(k, mergedHist);
+      }
+      return;
+    }
+    if (local === v) return;
+    if (shouldTakeCloudValue(k, local, v)) { localStorage.setItem(k, v); changed = true; }
+  });
+  return changed;
+}
+
 (function preserveTutorialVisitedAfterReset() {
   if (localStorage.getItem('presence_visited')) return;
   var resetKeys = ['presence_v3','presence_conc_v1','presence_omnia_v1','bardon_rpg_v2'];
@@ -9220,16 +9273,7 @@ document.addEventListener('visibilitychange', function() {
       headers: { 'Authorization': 'Bearer ' + authToken }
     }).then(function(r) { return r.json(); }).then(function(result) {
       if (!result.data) return;
-      var changed = false;
-      Object.entries(result.data).forEach(function([k, v]) {
-        if (!v) return;
-        var local = localStorage.getItem(k);
-        if (local === v) return;
-        if (shouldTakeCloudValue(k, local, v)) {
-          localStorage.setItem(k, v);
-          changed = true;
-        }
-      });
+      var changed = applyPulledData(result.data);
       var surveyShowing = document.getElementById('surveyScreen') && document.getElementById('surveyScreen').classList.contains('active');
       // Block reload for the entire lifetime of the session, including the
       // moment the timer hits zero but endSession() hasn't fired yet (iOS
@@ -9288,16 +9332,7 @@ if (!localStorage.getItem('presence_auth_token')) {
     }).then(function(r) { return r.json(); }).then(function(result) {
       window._syncPullPending = false;
       if (!result.data) { renderHome(); return; }
-      var changed = false;
-      Object.entries(result.data).forEach(function([k, v]) {
-        if (!v) return;
-        var local = localStorage.getItem(k);
-        if (local === v) return;
-        if (shouldTakeCloudValue(k, local, v)) {
-          localStorage.setItem(k, v);
-          changed = true;
-        }
-      });
+      var changed = applyPulledData(result.data);
       if (changed) {
         // Reload once with fresh data — sessionStorage flag prevents infinite loop
         var surveyShowing2 = document.getElementById('surveyScreen') && document.getElementById('surveyScreen').classList.contains('active');
@@ -22921,31 +22956,12 @@ async function syncPullData() {
       console.log('[Sync] No data on cloud yet');
       return;
     }
-    
-    // Restore all keys from cloud — only write if value is non-null and richer than local
-    Object.entries(result.data).forEach(function([k, v]) {
-      if (!v) return; // skip nulls
-      var local = localStorage.getItem(k);
-      // Omnia is field-merged (monotonic counters take the max; bodies stay capped)
-      // rather than wholesale-replaced, so a stale snapshot can't roll back progress.
-      if (k === 'presence_omnia_v1') {
-        var mergedOmnia = mergeOmniaPull(local, v);
-        if (mergedOmnia !== null) localStorage.setItem(k, mergedOmnia);
-        return;
-      }
-      // Concentration & awareness carry the session histories that Progress
-      // Reports read from — union them so every device's sessions show up,
-      // rather than one device's snapshot clobbering the other's.
-      if (k === 'presence_conc_v1' || k === 'presence_v3') {
-        var mergedHist = mergeHistoryPull(k, local, v);
-        if (mergedHist !== null) localStorage.setItem(k, mergedHist);
-        return;
-      }
-      if (shouldTakeCloudValue(k, local, v)) {
-        localStorage.setItem(k, v);
-      }
-    });
-    
+
+    // Field-merge so no device's progress is ever rolled back (histories union,
+    // counters stay monotonic, Omnia field-merges). Shared with the startup and
+    // foreground pull paths via applyPulledData.
+    applyPulledData(result.data);
+
     window._syncPullPending = false;
     console.log('[Sync] Data pulled from cloud · synced at', result.syncedAt);
     return true;

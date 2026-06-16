@@ -765,35 +765,134 @@ function snapshotHasMeaningfulProgress(snap) {
   } catch (e) { return false; }
 }
 
+// ── Cross-snapshot merge on pull ────────────────────────────────────────────
+// The newest single snapshot can come from a device that's behind, which is how
+// a fresh sign-in ends up surfacing stale data. Merging the recent snapshots
+// field-wise — union session histories, keep counters monotonic, take the
+// richest Omnia/other values — guarantees a pull always returns the best
+// combined progress regardless of which device pushed last. Mirrors the
+// client-side merge in presence.html.
+function parseSafe(str) { try { return JSON.parse(str); } catch (e) { return null; } }
+
+function syncProgressScoreSrv(key, obj) {
+  if (!obj || typeof obj !== 'object') return 0;
+  if (key === 'presence_omnia_v1') {
+    const bodies = obj.bodies || {};
+    const b = (k) => Math.max(0, Number(bodies[k]) || 0);
+    return (obj.totalAkashaEarned || 0) + (obj.akasha || 0) + (obj.reservoir || 0)
+      + (b('physical') + b('astral') + b('mental')) * 1000
+      + ((obj.bardonStep || 1) - 1) * 10000
+      + ((obj.completedRecommended || 0) * 100);
+  }
+  if (obj.xp != null) return obj.xp;
+  return obj.totalSessions || (obj.history && obj.history.length) || 0;
+}
+
+// Pick the best raw value for a key across snapshots (newest-first). Newest
+// _resetAt wins; within the same reset, highest progress score; ties to newest.
+function pickBestValue(key, snaps) {
+  let bestStr = null, bestReset = -1, bestScore = -Infinity;
+  for (const s of snaps) {
+    const v = s[key];
+    if (!v) continue;
+    const obj = parseSafe(v);
+    if (!obj) { if (bestStr === null) bestStr = v; continue; }
+    const reset = (obj._resetAt) || 0;
+    const score = syncProgressScoreSrv(key, obj);
+    if (bestStr === null || reset > bestReset || (reset === bestReset && score > bestScore)) {
+      bestStr = v; bestReset = reset; bestScore = score;
+    }
+  }
+  return bestStr;
+}
+
+function mergeHistoryArraysSrv(a, b, cap) {
+  a = Array.isArray(a) ? a : []; b = Array.isArray(b) ? b : [];
+  const seen = {}, out = [];
+  a.concat(b).forEach((h) => {
+    if (!h || typeof h !== 'object') return;
+    const id = h.date || JSON.stringify(h);
+    if (seen[id]) return;
+    seen[id] = true; out.push(h);
+  });
+  out.sort((x, y) => (y.date ? new Date(y.date).getTime() : 0) - (x.date ? new Date(x.date).getTime() : 0));
+  return cap && out.length > cap ? out.slice(0, cap) : out;
+}
+
+const SRV_HISTORY_MERGE = {
+  presence_conc_v1: { arrays: ['history'], maxNums: ['xp','totalSessions','bestSeconds','bestAsanaSeconds','level'] },
+  presence_v3:      { arrays: ['history','weeklyScores'], maxNums: ['xp','totalSessions','streak','longestStreak','level'] },
+};
+
+function mergeHistoryKey(key, snaps) {
+  const spec = SRV_HISTORY_MERGE[key];
+  const baseStr = pickBestValue(key, snaps);
+  if (!spec || !baseStr) return baseStr;
+  const base = parseSafe(baseStr);
+  if (!base) return baseStr;
+  const baseReset = (base._resetAt) || 0;
+  snaps.forEach((s) => {
+    const o = parseSafe(s[key]); if (!o) return;
+    if (((o._resetAt) || 0) !== baseReset) return; // don't merge across a reset boundary
+    spec.arrays.forEach((f) => { base[f] = mergeHistoryArraysSrv(base[f], o[f], 100); });
+    spec.maxNums.forEach((f) => {
+      if (base[f] != null || o[f] != null) base[f] = Math.max(Number(base[f]) || 0, Number(o[f]) || 0);
+    });
+    if (key === 'presence_conc_v1' && !base.clockTheme && o.clockTheme) base.clockTheme = o.clockTheme;
+  });
+  return JSON.stringify(base);
+}
+
+function mergeOmniaKey(snaps) {
+  const baseStr = pickBestValue('presence_omnia_v1', snaps);
+  if (!baseStr) return baseStr;
+  const base = parseSafe(baseStr);
+  if (!base) return baseStr;
+  const baseReset = (base._resetAt) || 0;
+  base.bodies = base.bodies || {};
+  snaps.forEach((s) => {
+    const o = parseSafe(s.presence_omnia_v1); if (!o) return;
+    if (((o._resetAt) || 0) !== baseReset) return;
+    ['completedRecommended','totalAkashaEarned'].forEach((f) => { base[f] = Math.max(Number(base[f]) || 0, Number(o[f]) || 0); });
+    base.bardonStep = Math.max(Number(base.bardonStep) || 1, Number(o.bardonStep) || 1);
+    const ob = o.bodies || {};
+    ['physical','astral','mental'].forEach((bd) => { base.bodies[bd] = Math.max(Number(base.bodies[bd]) || 1, Number(ob[bd]) || 1); });
+    const union = [].concat(base.storySeen || [], o.storySeen || []);
+    base.storySeen = union.filter((id, i) => union.indexOf(id) === i);
+    base.storyRead = Math.max(Number(base.storyRead) || 0, Number(o.storyRead) || 0);
+  });
+  return JSON.stringify(base);
+}
+
+function mergeSnapshots(snaps) {
+  const KEYS = ['presence_v3','presence_conc_v1','presence_prayer_v1','presence_journal_v1','presence_soul_mirror_v1','presence_ai_report_comments_v1','presence_guide_v1','presence_omnia_v1','bardon_rpg_v2','presence_visited'];
+  const out = {};
+  KEYS.forEach((k) => {
+    if (k === 'presence_omnia_v1') out[k] = mergeOmniaKey(snaps);
+    else if (SRV_HISTORY_MERGE[k]) out[k] = mergeHistoryKey(k, snaps);
+    else out[k] = pickBestValue(k, snaps);
+  });
+  return out;
+}
+
 app.get('/api/sync/sync/pull', verifyToken, async (req, res) => {
   try {
-    // Search the last 20 snapshots for the most recent one with real progress.
-    // This recovers from cases where a sign-out cycle accidentally pushed empty
-    // data, leaving a blank snapshot as the most recent document.
+    // Merge the last 20 snapshots so the pull returns the best combined progress
+    // across every device, never just whichever device pushed most recently.
     const snapshots = await syncDataCollection.find(
       { userId: new ObjectId(req.user.userId) }
     ).sort({ syncedAt: -1 }).limit(20).toArray();
 
     if (!snapshots.length) return res.json({ data: null, message: 'No sync data found' });
 
-    // Prefer the most recent snapshot with meaningful progress; fall back to newest
-    const best = snapshots.find(s => snapshotHasMeaningfulProgress(s)) || snapshots[0];
+    const merged = mergeSnapshots(snapshots);
+    const newest = snapshots[0];
 
     res.json({
-      data: {
-        presence_v3: best.presence_v3,
-        presence_conc_v1: best.presence_conc_v1,
-        presence_prayer_v1: best.presence_prayer_v1,
-        presence_journal_v1: best.presence_journal_v1,
-        presence_soul_mirror_v1: best.presence_soul_mirror_v1,
-        presence_ai_report_comments_v1: best.presence_ai_report_comments_v1,
-        presence_guide_v1: best.presence_guide_v1,
-        presence_omnia_v1: best.presence_omnia_v1,
-        bardon_rpg_v2: best.bardon_rpg_v2,
-        presence_visited: best.presence_visited,
-      },
-      syncedAt: best.syncedAt,
-      deviceInfo: best.deviceInfo,
+      data: merged,
+      syncedAt: newest.syncedAt,
+      deviceInfo: newest.deviceInfo,
+      merged: true,
     });
   } catch (err) {
     console.error('Pull sync error:', err);
