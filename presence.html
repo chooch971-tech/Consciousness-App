@@ -22781,55 +22781,126 @@ function initGoogleSignIn(containerId, onSuccess) {
   var container = document.getElementById(containerId);
   if (!container) return;
 
-  // Render our styled button immediately — no SDK needed to display it
+  // Visual wrapper: our styled button stays in front; Google's real button is
+  // rendered into a hidden node and clicked programmatically when the user taps
+  // ours. We use the Identity Services *ID-token* flow (google.accounts.id),
+  // which returns a signed identity credential and NEVER mints an access token.
+  // Because no Google Account *data access* is granted, Google treats each login
+  // as a plain sign-in — no more "You shared some Google Account data" email on
+  // every authentication (a fresh access-token grant is what triggered that).
+  var wrap = document.createElement('div');
+  wrap.style.position = 'relative';
+  wrap.style.width = '100%';
+
   var btn = document.createElement('button');
+  btn.type = 'button';
   btn.className = 'tut-google-btn';
   btn.innerHTML = GOOGLE_ICON_SVG + ' Continue with Google';
-  container.appendChild(btn);
 
-  btn.addEventListener('click', function() {
+  // Hidden host for Google's rendered button — present in the DOM (so it can be
+  // clicked) but visually removed and non-interactive to the pointer.
+  var hidden = document.createElement('div');
+  hidden.style.position = 'absolute';
+  hidden.style.top = '0';
+  hidden.style.left = '0';
+  hidden.style.opacity = '0';
+  hidden.style.pointerEvents = 'none';
+  hidden.style.overflow = 'hidden';
+  hidden.style.width = '1px';
+  hidden.style.height = '1px';
+
+  wrap.appendChild(btn);
+  wrap.appendChild(hidden);
+  container.appendChild(wrap);
+
+  function resetBtn() {
+    btn.innerHTML = GOOGLE_ICON_SVG + ' Continue with Google';
+    btn.disabled = false;
+  }
+
+  function onCredential(response) {
+    if (!response || !response.credential) { resetBtn(); return; }
     btn.innerHTML = 'Signing in…';
     btn.disabled = true;
+    (async function() {
+      try {
+        var res = await fetch(SYNC_API_URL + '/auth/google', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ credential: response.credential })
+        });
+        var result = await res.json();
+        if (!res.ok) throw new Error(result.error || 'Sign-in failed');
+        authToken = result.token;
+        authEmail = result.email;
+        authUsername = result.username || null;
+        localStorage.setItem('presence_auth_token', authToken);
+        localStorage.setItem('presence_auth_email', authEmail);
+        if (authUsername) localStorage.setItem('presence_auth_username', authUsername);
+        syncEnabled = true;
+        onSuccess();
+      } catch(err) {
+        resetBtn();
+        showToast('Sign-in failed. Try again.');
+      }
+    })();
+  }
 
-    // Load SDK only when user clicks — initCodeClient + ux_mode:'popup'
-    // calls window.open() from OUR frame (same call stack as user gesture)
-    // so it's never blocked by popup blockers
-    loadGoogleScript(function() {
-      var client = google.accounts.oauth2.initCodeClient({
+  var gReady = false;
+  // Load + initialise the SDK eagerly so the real button exists before the tap.
+  loadGoogleScript(function() {
+    try {
+      google.accounts.id.initialize({
         client_id: GOOGLE_CLIENT_ID,
-        scope: 'email profile openid',
+        callback: onCredential,
         ux_mode: 'popup',
-        callback: async function(response) {
-          if (response.error) {
-            btn.innerHTML = GOOGLE_ICON_SVG + ' Continue with Google';
-            btn.disabled = false;
-            if (response.error !== 'access_denied') showToast('Sign-in failed. Try again.');
-            return;
-          }
-          try {
-            var res = await fetch(SYNC_API_URL + '/auth/google', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ code: response.code })
-            });
-            var result = await res.json();
-            if (!res.ok) throw new Error(result.error || 'Sign-in failed');
-            authToken = result.token;
-            authEmail = result.email;
-            authUsername = result.username || null;
-            localStorage.setItem('presence_auth_token', authToken);
-            localStorage.setItem('presence_auth_email', authEmail);
-            if (authUsername) localStorage.setItem('presence_auth_username', authUsername);
-            syncEnabled = true;
-            onSuccess();
-          } catch(err) {
-            btn.innerHTML = GOOGLE_ICON_SVG + ' Continue with Google';
-            btn.disabled = false;
-            showToast('Sign-in failed. Try again.');
-          }
-        }
+        auto_select: false,
+        itp_support: true
       });
-      client.requestCode();
+      google.accounts.id.renderButton(hidden, {
+        type: 'standard', theme: 'outline', size: 'large',
+        text: 'continue_with', width: 300
+      });
+      gReady = true;
+    } catch(e) { /* SDK blocked — button click will surface a toast */ }
+  });
+
+  function clickGoogle() {
+    var g = hidden.querySelector('div[role=button]') ||
+            hidden.querySelector('[role=button]') ||
+            hidden.querySelector('button') ||
+            hidden.firstElementChild;
+    if (g && typeof g.click === 'function') { g.click(); return true; }
+    return false;
+  }
+
+  btn.addEventListener('click', function() {
+    if (gReady && clickGoogle()) return;
+    // SDK not ready yet — load it, then trigger. Still within reach of the
+    // user's intent; the popup may need a second tap if the gesture lapses.
+    btn.innerHTML = 'Loading…';
+    loadGoogleScript(function() {
+      try {
+        if (!gReady) {
+          google.accounts.id.initialize({
+            client_id: GOOGLE_CLIENT_ID,
+            callback: onCredential,
+            ux_mode: 'popup',
+            auto_select: false,
+            itp_support: true
+          });
+          google.accounts.id.renderButton(hidden, {
+            type: 'standard', theme: 'outline', size: 'large',
+            text: 'continue_with', width: 300
+          });
+          gReady = true;
+        }
+        // Give the render a tick, then click.
+        setTimeout(function() {
+          if (!clickGoogle()) { resetBtn(); showToast('Sign-in unavailable. Try again.'); }
+          else if (btn.innerHTML.indexOf('Loading') !== -1) resetBtn();
+        }, 60);
+      } catch(e) { resetBtn(); showToast('Sign-in unavailable. Try again.'); }
     });
   });
 }

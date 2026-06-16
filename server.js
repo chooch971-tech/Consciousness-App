@@ -619,31 +619,41 @@ app.post('/api/sync/auth/heartbeat', verifyToken, async (req, res) => {
 
 // GOOGLE SIGN-IN — exchanges authorization code for tokens, then finds/creates user
 app.post('/api/sync/auth/google', async (req, res) => {
-  const { code } = req.body;
-  if (!code) return res.status(400).json({ error: 'code required' });
+  const { code, credential } = req.body;
+  if (!code && !credential) return res.status(400).json({ error: 'code or credential required' });
   try {
-    // Exchange authorization code for tokens using client secret
-    const tokenRes = await fetch('https://oauth2.googleapis.com/token', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-      body: new URLSearchParams({
-        code,
-        client_id: process.env.GOOGLE_CLIENT_ID,
-        client_secret: process.env.GOOGLE_CLIENT_SECRET,
-        redirect_uri: 'postmessage',
-        grant_type: 'authorization_code'
-      })
-    });
-    const tokens = await tokenRes.json();
-    if (!tokens.id_token) {
-      console.error('[Google Auth] Token exchange failed:', tokens);
-      return res.status(401).json({ error: 'Google token exchange failed' });
+    // New path: the client sends an ID-token `credential` straight from Google
+    // Identity Services (google.accounts.id). This grants no access token, so
+    // Google reports it as a plain sign-in rather than a data-sharing event —
+    // and we never needed the access token anyway, only the verified identity.
+    let idToken = credential;
+
+    // Legacy path: authorization code → exchange for tokens (kept for older
+    // clients still on the initCodeClient flow until they refresh).
+    if (!idToken) {
+      const tokenRes = await fetch('https://oauth2.googleapis.com/token', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: new URLSearchParams({
+          code,
+          client_id: process.env.GOOGLE_CLIENT_ID,
+          client_secret: process.env.GOOGLE_CLIENT_SECRET,
+          redirect_uri: 'postmessage',
+          grant_type: 'authorization_code'
+        })
+      });
+      const tokens = await tokenRes.json();
+      if (!tokens.id_token) {
+        console.error('[Google Auth] Token exchange failed:', tokens);
+        return res.status(401).json({ error: 'Google token exchange failed' });
+      }
+      idToken = tokens.id_token;
     }
 
     // Verify the ID token
     const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
     const ticket = await googleClient.verifyIdToken({
-      idToken: tokens.id_token,
+      idToken,
       audience: process.env.GOOGLE_CLIENT_ID
     });
     const { sub: googleId, email, name } = ticket.getPayload();
