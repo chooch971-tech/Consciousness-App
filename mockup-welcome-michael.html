@@ -103,12 +103,34 @@
   @keyframes amStaff{ 0%,100%{transform:rotate(-2.5deg) translateY(0);} 50%{transform:rotate(3.5deg) translateY(-2px);} }
   /* sparks drift up off the spear tip on a loop */
   .am-spark{ transform-box:fill-box; opacity:0; filter:drop-shadow(0 0 3px rgba(244,236,250,.9)); animation:amSpark 3.2s ease-out infinite; }
-  .am-spark.b{ animation-delay:1.6s; r:1; }
+  .am-spark.b{ animation-delay:1.6s; }
   @keyframes amSpark{
     0%{ transform:translate(0,0) scale(.4); opacity:0; }
     14%{ opacity:1; }
     60%{ opacity:.65; }
-    100%{ transform:translate(-7px,-30px) scale(1.15); opacity:0; }
+    100%{ transform:translate(-7px,-26px) scale(1.15); opacity:0; }
+  }
+  /* the staff's power: charge → release flash → launched bolt (3s loop) */
+  .am-charge{ transform-box:fill-box; transform-origin:center; opacity:0; animation:amCharge 3s ease-in-out infinite; }
+  @keyframes amCharge{
+    0%,86%,100%{ transform:scale(.25); opacity:0; }
+    16%{ opacity:.45; }
+    42%{ transform:scale(1.7); opacity:1; }
+    48%{ transform:scale(2.1); opacity:.95; }
+    50%{ transform:scale(.2); opacity:0; }
+  }
+  .am-flash{ transform-box:fill-box; transform-origin:center; opacity:0; animation:amFlash 3s ease-out infinite; }
+  @keyframes amFlash{
+    0%,47%,100%{ transform:scale(.2); opacity:0; }
+    50%{ transform:scale(.6); opacity:.95; }
+    60%{ transform:scale(2.6); opacity:0; }
+  }
+  .am-bolt{ transform-box:fill-box; opacity:0; animation:amBolt 3s ease-in infinite; }
+  @keyframes amBolt{
+    0%,46%{ transform:translate(0,0) scale(.35); opacity:0; }
+    50%{ transform:translate(1px,-3px) scale(1); opacity:1; }
+    80%{ transform:translate(9px,-40px) scale(.95); opacity:.95; }
+    94%,100%{ transform:translate(13px,-56px) scale(.5); opacity:0; }
   }
 </style>
 </head>
@@ -128,7 +150,11 @@
             <linearGradient id="amWingR" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#9b7fb8" stop-opacity=".55"/><stop offset="100%" stop-color="#4a3a60" stop-opacity=".5"/></linearGradient>
             <linearGradient id="amRobe" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#d4a8c0" stop-opacity=".5"/><stop offset="100%" stop-color="#b08aa8" stop-opacity=".28"/></linearGradient>
             <radialGradient id="amOrb" cx="42%" cy="38%" r="60%"><stop offset="0%" stop-color="#f4ecfa" stop-opacity=".5"/><stop offset="100%" stop-color="#c4a8d4" stop-opacity=".12"/></radialGradient>
+            <linearGradient id="amBlade" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#ffffff"/><stop offset="42%" stop-color="#e8d4f0"/><stop offset="100%" stop-color="#9b7fb8"/></linearGradient>
+            <linearGradient id="amShaft" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#d4bce4"/><stop offset="100%" stop-color="#5a4670"/></linearGradient>
+            <radialGradient id="amCore" cx="50%" cy="50%" r="50%"><stop offset="0%" stop-color="#ffffff" stop-opacity=".98"/><stop offset="55%" stop-color="#e8d4f0" stop-opacity=".6"/><stop offset="100%" stop-color="#c4a8d4" stop-opacity="0"/></radialGradient>
             <filter id="amGl" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="1.2" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+            <filter id="amGlBig" x="-160%" y="-160%" width="420%" height="420%"><feGaussianBlur stdDeviation="2.2" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
           </defs>
           <ellipse cx="40" cy="56" rx="36" ry="50" fill="url(#amAura)" opacity=".55"/>
           <g class="am-wing-l">
@@ -144,12 +170,30 @@
           <circle class="am-halo" cx="40" cy="21" r="9.5" fill="url(#amHalo)" filter="url(#amGl)"/>
           <circle cx="40" cy="21" r="8.5" fill="none" stroke="#e8d4f0" stroke-width=".7" opacity=".75"/>
           <g class="am-spear">
-            <line x1="28.2" y1="12" x2="27.4" y2="100" stroke="#9b7fb8" stroke-width="1" opacity=".85"/>
-            <path d="M25.7,9.5 h5 M28.2,7 v5" stroke="#e8d4f0" stroke-width=".8" stroke-linecap="round" opacity=".9"/>
+            <!-- shaft: dark core + bright gradient + hairline highlight -->
+            <line x1="28" y1="16" x2="27.4" y2="100" stroke="#3a2e4e" stroke-width="2" stroke-linecap="round" opacity=".9"/>
+            <line x1="28" y1="16" x2="27.4" y2="100" stroke="url(#amShaft)" stroke-width="1.1" stroke-linecap="round"/>
+            <line x1="27.7" y1="17" x2="27.2" y2="97" stroke="#f4ecfa" stroke-width=".3" opacity=".5"/>
+            <!-- swept crossguard / quillons -->
+            <path d="M23.3,17 Q28,13.3 32.7,17" fill="none" stroke="#e8d4f0" stroke-width="1" stroke-linecap="round" opacity=".9" filter="url(#amGl)"/>
+            <!-- gem where blade meets shaft -->
+            <circle cx="28" cy="16.2" r="1.7" fill="url(#amCore)"/>
+            <!-- glowing spearhead -->
+            <polygon points="28,1 25.4,9 28,16.2 30.6,9" fill="url(#amBlade)" stroke="#f4ecfa" stroke-width=".4" stroke-linejoin="round" filter="url(#amGl)"/>
+            <line x1="28" y1="2.5" x2="28" y2="14.5" stroke="#ffffff" stroke-width=".5" opacity=".85"/>
           </g>
-          <!-- sparks cast off the spear tip -->
-          <circle class="am-spark" cx="28" cy="8" r="1.4" fill="#f4ecfa"/>
-          <circle class="am-spark b" cx="28" cy="8" r="1.4" fill="#e8d4f0"/>
+          <!-- the staff gathers light at the tip, looses a bolt, flashes -->
+          <circle class="am-charge" cx="28" cy="5" r="3.4" fill="url(#amCore)" filter="url(#amGlBig)"/>
+          <circle class="am-flash" cx="28" cy="5" r="3" fill="none" stroke="#f4ecfa" stroke-width="1" opacity=".9"/>
+          <g class="am-bolt" filter="url(#amGlBig)">
+            <circle cx="28" cy="5" r="2.3" fill="#ffffff"/>
+            <circle cx="26.9" cy="7.4" r="1.5" fill="#f0e0ff" opacity=".82"/>
+            <circle cx="26" cy="9.5" r="1" fill="#d8c0ee" opacity=".55"/>
+            <circle cx="25.3" cy="11.3" r=".6" fill="#c4a8d4" opacity=".35"/>
+          </g>
+          <!-- ambient sparks off the spearhead -->
+          <circle class="am-spark" cx="28" cy="9" r="1.2" fill="#f4ecfa"/>
+          <circle class="am-spark b" cx="28" cy="9" r="1.2" fill="#e8d4f0"/>
           <path d="M33,30 C31,44 30,70 29,99 L51,99 C50,70 49,44 47,30 C44,28 36,28 33,30 Z" fill="url(#amRobe)" stroke="#c4a8d4" stroke-width=".9" filter="url(#amGl)"/>
           <path d="M35,42 C34.5,60 34,80 33.5,97 M45,42 C45.5,60 46,80 46.5,97 M40,64 C40,74 40,86 40,97" fill="none" stroke="#b08aa8" stroke-width=".4" opacity=".55"/>
           <path d="M37,72 C36.7,82 36.2,92 35.6,99 L44.4,99 C43.8,92 43.3,82 43,72 Q40,70.4 37,72 Z" fill="#7d96c8" opacity=".45"/>
