@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- v2026.06.17-akasha-spend-persist-fix -->
+<!-- v2026.06.17-thought-todaycount-fix -->
 <html lang="en" style="background:#07080d;">
 <head>
   <meta charset="UTF-8"/>
@@ -18364,7 +18364,17 @@ function advanceOmniaStep() {
 
 function beginOmniaRecommendation() {
   var rec = omniaPickRecommendation(false);
-  var meta = OMNIA_EXERCISE_META[rec.id] || OMNIA_EXERCISE_META.clock;
+  // If guided-path recommendation is a thought sub-mode, pre-set tcMode so the
+  // session is saved under the correct mode (observation/focus/vacancy).
+  if (rec.id === 'observation' || rec.id === 'focus' || rec.id === 'vacancy') {
+    if (TC_MODE_DEFS[rec.id]) tcMode = rec.id;
+  } else if (rec.id === 'thought') {
+    var _ts = guideThoughtStats();
+    var _m = guideState.thoughtModeForced || guideCurrentThoughtMode(_ts);
+    if (TC_MODE_DEFS[_m]) tcMode = _m;
+  }
+  var metaId = omniaMetaIdForExercise(rec.id) || rec.id;
+  var meta = OMNIA_EXERCISE_META[metaId] || OMNIA_EXERCISE_META.clock;
   if (meta.open === 'soulmirror') {
     switchMode('concentration');
     renderSoulMirrorTraits();
@@ -20429,16 +20439,16 @@ function guideBuildAddedItem(exId, rounds) {
     var ts = guideThoughtStats();
     var m = guideState.thoughtModeForced || guideCurrentThoughtMode(ts);
     var tm = guideThoughtTargetMinutes(m, ts);
-    var ms = ts[m] || { todaySec:0 };
+    var ms = ts[m] || { todaySec:0, todayCount:0 };
     var tt = tm * 60 * rounds;
-    return { id:'thought', name:'Thought Control', mode:m, duration:tm, durationLabel:tm + ' min' + (rounds > 1 ? ' x2' : ''), done:ms.todaySec >= tt, progress:'added', tip:(GUIDE_FOUNDATION_THOUGHT_TIPS[m] || 'Practice thought control.'), open:'thought', added:true };
+    return { id:'thought', name:'Thought Control', mode:m, duration:tm, durationLabel:tm + ' min' + (rounds > 1 ? ' x2' : ''), done:ms.todaySec >= tt, todayCount:ms.todayCount || 0, progress:'added', tip:(GUIDE_FOUNDATION_THOUGHT_TIPS[m] || 'Practice thought control.'), open:'thought', added:true };
   }
   if (exId === 'observation' || exId === 'focus' || exId === 'vacancy') {
     var ts2 = guideThoughtStats();
     var tm2 = guideThoughtTargetMinutes(exId, ts2);
-    var ms2 = ts2[exId] || { todaySec:0 };
+    var ms2 = ts2[exId] || { todaySec:0, todayCount:0 };
     var tt2 = tm2 * 60 * rounds;
-    return { id:exId, name:'Thought Control', mode:exId, duration:tm2, durationLabel:tm2 + ' min' + (rounds > 1 ? ' x2' : ''), done:ms2.todaySec >= tt2, progress:'added · ' + (ms2.count || 0) + ' recorded', tip:(GUIDE_FOUNDATION_THOUGHT_TIPS[exId] || 'Practice thought control.'), open:'thought', tcMode:exId, added:true };
+    return { id:exId, name:'Thought Control', mode:exId, duration:tm2, durationLabel:tm2 + ' min' + (rounds > 1 ? ' x2' : ''), done:ms2.todaySec >= tt2, todayCount:ms2.todayCount || 0, progress:'added · ' + (ms2.count || 0) + ' recorded', tip:(GUIDE_FOUNDATION_THOUGHT_TIPS[exId] || 'Practice thought control.'), open:'thought', tcMode:exId, added:true };
   }
   return null;
 }
