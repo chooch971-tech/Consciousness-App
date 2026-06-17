@@ -789,7 +789,11 @@ function syncProgressScoreSrv(key, obj) {
   if (key === 'presence_omnia_v1') {
     const bodies = obj.bodies || {};
     const b = (k) => Math.max(0, Number(bodies[k]) || 0);
-    return (obj.totalAkashaEarned || 0) + (obj.akasha || 0) + (obj.reservoir || 0)
+    // Monotonic-only score (mirrors the client): exclude the spendable
+    // akasha/reservoir balances so spending akasha on an upgrade can't make a
+    // post-spend snapshot score LOWER than a stale pre-spend one — which would
+    // make pickBestValue resurrect the old snapshot and revert the purchase.
+    return (obj.totalAkashaEarned || 0) + (obj.totalAkashaSpent || 0)
       + (b('physical') + b('astral') + b('mental')) * 1000
       + ((obj.bardonStep || 1) - 1) * 10000
       + ((obj.completedRecommended || 0) * 100);
@@ -863,10 +867,15 @@ function mergeOmniaKey(snaps) {
   snaps.forEach((s) => {
     const o = parseSafe(s.presence_omnia_v1); if (!o) return;
     if (((o._resetAt) || 0) !== baseReset) return;
-    ['completedRecommended','totalAkashaEarned'].forEach((f) => { base[f] = Math.max(Number(base[f]) || 0, Number(o[f]) || 0); });
+    ['completedRecommended','totalAkashaEarned','totalAkashaSpent'].forEach((f) => { base[f] = Math.max(Number(base[f]) || 0, Number(o[f]) || 0); });
     base.bardonStep = Math.max(Number(base.bardonStep) || 1, Number(o.bardonStep) || 1);
     const ob = o.bodies || {};
     ['physical','astral','mental'].forEach((bd) => { base.bodies[bd] = Math.max(Number(base.bodies[bd]) || 1, Number(ob[bd]) || 1); });
+    // Purchased upgrades are monotonic — keep the higher level of each so a
+    // stale snapshot can't revert an upgrade the user just bought.
+    base.upgrades = base.upgrades || {};
+    const ou = o.upgrades || {};
+    Object.keys(ou).forEach((u) => { base.upgrades[u] = Math.max(Number(base.upgrades[u]) || 1, Number(ou[u]) || 1); });
     const union = [].concat(base.storySeen || [], o.storySeen || []);
     base.storySeen = union.filter((id, i) => union.indexOf(id) === i);
     base.storyRead = Math.max(Number(base.storyRead) || 0, Number(o.storyRead) || 0);

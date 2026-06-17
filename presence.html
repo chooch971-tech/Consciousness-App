@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- v2026.06.17-remove-soulmirror-fix -->
+<!-- v2026.06.17-akasha-spend-persist-fix -->
 <html lang="en" style="background:#07080d;">
 <head>
   <meta charset="UTF-8"/>
@@ -9244,9 +9244,14 @@ function syncProgressScore(key, obj) {
       var cap = (scStep && scStep.req && scStep.req[b]) || Infinity;
       return Math.min(cap, Math.max(0, Number(bodies[b]) || 0));
     };
+    // Score from MONOTONIC quantities only. The spendable `akasha`/`reservoir`
+    // balances are deliberately excluded: spending akasha used to lower the
+    // score, which let a stale pre-spend cloud snapshot out-score (and clobber)
+    // a freshly-upgraded local state — reverting the upgrade and "uncollecting"
+    // the akasha. totalAkashaEarned and totalAkashaSpent both only ever rise, so
+    // earning AND spending now strictly increase progress.
     return (obj.totalAkashaEarned || 0)
-      + (obj.akasha || 0)
-      + (obj.reservoir || 0)
+      + (obj.totalAkashaSpent || 0)
       + (capBody('physical') + capBody('astral') + capBody('mental')) * 1000
       + ((obj.bardonStep || 1) - 1) * 10000
       + ((obj.completedRecommended || 0) * 100);
@@ -16079,6 +16084,7 @@ var OMNIA_DEFAULT = {
   recStreak: 0,
   completedRecommended: 0,
   totalAkashaEarned: 0,
+  totalAkashaSpent: 0, // monotonic — every akasha sink adds to this; used so spending never lowers the sync progress score
   storySeen: [],   // ids of OMNIA_STORY beats already revealed
   storyRead: 0,    // how many revealed beats the user has viewed in the chat
   cosmetics: {
@@ -16557,7 +16563,7 @@ function mergeOmniaPull(localStr, cloudStr) {
   // reset relative to the other — otherwise honor the reset and keep base as-is.
   var sameReset = ((localObj && localObj._resetAt) || 0) === ((cloudObj && cloudObj._resetAt) || 0);
   if (sameReset) {
-    ['completedRecommended','totalAkashaEarned'].forEach(function(f) {
+    ['completedRecommended','totalAkashaEarned','totalAkashaSpent'].forEach(function(f) {
       base[f] = Math.max(Number(base[f]) || 0, Number(other[f]) || 0);
     });
     base.bardonStep = Math.max(Number(base.bardonStep) || 1, Number(other.bardonStep) || 1);
@@ -16565,6 +16571,13 @@ function mergeOmniaPull(localStr, cloudStr) {
     var ob = other.bodies || {};
     ['physical','astral','mental'].forEach(function(b) {
       base.bodies[b] = Math.max(Number(base.bodies[b]) || 1, Number(ob[b]) || 1);
+    });
+    // Purchased upgrades are monotonic (never un-bought) — keep the higher level
+    // of each so a stale snapshot can't revert an upgrade the user just bought.
+    base.upgrades = base.upgrades || {};
+    var ou = other.upgrades || {};
+    Object.keys(ou).forEach(function(u) {
+      base.upgrades[u] = Math.max(Number(base.upgrades[u]) || 1, Number(ou[u]) || 1);
     });
   }
   // Story progress is monotonic: union the revealed beats and keep the higher
@@ -17440,6 +17453,7 @@ function unlockOrSelectOmniaCosmetic(kind, id) {
     var liveCost = omniaCosmeticCost(item);
     if ((omniaState.akasha || 0) < liveCost) return;
     omniaState.akasha -= liveCost;
+    omniaState.totalAkashaSpent = (omniaState.totalAkashaSpent || 0) + liveCost;
     omniaUnlockList(kind).push(id);
   }
   if (kind === 'palette') omniaState.cosmetics.palette = id;
@@ -18260,6 +18274,7 @@ function buildOmniaBody(body) {
   var cost = omniaBodyCost(body);
   if ((omniaState.akasha || 0) < cost) return;
   omniaState.akasha -= cost;
+  omniaState.totalAkashaSpent = (omniaState.totalAkashaSpent || 0) + cost;
   omniaState.bodies[body] = (omniaState.bodies[body] || 0) + 1;
   saveOmniaState();
   fireOmniaBodyBurst(body);
@@ -18319,6 +18334,7 @@ function buyOmniaUpgrade(id) {
   var cost = omniaUpgradeCost(upg);
   if ((omniaState.akasha || 0) < cost) return;
   omniaState.akasha -= cost;
+  omniaState.totalAkashaSpent = (omniaState.totalAkashaSpent || 0) + cost;
   omniaState.upgrades[id] = (omniaState.upgrades[id] || 1) + 1;
   saveOmniaState();
   renderOmniaEngine();
