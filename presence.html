@@ -4192,14 +4192,19 @@ body:not(.tut-live) #tutCorgi {
   window.__dismissSplash = dismiss;
   setTimeout(function() {
     // If a signed-in cloud pull is still in flight, keep the splash up so the
-    // user never sees an empty/default home before their progress is restored.
-    // The pull path calls __dismissSplash() when it finishes (or reloads, which
-    // re-shows the splash anyway). The hard cap below guarantees we never trap
-    // the user behind the splash if the network hangs.
-    if (window._syncPullPending) return;
-    dismiss();
-  }, 2000);
-  setTimeout(dismiss, 8000); // safety cap — pull hung or offline
+    // user never sees an empty/default home that looks like lost progress.
+    // Show a "restoring" note (the pull retries through a cold-starting server)
+    // and dismiss as soon as it finishes — or after a hard cap so a truly hung
+    // network can never trap the user behind the splash.
+    if (!window._syncPullPending) { dismiss(); return; }
+    var tag = s.querySelector('.splash-tagline');
+    if (tag) tag.textContent = 'Restoring your progress…';
+    var waited = 0;
+    var poll = setInterval(function() {
+      waited += 500;
+      if (!window._syncPullPending || waited >= 28000) { clearInterval(poll); dismiss(); }
+    }, 500);
+  }, 2200);
 })();
 </script>
 
@@ -9624,46 +9629,84 @@ if (!localStorage.getItem('presence_auth_token')) {
   // Mark pull as pending so saveState guards don't overwrite empty state
   window._syncPullPending = true;
 
-  // Pull cloud data BEFORE rendering, so we render with correct data
-  if (syncEnabled && authToken) {
-    fetch(SYNC_API_URL + '/sync/pull', {
-      headers: { 'Authorization': 'Bearer ' + authToken }
-    }).then(function(r) { return r.json(); }).then(function(result) {
-      window._syncPullPending = false;
-      if (!result.data) { renderHome(); if (window.__dismissSplash) window.__dismissSplash(); return; }
-      var changed = applyPulledData(result.data);
-      if (changed) {
-        // Reload once with fresh data — sessionStorage flag prevents infinite loop
-        var surveyShowing2 = document.getElementById('surveyScreen') && document.getElementById('surveyScreen').classList.contains('active');
-        var savedSess2 = localStorage.getItem('presence_session');
-        var sessionActive2 = false;
-        if (savedSess2) { try { var ss = JSON.parse(savedSess2); sessionActive2 = (ss.durationSec - Math.floor((Date.now() - ss.startTime) / 1000)) > 0; } catch(e) {} }
-        if (!sessionActive2 && !sessionStorage.getItem('_pullReloaded') && !surveyShowing2 && !sessionStorage.getItem('_sessionJustEnded')) {
-          sessionStorage.setItem('_pullReloaded', '1');
-          console.log('[Sync] Fresh data on startup — reloading');
-          // Keep the splash up across the reload — it re-shows on the fresh load
-          // and dismisses once the re-init renders the restored progress.
-          window.location.reload();
-        } else {
-          // Already reloaded once — just re-init state from localStorage
-          sessionStorage.removeItem('_pullReloaded');
-          state = loadState();
-          concState = loadConcState();
-          renderHome();
-          if (window.__dismissSplash) window.__dismissSplash();
-        }
+  // Apply a successful pull result, restoring every progress dimension.
+  function _applyStartupPull(result) {
+    window._syncPullPending = false;
+    if (!result || !result.data) { renderHome(); if (window.__dismissSplash) window.__dismissSplash(); return; }
+    var changed = applyPulledData(result.data);
+    if (changed) {
+      // Reload once with fresh data — sessionStorage flag prevents infinite loop
+      var surveyShowing2 = document.getElementById('surveyScreen') && document.getElementById('surveyScreen').classList.contains('active');
+      var savedSess2 = localStorage.getItem('presence_session');
+      var sessionActive2 = false;
+      if (savedSess2) { try { var ss = JSON.parse(savedSess2); sessionActive2 = (ss.durationSec - Math.floor((Date.now() - ss.startTime) / 1000)) > 0; } catch(e) {} }
+      if (!sessionActive2 && !sessionStorage.getItem('_pullReloaded') && !surveyShowing2 && !sessionStorage.getItem('_sessionJustEnded')) {
+        sessionStorage.setItem('_pullReloaded', '1');
+        console.log('[Sync] Fresh data on startup — reloading');
+        // Keep the splash up across the reload — it re-shows on the fresh load
+        // and dismisses once the re-init renders the restored progress.
+        window.location.reload();
       } else {
+        // Already reloaded once — re-init ALL state from localStorage so every
+        // dimension (Omnia/Akasha, prayer, guide included) reflects the restore,
+        // not just awareness + concentration.
         sessionStorage.removeItem('_pullReloaded');
+        state = loadState();
+        concState = loadConcState();
+        omniaState = loadOmniaState();
+        prayerState = loadPrayerState();
+        guideState = loadGuideState();
+        guidePathMode = null;
         renderHome();
         if (window.__dismissSplash) window.__dismissSplash();
-        // Cloud might be stale — push local state so cloud stays current
-        syncPushData();
       }
-    }).catch(function() {
-      window._syncPullPending = false;
+    } else {
+      sessionStorage.removeItem('_pullReloaded');
       renderHome();
       if (window.__dismissSplash) window.__dismissSplash();
+      // Cloud might be stale — push local state so cloud stays current
+      syncPushData();
+    }
+  }
+
+  // Robust startup pull. Free-tier hosts cold-start after idle and can return a
+  // 502 / non-JSON body for the first request — which used to drop the user on
+  // an empty home with no retry, looking exactly like lost progress. Retry with
+  // backoff (keeping the splash + "restoring" note up) so a waking server
+  // self-heals instead of stranding the user.
+  function _startupPull(attempt) {
+    if (!(syncEnabled && authToken)) { window._syncPullPending = false; renderHome(); if (window.__dismissSplash) window.__dismissSplash(); return; }
+    fetch(SYNC_API_URL + '/sync/pull', {
+      headers: { 'Authorization': 'Bearer ' + authToken }
+    }).then(function(r) {
+      if (r.status === 401) {
+        window._syncPullPending = false;
+        authLogout({ message: 'Session expired — sign in via Settings' });
+        if (window.__dismissSplash) window.__dismissSplash();
+        return null;
+      }
+      if (!r.ok) throw new Error('pull http ' + r.status); // e.g. cold-start 502
+      return r.json();
+    }).then(function(result) {
+      if (result === null) return; // 401 already handled
+      _applyStartupPull(result);
+    }).catch(function(err) {
+      if (attempt < 8) {
+        console.warn('[Sync] Startup pull attempt ' + attempt + ' failed (' + (err && err.message) + ') — retrying');
+        setTimeout(function() { _startupPull(attempt + 1); }, Math.min(2000 * attempt, 8000));
+      } else {
+        // Exhausted retries — show whatever's local (never imply loss) and tell
+        // the user the cloud is still waking; a manual refresh will restore it.
+        window._syncPullPending = false;
+        renderHome();
+        if (window.__dismissSplash) window.__dismissSplash();
+        if (typeof showToast === 'function') showToast('Cloud is waking up — reopen the app in a moment to restore progress', 5000);
+      }
     });
+  }
+
+  if (syncEnabled && authToken) {
+    _startupPull(1);
   } else {
     window._syncPullPending = false;
     renderHome();
