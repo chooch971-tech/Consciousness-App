@@ -4180,10 +4180,26 @@ body:not(.tut-live) #tutCorgi {
 <script>
 (function() {
   var s = document.getElementById('splash');
-  setTimeout(function() {
+  var dismissed = false;
+  // Idempotent splash dismiss — exposed so the startup cloud-pull can call it
+  // the moment a signed-in user's real progress is in localStorage and rendered.
+  function dismiss() {
+    if (dismissed) return;
+    dismissed = true;
     s.classList.add('splash-out');
     setTimeout(function() { s.style.display = 'none'; }, 950);
+  }
+  window.__dismissSplash = dismiss;
+  setTimeout(function() {
+    // If a signed-in cloud pull is still in flight, keep the splash up so the
+    // user never sees an empty/default home before their progress is restored.
+    // The pull path calls __dismissSplash() when it finishes (or reloads, which
+    // re-shows the splash anyway). The hard cap below guarantees we never trap
+    // the user behind the splash if the network hangs.
+    if (window._syncPullPending) return;
+    dismiss();
   }, 2000);
+  setTimeout(dismiss, 8000); // safety cap — pull hung or offline
 })();
 </script>
 
@@ -9614,7 +9630,7 @@ if (!localStorage.getItem('presence_auth_token')) {
       headers: { 'Authorization': 'Bearer ' + authToken }
     }).then(function(r) { return r.json(); }).then(function(result) {
       window._syncPullPending = false;
-      if (!result.data) { renderHome(); return; }
+      if (!result.data) { renderHome(); if (window.__dismissSplash) window.__dismissSplash(); return; }
       var changed = applyPulledData(result.data);
       if (changed) {
         // Reload once with fresh data — sessionStorage flag prevents infinite loop
@@ -9625,6 +9641,8 @@ if (!localStorage.getItem('presence_auth_token')) {
         if (!sessionActive2 && !sessionStorage.getItem('_pullReloaded') && !surveyShowing2 && !sessionStorage.getItem('_sessionJustEnded')) {
           sessionStorage.setItem('_pullReloaded', '1');
           console.log('[Sync] Fresh data on startup — reloading');
+          // Keep the splash up across the reload — it re-shows on the fresh load
+          // and dismisses once the re-init renders the restored progress.
           window.location.reload();
         } else {
           // Already reloaded once — just re-init state from localStorage
@@ -9632,16 +9650,19 @@ if (!localStorage.getItem('presence_auth_token')) {
           state = loadState();
           concState = loadConcState();
           renderHome();
+          if (window.__dismissSplash) window.__dismissSplash();
         }
       } else {
         sessionStorage.removeItem('_pullReloaded');
         renderHome();
+        if (window.__dismissSplash) window.__dismissSplash();
         // Cloud might be stale — push local state so cloud stays current
         syncPushData();
       }
     }).catch(function() {
       window._syncPullPending = false;
       renderHome();
+      if (window.__dismissSplash) window.__dismissSplash();
     });
   } else {
     window._syncPullPending = false;
