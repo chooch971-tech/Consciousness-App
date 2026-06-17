@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- v2026.06.17-path-remove-sort -->
+<!-- v2026.06.17-path-add-remove-fixes -->
 <html lang="en" style="background:#07080d;">
 <head>
   <meta charset="UTF-8"/>
@@ -19716,7 +19716,7 @@ function guideIsExperienced(exId) {
 // keep raising the bar from there. This is opt-in per exercise and independent
 // of the beginner/experienced path: an exercise has an override only once the
 // user sets one. Without an override, the exercise climbs naturally as before.
-var GUIDE_TIMED_EXERCISES = ['clock','visual','auditory','thought','asana'];
+var GUIDE_TIMED_EXERCISES = ['clock','visual','auditory','thought','observation','focus','vacancy','asana'];
 var GUIDE_FLOOR_CAP = 120;
 
 function guideFloorMin(exId) {
@@ -21277,7 +21277,7 @@ function renderPathQuests() {
     if (advItem) {
       if (isTimedEx(activeExId)) {
         var floor = guideFloorMin(activeExId);
-        advItem.textContent = floor ? ('Advanced · ' + floor + ' min') : 'I\'m Advanced';
+        advItem.textContent = floor ? ('I\'m Advanced · ' + floor + ' min') : 'I\'m Advanced';
         advItem.style.display = 'block';
       } else {
         advItem.style.display = 'none';
@@ -21343,6 +21343,7 @@ function renderPathQuests() {
     if (!guideState.postponed) guideState.postponed = {};
     guideState.postponed[activeExId] = Date.now() + 7 * 86400000;
     saveGuideState(guideState);
+    if (typeof syncPushData === 'function') syncPushData();
     renderPathQuests();
     if (typeof showToast === 'function') showToast('Removed from your path');
   });
@@ -21469,6 +21470,9 @@ function renderPathQuests() {
       // Clear any active postpone so the freshly-added exercise shows right away.
       if (guideState.postponed && guideState.postponed[exId]) delete guideState.postponed[exId];
       saveGuideState(guideState);
+      // Push immediately so a reload doesn't pull an older cloud snapshot that
+      // lacks this change and overwrite _pathAdded.
+      if (typeof syncPushData === 'function') syncPushData();
       renderPathQuests();
       if (typeof showToast === 'function') showToast((ADD_NAMES[exId] || exId) + ' added to your path');
     }
