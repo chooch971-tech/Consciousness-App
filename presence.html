@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- v2026.06.16-welcome-michael -->
+<!-- v2026.06.17-path-remove-sort -->
 <html lang="en" style="background:#07080d;">
 <head>
   <meta charset="UTF-8"/>
@@ -21004,6 +21004,8 @@ function renderPathQuests() {
   var _isTC = function(id) { return id === 'thought' || id === 'observation' || id === 'focus' || id === 'vacancy'; };
   // Cluster all thought-family items together at the first one's position.
   items = omniaClusterGuideItems(items);
+  // Sort: uncompleted exercises to the top, completed to the bottom (stable).
+  items.sort(function(a, b) { if (a.done === b.done) return 0; return a.done ? 1 : -1; });
   // Exercises that currently grant a body level if completed — the glow
   // below and the actual award in awardOmniaForExercise always agree.
   var _highlighted = (typeof omniaHighlightedExerciseIds === 'function') ? omniaHighlightedExerciseIds() : {};
@@ -21333,13 +21335,13 @@ function renderPathQuests() {
   if (removeItemBtn) removeItemBtn.addEventListener('click', function() {
     if (!activeExId) return;
     closeSkipMenu();
-    var inAdded = Array.isArray(guideState._pathAdded) && guideState._pathAdded.indexOf(activeExId) !== -1;
-    if (inAdded) {
+    // Always remove from manually-added list AND postpone — belt-and-suspenders
+    // so foundational items (which live outside _pathAdded) are also hidden.
+    if (Array.isArray(guideState._pathAdded)) {
       guideState._pathAdded = guideState._pathAdded.filter(function(id) { return id !== activeExId; });
-    } else {
-      if (!guideState.postponed) guideState.postponed = {};
-      guideState.postponed[activeExId] = Date.now() + 7 * 86400000;
     }
+    if (!guideState.postponed) guideState.postponed = {};
+    guideState.postponed[activeExId] = Date.now() + 7 * 86400000;
     saveGuideState(guideState);
     renderPathQuests();
     if (typeof showToast === 'function') showToast('Removed from your path');
