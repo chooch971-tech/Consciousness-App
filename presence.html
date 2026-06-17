@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- v2026.06.17-path-add-remove-fixes -->
+<!-- v2026.06.17-michael-staff -->
 <html lang="en" style="background:#07080d;">
 <head>
   <meta charset="UTF-8"/>
@@ -16682,6 +16682,11 @@ function renderOmniaEntityPreview(item) {
   if (item.id === 'elys') {
     // Archangel Michael at icon scale: halo, wings, robe, spear, orb, mound
     return '<svg viewBox="0 0 56 58" aria-hidden="true" style="overflow:visible;">'
+      + '<defs>'
+      + '<linearGradient id="amBlade" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#ffffff"/><stop offset="42%" stop-color="#e8d4f0"/><stop offset="100%" stop-color="#9b7fb8"/></linearGradient>'
+      + '<linearGradient id="amShaft" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#d4bce4"/><stop offset="100%" stop-color="#5a4670"/></linearGradient>'
+      + '<radialGradient id="amCore" cx="50%" cy="50%" r="50%"><stop offset="0%" stop-color="#ffffff" stop-opacity=".98"/><stop offset="55%" stop-color="#e8d4f0" stop-opacity=".6"/><stop offset="100%" stop-color="#c4a8d4" stop-opacity="0"/></radialGradient>'
+      + '</defs>'
       + '<path d="M24,15 C18,8 10,9 7,13 C10,16 10,22 9.5,28 C9,36 8,42 7.5,48 C13,43 17,35 19,27 C20.5,21 22,17 24,16 Z" fill="#9b7fb8" opacity=".5" stroke="#9b7fb8" stroke-width=".6" stroke-linejoin="round"/>'
       + '<path d="M32,15 C38,8 46,9 49,13 C46,16 46,22 46.5,28 C47,36 48,42 48.5,48 C43,43 39,35 37,27 C35.5,21 34,17 32,16 Z" fill="#9b7fb8" opacity=".5" stroke="#9b7fb8" stroke-width=".6" stroke-linejoin="round"/>'
       + '<path d="M10,30 C13,27 15,23 17,18 M11,40 C14,36 16,31 18,25 M46,30 C43,27 41,23 39,18 M45,40 C42,36 40,31 38,25" fill="none" stroke="#a8bce0" stroke-width=".45" opacity=".6"/>'
@@ -16691,8 +16696,13 @@ function renderOmniaEntityPreview(item) {
       + '<path d="M24,17 C22.8,26 22.3,38 21.8,50 L34.2,50 C33.7,38 33.2,26 32,17 C30,15.8 26,15.8 24,17 Z" fill="#d4a8c0" opacity=".4" stroke="#c4a8d4" stroke-width=".7"/>'
       + '<path d="M26.4,38 C26.2,42 26,46 25.8,50 L30.2,50 C30,46 29.8,42 29.6,38 Q28,37 26.4,38 Z" fill="#7d96c8" opacity=".45"/>'
       + '<path d="M24.2,21.5 L31.8,19.8 L31.8,21.8 L24.2,23.5 Z" fill="#7d96c8" opacity=".55"/>'
-      + '<line x1="20.5" y1="6" x2="20" y2="50" stroke="#9b7fb8" stroke-width=".8" opacity=".85"/>'
-      + '<path d="M19,4.6 h3 M20.5,3.1 v3" stroke="#e8d4f0" stroke-width=".6" stroke-linecap="round" opacity=".9"/>'
+      + '<line x1="20.5" y1="9" x2="20" y2="50" stroke="#3a2e4e" stroke-width="1.3" stroke-linecap="round" opacity=".85"/>'
+      + '<line x1="20.5" y1="9" x2="20" y2="50" stroke="url(#amShaft)" stroke-width=".8" stroke-linecap="round"/>'
+      + '<line x1="20.3" y1="9.5" x2="19.8" y2="49" stroke="#f4ecfa" stroke-width=".2" opacity=".5"/>'
+      + '<path d="M17.6,9 Q20.5,7.3 23.4,9" fill="none" stroke="#e8d4f0" stroke-width=".7" stroke-linecap="round" opacity=".9"/>'
+      + '<circle cx="20.5" cy="9" r="1.2" fill="url(#amCore)"/>'
+      + '<polygon points="20.5,2.5 18.7,6 20.5,9 22.3,6" fill="url(#amBlade)" stroke="#f4ecfa" stroke-width=".3" stroke-linejoin="round"/>'
+      + '<line x1="20.5" y1="3.2" x2="20.5" y2="8.2" stroke="#ffffff" stroke-width=".35" opacity=".85"/>'
       + '<circle cx="36.5" cy="31" r="3.6" fill="rgba(244,236,250,.16)" stroke="#f4ecfa" stroke-width=".6"/>'
       + '<path d="M36.5,29.2 V32.8 M34.7,31 H38.3" stroke="#e8d4f0" stroke-width=".4" opacity=".9"/>'
       + '<path d="M20,52.5 A8,3.4 0 0 1 36,52.5 L36,54 A8,2.6 0 0 1 20,54 Z" fill="rgba(232,212,240,.12)" stroke="#c4a8d4" stroke-width=".45" opacity=".8"/>'
@@ -16915,6 +16925,10 @@ function getEntityCrystalSVG(id) {
       + '<linearGradient id="amRobe" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#d4a8c0" stop-opacity=".5"/><stop offset="100%" stop-color="#b08aa8" stop-opacity=".28"/></linearGradient>'
       + '<radialGradient id="amOrb" cx="42%" cy="38%" r="60%"><stop offset="0%" stop-color="#f4ecfa" stop-opacity=".5"/><stop offset="100%" stop-color="#c4a8d4" stop-opacity=".12"/></radialGradient>'
       + '<filter id="amGl" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="1.2" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>'
+      + '<filter id="amGlBig" x="-160%" y="-160%" width="420%" height="420%"><feGaussianBlur stdDeviation="2.2" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>'
+      + '<linearGradient id="amBlade" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#ffffff"/><stop offset="42%" stop-color="#e8d4f0"/><stop offset="100%" stop-color="#9b7fb8"/></linearGradient>'
+      + '<linearGradient id="amShaft" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#d4bce4"/><stop offset="100%" stop-color="#5a4670"/></linearGradient>'
+      + '<radialGradient id="amCore" cx="50%" cy="50%" r="50%"><stop offset="0%" stop-color="#ffffff" stop-opacity=".98"/><stop offset="55%" stop-color="#e8d4f0" stop-opacity=".6"/><stop offset="100%" stop-color="#c4a8d4" stop-opacity="0"/></radialGradient>'
       + '</defs>'
       + '<ellipse cx="40" cy="56" rx="36" ry="50" fill="url(#amAura)" opacity=".55"/>'
       // wings: tall icon wings, dark with pale-blue inner feather rows
@@ -16931,9 +16945,21 @@ function getEntityCrystalSVG(id) {
       // halo
       + '<circle class="am-halo" cx="40" cy="21" r="9.5" fill="url(#amHalo)" filter="url(#amGl)"/>'
       + '<circle cx="40" cy="21" r="8.5" fill="none" stroke="#e8d4f0" stroke-width=".7" opacity=".75"/>'
-      // cross-tipped spear in the right hand
-      + '<line x1="28.2" y1="12" x2="27.4" y2="100" stroke="#9b7fb8" stroke-width="1" opacity=".85"/>'
-      + '<path d="M25.7,9.5 h5 M28.2,7 v5" stroke="#e8d4f0" stroke-width=".8" stroke-linecap="round" opacity=".9"/>'
+      // ornate spear: gradient shaft, diamond blade, animated charge at the tip
+      + '<g class="am-spear">'
+      + '<line x1="28" y1="16" x2="27.4" y2="100" stroke="#3a2e4e" stroke-width="2" stroke-linecap="round" opacity=".9"/>'
+      + '<line x1="28" y1="16" x2="27.4" y2="100" stroke="url(#amShaft)" stroke-width="1.1" stroke-linecap="round"/>'
+      + '<line x1="27.7" y1="17" x2="27.2" y2="97" stroke="#f4ecfa" stroke-width=".3" opacity=".5"/>'
+      + '<path d="M23.3,17 Q28,13.3 32.7,17" fill="none" stroke="#e8d4f0" stroke-width="1" stroke-linecap="round" opacity=".9" filter="url(#amGl)"/>'
+      + '<circle cx="28" cy="16.2" r="1.7" fill="url(#amCore)"/>'
+      + '<polygon points="28,1 25.4,9 28,16.2 30.6,9" fill="url(#amBlade)" stroke="#f4ecfa" stroke-width=".4" stroke-linejoin="round" filter="url(#amGl)"/>'
+      + '<line x1="28" y1="2.5" x2="28" y2="14.5" stroke="#ffffff" stroke-width=".5" opacity=".85"/>'
+      + '</g>'
+      + '<circle class="am-charge" cx="28" cy="5" r="3.4" fill="url(#amCore)" filter="url(#amGlBig)"/>'
+      + '<circle class="am-flash" cx="28" cy="5" r="3" fill="none" stroke="#f4ecfa" stroke-width="1" opacity=".9"/>'
+      + '<g class="am-bolt" filter="url(#amGlBig)"><circle cx="28" cy="5" r="2.3" fill="#ffffff"/><circle cx="26.9" cy="7.4" r="1.5" fill="#f0e0ff" opacity=".82"/><circle cx="26" cy="9.5" r="1" fill="#d8c0ee" opacity=".55"/><circle cx="25.3" cy="11.3" r=".6" fill="#c4a8d4" opacity=".35"/></g>'
+      + '<circle class="am-spark" cx="28" cy="9" r="1.2" fill="#f4ecfa"/>'
+      + '<circle class="am-spark b" cx="28" cy="9" r="1.2" fill="#e8d4f0"/>'
       // robe with folds, blue tunic at the hem, sash and waist band
       + '<path d="M33,30 C31,44 30,70 29,99 L51,99 C50,70 49,44 47,30 C44,28 36,28 33,30 Z" fill="url(#amRobe)" stroke="#c4a8d4" stroke-width=".9" filter="url(#amGl)"/>'
       + '<path d="M35,42 C34.5,60 34,80 33.5,97 M45,42 C45.5,60 46,80 46.5,97 M40,64 C40,74 40,86 40,97" fill="none" stroke="#b08aa8" stroke-width=".4" opacity=".55"/>'
