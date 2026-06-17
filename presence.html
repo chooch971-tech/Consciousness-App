@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- v2026.06.17-michael-staff -->
+<!-- v2026.06.17-remove-soulmirror-fix -->
 <html lang="en" style="background:#07080d;">
 <head>
   <meta charset="UTF-8"/>
@@ -20323,7 +20323,17 @@ function guideMaybeNoticeAdaptation(info) {
 function buildGuideRegimentItems(mode) {
   var info = guideCurrentRegimentInfo(mode);
   var items = info.mode === 'experienced' ? buildExperiencedGuideItems() : buildFoundationalGuideItems();
-  return guideMirrorToPore(guideApplyExRounds(guideMergeAddedItems(items)));
+  items = guideMirrorToPore(guideApplyExRounds(guideMergeAddedItems(items)));
+  // Honor "Remove from path" (postpone) for ALL path modes and on the final
+  // ids. The experienced builder never filtered postponed items, so removing
+  // a fixed card like Soul Mirror had no effect; mirror→pore conversion can
+  // also change an id, so filter here after the full pipeline.
+  var postponed = guideState.postponed || {};
+  var now = Date.now();
+  return items.filter(function(item) {
+    var until = postponed[item.id];
+    return !until || now >= until;
+  });
 }
 
 // Has a Pore Breathing session been logged today?
