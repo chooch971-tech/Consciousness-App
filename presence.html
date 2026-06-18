@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- v2026.06.17-thought-todaycount-fix -->
+<!-- v2026.06.18-auditory-sounds-timer -->
 <html lang="en" style="background:#07080d;">
 <head>
   <meta charset="UTF-8"/>
@@ -6163,7 +6163,7 @@ body:not(.tut-live) #tutCorgi {
       <button class="btn primary conc-btn" id="audLostBtn" style="display:none;">Lost Focus</button>
       <button class="btn ghost conc-btn" id="audNextRepBtn" style="display:none;">Ready — Begin Next Rep</button>
     </div>
-    <div style="position:fixed; bottom:max(env(safe-area-inset-bottom),28px); left:24px; font-size:10px; color:var(--muted); opacity:0.5; font-family:'DM Mono',monospace;">
+    <div style="position:fixed; bottom:max(env(safe-area-inset-bottom),28px); left:24px; font-size:12px; color:#fff; opacity:0.9; font-family:'DM Mono',monospace;">
       session <span id="audSessionTimer">0:00</span>
     </div>
     <div style="position:fixed; bottom:max(env(safe-area-inset-bottom),28px); right:24px; font-size:10px; color:#d4956e; opacity:0.7; font-family:'DM Mono',monospace;">
@@ -13674,6 +13674,14 @@ var SOUNDS = [
   { id:'binaural',     label:'Binaural',      icon:'&#127911;' },
   { id:'pulse',        label:'Soft Pulse',    icon:'&#11835;'  },
   { id:'psychedelic',  label:'Psychedelic',   icon:'&#127775;' },
+  { id:'ocean',        label:'Ocean Waves',   icon:'&#127754;' },
+  { id:'wind',         label:'Wind',          icon:'&#127788;' },
+  { id:'fire',         label:'Crackling Fire',icon:'&#128293;' },
+  { id:'chimes',       label:'Wind Chimes',   icon:'&#127888;' },
+  { id:'crickets',     label:'Night Crickets',icon:'&#129431;' },
+  { id:'brown',        label:'Brown Noise',   icon:'&#128996;' },
+  { id:'white',        label:'White Noise',   icon:'&#9898;'   },
+  { id:'theta',        label:'Theta Waves',   icon:'&#129504;' },
   { id:'freeplay',    label:'My Music — Stopwatch Mode', icon:'&#9836;' },
 ];
 
@@ -13969,8 +13977,176 @@ function playPsychedelic(ctx, when) {
   });
 }
 
+function playOcean(ctx, when, duration) {
+  // Ocean waves — brown noise through a lowpass, with a slow swell LFO on gain
+  duration = duration || 10;
+  var bufSize = ctx.sampleRate * duration;
+  var buf = ctx.createBuffer(2, bufSize, ctx.sampleRate);
+  for (var c = 0; c < 2; c++) {
+    var d = buf.getChannelData(c); var last = 0;
+    for (var i = 0; i < bufSize; i++) { var w = Math.random() * 2 - 1; last = (last + 0.02 * w) / 1.02; d[i] = last * 3.5; }
+  }
+  var src = ctx.createBufferSource(); src.buffer = buf; src.loop = true;
+  var filter = ctx.createBiquadFilter(); filter.type = 'lowpass'; filter.frequency.value = 500;
+  var gain = ctx.createGain(); gain.gain.value = 0.4;
+  var lfo = ctx.createOscillator(); lfo.frequency.value = 0.08;
+  var lfoGain = ctx.createGain(); lfoGain.gain.value = 0.25;
+  lfo.connect(lfoGain); lfoGain.connect(gain.gain);
+  src.connect(filter); filter.connect(gain); gain.connect(ctx.destination);
+  src.start(when); lfo.start(when);
+  audNodes.push(src); audNodes.push(lfo);
+}
+
+function playWind(ctx, when, duration) {
+  // Wind — white noise through a sweeping bandpass
+  duration = duration || 8;
+  var bufSize = ctx.sampleRate * duration;
+  var buf = ctx.createBuffer(2, bufSize, ctx.sampleRate);
+  for (var c = 0; c < 2; c++) { var d = buf.getChannelData(c); for (var i = 0; i < bufSize; i++) { d[i] = (Math.random() * 2 - 1) * 0.5; } }
+  var src = ctx.createBufferSource(); src.buffer = buf; src.loop = true;
+  var filter = ctx.createBiquadFilter(); filter.type = 'bandpass'; filter.frequency.value = 500; filter.Q.value = 1.2;
+  var lfo = ctx.createOscillator(); lfo.frequency.value = 0.15;
+  var lfoGain = ctx.createGain(); lfoGain.gain.value = 350;
+  lfo.connect(lfoGain); lfoGain.connect(filter.frequency);
+  var gain = ctx.createGain(); gain.gain.value = 0.3;
+  src.connect(filter); filter.connect(gain); gain.connect(ctx.destination);
+  src.start(when); lfo.start(when);
+  audNodes.push(src); audNodes.push(lfo);
+}
+
+function playFire(ctx, when, duration) {
+  // Crackling fire — a lowpassed brown-noise bed plus randomly scheduled pops
+  duration = duration || 6;
+  var bufSize = ctx.sampleRate * duration;
+  var buf = ctx.createBuffer(2, bufSize, ctx.sampleRate);
+  for (var c = 0; c < 2; c++) {
+    var d = buf.getChannelData(c); var last = 0;
+    for (var i = 0; i < bufSize; i++) { var w = Math.random() * 2 - 1; last = (last + 0.02 * w) / 1.02; d[i] = last * 2.2; }
+  }
+  var src = ctx.createBufferSource(); src.buffer = buf; src.loop = true;
+  var filter = ctx.createBiquadFilter(); filter.type = 'lowpass'; filter.frequency.value = 420;
+  var gain = ctx.createGain(); gain.gain.value = 0.35;
+  src.connect(filter); filter.connect(gain); gain.connect(ctx.destination);
+  src.start(when); audNodes.push(src);
+  function crackle() {
+    if (!audCtx || audCtx.state === 'closed') return;
+    var n = 1 + Math.floor(Math.random() * 3);
+    for (var k = 0; k < n; k++) {
+      var t = ctx.currentTime + Math.random() * 0.25;
+      var osc = ctx.createOscillator(); osc.type = 'triangle';
+      osc.frequency.value = 600 + Math.random() * 1800;
+      var g = ctx.createGain();
+      g.gain.setValueAtTime(0, t);
+      g.gain.linearRampToValueAtTime(0.08 + Math.random() * 0.12, t + 0.005);
+      g.gain.exponentialRampToValueAtTime(0.001, t + 0.06);
+      osc.connect(g); g.connect(ctx.destination);
+      osc.start(t); osc.stop(t + 0.08);
+      audNodes.push(osc);
+    }
+    audLoopHandle = setTimeout(crackle, 200 + Math.random() * 400);
+  }
+  audLoopHandle = setTimeout(crackle, 150);
+}
+
+function playChimes(ctx, when) {
+  // Wind chimes — random pentatonic bell tones with shimmering overtones
+  var scale = [523.25, 587.33, 659.25, 783.99, 880.00, 1046.50];
+  function chime() {
+    if (!audCtx || audCtx.state === 'closed') return;
+    var n = 1 + Math.floor(Math.random() * 2);
+    for (var k = 0; k < n; k++) {
+      var t = ctx.currentTime + Math.random() * 0.4;
+      var f = scale[Math.floor(Math.random() * scale.length)];
+      [1, 2.01, 3.03].forEach(function(mult, i) {
+        var osc = ctx.createOscillator(); osc.type = 'sine'; osc.frequency.value = f * mult;
+        var g = ctx.createGain();
+        g.gain.setValueAtTime(0, t);
+        g.gain.linearRampToValueAtTime(0.18 / (i + 1), t + 0.01);
+        g.gain.exponentialRampToValueAtTime(0.001, t + 2.4 - i * 0.5);
+        osc.connect(g); g.connect(ctx.destination);
+        osc.start(t); osc.stop(t + 2.6);
+        audNodes.push(osc);
+      });
+    }
+    audLoopHandle = setTimeout(chime, 900 + Math.random() * 1600);
+  }
+  chime();
+}
+
+function playCrickets(ctx, when, duration) {
+  // Night crickets — a faint high-air bed plus rhythmic chirp trains
+  duration = duration || 6;
+  var bufSize = ctx.sampleRate * duration;
+  var buf = ctx.createBuffer(2, bufSize, ctx.sampleRate);
+  for (var c = 0; c < 2; c++) { var d = buf.getChannelData(c); for (var i = 0; i < bufSize; i++) { d[i] = (Math.random() * 2 - 1) * 0.04; } }
+  var src = ctx.createBufferSource(); src.buffer = buf; src.loop = true;
+  var hp = ctx.createBiquadFilter(); hp.type = 'highpass'; hp.frequency.value = 4000;
+  var bgGain = ctx.createGain(); bgGain.gain.value = 0.5;
+  src.connect(hp); hp.connect(bgGain); bgGain.connect(ctx.destination);
+  src.start(when); audNodes.push(src);
+  function chirp() {
+    if (!audCtx || audCtx.state === 'closed') return;
+    var t0 = ctx.currentTime + 0.02;
+    for (var p = 0; p < 14; p++) {
+      var t = t0 + p * 0.018;
+      var osc = ctx.createOscillator(); osc.type = 'square';
+      osc.frequency.value = 4500 + Math.random() * 300;
+      var g = ctx.createGain();
+      g.gain.setValueAtTime(0, t);
+      g.gain.linearRampToValueAtTime(0.05, t + 0.002);
+      g.gain.exponentialRampToValueAtTime(0.001, t + 0.012);
+      osc.connect(g); g.connect(ctx.destination);
+      osc.start(t); osc.stop(t + 0.015);
+      audNodes.push(osc);
+    }
+    audLoopHandle = setTimeout(chirp, 350 + Math.random() * 250);
+  }
+  audLoopHandle = setTimeout(chirp, 200);
+}
+
+function playBrownNoise(ctx, when, duration) {
+  // Brown noise — integrated white noise, heavier on the low end
+  duration = duration || 8;
+  var bufSize = ctx.sampleRate * duration;
+  var buf = ctx.createBuffer(2, bufSize, ctx.sampleRate);
+  for (var c = 0; c < 2; c++) {
+    var d = buf.getChannelData(c); var last = 0;
+    for (var i = 0; i < bufSize; i++) { var w = Math.random() * 2 - 1; last = (last + 0.02 * w) / 1.02; d[i] = last * 3.5; }
+  }
+  var src = ctx.createBufferSource(); src.buffer = buf; src.loop = true;
+  var gain = ctx.createGain(); gain.gain.value = 0.4;
+  src.connect(gain); gain.connect(ctx.destination);
+  src.start(when); audNodes.push(src);
+}
+
+function playWhiteNoise(ctx, when, duration) {
+  // White noise — full-spectrum hiss
+  duration = duration || 8;
+  var bufSize = ctx.sampleRate * duration;
+  var buf = ctx.createBuffer(2, bufSize, ctx.sampleRate);
+  for (var c = 0; c < 2; c++) { var d = buf.getChannelData(c); for (var i = 0; i < bufSize; i++) { d[i] = (Math.random() * 2 - 1) * 0.18; } }
+  var src = ctx.createBufferSource(); src.buffer = buf; src.loop = true;
+  var gain = ctx.createGain(); gain.gain.value = 0.3;
+  src.connect(gain); gain.connect(ctx.destination);
+  src.start(when); audNodes.push(src);
+}
+
+function playTheta(ctx, when) {
+  // Theta waves — 6Hz binaural beat (200Hz left, 206Hz right) for deep calm
+  var gainL = ctx.createGain(); gainL.gain.value = 0.2;
+  var gainR = ctx.createGain(); gainR.gain.value = 0.2;
+  var merger = ctx.createChannelMerger(2);
+  gainL.connect(merger, 0, 0); gainR.connect(merger, 0, 1);
+  merger.connect(ctx.destination);
+  var oscL = ctx.createOscillator(); oscL.type = 'sine'; oscL.frequency.value = 200;
+  var oscR = ctx.createOscillator(); oscR.type = 'sine'; oscR.frequency.value = 206;
+  oscL.connect(gainL); oscR.connect(gainR);
+  oscL.start(when); oscR.start(when);
+  audNodes.push(oscL); audNodes.push(oscR);
+}
+
 // Sustained sounds need looping
-var SUSTAINED_SOUNDS = ['creek', 'rain', 'om', 'binaural', 'psychedelic'];
+var SUSTAINED_SOUNDS = ['creek', 'rain', 'om', 'binaural', 'psychedelic', 'ocean', 'wind', 'fire', 'crickets', 'brown', 'white', 'theta'];
 
 function _startCustomAudio(src, isObjectUrl) {
   var audio = new Audio(src);
@@ -14037,6 +14213,22 @@ function playSound(soundId) {
     playPulse(ctx, when);
   } else if (soundId === 'psychedelic') {
     playPsychedelic(ctx, when);
+  } else if (soundId === 'ocean') {
+    playOcean(ctx, when);
+  } else if (soundId === 'wind') {
+    playWind(ctx, when);
+  } else if (soundId === 'fire') {
+    playFire(ctx, when);
+  } else if (soundId === 'chimes') {
+    playChimes(ctx, when);
+  } else if (soundId === 'crickets') {
+    playCrickets(ctx, when);
+  } else if (soundId === 'brown') {
+    playBrownNoise(ctx, when);
+  } else if (soundId === 'white') {
+    playWhiteNoise(ctx, when);
+  } else if (soundId === 'theta') {
+    playTheta(ctx, when);
   }
 }
 
@@ -14122,8 +14314,12 @@ function audSwitchSound() {
   // matches a listening (not freeplay) session.
   var waveEl = document.getElementById('audWave');
   if (waveEl) waveEl.style.visibility = '';
-  var stateEl = document.getElementById('audStateLabel');
-  if (stateEl) stateEl.textContent = 'Listen to the sound.\nTap Start when ready to concentrate.';
+  // Before concentration begins, refresh the listening prompt. Mid-rep we just
+  // swap the ambient sound without disturbing the "Concentrate." cue.
+  if (!audRepActive) {
+    var stateEl = document.getElementById('audStateLabel');
+    if (stateEl) stateEl.textContent = 'Listen to the sound.\nTap Start when ready to concentrate.';
+  }
   stopAllAudio();
   playSound(currentSound);
   startWaveAnimation();
@@ -14163,7 +14359,11 @@ function startAuditorySession() {
     playSound(currentSound);
     startWaveAnimation();
   }
-  // Don't start timer or rep yet — wait for user to tap Start
+  // Session timer begins the moment the sound starts playing (or, in freeplay,
+  // when the session screen opens). The rep clock still waits for "Start".
+  audSessionStartTime = Date.now();
+  if (audTimerHandle) cancelAnimationFrame(audTimerHandle);
+  tickAudTimer();
 }
 
 function beginAudRep() {
@@ -14172,15 +14372,13 @@ function beginAudRep() {
   stopWaveAnimation();
   var waveEl = document.getElementById('audWave');
   if (waveEl) waveEl.style.visibility = '';
-  audSessionStartTime = Date.now();
+  // Session timer already started when the sound began; only start the rep clock.
+  if (!audSessionStartTime) audSessionStartTime = Date.now();
   audRepStartTime = Date.now();
   document.getElementById('audStartRepBtn').style.display = 'none';
-  var _switchBtn = document.getElementById('audSwitchSoundBtn');
-  if (_switchBtn) _switchBtn.style.display = 'none';
   document.getElementById('audStateLabel').textContent = 'Concentrate.';
   document.getElementById('audRepCount').textContent = 'rep 1';
   startAudRep();
-  tickAudTimer();
 }
 
 function startAudRep() {
@@ -14197,13 +14395,13 @@ function startAudRep() {
 
 function tickAudTimer() {
   var now = Date.now();
-  var sessElapsed = Math.floor((now - audSessionStartTime) / 1000);
-  var repElapsed = Math.floor((now - audRepStartTime) / 1000);
   var fmt = function(s) { return Math.floor(s/60) + ':' + String(s%60).padStart(2,'0'); };
   var sesEl = document.getElementById('audSessionTimer');
   var repEl = document.getElementById('audRepTimer');
-  if (sesEl) sesEl.textContent = fmt(sessElapsed);
-  if (repEl) repEl.textContent = fmt(repElapsed);
+  // The session clock runs from when the sound started; the rep clock only
+  // once concentration begins (so it reads 0:00 during the listening phase).
+  if (sesEl && audSessionStartTime) sesEl.textContent = fmt(Math.floor((now - audSessionStartTime) / 1000));
+  if (repEl) repEl.textContent = audRepStartTime ? fmt(Math.floor((now - audRepStartTime) / 1000)) : '0:00';
   audTimerHandle = requestAnimationFrame(tickAudTimer);
 }
 
