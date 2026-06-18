@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- v2026.06.18-sw-network-first-autoupdate -->
+<!-- v2026.06.18-google-overlay-sync-status-update-banner -->
 <html lang="en" style="background:#07080d;">
 <head>
   <meta charset="UTF-8"/>
@@ -9581,6 +9581,7 @@ document.addEventListener('visibilitychange', function() {
     fetch(SYNC_API_URL + '/sync/pull', {
       headers: { 'Authorization': 'Bearer ' + authToken }
     }).then(function(r) { return r.json(); }).then(function(result) {
+      if (typeof markSynced === 'function') markSynced();
       if (!result.data) return;
       var changed = applyPulledData(result.data);
       var surveyShowing = document.getElementById('surveyScreen') && document.getElementById('surveyScreen').classList.contains('active');
@@ -9637,6 +9638,7 @@ if (!localStorage.getItem('presence_auth_token')) {
   // Apply a successful pull result, restoring every progress dimension.
   function _applyStartupPull(result) {
     window._syncPullPending = false;
+    if (typeof markSynced === 'function') markSynced();
     if (!result || !result.data) { renderHome(); if (window.__dismissSplash) window.__dismissSplash(); return; }
     var changed = applyPulledData(result.data);
     if (changed) {
@@ -23403,13 +23405,16 @@ function initGoogleSignIn(containerId, onSuccess) {
   var container = document.getElementById(containerId);
   if (!container) return;
 
-  // Visual wrapper: our styled button stays in front; Google's real button is
-  // rendered into a hidden node and clicked programmatically when the user taps
-  // ours. We use the Identity Services *ID-token* flow (google.accounts.id),
-  // which returns a signed identity credential and NEVER mints an access token.
-  // Because no Google Account *data access* is granted, Google treats each login
-  // as a plain sign-in — no more "You shared some Google Account data" email on
-  // every authentication (a fresh access-token grant is what triggered that).
+  // We render Google's REAL Identity-Services button as a transparent overlay
+  // sitting directly on top of our styled button, so the user's tap lands on
+  // Google's own button and carries a genuine user gesture into the GIS iframe.
+  // (The old approach hid Google's button and proxy-clicked it; a synthetic
+  // click can't propagate user activation across the cross-origin iframe, so
+  // the desktop sign-in popup was blocked by the popup blocker — which is why
+  // it only worked on mobile, where GIS falls back to a redirect flow.)
+  // We use the *ID-token* flow (google.accounts.id), which returns a signed
+  // identity credential and NEVER mints an access token, so Google treats each
+  // login as a plain sign-in (no "You shared some Google Account data" email).
   var wrap = document.createElement('div');
   wrap.style.position = 'relative';
   wrap.style.width = '100%';
@@ -23419,31 +23424,46 @@ function initGoogleSignIn(containerId, onSuccess) {
   btn.className = 'tut-google-btn';
   btn.innerHTML = GOOGLE_ICON_SVG + ' Continue with Google';
 
-  // Hidden host for Google's rendered button — present in the DOM (so it can be
-  // clicked) but visually removed and non-interactive to the pointer.
-  var hidden = document.createElement('div');
-  hidden.style.position = 'absolute';
-  hidden.style.top = '0';
-  hidden.style.left = '0';
-  hidden.style.opacity = '0';
-  hidden.style.pointerEvents = 'none';
-  hidden.style.overflow = 'hidden';
-  hidden.style.width = '1px';
-  hidden.style.height = '1px';
+  // Transparent, click-through-disabled overlay that holds Google's button.
+  // opacity:0 keeps it invisible while still receiving pointer events (unlike
+  // display:none / visibility:hidden). overflow:hidden clips the scaled-up
+  // Google button to the visual button's bounds.
+  var overlay = document.createElement('div');
+  overlay.style.position = 'absolute';
+  overlay.style.inset = '0';
+  overlay.style.opacity = '0';
+  overlay.style.overflow = 'hidden';
+  overlay.style.zIndex = '3';
+  overlay.style.cursor = 'pointer';
+  overlay.style.display = 'flex';
+  overlay.style.alignItems = 'center';
+  overlay.style.justifyContent = 'center';
+
+  // Google's button renders at a fixed pixel size; scaling the host up ensures
+  // it fully covers the visual button area, so a tap anywhere lands on it.
+  var gHost = document.createElement('div');
+  gHost.style.transform = 'scale(4)';
+  gHost.style.transformOrigin = 'center center';
+  overlay.appendChild(gHost);
 
   wrap.appendChild(btn);
-  wrap.appendChild(hidden);
+  wrap.appendChild(overlay);
   container.appendChild(wrap);
 
   function resetBtn() {
     btn.innerHTML = GOOGLE_ICON_SVG + ' Continue with Google';
     btn.disabled = false;
+    overlay.style.pointerEvents = 'auto';
+  }
+  function setBusy() {
+    btn.innerHTML = 'Signing in…';
+    btn.disabled = true;
+    overlay.style.pointerEvents = 'none'; // block double-taps mid sign-in
   }
 
   function onCredential(response) {
     if (!response || !response.credential) { resetBtn(); return; }
-    btn.innerHTML = 'Signing in…';
-    btn.disabled = true;
+    setBusy();
     (async function() {
       try {
         var res = await fetch(SYNC_API_URL + '/auth/google', {
@@ -23468,9 +23488,21 @@ function initGoogleSignIn(containerId, onSuccess) {
     })();
   }
 
-  var gReady = false;
-  // Load + initialise the SDK eagerly so the real button exists before the tap.
+  // If the SDK is blocked or fails to load, drop the overlay so our own button
+  // becomes tappable and can explain what happened instead of silently eating
+  // the tap.
+  function failToFallback() {
+    overlay.style.display = 'none';
+    if (!btn._fallbackBound) {
+      btn._fallbackBound = true;
+      btn.addEventListener('click', function() {
+        showToast('Google sign-in is unavailable right now. Check your connection and try again.', 3500);
+      });
+    }
+  }
+
   loadGoogleScript(function() {
+    if (!(window.google && google.accounts && google.accounts.id)) { failToFallback(); return; }
     try {
       google.accounts.id.initialize({
         client_id: GOOGLE_CLIENT_ID,
@@ -23479,51 +23511,16 @@ function initGoogleSignIn(containerId, onSuccess) {
         auto_select: false,
         itp_support: true
       });
-      google.accounts.id.renderButton(hidden, {
+      google.accounts.id.renderButton(gHost, {
         type: 'standard', theme: 'outline', size: 'large',
         text: 'continue_with', width: 300
       });
-      gReady = true;
-    } catch(e) { /* SDK blocked — button click will surface a toast */ }
-  });
-
-  function clickGoogle() {
-    var g = hidden.querySelector('div[role=button]') ||
-            hidden.querySelector('[role=button]') ||
-            hidden.querySelector('button') ||
-            hidden.firstElementChild;
-    if (g && typeof g.click === 'function') { g.click(); return true; }
-    return false;
-  }
-
-  btn.addEventListener('click', function() {
-    if (gReady && clickGoogle()) return;
-    // SDK not ready yet — load it, then trigger. Still within reach of the
-    // user's intent; the popup may need a second tap if the gesture lapses.
-    btn.innerHTML = 'Loading…';
-    loadGoogleScript(function() {
-      try {
-        if (!gReady) {
-          google.accounts.id.initialize({
-            client_id: GOOGLE_CLIENT_ID,
-            callback: onCredential,
-            ux_mode: 'popup',
-            auto_select: false,
-            itp_support: true
-          });
-          google.accounts.id.renderButton(hidden, {
-            type: 'standard', theme: 'outline', size: 'large',
-            text: 'continue_with', width: 300
-          });
-          gReady = true;
-        }
-        // Give the render a tick, then click.
-        setTimeout(function() {
-          if (!clickGoogle()) { resetBtn(); showToast('Sign-in unavailable. Try again.'); }
-          else if (btn.innerHTML.indexOf('Loading') !== -1) resetBtn();
-        }, 60);
-      } catch(e) { resetBtn(); showToast('Sign-in unavailable. Try again.'); }
-    });
+      // If Google never actually rendered its button, fall back so the tap
+      // isn't swallowed by an empty transparent overlay.
+      setTimeout(function() {
+        if (!gHost.querySelector('div[role=button], [role=button], iframe')) failToFallback();
+      }, 1500);
+    } catch(e) { failToFallback(); }
   });
 }
 
@@ -23624,10 +23621,35 @@ async function syncPushData() {
       return;
     }
     console.log('[Sync] Data pushed to cloud');
+    markSynced();
   } catch (err) {
     console.warn('[Sync] Push failed:', err.message);
   }
 }
+
+// Record the moment of the last successful cloud round-trip, so the account
+// card can reassure the user their data is current ("Synced 2m ago").
+function markSynced() {
+  try { localStorage.setItem('presence_last_sync', String(Date.now())); } catch(e) {}
+  if (typeof refreshSyncStatusLabel === 'function') refreshSyncStatusLabel();
+}
+
+function syncStatusLabel() {
+  var raw = localStorage.getItem('presence_last_sync');
+  var ts = raw ? parseInt(raw, 10) : 0;
+  if (!ts) return '✓ Syncing across devices';
+  return '✓ Synced ' + timeAgo(ts) + ' · all devices';
+}
+
+// Keep the visible "Synced …" line current while the account card is open.
+function refreshSyncStatusLabel() {
+  if (!(syncEnabled && authToken)) return;
+  var st = document.getElementById('syncStatusText');
+  if (!st || st.offsetParent === null) return; // not visible
+  st.textContent = syncStatusLabel();
+  st.style.color = '';
+}
+setInterval(refreshSyncStatusLabel, 30000);
 
 async function syncPullData() {
   if (!syncEnabled || !authToken) return;
@@ -23656,6 +23678,7 @@ async function syncPullData() {
     applyPulledData(result.data);
 
     window._syncPullPending = false;
+    markSynced();
     console.log('[Sync] Data pulled from cloud · synced at', result.syncedAt);
     return true;
   } catch (err) {
@@ -23796,7 +23819,7 @@ function _refreshSettingsSyncCardSignedIn() {
   var lb   = document.getElementById('syncLogoutBtn');
   var uc   = document.getElementById('setUsernameCard');
   localStorage.removeItem('presence_sync_warning');
-  if (st) { st.textContent = '✓ Syncing across devices'; st.style.color = ''; }
+  if (st) { st.textContent = syncStatusLabel(); st.style.color = ''; }
   if (se) se.textContent = authUsername ? '@' + authUsername + ' · ' + authEmail : authEmail;
   if (lb) lb.style.display = 'block';
   if (wrap) wrap.style.display = 'none';
@@ -23959,20 +23982,53 @@ async function notifyServerSessionEnd() {
   } catch(e) { console.error('session/end error:', e); }
 }
 
+// A gentle, tappable "new version ready" pill. Tapping reloads into the fresh
+// shell and flags a one-time reconciliation pull so the updated (correct) merge
+// logic re-runs against the cloud immediately after the refresh.
+function showAppUpdateBanner() {
+  if (document.getElementById('appUpdateBanner')) return;
+  var bar = document.createElement('div');
+  bar.id = 'appUpdateBanner';
+  bar.setAttribute('role', 'button');
+  bar.style.cssText = 'position:fixed;left:50%;transform:translateX(-50%);bottom:max(env(safe-area-inset-bottom),18px);'
+    + 'z-index:99999;display:flex;align-items:center;gap:9px;padding:11px 18px;border-radius:999px;'
+    + 'background:rgba(126,184,164,.16);border:1px solid rgba(126,184,164,.42);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);'
+    + 'color:#bfe3d4;font-family:\'DM Mono\',monospace;font-size:11px;letter-spacing:.05em;cursor:pointer;'
+    + 'box-shadow:0 6px 24px rgba(0,0,0,.35);max-width:calc(100vw - 32px);transition:opacity .4s ease;opacity:0;';
+  setTimeout(function() { bar.style.opacity = '1'; }, 30);
+  bar.innerHTML = '<span style="font-size:13px;">✦</span><span>New version ready — tap to refresh</span>';
+  bar.addEventListener('click', function() {
+    try { sessionStorage.setItem('_postUpdatePull', '1'); } catch(e) {}
+    window.location.reload();
+  });
+  document.body.appendChild(bar);
+}
+
+// After an update-triggered refresh, re-pull once with the freshly-loaded code
+// so the corrected merge logic reconciles this device's state with the cloud.
+window.addEventListener('load', function() {
+  if (!sessionStorage.getItem('_postUpdatePull')) return;
+  sessionStorage.removeItem('_postUpdatePull');
+  setTimeout(function() {
+    if (syncEnabled && authToken && typeof syncPullData === 'function') syncPullData();
+  }, 1200);
+});
+
 // Auto re-subscribe on load
 if ('serviceWorker' in navigator) {
   // Whether a worker was already controlling this page when it loaded. On a
   // first-ever visit there's no controller, so the initial controllerchange
-  // (when our SW first takes control) must NOT trigger a reload — only a
-  // genuine *update* on a returning device should.
+  // (when our SW first takes control) must NOT surface an update prompt — only
+  // a genuine *update* on a returning device should.
   var _swHadController = !!navigator.serviceWorker.controller;
-  var _swRefreshing = false;
+  var _swUpdateShown = false;
   navigator.serviceWorker.addEventListener('controllerchange', function() {
-    if (_swRefreshing || !_swHadController) return;
-    // Never yank the page out from under a live session.
-    if (typeof sessionStartTime !== 'undefined' && sessionStartTime) return;
-    _swRefreshing = true;
-    window.location.reload();
+    if (_swUpdateShown || !_swHadController) return;
+    _swUpdateShown = true;
+    // A fresh version has activated in the background. Rather than yanking the
+    // page out from under the user, offer a gentle, tappable refresh so they
+    // control the timing (and we never interrupt a live session).
+    showAppUpdateBanner();
   });
 
   window.addEventListener('load', async function() {
@@ -23980,18 +24036,8 @@ if ('serviceWorker' in navigator) {
       var reg = await navigator.serviceWorker.register(SW_PATH);
       // Proactively check for a newer cached shell. sw.js calls skipWaiting()
       // on install, so a fresh version activates immediately and fires the
-      // controllerchange handler above — applying the update without the user
-      // having to manually reload (and reload twice, as before).
+      // controllerchange handler above — which surfaces the refresh banner.
       try { reg.update(); } catch(e) {}
-      reg.addEventListener('updatefound', function() {
-        var nw = reg.installing;
-        if (!nw) return;
-        nw.addEventListener('statechange', function() {
-          if (nw.state === 'installed' && navigator.serviceWorker.controller && typeof showToast === 'function') {
-            showToast('Updating to the latest version…', 2200);
-          }
-        });
-      });
       if (Notification.permission === 'granted') {
         var sub = await reg.pushManager.getSubscription();
         if (!sub) { sub = await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY) }); }
