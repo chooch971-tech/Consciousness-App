@@ -1,7 +1,7 @@
 // Service Worker for Presence app
 // Handles background push notifications + shell caching
 // Cache version — bump this string when you need to force-evict all clients
-const CACHE = 'presence-shell-v20';
+const CACHE = 'presence-shell-v21';
 
 const APP_URL = self.registration
   ? self.registration.scope + 'presence.html'
@@ -30,7 +30,7 @@ self.addEventListener('activate', event => {
   );
 });
 
-// ── Fetch: stale-while-revalidate for presence.html, cache-first for rest ────
+// ── Fetch: network-first for presence.html, cache-first for rest ─────────────
 self.addEventListener('fetch', event => {
   const url = new URL(event.request.url);
 
@@ -52,10 +52,12 @@ self.addEventListener('fetch', event => {
           return response;
         }).catch(() => cached); // offline: fall back to cached
 
-        // Stale-while-revalidate for the shell: return cached immediately,
-        // update in background so next launch gets the fresh version.
-        // Everything else: network first, fall back to cache.
-        return isShell && cached ? cached : networkFetch;
+        // The shell (presence.html) is the single source of all app code and
+        // changes often, so it's network-FIRST: a connected device always gets
+        // the freshest version, falling back to cache only when offline. This
+        // is what keeps a returning device from running stale code against the
+        // synced cloud state. Everything else stays cache-first for speed.
+        return isShell ? networkFetch : (cached || networkFetch);
       })
     )
   );

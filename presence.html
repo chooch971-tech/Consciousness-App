@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- v2026.06.18-auditory-sounds-timer -->
+<!-- v2026.06.18-sw-network-first-autoupdate -->
 <html lang="en" style="background:#07080d;">
 <head>
   <meta charset="UTF-8"/>
@@ -23961,9 +23961,37 @@ async function notifyServerSessionEnd() {
 
 // Auto re-subscribe on load
 if ('serviceWorker' in navigator) {
+  // Whether a worker was already controlling this page when it loaded. On a
+  // first-ever visit there's no controller, so the initial controllerchange
+  // (when our SW first takes control) must NOT trigger a reload — only a
+  // genuine *update* on a returning device should.
+  var _swHadController = !!navigator.serviceWorker.controller;
+  var _swRefreshing = false;
+  navigator.serviceWorker.addEventListener('controllerchange', function() {
+    if (_swRefreshing || !_swHadController) return;
+    // Never yank the page out from under a live session.
+    if (typeof sessionStartTime !== 'undefined' && sessionStartTime) return;
+    _swRefreshing = true;
+    window.location.reload();
+  });
+
   window.addEventListener('load', async function() {
     try {
       var reg = await navigator.serviceWorker.register(SW_PATH);
+      // Proactively check for a newer cached shell. sw.js calls skipWaiting()
+      // on install, so a fresh version activates immediately and fires the
+      // controllerchange handler above — applying the update without the user
+      // having to manually reload (and reload twice, as before).
+      try { reg.update(); } catch(e) {}
+      reg.addEventListener('updatefound', function() {
+        var nw = reg.installing;
+        if (!nw) return;
+        nw.addEventListener('statechange', function() {
+          if (nw.state === 'installed' && navigator.serviceWorker.controller && typeof showToast === 'function') {
+            showToast('Updating to the latest version…', 2200);
+          }
+        });
+      });
       if (Notification.permission === 'granted') {
         var sub = await reg.pushManager.getSubscription();
         if (!sub) { sub = await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY) }); }
