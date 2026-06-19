@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- v2026.06.19-soul-mirror-glow-not-stars -->
+<!-- v2026.06.19-michael-native-palette -->
 <html lang="en" style="background:#07080d;">
 <head>
   <meta charset="UTF-8"/>
@@ -16389,7 +16389,9 @@ var OMNIA_ENTITY_NATIVE_PALETTE = { omnia:'aether', noema:'aether', aurel:'solar
 
 // Forms whose signature palette is auto-unlocked and applied the moment
 // they're chosen, instead of just snapping to an already-owned native palette.
-var OMNIA_ENTITY_AUTO_PALETTE = { noema:'violet', aurel:'solar', elys:'crimson', seraph:'solar' };
+// Archangel Michael's signature is his native violet (which renders as his
+// drawn rose-violet — filter none); crimson "warrior-fire" stays a manual pick.
+var OMNIA_ENTITY_AUTO_PALETTE = { noema:'violet', aurel:'solar', elys:'violet', seraph:'solar' };
 
 // The CSS filter that makes `entity` wear `palette`, relative to the
 // entity's own base color. Spectral/aurora aren't hue-based and pass through.
@@ -16843,6 +16845,19 @@ function loadOmniaState() {
       var nativePal = OMNIA_ENTITY_NATIVE_PALETTE[merged.cosmetics.entity] || 'aether';
       merged.cosmetics.palette = merged.cosmetics.unlockedPalettes.indexOf(nativePal) !== -1 ? nativePal : 'aether';
     }
+    // One-time: Archangel Michael used to force the crimson "warrior-fire"
+    // palette the instant he was selected, overriding the player's chosen color
+    // and rendering him gold/coral instead of his native rose-violet. Restore
+    // his natural look once for anyone still on that auto-crimson.
+    try {
+      if (!localStorage.getItem('presence_elys_native_migrated')) {
+        if (merged.cosmetics.entity === 'elys' && merged.cosmetics.palette === 'crimson') {
+          merged.cosmetics.palette = 'violet';
+          if (merged.cosmetics.unlockedPalettes.indexOf('violet') === -1) merged.cosmetics.unlockedPalettes.push('violet');
+        }
+        localStorage.setItem('presence_elys_native_migrated', '1');
+      }
+    } catch(e) {}
     merged.storySeen = Array.isArray(parsed.storySeen) ? parsed.storySeen : [];
     merged.storyRead = Number(parsed.storyRead) || 0;
     if (!merged.lastTick) merged.lastTick = Date.now();
