@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- v2026.06.19-michael-tunic-color-fix -->
+<!-- v2026.06.19-soul-mirror-glow-not-stars -->
 <html lang="en" style="background:#07080d;">
 <head>
   <meta charset="UTF-8"/>
@@ -722,29 +722,25 @@
     .soul-banner-art { position:relative; z-index:2; width:86px; height:94px; display:flex; align-items:center; justify-content:center; flex-shrink:0; animation:omniaFloat 5s ease-in-out infinite; filter:drop-shadow(0 0 12px rgba(164,126,184,.42)); }
     .soul-banner-art svg { width:100%; height:100%; overflow:visible; }
 
-    /* Ambient soul-mirror backdrop — sits behind the trait content. */
+    /* Ambient soul-mirror backdrop — a calm purple glow behind the content,
+       no busy starfield. Sits behind the trait cards (z-index:-1). */
     .soul-bg { position:absolute; inset:0; z-index:-1; overflow:hidden; pointer-events:none; }
+    /* Static base wash: a soft bloom from behind the banner that fades down,
+       plus a faint lift in the lower corner so the empty scroll area isn't dead. */
     .soul-bg__aura { position:absolute; inset:0;
       background:
-        radial-gradient(ellipse 130% 55% at 50% 6%, rgba(170,128,196,.42) 0%, rgba(150,116,190,.16) 40%, transparent 72%),
-        radial-gradient(ellipse 70% 55% at 85% 34%, rgba(214,182,236,.16) 0%, transparent 60%),
-        radial-gradient(ellipse 100% 70% at 12% 92%, rgba(132,114,186,.22) 0%, transparent 64%); }
-    /* A drifting mote field on a single 200px tile so a -200px upward shift
-       loops seamlessly. Taller than the screen so it always covers after the
-       shift; twinkles gently so the motion is perceptible. */
-    .soul-bg__motes { position:absolute; left:0; right:0; top:0; height:220%; opacity:.9;
-      background-repeat:repeat; background-size:200px 200px;
-      background-image:
-        radial-gradient(circle at 30% 18%, rgba(236,222,252,.95) 0, rgba(236,222,252,0) 2.4px),
-        radial-gradient(circle at 72% 52%, rgba(206,180,224,.9) 0, rgba(206,180,224,0) 2px),
-        radial-gradient(circle at 46% 82%, rgba(255,255,255,.85) 0, rgba(255,255,255,0) 1.6px),
-        radial-gradient(circle at 88% 10%, rgba(216,186,238,.85) 0, rgba(216,186,238,0) 2px),
-        radial-gradient(circle at 14% 64%, rgba(200,172,220,.8) 0, rgba(200,172,220,0) 1.6px),
-        radial-gradient(circle at 60% 32%, rgba(184,234,255,.7) 0, rgba(184,234,255,0) 1.4px);
-      animation:soulMotesDrift 48s linear infinite, soulMotesTwinkle 6.5s ease-in-out infinite; }
-    @keyframes soulMotesDrift { from { transform:translateY(0); } to { transform:translateY(-200px); } }
-    @keyframes soulMotesTwinkle { 0%,100% { opacity:.55; } 50% { opacity:1; } }
-    @media (prefers-reduced-motion: reduce) { .soul-bg__motes { animation:none; } }
+        radial-gradient(ellipse 135% 55% at 50% 2%, rgba(158,112,202,.30) 0%, rgba(126,98,184,.10) 44%, transparent 74%),
+        radial-gradient(ellipse 95% 70% at 16% 96%, rgba(120,100,184,.14) 0%, transparent 62%); }
+    /* A large, slow-breathing orb of violet light — gives the page depth and a
+       sense of quiet life without anything discrete to track. */
+    .soul-bg__glow { position:absolute; left:50%; top:13%; width:125%; aspect-ratio:1;
+      transform:translate(-50%,-50%);
+      background:radial-gradient(circle, rgba(170,118,214,.28) 0%, rgba(150,108,202,.11) 36%, transparent 64%);
+      animation:soulGlowBreathe 15s ease-in-out infinite; }
+    @keyframes soulGlowBreathe {
+      0%,100% { transform:translate(-50%,-50%) scale(1);    opacity:.8; }
+      50%     { transform:translate(-50%,-44%) scale(1.14); opacity:1; } }
+    @media (prefers-reduced-motion: reduce) { .soul-bg__glow { animation:none; } }
     /* Group-by control + element/severity editor for negative traits */
     .soul-group-btn { background:rgba(255,255,255,.04); border:1px solid var(--border); border-radius:20px; color:var(--muted); font-family:'DM Mono',monospace; font-size:8px; letter-spacing:.12em; text-transform:uppercase; padding:5px 11px; cursor:pointer; transition:all .15s; }
     .soul-group-btn.sel { background:rgba(196,120,140,.16); border-color:rgba(196,120,140,.45); color:#e0a0b0; }
@@ -5646,12 +5642,11 @@ body:not(.tut-live) #tutCorgi {
 
   <!-- SOUL MIRROR SCREEN -->
   <div class="screen" id="soulMirrorScreen" style="padding:0; flex-direction:column;">
-    <!-- Ambient backdrop: a soft soul-purple aura with faint motes drifting
-         slowly upward, sitting behind the content (z-index:-1) so the trait
-         cards scroll over a calm, reflective atmosphere. -->
+    <!-- Ambient backdrop: a calm purple glow that slowly breathes behind the
+         content (z-index:-1) so the trait cards rest over a soft atmosphere. -->
     <div class="soul-bg" aria-hidden="true">
       <div class="soul-bg__aura"></div>
-      <div class="soul-bg__motes"></div>
+      <div class="soul-bg__glow"></div>
     </div>
     <div style="padding:var(--safe-top) 24px 0; display:flex; justify-content:flex-start; align-items:center; flex-shrink:0; background:var(--bg);">
       <button class="history-back" id="soulMirrorBack" aria-label="Back">←</button>
