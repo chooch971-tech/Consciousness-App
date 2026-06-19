@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- v2026.06.19-pore-redesign-legend -->
+<!-- v2026.06.19-pore-restrained -->
 <html lang="en" style="background:#07080d;">
 <head>
   <meta charset="UTF-8"/>
@@ -741,47 +741,41 @@
       50%     { transform:translate(-50%,-46%) scale(1.12); opacity:1;   } }
     @media (prefers-reduced-motion: reduce) { .soul-bg__glow { animation:none; } }
 
-    /* ── Pore Breathing: luminous full-color redesign ─────────────────── */
+    /* ── Pore Breathing: restrained redesign ──────────────────────────── */
     #poreBreathSetup > *:not(.pore-aura) { position:relative; z-index:1; }
     .pore-aura { position:absolute; inset:0; z-index:0; pointer-events:none;
-      background:
-        radial-gradient(ellipse 62% 48% at 10% 6%,  rgba(95,214,200,.40) 0%, transparent 60%),
-        radial-gradient(ellipse 60% 48% at 94% 12%, rgba(232,138,176,.38) 0%, transparent 60%),
-        radial-gradient(ellipse 72% 55% at 14% 90%, rgba(232,192,106,.26) 0%, transparent 62%),
-        radial-gradient(ellipse 70% 58% at 90% 86%, rgba(150,120,224,.38) 0%, transparent 62%);
-      animation:poreAuraBreathe 16s ease-in-out infinite; }
-    @keyframes poreAuraBreathe { 0%,100%{opacity:.85; transform:scale(1);} 50%{opacity:1; transform:scale(1.04);} }
-    #poreBreathSetup .soul-banner { background:linear-gradient(135deg, rgba(32,62,72,.88) 0%, rgba(52,40,82,.84) 46%, rgba(78,38,66,.88) 100%); border:1px solid rgba(150,200,210,.20); }
-    #poreBreathSetup .soul-banner-art { filter:drop-shadow(0 0 14px rgba(120,210,200,.5)); }
-    .pore-intro { font-size:14px; line-height:1.85; margin-bottom:30px; font-family:'Cormorant Garamond',serif; font-style:italic; color:rgba(220,224,236,.78); }
-    .pore-section-label { font-size:9px; letter-spacing:.26em; text-transform:uppercase; color:rgba(190,200,216,.62); font-family:'DM Mono',monospace; }
-    .pore-breaths-block { margin-bottom:34px; }
-    .pore-breaths-head { display:flex; justify-content:space-between; align-items:baseline; margin-bottom:16px; }
-    .pore-breaths-num { font-family:'Cormorant Garamond',serif; font-size:44px; line-height:1; font-weight:300;
-      background:linear-gradient(118deg,#5fd6c8 0%,#9b8ed4 50%,#e88ab0 100%); -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent; }
-    .pore-slider { width:100%; -webkit-appearance:none; appearance:none; height:7px; border-radius:4px; outline:none; cursor:pointer;
-      background:linear-gradient(90deg,#5fd6c8,#9b8ed4,#e88ab0,#e8c06a); }
-    .pore-slider::-webkit-slider-thumb { -webkit-appearance:none; width:24px; height:24px; border-radius:50%; cursor:pointer;
-      background:radial-gradient(circle at 38% 34%, #ffffff, #d6ecff 42%, #b4a4e6); border:2px solid rgba(255,255,255,.85);
-      box-shadow:0 0 16px rgba(155,142,212,.85), 0 2px 6px rgba(0,0,0,.4); }
-    .pore-slider::-moz-range-thumb { width:24px; height:24px; border-radius:50%; cursor:pointer;
-      background:radial-gradient(circle at 38% 34%, #ffffff, #d6ecff 42%, #b4a4e6); border:2px solid rgba(255,255,255,.85);
-      box-shadow:0 0 16px rgba(155,142,212,.85); }
-    .pore-slider-ends { display:flex; justify-content:space-between; margin-top:8px; font-size:9px; color:rgba(190,200,216,.5); font-family:'DM Mono',monospace; }
-    .pore-pattern { margin-bottom:32px; }
-    .pore-pattern-row { display:flex; justify-content:center; align-items:center; gap:8px; }
+      background:radial-gradient(ellipse 95% 44% at 50% 2%, rgba(108,166,176,.15) 0%, rgba(132,122,180,.06) 48%, transparent 76%);
+      animation:poreAuraBreathe 18s ease-in-out infinite; }
+    @keyframes poreAuraBreathe { 0%,100%{opacity:.78;} 50%{opacity:1;} }
+    #poreBreathSetup .soul-banner { background:linear-gradient(135deg, rgba(26,42,50,.9) 0%, rgba(40,38,60,.86) 100%); border:1px solid rgba(150,188,196,.14); }
+    #poreBreathSetup .soul-banner-art { filter:drop-shadow(0 0 10px rgba(120,188,182,.35)); }
+    .pore-section-label { font-size:9px; letter-spacing:.26em; text-transform:uppercase; color:rgba(190,200,216,.5); font-family:'DM Mono',monospace; }
+    /* Hero: the breath count rests inside a quiet double ring */
+    .pore-hero { display:flex; justify-content:center; margin:18px 0 28px; }
+    .pore-hero-ring { width:178px; height:178px; border-radius:50%; display:flex; align-items:center; justify-content:center; position:relative;
+      background:radial-gradient(circle at 50% 44%, rgba(122,190,180,.10) 0%, rgba(150,140,196,.04) 58%, transparent 74%);
+      border:1px solid rgba(168,196,204,.14); }
+    .pore-hero-ring::before { content:''; position:absolute; inset:15px; border-radius:50%; border:1px solid rgba(150,140,196,.16); }
+    .pore-hero-ring-inner { text-align:center; }
+    .pore-hero-unit { font-size:9px; letter-spacing:.3em; text-transform:uppercase; color:rgba(190,200,216,.46); font-family:'DM Mono',monospace; margin-top:6px; }
+    .pore-breaths-num { font-family:'Cormorant Garamond',serif; font-size:64px; line-height:1; font-weight:300;
+      background:linear-gradient(140deg,#90cfc2 0%,#a99ad6 100%); -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent; }
+    .pore-slider { width:100%; -webkit-appearance:none; appearance:none; height:4px; border-radius:3px; outline:none; cursor:pointer;
+      background:linear-gradient(90deg, rgba(122,190,180,.55), rgba(150,140,196,.55)); }
+    .pore-slider::-webkit-slider-thumb { -webkit-appearance:none; width:18px; height:18px; border-radius:50%; cursor:pointer;
+      background:#e9eef1; border:1px solid rgba(255,255,255,.55); box-shadow:0 0 10px rgba(150,180,188,.5), 0 1px 4px rgba(0,0,0,.4); }
+    .pore-slider::-moz-range-thumb { width:18px; height:18px; border-radius:50%; cursor:pointer;
+      background:#e9eef1; border:1px solid rgba(255,255,255,.55); box-shadow:0 0 10px rgba(150,180,188,.5); }
+    .pore-slider-ends { display:flex; justify-content:space-between; margin-top:8px; font-size:9px; color:rgba(190,200,216,.42); font-family:'DM Mono',monospace; }
+    .pore-pattern { margin:30px 0 30px; text-align:center; }
+    .pore-pattern-row { display:flex; justify-content:center; align-items:center; gap:10px; margin-top:14px; }
     .pore-phase { text-align:center; }
-    .pore-phase-num { font-family:'Cormorant Garamond',serif; font-size:30px; line-height:1; }
-    .pore-phase-lbl { font-size:8px; letter-spacing:.14em; text-transform:uppercase; margin-top:4px; font-family:'DM Mono',monospace; color:rgba(190,200,216,.55); }
-    .pore-phase--in   .pore-phase-num { color:#5fd6c8; text-shadow:0 0 14px rgba(95,214,200,.5); }
-    .pore-phase--hold .pore-phase-num,
-    .pore-phase--hold2 .pore-phase-num { color:#9b8ed4; text-shadow:0 0 14px rgba(155,142,212,.5); }
-    .pore-phase--out  .pore-phase-num { color:#e8c06a; text-shadow:0 0 14px rgba(232,192,106,.5); }
-    .pore-phase-dot { width:4px; height:4px; border-radius:50%; background:rgba(190,200,216,.4); margin-bottom:16px; }
-    .pore-begin-btn { width:100%; border:none; border-radius:14px; padding:17px; font-family:'DM Mono',monospace; font-size:11px; letter-spacing:.3em; text-transform:uppercase; color:#fff; cursor:pointer;
-      background:linear-gradient(120deg,#2f9f93,#7a5fc0,#c85f93); background-size:220% 220%; box-shadow:0 8px 28px rgba(122,95,192,.45); animation:poreBtnShift 7s ease infinite; }
+    .pore-phase-num { font-family:'Cormorant Garamond',serif; font-size:26px; line-height:1; color:rgba(186,200,210,.92); }
+    .pore-phase-lbl { font-size:8px; letter-spacing:.14em; text-transform:uppercase; margin-top:4px; font-family:'DM Mono',monospace; color:rgba(190,200,216,.42); }
+    .pore-phase-dot { width:3px; height:3px; border-radius:50%; background:rgba(190,200,216,.28); margin-bottom:14px; }
+    .pore-begin-btn { width:100%; border:none; border-radius:14px; padding:16px; font-family:'DM Mono',monospace; font-size:10px; letter-spacing:.32em; text-transform:uppercase; color:#eaf2f0; cursor:pointer;
+      background:linear-gradient(120deg, rgba(66,124,116,.92), rgba(104,94,148,.92)); box-shadow:0 6px 20px rgba(78,88,124,.34); }
     .pore-begin-btn:active { transform:translateY(1px); }
-    @keyframes poreBtnShift { 0%,100%{background-position:0% 50%;} 50%{background-position:100% 50%;} }
 
     /* ── Pore Breathing: the meditative "Legend" completion reveal ─────── */
     #poreLegendOverlay { display:none; position:absolute; inset:0; z-index:11; flex-direction:column; align-items:center; justify-content:center; text-align:center; padding:40px 30px; overflow:hidden; background:#05060b; }
@@ -789,29 +783,29 @@
     @keyframes poreLegendFade { from{opacity:0;} to{opacity:1;} }
     .pore-legend-aura { position:absolute; inset:0; z-index:0; pointer-events:none;
       background:
-        radial-gradient(circle at 50% 36%, rgba(120,206,212,.30) 0%, transparent 55%),
-        radial-gradient(ellipse 90% 50% at 50% 102%, rgba(160,110,200,.26) 0%, transparent 72%); }
-    .pore-legend-aura::before { content:''; position:absolute; left:50%; top:36%; width:300px; aspect-ratio:1; transform:translate(-50%,-50%); border-radius:50%;
-      background:conic-gradient(from 0deg,#5fd6c8,#9b8ed4,#e88ab0,#e8c06a,#5fd6c8); filter:blur(64px); opacity:.42; animation:poreLegendSpin 26s linear infinite; }
-    @keyframes poreLegendSpin { to { transform:translate(-50%,-50%) rotate(360deg); } }
+        radial-gradient(circle at 50% 36%, rgba(110,180,180,.22) 0%, transparent 56%),
+        radial-gradient(ellipse 90% 50% at 50% 102%, rgba(140,118,184,.18) 0%, transparent 72%); }
+    .pore-legend-aura::before { content:''; position:absolute; left:50%; top:36%; width:290px; aspect-ratio:1; transform:translate(-50%,-50%); border-radius:50%;
+      background:radial-gradient(circle, rgba(126,190,182,.45) 0%, rgba(150,140,198,.22) 50%, transparent 72%); filter:blur(58px); opacity:.7; animation:poreLegendPulse 9s ease-in-out infinite; }
+    @keyframes poreLegendPulse { 0%,100%{transform:translate(-50%,-50%) scale(1); opacity:.6;} 50%{transform:translate(-50%,-50%) scale(1.08); opacity:.8;} }
     .pore-legend-content { position:relative; z-index:1; width:100%; max-width:340px; }
     .pore-legend-mandala { width:118px; height:118px; margin:0 auto 24px; animation:poreMandalaFloat 6s ease-in-out infinite; }
     @keyframes poreMandalaFloat { 0%,100%{transform:translateY(0);} 50%{transform:translateY(-9px);} }
-    .pore-legend-mandala .plg-spin { transform-box:fill-box; transform-origin:center; animation:poreLegendSpin2 34s linear infinite; }
+    .pore-legend-mandala .plg-spin { transform-box:fill-box; transform-origin:center; animation:poreLegendSpin2 40s linear infinite; }
     @keyframes poreLegendSpin2 { to { transform:rotate(360deg); } }
-    .pore-legend-eyebrow { font-family:'DM Mono',monospace; font-size:9px; letter-spacing:.42em; text-transform:uppercase; color:rgba(180,210,220,.68); margin-bottom:10px; }
-    .pore-legend-title { font-family:'Cormorant Garamond',serif; font-size:31px; font-weight:300; color:#f0ecfa; line-height:1.15; margin-bottom:8px; }
-    .pore-legend-verse { font-family:'Cormorant Garamond',serif; font-style:italic; font-size:14px; line-height:1.7; color:rgba(214,206,232,.7); margin-bottom:32px; }
+    .pore-legend-eyebrow { font-family:'DM Mono',monospace; font-size:9px; letter-spacing:.42em; text-transform:uppercase; color:rgba(180,206,210,.62); margin-bottom:10px; }
+    .pore-legend-title { font-family:'Cormorant Garamond',serif; font-size:31px; font-weight:300; color:#eef0f4; line-height:1.15; margin-bottom:8px; }
+    .pore-legend-verse { font-family:'Cormorant Garamond',serif; font-style:italic; font-size:14px; line-height:1.7; color:rgba(210,212,224,.66); margin-bottom:32px; }
     .pore-legend-stats { display:flex; gap:10px; justify-content:center; margin-bottom:34px; }
-    .pore-stat { flex:1; padding:18px 6px 14px; border-radius:16px; background:rgba(255,255,255,.04); border:1px solid rgba(255,255,255,.08); }
-    .pore-stat__icon { font-size:17px; margin-bottom:8px; opacity:.9; }
+    .pore-stat { flex:1; padding:18px 6px 14px; border-radius:16px; background:rgba(255,255,255,.035); border:1px solid rgba(255,255,255,.07); }
+    .pore-stat__icon { font-size:16px; margin-bottom:8px; opacity:.85; }
     .pore-stat__val { font-family:'Cormorant Garamond',serif; font-size:30px; line-height:1; font-weight:300; }
-    .pore-stat__label { font-family:'DM Mono',monospace; font-size:8px; letter-spacing:.18em; text-transform:uppercase; color:rgba(190,200,216,.6); margin-top:7px; }
-    .pore-stat--breaths { border-color:rgba(95,214,200,.32); } .pore-stat--breaths .pore-stat__val, .pore-stat--breaths .pore-stat__icon { color:#5fd6c8; }
-    .pore-stat--xp { border-color:rgba(232,192,106,.32); } .pore-stat--xp .pore-stat__val, .pore-stat--xp .pore-stat__icon { color:#e8c06a; }
-    .pore-stat--akasha { border-color:rgba(200,155,240,.32); } .pore-stat--akasha .pore-stat__val, .pore-stat--akasha .pore-stat__icon { color:#c89bf0; }
-    .pore-legend-btn { width:100%; border:none; border-radius:14px; padding:16px; font-family:'DM Mono',monospace; font-size:10px; letter-spacing:.3em; text-transform:uppercase; color:#fff; cursor:pointer;
-      background:linear-gradient(120deg,#2f9f93,#7a5fc0,#c85f93); background-size:220% 220%; box-shadow:0 8px 26px rgba(122,95,192,.4); animation:poreBtnShift 7s ease infinite; }
+    .pore-stat__label { font-family:'DM Mono',monospace; font-size:8px; letter-spacing:.18em; text-transform:uppercase; color:rgba(190,200,216,.55); margin-top:7px; }
+    .pore-stat--breaths { border-color:rgba(126,190,182,.26); } .pore-stat--breaths .pore-stat__val, .pore-stat--breaths .pore-stat__icon { color:#90cfc2; }
+    .pore-stat--xp { border-color:rgba(214,190,140,.24); } .pore-stat--xp .pore-stat__val, .pore-stat--xp .pore-stat__icon { color:#d6be8c; }
+    .pore-stat--akasha { border-color:rgba(170,154,212,.26); } .pore-stat--akasha .pore-stat__val, .pore-stat--akasha .pore-stat__icon { color:#b3a6dc; }
+    .pore-legend-btn { width:100%; border:none; border-radius:14px; padding:16px; font-family:'DM Mono',monospace; font-size:10px; letter-spacing:.32em; text-transform:uppercase; color:#eaf2f0; cursor:pointer;
+      background:linear-gradient(120deg, rgba(66,124,116,.92), rgba(104,94,148,.92)); box-shadow:0 6px 20px rgba(78,88,124,.32); }
     .pore-legend-btn:active { transform:translateY(1px); }
     /* Group-by control + element/severity editor for negative traits */
     .soul-group-btn { background:rgba(255,255,255,.04); border:1px solid var(--border); border-radius:20px; color:var(--muted); font-family:'DM Mono',monospace; font-size:8px; letter-spacing:.12em; text-transform:uppercase; padding:5px 11px; cursor:pointer; transition:all .15s; }
@@ -5895,19 +5889,20 @@ body:not(.tut-live) #tutCorgi {
             </svg>
           </div>
         </div>
-        <div class="pore-intro">
-          Inhale light and vitality through every pore simultaneously. Hold. Exhale all darkness outward through the skin. The body becomes a single breathing organ.
-        </div>
-        <div class="pore-breaths-block">
-          <div class="pore-breaths-head">
-            <div class="pore-section-label">Breaths</div>
-            <div id="poreBreathCountDisplay" class="pore-breaths-num">7</div>
+        <div class="pore-hero">
+          <div class="pore-hero-ring">
+            <div class="pore-hero-ring-inner">
+              <div id="poreBreathCountDisplay" class="pore-breaths-num">7</div>
+              <div class="pore-hero-unit">Breaths</div>
+            </div>
           </div>
+        </div>
+        <div style="margin-bottom:6px;">
           <input type="range" id="poreBreathSlider" class="pore-slider" min="7" max="40" value="7" step="1"/>
           <div class="pore-slider-ends"><span>7</span><span>40</span></div>
         </div>
         <div class="pore-pattern">
-          <div class="pore-section-label" style="text-align:center; display:block; margin-bottom:14px;">Pattern</div>
+          <div class="pore-section-label" style="display:block;">Pattern</div>
           <div class="pore-pattern-row">
             <div class="pore-phase pore-phase--in"><div class="pore-phase-num">4</div><div class="pore-phase-lbl">In</div></div>
             <span class="pore-phase-dot"></span>
@@ -5945,21 +5940,21 @@ body:not(.tut-live) #tutCorgi {
                 </radialGradient>
               </defs>
               <g class="plg-spin">
-                <ellipse cx="60" cy="28" rx="6.5" ry="18" fill="#5fd6c8" opacity=".82" transform="rotate(0 60 60)"/>
-                <ellipse cx="60" cy="28" rx="6.5" ry="18" fill="#9b8ed4" opacity=".82" transform="rotate(30 60 60)"/>
-                <ellipse cx="60" cy="28" rx="6.5" ry="18" fill="#e88ab0" opacity=".82" transform="rotate(60 60 60)"/>
-                <ellipse cx="60" cy="28" rx="6.5" ry="18" fill="#e8c06a" opacity=".82" transform="rotate(90 60 60)"/>
-                <ellipse cx="60" cy="28" rx="6.5" ry="18" fill="#5fd6c8" opacity=".82" transform="rotate(120 60 60)"/>
-                <ellipse cx="60" cy="28" rx="6.5" ry="18" fill="#9b8ed4" opacity=".82" transform="rotate(150 60 60)"/>
-                <ellipse cx="60" cy="28" rx="6.5" ry="18" fill="#e88ab0" opacity=".82" transform="rotate(180 60 60)"/>
-                <ellipse cx="60" cy="28" rx="6.5" ry="18" fill="#e8c06a" opacity=".82" transform="rotate(210 60 60)"/>
-                <ellipse cx="60" cy="28" rx="6.5" ry="18" fill="#5fd6c8" opacity=".82" transform="rotate(240 60 60)"/>
-                <ellipse cx="60" cy="28" rx="6.5" ry="18" fill="#9b8ed4" opacity=".82" transform="rotate(270 60 60)"/>
-                <ellipse cx="60" cy="28" rx="6.5" ry="18" fill="#e88ab0" opacity=".82" transform="rotate(300 60 60)"/>
-                <ellipse cx="60" cy="28" rx="6.5" ry="18" fill="#e8c06a" opacity=".82" transform="rotate(330 60 60)"/>
+                <ellipse cx="60" cy="29" rx="6" ry="17" fill="#90cfc2" opacity=".6" transform="rotate(0 60 60)"/>
+                <ellipse cx="60" cy="29" rx="6" ry="17" fill="#a99ad6" opacity=".6" transform="rotate(30 60 60)"/>
+                <ellipse cx="60" cy="29" rx="6" ry="17" fill="#90cfc2" opacity=".6" transform="rotate(60 60 60)"/>
+                <ellipse cx="60" cy="29" rx="6" ry="17" fill="#a99ad6" opacity=".6" transform="rotate(90 60 60)"/>
+                <ellipse cx="60" cy="29" rx="6" ry="17" fill="#90cfc2" opacity=".6" transform="rotate(120 60 60)"/>
+                <ellipse cx="60" cy="29" rx="6" ry="17" fill="#a99ad6" opacity=".6" transform="rotate(150 60 60)"/>
+                <ellipse cx="60" cy="29" rx="6" ry="17" fill="#90cfc2" opacity=".6" transform="rotate(180 60 60)"/>
+                <ellipse cx="60" cy="29" rx="6" ry="17" fill="#a99ad6" opacity=".6" transform="rotate(210 60 60)"/>
+                <ellipse cx="60" cy="29" rx="6" ry="17" fill="#90cfc2" opacity=".6" transform="rotate(240 60 60)"/>
+                <ellipse cx="60" cy="29" rx="6" ry="17" fill="#a99ad6" opacity=".6" transform="rotate(270 60 60)"/>
+                <ellipse cx="60" cy="29" rx="6" ry="17" fill="#90cfc2" opacity=".6" transform="rotate(300 60 60)"/>
+                <ellipse cx="60" cy="29" rx="6" ry="17" fill="#a99ad6" opacity=".6" transform="rotate(330 60 60)"/>
               </g>
               <circle cx="60" cy="60" r="26" fill="url(#plgGlow)"/>
-              <circle cx="60" cy="60" r="7" fill="#ffffff"/>
+              <circle cx="60" cy="60" r="6.5" fill="#eef4f2"/>
             </svg>
           </div>
           <div class="pore-legend-eyebrow">The Breath Complete</div>
