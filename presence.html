@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- v2026.06.19-soul-bg-zfix -->
+<!-- v2026.06.19-soul-bg-v2 -->
 <html lang="en" style="background:#07080d;">
 <head>
   <meta charset="UTF-8"/>
@@ -712,7 +712,7 @@
     .rpt-bar { transform-box:fill-box; transform-origin:bottom; animation:rptBarBreath 3.6s ease-in-out infinite; }
     @keyframes rptBarBreath { 0%,100%{transform:scaleY(1);} 50%{transform:scaleY(1.09);} }
     /* ── Soul Mirror mode banners ── */
-    .soul-banner { position:relative; flex-shrink:0; height:118px; margin:0 0 20px; border-radius:16px; background:linear-gradient(145deg,#1b1226 0%,#271a38 45%,#1a1028 100%); overflow:hidden; display:flex; align-items:center; justify-content:space-between; padding:0 20px; }
+    .soul-banner { position:relative; flex-shrink:0; height:118px; margin:0 0 20px; border-radius:16px; background:linear-gradient(145deg,rgba(27,18,38,.72) 0%,rgba(39,26,56,.68) 45%,rgba(26,16,40,.72) 100%); overflow:hidden; display:flex; align-items:center; justify-content:space-between; padding:0 20px; backdrop-filter:blur(0px); }
     .soul-banner::before { content:''; position:absolute; inset:0; background:radial-gradient(ellipse 60% 72% at 76% 54%, rgba(164,126,184,.22) 0%, transparent 70%); pointer-events:none; }
     .soul-banner::after { content:''; position:absolute; inset:0; background:radial-gradient(ellipse 38% 48% at 72% 46%, rgba(212,180,232,.10) 0%, transparent 60%); pointer-events:none; }
     .soul-banner-text { z-index:2; display:flex; flex-direction:column; gap:3px; min-width:0; padding-right:12px; }
@@ -724,28 +724,22 @@
 
     /* Ambient soul-mirror backdrop — a calm purple glow behind the content,
        no busy starfield. Sits behind the trait cards. */
-    /* NOTE: must NOT use z-index:-1 — the Mirror screen (.screen.active) is a
-       position:fixed element with its own opaque background:var(--bg), and on
-       iOS Safari a negative-z-index child gets painted *behind* that background
-       and disappears. Instead the backdrop sits at z-index:0 and the screen's
-       content is explicitly lifted to z-index:1 (rule below). */
     .soul-bg { position:absolute; inset:0; z-index:0; overflow:hidden; pointer-events:none; }
     #soulMirrorScreen > *:not(.soul-bg) { position:relative; z-index:1; }
-    /* Static base wash: a soft bloom from behind the banner that fades down,
-       plus a faint lift in the lower corner so the empty scroll area isn't dead. */
+    /* Static wash: a deep purple bloom that fills the full screen */
     .soul-bg__aura { position:absolute; inset:0;
       background:
-        radial-gradient(ellipse 135% 55% at 50% 2%, rgba(158,112,202,.30) 0%, rgba(126,98,184,.10) 44%, transparent 74%),
-        radial-gradient(ellipse 95% 70% at 16% 96%, rgba(120,100,184,.14) 0%, transparent 62%); }
-    /* A large, slow-breathing orb of violet light — gives the page depth and a
-       sense of quiet life without anything discrete to track. */
-    .soul-bg__glow { position:absolute; left:50%; top:13%; width:125%; aspect-ratio:1;
+        radial-gradient(ellipse 160% 70% at 50% 0%,   rgba(148,90,200,.55) 0%, rgba(110,70,170,.20) 50%, transparent 80%),
+        radial-gradient(ellipse 140% 60% at 50% 100%,  rgba(100,60,160,.30) 0%, rgba(80,50,140,.10) 50%, transparent 78%),
+        radial-gradient(ellipse 120% 80% at 50% 48%,   rgba(130,80,190,.18) 0%, transparent 72%); }
+    /* A large, slow-breathing orb centered mid-screen */
+    .soul-bg__glow { position:absolute; left:50%; top:45%; width:180%; aspect-ratio:1;
       transform:translate(-50%,-50%);
-      background:radial-gradient(circle, rgba(170,118,214,.28) 0%, rgba(150,108,202,.11) 36%, transparent 64%);
+      background:radial-gradient(circle, rgba(160,90,210,.40) 0%, rgba(130,70,185,.18) 35%, rgba(100,55,155,.06) 60%, transparent 78%);
       animation:soulGlowBreathe 15s ease-in-out infinite; }
     @keyframes soulGlowBreathe {
-      0%,100% { transform:translate(-50%,-50%) scale(1);    opacity:.8; }
-      50%     { transform:translate(-50%,-44%) scale(1.14); opacity:1; } }
+      0%,100% { transform:translate(-50%,-50%) scale(1);    opacity:.85; }
+      50%     { transform:translate(-50%,-48%) scale(1.10); opacity:1;   } }
     @media (prefers-reduced-motion: reduce) { .soul-bg__glow { animation:none; } }
     /* Group-by control + element/severity editor for negative traits */
     .soul-group-btn { background:rgba(255,255,255,.04); border:1px solid var(--border); border-radius:20px; color:var(--muted); font-family:'DM Mono',monospace; font-size:8px; letter-spacing:.12em; text-transform:uppercase; padding:5px 11px; cursor:pointer; transition:all .15s; }
@@ -5663,7 +5657,7 @@ body:not(.tut-live) #tutCorgi {
   </div><!-- end homeScreen -->
 
   <!-- SOUL MIRROR SCREEN -->
-  <div class="screen" id="soulMirrorScreen" style="padding:0; flex-direction:column;">
+  <div class="screen" id="soulMirrorScreen" style="padding:0; flex-direction:column; background:#0a0610;">
     <!-- Ambient backdrop: a calm purple glow that slowly breathes behind the
          content (z-index:-1) so the trait cards rest over a soft atmosphere. -->
     <div class="soul-bg" aria-hidden="true">
