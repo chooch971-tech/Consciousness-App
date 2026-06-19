@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- v2026.06.19-pore-restrained -->
+<!-- v2026.06.19-pore-black-top -->
 <html lang="en" style="background:#07080d;">
 <head>
   <meta charset="UTF-8"/>
@@ -726,6 +726,10 @@
        no busy starfield. Sits behind the trait cards. */
     .soul-bg { position:absolute; inset:0; z-index:0; overflow:hidden; pointer-events:none; }
     #soulMirrorScreen > *:not(.soul-bg) { position:relative; z-index:1; }
+    /* The Mirror's ambient glow is only wanted on the Mirror tab. On the Pore
+       Breathing tab it bled purple into the top; hide it there so the top
+       reverts to black (the breathing panel keeps its own soft aura). */
+    #soulMirrorScreen.soul-tab-breathing .soul-bg { display:none; }
     /* Concentrated glow behind the banner, fades quickly into the dark */
     .soul-bg__aura { position:absolute; inset:0;
       background:
@@ -26964,6 +26968,8 @@ var soulMirrorMode='mirror'; // 'mirror' | 'autosug'
 
 function soulMirrorShowPanel(tab){
   var isMirror=tab==='mirror';
+  var screenEl=document.getElementById('soulMirrorScreen');
+  if(screenEl) screenEl.classList.toggle('soul-tab-breathing', tab==='breathing');
   document.getElementById('soulMirrorPanel').style.display=(isMirror&&soulMirrorMode==='mirror')?'block':'none';
   document.getElementById('soulAutosugPanel').style.display=(isMirror&&soulMirrorMode==='autosug')?'block':'none';
   document.getElementById('soulBreathingPanel').style.display=tab==='breathing'?'flex':'none';
