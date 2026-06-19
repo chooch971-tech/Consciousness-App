@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- v2026.06.19-soul-mirror-ambient-bg -->
+<!-- v2026.06.19-step3-30-restore-cosmetic-costs -->
 <html lang="en" style="background:#07080d;">
 <head>
   <meta charset="UTF-8"/>
@@ -16348,32 +16348,32 @@ var OMNIA_UPGRADES = [
   { id:'attunement', name:'Attunement', sub:'Cheapens cosmetics, engine upgrades, and body levels', base:640, step:320 }
 ];
 
-// ── TESTING MODE: all cosmetic costs temporarily set to 0 ────────────────────
-// Original prices are preserved in each item's `_price` field. To restore paid
-// pricing, copy `_price` back into `cost` for every entry below (or delete the
-// cost:0 overrides). Nothing else needs to change.
+// Cosmetic pricing. `_price` is the canonical tier price (also used by
+// getCosmeticReward); `cost` is what the shop charges and what the attunement
+// discount is applied to in omniaCosmeticCost(). The two are kept in sync —
+// free items (aether, aurora, omnia) stay at 0.
 var OMNIA_PALETTES = [
   { id:'aether', name:'Aether Blue', cost:0, _price:0, color:'#b8eaff', filter:'none', sub:'Original crystalline guide-light' },
-  { id:'rose', name:'Rose Astral', cost:0, _price:6800, color:'#ffc4d8', filter:'hue-rotate(128deg) saturate(1.28) brightness(1.08)', sub:'A softer astral radiance' },
-  { id:'solar', name:'Solar Gold', cost:0, _price:9200, color:'#f0d39a', filter:'hue-rotate(182deg) saturate(1.2) brightness(1.1)', sub:'A warm body of will' },
-  { id:'violet', name:'Violet Mind', cost:0, _price:11800, color:'#c4a8d4', filter:'hue-rotate(74deg) saturate(1.22) brightness(1.04)', sub:'A quiet mental flame' },
-  { id:'verdant', name:'Verdant Vessel', cost:0, _price:14500, color:'#98d8bd', filter:'hue-rotate(246deg) saturate(1.12) brightness(1.02)', sub:'A healing green current' },
-  { id:'crimson', name:'Crimson Flame', cost:0, _price:13500, color:'#e8554f', filter:'hue-rotate(162deg) saturate(1.3) brightness(1.05)', sub:"Archangel Michael's own warrior-fire" },
+  { id:'rose', name:'Rose Astral', cost:6800, _price:6800, color:'#ffc4d8', filter:'hue-rotate(128deg) saturate(1.28) brightness(1.08)', sub:'A softer astral radiance' },
+  { id:'solar', name:'Solar Gold', cost:9200, _price:9200, color:'#f0d39a', filter:'hue-rotate(182deg) saturate(1.2) brightness(1.1)', sub:'A warm body of will' },
+  { id:'violet', name:'Violet Mind', cost:11800, _price:11800, color:'#c4a8d4', filter:'hue-rotate(74deg) saturate(1.22) brightness(1.04)', sub:'A quiet mental flame' },
+  { id:'verdant', name:'Verdant Vessel', cost:14500, _price:14500, color:'#98d8bd', filter:'hue-rotate(246deg) saturate(1.12) brightness(1.02)', sub:'A healing green current' },
+  { id:'crimson', name:'Crimson Flame', cost:13500, _price:13500, color:'#e8554f', filter:'hue-rotate(162deg) saturate(1.3) brightness(1.05)', sub:"Archangel Michael's own warrior-fire" },
   { id:'aurora', name:'Aurora Veil', cost:0, _price:0, color:'#a8e8c8', filter:'none', sub:'A living prism — the full spectrum cycling endlessly' }
 ];
 
 // Veils are overlay effects layered on top of whichever palette color is
 // selected, rather than competing color choices of their own.
 var OMNIA_VEILS = [
-  { id:'spectral', name:'Spectral Veil', cost:0, _price:14500, color:'rgba(216,236,255,0.42)', sub:'A near-invisible ghost — only the glowing edges pulse into view, over any color' }
+  { id:'spectral', name:'Spectral Veil', cost:14500, _price:14500, color:'rgba(216,236,255,0.42)', sub:'A near-invisible ghost — only the glowing edges pulse into view, over any color' }
 ];
 
 var OMNIA_ENTITIES = [
   { id:'omnia', name:'Omnia', cost:0, _price:0, color:'#b8eaff', sub:'The first guide-form' },
-  { id:'noema', name:'Noema', cost:0, _price:12000, color:'#98b4cc', sub:'A sharper mental entity design' },
-  { id:'aurel', name:'Aurel', cost:0, _price:18000, color:'#f0d39a', sub:'A solar entity design for disciplined work' },
-  { id:'elys', name:'Archangel Michael', cost:0, _price:26000, color:'#c4a8d4', sub:'The standing archangel — halo, spear, and orb' },
-  { id:'seraph', name:'Seraph', cost:0, _price:34000, color:'#f3d486', sub:'A biblically accurate angel — wheels within wheels, eyes of flame' }
+  { id:'noema', name:'Noema', cost:12000, _price:12000, color:'#98b4cc', sub:'A sharper mental entity design' },
+  { id:'aurel', name:'Aurel', cost:18000, _price:18000, color:'#f0d39a', sub:'A solar entity design for disciplined work' },
+  { id:'elys', name:'Archangel Michael', cost:26000, _price:26000, color:'#c4a8d4', sub:'The standing archangel — halo, spear, and orb' },
+  { id:'seraph', name:'Seraph', cost:34000, _price:34000, color:'#f3d486', sub:'A biblically accurate angel — wheels within wheels, eyes of flame' }
 ];
 
 // Palette hue-rotate filters are hand-tuned against the blue Omnia crystal
@@ -16416,10 +16416,10 @@ function omniaDisplayColor(palette, entity) {
 }
 
 var OMNIA_COMPANIONS = [
-  { id:'wisp', name:'Akashic Wisp', cost:0, _price:5400, color:'#b8eaff', sub:'A small orbiting practice companion' },
-  { id:'ember', name:'Solar Ember', cost:0, _price:7600, color:'#f0d39a', sub:'A warm companion for steady effort' },
-  { id:'mote', name:'Violet Mote', cost:0, _price:9800, color:'#c4a8d4', sub:'A tiny watcher for mental work' },
-  { id:'corgi', name:'Astral Corgi', cost:0, _price:14500, color:'#d9a069', sub:'A loyal little companion for returning to practice' }
+  { id:'wisp', name:'Akashic Wisp', cost:5400, _price:5400, color:'#b8eaff', sub:'A small orbiting practice companion' },
+  { id:'ember', name:'Solar Ember', cost:7600, _price:7600, color:'#f0d39a', sub:'A warm companion for steady effort' },
+  { id:'mote', name:'Violet Mote', cost:9800, _price:9800, color:'#c4a8d4', sub:'A tiny watcher for mental work' },
+  { id:'corgi', name:'Astral Corgi', cost:14500, _price:14500, color:'#d9a069', sub:'A loyal little companion for returning to practice' }
 ];
 
 var OMNIA_BARDON_STEPS = [
@@ -16442,7 +16442,7 @@ var OMNIA_BARDON_STEPS = [
     roman:'III',
     name:'Step III · The Elements',
     text:'Omnia makes contact with the elements while deepening the senses. This is where the work begins to go above subjective experience.',
-    req:{ physical:45, astral:45, mental:45, recommended:35 }
+    req:{ physical:45, astral:45, mental:45, recommended:30 }
   },
   {
     step:4,
