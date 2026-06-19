@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- v2026.06.19-michael-native-palette -->
+<!-- v2026.06.19-michael-palette-fix2 -->
 <html lang="en" style="background:#07080d;">
 <head>
   <meta charset="UTF-8"/>
@@ -16845,17 +16845,12 @@ function loadOmniaState() {
       var nativePal = OMNIA_ENTITY_NATIVE_PALETTE[merged.cosmetics.entity] || 'aether';
       merged.cosmetics.palette = merged.cosmetics.unlockedPalettes.indexOf(nativePal) !== -1 ? nativePal : 'aether';
     }
-    // One-time: Archangel Michael used to force the crimson "warrior-fire"
-    // palette the instant he was selected, overriding the player's chosen color
-    // and rendering him gold/coral instead of his native rose-violet. Restore
-    // his natural look once for anyone still on that auto-crimson.
+    // Archangel Michael's native palette is rose-violet, not crimson.
+    // Correct the stored palette unconditionally — idempotent and safe every load.
     try {
-      if (!localStorage.getItem('presence_elys_native_migrated')) {
-        if (merged.cosmetics.entity === 'elys' && merged.cosmetics.palette === 'crimson') {
-          merged.cosmetics.palette = 'violet';
-          if (merged.cosmetics.unlockedPalettes.indexOf('violet') === -1) merged.cosmetics.unlockedPalettes.push('violet');
-        }
-        localStorage.setItem('presence_elys_native_migrated', '1');
+      if (merged.cosmetics.entity === 'elys' && merged.cosmetics.palette === 'crimson') {
+        merged.cosmetics.palette = 'violet';
+        if (merged.cosmetics.unlockedPalettes.indexOf('violet') === -1) merged.cosmetics.unlockedPalettes.push('violet');
       }
     } catch(e) {}
     merged.storySeen = Array.isArray(parsed.storySeen) ? parsed.storySeen : [];
