@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- v2026.06.19-soul-bg-v2 -->
+<!-- v2026.06.19-soul-bg-v3 -->
 <html lang="en" style="background:#07080d;">
 <head>
   <meta charset="UTF-8"/>
@@ -726,20 +726,19 @@
        no busy starfield. Sits behind the trait cards. */
     .soul-bg { position:absolute; inset:0; z-index:0; overflow:hidden; pointer-events:none; }
     #soulMirrorScreen > *:not(.soul-bg) { position:relative; z-index:1; }
-    /* Static wash: a deep purple bloom that fills the full screen */
+    /* Concentrated glow behind the banner, fades quickly into the dark */
     .soul-bg__aura { position:absolute; inset:0;
       background:
-        radial-gradient(ellipse 160% 70% at 50% 0%,   rgba(148,90,200,.55) 0%, rgba(110,70,170,.20) 50%, transparent 80%),
-        radial-gradient(ellipse 140% 60% at 50% 100%,  rgba(100,60,160,.30) 0%, rgba(80,50,140,.10) 50%, transparent 78%),
-        radial-gradient(ellipse 120% 80% at 50% 48%,   rgba(130,80,190,.18) 0%, transparent 72%); }
-    /* A large, slow-breathing orb centered mid-screen */
-    .soul-bg__glow { position:absolute; left:50%; top:45%; width:180%; aspect-ratio:1;
+        radial-gradient(ellipse 130% 42% at 50% 0%, rgba(148,90,200,.42) 0%, rgba(110,70,170,.12) 48%, transparent 70%),
+        radial-gradient(ellipse 70% 28% at 72% 96%, rgba(90,55,140,.22) 0%, transparent 65%); }
+    /* Soft orb that breathes gently — sits just behind the banner, doesn't flood below */
+    .soul-bg__glow { position:absolute; left:50%; top:18%; width:140%; aspect-ratio:1;
       transform:translate(-50%,-50%);
-      background:radial-gradient(circle, rgba(160,90,210,.40) 0%, rgba(130,70,185,.18) 35%, rgba(100,55,155,.06) 60%, transparent 78%);
+      background:radial-gradient(circle, rgba(155,85,205,.32) 0%, rgba(120,65,178,.10) 40%, transparent 68%);
       animation:soulGlowBreathe 15s ease-in-out infinite; }
     @keyframes soulGlowBreathe {
-      0%,100% { transform:translate(-50%,-50%) scale(1);    opacity:.85; }
-      50%     { transform:translate(-50%,-48%) scale(1.10); opacity:1;   } }
+      0%,100% { transform:translate(-50%,-50%) scale(1);    opacity:.75; }
+      50%     { transform:translate(-50%,-46%) scale(1.12); opacity:1;   } }
     @media (prefers-reduced-motion: reduce) { .soul-bg__glow { animation:none; } }
     /* Group-by control + element/severity editor for negative traits */
     .soul-group-btn { background:rgba(255,255,255,.04); border:1px solid var(--border); border-radius:20px; color:var(--muted); font-family:'DM Mono',monospace; font-size:8px; letter-spacing:.12em; text-transform:uppercase; padding:5px 11px; cursor:pointer; transition:all .15s; }
@@ -5657,7 +5656,7 @@ body:not(.tut-live) #tutCorgi {
   </div><!-- end homeScreen -->
 
   <!-- SOUL MIRROR SCREEN -->
-  <div class="screen" id="soulMirrorScreen" style="padding:0; flex-direction:column; background:#0a0610;">
+  <div class="screen" id="soulMirrorScreen" style="padding:0; flex-direction:column; background:#07080d;">
     <!-- Ambient backdrop: a calm purple glow that slowly breathes behind the
          content (z-index:-1) so the trait cards rest over a soft atmosphere. -->
     <div class="soul-bg" aria-hidden="true">
