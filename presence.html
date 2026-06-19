@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- v2026.06.19-step3-30-restore-cosmetic-costs -->
+<!-- v2026.06.19-soul-mirror-ambient-stronger -->
 <html lang="en" style="background:#07080d;">
 <head>
   <meta charset="UTF-8"/>
@@ -726,21 +726,24 @@
     .soul-bg { position:absolute; inset:0; z-index:-1; overflow:hidden; pointer-events:none; }
     .soul-bg__aura { position:absolute; inset:0;
       background:
-        radial-gradient(ellipse 95% 52% at 50% 15%, rgba(164,126,184,.20) 0%, rgba(164,126,184,.07) 34%, transparent 64%),
-        radial-gradient(ellipse 64% 44% at 84% 26%, rgba(212,180,232,.08) 0%, transparent 60%),
-        radial-gradient(ellipse 80% 60% at 10% 82%, rgba(126,110,168,.07) 0%, transparent 64%); }
-    /* A faint mote field on a single 240px tile so a -240px upward drift loops
-       seamlessly. Taller than the screen so it always covers after the shift. */
-    .soul-bg__motes { position:absolute; left:0; right:0; top:0; height:220%; opacity:.5;
-      background-repeat:repeat; background-size:240px 240px;
+        radial-gradient(ellipse 130% 55% at 50% 6%, rgba(170,128,196,.42) 0%, rgba(150,116,190,.16) 40%, transparent 72%),
+        radial-gradient(ellipse 70% 55% at 85% 34%, rgba(214,182,236,.16) 0%, transparent 60%),
+        radial-gradient(ellipse 100% 70% at 12% 92%, rgba(132,114,186,.22) 0%, transparent 64%); }
+    /* A drifting mote field on a single 200px tile so a -200px upward shift
+       loops seamlessly. Taller than the screen so it always covers after the
+       shift; twinkles gently so the motion is perceptible. */
+    .soul-bg__motes { position:absolute; left:0; right:0; top:0; height:220%; opacity:.9;
+      background-repeat:repeat; background-size:200px 200px;
       background-image:
-        radial-gradient(circle at 30% 18%, rgba(232,216,248,.85) 0, transparent 1.5px),
-        radial-gradient(circle at 72% 52%, rgba(196,168,212,.7) 0, transparent 1.3px),
-        radial-gradient(circle at 46% 82%, rgba(255,255,255,.6) 0, transparent 1px),
-        radial-gradient(circle at 88% 10%, rgba(212,180,232,.6) 0, transparent 1.2px),
-        radial-gradient(circle at 14% 64%, rgba(196,168,212,.5) 0, transparent 1px);
-      animation:soulMotesDrift 60s linear infinite; }
-    @keyframes soulMotesDrift { from { transform:translateY(0); } to { transform:translateY(-240px); } }
+        radial-gradient(circle at 30% 18%, rgba(236,222,252,.95) 0, rgba(236,222,252,0) 2.4px),
+        radial-gradient(circle at 72% 52%, rgba(206,180,224,.9) 0, rgba(206,180,224,0) 2px),
+        radial-gradient(circle at 46% 82%, rgba(255,255,255,.85) 0, rgba(255,255,255,0) 1.6px),
+        radial-gradient(circle at 88% 10%, rgba(216,186,238,.85) 0, rgba(216,186,238,0) 2px),
+        radial-gradient(circle at 14% 64%, rgba(200,172,220,.8) 0, rgba(200,172,220,0) 1.6px),
+        radial-gradient(circle at 60% 32%, rgba(184,234,255,.7) 0, rgba(184,234,255,0) 1.4px);
+      animation:soulMotesDrift 48s linear infinite, soulMotesTwinkle 6.5s ease-in-out infinite; }
+    @keyframes soulMotesDrift { from { transform:translateY(0); } to { transform:translateY(-200px); } }
+    @keyframes soulMotesTwinkle { 0%,100% { opacity:.55; } 50% { opacity:1; } }
     @media (prefers-reduced-motion: reduce) { .soul-bg__motes { animation:none; } }
     /* Group-by control + element/severity editor for negative traits */
     .soul-group-btn { background:rgba(255,255,255,.04); border:1px solid var(--border); border-radius:20px; color:var(--muted); font-family:'DM Mono',monospace; font-size:8px; letter-spacing:.12em; text-transform:uppercase; padding:5px 11px; cursor:pointer; transition:all .15s; }
