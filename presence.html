@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- v2026.06.19-michael-palette-fix2 -->
+<!-- v2026.06.19-signin-no-reload -->
 <html lang="en" style="background:#07080d;">
 <head>
   <meta charset="UTF-8"/>
@@ -4210,6 +4210,16 @@ body:not(.tut-live) #tutCorgi {
     setTimeout(function() { s.style.display = 'none'; }, 950);
   }
   window.__dismissSplash = dismiss;
+  // Re-show the splash (used by the no-reload sign-in path) so a returning user
+  // who just signed in gets the calm "Restoring your progress…" screen while the
+  // cloud pull runs — instead of a frozen login screen or a blank flash.
+  window.__showSplash = function(note) {
+    dismissed = false;
+    s.style.display = '';
+    s.classList.remove('splash-out');
+    var t = s.querySelector('.splash-tagline');
+    if (t && note) t.textContent = note;
+  };
   setTimeout(function() {
     // If a signed-in cloud pull is still in flight, keep the splash up so the
     // user never sees an empty/default home that looks like lost progress.
@@ -4370,8 +4380,7 @@ body:not(.tut-live) #tutCorgi {
       lgnGoogleInited = true;
       initGoogleSignIn('lgnGoogleContainer', function() {
         localStorage.setItem('presence_welcome_seen', '1');
-        lgnEl.classList.remove('lgn-vis');
-        window.location.reload();
+        enterAppAfterSignIn(function() { lgnEl.classList.remove('lgn-vis'); });
       });
     }
   }
@@ -4421,8 +4430,7 @@ body:not(.tut-live) #tutCorgi {
     var ok = await authRegisterOrLogin(email, password, lgnIsCreate, '');
     if (ok) {
       localStorage.setItem('presence_welcome_seen', '1');
-      lgnEl.classList.remove('lgn-vis');
-      window.location.reload();
+      enterAppAfterSignIn(function() { lgnEl.classList.remove('lgn-vis'); });
     } else {
       errEl.textContent = window._lastAuthError || 'Sign-in failed. Try again.';
       errEl.style.display = 'block';
@@ -9417,6 +9425,63 @@ function applyPulledData(data) {
     if (shouldTakeCloudValue(k, local, v)) { localStorage.setItem(k, v); changed = true; }
   });
   return changed;
+}
+
+// Enter the app after a fresh sign-in WITHOUT a full page reload. The old
+// login flow called window.location.reload() (sometimes twice), which re-fetched
+// and re-parsed the entire ~1.7MB single-file app over the network each time —
+// that, not the server, was the "30+ seconds" on the "I already have an account"
+// path. The tutorial path never reloads, which is why it always felt instant.
+// This pulls cloud data, applies it in place, re-inits every in-memory state
+// slice, and renders home — same as the tutorial path, no reload.
+function enterAppAfterSignIn(onEntered) {
+  if (window.__showSplash) window.__showSplash('Restoring your progress…');
+  window._syncPullPending = true;
+  var attempt = 0;
+  function finish() {
+    window._syncPullPending = false;
+    try {
+      state = loadState();
+      concState = loadConcState();
+      omniaState = loadOmniaState();
+      prayerState = loadPrayerState();
+      guideState = loadGuideState();
+      guidePathMode = null;
+    } catch(e) {}
+    if (typeof renderHome === 'function') renderHome();
+    if (typeof showScreen === 'function') showScreen('homeScreen');
+    if (typeof onEntered === 'function') { try { onEntered(); } catch(e) {} }
+    if (window.__dismissSplash) window.__dismissSplash();
+  }
+  function pull() {
+    attempt++;
+    if (!(syncEnabled && authToken)) { finish(); return; }
+    fetch(SYNC_API_URL + '/sync/pull', { headers: { 'Authorization': 'Bearer ' + authToken } })
+      .then(function(r) {
+        if (r.status === 401) { finish(); return null; }
+        if (!r.ok) throw new Error('pull http ' + r.status);
+        return r.json();
+      })
+      .then(function(result) {
+        if (result === null) return;
+        if (result && result.data) {
+          applyPulledData(result.data);
+          if (typeof markSynced === 'function') markSynced();
+        }
+        finish();
+        if (typeof syncPushData === 'function') syncPushData();
+      })
+      .catch(function() {
+        // Cold/unavailable server: retry a few times with light backoff. We still
+        // enter the app (showing whatever's local) rather than trapping the user.
+        if (attempt < 6) { setTimeout(pull, Math.min(1500 * attempt, 6000)); }
+        else {
+          finish();
+          if (typeof showToast === 'function') showToast('Cloud is waking up — your progress will fill in shortly', 4000);
+        }
+      });
+  }
+  pull();
 }
 
 (function preserveTutorialVisitedAfterReset() {
