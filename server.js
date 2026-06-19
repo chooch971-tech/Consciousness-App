@@ -81,6 +81,11 @@ async function connectDB() {
     practiceCollection = db.collection('practice_schedules');
     // TTL: let MongoDB sweep stale beacons automatically (reads also guard on expiresAt)
     try { await beaconsCollection.createIndex({ expiresAt: 1 }, { expireAfterSeconds: 0 }); } catch(e) {}
+    // Compound index makes every pull O(1) instead of a full collection scan
+    try { await syncDataCollection.createIndex({ userId: 1, syncedAt: -1 }); } catch(e) {}
+    // Speed up push upserts and user lookups
+    try { await usersCollection.createIndex({ email: 1 }, { unique: true, sparse: true }); } catch(e) {}
+    try { await usersCollection.createIndex({ googleId: 1 }, { sparse: true }); } catch(e) {}
 
     subscriptions = await subsCollection.find({}).toArray();
     const cutoff = Date.now() - 24 * 60 * 60 * 1000;
