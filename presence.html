@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- v2026.06.19-pore-black-top -->
+<!-- v2026.06.19-mirror-black-top-slider-fix -->
 <html lang="en" style="background:#07080d;">
 <head>
   <meta charset="UTF-8"/>
@@ -730,15 +730,15 @@
        Breathing tab it bled purple into the top; hide it there so the top
        reverts to black (the breathing panel keeps its own soft aura). */
     #soulMirrorScreen.soul-tab-breathing .soul-bg { display:none; }
-    /* Concentrated glow behind the banner, fades quickly into the dark */
+    /* Concentrated glow — starts well below the top so the status bar stays black */
     .soul-bg__aura { position:absolute; inset:0;
       background:
-        radial-gradient(ellipse 130% 42% at 50% 0%, rgba(148,90,200,.42) 0%, rgba(110,70,170,.12) 48%, transparent 70%),
-        radial-gradient(ellipse 70% 28% at 72% 96%, rgba(90,55,140,.22) 0%, transparent 65%); }
-    /* Soft orb that breathes gently — sits just behind the banner, doesn't flood below */
-    .soul-bg__glow { position:absolute; left:50%; top:18%; width:140%; aspect-ratio:1;
+        radial-gradient(ellipse 120% 40% at 50% 34%, rgba(148,90,200,.38) 0%, rgba(110,70,170,.10) 52%, transparent 72%),
+        radial-gradient(ellipse 60% 22% at 72% 96%, rgba(90,55,140,.18) 0%, transparent 65%); }
+    /* Soft orb that breathes gently — centred around 38% so top is dark */
+    .soul-bg__glow { position:absolute; left:50%; top:38%; width:140%; aspect-ratio:1;
       transform:translate(-50%,-50%);
-      background:radial-gradient(circle, rgba(155,85,205,.32) 0%, rgba(120,65,178,.10) 40%, transparent 68%);
+      background:radial-gradient(circle, rgba(155,85,205,.28) 0%, rgba(120,65,178,.08) 40%, transparent 68%);
       animation:soulGlowBreathe 15s ease-in-out infinite; }
     @keyframes soulGlowBreathe {
       0%,100% { transform:translate(-50%,-50%) scale(1);    opacity:.75; }
@@ -764,13 +764,13 @@
     .pore-hero-unit { font-size:9px; letter-spacing:.3em; text-transform:uppercase; color:rgba(190,200,216,.46); font-family:'DM Mono',monospace; margin-top:6px; }
     .pore-breaths-num { font-family:'Cormorant Garamond',serif; font-size:64px; line-height:1; font-weight:300;
       background:linear-gradient(140deg,#90cfc2 0%,#a99ad6 100%); -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent; }
-    .pore-slider { width:100%; -webkit-appearance:none; appearance:none; height:4px; border-radius:3px; outline:none; cursor:pointer;
+    .pore-slider { width:82%; display:block; margin:0 auto; -webkit-appearance:none; appearance:none; height:4px; border-radius:3px; outline:none; cursor:pointer;
       background:linear-gradient(90deg, rgba(122,190,180,.55), rgba(150,140,196,.55)); }
     .pore-slider::-webkit-slider-thumb { -webkit-appearance:none; width:18px; height:18px; border-radius:50%; cursor:pointer;
       background:#e9eef1; border:1px solid rgba(255,255,255,.55); box-shadow:0 0 10px rgba(150,180,188,.5), 0 1px 4px rgba(0,0,0,.4); }
     .pore-slider::-moz-range-thumb { width:18px; height:18px; border-radius:50%; cursor:pointer;
       background:#e9eef1; border:1px solid rgba(255,255,255,.55); box-shadow:0 0 10px rgba(150,180,188,.5); }
-    .pore-slider-ends { display:flex; justify-content:space-between; margin-top:8px; font-size:9px; color:rgba(190,200,216,.42); font-family:'DM Mono',monospace; }
+    .pore-slider-ends { display:flex; justify-content:space-between; margin-top:8px; font-size:9px; color:rgba(190,200,216,.42); font-family:'DM Mono',monospace; width:82%; margin-left:auto; margin-right:auto; }
     .pore-pattern { margin:30px 0 30px; text-align:center; }
     .pore-pattern-row { display:flex; justify-content:center; align-items:center; gap:10px; margin-top:14px; }
     .pore-phase { text-align:center; }
