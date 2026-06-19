@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- v2026.06.19-michael-polar-arcs -->
+<!-- v2026.06.19-soul-bg-zfix -->
 <html lang="en" style="background:#07080d;">
 <head>
   <meta charset="UTF-8"/>
@@ -723,8 +723,14 @@
     .soul-banner-art svg { width:100%; height:100%; overflow:visible; }
 
     /* Ambient soul-mirror backdrop — a calm purple glow behind the content,
-       no busy starfield. Sits behind the trait cards (z-index:-1). */
-    .soul-bg { position:absolute; inset:0; z-index:-1; overflow:hidden; pointer-events:none; }
+       no busy starfield. Sits behind the trait cards. */
+    /* NOTE: must NOT use z-index:-1 — the Mirror screen (.screen.active) is a
+       position:fixed element with its own opaque background:var(--bg), and on
+       iOS Safari a negative-z-index child gets painted *behind* that background
+       and disappears. Instead the backdrop sits at z-index:0 and the screen's
+       content is explicitly lifted to z-index:1 (rule below). */
+    .soul-bg { position:absolute; inset:0; z-index:0; overflow:hidden; pointer-events:none; }
+    #soulMirrorScreen > *:not(.soul-bg) { position:relative; z-index:1; }
     /* Static base wash: a soft bloom from behind the banner that fades down,
        plus a faint lift in the lower corner so the empty scroll area isn't dead. */
     .soul-bg__aura { position:absolute; inset:0;
@@ -5664,7 +5670,7 @@ body:not(.tut-live) #tutCorgi {
       <div class="soul-bg__aura"></div>
       <div class="soul-bg__glow"></div>
     </div>
-    <div style="padding:var(--safe-top) 24px 0; display:flex; justify-content:flex-start; align-items:center; flex-shrink:0; background:var(--bg);">
+    <div style="padding:var(--safe-top) 24px 0; display:flex; justify-content:flex-start; align-items:center; flex-shrink:0; background:transparent;">
       <button class="history-back" id="soulMirrorBack" aria-label="Back">←</button>
     </div>
     <!-- Tab bar -->
