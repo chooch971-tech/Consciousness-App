@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- v2026.06.18-google-overlay-sync-status-update-banner -->
+<!-- v2026.06.19-soul-mirror-ambient-bg -->
 <html lang="en" style="background:#07080d;">
 <head>
   <meta charset="UTF-8"/>
@@ -721,6 +721,27 @@
     .soul-banner-sub { font-size:9px; letter-spacing:.1em; color:rgba(216,200,232,.46); font-family:'DM Mono',monospace; line-height:1.5; }
     .soul-banner-art { position:relative; z-index:2; width:86px; height:94px; display:flex; align-items:center; justify-content:center; flex-shrink:0; animation:omniaFloat 5s ease-in-out infinite; filter:drop-shadow(0 0 12px rgba(164,126,184,.42)); }
     .soul-banner-art svg { width:100%; height:100%; overflow:visible; }
+
+    /* Ambient soul-mirror backdrop — sits behind the trait content. */
+    .soul-bg { position:absolute; inset:0; z-index:-1; overflow:hidden; pointer-events:none; }
+    .soul-bg__aura { position:absolute; inset:0;
+      background:
+        radial-gradient(ellipse 95% 52% at 50% 15%, rgba(164,126,184,.20) 0%, rgba(164,126,184,.07) 34%, transparent 64%),
+        radial-gradient(ellipse 64% 44% at 84% 26%, rgba(212,180,232,.08) 0%, transparent 60%),
+        radial-gradient(ellipse 80% 60% at 10% 82%, rgba(126,110,168,.07) 0%, transparent 64%); }
+    /* A faint mote field on a single 240px tile so a -240px upward drift loops
+       seamlessly. Taller than the screen so it always covers after the shift. */
+    .soul-bg__motes { position:absolute; left:0; right:0; top:0; height:220%; opacity:.5;
+      background-repeat:repeat; background-size:240px 240px;
+      background-image:
+        radial-gradient(circle at 30% 18%, rgba(232,216,248,.85) 0, transparent 1.5px),
+        radial-gradient(circle at 72% 52%, rgba(196,168,212,.7) 0, transparent 1.3px),
+        radial-gradient(circle at 46% 82%, rgba(255,255,255,.6) 0, transparent 1px),
+        radial-gradient(circle at 88% 10%, rgba(212,180,232,.6) 0, transparent 1.2px),
+        radial-gradient(circle at 14% 64%, rgba(196,168,212,.5) 0, transparent 1px);
+      animation:soulMotesDrift 60s linear infinite; }
+    @keyframes soulMotesDrift { from { transform:translateY(0); } to { transform:translateY(-240px); } }
+    @media (prefers-reduced-motion: reduce) { .soul-bg__motes { animation:none; } }
     /* Group-by control + element/severity editor for negative traits */
     .soul-group-btn { background:rgba(255,255,255,.04); border:1px solid var(--border); border-radius:20px; color:var(--muted); font-family:'DM Mono',monospace; font-size:8px; letter-spacing:.12em; text-transform:uppercase; padding:5px 11px; cursor:pointer; transition:all .15s; }
     .soul-group-btn.sel { background:rgba(196,120,140,.16); border-color:rgba(196,120,140,.45); color:#e0a0b0; }
@@ -5622,6 +5643,13 @@ body:not(.tut-live) #tutCorgi {
 
   <!-- SOUL MIRROR SCREEN -->
   <div class="screen" id="soulMirrorScreen" style="padding:0; flex-direction:column;">
+    <!-- Ambient backdrop: a soft soul-purple aura with faint motes drifting
+         slowly upward, sitting behind the content (z-index:-1) so the trait
+         cards scroll over a calm, reflective atmosphere. -->
+    <div class="soul-bg" aria-hidden="true">
+      <div class="soul-bg__aura"></div>
+      <div class="soul-bg__motes"></div>
+    </div>
     <div style="padding:var(--safe-top) 24px 0; display:flex; justify-content:flex-start; align-items:center; flex-shrink:0; background:var(--bg);">
       <button class="history-back" id="soulMirrorBack" aria-label="Back">←</button>
     </div>
