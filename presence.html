@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- v2026.06.19-veil-in-swatch-strip -->
+<!-- v2026.06.19-autosug-dropdown-ios-fix -->
 <html lang="en" style="background:#07080d;">
 <head>
   <meta charset="UTF-8"/>
@@ -27060,12 +27060,25 @@ function soulMirrorShowPanel(tab){
   else autosugReleaseWakeLock();
 }
 
+function soulDdSetOpen(open) {
+  var dd = document.getElementById('soulMirrorDropdown');
+  if (dd) dd.style.display = open ? 'block' : 'none';
+  // iOS -webkit-overflow-scrolling:touch steals touch events regardless of
+  // z-index. Disable pointer events on the scrollable panels while the
+  // dropdown is open so the Autosuggestion button is actually tappable.
+  var pe = open ? 'none' : '';
+  ['soulMirrorPanel','soulAutosugPanel','soulBreathingPanel'].forEach(function(id) {
+    var el = document.getElementById(id);
+    if (el) el.style.pointerEvents = pe;
+  });
+}
+
 document.getElementById('soulMirrorTabs').addEventListener('click',function(e){
   var dd=document.getElementById('soulMirrorDropdown');
   var opt=e.target.closest('.soul-mode-opt');
   if(opt){
     soulMirrorMode=opt.dataset.mode;
-    dd.style.display='none';
+    soulDdSetOpen(false);
     soulMirrorShowPanel('mirror');
     return;
   }
@@ -27075,13 +27088,21 @@ document.getElementById('soulMirrorTabs').addEventListener('click',function(e){
   btn.style.borderBottomColor='#a47eb8';btn.style.color='#c4a8d4';
   if(tab==='mirror'){
     // toggle the mode dropdown; the current mode's panel shows underneath
-    dd.style.display=dd.style.display==='none'?'block':'none';
+    soulDdSetOpen(dd.style.display==='none');
     soulMirrorShowPanel('mirror');
     return;
   }
-  dd.style.display='none';
+  soulDdSetOpen(false);
   soulMirrorShowPanel(tab);
 });
+
+// Close dropdown (and restore pointer events) when tapping outside it
+document.addEventListener('touchstart', function(e) {
+  var dd = document.getElementById('soulMirrorDropdown');
+  if (!dd || dd.style.display === 'none') return;
+  var tabs = document.getElementById('soulMirrorTabs');
+  if (tabs && !tabs.contains(e.target)) soulDdSetOpen(false);
+}, { passive: true });
 
 document.getElementById('soulMirrorBack').addEventListener('click',function(){
   stopPoreBreath();
