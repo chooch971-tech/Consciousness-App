@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- v2026.06.19-autosug-dropdown-zindex-specificity -->
+<!-- v2026.06.19-veil-swatch-detail-card -->
 <html lang="en" style="background:#07080d;">
 <head>
   <meta charset="UTF-8"/>
@@ -17786,10 +17786,16 @@ function renderOmniaCosDetail(kind, item) {
   var unlocked = omniaCosmeticUnlocked(kind, item.id);
   var selected = omniaCosmeticSelected(kind, item.id);
   var liveCost = omniaCosmeticCost(item);
-  var label = selected ? 'Selected' : unlocked ? 'Select' : liveCost > 0 ? 'Unlock ' + liveCost : 'Unlock';
-  var disabled = selected || (!unlocked && (omniaState.akasha || 0) < liveCost);
+  var label, disabled;
+  if (kind === 'veil') {
+    label = selected ? 'Turn Off' : unlocked ? 'Turn On' : liveCost > 0 ? 'Unlock · ' + liveCost.toLocaleString() + ' akasha' : 'Unlock';
+    disabled = !unlocked && (omniaState.akasha || 0) < liveCost;
+  } else {
+    label = selected ? 'Selected' : unlocked ? 'Select' : liveCost > 0 ? 'Unlock ' + liveCost : 'Unlock';
+    disabled = selected || (!unlocked && (omniaState.akasha || 0) < liveCost);
+  }
   return '<div class="oe-cos-detail">'
-    + '<div><div class="oe-cos-detail-name">' + item.name + '</div><div class="oe-cos-detail-sub">' + item.sub + (!unlocked && liveCost > 0 ? ' · ' + liveCost + ' akasha' : '') + '</div></div>'
+    + '<div><div class="oe-cos-detail-name">' + item.name + '</div><div class="oe-cos-detail-sub">' + item.sub + (!unlocked && liveCost > 0 ? ' · ' + liveCost.toLocaleString() + ' akasha' : '') + '</div></div>'
     + '<button class="omnia-mini-btn" data-omnia-cosmetic-kind="' + kind + '" data-omnia-cosmetic-id="' + item.id + '"' + (disabled ? ' disabled' : '') + '>' + label + '</button>'
     + '</div>';
 }
@@ -17825,16 +17831,15 @@ function renderOmniaAppearance() {
   }
 
   if (tab.kind === 'palette') {
-    // Palette swatches + veil swatches in one strip. Veil swatches toggle as
-    // stackable overlays (kind="veil") rather than replacing the active color.
+    // Palette swatches + veil swatches in one strip.
+    // Veil swatches ALWAYS go through the focus path so tapping any veil
+    // (owned or not) shows the detail card below. The detail card's button
+    // handles the actual toggle/unlock.
     var veilSwatches = OMNIA_VEILS.map(function(item) {
-      var unlocked = omniaCosmeticUnlocked('veil', item.id);
       var selected = omniaCosmeticSelected('veil', item.id);
+      var unlocked = omniaCosmeticUnlocked('veil', item.id);
       var isFocusV = _omniaCosFocus.veil === item.id;
-      var attrs = unlocked
-        ? 'data-omnia-cosmetic-kind="veil" data-omnia-cosmetic-id="' + item.id + '"'
-        : 'data-omnia-cos-focus="' + item.id + '" data-omnia-cos-kind="veil"';
-      return '<div class="oe-swatch oe-swatch-veil' + (selected ? ' sel' : '') + (unlocked ? '' : ' locked') + (isFocusV && !unlocked ? ' focus' : '') + '" style="' + omniaSwatchStyle(item) + '" title="' + item.name + '" ' + attrs + '>'
+      return '<div class="oe-swatch oe-swatch-veil' + (selected ? ' sel' : '') + (unlocked ? '' : ' locked') + (isFocusV ? ' focus' : '') + '" style="' + omniaSwatchStyle(item) + '" title="' + item.name + '" data-omnia-cos-focus="' + item.id + '" data-omnia-cos-kind="veil">'
         + (selected ? '<span class="oe-swatch-veil-dot"></span>' : '')
         + '</div>';
     }).join('');
@@ -17849,7 +17854,7 @@ function renderOmniaAppearance() {
     }).join('') + veilSwatches + '</div>';
     if (focusItem) html += renderOmniaCosDetail('palette', focusItem);
     var veilFocus = _omniaCosFocus.veil ? omniaFindCosmetic(OMNIA_VEILS, _omniaCosFocus.veil) : null;
-    if (veilFocus && !omniaCosmeticUnlocked('veil', veilFocus.id)) {
+    if (veilFocus) {
       html += '<div style="margin-top:10px;">' + renderOmniaCosDetail('veil', veilFocus) + '</div>';
     }
   } else {
