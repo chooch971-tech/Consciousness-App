@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- v2026.06.19-veil-swatch-detail-card -->
+<!-- v2026.06.19-step4-orbiting-shards -->
 <html lang="en" style="background:#07080d;">
 <head>
   <meta charset="UTF-8"/>
@@ -2098,25 +2098,20 @@ body.omnia-tier-crown .omnia-crown { display:block; }
 #drawerOmniaBtn .omnia-crown { top:-5px; width:32px; height:32px; }
 @keyframes omniaCrownPulse { 0%,100%{opacity:.8;transform:translateX(-50%) scale(.96);} 50%{opacity:1;transform:translateX(-50%) scale(1.06);} }
 
-/* ── Step IV permanent add-on: Polar Currents ─────────────────────── */
+/* ── Step IV permanent add-on: Polar Currents (orbiting crystalline shards) ─ */
+/* Shards orbit at a radius outside the figure — no blend-mode, no color clash */
 .omnia-polar { position:absolute; inset:0; pointer-events:none; z-index:3; display:none; }
 body.omnia-tier-polar .omnia-polar { display:block; }
-.omnia-polar-arc { position:absolute; top:50%; border-radius:50%; transform:translateY(-50%); pointer-events:none; mix-blend-mode:screen; }
-.omnia-polar-arc.electric { left:-12px; width:44px; height:90px; background:radial-gradient(ellipse at right center, rgba(126,200,255,.52) 0%, rgba(126,200,255,.18) 38%, rgba(126,200,255,0) 70%); animation:omniaPolarLeft 5.6s ease-in-out infinite; }
-.omnia-polar-arc.magnetic { right:-12px; width:44px; height:90px; background:radial-gradient(ellipse at left center, rgba(255,155,138,.52) 0%, rgba(255,155,138,.18) 38%, rgba(255,155,138,0) 70%); animation:omniaPolarRight 5.6s ease-in-out infinite; }
-.oe-omnia-figure .omnia-polar-arc { width:60px; height:130px; }
-.oe-omnia-figure .omnia-polar-arc.electric { left:-18px; }
-.oe-omnia-figure .omnia-polar-arc.magnetic { right:-18px; }
-/* Figural entities (Archangel Michael, Seraph): the polar arcs were drawn to
-   wash over the abstract Omnia crystal. On a representational figure they
-   screen a blue glow over his left half and a coral glow over his right —
-   reading as "half of Michael is a different color," and warming the robe off
-   its native rose-violet. Suppress them on figures (the halo + orbiting shards
-   still mark progression); the body keeps its true color. */
-.omnia-figure[data-entity="elys"] .omnia-polar,
-.omnia-figure[data-entity="seraph"] .omnia-polar { display:none; }
-@keyframes omniaPolarLeft  { 0%,100%{opacity:.55;transform:translateY(-50%) scale(.9,1);}  50%{opacity:1;transform:translateY(-50%) scale(1.18,1.04);} }
-@keyframes omniaPolarRight { 0%,100%{opacity:1;transform:translateY(-50%) scale(1.18,1.04);} 50%{opacity:.55;transform:translateY(-50%) scale(.9,1);} }
+.omnia-polar-ring { position:absolute; inset:0; animation:polarRingSpin 13s linear infinite; }
+.omnia-polar-shard { position:absolute; top:50%; left:50%; width:7px; height:7px; margin:-3.5px 0 0 -3.5px; background:rgba(222,238,255,.9); border-radius:1px; box-shadow:0 0 7px 3px rgba(180,218,255,.5), 0 0 15px rgba(180,218,255,.2); animation:polarShardGlow 2.8s ease-in-out infinite; }
+.omnia-polar-shard:nth-child(1) { transform:rotate(0deg)   translateX(50px) rotate(45deg); }
+.omnia-polar-shard:nth-child(2) { transform:rotate(120deg) translateX(50px) rotate(45deg); animation-delay:.93s; }
+.omnia-polar-shard:nth-child(3) { transform:rotate(240deg) translateX(50px) rotate(45deg); animation-delay:1.87s; }
+.oe-omnia-figure .omnia-polar-shard:nth-child(1) { transform:rotate(0deg)   translateX(70px) rotate(45deg); }
+.oe-omnia-figure .omnia-polar-shard:nth-child(2) { transform:rotate(120deg) translateX(70px) rotate(45deg); }
+.oe-omnia-figure .omnia-polar-shard:nth-child(3) { transform:rotate(240deg) translateX(70px) rotate(45deg); }
+@keyframes polarRingSpin  { to { transform:rotate(360deg); } }
+@keyframes polarShardGlow { 0%,100%{opacity:.35;} 50%{opacity:.88;} }
 
 /* ── Step V permanent add-on: Element Wheel + Luminous Mantle ──────── */
 .omnia-mantle { position:absolute; inset:-22%; border-radius:50%; pointer-events:none; z-index:0; display:none; background:radial-gradient(circle, rgba(255,238,200,.18) 0%, rgba(255,238,200,.10) 30%, rgba(255,238,200,0) 62%), conic-gradient(from 0deg, rgba(232,184,160,.10), rgba(196,168,212,.10), rgba(168,200,232,.10), rgba(140,196,160,.10), rgba(232,184,160,.10)); animation:omniaMantleSpin 22s linear infinite, omniaMantlePulse 6s ease-in-out infinite; filter:blur(2px); mix-blend-mode:screen; }
@@ -17614,7 +17609,7 @@ function injectOmniaPolar(fig) {
   var el = document.createElement('div');
   el.className = 'omnia-polar';
   el.setAttribute('aria-hidden', 'true');
-  el.innerHTML = '<div class="omnia-polar-arc electric"></div><div class="omnia-polar-arc magnetic"></div>';
+  el.innerHTML = '<div class="omnia-polar-ring"><div class="omnia-polar-shard"></div><div class="omnia-polar-shard"></div><div class="omnia-polar-shard"></div></div>';
   fig.appendChild(el);
 }
 function injectOmniaElements(fig) {
