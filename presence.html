@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- v2026.06.19-mirror-black-top-slider-fix -->
+<!-- v2026.06.19-mirror-dropdown-zfix -->
 <html lang="en" style="background:#07080d;">
 <head>
   <meta charset="UTF-8"/>
@@ -726,6 +726,9 @@
        no busy starfield. Sits behind the trait cards. */
     .soul-bg { position:absolute; inset:0; z-index:0; overflow:hidden; pointer-events:none; }
     #soulMirrorScreen > *:not(.soul-bg) { position:relative; z-index:1; }
+    /* The tab bar holds the mode dropdown (Mirror / Autosuggestion); it must
+       float above the panels below it, which share the same base z-index. */
+    #soulMirrorTabs { z-index:5; }
     /* The Mirror's ambient glow is only wanted on the Mirror tab. On the Pore
        Breathing tab it bled purple into the top; hide it there so the top
        reverts to black (the breathing panel keeps its own soft aura). */
