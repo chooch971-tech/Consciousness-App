@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- v2026.06.19-pore-path-breaths -->
+<!-- v2026.06.19-pore-options-in-menu -->
 <html lang="en" style="background:#07080d;">
 <head>
   <meta charset="UTF-8"/>
@@ -21627,36 +21627,8 @@ function renderPathQuests() {
       ? '<button class="pq-ex-start" style="' + beginStyle + '"' + startAttrs + (item.done ? ' disabled' : '') + '>' + (item.done ? 'Done' : 'Begin') + '</button>'
       : '';
 
-    // Pore Breathing extras: breath stepper, 1×/2× toggle, I'm Advanced
-    var extraHtml = '';
-    if (item.id === 'pore') {
-      var _pt = guidePoreBreathTarget();
-      var _pr = guideState.poreRounds || 1;
-      var _isAdv = !!guideState.poreAdvanced;
-      var _btnBase = 'padding:5px 12px;border-radius:6px;font-family:\'DM Mono\',monospace;font-size:8px;letter-spacing:.18em;text-transform:uppercase;cursor:pointer;';
-      var _activeStyle = _btnBase + 'border:1px solid rgba(142,204,224,.4);background:rgba(142,204,224,.1);color:#8ecce0;';
-      var _inactiveStyle = _btnBase + 'border:1px solid rgba(255,255,255,.08);background:none;color:var(--muted);';
-      var _stepBtn = 'width:24px;height:24px;border-radius:6px;border:1px solid rgba(255,255,255,.1);background:rgba(255,255,255,.04);color:var(--text);font-size:14px;cursor:pointer;display:flex;align-items:center;justify-content:center;';
-      extraHtml = '<div style="margin-top:10px;display:flex;flex-direction:column;gap:8px;">';
-      // Breath stepper
-      extraHtml += '<div style="display:flex;align-items:center;gap:8px;">'
-        + '<span style="font-size:9px;color:var(--muted);letter-spacing:.08em;flex:1;">Breaths per session</span>'
-        + '<div style="display:flex;align-items:center;gap:6px;">'
-        + '<button class="pq-pore-step" data-dir="-1" style="' + _stepBtn + '"' + (_pt <= 7 || _isAdv ? ' disabled' : '') + '>−</button>'
-        + '<span style="font-family:\'Cormorant Garamond\',serif;font-size:18px;font-weight:300;color:var(--text);min-width:30px;text-align:center;">' + _pt + '</span>'
-        + '<button class="pq-pore-step" data-dir="1" style="' + _stepBtn + '"' + (_pt >= 40 || _isAdv ? ' disabled' : '') + '>+</button>'
-        + '</div></div>';
-      // 1×/2× + Advanced row
-      extraHtml += '<div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">'
-        + '<button class="pq-pore-rounds" data-rounds="1" style="' + (_pr === 1 ? _activeStyle : _inactiveStyle) + '">1×/day</button>'
-        + '<button class="pq-pore-rounds" data-rounds="2" style="' + (_pr === 2 ? _activeStyle : _inactiveStyle) + '">2×/day</button>'
-        + (!_isAdv ? '<button class="pq-pore-advanced" style="' + _inactiveStyle + 'margin-left:auto;">I\'m Advanced</button>'
-          : '<span style="margin-left:auto;font-size:8px;color:#8ecce0;letter-spacing:.12em;">Advanced · 40 breaths</span>')
-        + '</div>';
-      extraHtml += '</div>';
-    }
-
     // Clock-specific extras: upsell banner or stepper
+    var extraHtml = '';
     if (item.clockExtra === 'upsell') {
       extraHtml = '<div style="margin-top:10px;padding:10px 12px;border-radius:8px;background:rgba(212,176,142,.07);border:1px solid rgba(212,176,142,.18);display:flex;align-items:center;justify-content:space-between;gap:10px;">'
         + '<div style="font-size:9px;color:#d4b08e;letter-spacing:.1em;">Ready for 15 min intervals?</div>'
@@ -21866,36 +21838,6 @@ function renderPathQuests() {
       renderPathQuests();
     };
   });
-
-  root.querySelectorAll('.pq-pore-step').forEach(function(btn) {
-    btn.onclick = function(e) {
-      e.stopPropagation();
-      if (guideState.poreAdvanced) return;
-      var dir = parseInt(btn.dataset.dir, 10);
-      var cur = Math.max(7, guideState.poreBreaths || 7);
-      guideState.poreBreaths = Math.min(40, Math.max(7, cur + dir));
-      saveGuideState(guideState);
-      renderPathQuests();
-    };
-  });
-  root.querySelectorAll('.pq-pore-rounds').forEach(function(btn) {
-    btn.onclick = function(e) {
-      e.stopPropagation();
-      guideState.poreRounds = parseInt(btn.dataset.rounds, 10);
-      saveGuideState(guideState);
-      renderPathQuests();
-    };
-  });
-  var poreAdvBtn = root.querySelector('.pq-pore-advanced');
-  if (poreAdvBtn) {
-    poreAdvBtn.onclick = function(e) {
-      e.stopPropagation();
-      guideState.poreAdvanced = true;
-      guideState.poreBreaths = 40;
-      saveGuideState(guideState);
-      renderPathQuests();
-    };
-  }
 }
 
 // ── Exercise card ··· menu ─────────────────────────────────
@@ -21919,8 +21861,12 @@ function renderPathQuests() {
   function openSkipMenu(btn) {
     activeExId = btn.dataset.exId;
     activeExMode = btn.dataset.exMode || null;
+    var isPore = activeExId === 'pore';
     if (advItem) {
-      if (isTimedEx(activeExId)) {
+      if (isPore) {
+        advItem.textContent = guideState.poreAdvanced ? 'Restart progression · 7 breaths' : 'I\'m Advanced · 40 breaths';
+        advItem.style.display = 'block';
+      } else if (isTimedEx(activeExId)) {
         var floor = guideFloorMin(activeExId);
         advItem.textContent = floor ? ('I\'m Advanced · ' + floor + ' min') : 'I\'m Advanced';
         advItem.style.display = 'block';
@@ -21928,16 +21874,19 @@ function renderPathQuests() {
         advItem.style.display = 'none';
       }
     }
-    // Per-exercise frequency controls (hidden for open-ended exercises)
-    var showFreq = !OPEN_ENDED_EX[activeExId];
+    // Per-exercise frequency controls. Pore uses its own poreRounds; only the
+    // truly open-ended Soul Mirror reflection has no frequency concept.
+    var showFreq = !OPEN_ENDED_EX[activeExId] || isPore;
+    var rounds1 = isPore ? (guideState.poreRounds || 1) === 1 : guideExRounds(activeExId) === 1;
+    var rounds2 = isPore ? (guideState.poreRounds || 1) === 2 : guideExRounds(activeExId) === 2;
     if (freqDiv)  freqDiv.style.display  = showFreq ? '' : 'none';
     if (freq1Btn) {
       freq1Btn.style.display = showFreq ? '' : 'none';
-      freq1Btn.classList.toggle('active', showFreq && guideExRounds(activeExId) === 1);
+      freq1Btn.classList.toggle('active', showFreq && rounds1);
     }
     if (freq2Btn) {
       freq2Btn.style.display = showFreq ? '' : 'none';
-      freq2Btn.classList.toggle('active', showFreq && guideExRounds(activeExId) === 2);
+      freq2Btn.classList.toggle('active', showFreq && rounds2);
     }
     var r = btn.getBoundingClientRect();
     menu.style.top = (r.bottom + 4) + 'px';
@@ -21995,12 +21944,24 @@ function renderPathQuests() {
 
   if (advItem) advItem.addEventListener('click', function() {
     closeSkipMenu();
+    if (activeExId === 'pore') {
+      if (guideState.poreAdvanced) {
+        guideState.poreAdvanced = false;
+        guideState.poreBreaths = 7;
+      } else {
+        guideState.poreAdvanced = true;
+        guideState.poreBreaths = 40;
+      }
+      saveGuideState(guideState);
+      renderPathQuests();
+      return;
+    }
     openAdvDialog();
   });
   if (freq1Btn) freq1Btn.addEventListener('click', function() {
     if (!activeExId) return;
-    if (!guideState._exRounds) guideState._exRounds = {};
-    guideState._exRounds[activeExId] = 1;
+    if (activeExId === 'pore') { guideState.poreRounds = 1; }
+    else { if (!guideState._exRounds) guideState._exRounds = {}; guideState._exRounds[activeExId] = 1; }
     saveGuideState(guideState);
     closeSkipMenu();
     renderPathQuests();
@@ -22008,8 +21969,8 @@ function renderPathQuests() {
   });
   if (freq2Btn) freq2Btn.addEventListener('click', function() {
     if (!activeExId) return;
-    if (!guideState._exRounds) guideState._exRounds = {};
-    guideState._exRounds[activeExId] = 2;
+    if (activeExId === 'pore') { guideState.poreRounds = 2; }
+    else { if (!guideState._exRounds) guideState._exRounds = {}; guideState._exRounds[activeExId] = 2; }
     saveGuideState(guideState);
     closeSkipMenu();
     renderPathQuests();
