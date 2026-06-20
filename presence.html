@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- v2026.06.19-step4-twin-pillars -->
+<!-- v2026.06.20-pore-rounds-fix -->
 <html lang="en" style="background:#07080d;">
 <head>
   <meta charset="UTF-8"/>
@@ -20898,6 +20898,7 @@ function guidePoreItem(added) {
   return {
     id:'pore', name:'Pore Breathing', duration:null, durationLabel:durLabel,
     done:done, progress:prog, open:'pore', added:!!added,
+    rounds: rounds, todayCount: sessToday,
     tip:'Draw vital force through the whole body. Pore breathing transforms what the mirror revealed — let the breath fill every pore.'
   };
 }
@@ -21600,12 +21601,12 @@ function renderPathQuests() {
   // below and the actual award in awardOmniaForExercise always agree.
   var _highlighted = (typeof omniaHighlightedExerciseIds === 'function') ? omniaHighlightedExerciseIds() : {};
   var _pqBuildCard = function(item, grouped, last) {
-    var rounds = (item.durationLabel && item.durationLabel.indexOf('x2') !== -1) ? 2 : 1;
+    var rounds = item.rounds != null ? item.rounds : (item.durationLabel && item.durationLabel.indexOf('x2') !== -1) ? 2 : 1;
     var modeText = item.mode ? (GUIDE_FOUNDATION_THOUGHT_LABELS[item.mode] || item.mode) : '';
     var metaParts = [];
     if (modeText && _isTC(item.id)) metaParts.push(modeText);
     if (item.duration) metaParts.push(item.duration + ' min');
-    else if (item.durationLabel) metaParts.push(item.durationLabel.replace(/\s*x2\s*$/, ''));
+    else if (item.durationLabel) metaParts.push(item.durationLabel.replace(/\s*[x×]\d+\s*$/, ''));
     if (rounds > 1 && !item.done) {
       var completedToday = item.todayCount || 0;
       metaParts.push(completedToday >= 1 ? '×1 remaining' : '×2 sessions');
