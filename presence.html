@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- v2026.06.19-mirror-dropdown-zfix -->
+<!-- v2026.06.19-pore-star-10k-breaths -->
 <html lang="en" style="background:#07080d;">
 <head>
   <meta charset="UTF-8"/>
@@ -9731,7 +9731,7 @@ function concSumXpToLevel(l) {
   return Math.round(a * (Math.pow(r, l - 1) - 1) / (r - 1));
 }
 
-var CONC_DEFAULT = { level:1, xp:0, bestSeconds:0, bestAsanaSeconds:0, totalSessions:0, history:[] };
+var CONC_DEFAULT = { level:1, xp:0, bestSeconds:0, bestAsanaSeconds:0, totalSessions:0, lifetimeBreaths:0, history:[] };
 
 function loadConcState() {
   try {
@@ -9767,6 +9767,25 @@ var concState = loadConcState();
     console.log('[Presence] Conc level migrated: ' + concState.level + ' → ' + correct + ' (xp=' + concState.xp + 's)');
     concState.level = correct;
     saveConcState();
+  }
+})();
+
+// ── Startup migration: seed lifetime breath tally from existing history ─────
+// Older saves predate concState.lifetimeBreaths. Seed it once from whatever
+// pore_breathing sessions remain in history (best effort — history is capped
+// at 100, so this may undercount, but it's a one-time floor for the star).
+(function migrateLifetimeBreaths() {
+  if (typeof concState.lifetimeBreaths === 'number' && concState.lifetimeBreaths > 0) return;
+  if (!concState.history || !concState.history.length) { concState.lifetimeBreaths = concState.lifetimeBreaths || 0; return; }
+  var sum = 0;
+  concState.history.forEach(function(h) {
+    if (h && h.exercise === 'pore_breathing' && h.breaths) sum += h.breaths;
+  });
+  if (sum > 0) {
+    concState.lifetimeBreaths = sum;
+    saveConcState();
+  } else {
+    concState.lifetimeBreaths = concState.lifetimeBreaths || 0;
   }
 })();
 var concTimerHandle = null;
@@ -19292,8 +19311,9 @@ function practiceTreeNodeBrightness(exId, stats) {
   if (exId === 'asana') return Math.min(20, Math.floor((st.bestSec||0)/90));
   if (exId === 'soulmirror') return Math.min(20, Math.floor((st.count||0)/2));
   if (exId === 'pore') {
-    var ss = stats.soulmirror || { count:0 };
-    return Math.min(20, Math.floor((ss.count||0)/2));
+    // Independent of Soul Mirror: maxes at 10,000 lifetime breaths (500/level).
+    var breaths = (typeof concState !== 'undefined' && concState.lifetimeBreaths) ? concState.lifetimeBreaths : 0;
+    return Math.min(20, Math.floor(breaths / 500));
   }
   if (exId === 'visual') return Math.min(20, Math.floor((st.bestSec||0)/30));
   if (exId === 'auditory') return Math.min(20, Math.floor((st.bestSec||0)/30));
@@ -19307,11 +19327,20 @@ function practiceTreeNodeBrightness(exId, stats) {
   return 0;
 }
 
+// Most recent pore_breathing session timestamp (history is newest-first).
+function poreLastSessionMs() {
+  var h = (typeof concState !== 'undefined' && concState.history) ? concState.history : [];
+  for (var i = 0; i < h.length; i++) {
+    if (h[i] && h[i].exercise === 'pore_breathing' && h[i].date) return new Date(h[i].date).getTime();
+  }
+  return 0;
+}
+
 function practiceTreeNodeRecency(exId, stats) {
-  var lookupId = exId === 'pore' ? 'soulmirror'
-    : exId === 'kether' ? null : exId;
-  if (!lookupId) return 0.15;
-  var ms = (stats[lookupId] || {}).lastMs || 0;
+  var ms;
+  if (exId === 'pore') ms = poreLastSessionMs();
+  else if (exId === 'kether') return 0.15;
+  else ms = (stats[exId] || {}).lastMs || 0;
   if (!ms) return 0.15;
   var days = (Date.now() - ms) / 86400000;
   if (days <= 7) return 1.0;
@@ -19320,8 +19349,12 @@ function practiceTreeNodeRecency(exId, stats) {
 }
 
 function practiceTreeNodeDepth(exId, stats) {
-  var lookupId = exId === 'pore' ? 'soulmirror' : exId;
-  return Math.min(3, Math.floor(((stats[lookupId] || {}).count||0) / 10));
+  if (exId === 'pore') {
+    // Ring layers grow with lifetime breaths: 2,500 / 5,000 / 7,500.
+    var breaths = (typeof concState !== 'undefined' && concState.lifetimeBreaths) ? concState.lifetimeBreaths : 0;
+    return Math.min(3, Math.floor(breaths / 2500));
+  }
+  return Math.min(3, Math.floor(((stats[exId] || {}).count||0) / 10));
 }
 
 function renderPracticeTree() {
@@ -19560,7 +19593,9 @@ function renderPracticeTree() {
       var max = maxMap[nodeId] || 20;
       var dep = practiceTreeNodeDepth(node.ex, stats);
       var rec = practiceTreeNodeRecency(node.ex, stats);
-      var lookupId = (node.ex === 'pore') ? 'soulmirror'
+      var isPore = (node.ex === 'pore');
+      var poreBreaths = isPore ? ((typeof concState !== 'undefined' && concState.lifetimeBreaths) ? concState.lifetimeBreaths : 0) : 0;
+      var lookupId = isPore ? null
         : (node.ex === 'observation' || node.ex === 'focus' || node.ex === 'vacancy') ? 'thought'
         : node.ex === 'kether' ? null : node.ex;
       var st = lookupId ? (stats[lookupId] || {}) : {};
@@ -19578,9 +19613,14 @@ function renderPracticeTree() {
 
       var statLines = [];
       statLines.push('<strong>Brightness</strong> ' + b + ' / ' + max);
-      statLines.push('<strong>Sessions</strong> ' + sessions + (dep > 0 ? ' · ' + dep + ' depth ring' + (dep > 1 ? 's' : '') : ''));
-      if (bestSec > 0) statLines.push('<strong>Best hold</strong> ' + (bestSec >= 60 ? Math.floor(bestSec/60) + 'm ' + (bestSec%60) + 's' : bestSec + 's'));
-      if (sessions > 0) statLines.push('<strong>Last practiced</strong> ' + recencyStr);
+      if (isPore) {
+        statLines.push('<strong>Breaths</strong> ' + poreBreaths.toLocaleString() + ' / 10,000' + (dep > 0 ? ' · ' + dep + ' depth ring' + (dep > 1 ? 's' : '') : ''));
+        if (poreBreaths > 0) statLines.push('<strong>Last practiced</strong> ' + recencyStr);
+      } else {
+        statLines.push('<strong>Sessions</strong> ' + sessions + (dep > 0 ? ' · ' + dep + ' depth ring' + (dep > 1 ? 's' : '') : ''));
+        if (bestSec > 0) statLines.push('<strong>Best hold</strong> ' + (bestSec >= 60 ? Math.floor(bestSec/60) + 'm ' + (bestSec%60) + 's' : bestSec + 's'));
+        if (sessions > 0) statLines.push('<strong>Last practiced</strong> ' + recencyStr);
+      }
       sheetStat.innerHTML = statLines.join('<br>');
 
       // Show Begin button for all practisable nodes (not kether which is a mastery summary)
@@ -27611,6 +27651,9 @@ function stopPoreBreath(completed){
       seconds: secondsElapsed,
       xpEarned: xpEarned
     });
+    // Lifetime breath tally drives the Pore Breathing star (maxes at 10,000).
+    // Kept separate from history because history is capped at 100 entries.
+    concState.lifetimeBreaths = (concState.lifetimeBreaths || 0) + breathsDone;
     if(concState.history.length > 100) concState.history = concState.history.slice(0,100);
     saveConcState();
     // Capture Akasha gained across the award so the legend screen can show it.
