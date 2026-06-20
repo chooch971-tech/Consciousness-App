@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- v2026.06.19-step4-orbiting-shards -->
+<!-- v2026.06.19-pore-path-breaths -->
 <html lang="en" style="background:#07080d;">
 <head>
   <meta charset="UTF-8"/>
@@ -20870,20 +20870,31 @@ function buildGuideRegimentItems(mode) {
 }
 
 // Has a Pore Breathing session been logged today?
-function guidePoreDoneToday() {
-  var history = (typeof concState !== 'undefined' && concState.history) ? concState.history : [];
+function guidePoreSessionsDoneToday() {
+  var h = (typeof concState !== 'undefined' && concState.history) ? concState.history : [];
   var today = guideLocalDayKey();
-  return history.some(function(h) {
-    return h && h.exercise === 'pore_breathing' && guideLocalDayKey(h.date) === today;
-  });
+  return h.filter(function(e) { return e && e.exercise === 'pore_breathing' && guideLocalDayKey(e.date) === today; }).length;
+}
+function guidePoreBreathTarget() {
+  if (guideState.poreAdvanced) return 40;
+  return Math.min(40, Math.max(7, guideState.poreBreaths || 7));
+}
+function guidePoreDoneToday() {
+  var rounds = guideState.poreRounds || 1;
+  return guidePoreSessionsDoneToday() >= rounds;
 }
 
-// A Pore Breathing path card — open-ended like Soul Mirror reflection (the
-// breath count is chosen on its own screen), opens the breathing tab.
+// A Pore Breathing path card with auto-progressing breath target (7 → 40).
 function guidePoreItem(added) {
+  var target = guidePoreBreathTarget();
+  var rounds = guideState.poreRounds || 1;
+  var done = guidePoreDoneToday();
+  var sessToday = guidePoreSessionsDoneToday();
+  var durLabel = target + ' breaths' + (rounds > 1 ? ' ×' + rounds : '');
+  var prog = rounds > 1 && !done && sessToday >= 1 ? '×1 remaining' : '';
   return {
-    id:'pore', name:'Pore Breathing', duration:null, durationLabel:'Breathwork',
-    done:guidePoreDoneToday(), progress:'', open:'pore', added:!!added,
+    id:'pore', name:'Pore Breathing', duration:null, durationLabel:durLabel,
+    done:done, progress:prog, open:'pore', added:!!added,
     tip:'Draw vital force through the whole body. Pore breathing transforms what the mirror revealed — let the breath fill every pore.'
   };
 }
@@ -21184,6 +21195,13 @@ function beginGuidePlanItem(btn) {
     showScreen('soulMirrorScreen');
     var pbTab = document.querySelector('#soulMirrorTabs [data-tab="breathing"]');
     if (pbTab) pbTab.click();
+    // Pre-seed slider to the path breath target so the user doesn't have to adjust it.
+    setTimeout(function() {
+      var t = (typeof guidePoreBreathTarget === 'function') ? guidePoreBreathTarget() : 7;
+      var sl = document.getElementById('poreBreathSlider');
+      var disp = document.getElementById('poreBreathCountDisplay');
+      if (sl) { sl.value = t; poreBreathTotal = t; if (disp) disp.textContent = t; }
+    }, 0);
     return;
   }
   if (ex === 'multisense' || ex === 'allangles') {
@@ -21609,8 +21627,36 @@ function renderPathQuests() {
       ? '<button class="pq-ex-start" style="' + beginStyle + '"' + startAttrs + (item.done ? ' disabled' : '') + '>' + (item.done ? 'Done' : 'Begin') + '</button>'
       : '';
 
-    // Clock-specific extras: upsell banner or stepper
+    // Pore Breathing extras: breath stepper, 1×/2× toggle, I'm Advanced
     var extraHtml = '';
+    if (item.id === 'pore') {
+      var _pt = guidePoreBreathTarget();
+      var _pr = guideState.poreRounds || 1;
+      var _isAdv = !!guideState.poreAdvanced;
+      var _btnBase = 'padding:5px 12px;border-radius:6px;font-family:\'DM Mono\',monospace;font-size:8px;letter-spacing:.18em;text-transform:uppercase;cursor:pointer;';
+      var _activeStyle = _btnBase + 'border:1px solid rgba(142,204,224,.4);background:rgba(142,204,224,.1);color:#8ecce0;';
+      var _inactiveStyle = _btnBase + 'border:1px solid rgba(255,255,255,.08);background:none;color:var(--muted);';
+      var _stepBtn = 'width:24px;height:24px;border-radius:6px;border:1px solid rgba(255,255,255,.1);background:rgba(255,255,255,.04);color:var(--text);font-size:14px;cursor:pointer;display:flex;align-items:center;justify-content:center;';
+      extraHtml = '<div style="margin-top:10px;display:flex;flex-direction:column;gap:8px;">';
+      // Breath stepper
+      extraHtml += '<div style="display:flex;align-items:center;gap:8px;">'
+        + '<span style="font-size:9px;color:var(--muted);letter-spacing:.08em;flex:1;">Breaths per session</span>'
+        + '<div style="display:flex;align-items:center;gap:6px;">'
+        + '<button class="pq-pore-step" data-dir="-1" style="' + _stepBtn + '"' + (_pt <= 7 || _isAdv ? ' disabled' : '') + '>−</button>'
+        + '<span style="font-family:\'Cormorant Garamond\',serif;font-size:18px;font-weight:300;color:var(--text);min-width:30px;text-align:center;">' + _pt + '</span>'
+        + '<button class="pq-pore-step" data-dir="1" style="' + _stepBtn + '"' + (_pt >= 40 || _isAdv ? ' disabled' : '') + '>+</button>'
+        + '</div></div>';
+      // 1×/2× + Advanced row
+      extraHtml += '<div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">'
+        + '<button class="pq-pore-rounds" data-rounds="1" style="' + (_pr === 1 ? _activeStyle : _inactiveStyle) + '">1×/day</button>'
+        + '<button class="pq-pore-rounds" data-rounds="2" style="' + (_pr === 2 ? _activeStyle : _inactiveStyle) + '">2×/day</button>'
+        + (!_isAdv ? '<button class="pq-pore-advanced" style="' + _inactiveStyle + 'margin-left:auto;">I\'m Advanced</button>'
+          : '<span style="margin-left:auto;font-size:8px;color:#8ecce0;letter-spacing:.12em;">Advanced · 40 breaths</span>')
+        + '</div>';
+      extraHtml += '</div>';
+    }
+
+    // Clock-specific extras: upsell banner or stepper
     if (item.clockExtra === 'upsell') {
       extraHtml = '<div style="margin-top:10px;padding:10px 12px;border-radius:8px;background:rgba(212,176,142,.07);border:1px solid rgba(212,176,142,.18);display:flex;align-items:center;justify-content:space-between;gap:10px;">'
         + '<div style="font-size:9px;color:#d4b08e;letter-spacing:.1em;">Ready for 15 min intervals?</div>'
@@ -21820,6 +21866,36 @@ function renderPathQuests() {
       renderPathQuests();
     };
   });
+
+  root.querySelectorAll('.pq-pore-step').forEach(function(btn) {
+    btn.onclick = function(e) {
+      e.stopPropagation();
+      if (guideState.poreAdvanced) return;
+      var dir = parseInt(btn.dataset.dir, 10);
+      var cur = Math.max(7, guideState.poreBreaths || 7);
+      guideState.poreBreaths = Math.min(40, Math.max(7, cur + dir));
+      saveGuideState(guideState);
+      renderPathQuests();
+    };
+  });
+  root.querySelectorAll('.pq-pore-rounds').forEach(function(btn) {
+    btn.onclick = function(e) {
+      e.stopPropagation();
+      guideState.poreRounds = parseInt(btn.dataset.rounds, 10);
+      saveGuideState(guideState);
+      renderPathQuests();
+    };
+  });
+  var poreAdvBtn = root.querySelector('.pq-pore-advanced');
+  if (poreAdvBtn) {
+    poreAdvBtn.onclick = function(e) {
+      e.stopPropagation();
+      guideState.poreAdvanced = true;
+      guideState.poreBreaths = 40;
+      saveGuideState(guideState);
+      renderPathQuests();
+    };
+  }
 }
 
 // ── Exercise card ··· menu ─────────────────────────────────
@@ -27724,6 +27800,11 @@ function stopPoreBreath(completed){
     // Lifetime breath tally drives the Pore Breathing star (maxes at 10,000).
     // Kept separate from history because history is capped at 100 entries.
     concState.lifetimeBreaths = (concState.lifetimeBreaths || 0) + breathsDone;
+    // Auto-advance path breath target by 1 per session (7 → 40).
+    if (!guideState.poreAdvanced) {
+      var _curTarget = Math.max(7, guideState.poreBreaths || 7);
+      if (_curTarget < 40) { guideState.poreBreaths = _curTarget + 1; saveGuideState(guideState); }
+    }
     if(concState.history.length > 100) concState.history = concState.history.slice(0,100);
     saveConcState();
     // Capture Akasha gained across the award so the legend screen can show it.
