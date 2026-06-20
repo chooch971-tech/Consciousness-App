@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- v2026.06.19-pore-star-10k-breaths -->
+<!-- v2026.06.19-soulmirror-star-benchmarks -->
 <html lang="en" style="background:#07080d;">
 <head>
   <meta charset="UTF-8"/>
@@ -19302,6 +19302,31 @@ var GUIDE_FOUNDATION_THOUGHT_TIPS = {
 
 // ── Practice Tree ─────────────────────────────────────────
 
+// Soul Mirror star brightness — driven by inventory + transformation
+// milestones rather than raw session count. Each benchmark raises a floor
+// (Math.max), so the independent "build the mirror" and "transform traits"
+// tracks both contribute and the star maxes at 20 once 20 negative traits
+// have been transformed.
+function soulMirrorStarBrightness() {
+  var data;
+  try { data = loadSoulMirror(); } catch(e) { return 0; }
+  var neg = data.negative || [], pos = data.positive || [];
+  var negDone = neg.filter(function(t){ return t.done; }).length;
+  var mirrorComplete = neg.length >= SOUL_MIRROR_NEG_GOAL && pos.length >= SOUL_MIRROR_POS_GOAL;
+  var practiced4 = neg.some(function(t){ return (t.sessions||0) >= 4; });
+  var b = 0;
+  if (mirrorComplete) b = Math.max(b, 2);   // 100 neg + 60 pos added
+  if (practiced4)     b = Math.max(b, 4);   // a trait worked 4+ autosug sessions
+  if (negDone >= 1)   b = Math.max(b, 6);   // first trait transformed
+  if (negDone >= 3)   b = Math.max(b, 8);
+  if (negDone >= 5)   b = Math.max(b, 11);
+  if (negDone >= 8)   b = Math.max(b, 13);
+  if (negDone >= 12)  b = Math.max(b, 16);
+  if (negDone >= 15)  b = Math.max(b, 18);
+  if (negDone >= 20)  b = Math.max(b, 20);  // fully lit
+  return b;
+}
+
 function practiceTreeNodeBrightness(exId, stats) {
   var st = stats[exId] || { bestSec:0, count:0 };
   if (exId === 'clock') return Math.min(15, Math.floor((st.bestSec||0)/60));
@@ -19309,7 +19334,7 @@ function practiceTreeNodeBrightness(exId, stats) {
     return Math.min(20, Math.floor((st.bestSec||0)/45));
   }
   if (exId === 'asana') return Math.min(20, Math.floor((st.bestSec||0)/90));
-  if (exId === 'soulmirror') return Math.min(20, Math.floor((st.count||0)/2));
+  if (exId === 'soulmirror') return soulMirrorStarBrightness();
   if (exId === 'pore') {
     // Independent of Soul Mirror: maxes at 10,000 lifetime breaths (500/level).
     var breaths = (typeof concState !== 'undefined' && concState.lifetimeBreaths) ? concState.lifetimeBreaths : 0;
@@ -19594,6 +19619,7 @@ function renderPracticeTree() {
       var dep = practiceTreeNodeDepth(node.ex, stats);
       var rec = practiceTreeNodeRecency(node.ex, stats);
       var isPore = (node.ex === 'pore');
+      var isMirror = (node.ex === 'soulmirror');
       var poreBreaths = isPore ? ((typeof concState !== 'undefined' && concState.lifetimeBreaths) ? concState.lifetimeBreaths : 0) : 0;
       var lookupId = isPore ? null
         : (node.ex === 'observation' || node.ex === 'focus' || node.ex === 'vacancy') ? 'thought'
@@ -19616,6 +19642,15 @@ function renderPracticeTree() {
       if (isPore) {
         statLines.push('<strong>Breaths</strong> ' + poreBreaths.toLocaleString() + ' / 10,000' + (dep > 0 ? ' · ' + dep + ' depth ring' + (dep > 1 ? 's' : '') : ''));
         if (poreBreaths > 0) statLines.push('<strong>Last practiced</strong> ' + recencyStr);
+      } else if (isMirror) {
+        var _sm; try { _sm = loadSoulMirror(); } catch(e) { _sm = { positive:[], negative:[] }; }
+        var _neg = _sm.negative || [], _pos = _sm.positive || [];
+        var _negDone = _neg.filter(function(t){ return t.done; }).length;
+        var _inProg = _neg.filter(function(t){ return !t.done && (t.sessions||0) > 0; }).length;
+        var _mc = _neg.length >= SOUL_MIRROR_NEG_GOAL && _pos.length >= SOUL_MIRROR_POS_GOAL;
+        statLines.push('<strong>Inventory</strong> ' + (_mc ? '✓ complete' : (_neg.length + ' / 100 neg · ' + _pos.length + ' / 60 pos')));
+        statLines.push('<strong>Transformed</strong> ' + _negDone + ' / 20 trait' + (_negDone === 1 ? '' : 's'));
+        if (_inProg > 0) statLines.push('<strong>In progress</strong> ' + _inProg + ' trait' + (_inProg === 1 ? '' : 's'));
       } else {
         statLines.push('<strong>Sessions</strong> ' + sessions + (dep > 0 ? ' · ' + dep + ' depth ring' + (dep > 1 ? 's' : '') : ''));
         if (bestSec > 0) statLines.push('<strong>Best hold</strong> ' + (bestSec >= 60 ? Math.floor(bestSec/60) + 'm ' + (bestSec%60) + 's' : bestSec + 's'));
@@ -26674,7 +26709,7 @@ function saveSoulMirror(data){
 // recommended practice to Pore Breathing — the energetic transformation work.
 // The Mirror itself stays fully editable; this only changes the recommendation.
 var SOUL_MIRROR_NEG_GOAL = 100;
-var SOUL_MIRROR_POS_GOAL = 30;
+var SOUL_MIRROR_POS_GOAL = 60;
 function soulMirrorThresholdMet(data){
   data = data || loadSoulMirror();
   return (data.negative||[]).length >= SOUL_MIRROR_NEG_GOAL
@@ -27201,6 +27236,16 @@ function autosugFinish(){
   });
   if(concState.history.length>100)concState.history=concState.history.slice(0,100);
   saveConcState();
+  // Tally this session against the active trait so the Soul Mirror star can
+  // track per-trait progress (benchmark: a negative trait practiced 4+ times).
+  try{
+    var _sm=loadSoulMirror();
+    if(_sm.autosug){
+      var _list=_sm.autosug.kind==='positive'?_sm.positive:_sm.negative;
+      var _t=_list.find(function(x){return x.text===_sm.autosug.text;});
+      if(_t){_t.sessions=(_t.sessions||0)+1;saveSoulMirror(_sm);}
+    }
+  }catch(e){}
   if(syncEnabled&&authToken)syncPushData();
   showToast('Autosuggestion complete · +'+xpEarned+' XP');
   if(didLevelUp)setTimeout(function(){showConcLevelUp(concState.level);},800);
