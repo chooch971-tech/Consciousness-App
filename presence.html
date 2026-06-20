@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- v2026.06.19-soulmirror-star-benchmarks -->
+<!-- v2026.06.19-veil-in-swatch-strip -->
 <html lang="en" style="background:#07080d;">
 <head>
   <meta charset="UTF-8"/>
@@ -1276,10 +1276,15 @@
     .oe-cos-card-tag { font-size:8px; letter-spacing:.12em; text-transform:uppercase; font-family:'DM Mono',monospace; color:var(--muted); }
     .oe-cos-card-tag.sel { color:#8ecce0; }
     .oe-cos-dismiss { margin-top:10px; width:100%; }
-    .oe-veil-section { margin-top:14px; padding-top:14px; border-top:1px solid var(--border); }
-    .oe-veil-card { flex-direction:row; justify-content:flex-start; gap:10px; padding:10px 12px; }
-    .oe-veil-card .omnia-cosmetic-preview { width:30px; height:30px; flex-shrink:0; }
-    .oe-veil-card .oe-cos-card-name { flex:1; text-align:left; }
+    /* Veil swatch sits in the same strip as palette swatches; a small dot
+       inside it shows when the overlay is active. A dashed border distinguishes
+       it from solid palette picks so users know it's a stackable toggle. */
+    /* Veil swatch sits in the same strip as palette swatches; a small ✦ inside
+       shows when the overlay is active. Dashed border signals it's a stackable
+       toggle, not a color replacement. */
+    .oe-swatch-veil { border:1.5px dashed rgba(216,236,255,.5) !important; position:relative; }
+    .oe-swatch-veil.sel { border-color:rgba(216,236,255,.95) !important; box-shadow:0 0 0 2px rgba(216,236,255,.35); }
+    .oe-swatch-veil-dot { position:absolute; inset:0; display:flex; align-items:center; justify-content:center; font-size:10px; color:rgba(216,236,255,.9); pointer-events:none; }
     @keyframes engRingPulse  { 0%,100%{opacity:.55;} 50%{opacity:.9;} }
     @keyframes engRingPulse2 { 0%,100%{opacity:.38;} 50%{opacity:.7;} }
     @keyframes engRingPulse3 { 0%,100%{opacity:.22;} 50%{opacity:.48;} }
@@ -17818,6 +17823,19 @@ function renderOmniaAppearance() {
   }
 
   if (tab.kind === 'palette') {
+    // Palette swatches + veil swatches in one strip. Veil swatches toggle as
+    // stackable overlays (kind="veil") rather than replacing the active color.
+    var veilSwatches = OMNIA_VEILS.map(function(item) {
+      var unlocked = omniaCosmeticUnlocked('veil', item.id);
+      var selected = omniaCosmeticSelected('veil', item.id);
+      var isFocusV = _omniaCosFocus.veil === item.id;
+      var attrs = unlocked
+        ? 'data-omnia-cosmetic-kind="veil" data-omnia-cosmetic-id="' + item.id + '"'
+        : 'data-omnia-cos-focus="' + item.id + '" data-omnia-cos-kind="veil"';
+      return '<div class="oe-swatch oe-swatch-veil' + (selected ? ' sel' : '') + (unlocked ? '' : ' locked') + (isFocusV && !unlocked ? ' focus' : '') + '" style="' + omniaSwatchStyle(item) + '" title="' + item.name + '" ' + attrs + '>'
+        + (selected ? '<span class="oe-swatch-veil-dot"></span>' : '')
+        + '</div>';
+    }).join('');
     html += '<div class="oe-swatch-strip">' + tab.items.map(function(item) {
       var unlocked = omniaCosmeticUnlocked('palette', item.id);
       var selected = omniaCosmeticSelected('palette', item.id);
@@ -17826,24 +17844,8 @@ function renderOmniaAppearance() {
         ? 'data-omnia-cosmetic-kind="palette" data-omnia-cosmetic-id="' + item.id + '"'
         : 'data-omnia-cos-focus="' + item.id + '" data-omnia-cos-kind="palette"';
       return '<div class="oe-swatch' + (selected ? ' sel' : '') + (unlocked ? '' : ' locked') + (isFocus && !unlocked ? ' focus' : '') + '" style="' + omniaSwatchStyle(item) + '" title="' + item.name + '" ' + attrs + '></div>';
-    }).join('') + '</div>';
+    }).join('') + veilSwatches + '</div>';
     if (focusItem) html += renderOmniaCosDetail('palette', focusItem);
-    // Veils are overlay effects that stack on top of whichever color above
-    // is selected — toggle independently rather than picking one.
-    html += '<div class="oe-veil-section">' + OMNIA_VEILS.map(function(item) {
-      var unlocked = omniaCosmeticUnlocked('veil', item.id);
-      var selected = omniaCosmeticSelected('veil', item.id);
-      var liveCost = omniaCosmeticCost(item);
-      var tag = selected ? 'On' : unlocked ? 'Off' : liveCost > 0 ? liveCost.toLocaleString() + ' akasha' : 'Locked';
-      var attrs = unlocked
-        ? 'data-omnia-cosmetic-kind="veil" data-omnia-cosmetic-id="' + item.id + '"'
-        : 'data-omnia-cos-focus="' + item.id + '" data-omnia-cos-kind="veil"';
-      return '<div class="oe-cos-card oe-veil-card' + (selected ? ' sel' : '') + (unlocked ? '' : ' locked') + '" ' + attrs + '>'
-        + renderOmniaCosmeticPreview('veil', item)
-        + '<div class="oe-cos-card-name">' + item.name + '</div>'
-        + '<div class="oe-cos-card-tag' + (selected ? ' sel' : '') + '">' + tag + '</div>'
-        + '</div>';
-    }).join('') + '</div>';
     var veilFocus = _omniaCosFocus.veil ? omniaFindCosmetic(OMNIA_VEILS, _omniaCosFocus.veil) : null;
     if (veilFocus && !omniaCosmeticUnlocked('veil', veilFocus.id)) {
       html += '<div style="margin-top:10px;">' + renderOmniaCosDetail('veil', veilFocus) + '</div>';
