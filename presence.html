@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- v2026.06.21-autosug-color -->
+<!-- v2026.06.21-coming-soon-trait-confirm -->
 <html lang="en" style="background:#07080d;">
 <head>
   <meta charset="UTF-8"/>
@@ -5143,6 +5143,11 @@ body:not(.tut-live) #tutCorgi {
               <div class="exercise-card-name" style="color:#c4a8d4;">Soul Mirror</div>
               <div class="exercise-card-desc">Track traits. Pore breathing.</div>
             </div>
+            <div class="exercise-card" style="--conc-card-accent:#8888aa; border-color:rgba(136,136,170,.2); background:rgba(136,136,170,.04); opacity:.45; pointer-events:none;">
+              <div class="exercise-card-icon"><svg width="22" height="22" viewBox="0 0 100 100" fill="none"><circle cx="50" cy="50" r="30" stroke="#8888aa" stroke-width="3.5" opacity=".6"/><line x1="50" y1="20" x2="50" y2="36" stroke="#8888aa" stroke-width="3" stroke-linecap="round" opacity=".5"/><line x1="50" y1="64" x2="50" y2="80" stroke="#8888aa" stroke-width="3" stroke-linecap="round" opacity=".5"/><line x1="20" y1="50" x2="36" y2="50" stroke="#8888aa" stroke-width="3" stroke-linecap="round" opacity=".5"/><line x1="64" y1="50" x2="80" y2="50" stroke="#8888aa" stroke-width="3" stroke-linecap="round" opacity=".5"/></svg></div>
+              <div class="exercise-card-name" style="color:#aaaacc;">More<span style="font-size:8px; letter-spacing:.15em; text-transform:uppercase; color:rgba(255,255,255,.5); margin-left:6px;">· Coming Soon</span></div>
+              <div class="exercise-card-desc">Additional beginner exercises are in development.</div>
+            </div>
           </div>
         </div>
 
@@ -5164,6 +5169,11 @@ body:not(.tut-live) #tutCorgi {
               <div class="exercise-card-icon"><svg width="22" height="22" viewBox="0 0 100 100" fill="none"><path d="M30 18 L42 40 L18 40 Z" stroke="#6e9fd4" stroke-width="3" stroke-linejoin="round"/><path d="M70 18 L82 40 L58 40 Z" stroke="#6e9fd4" stroke-width="3" stroke-linejoin="round"/><line x1="62" y1="33" x2="78" y2="33" stroke="#6e9fd4" stroke-width="3" stroke-linecap="round"/><path d="M18 56 L42 56 L30 78 Z" stroke="#6e9fd4" stroke-width="3" stroke-linejoin="round"/><path d="M58 56 L82 56 L70 78 Z" stroke="#6e9fd4" stroke-width="3" stroke-linejoin="round"/><line x1="62" y1="64" x2="78" y2="64" stroke="#6e9fd4" stroke-width="3" stroke-linecap="round"/></svg></div>
               <div class="exercise-card-name" style="color:#9ec4e0;">Elemental Work<span style="font-size:8px; letter-spacing:.15em; text-transform:uppercase; color:rgba(255,255,255,.68); margin-left:6px;">· Coming Soon</span></div>
               <div class="exercise-card-desc">Charge and condense the four elements through the body. Bardon&#39;s method.</div>
+            </div>
+            <div class="exercise-card" style="--conc-card-accent:#a47eb8; border-color:rgba(164,126,184,.2); background:rgba(164,126,184,.04); opacity:.5; pointer-events:none;">
+              <div class="exercise-card-icon"><svg width="22" height="22" viewBox="0 0 100 100" fill="none"><circle cx="50" cy="50" r="32" stroke="#a47eb8" stroke-width="3.5" opacity=".55"/><path d="M50 18 L56 38 L76 38 L60 50 L66 70 L50 58 L34 70 L40 50 L24 38 L44 38 Z" stroke="#a47eb8" stroke-width="2.8" stroke-linejoin="round" opacity=".7"/></svg></div>
+              <div class="exercise-card-name" style="color:#c4a8d4;">More<span style="font-size:8px; letter-spacing:.15em; text-transform:uppercase; color:rgba(255,255,255,.5); margin-left:6px;">· Coming Soon</span></div>
+              <div class="exercise-card-desc">Additional advanced exercises are in development.</div>
             </div>
           </div>
         </div>
@@ -27427,11 +27437,18 @@ function autosugPick(kind,i){
 }
 
 function autosugChangeTrait(){
-  var data=loadSoulMirror();
-  delete data.autosug;
-  saveSoulMirror(data);
-  autosugCount=0;autosugStartTime=null;
-  renderAutosug();
+  function _doChange(){
+    var data=loadSoulMirror();
+    delete data.autosug;
+    saveSoulMirror(data);
+    autosugCount=0;autosugStartTime=null;
+    renderAutosug();
+  }
+  if(autosugCount>0&&autosugCount<AUTOSUG_TAPS){
+    showConfirm('Change trait?','You have not completed your current trait. It is heavily advised you work through it before switching. Proceed anyway?',_doChange);
+  }else{
+    _doChange();
+  }
 }
 
 function autosugMarkComplete(){
