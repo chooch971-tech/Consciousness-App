@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- v2026.06.21-pore-shared-legend -->
+<!-- v2026.06.21-sense-concentration -->
 <html lang="en" style="background:#07080d;">
 <head>
   <meta charset="UTF-8"/>
@@ -5123,6 +5123,11 @@ body:not(.tut-live) #tutCorgi {
               <div class="exercise-card-name" style="color:#8eccc0;">Auditory</div>
               <div class="exercise-card-desc">Listen to a sound with complete attention.</div>
             </div>
+            <div class="exercise-card" data-exercise="sense" style="--conc-card-accent:#cf8fb0; border-color:rgba(207,143,176,.55); background:rgba(207,143,176,.08);">
+              <div class="exercise-card-icon"><svg width="22" height="22" viewBox="0 0 100 100" fill="none"><circle cx="50" cy="50" r="11" stroke="#cf8fb0" stroke-width="4"/><circle cx="50" cy="22" r="7" stroke="#cf8fb0" stroke-width="3.5" opacity=".9"/><circle cx="26" cy="64" r="7" stroke="#cf8fb0" stroke-width="3.5" opacity=".7"/><circle cx="74" cy="64" r="7" stroke="#cf8fb0" stroke-width="3.5" opacity=".7"/></svg></div>
+              <div class="exercise-card-name" style="color:#e0a8c4;">Senses</div>
+              <div class="exercise-card-desc">Hold an imagined feeling, smell, or taste.</div>
+            </div>
             <div class="exercise-card" data-exercise="thought" style="--conc-card-accent:#7898b8; border-color:rgba(120,152,184,.55); background:rgba(120,152,184,.08);">
               <div class="exercise-card-icon"><svg width="22" height="22" viewBox="0 0 100 100" fill="none"><circle cx="50" cy="50" r="42" stroke="#7898b8" stroke-width="4" opacity=".9"/><circle cx="50" cy="50" r="5" fill="#7898b8" opacity=".5"/></svg></div>
               <div class="exercise-card-name" style="color:#98b4cc;">Thought Control<span id="tcMasteredStar" style="display:none; color:#c0403a; margin-left:3px;">*</span></div>
@@ -6360,6 +6365,23 @@ body:not(.tut-live) #tutCorgi {
     </div>
     <div style="padding:0 24px max(env(safe-area-inset-bottom),28px); text-align:center;">
       <div style="font-size:9px; letter-spacing:.15em; color:var(--muted); opacity:.35;">sit motionless · breathe naturally</div>
+    </div>
+  </div>
+
+  <!-- SENSE CONCENTRATION SESSION -->
+  <div class="screen" id="senseSessionScreen">
+    <div style="padding:var(--safe-top) 24px 0; display:flex; justify-content:space-between; align-items:center;">
+      <button class="session-discard-btn" onclick="discardSession('sense')" title="Discard session">✕</button>
+      <span class="session-title" id="senseSessionTitle" style="color:#cf8fb0;">senses</span>
+      <button class="session-end-btn" id="senseEndBtn">End Session</button>
+    </div>
+    <div style="flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; user-select:none; padding:0 32px;">
+      <div id="senseSessionCue" style="font-family:Cormorant Garamond,serif; font-size:24px; font-weight:300; font-style:italic; color:var(--text); line-height:1.5; margin-bottom:38px; max-width:320px;"></div>
+      <div style="font-family:Cormorant Garamond,serif; font-size:64px; font-weight:300; color:#cf8fb0; line-height:1; letter-spacing:-.02em;" id="senseTimerDisplay">0:00</div>
+      <div style="font-size:9px; letter-spacing:.25em; text-transform:uppercase; color:var(--muted); margin-top:14px;" id="senseStateLabel">summon it</div>
+    </div>
+    <div style="padding:0 24px max(env(safe-area-inset-bottom),28px); text-align:center;">
+      <div style="font-size:9px; letter-spacing:.15em; color:var(--muted); opacity:.35;">hold the sensation · let nothing else in</div>
     </div>
   </div>
 
@@ -11804,6 +11826,7 @@ function renderConcHistory() {
       var timeStr = d.toLocaleTimeString('en-US', { hour:'numeric', minute:'2-digit' });
       var notesHtml = h.notes ? '<div class="history-notes">' + h.notes.replace(/</g,'&lt;').replace(/>/g,'&gt;') + '</div>' : '';
       var typeStr = h.exercise === 'asana' ? ('Asana' + (h.posture ? ' · ' + h.posture.replace(/</g,'&lt;').replace(/>/g,'&gt;') : ''))
+        : h.exercise === 'sense' ? ((SENSE_MODE_DEFS[h.mode] ? SENSE_MODE_DEFS[h.mode].label : 'Senses') + (h.cue ? ' · ' + h.cue.replace(/</g,'&lt;').replace(/>/g,'&gt;') : ''))
         : h.exercise === 'pore_breathing' ? 'Pore Breathing'
         : h.exercise === 'autosuggestion' ? 'Autosuggestion'
         : h.type === 'visualization' ? (h.object ? h.object.replace(/</g,'&lt;').replace(/>/g,'&gt;') : 'Visualization')
@@ -11812,7 +11835,7 @@ function renderConcHistory() {
         : 'Clock';
       var holdStr = h.exercise === 'autosuggestion'
         ? ((h.taps || 40) + ' taps')
-        : h.exercise === 'asana'
+        : (h.exercise === 'asana' || h.exercise === 'sense')
         ? (Math.floor(h.seconds/60) + ':' + (h.seconds%60 < 10 ? '0' : '') + (h.seconds%60))
         : h.seconds + 's';
       var isClockEntry = !h.type && !h.exercise;
@@ -13167,6 +13190,13 @@ var EXERCISE_DEFS = {
     },
     begin: function() { startAuditorySession(); }
   },
+  sense: {
+    icon: '&#10042;',
+    name: 'Sense Concentration',
+    desc: function() { return SENSE_MODE_DEFS[senseMode].desc; },
+    setupHTML: function() { return buildSenseSetupHTML(); },
+    begin: function() { startSenseSession(); }
+  },
   thought: {
     icon: '&#9711;',
     name: 'Thought Control',
@@ -13263,6 +13293,15 @@ var EX_BANNER_CONFIG = {
       + '<path d="M50 33 L50 56" stroke="#d49898" stroke-width="2.4" stroke-linecap="round" opacity="0.72"/>'
       + '<path d="M28 48 L50 42 L72 48" stroke="#d49898" stroke-width="2.2" stroke-linecap="round" fill="none" opacity="0.7"/>'
       + '<path d="M30 72 Q50 56 70 72" stroke="#d49898" stroke-width="2.4" stroke-linecap="round" fill="none" opacity="0.78"/>',
+  },
+  sense: {
+    rgb: '207,143,176', light: '#e0a8c4', label: 'Concentration · Senses', title: 'Senses',
+    tagline: 'Hold an imagined sensation.',
+    symInner:
+      '<circle cx="50" cy="50" r="13" stroke="#e0a8c4" stroke-width="2.4" opacity="0.9"/>'
+      + '<circle cx="50" cy="22" r="8" stroke="#e0a8c4" stroke-width="2.2" opacity="0.85"/>'
+      + '<circle cx="26" cy="64" r="8" stroke="#e0a8c4" stroke-width="2.2" opacity="0.6"/>'
+      + '<circle cx="74" cy="64" r="8" stroke="#e0a8c4" stroke-width="2.2" opacity="0.6"/>',
   },
 };
 
@@ -13548,6 +13587,14 @@ function discardSession(type) {
       clearTimeout(asanaTimerHandle);
       asanaTimerHandle = null;
       asanaStartTime = null;
+      releaseExerciseWakeLock();
+      showScreen('homeScreen');
+      switchMode('concentration');
+      break;
+    case 'sense':
+      clearTimeout(senseTimerHandle);
+      senseTimerHandle = null;
+      senseStartTime = null;
       releaseExerciseWakeLock();
       showScreen('homeScreen');
       switchMode('concentration');
@@ -15298,6 +15345,233 @@ document.getElementById('asanaViewHistoryBtn').addEventListener('click', functio
   concHistoryFrom='home'; concHistoryFilter='all'; renderConcHistory(); showScreen('concHistoryScreen');
 });
 
+// ══════════════════════════════════════════
+// SENSE CONCENTRATION EXERCISE
+// ══════════════════════════════════════════
+// Bardon's sense-concentration training for the three senses the app does not
+// already cover with their own cards (Visualization = sight, Auditory =
+// hearing). The student evokes a single feeling, smell, or taste from
+// imagination alone and holds it, unbroken, for the chosen duration. It is a
+// pure countdown exercise — modelled on Asana — that ends on a gentle alarm and
+// the shared meditative completion screen.
+var senseMode = 'feeling'; // 'feeling' | 'smell' | 'taste'
+var senseDuration = 5;     // minutes
+var senseCueIdx = 0;
+
+var SENSE_MODE_DEFS = {
+  feeling: {
+    label: 'Feeling',
+    desc: 'Evoke a single physical sensation from imagination alone — warmth, coolness, weight, or texture — and hold it on your skin as vividly as if it were real. When it fades or another sensation intrudes, gently rebuild it. <em>Feeling</em> trains the sense of touch.',
+    cues: [
+      'The warmth of sunlight on your face',
+      'Cool water flowing over your hands',
+      'A gentle breeze across your arms',
+      'The weight of a warm blanket',
+      'Soft sand beneath bare feet',
+      'The heat of a fire on your palms',
+      'Cold air filling your lungs',
+      'Smooth, cool stone in your hand'
+    ]
+  },
+  smell: {
+    label: 'Smell',
+    desc: 'Summon a scent in the mind alone, with nothing before you. Let it bloom as fully as if its source were present, and hold it steady. When it slips away, call it back. <em>Smell</em> trains the olfactory imagination.',
+    cues: [
+      'Fresh rain on warm earth',
+      'A rose in full bloom',
+      'Coffee brewing',
+      'Pine forest after snow',
+      'Fresh-cut citrus peel',
+      'Bread baking in an oven',
+      'Salt air by the sea',
+      'A field of lavender'
+    ]
+  },
+  taste: {
+    label: 'Taste',
+    desc: 'Bring a taste alive on the tongue with nothing in your mouth — its body, sweetness, sharpness, and finish. Hold it, and when it dissolves, evoke it again. <em>Taste</em> trains the gustatory imagination.',
+    cues: [
+      'Honey, slow and golden',
+      'A slice of ripe lemon',
+      'Dark chocolate melting',
+      'Cool fresh mint',
+      'A pinch of sea salt',
+      'A ripe summer strawberry',
+      'Strong black tea',
+      'A sliver of fresh ginger'
+    ]
+  }
+};
+
+function senseCurrentCue() {
+  var cues = SENSE_MODE_DEFS[senseMode].cues;
+  if (senseCueIdx < 0 || senseCueIdx >= cues.length) senseCueIdx = 0;
+  return cues[senseCueIdx];
+}
+
+function buildSenseSetupHTML() {
+  var tabs = ['feeling','smell','taste'].map(function(m) {
+    var active = m === senseMode;
+    return '<button onclick="switchSenseMode(\'' + m + '\')" style="'
+      + 'flex:1;padding:7px 4px;font-family:\'DM Mono\',monospace;font-size:8px;letter-spacing:.15em;text-transform:uppercase;'
+      + 'border-radius:6px;cursor:pointer;transition:all .2s;'
+      + (active
+        ? 'background:rgba(207,143,176,.18);border:1px solid rgba(207,143,176,.42);color:#e0a8c4;'
+        : 'background:transparent;border:1px solid rgba(207,143,176,.12);color:var(--muted);')
+      + '">' + SENSE_MODE_DEFS[m].label + '</button>';
+  }).join('');
+
+  var durs = [2,5,10].map(function(d) {
+    var active = d === senseDuration;
+    return '<button onclick="setSenseDuration(' + d + ')" style="'
+      + 'flex:1;padding:9px 4px;font-family:\'DM Mono\',monospace;font-size:10px;letter-spacing:.08em;'
+      + 'border-radius:6px;cursor:pointer;transition:all .2s;'
+      + (active
+        ? 'background:rgba(207,143,176,.16);border:1px solid rgba(207,143,176,.4);color:#e0a8c4;'
+        : 'background:transparent;border:1px solid rgba(207,143,176,.12);color:var(--muted);')
+      + '">' + d + ' min</button>';
+  }).join('');
+
+  return '<div style="display:flex;gap:6px;margin-bottom:20px;">' + tabs + '</div>'
+    + '<div style="height:1px;background:var(--border);margin-bottom:20px;opacity:.4;"></div>'
+    + '<div style="font-size:9px;letter-spacing:.2em;text-transform:uppercase;color:var(--muted);margin-bottom:10px;">Hold this</div>'
+    + '<div style="display:flex;align-items:center;gap:12px;margin-bottom:24px;">'
+    + '<div id="senseCueText" style="flex:1;font-family:\'Cormorant Garamond\',serif;font-size:20px;font-weight:300;font-style:italic;color:var(--text);line-height:1.4;">' + senseCurrentCue() + '</div>'
+    + '<button onclick="shuffleSenseCue()" title="Another" style="flex-shrink:0;width:38px;height:38px;border-radius:50%;background:rgba(207,143,176,.1);border:1px solid rgba(207,143,176,.3);color:#e0a8c4;font-size:16px;cursor:pointer;">&#8635;</button>'
+    + '</div>'
+    + '<div style="font-size:9px;letter-spacing:.2em;text-transform:uppercase;color:var(--muted);margin-bottom:12px;">Session duration</div>'
+    + '<div style="display:flex;gap:6px;">' + durs + '</div>'
+    + '<span onclick="concHistoryFrom=\'exSetupScreen\'; concHistoryFilter=\'all\'; renderConcHistory(); showScreen(\'concHistoryScreen\');" style="display:block;margin-top:22px;font-size:9px;letter-spacing:.15em;text-transform:uppercase;color:var(--muted);cursor:pointer;text-decoration:underline;">View History</span>';
+}
+
+function switchSenseMode(mode) {
+  if (!SENSE_MODE_DEFS[mode]) return;
+  senseMode = mode;
+  senseCueIdx = 0;
+  var descEl = document.getElementById('exSetupDesc');
+  if (descEl) descEl.innerHTML = SENSE_MODE_DEFS[mode].desc;
+  var contentEl = document.getElementById('exSetupContent');
+  if (contentEl) contentEl.innerHTML = buildSenseSetupHTML();
+}
+
+function setSenseDuration(min) {
+  senseDuration = min;
+  var contentEl = document.getElementById('exSetupContent');
+  if (contentEl) contentEl.innerHTML = buildSenseSetupHTML();
+}
+
+function shuffleSenseCue() {
+  var cues = SENSE_MODE_DEFS[senseMode].cues;
+  if (cues.length < 2) return;
+  var next = senseCueIdx;
+  while (next === senseCueIdx) next = Math.floor(Math.random() * cues.length);
+  senseCueIdx = next;
+  var el = document.getElementById('senseCueText');
+  if (el) el.textContent = senseCurrentCue();
+}
+
+var senseTimerHandle = null;
+var senseStartTime = null;
+var senseSeconds = 0;
+var senseTargetSeconds = 300;
+var senseActiveCue = '';
+var senseActiveMode = 'feeling';
+
+function fmtSenseTime(sec) {
+  var m = Math.floor(sec / 60), s = sec % 60;
+  return m + ':' + (s < 10 ? '0' : '') + s;
+}
+
+function startSenseSession() {
+  senseActiveCue = senseCurrentCue();
+  senseActiveMode = senseMode;
+  senseTargetSeconds = senseDuration * 60;
+  senseSeconds = 0;
+  senseStartTime = Date.now();
+  var cueEl = document.getElementById('senseSessionCue');
+  if (cueEl) cueEl.textContent = senseActiveCue;
+  var titleEl = document.getElementById('senseSessionTitle');
+  if (titleEl) titleEl.textContent = SENSE_MODE_DEFS[senseActiveMode].label.toLowerCase();
+  var el = document.getElementById('senseTimerDisplay');
+  if (el) el.textContent = fmtSenseTime(senseTargetSeconds);
+  var stateEl = document.getElementById('senseStateLabel');
+  if (stateEl) stateEl.textContent = 'summon it';
+  showScreen('senseSessionScreen');
+  requestExerciseWakeLock();
+  tickSense();
+}
+
+function tickSense() {
+  senseSeconds = Math.floor((Date.now() - senseStartTime) / 1000);
+  var remaining = Math.max(0, senseTargetSeconds - senseSeconds);
+  var el = document.getElementById('senseTimerDisplay');
+  if (el) el.textContent = fmtSenseTime(remaining);
+  var pct = senseTargetSeconds > 0 ? remaining / senseTargetSeconds : 0;
+  var label = pct > 0.75 ? 'summon it' : pct > 0.5 ? 'let it bloom' : pct > 0.25 ? 'hold it steady' : 'let nothing else in';
+  var stateEl = document.getElementById('senseStateLabel');
+  if (stateEl) stateEl.textContent = label;
+  if (remaining === 0) {
+    clearTimeout(senseTimerHandle);
+    senseTimerHandle = null;
+    playAsanaAlarm();
+    endSenseSession();
+    return;
+  }
+  senseTimerHandle = setTimeout(tickSense, 1000);
+}
+
+function endSenseSession() {
+  clearTimeout(senseTimerHandle);
+  senseTimerHandle = null;
+  releaseExerciseWakeLock();
+  showSenseResult(senseSeconds);
+}
+
+function showSenseResult(seconds) {
+  var xpEarned = seconds;
+  concState.xp += xpEarned;
+  if (isConcNewSession()) concState.totalSessions++;
+
+  var prevLevel = concState.level;
+  while (concState.level < 777) {
+    var xpThis = concState.xp - concSumXpToLevel(concState.level);
+    if (xpThis >= concXpForLevel(concState.level)) { concState.level++; } else { break; }
+  }
+  var didLevelUp = concState.level > prevLevel;
+
+  concState.history.unshift({
+    date: new Date().toISOString(),
+    exercise: 'sense',
+    mode: senseActiveMode,
+    cue: senseActiveCue,
+    seconds: seconds,
+    xpEarned: xpEarned
+  });
+  if (concState.history.length > 100) concState.history = concState.history.slice(0, 100);
+  saveConcState();
+  if (syncEnabled && authToken) syncPushData();
+  touchPracticeStreak();
+  var _sensePreAkasha = omniaState ? omniaState.akasha : 0;
+  awardOmniaForExercise('sense', seconds);
+
+  var _akashaDeltaSense = omniaState ? Math.round(omniaState.akasha - _sensePreAkasha) : 0;
+  var _senseOriginMode = currentMode;
+  showSessionComplete({
+    title: SENSE_MODE_DEFS[senseActiveMode].label + ' held.',
+    sub: senseActiveCue,
+    xp: xpEarned,
+    akashaDelta: _akashaDeltaSense,
+    stat3: { label: 'Time', color: 'blue', value: fmtSenseTime(seconds) },
+    onDone: function() {
+      showScreen('homeScreen');
+      returnAfterExercise(_senseOriginMode);
+      if (didLevelUp) setTimeout(function() { showLevelUp(concState.level, getConcRank(concState.level), 'concentration'); }, 800);
+    }
+  });
+}
+
+document.getElementById('senseEndBtn').addEventListener('click', endSenseSession);
+
 // ── Mode switching ──
 var currentMode = 'guide';
 var awarenessSubMode = 'awareness'; // 'awareness' or 'prayer'
@@ -16479,6 +16753,7 @@ var OMNIA_EXERCISE_META = {
   clock: { name:'Clock', body:'mental', open:'clock', text:'Follow the seconds hand until attention breaks. Omnia wants clean, honest concentration.' },
   visual: { name:'Visualization', body:'astral', open:'visual', text:'Hold one image until it steadies. This feeds Omnia with form and color.' },
   auditory: { name:'Auditory', body:'astral', open:'auditory', text:'Listen without leaning forward. The astral body learns through subtle vibration.' },
+  sense: { name:'Sense Concentration', body:'astral', open:'sense', text:'Evoke a feeling, smell, or taste from imagination alone. The astral body is built from inner sensation.' },
   thought: { name:'Thought Control', body:'mental', open:'thought', text:'Observe, focus, or empty the mind. This strengthens Omnia\'s mental body.' },
   asana: { name:'Asana', body:'physical', open:'asana', text:'Make the body still enough to become a reliable instrument.' },
   pore_breathing: { name:'Pore Breathing', body:'physical', open:'soulmirror', text:'Draw vitality through the whole body. Omnia needs a living vessel, not only light.' }
@@ -20280,6 +20555,7 @@ function guideExperienceScore(exId) {
 function guideHistoryExerciseId(h) {
   if (!h) return 'clock';
   if (h.exercise === 'asana') return 'asana';
+  if (h.exercise === 'sense') return 'sense';
   if (h.exercise === 'pore_breathing') return 'soulmirror';
   if (h.exercise === 'autosuggestion') return 'soulmirror';
   if (h.type === 'visualization') return 'visual';
@@ -20996,7 +21272,7 @@ function renderGuidePlan(mode, skipScroll) {
   renderGuideCadenceControl();
 
   // Exercise icons by type
-  var exIcon = { clock:'⊙', visual:'◉', auditory:'◈', thought:'◌', observation:'◌', focus:'◌', vacancy:'◌', asana:'✦', soulmirror:'◆', pore:'≋' };
+  var exIcon = { clock:'⊙', visual:'◉', auditory:'◈', sense:'✺', thought:'◌', observation:'◌', focus:'◌', vacancy:'◌', asana:'✦', soulmirror:'◆', pore:'≋' };
 
   var doneCount = items.filter(function(i){ return i.done; }).length;
   var totalCount = items.length;
@@ -21481,8 +21757,8 @@ function renderPathQuests() {
   var awarenessDone = awarenessMinutes >= awarenessTarget, awarenessClaimed = !!q.awareness.claimed;
   var awarenessReward = pathQuestReward('awareness');
 
-  var exIcon = { clock:'⊙', visual:'◉', auditory:'◈', thought:'◌', observation:'◌', focus:'◌', vacancy:'◌', asana:'✦', soulmirror:'◆', pore:'≋' };
-  var exColor = { clock:'#d4b08e', visual:'#8ab8e0', auditory:'#8eccc0', thought:'#98b4cc', observation:'#98b4cc', focus:'#98b4cc', vacancy:'#98b4cc', asana:'#d49898', soulmirror:'#c4a8d4', pore:'#8ecce0' };
+  var exIcon = { clock:'⊙', visual:'◉', auditory:'◈', sense:'✺', thought:'◌', observation:'◌', focus:'◌', vacancy:'◌', asana:'✦', soulmirror:'◆', pore:'≋' };
+  var exColor = { clock:'#d4b08e', visual:'#8ab8e0', auditory:'#8eccc0', sense:'#e0a8c4', thought:'#98b4cc', observation:'#98b4cc', focus:'#98b4cc', vacancy:'#98b4cc', asana:'#d49898', soulmirror:'#c4a8d4', pore:'#8ecce0' };
 
   var dayNames = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
   var monthNames = ['January','February','March','April','May','June','July','August','September','October','November','December'];
