@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- v2026.06.21-sense-concentration -->
+<!-- v2026.06.21-senses-path-trait-restore -->
 <html lang="en" style="background:#07080d;">
 <head>
   <meta charset="UTF-8"/>
@@ -16711,6 +16711,7 @@ var GUIDE_EXERCISES = [
   { id:'clock',      name:'Clock',           sub:'Attention on the seconds hand',        opts:['New to me','5 min','10 min','15+ min'] },
   { id:'visual',     name:'Visualization',   sub:'Holding a mental image',               opts:['New to me','5 min','10 min','15+ min'] },
   { id:'auditory',   name:'Auditory',        sub:'Concentrated listening',               opts:['New to me','5 min','10 min','15+ min'] },
+  { id:'sense',      name:'Senses',          sub:'Imagined feeling, smell, or taste',    opts:['New to me','5 min','10 min','15+ min'] },
   { id:'thought',    name:'Thought Control', sub:'Observation, Focus, or Vacancy',       opts:['New to me','5 min','10 min','15+ min'] },
   { id:'asana',      name:'Asana',           sub:'Motionless seated posture',            opts:['New to me','5 min','10 min','15+ min'] },
   { id:'soulmirror', name:'Soul Mirror',     sub:'Trait tracking & pore breathing',      opts:['New to me','Familiar'] }
@@ -20678,7 +20679,7 @@ function buildExperiencedGuideItems() {
   // Visualization and Auditory are never recommended together (same astral
   // faculty). Since only one gate rotates here, the anti-pair rule is naturally
   // satisfied — whichever ranks most neglected appears alone.
-  var GATE_IDS = ['visual', 'auditory', 'asana'];
+  var GATE_IDS = ['visual', 'auditory', 'asana', 'sense'];
   var gateCandidates = GATE_IDS.map(function(id) {
     var ex = guideExerciseById(id);
     var st = stats[id] || { count:0, bestSec:0, lastMs:0 };
@@ -20729,6 +20730,10 @@ function buildExperiencedGuideItems() {
     gDur = guideAsanaStats().qualTarget;
   } else if (gateId === 'auditory') {
     gDur = guideAuditoryStats().qualTarget;
+  } else if (gateId === 'sense') {
+    // Senses is held to its own 2/5/10 duration model, so the score-scaled
+    // target never asks for a length the setup screen can't offer.
+    gDur = Math.min(10, guideDurationForScore(gStableScore));
   }
   var gTip;
   if (gScore === 0) {
@@ -21389,6 +21394,7 @@ function beginGuidePlanItem(btn) {
     if (mode && TC_MODE_DEFS[mode]) tcMode = mode;
     if (duration) tcDuration = duration;
   }
+  if (ex === 'sense' && duration) senseDuration = duration;
   if (ex === 'soulmirror') {
     switchMode('concentration');
     suppressTutorialForExerciseEntry();
@@ -27034,6 +27040,7 @@ function soulPosCard(t,i){
       +'<div style="font-size:13px;color:var(--text);line-height:1.3;'+textStyle+'">'+esc(t.text)+'</div>'
       +extra
     +'</div>'
+    +(done?'<button onclick="soulRestoreTrait(\'positive\','+i+')" aria-label="Mark as not complete" title="Mark as not complete" style="flex-shrink:0;background:none;border:none;color:rgba(126,184,164,.8);font-size:15px;cursor:pointer;padding:4px 6px;line-height:1;">&#8617;</button>':'')
     +'<button onclick="deletePositiveTrait('+i+')" aria-label="Remove trait" style="flex-shrink:0;background:none;border:none;color:rgba(255,255,255,.28);font-size:14px;cursor:pointer;padding:4px 6px;line-height:1;">✕</button>'
     +'</div>';
 }
@@ -27061,6 +27068,7 @@ function soulNegCard(t,i){
       +'<div style="display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-top:6px;">'+badges+'</div>'
       +stateBadge
     +'</div>'
+    +(done?'<button onclick="event.stopPropagation();soulRestoreTrait(\'negative\','+i+')" aria-label="Mark as not complete" title="Mark as not complete" style="flex-shrink:0;background:none;border:none;color:rgba(126,184,164,.8);font-size:15px;cursor:pointer;padding:4px 6px;line-height:1;">&#8617;</button>':'')
     +'<button onclick="deleteNegativeTrait('+i+')" aria-label="Remove trait" style="flex-shrink:0;background:none;border:none;color:rgba(255,255,255,.28);font-size:14px;cursor:pointer;padding:4px 6px;line-height:1;">✕</button>'
     +'</div>';
 
@@ -27427,7 +27435,7 @@ function autosugChangeTrait(){
 }
 
 function autosugMarkComplete(){
-  showConfirm('Trait transformed?','This trait will be marked complete and darkened in your Soul Mirror.',function(){
+  showConfirm('Trait transformed?','This trait will be marked complete and darkened in your Soul Mirror. If you tap it by mistake, you can restore it anytime with the ↩ button on the trait.',function(){
     var data=loadSoulMirror();
     var a=data.autosug;
     if(a){
@@ -27442,6 +27450,21 @@ function autosugMarkComplete(){
     renderAutosug();
     showToast('Trait transformed');
   });
+}
+
+// Undo an accidental (or premature) completion: clears the trait's done flag so
+// it returns to the active list and can be worked on again.
+function soulRestoreTrait(kind,i){
+  var data=loadSoulMirror();
+  var list=kind==='positive'?data.positive:data.negative;
+  var t=list&&list[i];
+  if(t&&t.done){
+    t.done=false;
+    saveSoulMirror(data);
+    renderSoulMirrorTraits();
+    renderAutosug();
+    showToast('Trait restored');
+  }
 }
 
 // A clear, unmissable completion sound: three rising bell strikes.
