@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- v2026.06.21-soul-mirror-tut-header -->
+<!-- v2026.06.21-live-interval -->
 <html lang="en" style="background:#07080d;">
 <head>
   <meta charset="UTF-8"/>
@@ -6445,6 +6445,12 @@ body:not(.tut-live) #tutCorgi {
         <div class="prompt-card-text" id="sessionPrompt">Beginning session...</div>
       </div>
       <div class="next-notif" id="nextNotifLabel">next reminder in —</div>
+      <div style="margin-top:14px; display:flex; align-items:center; justify-content:center; gap:10px;">
+        <span style="font-size:9px; letter-spacing:.18em; text-transform:uppercase; color:var(--muted);">reminder every</span>
+        <button id="sessionIntervalMinus" aria-label="Shorten interval" style="width:28px;height:28px;border-radius:50%;border:1px solid rgba(126,184,164,.25);background:rgba(126,184,164,.06);color:var(--accent);font-size:15px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-family:'DM Mono',monospace;">−</button>
+        <span id="sessionIntervalVal" style="min-width:52px;text-align:center;font-family:'DM Mono',monospace;font-size:13px;color:var(--accent);">2m</span>
+        <button id="sessionIntervalPlus" aria-label="Lengthen interval" style="width:28px;height:28px;border-radius:50%;border:1px solid rgba(126,184,164,.25);background:rgba(126,184,164,.06);color:var(--accent);font-size:15px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-family:'DM Mono',monospace;">+</button>
+      </div>
     </div>
     <div class="session-bottom">
       <div class="reminder-count">reminders sent: <span id="reminderCount">0</span></div>
@@ -7763,7 +7769,9 @@ function renderHome() {
 var sessionTimerHandle = null;
 var customSessionParams = null; // set when user starts a custom session
 var sessionReminderCount = 0;
+var sessionRemindersBase = 0; // reminders banked before the current interval "epoch" (lets the interval change mid-session without losing the tally)
 var sessionStartTime = null;
+var reminderEpochStart = null; // anchor for reminder-cycle math; rebased when the interval changes mid-session (session duration accounting still uses sessionStartTime)
 var sessionDurationSec = 0;
 var sessionIntervalSec = 0;
 var lastReminderCycle = -1;
@@ -7781,7 +7789,8 @@ function saveSessionState() {
   try {
     localStorage.setItem('presence_session', JSON.stringify({
       startTime: sessionStartTime, durationSec: sessionDurationSec,
-      intervalSec: sessionIntervalSec, reminderCount: sessionReminderCount
+      intervalSec: sessionIntervalSec, reminderCount: sessionReminderCount,
+      remindersBase: sessionRemindersBase, reminderEpochStart: reminderEpochStart
     }));
   } catch(e) {}
 }
@@ -7797,9 +7806,11 @@ async function startSession() {
   customSessionParams = null;
   localStorage.removeItem('presence_session');
   sessionStartTime = Date.now();
+  reminderEpochStart = sessionStartTime;
   sessionDurationSec = params.durationMin * 60;
   sessionIntervalSec = params.intervalSec;
   sessionReminderCount = 0;
+  sessionRemindersBase = 0;
   lastReminderCycle = -1;
   lastPavlokFiredCycle = -1;
   sessionEndedEarly = false;
@@ -7823,7 +7834,9 @@ async function resumeSession(sess) {
   sessionDurationSec = sess.durationSec;
   sessionIntervalSec = sess.intervalSec;
   sessionReminderCount = sess.reminderCount || 0;
-  var elapsed = Math.floor((Date.now() - sessionStartTime) / 1000);
+  sessionRemindersBase = sess.remindersBase || 0;
+  reminderEpochStart = sess.reminderEpochStart || sess.startTime;
+  var elapsed = Math.floor((Date.now() - reminderEpochStart) / 1000);
   lastReminderCycle = Math.floor(elapsed / sessionIntervalSec);
   lastPavlokFiredCycle = lastReminderCycle;
   sessionEndedEarly = false;
@@ -7851,13 +7864,21 @@ async function resumeSession(sess) {
 function runLoop() {
   clearTimeout(sessionTimerHandle);
   var remaining = getSecondsRemaining();
-  var elapsed = Math.floor((Date.now() - sessionStartTime) / 1000);
+  // Reminder cadence is measured from the reminder epoch (rebased on interval
+  // change), kept separate from sessionStartTime so duration/XP accounting and
+  // the remaining countdown always reflect the true, full session.
+  if (!reminderEpochStart) reminderEpochStart = sessionStartTime;
+  var elapsed = Math.floor((Date.now() - reminderEpochStart) / 1000);
   var untilReminder = sessionIntervalSec - (elapsed % sessionIntervalSec);
 
   document.getElementById('sessionTimer').textContent = fmt(remaining);
   document.getElementById('nextNotifLabel').textContent = 'next reminder in ' + fmtInterval(untilReminder);
-  // Derive count from elapsed time so it stays accurate when the app was backgrounded
-  sessionReminderCount = elapsed >= sessionIntervalSec ? Math.floor(elapsed / sessionIntervalSec) : 0;
+  var sivEl = document.getElementById('sessionIntervalVal');
+  if (sivEl) sivEl.textContent = fmtInterval(sessionIntervalSec);
+  // Derive count from epoch-elapsed time so it stays accurate when the app was
+  // backgrounded, then add any reminders banked before the last interval change.
+  var cyclesThisEpoch = elapsed >= sessionIntervalSec ? Math.floor(elapsed / sessionIntervalSec) : 0;
+  sessionReminderCount = (sessionRemindersBase || 0) + cyclesThisEpoch;
   document.getElementById('reminderCount').textContent = sessionReminderCount;
 
   if (remaining <= 0) { endSession(); return; }
@@ -7897,6 +7918,42 @@ function runLoop() {
 
   saveSessionState();
   sessionTimerHandle = setTimeout(runLoop, 1000);
+}
+
+// Re-registering the session with the server is debounced so holding the
+// interval buttons doesn't fire a request on every repeat.
+var _intervalServerSyncTimer = null;
+function scheduleServerIntervalSync() {
+  clearTimeout(_intervalServerSyncTimer);
+  _intervalServerSyncTimer = setTimeout(function() {
+    if (sessionStartTime) notifyServerSessionStart();
+  }, 700);
+}
+
+// Change the live reminder cadence mid-session. Rebases the schedule so the
+// next bell lands a full (new) interval from now, preserves the remaining
+// countdown and the running "reminders sent" tally, and reschedules the
+// server's push reminders to match.
+function changeSessionInterval(deltaSec) {
+  if (!sessionStartTime) return;
+  var newInterval = Math.min(600, Math.max(30, sessionIntervalSec + deltaSec));
+  if (newInterval === sessionIntervalSec) return;
+  if (!reminderEpochStart) reminderEpochStart = sessionStartTime;
+  var epElapsed = Math.floor((Date.now() - reminderEpochStart) / 1000);
+  // Bank reminders already sent in the current epoch before rebasing it.
+  var cyclesThisEpoch = epElapsed >= sessionIntervalSec ? Math.floor(epElapsed / sessionIntervalSec) : 0;
+  sessionRemindersBase = (sessionRemindersBase || 0) + cyclesThisEpoch;
+  sessionIntervalSec = newInterval;
+  // Rebase only the reminder schedule — the next bell is a full new interval
+  // from now. sessionStartTime / sessionDurationSec stay put so the countdown
+  // and end-of-session duration/XP are unaffected.
+  reminderEpochStart = Date.now();
+  lastReminderCycle = 0;
+  lastPavlokFiredCycle = 0;
+  saveSessionState();
+  runLoop();
+  if (navigator.vibrate) { try { navigator.vibrate(8); } catch(e) {} }
+  scheduleServerIntervalSync();
 }
 
 function playReminderBell() {
@@ -8012,6 +8069,7 @@ function endSession() {
   actualDuration = Math.min(actualDuration, targetDuration + 5);
   sessionEndedEarly = actualDuration < targetDuration;
   sessionStartTime = null;
+  reminderEpochStart = null;
   sessionDurationSec = 0;
   showSurvey(actualDuration);
 }
@@ -8424,18 +8482,23 @@ function setupNudgeBtn(id, action) {
   el.addEventListener('touchcancel', stopHold);
 }
 
+// 15s per tap (was 5s) so the interval moves faster; hold-to-repeat accelerates.
+var INTERVAL_STEP = 15;
 setupNudgeBtn('intervalNudgeMinus', function() {
   var base = getSessionParams(state.level).intervalSec;
   var maxNeg = 30 - base; // floor: resulting interval >= 30s
-  state.intervalOffset = Math.max(maxNeg, (state.intervalOffset || 0) - 5);
+  state.intervalOffset = Math.max(maxNeg, (state.intervalOffset || 0) - INTERVAL_STEP);
   saveState(); renderHome();
 });
 setupNudgeBtn('intervalNudgePlus', function() {
   var base = getSessionParams(state.level).intervalSec;
   var maxPos = 600 - base; // ceiling: resulting interval <= 600s (10 min)
-  state.intervalOffset = Math.min(maxPos, (state.intervalOffset || 0) + 5);
+  state.intervalOffset = Math.min(maxPos, (state.intervalOffset || 0) + INTERVAL_STEP);
   saveState(); renderHome();
 });
+// Live interval adjustment during an active Awareness session.
+setupNudgeBtn('sessionIntervalMinus', function() { changeSessionInterval(-INTERVAL_STEP); });
+setupNudgeBtn('sessionIntervalPlus', function() { changeSessionInterval(INTERVAL_STEP); });
 setupNudgeBtn('durationNudgeMinus', function() {
   var base = getSessionParams(state.level).durationMin;
   var current = state.durationOverride != null ? state.durationOverride : base;
@@ -24561,9 +24624,13 @@ async function notifyServerSessionStart() {
     if (getPavlokToken() && pvk.awareness.enabled) {
       pavlokPayload = { token: getPavlokToken(), enabled: true, type: pvk.awareness.type || 'vibe', intensity: pvk.awareness.intensity || 50 };
     }
+    // Send the REMAINING duration so a mid-session interval change (which
+    // re-calls this) reschedules only the time left, never past the real end.
+    var _elapsedTotal = sessionStartTime ? Math.floor((Date.now() - sessionStartTime) / 1000) : 0;
+    var _remainingDur = Math.max(1, sessionDurationSec - _elapsedTotal);
     var res = await fetch(SERVER_URL + '/session/start', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ endpoint: sub.endpoint, intervalSec: sessionIntervalSec, durationSec: sessionDurationSec, pavlok: pavlokPayload })
+      body: JSON.stringify({ endpoint: sub.endpoint, intervalSec: sessionIntervalSec, durationSec: _remainingDur, pavlok: pavlokPayload })
     });
     var data = await res.json();
     // When the server is firing Pavlok, the client must NOT also fire it (avoids double-zaps)
