@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- v2026.06.21-coming-soon-trait-confirm -->
+<!-- v2026.06.21-advanced-floor-start -->
 <html lang="en" style="background:#07080d;">
 <head>
   <meta charset="UTF-8"/>
@@ -20297,8 +20297,12 @@ function guideAsanaStats() {
   // rung and the ceiling (to 120); without a floor it's the standard 5→30 ladder.
   var cap = floor > 0 ? GUIDE_FLOOR_CAP : 30;
   var tier = floor > 0 ? floor : 5, qualAtTier = 0;
+  // With an advanced floor, the chosen minute IS the starting recommendation;
+  // only sessions logged after it was set count toward climbing higher.
+  var setAt = floor > 0 ? guideAdvanceSetAt('asana') : 0;
   sessions.forEach(function(s) {
     if (tier >= cap) return;
+    if (setAt && s.ms <= setAt) return;
     var required = asanaTierRequired(tier);
     if (s.sec + 5 >= tier * 60) {
       qualAtTier++;
@@ -20357,8 +20361,12 @@ function guideAuditoryStats() {
 
   var cap = floor > 0 ? GUIDE_FLOOR_CAP : 20;
   var tier = floor > 0 ? floor : 5, qualAtTier = 0;
+  // With an advanced floor, the chosen minute IS the starting recommendation;
+  // only sessions logged after it was set count toward climbing higher.
+  var setAt = floor > 0 ? guideAdvanceSetAt('auditory') : 0;
   sessions.forEach(function(s) {
     if (tier >= cap) return;
+    if (setAt && s.ms <= setAt) return;
     var required = auditoryTierRequired(tier);
     if (s.sec + 5 >= tier * 60) { // 5s grace for tap-timing variance
       qualAtTier++;
@@ -20515,15 +20523,28 @@ function guideAdvancedActive(exId) {
 function guideSetAdvanced(exId, minutes, autoOn) {
   if (!guideState._advancedFloors || typeof guideState._advancedFloors !== 'object') guideState._advancedFloors = {};
   if (!guideState._advanceAuto || typeof guideState._advanceAuto !== 'object') guideState._advanceAuto = {};
+  if (!guideState._advanceSetAt || typeof guideState._advanceSetAt !== 'object') guideState._advanceSetAt = {};
   guideState._advancedFloors[exId] = guideClamp(parseInt(minutes, 10) || 5, 1, GUIDE_FLOOR_CAP);
   guideState._advanceAuto[exId] = !!autoOn;
+  // Remember when the floor was set: only practice from this point on should
+  // climb the bar past the chosen start, so declaring a start never snaps the
+  // recommendation upward off the back of pre-existing history.
+  guideState._advanceSetAt[exId] = Date.now();
   saveGuideState(guideState);
 }
 
 function guideClearAdvanced(exId) {
   if (guideState._advancedFloors) delete guideState._advancedFloors[exId];
   if (guideState._advanceAuto) delete guideState._advanceAuto[exId];
+  if (guideState._advanceSetAt) delete guideState._advanceSetAt[exId];
   saveGuideState(guideState);
+}
+
+// Timestamp (ms) when the advanced floor for an exercise was set, or 0. Sessions
+// at or before this only establish the starting point; later ones climb past it.
+function guideAdvanceSetAt(exId) {
+  var t = guideState && guideState._advanceSetAt && guideState._advanceSetAt[exId];
+  return (typeof t === 'number' && t > 0) ? t : 0;
 }
 
 // Apply any advanced override to a naturally-computed minute target. No override
