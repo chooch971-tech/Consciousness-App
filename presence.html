@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- v2026.06.21-advanced-floor-start -->
+<!-- v2026.06.21-soul-mirror-tutorials -->
 <html lang="en" style="background:#07080d;">
 <head>
   <meta charset="UTF-8"/>
@@ -5741,6 +5741,7 @@ body:not(.tut-live) #tutCorgi {
     </div>
     <!-- Mirror panel -->
     <div id="soulMirrorPanel" style="flex:1; overflow-y:auto; -webkit-overflow-scrolling:touch; padding:20px 24px 120px;">
+      <button type="button" class="clk-omnia-peek" onclick="openExExplainer('soulmirror')" aria-label="Open tutorial"><span class="clk-omnia-peek-head"><span class="clk-omnia-spin"></span></span></button>
       <div class="soul-banner">
         <div class="soul-banner-text">
           <div class="soul-banner-label">Soul Mirror</div>
@@ -5826,6 +5827,7 @@ body:not(.tut-live) #tutCorgi {
     </div>
     <!-- Autosuggestion panel -->
     <div id="soulAutosugPanel" style="display:none; flex:1; overflow-y:auto; -webkit-overflow-scrolling:touch; padding:20px 24px 120px;">
+      <button type="button" class="clk-omnia-peek" onclick="openExExplainer('autosug')" aria-label="Open tutorial"><span class="clk-omnia-peek-head"><span class="clk-omnia-spin"></span></span></button>
       <div class="soul-banner">
         <div class="soul-banner-text">
           <div class="soul-banner-label">Soul Mirror</div>
@@ -5850,6 +5852,7 @@ body:not(.tut-live) #tutCorgi {
     <!-- Pore breathing panel -->
     <div id="soulBreathingPanel" style="display:none; flex:1; flex-direction:column; overflow:hidden; position:relative;">
       <div id="poreBreathSetup" style="flex:1; overflow-y:auto; padding:20px 24px 40px; position:relative;">
+        <button type="button" class="clk-omnia-peek" onclick="openExExplainer('pore')" aria-label="Open tutorial"><span class="clk-omnia-peek-head"><span class="clk-omnia-spin"></span></span></button>
         <div class="pore-aura" aria-hidden="true"></div>
         <div class="soul-banner">
           <div class="soul-banner-text">
@@ -13382,6 +13385,33 @@ var EX_EXPLAINERS = {
       'Let <strong>no other thought</strong> enter. The moving hand is the only thing in your mind.',
       'The instant a thought slips in, <strong>tap the screen</strong> — the session ends there.',
       'Your time is logged. Day by day, the gap before the first thought grows longer.'
+    ]
+  },
+  soulmirror: {
+    title: 'Soul Mirror',
+    steps: [
+      'The Mirror holds two columns: <strong>traits to cultivate</strong> and <strong>traits to overcome</strong>.',
+      'Work through them <strong>one at a time</strong>. Honesty here is the whole exercise — name what is truly yours.',
+      'When a trait is genuinely transformed, mark it <strong>complete</strong> and it darkens. Tapped by mistake? Restore it with the <strong>↩</strong> button.',
+      'Use <strong>Mirror Notes</strong> to record what you observe. This is the slow work that reshapes character.'
+    ]
+  },
+  autosug: {
+    title: 'Autosuggestion',
+    steps: [
+      'Pick <strong>one trait</strong> from your Soul Mirror to impress upon the subconscious.',
+      'Repeat its phrase in the <strong>present tense</strong>, as if it is already true — <strong>tap once</strong> with each repetition.',
+      'Reach the day\'s count to complete the session. Repetition, not force, is what <strong>influences the subconscious</strong>.',
+      'Return <strong>daily</strong>. The mind accepts as real whatever it is told often enough.'
+    ]
+  },
+  pore: {
+    title: 'Pore Breathing',
+    steps: [
+      'Sit quietly and choose your number of <strong>breaths</strong>. Each breath is one full inhale and exhale.',
+      'As you <strong>inhale</strong>, imagine drawing living light in through every pore of the skin.',
+      'As you <strong>exhale</strong>, release darkness and fatigue back out through the same pores.',
+      'The whole body breathes <strong>as one organ</strong>. With practice, vitality gathers and the breath grows still.'
     ]
   }
 };
@@ -28066,12 +28096,22 @@ var PORE_LEGEND_VERSES = [
   'Light has moved through every pore. Darkness has left by the same door.',
   'The skin forgets its edges. For a breath, the body was one organ.',
   'You drew in the living light and returned the night to the air.',
-  'There was no inside and no outside — only the breath, moving.',
   'Vitality gathers in the vessel. Omnia stirs within the light.'
 ];
 
 document.getElementById('startPoreBreathBtn').addEventListener('click',startPoreBreath);
 document.getElementById('stopPoreBreathBtn').addEventListener('click',function(){stopPoreBreath(false);});
+
+// Fill the spinning Omnia head into the Soul Mirror tutorial peek beacons
+// (Mirror / Autosuggestion / Pore Breathing), mirroring the Clock setup peek.
+(function fillSoulMirrorPeeks(){
+  ['soulMirrorPanel','soulAutosugPanel','poreBreathSetup'].forEach(function(id){
+    var p = document.getElementById(id);
+    if (!p) return;
+    var spin = p.querySelector('.clk-omnia-peek .clk-omnia-spin');
+    if (spin && !spin.innerHTML.trim()) spin.innerHTML = omniaHeadOnlySVG(34, 32);
+  });
+})();
 
 /* ─── First-Time Tutorial ──────────────────────────────────────────────── */
 document.addEventListener('DOMContentLoaded',function(){(function(){
