@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- v2026.06.21-live-interval -->
+<!-- v2026.06.21-resume-timer-fix -->
 <html lang="en" style="background:#07080d;">
 <head>
   <meta charset="UTF-8"/>
@@ -7852,12 +7852,19 @@ async function resumeSession(sess) {
   showScreen('sessionScreen');
   requestExerciseWakeLock();
   document.getElementById('reminderCount').textContent = sessionReminderCount;
+  // Paint the live remaining time straight away so a slow/unreachable server
+  // call can never leave a stale 30:00 frozen on screen.
+  document.getElementById('sessionTimer').textContent = fmt(getSecondsRemaining());
   updateSessionPrompt(randomPrompt(''));
   initSessionPvkSlider();
-  // notifyServerPavlokUpdate() sets pavlokServerManaged from the server's reply
-  // without resetting the session clock. Await it so runLoop sees the truth.
-  if (pavlokServerManaged) { try { await notifyServerPavlokUpdate(); } catch(e) {} }
+  // Start the loop immediately. pavlokServerManaged is already true (optimistic),
+  // so this won't client-fire Pavlok before the server confirms ownership.
   runLoop();
+  // Confirm Pavlok ownership in the background — correcting pavlokServerManaged
+  // afterwards doesn't disturb the already-running loop, and never blocks the
+  // timer from rendering (the old awaited call here was the cause of the stuck
+  // counter on reopen).
+  if (pavlokServerManaged) { try { notifyServerPavlokUpdate().catch(function() {}); } catch(e) {} }
   showToast('Session resumed');
 }
 
