@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- v2026.06.20-pore-rounds-fix -->
+<!-- v2026.06.21-pore-shared-legend -->
 <html lang="en" style="background:#07080d;">
 <head>
   <meta charset="UTF-8"/>
@@ -786,36 +786,6 @@
       background:linear-gradient(120deg, rgba(66,124,116,.92), rgba(104,94,148,.92)); box-shadow:0 6px 20px rgba(78,88,124,.34); }
     .pore-begin-btn:active { transform:translateY(1px); }
 
-    /* ── Pore Breathing: the meditative "Legend" completion reveal ─────── */
-    #poreLegendOverlay { display:none; position:absolute; inset:0; z-index:11; flex-direction:column; align-items:center; justify-content:center; text-align:center; padding:40px 30px; overflow:hidden; background:#05060b; }
-    #poreLegendOverlay.show { display:flex; animation:poreLegendFade .8s ease both; }
-    @keyframes poreLegendFade { from{opacity:0;} to{opacity:1;} }
-    .pore-legend-aura { position:absolute; inset:0; z-index:0; pointer-events:none;
-      background:
-        radial-gradient(circle at 50% 36%, rgba(110,180,180,.22) 0%, transparent 56%),
-        radial-gradient(ellipse 90% 50% at 50% 102%, rgba(140,118,184,.18) 0%, transparent 72%); }
-    .pore-legend-aura::before { content:''; position:absolute; left:50%; top:36%; width:290px; aspect-ratio:1; transform:translate(-50%,-50%); border-radius:50%;
-      background:radial-gradient(circle, rgba(126,190,182,.45) 0%, rgba(150,140,198,.22) 50%, transparent 72%); filter:blur(58px); opacity:.7; animation:poreLegendPulse 9s ease-in-out infinite; }
-    @keyframes poreLegendPulse { 0%,100%{transform:translate(-50%,-50%) scale(1); opacity:.6;} 50%{transform:translate(-50%,-50%) scale(1.08); opacity:.8;} }
-    .pore-legend-content { position:relative; z-index:1; width:100%; max-width:340px; }
-    .pore-legend-mandala { width:118px; height:118px; margin:0 auto 24px; animation:poreMandalaFloat 6s ease-in-out infinite; }
-    @keyframes poreMandalaFloat { 0%,100%{transform:translateY(0);} 50%{transform:translateY(-9px);} }
-    .pore-legend-mandala .plg-spin { transform-box:fill-box; transform-origin:center; animation:poreLegendSpin2 40s linear infinite; }
-    @keyframes poreLegendSpin2 { to { transform:rotate(360deg); } }
-    .pore-legend-eyebrow { font-family:'DM Mono',monospace; font-size:9px; letter-spacing:.42em; text-transform:uppercase; color:rgba(180,206,210,.62); margin-bottom:10px; }
-    .pore-legend-title { font-family:'Cormorant Garamond',serif; font-size:31px; font-weight:300; color:#eef0f4; line-height:1.15; margin-bottom:8px; }
-    .pore-legend-verse { font-family:'Cormorant Garamond',serif; font-style:italic; font-size:14px; line-height:1.7; color:rgba(210,212,224,.66); margin-bottom:32px; }
-    .pore-legend-stats { display:flex; gap:10px; justify-content:center; margin-bottom:34px; }
-    .pore-stat { flex:1; padding:18px 6px 14px; border-radius:16px; background:rgba(255,255,255,.035); border:1px solid rgba(255,255,255,.07); }
-    .pore-stat__icon { font-size:16px; margin-bottom:8px; opacity:.85; }
-    .pore-stat__val { font-family:'Cormorant Garamond',serif; font-size:30px; line-height:1; font-weight:300; }
-    .pore-stat__label { font-family:'DM Mono',monospace; font-size:8px; letter-spacing:.18em; text-transform:uppercase; color:rgba(190,200,216,.55); margin-top:7px; }
-    .pore-stat--breaths { border-color:rgba(126,190,182,.26); } .pore-stat--breaths .pore-stat__val, .pore-stat--breaths .pore-stat__icon { color:#90cfc2; }
-    .pore-stat--xp { border-color:rgba(214,190,140,.24); } .pore-stat--xp .pore-stat__val, .pore-stat--xp .pore-stat__icon { color:#d6be8c; }
-    .pore-stat--akasha { border-color:rgba(170,154,212,.26); } .pore-stat--akasha .pore-stat__val, .pore-stat--akasha .pore-stat__icon { color:#b3a6dc; }
-    .pore-legend-btn { width:100%; border:none; border-radius:14px; padding:16px; font-family:'DM Mono',monospace; font-size:10px; letter-spacing:.32em; text-transform:uppercase; color:#eaf2f0; cursor:pointer;
-      background:linear-gradient(120deg, rgba(66,124,116,.92), rgba(104,94,148,.92)); box-shadow:0 6px 20px rgba(78,88,124,.32); }
-    .pore-legend-btn:active { transform:translateY(1px); }
     /* Group-by control + element/severity editor for negative traits */
     .soul-group-btn { background:rgba(255,255,255,.04); border:1px solid var(--border); border-radius:20px; color:var(--muted); font-family:'DM Mono',monospace; font-size:8px; letter-spacing:.12em; text-transform:uppercase; padding:5px 11px; cursor:pointer; transition:all .15s; }
     .soul-group-btn.sel { background:rgba(196,120,140,.16); border-color:rgba(196,120,140,.45); color:#e0a0b0; }
@@ -5937,48 +5907,6 @@ body:not(.tut-live) #tutCorgi {
         </div>
         <div id="poreBreathCycleLabel" style="font-size:9px; letter-spacing:.2em; color:var(--muted); margin-bottom:40px;"></div>
         <button id="stopPoreBreathBtn" style="background:none; border:1px solid rgba(255,255,255,.08); border-radius:4px; color:rgba(255,255,255,.2); font-family:'DM Mono',monospace; font-size:9px; letter-spacing:.2em; padding:8px 24px; cursor:pointer; text-transform:uppercase;">Stop</button>
-      </div>
-      <!-- Legend: meditative completion reveal -->
-      <div id="poreLegendOverlay">
-        <div class="pore-legend-aura" aria-hidden="true"></div>
-        <div class="pore-legend-content">
-          <div class="pore-legend-mandala" aria-hidden="true">
-            <svg viewBox="0 0 120 120" width="118" height="118" style="overflow:visible;">
-              <defs>
-                <radialGradient id="plgGlow" cx="50%" cy="50%" r="50%">
-                  <stop offset="0%" stop-color="#ffffff" stop-opacity=".95"/>
-                  <stop offset="46%" stop-color="#bfe9e0" stop-opacity=".55"/>
-                  <stop offset="100%" stop-color="#5fd6c8" stop-opacity="0"/>
-                </radialGradient>
-              </defs>
-              <g class="plg-spin">
-                <ellipse cx="60" cy="29" rx="6" ry="17" fill="#90cfc2" opacity=".6" transform="rotate(0 60 60)"/>
-                <ellipse cx="60" cy="29" rx="6" ry="17" fill="#a99ad6" opacity=".6" transform="rotate(30 60 60)"/>
-                <ellipse cx="60" cy="29" rx="6" ry="17" fill="#90cfc2" opacity=".6" transform="rotate(60 60 60)"/>
-                <ellipse cx="60" cy="29" rx="6" ry="17" fill="#a99ad6" opacity=".6" transform="rotate(90 60 60)"/>
-                <ellipse cx="60" cy="29" rx="6" ry="17" fill="#90cfc2" opacity=".6" transform="rotate(120 60 60)"/>
-                <ellipse cx="60" cy="29" rx="6" ry="17" fill="#a99ad6" opacity=".6" transform="rotate(150 60 60)"/>
-                <ellipse cx="60" cy="29" rx="6" ry="17" fill="#90cfc2" opacity=".6" transform="rotate(180 60 60)"/>
-                <ellipse cx="60" cy="29" rx="6" ry="17" fill="#a99ad6" opacity=".6" transform="rotate(210 60 60)"/>
-                <ellipse cx="60" cy="29" rx="6" ry="17" fill="#90cfc2" opacity=".6" transform="rotate(240 60 60)"/>
-                <ellipse cx="60" cy="29" rx="6" ry="17" fill="#a99ad6" opacity=".6" transform="rotate(270 60 60)"/>
-                <ellipse cx="60" cy="29" rx="6" ry="17" fill="#90cfc2" opacity=".6" transform="rotate(300 60 60)"/>
-                <ellipse cx="60" cy="29" rx="6" ry="17" fill="#a99ad6" opacity=".6" transform="rotate(330 60 60)"/>
-              </g>
-              <circle cx="60" cy="60" r="26" fill="url(#plgGlow)"/>
-              <circle cx="60" cy="60" r="6.5" fill="#eef4f2"/>
-            </svg>
-          </div>
-          <div class="pore-legend-eyebrow">The Breath Complete</div>
-          <div class="pore-legend-title">A Living Vessel</div>
-          <div class="pore-legend-verse" id="poreLegendVerse">Light has moved through every pore. Darkness has left by the same door.</div>
-          <div class="pore-legend-stats">
-            <div class="pore-stat pore-stat--breaths"><div class="pore-stat__icon">&#10050;</div><div class="pore-stat__val" id="poreLegendBreaths">0</div><div class="pore-stat__label">Breaths</div></div>
-            <div class="pore-stat pore-stat--xp"><div class="pore-stat__icon">&#10022;</div><div class="pore-stat__val" id="poreLegendXp">0</div><div class="pore-stat__label">XP</div></div>
-            <div class="pore-stat pore-stat--akasha"><div class="pore-stat__icon">&#9672;</div><div class="pore-stat__val" id="poreLegendAkasha">0</div><div class="pore-stat__label">Akasha</div></div>
-          </div>
-          <button class="pore-legend-btn" id="poreLegendContinue">Return</button>
-        </div>
       </div>
     </div>
   </div>
@@ -27700,7 +27628,6 @@ function startPoreBreath(){
   poreBreathTotal=parseInt(document.getElementById('poreBreathSlider').value);
   poreBreathCurrent=1;
   poreBreathStartTime=Date.now();
-  var _leg=document.getElementById('poreLegendOverlay'); if(_leg) _leg.classList.remove('show');
   document.getElementById('poreBreathSetup').style.display='none';
   document.getElementById('poreBreathOverlay').style.display='flex';
   document.getElementById('poreBreathCycleLabel').textContent='breath 1 of '+poreBreathTotal;
@@ -27779,26 +27706,24 @@ function stopPoreBreath(completed){
     if(syncEnabled && authToken) syncPushData();
 
     renderConcHome();
-    showPoreLegend(breathsDone, xpEarned, akashaGained, didLevelUp ? concState.level : null);
+    // Use the shared meditative "legend" completion screen + sound that every
+    // other exercise shows, rather than the bespoke pore-only overlay.
+    var _poreVerse = PORE_LEGEND_VERSES[Math.floor(Math.random() * PORE_LEGEND_VERSES.length)];
+    var _poreLevelUp = didLevelUp ? concState.level : null;
+    showSessionComplete({
+      title: 'Pore breathing complete.',
+      sub: _poreVerse,
+      xp: xpEarned,
+      akashaDelta: akashaGained,
+      stat3: { label: 'Breaths', color: 'blue', value: breathsDone },
+      onDone: function() {
+        if (_poreLevelUp) setTimeout(function() { showConcLevelUp(_poreLevelUp); }, 400);
+      }
+    });
   }
 }
 
-// Animate a number counting up from 0 to target.
-function poreCountUp(el, target, dur){
-  if(!el) return;
-  target = target || 0;
-  if(!target){ el.textContent='0'; return; }
-  var start=null;
-  function step(now){
-    if(start===null) start=now;
-    var t=Math.min(1,(now-start)/dur);
-    var eased=1-Math.pow(1-t,3);
-    el.textContent = Math.round(eased*target);
-    if(t<1) requestAnimationFrame(step);
-  }
-  requestAnimationFrame(step);
-}
-
+// Meditative verses shown as the subtitle on the shared completion screen.
 var PORE_LEGEND_VERSES = [
   'Light has moved through every pore. Darkness has left by the same door.',
   'The skin forgets its edges. For a breath, the body was one organ.',
@@ -27806,25 +27731,6 @@ var PORE_LEGEND_VERSES = [
   'There was no inside and no outside — only the breath, moving.',
   'Vitality gathers in the vessel. Omnia stirs within the light.'
 ];
-
-function showPoreLegend(breaths, xp, akasha, levelUpLevel){
-  var ov=document.getElementById('poreLegendOverlay');
-  if(!ov){ showToast('Pore breathing complete · +' + xp + ' XP'); if(levelUpLevel) setTimeout(function(){showConcLevelUp(levelUpLevel);},800); return; }
-  var verseEl=document.getElementById('poreLegendVerse');
-  if(verseEl) verseEl.textContent = PORE_LEGEND_VERSES[Math.floor(Math.random()*PORE_LEGEND_VERSES.length)];
-  ov._pendingLevel = levelUpLevel || null;
-  ov.classList.add('show');
-  poreCountUp(document.getElementById('poreLegendBreaths'), breaths, 900);
-  poreCountUp(document.getElementById('poreLegendXp'), xp, 1100);
-  poreCountUp(document.getElementById('poreLegendAkasha'), akasha, 1300);
-}
-
-document.getElementById('poreLegendContinue').addEventListener('click',function(){
-  var ov=document.getElementById('poreLegendOverlay');
-  ov.classList.remove('show');
-  var lvl=ov._pendingLevel; ov._pendingLevel=null;
-  if(lvl) setTimeout(function(){showConcLevelUp(lvl);},400);
-});
 
 document.getElementById('startPoreBreathBtn').addEventListener('click',startPoreBreath);
 document.getElementById('stopPoreBreathBtn').addEventListener('click',function(){stopPoreBreath(false);});
