@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- v2026.06.21-resume-timer-fix -->
+<!-- v2026.06.21-hold-to-upgrade -->
 <html lang="en" style="background:#07080d;">
 <head>
   <meta charset="UTF-8"/>
@@ -995,7 +995,7 @@
     .omnia-body-lvl { font-size:9px; color:var(--muted); }
     .omnia-body-actions { display:flex; justify-content:space-between; align-items:center; gap:10px; margin-top:8px; }
     .omnia-body-effect { font-size:9px; color:var(--muted); line-height:1.4; }
-    .omnia-mini-btn { border:1px solid rgba(142,204,224,.22); background:transparent; color:#8ecce0; border-radius:4px; padding:6px 8px; font-family:'DM Mono',monospace; font-size:8px; letter-spacing:.12em; text-transform:uppercase; cursor:pointer; white-space:nowrap; }
+    .omnia-mini-btn { border:1px solid rgba(142,204,224,.22); background:transparent; color:#8ecce0; border-radius:4px; padding:6px 8px; font-family:'DM Mono',monospace; font-size:8px; letter-spacing:.12em; text-transform:uppercase; cursor:pointer; white-space:nowrap; user-select:none; -webkit-user-select:none; -webkit-touch-callout:none; touch-action:manipulation; }
     .omnia-mini-btn:disabled { color:rgba(142,204,224,.45); border-color:rgba(142,204,224,.18); cursor:default; }
     .omnia-rec-card { border:1px solid rgba(212,149,110,.18); background:rgba(212,149,110,.045); border-radius:10px; padding:13px 14px; margin-bottom:12px; }
     .omnia-rec-top { display:flex; justify-content:space-between; gap:12px; align-items:flex-start; margin-bottom:7px; }
@@ -19094,17 +19094,23 @@ function fireOmniaBodyBurst(body) {
   }
 }
 
+// True while a press-and-hold is actively repeating upgrades, so the trailing
+// synthesized click doesn't apply one more on release.
+var _omniaUpgradeHeld = false;
+
 function buyOmniaUpgrade(id) {
   var upg = OMNIA_UPGRADES.find(function(u) { return u.id === id; });
-  if (!upg) return;
-  if (omniaUpgradeAtMax(id)) return;
+  if (!upg) return false;
+  if (omniaUpgradeAtMax(id)) return false;
   var cost = omniaUpgradeCost(upg);
-  if ((omniaState.akasha || 0) < cost) return;
+  if ((omniaState.akasha || 0) < cost) return false;
   omniaState.akasha -= cost;
   omniaState.totalAkashaSpent = (omniaState.totalAkashaSpent || 0) + cost;
   omniaState.upgrades[id] = (omniaState.upgrades[id] || 1) + 1;
   saveOmniaState();
   renderOmniaEngine();
+  if (navigator.vibrate) { try { navigator.vibrate(5); } catch(e) {} }
+  return true;
 }
 
 function performOmniaAction(kind) {
@@ -22729,8 +22735,51 @@ document.getElementById('omniaEngine').addEventListener('click', function(e) {
   var bodyBtn = e.target.closest('[data-omnia-body]');
   if (bodyBtn) { buildOmniaBody(bodyBtn.dataset.omniaBody); return; }
   var upgBtn = e.target.closest('[data-omnia-upgrade]');
-  if (upgBtn) buyOmniaUpgrade(upgBtn.dataset.omniaUpgrade);
+  if (upgBtn) {
+    // A press-and-hold already applied its upgrades; ignore the click that
+    // fires on release. A plain tap (or keyboard activation) applies one.
+    if (_omniaUpgradeHeld) { _omniaUpgradeHeld = false; return; }
+    buyOmniaUpgrade(upgBtn.dataset.omniaUpgrade);
+  }
 });
+
+// Press-and-hold an Upgrade button to buy several levels in a row. Keyed by the
+// upgrade id (not the element) so it keeps working as the grid re-renders after
+// each purchase. The action only starts after a short hold and is cancelled by
+// any scroll movement, so a tap stays a single buy and scrolling never buys.
+(function() {
+  var engine = document.getElementById('omniaEngine');
+  if (!engine) return;
+  var holdTimer = null, repeatTimer = null, activeId = null, startX = 0, startY = 0;
+  function stopHold() {
+    clearTimeout(holdTimer); clearInterval(repeatTimer);
+    holdTimer = repeatTimer = null; activeId = null;
+  }
+  function beginRepeat() {
+    _omniaUpgradeHeld = true;
+    if (!buyOmniaUpgrade(activeId)) { stopHold(); return; }
+    repeatTimer = setInterval(function() {
+      if (!activeId || !buyOmniaUpgrade(activeId)) stopHold();
+    }, 140);
+  }
+  engine.addEventListener('pointerdown', function(e) {
+    var btn = e.target.closest('[data-omnia-upgrade]');
+    if (!btn || btn.disabled) return;
+    _omniaUpgradeHeld = false; // fresh interaction; a tap stays a tap
+    activeId = btn.dataset.omniaUpgrade;
+    startX = e.clientX; startY = e.clientY;
+    holdTimer = setTimeout(beginRepeat, 400);
+  });
+  engine.addEventListener('pointermove', function(e) {
+    if (!activeId) return;
+    if (Math.abs(e.clientX - startX) > 10 || Math.abs(e.clientY - startY) > 10) stopHold();
+  });
+  ['pointerup', 'pointercancel', 'pointerleave'].forEach(function(ev) {
+    engine.addEventListener(ev, stopHold);
+  });
+  window.addEventListener('pointerup', stopHold);
+  window.addEventListener('pointercancel', stopHold);
+})();
 
 // Settings toggle (inline accordion)
 document.getElementById('prayerSettingsToggle').addEventListener('click', function() {
