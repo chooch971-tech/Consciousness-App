@@ -20264,7 +20264,7 @@ function guideApplyExRounds(items) {
     } else {
       todaySec = (getStats()[it.id] || {}).todaySec || 0;
     }
-    var done = todaySec >= it.duration * 60 * ov;
+    var done = todaySec + 5 * ov >= it.duration * 60 * ov;
     var durationLabel = it.duration + ' min' + (ov > 1 ? ' x2' : '');
     return Object.assign({}, it, { done: done, durationLabel: durationLabel });
   });
@@ -20790,7 +20790,7 @@ function buildExperiencedGuideItems() {
       name:'Clock',
       duration:clockMinutes,
       durationLabel:clockDurLabel,
-      done:clockStats.todaySec >= clockDailyTarget,
+      done:clockStats.todaySec + 5 * rounds >= clockDailyTarget,
       todayCount:clockStats.todayCount || 0,
       progress:'today ' + guideFmtTime(clockStats.todaySec) + ' / ' + guideFmtTime(clockDailyTarget) + (atCap ? '' : ' · ' + (clockStats.qualAtTier || 0) + '/2 → ' + (clockMinutes + 1) + 'min'),
       tip:'Complete the full session to count toward the next tier. Two qualifying sessions unlock the next minute.' + tierProgress,
@@ -20803,7 +20803,7 @@ function buildExperiencedGuideItems() {
       mode:thoughtMode,
       duration:thoughtMinutes,
       durationLabel:thoughtDurLabel,
-      done:thoughtModeStats.todaySec >= thoughtDailyTarget,
+      done:thoughtModeStats.todaySec + 5 * rounds >= thoughtDailyTarget,
       todayCount:thoughtModeStats.todayCount || 0,
       progress:'today ' + guideFmtTime(thoughtModeStats.todaySec) + ' / ' + guideFmtTime(thoughtDailyTarget) + ' · best gap ' + guideFmtTime(thoughtModeStats.bestSec || 0),
       tip:GUIDE_FOUNDATION_THOUGHT_TIPS[thoughtMode] + ' ' + nextThought,
@@ -20907,7 +20907,7 @@ function buildExperiencedGuideItems() {
     name:gc.ex.name,
     duration:gDur,
     durationLabel:gDur + ' min' + (rounds > 1 ? ' x' + rounds : ''),
-    done:(stats[gateId] && stats[gateId].todaySec >= gDur * 60 * rounds) || false,
+    done:(stats[gateId] && stats[gateId].todaySec + 5 * rounds >= gDur * 60 * rounds) || false,
     todayCount:stats[gateId] ? (stats[gateId].todayCount || 0) : 0,
     progress:gateProgress,
     tip:gTip + (gc.count ? ' Omnia has recorded ' + gc.count + ' completed session' + (gc.count === 1 ? '' : 's') + ' here.' : ' Omnia has no completed sessions recorded here yet.'),
@@ -20964,7 +20964,7 @@ function buildFoundationalGuideItems() {
       name:'Clock',
       duration:clockMinutes,
       durationLabel:clockDurLabel2,
-      done:clock.todaySec >= clockDailyTarget,
+      done:clock.todaySec + 5 * rounds >= clockDailyTarget,
       todayCount:clock.todayCount || 0,
       progress:'today ' + guideFmtTime(clock.todaySec) + ' / ' + guideFmtTime(clockDailyTarget) + (atCap ? '' : ' · ' + (clock.qualAtTier || 0) + '/2 → ' + (clockMinutes + 1) + 'min'),
       tip:'Complete the full session to count toward the next tier. Two qualifying sessions unlock the next minute.' + tierProgress + attentionText,
@@ -20977,7 +20977,7 @@ function buildFoundationalGuideItems() {
       mode:mode,
       duration:thoughtMinutes,
       durationLabel:thoughtDurLabel2,
-      done:modeStats.todaySec >= thoughtDailyTarget,
+      done:modeStats.todaySec + 5 * rounds >= thoughtDailyTarget,
       todayCount:modeStats.todayCount || 0,
       progress:'today ' + guideFmtTime(modeStats.todaySec) + ' / ' + guideFmtTime(thoughtDailyTarget) + ' · best gap ' + guideFmtTime(modeStats.bestSec || 0),
       tip:GUIDE_FOUNDATION_THOUGHT_TIPS[mode] + ' Omnia adds one minute after every two completed sessions in this form, up to ten minutes. ' + nextThought,
@@ -21001,9 +21001,9 @@ function buildFoundationalGuideItems() {
   if (gateForced && (!gate || gate.id !== gateForced)) {
     var dailyTarget5 = 5 * 60 * rounds;
     var forcedGateItems = {
-      asana: (function() { var _asp2 = guideAsanaStats(); var _ad = _asp2.qualTarget; var _at = _ad * 60 * rounds; var _prog = _asp2.locked ? ('held at ' + _ad + ' min · ' + (_asp2.count||0) + ' recorded') : _asp2.atCap ? ('ceiling reached · ' + (_asp2.count||0) + ' recorded') : (_asp2.qualAtTier + ' / ' + _asp2.tierRequired + ' sessions at ' + _asp2.qualTarget + ' min'); return { id:'asana', name:'Asana', duration:_ad, durationLabel:_ad + ' min' + (rounds > 1 ? ' x2' : ''), done:(stats.asana||{}).todaySec >= _at, progress:_prog, tip:'Begin building stillness. Sit upright and complete the whole period without negotiating with each impulse.', open:'asana' }; })(),
-      visual: { id:'visual', name:'Visualization', duration:5, durationLabel:'5 min' + (rounds > 1 ? ' x2' : ''), done:(stats.visual||{}).todaySec >= dailyTarget5, progress:'new gate · ' + ((stats.visual||{}).count||0) + ' recorded', tip:'Hold a simple mental image clearly. Clarity matters more than complexity.', open:'visual' },
-      auditory: { id:'auditory', name:'Auditory', duration:5, durationLabel:'5 min' + (rounds > 1 ? ' x2' : ''), done:(stats.auditory||{}).todaySec >= dailyTarget5, progress:'astral refinement gate · ' + ((stats.auditory||{}).count||0) + ' recorded', tip:'Focused listening on a single sound. Broaden the astral body steadily.', open:'auditory' }
+      asana: (function() { var _asp2 = guideAsanaStats(); var _ad = _asp2.qualTarget; var _at = _ad * 60 * rounds; var _prog = _asp2.locked ? ('held at ' + _ad + ' min · ' + (_asp2.count||0) + ' recorded') : _asp2.atCap ? ('ceiling reached · ' + (_asp2.count||0) + ' recorded') : (_asp2.qualAtTier + ' / ' + _asp2.tierRequired + ' sessions at ' + _asp2.qualTarget + ' min'); return { id:'asana', name:'Asana', duration:_ad, durationLabel:_ad + ' min' + (rounds > 1 ? ' x2' : ''), done:(stats.asana||{}).todaySec + 5 * rounds >= _at, progress:_prog, tip:'Begin building stillness. Sit upright and complete the whole period without negotiating with each impulse.', open:'asana' }; })(),
+      visual: { id:'visual', name:'Visualization', duration:5, durationLabel:'5 min' + (rounds > 1 ? ' x2' : ''), done:(stats.visual||{}).todaySec + 5 * rounds >= dailyTarget5, progress:'new gate · ' + ((stats.visual||{}).count||0) + ' recorded', tip:'Hold a simple mental image clearly. Clarity matters more than complexity.', open:'visual' },
+      auditory: { id:'auditory', name:'Auditory', duration:5, durationLabel:'5 min' + (rounds > 1 ? ' x2' : ''), done:(stats.auditory||{}).todaySec + 5 * rounds >= dailyTarget5, progress:'astral refinement gate · ' + ((stats.auditory||{}).count||0) + ' recorded', tip:'Focused listening on a single sound. Broaden the astral body steadily.', open:'auditory' }
     };
     gate = forcedGateItems[gateForced] || gate;
   }
@@ -21033,7 +21033,7 @@ function guideFoundationNewGate(stats, thoughtStats, rounds) {
       name:'Visualization',
       duration:5,
       durationLabel:'5 min' + (rounds > 1 ? ' x2' : ''),
-      done:visual.todaySec >= dailyTarget,
+      done:visual.todaySec + 5 * rounds >= dailyTarget,
       progress:'new gate · ' + visual.count + ' recorded',
       tip:'Now that attention and observation have some weight, Omnia permits a small image practice. Keep it simple; clarity matters more than ambition.',
       open:'visual'
@@ -21046,7 +21046,7 @@ function guideFoundationNewGate(stats, thoughtStats, rounds) {
       name:'Asana',
       duration:_adNew,
       durationLabel:_adNew + ' min',
-      done:asana.todaySec >= _adNew * 60,
+      done:asana.todaySec + 5 >= _adNew * 60,
       progress:'physical body gate · ' + asana.count + ' recorded',
       tip:'Begin building Omnia\'s physical body through stillness. Sit upright and complete the whole period without negotiating with each impulse.',
       open:'asana'
@@ -21058,7 +21058,7 @@ function guideFoundationNewGate(stats, thoughtStats, rounds) {
       name:'Auditory',
       duration:5,
       durationLabel:'5 min',
-      done:auditory.todaySec >= 300,
+      done:auditory.todaySec + 5 >= 300,
       progress:'astral refinement gate · ' + auditory.count + ' recorded',
       tip:'Add sound only after the earlier gates are stable. This broadens the astral body without turning the agenda into a checklist.',
       open:'auditory'
@@ -21239,7 +21239,8 @@ function guidePoreItem(added) {
   var done = guidePoreDoneToday();
   var sessToday = guidePoreSessionsDoneToday();
   var durLabel = target + ' breaths' + (rounds > 1 ? ' ×' + rounds : '');
-  var prog = rounds > 1 && !done && sessToday >= 1 ? '×1 remaining' : '';
+  var poreRemaining = rounds - sessToday;
+  var prog = rounds > 1 && !done && poreRemaining > 0 ? (poreRemaining === 1 ? '×1 remaining' : '×' + rounds + ' sessions') : '';
   return {
     id:'pore', name:'Pore Breathing', duration:null, durationLabel:durLabel,
     done:done, progress:prog, open:'pore', added:!!added,
@@ -21955,7 +21956,10 @@ function renderPathQuests() {
     else if (item.durationLabel) metaParts.push(item.durationLabel.replace(/\s*[x×]\d+\s*$/, ''));
     if (rounds > 1 && !item.done) {
       var completedToday = item.todayCount || 0;
-      metaParts.push(completedToday >= 1 ? '×1 remaining' : '×2 sessions');
+      var remaining = rounds - completedToday;
+      if (remaining > 0) {
+        metaParts.push(remaining === 1 ? '×1 remaining' : '×' + rounds + ' sessions');
+      }
     }
     if (item.done) metaParts.push('completed');
     var meta = metaParts.join(' · ') || 'Open-ended';
