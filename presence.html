@@ -10611,18 +10611,21 @@ function showConcRepOverlay(repSecs) {
   }
   document.getElementById('concRepNextBtn').onclick = function() { dismiss(startConcentration); };
   document.getElementById('concEndSessionBtn').onclick = function() {
-    if (concRepTimerInterval) { clearInterval(concRepTimerInterval); concRepTimerInterval = null; }
-    // Drop this overlay just behind the session-complete legend (z-9800) and
-    // let the legend fade in on top of it. This opaque overlay keeps covering
-    // the clock the entire time, so the clock never flashes through between
-    // the two screens. Remove the overlay once the legend has fully arrived.
-    el.style.zIndex = '9799';
-    saveConcSession();
-    setTimeout(function() {
-      el.classList.remove('cro-vis');
-      el.classList.remove('cro-show');
-      el.style.zIndex = '';
-    }, 700);
+    var _clockElapsed = concSessionStartTime ? Math.floor((Date.now() - concSessionStartTime) / 1000) : 0;
+    omniaConfirmEarlyEnd('clock', _clockElapsed, function() {
+      if (concRepTimerInterval) { clearInterval(concRepTimerInterval); concRepTimerInterval = null; }
+      // Drop this overlay just behind the session-complete legend (z-9800) and
+      // let the legend fade in on top of it. This opaque overlay keeps covering
+      // the clock the entire time, so the clock never flashes through between
+      // the two screens. Remove the overlay once the legend has fully arrived.
+      el.style.zIndex = '9799';
+      saveConcSession();
+      setTimeout(function() {
+        el.classList.remove('cro-vis');
+        el.classList.remove('cro-show');
+        el.style.zIndex = '';
+      }, 700);
+    });
   };
 
   el.classList.add('cro-show');
@@ -10677,7 +10680,7 @@ function saveConcSession() {
   var _clockToday = concState.history.filter(function(h) { return h.date && h.date.slice(0, 10) === _todayStr && !h.type && !h.exercise; }).length;
   var _akashaCapped = _clockToday > 3;
   if (!_akashaCapped) {
-    awardOmniaForExercise('clock', totalXP);
+    awardOmniaForExercise('clock', totalXP, omniaReachedRecommendation('clock', sessionDurationSec));
   } else {
     showToast('Clock · Daily Akasha cap reached · XP still counts', 3200);
   }
@@ -13099,7 +13102,8 @@ function saveVisSessionResult() {
   if (syncEnabled && authToken) syncPushData();
   touchPracticeStreak();
   var _visPreAkasha = omniaState ? omniaState.akasha : 0;
-  awardOmniaForExercise('visual', totalXP);
+  var _visWallSec = visSessionStartTime ? Math.floor((Date.now() - visSessionStartTime) / 1000) : 0;
+  awardOmniaForExercise('visual', totalXP, omniaReachedRecommendation('visual', _visWallSec));
 
   currentVisObject = pickVisObject();
   var wrap = document.getElementById('visPreviewWrap');
@@ -13835,7 +13839,10 @@ document.getElementById('visStudyCancelBtn').addEventListener('click', function(
   showScreen('homeScreen');
   switchMode('concentration');
 });
-document.getElementById('visEndSessionBtn').addEventListener('click', endVisSession);
+document.getElementById('visEndSessionBtn').addEventListener('click', function() {
+  var _visElapsed = visSessionStartTime ? Math.floor((Date.now() - visSessionStartTime) / 1000) : 0;
+  omniaConfirmEarlyEnd('visual', _visElapsed, endVisSession);
+});
 document.getElementById('visMainArea').addEventListener('click', function() {
   // Only register halts when actively concentrating (Image Faded button visible)
   var lostBtn = document.getElementById('visLostBtn');
@@ -14859,7 +14866,7 @@ function saveAudResult() {
   if (syncEnabled && authToken) syncPushData();
   touchPracticeStreak();
   var _audPreAkasha = omniaState ? omniaState.akasha : 0;
-  awardOmniaForExercise('auditory', totalXP);
+  awardOmniaForExercise('auditory', totalXP, omniaReachedRecommendation('auditory', audSessionDurationSec));
 
   var _akashaDeltaAud = omniaState ? Math.round(omniaState.akasha - _audPreAkasha) : 0;
   var _concDidLevelUpAud = concDidLevelUpA;
@@ -14896,7 +14903,10 @@ document.getElementById('audNextRepBtn').addEventListener('click', function() {
 });
 document.getElementById('audStartRepBtn').addEventListener('click', beginAudRep);
 document.getElementById('audSwitchSoundBtn').addEventListener('click', audSwitchSound);
-document.getElementById('audEndBtn').addEventListener('click', endAuditorySession);
+document.getElementById('audEndBtn').addEventListener('click', function() {
+  var _audElapsed = audSessionStartTime ? Math.floor((Date.now() - audSessionStartTime) / 1000) : 0;
+  omniaConfirmEarlyEnd('auditory', _audElapsed, endAuditorySession);
+});
 document.getElementById('audSaveBtn').addEventListener('click', saveAudResult);
 document.getElementById('audViewHistoryBtn').addEventListener('click', function() {
   concHistoryFrom='home'; concHistoryFilter='all'; renderConcHistory(); showScreen('concHistoryScreen');
@@ -15269,7 +15279,7 @@ function saveTCResult() {
   if (syncEnabled && authToken) syncPushData();
   touchPracticeStreak();
   var _tcPreAkasha = omniaState ? omniaState.akasha : 0;
-  awardOmniaForExercise('thought', elapsedSec);
+  awardOmniaForExercise('thought', elapsedSec, _tcCompletedFlag || omniaReachedRecommendation('thought', elapsedSec));
 
   var _akashaDeltaTC = omniaState ? Math.round(omniaState.akasha - _tcPreAkasha) : 0;
   var _concDidLevelUpTC2 = concDidLevelUpTC;
@@ -15295,8 +15305,11 @@ document.getElementById('tcTapArea').addEventListener('click', function() {
 });
 
 document.getElementById('tcEndBtn').addEventListener('click', function() {
-  cancelAnimationFrame(tcTimerHandle);
-  endThoughtControl(false);
+  var _tcElapsed = tcStartTime ? Math.floor((Date.now() - tcStartTime) / 1000) : 0;
+  omniaConfirmEarlyEnd('thought', _tcElapsed, function() {
+    cancelAnimationFrame(tcTimerHandle);
+    endThoughtControl(false);
+  });
 });
 document.getElementById('tcSaveBtn').addEventListener('click', saveTCResult);
 document.getElementById('tcViewHistoryBtn').addEventListener('click', function() {
@@ -15424,7 +15437,7 @@ function showAsanaResult(seconds) {
   if (syncEnabled && authToken) syncPushData();
   touchPracticeStreak();
   var _asanaPreAkasha = omniaState ? omniaState.akasha : 0;
-  awardOmniaForExercise('asana', seconds);
+  awardOmniaForExercise('asana', seconds, omniaReachedRecommendation('asana', seconds, asanaTargetSeconds));
 
   var _akashaDeltaAsana = omniaState ? Math.round(omniaState.akasha - _asanaPreAkasha) : 0;
   var _asanaOriginMode = currentMode;
@@ -15452,7 +15465,9 @@ function saveAsanaResult() {
   switchMode('concentration');
 }
 
-document.getElementById('asanaEndBtn').addEventListener('click', endAsana);
+document.getElementById('asanaEndBtn').addEventListener('click', function() {
+  omniaConfirmEarlyEnd('asana', asanaSeconds, endAsana, asanaTargetSeconds);
+});
 document.getElementById('asanaSaveBtn').addEventListener('click', saveAsanaResult);
 document.getElementById('asanaViewHistoryBtn').addEventListener('click', function() {
   concHistoryFrom='home'; concHistoryFilter='all'; renderConcHistory(); showScreen('concHistoryScreen');
@@ -15665,7 +15680,7 @@ function showSenseResult(seconds) {
   if (syncEnabled && authToken) syncPushData();
   touchPracticeStreak();
   var _sensePreAkasha = omniaState ? omniaState.akasha : 0;
-  awardOmniaForExercise('sense', seconds);
+  awardOmniaForExercise('sense', seconds, omniaReachedRecommendation('sense', seconds, senseTargetSeconds));
 
   var _akashaDeltaSense = omniaState ? Math.round(omniaState.akasha - _sensePreAkasha) : 0;
   var _senseOriginMode = currentMode;
@@ -15683,7 +15698,9 @@ function showSenseResult(seconds) {
   });
 }
 
-document.getElementById('senseEndBtn').addEventListener('click', endSenseSession);
+document.getElementById('senseEndBtn').addEventListener('click', function() {
+  omniaConfirmEarlyEnd('sense', senseSeconds, endSenseSession, senseTargetSeconds);
+});
 
 // ── Mode switching ──
 var currentMode = 'guide';
@@ -18672,7 +18689,49 @@ function renderAkashaBoostBadge() {
   });
 }
 
-function awardOmniaForExercise(exId, seconds) {
+// ── Early-end guard: Omnia's recommended duration ─────────────────────────
+// A session only earns "completion" (daily plan credit + any pending body
+// level) once it reaches Omnia's recommended length. These helpers let the
+// per-exercise End buttons warn before forfeiting that, and let the award
+// path gate the body level on it.
+function omniaRecommendedSec(exId) {
+  try {
+    var m = guideRecommendedMinutes(exId);
+    return (typeof m === 'number' && m > 0) ? Math.round(m * 60) : 0;
+  } catch (e) { return 0; }
+}
+
+// True when a body level is currently waiting on this exercise (the ✦ the
+// player saw before starting) and would be lost by ending early.
+function omniaExercisePendingBody(exId) {
+  try { return !!(omniaHighlightedExerciseIds() || {})[exId]; } catch (e) { return false; }
+}
+
+// 5s grace for tap-timing variance, matching the guide's daily-completion grace.
+function omniaReachedRecommendation(exId, elapsedSec, recSecOverride) {
+  var recSec = (typeof recSecOverride === 'number') ? recSecOverride : omniaRecommendedSec(exId);
+  if (!recSec) return true; // no recommendation to enforce
+  return (elapsedSec || 0) + 5 >= recSec;
+}
+
+// Confirm before ending early. Runs onProceed() immediately if the
+// recommendation is already met (or none exists); otherwise shows a warning
+// and only proceeds if the user accepts. Countdown exercises (asana/sense)
+// pass their own session target via recSecOverride.
+function omniaConfirmEarlyEnd(exId, elapsedSec, onProceed, recSecOverride) {
+  var recSec = (typeof recSecOverride === 'number') ? recSecOverride : omniaRecommendedSec(exId);
+  if (!recSec || (elapsedSec || 0) + 5 >= recSec) { onProceed(); return; }
+  var recMin = Math.round(recSec / 60);
+  var msg = "You haven't reached Omnia's recommended " + recMin + " minute" + (recMin === 1 ? '' : 's') + " yet.\n\n"
+          + "If you end now, this won't count as a completed session toward today's plan";
+  if (omniaExercisePendingBody(exId)) {
+    msg += ", and you'll forfeit the body-level award waiting on this exercise";
+  }
+  msg += ".\n\nEnd anyway?";
+  if (window.confirm(msg)) onProceed();
+}
+
+function awardOmniaForExercise(exId, seconds, reachedRec) {
   omniaAccrue();
   // ── Plausibility clamps ──────────────────────────────────────────────────
   // Awards can't arrive faster than real practice: ignore calls < 30s apart,
@@ -18735,7 +18794,10 @@ function awardOmniaForExercise(exId, seconds) {
     // body is raised unless it's capped, in which case the level cascades to
     // the next uncapped body (mental → astral → physical). A clock session
     // past its daily akasha cap earns no body level either, so it can't be farmed.
-    if (!clockAkashaCapped && omniaHighlightedExerciseIds()[exId]) {
+    // The session must also have reached Omnia's recommended duration: ending
+    // early forfeits the body level (reachedRec === false). Callers that don't
+    // pass the flag (tutorial clock, pore breathing) are unaffected.
+    if (!clockAkashaCapped && reachedRec !== false && omniaHighlightedExerciseIds()[exId]) {
       var targetBody = omniaPickAwardBody(meta.body);
       if (targetBody) {
         omniaState.bodies[targetBody] = (omniaState.bodies[targetBody] || 0) + 1;
