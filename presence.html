@@ -3676,7 +3676,7 @@ body.tut-post  .tut-back-btn { display:block; }
 .tut-continue-btn:active { transform:translateX(-50%) scale(0.96); }
 body:not(.tut-live) .tut-continue-btn { display:none !important; }
 .tut-skip-btn {
-  display:none; position:fixed; top:max(env(safe-area-inset-top),20px); right:20px;
+  display:none !important; position:fixed; top:max(env(safe-area-inset-top),20px); right:20px;
   font-size:11px; letter-spacing:.18em; text-transform:uppercase;
   color:rgba(221,216,206,0.32); background:none; border:none; cursor:pointer;
   z-index:9008; padding:12px; pointer-events:auto; transition:color 0.2s;
@@ -6639,19 +6639,6 @@ body:not(.tut-live) #tutCorgi {
 <div class="drawer-overlay" id="drawerOverlay">
   <div class="drawer" id="drawer">
     <div class="drawer-header">
-      <button id="drawerOmniaBtn" title="Meet Omnia" aria-label="Open guide tutorial">
-        <svg width="36" height="58" viewBox="0 0 72 118" xmlns="http://www.w3.org/2000/svg">
-          <polygon points="36,2 50,14 36,26 22,14" fill="#ceeaff" stroke="#90cce8" stroke-width=".8" opacity=".95"/>
-          <polygon points="36,2 50,14 36,13" fill="#e8f8ff" opacity=".55"/>
-          <polygon points="36,2 22,14 36,13" fill="#b4daf5" opacity=".35"/>
-          <polygon points="36,26 56,37 60,59 36,70 12,59 16,37" fill="#b8dcf5" stroke="#88c4e0" stroke-width=".7" opacity=".88"/>
-          <polygon points="36,26 56,37 36,45" fill="#d4ecff" opacity=".44"/>
-          <polygon points="36,26 16,37 36,45" fill="#a8d4f0" opacity=".28"/>
-          <polygon points="36,70 60,59 52,88 36,100 20,88 12,59" fill="#a8d4f0" stroke="#88c4e0" stroke-width=".7" opacity=".82"/>
-          <polygon points="36,100 52,88 36,116" fill="#98c8e8" stroke="#88c4e0" stroke-width=".6" opacity=".7"/>
-          <polygon points="36,100 20,88 36,116" fill="#88c0e0" stroke="#88c4e0" stroke-width=".6" opacity=".52"/>
-        </svg>
-      </button>
       <div class="drawer-wordmark">Presence</div>
       <div class="drawer-level" id="drawerLevel">Level 1 · Initiate</div>
     </div>
@@ -7591,7 +7578,12 @@ function clearStaleInteractionLocks() {
   if (drawer) drawer.classList.remove('show');
 }
 function suppressTutorialForExerciseEntry() {
-  try { localStorage.setItem('presence_visited', '1'); } catch(e) {}
+  // Only mark the tutorial complete when it is NOT currently running.
+  // During the tutorial's own clock-launch sequence __tutInProgress is true,
+  // so we skip setting the flag here — VISITED is set only when end() fires.
+  if (!window.__tutInProgress) {
+    try { localStorage.setItem('presence_visited', '1'); } catch(e) {}
+  }
   window.__tutBoot = null;
   clearStaleInteractionLocks();
 }
@@ -8584,12 +8576,6 @@ document.getElementById('hamburgerBtn').addEventListener('click', openDrawer);
   }, {passive: true});
 })();
 
-document.getElementById('drawerOmniaBtn').addEventListener('click', function() {
-  closeDrawer();
-  setTimeout(function() {
-    if (typeof window.__tutReplay === 'function') window.__tutReplay();
-  }, 320); // wait for drawer slide-out before tutorial appears
-});
 document.getElementById('drawerOverlay').addEventListener('click', function(e) {
   if (e.target === this) closeDrawer();
 });
@@ -28456,7 +28442,6 @@ document.addEventListener('DOMContentLoaded',function(){(function(){
               qp.classList.remove('tut-vis');
               window._tutorialFirstClock=true;
               window._tutorialAnswers=JSON.parse(JSON.stringify(tutAnswers));
-              localStorage.setItem(VISITED,'1');
               document.body.classList.remove('tut-live');
               ov.style.transition='none';
               ov.style.opacity='0';
@@ -29625,6 +29610,7 @@ document.addEventListener('DOMContentLoaded',function(){(function(){
 
   /* ── End ── */
   function end(){
+    window.__tutInProgress = false;
     localStorage.setItem(VISITED,'1');
     document.body.classList.remove('tut-live');
     document.querySelectorAll('.tut-elem-glow').forEach(function(e){e.classList.remove('tut-elem-glow');});
@@ -29708,7 +29694,6 @@ document.addEventListener('DOMContentLoaded',function(){(function(){
       // Clear tutorial state synchronously — no transitions, no timeouts
       window._tutorialFirstClock=true;
       window._tutorialAnswers=JSON.parse(JSON.stringify(tutAnswers));
-      localStorage.setItem(VISITED,'1');
       document.body.classList.remove('tut-live');
       if(qp) qp.classList.remove('tut-vis');
       ov.style.transition='none';
@@ -29741,8 +29726,6 @@ document.addEventListener('DOMContentLoaded',function(){(function(){
       end();
     }
   });
-  sk.addEventListener('click',function(e){e.stopPropagation();end();});
-
   /* ── Back button: walk back one step at a time, clearing the answer of the
      step we're returning to so the user can re-pick. Disabled while not rdy to
      avoid mid-animation re-entry. ── */
@@ -29791,6 +29774,7 @@ document.addEventListener('DOMContentLoaded',function(){(function(){
   function boot(){
     if(localStorage.getItem(VISITED)) return;
     if(!tutorialCanBootOnHome()) return;
+    window.__tutInProgress = true;
     document.body.classList.add('tut-live');
     ov.style.display='block'; ov.style.opacity='0'; ov.style.pointerEvents='auto';
     ov.style.transition='opacity 0.7s ease,background 0.4s ease';
@@ -29799,6 +29783,7 @@ document.addEventListener('DOMContentLoaded',function(){(function(){
 
   window.__tutReplay=function(){
     cur=0; eyeOn=false; rdy=false;
+    window.__tutInProgress = true;
     document.body.classList.add('tut-live');
     stopSparks(); darkSpot(); hideClockBg(); hideObjFlash(); stopTutCreek(); hideThoughtAnim();
     if(corgiTimer){clearTimeout(corgiTimer);cg.style.display='none';}
@@ -29839,20 +29824,6 @@ document.addEventListener('DOMContentLoaded',function(){(function(){
     }
   }
 
-  // If user quit mid-tutorial (after launchClock but before guide-intro), resume it
-  if(localStorage.getItem(VISITED) && localStorage.getItem('presence_tutorialPending')){
-    var homeElR=document.getElementById('homeScreen');
-    if(homeElR){
-      var _resumePoller=setInterval(function(){
-        if(homeElR.style.display==='flex'){
-          clearInterval(_resumePoller);
-          window._tutorialFirstClock=true;
-          currentExercise='clock';
-          if(typeof startConcentration==='function') startConcentration();
-        }
-      },300);
-    }
-  }
 })();});
 </script>
 
