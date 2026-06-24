@@ -7345,10 +7345,9 @@ function touchPracticeStreak() {
             omniaState.akasha += commitDef.akasha;
             if (typeof saveOmniaState === 'function') saveOmniaState();
           }
-          setTimeout(function() {
-            showToast('🔥 ' + commitDays + '-day goal complete! +' + commitDef.xp.toLocaleString() + ' XP · +' + commitDef.akasha + ' Akasha', 4500);
-          }, 2600);
-          if (_scLeveled) setTimeout(function() { showLevelUp(state.level); }, 3400);
+          // Queue the reward notification so it surfaces inside the session-complete
+          // overlay (not buried behind it as a timed toast).
+          window._pendingStreakBonus = { days: commitDays, xp: commitDef.xp, akasha: commitDef.akasha, leveled: _scLeveled, level: state.level };
         }
       }
     }
@@ -10975,10 +10974,10 @@ function playSessionCompleteSound() {
 }
 
 var STREAK_COMMITS = [
-  { days:7,  xp:500,   akasha:100  },
-  { days:14, xp:1200,  akasha:250  },
-  { days:30, xp:3000,  akasha:600  },
-  { days:45, xp:5000,  akasha:1000 },
+  { days:7,  xp:50,   akasha:2000  },
+  { days:14, xp:100,  akasha:4500  },
+  { days:30, xp:200,  akasha:10000 },
+  { days:45, xp:300,  akasha:18000 },
 ];
 
 function buildStreakCalendar(year, month, commit) {
@@ -11191,6 +11190,20 @@ function showSessionComplete(opts) {
   var el = document.getElementById('sessionComplete');
   if (!el) return;
   playSessionCompleteSound();
+  // Consume any pending streak-goal reward so it shows in this overlay,
+  // not as a timed toast that fires behind the session-complete screen.
+  var _psb = window._pendingStreakBonus || null;
+  window._pendingStreakBonus = null;
+  var streakBannerHtml = _psb
+    ? '<div style="margin:12px 0 4px;padding:12px 16px;background:rgba(212,149,110,.12);border:1px solid rgba(212,149,110,.35);border-radius:10px;text-align:center;">'
+      + '<div style="font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:#d4956e;margin-bottom:6px;">🔥 ' + _psb.days + '-Day Awareness Streak</div>'
+      + '<div style="display:flex;justify-content:center;gap:16px;">'
+      + '<span style="font-family:serif;font-size:18px;color:#d4b08e;">+' + _psb.akasha.toLocaleString() + ' <span style="font-size:11px;font-family:\'DM Mono\',monospace;letter-spacing:.08em;color:#d4956e;">Akasha</span></span>'
+      + '<span style="font-family:serif;font-size:18px;color:#d4b08e;">+' + _psb.xp + ' <span style="font-size:11px;font-family:\'DM Mono\',monospace;letter-spacing:.08em;color:#d4956e;">Awareness XP</span></span>'
+      + '</div>'
+      + '</div>'
+    : '';
+
   el.innerHTML =
     buildOmniaShowerHtml()
     + '<div class="tut-legend-title">' + opts.title + '</div>'
@@ -11209,6 +11222,7 @@ function showSessionComplete(opts) {
     + '<span class="tut-legend-card-value">' + opts.stat3.value + '</span>'
     + '</div>'
     + '</div>'
+    + streakBannerHtml
     + (opts.omniaMsg ? '<div class="omnia-speak">' + opts.omniaMsg + '</div>' : '')
     + '<button class="sc-done-btn" id="scDoneBtn">Done →</button>'
     + (opts.onRepeat ? '<button class="sc-repeat-btn" id="scRepeatBtn">Repeat ↺</button>' : '');
@@ -11220,7 +11234,11 @@ function showSessionComplete(opts) {
     if (opts.onDone) opts.onDone();
     requestAnimationFrame(function() {
       el.classList.remove('sc-vis');
-      setTimeout(function() { el.classList.remove('sc-show'); }, 560);
+      setTimeout(function() {
+        el.classList.remove('sc-show');
+        // Fire Awareness level-up after the overlay is gone, not while it's open.
+        if (_psb && _psb.leveled) setTimeout(function() { showLevelUp(_psb.level); }, 300);
+      }, 560);
     });
   };
   if (opts.onRepeat) {
