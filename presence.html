@@ -166,6 +166,18 @@
     .so-goal-fill { height:100%; background:linear-gradient(90deg,#b86820,#d4956e); border-radius:4px; transition:width 0.6s ease; }
     .so-goal-labels { display:flex; justify-content:space-between; margin-top:5px; }
     .so-goal-lbl { font-size:8px; color:var(--muted); }
+    /* Goal selector — change the commitment target straight from the streak screen */
+    .so-goal-select-label { font-size:9px; letter-spacing:.22em; text-transform:uppercase; color:var(--muted); margin:16px 0 9px; }
+    .so-goal-tiers { display:grid; grid-template-columns:repeat(4,1fr); gap:7px; }
+    .so-goal-tier { --tc:#d4956e; border:1.5px solid var(--border); border-radius:12px; padding:10px 4px 9px; text-align:center; cursor:pointer; background:rgba(255,255,255,.025); transition:transform .2s ease, border-color .2s ease, box-shadow .2s ease, background .2s ease; display:flex; flex-direction:column; align-items:center; gap:2px; position:relative; }
+    .so-goal-tier:active { transform:scale(.96); }
+    .so-goal-tier-days { font-family:'Cormorant Garamond',serif; font-size:22px; line-height:1; color:var(--fg); }
+    .so-goal-tier-unit { font-size:7px; letter-spacing:.16em; text-transform:uppercase; color:var(--muted); }
+    .so-goal-tier-reward { font-size:8px; color:#7fc3a8; font-family:'DM Mono',monospace; margin-top:3px; }
+    .so-goal-tier.selected { border-color:var(--tc); background:rgba(212,149,110,.08); box-shadow:0 0 18px -4px var(--tc), inset 0 0 14px -10px var(--tc); }
+    .so-goal-tier.selected::after { content:'✓'; position:absolute; top:5px; right:7px; font-size:9px; color:#e8b88a; }
+    .so-goal-tier.reached { opacity:.5; cursor:default; }
+    .so-goal-tier.reached::after { content:'🏆'; position:absolute; top:5px; right:6px; font-size:8px; }
     /* Society */
     .so-society-card { background:var(--surface); border:1.5px solid var(--border); border-radius:16px; padding:15px 18px; display:flex; align-items:center; gap:14px; }
     .so-society-icon { font-size:24px; }
@@ -11028,6 +11040,58 @@ function showStreakScreen() {
   }).join('');
   var goalPct = commit > 0 ? Math.min(100, Math.round(streak / commit * 100)) : 100;
   var societyLocked = streak < 7;
+
+  // The Streak Goal card is interactive: the player can commit to a longer goal
+  // at any time — crucially after completing one — to chase the next milestone.
+  // The streak-bonus award is keyed by (streakStartDate, commitDays), so simply
+  // raising the goal lets the new milestone pay out when it's reached. Goals the
+  // current streak has already passed are locked (🏆) so a bonus can't be claimed
+  // retroactively by re-selecting a smaller goal.
+  function goalCardInner() {
+    var commitNow = state.streakCommit || 7;
+    var pct = commitNow > 0 ? Math.min(100, Math.round(streak / commitNow * 100)) : 100;
+    var completedCurrent = streak >= commitNow;
+    var selLabel = completedCurrent ? 'Choose your next goal' : 'Change your goal';
+    var tiersHTML = STREAK_COMMITS.map(function(c) {
+      var isCurrent = commitNow === c.days;
+      var isReached = streak >= c.days;
+      var cls = 'so-goal-tier';
+      var disabled = false;
+      if (isCurrent) { cls += ' selected'; disabled = true; }
+      else if (isReached) { cls += ' reached'; disabled = true; }
+      return '<button class="' + cls + '" data-days="' + c.days + '"' + (disabled ? ' disabled' : '') + '>'
+        + '<span class="so-goal-tier-days">' + c.days + '</span>'
+        + '<span class="so-goal-tier-unit">days</span>'
+        + '<span class="so-goal-tier-reward">+' + c.akasha.toLocaleString() + '</span>'
+        + '</button>';
+    }).join('');
+    return '<div class="so-goal-header"><span class="so-goal-title">Streak Goal</span><span class="so-goal-fraction">' + streak + ' / ' + commitNow + ' days</span></div>'
+      + '<div class="so-goal-track"><div class="so-goal-fill" style="width:' + pct + '%"></div></div>'
+      + '<div class="so-goal-labels"><span class="so-goal-lbl">📅 Day 1</span><span class="so-goal-lbl">🏆 Day ' + commitNow + '</span></div>'
+      + '<div class="so-goal-select-label">' + selLabel + '</div>'
+      + '<div class="so-goal-tiers">' + tiersHTML + '</div>';
+  }
+  function wireGoalCard() {
+    var card = document.getElementById('soGoalCard');
+    if (!card) return;
+    card.querySelectorAll('.so-goal-tier:not([disabled])').forEach(function(btn) {
+      btn.addEventListener('click', function() {
+        var days = parseInt(btn.dataset.days, 10);
+        if (!days) return;
+        state.streakCommit = days;
+        localStorage.setItem('presence_streak_commit', String(days));
+        saveState();
+        if (syncEnabled && authToken) syncPushData();
+        // Re-render only the goal card (not the whole overlay) so the calendar
+        // nav listener on `el` isn't re-bound and stacked.
+        card.innerHTML = goalCardInner();
+        wireGoalCard();
+        var cal = el.querySelector('.so-cal-card');
+        if (cal) cal.innerHTML = buildStreakCalendar(parseInt(el.dataset.calYear, 10), parseInt(el.dataset.calMonth, 10), days);
+        showToast('Streak goal set to ' + days + ' days', 2600);
+      });
+    });
+  }
   el.innerHTML =
     '<button class="so-back-btn" id="soBackBtn" aria-label="Back">&#8592;</button>'
     + '<div class="so-hero">'
@@ -11049,11 +11113,7 @@ function showStreakScreen() {
     + '<div class="so-freeze-gems">' + gemsHTML + '</div>'
     + '</div></div>'
     + '<div class="so-cal-card" id="soCalCard">' + buildStreakCalendar(calYear, calMonth, commit) + '</div>'
-    + '<div class="so-goal-card">'
-    + '<div class="so-goal-header"><span class="so-goal-title">Streak Goal</span><span class="so-goal-fraction">' + streak + ' / ' + commit + ' days</span></div>'
-    + '<div class="so-goal-track"><div class="so-goal-fill" style="width:' + goalPct + '%"></div></div>'
-    + '<div class="so-goal-labels"><span class="so-goal-lbl">📅 Day 1</span><span class="so-goal-lbl">🏆 Day ' + commit + '</span></div>'
-    + '</div>'
+    + '<div class="so-goal-card" id="soGoalCard">' + goalCardInner() + '</div>'
     + '<div class="so-society-card" style="opacity:' + (societyLocked ? '.45' : '1') + '">'
     + '<div class="so-society-icon">👥</div>'
     + '<div class="so-society-text">'
@@ -11083,6 +11143,7 @@ function showStreakScreen() {
   }
   document.getElementById('soBackBtn').onclick = closeStreakOverlay;
   document.getElementById('soCloseBtn').onclick = closeStreakOverlay;
+  wireGoalCard();
   el.classList.add('so-show');
   requestAnimationFrame(function() { requestAnimationFrame(function() { el.classList.add('so-vis'); }); });
 }
