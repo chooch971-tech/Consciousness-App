@@ -13991,6 +13991,7 @@ document.getElementById('visIntermediateFadedBtn').addEventListener('click', fun
   });
   if(concState.history.length > 100) concState.history = concState.history.slice(0,100);
   saveConcState();
+  touchPracticeStreak();
   if(syncEnabled && authToken) syncPushData();
   showToast('+' + xpEarned + ' XP');
   if(didLevelUp) setTimeout(function(){showConcLevelUp(concState.level);},600);
@@ -28324,6 +28325,7 @@ function stopPoreBreath(completed){
     var akashaBefore = (typeof omniaState !== 'undefined' && omniaState.akasha) ? omniaState.akasha : 0;
     awardOmniaForExercise('pore_breathing', secondsElapsed || breathsDone * 10);
     var akashaGained = Math.max(0, Math.round(((typeof omniaState !== 'undefined' && omniaState.akasha) ? omniaState.akasha : 0) - akashaBefore));
+    touchPracticeStreak();
     if(syncEnabled && authToken) syncPushData();
 
     renderConcHome();
