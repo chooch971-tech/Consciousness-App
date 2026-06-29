@@ -1407,6 +1407,10 @@
     .sound-btn .sound-icon { font-size:18px; display:block; margin-bottom:4px; }
     .sound-btn--freeplay { grid-column:1 / -1; border-style:dashed; display:flex; align-items:center; justify-content:center; gap:10px; padding:12px 16px; }
     .sound-btn--freeplay .sound-icon { font-size:16px; display:inline; margin-bottom:0; }
+    .aud-picker-overlay { display:none; position:fixed; inset:0; z-index:9700; background:rgba(7,8,13,0.94); align-items:center; justify-content:center; padding:24px; }
+    .aud-picker-overlay.show { display:flex; }
+    .aud-picker-sheet { width:100%; max-width:420px; max-height:82vh; overflow-y:auto; -webkit-overflow-scrolling:touch; background:var(--bg); border:1px solid var(--border); border-radius:14px; padding:20px; }
+    .aud-picker-title { font-size:9px; letter-spacing:.3em; text-transform:uppercase; color:#d4956e; text-align:center; margin-bottom:16px; }
     #audSessionScreen { justify-content:space-between; }
     .aud-wave { display:flex; align-items:flex-end; justify-content:center; gap:3px; height:48px; margin:20px auto; }
     .aud-bar { width:4px; border-radius:2px; background:#d4956e; opacity:0.7; transition:height 0.15s ease; }
@@ -6289,6 +6293,13 @@ body:not(.tut-live) #tutCorgi {
       rep <span id="audRepTimer">0:00</span>
     </div>
     <div class="vis-halt-flash" id="audHaltFlash">Halt.</div>
+    <div class="aud-picker-overlay" id="audPickerOverlay">
+      <div class="aud-picker-sheet">
+        <div class="aud-picker-title">Choose a sound</div>
+        <div class="sound-grid" id="audPickerGrid"></div>
+        <button class="btn ghost conc-btn" id="audPickerCloseBtn" style="margin-top:6px;">Close</button>
+      </div>
+    </div>
   </div>
 
   <!-- AUDITORY RESULT SCREEN -->
@@ -14742,28 +14753,66 @@ function audSwitchableSounds() {
   return ids;
 }
 
-// Cycle to the next sound mid-listen, previewing it immediately. Only available
-// before the concentration rep starts (the sound is silenced once focus begins).
-function audSwitchSound() {
-  var ids = audSwitchableSounds();
-  if (ids.length < 2) return;
-  var idx = ids.indexOf(currentSound);
-  currentSound = ids[(idx + 1) % ids.length]; // from -1 (e.g. freeplay) → first
+// Build the in-session sound picker grid — same contents as the home selector:
+// every built-in sound, "My Music" (freeplay), and any custom uploads.
+function buildAudPickerGrid() {
+  var grid = document.getElementById('audPickerGrid');
+  if (!grid) return;
+  var customSounds = loadCustomAudSounds().filter(function(s) { return s.kind !== 'youtube'; });
+  var allSounds = SOUNDS.map(function(s) {
+    return { id: s.id, label: s.label, icon: s.icon };
+  }).concat(customSounds.map(function(s) {
+    return { id: s.id, label: s.name.replace(/</g, '&lt;'), icon: s.kind === 'url' ? '&#128279;' : '&#127911;' };
+  }));
+  grid.innerHTML = allSounds.map(function(s) {
+    var sel = s.id === currentSound ? ' selected' : '';
+    var extra = s.id === 'freeplay' ? ' sound-btn--freeplay' : '';
+    return '<button class="sound-btn' + extra + sel + '" data-sound="' + s.id + '">'
+      + '<span class="sound-icon">' + s.icon + '</span>' + s.label + '</button>';
+  }).join('');
+  grid.querySelectorAll('.sound-btn').forEach(function(btn) {
+    btn.addEventListener('click', function() { pickAudSoundFromPicker(this.dataset.sound); });
+  });
+}
+
+// Open the picker so the user can jump straight to any sound (rather than
+// cycling one at a time). Only meaningful before concentration begins.
+function openAudSoundPicker() {
+  buildAudPickerGrid();
+  var ov = document.getElementById('audPickerOverlay');
+  if (ov) ov.classList.add('show');
+}
+
+function closeAudSoundPicker() {
+  var ov = document.getElementById('audPickerOverlay');
+  if (ov) ov.classList.remove('show');
+}
+
+// Apply a sound chosen from the picker, previewing it immediately and matching
+// the listening/freeplay prompt the same way startAuditorySession does.
+function pickAudSoundFromPicker(id) {
+  currentSound = id;
+  closeAudSoundPicker();
+  var isFreePlay = id === 'freeplay';
   var nameEl = document.getElementById('audSoundName');
   if (nameEl) nameEl.textContent = getAudSoundLabel(currentSound);
-  // A real sound is now selected — make sure the wave shows and the prompt
-  // matches a listening (not freeplay) session.
   var waveEl = document.getElementById('audWave');
-  if (waveEl) waveEl.style.visibility = '';
+  if (waveEl) waveEl.style.visibility = isFreePlay ? 'hidden' : '';
   // Before concentration begins, refresh the listening prompt. Mid-rep we just
   // swap the ambient sound without disturbing the "Concentrate." cue.
   if (!audRepActive) {
     var stateEl = document.getElementById('audStateLabel');
-    if (stateEl) stateEl.textContent = 'Listen to the sound.\nTap Start when ready to concentrate.';
+    if (stateEl) stateEl.textContent = isFreePlay
+      ? 'Play your own music.\nTap Start when ready to focus.'
+      : 'Listen to the sound.\nTap Start when ready to concentrate.';
   }
   stopAllAudio();
-  playSound(currentSound);
-  startWaveAnimation();
+  if (!isFreePlay) {
+    playSound(currentSound);
+    startWaveAnimation();
+  } else {
+    stopWaveAnimation();
+  }
 }
 
 // ── Session logic ─────────────────────────────────────────
@@ -14793,6 +14842,7 @@ function startAuditorySession() {
   // and only when more than one sound is available.
   var switchBtn = document.getElementById('audSwitchSoundBtn');
   if (switchBtn) switchBtn.style.display = audSwitchableSounds().length > 1 ? '' : 'none';
+  closeAudSoundPicker();
 
   showScreen('audSessionScreen');
   requestExerciseWakeLock();
@@ -15004,7 +15054,17 @@ document.getElementById('audNextRepBtn').addEventListener('click', function() {
   startAudRep();
 });
 document.getElementById('audStartRepBtn').addEventListener('click', beginAudRep);
-document.getElementById('audSwitchSoundBtn').addEventListener('click', audSwitchSound);
+document.getElementById('audSwitchSoundBtn').addEventListener('click', openAudSoundPicker);
+document.getElementById('audPickerCloseBtn').addEventListener('click', function(e) {
+  e.stopPropagation();
+  closeAudSoundPicker();
+});
+// Tapping the dimmed backdrop (outside the sheet) closes the picker. Stop the
+// click from bubbling to the session screen, which would log a stray halt.
+document.getElementById('audPickerOverlay').addEventListener('click', function(e) {
+  e.stopPropagation();
+  if (e.target === this) closeAudSoundPicker();
+});
 document.getElementById('audEndBtn').addEventListener('click', function() {
   var _audElapsed = audSessionStartTime ? Math.floor((Date.now() - audSessionStartTime) / 1000) : 0;
   omniaConfirmEarlyEnd('auditory', _audElapsed, endAuditorySession);
