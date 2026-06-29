@@ -7277,6 +7277,7 @@ const DEFAULT_STATE = {
   streakFreezesEverEarned: 0, // lifetime count (for "earned N freezes" toast)
   freezesUsed: 0,            // lifetime freezes consumed
   practicedDates: [],        // array of 'YYYY-MM-DD' strings
+  frozenDates: [],           // days a freeze covered (keep the chain unbroken)
   streakStartDate: null,     // 'YYYY-MM-DD' of current streak's day 1
   streakCommit: 7,           // current commitment goal (7/14/30/45)
   endedStreakInfo: null,     // {days, date} stashed when streak ends, cleared after modal shown
@@ -7345,31 +7346,28 @@ function touchPracticeStreak() {
   var today = new Date().toDateString();
   var todayISO = new Date().toISOString().slice(0,10);
   if (state.lastSessionDate !== today) {
-    var yesterday = new Date(Date.now() - 86400000).toDateString();
-    var isConsecutive = state.lastSessionDate === yesterday;
     var prevStreak = state.streak || 0;
-    if (isConsecutive) {
-      state.streak = prevStreak + 1;
-      // +1 freeze every 7 streak days, capped at 3
-      if (state.streak % 7 === 0 && (state.streakFreezes || 0) < 3) {
-        state.streakFreezes = Math.min(3, (state.streakFreezes || 0) + 1);
-        state.streakFreezesEverEarned = (state.streakFreezesEverEarned || 0) + 1;
-      }
-    } else {
-      state.streak = 1;
-      state.streakStartDate = todayISO;
-      // +3 freezes at the start of every new streak, capped at 3
+    // Record today's practice first, then derive the streak from the calendar so
+    // the number can never drift from what the user sees.
+    if (!state.practicedDates) state.practicedDates = [];
+    if (state.practicedDates.indexOf(todayISO) === -1) {
+      state.practicedDates.push(todayISO);
+      if (state.practicedDates.length > 365) state.practicedDates = state.practicedDates.slice(-365);
+    }
+    state.lastSessionDate = today;
+    syncStreakFromCalendar();
+    // Freeze gifts, keyed off the calendar-derived streak:
+    if (state.streak === 1) {
+      // Fresh streak — top up to 3 freezes.
       var fGift = Math.min(3, 3 - (state.streakFreezes || 0));
       if (fGift > 0) {
         state.streakFreezes = (state.streakFreezes || 0) + fGift;
         state.streakFreezesEverEarned = (state.streakFreezesEverEarned || 0) + fGift;
       }
-    }
-    state.lastSessionDate = today;
-    if (!state.practicedDates) state.practicedDates = [];
-    if (state.practicedDates.indexOf(todayISO) === -1) {
-      state.practicedDates.push(todayISO);
-      if (state.practicedDates.length > 90) state.practicedDates = state.practicedDates.slice(-90);
+    } else if (state.streak === prevStreak + 1 && state.streak % 7 === 0 && (state.streakFreezes || 0) < 3) {
+      // Reached another clean week of practice — +1 freeze (capped at 3).
+      state.streakFreezes = Math.min(3, (state.streakFreezes || 0) + 1);
+      state.streakFreezesEverEarned = (state.streakFreezesEverEarned || 0) + 1;
     }
     // Award the committed streak goal's XP + Akasha when the streak reaches it.
     // Keyed by (streak start, goal days) so each goal pays out exactly once per
@@ -7443,46 +7441,125 @@ function backfillPracticedDates() {
   }
 }
 
+// ── Calendar-derived streak ──────────────────────────────────────────────
+// The streak NUMBER is always recomputed from the practiced-days calendar (plus
+// any days a freeze covered) so it can never drift away from what the user sees
+// on the calendar. A day counts toward the streak if it was practiced or frozen.
+function _streakISO(d) { return d.toISOString().slice(0, 10); }
+
+var STREAK_FREEZE_CAP = 3;
+
+// Pure: walk backwards from today (or yesterday, since the streak is still alive
+// until midnight) over consecutive practiced-or-frozen days. A frozen day is one
+// a freeze covered, so it keeps the chain unbroken and counts toward the span.
+// Returns the run length and its first day. Stops at the first uncovered miss.
+function computeStreakRun() {
+  var practiced = {}; (state.practicedDates || []).forEach(function(d) { practiced[d] = true; });
+  var frozen = {}; (state.frozenDates || []).forEach(function(d) { frozen[d] = true; });
+  function has(key) { return practiced[key] || frozen[key]; }
+  var today = new Date(); today.setHours(0, 0, 0, 0);
+  var cursor = new Date(today);
+  if (!has(_streakISO(today))) cursor.setDate(cursor.getDate() - 1);
+  var count = 0;
+  var start = null;
+  while (has(_streakISO(cursor))) {
+    count++;
+    start = _streakISO(cursor);
+    cursor.setDate(cursor.getDate() - 1);
+  }
+  return { count: count, start: start };
+}
+
+// One-time repair for streaks created before the calendar-derived model: their
+// missed days were never recorded as frozen, so the run would break at the first
+// old gap. Seed frozenDates for already-passed ISOLATED single-day gaps in the
+// trailing run (the kind a freeze covers), up to the freeze cap, so the streak
+// number reflects the user's real, near-continuous practice. Runs exactly once.
+function reconcileLegacyStreak() {
+  if (state.streakReconciledV2) return;
+  state.streakReconciledV2 = true;
+  if (!state.frozenDates) state.frozenDates = [];
+  var practiced = {}; (state.practicedDates || []).forEach(function(d) { practiced[d] = true; });
+  var frozen = {}; state.frozenDates.forEach(function(d) { frozen[d] = true; });
+  function has(key) { return practiced[key] || frozen[key]; }
+  var today = new Date(); today.setHours(0, 0, 0, 0);
+  var cursor = new Date(today);
+  if (!has(_streakISO(today))) cursor.setDate(cursor.getDate() - 1);
+  var bridgesLeft = STREAK_FREEZE_CAP;
+  while (true) {
+    var key = _streakISO(cursor);
+    if (has(key)) { cursor.setDate(cursor.getDate() - 1); continue; }
+    // Uncovered miss. Forgive it only if it's isolated (day before was practiced)
+    // and we still have legacy bridges left; otherwise the chain genuinely ends.
+    var prev = new Date(cursor); prev.setDate(prev.getDate() - 1);
+    if (has(_streakISO(prev)) && bridgesLeft > 0) {
+      bridgesLeft--;
+      frozen[key] = true;
+      if (state.frozenDates.indexOf(key) === -1) state.frozenDates.push(key);
+      cursor.setDate(cursor.getDate() - 1);
+      continue;
+    }
+    break;
+  }
+  saveState();
+}
+
+// Recompute state.streak from the calendar. Returns the previous value so
+// callers can detect a break (prev > 0, now 0) or growth.
+function syncStreakFromCalendar() {
+  var run = computeStreakRun();
+  var prev = state.streak || 0;
+  state.streak = run.count;
+  state.streakStartDate = run.count > 0 ? run.start : null;
+  var el = document.getElementById('streakCount');
+  if (el) el.textContent = state.streak;
+  return prev;
+}
+
 function checkStreakStatus() {
   backfillPracticedDates();
-  if (!state.lastSessionDate || !state.streak) return;
+  reconcileLegacyStreak();
+  if (!state.lastSessionDate) { syncStreakFromCalendar(); return; }
   var today = new Date(); today.setHours(0,0,0,0);
   var last = new Date(state.lastSessionDate); last.setHours(0,0,0,0);
   var diffDays = Math.round((today - last) / 86400000);
-  if (diffDays > 1) {
+  var prevStreak = state.streak || 0;
+  if (diffDays > 1 && prevStreak > 0) {
     var missed = diffDays - 1;
-    var spend = Math.min(missed, state.streakFreezes || 0);
-    var broken = missed - spend;
-    if (spend > 0) {
-      state.streakFreezes -= spend;
-      state.freezesUsed = (state.freezesUsed || 0) + spend;
-      if (broken === 0) {
-        // Freeze(s) protected the streak — clear any stale endedStreakInfo so
-        // the "Streak Ended" popup doesn't fire from an old value in state.
-        state.endedStreakInfo = null;
-        state.streakEndedPromptShown = true;
-        setTimeout(function() {
-          var left = state.streakFreezes || 0;
-          showToast('Streak freeze used · ' + left + ' freeze' + (left === 1 ? '' : 's') + ' remaining', 3200);
-        }, 800);
+    var available = state.streakFreezes || 0;
+    if (missed <= available) {
+      // Freezes can fully bridge the gap — spend exactly one per missed day and
+      // record those days as frozen so the calendar-derived streak stays intact.
+      for (var i = 1; i <= missed; i++) {
+        var d = new Date(last); d.setDate(d.getDate() + i);
+        var key = _streakISO(d);
+        if (!state.frozenDates) state.frozenDates = [];
+        if (state.frozenDates.indexOf(key) === -1) state.frozenDates.push(key);
       }
-    }
-    if (broken > 0) {
-      state.endedStreakInfo = { days: state.streak, date: state.lastSessionDate };
+      state.streakFreezes = available - missed;
+      state.freezesUsed = (state.freezesUsed || 0) + missed;
+      state.endedStreakInfo = null;
+      var _left = state.streakFreezes;
+      setTimeout(function() {
+        showToast('Streak freeze used · ' + _left + ' freeze' + (_left === 1 ? '' : 's') + ' remaining', 3200);
+      }, 800);
+    } else {
+      // Not enough freezes to save the streak — break it, but DON'T waste the
+      // freezes you did have (they carry into the next streak).
+      state.endedStreakInfo = { days: prevStreak, date: state.lastSessionDate };
       state.streakEndedPromptShown = false;
-      state.streak = 0;
-      state.streakStartDate = null;
     }
     saveState();
   }
-  // Keep the header badge in sync — a reset above used to leave the old
-  // number on screen until something else happened to re-render it.
-  var _scEl = document.getElementById('streakCount');
-  if (_scEl) _scEl.textContent = state.streak || 0;
+  // The streak number always reflects the calendar (never a stale counter).
+  syncStreakFromCalendar();
+  saveState();
+  // Surface a pending "Streak Ended" popup — even if the streak is already 0
+  // (e.g. the app reloaded before the prompt could render last time). The
+  // "shown" flag is only set once the overlay actually appears, inside
+  // showStreakEndedPrompt, so a missed render gets another chance.
   if (state.endedStreakInfo && !state.streakEndedPromptShown) {
-    state.streakEndedPromptShown = true;
-    saveState();
-    setTimeout(showStreakEndedPrompt, 2200);
+    setTimeout(showStreakEndedPrompt, 1600);
   }
 }
 
@@ -11201,6 +11278,11 @@ function showStreakScreen() {
 
 function showStreakEndedPrompt() {
   if (document.getElementById('streakEndedOverlay')) return;
+  if (!state.endedStreakInfo) return;
+  // Mark shown only now that we're actually rendering — if the app had reloaded
+  // before reaching this point, the prompt gets another chance next launch.
+  state.streakEndedPromptShown = true;
+  saveState();
   var info = state.endedStreakInfo;
   var overlay = document.createElement('div');
   overlay.className = 'so-ended-overlay';
