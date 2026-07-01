@@ -21563,10 +21563,43 @@ function buildGuideRegimentItems(mode) {
   // also change an id, so filter here after the full pipeline.
   var postponed = guideState.postponed || {};
   var now = Date.now();
-  return items.filter(function(item) {
+  return guideAttachSessionDone(items.filter(function(item) {
     var until = postponed[item.id];
     return !until || now >= until;
+  }));
+}
+
+// Mark a timed Path exercise as session-complete once the day's required number
+// of sessions has been recorded — even if each ended before Omnia's recommended
+// duration (ending early only forfeits the body-level award, not the daily Path
+// credit). This is stored as a SEPARATE flag (item.sessionDone), never folded
+// into item.done here, so the body-award highlight (omniaHighlightedExerciseIds)
+// and the recommendation picker — both of which read item.done — are unchanged.
+// The Path renderers fold sessionDone into done for display only.
+function guideAttachSessionDone(items) {
+  var exStats = null, thStats = null;
+  var thoughtModes = { thought:1, observation:1, focus:1, vacancy:1 };
+  items.forEach(function(it) {
+    if (it.done) return;                            // already complete by duration
+    if (typeof it.duration !== 'number') return;    // open-ended (soulmirror/pore) keep own logic
+    if (it.id === 'soulmirror' || it.id === 'pore' || it.id === 'pore_breathing') return;
+    var rounds = 1;
+    var ov = guideState._exRounds && guideState._exRounds[it.id];
+    if (ov === 1 || ov === 2) rounds = ov;
+    else rounds = guideTwoADayEnabled() ? 2 : 1;
+    var todayCount;
+    if (typeof it.todayCount === 'number') {
+      todayCount = it.todayCount;
+    } else if (thoughtModes[it.id]) {
+      if (!thStats) thStats = guideThoughtStats();
+      todayCount = ((thStats[it.mode || it.id]) || {}).todayCount || 0;
+    } else {
+      if (!exStats) exStats = guideExerciseStats();
+      todayCount = ((exStats[it.id]) || {}).todayCount || 0;
+    }
+    if (todayCount >= rounds) it.sessionDone = true;
   });
+  return items;
 }
 
 // Has a Pore Breathing session been logged today?
@@ -21750,6 +21783,9 @@ function renderGuidePlan(mode, skipScroll) {
   var dayIdx = new Date().getDay(); // 0–6
 
   var items = buildGuideRegimentItems(regiment.selectedMode);
+  // An exercise whose day's sessions were completed (even if ended early) shows
+  // as done on the Path — display only; body-award logic uses the untouched flag.
+  items.forEach(function(it) { if (it.sessionDone) it.done = true; });
   var focus = regiment.focus;
 
   var dayNames = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
@@ -22229,6 +22265,10 @@ function renderPathQuests() {
 
   var regiment = (typeof guideCurrentRegimentInfo === 'function') ? guideCurrentRegimentInfo() : { mode:'beginner', focus:'Step I · Fundamentals' };
   var items = (typeof buildGuideRegimentItems === 'function') ? buildGuideRegimentItems(regiment.selectedMode) : [];
+  // Fold session-completion into done for display: an exercise done for the day
+  // (even if ended before Omnia's recommended time) reads as completed here.
+  // Body-award eligibility is computed separately from the untouched item.done.
+  items.forEach(function(it) { if (it.sessionDone) it.done = true; });
   var pathTotal = items.length;
   var pathDone = items.filter(function(i) { return i.done; }).length;
   var bannerSub = document.getElementById('pathBannerSub');
