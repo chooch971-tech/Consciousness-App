@@ -11290,17 +11290,23 @@ function showStreakScreen() {
     + '</div>';
   el.dataset.calYear = calYear;
   el.dataset.calMonth = calMonth;
-  el.addEventListener('click', function(e) {
-    var btn = e.target.closest('.so-cal-nav');
-    if (!btn) return;
-    var yr = parseInt(el.dataset.calYear, 10);
-    var mo = parseInt(el.dataset.calMonth, 10);
-    if (btn.dataset.dir === 'prev') { mo--; if(mo<0){mo=11;yr--;} }
-    else { mo++; if(mo>11){mo=0;yr++;} }
-    el.dataset.calYear = yr; el.dataset.calMonth = mo;
-    var cal = el.querySelector('.so-cal-card');
-    if (cal) cal.innerHTML = buildStreakCalendar(yr, mo, state.streakCommit || 7);
-  }, { once: false });
+  // Bind the month-nav handler ONCE. `el` is a persistent element reused every
+  // time the streak screen opens, so re-adding this listener each open stacked
+  // them — one tap then fired N times and skipped months (June went missing).
+  if (!el._calNavBound) {
+    el._calNavBound = true;
+    el.addEventListener('click', function(e) {
+      var btn = e.target.closest('.so-cal-nav');
+      if (!btn) return;
+      var yr = parseInt(el.dataset.calYear, 10);
+      var mo = parseInt(el.dataset.calMonth, 10);
+      if (btn.dataset.dir === 'prev') { mo--; if(mo<0){mo=11;yr--;} }
+      else { mo++; if(mo>11){mo=0;yr++;} }
+      el.dataset.calYear = yr; el.dataset.calMonth = mo;
+      var cal = el.querySelector('.so-cal-card');
+      if (cal) cal.innerHTML = buildStreakCalendar(yr, mo, state.streakCommit || 7);
+    });
+  }
   function closeStreakOverlay() {
     el.classList.remove('so-vis');
     setTimeout(function() { el.classList.remove('so-show'); }, 420);
