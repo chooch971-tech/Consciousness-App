@@ -124,7 +124,7 @@
     /* Streak overlay — hero band */
     .so-hero { width:100%; background:linear-gradient(160deg,#b86820 0%,#d4956e 45%,#c07030 100%); padding:max(env(safe-area-inset-top),44px) 24px 32px; display:flex; flex-direction:column; align-items:center; }
     .so-flame-svg { width:48px; height:48px; margin-bottom:8px; }
-    .so-hero-num { font-family:Cormorant Garamond,serif; font-size:96px; font-weight:300; color:#fff; line-height:1; text-shadow:0 2px 20px rgba(0,0,0,.22); }
+    .so-hero-num { font-family:Cormorant Garamond,serif; font-size:96px; font-weight:300; color:#fff; line-height:1.06; margin-bottom:8px; text-shadow:0 2px 20px rgba(0,0,0,.22); }
     .so-hero-label { font-size:11px; letter-spacing:.22em; text-transform:uppercase; color:rgba(255,255,255,0.7); margin-bottom:6px; }
     .so-hero-sub { font-size:12px; color:rgba(255,255,255,0.6); font-style:italic; text-align:center; max-width:280px; line-height:1.7; }
     /* Body */
@@ -153,6 +153,8 @@
     .so-cal-grid { display:grid; grid-template-columns:repeat(7,1fr); gap:2px; }
     .so-cal-day { aspect-ratio:1; display:flex; align-items:center; justify-content:center; font-size:11px; font-family:'DM Mono',monospace; color:var(--muted); border-radius:50%; position:relative; }
     .so-cal-day.practiced { background:#d4956e; color:#fff; }
+    .so-cal-day.frozen { background:rgba(126,184,164,0.18); color:#7eb8a4; border:1px solid rgba(126,184,164,0.4); }
+    .so-cal-day.frozen::after { content:'❄'; position:absolute; top:-7px; right:-3px; font-size:9px; color:#7eb8a4; }
     .so-cal-day.today { box-shadow:0 0 0 2px #d4956e; color:#d4956e; }
     .so-cal-day.today.practiced { color:#fff; }
     .so-cal-day.goal-end::after { content:'🎯'; position:absolute; top:-9px; right:-5px; font-size:9px; }
@@ -7280,6 +7282,7 @@ const DEFAULT_STATE = {
   frozenDates: [],           // days a freeze covered (keep the chain unbroken)
   streakStartDate: null,     // 'YYYY-MM-DD' of current streak's day 1
   streakCommit: 7,           // current commitment goal (7/14/30/45)
+  streakGoalBaseDays: 0,     // streak-day count when the current goal was committed; a new goal counts from here, not day 1
   endedStreakInfo: null,     // {days, date} stashed when streak ends, cleared after modal shown
   streakEndedPromptShown: false,
 };
@@ -7358,7 +7361,8 @@ function touchPracticeStreak() {
     syncStreakFromCalendar();
     // Freeze gifts, keyed off the calendar-derived streak:
     if (state.streak === 1) {
-      // Fresh streak — top up to 3 freezes.
+      // Fresh streak — top up to 3 freezes and reset the goal baseline to day 1.
+      state.streakGoalBaseDays = 0;
       var fGift = Math.min(3, 3 - (state.streakFreezes || 0));
       if (fGift > 0) {
         state.streakFreezes = (state.streakFreezes || 0) + fGift;
@@ -7370,11 +7374,13 @@ function touchPracticeStreak() {
       state.streakFreezesEverEarned = (state.streakFreezesEverEarned || 0) + 1;
     }
     // Award the committed streak goal's XP + Akasha when the streak reaches it.
-    // Keyed by (streak start, goal days) so each goal pays out exactly once per
-    // streak — and picking a longer goal afterwards can still pay out later.
+    // Progress is measured from the goal's baseline (where the previous goal was
+    // reached), so a goal is "N more days," and keyed by (streak start, baseline,
+    // goal days) so each goal pays out exactly once.
     var commitDays = state.streakCommit || 7;
-    if (state.streak >= commitDays) {
-      var awardKey = (state.streakStartDate || 'legacy') + ':' + commitDays;
+    var goalBase = state.streakGoalBaseDays || 0;
+    if (state.streak - goalBase >= commitDays) {
+      var awardKey = (state.streakStartDate || 'legacy') + ':' + goalBase + ':' + commitDays;
       if (state.streakCommitAwardedKey !== awardKey) {
         state.streakCommitAwardedKey = awardKey;
         var commitDef = null;
@@ -7504,6 +7510,25 @@ function reconcileLegacyStreak() {
   saveState();
 }
 
+// A streak goal is a fresh challenge measured from where the previous goal was
+// reached — not from day 1 — so picking "45 days" after finishing "30 days"
+// means "45 more days," never showing you as already 37/45. This one-time
+// migration seeds the baseline for existing streaks at the highest milestone the
+// current streak has already cleared (below the current goal).
+function migrateStreakGoalBase() {
+  if (state.streakGoalBaseMigrated) return;
+  state.streakGoalBaseMigrated = true;
+  if (typeof state.streakGoalBaseDays !== 'number') state.streakGoalBaseDays = 0;
+  var commit = state.streakCommit || 7;
+  var streak = state.streak || 0;
+  var base = 0;
+  STREAK_COMMITS.forEach(function(c) {
+    if (c.days < commit && streak >= c.days && c.days > base) base = c.days;
+  });
+  state.streakGoalBaseDays = base;
+  saveState();
+}
+
 // Recompute state.streak from the calendar. Returns the previous value so
 // callers can detect a break (prev > 0, now 0) or growth.
 function syncStreakFromCalendar() {
@@ -7548,11 +7573,13 @@ function checkStreakStatus() {
       // freezes you did have (they carry into the next streak).
       state.endedStreakInfo = { days: prevStreak, date: state.lastSessionDate };
       state.streakEndedPromptShown = false;
+      state.streakGoalBaseDays = 0; // next streak's goal counts from day 1
     }
     saveState();
   }
   // The streak number always reflects the calendar (never a stale counter).
   syncStreakFromCalendar();
+  migrateStreakGoalBase();
   saveState();
   // Surface a pending "Streak Ended" popup — even if the streak is already 0
   // (e.g. the app reloaded before the prompt could render last time). The
@@ -11115,12 +11142,13 @@ function buildStreakCalendar(year, month, commit) {
   var now = new Date();
   var todayStr = now.toISOString().slice(0,10);
   var practiced = state.practicedDates || [];
+  var frozen = state.frozenDates || [];
   var firstDow = new Date(year, month, 1).getDay();
   var daysInMonth = new Date(year, month + 1, 0).getDate();
   var goalEndStr = null;
   if (state.streakStartDate && commit) {
     var sd = new Date(state.streakStartDate);
-    sd.setDate(sd.getDate() + commit - 1);
+    sd.setDate(sd.getDate() + (state.streakGoalBaseDays || 0) + commit - 1);
     goalEndStr = sd.toISOString().slice(0,10);
   }
   var prefix = year + '-' + String(month+1).padStart(2,'0') + '-';
@@ -11141,6 +11169,7 @@ function buildStreakCalendar(year, month, commit) {
     var ds = prefix + String(d).padStart(2,'0');
     var cls = 'so-cal-day';
     if (practiced.indexOf(ds) !== -1) cls += ' practiced';
+    else if (frozen.indexOf(ds) !== -1) cls += ' frozen';
     if (ds === todayStr) cls += ' today';
     if (goalEndStr && ds === goalEndStr) cls += ' goal-end';
     html += '<div class="' + cls + '">' + d + '</div>';
@@ -11152,6 +11181,7 @@ function showStreakScreen() {
   var el = document.getElementById('streakOverlay');
   if (!el) return;
   if (typeof backfillPracticedDates === 'function') backfillPracticedDates();
+  if (typeof migrateStreakGoalBase === 'function') migrateStreakGoalBase();
   var streak = state.streak || 0;
   var commit = state.streakCommit || 7;
   var freezes = state.streakFreezes || 0;
@@ -11177,12 +11207,14 @@ function showStreakScreen() {
   // retroactively by re-selecting a smaller goal.
   function goalCardInner() {
     var commitNow = state.streakCommit || 7;
-    var pct = commitNow > 0 ? Math.min(100, Math.round(streak / commitNow * 100)) : 100;
-    var completedCurrent = streak >= commitNow;
+    var base = state.streakGoalBaseDays || 0;
+    var done = Math.max(0, streak - base);          // days completed toward THIS goal
+    var pct = commitNow > 0 ? Math.min(100, Math.round(done / commitNow * 100)) : 100;
+    var completedCurrent = done >= commitNow;
     var selLabel = completedCurrent ? 'Choose your next goal' : 'Change your goal';
     var tiersHTML = STREAK_COMMITS.map(function(c) {
       var isCurrent = commitNow === c.days;
-      var isReached = streak >= c.days;
+      var isReached = done >= c.days;               // already cleared this many days in the window
       var cls = 'so-goal-tier';
       var disabled = false;
       if (isCurrent) { cls += ' selected'; disabled = true; }
@@ -11193,9 +11225,9 @@ function showStreakScreen() {
         + '<span class="so-goal-tier-reward">+' + c.akasha.toLocaleString() + '</span>'
         + '</button>';
     }).join('');
-    return '<div class="so-goal-header"><span class="so-goal-title">Streak Goal</span><span class="so-goal-fraction">' + streak + ' / ' + commitNow + ' days</span></div>'
+    return '<div class="so-goal-header"><span class="so-goal-title">Streak Goal</span><span class="so-goal-fraction">' + Math.min(done, commitNow) + ' / ' + commitNow + ' days</span></div>'
       + '<div class="so-goal-track"><div class="so-goal-fill" style="width:' + pct + '%"></div></div>'
-      + '<div class="so-goal-labels"><span class="so-goal-lbl">📅 Day 1</span><span class="so-goal-lbl">🏆 Day ' + commitNow + '</span></div>'
+      + '<div class="so-goal-labels"><span class="so-goal-lbl">📅 ' + (base > 0 ? 'Day ' + (base + 1) : 'Day 1') + '</span><span class="so-goal-lbl">🏆 ' + commitNow + ' days</span></div>'
       + '<div class="so-goal-select-label">' + selLabel + '</div>'
       + '<div class="so-goal-tiers">' + tiersHTML + '</div>';
   }
@@ -11206,6 +11238,10 @@ function showStreakScreen() {
       btn.addEventListener('click', function() {
         var days = parseInt(btn.dataset.days, 10);
         if (!days) return;
+        // If the current goal is already complete, the new goal is a fresh
+        // challenge measured from here — so it reads 0 / N, not N-already-done.
+        var base = state.streakGoalBaseDays || 0;
+        if (streak - base >= (state.streakCommit || 7)) state.streakGoalBaseDays = streak;
         state.streakCommit = days;
         localStorage.setItem('presence_streak_commit', String(days));
         saveState();
