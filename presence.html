@@ -20539,8 +20539,11 @@ function practiceTreeNodeBrightness(exId, stats) {
   if (exId === 'auditory') return Math.min(20, Math.floor((st.bestSec||0)/30));
   if (exId === 'kether') {
     var score = 0;
-    ['clock','observation','asana','soulmirror','visual','auditory'].forEach(function(id) {
-      if (practiceTreeNodeBrightness(id, stats) >= 10) score++;
+    // Each contributor lights its share at a brightness threshold. Vacancy is
+    // held to full brightness (20 = best gap ≥ 15 min, at /45); the rest keep
+    // their halfway mark (10).
+    [['clock',10],['vacancy',20],['asana',10],['soulmirror',10],['visual',10],['auditory',10]].forEach(function(pair) {
+      if (practiceTreeNodeBrightness(pair[0], stats) >= pair[1]) score++;
     });
     return Math.round(score / 6 * 20);
   }
