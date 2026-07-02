@@ -332,6 +332,15 @@
     @keyframes scoParticle { 0% { transform:translate(-50%,-50%) rotate(var(--a)) translateX(0) scale(0); opacity:0; } 10% { opacity:1; } 60% { transform:translate(-50%,-50%) rotate(var(--a)) translateX(var(--d)) scale(1.2); opacity:1; } 100% { transform:translate(-50%,-50%) rotate(var(--a)) translateX(calc(var(--d) * 1.4)) scale(0); opacity:0; } }
     .sco-mascot-wrap.sco-anim svg { animation:scoCrystalReveal 1.4s cubic-bezier(.22,.85,.4,1) both; }
     @keyframes scoCrystalReveal { 0% { transform:scale(0.2); opacity:0; filter:blur(8px) brightness(3); } 30% { transform:scale(1.45); opacity:1; filter:blur(0) brightness(2.2); } 55% { transform:scale(.92); filter:blur(0) brightness(1.4); } 100% { transform:scale(1); opacity:1; filter:blur(0) brightness(1); } }
+    /* Flame ignition — the streak flame catching (the reverse of the Streak
+       Ended extinguish). Ignites from the base, overshoots, settles into the
+       same gentle sway the streak flame has everywhere else. */
+    .sco-flame-svg { width:92px; height:113px; transform-origin:50% 88%; filter:drop-shadow(0 0 18px rgba(255,150,60,.5));
+      animation:scoFlameIgnite 1.1s cubic-bezier(.22,.85,.4,1) both, seoFlameSway 2.4s ease-in-out 1.1s infinite; }
+    @keyframes scoFlameIgnite { 0% { transform:scale(.12,0); opacity:0; filter:brightness(3); } 35% { transform:scale(1.18,1.3); opacity:1; filter:brightness(2.1); } 55% { transform:scale(.9,.85); } 75% { transform:scale(1.06,1.1); } 100% { transform:scale(1,1); filter:brightness(1); } }
+    .sco-ember { position:absolute; bottom:20px; width:4px; height:4px; border-radius:50%; background:#ffc080; box-shadow:0 0 6px #ff9850, 0 0 12px rgba(255,140,60,.6); opacity:0; animation:seoEmber 2.6s ease-in infinite; }
+    .sco-num.sco-num-pop { opacity:1; transform:none; animation:scoNumPop .55s cubic-bezier(.22,.85,.4,1); }
+    @keyframes scoNumPop { 0% { transform:scale(1); text-shadow:0 0 0 rgba(255,170,100,0); } 40% { transform:scale(1.32); text-shadow:0 0 30px rgba(255,170,100,.85); } 100% { transform:scale(1); text-shadow:0 0 12px rgba(255,170,100,.3); } }
     .sco-bubble.sco-fadein, .sco-num.sco-fadein, .sco-label.sco-fadein, .sco-week.sco-fadein, .sco-commit-btn.sco-fadein, .sco-later.sco-fadein { opacity:0; transform:translateY(8px); animation:scoFadeIn .55s ease-out forwards; }
     @keyframes scoFadeIn { to { opacity:1; transform:translateY(0); } }
     .sco-week.sco-fadein .sco-week-col { opacity:0; animation:scoFadeIn .4s ease-out forwards; }
@@ -7484,8 +7493,10 @@ function touchPracticeStreak() {
     if (syncEnabled && authToken) syncPushData();
     var el = document.getElementById('streakCount');
     if (el) el.textContent = state.streak;
-    // Show streak celebration if not in tutorial
-    if (!window._tutorialFirstClock && localStorage.getItem('presence_tutorialVisited')) {
+    // Show streak celebration if not in tutorial. NOTE: this checked the key
+    // 'presence_tutorialVisited', which nothing ever sets (the tutorial writes
+    // 'presence_visited') — so the celebration never fired for anyone.
+    if (!window._tutorialFirstClock && localStorage.getItem('presence_visited')) {
       setTimeout(function() {
         if (typeof showStreakCelebration === 'function') showStreakCelebration();
       }, 1400);
@@ -11629,6 +11640,15 @@ function _tutDisablePostMode() {
 function showStreakCelebration() {
   var el = document.getElementById('streakCelebOverlay');
   if (!el) return;
+  if (el.classList.contains('sco-show')) return;
+  // Wait until the session-complete legend and body-level award are dismissed —
+  // this overlay sits below them (z 9750 vs 9800/9900), so firing now would
+  // play the whole ignition invisibly behind the legend.
+  var _sc = document.getElementById('sessionComplete');
+  if ((_sc && _sc.classList.contains('sc-show')) || document.getElementById('bodyLevelAwardOverlay')) {
+    setTimeout(showStreakCelebration, 700);
+    return;
+  }
   var streak = state.streak || 0;
   var msgs = [
     'You came back. That\'s the whole practice.',
@@ -11666,20 +11686,17 @@ function showStreakCelebration() {
       + '</div>';
   }).join('');
 
-  // Crystal SVG
-  var cSVG = '<svg viewBox="0 0 80 130" width="86" height="126" xmlns="http://www.w3.org/2000/svg" style="filter:drop-shadow(0 0 12px rgba(184,234,255,.35))">'
-    + '<defs><linearGradient id="scoG1" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#ddf0ff" stop-opacity=".92"/><stop offset="100%" stop-color="#6ab8d8" stop-opacity=".48"/></linearGradient><radialGradient id="scoG3" cx="50%" cy="38%" r="58%"><stop offset="0%" stop-color="#b8eaff" stop-opacity=".42"/><stop offset="100%" stop-color="#2878a0" stop-opacity="0"/></radialGradient></defs>'
-    + '<ellipse cx="40" cy="68" rx="28" ry="48" fill="url(#scoG3)" opacity=".62"/>'
-    + '<polygon points="40,3 54,14 40,25 26,14" fill="url(#scoG1)" stroke="#90cce8" stroke-width=".55"/>'
-    + '<polygon points="40,3 54,14 40,13" fill="#ceeaff" opacity=".72"/>'
-    + '<polygon points="40,3 26,14 40,13" fill="#b0dcf5" opacity=".42"/>'
-    + '<polygon points="40,25 60,36 64,58 40,70 16,58 20,36" fill="url(#scoG1)" stroke="#88c4e0" stroke-width=".55"/>'
-    + '<polygon points="40,25 60,36 40,44" fill="#d4ecff" opacity=".52"/>'
-    + '<polygon points="40,25 20,36 40,44" fill="#bce0f8" opacity=".32"/>'
-    + '<polygon points="40,70 64,58 56,88 40,100 24,88 16,58" fill="url(#scoG1)" stroke="#88c4e0" stroke-width=".55" opacity=".88"/>'
-    + '<polygon points="40,100 56,88 40,114" fill="url(#scoG1)" stroke="#88c4e0" stroke-width=".48" opacity=".72"/>'
-    + '<polygon points="40,100 24,88 40,114" fill="#b4dcf4" stroke="#88c4e0" stroke-width=".48" opacity=".52"/>'
+  // The streak flame igniting — the same flame the streak screen shows and the
+  // Streak Ended overlay extinguishes; extending the streak is it catching again.
+  var cSVG = '<svg class="sco-flame-svg" viewBox="0 0 52 64" fill="none" aria-hidden="true">'
+    + '<path d="M26 6C26 6 40 22 40 34C40 42 35 47 30 47C35 33 26 24 26 24C26 24 18 36 22 46C17 45 12 40 12 34C12 22 26 6 26 6Z" fill="rgba(255,200,80,0.9)"/>'
+    + '<path d="M26 28C26 28 32 36 30 43C28 49 23 48 21 46C26 40 26 28 26 28Z" fill="rgba(255,250,180,0.8)"/>'
+    + '<ellipse cx="26" cy="54" rx="13" ry="4" fill="rgba(180,80,20,0.30)"/>'
     + '</svg>';
+  // Embers begin drifting once the flame has caught (after the 1.1s ignition).
+  var emberHTML = [[30,1.2,-8],[52,1.9,6],[64,2.6,12],[42,3.2,-4]].map(function(e) {
+    return '<span class="sco-ember" style="left:' + e[0] + '%;animation-delay:' + e[1] + 's;--drift:' + e[2] + 'px;"></span>';
+  }).join('');
 
   // Burst particles — 18 light shards radiating outward
   var burstHTML = '<div class="sco-burst" id="scoBurst">'
@@ -11700,15 +11717,28 @@ function showStreakCelebration() {
   }
   burstHTML += '</div>';
 
+  // The number fades in at yesterday's count, then ticks up to today's with a
+  // pop — the moment the streak visibly extends. Day one just shows 1.
+  var prevStreak = streak > 1 ? streak - 1 : streak;
   el.innerHTML =
     burstHTML
     + '<div class="sco-bubble sco-fadein" style="animation-delay:.55s">' + msg + '</div>'
-    + '<div class="sco-mascot-wrap sco-anim"><div class="sco-glow"></div>' + cSVG + '</div>'
-    + '<div class="sco-num sco-fadein" style="animation-delay:.65s">' + streak + '</div>'
+    + '<div class="sco-mascot-wrap"><div class="sco-glow"></div>' + cSVG + emberHTML + '</div>'
+    + '<div class="sco-num sco-fadein" id="scoNumEl" style="animation-delay:.65s">' + prevStreak + '</div>'
     + '<div class="sco-label sco-fadein" style="animation-delay:.72s">day streak</div>'
     + '<div class="sco-week sco-fadein" style="animation-delay:.80s">' + weekHTML + '</div>'
     + '<button class="sco-commit-btn sco-fadein" id="scoCelebBtn" style="animation-delay:1.15s">I\'m Committed →</button>'
     + '<button class="sco-later sco-fadein" id="scoCelebLater" style="animation-delay:1.25s">Continue</button>';
+  if (streak > 1) {
+    setTimeout(function() {
+      var numEl = document.getElementById('scoNumEl');
+      if (!numEl) return;
+      numEl.textContent = streak;
+      numEl.classList.remove('sco-fadein');
+      numEl.classList.add('sco-num-pop');
+      if (navigator.vibrate) navigator.vibrate(60);
+    }, 1350);
+  }
 
   function close() {
     el.classList.remove('sco-vis');
