@@ -354,7 +354,28 @@
     @media (min-width:600px) {
       .so-hero-num { font-size:120px; }
     }
-    /* ── Idle game new UI ── */
+    /* ── Prestige (Turnings of the Wheel) ── */
+    .oe-prestige-btn { width:100%; margin-top:9px; padding:12px; border-radius:9px; border:1px solid rgba(226,196,140,.5); background:linear-gradient(100deg,#6a4f8e 0%,#b89a5e 52%,#6a4f8e 100%); background-size:200% 100%; color:#fff6e2; font-family:'DM Mono',monospace; font-size:10px; letter-spacing:.24em; text-transform:uppercase; cursor:pointer; box-shadow:0 4px 22px rgba(180,150,90,.3), inset 0 1px 0 rgba(255,255,255,.28); animation:oePrestigeShine 5s linear infinite; }
+    @keyframes oePrestigeShine { to { background-position:200% 0; } }
+    .oe-prestige-btn:active { transform:scale(.985); }
+    .oe-prestige-pips { color:#e8cd94; letter-spacing:.06em; }
+    .oe-prestige-pips-mark { text-shadow:0 0 8px rgba(226,196,140,.6); cursor:help; }
+    /* A prestiged Omnia carries a faint gold aura behind the crystal. */
+    body.omnia-prestiged .oe-omnia-figure::after { content:''; position:absolute; inset:-14%; border-radius:50%; background:radial-gradient(circle, rgba(226,196,140,.16) 0%, transparent 66%); pointer-events:none; z-index:-1; animation:scoPulse 4s ease-in-out infinite; }
+    /* Ceremony overlay */
+    #prestigeCeremony { display:none; position:fixed; inset:0; z-index:9820; background:radial-gradient(ellipse at 50% 45%, #17122a 0%, #0a0812 70%); flex-direction:column; align-items:center; justify-content:center; padding:32px; text-align:center; opacity:0; transition:opacity .5s ease; }
+    #prestigeCeremony.pc-show { display:flex; }
+    #prestigeCeremony.pc-vis { opacity:1; }
+    .pc-rays { position:absolute; left:50%; top:44%; width:720px; height:720px; margin:-360px 0 0 -360px; background:repeating-conic-gradient(from 0deg, transparent 0deg 9deg, rgba(226,196,140,.06) 9deg 13deg); border-radius:50%; animation:pnhRays 40s linear infinite; pointer-events:none; opacity:0; transition:opacity 1.2s ease; }
+    #prestigeCeremony.pc-vis .pc-rays { opacity:1; }
+    .pc-crystal { position:relative; width:120px; height:150px; margin-bottom:26px; animation:pcRise 1.6s cubic-bezier(.22,.85,.4,1) both; filter:drop-shadow(0 0 26px rgba(226,196,140,.6)); }
+    @keyframes pcRise { 0%{ transform:scale(.3) translateY(30px); opacity:0; filter:blur(6px) brightness(2.6); } 45%{ transform:scale(1.3) translateY(0); opacity:1; } 100%{ transform:scale(1) translateY(0); opacity:1; } }
+    .pc-kicker { font-family:'DM Mono',monospace; font-size:10px; letter-spacing:.32em; text-transform:uppercase; color:#e8cd94; margin-bottom:12px; opacity:0; animation:scoFadeIn .7s ease .7s forwards; }
+    .pc-title { font-family:'Cormorant Garamond',serif; font-size:38px; font-weight:300; color:#f4ecff; line-height:1.15; margin-bottom:14px; opacity:0; animation:scoFadeIn .7s ease .95s forwards; text-shadow:0 0 30px rgba(196,168,220,.4); }
+    .pc-sub { font-size:12px; color:rgba(226,210,244,.72); line-height:1.75; max-width:300px; margin-bottom:12px; opacity:0; animation:scoFadeIn .7s ease 1.2s forwards; }
+    .pc-boon { font-family:'DM Mono',monospace; font-size:11px; letter-spacing:.06em; color:#e8cd94; margin-bottom:34px; opacity:0; animation:scoFadeIn .7s ease 1.45s forwards; }
+    .pc-btn { padding:15px 40px; border-radius:11px; border:1px solid rgba(226,196,140,.5); background:linear-gradient(100deg,#7a5fae,#b89a5e); color:#fff6e2; font-family:'DM Mono',monospace; font-size:11px; letter-spacing:.22em; text-transform:uppercase; cursor:pointer; box-shadow:0 4px 26px rgba(160,130,90,.4); opacity:0; animation:scoFadeIn .7s ease 1.75s forwards; }
+        /* ── Idle game new UI ── */
     .residue-glow { animation: residuePulse 2.5s ease-in-out infinite; cursor:pointer; }
     @keyframes residuePulse { 0%,100% { filter: drop-shadow(0 0 4px rgba(126,184,164,0.2)); } 50% { filter: drop-shadow(0 0 12px rgba(126,184,164,0.55)); } }
     .nba-bar { font-size:9px; letter-spacing:.15em; color:var(--muted); text-align:center; padding:6px 0 2px; min-height:18px; }
@@ -5499,7 +5520,7 @@ body:not(.tut-live) #tutCorgi {
           </div>
         </div>
         <div class="oe-stage-step">
-          <div class="oe-stage-step-label">Now Building</div>
+          <div class="oe-stage-step-label">Now Building<span class="oe-prestige-pips" id="omniaPrestigePips"></span></div>
           <div class="oe-stage-step-name" id="omniaStepName">Step I · Fundamentals</div>
           <div class="oe-stage-step-need" id="omniaStepText"></div>
         </div>
@@ -5521,6 +5542,7 @@ body:not(.tut-live) #tutCorgi {
         <div class="oe-session-progress" id="omniaSessionProgress"></div>
         <button class="oe-advance-btn" id="omniaAdvanceBtn">Advance Step</button>
       </div>
+      <button class="oe-prestige-btn" id="omniaPrestigeBtn" style="display:none;" onclick="omniaConfirmPrestige()">✦ Begin a New Turning ✦</button>
 
       <!-- Secondary sections -->
       <div class="oe-secondary">
@@ -9784,7 +9806,8 @@ function syncProgressScore(key, obj) {
     // a freshly-upgraded local state — reverting the upgrade and "uncollecting"
     // the akasha. totalAkashaEarned and totalAkashaSpent both only ever rise, so
     // earning AND spending now strictly increase progress.
-    return (obj.totalAkashaEarned || 0)
+    return (obj.prestige || 0) * 10000000
+      + (obj.totalAkashaEarned || 0)
       + (obj.totalAkashaSpent || 0)
       + (capBody('physical') + capBody('astral') + capBody('mental')) * 1000
       + ((obj.bardonStep || 1) - 1) * 10000
@@ -17539,6 +17562,7 @@ var OMNIA_DEFAULT = {
   bodies: { physical:1, astral:1, mental:1 },
   upgrades: { current:1, vessel:1, attunement:1 },
   bardonStep:1,
+  prestige:0,
   rec: null,
   recStreak: 0,
   completedRecommended: 0,
@@ -18024,7 +18048,12 @@ function mergeOmniaPull(localStr, cloudStr) {
   // Only fold monotonic progress across snapshots when neither side was deliberately
   // reset relative to the other — otherwise honor the reset and keep base as-is.
   var sameReset = ((localObj && localObj._resetAt) || 0) === ((cloudObj && cloudObj._resetAt) || 0);
-  if (sameReset) {
+  // Prestige is a generational marker: fold monotonic progress only WITHIN the
+  // same prestige count, or a pre-prestige snapshot's higher bardonStep/bodies
+  // would revert a prestige (which intentionally resets them to 1).
+  base.prestige = Math.max(Number(base.prestige) || 0, Number(other.prestige) || 0);
+  var sameGen = sameReset && (((localObj && localObj.prestige) || 0) === ((cloudObj && cloudObj.prestige) || 0));
+  if (sameGen) {
     ['completedRecommended','totalAkashaEarned','totalAkashaSpent'].forEach(function(f) {
       base[f] = Math.max(Number(base[f]) || 0, Number(other[f]) || 0);
     });
@@ -19012,7 +19041,7 @@ function omniaAccrue() {
   var now = Date.now();
   var elapsedHours = Math.max(0, (now - (omniaState.lastTick || now)) / 3600000);
   if (elapsedHours > 0) {
-    var gain = Math.floor(elapsedHours * omniaRatePerHour());
+    var gain = Math.floor(elapsedHours * omniaRatePerHour() * omniaPrestigeMult());
     if (gain > 0) {
       omniaState.reservoir = Math.min(omniaReservoirCap(), (omniaState.reservoir || 0) + gain);
       omniaState.totalAkashaEarned = (omniaState.totalAkashaEarned || 0) + gain;
@@ -19058,17 +19087,95 @@ function omniaUpgradeCost(upg) {
   return Math.floor(raw * omniaDiscountMult());
 }
 
+// ── Prestige (Turnings of the Wheel) ────────────────────────────
+// Completing Bardon Step X lets the practitioner begin the path again, deeper.
+// A prestige resets ONLY the path position (step + bodies + recommended count);
+// akasha, upgrades, cosmetics, streaks, history and level are all preserved.
+// Each turning grants a permanent +25% akasha and cuts the step requirements so
+// re-walking is genuinely faster (the "half the time each cycle" cadence).
+function omniaPrestigeMult() { return 1 + 0.25 * (omniaState.prestige || 0); }
+function omniaReqFactor() {
+  var p = omniaState.prestige || 0;
+  return p <= 0 ? 1 : Math.max(0.3, Math.pow(0.65, p)); // ~65% per turning, floored at 30%
+}
+// Scaled step requirement for the ADVANCE gate + its display. Sync scoring and
+// body clamps deliberately use raw requirements (they operate on snapshots).
+function omniaStepReqVal(step, key) {
+  var raw = (step && step.req && step.req[key]) || 0;
+  return raw ? Math.max(1, Math.round(raw * omniaReqFactor())) : 0;
+}
+function omniaCanPrestige() {
+  var last = OMNIA_BARDON_STEPS[OMNIA_BARDON_STEPS.length - 1];
+  return (omniaState.bardonStep || 1) >= last.step && omniaStepReady(last);
+}
+function omniaPrestige() {
+  if (!omniaCanPrestige()) return;
+  omniaState.prestige = (omniaState.prestige || 0) + 1;
+  omniaState.bardonStep = 1;
+  omniaState.bodies = { physical: 1, astral: 1, mental: 1 };
+  omniaState.completedRecommended = 0;
+  omniaState.rec = null;
+  omniaState.recStreak = 0;
+  saveOmniaState();
+  if (syncEnabled && authToken) syncPushData();
+  showPrestigeCeremony(omniaState.prestige);
+  renderOmniaEngine();
+}
+
+function _prestigeRoman(n){ return ['','I','II','III','IV','V','VI','VII','VIII','IX','X','XI','XII'][n] || String(n); }
+function _prestigeOrdinal(n){ return ['zeroth','first','second','third','fourth','fifth','sixth','seventh','eighth','ninth','tenth'][n] || (n+'th'); }
+
+function omniaConfirmPrestige() {
+  if (!omniaCanPrestige()) return;
+  var next = (omniaState.prestige || 0) + 1;
+  var msg = 'Begin the ' + _prestigeOrdinal(next) + ' Turning of the Wheel?\n\n'
+    + 'Omnia returns to Step I and rebuilds her three bodies from the beginning — '
+    + 'but keeps all akasha, upgrades, cosmetics, level and your streak.\n\n'
+    + 'Permanent boon: +' + (25 * next) + '% akasha, and every step requirement ahead is eased.';
+  if (window.confirm(msg)) omniaPrestige();
+}
+
+function showPrestigeCeremony(n) {
+  var el = document.getElementById('prestigeCeremony');
+  if (!el) return;
+  var crystal = '<svg class="pc-crystal" viewBox="0 0 80 130" fill="none" xmlns="http://www.w3.org/2000/svg">'
+    + '<defs><linearGradient id="pcG1" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#fff2cf" stop-opacity=".95"/><stop offset="100%" stop-color="#c99f52" stop-opacity=".55"/></linearGradient>'
+    + '<radialGradient id="pcG3" cx="50%" cy="38%" r="58%"><stop offset="0%" stop-color="#ffe9b8" stop-opacity=".5"/><stop offset="100%" stop-color="#8a6a28" stop-opacity="0"/></radialGradient></defs>'
+    + '<ellipse cx="40" cy="68" rx="28" ry="48" fill="url(#pcG3)" opacity=".7"/>'
+    + '<polygon points="40,3 54,14 40,25 26,14" fill="url(#pcG1)" stroke="#e8c878" stroke-width=".55"/>'
+    + '<polygon points="40,3 54,14 40,13" fill="#fff4d6" opacity=".7"/>'
+    + '<polygon points="40,25 60,36 64,58 40,70 16,58 20,36" fill="url(#pcG1)" stroke="#d8b258" stroke-width=".55"/>'
+    + '<polygon points="40,25 60,36 40,44" fill="#ffeec2" opacity=".5"/>'
+    + '<polygon points="40,70 64,58 56,88 40,100 24,88 16,58" fill="url(#pcG1)" stroke="#d8b258" stroke-width=".55" opacity=".9"/>'
+    + '<polygon points="40,100 56,88 40,114" fill="url(#pcG1)" stroke="#d8b258" stroke-width=".48" opacity=".72"/>'
+    + '<polygon points="40,100 24,88 40,114" fill="#e8cd8e" stroke="#d8b258" stroke-width=".48" opacity=".5"/>'
+    + '</svg>';
+  el.innerHTML = '<div class="pc-rays"></div>' + crystal
+    + '<div class="pc-kicker">Turning ' + _prestigeRoman(n) + ' · The Wheel Turns</div>'
+    + '<div class="pc-title">A New Turning Begins</div>'
+    + '<div class="pc-sub">Omnia dissolves and reforms at the first step — the whole path walked again, now seen with mastery.</div>'
+    + '<div class="pc-boon">✦ +' + (25 * n) + '% akasha, forever · the path ahead is shorter ✦</div>'
+    + '<button class="pc-btn" id="pcCloseBtn">Walk Again →</button>';
+  el.classList.add('pc-show');
+  requestAnimationFrame(function(){ requestAnimationFrame(function(){ el.classList.add('pc-vis'); }); });
+  if (navigator.vibrate) { try { navigator.vibrate([40,60,120,60,220]); } catch(e) {} }
+  if (typeof playStreakBurstSound === 'function') { try { playStreakBurstSound(); } catch(e) {} }
+  document.getElementById('pcCloseBtn').onclick = function() {
+    el.classList.remove('pc-vis');
+    setTimeout(function(){ el.classList.remove('pc-show'); }, 500);
+  };
+}
+
 function omniaCurrentStep() {
   var stepNum = omniaState.bardonStep || 1;
   return OMNIA_BARDON_STEPS.find(function(s) { return s.step === stepNum; }) || OMNIA_BARDON_STEPS[0];
 }
 
 function omniaStepReady(step) {
-  var req = step.req || {};
-  return (omniaState.bodies.physical || 0) >= req.physical
-    && (omniaState.bodies.astral || 0) >= req.astral
-    && (omniaState.bodies.mental || 0) >= req.mental
-    && (omniaState.completedRecommended || 0) >= req.recommended;
+  return (omniaState.bodies.physical || 0) >= omniaStepReqVal(step, 'physical')
+    && (omniaState.bodies.astral || 0) >= omniaStepReqVal(step, 'astral')
+    && (omniaState.bodies.mental || 0) >= omniaStepReqVal(step, 'mental')
+    && (omniaState.completedRecommended || 0) >= omniaStepReqVal(step, 'recommended');
 }
 
 function renderOmniaStepReq(label, current, target) {
@@ -19312,7 +19419,7 @@ function omniaExerciseReward(exId, seconds, recommended, extraBoost) {
   // stack at 3x keeps bonuses feeling rewarding without trivializing the
   // akasha economy, while leaving non-paying players (max ~2.54x) untouched.
   var bonusMult = Math.min(streakMult * recMult * (extraBoost || 1), OMNIA_BONUS_STACK_CAP);
-  return Math.max(42, Math.floor(base * effMult * stepPenalty * catchup * bonusMult));
+  return Math.max(42, Math.floor(base * effMult * stepPenalty * catchup * bonusMult * omniaPrestigeMult()));
 }
 
 var OMNIA_BONUS_STACK_CAP = 3.0;
@@ -19549,6 +19656,7 @@ function showBodyLevelAward(award) {
 
 function renderOmniaEngine() {
   omniaAccrue();
+  document.body.classList.toggle('omnia-prestiged', (omniaState.prestige || 0) > 0);
   applyOmniaCosmetics();
   applyOmniaStepVisuals();
   var stage = omniaStage();
@@ -19658,15 +19766,26 @@ function renderOmniaEngine() {
   // Inline session progress + advance button
   var sessionProgress = document.getElementById('omniaSessionProgress');
   var advanceBtn = document.getElementById('omniaAdvanceBtn');
-  var sessNeeded = step.req.recommended || 0;
+  var sessNeeded = omniaStepReqVal(step, 'recommended');
   var sessCompleted = Math.min(omniaState.completedRecommended || 0, sessNeeded);
   if (sessionProgress) {
     sessionProgress.innerHTML = 'Meditation sessions: <strong>' + sessCompleted + ' / ' + sessNeeded + '</strong> for Step ' + step.roman;
   }
   if (advanceBtn) {
     var next = OMNIA_BARDON_STEPS.find(function(s) { return s.step === (omniaState.bardonStep || 1) + 1; });
+    var canPrestige = omniaCanPrestige();
     advanceBtn.disabled = !canAdvance || !next;
     advanceBtn.textContent = next ? ('Advance to Step ' + next.roman) : 'All Steps Complete';
+    advanceBtn.style.display = (!next && canPrestige) ? 'none' : '';
+    var prestigeBtn = document.getElementById('omniaPrestigeBtn');
+    if (prestigeBtn) prestigeBtn.style.display = (!next && canPrestige) ? '' : 'none';
+  }
+  var pipsEl = document.getElementById('omniaPrestigePips');
+  if (pipsEl) {
+    var pc = omniaState.prestige || 0;
+    pipsEl.innerHTML = pc > 0
+      ? ' · <span class="oe-prestige-pips-mark" title="' + pc + ' turning' + (pc === 1 ? '' : 's') + ' completed · +' + Math.round((omniaPrestigeMult() - 1) * 100) + '% akasha">' + (pc <= 5 ? Array(pc + 1).join('✦') : '✦×' + pc) + '</span>'
+      : '';
   }
 
   var collectBtn = document.getElementById('omniaCollectBtn');
@@ -19681,7 +19800,7 @@ function renderOmniaEngine() {
       var meta = OMNIA_BODY_META[body];
       var lvl = omniaState.bodies[body] || 0;
       var cost = omniaBodyCost(body);
-      var need = step.req[body] || 0;
+      var need = omniaStepReqVal(step, body);
       var pct = need > 0 ? Math.min(100, (lvl / need) * 100) : Math.min(100, (lvl % 25) * 4);
       var met = lvl >= need;
       var shortName = meta.name.replace(' Body','');
@@ -19781,7 +19900,7 @@ function collectOmniaAkasha() {
 
 function omniaBodyCap(body) {
   var step = omniaCurrentStep();
-  return (step && step.req && step.req[body]) || Infinity;
+  return omniaStepReqVal(step, body) || Infinity;
 }
 function omniaBodyAtCap(body) {
   return (omniaState.bodies[body] || 0) >= omniaBodyCap(body);
@@ -30776,6 +30895,7 @@ document.addEventListener('DOMContentLoaded',function(){(function(){
 
 <!-- Streak continuation celebration (shown after session extends streak) -->
 <div id="streakCelebOverlay"></div>
+<div id="prestigeCeremony"></div>
 
 <div id="concRepOverlay"></div>
 
