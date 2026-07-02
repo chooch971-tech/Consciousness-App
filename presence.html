@@ -354,7 +354,19 @@
     @media (min-width:600px) {
       .so-hero-num { font-size:120px; }
     }
-    /* ── Prestige (Turnings of the Wheel) ── */
+    /* ── Turnings status card + Dark Matter ── */
+    .oe-turnings { margin-top:11px; border:1px solid rgba(196,168,220,.22); border-radius:11px; padding:12px 14px; background:linear-gradient(150deg, rgba(60,44,92,.34), rgba(30,24,48,.24)); }
+    .oe-turnings-top { display:flex; align-items:center; justify-content:space-between; gap:10px; margin-bottom:4px; }
+    .oe-turnings-label { font-family:'DM Mono',monospace; font-size:8px; letter-spacing:.24em; text-transform:uppercase; color:rgba(214,196,240,.72); }
+    .oe-turnings-count { font-family:'DM Mono',monospace; font-size:10px; letter-spacing:.1em; color:#e8cd94; }
+    .oe-turnings-count .pip { text-shadow:0 0 7px rgba(226,196,140,.6); }
+    .oe-turnings-hint { font-size:9.5px; line-height:1.6; color:rgba(214,196,240,.62); }
+    .oe-turnings-hint b { color:#e8cd94; font-weight:400; }
+    .oe-dm-row { display:flex; align-items:center; gap:7px; margin-top:7px; padding-top:8px; border-top:1px solid rgba(255,255,255,.06); }
+    .oe-dm-orb { width:13px; height:13px; border-radius:50%; background:radial-gradient(circle at 38% 34%, #b48ce0 0%, #5a3c8e 60%, #24123c 100%); box-shadow:0 0 8px rgba(150,110,220,.7); }
+    .oe-dm-val { font-family:'DM Mono',monospace; font-size:12px; color:#d8c4f4; letter-spacing:.06em; }
+    .oe-dm-key { font-family:'DM Mono',monospace; font-size:8px; letter-spacing:.2em; text-transform:uppercase; color:var(--muted); }
+        /* ── Prestige (Turnings of the Wheel) ── */
     .oe-prestige-btn { width:100%; margin-top:9px; padding:12px; border-radius:9px; border:1px solid rgba(226,196,140,.5); background:linear-gradient(100deg,#6a4f8e 0%,#b89a5e 52%,#6a4f8e 100%); background-size:200% 100%; color:#fff6e2; font-family:'DM Mono',monospace; font-size:10px; letter-spacing:.24em; text-transform:uppercase; cursor:pointer; box-shadow:0 4px 22px rgba(180,150,90,.3), inset 0 1px 0 rgba(255,255,255,.28); animation:oePrestigeShine 5s linear infinite; }
     @keyframes oePrestigeShine { to { background-position:200% 0; } }
     .oe-prestige-btn:active { transform:scale(.985); }
@@ -5543,6 +5555,7 @@ body:not(.tut-live) #tutCorgi {
         <button class="oe-advance-btn" id="omniaAdvanceBtn">Advance Step</button>
       </div>
       <button class="oe-prestige-btn" id="omniaPrestigeBtn" style="display:none;" onclick="omniaConfirmPrestige()">✦ Begin a New Turning ✦</button>
+      <div class="oe-turnings" id="omniaTurnings"></div>
 
       <!-- Secondary sections -->
       <div class="oe-secondary">
@@ -9807,6 +9820,7 @@ function syncProgressScore(key, obj) {
     // the akasha. totalAkashaEarned and totalAkashaSpent both only ever rise, so
     // earning AND spending now strictly increase progress.
     return (obj.prestige || 0) * 10000000
+      + (obj.totalDarkMatterEarned || 0) * 50
       + (obj.totalAkashaEarned || 0)
       + (obj.totalAkashaSpent || 0)
       + (capBody('physical') + capBody('astral') + capBody('mental')) * 1000
@@ -14413,7 +14427,8 @@ document.getElementById('visIntermediateFadedBtn').addEventListener('click', fun
     },
     skipOmnia: true // intermediate visual drills earn XP only, no Omnia award
   });
-  showToast('+' + xpEarned + ' XP');
+  var _dm = mintDarkMatter(DARK_MATTER_PER_ADVANCED);
+  showToast('+' + xpEarned + ' XP' + (_dm ? ' · +' + _dm + ' ◆ Dark Matter' : ''));
   if(didLevelUp) setTimeout(function(){showConcLevelUp(concState.level);},600);
   renderConcHome();
   showScreen('homeScreen');
@@ -17563,6 +17578,8 @@ var OMNIA_DEFAULT = {
   upgrades: { current:1, vessel:1, attunement:1 },
   bardonStep:1,
   prestige:0,
+  darkMatter:0,
+  totalDarkMatterEarned:0, // monotonic — used for sync scoring
   rec: null,
   recStreak: 0,
   completedRecommended: 0,
@@ -18054,7 +18071,7 @@ function mergeOmniaPull(localStr, cloudStr) {
   base.prestige = Math.max(Number(base.prestige) || 0, Number(other.prestige) || 0);
   var sameGen = sameReset && (((localObj && localObj.prestige) || 0) === ((cloudObj && cloudObj.prestige) || 0));
   if (sameGen) {
-    ['completedRecommended','totalAkashaEarned','totalAkashaSpent'].forEach(function(f) {
+    ['completedRecommended','totalAkashaEarned','totalAkashaSpent','darkMatter','totalDarkMatterEarned'].forEach(function(f) {
       base[f] = Math.max(Number(base[f]) || 0, Number(other[f]) || 0);
     });
     base.bardonStep = Math.max(Number(base.bardonStep) || 1, Number(other.bardonStep) || 1);
@@ -19094,6 +19111,45 @@ function omniaUpgradeCost(upg) {
 // Each turning grants a permanent +25% akasha and cuts the step requirements so
 // re-walking is genuinely faster (the "half the time each cycle" cadence).
 function omniaPrestigeMult() { return 1 + 0.25 * (omniaState.prestige || 0); }
+// ── Dark Matter (Book II currency) ─────────────────────────────
+// A second current that only awakens at the 3rd Turning, minted by the advanced
+// exercises. Book II upgrades (tools, spheres) will spend it alongside akasha.
+var PRESTIGE_BOOK2 = 3;            // turnings required before Dark Matter awakens
+var DARK_MATTER_PER_ADVANCED = 5; // per advanced-drill session (tunable)
+function darkMatterUnlocked() { return (omniaState.prestige || 0) >= PRESTIGE_BOOK2; }
+function mintDarkMatter(amount) {
+  if (!darkMatterUnlocked() || amount <= 0) return 0;
+  omniaState.darkMatter = (omniaState.darkMatter || 0) + amount;
+  omniaState.totalDarkMatterEarned = (omniaState.totalDarkMatterEarned || 0) + amount;
+  saveOmniaState();
+  if (syncEnabled && authToken) syncPushData();
+  return amount;
+}
+
+// The always-visible "Turnings of the Wheel" status: which turning you're on,
+// the permanent bonus, a tease toward the 3rd Turning, and — once unlocked —
+// the Dark Matter balance.
+function renderOmniaTurnings() {
+  var pc = omniaState.prestige || 0;
+  var countHtml = pc > 0
+    ? '<span class="pip">' + (pc <= 6 ? Array(pc + 1).join('✦') : '✦ ×' + pc) + '</span> · +' + Math.round((omniaPrestigeMult() - 1) * 100) + '% akasha'
+    : 'Not yet turned';
+  var html = '<div class="oe-turnings-top">'
+    + '<span class="oe-turnings-label">Turnings of the Wheel</span>'
+    + '<span class="oe-turnings-count">' + countHtml + '</span>'
+    + '</div>';
+  if (pc < PRESTIGE_BOOK2) {
+    var left = PRESTIGE_BOOK2 - pc;
+    html += '<div class="oe-turnings-hint">At the <b>3rd Turning</b> a deeper current awakens — <b>Dark Matter</b>, drawn from the advanced work, opening the path beyond the fundamentals. '
+      + (pc === 0 ? 'The Wheel first turns when Omnia completes Step X.' : left + ' turning' + (left === 1 ? '' : 's') + ' remain.') + '</div>';
+  } else {
+    html += '<div class="oe-turnings-hint">The deeper current flows. <b>Dark Matter</b> gathers from the advanced exercises.</div>'
+      + '<div class="oe-dm-row"><span class="oe-dm-orb"></span>'
+      + '<span class="oe-dm-val">' + Math.floor(omniaState.darkMatter || 0) + '</span>'
+      + '<span class="oe-dm-key">Dark Matter</span></div>';
+  }
+  return html;
+}
 function omniaReqFactor() {
   var p = omniaState.prestige || 0;
   return p <= 0 ? 1 : Math.max(0.3, Math.pow(0.65, p)); // ~65% per turning, floored at 30%
@@ -19787,6 +19843,8 @@ function renderOmniaEngine() {
       ? ' · <span class="oe-prestige-pips-mark" title="' + pc + ' turning' + (pc === 1 ? '' : 's') + ' completed · +' + Math.round((omniaPrestigeMult() - 1) * 100) + '% akasha">' + (pc <= 5 ? Array(pc + 1).join('✦') : '✦×' + pc) + '</span>'
       : '';
   }
+  var turnEl = document.getElementById('omniaTurnings');
+  if (turnEl) turnEl.innerHTML = renderOmniaTurnings();
 
   var collectBtn = document.getElementById('omniaCollectBtn');
   if (collectBtn) {
