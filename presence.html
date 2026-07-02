@@ -7491,6 +7491,57 @@ function calcMomentum(streak) {
   return Math.min(1.5, Math.max(0.7, 1.0 + streak * 0.05));
 }
 
+// ── Shared helpers ────────────────────────────────────────────────────────
+// Consume pending XP into level-ups. Both XP curves share the same loop —
+// pass the matching cumulative-XP and next-level-cost functions
+// (awareness: sumXpToLevel/xpForLevel · concentration: concSumXpToLevel/
+// concXpForLevel). Returns true if at least one level was gained.
+function awardLevelUps(st, sumFn, forFn) {
+  var prev = st.level;
+  while (st.level < 777) {
+    if (st.xp - sumFn(st.level) >= forFn(st.level)) { st.level++; } else { break; }
+  }
+  return st.level > prev;
+}
+
+// Escape user-supplied text for safe insertion into innerHTML strings.
+function escHtml(s) {
+  return String(s == null ? '' : s).replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
+
+// Prepend an entry to a history array and truncate in place to the cap.
+function pushHistory(arr, entry, cap) {
+  arr.unshift(entry);
+  var max = cap || 100;
+  if (arr.length > max) arr.length = max;
+}
+
+// ── Shared exercise-completion pipeline ─────────────────────────────────────
+// Every exercise ends the same way: record the session in concState.history,
+// persist, sync, count the practice (streak + daily quests), then award Omnia
+// akasha/body progress. Keeping this in ONE place means a completion-time
+// feature is a single edit here — not a hand-threaded change across eight
+// sites (which is exactly how pore breathing and multi-sense once missed
+// quest counting).
+// opts:
+//   entry        history entry object (required)
+//   exId         Omnia exercise id ('clock', 'visual', …); omit to skip award
+//   omniaSeconds seconds/XP figure passed to awardOmniaForExercise
+//   reachedRec   optional early-end flag (see awardOmniaForExercise)
+//   skipOmnia    record + count only, no Omnia award (capped clock, multi-sense)
+// Returns the akasha gained by the award (0 when skipped), for the legend.
+function recordExerciseCompletion(opts) {
+  pushHistory(concState.history, opts.entry, 100);
+  saveConcState();
+  if (syncEnabled && authToken) syncPushData();
+  touchPracticeStreak();
+  var pre = (typeof omniaState !== 'undefined' && omniaState) ? omniaState.akasha : 0;
+  if (opts.exId && !opts.skipOmnia) {
+    awardOmniaForExercise(opts.exId, opts.omniaSeconds, opts.reachedRec);
+  }
+  return (typeof omniaState !== 'undefined' && omniaState) ? Math.round(omniaState.akasha - pre) : 0;
+}
+
 function touchPracticeStreak() {
   var today = new Date().toDateString();
   var todayISO = new Date().toISOString().slice(0,10);
@@ -7535,12 +7586,7 @@ function touchPracticeStreak() {
         }
         if (commitDef) {
           state.xp += commitDef.xp;
-          var _scPrevLevel = state.level;
-          while (state.level < 777) {
-            var _scXpThis = state.xp - sumXpToLevel(state.level);
-            if (_scXpThis >= xpForLevel(state.level)) { state.level++; } else { break; }
-          }
-          var _scLeveled = state.level > _scPrevLevel;
+          var _scLeveled = awardLevelUps(state, sumXpToLevel, xpForLevel);
           if (typeof omniaState !== 'undefined' && omniaState) {
             omniaState.akasha += commitDef.akasha;
             if (typeof saveOmniaState === 'function') saveOmniaState();
@@ -7756,13 +7802,7 @@ function collectResidue() {
   state.residue = 0;
   state.residueGeneratedAt = null;
   state.depth = calcDepth(state.xp);
-  // Check for level-ups
-  var prevLevel = state.level;
-  while (state.level < 777) {
-    var xpThis = state.xp - sumXpToLevel(state.level);
-    if (xpThis >= xpForLevel(state.level)) { state.level++; } else { break; }
-  }
-  var didLevelUp = state.level > prevLevel;
+  var didLevelUp = awardLevelUps(state, sumXpToLevel, xpForLevel);
   saveState();
   if (syncEnabled && authToken) syncPushData();
   if (didLevelUp) setTimeout(function() { showLevelUp(state.level); }, 600);
@@ -8475,12 +8515,7 @@ function submitSurvey() {
   var xpEarned = clarityResult.finalXP;
 
   // Level up (legacy rank system still uses cumulative XP)
-  var prevLevel = state.level;
-  while (state.level < 777) {
-    var xpThis = state.xp - sumXpToLevel(state.level);
-    if (xpThis >= xpForLevel(state.level)) { state.level++; } else { break; }
-  }
-  var didLevelUp = state.level > prevLevel;
+  var didLevelUp = awardLevelUps(state, sumXpToLevel, xpForLevel);
 
   // Adapt
   var adaptation = adapt(finalScore, sessionEndedEarly);
@@ -8496,7 +8531,7 @@ function submitSurvey() {
     intervalSec: params.intervalSec, endedEarly: sessionEndedEarly,
     xpEarned: xpEarned, notes: notes || '',
   });
-  if (state.history.length > 100) state.history = state.history.slice(0, 100);
+  if (state.history.length > 100) state.history.length = 100;
   saveState();
 
   // Credit awareness quest minutes (awareness sessions are the main meditation sessions)
@@ -8707,7 +8742,7 @@ function renderHistory() {
       var durStr = h.durationMin + ' min' + (h.targetMin && h.targetMin !== h.durationMin ? ' (target: ' + h.targetMin + ')' : '');
       var earlyStr = h.endedEarly ? ' · early' : '';
       var xpStr = h.xpEarned ? '+' + h.xpEarned + 'xp' : '';
-      var notesHtml = h.notes ? '<div class="history-notes">' + h.notes.replace(/</g,'&lt;').replace(/>/g,'&gt;') + '</div>' : '';
+      var notesHtml = h.notes ? '<div class="history-notes">' + escHtml(h.notes) + '</div>' : '';
       return '<div class="history-item">'
         + '<button class="history-delete-btn" onclick="deleteSession(' + idx + ')">✕</button>'
         + '<div class="history-item-top">'
@@ -10980,30 +11015,22 @@ function saveConcSession() {
   if (isConcNewSession()) concState.totalSessions++;
   if (isNewBest) concState.bestSeconds = bestRep;
 
-  var concPrevLevel = concState.level;
-  while (concState.level < 777) {
-    var xpThis = concState.xp - concSumXpToLevel(concState.level);
-    if (xpThis >= concXpForLevel(concState.level)) { concState.level++; } else { break; }
-  }
-  var didLevelUp = concState.level > concPrevLevel;
+  var didLevelUp = awardLevelUps(concState, concSumXpToLevel, concXpForLevel);
 
-  concState.history.unshift({ date: new Date().toISOString(), seconds: bestRep, xpEarned: totalXP, sessionDurationSec: sessionDurationSec, notes: '' });
-  if (concState.history.length > 100) concState.history = concState.history.slice(0, 100);
-  saveConcState();
-
-  var _tutPreAkasha = omniaState ? omniaState.akasha : 0;
+  // Daily akasha cap: counting the session being recorded, only the first 4
+  // clock sessions of the day earn akasha.
   var _todayStr = new Date().toISOString().slice(0, 10);
-  var _clockToday = concState.history.filter(function(h) { return h.date && h.date.slice(0, 10) === _todayStr && !h.type && !h.exercise; }).length;
-  var _akashaCapped = _clockToday > 3;
-  if (!_akashaCapped) {
-    awardOmniaForExercise('clock', totalXP, omniaReachedRecommendation('clock', sessionDurationSec));
-  } else {
-    showToast('Clock · Daily Akasha cap reached · XP still counts', 3200);
-  }
-  if (syncEnabled && authToken) syncPushData();
-  touchPracticeStreak();
+  var _clockPrevToday = concState.history.filter(function(h) { return h.date && h.date.slice(0, 10) === _todayStr && !h.type && !h.exercise; }).length;
+  var _akashaCapped = _clockPrevToday + 1 > 3;
+  var _akashaDelta = recordExerciseCompletion({
+    entry: { date: new Date().toISOString(), seconds: bestRep, xpEarned: totalXP, sessionDurationSec: sessionDurationSec, notes: '' },
+    exId: 'clock',
+    omniaSeconds: totalXP,
+    reachedRec: omniaReachedRecommendation('clock', sessionDurationSec),
+    skipOmnia: _akashaCapped
+  });
+  if (_akashaCapped) showToast('Clock · Daily Akasha cap reached · XP still counts', 3200);
 
-  var _akashaDelta = omniaState ? Math.round(omniaState.akasha - _tutPreAkasha) : 0;
   var _originMode = currentMode;
   var _pbLabel = isNewBest ? 'New PB' : 'PB';
   var _fmtBest = fmtSecs(concState.bestSeconds);
@@ -11078,33 +11105,17 @@ function saveConcResult(repeatAfter) {
   if (isConcNewSession()) concState.totalSessions++;
   if (isNewBest) concState.bestSeconds = seconds;
 
-  // Level up
-  var concPrevLevel1 = concState.level;
-  while (concState.level < 777) {
-    var xpThis = concState.xp - concSumXpToLevel(concState.level);
-    if (xpThis >= concXpForLevel(concState.level)) { concState.level++; } else { break; }
-  }
-  var concDidLevelUp1 = concState.level > concPrevLevel1;
+  var concDidLevelUp1 = awardLevelUps(concState, concSumXpToLevel, concXpForLevel);
 
-  concState.history.unshift({
-    date: new Date().toISOString(),
-    seconds: seconds,
-    xpEarned: xpEarned,
-    notes: notes
+  var _akashaDelta = recordExerciseCompletion({
+    entry: { date: new Date().toISOString(), seconds: seconds, xpEarned: xpEarned, notes: notes },
+    exId: 'clock',
+    omniaSeconds: seconds
   });
-  if (concState.history.length > 100) concState.history = concState.history.slice(0, 100);
-  saveConcState();
-  var _tutPreAkasha = omniaState ? omniaState.akasha : 0;
-  awardOmniaForExercise('clock', seconds);
-  if (syncEnabled && authToken) syncPushData();
-  touchPracticeStreak();
-
-  var _akashaDelta = omniaState ? Math.round(omniaState.akasha - _tutPreAkasha) : 0;
   if (window._tutorialFirstClock) {
     window._tutorialFirstClock = false;
     if (omniaState) { omniaState.akasha += 50; saveOmniaState(); }
-    var tutAkashaDelta = omniaState ? Math.round(omniaState.akasha - _tutPreAkasha) : 50;
-    showTutorialPostSession(seconds, tutAkashaDelta);
+    showTutorialPostSession(seconds, _akashaDelta + 50);
     return;
   }
   var _concDidLevelUp = concDidLevelUp1;
@@ -12356,14 +12367,14 @@ function renderConcHistory() {
       var h = entry.h; var idx = entry.i;
       var d = new Date(h.date);
       var timeStr = d.toLocaleTimeString('en-US', { hour:'numeric', minute:'2-digit' });
-      var notesHtml = h.notes ? '<div class="history-notes">' + h.notes.replace(/</g,'&lt;').replace(/>/g,'&gt;') + '</div>' : '';
-      var typeStr = h.exercise === 'asana' ? ('Asana' + (h.posture ? ' · ' + h.posture.replace(/</g,'&lt;').replace(/>/g,'&gt;') : ''))
-        : h.exercise === 'sense' ? ((SENSE_MODE_DEFS[h.mode] ? SENSE_MODE_DEFS[h.mode].label : 'Senses') + (h.cue ? ' · ' + h.cue.replace(/</g,'&lt;').replace(/>/g,'&gt;') : ''))
+      var notesHtml = h.notes ? '<div class="history-notes">' + escHtml(h.notes) + '</div>' : '';
+      var typeStr = h.exercise === 'asana' ? ('Asana' + (h.posture ? ' · ' + escHtml(h.posture) : ''))
+        : h.exercise === 'sense' ? ((SENSE_MODE_DEFS[h.mode] ? SENSE_MODE_DEFS[h.mode].label : 'Senses') + (h.cue ? ' · ' + escHtml(h.cue) : ''))
         : h.exercise === 'pore_breathing' ? 'Pore Breathing'
         : h.exercise === 'autosuggestion' ? 'Autosuggestion'
-        : h.type === 'visualization' ? (h.object ? h.object.replace(/</g,'&lt;').replace(/>/g,'&gt;') : 'Visualization')
-        : h.type === 'auditory' ? (h.object ? h.object.replace(/</g,'&lt;').replace(/>/g,'&gt;') : 'Auditory')
-        : h.type === 'thought' ? (h.object ? h.object.replace(/</g,'&lt;').replace(/>/g,'&gt;') : 'Thought Control')
+        : h.type === 'visualization' ? (h.object ? escHtml(h.object) : 'Visualization')
+        : h.type === 'auditory' ? (h.object ? escHtml(h.object) : 'Auditory')
+        : h.type === 'thought' ? (h.object ? escHtml(h.object) : 'Thought Control')
         : 'Clock';
       var holdStr = h.exercise === 'autosuggestion'
         ? ((h.taps || 40) + ' taps')
@@ -12603,7 +12614,7 @@ function renderCustomAudSoundList() {
     var icon = s.kind === 'url' ? '<span style="color:#6eb8a4;">&#128279;</span>' : '&#127911;';
     return '<div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--border);">'
       + '<span style="font-size:18px;flex-shrink:0;">' + icon + '</span>'
-      + '<span style="flex:1;font-size:10px;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + s.name.replace(/</g,'&lt;') + '</span>'
+      + '<span style="flex:1;font-size:10px;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + escHtml(s.name) + '</span>'
       + '<button onclick="deleteCustomAudSound(\'' + s.id + '\')" style="background:none;border:none;color:var(--muted);font-size:14px;cursor:pointer;padding:4px 6px;flex-shrink:0;">✕</button>'
       + '</div>';
   }).join('');
@@ -12635,7 +12646,7 @@ function renderCustomVisImageList() {
   list.innerHTML = imgs.map(function(img) {
     return '<div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--border);">'
       + '<img src="' + img.dataUrl + '" style="width:40px;height:40px;object-fit:cover;border-radius:4px;flex-shrink:0;">'
-      + '<span style="flex:1;font-size:10px;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + img.name.replace(/</g,'&lt;') + '</span>'
+      + '<span style="flex:1;font-size:10px;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + escHtml(img.name) + '</span>'
       + '<button onclick="deleteCustomVisImage(\'' + img.id + '\')" style="background:none;border:none;color:var(--muted);font-size:14px;cursor:pointer;padding:4px 6px;flex-shrink:0;">✕</button>'
       + '</div>';
   }).join('');
@@ -13524,35 +13535,28 @@ function saveVisSessionResult() {
   if (isConcNewSession()) concState.totalSessions++;
   if (bestSec > concState.bestSeconds) concState.bestSeconds = bestSec;
 
-  var concPrevLevel2 = concState.level;
-  while (concState.level < 777) {
-    var xpThis = concState.xp - concSumXpToLevel(concState.level);
-    if (xpThis >= concXpForLevel(concState.level)) { concState.level++; } else { break; }
-  }
-  var concDidLevelUp2 = concState.level > concPrevLevel2;
+  var concDidLevelUp2 = awardLevelUps(concState, concSumXpToLevel, concXpForLevel);
 
-  concState.history.unshift({
-    date: new Date().toISOString(),
-    seconds: bestSec,
-    xpEarned: totalXP,
-    reps: visReps.length,
-    notes: notes,
-    type: 'visualization',
-    object: visReps.length > 0 ? visReps[0].object.label : ''
-  });
-  if (concState.history.length > 100) concState.history = concState.history.slice(0, 100);
-  saveConcState();
-  if (syncEnabled && authToken) syncPushData();
-  touchPracticeStreak();
-  var _visPreAkasha = omniaState ? omniaState.akasha : 0;
   var _visWallSec = visSessionStartTime ? Math.floor((Date.now() - visSessionStartTime) / 1000) : 0;
-  awardOmniaForExercise('visual', totalXP, omniaReachedRecommendation('visual', _visWallSec));
+  var _akashaDeltaVis = recordExerciseCompletion({
+    entry: {
+      date: new Date().toISOString(),
+      seconds: bestSec,
+      xpEarned: totalXP,
+      reps: visReps.length,
+      notes: notes,
+      type: 'visualization',
+      object: visReps.length > 0 ? visReps[0].object.label : ''
+    },
+    exId: 'visual',
+    omniaSeconds: totalXP,
+    reachedRec: omniaReachedRecommendation('visual', _visWallSec)
+  });
 
   currentVisObject = pickVisObject();
   var wrap = document.getElementById('visPreviewWrap');
   if (wrap) wrap.innerHTML = renderVisObject(currentVisObject, 175);
 
-  var _akashaDeltaVis = omniaState ? Math.round(omniaState.akasha - _visPreAkasha) : 0;
   var _concDidLevelUpVis = concDidLevelUp2;
   var _visOriginMode = currentMode;
   var _totalSecVis = Math.floor((Date.now() - visSessionStartTime) / 1000);
@@ -14374,23 +14378,18 @@ document.getElementById('visIntermediateFadedBtn').addEventListener('click', fun
   stopSceneAudio();
   // Record this as a concentration session with the time spent
   var xpEarned = 50; // flat XP for completing an intermediate session
-  var prevLevel = concState.level;
   concState.xp += xpEarned;
   if (isConcNewSession()) concState.totalSessions++;
-  while(concState.level < 777){
-    if(concState.xp - concSumXpToLevel(concState.level) >= concXpForLevel(concState.level)){concState.level++;}else{break;}
-  }
-  var didLevelUp = concState.level > prevLevel;
-  concState.history.unshift({
-    date: new Date().toISOString(),
-    type: window.visIntermediateExercise === 'allangles' ? 'all-angles' : 'multi-sense',
-    object: currentVisObject ? currentVisObject.label : '',
-    xpEarned: xpEarned
+  var didLevelUp = awardLevelUps(concState, concSumXpToLevel, concXpForLevel);
+  recordExerciseCompletion({
+    entry: {
+      date: new Date().toISOString(),
+      type: window.visIntermediateExercise === 'allangles' ? 'all-angles' : 'multi-sense',
+      object: currentVisObject ? currentVisObject.label : '',
+      xpEarned: xpEarned
+    },
+    skipOmnia: true // intermediate visual drills earn XP only, no Omnia award
   });
-  if(concState.history.length > 100) concState.history = concState.history.slice(0,100);
-  saveConcState();
-  touchPracticeStreak();
-  if(syncEnabled && authToken) syncPushData();
   showToast('+' + xpEarned + ' XP');
   if(didLevelUp) setTimeout(function(){showConcLevelUp(concState.level);},600);
   renderConcHome();
@@ -15096,7 +15095,7 @@ function audAllSelectableSounds() {
   return SOUNDS.map(function(s) {
     return { id: s.id, label: s.label };
   }).concat(customSounds.map(function(s) {
-    return { id: s.id, label: s.name.replace(/</g, '&lt;'), kind: s.kind };
+    return { id: s.id, label: escHtml(s.name), kind: s.kind };
   }));
 }
 
@@ -15371,31 +15370,23 @@ function saveAudResult() {
   if (isConcNewSession()) concState.totalSessions++;
   if (bestSec > concState.bestSeconds) concState.bestSeconds = bestSec;
 
-  var concPrevLevelA = concState.level;
-  while (concState.level < 777) {
-    var xpThis = concState.xp - concSumXpToLevel(concState.level);
-    if (xpThis >= concXpForLevel(concState.level)) { concState.level++; } else { break; }
-  }
-  var concDidLevelUpA = concState.level > concPrevLevelA;
+  var concDidLevelUpA = awardLevelUps(concState, concSumXpToLevel, concXpForLevel);
 
-  concState.history.unshift({
-    date: new Date().toISOString(),
-    seconds: bestSec,
-    xpEarned: totalXP,
-    sessionDurationSec: audSessionDurationSec,
-    reps: audReps.length,
-    notes: notes,
-    type: 'auditory',
-    object: getAudSoundLabel(currentSound)
+  var _akashaDeltaAud = recordExerciseCompletion({
+    entry: {
+      date: new Date().toISOString(),
+      seconds: bestSec,
+      xpEarned: totalXP,
+      sessionDurationSec: audSessionDurationSec,
+      reps: audReps.length,
+      notes: notes,
+      type: 'auditory',
+      object: getAudSoundLabel(currentSound)
+    },
+    exId: 'auditory',
+    omniaSeconds: totalXP,
+    reachedRec: omniaReachedRecommendation('auditory', audSessionDurationSec)
   });
-  if (concState.history.length > 100) concState.history = concState.history.slice(0, 100);
-  saveConcState();
-  if (syncEnabled && authToken) syncPushData();
-  touchPracticeStreak();
-  var _audPreAkasha = omniaState ? omniaState.akasha : 0;
-  awardOmniaForExercise('auditory', totalXP, omniaReachedRecommendation('auditory', audSessionDurationSec));
-
-  var _akashaDeltaAud = omniaState ? Math.round(omniaState.akasha - _audPreAkasha) : 0;
   var _concDidLevelUpAud = concDidLevelUpA;
   var _audOriginMode = currentMode;
   showSessionComplete({
@@ -15794,31 +15785,23 @@ function saveTCResult() {
   concState.xp += xpEarned;
   if (isConcNewSession()) concState.totalSessions++;
 
-  var concPrevLevelTC = concState.level;
-  while (concState.level < 777) {
-    var xpThis = concState.xp - concSumXpToLevel(concState.level);
-    if (xpThis >= concXpForLevel(concState.level)) { concState.level++; } else { break; }
-  }
-  var concDidLevelUpTC = concState.level > concPrevLevelTC;
+  var concDidLevelUpTC = awardLevelUps(concState, concSumXpToLevel, concXpForLevel);
 
-  concState.history.unshift({
-    date: new Date().toISOString(),
-    seconds: bestGap,
-    xpEarned: xpEarned,
-    notes: notes,
-    type: 'thought',
-    tcMode: tcMode,
-    durationSec: elapsedSec,
-    object: tcIntrusions.length + ' thoughts in ' + fmtTimer(elapsedSec)
+  var _akashaDeltaTC = recordExerciseCompletion({
+    entry: {
+      date: new Date().toISOString(),
+      seconds: bestGap,
+      xpEarned: xpEarned,
+      notes: notes,
+      type: 'thought',
+      tcMode: tcMode,
+      durationSec: elapsedSec,
+      object: tcIntrusions.length + ' thoughts in ' + fmtTimer(elapsedSec)
+    },
+    exId: 'thought',
+    omniaSeconds: elapsedSec,
+    reachedRec: _tcCompletedFlag || omniaReachedRecommendation('thought', elapsedSec)
   });
-  if (concState.history.length > 100) concState.history = concState.history.slice(0, 100);
-  saveConcState();
-  if (syncEnabled && authToken) syncPushData();
-  touchPracticeStreak();
-  var _tcPreAkasha = omniaState ? omniaState.akasha : 0;
-  awardOmniaForExercise('thought', elapsedSec, _tcCompletedFlag || omniaReachedRecommendation('thought', elapsedSec));
-
-  var _akashaDeltaTC = omniaState ? Math.round(omniaState.akasha - _tcPreAkasha) : 0;
   var _concDidLevelUpTC2 = concDidLevelUpTC;
   var _tcOriginMode = currentMode;
   showSessionComplete({
@@ -15954,29 +15937,20 @@ function showAsanaResult(seconds) {
   if (isConcNewSession()) concState.totalSessions++;
   if (seconds > (concState.bestAsanaSeconds || 0)) concState.bestAsanaSeconds = seconds;
 
-  // Level up
-  var prevLevel = concState.level;
-  while (concState.level < 777) {
-    var xpThis = concState.xp - concSumXpToLevel(concState.level);
-    if (xpThis >= concXpForLevel(concState.level)) { concState.level++; } else { break; }
-  }
-  var didLevelUp = concState.level > prevLevel;
+  var didLevelUp = awardLevelUps(concState, concSumXpToLevel, concXpForLevel);
 
-  concState.history.unshift({
-    date: new Date().toISOString(),
-    exercise: 'asana',
-    posture: currentAsanaPosture,
-    seconds: seconds,
-    xpEarned: xpEarned
+  var _akashaDeltaAsana = recordExerciseCompletion({
+    entry: {
+      date: new Date().toISOString(),
+      exercise: 'asana',
+      posture: currentAsanaPosture,
+      seconds: seconds,
+      xpEarned: xpEarned
+    },
+    exId: 'asana',
+    omniaSeconds: seconds,
+    reachedRec: omniaReachedRecommendation('asana', seconds, asanaTargetSeconds)
   });
-  if (concState.history.length > 100) concState.history = concState.history.slice(0, 100);
-  saveConcState();
-  if (syncEnabled && authToken) syncPushData();
-  touchPracticeStreak();
-  var _asanaPreAkasha = omniaState ? omniaState.akasha : 0;
-  awardOmniaForExercise('asana', seconds, omniaReachedRecommendation('asana', seconds, asanaTargetSeconds));
-
-  var _akashaDeltaAsana = omniaState ? Math.round(omniaState.akasha - _asanaPreAkasha) : 0;
   var _asanaOriginMode = currentMode;
   showSessionComplete({
     title: 'Stillness mastered.',
@@ -16197,29 +16171,21 @@ function showSenseResult(seconds) {
   concState.xp += xpEarned;
   if (isConcNewSession()) concState.totalSessions++;
 
-  var prevLevel = concState.level;
-  while (concState.level < 777) {
-    var xpThis = concState.xp - concSumXpToLevel(concState.level);
-    if (xpThis >= concXpForLevel(concState.level)) { concState.level++; } else { break; }
-  }
-  var didLevelUp = concState.level > prevLevel;
+  var didLevelUp = awardLevelUps(concState, concSumXpToLevel, concXpForLevel);
 
-  concState.history.unshift({
-    date: new Date().toISOString(),
-    exercise: 'sense',
-    mode: senseActiveMode,
-    cue: senseActiveCue,
-    seconds: seconds,
-    xpEarned: xpEarned
+  var _akashaDeltaSense = recordExerciseCompletion({
+    entry: {
+      date: new Date().toISOString(),
+      exercise: 'sense',
+      mode: senseActiveMode,
+      cue: senseActiveCue,
+      seconds: seconds,
+      xpEarned: xpEarned
+    },
+    exId: 'sense',
+    omniaSeconds: seconds,
+    reachedRec: omniaReachedRecommendation('sense', seconds, senseTargetSeconds)
   });
-  if (concState.history.length > 100) concState.history = concState.history.slice(0, 100);
-  saveConcState();
-  if (syncEnabled && authToken) syncPushData();
-  touchPracticeStreak();
-  var _sensePreAkasha = omniaState ? omniaState.akasha : 0;
-  awardOmniaForExercise('sense', seconds, omniaReachedRecommendation('sense', seconds, senseTargetSeconds));
-
-  var _akashaDeltaSense = omniaState ? Math.round(omniaState.akasha - _sensePreAkasha) : 0;
   var _senseOriginMode = currentMode;
   showSessionComplete({
     title: SENSE_MODE_DEFS[senseActiveMode].label + ' held.',
@@ -17096,11 +17062,7 @@ function concludePrayer() {
   // XP — award based on time prayed, feeds into awareness XP
   var xpEarned = Math.round(elapsed / 60 * 20); // 20 XP per minute
   state.xp += xpEarned;
-  // Level up awareness
-  while (state.level < 777) {
-    var xpThis = state.xp - sumXpToLevel(state.level);
-    if (xpThis >= xpForLevel(state.level)) { state.level++; } else { break; }
-  }
+  awardLevelUps(state, sumXpToLevel, xpForLevel);
   saveState();
 
   // Check if all prayers done today
@@ -17124,8 +17086,7 @@ function concludePrayer() {
     reflection: ''
   };
   prayerState.history = prayerState.history || [];
-  prayerState.history.unshift(entry);
-  if (prayerState.history.length > 100) prayerState.history = prayerState.history.slice(0, 100);
+  pushHistory(prayerState.history, entry, 100);
   savePrayerState();
   _pendingPrayer = entry; // reference into the array so updates are live
 
@@ -17286,10 +17247,10 @@ function renderPrayerHistory() {
     var durStr = m + ':' + String(s).padStart(2,'0');
     var labelStr = h.voluntary ? 'Voluntary' : (h.label || ('Prayer ' + ((h.index||0)+1)));
     var promptHtml = h.prompt
-      ? '<div style="font-family:Cormorant Garamond,serif; font-style:italic; font-size:13px; color:var(--text); margin-top:8px; line-height:1.5;">' + h.prompt.replace(/</g,'&lt;').replace(/>/g,'&gt;') + '</div>'
+      ? '<div style="font-family:Cormorant Garamond,serif; font-style:italic; font-size:13px; color:var(--text); margin-top:8px; line-height:1.5;">' + escHtml(h.prompt) + '</div>'
       : '';
     var reflectionHtml = h.reflection
-      ? '<div class="history-notes">' + h.reflection.replace(/</g,'&lt;').replace(/>/g,'&gt;') + '</div>'
+      ? '<div class="history-notes">' + escHtml(h.reflection) + '</div>'
       : '';
     return '<div class="conc-history-item" style="position:relative; border-color:rgba(155,142,196,.2);">'
       + '<button class="history-delete-btn" onclick="deletePrayerHistoryEntry(' + idx + ')">✕</button>'
@@ -17299,7 +17260,7 @@ function renderPrayerHistory() {
       + '</div>'
       + '<div style="display:flex;gap:12px;align-items:center;">'
       + '<span class="conc-history-xp" style="color:#9b8ec4;">+' + (h.xpEarned || 0) + ' xp</span>'
-      + '<span style="font-size:9px;color:var(--muted);letter-spacing:.1em;">' + labelStr.replace(/</g,'&lt;') + '</span>'
+      + '<span style="font-size:9px;color:var(--muted);letter-spacing:.1em;">' + escHtml(labelStr) + '</span>'
       + '</div>'
       + promptHtml
       + reflectionHtml
@@ -17335,11 +17296,10 @@ function renderPrayerMantraCard() {
   if (!card) return;
   var text = (prayerState.mantraText || '').trim();
   var target = prayerState.mantraTarget || 108;
-  var esc = text.replace(/</g, '&lt;').replace(/>/g, '&gt;');
   var todayRounds = countMantraRoundsToday();
   card.innerHTML = '<div class="prayer-card-title">☙ Mantra</div>'
     + (text
-      ? '<div class="prayer-mantra-text">“' + esc + '”</div>'
+      ? '<div class="prayer-mantra-text">“' + escHtml(text) + '”</div>'
       : '<div class="prayer-mantra-text" style="color:var(--muted);">Set a sacred phrase to repeat…</div>')
     + '<div class="prayer-mantra-meta">' + target + ' beads per round'
       + (todayRounds ? ' · ' + todayRounds + ' round' + (todayRounds === 1 ? '' : 's') + ' today' : '') + '</div>'
@@ -17415,13 +17375,10 @@ function completeMantra(beads) {
   var target = prayerState.mantraTarget || 108;
   var xpEarned = Math.max(5, Math.round(elapsed / 60 * 20)); // same rate as prayer
   state.xp += xpEarned;
-  while (state.level < 777) {
-    var xpThis = state.xp - sumXpToLevel(state.level);
-    if (xpThis >= xpForLevel(state.level)) { state.level++; } else { break; }
-  }
+  awardLevelUps(state, sumXpToLevel, xpForLevel);
   saveState();
   prayerState.history = prayerState.history || [];
-  prayerState.history.unshift({
+  pushHistory(prayerState.history, {
     date: new Date().toISOString(),
     type: 'mantra',
     beads: beads,
@@ -17432,8 +17389,7 @@ function completeMantra(beads) {
     voluntary: false,
     xpEarned: xpEarned,
     reflection: ''
-  });
-  if (prayerState.history.length > 100) prayerState.history = prayerState.history.slice(0, 100);
+  }, 100);
   savePrayerState();
   if (typeof playSessionCompleteSound === 'function') { try { playSessionCompleteSound(); } catch(e) {} }
   showToast('+' + xpEarned + ' XP · Mantra round ' + (beads >= target ? 'complete' : 'recorded') + ' · ' + beads + ' beads');
@@ -28539,14 +28495,9 @@ function autosugFinish(){
   if(navigator.vibrate){try{navigator.vibrate([70,50,70]);}catch(e){}}
   // A little XP only — deliberately no akasha for this practice.
   var xpEarned=AUTOSUG_XP;
-  var prevLevel=concState.level;
   concState.xp+=xpEarned;
   if(isConcNewSession())concState.totalSessions++;
-  while(concState.level<777){
-    var xpThis=concState.xp-concSumXpToLevel(concState.level);
-    if(xpThis>=concXpForLevel(concState.level)){concState.level++;}else{break;}
-  }
-  var didLevelUp=concState.level>prevLevel;
+  var didLevelUp=awardLevelUps(concState, concSumXpToLevel, concXpForLevel);
   var secs=autosugStartTime?Math.floor((Date.now()-autosugStartTime)/1000):0;
   concState.history.unshift({
     date:new Date().toISOString(),
@@ -28555,7 +28506,7 @@ function autosugFinish(){
     seconds:secs,
     xpEarned:xpEarned
   });
-  if(concState.history.length>100)concState.history=concState.history.slice(0,100);
+  if(concState.history.length>100)concState.history.length=100;
   saveConcState();
   // Tally this session against the active trait so the Soul Mirror star can
   // track per-trait progress (benchmark: a negative trait practiced 4+ times).
@@ -29001,22 +28952,10 @@ function stopPoreBreath(completed){
     var secondsElapsed = poreBreathStartTime ? Math.floor((Date.now() - poreBreathStartTime) / 1000) : 0;
     var xpEarned = breathsDone * 10; // 10 XP per breath
 
-    var prevLevel = concState.level;
     concState.xp += xpEarned;
     if (isConcNewSession()) concState.totalSessions++;
-    while(concState.level < 777){
-      var xpThis = concState.xp - concSumXpToLevel(concState.level);
-      if(xpThis >= concXpForLevel(concState.level)){concState.level++;}else{break;}
-    }
-    var didLevelUp = concState.level > prevLevel;
+    var didLevelUp = awardLevelUps(concState, concSumXpToLevel, concXpForLevel);
 
-    concState.history.unshift({
-      date: new Date().toISOString(),
-      exercise: 'pore_breathing',
-      breaths: breathsDone,
-      seconds: secondsElapsed,
-      xpEarned: xpEarned
-    });
     // Lifetime breath tally drives the Pore Breathing star (maxes at 10,000).
     // Kept separate from history because history is capped at 100 entries.
     concState.lifetimeBreaths = (concState.lifetimeBreaths || 0) + breathsDone;
@@ -29025,14 +28964,17 @@ function stopPoreBreath(completed){
       var _curTarget = Math.max(7, guideState.poreBreaths || 7);
       if (_curTarget < 40) { guideState.poreBreaths = _curTarget + 1; saveGuideState(guideState); }
     }
-    if(concState.history.length > 100) concState.history = concState.history.slice(0,100);
-    saveConcState();
-    // Capture Akasha gained across the award so the legend screen can show it.
-    var akashaBefore = (typeof omniaState !== 'undefined' && omniaState.akasha) ? omniaState.akasha : 0;
-    awardOmniaForExercise('pore_breathing', secondsElapsed || breathsDone * 10);
-    var akashaGained = Math.max(0, Math.round(((typeof omniaState !== 'undefined' && omniaState.akasha) ? omniaState.akasha : 0) - akashaBefore));
-    touchPracticeStreak();
-    if(syncEnabled && authToken) syncPushData();
+    var akashaGained = Math.max(0, recordExerciseCompletion({
+      entry: {
+        date: new Date().toISOString(),
+        exercise: 'pore_breathing',
+        breaths: breathsDone,
+        seconds: secondsElapsed,
+        xpEarned: xpEarned
+      },
+      exId: 'pore_breathing',
+      omniaSeconds: secondsElapsed || breathsDone * 10
+    }));
 
     renderConcHome();
     // Use the shared meditative "legend" completion screen + sound that every
