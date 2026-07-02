@@ -1427,23 +1427,62 @@
     .prayer-streak { font-size:9px; letter-spacing:.2em; text-transform:uppercase; color:var(--muted); text-align:center; margin-bottom:20px; }
     .prayer-streak span { color:#c4b8e8; }
     .prayer-time-status.passed { color:rgba(196,184,224,.32); }
-    /* Next-prayer hero card */
-    .prayer-next-hero { position:relative; background:linear-gradient(150deg,rgba(40,30,58,.55) 0%,rgba(26,20,40,.45) 100%); border:1px solid rgba(155,142,196,.22); border-radius:16px; padding:22px 20px 20px; margin-bottom:16px; overflow:hidden; }
-    .prayer-next-hero::before { content:''; position:absolute; top:-45%; right:-22%; width:190px; height:190px; border-radius:50%; background:radial-gradient(circle,rgba(196,168,220,.16) 0%,transparent 70%); pointer-events:none; }
-    .pnh-eyebrow { position:relative; font-family:'DM Mono',monospace; font-size:9px; letter-spacing:.24em; text-transform:uppercase; color:rgba(196,168,220,.72); margin-bottom:9px; }
-    .pnh-time { position:relative; font-family:'Cormorant Garamond',serif; font-weight:300; font-size:40px; line-height:1; color:#e6d8f4; margin-bottom:7px; }
-    .pnh-count { position:relative; font-family:'DM Mono',monospace; font-size:11px; letter-spacing:.06em; color:rgba(220,200,235,.6); margin-bottom:18px; }
-    .pnh-cta { position:relative; width:100%; padding:15px; border-radius:11px; border:1px solid rgba(155,142,196,.42); background:linear-gradient(145deg,rgba(78,60,118,.55) 0%,rgba(112,90,160,.6) 50%,rgba(72,56,110,.55) 100%); color:#ede4fa; font-family:'DM Mono',monospace; font-size:11px; letter-spacing:.22em; text-transform:uppercase; cursor:pointer; transition:transform .15s, box-shadow .2s; box-shadow:0 0 22px rgba(155,142,196,.16),inset 0 1px 0 rgba(255,255,255,.06); }
-    .pnh-cta:active { transform:scale(.98); box-shadow:0 0 10px rgba(155,142,196,.1); }
-    .prayer-dots { display:flex; align-items:center; justify-content:center; gap:10px; margin-bottom:9px; }
-    .prayer-dots i { width:9px; height:9px; border-radius:50%; background:transparent; border:1.5px solid rgba(155,142,196,.32); transition:all .3s; }
-    .prayer-dots i.done { background:#9b8ec4; border-color:#9b8ec4; box-shadow:0 0 9px rgba(155,142,196,.5); }
-    .prayer-dots i.active { border-color:#c4b8e8; animation:prayerDotPulse 1.7s ease-in-out infinite; }
-    .prayer-dots i.passed { border-color:rgba(155,142,196,.18); opacity:.45; }
-    .prayer-dots i.skipped { border-color:rgba(155,142,196,.18); background:rgba(155,142,196,.12); opacity:.5; }
-    @keyframes prayerDotPulse { 0%,100%{ box-shadow:0 0 0 0 rgba(196,184,232,.5);} 50%{ box-shadow:0 0 0 5px rgba(196,184,232,0);} }
-    .prayer-dots-label { text-align:center; font-family:'DM Mono',monospace; font-size:9px; letter-spacing:.2em; text-transform:uppercase; color:var(--muted); margin-bottom:22px; }
-    .prayer-dots-label span { color:#c4b8e8; }
+    /* Next-prayer hero — radiant violet/gold with slow-turning light rays */
+    .prayer-next-hero { position:relative; background:linear-gradient(150deg,#241a3a 0%,#1a1430 46%,#141024 100%); border:1px solid rgba(196,168,220,.32); border-radius:18px; padding:24px 20px 20px; margin-bottom:16px; overflow:hidden; box-shadow:0 0 34px rgba(155,142,196,.12), inset 0 1px 0 rgba(255,255,255,.05); }
+    .pnh-rays { position:absolute; left:50%; top:50%; width:560px; height:560px; margin:-280px 0 0 -280px; background:repeating-conic-gradient(from 0deg, transparent 0deg 11deg, rgba(214,192,240,.05) 11deg 15deg); border-radius:50%; animation:pnhRays 48s linear infinite; pointer-events:none; }
+    @keyframes pnhRays { to { transform:rotate(360deg); } }
+    .prayer-next-hero::before { content:''; position:absolute; top:-45%; right:-22%; width:220px; height:220px; border-radius:50%; background:radial-gradient(circle,rgba(226,196,140,.14) 0%,rgba(196,168,220,.10) 40%,transparent 70%); pointer-events:none; }
+    .pnh-star { position:absolute; top:14px; right:16px; width:34px; height:34px; pointer-events:none; animation:pnhStarPulse 3.4s ease-in-out infinite; filter:drop-shadow(0 0 8px rgba(230,216,244,.5)); }
+    @keyframes pnhStarPulse { 0%,100%{opacity:.55;transform:scale(.94);} 50%{opacity:1;transform:scale(1.06);} }
+    .pnh-eyebrow { position:relative; font-family:'DM Mono',monospace; font-size:9px; letter-spacing:.24em; text-transform:uppercase; color:rgba(226,200,150,.85); margin-bottom:9px; }
+    .pnh-time { position:relative; font-family:'Cormorant Garamond',serif; font-weight:300; font-size:42px; line-height:1; color:#efe6fa; margin-bottom:7px; text-shadow:0 0 24px rgba(196,168,220,.35); }
+    .pnh-count { position:relative; font-family:'DM Mono',monospace; font-size:11px; letter-spacing:.06em; color:rgba(224,206,240,.66); margin-bottom:18px; }
+    .pnh-cta { position:relative; width:100%; padding:15px; border-radius:11px; border:1px solid rgba(226,196,140,.5); background:linear-gradient(100deg,#7a5fae 0%,#9b7fd0 45%,#7a5fae 100%); color:#f6f0ff; font-family:'DM Mono',monospace; font-size:11px; letter-spacing:.22em; text-transform:uppercase; cursor:pointer; transition:transform .15s, box-shadow .2s; box-shadow:0 4px 26px rgba(155,120,210,.38), inset 0 1px 0 rgba(255,255,255,.22); }
+    .pnh-cta:active { transform:scale(.98); box-shadow:0 0 10px rgba(155,142,196,.16); }
+    /* Candle row — one candle per prayer, lit as each is kept */
+    .prayer-candles { display:flex; align-items:flex-end; justify-content:center; gap:16px; margin:2px 0 8px; }
+    .p-candle { display:flex; flex-direction:column; align-items:center; gap:5px; width:44px; }
+    .p-candle-holder { position:relative; display:flex; flex-direction:column; align-items:center; height:52px; justify-content:flex-end; }
+    .p-candle-flame { position:absolute; bottom:29px; width:9px; height:13px; border-radius:50% 50% 50% 50% / 62% 62% 38% 38%; background:radial-gradient(ellipse at 50% 68%, #fff6d0 0%, #f4c468 52%, rgba(240,150,60,.35) 82%, transparent 100%); box-shadow:0 0 10px rgba(244,196,104,.75), 0 0 22px rgba(244,196,104,.35); transform-origin:50% 92%; animation:pCandleFlick .55s ease-in-out infinite alternate; opacity:0; transition:opacity .4s; }
+    @keyframes pCandleFlick { from { transform:scale(1) rotate(-2.5deg); } to { transform:scale(1.12,1.2) rotate(2.5deg); } }
+    .p-candle-wick { position:absolute; bottom:26px; width:1.5px; height:4px; background:#6a6280; border-radius:1px; }
+    .p-candle-body { width:13px; height:26px; border-radius:3.5px 3.5px 3px 3px; background:linear-gradient(180deg,#efe6fa 0%,#c8b8e4 55%,#a894cc 100%); box-shadow:inset -2px 0 3px rgba(90,70,130,.35), inset 0 1px 0 rgba(255,255,255,.5); transition:opacity .4s, filter .4s; }
+    .p-candle-name { font-family:'DM Mono',monospace; font-size:7.5px; letter-spacing:.14em; text-transform:uppercase; color:var(--muted); transition:color .3s; }
+    .p-candle.lit .p-candle-flame { opacity:1; }
+    .p-candle.lit .p-candle-name { color:#e8cd94; }
+    .p-candle.active .p-candle-holder::after { content:''; position:absolute; bottom:16px; left:50%; width:34px; height:34px; margin-left:-17px; border-radius:50%; border:1px solid rgba(226,196,140,.4); animation:pCandleCall 1.8s ease-in-out infinite; }
+    @keyframes pCandleCall { 0%,100%{ transform:scale(.82); opacity:.7; } 50%{ transform:scale(1.08); opacity:.15; } }
+    .p-candle.passed .p-candle-body, .p-candle.skipped .p-candle-body { opacity:.38; filter:grayscale(.5); }
+    .p-candle.passed .p-candle-name, .p-candle.skipped .p-candle-name { opacity:.5; }
+    .prayer-dots-label { text-align:center; font-family:'DM Mono',monospace; font-size:9px; letter-spacing:.2em; text-transform:uppercase; color:var(--muted); margin-bottom:18px; }
+    .prayer-dots-label span { color:#e8cd94; }
+    /* Named hour rows */
+    .prayer-hour-row { display:flex; align-items:center; gap:12px; background:linear-gradient(150deg, rgba(var(--phr,155,142,196),.09), rgba(var(--phr,155,142,196),.03)); border:1px solid rgba(var(--phr,155,142,196),.22); border-radius:12px; padding:11px 14px; margin-bottom:8px; transition:border-color .3s; }
+    .prayer-hour-row.done { border-color:rgba(226,196,140,.4); }
+    .prayer-hour-icon { flex-shrink:0; width:30px; height:30px; border-radius:9px; display:flex; align-items:center; justify-content:center; background:rgba(var(--phr,155,142,196),.14); color:var(--phc,#c4b8e8); }
+    .prayer-hour-icon svg { width:17px; height:17px; }
+    .prayer-hour-name { flex:1; font-size:10px; letter-spacing:.18em; text-transform:uppercase; color:var(--text); }
+    .prayer-hour-time { font-size:13px; color:var(--phc,#c4b8e8); font-family:'DM Mono',monospace; margin-right:10px; }
+    /* Mantra + intentions cards */
+    .prayer-card { position:relative; background:var(--surface); border:1px solid rgba(155,142,196,.24); border-radius:14px; padding:16px 18px; margin-bottom:12px; overflow:hidden; }
+    .prayer-card-title { font-size:9px; letter-spacing:.24em; text-transform:uppercase; color:#c9ab6e; margin-bottom:10px; display:flex; align-items:center; gap:7px; }
+    .prayer-mantra-text { font-family:'Cormorant Garamond',serif; font-size:19px; font-style:italic; color:#e6d8f4; line-height:1.5; margin-bottom:4px; word-break:break-word; }
+    .prayer-mantra-meta { font-family:'DM Mono',monospace; font-size:9px; letter-spacing:.14em; text-transform:uppercase; color:var(--muted); margin-bottom:13px; }
+    .prayer-mantra-row { display:flex; gap:9px; }
+    .prayer-mantra-begin { flex:1; padding:12px; border-radius:10px; border:1px solid rgba(226,196,140,.42); background:linear-gradient(100deg, rgba(201,171,110,.16), rgba(226,196,140,.09)); color:#e8cd94; font-family:'DM Mono',monospace; font-size:10px; letter-spacing:.2em; text-transform:uppercase; cursor:pointer; }
+    .prayer-mantra-edit { padding:12px 15px; border-radius:10px; border:1px solid var(--border); background:none; color:var(--muted); font-family:'DM Mono',monospace; font-size:10px; cursor:pointer; }
+    /* Mantra bead screen */
+    #mantraScreen { justify-content:space-between; }
+    .mantra-stage { position:relative; width:250px; height:250px; margin:0 auto; display:flex; align-items:center; justify-content:center; }
+    .mantra-ring-track { fill:none; stroke:rgba(155,142,196,.16); stroke-width:5; stroke-linecap:round; stroke-dasharray:2 8.4; }
+    .mantra-ring-fill { fill:none; stroke:#c9ab6e; stroke-width:5; stroke-linecap:round; filter:drop-shadow(0 0 6px rgba(201,171,110,.6)); transition:stroke-dashoffset .18s ease; }
+    .mantra-count { position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; }
+    .mantra-count-num { font-family:'Cormorant Garamond',serif; font-size:74px; font-weight:300; color:#efe6fa; line-height:1; }
+    .mantra-count-target { font-family:'DM Mono',monospace; font-size:10px; letter-spacing:.24em; color:var(--muted); margin-top:6px; }
+    .mantra-count-num.tick { animation:mantraTick .22s ease; }
+    @keyframes mantraTick { 40% { transform:scale(1.09); text-shadow:0 0 22px rgba(201,171,110,.65); } }
+    .mantra-phrase { font-family:'Cormorant Garamond',serif; font-size:20px; font-style:italic; color:#d8cbe8; text-align:center; line-height:1.6; max-width:300px; margin:0 auto; }
+    .mantra-hint { font-family:'DM Mono',monospace; font-size:9px; letter-spacing:.22em; text-transform:uppercase; color:var(--muted); text-align:center; }
     /* PRAYER SESSION SCREEN */
     #prayerSessionScreen { justify-content:space-between; }
     .prayer-session-prompt { font-family:Cormorant Garamond,serif; font-size:22px; font-weight:300; font-style:italic; color:var(--text); line-height:1.6; text-align:center; max-width:300px; }
@@ -5313,19 +5352,16 @@ body:not(.tut-live) #tutCorgi {
         <!-- Next-prayer hero -->
         <div class="prayer-next-hero" id="prayerNextHero"></div>
 
-        <!-- Today's progress dots -->
-        <div class="prayer-dots" id="prayerDotsRow"></div>
+        <!-- Today's candles — one per sacred hour, lit as each is kept -->
+        <div class="prayer-candles" id="prayerCandlesRow"></div>
         <div class="prayer-dots-label"><span id="prayerDoneCount">0</span> of <span id="prayerTotalCount">5</span> kept today</div>
 
-        <!-- Prayer times list -->
+        <!-- Sacred hours list -->
         <div class="prayer-times-list" id="prayerTimesList"></div>
+        <button class="btn ghost" id="prayerBeginAnyBtn" style="width:100%; font-size:9px; color:var(--muted); border:1px dashed rgba(155,142,196,.3); border-radius:10px; padding:11px; margin-bottom:14px;">✧ Pray now — outside the hours</button>
 
-        <!-- Begin prayer anytime -->
-        <div style="background:var(--surface); border:1px solid rgba(155,142,196,.2); border-radius:10px; padding:16px 18px; margin-bottom:12px;">
-          <div style="font-size:9px; letter-spacing:.2em; text-transform:uppercase; color:#9b8ec4; margin-bottom:6px;">Begin at any time</div>
-          <div style="font-size:12px; color:var(--muted); line-height:1.5; margin-bottom:14px;">You may enter prayer outside of scheduled times whenever you feel called.</div>
-          <button class="btn primary" id="prayerBeginAnyBtn" style="background:rgba(155,142,196,0.12); border-color:rgba(155,142,196,.35); color:#c4b8e8; padding:12px;">Begin Prayer Now</button>
-        </div>
+        <!-- Mantra -->
+        <div class="prayer-card" id="prayerMantraCard"></div>
 
         <!-- View History -->
         <button id="prayerHistoryBtn" onclick="openPrayerHistory()" style="width:100%; padding:12px; background:none; border:1px solid var(--border); border-radius:8px; color:var(--muted); font-family:'DM Mono',monospace; font-size:9px; letter-spacing:.2em; text-transform:uppercase; cursor:pointer; margin-bottom:12px;">View History</button>
@@ -6165,6 +6201,32 @@ body:not(.tut-live) #tutCorgi {
     </div>
     <div style="padding:0 24px max(env(safe-area-inset-bottom),28px); display:flex; flex-direction:column; gap:10px;">
       <button class="btn primary" id="prayerConcludeBtn" style="background:rgba(155,142,196,0.12); border-color:rgba(155,142,196,.35); color:#c4b8e8;">Conclude Prayer</button>
+    </div>
+  </div>
+
+  <!-- MANTRA BEAD SCREEN — tap anywhere to count a repetition -->
+  <div class="screen" id="mantraScreen">
+    <div style="padding:var(--safe-top) 24px 0; display:flex; justify-content:space-between; align-items:center;">
+      <button class="session-discard-btn" onclick="discardMantra()" title="Discard">✕</button>
+      <span class="session-title" style="color:#c9ab6e;">mantra</span>
+      <span id="mantraScreenTarget" style="font-size:9px; letter-spacing:.2em; color:var(--muted);"></span>
+    </div>
+    <div style="flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:28px; padding:0 28px;">
+      <div class="mantra-stage">
+        <svg width="250" height="250" viewBox="0 0 250 250">
+          <circle class="mantra-ring-track" cx="125" cy="125" r="112"/>
+          <circle class="mantra-ring-fill" id="mantraRingFill" cx="125" cy="125" r="112" transform="rotate(-90 125 125)"/>
+        </svg>
+        <div class="mantra-count">
+          <div class="mantra-count-num" id="mantraCountNum">0</div>
+          <div class="mantra-count-target" id="mantraCountTarget">of 108</div>
+        </div>
+      </div>
+      <div class="mantra-phrase" id="mantraPhrase"></div>
+      <div class="mantra-hint">Tap anywhere with each repetition</div>
+    </div>
+    <div style="padding:0 24px max(env(safe-area-inset-bottom),28px); display:flex; flex-direction:column; gap:10px;">
+      <button class="btn ghost" id="mantraEndEarlyBtn" style="font-size:9px; color:var(--muted);">End Here</button>
     </div>
   </div>
 
@@ -16598,8 +16660,34 @@ var PRAYER_DEFAULT = {
   todaySkipped: [], // indices skipped today
   streak: 0,
   lastFullDay: '',
-  history: [], // {date, durationSec, prompt, reflection, voluntary, label, xpEarned}
+  history: [], // {date, durationSec, prompt, reflection, voluntary, label, xpEarned} | {type:'mantra', beads, target, mantra, ...}
+  mantraText: '',      // the user's personal mantra
+  mantraTarget: 108,   // beads per round (21 / 54 / 108)
 };
+
+// The five sacred hours. Fewer prayers/day slice from the middle outward so a
+// single daily prayer is Midday and two are Morning + Evening.
+var PRAYER_HOUR_SETS = {
+  1: ['Midday'],
+  2: ['Morning','Evening'],
+  3: ['Morning','Midday','Evening'],
+  4: ['Morning','Midday','Evening','Night'],
+  5: ['Dawn','Morning','Midday','Evening','Night']
+};
+var PRAYER_HOUR_META = {
+  Dawn:    { c:'#e8a87c', r:'232,168,124', svg:'<path d="M3 17h18M7 17a5 5 0 0 1 10 0" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round"/><path d="M12 6V3M5.6 9.6 4 8M18.4 9.6 20 8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>' },
+  Morning: { c:'#e8c878', r:'232,200,120', svg:'<circle cx="12" cy="14" r="4.5" stroke="currentColor" stroke-width="1.5" fill="none"/><path d="M12 5.5V3M4 14H2M22 14h-2M6 8l-1.5-1.5M18 8l1.5-1.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>' },
+  Midday:  { c:'#f0d890', r:'240,216,144', svg:'<circle cx="12" cy="12" r="4.5" stroke="currentColor" stroke-width="1.5" fill="none"/><path d="M12 4V2M12 22v-2M4 12H2M22 12h-2M5.6 5.6 4.2 4.2M18.4 5.6l1.4-1.4M5.6 18.4l-1.4 1.4M18.4 18.4l1.4 1.4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>' },
+  Evening: { c:'#d894a8', r:'216,148,168', svg:'<path d="M3 16h18M7 16a5 5 0 0 1 10 0" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round"/><path d="M12 8V5M6 20h12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>' },
+  Night:   { c:'#8ea8e8', r:'142,168,232', svg:'<path d="M14.5 3.5a8 8 0 1 0 6.8 11.6A8.5 8.5 0 0 1 14.5 3.5z" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linejoin="round"/><circle cx="18.6" cy="5.4" r=".9" fill="currentColor"/>' }
+};
+function prayerHourName(i, count) {
+  var set = PRAYER_HOUR_SETS[count] || PRAYER_HOUR_SETS[5];
+  return set[i] || ('Prayer ' + (i + 1));
+}
+function prayerHourMeta(i, count) {
+  return PRAYER_HOUR_META[prayerHourName(i, count)] || { c:'#c4b8e8', r:'196,184,232', svg:PRAYER_HOUR_META.Midday.svg };
+}
 
 function loadPrayerState() {
   try {
@@ -16649,6 +16737,8 @@ async function syncPrayerScheduleToServer() {
 
 var prayerState = loadPrayerState();
 if (!Array.isArray(prayerState.history)) prayerState.history = []; // backfill for older saves
+if (typeof prayerState.mantraText !== 'string') prayerState.mantraText = '';
+if (!prayerState.mantraTarget) prayerState.mantraTarget = 108;
 var prayerCheckInterval = null;
 var prayerActiveTimes = []; // {index, scheduledMs, notifCount, delayUntilMs}
 var currentPrayerIndex = -1;
@@ -16682,21 +16772,24 @@ function renderPrayerPanel() {
   var times = prayerState.times.slice(0, count);
   var now = new Date();
 
-  // Progress dots — one per prayer, no shame language
-  var dotsRow = document.getElementById('prayerDotsRow');
-  if (dotsRow) {
-    dotsRow.innerHTML = times.map(function(t, i) {
+  // Candle row — one candle per sacred hour, lit as each is kept
+  var candlesRow = document.getElementById('prayerCandlesRow');
+  if (candlesRow) {
+    candlesRow.innerHTML = times.map(function(t, i) {
       var parts = t.split(':');
       var pDate = new Date(); pDate.setHours(parseInt(parts[0]), parseInt(parts[1]), 0, 0);
       var isDone = done.indexOf(i) !== -1;
       var isSkipped = skipped.indexOf(i) !== -1;
       var isActive = !isDone && !isSkipped && Math.abs(now - pDate) < 5 * 60 * 1000;
-      var cls = isDone ? 'done' : isActive ? 'active' : isSkipped ? 'skipped' : (now > pDate ? 'passed' : '');
-      return '<i class="' + cls + '"></i>';
+      var cls = isDone ? ' lit' : isActive ? ' active' : isSkipped ? ' skipped' : (now > pDate ? ' passed' : '');
+      return '<div class="p-candle' + cls + '">'
+        + '<div class="p-candle-holder"><div class="p-candle-flame"></div><div class="p-candle-wick"></div><div class="p-candle-body"></div></div>'
+        + '<div class="p-candle-name">' + prayerHourName(i, count) + '</div>'
+        + '</div>';
     }).join('');
   }
 
-  // Detailed list — "missed" softened to "passed"
+  // Named hour rows — "missed" softened to "passed"
   list.innerHTML = times.map(function(t, i) {
     var parts = t.split(':');
     var h = parseInt(parts[0]), m = parseInt(parts[1]);
@@ -16707,16 +16800,20 @@ function renderPrayerPanel() {
     var isActive = !isDone && !isSkipped && Math.abs(now - pDate) < 5 * 60 * 1000;
     var statusText = isDone ? '✓ kept' : isSkipped ? '— skipped' : isActive ? '● now' : isPast ? 'passed' : 'upcoming';
     var statusClass = isDone ? 'done' : isActive ? 'active' : (isPast && !isSkipped ? 'passed' : 'pending');
+    var meta = prayerHourMeta(i, count);
     var ampm = h >= 12 ? 'pm' : 'am';
     var h12 = h % 12 || 12;
     var mStr = String(m).padStart(2,'0');
-    var borderColor = isDone ? 'rgba(126,184,164,.2)' : isActive ? 'rgba(155,142,196,.4)' : 'var(--border)';
-    return '<div class="prayer-time-row" style="border-color:' + borderColor + '; margin-bottom:8px;">'
-      + '<span class="prayer-time-label">Prayer ' + (i+1) + '</span>'
-      + '<span class="prayer-time-val">' + h12 + ':' + mStr + ' ' + ampm + '</span>'
+    return '<div class="prayer-hour-row' + (isDone ? ' done' : '') + '" style="--phr:' + meta.r + ';--phc:' + meta.c + ';">'
+      + '<div class="prayer-hour-icon"><svg viewBox="0 0 24 24" fill="none">' + meta.svg + '</svg></div>'
+      + '<span class="prayer-hour-name">' + prayerHourName(i, count) + '</span>'
+      + '<span class="prayer-hour-time">' + h12 + ':' + mStr + ' ' + ampm + '</span>'
       + '<span class="prayer-time-status ' + statusClass + '">' + statusText + '</span>'
       + '</div>';
   }).join('');
+
+  // Mantra card
+  renderPrayerMantraCard();
 
   // Next-prayer hero + live countdown
   renderPrayerNextHero();
@@ -16793,6 +16890,13 @@ function renderPrayerNextHero() {
   if (!el) return;
   var st = getPrayerNextState();
   var pStreak = prayerState.streak || 0;
+  var count = prayerState.count;
+  // Slow-turning light rays + pulsing star behind everything
+  var artHtml = '<div class="pnh-rays"></div>'
+    + '<svg class="pnh-star" viewBox="0 0 100 100" fill="none">'
+    + '<path d="M50 8 L58 42 L92 50 L58 58 L50 92 L42 58 L8 50 L42 42 Z" fill="#e6d8f4" opacity="0.9"/>'
+    + '<circle cx="50" cy="50" r="4" fill="#fff" opacity="0.85"/>'
+    + '</svg>';
   var html = '';
   if (st.kind === 'complete') {
     html = '<div class="pnh-eyebrow">Today’s devotion</div>'
@@ -16800,12 +16904,12 @@ function renderPrayerNextHero() {
       + '<div class="pnh-count">' + (pStreak > 0 ? pStreak + '-day path held' : 'The path begins') + '</div>'
       + '<button class="pnh-cta" onclick="enterPrayerFromHero()">Pray Again</button>';
   } else if (st.kind === 'now') {
-    html = '<div class="pnh-eyebrow">● Prayer ' + (st.index + 1) + ' · Now</div>'
+    html = '<div class="pnh-eyebrow">● ' + prayerHourName(st.index, count) + ' · Now</div>'
       + '<div class="pnh-time">' + fmtPrayerClock(st.time) + '</div>'
       + '<div class="pnh-count">The hour is here</div>'
       + '<button class="pnh-cta" onclick="enterPrayerFromHero()">Enter Prayer</button>';
   } else if (st.kind === 'upcoming') {
-    html = '<div class="pnh-eyebrow">Next · Prayer ' + (st.index + 1) + '</div>'
+    html = '<div class="pnh-eyebrow">Next · ' + prayerHourName(st.index, count) + '</div>'
       + '<div class="pnh-time">' + fmtPrayerClock(st.time) + '</div>'
       + '<div class="pnh-count" id="pnhCountdown">' + fmtCountdown(st.at - new Date()) + '</div>'
       + '<button class="pnh-cta" onclick="enterPrayerFromHero()">Enter Prayer Now</button>';
@@ -16815,7 +16919,7 @@ function renderPrayerNextHero() {
       + '<div class="pnh-count">No scheduled prayers remain today</div>'
       + '<button class="pnh-cta" onclick="enterPrayerFromHero()">Enter Prayer</button>';
   }
-  el.innerHTML = html;
+  el.innerHTML = artHtml + html;
 }
 
 var _prayerHeroTicker = null;
@@ -16906,7 +17010,7 @@ function showPrayerModal(index) {
     return;
   }
   currentPrayerIndex = index;
-  var sub = 'Prayer ' + (index + 1) + ' of ' + prayerState.count;
+  var sub = prayerHourName(index, prayerState.count) + ' · ' + (index + 1) + ' of ' + prayerState.count;
   document.getElementById('prayerModalSub').textContent = sub;
   document.getElementById('prayerModal').classList.add('show');
   sendPrayerPushNotification(index);
@@ -16918,7 +17022,9 @@ async function sendPrayerPushNotification(index) {
   try {
     var sub = await getSubscription();
     if (!sub) return;
-    var label = index >= 0 ? 'Prayer ' + (index + 1) + ' of ' + prayerState.count : 'Prayer time';
+    var label = index >= 0
+      ? prayerHourName(index, prayerState.count) + ' prayer (' + (index + 1) + ' of ' + prayerState.count + ')'
+      : 'Prayer time';
     await fetch(SERVER_URL + '/notify', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -16939,7 +17045,7 @@ function hidePrayerModal() {
 function beginPrayer(index) {
   hidePrayerModal();
   var prompt = PRAYER_PROMPTS[Math.floor(Math.random() * PRAYER_PROMPTS.length)];
-  var label = index === -1 ? 'Voluntary Prayer' : 'Prayer ' + (index + 1) + ' of ' + prayerState.count;
+  var label = index === -1 ? 'Voluntary Prayer' : prayerHourName(index, prayerState.count) + ' Prayer';
   var enc = PRAYER_ENCOURAGEMENTS[Math.floor(Math.random() * PRAYER_ENCOURAGEMENTS.length)];
   currentPrayerPrompt = prompt;
   currentPrayerEncouragement = enc;
@@ -17113,8 +17219,9 @@ function renderPrayerTimesSettings() {
   var wrap = document.getElementById('prayerTimesSettings');
   if (!wrap) return;
   wrap.innerHTML = prayerState.times.slice(0, prayerState.count).map(function(t, i) {
+    var meta = prayerHourMeta(i, prayerState.count);
     return '<div style="display:flex; align-items:center; justify-content:space-between;">'
-      + '<span style="font-size:10px; letter-spacing:.15em; color:var(--muted);">Prayer ' + (i+1) + '</span>'
+      + '<span style="font-size:10px; letter-spacing:.15em; color:' + meta.c + ';">' + prayerHourName(i, prayerState.count) + '</span>'
       + '<input type="time" value="' + t + '" data-idx="' + i + '" onchange="updatePrayerTime(this)" '
       + 'style="background:var(--bg); border:1px solid var(--border2); border-radius:4px; padding:6px 10px; color:var(--text); font-family:monospace; font-size:13px; outline:none;"/>'
       + '</div>';
@@ -17207,6 +17314,152 @@ function deletePrayerHistoryEntry(idx) {
   renderPrayerHistory();
   showToast('Entry deleted');
 }
+
+// ── Mantra — japa-style bead counter ────────────────────────────────────────
+// A personal sacred phrase repeated a set number of times (21 / 54 / 108, the
+// traditional mala counts). Tap anywhere on the screen with each repetition;
+// the bead ring fills, quarters pulse, and the round completes at the target.
+var mantraCount = 0;
+var mantraStartMs = null;
+var MANTRA_RING_C = 2 * Math.PI * 112; // ring circumference (r=112)
+
+function countMantraRoundsToday() {
+  var today = new Date().toDateString();
+  return (prayerState.history || []).filter(function(h) {
+    return h && h.type === 'mantra' && new Date(h.date).toDateString() === today;
+  }).length;
+}
+
+function renderPrayerMantraCard() {
+  var card = document.getElementById('prayerMantraCard');
+  if (!card) return;
+  var text = (prayerState.mantraText || '').trim();
+  var target = prayerState.mantraTarget || 108;
+  var esc = text.replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  var todayRounds = countMantraRoundsToday();
+  card.innerHTML = '<div class="prayer-card-title">☙ Mantra</div>'
+    + (text
+      ? '<div class="prayer-mantra-text">“' + esc + '”</div>'
+      : '<div class="prayer-mantra-text" style="color:var(--muted);">Set a sacred phrase to repeat…</div>')
+    + '<div class="prayer-mantra-meta">' + target + ' beads per round'
+      + (todayRounds ? ' · ' + todayRounds + ' round' + (todayRounds === 1 ? '' : 's') + ' today' : '') + '</div>'
+    + '<div style="display:flex; gap:6px; margin-bottom:12px;">'
+    + [21, 54, 108].map(function(n) {
+        return '<button class="q-scale-btn' + (n === target ? ' selected' : '') + '" style="aspect-ratio:auto; padding:7px 0;" onclick="setMantraTarget(' + n + ')">' + n + '</button>';
+      }).join('')
+    + '</div>'
+    + '<div class="prayer-mantra-row">'
+    + '<button class="prayer-mantra-begin" onclick="beginMantra()">Begin Mantra</button>'
+    + '<button class="prayer-mantra-edit" onclick="editMantra()">' + (text ? 'Edit' : 'Set') + '</button>'
+    + '</div>';
+}
+
+function setMantraTarget(n) {
+  prayerState.mantraTarget = n;
+  savePrayerState();
+  renderPrayerMantraCard();
+}
+
+function editMantra() {
+  var next = window.prompt('Your mantra — a phrase to repeat with each bead:', prayerState.mantraText || '');
+  if (next === null) return;
+  prayerState.mantraText = next.trim().slice(0, 160);
+  savePrayerState();
+  renderPrayerMantraCard();
+}
+
+function beginMantra() {
+  if (!(prayerState.mantraText || '').trim()) {
+    editMantra();
+    if (!(prayerState.mantraText || '').trim()) return;
+  }
+  mantraCount = 0;
+  mantraStartMs = Date.now();
+  var target = prayerState.mantraTarget || 108;
+  document.getElementById('mantraPhrase').textContent = '“' + prayerState.mantraText.trim() + '”';
+  document.getElementById('mantraScreenTarget').textContent = target + ' beads';
+  document.getElementById('mantraCountNum').textContent = '0';
+  document.getElementById('mantraCountTarget').textContent = 'of ' + target;
+  var ring = document.getElementById('mantraRingFill');
+  if (ring) { ring.style.strokeDasharray = MANTRA_RING_C; ring.style.strokeDashoffset = MANTRA_RING_C; }
+  showScreen('mantraScreen');
+  requestExerciseWakeLock();
+}
+
+function mantraTap() {
+  var target = prayerState.mantraTarget || 108;
+  if (mantraCount >= target) return;
+  mantraCount++;
+  var numEl = document.getElementById('mantraCountNum');
+  if (numEl) {
+    numEl.textContent = mantraCount;
+    numEl.classList.remove('tick');
+    void numEl.offsetWidth;
+    numEl.classList.add('tick');
+  }
+  var ring = document.getElementById('mantraRingFill');
+  if (ring) ring.style.strokeDashoffset = MANTRA_RING_C * (1 - mantraCount / target);
+  if (mantraCount >= target) {
+    if (navigator.vibrate) navigator.vibrate([60, 60, 160]);
+    setTimeout(function() { completeMantra(mantraCount); }, 550);
+  } else if (mantraCount % Math.max(1, Math.floor(target / 4)) === 0) {
+    if (navigator.vibrate) navigator.vibrate(45); // quarter milestone
+  } else {
+    if (navigator.vibrate) navigator.vibrate(12);
+  }
+}
+
+function completeMantra(beads) {
+  releaseExerciseWakeLock();
+  var elapsed = Math.floor((Date.now() - (mantraStartMs || Date.now())) / 1000);
+  var target = prayerState.mantraTarget || 108;
+  var xpEarned = Math.max(5, Math.round(elapsed / 60 * 20)); // same rate as prayer
+  state.xp += xpEarned;
+  while (state.level < 777) {
+    var xpThis = state.xp - sumXpToLevel(state.level);
+    if (xpThis >= xpForLevel(state.level)) { state.level++; } else { break; }
+  }
+  saveState();
+  prayerState.history = prayerState.history || [];
+  prayerState.history.unshift({
+    date: new Date().toISOString(),
+    type: 'mantra',
+    beads: beads,
+    target: target,
+    durationSec: elapsed,
+    prompt: prayerState.mantraText.trim(),   // shows in history like a prayer prompt
+    label: 'Mantra · ' + beads + '/' + target + ' beads',
+    voluntary: false,
+    xpEarned: xpEarned,
+    reflection: ''
+  });
+  if (prayerState.history.length > 100) prayerState.history = prayerState.history.slice(0, 100);
+  savePrayerState();
+  if (typeof playSessionCompleteSound === 'function') { try { playSessionCompleteSound(); } catch(e) {} }
+  showToast('+' + xpEarned + ' XP · Mantra round ' + (beads >= target ? 'complete' : 'recorded') + ' · ' + beads + ' beads');
+  mantraStartMs = null;
+  renderPrayerPanel();
+  showScreen('homeScreen');
+  switchMode('prayer');
+}
+
+function discardMantra() {
+  if (mantraCount > 0 && !confirm('Discard this mantra round? No beads will be saved.')) return;
+  releaseExerciseWakeLock();
+  mantraStartMs = null;
+  showScreen('homeScreen');
+  switchMode('prayer');
+}
+
+// Tap anywhere on the mantra screen counts a bead — except the control buttons.
+document.getElementById('mantraScreen').addEventListener('click', function(e) {
+  if (e.target.closest('button')) return;
+  mantraTap();
+});
+document.getElementById('mantraEndEarlyBtn').addEventListener('click', function() {
+  if (mantraCount > 0) completeMantra(mantraCount);
+  else discardMantra();
+});
 
 document.getElementById('prayerHistoryBack').addEventListener('click', function() {
   showScreen('homeScreen');
