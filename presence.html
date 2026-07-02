@@ -1459,11 +1459,31 @@
 
     /* AUDITORY EXERCISE */
     .sound-grid { display:grid; grid-template-columns:1fr 1fr; gap:8px; width:100%; margin-bottom:8px; }
-    .sound-btn { padding:10px 8px; border-radius:8px; border:1px solid var(--border); background:var(--surface); color:var(--muted); font-family:'DM Mono',monospace; font-size:9px; letter-spacing:.1em; text-transform:uppercase; cursor:pointer; transition:all .2s; text-align:center; line-height:1.4; }
-    .sound-btn.selected { background:rgba(212,149,110,0.12); border-color:rgba(212,149,110,.4); color:#d4b08e; }
+    /* Each sound tile carries its own accent (--sc hex, --scr r,g,b triplet)
+       and a line-art SVG icon; the selected tile glows and shows a live EQ. */
+    .sound-btn { --sc:#8eccc0; --scr:142,204,192; position:relative; padding:13px 8px 11px; border-radius:12px; border:1px solid rgba(var(--scr),.22); background:linear-gradient(160deg, rgba(var(--scr),.09), rgba(var(--scr),.025) 62%, rgba(255,255,255,.015)); color:var(--muted); font-family:'DM Mono',monospace; font-size:9px; letter-spacing:.1em; text-transform:uppercase; cursor:pointer; transition:border-color .2s, background .2s, color .2s, box-shadow .25s, transform .15s; text-align:center; line-height:1.4; }
+    .sound-btn:active { transform:scale(.97); }
+    .sound-btn.selected { border-color:rgba(var(--scr),.62); background:linear-gradient(160deg, rgba(var(--scr),.19), rgba(var(--scr),.05)); color:var(--sc); box-shadow:0 0 20px -6px var(--sc), inset 0 0 18px -12px var(--sc); }
+    .sound-btn .sound-art { display:flex; justify-content:center; margin-bottom:7px; color:var(--sc); opacity:.8; transition:opacity .2s, filter .2s; }
+    .sound-btn .sound-art svg { width:24px; height:24px; }
+    .sound-btn.selected .sound-art { opacity:1; filter:drop-shadow(0 0 6px rgba(var(--scr),.75)); }
     .sound-btn .sound-icon { font-size:18px; display:block; margin-bottom:4px; }
+    .sound-eq { position:absolute; top:9px; right:10px; display:none; align-items:flex-end; gap:2px; height:12px; pointer-events:none; }
+    .sound-btn.selected .sound-eq { display:flex; }
+    .sound-eq i { width:2.5px; border-radius:1px; background:var(--sc); box-shadow:0 0 4px rgba(var(--scr),.7); animation:audEqBar 1s ease-in-out infinite; height:5px; }
+    .sound-eq i:nth-child(1) { animation-delay:0s; }
+    .sound-eq i:nth-child(2) { animation-delay:.25s; }
+    .sound-eq i:nth-child(3) { animation-delay:.5s; }
+    .sound-eq i:nth-child(4) { animation-delay:.12s; }
+    @keyframes audEqBar { 0%,100%{height:4px;} 50%{height:12px;} }
     .sound-btn--freeplay { grid-column:1 / -1; border-style:dashed; display:flex; align-items:center; justify-content:center; gap:10px; padding:12px 16px; }
     .sound-btn--freeplay .sound-icon { font-size:16px; display:inline; margin-bottom:0; }
+    .sound-btn--freeplay .sound-art { margin-bottom:0; }
+    .aud-setup-head { display:flex; align-items:center; justify-content:space-between; margin-bottom:12px; min-height:40px; }
+    .aud-omnia-peek { background:none; border:none; padding:2px; margin:0; cursor:pointer; display:flex; align-items:center; justify-content:center; }
+    .aud-omnia-peek:active { transform:scale(.92); }
+    /* Faint teal ambient bloom behind the sound grid (mirrors the Clock's copper glow) */
+    #exSetupScrollArea:has(.aud-setup) { background:radial-gradient(ellipse 90% 55% at 50% 0%, rgba(110,184,164,.11) 0%, rgba(70,140,120,.05) 40%, transparent 70%); }
     .aud-picker-overlay { display:none; position:fixed; inset:0; z-index:9700; background:rgba(7,8,13,0.94); align-items:center; justify-content:center; padding:24px; }
     .aud-picker-overlay.show { display:flex; }
     .aud-picker-sheet { width:100%; max-width:420px; max-height:82vh; overflow-y:auto; -webkit-overflow-scrolling:touch; background:var(--bg); border:1px solid var(--border); border-radius:14px; padding:20px; }
@@ -13604,9 +13624,16 @@ var EXERCISE_DEFS = {
   auditory: {
     icon: '&#127911;',
     name: 'Auditory',
-    desc: 'Choose a sound. Listen to it, then tap Start when ready to concentrate in silence. Each time your mind wanders from the sound, tap the screen.',
+    // No instruction block — Omnia's head beside the grid opens the tutorial.
+    desc: '',
     setupHTML: function() {
-      return '<div><div class="vis-object-label" style="margin-bottom:10px;">Choose a sound</div>'
+      return '<div class="aud-setup">'
+        + '<div class="aud-setup-head">'
+        + '<div class="vis-object-label" style="margin:0;">Choose a sound</div>'
+        + '<button type="button" class="aud-omnia-peek" onclick="openExExplainer(\'auditory\')" aria-label="How Auditory works">'
+        + '<span class="clk-omnia-peek-head"><span class="clk-omnia-spin">' + omniaHeadOnlySVG(34, 32) + '</span></span>'
+        + '</button>'
+        + '</div>'
         + '<div class="sound-grid" id="soundGrid"></div></div>';
     },
     begin: function() { startAuditorySession(); }
@@ -13802,6 +13829,15 @@ var EX_EXPLAINERS = {
       'Work through them <strong>one at a time</strong>. Honesty here is the whole exercise — name what is truly yours.',
       'When a trait is genuinely transformed, mark it <strong>complete</strong> and it darkens. Tapped by mistake? Restore it with the <strong>↩</strong> button.',
       'Use <strong>Mirror Notes</strong> to record what you observe. This is the slow work that reshapes character.'
+    ]
+  },
+  auditory: {
+    title: 'Auditory',
+    steps: [
+      'Choose a <strong>sound</strong> and simply listen. Let it fill the mind completely — nothing else.',
+      'When you are settled, tap <strong>Start</strong>. The sound falls silent and you hold it <strong>in imagination alone</strong>.',
+      'Each time the mind wanders from the imagined sound, <strong>tap the screen</strong> to log the halt honestly.',
+      'When the inner tone collapses, tap <strong>Lost Focus</strong> to end the rep. Rep by rep, the imagined sound grows steady.'
     ]
   },
   autosug: {
@@ -14922,21 +14958,60 @@ function stopWaveAnimation() {
 }
 
 // ── Home screen — sound selector ─────────────────────────
+// Per-sound accent colour + line-art SVG icon (24×24, stroke:currentColor).
+// _custom / _url cover uploaded files and pasted links.
+var AUD_SOUND_ART = {
+  gong:        ['#e8c078', '<circle cx="12" cy="12" r="8.5"/><circle cx="12" cy="12" r="4.5"/><circle cx="12" cy="12" r="1.2" fill="currentColor" stroke="none"/>'],
+  bowl:        ['#d4956e', '<path d="M4 11c0 3.8 3.6 6.8 8 6.8s8-3 8-6.8H4z"/><path d="M9 21h6"/><path d="M18.5 4.5 21 7"/>'],
+  creek:       ['#7ec8d8', '<path d="M3 9c2-2.4 4-2.4 6 0s4 2.4 6 0 4-2.4 6 0"/><path d="M3 15c2-2.4 4-2.4 6 0s4 2.4 6 0 4-2.4 6 0"/>'],
+  rain:        ['#8aa8d8', '<path d="M7 13a5 5 0 1 1 1-9.9A6 6 0 0 1 19.5 6 4 4 0 0 1 18 13.5H7z"/><path d="M8 17l-1.2 3M13 17l-1.2 3M18 17l-1.2 3"/>'],
+  bell:        ['#e8d080', '<path d="M12 4a5.5 5.5 0 0 1 5.5 5.5c0 3 .8 4.6 1.8 5.7H4.7c1-1.1 1.8-2.7 1.8-5.7A5.5 5.5 0 0 1 12 4z"/><circle cx="12" cy="18.6" r="1.5"/><path d="M12 2.2v1.6"/>'],
+  om:          ['#c4a8e0', '<circle cx="5.5" cy="12" r="1.3" fill="currentColor" stroke="none"/><path d="M8.5 9a4.4 4.4 0 0 1 0 6"/><path d="M11.5 6.5a8.2 8.2 0 0 1 0 11"/><path d="M14.5 4a12.2 12.2 0 0 1 0 16"/>'],
+  binaural:    ['#a89ce8', '<path d="M4 16v-3a8 8 0 0 1 16 0v3"/><rect x="3" y="14.5" width="4" height="6" rx="1.6"/><rect x="17" y="14.5" width="4" height="6" rx="1.6"/>'],
+  pulse:       ['#7eb8a4', '<path d="M2 12h4.2l2.3-5.6 3.3 11.2 2.5-5.6H22"/>'],
+  psychedelic: ['#e08ac0', '<path d="M12 12c.9 0 1.4.8 1.1 1.6-.4 1.1-1.6 1.7-2.8 1.3-1.9-.6-2.8-2.6-2.1-4.5.9-2.6 3.7-4 6.2-3 3.4 1.3 5.1 5 3.8 8.4-1.6 4.2-6.3 6.3-10.4 4.7"/>'],
+  ocean:       ['#6aaede', '<path d="M2 16.5c2.6 0 2.6-6.5 7.6-6.5 3.4 0 4.7 3 3.2 4.7-1.1 1.2-3.1.7-3.2-.9"/><path d="M2 20h20"/>'],
+  wind:        ['#9cc8d0', '<path d="M3 8h10a2.5 2.5 0 1 0-2.5-2.5"/><path d="M3 12h15a2.5 2.5 0 1 1-2.5 2.5"/><path d="M3 16h8a2 2 0 1 1-2 2"/>'],
+  fire:        ['#e89060', '<path d="M12 3s5 4.7 5 8.7c0 3-2.1 5.5-5 5.5s-5-2.5-5-5.5C7 7.7 12 3 12 3z"/><path d="M12 11.5s2 1.9 2 3.4a2 2 0 1 1-4 0c0-1.5 2-3.4 2-3.4z"/>'],
+  chimes:      ['#a8d8b8', '<path d="M4 4h16"/><path d="M8 4v9M12 4v13M16 4v7"/><circle cx="8" cy="14.6" r="1"/><circle cx="12" cy="18.6" r="1"/><circle cx="16" cy="12.6" r="1"/>'],
+  crickets:    ['#98c888', '<path d="M14.5 3.5a7.5 7.5 0 1 0 6 11.5 8.5 8.5 0 0 1-6-11.5z"/><circle cx="18.5" cy="5.5" r=".9" fill="currentColor" stroke="none"/><circle cx="21" cy="9" r=".7" fill="currentColor" stroke="none"/>'],
+  brown:       ['#c0987a', '<circle cx="12" cy="12" r="8.5" fill="currentColor" stroke="none" opacity=".22"/><circle cx="12" cy="12" r="5" fill="currentColor" stroke="none" opacity=".45"/><circle cx="12" cy="12" r="1.8" fill="currentColor" stroke="none"/>'],
+  white:       ['#cfd4de', '<circle cx="6" cy="7" r="1.1" fill="currentColor" stroke="none"/><circle cx="13" cy="5" r=".8" fill="currentColor" stroke="none" opacity=".7"/><circle cx="18.5" cy="8.5" r="1" fill="currentColor" stroke="none"/><circle cx="9" cy="12.5" r=".8" fill="currentColor" stroke="none" opacity=".6"/><circle cx="16" cy="13.5" r="1.1" fill="currentColor" stroke="none" opacity=".85"/><circle cx="5.5" cy="17" r="1" fill="currentColor" stroke="none" opacity=".75"/><circle cx="12" cy="18.5" r=".9" fill="currentColor" stroke="none"/><circle cx="19" cy="18" r=".7" fill="currentColor" stroke="none" opacity=".6"/>'],
+  theta:       ['#90a0e8', '<path d="M2 12c1.7-4.5 3.3-4.5 5 0s3.3 4.5 5 0 3.3-4.5 5 0 3.3 4.5 5 0"/>'],
+  freeplay:    ['#8eccc0', '<path d="M9.5 18V5.5l10-2V15"/><circle cx="7" cy="18" r="2.6"/><circle cx="17" cy="15" r="2.6"/>'],
+  _custom:     ['#8eccc0', '<path d="M4 10v4M7.5 7v10M11 9.5v5M14.5 5v14M18 8.5v7M21 11v2"/>'],
+  _url:        ['#6eb8a4', '<path d="M10 14a4 4 0 0 0 6 .4l3-3a4 4 0 0 0-5.7-5.7l-1.7 1.7"/><path d="M14 10a4 4 0 0 0-6-.4l-3 3a4 4 0 0 0 5.7 5.7l1.7-1.7"/>']
+};
+
+function _audRgbTriplet(hex) {
+  var h = hex.replace('#', '');
+  return parseInt(h.substr(0,2),16) + ',' + parseInt(h.substr(2,2),16) + ',' + parseInt(h.substr(4,2),16);
+}
+
+// Shared tile renderer for the setup grid and the in-session picker.
+function audSoundBtnHTML(s) {
+  var art = AUD_SOUND_ART[s.id] || (s.kind === 'url' ? AUD_SOUND_ART._url : AUD_SOUND_ART._custom);
+  var sel = s.id === currentSound ? ' selected' : '';
+  var extra = s.id === 'freeplay' ? ' sound-btn--freeplay' : '';
+  return '<button class="sound-btn' + extra + sel + '" data-sound="' + s.id + '" style="--sc:' + art[0] + ';--scr:' + _audRgbTriplet(art[0]) + ';">'
+    + '<span class="sound-art"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + art[1] + '</svg></span>'
+    + '<span class="sound-eq"><i></i><i></i><i></i><i></i></span>'
+    + s.label + '</button>';
+}
+
+function audAllSelectableSounds() {
+  var customSounds = loadCustomAudSounds().filter(function(s) { return s.kind !== 'youtube'; });
+  return SOUNDS.map(function(s) {
+    return { id: s.id, label: s.label };
+  }).concat(customSounds.map(function(s) {
+    return { id: s.id, label: s.name.replace(/</g, '&lt;'), kind: s.kind };
+  }));
+}
+
 function buildSoundGrid() {
   var grid = document.getElementById('soundGrid');
   if (!grid) return;
-  var customSounds = loadCustomAudSounds().filter(function(s) { return s.kind !== 'youtube'; });
-  var allSounds = SOUNDS.map(function(s) {
-    return { id: s.id, label: s.label, icon: s.icon };
-  }).concat(customSounds.map(function(s) {
-    return { id: s.id, label: s.name.replace(/</g, '&lt;'), icon: s.kind === 'url' ? '&#128279;' : '&#127911;' };
-  }));
-  grid.innerHTML = allSounds.map(function(s) {
-    var sel = s.id === currentSound ? ' selected' : '';
-    var extra = s.id === 'freeplay' ? ' sound-btn--freeplay' : '';
-    return '<button class="sound-btn' + extra + sel + '" data-sound="' + s.id + '">'
-      + '<span class="sound-icon">' + s.icon + '</span>' + s.label + '</button>';
-  }).join('');
+  grid.innerHTML = audAllSelectableSounds().map(audSoundBtnHTML).join('');
   grid.querySelectorAll('.sound-btn').forEach(function(btn) {
     btn.addEventListener('click', function() { selectSound(this.dataset.sound); });
   });
@@ -14977,18 +15052,7 @@ function audSwitchableSounds() {
 function buildAudPickerGrid() {
   var grid = document.getElementById('audPickerGrid');
   if (!grid) return;
-  var customSounds = loadCustomAudSounds().filter(function(s) { return s.kind !== 'youtube'; });
-  var allSounds = SOUNDS.map(function(s) {
-    return { id: s.id, label: s.label, icon: s.icon };
-  }).concat(customSounds.map(function(s) {
-    return { id: s.id, label: s.name.replace(/</g, '&lt;'), icon: s.kind === 'url' ? '&#128279;' : '&#127911;' };
-  }));
-  grid.innerHTML = allSounds.map(function(s) {
-    var sel = s.id === currentSound ? ' selected' : '';
-    var extra = s.id === 'freeplay' ? ' sound-btn--freeplay' : '';
-    return '<button class="sound-btn' + extra + sel + '" data-sound="' + s.id + '">'
-      + '<span class="sound-icon">' + s.icon + '</span>' + s.label + '</button>';
-  }).join('');
+  grid.innerHTML = audAllSelectableSounds().map(audSoundBtnHTML).join('');
   grid.querySelectorAll('.sound-btn').forEach(function(btn) {
     btn.addEventListener('click', function() { pickAudSoundFromPicker(this.dataset.sound); });
   });
