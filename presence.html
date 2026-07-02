@@ -198,13 +198,62 @@
     .so-ended-overlay.seo-vis { opacity:1; }
     .so-ended-card { position:relative; overflow:hidden; background:linear-gradient(168deg,#1e1410 0%,#141019 52%,#100c16 100%); border:1px solid rgba(228,152,94,.35); border-radius:20px; padding:26px 22px 24px; max-width:340px; width:100%; text-align:center; box-shadow:0 0 54px rgba(228,140,70,.16), inset 0 1px 0 rgba(255,255,255,.06); }
     .so-ended-card::before { content:''; position:absolute; top:0; left:14%; right:14%; height:1px; background:linear-gradient(90deg,transparent,rgba(255,212,160,.55),transparent); }
-    .so-ended-flame-wrap { position:relative; width:92px; height:92px; margin:0 auto 4px; display:flex; align-items:center; justify-content:center; }
-    .so-ended-flame-glow { position:absolute; inset:-16px; border-radius:50%; background:radial-gradient(circle, rgba(255,150,60,.32) 0%, rgba(255,120,40,.12) 45%, transparent 70%); animation:seoGlowPulse 2.4s ease-in-out infinite; }
-    .so-ended-flame { font-size:50px; position:relative; z-index:2; animation:seoFlameBob 2.4s ease-in-out infinite; filter:drop-shadow(0 0 18px rgba(255,140,50,.55)); }
-    .so-ended-ember { position:absolute; bottom:10px; width:4px; height:4px; border-radius:50%; background:#ffc080; box-shadow:0 0 6px #ff9850, 0 0 12px rgba(255,140,60,.6); opacity:0; animation:seoEmber 2.8s ease-in infinite; }
-    @keyframes seoGlowPulse { 0%,100%{transform:scale(1);opacity:.8;} 50%{transform:scale(1.18);opacity:1;} }
-    @keyframes seoFlameBob { 0%,100%{transform:translateY(0) scale(1);} 50%{transform:translateY(-5px) scale(1.05);} }
-    @keyframes seoEmber { 0%{transform:translateY(0) scale(1);opacity:0;} 15%{opacity:.95;} 100%{transform:translateY(-74px) scale(.25);opacity:0;} }
+    /* The extinguish sequence is choreographed via data-seophase on the overlay:
+       alive → struggle (flame gutters) → out (snuffed, smoke) → ash (number
+       greys, ash falls) → reveal (title/goals/buttons rise in). */
+    .so-ended-card { transition:border-color 1.6s ease, box-shadow 1.6s ease, background 1.6s ease; }
+    .so-ended-card::before { transition:opacity 1.4s ease; }
+    .so-ended-overlay[data-seophase="out"] .so-ended-card,
+    .so-ended-overlay[data-seophase="ash"] .so-ended-card,
+    .so-ended-overlay[data-seophase="reveal"] .so-ended-card { border-color:rgba(140,160,200,.22); box-shadow:0 0 44px rgba(90,110,160,.10), inset 0 1px 0 rgba(255,255,255,.04); background:linear-gradient(168deg,#14121a 0%,#111019 52%,#0e0d14 100%); }
+    .so-ended-overlay[data-seophase="out"] .so-ended-card::before,
+    .so-ended-overlay[data-seophase="ash"] .so-ended-card::before,
+    .so-ended-overlay[data-seophase="reveal"] .so-ended-card::before { opacity:.25; }
+    .so-ended-stage { position:relative; width:120px; height:110px; margin:0 auto 2px; transition:height .7s ease; }
+    .so-ended-overlay[data-seophase="reveal"] .so-ended-stage { height:84px; }
+    .so-ended-flame-glow { position:absolute; left:50%; top:44%; width:130px; height:130px; transform:translate(-50%,-50%); border-radius:50%; background:radial-gradient(circle, rgba(255,150,60,.34) 0%, rgba(255,120,40,.13) 45%, transparent 70%); animation:seoGlowPulse 2.2s ease-in-out infinite; transition:opacity .5s ease; }
+    @keyframes seoGlowPulse { 0%,100%{opacity:.85;transform:translate(-50%,-50%) scale(1);} 50%{opacity:1;transform:translate(-50%,-50%) scale(1.08);} }
+    .so-ended-overlay[data-seophase="struggle"] .so-ended-flame-glow { animation:seoGlowGutter .28s ease-in-out infinite; }
+    @keyframes seoGlowGutter { 0%,100%{opacity:.75;transform:translate(-50%,-50%) scale(.92);} 35%{opacity:.35;transform:translate(-50%,-50%) scale(.78);} 70%{opacity:.6;transform:translate(-50%,-50%) scale(.86);} }
+    .so-ended-overlay[data-seophase="out"] .so-ended-flame-glow,
+    .so-ended-overlay[data-seophase="ash"] .so-ended-flame-glow,
+    .so-ended-overlay[data-seophase="reveal"] .so-ended-flame-glow { opacity:0; animation:none; }
+    .so-ended-flame-svg { position:absolute; left:50%; bottom:18px; width:64px; height:79px; margin-left:-32px; transform-origin:50% 92%; animation:seoFlameSway 2.2s ease-in-out infinite; filter:drop-shadow(0 0 16px rgba(255,140,50,.55)); }
+    @keyframes seoFlameSway { 0%,100%{transform:scale(1) rotate(0deg);} 30%{transform:scale(1.03,1.05) rotate(-1.6deg);} 60%{transform:scale(.98,.96) rotate(1.4deg);} }
+    .so-ended-overlay[data-seophase="struggle"] .so-ended-flame-svg { animation:seoFlameGutter .3s linear infinite; }
+    @keyframes seoFlameGutter { 0%,100%{transform:scale(.9,.82) rotate(-4deg) skewX(3deg);opacity:1;} 20%{transform:scale(.72,.62) rotate(5deg) skewX(-6deg);opacity:.75;} 45%{transform:scale(.85,.72) rotate(-6deg) skewX(5deg);opacity:.95;} 65%{transform:scale(.6,.5) rotate(4deg) skewX(-4deg);opacity:.6;} 85%{transform:scale(.8,.66) rotate(-3deg) skewX(2deg);opacity:.9;} }
+    .so-ended-overlay[data-seophase="out"] .so-ended-flame-svg,
+    .so-ended-overlay[data-seophase="ash"] .so-ended-flame-svg,
+    .so-ended-overlay[data-seophase="reveal"] .so-ended-flame-svg { animation:seoFlameOut .42s cubic-bezier(.55,0,.9,.4) forwards; }
+    @keyframes seoFlameOut { 0%{transform:scale(.8,.7);opacity:1;} 55%{transform:scale(1.05,.32) translateY(6px);opacity:.85;} 100%{transform:scale(.02,.02) translateY(26px);opacity:0;} }
+    .so-ended-ember { position:absolute; bottom:22px; width:4px; height:4px; border-radius:50%; background:#ffc080; box-shadow:0 0 6px #ff9850, 0 0 12px rgba(255,140,60,.6); opacity:0; animation:seoEmber 2.6s ease-in infinite; }
+    @keyframes seoEmber { 0%{transform:translateY(0) scale(1);opacity:0;} 15%{opacity:.95;} 100%{transform:translateY(-72px) translateX(var(--drift,6px)) scale(.3);opacity:0;} }
+    .so-ended-overlay[data-seophase="out"] .so-ended-ember,
+    .so-ended-overlay[data-seophase="ash"] .so-ended-ember,
+    .so-ended-overlay[data-seophase="reveal"] .so-ended-ember { display:none; }
+    .so-ended-smoke { position:absolute; left:50%; bottom:30px; width:14px; height:22px; margin-left:-7px; border-radius:50%; background:radial-gradient(ellipse at 50% 60%, rgba(170,178,196,.5), rgba(170,178,196,0) 70%); filter:blur(4px); opacity:0; }
+    .so-ended-overlay[data-seophase="out"] .so-ended-smoke,
+    .so-ended-overlay[data-seophase="ash"] .so-ended-smoke,
+    .so-ended-overlay[data-seophase="reveal"] .so-ended-smoke { animation:seoSmokeRise 2.4s ease-out forwards; animation-delay:var(--sd,0s); }
+    @keyframes seoSmokeRise { 0%{opacity:0;transform:translateY(6px) translateX(0) scale(.5,.7);} 18%{opacity:.65;} 100%{opacity:0;transform:translateY(-84px) translateX(var(--sx,0px)) scale(2.4,3.2) rotate(var(--sr,8deg));} }
+    .so-ended-ash { position:absolute; top:64%; width:3px; height:3px; background:#9aa2b2; border-radius:1px; opacity:0; pointer-events:none; }
+    .so-ended-overlay[data-seophase="ash"] .so-ended-ash,
+    .so-ended-overlay[data-seophase="reveal"] .so-ended-ash { animation:seoAshFall 1.7s ease-in forwards; animation-delay:var(--ad,0s); }
+    @keyframes seoAshFall { 0%{opacity:0;transform:translateY(0) rotate(0);} 12%{opacity:.8;} 100%{opacity:0;transform:translateY(58px) translateX(var(--ax,4px)) rotate(160deg);} }
+    .so-ended-daysbig { position:absolute; left:0; right:0; bottom:-14px; font-family:Cormorant Garamond,serif; font-size:44px; font-weight:300; line-height:1; background:linear-gradient(100deg,#ffb070,#ffe2b8 48%,#e8945e); -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent; filter:drop-shadow(0 0 14px rgba(255,160,90,.35)); transition:filter 1.2s ease; }
+    .so-ended-daysbig .u { font-size:12px; letter-spacing:.22em; text-transform:uppercase; }
+    .so-ended-overlay[data-seophase="ash"] .so-ended-daysbig,
+    .so-ended-overlay[data-seophase="reveal"] .so-ended-daysbig { background:linear-gradient(100deg,#5d6470,#8b93a2 48%,#555c68); -webkit-background-clip:text; background-clip:text; filter:none; animation:seoAshSettle 1s ease forwards; }
+    @keyframes seoAshSettle { 0%{transform:translateY(0);} 30%{transform:translateY(1.5px) rotate(.4deg);} 100%{transform:translateY(3px);} }
+    .so-ended-reveal { opacity:0; pointer-events:none; }
+    .so-ended-overlay[data-seophase="reveal"] .so-ended-reveal { opacity:1; pointer-events:auto; }
+    .so-ended-title, .so-ended-sub, .so-ended-freeze-note, .so-ended-start, .so-ended-dismiss { opacity:0; }
+    .so-ended-overlay[data-seophase="reveal"] .so-ended-title { animation:rptRise .55s ease forwards; }
+    .so-ended-overlay[data-seophase="reveal"] .so-ended-sub { animation:rptRise .55s ease .12s forwards; }
+    .so-ended-overlay[data-seophase="reveal"] .so-ended-freeze-note { animation:rptRise .55s ease .18s forwards; }
+    .so-ended-overlay[data-seophase="reveal"] .so-ended-start { animation:rptRise .5s ease .5s forwards; }
+    .so-ended-overlay[data-seophase="reveal"] .so-ended-dismiss { animation:rptRise .5s ease .6s forwards; }
+    .so-ended-freeze-note { font-size:10px; color:#7eb8a4; line-height:1.6; margin:-8px 0 16px; }
     .so-ended-title { font-family:Cormorant Garamond,serif; font-size:30px; background:linear-gradient(100deg,#ffb070,#ffe2b8 48%,#e8945e); -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent; margin-bottom:7px; }
     .so-ended-sub { font-size:12px; color:var(--muted); line-height:1.7; margin-bottom:18px; }
     .so-ended-sub .seo-days { color:#ffc890; text-shadow:0 0 14px rgba(255,160,90,.4); }
@@ -215,6 +264,12 @@
     .so-ended-commit-card:nth-child(2) { animation-delay:.16s; }
     .so-ended-commit-card:nth-child(3) { animation-delay:.24s; }
     .so-ended-commit-card:nth-child(4) { animation-delay:.32s; }
+    /* Hold the goal cards until the reveal phase, then stagger them in. */
+    .so-ended-overlay:not([data-seophase="reveal"]) .so-ended-commit-card { animation:none; opacity:0; }
+    .so-ended-overlay[data-seophase="reveal"] .so-ended-commit-card:nth-child(1) { animation-delay:.22s; }
+    .so-ended-overlay[data-seophase="reveal"] .so-ended-commit-card:nth-child(2) { animation-delay:.30s; }
+    .so-ended-overlay[data-seophase="reveal"] .so-ended-commit-card:nth-child(3) { animation-delay:.38s; }
+    .so-ended-overlay[data-seophase="reveal"] .so-ended-commit-card:nth-child(4) { animation-delay:.46s; }
     .seo-t0 { --tc:#7eb8a4; --tcl:#9ed8c0; }
     .seo-t1 { --tc:#a8c8e8; --tcl:#bcd8f2; }
     .seo-t2 { --tc:#b8a8e0; --tcl:#cdbcf0; }
@@ -7570,8 +7625,9 @@ function checkStreakStatus() {
       }, 800);
     } else {
       // Not enough freezes to save the streak — break it, but DON'T waste the
-      // freezes you did have (they carry into the next streak).
-      state.endedStreakInfo = { days: prevStreak, date: state.lastSessionDate };
+      // freezes you did have (they carry into the next streak). Stash the miss/
+      // freeze numbers so the Streak Ended popup can explain why it broke.
+      state.endedStreakInfo = { days: prevStreak, date: state.lastSessionDate, missed: missed, freezes: available };
       state.streakEndedPromptShown = false;
       state.streakGoalBaseDays = 0; // next streak's goal counts from day 1
     }
@@ -11338,18 +11394,57 @@ function showStreakEndedPrompt() {
       + '<div class="so-ended-commit-akasha">+' + c.akasha + ' Akasha</div>'
       + '</div>';
   }).join('');
-  var embersHTML = [[18,0],[36,.7],[52,1.3],[68,.4],[80,1.9]].map(function(e) {
-    return '<span class="so-ended-ember" style="left:' + e[0] + '%;animation-delay:' + e[1] + 's;"></span>';
+  var embersHTML = [[34,0,-8],[48,.7,5],[60,1.3,12],[42,1.9,-4]].map(function(e) {
+    return '<span class="so-ended-ember" style="left:' + e[0] + '%;animation-delay:' + e[1] + 's;--drift:' + e[2] + 'px;"></span>';
   }).join('');
+  var smokeHTML = [[.05,-10,-14],[.30,8,12],[.60,-4,-6],[.95,13,16]].map(function(s) {
+    return '<span class="so-ended-smoke" style="--sd:' + s[0] + 's;--sx:' + s[1] + 'px;--sr:' + s[2] + 'deg;"></span>';
+  }).join('');
+  var ashHTML = [[38,.05,-7],[46,.25,4],[55,.12,9],[50,.45,-3],[61,.34,6],[42,.58,-9]].map(function(a) {
+    return '<span class="so-ended-ash" style="left:' + a[0] + '%;--ad:' + a[1] + 's;--ax:' + a[2] + 'px;"></span>';
+  }).join('');
+  // The freeze math behind the break — why freezes didn't (or couldn't) save it.
+  var freezeNote = '';
+  if (typeof info.missed === 'number') {
+    var _fz = info.freezes || 0;
+    freezeNote = '<div class="so-ended-freeze-note">❄ ' + info.missed + ' day' + (info.missed === 1 ? '' : 's') + ' missed — '
+      + (_fz > 0
+        ? 'more than your ' + _fz + ' freeze' + (_fz === 1 ? '' : 's') + ' could cover. Your freezes were kept.'
+        : 'and no freezes were available to cover ' + (info.missed === 1 ? 'it' : 'them') + '.')
+      + '</div>';
+  }
   overlay.innerHTML = '<div class="so-ended-card">'
-    + '<div class="so-ended-flame-wrap"><div class="so-ended-flame-glow"></div><div class="so-ended-flame">🔥</div>' + embersHTML + '</div>'
+    + '<div class="so-ended-stage">'
+    + '<div class="so-ended-flame-glow"></div>'
+    // The same flame as the streak screen hero — it's that flame going out.
+    + '<svg class="so-ended-flame-svg" viewBox="0 0 52 64" fill="none" aria-hidden="true">'
+    + '<path d="M26 6C26 6 40 22 40 34C40 42 35 47 30 47C35 33 26 24 26 24C26 24 18 36 22 46C17 45 12 40 12 34C12 22 26 6 26 6Z" fill="rgba(255,200,80,0.9)"/>'
+    + '<path d="M26 28C26 28 32 36 30 43C28 49 23 48 21 46C26 40 26 28 26 28Z" fill="rgba(255,250,180,0.8)"/>'
+    + '<ellipse cx="26" cy="54" rx="13" ry="4" fill="rgba(180,80,20,0.30)"/>'
+    + '</svg>'
+    + embersHTML + smokeHTML + ashHTML
+    + '<div class="so-ended-daysbig">' + (info.days || 0) + ' <span class="u">day' + (info.days === 1 ? '' : 's') + '</span></div>'
+    + '</div>'
+    + '<div class="so-ended-reveal">'
     + '<div class="so-ended-title">Streak Ended</div>'
     + '<div class="so-ended-sub">Your <span class="seo-days">' + (info ? info.days : 0) + ' day</span> streak ended. Every master has fallen — and risen. Commit to a new goal and begin again.</div>'
+    + freezeNote
     + '<div class="so-ended-commits">' + cardsHTML + '</div>'
     + '<button class="so-ended-start" id="seoPrimaryBtn">Begin Again →</button>'
     + '<button class="so-ended-dismiss" id="seoDismissBtn">Maybe later</button>'
+    + '</div>'
     + '</div>';
   document.body.appendChild(overlay);
+  // Choreograph the extinguish: alive → struggle → out → ash → reveal.
+  // Reduced-motion users skip straight to the revealed card.
+  if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    overlay.dataset.seophase = 'reveal';
+  } else {
+    overlay.dataset.seophase = 'alive';
+    [['struggle',1500],['out',2650],['ash',3350],['reveal',4150]].forEach(function(p) {
+      setTimeout(function() { if (overlay.isConnected) overlay.dataset.seophase = p[0]; }, p[1]);
+    });
+  }
   overlay.querySelectorAll('.so-ended-commit-card').forEach(function(card) {
     card.addEventListener('click', function() {
       state.streakCommit = parseInt(card.dataset.days, 10);
