@@ -400,25 +400,25 @@
     body[data-sphere-form] .oe-omnia-figure::before, body[data-sphere-form] .path-banner-figure::before { position:absolute; top:-16px; left:50%; transform:translateX(-50%); font-size:15px; z-index:6; pointer-events:none; animation:scoPulse 3.6s ease-in-out infinite; }
     /* With the Step-X crown worn, the sphere sigil rises to hover above it. */
     body.omnia-tier-crown[data-sphere-form] .oe-omnia-figure::before, body.omnia-tier-crown[data-sphere-form] .path-banner-figure::before { top:-36px; }
-    body[data-sphere-form="1"] .oe-omnia-figure, body[data-sphere-form="1"] .path-banner-figure { filter:drop-shadow(0 0 16px #9cb88aaa); }
+    body[data-sphere-form="1"] { --sphere-glow:#9cb88aaa; }
     body[data-sphere-form="1"] .oe-omnia-figure::before, body[data-sphere-form="1"] .path-banner-figure::before { content:'⊕'; color:#9cb88a; text-shadow:0 0 9px #9cb88a, 0 0 20px #9cb88a66; }
-    body[data-sphere-form="2"] .oe-omnia-figure, body[data-sphere-form="2"] .path-banner-figure { filter:drop-shadow(0 0 16px #cdd6e8aa); }
+    body[data-sphere-form="2"] { --sphere-glow:#cdd6e8aa; }
     body[data-sphere-form="2"] .oe-omnia-figure::before, body[data-sphere-form="2"] .path-banner-figure::before { content:'☽'; color:#cdd6e8; text-shadow:0 0 9px #cdd6e8, 0 0 20px #cdd6e866; }
-    body[data-sphere-form="3"] .oe-omnia-figure, body[data-sphere-form="3"] .path-banner-figure { filter:drop-shadow(0 0 16px #e8b060aa); }
+    body[data-sphere-form="3"] { --sphere-glow:#e8b060aa; }
     body[data-sphere-form="3"] .oe-omnia-figure::before, body[data-sphere-form="3"] .path-banner-figure::before { content:'☿'; color:#e8b060; text-shadow:0 0 9px #e8b060, 0 0 20px #e8b06066; }
-    body[data-sphere-form="4"] .oe-omnia-figure, body[data-sphere-form="4"] .path-banner-figure { filter:drop-shadow(0 0 16px #e89ab8aa); }
+    body[data-sphere-form="4"] { --sphere-glow:#e89ab8aa; }
     body[data-sphere-form="4"] .oe-omnia-figure::before, body[data-sphere-form="4"] .path-banner-figure::before { content:'♀'; color:#e89ab8; text-shadow:0 0 9px #e89ab8, 0 0 20px #e89ab866; }
-    body[data-sphere-form="5"] .oe-omnia-figure, body[data-sphere-form="5"] .path-banner-figure { filter:drop-shadow(0 0 16px #f0c860aa); }
+    body[data-sphere-form="5"] { --sphere-glow:#f0c860aa; }
     body[data-sphere-form="5"] .oe-omnia-figure::before, body[data-sphere-form="5"] .path-banner-figure::before { content:'☉'; color:#f0c860; text-shadow:0 0 9px #f0c860, 0 0 20px #f0c86066; }
-    body[data-sphere-form="6"] .oe-omnia-figure, body[data-sphere-form="6"] .path-banner-figure { filter:drop-shadow(0 0 16px #e06858aa); }
+    body[data-sphere-form="6"] { --sphere-glow:#e06858aa; }
     body[data-sphere-form="6"] .oe-omnia-figure::before, body[data-sphere-form="6"] .path-banner-figure::before { content:'♂'; color:#e06858; text-shadow:0 0 9px #e06858, 0 0 20px #e0685866; }
-    body[data-sphere-form="7"] .oe-omnia-figure, body[data-sphere-form="7"] .path-banner-figure { filter:drop-shadow(0 0 16px #8898e8aa); }
+    body[data-sphere-form="7"] { --sphere-glow:#8898e8aa; }
     body[data-sphere-form="7"] .oe-omnia-figure::before, body[data-sphere-form="7"] .path-banner-figure::before { content:'♃'; color:#8898e8; text-shadow:0 0 9px #8898e8, 0 0 20px #8898e866; }
-    body[data-sphere-form="8"] .oe-omnia-figure, body[data-sphere-form="8"] .path-banner-figure { filter:drop-shadow(0 0 16px #7a88a0aa); }
+    body[data-sphere-form="8"] { --sphere-glow:#7a88a0aa; }
     body[data-sphere-form="8"] .oe-omnia-figure::before, body[data-sphere-form="8"] .path-banner-figure::before { content:'♄'; color:#7a88a0; text-shadow:0 0 9px #7a88a0, 0 0 20px #7a88a066; }
-    body[data-sphere-form="9"] .oe-omnia-figure, body[data-sphere-form="9"] .path-banner-figure { filter:drop-shadow(0 0 16px #7ed8e8aa); }
+    body[data-sphere-form="9"] { --sphere-glow:#7ed8e8aa; }
     body[data-sphere-form="9"] .oe-omnia-figure::before, body[data-sphere-form="9"] .path-banner-figure::before { content:'♅'; color:#7ed8e8; text-shadow:0 0 9px #7ed8e8, 0 0 20px #7ed8e866; }
-    body[data-sphere-form="10"] .oe-omnia-figure, body[data-sphere-form="10"] .path-banner-figure { filter:drop-shadow(0 0 16px #9a6ae8aa); }
+    body[data-sphere-form="10"] { --sphere-glow:#9a6ae8aa; }
     body[data-sphere-form="10"] .oe-omnia-figure::before, body[data-sphere-form="10"] .path-banner-figure::before { content:'♇'; color:#9a6ae8; text-shadow:0 0 9px #9a6ae8, 0 0 20px #9a6ae866; }
 
     .b2t-phases { font-family:'DM Mono',monospace; font-size:8px; letter-spacing:.14em; text-transform:uppercase; color:rgba(255,255,255,.28); }
@@ -428,7 +428,7 @@
     .b2t-btn { width:100%; padding:11px; border-radius:9px; border:1px solid rgba(226,196,140,.4); background:linear-gradient(100deg, rgba(122,95,174,.35), rgba(184,154,94,.28)); color:#f2e8d4; font-family:'DM Mono',monospace; font-size:9px; letter-spacing:.16em; text-transform:uppercase; cursor:pointer; }
     .b2t-btn:disabled { opacity:.45; cursor:default; }
     .b2-bodies { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; margin-top:10px; }
-    .b2-body { border:1px solid color-mix(in srgb, var(--b2c) 32%, transparent); border-radius:11px; padding:10px 8px; text-align:center; background:rgba(255,255,255,.02); }
+    .b2-body { border:1px solid rgba(255,255,255,.14); border:1px solid color-mix(in srgb, var(--b2c) 32%, transparent); border-radius:11px; padding:10px 8px; text-align:center; background:rgba(255,255,255,.02); }
     .b2-body-name { font-family:'Cormorant Garamond',serif; font-size:14px; color:var(--b2c); letter-spacing:.08em; }
     .b2-body-lvl { font-family:'Cormorant Garamond',serif; font-size:26px; font-weight:300; color:var(--text); line-height:1.1; text-shadow:0 0 14px color-mix(in srgb, var(--b2c) 45%, transparent); }
     .b2-body-desc { font-size:8.5px; color:var(--muted); line-height:1.5; margin:3px 0 8px; min-height:26px; }
@@ -2358,6 +2358,10 @@ body.omnia-tier-polar .omnia-polar { display:block; }
 .oe-omnia-figure .omnia-polar-pillar.left  { left:-10px; }
 .oe-omnia-figure .omnia-polar-pillar.right { right:-10px; }
 #drawerOmniaBtn .omnia-polar-pillar { width:2px; height:22px; }
+/* The drawer crystal is ~48px — the later tier layers are pure clutter there. */
+#drawerOmniaBtn .omnia-elements, #drawerOmniaBtn .omnia-mantle, #drawerOmniaBtn .omnia-elring,
+#drawerOmniaBtn .omnia-echo, #drawerOmniaBtn .omnia-senses, #drawerOmniaBtn .omnia-currents,
+#drawerOmniaBtn .omnia-mirror, #drawerOmniaBtn .omnia-apotheosis { display:none !important; }
 @keyframes polarPillar { 0%,100%{opacity:.4; transform:translateY(-50%) scaleY(.9);} 50%{opacity:.92; transform:translateY(-50%) scaleY(1.06);} }
 
 /* ── Step V permanent add-on: Element Wheel + Luminous Mantle ──────── */
@@ -2434,6 +2438,9 @@ body.omnia-tier-apotheosis .omnia-apotheosis { display:block; animation:omniaApo
 .omnia-apo-ring:nth-child(3) { width:84%; height:84%; border-color:rgba(200,160,120,0.10); animation-delay:2.4s; }
 .omnia-apo-dot { position:absolute; width:4px; height:4px; margin:-2px 0 0 -2px; border-radius:50%; background:rgba(255,238,200,0.65); animation:omniaApoDotPulse 4.5s ease-in-out infinite; }
 body.omnia-tier-apotheosis .omnia-figure { filter:drop-shadow(0 0 22px rgba(255,238,200,.40)) drop-shadow(0 0 50px rgba(255,238,200,.18)); }
+/* Sphere aura composes over the tier glow (sphere colour + gold undertone).
+   Placed after the tier rules so it wins the cascade. */
+body[data-sphere-form] .omnia-figure { filter:drop-shadow(0 0 16px var(--sphere-glow, rgba(160,210,240,.45))) drop-shadow(0 0 36px rgba(255,238,200,.20)); }
 @keyframes omniaApotheosisSpin { from{transform:rotate(0deg);} to{transform:rotate(360deg);} }
 @keyframes omniaApotheosisPulse { 0%,100%{opacity:0.55;} 50%{opacity:1;} }
 @keyframes omniaApoDotPulse { 0%,100%{transform:translate(-50%,-50%) scale(1);opacity:0.65;} 50%{transform:translate(-50%,-50%) scale(1.6);opacity:1;} }
@@ -8159,6 +8166,8 @@ document.addEventListener('DOMContentLoaded', function() {
   // Apply saved entity/palette cosmetics to the guide banner and drawer icon
   // on every page load so Seraph/etc. show immediately without visiting Upgrade.
   if (typeof applyOmniaCosmetics === 'function') applyOmniaCosmetics();
+  if (typeof applyOmniaStepVisuals === 'function') { try { applyOmniaStepVisuals(); } catch(e) {} }
+  if (typeof applyOmniaMetaMarks === 'function') { try { applyOmniaMetaMarks(); } catch(e) {} }
   // If a body level was earned but never acknowledged (app closed first),
   // surface the acknowledgment screen on next launch.
   setTimeout(function() {
@@ -18986,6 +18995,14 @@ function injectOmniaApotheosis(fig) {
   });
   fig.insertBefore(el, fig.firstChild);
 }
+// Prestige aura + sphere-touched form markers on <body> — applied on load and
+// on every Omnia render so the Path banner is correct before Upgrade is visited.
+function applyOmniaMetaMarks() {
+  document.body.classList.toggle('omnia-prestiged', (omniaState.prestige || 0) > 0);
+  var sf = (omniaState.bookII && omniaState.bookII.sphere) || 0;
+  if (sf > 0) document.body.dataset.sphereForm = sf; else delete document.body.dataset.sphereForm;
+}
+
 function applyOmniaStepVisuals() {
   var step = (omniaState && omniaState.bardonStep) || 1;
   // Once the Wheel has turned, Step X was genuinely completed — Omnia keeps
@@ -19354,14 +19371,13 @@ function omniaPrestigeMult() { return 1 + 0.25 * (omniaState.prestige || 0); }
 // A second current that only awakens at the 3rd Turning, minted by the advanced
 // exercises. Book II upgrades (tools, spheres) will spend it alongside akasha.
 var PRESTIGE_BOOK2 = 3;            // turnings required before Dark Matter awakens
-var DARK_MATTER_PER_ADVANCED = 5; // per advanced-drill session (tunable)
+var DARK_MATTER_PER_ADVANCED = 30; // sized so total Book II sinks (~11k ◆) ≈ months, not years
 function darkMatterUnlocked() { return (omniaState.prestige || 0) >= PRESTIGE_BOOK2; }
 function mintDarkMatter(amount) {
   if (!darkMatterUnlocked() || amount <= 0) return 0;
   omniaState.darkMatter = (omniaState.darkMatter || 0) + amount;
   omniaState.totalDarkMatterEarned = (omniaState.totalDarkMatterEarned || 0) + amount;
-  saveOmniaState();
-  if (syncEnabled && authToken) syncPushData();
+  saveOmniaState(); // completion pipeline already pushes the sync
   return amount;
 }
 
@@ -19738,10 +19754,13 @@ function showPrestigeCeremony(n) {
     + '<polygon points="40,100 56,88 40,114" fill="url(#pcG1)" stroke="#d8b258" stroke-width=".48" opacity=".72"/>'
     + '<polygon points="40,100 24,88 40,114" fill="#e8cd8e" stroke="#d8b258" stroke-width=".48" opacity=".5"/>'
     + '</svg>';
+  var subTxt = n > PRESTIGE_BOOK2
+    ? 'The spheres close behind her — instruments and bodies kept — to be walked again at greater depth.'
+    : 'Omnia dissolves and reforms at the first step — the whole path walked again, now seen with mastery.';
   el.innerHTML = '<div class="pc-rays"></div>' + crystal
     + '<div class="pc-kicker">Turning ' + _prestigeRoman(n) + ' · The Wheel Turns</div>'
     + '<div class="pc-title">A New Turning Begins</div>'
-    + '<div class="pc-sub">Omnia dissolves and reforms at the first step — the whole path walked again, now seen with mastery.</div>'
+    + '<div class="pc-sub">' + subTxt + '</div>'
     + '<div class="pc-boon">✦ +' + (25 * n) + '% akasha, forever · the path ahead is shorter ✦</div>'
     + '<button class="pc-btn" id="pcCloseBtn">Walk Again →</button>';
   el.classList.add('pc-show');
@@ -20244,10 +20263,7 @@ function showBodyLevelAward(award) {
 
 function renderOmniaEngine() {
   omniaAccrue();
-  document.body.classList.toggle('omnia-prestiged', (omniaState.prestige || 0) > 0);
-  // Sphere-touched form: the last traversed sphere marks Omnia's figures.
-  var _sf = (omniaState.bookII && omniaState.bookII.sphere) || 0;
-  if (_sf > 0) document.body.dataset.sphereForm = _sf; else delete document.body.dataset.sphereForm;
+  applyOmniaMetaMarks();
   applyOmniaCosmetics();
   applyOmniaStepVisuals();
   var stage = omniaStage();
