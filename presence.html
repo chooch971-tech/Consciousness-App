@@ -134,7 +134,7 @@
     .so-freeze-icon { font-size:24px; margin-top:2px; }
     .so-freeze-text { flex:1; }
     .so-freeze-title { font-size:12px; letter-spacing:.06em; color:#7eb8a4; margin-bottom:3px; }
-    .so-freeze-sub { font-size:10px; color:var(--muted); line-height:1.5; }
+    .so-freeze-sub { font-size:11px; color:var(--muted); line-height:1.55; }
     .so-freeze-gems { display:flex; gap:6px; margin-top:9px; }
     .so-freeze-gem { width:24px; height:24px; border-radius:6px; border:1.5px solid rgba(126,184,164,0.28); background:rgba(126,184,164,0.04); transition:background .3s,border-color .3s; }
     .so-freeze-gem.active { background:rgba(126,184,164,0.22); border-color:#7eb8a4; box-shadow:0 0 8px rgba(126,184,164,0.35); }
@@ -367,6 +367,25 @@
     .oe-dm-orb { width:13px; height:13px; border-radius:50%; background:radial-gradient(circle at 38% 34%, #b48ce0 0%, #5a3c8e 60%, #24123c 100%); box-shadow:0 0 8px rgba(150,110,220,.7); }
     .oe-dm-val { font-family:'DM Mono',monospace; font-size:12px; color:#d8c4f4; letter-spacing:.06em; }
     .oe-dm-key { font-family:'DM Mono',monospace; font-size:8px; letter-spacing:.2em; text-transform:uppercase; color:var(--muted); }
+    /* Book II magical tools panel (inside the Prestige card) */
+    .b2-tools { margin-top:11px; padding-top:11px; border-top:1px solid rgba(255,255,255,.07); }
+    .b2-tools-head { display:flex; align-items:center; justify-content:space-between; margin-bottom:8px; }
+    .b2-tools-title { font-family:'Cormorant Garamond',serif; font-size:14px; font-weight:300; letter-spacing:.16em; text-transform:uppercase; color:#d8c4f4; }
+    .b2-tools-count { font-family:'DM Mono',monospace; font-size:9px; letter-spacing:.12em; color:var(--muted); }
+    .b2t-dots { display:flex; flex-wrap:wrap; gap:5px; margin-bottom:11px; }
+    .b2t-dot { width:24px; height:24px; border-radius:7px; display:flex; align-items:center; justify-content:center; font-size:11px; color:rgba(214,196,240,.35); border:1px solid rgba(255,255,255,.08); background:rgba(255,255,255,.02); }
+    .b2t-dot.cur { color:#e8cd94; border-color:rgba(226,196,140,.55); box-shadow:0 0 10px -3px #e8cd94; }
+    .b2t-dot.done { color:#9ed8c0; border-color:rgba(126,184,164,.4); background:rgba(126,184,164,.08); }
+    .b2t-cur { display:flex; gap:11px; align-items:flex-start; margin-bottom:10px; }
+    .b2t-glyph { flex-shrink:0; width:38px; height:38px; border-radius:10px; display:flex; align-items:center; justify-content:center; font-size:19px; color:#e8cd94; border:1px solid rgba(226,196,140,.4); background:rgba(226,196,140,.07); box-shadow:inset 0 0 14px -8px #e8cd94; }
+    .b2t-name { font-family:'Cormorant Garamond',serif; font-size:17px; font-weight:300; color:var(--text); line-height:1.2; }
+    .b2t-desc { font-size:10.5px; color:var(--muted); line-height:1.55; margin:2px 0 5px; font-style:italic; }
+    .b2t-phases { font-family:'DM Mono',monospace; font-size:8px; letter-spacing:.14em; text-transform:uppercase; color:rgba(255,255,255,.28); }
+    .b2t-ph.done { color:#9ed8c0; }
+    .b2t-ph.cur { color:#e8cd94; text-shadow:0 0 8px rgba(226,196,140,.5); }
+    .b2t-sep { margin:0 5px; opacity:.4; }
+    .b2t-btn { width:100%; padding:11px; border-radius:9px; border:1px solid rgba(226,196,140,.4); background:linear-gradient(100deg, rgba(122,95,174,.35), rgba(184,154,94,.28)); color:#f2e8d4; font-family:'DM Mono',monospace; font-size:9px; letter-spacing:.16em; text-transform:uppercase; cursor:pointer; }
+    .b2t-btn:disabled { opacity:.45; cursor:default; }
         /* ── Prestige (Turnings of the Wheel) ── */
     .oe-prestige-btn { width:100%; margin-top:9px; padding:13px 12px 11px; border-radius:12px; border:1px solid rgba(226,196,140,.55); background:linear-gradient(100deg,#6a4f8e 0%,#b89a5e 52%,#6a4f8e 100%); background-size:200% 100%; color:#fff6e2; cursor:pointer; display:flex; flex-direction:column; align-items:center; gap:3px; box-shadow:0 4px 26px rgba(180,150,90,.34), inset 0 1px 0 rgba(255,255,255,.3), inset 0 0 24px -14px #ffe9b8; animation:oePrestigeShine 5s linear infinite; }
     .oe-prestige-btn .pb-main { font-family:'Cormorant Garamond',serif; font-size:21px; font-weight:300; letter-spacing:.2em; text-transform:uppercase; line-height:1; text-shadow:0 0 16px rgba(255,233,184,.55); }
@@ -1053,17 +1072,17 @@
     .guide-route-title { font-size:10px; letter-spacing:.2em; text-transform:uppercase; color:var(--text); margin-bottom:7px; }
     .guide-route-card.active .guide-route-title { color:#8ecce0; }
     .guide-route-card.experienced.active .guide-route-title { color:#d4b08e; }
-    .guide-route-text { font-size:10px; color:var(--text); line-height:1.6; letter-spacing:.03em; }
+    .guide-route-text { font-size:11.5px; color:var(--text); line-height:1.65; letter-spacing:.02em; }
     .guide-confirm-panel { display:none; border:1px solid rgba(142,204,224,.18); background:rgba(142,204,224,.045); border-radius:10px; padding:15px 16px; margin-bottom:18px; }
     .guide-confirm-title { font-size:10px; letter-spacing:.18em; text-transform:uppercase; color:var(--text); margin-bottom:7px; }
-    .guide-confirm-text { font-size:10px; color:var(--text); line-height:1.6; margin-bottom:12px; }
+    .guide-confirm-text { font-size:11.5px; color:var(--text); line-height:1.65; margin-bottom:12px; }
     .guide-confirm-actions { display:grid; grid-template-columns:1fr 1.35fr; gap:8px; }
     .guide-confirm-btn { border:1px solid rgba(142,204,224,.24); background:rgba(142,204,224,.07); color:#8ecce0; border-radius:4px; padding:9px 10px; font-family:'DM Mono',monospace; font-size:8px; letter-spacing:.13em; text-transform:uppercase; cursor:pointer; }
     .guide-confirm-btn.ghost { color:var(--text); border-color:var(--border); background:rgba(255,255,255,.02); }
     .guide-locked-path { display:none; border:1px solid rgba(142,204,224,.18); background:rgba(142,204,224,.045); border-radius:10px; padding:14px 16px; margin-bottom:18px; }
     .guide-locked-kicker { font-size:8px; letter-spacing:.24em; text-transform:uppercase; color:#8ecce0; margin-bottom:5px; }
     .guide-locked-title { font-size:10px; letter-spacing:.16em; text-transform:uppercase; color:var(--text); margin-bottom:6px; }
-    .guide-locked-text { font-size:10px; color:var(--text); line-height:1.6; }
+    .guide-locked-text { font-size:11.5px; color:var(--text); line-height:1.65; }
     .guide-cadence-control { display:none; align-items:center; justify-content:space-between; gap:10px; margin-top:12px; padding-top:12px; border-top:1px solid rgba(142,204,224,.12); }
     .guide-cadence-label { font-size:8px; letter-spacing:.18em; text-transform:uppercase; color:var(--text); }
     .guide-cadence-toggle { border:none; background:transparent; color:var(--text); border-radius:4px; padding:4px 6px; font-family:'DM Mono',monospace; font-size:8px; letter-spacing:.14em; text-transform:uppercase; cursor:pointer; white-space:nowrap; opacity:.85; transition:opacity .15s, color .15s; }
@@ -4770,7 +4789,7 @@ body:not(.tut-live) #tutCorgi {
 
         <div style="background:rgba(255,255,255,.03); border:1px solid var(--border); border-radius:10px; padding:16px 18px; margin-bottom:10px;">
           <div style="font-size:12px; color:var(--text); margin-bottom:4px;">Export progress</div>
-          <div style="font-size:10px; color:var(--muted); line-height:1.6; margin-bottom:14px;">Downloads a backup file containing all your Awareness, Concentration, Prayer, Journal, Soul Mirror, and Idle Game data. Save it somewhere safe.</div>
+          <div style="font-size:11.5px; color:var(--muted); line-height:1.65; margin-bottom:14px;">Downloads a backup file containing all your Awareness, Concentration, Prayer, Journal, Soul Mirror, and Idle Game data. Save it somewhere safe.</div>
           <button id="exportBtn" class="btn primary" style="width:100%; font-size:9px; letter-spacing:.15em;">↓ Download Backup</button>
         </div>
 
@@ -9896,6 +9915,8 @@ function syncProgressScore(key, obj) {
     // earning AND spending now strictly increase progress.
     return (obj.prestige || 0) * 10000000
       + (obj.totalDarkMatterEarned || 0) * 50
+      + (obj.totalDarkMatterSpent || 0) * 50
+      + (function(){ var t=(obj.bookII||{}).tools||{}; var n=0; Object.keys(t).forEach(function(k){ n += (t[k].p||0); }); return n; })() * 5000
       + (obj.totalAkashaEarned || 0)
       + (obj.totalAkashaSpent || 0)
       + (capBody('physical') + capBody('astral') + capBody('mental')) * 1000
@@ -18164,7 +18185,7 @@ function mergeOmniaPull(localStr, cloudStr) {
   base.prestige = Math.max(Number(base.prestige) || 0, Number(other.prestige) || 0);
   var sameGen = sameReset && (((localObj && localObj.prestige) || 0) === ((cloudObj && cloudObj.prestige) || 0));
   if (sameGen) {
-    ['completedRecommended','totalAkashaEarned','totalAkashaSpent','darkMatter','totalDarkMatterEarned'].forEach(function(f) {
+    ['completedRecommended','totalAkashaEarned','totalAkashaSpent','darkMatter','totalDarkMatterEarned','totalDarkMatterSpent'].forEach(function(f) {
       base[f] = Math.max(Number(base[f]) || 0, Number(other[f]) || 0);
     });
     base.bardonStep = Math.max(Number(base.bardonStep) || 1, Number(other.bardonStep) || 1);
@@ -18181,6 +18202,15 @@ function mergeOmniaPull(localStr, cloudStr) {
       base.upgrades[u] = Math.max(Number(base.upgrades[u]) || 1, Number(ou[u]) || 1);
     });
   }
+  // Magical tools are kept across turnings and never reset — fold the higher
+  // phase for every tool regardless of prestige generation.
+  base.bookII = base.bookII || {}; base.bookII.tools = base.bookII.tools || {};
+  var _obT = ((other.bookII || {}).tools) || {};
+  Object.keys(_obT).forEach(function(k) {
+    var bt = base.bookII.tools[k] || (base.bookII.tools[k] = { p:0, readyAt:0 });
+    var ot = _obT[k] || {};
+    if ((ot.p || 0) > (bt.p || 0)) { bt.p = ot.p || 0; bt.readyAt = ot.readyAt || 0; }
+  });
   // Story progress is monotonic: union the revealed beats and keep the higher
   // read-count so a stale snapshot can't un-reveal Omnia's narrative.
   var seenUnion = [].concat(base.storySeen || [], other.storySeen || []);
@@ -19219,6 +19249,122 @@ function mintDarkMatter(amount) {
   return amount;
 }
 
+// ── Book II: the fifteen magical tools ─────────────────────────
+// Built strictly in order, each through three phases (Design → Craft →
+// Consecrate). Every phase costs akasha + dark matter and imposes a rest
+// before the next may begin. Once consecrated, a tool is kept forever —
+// later turnings never ask for it again.
+var BOOK2_TOOLS = [
+  { id:'circle',   name:'Magic Circle', g:'◯', d:'The boundary of the operator’s universe — drawn before all else.' },
+  { id:'triangle', name:'Triangle',     g:'△', d:'The place of manifestation, where the summoned appears.' },
+  { id:'censer',   name:'Censer',       g:'≋', d:'Smoke gives the subtle a body to inhabit.' },
+  { id:'mirror',   name:'Magic Mirror', g:'◍', d:'A gate between the planes, condensed and charged.' },
+  { id:'lamp',     name:'Magic Lamp',   g:'☉', d:'The light of whichever sphere you would visit.' },
+  { id:'wand',     name:'Wand',         g:'⌇', d:'The concentrated will, given form.' },
+  { id:'sword',    name:'Sword',        g:'†', d:'Absolute victory over every plane.' },
+  { id:'dagger',   name:'Dagger',       g:'‡', d:'The lesser blade — command over the astral.' },
+  { id:'trident',  name:'Trident',      g:'ψ', d:'Body, soul and spirit mastered in one haft.' },
+  { id:'crown',    name:'Crown',        g:'♛', d:'Authority of the spirit made visible.' },
+  { id:'cap',      name:'Cap',          g:'∩', d:'The quiet dignity of inner rank.' },
+  { id:'miter',    name:'Miter',        g:'⋀', d:'The office of the initiate, worn in the invisible.' },
+  { id:'headband', name:'Headband',     g:'◠', d:'The simplest crown — thought bound to purpose.' },
+  { id:'robe',     name:'Robe',         g:'▽', d:'Woven silence; nothing profane touches the work.' },
+  { id:'belt',     name:'Belt',         g:'∞', d:'The girdle that closes the vestment — and the work.' }
+];
+var TOOL_PHASES = ['Design', 'Craft', 'Consecrate'];
+var TOOL_PHASE_GATE_MS = 12 * 3600 * 1000; // rest between phases
+
+function bookIIToolState(id) {
+  if (!omniaState.bookII) omniaState.bookII = {};
+  if (!omniaState.bookII.tools) omniaState.bookII.tools = {};
+  if (!omniaState.bookII.tools[id]) omniaState.bookII.tools[id] = { p: 0, readyAt: 0 };
+  return omniaState.bookII.tools[id];
+}
+function bookIICurrentToolIdx() {
+  for (var i = 0; i < BOOK2_TOOLS.length; i++) {
+    if (bookIIToolState(BOOK2_TOOLS[i].id).p < TOOL_PHASES.length) return i;
+  }
+  return BOOK2_TOOLS.length;
+}
+function toolPhaseCost(toolIdx, phase) {
+  var m = 1 + phase * 0.5; // consecration costs half again more than design
+  return {
+    a: Math.round((900 + toolIdx * 450) * m),
+    d: Math.round((12 + toolIdx * 8) * m)
+  };
+}
+function fmtToolGate(ms) {
+  var h = Math.floor(ms / 3600000), m = Math.ceil((ms % 3600000) / 60000);
+  return h > 0 ? h + 'h ' + m + 'm' : m + 'm';
+}
+function omniaBuildToolPhase() {
+  if (!darkMatterUnlocked()) return;
+  var idx = bookIICurrentToolIdx();
+  if (idx >= BOOK2_TOOLS.length) return;
+  var tool = BOOK2_TOOLS[idx];
+  var st = bookIIToolState(tool.id);
+  if (Date.now() < (st.readyAt || 0)) {
+    showToast(tool.name + ' rests · ' + fmtToolGate(st.readyAt - Date.now()) + ' before the next phase', 3200);
+    return;
+  }
+  var c = toolPhaseCost(idx, st.p);
+  if ((omniaState.akasha || 0) < c.a || (omniaState.darkMatter || 0) < c.d) {
+    showToast('Requires ' + c.a + ' akasha + ' + c.d + ' ◆ dark matter', 3200);
+    return;
+  }
+  omniaState.akasha -= c.a;
+  omniaState.totalAkashaSpent = (omniaState.totalAkashaSpent || 0) + c.a;
+  omniaState.darkMatter -= c.d;
+  omniaState.totalDarkMatterSpent = (omniaState.totalDarkMatterSpent || 0) + c.d;
+  var phaseName = TOOL_PHASES[st.p];
+  st.p++;
+  st.readyAt = st.p < TOOL_PHASES.length ? Date.now() + TOOL_PHASE_GATE_MS : 0;
+  saveOmniaState();
+  if (syncEnabled && authToken) syncPushData();
+  showToast(st.p >= TOOL_PHASES.length
+    ? '✦ ' + tool.name + ' consecrated'
+    : tool.name + ' · ' + phaseName + ' complete', 3200, 'gold');
+  renderOmniaEngine();
+}
+
+// The tools panel, appended to the Prestige card once Dark Matter flows.
+function renderBookIITools() {
+  var idx = bookIICurrentToolIdx();
+  var doneCount = 0;
+  var dots = BOOK2_TOOLS.map(function(t, i) {
+    var st = bookIIToolState(t.id);
+    if (st.p >= TOOL_PHASES.length) doneCount++;
+    var cls = st.p >= TOOL_PHASES.length ? ' done' : (i === idx ? ' cur' : '');
+    return '<span class="b2t-dot' + cls + '" title="' + t.name + '">' + t.g + '</span>';
+  }).join('');
+  var html = '<div class="b2-tools">'
+    + '<div class="b2-tools-head"><span class="b2-tools-title">Magical Tools</span>'
+    + '<span class="b2-tools-count">' + doneCount + ' / ' + BOOK2_TOOLS.length + '</span></div>'
+    + '<div class="b2t-dots">' + dots + '</div>';
+  if (idx >= BOOK2_TOOLS.length) {
+    return html + '<div class="oe-turnings-hint">All fifteen instruments consecrated. The spheres await.</div></div>';
+  }
+  var tool = BOOK2_TOOLS[idx];
+  var st = bookIIToolState(tool.id);
+  var c = toolPhaseCost(idx, st.p);
+  var phasesHtml = TOOL_PHASES.map(function(pn, pi) {
+    return '<span class="b2t-ph' + (pi < st.p ? ' done' : pi === st.p ? ' cur' : '') + '">' + pn + '</span>';
+  }).join('<span class="b2t-sep">·</span>');
+  html += '<div class="b2t-cur"><span class="b2t-glyph">' + tool.g + '</span>'
+    + '<div class="b2t-info"><div class="b2t-name">' + tool.name + '</div>'
+    + '<div class="b2t-desc">' + tool.d + '</div>'
+    + '<div class="b2t-phases">' + phasesHtml + '</div></div></div>';
+  var gateLeft = (st.readyAt || 0) - Date.now();
+  if (gateLeft > 0) {
+    html += '<button class="b2t-btn" disabled>' + TOOL_PHASES[st.p] + ' · resting ' + fmtToolGate(gateLeft) + '</button>';
+  } else {
+    var can = (omniaState.akasha || 0) >= c.a && (omniaState.darkMatter || 0) >= c.d;
+    html += '<button class="b2t-btn" onclick="omniaBuildToolPhase()"' + (can ? '' : ' disabled') + '>'
+      + TOOL_PHASES[st.p] + ' · ' + c.a.toLocaleString() + ' akasha + ' + c.d + ' ◆</button>';
+  }
+  return html + '</div>';
+}
+
 // The always-visible "Turnings of the Wheel" status: which turning you're on,
 // the permanent bonus, a tease toward the 3rd Turning, and — once unlocked —
 // the Dark Matter balance.
@@ -19238,7 +19384,8 @@ function renderOmniaTurnings() {
     html += '<div class="oe-turnings-hint">The deeper current flows. <b>Dark Matter</b> gathers from the advanced exercises.</div>'
       + '<div class="oe-dm-row"><span class="oe-dm-orb"></span>'
       + '<span class="oe-dm-val">' + Math.floor(omniaState.darkMatter || 0) + '</span>'
-      + '<span class="oe-dm-key">Dark Matter</span></div>';
+      + '<span class="oe-dm-key">Dark Matter</span></div>'
+      + renderBookIITools();
   }
   return html;
 }
