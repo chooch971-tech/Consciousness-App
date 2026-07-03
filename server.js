@@ -163,6 +163,24 @@ function verifyAdmin(req, res, next) {
   next();
 }
 
+// ── Push-ownership middleware ────────────────────────────
+// The endpoint-keyed routes (session/schedule/notify) used to authenticate by
+// mere knowledge of the push-endpoint URL — which is transmitted constantly and
+// long-lived. Now the caller must also prove possession of the subscription's
+// `auth` secret (sent at /subscribe, never in the URL). A captured endpoint
+// alone can no longer start sessions, rewrite schedules, or send pushes.
+function verifyPushOwner(req, res, next) {
+  const endpoint = req.body && req.body.endpoint;
+  const authKey = req.body && req.body.authKey;
+  if (!endpoint) return res.status(400).json({ error: 'endpoint required' });
+  const sub = subscriptions.find(s => s.endpoint === endpoint);
+  if (!sub) return res.status(404).json({ error: 'Subscriber not found' });
+  const stored = sub.keys && sub.keys.auth;
+  if (!stored || !authKey || authKey !== stored) return res.status(403).json({ error: 'Forbidden' });
+  req.pushSub = sub;
+  next();
+}
+
 // ── Prompts ──────────────────────────────────────────────
 const PROMPTS = [
   "Are you here right now?", "Feel the weight of your body.",
@@ -191,6 +209,22 @@ function randomPromptFor(endpoint) {
 const aiRateBuckets = new Map();
 const AI_RATE_LIMIT = 30;
 const AI_RATE_WINDOW_MS = 60 * 1000;
+
+// Hard global ceiling on real OpenAI generations per UTC day — bounds worst-
+// case spend even against rotating deviceIds/IPs that defeat the per-key limit
+// and the once-per-period cache. Cached reads don't count (they never reach
+// generateAiMessage). Tune AI_GLOBAL_DAILY_CAP to your budget.
+const AI_GLOBAL_DAILY_CAP = 3000;
+let aiGlobalDay = { key: '', count: 0 };
+function aiCurrentDayKey() { return new Date().toISOString().slice(0, 10); }
+function aiGlobalBudget(req, res, next) {
+  const k = aiCurrentDayKey();
+  if (aiGlobalDay.key !== k) aiGlobalDay = { key: k, count: 0 };
+  if (aiGlobalDay.count >= AI_GLOBAL_DAILY_CAP) {
+    return res.status(429).json({ error: 'AI temporarily at capacity. Try again later.' });
+  }
+  next();
+}
 
 function aiRateLimit(req, res, next) {
   const now = Date.now();
@@ -322,6 +356,11 @@ async function generateAiMessage(feature, context) {
     ],
     max_tokens: 500
   };
+
+  // Count this real generation toward the global daily budget.
+  const _dk = aiCurrentDayKey();
+  if (aiGlobalDay.key !== _dk) aiGlobalDay = { key: _dk, count: 0 };
+  aiGlobalDay.count++;
 
   const response = await fetch('https://api.openai.com/v1/chat/completions', {
     method: 'POST',
@@ -1155,8 +1194,7 @@ app.get('/api/sync/friends/list', verifyToken, async (req, res) => {
 
       friends.push({
         userId: otherId,
-        username: otherUser.username || otherUser.email,
-        email: otherUser.email,
+        username: otherUser.username || ('practitioner_' + String(otherId).slice(-5)),
         profilePic: otherUser.profilePic || null,
         lastSync: latestSync ? latestSync.syncedAt : null,
         lastActive: otherUser.lastActive || null,
@@ -1260,7 +1298,7 @@ app.get('/api/sync/friends/requests', verifyToken, async (req, res) => {
       try { userOid = new ObjectId(doc.userId); } catch(e) { continue; }
       const user = await usersCollection.findOne({ _id: userOid });
       if (!user) continue;
-      requests.push({ userId: doc.userId, username: user.username || user.email });
+      requests.push({ userId: doc.userId, username: user.username || ('practitioner_' + String(doc.userId).slice(-5)) });
     }
     res.json({ requests });
   } catch (err) {
@@ -1317,7 +1355,7 @@ app.get('/debug', verifyAdmin, (req, res) => {
 
 app.get('/vapid-public-key', (req, res) => res.json({ publicKey: VAPID_PUBLIC_KEY }));
 
-app.post('/api/ai/progress-comment', aiRateLimit, async (req, res) => {
+app.post('/api/ai/progress-comment', aiRateLimit, aiGlobalBudget, async (req, res) => {
   try {
     const message = await generateAiMessage('progress_report', req.body?.context || {});
     res.json({ message, model: OPENAI_MODEL });
@@ -1327,7 +1365,7 @@ app.post('/api/ai/progress-comment', aiRateLimit, async (req, res) => {
   }
 });
 
-app.post('/api/sync/omnia/report', aiRateLimit, async (req, res) => {
+app.post('/api/sync/omnia/report', aiRateLimit, aiGlobalBudget, async (req, res) => {
   const { period, context, deviceId } = req.body || {};
   if (!['daily','weekly','monthly'].includes(period)) {
     return res.status(400).json({ error: 'Invalid period' });
@@ -1481,14 +1519,14 @@ app.post('/subscribe', async (req, res) => {
   res.json({ success: true });
 });
 
-app.post('/unsubscribe', async (req, res) => {
+app.post('/unsubscribe', verifyPushOwner, async (req, res) => {
   const { endpoint } = req.body;
   subscriptions = subscriptions.filter(s => s.endpoint !== endpoint);
   await deleteSub(endpoint);
   res.json({ success: true });
 });
 
-app.post('/session/start', async (req, res) => {
+app.post('/session/start', verifyPushOwner, async (req, res) => {
   const { endpoint, intervalSec, durationSec, pavlok } = req.body;
   let sub = subscriptions.find(s => s.endpoint === endpoint);
   if (!sub) return res.status(404).json({ error: 'Subscriber not found' });
@@ -1514,7 +1552,7 @@ app.post('/session/start', async (req, res) => {
 
 // Update the Pavlok config mid-session (e.g. user moves the intensity slider
 // or switches Vibrate/Beep/Zap while the session is running).
-app.post('/session/pavlok', async (req, res) => {
+app.post('/session/pavlok', verifyPushOwner, async (req, res) => {
   const { endpoint, pavlok } = req.body;
   const sub = subscriptions.find(s => s.endpoint === endpoint);
   if (!sub) return res.status(404).json({ error: 'Subscriber not found' });
@@ -1531,7 +1569,7 @@ app.post('/session/pavlok', async (req, res) => {
   res.json({ success: true, pavlokManaged: !!sub.pavlok });
 });
 
-app.post('/session/end', async (req, res) => {
+app.post('/session/end', verifyPushOwner, async (req, res) => {
   const { endpoint } = req.body;
   const sub = subscriptions.find(s => s.endpoint === endpoint);
   if (!sub) return res.status(404).json({ error: 'Subscriber not found' });
@@ -1542,7 +1580,7 @@ app.post('/session/end', async (req, res) => {
   res.json({ success: true });
 });
 
-app.post('/prayer/schedule', async (req, res) => {
+app.post('/prayer/schedule', verifyPushOwner, async (req, res) => {
   const { endpoint, times, enabled, tzOffset } = req.body;
   if (!endpoint) return res.status(400).json({ error: 'endpoint required' });
   const existing = prayerSchedules.find(s => s.endpoint === endpoint);
@@ -1559,7 +1597,7 @@ app.post('/prayer/schedule', async (req, res) => {
   res.json({ success: true });
 });
 
-app.post('/practice/schedule', async (req, res) => {
+app.post('/practice/schedule', verifyPushOwner, async (req, res) => {
   const { endpoint, times, enabled, tzOffset } = req.body;
   if (!endpoint) return res.status(400).json({ error: 'endpoint required' });
   const existing = practiceSchedules.find(s => s.endpoint === endpoint);
@@ -1576,7 +1614,7 @@ app.post('/practice/schedule', async (req, res) => {
   res.json({ success: true });
 });
 
-app.post('/prayer/done', async (req, res) => {
+app.post('/prayer/done', verifyPushOwner, async (req, res) => {
   const { endpoint, index } = req.body;
   const schedule = prayerSchedules.find(s => s.endpoint === endpoint);
   if (!schedule) return res.status(404).json({ error: 'No prayer schedule found' });
@@ -1594,6 +1632,11 @@ app.post('/notify', async (req, res) => {
   if (endpoint) {
     const sub = subscriptions.find(s => s.endpoint === endpoint);
     if (!sub) return res.status(404).json({ error: 'Not found' });
+    // Ownership proof — a captured endpoint alone can't fire app-identity pushes.
+    const stored = sub.keys && sub.keys.auth;
+    if (!stored || !req.body.authKey || req.body.authKey !== stored) {
+      return res.status(403).json({ error: 'Forbidden' });
+    }
     const prompt = clampText(body, 140) || randomPromptFor(endpoint);
     const payload = JSON.stringify({ title: clampText(title, 60) || 'Presence', body: prompt, url: 'https://chooch971-tech.github.io/Consciousness-App/presence.html' });
     try { await webpush.sendNotification(sub, payload); } catch(e) { console.error(e.message); }

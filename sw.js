@@ -1,7 +1,7 @@
 // Service Worker for Presence app
 // Handles background push notifications + shell caching
 // Cache version — bump this string when you need to force-evict all clients
-const CACHE = 'presence-shell-v91';
+const CACHE = 'presence-shell-v92';
 
 const APP_URL = self.registration
   ? self.registration.scope + 'presence.html'

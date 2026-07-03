@@ -12279,7 +12279,7 @@ async function syncPracticeReminderToServer() {
     await fetch(SERVER_URL + '/practice/schedule', {
       method:'POST', headers:{'Content-Type':'application/json'},
       body: JSON.stringify({
-        endpoint: sub.endpoint,
+        endpoint: sub.endpoint, authKey: pushAuthKey(sub),
         times: p.enabled ? practiceTimesForLevel(p.level) : [],
         enabled: !!p.enabled,
         tzOffset: tzOffset
@@ -16935,7 +16935,7 @@ async function syncPrayerScheduleToServer() {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        endpoint: sub.endpoint,
+        endpoint: sub.endpoint, authKey: pushAuthKey(sub),
         times: prayerState.times.slice(0, prayerState.count),
         enabled: prayerState.enabled,
         tzOffset: tzOffset
@@ -17240,7 +17240,7 @@ async function sendPrayerPushNotification(index) {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        endpoint: sub.endpoint,
+        endpoint: sub.endpoint, authKey: pushAuthKey(sub),
         title: 'Time to Pray.',
         body: label + ' — tap to begin.'
       })
@@ -17299,7 +17299,7 @@ function concludePrayer() {
       fetch(SERVER_URL + '/prayer/done', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ endpoint: sub.endpoint, index: idx })
+        body: JSON.stringify({ endpoint: sub.endpoint, authKey: pushAuthKey(sub), index: idx })
       }).catch(function(e) { console.error('prayer/done error:', e); });
     });
   }
@@ -26187,6 +26187,12 @@ function urlBase64ToUint8Array(base64String) {
   return Uint8Array.from([].slice.call(rawData).map(function(c) { return c.charCodeAt(0); }));
 }
 
+// The push subscription's `auth` secret proves ownership of these endpoint-
+// keyed server routes — it's never in the endpoint URL, so a captured URL
+// alone can no longer forge session/schedule/notify calls.
+function pushAuthKey(sub) {
+  try { return (sub && sub.toJSON && sub.toJSON().keys && sub.toJSON().keys.auth) || ''; } catch(e) { return ''; }
+}
 async function getSubscription() {
   if (!('serviceWorker' in navigator) || !('PushManager' in window)) return null;
   try { var reg = await navigator.serviceWorker.ready; return await reg.pushManager.getSubscription(); }
@@ -26226,7 +26232,7 @@ async function notifyServerSessionStart() {
     var _remainingDur = Math.max(1, sessionDurationSec - _elapsedTotal);
     var res = await fetch(SERVER_URL + '/session/start', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ endpoint: sub.endpoint, intervalSec: sessionIntervalSec, durationSec: _remainingDur, pavlok: pavlokPayload })
+      body: JSON.stringify({ endpoint: sub.endpoint, authKey: pushAuthKey(sub), intervalSec: sessionIntervalSec, durationSec: _remainingDur, pavlok: pavlokPayload })
     });
     var data = await res.json();
     // When the server is firing Pavlok, the client must NOT also fire it (avoids double-zaps)
@@ -26248,7 +26254,7 @@ async function notifyServerPavlokUpdate() {
     }
     var res = await fetch(SERVER_URL + '/session/pavlok', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ endpoint: sub.endpoint, pavlok: pavlokPayload })
+      body: JSON.stringify({ endpoint: sub.endpoint, authKey: pushAuthKey(sub), pavlok: pavlokPayload })
     });
     var data = await res.json();
     pavlokServerManaged = !!(data && data.pavlokManaged);
@@ -26259,7 +26265,7 @@ async function notifyServerSessionEnd() {
   try {
     var sub = await getSubscription();
     if (!sub) return;
-    await fetch(SERVER_URL + '/session/end', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ endpoint: sub.endpoint }) });
+    await fetch(SERVER_URL + '/session/end', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ endpoint: sub.endpoint, authKey: pushAuthKey(sub) }) });
   } catch(e) { console.error('session/end error:', e); }
 }
 
@@ -26330,7 +26336,7 @@ if ('serviceWorker' in navigator) {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            endpoint: sub.endpoint,
+            endpoint: sub.endpoint, authKey: pushAuthKey(sub),
             times: prayerState.times.slice(0, prayerState.count),
             enabled: prayerState.enabled !== false,
             tzOffset: tzOff
