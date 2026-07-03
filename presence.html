@@ -398,6 +398,8 @@
     /* Sphere-touched forms — a planetary sigil floats above Omnia's figures
        and her aura takes the sphere's light (Path banner + Omnia screen). */
     body[data-sphere-form] .oe-omnia-figure::before, body[data-sphere-form] .path-banner-figure::before { position:absolute; top:-16px; left:50%; transform:translateX(-50%); font-size:15px; z-index:6; pointer-events:none; animation:scoPulse 3.6s ease-in-out infinite; }
+    /* With the Step-X crown worn, the sphere sigil rises to hover above it. */
+    body.omnia-tier-crown[data-sphere-form] .oe-omnia-figure::before, body.omnia-tier-crown[data-sphere-form] .path-banner-figure::before { top:-36px; }
     body[data-sphere-form="1"] .oe-omnia-figure, body[data-sphere-form="1"] .path-banner-figure { filter:drop-shadow(0 0 16px #9cb88aaa); }
     body[data-sphere-form="1"] .oe-omnia-figure::before, body[data-sphere-form="1"] .path-banner-figure::before { content:'⊕'; color:#9cb88a; text-shadow:0 0 9px #9cb88a, 0 0 20px #9cb88a66; }
     body[data-sphere-form="2"] .oe-omnia-figure, body[data-sphere-form="2"] .path-banner-figure { filter:drop-shadow(0 0 16px #cdd6e8aa); }
@@ -18936,6 +18938,11 @@ function injectOmniaApotheosis(fig) {
 }
 function applyOmniaStepVisuals() {
   var step = (omniaState && omniaState.bardonStep) || 1;
+  // Once the Wheel has turned, Step X was genuinely completed — Omnia keeps
+  // her full regalia (orbit, crown, pillars, elements … apotheosis) through
+  // every later walk and the sphere journeys, rather than regressing to a
+  // bare crystal each turning.
+  if (omniaState && (omniaState.prestige || 0) > 0) step = 10;
   document.body.classList.toggle('omnia-tier-orbit',      step >= 2);
   document.body.classList.toggle('omnia-tier-crown',      step >= 3);
   document.body.classList.toggle('omnia-tier-polar',      step >= 4);
