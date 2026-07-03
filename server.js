@@ -26,7 +26,9 @@ app.use(cors({
     if (!origin || ALLOWED_ORIGINS.includes(origin)) return cb(null, true);
     cb(new Error('CORS: origin not allowed'));
   },
-  credentials: true,
+  // No cookies are used (auth is a Bearer header), so credentialed CORS is
+  // unnecessary and only widens the surface.
+  credentials: false,
 }));
 
 // ── Body parser — 1 MB cap ──────────────────────────────
@@ -67,6 +69,34 @@ let prayerSchedules = [];
 let practiceSchedules = [];
 
 let mongoClient;
+// One-time sanitization of usernames stored before the charset rule was
+// enforced at registration (latent stored-XSS if any render path ever skips
+// escaping). Only touches usernames that violate [a-z0-9_]{3,24}; resolves
+// collisions and empties by appending a short id-derived suffix. Idempotent —
+// after the first run the offending set is empty and it's a no-op.
+async function migrateLegacyUsernames() {
+  if (!usersCollection) return;
+  const bad = await usersCollection.find({
+    username: { $exists: true, $ne: null, $type: 'string', $not: /^[a-z0-9_]{3,24}$/ }
+  }).project({ _id: 1, username: 1 }).toArray();
+  if (!bad.length) return;
+  let fixed = 0;
+  for (const u of bad) {
+    let clean = String(u.username).trim().toLowerCase().replace(/[^a-z0-9_]/g, '').slice(0, 24);
+    if (clean.length < 3) clean = 'practitioner_' + String(u._id).slice(-5);
+    // Resolve collisions against any OTHER user holding the cleaned name.
+    let candidate = clean, n = 0;
+    while (await usersCollection.findOne({ username: candidate, _id: { $ne: u._id } })) {
+      const suffix = '_' + String(u._id).slice(-(2 + n));
+      candidate = clean.slice(0, 24 - suffix.length) + suffix;
+      if (++n > 6) { candidate = 'practitioner_' + String(u._id).slice(-6); break; }
+    }
+    await usersCollection.updateOne({ _id: u._id }, { $set: { username: candidate } });
+    fixed++;
+  }
+  console.log(`[Migration] Sanitized ${fixed} legacy username(s).`);
+}
+
 async function connectDB() {
   try {
     mongoClient = new MongoClient(MONGO_URI, { tls: true, tlsAllowInvalidCertificates: false });
@@ -107,6 +137,7 @@ async function connectDB() {
     }
     prayerSchedules = await prayerCollection.find({}).toArray();
     practiceSchedules = await practiceCollection.find({}).toArray();
+    try { await migrateLegacyUsernames(); } catch (e) { console.error('Username migration skipped:', e.message); }
     console.log(`Connected to MongoDB. ${subscriptions.length} subscribers, ${prayerSchedules.length} prayer schedules, ${practiceSchedules.length} practice schedules.`);
   } catch(err) {
     console.error('MongoDB connection failed:', err.message);
@@ -1313,7 +1344,11 @@ app.put('/api/sync/profile-pic', verifyToken, async (req, res) => {
     const { pic } = req.body;
     if (!pic || typeof pic !== 'string') return res.status(400).json({ error: 'pic required' });
     if (pic.length > 200000) return res.status(413).json({ error: 'Image too large' });
-    if (!pic.startsWith('data:image/')) return res.status(400).json({ error: 'Invalid image format' });
+    // Must be a clean base64 image data-URL and nothing else — no quotes,
+    // parens, or other characters that could break out of a CSS url() sink.
+    if (!/^data:image\/(png|jpe?g|gif|webp);base64,[A-Za-z0-9+/=]+$/i.test(pic)) {
+      return res.status(400).json({ error: 'Invalid image format' });
+    }
     await usersCollection.updateOne(
       { _id: new ObjectId(req.user.userId) },
       { $set: { profilePic: pic } }

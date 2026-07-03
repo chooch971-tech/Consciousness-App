@@ -9416,9 +9416,10 @@ function renderProfile() {
   var av = document.getElementById('profAvatar');
   var init = document.getElementById('profAvatarInitial');
   var pic = getProfilePic();
-  if (pic) {
+  var _sp = safeProfilePic(pic);
+  if (_sp) {
     av.classList.add('has-pic');
-    av.style.backgroundImage = 'url(' + pic + ')';
+    av.style.backgroundImage = 'url("' + _sp + '")';
   } else {
     av.classList.remove('has-pic');
     av.style.backgroundImage = '';
@@ -9500,9 +9501,17 @@ function renderProfileAchievements() {
   }).join('');
 }
 
+// A profile picture must be a clean base64 image data-URL and nothing else.
+// escHtml only escapes <>, so a pic containing a quote could otherwise break
+// out of a style="…url(pic)…" attribute and inject an event handler (stored
+// XSS via a friend's avatar). Returns '' for anything that doesn't match.
+function safeProfilePic(pic) {
+  return (typeof pic === 'string' && /^data:image\/(png|jpe?g|gif|webp);base64,[A-Za-z0-9+/=]+$/i.test(pic)) ? pic : '';
+}
 function _friendRingHtml(initial, pic) {
-  if (pic) {
-    return '<div class="prof-friend__ring prof-friend__ring--filled" style="background-image:url(' + escHtml(pic) + ');background-size:cover;background-position:center top;color:transparent;font-size:0;"></div>';
+  var sp = safeProfilePic(pic);
+  if (sp) {
+    return '<div class="prof-friend__ring prof-friend__ring--filled" style="background-image:url(\'' + sp + '\');background-size:cover;background-position:center top;color:transparent;font-size:0;"></div>';
   }
   return '<div class="prof-friend__ring prof-friend__ring--filled">' + escHtml(String(initial || '?').toUpperCase()[0]) + '</div>';
 }
@@ -9527,9 +9536,10 @@ function renderFriendProfile(f) {
 
   var av = document.getElementById('friendProfAvatar');
   var initEl = document.getElementById('friendProfInitial');
-  if (f.profilePic) {
+  var _fsp = safeProfilePic(f.profilePic);
+  if (_fsp) {
     av.classList.add('has-pic');
-    av.style.backgroundImage = 'url(' + f.profilePic + ')';
+    av.style.backgroundImage = 'url("' + _fsp + '")';
     initEl.style.display = 'none';
   } else {
     av.classList.remove('has-pic');
