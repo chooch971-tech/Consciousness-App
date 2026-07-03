@@ -367,7 +367,9 @@
     .oe-dm-val { font-family:'DM Mono',monospace; font-size:12px; color:#d8c4f4; letter-spacing:.06em; }
     .oe-dm-key { font-family:'DM Mono',monospace; font-size:8px; letter-spacing:.2em; text-transform:uppercase; color:var(--muted); }
         /* ── Prestige (Turnings of the Wheel) ── */
-    .oe-prestige-btn { width:100%; margin-top:9px; padding:12px; border-radius:9px; border:1px solid rgba(226,196,140,.5); background:linear-gradient(100deg,#6a4f8e 0%,#b89a5e 52%,#6a4f8e 100%); background-size:200% 100%; color:#fff6e2; font-family:'DM Mono',monospace; font-size:10px; letter-spacing:.24em; text-transform:uppercase; cursor:pointer; box-shadow:0 4px 22px rgba(180,150,90,.3), inset 0 1px 0 rgba(255,255,255,.28); animation:oePrestigeShine 5s linear infinite; }
+    .oe-prestige-btn { width:100%; margin-top:9px; padding:13px 12px 11px; border-radius:12px; border:1px solid rgba(226,196,140,.55); background:linear-gradient(100deg,#6a4f8e 0%,#b89a5e 52%,#6a4f8e 100%); background-size:200% 100%; color:#fff6e2; cursor:pointer; display:flex; flex-direction:column; align-items:center; gap:3px; box-shadow:0 4px 26px rgba(180,150,90,.34), inset 0 1px 0 rgba(255,255,255,.3), inset 0 0 24px -14px #ffe9b8; animation:oePrestigeShine 5s linear infinite; }
+    .oe-prestige-btn .pb-main { font-family:'Cormorant Garamond',serif; font-size:21px; font-weight:300; letter-spacing:.2em; text-transform:uppercase; line-height:1; text-shadow:0 0 16px rgba(255,233,184,.55); }
+    .oe-prestige-btn .pb-note { font-family:'DM Mono',monospace; font-size:8px; letter-spacing:.2em; text-transform:uppercase; color:rgba(255,246,226,.75); }
     @keyframes oePrestigeShine { to { background-position:200% 0; } }
     .oe-prestige-btn:active { transform:scale(.985); }
     .oe-prestige-pips { color:#e8cd94; letter-spacing:.06em; }
@@ -5585,7 +5587,7 @@ body:not(.tut-live) #tutCorgi {
         <div class="oe-session-progress" id="omniaSessionProgress"></div>
         <button class="oe-advance-btn" id="omniaAdvanceBtn">Advance Step</button>
       </div>
-      <button class="oe-prestige-btn" id="omniaPrestigeBtn" style="display:none;" onclick="omniaConfirmPrestige()">✦ Begin a New Turning ✦</button>
+      <button class="oe-prestige-btn" id="omniaPrestigeBtn" style="display:none;" onclick="omniaConfirmPrestige()"><span class="pb-main">✦ &nbsp;Prestige&nbsp; ✦</span><span class="pb-note">Unlock Dark Matter at Prestige 3</span></button>
       <div class="oe-turnings" id="omniaTurnings"></div>
 
       <!-- Secondary sections -->
@@ -19924,7 +19926,14 @@ function renderOmniaEngine() {
     advanceBtn.textContent = next ? ('Advance to Step ' + next.roman) : 'All Steps Complete';
     advanceBtn.style.display = (!next && canPrestige) ? 'none' : '';
     var prestigeBtn = document.getElementById('omniaPrestigeBtn');
-    if (prestigeBtn) prestigeBtn.style.display = (!next && canPrestige) ? '' : 'none';
+    if (prestigeBtn) {
+      prestigeBtn.style.display = (!next && canPrestige) ? '' : 'none';
+      var _pcNow = omniaState.prestige || 0;
+      var _pbNote = _pcNow >= PRESTIGE_BOOK2 ? 'Dark Matter flows · +' + Math.round((omniaPrestigeMult() - 1) * 100 + 25) + '% akasha next'
+        : _pcNow === PRESTIGE_BOOK2 - 1 ? 'This Prestige unlocks Dark Matter'
+        : 'Unlock Dark Matter at Prestige 3';
+      prestigeBtn.innerHTML = '<span class="pb-main">✦ &nbsp;Prestige&nbsp; ✦</span><span class="pb-note">' + _pbNote + '</span>';
+    }
   }
   var pipsEl = document.getElementById('omniaPrestigePips');
   if (pipsEl) {
