@@ -355,12 +355,13 @@
       .so-hero-num { font-size:120px; }
     }
     /* ── Turnings status card + Dark Matter ── */
-    .oe-turnings { margin-top:11px; border:1px solid rgba(196,168,220,.22); border-radius:11px; padding:12px 14px; background:linear-gradient(150deg, rgba(60,44,92,.34), rgba(30,24,48,.24)); }
+    .oe-turnings { position:relative; overflow:hidden; margin-top:11px; border:1px solid rgba(226,196,140,.28); border-radius:13px; padding:13px 15px; background:linear-gradient(140deg, rgba(74,56,108,.4) 0%, rgba(34,26,54,.3) 55%, rgba(58,46,32,.26) 100%); box-shadow:inset 0 1px 0 rgba(255,255,255,.06), 0 0 24px -12px rgba(226,196,140,.45); }
+    .oe-turnings::before { content:'✦'; position:absolute; right:-6px; bottom:-16px; font-size:58px; color:rgba(226,196,140,.07); pointer-events:none; }
     .oe-turnings-top { display:flex; align-items:center; justify-content:space-between; gap:10px; margin-bottom:4px; }
-    .oe-turnings-label { font-family:'DM Mono',monospace; font-size:8px; letter-spacing:.24em; text-transform:uppercase; color:rgba(214,196,240,.72); }
+    .oe-turnings-label { font-family:'Cormorant Garamond',serif; font-size:16px; font-weight:300; letter-spacing:.18em; text-transform:uppercase; color:#e8cd94; text-shadow:0 0 12px rgba(226,196,140,.35); }
     .oe-turnings-count { font-family:'DM Mono',monospace; font-size:10px; letter-spacing:.1em; color:#e8cd94; }
     .oe-turnings-count .pip { text-shadow:0 0 7px rgba(226,196,140,.6); }
-    .oe-turnings-hint { font-size:9.5px; line-height:1.6; color:rgba(214,196,240,.62); }
+    .oe-turnings-hint { font-size:10.5px; line-height:1.6; color:rgba(214,196,240,.7); }
     .oe-turnings-hint b { color:#e8cd94; font-weight:400; }
     .oe-dm-row { display:flex; align-items:center; gap:7px; margin-top:7px; padding-top:8px; border-top:1px solid rgba(255,255,255,.06); }
     .oe-dm-orb { width:13px; height:13px; border-radius:50%; background:radial-gradient(circle at 38% 34%, #b48ce0 0%, #5a3c8e 60%, #24123c 100%); box-shadow:0 0 8px rgba(150,110,220,.7); }
@@ -19225,15 +19226,14 @@ function renderOmniaTurnings() {
   var pc = omniaState.prestige || 0;
   var countHtml = pc > 0
     ? '<span class="pip">' + (pc <= 6 ? Array(pc + 1).join('✦') : '✦ ×' + pc) + '</span> · +' + Math.round((omniaPrestigeMult() - 1) * 100) + '% akasha'
-    : 'Not yet turned';
+    : '<span class="pip">✦</span> 0';
   var html = '<div class="oe-turnings-top">'
-    + '<span class="oe-turnings-label">Turnings of the Wheel</span>'
+    + '<span class="oe-turnings-label">Prestige</span>'
     + '<span class="oe-turnings-count">' + countHtml + '</span>'
     + '</div>';
   if (pc < PRESTIGE_BOOK2) {
-    var left = PRESTIGE_BOOK2 - pc;
-    html += '<div class="oe-turnings-hint">At the <b>3rd Turning</b> a deeper current awakens — <b>Dark Matter</b>, drawn from the advanced work, opening the path beyond the fundamentals. '
-      + (pc === 0 ? 'The Wheel first turns when Omnia completes Step X.' : left + ' turning' + (left === 1 ? '' : 's') + ' remain.') + '</div>';
+    html += '<div class="oe-turnings-hint">Unlock <b>Dark Matter</b> at Prestige 3'
+      + (pc === 0 ? ' · the Wheel first turns at Step X' : '') + '</div>';
   } else {
     html += '<div class="oe-turnings-hint">The deeper current flows. <b>Dark Matter</b> gathers from the advanced exercises.</div>'
       + '<div class="oe-dm-row"><span class="oe-dm-orb"></span>'
