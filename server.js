@@ -541,18 +541,26 @@ app.post('/api/sync/auth/register', authRateLimit, async (req, res) => {
     if (!email || !password) return res.status(400).json({ error: 'Email and password required' });
     if (password.length < 8) return res.status(400).json({ error: 'Password must be at least 8 characters' });
     if (username !== undefined && typeof username !== 'string') return res.status(400).json({ error: 'Invalid username' });
+    // Same charset rules as set-username — stored usernames are rendered on
+    // other users' screens, so they must never carry markup.
+    let cleanUsername = null;
+    if (username) {
+      cleanUsername = username.trim().toLowerCase().replace(/[^a-z0-9_]/g, '');
+      if (cleanUsername.length < 3) return res.status(400).json({ error: 'Username must be at least 3 characters (letters, numbers, underscores)' });
+      if (cleanUsername.length > 24) return res.status(400).json({ error: 'Username too long (max 24 characters)' });
+    }
     const existingUser = await usersCollection.findOne({ email });
     if (existingUser) return res.status(400).json({ error: 'Email already in use' });
-    if (username) {
-      const existingUsername = await usersCollection.findOne({ username });
+    if (cleanUsername) {
+      const existingUsername = await usersCollection.findOne({ username: cleanUsername });
       if (existingUsername) return res.status(400).json({ error: 'Username already taken' });
     }
     const passwordHash = await bcrypt.hash(password, 10);
     const userDoc = { email, passwordHash, createdAt: new Date(), lastSync: null };
-    if (username) userDoc.username = username;
+    if (cleanUsername) userDoc.username = cleanUsername;
     const result = await usersCollection.insertOne(userDoc);
     const token = jwt.sign({ userId: result.insertedId.toString(), email }, JWT_SECRET, { expiresIn: TOKEN_EXPIRY });
-    res.json({ token, userId: result.insertedId, email, username: username || null });
+    res.json({ token, userId: result.insertedId, email, username: cleanUsername || null });
   } catch (err) {
     console.error('Register error:', err);
     res.status(500).json({ error: 'Registration failed' });
@@ -720,6 +728,19 @@ function clampOmniaSnapshot(incomingStr, prevSnap) {
       });
       clamped = true;
     }
+    // Dark matter: honest play is a few hundred/day; 3000/day never touches
+    // real users but stops console-cheated values from reaching friends.
+    const maxDmGain = Math.ceil(elapsedDays * 3000);
+    const prevDmEarned = prev.totalDarkMatterEarned || 0;
+    if ((incoming.totalDarkMatterEarned || 0) > prevDmEarned + maxDmGain) {
+      incoming.totalDarkMatterEarned = prevDmEarned + maxDmGain;
+      clamped = true;
+    }
+    const prevDm = prev.darkMatter || 0;
+    if ((incoming.darkMatter || 0) > prevDm + maxDmGain) {
+      incoming.darkMatter = prevDm + maxDmGain;
+      clamped = true;
+    }
     return { str: clamped ? JSON.stringify(incoming) : incomingStr, clamped };
   } catch (e) {
     return { str: incomingStr, clamped: false };
@@ -798,7 +819,18 @@ function syncProgressScoreSrv(key, obj) {
     // akasha/reservoir balances so spending akasha on an upgrade can't make a
     // post-spend snapshot score LOWER than a stale pre-spend one — which would
     // make pickBestValue resurrect the old snapshot and revert the purchase.
-    return (obj.totalAkashaEarned || 0) + (obj.totalAkashaSpent || 0)
+    const b2 = obj.bookII || {};
+    const toolPhases = Object.keys(b2.tools || {}).reduce((n, k) => n + ((b2.tools[k] && b2.tools[k].p) || 0), 0);
+    const b2b = b2.bodies || {};
+    // Prestige is a generational marker and dominates (mirrors the client):
+    // a prestiged snapshot must never lose to a stale pre-prestige one.
+    return (obj.prestige || 0) * 10000000
+      + (obj.totalDarkMatterEarned || 0) * 50
+      + (obj.totalDarkMatterSpent || 0) * 50
+      + toolPhases * 5000
+      + ((Number(b2b.astral) || 0) + (Number(b2b.mental) || 0) + (Number(b2b.wisdom) || 0)) * 1500
+      + ((b2.sphere) || 0) * 20000
+      + (obj.totalAkashaEarned || 0) + (obj.totalAkashaSpent || 0)
       + (b('physical') + b('astral') + b('mental')) * 1000
       + ((obj.bardonStep || 1) - 1) * 10000
       + ((obj.completedRecommended || 0) * 100);
@@ -869,21 +901,53 @@ function mergeOmniaKey(snaps) {
   if (!base) return baseStr;
   const baseReset = (base._resetAt) || 0;
   base.bodies = base.bodies || {};
+  base.bookII = base.bookII || {};
+  base.bookII.tools = base.bookII.tools || {};
+  // Prestige is a generational marker (mirrors the client's mergeOmniaPull):
+  // a turning deliberately resets bardonStep/bodies/sphere, so those fields
+  // only fold from snapshots of the SAME generation — otherwise a stale
+  // pre-prestige snapshot's higher step/bodies would silently revert the
+  // turning on the next pull.
+  let gen = Number(base.prestige) || 0;
+  snaps.forEach((s) => {
+    const o = parseSafe(s.presence_omnia_v1);
+    if (o && ((o._resetAt) || 0) === baseReset) gen = Math.max(gen, Number(o.prestige) || 0);
+  });
+  base.prestige = gen;
   snaps.forEach((s) => {
     const o = parseSafe(s.presence_omnia_v1); if (!o) return;
     if (((o._resetAt) || 0) !== baseReset) return;
-    ['completedRecommended','totalAkashaEarned','totalAkashaSpent'].forEach((f) => { base[f] = Math.max(Number(base[f]) || 0, Number(o[f]) || 0); });
+    // Permanent across turnings: magical tools, Book II bodies, story.
+    const oT = ((o.bookII || {}).tools) || {};
+    Object.keys(oT).forEach((k) => {
+      const bt = base.bookII.tools[k] || (base.bookII.tools[k] = { p: 0, readyAt: 0 });
+      const ot = oT[k] || {};
+      if ((ot.p || 0) > (bt.p || 0)) { bt.p = ot.p || 0; bt.readyAt = ot.readyAt || 0; }
+    });
+    const oB = ((o.bookII || {}).bodies) || null;
+    if (oB) {
+      base.bookII.bodies = base.bookII.bodies || { astral: 1, mental: 1, wisdom: 1 };
+      ['astral','mental','wisdom'].forEach((bd) => {
+        base.bookII.bodies[bd] = Math.max(Number(base.bookII.bodies[bd]) || 1, Number(oB[bd]) || 1);
+      });
+    }
+    const union = [].concat(base.storySeen || [], o.storySeen || []);
+    base.storySeen = union.filter((id, i) => union.indexOf(id) === i);
+    base.storyRead = Math.max(Number(base.storyRead) || 0, Number(o.storyRead) || 0);
+    // Generation-gated: fields a turning resets, plus in-run monotonics.
+    if ((Number(o.prestige) || 0) !== gen) return;
+    ['completedRecommended','totalAkashaEarned','totalAkashaSpent','darkMatter','totalDarkMatterEarned','totalDarkMatterSpent'].forEach((f) => { base[f] = Math.max(Number(base[f]) || 0, Number(o[f]) || 0); });
     base.bardonStep = Math.max(Number(base.bardonStep) || 1, Number(o.bardonStep) || 1);
     const ob = o.bodies || {};
     ['physical','astral','mental'].forEach((bd) => { base.bodies[bd] = Math.max(Number(base.bodies[bd]) || 1, Number(ob[bd]) || 1); });
+    if ((o.bookII || {}).sphere != null) {
+      base.bookII.sphere = Math.max(Number(base.bookII.sphere) || 0, Number(o.bookII.sphere) || 0);
+    }
     // Purchased upgrades are monotonic — keep the higher level of each so a
     // stale snapshot can't revert an upgrade the user just bought.
     base.upgrades = base.upgrades || {};
     const ou = o.upgrades || {};
     Object.keys(ou).forEach((u) => { base.upgrades[u] = Math.max(Number(base.upgrades[u]) || 1, Number(ou[u]) || 1); });
-    const union = [].concat(base.storySeen || [], o.storySeen || []);
-    base.storySeen = union.filter((id, i) => union.indexOf(id) === i);
-    base.storyRead = Math.max(Number(base.storyRead) || 0, Number(o.storyRead) || 0);
   });
   return JSON.stringify(base);
 }
@@ -1342,7 +1406,7 @@ app.post('/api/pavlok/link', async (req, res) => {
       body: JSON.stringify({ user: { email, password } }),
     });
     const data = await r.json();
-    console.log('Pavlok login response status:', r.status, 'body:', JSON.stringify(data));
+    console.log('Pavlok login response status:', r.status, '— token', token ? 'received' : 'missing');
     // Token field name varies — try all known variants
     const token = data?.user?.token || data?.token || data?.access_token || data?.auth_token || data?.data?.token;
     if (!r.ok || !token) {
@@ -1396,7 +1460,7 @@ app.post('/api/pavlok/stimulus', async (req, res) => {
       body: JSON.stringify({ stimulus: { stimulusType: type, stimulusValue: intensity } }),
     });
     const data = await r.json().catch(() => ({}));
-    console.log(`[Pavlok] /stimulus/send status=${r.status} body=${JSON.stringify(data)}`);
+    console.log(`[Pavlok] /stimulus/send status=${r.status}`);
     if (!r.ok) return res.status(r.status).json({ error: data?.message || data?.error || JSON.stringify(data) || 'Pavlok stimulus failed', raw: data });
     res.json({ ok: true });
   } catch (err) {
@@ -1443,7 +1507,7 @@ app.post('/session/start', async (req, res) => {
   } else {
     sub.pavlok = null;
   }
-  console.log(`[Pavlok] /session/start — payload received: ${JSON.stringify(pavlok)} | stored sub.pavlok: ${sub.pavlok ? sub.pavlok.type + '@' + sub.pavlok.intensity : 'null'}`);
+  console.log(`[Pavlok] /session/start — enabled=${!!(pavlok && pavlok.enabled)} | stored sub.pavlok: ${sub.pavlok ? sub.pavlok.type + '@' + sub.pavlok.intensity : 'null'}`);
   await saveSub(sub);
   res.json({ success: true, pavlokManaged: !!sub.pavlok });
 });
