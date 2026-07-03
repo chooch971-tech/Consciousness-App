@@ -386,6 +386,39 @@
     .b2s-state { font-family:'DM Mono',monospace; font-size:8px; letter-spacing:.16em; text-transform:uppercase; padding:9px 12px; border-radius:9px; width:100%; box-sizing:border-box; }
     .b2s-state.done { color:#9ed8c0; border:1px solid rgba(126,184,164,.35); }
     .b2s-state.lock { color:#6a6284; border:1px solid rgba(255,255,255,.07); }
+    /* Sphere travel */
+    .b2sp-row { display:flex; gap:6px; flex-wrap:wrap; margin-bottom:10px; }
+    .b2sp { width:26px; height:26px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:13px; color:var(--spc); opacity:.32; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.02); }
+    .b2sp.done { opacity:1; border-color:var(--spc); box-shadow:0 0 9px -2px var(--spc); }
+    .b2sp.cur { opacity:.9; border-color:var(--spc); border-style:dashed; }
+    .b2sp-cur { display:flex; gap:12px; align-items:center; margin-bottom:9px; }
+    .b2sp-big { font-size:27px; color:var(--spc); text-shadow:0 0 15px var(--spc); line-height:1; }
+    .b2sp-reqs { font-family:'DM Mono',monospace; font-size:8.5px; letter-spacing:.08em; color:rgba(255,255,255,.35); margin-top:3px; }
+    .b2sp-req.met { color:#9ed8c0; }
+    /* Sphere-touched forms — a planetary sigil floats above Omnia's figures
+       and her aura takes the sphere's light (Path banner + Omnia screen). */
+    body[data-sphere-form] .oe-omnia-figure::before, body[data-sphere-form] .path-banner-figure::before { position:absolute; top:-16px; left:50%; transform:translateX(-50%); font-size:15px; z-index:6; pointer-events:none; animation:scoPulse 3.6s ease-in-out infinite; }
+    body[data-sphere-form="1"] .oe-omnia-figure, body[data-sphere-form="1"] .path-banner-figure { filter:drop-shadow(0 0 16px #9cb88aaa); }
+    body[data-sphere-form="1"] .oe-omnia-figure::before, body[data-sphere-form="1"] .path-banner-figure::before { content:'⊕'; color:#9cb88a; text-shadow:0 0 9px #9cb88a, 0 0 20px #9cb88a66; }
+    body[data-sphere-form="2"] .oe-omnia-figure, body[data-sphere-form="2"] .path-banner-figure { filter:drop-shadow(0 0 16px #cdd6e8aa); }
+    body[data-sphere-form="2"] .oe-omnia-figure::before, body[data-sphere-form="2"] .path-banner-figure::before { content:'☽'; color:#cdd6e8; text-shadow:0 0 9px #cdd6e8, 0 0 20px #cdd6e866; }
+    body[data-sphere-form="3"] .oe-omnia-figure, body[data-sphere-form="3"] .path-banner-figure { filter:drop-shadow(0 0 16px #e8b060aa); }
+    body[data-sphere-form="3"] .oe-omnia-figure::before, body[data-sphere-form="3"] .path-banner-figure::before { content:'☿'; color:#e8b060; text-shadow:0 0 9px #e8b060, 0 0 20px #e8b06066; }
+    body[data-sphere-form="4"] .oe-omnia-figure, body[data-sphere-form="4"] .path-banner-figure { filter:drop-shadow(0 0 16px #e89ab8aa); }
+    body[data-sphere-form="4"] .oe-omnia-figure::before, body[data-sphere-form="4"] .path-banner-figure::before { content:'♀'; color:#e89ab8; text-shadow:0 0 9px #e89ab8, 0 0 20px #e89ab866; }
+    body[data-sphere-form="5"] .oe-omnia-figure, body[data-sphere-form="5"] .path-banner-figure { filter:drop-shadow(0 0 16px #f0c860aa); }
+    body[data-sphere-form="5"] .oe-omnia-figure::before, body[data-sphere-form="5"] .path-banner-figure::before { content:'☉'; color:#f0c860; text-shadow:0 0 9px #f0c860, 0 0 20px #f0c86066; }
+    body[data-sphere-form="6"] .oe-omnia-figure, body[data-sphere-form="6"] .path-banner-figure { filter:drop-shadow(0 0 16px #e06858aa); }
+    body[data-sphere-form="6"] .oe-omnia-figure::before, body[data-sphere-form="6"] .path-banner-figure::before { content:'♂'; color:#e06858; text-shadow:0 0 9px #e06858, 0 0 20px #e0685866; }
+    body[data-sphere-form="7"] .oe-omnia-figure, body[data-sphere-form="7"] .path-banner-figure { filter:drop-shadow(0 0 16px #8898e8aa); }
+    body[data-sphere-form="7"] .oe-omnia-figure::before, body[data-sphere-form="7"] .path-banner-figure::before { content:'♃'; color:#8898e8; text-shadow:0 0 9px #8898e8, 0 0 20px #8898e866; }
+    body[data-sphere-form="8"] .oe-omnia-figure, body[data-sphere-form="8"] .path-banner-figure { filter:drop-shadow(0 0 16px #7a88a0aa); }
+    body[data-sphere-form="8"] .oe-omnia-figure::before, body[data-sphere-form="8"] .path-banner-figure::before { content:'♄'; color:#7a88a0; text-shadow:0 0 9px #7a88a0, 0 0 20px #7a88a066; }
+    body[data-sphere-form="9"] .oe-omnia-figure, body[data-sphere-form="9"] .path-banner-figure { filter:drop-shadow(0 0 16px #7ed8e8aa); }
+    body[data-sphere-form="9"] .oe-omnia-figure::before, body[data-sphere-form="9"] .path-banner-figure::before { content:'♅'; color:#7ed8e8; text-shadow:0 0 9px #7ed8e8, 0 0 20px #7ed8e866; }
+    body[data-sphere-form="10"] .oe-omnia-figure, body[data-sphere-form="10"] .path-banner-figure { filter:drop-shadow(0 0 16px #9a6ae8aa); }
+    body[data-sphere-form="10"] .oe-omnia-figure::before, body[data-sphere-form="10"] .path-banner-figure::before { content:'♇'; color:#9a6ae8; text-shadow:0 0 9px #9a6ae8, 0 0 20px #9a6ae866; }
+
     .b2t-phases { font-family:'DM Mono',monospace; font-size:8px; letter-spacing:.14em; text-transform:uppercase; color:rgba(255,255,255,.28); }
     .b2t-ph.done { color:#9ed8c0; }
     .b2t-ph.cur { color:#e8cd94; text-shadow:0 0 8px rgba(226,196,140,.5); }
@@ -9929,6 +9962,7 @@ function syncProgressScore(key, obj) {
       + (obj.totalDarkMatterSpent || 0) * 50
       + (function(){ var t=(obj.bookII||{}).tools||{}; var n=0; Object.keys(t).forEach(function(k){ n += (t[k].p||0); }); return n; })() * 5000
       + (function(){ var b=(obj.bookII||{}).bodies||{}; return ((b.astral||0)+(b.mental||0)+(b.wisdom||0)); })() * 1500
+      + (((obj.bookII||{}).sphere)||0) * 20000
       + (obj.totalAkashaEarned || 0)
       + (obj.totalAkashaSpent || 0)
       + (capBody('physical') + capBody('astral') + capBody('mental')) * 1000
@@ -18201,6 +18235,11 @@ function mergeOmniaPull(localStr, cloudStr) {
       base[f] = Math.max(Number(base[f]) || 0, Number(other[f]) || 0);
     });
     base.bardonStep = Math.max(Number(base.bardonStep) || 1, Number(other.bardonStep) || 1);
+    // Sphere progress resets each turning — fold only within the generation.
+    if ((other.bookII || {}).sphere != null) {
+      base.bookII = base.bookII || {};
+      base.bookII.sphere = Math.max(Number(base.bookII.sphere) || 0, Number(other.bookII.sphere) || 0);
+    }
     base.bodies = base.bodies || {};
     var ob = other.bodies || {};
     ['physical','astral','mental'].forEach(function(b) {
@@ -19422,6 +19461,87 @@ function renderBookIIBodies() {
     + '</div>';
 }
 
+// ── Book II: the ten spheres ─────────────────────────────────
+// Traversed strictly in order once the tools and bodies allow. Each sphere
+// demands body thresholds, costs akasha + dark matter, and imposes a day's
+// rest. Pluto opens the next Turning: spheres reset, tools and bodies remain.
+var BOOK2_SPHERES = [
+  { id:'zone',    name:'Zone Girdling the Earth', sym:'⊕', c:'#9cb88a' },
+  { id:'luna',    name:'Lunar Sphere',            sym:'☽', c:'#cdd6e8' },
+  { id:'mercury', name:'Mercurian Sphere',        sym:'☿', c:'#e8b060' },
+  { id:'venus',   name:'Venusian Sphere',         sym:'♀', c:'#e89ab8' },
+  { id:'sol',     name:'Solar Sphere',            sym:'☉', c:'#f0c860' },
+  { id:'mars',    name:'Martian Sphere',          sym:'♂', c:'#e06858' },
+  { id:'jupiter', name:'Jupiter Sphere',          sym:'♃', c:'#8898e8' },
+  { id:'saturn',  name:'Saturn Sphere',           sym:'♄', c:'#7a88a0' },
+  { id:'uranus',  name:'Uranus Sphere',           sym:'♅', c:'#7ed8e8' },
+  { id:'pluto',   name:'Pluto Sphere',            sym:'♇', c:'#9a6ae8' }
+];
+var SPHERE_REST_MS = 24 * 3600 * 1000;
+function bookIISphereCount() { return (omniaState.bookII && omniaState.bookII.sphere) || 0; }
+function sphereReq(i) { var n = 4 + i * 3; return { astral:n, mental:n, wisdom:n }; }
+function sphereCost(i) { return { a: 2200 + i * 900, d: 45 + i * 28 }; }
+function omniaTravelSphere() {
+  if (bookIICurrentToolIdx() < BOOK2_TOOLS.length) return;
+  var i = bookIISphereCount();
+  if (i >= BOOK2_SPHERES.length) return;
+  var b2 = omniaState.bookII;
+  if (Date.now() < (b2.sphereReadyAt || 0)) {
+    showToast('The way rests · ' + fmtToolGate(b2.sphereReadyAt - Date.now()) + ' before the next passage', 3200);
+    return;
+  }
+  var req = sphereReq(i), bodies = bookIIBodies();
+  if ((bodies.astral||1) < req.astral || (bodies.mental||1) < req.mental || (bodies.wisdom||1) < req.wisdom) {
+    showToast('Requires Astral ' + req.astral + ' · Mental ' + req.mental + ' · Wisdom ' + req.wisdom, 3400);
+    return;
+  }
+  var c = sphereCost(i);
+  if ((omniaState.akasha || 0) < c.a || (omniaState.darkMatter || 0) < c.d) {
+    showToast('Requires ' + c.a + ' akasha + ' + c.d + ' ◆ dark matter', 3200);
+    return;
+  }
+  omniaState.akasha -= c.a;
+  omniaState.totalAkashaSpent = (omniaState.totalAkashaSpent || 0) + c.a;
+  omniaState.darkMatter -= c.d;
+  omniaState.totalDarkMatterSpent = (omniaState.totalDarkMatterSpent || 0) + c.d;
+  b2.sphere = i + 1;
+  b2.sphereReadyAt = (i + 1 < BOOK2_SPHERES.length) ? Date.now() + SPHERE_REST_MS : 0;
+  saveOmniaState();
+  if (syncEnabled && authToken) syncPushData();
+  showToast('✦ ' + BOOK2_SPHERES[i].name + ' traversed', 3400, 'gold');
+  renderOmniaEngine();
+}
+function renderBookIISpheres() {
+  var n = bookIISphereCount();
+  var orbs = BOOK2_SPHERES.map(function(sp, i) {
+    return '<span class="b2sp' + (i < n ? ' done' : i === n ? ' cur' : '') + '" style="--spc:' + sp.c + ';" title="' + sp.name + '">' + sp.sym + '</span>';
+  }).join('');
+  var html = '<div class="b2-spheres">'
+    + '<div class="b2-tools-head" style="margin-top:12px;"><span class="b2-tools-title">Sphere Travel</span>'
+    + '<span class="b2-tools-count">' + n + ' / ' + BOOK2_SPHERES.length + '</span></div>'
+    + '<div class="b2sp-row">' + orbs + '</div>';
+  if (n >= BOOK2_SPHERES.length) {
+    return html + '<div class="oe-turnings-hint" style="color:#e8cd94;">♇ Pluto attained. The Wheel may turn again — the spheres await a deeper passage.</div></div>';
+  }
+  var sp = BOOK2_SPHERES[n], req = sphereReq(n), c = sphereCost(n), bodies = bookIIBodies();
+  var reqHtml = ['astral','mental','wisdom'].map(function(b) {
+    var met = (bodies[b] || 1) >= req[b];
+    return '<span class="b2sp-req' + (met ? ' met' : '') + '">' + BOOK2_BODY_META[b].name + ' ' + Math.min(bodies[b] || 1, req[b]) + '/' + req[b] + '</span>';
+  }).join('<span class="b2t-sep">·</span>');
+  html += '<div class="b2sp-cur"><span class="b2sp-big" style="--spc:' + sp.c + ';">' + sp.sym + '</span>'
+    + '<div><div class="b2s-name" style="text-align:left;">' + sp.name + '</div>'
+    + '<div class="b2sp-reqs">' + reqHtml + '</div></div></div>';
+  var gateLeft = ((omniaState.bookII || {}).sphereReadyAt || 0) - Date.now();
+  if (gateLeft > 0) {
+    html += '<button class="b2t-btn" disabled>The way rests · ' + fmtToolGate(gateLeft) + '</button>';
+  } else {
+    var met = (bodies.astral||1) >= req.astral && (bodies.mental||1) >= req.mental && (bodies.wisdom||1) >= req.wisdom;
+    var can = met && (omniaState.akasha || 0) >= c.a && (omniaState.darkMatter || 0) >= c.d;
+    html += '<button class="b2t-btn" onclick="omniaTravelSphere()"' + (can ? '' : ' disabled') + '>Travel · ' + c.a.toLocaleString() + ' akasha + ' + c.d + ' ◆</button>';
+  }
+  return html + '</div>';
+}
+
 // The tools atelier: a horizontal carousel, one instrument in focus at a
 // time, each drawn in detail and assembled piece by piece as phases are
 // bought. Ghosted parts show what remains.
@@ -19469,7 +19589,8 @@ function renderBookIITools() {
     + '<div class="b2-car" id="b2Car">' + slides + '</div>';
   if (idx >= BOOK2_TOOLS.length) {
     html += '<div class="oe-turnings-hint" style="margin-top:9px;">All fifteen instruments consecrated. Now the three bodies of the operator are refined for the spheres.</div>'
-      + renderBookIIBodies();
+      + renderBookIIBodies()
+      + renderBookIISpheres();
   }
   return html + '</div>';
 }
@@ -19509,6 +19630,10 @@ function omniaStepReqVal(step, key) {
   return raw ? Math.max(1, Math.round(raw * omniaReqFactor())) : 0;
 }
 function omniaCanPrestige() {
+  if ((omniaState.prestige || 0) >= PRESTIGE_BOOK2) {
+    // Book II turnings: reaching Pluto (all tools implied) turns the Wheel.
+    return bookIISphereCount() >= BOOK2_SPHERES.length;
+  }
   var last = OMNIA_BARDON_STEPS[OMNIA_BARDON_STEPS.length - 1];
   return (omniaState.bardonStep || 1) >= last.step && omniaStepReady(last);
 }
@@ -19520,6 +19645,8 @@ function omniaPrestige() {
   omniaState.completedRecommended = 0;
   omniaState.rec = null;
   omniaState.recStreak = 0;
+  // Book II turnings re-travel the spheres; tools and bodies are never asked again.
+  if (omniaState.bookII) { omniaState.bookII.sphere = 0; omniaState.bookII.sphereReadyAt = 0; }
   saveOmniaState();
   if (syncEnabled && authToken) syncPushData();
   showPrestigeCeremony(omniaState.prestige);
@@ -20061,6 +20188,9 @@ function showBodyLevelAward(award) {
 function renderOmniaEngine() {
   omniaAccrue();
   document.body.classList.toggle('omnia-prestiged', (omniaState.prestige || 0) > 0);
+  // Sphere-touched form: the last traversed sphere marks Omnia's figures.
+  var _sf = (omniaState.bookII && omniaState.bookII.sphere) || 0;
+  if (_sf > 0) document.body.dataset.sphereForm = _sf; else delete document.body.dataset.sphereForm;
   applyOmniaCosmetics();
   applyOmniaStepVisuals();
   var stage = omniaStage();
@@ -20182,8 +20312,9 @@ function renderOmniaEngine() {
     advanceBtn.textContent = next ? ('Advance to Step ' + next.roman) : 'All Steps Complete';
     advanceBtn.style.display = (!next && canPrestige) ? 'none' : '';
     var prestigeBtn = document.getElementById('omniaPrestigeBtn');
+    var _pShow = canPrestige;
     if (prestigeBtn) {
-      prestigeBtn.style.display = (!next && canPrestige) ? '' : 'none';
+      prestigeBtn.style.display = _pShow ? '' : 'none';
       var _pcNow = omniaState.prestige || 0;
       var _pbNote = _pcNow >= PRESTIGE_BOOK2 ? 'Dark Matter flows · +' + Math.round((omniaPrestigeMult() - 1) * 100 + 25) + '% akasha next'
         : _pcNow === PRESTIGE_BOOK2 - 1 ? 'This Prestige unlocks Dark Matter'
