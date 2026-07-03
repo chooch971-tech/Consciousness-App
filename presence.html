@@ -608,6 +608,37 @@
     .btn.ghost { background:transparent; border-color:transparent; color:var(--muted); }
     .toast { position:fixed; bottom:max(env(safe-area-inset-bottom),28px); left:50%; transform:translateX(-50%) translateY(16px); background:var(--surface2); border:1px solid var(--border2); padding:10px 22px; border-radius:100px; font-size:10px; letter-spacing:.15em; color:var(--muted); opacity:0; transition:opacity .3s, transform .3s; white-space:nowrap; z-index:200; pointer-events:none; }
     .toast.show { opacity:1; transform:translateX(-50%) translateY(0); }
+    .toast--gold { border-color:rgba(226,196,140,.5); color:#e8cd94; box-shadow:0 0 18px -6px rgba(226,196,140,.5); }
+    .toast--violet { border-color:rgba(196,168,220,.5); color:#d8c4f4; }
+    .toast--teal { border-color:rgba(126,184,164,.5); color:#9ed8c0; }
+
+    /* Gentle fade on every screen entry (opacity only — transforms would break
+       position:fixed children like the session timers). */
+    .screen.active { animation:screenIn .16s ease; }
+    @keyframes screenIn { from { opacity:0; } }
+
+    /* In-session ambient vignettes — static radial bloom in each exercise's
+       accent. Zero runtime cost (no animation). */
+    #concSessionScreen  { background:radial-gradient(ellipse 90% 55% at 50% 0%, rgba(224,124,58,.10) 0%, transparent 65%), var(--bg); }
+    #visSessionScreen   { background:radial-gradient(ellipse 90% 55% at 50% 0%, rgba(110,159,212,.10) 0%, transparent 65%), var(--bg); }
+    #audSessionScreen   { background:radial-gradient(ellipse 90% 55% at 50% 0%, rgba(212,149,110,.10) 0%, transparent 65%), var(--bg); }
+    #tcSessionScreen    { background:radial-gradient(ellipse 90% 55% at 50% 0%, rgba(120,152,184,.11) 0%, transparent 65%), var(--bg); }
+    #asanaSessionScreen { background:radial-gradient(ellipse 90% 55% at 50% 0%, rgba(196,120,120,.10) 0%, transparent 65%), var(--bg); }
+    #senseSessionScreen { background:radial-gradient(ellipse 90% 55% at 50% 0%, rgba(212,184,110,.10) 0%, transparent 65%), var(--bg); }
+    #prayerSessionScreen{ background:radial-gradient(ellipse 90% 55% at 50% 0%, rgba(155,142,196,.12) 0%, transparent 65%), var(--bg); }
+    #mantraScreen       { background:radial-gradient(ellipse 90% 55% at 50% 0%, rgba(201,171,110,.10) 0%, transparent 65%), var(--bg); }
+
+    /* Universal press feedback (no layout shift). */
+    button:not(:disabled):active { filter:brightness(1.15); }
+
+    /* Reduced motion: still the ambient loops; one-shot fades keep working. */
+    @media (prefers-reduced-motion: reduce) {
+      .exb-motes i, .bn-ripple, .exb-ripple, .pnh-rays, .pc-rays,
+      .oe-omnia-figure, .omnia-figure, .clk-omnia-spin, .clk-omnia-shine,
+      .sound-eq i, .p-candle-flame, .sco-flame-svg, .so-ended-flame-svg,
+      .seo-glow, .sco-glow, .pnh-star, .residue-glow, .omnia-triad-orbit .triad-ring
+      { animation:none !important; }
+    }
 
     /* MODE TABS */
     .mode-tabs { display:flex; gap:0; margin-bottom:16px; border-bottom:1px solid var(--border); }
@@ -1920,7 +1951,7 @@
     .drawer-items { flex:1; display:flex; flex-direction:column; padding:8px 0; }
     .drawer-item { display:flex; align-items:center; gap:14px; padding:16px 24px; cursor:pointer; border:none; background:none; color:var(--text); font-family:'DM Mono',monospace; font-size:11px; letter-spacing:.1em; text-align:left; width:100%; transition:background .15s; }
     .drawer-item:hover { background:rgba(126,184,164,0.05); }
-    .drawer-item-icon { font-size:14px; opacity:0.7; width:18px; text-align:center; }
+    .drawer-item-icon { font-size:14px; opacity:0.7; width:18px; text-align:center; display:inline-flex; align-items:center; justify-content:center; }
     .drawer-divider { height:1px; background:var(--border); margin:8px 24px; }
     @keyframes drawerPulse { 0%,100%{background:transparent} 50%{background:rgba(126,184,164,.12)} }
     .drawer-item-pulse { animation:drawerPulse 1.2s ease-in-out 3; }
@@ -6893,31 +6924,31 @@ body:not(.tut-live) #tutCorgi {
         <span class="drawer-item-icon">◈</span>Progress Reports
       </button>
       <button class="drawer-item" id="drawerJournal">
-        <span class="drawer-item-icon">📓</span>Journal
+        <span class="drawer-item-icon"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 4h11a2 2 0 0 1 2 2v14H7a2 2 0 0 1-2-2V4z"/><path d="M5 4v14"/><path d="M9 8h6M9 12h6"/></svg></span>Journal
       </button>
       <button class="drawer-item" id="drawerPlayground">
-        <span class="drawer-item-icon">🧪</span>Playground
+        <span class="drawer-item-icon"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M10 3h4M11 3v6l-4.5 8A2 2 0 0 0 8.3 20h7.4a2 2 0 0 0 1.8-3L13 9V3"/><path d="M8.5 15h7"/></svg></span>Playground
       </button>
       <button class="drawer-item" id="drawerProfile">
-        <span class="drawer-item-icon">👤</span>Profile
+        <span class="drawer-item-icon"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="3.6"/><path d="M5 20c1.2-3.4 3.8-5 7-5s5.8 1.6 7 5"/></svg></span>Profile
       </button>
       <button class="drawer-item" id="drawerFaq">
-        <span class="drawer-item-icon">💬</span>FAQ
+        <span class="drawer-item-icon"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H9l-5 4V6z"/></svg></span>FAQ
       </button>
       <button class="drawer-item" id="drawerAbout">
         <span class="drawer-item-icon">◎</span>About
       </button>
       <button class="drawer-item" id="drawerSettings">
-        <span class="drawer-item-icon">⚙️</span>Settings
+        <span class="drawer-item-icon"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M12 2.8v2.6M12 18.6v2.6M2.8 12h2.6M18.6 12h2.6M5.5 5.5l1.8 1.8M16.7 16.7l1.8 1.8M18.5 5.5l-1.8 1.8M7.3 16.7l-1.8 1.8"/></svg></span>Settings
       </button>
       <button class="drawer-item" id="drawerDonate">
-        <span class="drawer-item-icon">☕</span>Donate
+        <span class="drawer-item-icon"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 8h11v7a4 4 0 0 1-4 4H9a4 4 0 0 1-4-4V8z"/><path d="M16 9.5h2a2.5 2.5 0 0 1 0 5h-2"/><path d="M8 4.5c0 1 .8 1 .8 2M11.5 4.5c0 1 .8 1 .8 2"/></svg></span>Donate
       </button>
       <button class="drawer-item" id="drawerGuide" style="display:none;">
         <span class="drawer-item-icon">✦</span>Prayer
       </button>
       <button class="drawer-item" id="drawerBardon" style="display:none;">
-        <span class="drawer-item-icon">📖</span>The Path <span style="color:var(--muted); font-size:10px;">(Idle game)</span>
+        <span class="drawer-item-icon"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 6c-1.6-1.4-3.8-2-6.5-2v14c2.7 0 4.9.6 6.5 2 1.6-1.4 3.8-2 6.5-2V4c-2.7 0-4.9.6-6.5 2z"/><path d="M12 6v14"/></svg></span>The Path <span style="color:var(--muted); font-size:10px;">(Idle game)</span>
       </button>
       <div class="drawer-divider"></div>
       <button class="drawer-item danger" id="drawerResetAll">
@@ -6963,10 +6994,23 @@ body:not(.tut-live) #tutCorgi {
 <div class="modal-overlay" id="confirmModal">
   <div class="modal-sheet" style="padding:24px 24px 32px;">
     <div id="confirmModalTitle" style="font-size:13px; letter-spacing:.05em; color:var(--text); margin-bottom:8px;"></div>
-    <div id="confirmModalText" style="font-size:11px; color:var(--muted); line-height:1.6; margin-bottom:20px;"></div>
+    <div id="confirmModalText" style="font-size:11px; color:var(--muted); line-height:1.6; margin-bottom:20px; white-space:pre-line;"></div>
     <div style="display:flex; gap:10px;">
       <button class="btn ghost" id="confirmModalCancel" style="flex:1;">Cancel</button>
       <button class="btn primary" id="confirmModalOk" style="flex:1; background:rgba(196,120,120,.15); border-color:rgba(196,120,120,.4); color:#c47a7a;">Confirm</button>
+    </div>
+  </div>
+</div>
+
+<!-- Reusable styled prompt (replaces window.prompt) -->
+<div class="modal-overlay" id="appPromptModal">
+  <div class="modal-sheet" style="padding:24px 24px 32px;">
+    <div id="appPromptTitle" style="font-family:'Cormorant Garamond',serif; font-size:20px; font-weight:300; color:var(--text); margin-bottom:6px;"></div>
+    <div id="appPromptText" style="font-size:11px; color:var(--muted); line-height:1.6; margin-bottom:14px;"></div>
+    <input id="appPromptInput" type="text" style="width:100%; box-sizing:border-box; background:rgba(255,255,255,.04); border:1px solid var(--border2); border-radius:9px; padding:12px 14px; color:var(--text); font-family:'Cormorant Garamond',serif; font-size:16px; outline:none; margin-bottom:18px;"/>
+    <div style="display:flex; gap:10px;">
+      <button class="btn ghost" id="appPromptCancel" style="flex:1;">Cancel</button>
+      <button class="btn primary" id="appPromptOk" style="flex:1; background:rgba(226,196,140,.14); border-color:rgba(226,196,140,.45); color:#e8cd94;">Save</button>
     </div>
   </div>
 </div>
@@ -7956,7 +8000,15 @@ function fmtInterval(sec) {
   return s ? m + 'm ' + s + 's' : m + 'm';
 }
 
-function showToast(msg, dur) { dur = dur || 2400; const t = document.getElementById('toast'); t.textContent = msg; t.classList.add('show'); setTimeout(function() { t.classList.remove('show'); }, dur); }
+function showToast(msg, dur, variant) {
+  dur = dur || 2400;
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  // Reward toasts glow gold automatically; explicit variant overrides.
+  var v = variant || (/\+\d[\d,]*\s*(XP|xp|akasha|Akasha|◆)/.test(msg) ? 'gold' : '');
+  t.className = 'toast show' + (v ? ' toast--' + v : '');
+  setTimeout(function() { t.classList.remove('show'); }, dur);
+}
 function clearStaleInteractionLocks() {
   var cap = document.getElementById('tutDrawerCapture');
   var tut = document.getElementById('tutOverlay');
@@ -8707,7 +8759,7 @@ document.getElementById('levelupContinue').addEventListener('click', function() 
 // HISTORY
 // ═══════════════════════════════════════
 
-function deleteSession(index) {
+function deleteSession(index, _c) {
   var h = state.history[index];
   if (!h) return;
   var xpLost = h.xpEarned || 0;
@@ -8725,7 +8777,7 @@ function deleteSession(index) {
       + getRankTitle(state.level) + ' (level ' + state.level + ') to '
       + getRankTitle(newLevel) + ' (level ' + newLevel + ').';
   }
-  if (!confirm(msg)) return;
+  if (!_c) { showConfirm('Delete Session', msg.replace('Delete this session?\n\n',''), function(){ deleteSession(index, true); }); return; }
   // Apply deletion
   state.history.splice(index, 1);
   state.xp = newXP;
@@ -9103,9 +9155,9 @@ document.getElementById('audUrlInput').addEventListener('keydown', function(e) {
 });
 
 document.getElementById('syncLogoutBtn').addEventListener('click', function() {
-  if (confirm('Sign out? Your progress is saved to the cloud and will be restored when you sign back in.')) {
+  showConfirm('Sign Out', 'Your progress is saved to the cloud and will be restored when you sign back in.', function() {
     authLogout({ clearLocalProgress: true });
-  }
+  });
 });
 
 document.getElementById('setUsernameBtn').addEventListener('click', async function() {
@@ -9712,6 +9764,26 @@ function showConfirm(title, text, onConfirm) {
   window._confirmCallback = onConfirm;
   document.getElementById('confirmModal').classList.add('show');
 }
+
+// Styled replacement for window.prompt — same overlay pattern as showConfirm.
+function showAppPrompt(title, text, initial, onSubmit) {
+  document.getElementById('appPromptTitle').textContent = title;
+  document.getElementById('appPromptText').textContent = text;
+  var input = document.getElementById('appPromptInput');
+  input.value = initial || '';
+  window._appPromptCallback = onSubmit;
+  document.getElementById('appPromptModal').classList.add('show');
+  setTimeout(function(){ input.focus(); }, 80);
+}
+document.getElementById('appPromptCancel').addEventListener('click', function() {
+  document.getElementById('appPromptModal').classList.remove('show');
+  window._appPromptCallback = null;
+});
+document.getElementById('appPromptOk').addEventListener('click', function() {
+  document.getElementById('appPromptModal').classList.remove('show');
+  var cb = window._appPromptCallback; window._appPromptCallback = null;
+  if (cb) cb(document.getElementById('appPromptInput').value);
+});
 
 document.getElementById('drawerResetAll').addEventListener('click', function() {
   closeDrawer();
@@ -11712,6 +11784,24 @@ function showSessionComplete(opts) {
   requestAnimationFrame(function() {
     requestAnimationFrame(function() { el.classList.add('sc-vis'); });
   });
+  // The reward numbers tick up from 0 — the payoff should feel earned, not
+  // merely stated. Only plain "+N" values animate; times/labels are left alone.
+  el.querySelectorAll('.tut-legend-card-value').forEach(function(vEl) {
+    var m = /^\+(\d+)$/.exec((vEl.textContent || '').trim());
+    if (!m) return;
+    var target = parseInt(m[1], 10);
+    if (!target || target > 100000) return;
+    var t0 = null;
+    function tick(ts) {
+      if (!t0) t0 = ts;
+      var k = Math.min(1, (ts - t0) / 650);
+      k = 1 - Math.pow(1 - k, 3); // ease-out
+      vEl.textContent = '+' + Math.round(target * k);
+      if (k < 1) requestAnimationFrame(tick);
+    }
+    vEl.textContent = '+0';
+    requestAnimationFrame(tick);
+  });
 }
 
 function tutFadeStage(buildFn) {
@@ -12330,7 +12420,7 @@ function recalcConcSessions(history) {
   return sessions;
 }
 
-function deleteConcSession(index) {
+function deleteConcSession(index, _c) {
   var h = concState.history[index];
   if (!h) return;
   var xpLost = h.xpEarned || 0;
@@ -12346,7 +12436,7 @@ function deleteConcSession(index) {
       + getConcRank(concState.level) + ' (level ' + concState.level + ') to '
       + getConcRank(newLevel) + ' (level ' + newLevel + ').';
   }
-  if (!confirm(msg)) return;
+  if (!_c) { showConfirm('Delete Session', msg.replace('Delete this session?\n\n',''), function(){ deleteConcSession(index, true); }); return; }
 
   // Remove session and recalculate totalSessions from remaining history
   // (don't blindly decrement — multiple exercises can share a single session)
@@ -14146,8 +14236,8 @@ document.getElementById('exerciseGrid').addEventListener('click', function(e) {
 });
 
 // ── Discard session (red X button on all session screens) ─
-function discardSession(type) {
-  if (!confirm('Discard this session? No data will be saved.')) return;
+function discardSession(type, _c) {
+  if (!_c) { showConfirm('Discard Session', 'No data will be saved.', function(){ discardSession(type, true); }); return; }
   switch (type) {
     case 'awareness':
       releaseExerciseWakeLock();
@@ -17306,8 +17396,8 @@ function renderPrayerHistory() {
   }).join('');
 }
 
-function deletePrayerHistoryEntry(idx) {
-  if (!confirm('Delete this prayer entry? This cannot be undone.')) return;
+function deletePrayerHistoryEntry(idx, _c) {
+  if (!_c) { showConfirm('Delete Entry', 'This prayer entry will be removed. This cannot be undone.', function(){ deletePrayerHistoryEntry(idx, true); }); return; }
   prayerState.history.splice(idx, 1);
   savePrayerState();
   renderPrayerHistory();
@@ -17359,11 +17449,11 @@ function setMantraTarget(n) {
 }
 
 function editMantra() {
-  var next = window.prompt('Your mantra — a phrase to repeat with each bead:', prayerState.mantraText || '');
-  if (next === null) return;
-  prayerState.mantraText = next.trim().slice(0, 160);
-  savePrayerState();
-  renderPrayerMantraCard();
+  showAppPrompt('Your Mantra', 'A phrase to repeat with each bead.', prayerState.mantraText || '', function(next) {
+    prayerState.mantraText = next.trim().slice(0, 160);
+    savePrayerState();
+    renderPrayerMantraCard();
+  });
 }
 
 function beginMantra() {
@@ -17437,8 +17527,8 @@ function completeMantra(beads) {
   switchMode('prayer');
 }
 
-function discardMantra() {
-  if (mantraCount > 0 && !confirm('Discard this mantra round? No beads will be saved.')) return;
+function discardMantra(_c) {
+  if (mantraCount > 0 && !_c) { showConfirm('Discard Mantra', 'No beads will be saved.', function(){ discardMantra(true); }); return; }
   releaseExerciseWakeLock();
   mantraStartMs = null;
   showScreen('homeScreen');
@@ -19188,7 +19278,7 @@ function omniaConfirmPrestige() {
     + 'Omnia returns to Step I and rebuilds her three bodies from the beginning — '
     + 'but keeps all akasha, upgrades, cosmetics, level and your streak.\n\n'
     + 'Permanent boon: +' + (25 * next) + '% akasha, and every step requirement ahead is eased.';
-  if (window.confirm(msg)) omniaPrestige();
+  showConfirm('Begin the ' + _prestigeOrdinal(next).charAt(0).toUpperCase() + _prestigeOrdinal(next).slice(1) + ' Turning?', msg.split('?\n\n')[1] || msg, omniaPrestige);
 }
 
 function showPrestigeCeremony(n) {
@@ -19575,7 +19665,7 @@ function omniaConfirmEarlyEnd(exId, elapsedSec, onProceed, recSecOverride) {
     msg += ", and you'll forfeit the body-level award waiting on this exercise";
   }
   msg += ".\n\nEnd anyway?";
-  if (window.confirm(msg)) onProceed();
+  showConfirm('End Early?', msg, onProceed);
 }
 
 function awardOmniaForExercise(exId, seconds, reachedRec) {
@@ -27352,8 +27442,8 @@ function showModal(title,text,onContinue){
 
 function render(){renderSidebar();renderChoices();}
 
-function newGame(){
-  if(!confirm('Begin again? All progress will be lost.'))return;
+function newGame(_c){
+  if(!_c){ showConfirm('Begin Again', 'All progress will be lost.', function(){ newGame(true); }); return; }
   localStorage.removeItem('bardon_rpg_v2');
   G=defaultState();
   window.bardonInitialized = false;
@@ -31109,8 +31199,9 @@ async function declineFriend(userId) {
   } catch(e) {}
 }
 
-async function removeFriend(userId) {
-  if (!authToken || !confirm('Remove this friend?')) return;
+async function removeFriend(userId, _c) {
+  if (!authToken) return;
+  if (!_c) { showConfirm('Remove Friend', 'They will be removed from your Streak Society.', function(){ removeFriend(userId, true); }); return; }
   try {
     await fetch(SYNC_API_URL + '/friends/decline', {
       method:'POST', headers:{'Content-Type':'application/json','Authorization':'Bearer ' + authToken},
