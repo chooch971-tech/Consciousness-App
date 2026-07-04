@@ -433,7 +433,7 @@
     .b2-body-lvl { font-family:'Cormorant Garamond',serif; font-size:26px; font-weight:300; color:var(--text); line-height:1.1; text-shadow:0 0 14px color-mix(in srgb, var(--b2c) 45%, transparent); }
     .b2-body-desc { font-size:8.5px; color:var(--muted); line-height:1.5; margin:3px 0 8px; min-height:26px; }
         /* ── Prestige (Turnings of the Wheel) ── */
-    .oe-prestige-btn { width:100%; margin-top:9px; padding:12px; border-radius:11px; border:1px solid rgba(226,196,140,.5); background:rgba(226,196,140,.07); color:#e8cd94; cursor:pointer; display:flex; flex-direction:column; align-items:center; gap:3px; }
+    .oe-prestige-btn { width:100%; margin-top:14px; padding:13px 12px 14px; border-radius:11px; border:1px solid rgba(226,196,140,.5); background:rgba(226,196,140,.07); color:#e8cd94; cursor:pointer; display:flex; flex-direction:column; align-items:center; gap:3px; }
     .oe-prestige-btn .pb-main { font-family:'Cormorant Garamond',serif; font-size:18px; font-weight:300; letter-spacing:.22em; text-transform:uppercase; line-height:1; }
     .oe-prestige-btn .pb-note { font-family:'DM Mono',monospace; font-size:8px; letter-spacing:.18em; text-transform:uppercase; color:var(--muted); }
     .oe-prestige-btn.locked { border-color:var(--border); background:rgba(255,255,255,.02); }
@@ -12027,7 +12027,7 @@ function maybeShowWelcomeBack() {
     try { localStorage.setItem('presence_last_seen_ms', String(now)); } catch(e) {}
     var awayMs = last ? Math.max(0, now - last) : 0;
     var offeringUnclaimed = localStorage.getItem('presence_offering_day') !== _wbTodayKey();
-    var longAway = awayMs >= 3 * 3600 * 1000;
+    var longAway = awayMs >= 8 * 3600 * 1000;
     if (!offeringUnclaimed && !longAway) return;
 
     // What ripened while away (display estimates; the reservoir is the truth).
@@ -20533,7 +20533,16 @@ function renderOmniaEngine() {
     advanceBtn.textContent = next ? ('Advance to Step ' + next.roman) : 'All Steps Complete';
     advanceBtn.style.display = (!next && canPrestige) ? 'none' : '';
     var prestigeBtn = document.getElementById('omniaPrestigeBtn');
-    if (prestigeBtn) prestigeBtn.classList.toggle('locked', !canPrestige);
+    if (prestigeBtn) {
+      // Only surface Prestige when it's actually on the horizon — the final
+      // Bardon step (Book I) or once all tools are consecrated (Book II).
+      // Showing a locked Prestige card back at Step IV was premature clutter.
+      var _atFinalStretch = (omniaState.prestige || 0) >= PRESTIGE_BOOK2
+        ? (typeof bookIICurrentToolIdx === 'function' && bookIICurrentToolIdx() >= BOOK2_TOOLS.length)
+        : !next;
+      prestigeBtn.style.display = (canPrestige || _atFinalStretch) ? '' : 'none';
+      prestigeBtn.classList.toggle('locked', !canPrestige);
+    }
   }
   var pipsEl = document.getElementById('omniaPrestigePips');
   if (pipsEl) {
