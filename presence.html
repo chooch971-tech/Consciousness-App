@@ -433,10 +433,11 @@
     .b2-body-lvl { font-family:'Cormorant Garamond',serif; font-size:26px; font-weight:300; color:var(--text); line-height:1.1; text-shadow:0 0 14px color-mix(in srgb, var(--b2c) 45%, transparent); }
     .b2-body-desc { font-size:8.5px; color:var(--muted); line-height:1.5; margin:3px 0 8px; min-height:26px; }
         /* ── Prestige (Turnings of the Wheel) ── */
-    .oe-prestige-btn { width:100%; margin-top:9px; padding:13px 12px 11px; border-radius:12px; border:1px solid rgba(226,196,140,.55); background:linear-gradient(100deg,#6a4f8e 0%,#b89a5e 52%,#6a4f8e 100%); background-size:200% 100%; color:#fff6e2; cursor:pointer; display:flex; flex-direction:column; align-items:center; gap:3px; box-shadow:0 4px 26px rgba(180,150,90,.34), inset 0 1px 0 rgba(255,255,255,.3), inset 0 0 24px -14px #ffe9b8; animation:oePrestigeShine 5s linear infinite; }
-    .oe-prestige-btn .pb-main { font-family:'Cormorant Garamond',serif; font-size:21px; font-weight:300; letter-spacing:.2em; text-transform:uppercase; line-height:1; text-shadow:0 0 16px rgba(255,233,184,.55); }
-    .oe-prestige-btn .pb-note { font-family:'DM Mono',monospace; font-size:8px; letter-spacing:.2em; text-transform:uppercase; color:rgba(255,246,226,.75); }
-    @keyframes oePrestigeShine { to { background-position:200% 0; } }
+    .oe-prestige-btn { width:100%; margin-top:9px; padding:12px; border-radius:11px; border:1px solid rgba(226,196,140,.5); background:rgba(226,196,140,.07); color:#e8cd94; cursor:pointer; display:flex; flex-direction:column; align-items:center; gap:3px; }
+    .oe-prestige-btn .pb-main { font-family:'Cormorant Garamond',serif; font-size:18px; font-weight:300; letter-spacing:.22em; text-transform:uppercase; line-height:1; }
+    .oe-prestige-btn .pb-note { font-family:'DM Mono',monospace; font-size:8px; letter-spacing:.18em; text-transform:uppercase; color:var(--muted); }
+    .oe-prestige-btn.locked { border-color:var(--border); background:rgba(255,255,255,.02); }
+    .oe-prestige-btn.locked .pb-main { color:var(--muted); opacity:.7; }
     .oe-prestige-btn:active { transform:scale(.985); }
     .oe-prestige-pips { color:#e8cd94; letter-spacing:.06em; }
     .oe-prestige-pips-mark { text-shadow:0 0 8px rgba(226,196,140,.6); cursor:help; }
@@ -679,6 +680,22 @@
     .toast--gold { border-color:rgba(226,196,140,.5); color:#e8cd94; box-shadow:0 0 18px -6px rgba(226,196,140,.5); }
     .toast--violet { border-color:rgba(196,168,220,.5); color:#d8c4f4; }
     .toast--teal { border-color:rgba(126,184,164,.5); color:#9ed8c0; }
+
+    /* ── Welcome back + Morning Offering ── */
+    #wbOverlay { position:fixed; inset:0; z-index:9790; background:rgba(7,8,13,.96); display:flex; flex-direction:column; align-items:center; justify-content:center; padding:28px; opacity:0; transition:opacity .45s ease; }
+    #wbOverlay.vis { opacity:1; }
+    .wb-card { position:relative; overflow:hidden; width:100%; max-width:330px; border:1px solid rgba(196,168,220,.3); border-radius:18px; padding:24px 20px 18px; background:linear-gradient(160deg,#1e1830 0%,#141020 60%,#100c18 100%); box-shadow:0 0 40px rgba(155,142,196,.14), inset 0 1px 0 rgba(255,255,255,.05); text-align:center; }
+    .wb-kicker { font-family:'DM Mono',monospace; font-size:9px; letter-spacing:.3em; text-transform:uppercase; color:rgba(214,196,240,.7); margin-bottom:6px; }
+    .wb-title { font-family:'Cormorant Garamond',serif; font-size:26px; font-weight:300; color:#efe6fa; margin-bottom:14px; }
+    .wb-lines { text-align:left; display:flex; flex-direction:column; gap:9px; margin-bottom:6px; }
+    .wb-line { display:flex; gap:10px; align-items:baseline; font-size:11.5px; color:rgba(224,214,240,.85); line-height:1.5; }
+    .wb-line i { font-style:normal; flex-shrink:0; width:16px; text-align:center; }
+    .wb-offering { margin-top:12px; padding-top:14px; border-top:1px solid rgba(255,255,255,.07); }
+    .wb-orb { width:52px; height:52px; margin:0 auto 8px; border-radius:50%; background:radial-gradient(circle at 38% 32%, #fff2cf 0%, #e8cd94 45%, #8a6a28 100%); box-shadow:0 0 18px rgba(232,205,148,.7), 0 0 40px rgba(232,205,148,.3); animation:scoPulse 2.8s ease-in-out infinite; }
+    .wb-verse { font-family:'Cormorant Garamond',serif; font-style:italic; font-size:14.5px; color:#d8cbe8; line-height:1.55; margin-bottom:11px; }
+    .wb-claim { width:100%; padding:13px; border-radius:10px; border:1px solid rgba(226,196,140,.5); background:linear-gradient(100deg, rgba(201,171,110,.2), rgba(226,196,140,.12)); color:#e8cd94; font-family:'DM Mono',monospace; font-size:10px; letter-spacing:.2em; text-transform:uppercase; cursor:pointer; }
+    .wb-claimed { font-family:'DM Mono',monospace; font-size:10px; letter-spacing:.18em; text-transform:uppercase; color:#9ed8c0; padding:12px; }
+    .wb-continue { margin-top:12px; background:none; border:none; color:var(--muted); font-family:'DM Mono',monospace; font-size:9px; letter-spacing:.2em; text-transform:uppercase; cursor:pointer; padding:8px; }
 
     /* Gentle fade on every screen entry (opacity only — transforms would break
        position:fixed children like the session timers). */
@@ -5696,7 +5713,7 @@ body:not(.tut-live) #tutCorgi {
         <div class="oe-session-progress" id="omniaSessionProgress"></div>
         <button class="oe-advance-btn" id="omniaAdvanceBtn">Advance Step</button>
       </div>
-      <button class="oe-prestige-btn" id="omniaPrestigeBtn" style="display:none;" onclick="omniaConfirmPrestige()"><span class="pb-main">✦ &nbsp;Prestige&nbsp; ✦</span><span class="pb-note">Unlock Dark Matter at Prestige 3</span></button>
+      <button class="oe-prestige-btn" id="omniaPrestigeBtn" onclick="omniaConfirmPrestige()"><span class="pb-main">Prestige</span><span class="pb-note">Unlock Dark Matter at Prestige 3</span></button>
       <div class="oe-turnings" id="omniaTurnings"></div>
 
       <!-- Secondary sections -->
@@ -8162,6 +8179,7 @@ document.addEventListener('DOMContentLoaded', function() {
   setTimeout(clearStaleInteractionLocks, 250);
   setTimeout(clearStaleInteractionLocks, 1000);
   if (typeof checkStreakStatus === 'function') checkStreakStatus();
+  setTimeout(function() { try { maybeShowWelcomeBack(); } catch(e) {} }, 1100);
   if (typeof checkRemindersOnLoad === 'function') checkRemindersOnLoad();
   // Apply saved entity/palette cosmetics to the guide banner and drawer icon
   // on every page load so Seraph/etc. show immediately without visiting Upgrade.
@@ -11963,6 +11981,105 @@ function _tutDisablePostMode() {
   if (bk) bk.style.display = 'none';
 }
 /* ─────────────────────────────────────────────────────────────────── */
+
+// ── Welcome back + Morning Offering ─────────────────────
+// Returning after hours away (or on the first open of the day) is greeted
+// with what ripened in the absence: akasha gathered by the well, tools that
+// finished resting, the streak still burning — and, once per day, Omnia's
+// Offering: a small streak-scaled akasha gift with a word from her.
+var WB_VERSES = [
+  'I gathered this while you slept. Now gather yourself.',
+  'The current never stopped. Neither did I.',
+  'A little light, saved from the night, for the one who returns.',
+  'Every return is a small vow renewed. Take this.',
+  'The well remembers you. So do I.',
+  'What you left burning, I tended. Begin again.',
+  'Stillness earned this. Sit, and earn more.'
+];
+function _wbTodayKey() { return new Date().toISOString().slice(0, 10); }
+function morningOfferingAmount() {
+  return Math.min(500, 150 + 25 * ((typeof state !== 'undefined' && state.streak) || 0));
+}
+function claimMorningOffering() {
+  var today = _wbTodayKey();
+  if (localStorage.getItem('presence_offering_day') === today) return;
+  try { localStorage.setItem('presence_offering_day', today); } catch(e) {}
+  var gift = morningOfferingAmount();
+  omniaState.akasha = (omniaState.akasha || 0) + gift;
+  omniaState.totalAkashaEarned = (omniaState.totalAkashaEarned || 0) + gift;
+  saveOmniaState();
+  if (syncEnabled && authToken) syncPushData();
+  showToast('+' + gift + ' akasha · Omnia\u2019s offering', 3000, 'gold');
+  var blk = document.getElementById('wbOffering');
+  if (blk) blk.innerHTML = '<div class="wb-claimed">\u2726 Received \u00b7 +' + gift + ' akasha</div>';
+  if (typeof renderOmniaEngine === 'function' && document.getElementById('omniaEngine')) { try { renderOmniaEngine(); } catch(e) {} }
+}
+function maybeShowWelcomeBack() {
+  try {
+    if (!localStorage.getItem('presence_visited')) return;            // not mid-tutorial
+    if (document.body.classList.contains('tut-live')) return;
+    if (document.getElementById('wbOverlay')) return;
+    var now = Date.now();
+    var last = parseInt(localStorage.getItem('presence_last_seen_ms'), 10) || 0;
+    try { localStorage.setItem('presence_last_seen_ms', String(now)); } catch(e) {}
+    var awayMs = last ? Math.max(0, now - last) : 0;
+    var offeringUnclaimed = localStorage.getItem('presence_offering_day') !== _wbTodayKey();
+    var longAway = awayMs >= 3 * 3600 * 1000;
+    if (!offeringUnclaimed && !longAway) return;
+
+    // What ripened while away (display estimates; the reservoir is the truth).
+    var lines = [];
+    if (awayMs >= 30 * 60 * 1000 && typeof omniaRatePerHour === 'function') {
+      var est = Math.floor((awayMs / 3600000) * omniaRatePerHour() * (typeof omniaPrestigeMult === 'function' ? omniaPrestigeMult() : 1));
+      est = Math.min(est, typeof omniaReservoirCap === 'function' ? omniaReservoirCap() : est);
+      if (est > 0) lines.push('<div class="wb-line"><i style="color:#b8eaff;">\u25CF</i>The well gathered ~' + est.toLocaleString() + ' akasha in your absence</div>');
+    }
+    if (typeof state !== 'undefined' && (state.streak || 0) > 0) {
+      lines.push('<div class="wb-line"><i style="color:#e8a060;">\u2727</i>Your ' + state.streak + '-day flame still burns \u2014 practice today to keep it</div>');
+    }
+    if (typeof bookIICurrentToolIdx === 'function' && typeof darkMatterUnlocked === 'function' && darkMatterUnlocked()) {
+      var ti = bookIICurrentToolIdx();
+      if (ti < BOOK2_TOOLS.length) {
+        var tst = bookIIToolState(BOOK2_TOOLS[ti].id);
+        if (tst.readyAt && tst.readyAt <= now && tst.readyAt > last) {
+          lines.push('<div class="wb-line"><i style="color:#e8cd94;">' + BOOK2_TOOLS[ti].g + '</i>The ' + BOOK2_TOOLS[ti].name + ' has rested \u2014 ' + TOOL_PHASES[tst.p] + ' awaits</div>');
+        }
+      }
+      var b2 = omniaState.bookII || {};
+      if (b2.sphereReadyAt && b2.sphereReadyAt <= now && b2.sphereReadyAt > last && (b2.sphere || 0) < BOOK2_SPHERES.length) {
+        lines.push('<div class="wb-line"><i style="color:#c4a8d4;">' + BOOK2_SPHERES[b2.sphere].sym + '</i>The way to the ' + BOOK2_SPHERES[b2.sphere].name + ' is open again</div>');
+      }
+    }
+    if (!lines.length && !offeringUnclaimed) return; // nothing to say
+
+    var verse = WB_VERSES[Math.floor(Math.random() * WB_VERSES.length)];
+    var offeringHtml = offeringUnclaimed
+      ? '<div class="wb-offering" id="wbOffering">'
+        + '<div class="wb-orb"></div>'
+        + '<div class="wb-kicker">Omnia\u2019s Offering</div>'
+        + '<div class="wb-verse">\u201C' + verse + '\u201D</div>'
+        + '<button class="wb-claim" onclick="claimMorningOffering()">Receive \u00b7 +' + morningOfferingAmount() + ' akasha</button>'
+        + '</div>'
+      : '';
+    var el = document.createElement('div');
+    el.id = 'wbOverlay';
+    el.innerHTML = '<div class="wb-card">'
+      + '<div class="wb-kicker">' + (longAway ? 'While you were away' : 'A new day') + '</div>'
+      + '<div class="wb-title">Welcome back</div>'
+      + (lines.length ? '<div class="wb-lines">' + lines.join('') + '</div>' : '')
+      + offeringHtml
+      + '<button class="wb-continue" onclick="(function(o){o.classList.remove(\'vis\');setTimeout(function(){o.remove();},450);})(document.getElementById(\'wbOverlay\'))">Continue \u2192</button>'
+      + '</div>';
+    document.body.appendChild(el);
+    requestAnimationFrame(function(){ requestAnimationFrame(function(){ el.classList.add('vis'); }); });
+  } catch(e) {}
+}
+// Keep the away-clock honest whenever the app goes to background.
+document.addEventListener('visibilitychange', function() {
+  if (document.visibilityState === 'hidden') {
+    try { localStorage.setItem('presence_last_seen_ms', String(Date.now())); } catch(e) {}
+  }
+});
 
 function showStreakCelebration() {
   var el = document.getElementById('streakCelebOverlay');
@@ -19740,7 +19857,12 @@ function _prestigeRoman(n){ return ['','I','II','III','IV','V','VI','VII','VIII'
 function _prestigeOrdinal(n){ return ['zeroth','first','second','third','fourth','fifth','sixth','seventh','eighth','ninth','tenth'][n] || (n+'th'); }
 
 function omniaConfirmPrestige() {
-  if (!omniaCanPrestige()) return;
+  if (!omniaCanPrestige()) {
+    showToast((omniaState.prestige || 0) >= PRESTIGE_BOOK2
+      ? 'You must reach Pluto to Prestige'
+      : 'You need to reach Step X to Prestige', 3000);
+    return;
+  }
   var next = (omniaState.prestige || 0) + 1;
   var msg = 'Begin the ' + _prestigeOrdinal(next) + ' Turning of the Wheel?\n\n'
     + 'Omnia returns to Step I and rebuilds her three bodies from the beginning — '
@@ -20395,15 +20517,7 @@ function renderOmniaEngine() {
     advanceBtn.textContent = next ? ('Advance to Step ' + next.roman) : 'All Steps Complete';
     advanceBtn.style.display = (!next && canPrestige) ? 'none' : '';
     var prestigeBtn = document.getElementById('omniaPrestigeBtn');
-    var _pShow = canPrestige;
-    if (prestigeBtn) {
-      prestigeBtn.style.display = _pShow ? '' : 'none';
-      var _pcNow = omniaState.prestige || 0;
-      var _pbNote = _pcNow >= PRESTIGE_BOOK2 ? 'Dark Matter flows · +' + Math.round((omniaPrestigeMult() - 1) * 100 + 25) + '% akasha next'
-        : _pcNow === PRESTIGE_BOOK2 - 1 ? 'This Prestige unlocks Dark Matter'
-        : 'Unlock Dark Matter at Prestige 3';
-      prestigeBtn.innerHTML = '<span class="pb-main">✦ &nbsp;Prestige&nbsp; ✦</span><span class="pb-note">' + _pbNote + '</span>';
-    }
+    if (prestigeBtn) prestigeBtn.classList.toggle('locked', !canPrestige);
   }
   var pipsEl = document.getElementById('omniaPrestigePips');
   if (pipsEl) {
