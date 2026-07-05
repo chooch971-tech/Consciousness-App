@@ -168,85 +168,110 @@ function discIcon(name, cx, cy, size, c) {
   if (name === 'visual')    inner = P('M2.6 12S6 5.8 12 5.8 21.4 12 21.4 12 18 18.2 12 18.2 2.6 12 2.6 12z') + C(12,12,2.6) + C(12,12,0.9,true);
   if (name === 'auditory')  inner = C(5.5,12,1.2,true) + P('M8.5 9a4.4 4.4 0 0 1 0 6') + P('M11.5 6.5a8.2 8.2 0 0 1 0 11') + P('M14.5 4a12.2 12.2 0 0 1 0 16');
   if (name === 'thought')   inner = C(12,12,8.4) + C(12,12,1.6,true);
+  if (name === 'soulmirror') inner = C(12,9.6,6.2) + P('M12 15.8v4.6M9.2 20.4h5.6') + P('M9.2 7.6c.7-1.5 2.1-2.4 3.6-2.3');
   if (name === 'asana')     inner = C(12,5.6,2.6) + P('M12 8.6c-2.6 0-4.4 1.8-5.2 4.4L4 17.4c2.4 1.6 5.2 2.4 8 2.4s5.6-.8 8-2.4l-2.8-4.4c-.8-2.6-2.6-4.4-5.2-4.4z') + P('M8.6 15.4h6.8');
   return `<g transform="translate(${cx - size / 2}, ${cy - size / 2}) scale(${s})">${inner}</g>`;
 }
 
-// ── card 2: six disciplines ──────────────────────────────────────────────────
+// ── card 2: the exercises, styled like the in-game cards ────────────────────
+
+const INK = '#f2ede3';
+const INK2 = 'rgba(232,227,216,0.66)';
 
 function card2() {
-  const tiles = [
-    { id:'awareness', name: 'Awareness',      sub: 'RETURN TO NOW',   c: ACCENT },
-    { id:'clock',     name: 'The Clock',      sub: 'UNBROKEN FOCUS',  c: AMBER },
-    { id:'visual',    name: 'Visualization',  sub: 'THE INNER EYE',   c: PURPLE },
-    { id:'auditory',  name: 'Auditory',       sub: 'THE INNER EAR',   c: '#d4b08e' },
-    { id:'thought',   name: 'Thought Control',sub: 'MASTER THE MIND', c: '#8ecce0' },
-    { id:'asana',     name: 'Asana',          sub: 'STILL THE BODY',  c: ROSE },
+  // In-game exercise cards: stacked full-width, per-exercise accent tint.
+  const rows = [
+    { id:'clock',      name: 'The Clock',       sub: 'UNBROKEN FOCUS',  c: '#e07c3a' },
+    { id:'visual',     name: 'Visualization',   sub: 'THE INNER EYE',   c: '#6e9fd4' },
+    { id:'auditory',   name: 'Auditory',        sub: 'THE INNER EAR',   c: '#6eb8a4' },
+    { id:'thought',    name: 'Thought Control', sub: 'MASTER THE MIND', c: '#7898b8' },
+    { id:'asana',      name: 'Asana',           sub: 'STILL THE BODY',  c: '#c47878' },
+    { id:'soulmirror', name: 'Soul Mirror',     sub: 'KNOW THYSELF',    c: '#a47eb8' },
   ];
-  const gx = 110, gw = W - gx * 2, gap = 34;
-  const tw = (gw - gap) / 2, th = 396;
+  const x = 140, w = W - 280, rh = 252, gap = 30;
   let defs = '', g = '';
-  tiles.forEach((t, i) => {
-    const col = i % 2, row = (i / 2) | 0;
-    const x = gx + col * (tw + gap), y = 930 + row * (th + gap);
-    defs += `<linearGradient id="t${i}g" x1="0" y1="0" x2="0.6" y2="1">
-      <stop offset="0" stop-color="${t.c}" stop-opacity="0.13"/>
-      <stop offset="1" stop-color="${t.c}" stop-opacity="0.03"/></linearGradient>`;
+  rows.forEach((r, i) => {
+    const y = 900 + i * (rh + gap);
+    defs += `<linearGradient id="r${i}g" x1="0" y1="0" x2="0.7" y2="1">
+      <stop offset="0" stop-color="${r.c}" stop-opacity="0.20"/>
+      <stop offset="1" stop-color="${r.c}" stop-opacity="0.06"/></linearGradient>`;
     g += `
-    <rect x="${x}" y="${y}" width="${tw}" height="${th}" rx="30" fill="url(#t${i}g)"/>
-    <rect x="${x}" y="${y}" width="${tw}" height="${th}" rx="30" fill="none" stroke="${t.c}" stroke-opacity="0.38" stroke-width="2"/>
-    <rect x="${x + tw * 0.18}" y="${y + 1}" width="${tw * 0.64}" height="2" fill="#ffffff" opacity="0.08"/>
-    <rect x="${x + tw / 2 - 52}" y="${y + 52}" width="104" height="104" rx="26" fill="${t.c}" opacity="0.13"/>
-    <rect x="${x + tw / 2 - 52}" y="${y + 52}" width="104" height="104" rx="26" fill="none" stroke="${t.c}" stroke-opacity="0.42" stroke-width="2"/>
-    ${discIcon(t.id, x + tw / 2, y + 104, 62, t.c)}
-    ${serif(x + tw / 2, y + 262, 60, TEXT, t.name)}
-    ${mono(x + tw / 2, y + 326, 25, MUTED, t.sub, 5)}`;
+    <rect x="${x}" y="${y}" width="${w}" height="${rh}" rx="26" fill="url(#r${i}g)"/>
+    <rect x="${x}" y="${y}" width="${w}" height="${rh}" rx="26" fill="none" stroke="${r.c}" stroke-opacity="0.55" stroke-width="2.5"/>
+    <rect x="${x + w * 0.12}" y="${y + 1}" width="${w * 0.56}" height="2" fill="#ffffff" opacity="0.10"/>
+    <rect x="${x + 56}" y="${y + rh / 2 - 52}" width="104" height="104" rx="26" fill="${r.c}" opacity="0.20"/>
+    <rect x="${x + 56}" y="${y + rh / 2 - 52}" width="104" height="104" rx="26" fill="none" stroke="${r.c}" stroke-opacity="0.6" stroke-width="2"/>
+    ${discIcon(r.id, x + 108, y + rh / 2, 60, r.c)}
+    ${serif(x + 210, y + rh / 2 + 2, 62, INK, r.name, 'start')}
+    ${mono(x + 213, y + rh / 2 + 62, 26, INK2, r.sub, 5, 'start')}`;
   });
   return shell(`
   <defs>${defs}</defs>
   ${wordmark(300)}
-  ${serif(W / 2, 530, 116, TEXT, 'Six disciplines.')}
-  ${serif(W / 2, 670, 116, ACCENT, 'One path.', 'middle', 'font-style="italic"')}
-  ${mono(W / 2, 800, 36, MUTED, 'CLASSICAL CONCENTRATION TRAINING, MADE DAILY', 5)}
+  ${serif(W / 2, 530, 116, INK, 'Interactive,')}
+  ${serif(W / 2, 670, 116, ACCENT, 'occult exercises.', 'middle', 'font-style="italic"')}
   ${g}
-  ${mono(W / 2, 2400, 34, FAINT, 'EACH SESSION MEASURED · EVERY REP COUNTS', 6)}
   `, 19);
 }
 
-// ── card 3: meet Omnia — she visibly grows ───────────────────────────────────
+// ── card 3: meet Omnia — grown with the app's real step regalia ──────────────
 
 function card3() {
-  const BASE = 1760; // shared baseline for the three crystals
+  const BASE = 1760;
   const forms = [
     { cx: 250,  w: 230, label: 'DAY ONE' },
     { cx: 645,  w: 330, label: 'STEP V' },
     { cx: 1035, w: 470, label: 'STEP X' },
   ];
   const at = (idp, f) => crystalAt(idp, f.cx, BASE - (130 * (f.w / 80)) / 2, f.w);
+  const midCy = BASE - 130 * (forms[1].w / 80) / 2;
+  const bigCy = BASE - 130 * (forms[2].w / 80) / 2;
+  const cx2 = forms[1].cx, cx3 = forms[2].cx;
+  const top3 = BASE - 130 * (forms[2].w / 80);
 
-  // Step V adornment: the triad shards on a tilted orbit ring.
+  // In-game tiers, cumulative:
+  // II triad shards · III crown glow · IV polar pillars · V element wheel
   const shardCols = ['#e8b8a0', '#c4a8d4', '#a8c8e8'];
   const orbit = (cx, cy, rx, ry) => {
-    let o = `<ellipse cx="${cx}" cy="${cy}" rx="${rx}" ry="${ry}" fill="none" stroke="#b8eaff" stroke-opacity="0.25" stroke-width="1.6" stroke-dasharray="3 9"/>`;
+    let o = `<ellipse cx="${cx}" cy="${cy}" rx="${rx}" ry="${ry}" fill="none" stroke="#b8eaff" stroke-opacity="0.3" stroke-width="1.6" stroke-dasharray="3 9"/>`;
     [[0.06, -1], [0.5, 1.06], [0.88, -0.72]].forEach((p, i) => {
       const a = p[0] * Math.PI * 2, sx = cx + Math.cos(a) * rx, sy = cy + Math.sin(a) * ry * p[1];
       o += `<polygon points="${sx},${sy - 13} ${sx + 11},${sy - 4} ${sx + 7},${sy + 12} ${sx - 7},${sy + 12} ${sx - 11},${sy - 4}" fill="${shardCols[i]}" opacity="0.95" filter="url(#soft)"/>`;
     });
     return o;
   };
-
-  // Step X adornment: gold crown-glow + drawn diadem stars + polar pillars.
-  const cx3 = forms[2].cx, top3 = BASE - 130 * (forms[2].w / 80);
-  const crownGlow = `<ellipse cx="${cx3}" cy="${top3 + 8}" rx="120" ry="74" fill="${GOLD}" opacity="0.16" filter="url(#soft)"/>`;
+  const elements = (cx, cy, rx, ry, r) => {
+    const cols = ['#ff8b4d', '#f5e29a', '#6bb8ff', '#8fc880']; // fire air water earth
+    let e = `<ellipse cx="${cx}" cy="${cy}" rx="${rx}" ry="${ry}" fill="none" stroke="#f5e29a" stroke-opacity="0.18" stroke-width="1.4"/>`;
+    [[0, -1], [1, 0], [0, 1], [-1, 0]].forEach((d, i) => {
+      const ex = cx + d[0] * rx, ey = cy + d[1] * ry;
+      e += `<circle cx="${ex}" cy="${ey}" r="${r}" fill="${cols[i]}" filter="url(#soft)"/>
+            <circle cx="${ex}" cy="${ey}" r="${r * 1.9}" fill="${cols[i]}" opacity="0.14"/>`;
+    });
+    return e;
+  };
+  const crownGlow = (cx, cy, rx, ry, o) =>
+    `<ellipse cx="${cx}" cy="${cy}" rx="${rx}" ry="${ry}" fill="${GOLD}" opacity="${o}" filter="url(#soft)"/>`;
+  const pillar = (px, h) => `<rect x="${px - 5}" y="${BASE - h - 50}" width="10" height="${h}" rx="5" fill="url(#pillarG)" opacity="0.7"/>`;
+  // X: apotheosis mandala + mirror disc
+  const apo = () => {
+    let a = '';
+    [[210, 0.28], [260, 0.20], [310, 0.13]].forEach((rr) => {
+      a += `<circle cx="${cx3}" cy="${bigCy}" r="${rr[0]}" fill="none" stroke="${GOLD}" stroke-opacity="${rr[1]}" stroke-width="1.6"/>`;
+    });
+    for (let i = 0; i < 12; i++) {
+      const an = (i / 12) * Math.PI * 2;
+      a += `<circle cx="${cx3 + Math.cos(an) * 310}" cy="${bigCy + Math.sin(an) * 310}" r="5" fill="#ffeec8" opacity="0.8"/>`;
+    }
+    return a;
+  };
   const diadem =
     star4(cx3 - 84, top3 + 30, 12, '#f4e8c0', 0.75) +
     star4(cx3 - 44, top3 + 2, 15, '#f4e8c0', 0.9) +
     star4(cx3, top3 - 12, 19, '#fff2cf', 1) +
     star4(cx3 + 44, top3 + 2, 15, '#f4e8c0', 0.9) +
     star4(cx3 + 84, top3 + 30, 12, '#f4e8c0', 0.75);
-  const pillar = (px) => `<rect x="${px - 5}" y="${BASE - 430}" width="10" height="380" rx="5" fill="url(#pillarG)" opacity="0.7"/>`;
 
-  // palette shown as cut gems, not flat dots
   const palette = ['#b8eaff', '#ffc4d8', '#f0d39a', '#c4a8d4', '#98d8bd', '#e8554f'];
   let gems = '';
   palette.forEach((c, i) => {
@@ -264,22 +289,29 @@ function card3() {
   </defs>
   <ellipse cx="${W / 2}" cy="1440" rx="640" ry="660" fill="url(#glow)"/>
   ${wordmark(300)}
-  ${serif(W / 2, 530, 124, TEXT, `Meet <tspan fill="${BLUE}">Omnia</tspan>.`)}
-  ${serif(W / 2, 680, 72, MUTED, 'A living guide that grows as you do.', 'middle', 'font-style="italic"')}
+  ${serif(W / 2, 530, 124, INK, `Meet <tspan fill="${BLUE}">Omnia</tspan>.`)}
+  ${serif(W / 2, 680, 72, 'rgba(232,227,216,0.72)', 'A living guide that grows as you do.', 'middle', 'font-style="italic"')}
   <g opacity="0.8">${at('c3a', forms[0])}</g>
-  ${orbit(forms[1].cx, BASE - 130 * (forms[1].w / 80) / 2, 250, 84)}
+  ${elements(cx2, midCy, 190, 64, 11)}
+  ${orbit(cx2, midCy, 152, 52)}
+  ${pillar(cx2 - 128, 250)}${pillar(cx2 + 128, 250)}
+  ${crownGlow(cx2, midCy - 130 * (forms[1].w / 80) / 2 + 6, 68, 40, 0.13)}
   ${at('c3b', forms[1])}
-  ${pillar(cx3 - 185)}${pillar(cx3 + 185)}
+  ${apo()}
+  ${elements(cx3, bigCy, 208, 76, 13)}
+  ${pillar(cx3 - 185, 380)}${pillar(cx3 + 185, 380)}
   ${at('c3c', forms[2])}
-  ${crownGlow}${diadem}
+  ${crownGlow(cx3, top3 + 8, 120, 74, 0.16)}
+  ${diadem}
+  <ellipse cx="${cx3}" cy="${BASE + 26}" rx="235" ry="26" fill="#a0d2f0" opacity="0.10"/>
   <ellipse cx="${W / 2}" cy="${BASE + 46}" rx="480" ry="30" fill="#8ecce0" opacity="0.06"/>
-  ${mono(forms[0].cx, BASE + 120, 26, FAINT, forms[0].label, 5)}
-  ${mono(forms[1].cx, BASE + 120, 26, MUTED, forms[1].label, 5)}
+  ${mono(forms[0].cx, BASE + 120, 26, INK2, forms[0].label, 5)}
+  ${mono(forms[1].cx, BASE + 120, 26, INK2, forms[1].label, 5)}
   ${mono(forms[2].cx, BASE + 120, 26, GOLD, forms[2].label, 5)}
   ${gems}
-  ${mono(W / 2, 2190, 32, MUTED, 'NEW FORMS · COLORS · COMPANIONS', 7)}
-  ${serif(W / 2, 2360, 70, TEXT, 'Practice earns akasha — spend it', 'middle')}
-  ${serif(W / 2, 2445, 70, TEXT, `to shape your <tspan fill="${ACCENT}" font-style="italic">guide</tspan>.`, 'middle')}
+  ${mono(W / 2, 2190, 32, INK2, 'NEW FORMS · COLORS · COMPANIONS', 7)}
+  ${serif(W / 2, 2360, 70, INK, 'Practice earns akasha — spend it', 'middle')}
+  ${serif(W / 2, 2445, 70, INK, `to shape your <tspan fill="${ACCENT}" font-style="italic">guide</tspan>.`, 'middle')}
   `, 41);
 }
 
@@ -295,7 +327,7 @@ function card4() {
   const x = 110, w = W - 220, rh = 300, gap = 40;
   let g = '';
   rows.forEach((r, i) => {
-    const y = 1010 + i * (rh + gap);
+    const y = 1060 + i * (rh + gap);
     const chipX = x + 66, chipY = y + 68;
     const badge = r.badge
       ? `<rect x="${x + w - 328}" y="${y + 58}" width="266" height="60" rx="30" fill="${GOLD}" opacity="0.10"/>
@@ -315,19 +347,18 @@ function card4() {
     <rect x="${chipX - 48}" y="${chipY - 48}" width="96" height="96" rx="24" fill="none" stroke="${r.c}" stroke-opacity="0.45" stroke-width="2"/>
     <text x="${chipX}" y="${chipY + 20}" font-family="DejaVu Sans" font-size="52" fill="${r.c}" text-anchor="middle">${r.glyph}</text>
     ${doneMark}
-    ${serif(x + 190, y + 100, 60, TEXT, r.name, 'start')}
-    ${mono(x + 192, y + 158, 27, MUTED, r.meta, 4, 'start')}
+    ${serif(x + 190, y + 100, 60, INK, r.name, 'start')}
+    ${mono(x + 192, y + 158, 27, INK2, r.meta, 4, 'start')}
     ${badge}
     <rect x="${x + 190}" y="${y + 210}" width="${w - 310}" height="8" rx="4" fill="rgba(221,216,206,0.10)"/>
     <rect x="${x + 190}" y="${y + 210}" width="${(w - 310) * r.prog}" height="8" rx="4" fill="${r.c}" opacity="0.85"/>`;
   });
   return shell(`
   ${wordmark(300)}
-  ${serif(W / 2, 530, 116, TEXT, 'A path paced')}
-  ${serif(W / 2, 670, 116, TEXT, `to <tspan fill="${ACCENT}" font-style="italic">you</tspan>.`)}
-  ${mono(W / 2, 800, 36, MUTED, 'OMNIA BUILDS EACH DAY AROUND YOUR NUMBERS', 5)}
+  ${serif(W / 2, 530, 116, INK, 'A path paced')}
+  ${serif(W / 2, 670, 116, INK, `to <tspan fill="${ACCENT}" font-style="italic">you</tspan>.`)}
+  ${mono(W / 2, 800, 36, INK2, 'OMNIA BUILDS EACH DAY AROUND YOUR NUMBERS', 5)}
   ${g}
-  ${serif(W / 2, 2560, 70, MUTED, 'It never rushes. It never lets you stall.', 'middle', 'font-style="italic"')}
   `, 67);
 }
 
@@ -386,15 +417,14 @@ function card5() {
   <ellipse cx="${cx}" cy="${cy}" rx="660" ry="680" fill="url(#glow)"/>
   <ellipse cx="${cx}" cy="${cy}" rx="420" ry="440" fill="${GOLD}" opacity="0.05"/>
   ${wordmark(300)}
-  ${serif(W / 2, 530, 116, TEXT, 'A practice with')}
-  ${serif(W / 2, 670, 116, GOLD, 'an endgame.', 'middle', 'font-style="italic"')}
-  ${mono(W / 2, 800, 36, MUTED, 'TEN STEPS · THREE TURNINGS · TEN SPHERES', 5)}
+  ${serif(W / 2, 530, 108, INK, 'Based on Franz Bardon’s')}
+  ${serif(W / 2, 670, 116, GOLD, 'Hermetics.', 'middle', 'font-style="italic"')}
+  ${mono(W / 2, 800, 36, INK2, 'TEN STEPS · PRESTIGES · EXERCISES', 5)}
   ${ring}
   <g transform="translate(${cx - 150}, ${cy - 262}) scale(3.75)">${goldCrystal('g5')}</g>
   ${pips}
   ${chips}
-  ${serif(W / 2, 2500, 68, TEXT, 'Prestige rebuilds the path — deeper, faster —', 'middle')}
-  ${serif(W / 2, 2585, 68, TEXT, `until the <tspan fill="${GOLD}" font-style="italic">spheres themselves</tspan> open.`, 'middle')}
+  ${serif(W / 2, 2540, 72, INK, 'Idle mechanics reinforce practice.', 'middle')}
   `, 83);
 }
 
