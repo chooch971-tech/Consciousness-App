@@ -181,7 +181,7 @@ const INK2 = 'rgba(232,227,216,0.66)';
 function card2() {
   // In-game exercise cards: stacked full-width, per-exercise accent tint.
   const rows = [
-    { id:'clock',      name: 'The Clock',       sub: 'UNBROKEN FOCUS',  c: '#e07c3a' },
+    { id:'clock',      name: 'Clock',           sub: 'UNBROKEN FOCUS',  c: '#e07c3a' },
     { id:'visual',     name: 'Visualization',   sub: 'THE INNER EYE',   c: '#6e9fd4' },
     { id:'auditory',   name: 'Auditory',        sub: 'THE INNER EAR',   c: '#6eb8a4' },
     { id:'thought',    name: 'Thought Control', sub: 'MASTER THE MIND', c: '#7898b8' },
@@ -208,13 +208,13 @@ function card2() {
   return shell(`
   <defs>${defs}</defs>
   ${wordmark(300)}
-  ${serif(W / 2, 530, 116, INK, 'Interactive,')}
-  ${serif(W / 2, 670, 116, ACCENT, 'occult exercises.', 'middle', 'font-style="italic"')}
+  ${serif(W / 2, 530, 112, INK, 'Structured, interactive')}
+  ${serif(W / 2, 670, 112, INK, 'occult exercises.', 'middle', 'font-style="italic"')}
   ${g}
   `, 19);
 }
 
-// ── card 3: meet Omnia — grown with the app's real step regalia ──────────────
+// ── card 3: meet Omnia — clean growth triptych ───────────────────────────────
 
 function card3() {
   const BASE = 1760;
@@ -229,42 +229,17 @@ function card3() {
   const cx2 = forms[1].cx, cx3 = forms[2].cx;
   const top3 = BASE - 130 * (forms[2].w / 80);
 
-  // In-game tiers, cumulative:
-  // II triad shards · III crown glow · IV polar pillars · V element wheel
+  // Step V: one quiet orbit with the three body-shards.
   const shardCols = ['#e8b8a0', '#c4a8d4', '#a8c8e8'];
-  const orbit = (cx, cy, rx, ry) => {
-    let o = `<ellipse cx="${cx}" cy="${cy}" rx="${rx}" ry="${ry}" fill="none" stroke="#b8eaff" stroke-opacity="0.3" stroke-width="1.6" stroke-dasharray="3 9"/>`;
-    [[0.06, -1], [0.5, 1.06], [0.88, -0.72]].forEach((p, i) => {
-      const a = p[0] * Math.PI * 2, sx = cx + Math.cos(a) * rx, sy = cy + Math.sin(a) * ry * p[1];
-      o += `<polygon points="${sx},${sy - 13} ${sx + 11},${sy - 4} ${sx + 7},${sy + 12} ${sx - 7},${sy + 12} ${sx - 11},${sy - 4}" fill="${shardCols[i]}" opacity="0.95" filter="url(#soft)"/>`;
-    });
-    return o;
-  };
-  const elements = (cx, cy, rx, ry, r) => {
-    const cols = ['#ff8b4d', '#f5e29a', '#6bb8ff', '#8fc880']; // fire air water earth
-    let e = `<ellipse cx="${cx}" cy="${cy}" rx="${rx}" ry="${ry}" fill="none" stroke="#f5e29a" stroke-opacity="0.18" stroke-width="1.4"/>`;
-    [[0, -1], [1, 0], [0, 1], [-1, 0]].forEach((d, i) => {
-      const ex = cx + d[0] * rx, ey = cy + d[1] * ry;
-      e += `<circle cx="${ex}" cy="${ey}" r="${r}" fill="${cols[i]}" filter="url(#soft)"/>
-            <circle cx="${ex}" cy="${ey}" r="${r * 1.9}" fill="${cols[i]}" opacity="0.14"/>`;
-    });
-    return e;
-  };
-  const crownGlow = (cx, cy, rx, ry, o) =>
-    `<ellipse cx="${cx}" cy="${cy}" rx="${rx}" ry="${ry}" fill="${GOLD}" opacity="${o}" filter="url(#soft)"/>`;
-  const pillar = (px, h) => `<rect x="${px - 5}" y="${BASE - h - 50}" width="10" height="${h}" rx="5" fill="url(#pillarG)" opacity="0.7"/>`;
-  // X: apotheosis mandala + mirror disc
-  const apo = () => {
-    let a = '';
-    [[210, 0.28], [260, 0.20], [310, 0.13]].forEach((rr) => {
-      a += `<circle cx="${cx3}" cy="${bigCy}" r="${rr[0]}" fill="none" stroke="${GOLD}" stroke-opacity="${rr[1]}" stroke-width="1.6"/>`;
-    });
-    for (let i = 0; i < 12; i++) {
-      const an = (i / 12) * Math.PI * 2;
-      a += `<circle cx="${cx3 + Math.cos(an) * 310}" cy="${bigCy + Math.sin(an) * 310}" r="5" fill="#ffeec8" opacity="0.8"/>`;
-    }
-    return a;
-  };
+  let orbit = `<ellipse cx="${cx2}" cy="${midCy}" rx="235" ry="76" fill="none" stroke="#b8eaff" stroke-opacity="0.3" stroke-width="1.6" stroke-dasharray="3 9"/>`;
+  [[0.06, -1], [0.5, 1.06], [0.88, -0.72]].forEach((pp, i) => {
+    const a = pp[0] * Math.PI * 2, sx = cx2 + Math.cos(a) * 235, sy = midCy + Math.sin(a) * 76 * pp[1];
+    orbit += `<polygon points="${sx},${sy - 13} ${sx + 11},${sy - 4} ${sx + 7},${sy + 12} ${sx - 7},${sy + 12} ${sx - 11},${sy - 4}" fill="${shardCols[i]}" opacity="0.95" filter="url(#soft)"/>`;
+  });
+
+  // Step X: halo, drawn diadem, and a single thin gold ring.
+  const halo = `<ellipse cx="${cx3}" cy="${top3 + 8}" rx="118" ry="70" fill="${GOLD}" opacity="0.15" filter="url(#soft)"/>`;
+  const ringX = `<circle cx="${cx3}" cy="${bigCy}" r="245" fill="none" stroke="${GOLD}" stroke-opacity="0.28" stroke-width="1.8"/>`;
   const diadem =
     star4(cx3 - 84, top3 + 30, 12, '#f4e8c0', 0.75) +
     star4(cx3 - 44, top3 + 2, 15, '#f4e8c0', 0.9) +
@@ -281,35 +256,23 @@ function card3() {
       <polygon points="${x},${y - 26} ${x + 20},${y} ${x},${y}" fill="#ffffff" opacity="0.30"/>`;
   });
   return shell(`
-  <defs>
-    <linearGradient id="pillarG" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0" stop-color="#dff0ff" stop-opacity="0.85"/>
-      <stop offset="1" stop-color="#dff0ff" stop-opacity="0"/>
-    </linearGradient>
-  </defs>
   <ellipse cx="${W / 2}" cy="1440" rx="640" ry="660" fill="url(#glow)"/>
   ${wordmark(300)}
   ${serif(W / 2, 530, 124, INK, `Meet <tspan fill="${BLUE}">Omnia</tspan>.`)}
-  ${serif(W / 2, 680, 72, 'rgba(232,227,216,0.72)', 'A living guide that grows as you do.', 'middle', 'font-style="italic"')}
+  ${serif(W / 2, 680, 72, 'rgba(238,233,222,0.78)', 'A living guide that grows as you do.', 'middle', 'font-style="italic"')}
   <g opacity="0.8">${at('c3a', forms[0])}</g>
-  ${elements(cx2, midCy, 190, 64, 11)}
-  ${orbit(cx2, midCy, 152, 52)}
-  ${pillar(cx2 - 128, 250)}${pillar(cx2 + 128, 250)}
-  ${crownGlow(cx2, midCy - 130 * (forms[1].w / 80) / 2 + 6, 68, 40, 0.13)}
+  ${orbit}
   ${at('c3b', forms[1])}
-  ${apo()}
-  ${elements(cx3, bigCy, 208, 76, 13)}
-  ${pillar(cx3 - 185, 380)}${pillar(cx3 + 185, 380)}
+  ${ringX}
   ${at('c3c', forms[2])}
-  ${crownGlow(cx3, top3 + 8, 120, 74, 0.16)}
+  ${halo}
   ${diadem}
-  <ellipse cx="${cx3}" cy="${BASE + 26}" rx="235" ry="26" fill="#a0d2f0" opacity="0.10"/>
   <ellipse cx="${W / 2}" cy="${BASE + 46}" rx="480" ry="30" fill="#8ecce0" opacity="0.06"/>
-  ${mono(forms[0].cx, BASE + 120, 26, INK2, forms[0].label, 5)}
-  ${mono(forms[1].cx, BASE + 120, 26, INK2, forms[1].label, 5)}
-  ${mono(forms[2].cx, BASE + 120, 26, GOLD, forms[2].label, 5)}
+  ${mono(forms[0].cx, BASE + 120, 27, 'rgba(238,233,222,0.72)', forms[0].label, 5)}
+  ${mono(forms[1].cx, BASE + 120, 27, 'rgba(238,233,222,0.72)', forms[1].label, 5)}
+  ${mono(forms[2].cx, BASE + 120, 27, GOLD, forms[2].label, 5)}
   ${gems}
-  ${mono(W / 2, 2190, 32, INK2, 'NEW FORMS · COLORS · COMPANIONS', 7)}
+  ${mono(W / 2, 2190, 32, 'rgba(238,233,222,0.72)', 'NEW FORMS · COLORS · COMPANIONS', 7)}
   ${serif(W / 2, 2360, 70, INK, 'Practice earns akasha — spend it', 'middle')}
   ${serif(W / 2, 2445, 70, INK, `to shape your <tspan fill="${ACCENT}" font-style="italic">guide</tspan>.`, 'middle')}
   `, 41);
@@ -348,16 +311,16 @@ function card4() {
     <text x="${chipX}" y="${chipY + 20}" font-family="DejaVu Sans" font-size="52" fill="${r.c}" text-anchor="middle">${r.glyph}</text>
     ${doneMark}
     ${serif(x + 190, y + 100, 60, INK, r.name, 'start')}
-    ${mono(x + 192, y + 158, 27, INK2, r.meta, 4, 'start')}
+    ${mono(x + 192, y + 160, 30, 'rgba(240,235,225,0.82)', r.meta, 4, 'start')}
     ${badge}
     <rect x="${x + 190}" y="${y + 210}" width="${w - 310}" height="8" rx="4" fill="rgba(221,216,206,0.10)"/>
     <rect x="${x + 190}" y="${y + 210}" width="${(w - 310) * r.prog}" height="8" rx="4" fill="${r.c}" opacity="0.85"/>`;
   });
   return shell(`
   ${wordmark(300)}
-  ${serif(W / 2, 530, 116, INK, 'A path paced')}
+  ${serif(W / 2, 530, 116, INK, 'A path adapted')}
   ${serif(W / 2, 670, 116, INK, `to <tspan fill="${ACCENT}" font-style="italic">you</tspan>.`)}
-  ${mono(W / 2, 800, 36, INK2, 'OMNIA BUILDS EACH DAY AROUND YOUR NUMBERS', 5)}
+  ${mono(W / 2, 800, 37, 'rgba(240,235,225,0.82)', 'OMNIA BUILDS EACH DAY AROUND YOUR NUMBERS', 5)}
   ${g}
   `, 67);
 }
@@ -377,7 +340,7 @@ function goldCrystal(idp) {
 }
 
 function card5() {
-  const cx = W / 2, cy = 1500, R = 430;
+  const cx = W / 2, cy = 1580, R = 480;
   const spheres = [
     ['⊕', '#9cb88a'], ['☽', '#cdd6e8'], ['☿', '#e8b060'], ['♀', '#e89ab8'], ['☉', '#f0d860'],
     ['♂', '#e06858'], ['♃', '#8898e8'], ['♄', '#8a98b0'], ['♅', '#7ed8e8'], ['♇', '#9a6ae8'],
@@ -394,37 +357,19 @@ function card5() {
       <text x="${sx}" y="${sy + 22}" font-family="DejaVu Sans" font-size="58" fill="${sp[1]}" text-anchor="middle" filter="url(#soft)">${sp[0]}</text>`;
   });
   // prestige pips beneath the gold crystal
-  const pips = [-56, 0, 56].map((dx) => star4(cx + dx, cy + 300, 17, '#f4e2b0', 0.95)).join('');
-  const stats = [
-    { v: '15', l: 'TOOLS FORGED', c: GOLD },
-    { v: '◆', l: 'DARK MATTER', c: '#b48ce0' },
-    { v: '10', l: 'SPHERES', c: BLUE },
-  ];
-  let chips = '';
-  const chw = 330, chh = 220, chGap = 32;
-  stats.forEach((st, i) => {
-    const x = (W - (chw * 3 + chGap * 2)) / 2 + i * (chw + chGap), y = 2100;
-    const val = st.v === '◆'
-      ? `<text x="${x + chw / 2}" y="${y + 128}" font-family="DejaVu Sans" font-size="84" fill="${st.c}" text-anchor="middle" filter="url(#soft)">◆</text>`
-      : serif(x + chw / 2, y + 122, 88, st.c, st.v);
-    chips += `
-    <rect x="${x}" y="${y}" width="${chw}" height="${chh}" rx="26" fill="#0e0f17"/>
-    <rect x="${x}" y="${y}" width="${chw}" height="${chh}" rx="26" fill="none" stroke="${st.c}" stroke-opacity="0.30" stroke-width="2"/>
-    ${val}
-    ${mono(x + chw / 2, y + 176, 23, MUTED, st.l, 4)}`;
-  });
+  const pips = [-56, 0, 56].map((dx) => star4(cx + dx, cy + 330, 17, '#f4e2b0', 0.95)).join('');
+
   return shell(`
   <ellipse cx="${cx}" cy="${cy}" rx="660" ry="680" fill="url(#glow)"/>
   <ellipse cx="${cx}" cy="${cy}" rx="420" ry="440" fill="${GOLD}" opacity="0.05"/>
   ${wordmark(300)}
   ${serif(W / 2, 530, 108, INK, 'Based on Franz Bardon’s')}
   ${serif(W / 2, 670, 116, GOLD, 'Hermetics.', 'middle', 'font-style="italic"')}
-  ${mono(W / 2, 800, 36, INK2, 'TEN STEPS · PRESTIGES · EXERCISES', 5)}
+  ${mono(W / 2, 800, 37, 'rgba(240,235,225,0.82)', 'TEN STEPS · PRESTIGES · LEVEL UP', 5)}
   ${ring}
-  <g transform="translate(${cx - 150}, ${cy - 262}) scale(3.75)">${goldCrystal('g5')}</g>
+  <g transform="translate(${cx - 160}, ${cy - 280}) scale(4)">${goldCrystal('g5')}</g>
   ${pips}
-  ${chips}
-  ${serif(W / 2, 2540, 72, INK, 'Idle mechanics reinforce practice.', 'middle')}
+  ${serif(W / 2, 2480, 74, INK, 'Idle mechanics reinforce practice.', 'middle')}
   `, 83);
 }
 
