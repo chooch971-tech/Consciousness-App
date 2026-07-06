@@ -373,6 +373,161 @@ function card5() {
   `, 83);
 }
 
+// ── card 6: the Guide screen — Omnia, now building ──────────────────────────
+
+// small "+" spark used around the figure
+function plus(x, y, sz, op) {
+  return `<g opacity="${op}"><line x1="${x - sz}" y1="${y}" x2="${x + sz}" y2="${y}" stroke="#f2e8d8" stroke-width="2"/><line x1="${x}" y1="${y - sz}" x2="${x}" y2="${y + sz}" stroke="#f2e8d8" stroke-width="2"/></g>`;
+}
+
+function pentagon(cx, cy, r, fill, op) {
+  let pts = '';
+  for (let i = 0; i < 5; i++) {
+    const a = (-90 + 72 * i) * Math.PI / 180;
+    pts += `${(cx + Math.cos(a) * r).toFixed(1)},${(cy + Math.sin(a) * r).toFixed(1)} `;
+  }
+  return `<polygon points="${pts.trim()}" fill="${fill}" opacity="${op}" filter="url(#soft)"/>
+    <polygon points="${pts.trim()}" fill="none" stroke="#fff" stroke-opacity="0.25" stroke-width="1"/>`;
+}
+
+// Omnia — the luminous winged guide, drawn in local coords then placed.
+function omniaGuide(cx, cy) {
+  const roseHi = '#f4b8a4';
+  const wing = `M -30,-95 C -80,-205 -150,-242 -196,-210 C -181,-176 -172,-150 -151,-136 C -166,-120 -151,-96 -131,-90 C -146,-70 -121,-55 -101,-58 C -111,-38 -86,-30 -68,-40 C -55,-70 -45,-90 -30,-95 Z`;
+  const feathers = `M -44,-90 C -90,-122 -132,-162 -162,-202 M -55,-70 C -96,-96 -126,-126 -151,-156 M -70,-52 C -100,-72 -120,-96 -138,-120`;
+  const wingGroup = `<path d="${wing}" fill="#e0846a" opacity="0.5" filter="url(#soft)"/>
+    <path d="${wing}" fill="none" stroke="${roseHi}" stroke-width="1.4" stroke-opacity="0.6"/>
+    <path d="${feathers}" fill="none" stroke="${roseHi}" stroke-width="1.2" stroke-opacity="0.5" stroke-linecap="round"/>`;
+
+  const pillar = (px) => `<rect x="${px - 8}" y="-155" width="16" height="310" rx="8" fill="#7f92ad" opacity="0.20"/>
+    <rect x="${px - 8}" y="-155" width="16" height="96" rx="8" fill="#aebfd6" opacity="0.16"/>`;
+
+  // chest sigil rays
+  let rays = '';
+  for (let i = 0; i < 8; i++) {
+    const a = (i / 8) * Math.PI * 2;
+    rays += `<line x1="${(6 + Math.cos(a) * 13).toFixed(1)}" y1="${(-38 + Math.sin(a) * 13).toFixed(1)}" x2="${(6 + Math.cos(a) * 20).toFixed(1)}" y2="${(-38 + Math.sin(a) * 20).toFixed(1)}" stroke="#fff4e8" stroke-width="1.4" opacity="0.7"/>`;
+  }
+
+  const sparks = [[-92, -188, 9, 0.55], [78, -206, 8, 0.5], [64, -118, 7, 0.45],
+                  [-116, 58, 8, 0.4], [72, 116, 8, 0.42], [-42, 168, 7, 0.5],
+                  [46, 166, 7, 0.5], [-150, -70, 7, 0.35]].map(p => plus(...p)).join('');
+
+  return `<g transform="translate(${cx},${cy})">
+    ${pillar(-206)} ${pillar(206)}
+    <ellipse cx="0" cy="180" rx="92" ry="22" fill="none" stroke="#f0a890" stroke-opacity="0.4" stroke-width="1.6"/>
+    <ellipse cx="0" cy="10" rx="190" ry="250" fill="#e0846a" opacity="0.08" filter="url(#soft)"/>
+    ${wingGroup}
+    <g transform="scale(-1,1)">${wingGroup}</g>
+    <line x1="-12" y1="-210" x2="-12" y2="160" stroke="#e8d6ac" stroke-width="3" opacity="0.75"/>
+    <path d="M -44,-104 C -58,-42 -46,110 -32,170 C -18,180 18,180 32,170 C 46,110 58,-42 44,-104 C 20,-122 -20,-122 -44,-104 Z" fill="url(#robeGrad)" stroke="${roseHi}" stroke-width="1.2" stroke-opacity="0.35"/>
+    <path d="M 0,-100 L 0,168 M -22,-96 C -26,20 -22,120 -16,166 M 22,-96 C 26,20 22,120 16,166" fill="none" stroke="#f0d0a0" stroke-width="1" stroke-opacity="0.28"/>
+    <path d="M -40,-28 C -10,-20 10,-20 40,-28 M -38,26 C -12,34 12,34 38,26 M -34,86 C -11,94 11,94 34,86" fill="none" stroke="#caa070" stroke-width="1" stroke-opacity="0.3"/>
+    <ellipse cx="0" cy="-150" rx="46" ry="46" fill="#f0dca8" opacity="0.08"/>
+    <circle cx="0" cy="-150" r="40" fill="none" stroke="#f0dca8" stroke-width="2.5" opacity="0.7"/>
+    <circle cx="0" cy="-150" r="19" fill="#ecc6a4" opacity="0.9" filter="url(#soft)"/>
+    <circle cx="6" cy="-38" r="11" fill="none" stroke="#fff4e8" stroke-width="1.6" opacity="0.85"/>
+    <circle cx="6" cy="-38" r="3" fill="#fff4e8"/>
+    ${rays}
+    ${star4(-12, -212, 15, '#fff4d0', 1)}
+    ${sparks}
+    ${pentagon(-224, 36, 30, '#a78bd0', 0.9)}
+    ${pentagon(222, -30, 34, '#e0a06a', 0.9)}
+    <ellipse cx="232" cy="120" rx="42" ry="46" fill="#ffb870" opacity="0.14" filter="url(#soft)"/>
+    <path d="M 232,74 C 210,104 208,150 232,166 C 256,150 254,104 232,74 Z" fill="url(#flameGrad)" stroke="#f0c890" stroke-width="1" stroke-opacity="0.5" filter="url(#soft)"/>
+    <path d="M 219,130 q 5,5 9,0 M 235,130 q 5,5 9,0 M 226,146 q 6,3 12,0" fill="none" stroke="#8a6244" stroke-width="1.8" stroke-linecap="round"/>
+  </g>`;
+}
+
+// a body card (Physical / Astral / Mental)
+function bodyCard(x, y, w, h, o) {
+  const px = x + 30;
+  return `
+  <rect x="${x}" y="${y}" width="${w}" height="${h}" rx="24" fill="#0e0f16"/>
+  <rect x="${x}" y="${y}" width="${w}" height="${h}" rx="24" fill="none" stroke="${o.c}" stroke-opacity="0.5" stroke-width="2"/>
+  ${mono(px, y + 54, 27, o.c, o.label, 3, 'start')}
+  ${serif(px - 2, y + 152, 92, INK, o.lvl, 'start')}
+  ${mono(px + 96, y + 118, 25, INK2, 'LVL', 2, 'start')}
+  ${mono(px, y + 200, 23, INK2, o.cur, 2, 'start')}
+  ${mono(px, y + 228, 23, INK2, 'step IV', 2, 'start')}
+  <rect x="${px}" y="${y + 262}" width="${w - 60}" height="8" rx="4" fill="rgba(221,216,206,0.12)"/>
+  <rect x="${px}" y="${y + 262}" width="${(w - 60) * o.prog}" height="8" rx="4" fill="${o.c}" opacity="0.9"/>
+  <rect x="${px}" y="${y + 300}" width="${w - 60}" height="96" rx="16" fill="none" stroke="${o.c}" stroke-opacity="0.45" stroke-width="2"/>
+  ${mono(px + 28, y + 358, 30, INK, 'BUILD', 3, 'start')}
+  ${mono(x + w - 30, y + 358, 30, INK2, o.cost, 1, 'end')}`;
+}
+
+function card6() {
+  const ocx = W / 2, ocy = 1000, R = 355;
+  // top chrome
+  const chrome = `
+  <line x1="70" y1="146" x2="118" y2="146" stroke="${MUTED}" stroke-width="3"/>
+  <line x1="70" y1="160" x2="118" y2="160" stroke="${MUTED}" stroke-width="3"/>
+  <line x1="70" y1="174" x2="118" y2="174" stroke="${MUTED}" stroke-width="3"/>
+  ${mono(W / 2, 172, 34, ACCENT, 'P R E S E N C E', 12)}
+  <text x="${W - 72}" y="172" font-family="${MONO}" font-size="30" fill="${MUTED}" letter-spacing="1" text-anchor="end">streak <tspan fill="${ACCENT}">42d</tspan></text>
+  ${mono(255, 292, 30, ACCENT, 'GUIDE', 3)}
+  ${mono(645, 292, 30, MUTED, 'CONCENTRATION', 3)}
+  ${mono(1010, 292, 30, MUTED, 'AWARENESS', 3)}
+  <polygon points="1120,283 1140,283 1130,295" fill="${MUTED}"/>
+  <rect x="160" y="320" width="190" height="3" rx="1.5" fill="${PURPLE}"/>
+  <line x1="0" y1="321.5" x2="${W}" y2="321.5" stroke="${MUTED}" stroke-opacity="0.5" stroke-width="1"/>
+  <circle cx="600" cy="415" r="9" fill="${MUTED}"/>
+  <circle cx="645" cy="415" r="10" fill="${BLUE}"/>
+  <circle cx="690" cy="415" r="9" fill="${MUTED}"/>`;
+
+  // book icon (top-left) + akasha pill (top-right)
+  const book = `
+  <circle cx="150" cy="520" r="52" fill="none" stroke="${MUTED}" stroke-width="2" stroke-opacity="0.7"/>
+  <path d="M 150,502 C 138,494 124,494 124,494 L 124,540 C 124,540 138,540 150,548 C 162,540 176,540 176,540 L 176,494 C 176,494 162,494 150,502 Z" fill="none" stroke="${TEXT}" stroke-width="2" stroke-opacity="0.7"/>
+  <line x1="150" y1="502" x2="150" y2="548" stroke="${TEXT}" stroke-width="1.6" stroke-opacity="0.6"/>`;
+  const pill = `
+  <rect x="${W - 470}" y="478" width="400" height="86" rx="43" fill="${GOLD}" opacity="0.05"/>
+  <rect x="${W - 470}" y="478" width="400" height="86" rx="43" fill="none" stroke="${GOLD}" stroke-opacity="0.4" stroke-width="1.6"/>
+  ${serif(W - 300, 538, 50, GOLD, '7,757', 'middle')}
+  ${mono(W - 140, 532, 25, MUTED, 'AKASHA', 2)}`;
+
+  // three bodies
+  const m = 76, gap = 26, cw = (W - 2 * m - 2 * gap) / 3, cy = 1802, ch = 460;
+  const cards = bodyCard(m, cy, cw, ch, { label: 'PHYSICAL', lvl: '45', cur: '45 / 100', cost: '248', prog: 0.45, c: '#d8956a' })
+    + bodyCard(m + cw + gap, cy, cw, ch, { label: 'ASTRAL', lvl: '61', cur: '61 / 100', cost: '325', prog: 0.61, c: '#b09ad0' })
+    + bodyCard(m + 2 * (cw + gap), cy, cw, ch, { label: 'MENTAL', lvl: '63', cur: '63 / 100', cost: '334', prog: 0.63, c: '#8ec4e0' });
+
+  return shell(`
+  <defs>
+    <radialGradient id="orbGrad" cx="0.5" cy="0.42" r="0.62">
+      <stop offset="0" stop-color="#b8a0b0" stop-opacity="0.22"/>
+      <stop offset="0.55" stop-color="#6a6480" stop-opacity="0.10"/>
+      <stop offset="1" stop-color="#07080d" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="robeGrad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#ecc890"/>
+      <stop offset="0.5" stop-color="#d8a868"/>
+      <stop offset="1" stop-color="#b8824e"/>
+    </linearGradient>
+    <radialGradient id="flameGrad" cx="0.5" cy="0.35" r="0.7">
+      <stop offset="0" stop-color="#fff6dc"/>
+      <stop offset="1" stop-color="#e6b06a"/>
+    </radialGradient>
+  </defs>
+  ${chrome}
+  ${book}
+  ${pill}
+  <circle cx="${ocx}" cy="${ocy}" r="${R}" fill="url(#orbGrad)"/>
+  <circle cx="${ocx}" cy="${ocy}" r="${R}" fill="none" stroke="#c8bcc8" stroke-opacity="0.08" stroke-width="1.5"/>
+  ${omniaGuide(ocx, ocy)}
+  ${mono(W / 2, 1478, 28, MUTED, 'NOW BUILDING', 8)}
+  ${serif(W / 2, 1560, 78, INK, 'Step IV · Polarity', 'middle')}
+  ${mono(W / 2, 1636, 26, INK2, 'Omnia learns to transfer his consciousness', 1)}
+  ${mono(W / 2, 1674, 26, INK2, 'into any being. The powers grow stronger;', 1)}
+  ${mono(W / 2, 1712, 26, INK2, 'everything is becoming balanced.', 1)}
+  ${cards}
+  <text x="${W / 2}" y="2382" font-family="${MONO}" font-size="30" fill="${MUTED}" letter-spacing="3" text-anchor="middle">MEDITATION SESSIONS: <tspan fill="${ACCENT}">55</tspan> / <tspan fill="${ACCENT}">70</tspan> FOR STEP IV</text>
+  <rect x="110" y="2440" width="${W - 220}" height="108" rx="20" fill="none" stroke="${MUTED}" stroke-opacity="0.4" stroke-width="1.6"/>
+  ${mono(W / 2, 2504, 32, MUTED, 'ADVANCE TO STEP V', 5)}
+  `, 53);
+}
+
 // ── render ───────────────────────────────────────────────────────────────────
 
 (async () => {
@@ -382,6 +537,7 @@ function card5() {
     ['03-omnia.png', card3()],
     ['04-path.png', card4()],
     ['05-progress.png', card5()],
+    ['06-guide.png', card6()],
   ];
   for (const [name, svg] of cards) {
     await sharp(Buffer.from(svg), { density: 72 }).png().toFile(path.join(OUT, name));
