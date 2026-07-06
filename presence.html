@@ -18325,6 +18325,16 @@ function mergeOmniaPull(localStr, cloudStr) {
   var takeCloud = shouldTakeCloudValue('presence_omnia_v1', localStr, cloudStr);
   var base  = takeCloud ? cloudObj : localObj;
   var other = takeCloud ? localObj : cloudObj;
+  // Cosmetic selection (palette/entity/veil/companion) carries no progress score,
+  // so the score-based winner above can't preserve it: a stale cloud snapshot that
+  // ties on progress would revert a color the user just picked and left before it
+  // synced. Reconcile cosmetics independently — keep whichever side was touched
+  // most recently (last-writer-wins by _updatedAt).
+  (function() {
+    var bc = (base && base.cosmetics) || {};
+    var oc = (other && other.cosmetics) || {};
+    if ((Number(oc._updatedAt) || 0) > (Number(bc._updatedAt) || 0)) base.cosmetics = oc;
+  })();
   // Only fold monotonic progress across snapshots when neither side was deliberately
   // reset relative to the other — otherwise honor the reset and keep base as-is.
   var sameReset = ((localObj && localObj._resetAt) || 0) === ((cloudObj && cloudObj._resetAt) || 0);
@@ -19264,6 +19274,7 @@ function unlockOrSelectOmniaCosmetic(kind, id) {
   if (!omniaState.cosmetics) omniaState.cosmetics = cloneOmniaDefault().cosmetics;
   if (kind === 'companion' && id === 'none') {
     omniaState.cosmetics.companion = null;
+    omniaState.cosmetics._updatedAt = Date.now();
     saveOmniaState();
     renderOmniaEngine();
     return;
@@ -19275,6 +19286,7 @@ function unlockOrSelectOmniaCosmetic(kind, id) {
   // replacing one another like palettes/entities/companions do.
   if (kind === 'veil' && unlocked && omniaState.cosmetics.veil === id) {
     omniaState.cosmetics.veil = null;
+    omniaState.cosmetics._updatedAt = Date.now();
     saveOmniaState();
     renderOmniaEngine();
     showToast(item.name + ' removed');
@@ -19307,6 +19319,7 @@ function unlockOrSelectOmniaCosmetic(kind, id) {
     }
   }
   if (kind === 'companion') omniaState.cosmetics.companion = id;
+  omniaState.cosmetics._updatedAt = Date.now();
   saveOmniaState();
   renderOmniaEngine();
   showToast(item.name + (unlocked ? ' selected' : ' unlocked'));
