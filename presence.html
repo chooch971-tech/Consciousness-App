@@ -354,7 +354,7 @@
     @media (min-width:600px) {
       .so-hero-num { font-size:120px; }
     }
-    /* ── Turnings status card + Dark Matter ──
+    /* ── Magical Evocation status card + Dark Matter ──
        Styled with the Book I engine's own idioms (flat surface, 8px uppercase
        labels, thin bars, outline buttons) so Book II reads as the same app. */
     .oe-turnings { position:relative; margin-top:11px; border:1px solid var(--border); border-radius:12px; padding:12px 14px; background:rgba(255,255,255,.025); }
@@ -381,12 +381,11 @@
     .b2p { opacity:.07; filter:grayscale(1) brightness(1.6); }
     .b2p.on { opacity:1; filter:none; transition:opacity .8s ease, filter .8s ease; }
     /* Sphere travel */
-    .b2sp-row { display:flex; gap:6px; flex-wrap:wrap; margin-bottom:10px; }
-    .b2sp { width:26px; height:26px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:13px; color:var(--spc); opacity:.32; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.02); }
+    .b2sp-row { display:flex; gap:5px; flex-wrap:wrap; justify-content:center; margin-bottom:9px; }
+    .b2sp { width:27px; height:27px; border-radius:50%; display:flex; align-items:center; justify-content:center; padding:1px; opacity:.3; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.02); }
+    .b2sp svg { display:block; width:100%; height:100%; }
     .b2sp.done { opacity:1; border-color:var(--spc); box-shadow:0 0 9px -2px var(--spc); }
     .b2sp.cur { opacity:.9; border-color:var(--spc); border-style:dashed; }
-    .b2sp-cur { display:flex; gap:12px; align-items:center; margin-bottom:9px; }
-    .b2sp-big { font-size:27px; color:var(--spc); text-shadow:0 0 15px var(--spc); line-height:1; }
     .b2sp-reqs { font-family:'DM Mono',monospace; font-size:8.5px; letter-spacing:.08em; color:rgba(255,255,255,.35); margin-top:3px; }
     .b2sp-req.met { color:#9ed8c0; }
     /* Sphere-touched forms — a planetary sigil floats above Omnia's figures
@@ -422,7 +421,7 @@
     /* Same shape/typography as .oe-advance-btn, in Book II's gold */
     .b2t-btn { width:100%; margin-top:10px; padding:10px; border-radius:7px; border:1px solid rgba(226,196,140,.32); background:rgba(226,196,140,.08); color:#e8cd94; font-family:'DM Mono',monospace; font-size:9px; letter-spacing:.2em; text-transform:uppercase; cursor:pointer; }
     .b2t-btn:disabled { opacity:.42; cursor:default; }
-        /* ── Prestige (Turnings of the Wheel) ── */
+        /* ── Prestige (Magical Evocation) ── */
     .oe-prestige-btn { width:100%; margin-top:14px; padding:13px 12px 14px; border-radius:11px; border:1px solid rgba(226,196,140,.5); background:rgba(226,196,140,.07); color:#e8cd94; cursor:pointer; display:flex; flex-direction:column; align-items:center; gap:3px; }
     .oe-prestige-btn .pb-main { font-family:'Cormorant Garamond',serif; font-size:18px; font-weight:300; letter-spacing:.22em; text-transform:uppercase; line-height:1; }
     .oe-prestige-btn .pb-note { font-family:'DM Mono',monospace; font-size:8px; letter-spacing:.18em; text-transform:uppercase; color:var(--muted); }
@@ -19328,12 +19327,19 @@ function omniaSessionsToday() {
 
 function omniaRatePerHour() {
   var total = omniaBodyTotal();
+  var inBookII = typeof darkMatterUnlocked === 'function' && darkMatterUnlocked();
+  // Book II: the refined bodies (astral/mental/wisdom) take over feeding the
+  // generator, so income keeps scaling as the operator is built for the spheres.
+  if (inBookII) {
+    var b2b = bookIIBodies();
+    total += (b2b.astral || 1) + (b2b.mental || 1) + (b2b.wisdom || 1);
+  }
   var currentLvl = omniaState.upgrades.current || 1;
   var stepNum = omniaState.bardonStep || 1;
   var earlyBoost = total < 48 ? Math.floor((48 - total) * 1.5) : 0;
   var stepTax = Math.max(0, stepNum - 1) * 16;
   var bodyBonus = Math.floor(Math.sqrt(Math.max(0, total)) * 9);
-  var secondGen = stepNum >= 5 ? Math.floor(18 + currentLvl * 8) : 0;
+  var secondGen = (stepNum >= 5 || inBookII) ? Math.floor(18 + currentLvl * 8) : 0;
   var base = 10 + currentLvl * 12 + Math.floor(bodyBonus * 0.5) + Math.floor(earlyBoost * 0.3) - stepTax + secondGen;
   // The generator hums when you practice: idle days trickle at 55%, and each
   // session today restores 15%, reaching full flow at 3 sessions.
@@ -19356,11 +19362,16 @@ function omniaReservoirCap() {
 }
 
 function omniaAkashaCap() {
+  // Book II sits past Step X (bardonStep frozen at 1) — keep the endgame cap.
+  if (typeof darkMatterUnlocked === 'function' && darkMatterUnlocked()) return 80000000;
   var step = omniaState.bardonStep || 1;
   return [6000, 18000, 45000, 100000, 220000, 800000, 2500000, 8000000, 25000000, 80000000][step - 1] || 80000000;
 }
 
 function omniaUpgradeStepMax(upgId) {
+  // Book II (Magical Evocation) sits past Step X — caps are fully open there,
+  // since bardonStep is reset to 1 and no longer advances.
+  if (typeof darkMatterUnlocked === 'function' && darkMatterUnlocked()) return 999;
   var step = omniaState.bardonStep || 1;
   var caps = { current:[3,6,10,15,999], vessel:[3,6,10,15,999], attunement:[2,4,7,11,999] };
   return (caps[upgId] || [999])[Math.min(step - 1, 4)];
@@ -19385,6 +19396,12 @@ function omniaAccrue() {
 }
 
 function omniaStage() {
+  // Book II: the stage tells the Evocation story instead of the body total.
+  if (typeof darkMatterUnlocked === 'function' && darkMatterUnlocked()) {
+    if (bookIICurrentToolIdx() < BOOK2_TOOLS.length) return { name:'Forge', sub:'The instruments of the art take shape.' };
+    if (bookIISphereCount() < BOOK2_SPHERES.length) return { name:'Wanderer', sub:'Omnia walks the planetary spheres.' };
+    return { name:'Sovereign', sub:'All spheres traversed. The next Evocation awaits.' };
+  }
   var total = omniaBodyTotal();
   if (total >= 210) return { name:'Gate', sub:'Omnia can hold a complete triadic current.' };
   if (total >= 150) return { name:'Star', sub:'The three bodies are beginning to harmonize.' };
@@ -19420,17 +19437,17 @@ function omniaUpgradeCost(upg) {
   return Math.floor(raw * omniaDiscountMult());
 }
 
-// ── Prestige (Turnings of the Wheel) ────────────────────────────
+// ── Prestige (Magical Evocation) ─────────────────────────────────
 // Completing Bardon Step X lets the practitioner begin the path again, deeper.
 // A prestige resets ONLY the path position (step + bodies + recommended count);
 // akasha, upgrades, cosmetics, streaks, history and level are all preserved.
-// Each turning grants a permanent +25% akasha and cuts the step requirements so
+// Each prestige grants a permanent +25% akasha and cuts the step requirements so
 // re-walking is genuinely faster (the "half the time each cycle" cadence).
 function omniaPrestigeMult() { return 1 + 0.25 * (omniaState.prestige || 0); }
 // ── Dark Matter (Book II currency) ─────────────────────────────
-// A second current that only awakens at the 3rd Turning, minted by the advanced
+// A second current that only awakens at the 3rd Prestige, minted by the advanced
 // exercises. Book II upgrades (tools, spheres) will spend it alongside akasha.
-var PRESTIGE_BOOK2 = 3;            // turnings required before Dark Matter awakens
+var PRESTIGE_BOOK2 = 3;            // prestiges required before Dark Matter awakens
 var DARK_MATTER_PER_ADVANCED = 30; // sized so total Book II sinks (~11k ◆) ≈ months, not years
 function darkMatterUnlocked() { return (omniaState.prestige || 0) >= PRESTIGE_BOOK2; }
 function mintDarkMatter(amount) {
@@ -19576,36 +19593,39 @@ function omniaBuildBookIIBody(b) {
   showToast(BOOK2_BODY_META[b].name + ' rises to ' + bodies[b], 2800, 'gold');
   renderOmniaEngine();
 }
-function renderBookIIBodies() {
-  // The refined bodies, as literal Book I body cards (.oe-body): name, big
-  // serif level, "n / req · sphere" need line, thin bar, outline Build button.
+// The refined bodies as literal Book I body cards (.oe-body): name, big serif
+// level, "n / req · sphere" need line, thin bar, outline Build button. Rendered
+// into the engine's own #omniaBodyGrid once Book II takes over. While the
+// instruments are still being forged the cards show locked.
+function renderBookIIBodyCards() {
   var bodies = bookIIBodies();
+  var toolsDone = bookIICurrentToolIdx() >= BOOK2_TOOLS.length;
   var sphereIdx = bookIISphereCount();
   var spheresLeft = sphereIdx < BOOK2_SPHERES.length;
   var req = spheresLeft ? sphereReq(sphereIdx) : null;
   var roman = ['I','II','III','IV','V','VI','VII','VIII','IX','X'][sphereIdx] || 'X';
-  return '<div class="oe-bodies" style="padding:11px 0 0;">'
-    + Object.keys(BOOK2_BODY_META).map(function(b) {
-        var m = BOOK2_BODY_META[b];
-        var lvl = bodies[b] || 1;
-        var need = req ? req[b] : 0;
-        var met = need > 0 && lvl >= need;
-        var pct = need > 0 ? Math.min(100, (lvl / need) * 100) : Math.min(100, (lvl % 25) * 4);
-        var needHtml = need > 0
-          ? '<span class="' + (met ? 'need-met' : '') + '">' + Math.min(lvl, need) + ' / ' + need + '</span> · sphere ' + roman
-          : 'the spheres are yours';
-        var c = bookIIBodyCost(b);
-        var can = (omniaState.akasha || 0) >= c.a && (omniaState.darkMatter || 0) >= c.d;
-        return '<div class="oe-body" style="--body-color:' + m.color + ';">'
-          + '<div class="oe-body-name">' + m.name + '</div>'
-          + '<div class="oe-body-lvl-row"><span class="oe-body-lvl">' + lvl + '</span><span class="oe-body-lvl-key">lvl</span></div>'
-          + '<div class="oe-body-need ' + (met ? 'need-met' : '') + '">' + needHtml + '</div>'
-          + '<div class="oe-body-bar"><div class="oe-body-bar-fill" style="width:' + pct + '%;"></div></div>'
-          + '<button class="oe-body-btn" onclick="omniaBuildBookIIBody(\'' + b + '\')"' + (can ? '' : ' disabled') + '>'
-          + 'Build <span class="oe-body-cost">' + c.a.toLocaleString() + ' + ' + c.d + '◆</span></button>'
-          + '</div>';
-      }).join('')
-    + '</div>';
+  return Object.keys(BOOK2_BODY_META).map(function(b) {
+    var m = BOOK2_BODY_META[b];
+    var lvl = bodies[b] || 1;
+    var need = req ? req[b] : 0;
+    var met = need > 0 && lvl >= need;
+    var pct = need > 0 ? Math.min(100, (lvl / need) * 100) : Math.min(100, (lvl % 25) * 4);
+    var needHtml = !toolsDone
+      ? 'awaits the instruments'
+      : need > 0
+        ? '<span class="' + (met ? 'need-met' : '') + '">' + Math.min(lvl, need) + ' / ' + need + '</span> · sphere ' + roman
+        : 'the spheres are yours';
+    var c = bookIIBodyCost(b);
+    var can = toolsDone && (omniaState.akasha || 0) >= c.a && (omniaState.darkMatter || 0) >= c.d;
+    return '<div class="oe-body" style="--body-color:' + m.color + ';">'
+      + '<div class="oe-body-name">' + m.name + '</div>'
+      + '<div class="oe-body-lvl-row"><span class="oe-body-lvl">' + lvl + '</span><span class="oe-body-lvl-key">lvl</span></div>'
+      + '<div class="oe-body-need ' + (met ? 'need-met' : '') + '">' + needHtml + '</div>'
+      + '<div class="oe-body-bar"><div class="oe-body-bar-fill" style="width:' + (toolsDone ? pct : 0) + '%;"></div></div>'
+      + '<button class="oe-body-btn" onclick="omniaBuildBookIIBody(\'' + b + '\')"' + (can ? '' : ' disabled') + '>'
+      + 'Build <span class="oe-body-cost">' + c.a.toLocaleString() + ' + ' + c.d + '◆</span></button>'
+      + '</div>';
+  }).join('');
 }
 
 // ── Book II: the ten spheres ─────────────────────────────────
@@ -19613,17 +19633,84 @@ function renderBookIIBodies() {
 // demands body thresholds, costs akasha + dark matter, and imposes a day's
 // rest. Pluto opens the next Turning: spheres reset, tools and bodies remain.
 var BOOK2_SPHERES = [
-  { id:'zone',    name:'Zone Girdling the Earth', sym:'⊕', c:'#9cb88a' },
-  { id:'luna',    name:'Lunar Sphere',            sym:'☽', c:'#cdd6e8' },
-  { id:'mercury', name:'Mercurian Sphere',        sym:'☿', c:'#e8b060' },
-  { id:'venus',   name:'Venusian Sphere',         sym:'♀', c:'#e89ab8' },
-  { id:'sol',     name:'Solar Sphere',            sym:'☉', c:'#f0c860' },
-  { id:'mars',    name:'Martian Sphere',          sym:'♂', c:'#e06858' },
-  { id:'jupiter', name:'Jupiter Sphere',          sym:'♃', c:'#8898e8' },
-  { id:'saturn',  name:'Saturn Sphere',           sym:'♄', c:'#7a88a0' },
-  { id:'uranus',  name:'Uranus Sphere',           sym:'♅', c:'#7ed8e8' },
-  { id:'pluto',   name:'Pluto Sphere',            sym:'♇', c:'#9a6ae8' }
+  { id:'zone',    name:'Zone Girdling the Earth', sym:'⊕', c:'#9cb88a', d:'The belt of the earth — the first passage beyond the physical.' },
+  { id:'luna',    name:'Lunar Sphere',            sym:'☽', c:'#cdd6e8', d:'The realm of rhythm, and the tides of the astral sea.' },
+  { id:'mercury', name:'Mercurian Sphere',        sym:'☿', c:'#e8b060', d:'The sphere of intellect, word, and swift intelligences.' },
+  { id:'venus',   name:'Venusian Sphere',         sym:'♀', c:'#e89ab8', d:'The sphere of love, harmony, and attraction.' },
+  { id:'sol',     name:'Solar Sphere',            sym:'☉', c:'#f0c860', d:'The heart of the system — light, life, and power.' },
+  { id:'mars',    name:'Martian Sphere',          sym:'♂', c:'#e06858', d:'The sphere of strength, courage, and command.' },
+  { id:'jupiter', name:'Jupiter Sphere',          sym:'♃', c:'#8898e8', d:'The sphere of order, mercy, and expansion.' },
+  { id:'saturn',  name:'Saturn Sphere',           sym:'♄', c:'#7a88a0', d:'The severe teacher — limits, time, and karma.' },
+  { id:'uranus',  name:'Uranus Sphere',           sym:'♅', c:'#7ed8e8', d:'The sphere of revelation and sudden knowing.' },
+  { id:'pluto',   name:'Pluto Sphere',            sym:'♇', c:'#9a6ae8', d:'The deepest gate — transformation entire.' }
 ];
+
+// Drawn mini-planet for each sphere (44x44 box), in the same hand-built style
+// as the tool illustrations. Shared defs are emitted once by the orb row.
+var BOOK2_SPHERE_DEFS = '<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>'
+  + '<radialGradient id="spgZone" cx="35%" cy="30%" r="90%"><stop offset="0" stop-color="#dcecc4"/><stop offset=".55" stop-color="#9cb88a"/><stop offset="1" stop-color="#37503a"/></radialGradient>'
+  + '<radialGradient id="spgLuna" cx="32%" cy="30%" r="95%"><stop offset="0" stop-color="#f4f7fc"/><stop offset=".5" stop-color="#cdd6e8"/><stop offset="1" stop-color="#5a6478"/></radialGradient>'
+  + '<radialGradient id="spgMerc" cx="35%" cy="30%" r="90%"><stop offset="0" stop-color="#f8dfae"/><stop offset=".55" stop-color="#e8b060"/><stop offset="1" stop-color="#6e4a1e"/></radialGradient>'
+  + '<radialGradient id="spgVenus" cx="35%" cy="30%" r="90%"><stop offset="0" stop-color="#fcd9e6"/><stop offset=".55" stop-color="#e89ab8"/><stop offset="1" stop-color="#7a3a54"/></radialGradient>'
+  + '<radialGradient id="spgSol" cx="42%" cy="38%" r="80%"><stop offset="0" stop-color="#fff6d8"/><stop offset=".5" stop-color="#f0c860"/><stop offset="1" stop-color="#9a6c1c"/></radialGradient>'
+  + '<radialGradient id="spgMars" cx="35%" cy="30%" r="90%"><stop offset="0" stop-color="#f4a894"/><stop offset=".55" stop-color="#e06858"/><stop offset="1" stop-color="#6a2018"/></radialGradient>'
+  + '<radialGradient id="spgJup" cx="35%" cy="30%" r="90%"><stop offset="0" stop-color="#c4cdf4"/><stop offset=".55" stop-color="#8898e8"/><stop offset="1" stop-color="#38406e"/></radialGradient>'
+  + '<radialGradient id="spgSat" cx="35%" cy="30%" r="90%"><stop offset="0" stop-color="#d2dae6"/><stop offset=".55" stop-color="#9aa8ba"/><stop offset="1" stop-color="#404c5e"/></radialGradient>'
+  + '<radialGradient id="spgUra" cx="35%" cy="30%" r="90%"><stop offset="0" stop-color="#d8f6fc"/><stop offset=".55" stop-color="#7ed8e8"/><stop offset="1" stop-color="#2a6470"/></radialGradient>'
+  + '<radialGradient id="spgPlu" cx="35%" cy="30%" r="90%"><stop offset="0" stop-color="#c8aef0"/><stop offset=".55" stop-color="#9a6ae8"/><stop offset="1" stop-color="#32204e"/></radialGradient>'
+  + '<clipPath id="spcOrb"><circle cx="22" cy="22" r="15"/></clipPath>'
+  + '<clipPath id="spcOrbSm"><circle cx="22" cy="22" r="12"/></clipPath>'
+  + '</defs></svg>';
+
+var BOOK2_SPHERE_ART = {
+  zone: '<circle cx="22" cy="22" r="15" fill="url(#spgZone)"/>'
+    + '<ellipse cx="22" cy="22" rx="15" ry="5.2" fill="none" stroke="#e8cd94" stroke-width="1.4" opacity=".85"/>'
+    + '<ellipse cx="22" cy="22" rx="7" ry="15" fill="none" stroke="#dcecc4" stroke-width=".7" opacity=".3"/>'
+    + '<circle cx="22" cy="22" r="15" fill="none" stroke="#c4d8ac" stroke-width=".7" opacity=".5"/>',
+  luna: '<circle cx="22" cy="22" r="15" fill="url(#spgLuna)"/>'
+    + '<g clip-path="url(#spcOrb)"><circle cx="31" cy="18" r="15" fill="#1a2030" opacity=".42"/></g>'
+    + '<circle cx="16" cy="17" r="2.4" fill="#8a94a8" opacity=".55"/><circle cx="21" cy="27" r="1.7" fill="#8a94a8" opacity=".45"/><circle cx="13" cy="25" r="1.2" fill="#8a94a8" opacity=".4"/>'
+    + '<circle cx="22" cy="22" r="15" fill="none" stroke="#e8eef8" stroke-width=".7" opacity=".5"/>',
+  mercury: '<circle cx="22" cy="22" r="12" fill="url(#spgMerc)"/>'
+    + '<ellipse cx="22" cy="22" rx="19" ry="7.5" fill="none" stroke="#e8b060" stroke-width="1" stroke-dasharray="2.5 4" opacity=".65" transform="rotate(-18 22 22)"/>'
+    + '<circle cx="17" cy="18" r="1.6" fill="#6e4a1e" opacity=".5"/><circle cx="26" cy="24" r="1.2" fill="#6e4a1e" opacity=".45"/>'
+    + '<circle cx="22" cy="22" r="12" fill="none" stroke="#f4d494" stroke-width=".7" opacity=".55"/>',
+  venus: '<circle cx="22" cy="22" r="14" fill="url(#spgVenus)"/>'
+    + '<g clip-path="url(#spcOrb)"><path d="M6 18 Q16 13 24 17 T40 15" fill="none" stroke="#fcd9e6" stroke-width="2.2" opacity=".4"/><path d="M4 27 Q15 23 25 26 T42 24" fill="none" stroke="#fcd9e6" stroke-width="1.7" opacity=".3"/></g>'
+    + '<path d="M33 9l.9 2.1L36 12l-2.1.9L33 15l-.9-2.1L30 12l2.1-.9z" fill="#fcd9e6" opacity=".9"/>'
+    + '<circle cx="22" cy="22" r="14" fill="none" stroke="#f4b8ce" stroke-width=".7" opacity=".55"/>',
+  sol: '<circle cx="22" cy="22" r="11.5" fill="url(#spgSol)"/>'
+    + '<g stroke="#f0c860" stroke-width="1.4" stroke-linecap="round" opacity=".85">'
+    + '<line x1="22" y1="4" x2="22" y2="8.5"/><line x1="22" y1="35.5" x2="22" y2="40"/><line x1="4" y1="22" x2="8.5" y2="22"/><line x1="35.5" y1="22" x2="40" y2="22"/>'
+    + '<line x1="9.3" y1="9.3" x2="12.4" y2="12.4"/><line x1="31.6" y1="31.6" x2="34.7" y2="34.7"/><line x1="34.7" y1="9.3" x2="31.6" y2="12.4"/><line x1="12.4" y1="31.6" x2="9.3" y2="34.7"/></g>'
+    + '<circle cx="22" cy="22" r="11.5" fill="none" stroke="#ffe9a8" stroke-width=".8" opacity=".7"/>',
+  mars: '<circle cx="22" cy="22" r="14" fill="url(#spgMars)"/>'
+    + '<g clip-path="url(#spcOrb)"><ellipse cx="22" cy="9.5" rx="7" ry="3.4" fill="#f8e8e0" opacity=".75"/><path d="M12 24q5-3.5 10-1t9 1.5q-4 6-10.5 5T12 24z" fill="#8a3024" opacity=".5"/></g>'
+    + '<circle cx="22" cy="22" r="14" fill="none" stroke="#f0907e" stroke-width=".7" opacity=".55"/>',
+  jupiter: '<circle cx="22" cy="22" r="15" fill="url(#spgJup)"/>'
+    + '<g clip-path="url(#spcOrb)" opacity=".75">'
+    + '<path d="M5 14h34" stroke="#c4cdf4" stroke-width="2.6" opacity=".5"/><path d="M4 20h36" stroke="#5a68a8" stroke-width="3.2" opacity=".6"/>'
+    + '<path d="M5 27h34" stroke="#c4cdf4" stroke-width="2.2" opacity=".45"/><path d="M7 32.5h30" stroke="#5a68a8" stroke-width="2.6" opacity=".5"/></g>'
+    + '<ellipse cx="27.5" cy="26.5" rx="3.6" ry="2.3" fill="#e8a088" opacity=".9"/>'
+    + '<circle cx="22" cy="22" r="15" fill="none" stroke="#aab6f0" stroke-width=".7" opacity=".5"/>',
+  saturn: '<circle cx="22" cy="22" r="11" fill="url(#spgSat)"/>'
+    + '<g clip-path="url(#spcOrbSm)" opacity=".6"><path d="M8 17h28" stroke="#d2dae6" stroke-width="2" opacity=".5"/><path d="M8 25h28" stroke="#66788e" stroke-width="2.4" opacity=".55"/></g>'
+    + '<ellipse cx="22" cy="22" rx="19.5" ry="5.6" fill="none" stroke="#e8cd94" stroke-width="1.5" opacity=".85" transform="rotate(-16 22 22)"/>'
+    + '<ellipse cx="22" cy="22" rx="16.5" ry="4.4" fill="none" stroke="#b8a06a" stroke-width=".8" opacity=".55" transform="rotate(-16 22 22)"/>'
+    + '<circle cx="22" cy="22" r="11" fill="none" stroke="#c8d2e0" stroke-width=".7" opacity=".55"/>',
+  uranus: '<circle cx="22" cy="22" r="13" fill="url(#spgUra)"/>'
+    + '<ellipse cx="22" cy="22" rx="5.4" ry="18.5" fill="none" stroke="#a8ecf8" stroke-width="1.3" opacity=".7" transform="rotate(14 22 22)"/>'
+    + '<g clip-path="url(#spcOrb)"><path d="M8 16 Q22 20 36 15" fill="none" stroke="#d8f6fc" stroke-width="1.6" opacity=".4"/></g>'
+    + '<circle cx="22" cy="22" r="13" fill="none" stroke="#b0e8f4" stroke-width=".7" opacity=".55"/>',
+  pluto: '<circle cx="22" cy="22" r="12.5" fill="url(#spgPlu)"/>'
+    + '<g clip-path="url(#spcOrb)"><path d="M17 17c2.4-2.6 6.6-2.4 8.4.4 1.9-2.6 6-2.2 7.6.6 1.4 2.6-.6 5.4-3.6 7.8L22 31.5l-6.8-5.9c-2.4-2.4-1-6.5 1.8-8.6z" fill="#c8aef0" opacity=".38"/></g>'
+    + '<circle cx="17.5" cy="16.5" r="1.3" fill="#e8dcfc" opacity=".8"/>'
+    + '<circle cx="22" cy="22" r="12.5" fill="none" stroke="#b492ec" stroke-width=".7" opacity=".55"/>'
+};
+
+function bookIISphereSvg(sp, size) {
+  return '<svg viewBox="0 0 44 44" width="' + size + '" height="' + size + '" aria-hidden="true">' + (BOOK2_SPHERE_ART[sp.id] || '') + '</svg>';
+}
 var SPHERE_REST_MS = 24 * 3600 * 1000;
 function bookIISphereCount() { return (omniaState.bookII && omniaState.bookII.sphere) || 0; }
 function sphereReq(i) { var n = 4 + i * 3; return { astral:n, mental:n, wisdom:n }; }
@@ -19658,41 +19745,29 @@ function omniaTravelSphere() {
   showToast('✦ ' + BOOK2_SPHERES[i].name + ' traversed', 3400, 'gold');
   renderOmniaEngine();
 }
-function renderBookIISpheres() {
+// The ten spheres as drawn planets — rendered in the engine's session slot
+// (where Book I's meditation-sessions line was) once Book II takes over.
+function bookIISphereOrbRow() {
   var n = bookIISphereCount();
-  var orbs = BOOK2_SPHERES.map(function(sp, i) {
-    return '<span class="b2sp' + (i < n ? ' done' : i === n ? ' cur' : '') + '" style="--spc:' + sp.c + ';" title="' + sp.name + '">' + sp.sym + '</span>';
-  }).join('');
-  var html = '<div class="b2-spheres">'
-    + '<div class="b2-tools-head" style="margin-top:12px;"><span class="b2-tools-title">Sphere Travel</span>'
-    + '<span class="b2-tools-count">' + n + ' / ' + BOOK2_SPHERES.length + '</span></div>'
-    + '<div class="b2sp-row">' + orbs + '</div>';
-  if (n >= BOOK2_SPHERES.length) {
-    return html + '<div class="oe-turnings-hint" style="color:#e8cd94;">♇ Pluto attained. The Wheel may turn again — the spheres await a deeper passage.</div></div>';
-  }
-  var sp = BOOK2_SPHERES[n], req = sphereReq(n), c = sphereCost(n), bodies = bookIIBodies();
-  var reqHtml = ['astral','mental','wisdom'].map(function(b) {
+  return BOOK2_SPHERE_DEFS + '<div class="b2sp-row">'
+    + BOOK2_SPHERES.map(function(sp, i) {
+        return '<span class="b2sp' + (i < n ? ' done' : i === n ? ' cur' : '') + '" style="--spc:' + sp.c + ';" title="' + sp.name + '">' + bookIISphereSvg(sp, 26) + '</span>';
+      }).join('')
+    + '</div>';
+}
+// Body-requirement line for the sphere currently ahead.
+function bookIISphereReqLine(n) {
+  var req = sphereReq(n), bodies = bookIIBodies();
+  return ['astral','mental','wisdom'].map(function(b) {
     var met = (bodies[b] || 1) >= req[b];
     return '<span class="b2sp-req' + (met ? ' met' : '') + '">' + BOOK2_BODY_META[b].name + ' ' + Math.min(bodies[b] || 1, req[b]) + '/' + req[b] + '</span>';
   }).join('<span class="b2t-sep">·</span>');
-  html += '<div class="b2sp-cur"><span class="b2sp-big" style="--spc:' + sp.c + ';">' + sp.sym + '</span>'
-    + '<div><div class="oe-stage-step-label">Now Approaching</div>'
-    + '<div class="oe-stage-step-name">' + sp.name + '</div>'
-    + '<div class="b2sp-reqs">' + reqHtml + '</div></div></div>';
-  var gateLeft = ((omniaState.bookII || {}).sphereReadyAt || 0) - Date.now();
-  if (gateLeft > 0) {
-    html += '<button class="b2t-btn" disabled>The way rests · ' + fmtToolGate(gateLeft) + '</button>';
-  } else {
-    var met = (bodies.astral||1) >= req.astral && (bodies.mental||1) >= req.mental && (bodies.wisdom||1) >= req.wisdom;
-    var can = met && (omniaState.akasha || 0) >= c.a && (omniaState.darkMatter || 0) >= c.d;
-    html += '<button class="b2t-btn" onclick="omniaTravelSphere()"' + (can ? '' : ' disabled') + '>Travel · ' + c.a.toLocaleString() + ' akasha + ' + c.d + ' ◆</button>';
-  }
-  return html + '</div>';
 }
 
 // The tools atelier, laid out like the engine's "Now Building" block: a
-// 15-segment track (the Book I step-dots idiom), the current instrument's
-// art assembling piece by piece as phases are bought, and one build button.
+// 15-segment track (the Book I step-dots idiom) and the current instrument's
+// art assembling piece by piece as phases are bought. The build action lives
+// on the engine's main button (the old Advance slot), not in this card.
 function renderBookIITools() {
   var idx = bookIICurrentToolIdx();
   var doneCount = 0;
@@ -19711,10 +19786,7 @@ function renderBookIITools() {
     + BOOK2_TOOL_DEFS
     + track;
   if (idx >= BOOK2_TOOLS.length) {
-    html += '<div class="oe-turnings-hint" style="margin-top:9px;">All fifteen instruments consecrated. Now the three bodies of the operator are refined for the spheres.</div>'
-      + renderBookIIBodies()
-      + renderBookIISpheres();
-    return html + '</div>';
+    return html + '<div class="oe-turnings-hint" style="margin-top:9px;">All fifteen instruments consecrated. The three bodies of the operator are refined for the spheres.</div></div>';
   }
   var tool = BOOK2_TOOLS[idx];
   var st = bookIIToolState(tool.id);
@@ -19733,35 +19805,26 @@ function renderBookIITools() {
     + '<div class="oe-stage-step-need">' + tool.d + '</div>'
     + '<div class="b2t-phases">' + trail + '</div>'
     + '</div></div>';
-  var gateLeft = (st.readyAt || 0) - Date.now();
-  if (gateLeft > 0) {
-    html += '<button class="b2t-btn" disabled>' + TOOL_PHASES[st.p] + ' · resting ' + fmtToolGate(gateLeft) + '</button>';
-  } else {
-    var c = toolPhaseCost(idx, st.p);
-    var can = (omniaState.akasha || 0) >= c.a && (omniaState.darkMatter || 0) >= c.d;
-    html += '<button class="b2t-btn" onclick="omniaBuildToolPhase()"' + (can ? '' : ' disabled') + '>'
-      + TOOL_PHASES[st.p] + ' · ' + c.a.toLocaleString() + ' akasha + ' + c.d + ' ◆</button>';
-  }
   return html + '</div>';
 }
 
-// The always-visible "Turnings of the Wheel" status: which turning you're on,
-// the permanent bonus, a tease toward the 3rd Turning, and — once unlocked —
+// The always-visible "Magical Evocation" status: which prestige you're on,
+// the permanent bonus, a tease toward the 3rd Prestige, and — once unlocked —
 // the Dark Matter balance.
 function renderOmniaTurnings() {
   var pc = omniaState.prestige || 0;
-  // Before the first turning the Prestige BUTTON already carries the teaser —
+  // Before the first prestige the Prestige BUTTON already carries the teaser —
   // showing a card that repeats it is the duplicate the user saw. So this
   // status hub only appears once there's something the button doesn't say:
-  // your turning count, the akasha bonus, and (at 3+) Dark Matter + Book II.
+  // your prestige count, the akasha bonus, and (at 3+) Dark Matter + Book II.
   if (pc < 1) return '';
   var countHtml = '<span class="pip">' + (pc <= 6 ? Array(pc + 1).join('✦') : '✦ ×' + pc) + '</span> · +' + Math.round((omniaPrestigeMult() - 1) * 100) + '% akasha';
   var html = '<div class="oe-turnings-top">'
-    + '<span class="oe-turnings-label">Turnings of the Wheel</span>'
+    + '<span class="oe-turnings-label">Magical Evocation</span>'
     + '<span class="oe-turnings-count">' + countHtml + '</span>'
     + '</div>';
   if (pc < PRESTIGE_BOOK2) {
-    html += '<div class="oe-turnings-hint">The 3rd Turning awakens <b>Dark Matter</b>.</div>';
+    html += '<div class="oe-turnings-hint">The 3rd Prestige awakens <b>Dark Matter</b> — and Book II: <b>Magical Evocation</b>.</div>';
   } else {
     html += '<div class="oe-turnings-hint">The deeper current flows. <b>Dark Matter</b> gathers from the advanced exercises.</div>'
       + '<div class="oe-dm-row"><span class="oe-dm-orb"></span>'
@@ -19773,7 +19836,7 @@ function renderOmniaTurnings() {
 }
 function omniaReqFactor() {
   var p = omniaState.prestige || 0;
-  return p <= 0 ? 1 : Math.max(0.3, Math.pow(0.65, p)); // ~65% per turning, floored at 30%
+  return p <= 0 ? 1 : Math.max(0.3, Math.pow(0.65, p)); // ~65% per prestige, floored at 30%
 }
 // Scaled step requirement for the ADVANCE gate + its display. Sync scoring and
 // body clamps deliberately use raw requirements (they operate on snapshots).
@@ -19783,7 +19846,7 @@ function omniaStepReqVal(step, key) {
 }
 function omniaCanPrestige() {
   if ((omniaState.prestige || 0) >= PRESTIGE_BOOK2) {
-    // Book II turnings: reaching Pluto (all tools implied) turns the Wheel.
+    // Book II evocations: reaching Pluto (all tools implied) completes one.
     return bookIISphereCount() >= BOOK2_SPHERES.length;
   }
   var last = OMNIA_BARDON_STEPS[OMNIA_BARDON_STEPS.length - 1];
@@ -19797,7 +19860,7 @@ function omniaPrestige() {
   omniaState.completedRecommended = 0;
   omniaState.rec = null;
   omniaState.recStreak = 0;
-  // Book II turnings re-travel the spheres; tools and bodies are never asked again.
+  // Book II evocations re-travel the spheres; tools and bodies are never asked again.
   if (omniaState.bookII) { omniaState.bookII.sphere = 0; omniaState.bookII.sphereReadyAt = 0; }
   saveOmniaState();
   if (syncEnabled && authToken) syncPushData();
@@ -19816,11 +19879,13 @@ function omniaConfirmPrestige() {
     return;
   }
   var next = (omniaState.prestige || 0) + 1;
-  var msg = 'Begin the ' + _prestigeOrdinal(next) + ' Turning of the Wheel?\n\n'
-    + 'Omnia returns to Step I and rebuilds her three bodies from the beginning — '
-    + 'but keeps all akasha, upgrades, cosmetics, level and your streak.\n\n'
-    + 'Permanent boon: +' + (25 * next) + '% akasha, and every step requirement ahead is eased.';
-  showConfirm('Begin the ' + _prestigeOrdinal(next).charAt(0).toUpperCase() + _prestigeOrdinal(next).slice(1) + ' Turning?', msg.split('?\n\n')[1] || msg, omniaPrestige);
+  var body = (omniaState.prestige || 0) >= PRESTIGE_BOOK2
+    ? 'The spheres close behind Omnia — instruments and bodies kept — to be walked again at greater depth.\n\n'
+      + 'Permanent boon: +' + (25 * next) + '% akasha.'
+    : 'Omnia returns to Step I and rebuilds her three bodies from the beginning — '
+      + 'but keeps all akasha, upgrades, cosmetics, level and your streak.\n\n'
+      + 'Permanent boon: +' + (25 * next) + '% akasha, and every step requirement ahead is eased.';
+  showConfirm('Begin Magical Evocation ' + _prestigeRoman(next) + '?', body, omniaPrestige);
 }
 
 function showPrestigeCeremony(n) {
@@ -19842,8 +19907,8 @@ function showPrestigeCeremony(n) {
     ? 'The spheres close behind her — instruments and bodies kept — to be walked again at greater depth.'
     : 'Omnia dissolves and reforms at the first step — the whole path walked again, now seen with mastery.';
   el.innerHTML = '<div class="pc-rays"></div>' + crystal
-    + '<div class="pc-kicker">Turning ' + _prestigeRoman(n) + ' · The Wheel Turns</div>'
-    + '<div class="pc-title">A New Turning Begins</div>'
+    + '<div class="pc-kicker">Magical Evocation ' + _prestigeRoman(n) + '</div>'
+    + '<div class="pc-title">A New Evocation Begins</div>'
     + '<div class="pc-sub">' + subTxt + '</div>'
     + '<div class="pc-boon">✦ +' + (25 * n) + '% akasha, forever · the path ahead is shorter ✦</div>'
     + '<button class="pc-btn" id="pcCloseBtn">Walk Again →</button>';
@@ -20449,14 +20514,86 @@ function renderOmniaEngine() {
   if (stepNum2 >= 5) rateLabel += ' · dual generator active';
   if (rateText) rateText.textContent = rateLabel;
 
+  var _inBookII = typeof darkMatterUnlocked === 'function' && darkMatterUnlocked();
+  var stepLabelEl = document.querySelector('#omniaEngine .oe-stage-step-label');
   var stepName = document.getElementById('omniaStepName');
   var stepText = document.getElementById('omniaStepText');
-  if (stepName) stepName.textContent = step.name;
-  if (stepText) stepText.textContent = step.text;
+  if (_inBookII) {
+    // Book II (Magical Evocation) takes the place of Book I: the "Now
+    // Building" block narrates the forge, then the spheres.
+    var _b2ToolIdx = bookIICurrentToolIdx();
+    var _b2ToolsDone = _b2ToolIdx >= BOOK2_TOOLS.length;
+    var _b2SphereN = bookIISphereCount();
+    var _b2Label, _b2Name, _b2Text;
+    if (!_b2ToolsDone) {
+      var _b2Tool = BOOK2_TOOLS[_b2ToolIdx];
+      _b2Label = 'Now Forging'; _b2Name = _b2Tool.name; _b2Text = _b2Tool.d;
+    } else if (_b2SphereN < BOOK2_SPHERES.length) {
+      var _b2Sp = BOOK2_SPHERES[_b2SphereN];
+      _b2Label = 'Now Approaching'; _b2Name = _b2Sp.name; _b2Text = _b2Sp.d;
+    } else {
+      _b2Label = 'Evocation Complete'; _b2Name = 'Pluto Attained';
+      _b2Text = 'Seal the spheres to begin the next Evocation — the bonus deepens.';
+    }
+    if (stepLabelEl && stepLabelEl.childNodes.length) stepLabelEl.childNodes[0].nodeValue = _b2Label;
+    if (stepName) stepName.textContent = _b2Name;
+    if (stepText) stepText.textContent = _b2Text;
+  } else {
+    if (stepLabelEl && stepLabelEl.childNodes.length) stepLabelEl.childNodes[0].nodeValue = 'Now Building';
+    if (stepName) stepName.textContent = step.name;
+    if (stepText) stepText.textContent = step.text;
+  }
 
   // Inline session progress + advance button
   var sessionProgress = document.getElementById('omniaSessionProgress');
   var advanceBtn = document.getElementById('omniaAdvanceBtn');
+  if (_inBookII) {
+    // Session slot: instrument count while forging, then the ten drawn
+    // spheres. Main button: forge the next phase, then sphere travel.
+    var _tIdx = bookIICurrentToolIdx();
+    var _tDone = _tIdx >= BOOK2_TOOLS.length;
+    var _spN = bookIISphereCount();
+    var _spAll = _spN >= BOOK2_SPHERES.length;
+    if (sessionProgress) {
+      sessionProgress.innerHTML = _tDone
+        ? bookIISphereOrbRow() + 'Spheres: <strong>' + _spN + ' / ' + BOOK2_SPHERES.length + '</strong> traversed'
+        : 'Instruments: <strong>' + _tIdx + ' / ' + BOOK2_TOOLS.length + '</strong> consecrated';
+    }
+    if (advanceBtn) {
+      var _cta = null, _ctaOff = true;
+      if (!_tDone) {
+        var _ct = BOOK2_TOOLS[_tIdx], _cst = bookIIToolState(_ct.id);
+        var _gate = (_cst.readyAt || 0) - Date.now();
+        if (_gate > 0) { _cta = _ct.name + ' rests · ' + fmtToolGate(_gate); }
+        else {
+          var _cc = toolPhaseCost(_tIdx, _cst.p);
+          _cta = TOOL_PHASES[_cst.p] + ' the ' + _ct.name + ' · ' + _cc.a.toLocaleString() + ' + ' + _cc.d + ' ◆';
+          _ctaOff = (omniaState.akasha || 0) < _cc.a || (omniaState.darkMatter || 0) < _cc.d;
+        }
+      } else if (!_spAll) {
+        var _sp2 = BOOK2_SPHERES[_spN], _rq = sphereReq(_spN), _sc = sphereCost(_spN), _bd = bookIIBodies();
+        var _gate2 = ((omniaState.bookII || {}).sphereReadyAt || 0) - Date.now();
+        if (_gate2 > 0) { _cta = 'The way rests · ' + fmtToolGate(_gate2); }
+        else {
+          var _met = (_bd.astral||1) >= _rq.astral && (_bd.mental||1) >= _rq.mental && (_bd.wisdom||1) >= _rq.wisdom;
+          _cta = 'Travel to ' + _sp2.name + ' · ' + _sc.a.toLocaleString() + ' + ' + _sc.d + ' ◆';
+          _ctaOff = !_met || (omniaState.akasha || 0) < _sc.a || (omniaState.darkMatter || 0) < _sc.d;
+        }
+      }
+      var canPrestigeB2 = omniaCanPrestige();
+      advanceBtn.style.display = _cta ? '' : 'none';
+      if (_cta) { advanceBtn.textContent = _cta; advanceBtn.disabled = _ctaOff; }
+      var prestigeBtnB2 = document.getElementById('omniaPrestigeBtn');
+      if (prestigeBtnB2) {
+        prestigeBtnB2.style.display = (canPrestigeB2 || _tDone) ? '' : 'none';
+        prestigeBtnB2.classList.toggle('locked', !canPrestigeB2);
+        var _note = prestigeBtnB2.querySelector('.pb-note');
+        if (_note) _note.textContent = canPrestigeB2
+          ? 'Seal the spheres · +25% akasha, forever'
+          : 'Reach Pluto to begin the next Evocation';
+      }
+    }
+  } else {
   var sessNeeded = omniaStepReqVal(step, 'recommended');
   var sessCompleted = Math.min(omniaState.completedRecommended || 0, sessNeeded);
   if (sessionProgress) {
@@ -20471,20 +20608,19 @@ function renderOmniaEngine() {
     var prestigeBtn = document.getElementById('omniaPrestigeBtn');
     if (prestigeBtn) {
       // Only surface Prestige when it's actually on the horizon — the final
-      // Bardon step (Book I) or once all tools are consecrated (Book II).
-      // Showing a locked Prestige card back at Step IV was premature clutter.
-      var _atFinalStretch = (omniaState.prestige || 0) >= PRESTIGE_BOOK2
-        ? (typeof bookIICurrentToolIdx === 'function' && bookIICurrentToolIdx() >= BOOK2_TOOLS.length)
-        : !next;
-      prestigeBtn.style.display = (canPrestige || _atFinalStretch) ? '' : 'none';
+      // Bardon step of Book I. (Book II handles its own prestige surface.)
+      prestigeBtn.style.display = (canPrestige || !next) ? '' : 'none';
       prestigeBtn.classList.toggle('locked', !canPrestige);
+      var _noteB1 = prestigeBtn.querySelector('.pb-note');
+      if (_noteB1) _noteB1.textContent = 'Unlock Dark Matter at Prestige 3';
     }
+  }
   }
   var pipsEl = document.getElementById('omniaPrestigePips');
   if (pipsEl) {
     var pc = omniaState.prestige || 0;
     pipsEl.innerHTML = pc > 0
-      ? ' · <span class="oe-prestige-pips-mark" title="' + pc + ' turning' + (pc === 1 ? '' : 's') + ' completed · +' + Math.round((omniaPrestigeMult() - 1) * 100) + '% akasha">' + (pc <= 5 ? Array(pc + 1).join('✦') : '✦×' + pc) + '</span>'
+      ? ' · <span class="oe-prestige-pips-mark" title="' + pc + ' evocation' + (pc === 1 ? '' : 's') + ' completed · +' + Math.round((omniaPrestigeMult() - 1) * 100) + '% akasha">' + (pc <= 5 ? Array(pc + 1).join('✦') : '✦×' + pc) + '</span>'
       : '';
   }
   var turnEl = document.getElementById('omniaTurnings');
@@ -20501,7 +20637,10 @@ function renderOmniaEngine() {
   }
 
   var bodyGrid = document.getElementById('omniaBodyGrid');
-  if (bodyGrid) {
+  if (bodyGrid && _inBookII) {
+    // Book II: the refined bodies (Astral/Mental/Wisdom) take the trio's place.
+    bodyGrid.innerHTML = renderBookIIBodyCards();
+  } else if (bodyGrid) {
     bodyGrid.innerHTML = Object.keys(OMNIA_BODY_META).map(function(body) {
       var meta = OMNIA_BODY_META[body];
       var lvl = omniaState.bodies[body] || 0;
@@ -20701,6 +20840,13 @@ function performOmniaAction(kind) {
 }
 
 function advanceOmniaStep() {
+  // Book II: the main button drives Evocation progress — forge the current
+  // instrument's next phase while tools remain, then travel the spheres.
+  if (typeof darkMatterUnlocked === 'function' && darkMatterUnlocked()) {
+    if (bookIICurrentToolIdx() < BOOK2_TOOLS.length) omniaBuildToolPhase();
+    else omniaTravelSphere();
+    return;
+  }
   var step = omniaCurrentStep();
   var next = OMNIA_BARDON_STEPS.find(function(s) { return s.step === (omniaState.bardonStep || 1) + 1; });
   if (!next || !omniaStepReady(step)) return;
