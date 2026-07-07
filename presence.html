@@ -354,14 +354,15 @@
     @media (min-width:600px) {
       .so-hero-num { font-size:120px; }
     }
-    /* ── Turnings status card + Dark Matter ── */
-    .oe-turnings { position:relative; overflow:hidden; margin-top:11px; border:1px solid rgba(226,196,140,.28); border-radius:13px; padding:13px 15px; background:linear-gradient(140deg, rgba(74,56,108,.4) 0%, rgba(34,26,54,.3) 55%, rgba(58,46,32,.26) 100%); box-shadow:inset 0 1px 0 rgba(255,255,255,.06), 0 0 24px -12px rgba(226,196,140,.45); }
-    .oe-turnings::before { content:'✦'; position:absolute; right:-6px; bottom:-16px; font-size:58px; color:rgba(226,196,140,.07); pointer-events:none; }
+    /* ── Turnings status card + Dark Matter ──
+       Styled with the Book I engine's own idioms (flat surface, 8px uppercase
+       labels, thin bars, outline buttons) so Book II reads as the same app. */
+    .oe-turnings { position:relative; margin-top:11px; border:1px solid var(--border); border-radius:12px; padding:12px 14px; background:rgba(255,255,255,.025); }
     .oe-turnings-top { display:flex; align-items:center; justify-content:space-between; gap:10px; margin-bottom:4px; }
-    .oe-turnings-label { font-family:'Cormorant Garamond',serif; font-size:16px; font-weight:300; letter-spacing:.18em; text-transform:uppercase; color:#e8cd94; text-shadow:0 0 12px rgba(226,196,140,.35); }
+    .oe-turnings-label { font-size:8px; letter-spacing:.24em; text-transform:uppercase; color:#e8cd94; }
     .oe-turnings-count { font-family:'DM Mono',monospace; font-size:10px; letter-spacing:.1em; color:#e8cd94; }
     .oe-turnings-count .pip { text-shadow:0 0 7px rgba(226,196,140,.6); }
-    .oe-turnings-hint { font-size:10.5px; line-height:1.6; color:rgba(214,196,240,.7); }
+    .oe-turnings-hint { font-size:9px; line-height:1.55; color:var(--muted); }
     .oe-turnings-hint b { color:#e8cd94; font-weight:400; }
     .oe-dm-row { display:flex; align-items:center; gap:7px; margin-top:7px; padding-top:8px; border-top:1px solid rgba(255,255,255,.06); }
     .oe-dm-orb { width:13px; height:13px; border-radius:50%; background:radial-gradient(circle at 38% 34%, #b48ce0 0%, #5a3c8e 60%, #24123c 100%); box-shadow:0 0 8px rgba(150,110,220,.7); }
@@ -370,22 +371,15 @@
     /* Book II magical tools panel (inside the Prestige card) */
     .b2-tools { margin-top:11px; padding-top:11px; border-top:1px solid rgba(255,255,255,.07); }
     .b2-tools-head { display:flex; align-items:center; justify-content:space-between; margin-bottom:8px; }
-    .b2-tools-title { font-family:'Cormorant Garamond',serif; font-size:14px; font-weight:300; letter-spacing:.16em; text-transform:uppercase; color:#d8c4f4; }
+    .b2-tools-title { font-size:8px; letter-spacing:.24em; text-transform:uppercase; color:var(--muted); }
     .b2-tools-count { font-family:'DM Mono',monospace; font-size:9px; letter-spacing:.12em; color:var(--muted); }
-    .b2-car { position:relative; display:flex; overflow-x:auto; scroll-snap-type:x mandatory; gap:10px; margin:2px -15px 0; padding:4px 15px 6px; -webkit-overflow-scrolling:touch; scrollbar-width:none; }
-    .b2-car::-webkit-scrollbar { display:none; }
-    .b2s { flex:0 0 82%; scroll-snap-align:center; border:1px solid rgba(226,196,140,.18); border-radius:13px; padding:13px 13px 12px; background:linear-gradient(155deg, rgba(60,44,92,.28), rgba(24,20,38,.24)); display:flex; flex-direction:column; align-items:center; text-align:center; }
-    .b2s.cur { border-color:rgba(226,196,140,.5); box-shadow:0 0 22px -10px #e8cd94; }
-    .b2s.done { border-color:rgba(126,184,164,.28); }
-    .b2s svg { width:110px; height:138px; margin-bottom:4px; }
-    .b2s.done svg { filter:drop-shadow(0 0 9px rgba(232,205,148,.5)); }
+    /* Current instrument, laid out like the engine's "Now Building" block */
+    .b2-now { display:flex; align-items:center; gap:14px; margin-top:11px; text-align:left; }
+    .b2-now svg { width:64px; height:80px; flex:0 0 auto; filter:drop-shadow(0 0 8px rgba(232,205,148,.22)); }
+    .b2-tools .oe-bardon-dot.done { background:rgba(226,196,140,.4); }
+    .b2-tools .oe-bardon-dot.active { background:#e8cd94; box-shadow:0 0 8px rgba(232,205,148,.5); }
     .b2p { opacity:.07; filter:grayscale(1) brightness(1.6); }
     .b2p.on { opacity:1; filter:none; transition:opacity .8s ease, filter .8s ease; }
-    .b2s-name { font-family:'Cormorant Garamond',serif; font-size:17px; font-weight:300; color:var(--text); line-height:1.2; }
-    .b2s-desc { font-size:10px; color:var(--muted); line-height:1.5; margin:2px 0 6px; font-style:italic; min-height:30px; }
-    .b2s-state { font-family:'DM Mono',monospace; font-size:8px; letter-spacing:.16em; text-transform:uppercase; padding:9px 12px; border-radius:9px; width:100%; box-sizing:border-box; }
-    .b2s-state.done { color:#9ed8c0; border:1px solid rgba(126,184,164,.35); }
-    .b2s-state.lock { color:#6a6284; border:1px solid rgba(255,255,255,.07); }
     /* Sphere travel */
     .b2sp-row { display:flex; gap:6px; flex-wrap:wrap; margin-bottom:10px; }
     .b2sp { width:26px; height:26px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:13px; color:var(--spc); opacity:.32; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.02); }
@@ -421,17 +415,13 @@
     body[data-sphere-form="10"] { --sphere-glow:#9a6ae8aa; }
     body[data-sphere-form="10"] .oe-omnia-figure::before, body[data-sphere-form="10"] .path-banner-figure::before { content:'♇'; color:#9a6ae8; text-shadow:0 0 9px #9a6ae8, 0 0 20px #9a6ae866; }
 
-    .b2t-phases { font-family:'DM Mono',monospace; font-size:8px; letter-spacing:.14em; text-transform:uppercase; color:rgba(255,255,255,.28); }
+    .b2t-phases { font-family:'DM Mono',monospace; font-size:8px; letter-spacing:.14em; text-transform:uppercase; color:rgba(255,255,255,.28); margin-top:6px; }
     .b2t-ph.done { color:#9ed8c0; }
     .b2t-ph.cur { color:#e8cd94; text-shadow:0 0 8px rgba(226,196,140,.5); }
     .b2t-sep { margin:0 5px; opacity:.4; }
-    .b2t-btn { width:100%; padding:11px; border-radius:9px; border:1px solid rgba(226,196,140,.4); background:linear-gradient(100deg, rgba(122,95,174,.35), rgba(184,154,94,.28)); color:#f2e8d4; font-family:'DM Mono',monospace; font-size:9px; letter-spacing:.16em; text-transform:uppercase; cursor:pointer; }
-    .b2t-btn:disabled { opacity:.45; cursor:default; }
-    .b2-bodies { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; margin-top:10px; }
-    .b2-body { border:1px solid rgba(255,255,255,.14); border:1px solid color-mix(in srgb, var(--b2c) 32%, transparent); border-radius:11px; padding:10px 8px; text-align:center; background:rgba(255,255,255,.02); }
-    .b2-body-name { font-family:'Cormorant Garamond',serif; font-size:14px; color:var(--b2c); letter-spacing:.08em; }
-    .b2-body-lvl { font-family:'Cormorant Garamond',serif; font-size:26px; font-weight:300; color:var(--text); line-height:1.1; text-shadow:0 0 14px color-mix(in srgb, var(--b2c) 45%, transparent); }
-    .b2-body-desc { font-size:8.5px; color:var(--muted); line-height:1.5; margin:3px 0 8px; min-height:26px; }
+    /* Same shape/typography as .oe-advance-btn, in Book II's gold */
+    .b2t-btn { width:100%; margin-top:10px; padding:10px; border-radius:7px; border:1px solid rgba(226,196,140,.32); background:rgba(226,196,140,.08); color:#e8cd94; font-family:'DM Mono',monospace; font-size:9px; letter-spacing:.2em; text-transform:uppercase; cursor:pointer; }
+    .b2t-btn:disabled { opacity:.42; cursor:default; }
         /* ── Prestige (Turnings of the Wheel) ── */
     .oe-prestige-btn { width:100%; margin-top:14px; padding:13px 12px 14px; border-radius:11px; border:1px solid rgba(226,196,140,.5); background:rgba(226,196,140,.07); color:#e8cd94; cursor:pointer; display:flex; flex-direction:column; align-items:center; gap:3px; }
     .oe-prestige-btn .pb-main { font-family:'Cormorant Garamond',serif; font-size:18px; font-weight:300; letter-spacing:.22em; text-transform:uppercase; line-height:1; }
@@ -19587,18 +19577,32 @@ function omniaBuildBookIIBody(b) {
   renderOmniaEngine();
 }
 function renderBookIIBodies() {
+  // The refined bodies, as literal Book I body cards (.oe-body): name, big
+  // serif level, "n / req · sphere" need line, thin bar, outline Build button.
   var bodies = bookIIBodies();
-  return '<div class="b2-bodies">'
+  var sphereIdx = bookIISphereCount();
+  var spheresLeft = sphereIdx < BOOK2_SPHERES.length;
+  var req = spheresLeft ? sphereReq(sphereIdx) : null;
+  var roman = ['I','II','III','IV','V','VI','VII','VIII','IX','X'][sphereIdx] || 'X';
+  return '<div class="oe-bodies" style="padding:11px 0 0;">'
     + Object.keys(BOOK2_BODY_META).map(function(b) {
         var m = BOOK2_BODY_META[b];
+        var lvl = bodies[b] || 1;
+        var need = req ? req[b] : 0;
+        var met = need > 0 && lvl >= need;
+        var pct = need > 0 ? Math.min(100, (lvl / need) * 100) : Math.min(100, (lvl % 25) * 4);
+        var needHtml = need > 0
+          ? '<span class="' + (met ? 'need-met' : '') + '">' + Math.min(lvl, need) + ' / ' + need + '</span> · sphere ' + roman
+          : 'the spheres are yours';
         var c = bookIIBodyCost(b);
         var can = (omniaState.akasha || 0) >= c.a && (omniaState.darkMatter || 0) >= c.d;
-        return '<div class="b2-body" style="--b2c:' + m.color + ';">'
-          + '<div class="b2-body-name">' + m.name + '</div>'
-          + '<div class="b2-body-lvl">' + (bodies[b] || 1) + '</div>'
-          + '<div class="b2-body-desc">' + m.desc + '</div>'
-          + '<button class="b2t-btn" style="padding:8px;font-size:8px;" onclick="omniaBuildBookIIBody(\'' + b + '\')"' + (can ? '' : ' disabled') + '>'
-          + c.a.toLocaleString() + ' + ' + c.d + ' ◆</button>'
+        return '<div class="oe-body" style="--body-color:' + m.color + ';">'
+          + '<div class="oe-body-name">' + m.name + '</div>'
+          + '<div class="oe-body-lvl-row"><span class="oe-body-lvl">' + lvl + '</span><span class="oe-body-lvl-key">lvl</span></div>'
+          + '<div class="oe-body-need ' + (met ? 'need-met' : '') + '">' + needHtml + '</div>'
+          + '<div class="oe-body-bar"><div class="oe-body-bar-fill" style="width:' + pct + '%;"></div></div>'
+          + '<button class="oe-body-btn" onclick="omniaBuildBookIIBody(\'' + b + '\')"' + (can ? '' : ' disabled') + '>'
+          + 'Build <span class="oe-body-cost">' + c.a.toLocaleString() + ' + ' + c.d + '◆</span></button>'
           + '</div>';
       }).join('')
     + '</div>';
@@ -19672,7 +19676,8 @@ function renderBookIISpheres() {
     return '<span class="b2sp-req' + (met ? ' met' : '') + '">' + BOOK2_BODY_META[b].name + ' ' + Math.min(bodies[b] || 1, req[b]) + '/' + req[b] + '</span>';
   }).join('<span class="b2t-sep">·</span>');
   html += '<div class="b2sp-cur"><span class="b2sp-big" style="--spc:' + sp.c + ';">' + sp.sym + '</span>'
-    + '<div><div class="b2s-name" style="text-align:left;">' + sp.name + '</div>'
+    + '<div><div class="oe-stage-step-label">Now Approaching</div>'
+    + '<div class="oe-stage-step-name">' + sp.name + '</div>'
     + '<div class="b2sp-reqs">' + reqHtml + '</div></div></div>';
   var gateLeft = ((omniaState.bookII || {}).sphereReadyAt || 0) - Date.now();
   if (gateLeft > 0) {
@@ -19685,55 +19690,57 @@ function renderBookIISpheres() {
   return html + '</div>';
 }
 
-// The tools atelier: a horizontal carousel, one instrument in focus at a
-// time, each drawn in detail and assembled piece by piece as phases are
-// bought. Ghosted parts show what remains.
+// The tools atelier, laid out like the engine's "Now Building" block: a
+// 15-segment track (the Book I step-dots idiom), the current instrument's
+// art assembling piece by piece as phases are bought, and one build button.
 function renderBookIITools() {
   var idx = bookIICurrentToolIdx();
   var doneCount = 0;
-  var slides = BOOK2_TOOLS.map(function(tool, i) {
-    var st = bookIIToolState(tool.id);
-    if (st.p >= TOOL_PHASES.length) doneCount++;
-    var art = (BOOK2_TOOL_ART[tool.id] || '')
-      .replace('{P1}', st.p >= 1 ? ' on' : '')
-      .replace('{P2}', st.p >= 2 ? ' on' : '')
-      .replace('{P3}', st.p >= 3 ? ' on' : '');
-    var cls = 'b2s' + (st.p >= TOOL_PHASES.length ? ' done' : i === idx ? ' cur' : '');
-    var trail = TOOL_PHASES.map(function(pn, pi) {
-      return '<span class="b2t-ph' + (pi < st.p ? ' done' : (i === idx && pi === st.p) ? ' cur' : '') + '">' + pn + '</span>';
-    }).join('<span class="b2t-sep">·</span>');
-    var foot;
-    if (st.p >= TOOL_PHASES.length) {
-      foot = '<div class="b2s-state done">✦ Consecrated</div>';
-    } else if (i !== idx) {
-      foot = '<div class="b2s-state lock">Awaits the ' + BOOK2_TOOLS[i - 1].name + '</div>';
-    } else {
-      var gateLeft = (st.readyAt || 0) - Date.now();
-      if (gateLeft > 0) {
-        foot = '<button class="b2t-btn" disabled>' + TOOL_PHASES[st.p] + ' · resting ' + fmtToolGate(gateLeft) + '</button>';
-      } else {
-        var c = toolPhaseCost(i, st.p);
-        var can = (omniaState.akasha || 0) >= c.a && (omniaState.darkMatter || 0) >= c.d;
-        foot = '<button class="b2t-btn" onclick="omniaBuildToolPhase()"' + (can ? '' : ' disabled') + '>'
-          + TOOL_PHASES[st.p] + ' · ' + c.a.toLocaleString() + ' akasha + ' + c.d + ' ◆</button>';
-      }
-    }
-    return '<div class="' + cls + '">'
-      + '<svg viewBox="0 0 120 150" aria-hidden="true">' + art + '</svg>'
-      + '<div class="b2s-name">' + tool.name + '</div>'
-      + '<div class="b2s-desc">' + tool.d + '</div>'
-      + '<div class="b2t-phases">' + trail + '</div>'
-      + foot + '</div>';
-  }).join('');
+  BOOK2_TOOLS.forEach(function(tool) {
+    if (bookIIToolState(tool.id).p >= TOOL_PHASES.length) doneCount++;
+  });
+  var track = '<div class="oe-bardon-track" style="margin-top:0;">'
+    + BOOK2_TOOLS.map(function(tool, i) {
+        var cls = 'oe-bardon-dot' + (i < idx ? ' done' : (i === idx ? ' active' : ''));
+        return '<div class="' + cls + '" title="' + tool.name + '"></div>';
+      }).join('')
+    + '</div>';
   var html = '<div class="b2-tools">'
     + '<div class="b2-tools-head"><span class="b2-tools-title">Magical Tools</span>'
     + '<span class="b2-tools-count">' + doneCount + ' / ' + BOOK2_TOOLS.length + '</span></div>'
     + BOOK2_TOOL_DEFS
-    + '<div class="b2-car" id="b2Car">' + slides + '</div>';
+    + track;
   if (idx >= BOOK2_TOOLS.length) {
     html += '<div class="oe-turnings-hint" style="margin-top:9px;">All fifteen instruments consecrated. Now the three bodies of the operator are refined for the spheres.</div>'
       + renderBookIIBodies()
       + renderBookIISpheres();
+    return html + '</div>';
+  }
+  var tool = BOOK2_TOOLS[idx];
+  var st = bookIIToolState(tool.id);
+  var art = (BOOK2_TOOL_ART[tool.id] || '')
+    .replace('{P1}', st.p >= 1 ? ' on' : '')
+    .replace('{P2}', st.p >= 2 ? ' on' : '')
+    .replace('{P3}', st.p >= 3 ? ' on' : '');
+  var trail = TOOL_PHASES.map(function(pn, pi) {
+    return '<span class="b2t-ph' + (pi < st.p ? ' done' : pi === st.p ? ' cur' : '') + '">' + pn + '</span>';
+  }).join('<span class="b2t-sep">·</span>');
+  html += '<div class="b2-now">'
+    + '<svg viewBox="0 0 120 150" aria-hidden="true">' + art + '</svg>'
+    + '<div>'
+    + '<div class="oe-stage-step-label">Now Forging</div>'
+    + '<div class="oe-stage-step-name">' + tool.name + '</div>'
+    + '<div class="oe-stage-step-need">' + tool.d + '</div>'
+    + '<div class="b2t-phases">' + trail + '</div>'
+    + '</div></div>';
+  var gateLeft = (st.readyAt || 0) - Date.now();
+  if (gateLeft > 0) {
+    html += '<button class="b2t-btn" disabled>' + TOOL_PHASES[st.p] + ' · resting ' + fmtToolGate(gateLeft) + '</button>';
+  } else {
+    var c = toolPhaseCost(idx, st.p);
+    var can = (omniaState.akasha || 0) >= c.a && (omniaState.darkMatter || 0) >= c.d;
+    html += '<button class="b2t-btn" onclick="omniaBuildToolPhase()"' + (can ? '' : ' disabled') + '>'
+      + TOOL_PHASES[st.p] + ' · ' + c.a.toLocaleString() + ' akasha + ' + c.d + ' ◆</button>';
   }
   return html + '</div>';
 }
@@ -20485,11 +20492,6 @@ function renderOmniaEngine() {
     var _turnHtml = renderOmniaTurnings();
     turnEl.innerHTML = _turnHtml;
     turnEl.style.display = _turnHtml ? '' : 'none';
-    var _car = document.getElementById('b2Car');
-    if (_car) {
-      var _cs = _car.querySelector('.b2s.cur') || _car.lastElementChild;
-      if (_cs) _car.scrollLeft = Math.max(0, _cs.offsetLeft - (_car.clientWidth - _cs.clientWidth) / 2);
-    }
   }
 
   var collectBtn = document.getElementById('omniaCollectBtn');
