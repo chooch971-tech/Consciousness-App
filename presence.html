@@ -18409,12 +18409,18 @@ function loadOmniaState() {
       var nativePal = OMNIA_ENTITY_NATIVE_PALETTE[merged.cosmetics.entity] || 'aether';
       merged.cosmetics.palette = merged.cosmetics.unlockedPalettes.indexOf(nativePal) !== -1 ? nativePal : 'aether';
     }
-    // Archangel Michael's native palette is rose-violet, not crimson.
-    // Correct the stored palette unconditionally — idempotent and safe every load.
+    // Archangel Michael's native palette is rose-violet, not crimson — correct
+    // the old bad DEFAULT once. This must be a one-time migration (flagged),
+    // never an every-load rule: Crimson Flame is a purchasable palette themed
+    // for Michael, and re-running this on each load silently reverted a
+    // deliberate Crimson pick back to violet every time the app reopened.
     try {
-      if (merged.cosmetics.entity === 'elys' && merged.cosmetics.palette === 'crimson') {
-        merged.cosmetics.palette = 'violet';
-        if (merged.cosmetics.unlockedPalettes.indexOf('violet') === -1) merged.cosmetics.unlockedPalettes.push('violet');
+      if (!merged.cosmetics._elysPalFixed) {
+        if (merged.cosmetics.entity === 'elys' && merged.cosmetics.palette === 'crimson') {
+          merged.cosmetics.palette = 'violet';
+          if (merged.cosmetics.unlockedPalettes.indexOf('violet') === -1) merged.cosmetics.unlockedPalettes.push('violet');
+        }
+        merged.cosmetics._elysPalFixed = 1;
       }
     } catch(e) {}
     merged.storySeen = Array.isArray(parsed.storySeen) ? parsed.storySeen : [];
