@@ -728,6 +728,9 @@
     .faq-empty { font-size:11.5px; font-style:italic; color:rgba(221,216,206,.7); line-height:1.6; }
 
     /* ── Achievements screen ── */
+    .ach-banner-title { position:absolute; inset:0; padding-right:136px; z-index:3; display:flex; align-items:center; justify-content:center; font-family:'Cormorant Garamond',serif; font-size:36px; font-weight:300; color:#f0d8ac; pointer-events:none; text-shadow:0 0 24px rgba(240,216,172,.3); }
+    #achBannerStar { cursor:pointer; }
+    .exb-ripple.exb-ripple-burst { animation:bannerRipple 1.5s ease-out 1 both; }
     .ach-detail { position:fixed; left:12px; right:12px; bottom:calc(env(safe-area-inset-bottom, 0px) + 12px); z-index:9705; border:1px solid rgba(232,200,122,.4); border-radius:14px; background:#10121a; padding:14px 16px; box-shadow:0 10px 40px rgba(0,0,0,.6); max-height:46vh; overflow-y:auto; }
     .ach-detail-close { position:absolute; top:8px; right:10px; background:none; border:none; color:rgba(221,216,206,.6); font-size:14px; cursor:pointer; padding:6px; }
     .ach-detail-kicker { font-family:'DM Mono',monospace; font-size:8px; letter-spacing:.24em; text-transform:uppercase; color:#e8c87a; margin-bottom:5px; }
@@ -5241,12 +5244,8 @@ body:not(.tut-live) #tutCorgi {
         <i style="width:3px;height:3px;left:86%;top:24%;animation-delay:2.8s;animation-duration:5.4s;"></i>
         <i style="width:4px;height:4px;left:92%;top:64%;animation-delay:1.2s;animation-duration:4.8s;"></i>
       </div>
-      <div class="exb-text">
-        <div class="exb-label">The Record</div>
-        <div class="exb-title">Achievements</div>
-        <div class="exb-tagline" id="achBannerTagline">Every badge earned pays akasha.</div>
-      </div>
-      <div class="exb-right">
+      <div class="ach-banner-title">Achievements</div>
+      <div class="exb-right" id="achBannerStar">
         <div class="exb-glow"></div>
         <div class="exb-ripple"></div><div class="exb-ripple"></div><div class="exb-ripple"></div>
         <div class="exb-sym">
@@ -10422,15 +10421,6 @@ function renderAchScreen() {
   achSeed(); achEnsureMonth();
   var p = achProviders();
   var monthName = new Date().toLocaleString('en', { month:'long' });
-  var tag = document.getElementById('achBannerTagline');
-  if (tag) {
-    var eTot = 0, tTot = 0;
-    ACH_GROUPS.forEach(function(g) {
-      var em = g.monthly ? achState.monthly.earned : achState.earned;
-      g.items.forEach(function(b) { tTot++; if (em[b.id]) eTot++; });
-    });
-    tag.textContent = eTot + ' of ' + tTot + ' earned — every badge pays akasha.';
-  }
   var daysLeft = (function(){ var n = new Date(); return new Date(n.getFullYear(), n.getMonth()+1, 1) - n; })();
   daysLeft = Math.max(1, Math.ceil(daysLeft / 86400000));
   body.innerHTML = ACH_GROUPS.map(function(g) {
@@ -10502,6 +10492,16 @@ document.getElementById('drawerAch').addEventListener('click', function() {
   achEvaluate(true);
   renderAchScreen();
   showScreen('achScreen');
+});
+document.getElementById('achBannerStar').addEventListener('click', function() {
+  var host = this;
+  for (var i = 0; i < 3; i++) {
+    var r = document.createElement('div');
+    r.className = 'exb-ripple exb-ripple-burst';
+    r.style.animationDelay = (i * 0.18) + 's';
+    host.appendChild(r);
+    r.addEventListener('animationend', function() { this.remove(); });
+  }
 });
 document.getElementById('achBackBtn').addEventListener('click', function() {
   _achSelected = null;
