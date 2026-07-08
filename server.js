@@ -1191,12 +1191,16 @@ app.get('/api/sync/friends/list', verifyToken, async (req, res) => {
 
       let streak = 0, concLevel = 1, concXp = 0, akasha = 0, bardonStep = 1;
       let bodies = { physical: 1, astral: 1, mental: 1 };
+      // Practice calendar + last session date feed the client-side Streak Society shared-streak computation.
+      let practicedDates = [], lastSessionDate = null;
 
       if (latestSync) {
         try {
           const v3 = latestSync.presence_v3 ? JSON.parse(latestSync.presence_v3) : null;
           if (v3) {
             streak = v3.streak || 0;
+            practicedDates = Array.isArray(v3.practicedDates) ? v3.practicedDates.slice(-90) : [];
+            lastSessionDate = v3.lastSessionDate || null;
             // Decay a stale streak: a friend's stored streak reflects their last sync.
             // If they haven't practiced in more than one full day, the streak is broken —
             // mirror the client's checkStreakStatus() so we don't show a phantom streak.
@@ -1230,7 +1234,8 @@ app.get('/api/sync/friends/list', verifyToken, async (req, res) => {
         profilePic: otherUser.profilePic || null,
         lastSync: latestSync ? latestSync.syncedAt : null,
         lastActive: otherUser.lastActive || null,
-        streak, concLevel, concXp, akasha, bardonStep, bodies
+        streak, concLevel, concXp, akasha, bardonStep, bodies,
+        practicedDates, lastSessionDate
       });
     }
     res.json({ friends });
