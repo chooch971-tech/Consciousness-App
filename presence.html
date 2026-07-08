@@ -728,8 +728,10 @@
     .faq-empty { font-size:11.5px; font-style:italic; color:rgba(221,216,206,.7); line-height:1.6; }
 
     /* ── Achievements screen ── */
-    #achScreen .top-bar .history-back { flex:0 0 auto; width:auto; padding:0 13px; font-family:'DM Mono',monospace; font-size:10px; letter-spacing:.12em; }
-    .ach-intro { font-size:12.5px; color:rgba(221,216,206,.82); line-height:1.75; margin:4px 0 18px; }
+    /* Full-width banner bar (the app's sub-screen idiom): the whole bar is the
+       back button, arrow at the left, title centered over it. */
+    #achScreen .top-bar .history-back { flex:1 1 100%; width:100%; height:52px; border-radius:14px; justify-content:flex-start; padding:0 17px; font-size:16px; }
+    #achScreen .top-bar .wordmark { z-index:1; }
     .ach-detail { position:fixed; left:12px; right:12px; bottom:calc(env(safe-area-inset-bottom, 0px) + 12px); z-index:9705; border:1px solid rgba(232,200,122,.4); border-radius:14px; background:#10121a; padding:14px 16px; box-shadow:0 10px 40px rgba(0,0,0,.6); max-height:46vh; overflow-y:auto; }
     .ach-detail-close { position:absolute; top:8px; right:10px; background:none; border:none; color:rgba(221,216,206,.6); font-size:14px; cursor:pointer; padding:6px; }
     .ach-detail-kicker { font-family:'DM Mono',monospace; font-size:8px; letter-spacing:.24em; text-transform:uppercase; color:#e8c87a; margin-bottom:5px; }
@@ -5236,10 +5238,9 @@ body:not(.tut-live) #tutCorgi {
   <div class="screen" id="achScreen">
     <div class="top-bar">
       <span class="wordmark">Achievements</span>
-      <button class="history-back" id="achBackBtn">← back</button>
+      <button class="history-back" id="achBackBtn">←</button>
     </div>
     <div style="flex:1; overflow-y:auto; padding-bottom:24px;">
-      <div class="ach-intro">Marks of the long work. Each badge pays akasha when it is earned. Tap one to see your progress.</div>
       <div class="ach-detail" id="achDetail" style="display:none;"></div>
       <div id="achBody"></div>
     </div>
@@ -10133,7 +10134,7 @@ function achHwm(k, extra) { return Math.max(achState.hwm[k] || 0, extra || 0); }
 function ACH_MASTERY_DEFS() {
   var cs = (typeof concState !== 'undefined' && concState) ? concState : {};
   var ct = achState.counters || {};
-  var clockBest = achHwm('clock', cs.bestSeconds);
+  var clockBest = achHwm('clock');
   var tcAll = Math.min(achTCBest('observation'), achTCBest('focus'), achTCBest('vacancy'));
   var senseAll = Math.min(achHwm('sense_feeling'), achHwm('sense_smell'), achHwm('sense_taste'));
   var vis = achHwm('visual'), aud = achHwm('auditory'), br = cs.lifetimeBreaths || 0;
@@ -10232,12 +10233,14 @@ function achSeed() {
   // Credit past practice: assume recorded lifetime sessions qualify.
   achState.exCount = (cs.totalSessions || 0) + (aw.totalSessions || 0);
   try {
-    var st = (typeof guideExerciseStats === 'function') ? guideExerciseStats() : {};
-    ['visual','auditory','sense','asana','clock'].forEach(function(ex) {
-      if (st[ex] && st[ex].bestSec) achState.hwm[ex] = Math.max(achState.hwm[ex] || 0, st[ex].bestSec);
-    });
+    // Strict per-entry matching only. guideExerciseStats() defaults unknown
+    // entries to 'clock' and can fall back to whole-session durations, which
+    // once seeded phantom masteries — never use it here.
     achState.counters = achState.counters || {};
     ((cs.history) || []).forEach(function(h) {
+      if (typeof isClockSession === 'function' && isClockSession(h) && h.seconds) achState.hwm.clock = Math.max(achState.hwm.clock || 0, h.seconds);
+      if (h.type === 'visualization' && h.seconds) achState.hwm.visual = Math.max(achState.hwm.visual || 0, h.seconds);
+      if (h.type === 'auditory' && h.seconds) achState.hwm.auditory = Math.max(achState.hwm.auditory || 0, h.seconds);
       if (h.type === 'multi-sense') achState.flags.multisense = true;
       if (h.type === 'all-angles') achState.flags.allangles = true;
       if (h.exercise === 'sense' && h.mode) achState.hwm['sense_' + h.mode] = Math.max(achState.hwm['sense_' + h.mode] || 0, h.seconds || 0);
@@ -10261,9 +10264,44 @@ function achTouchLogin() {
   var d = achToday();
   if (achState.monthly.loginDays.indexOf(d) === -1) { achState.monthly.loginDays.push(d); achSave(); }
 }
+// One-time repair for the stats-based seed above: re-derive clock/visual/
+// auditory strictly, then revoke any Mastery badges the polluted seed paid
+// for (clawing the akasha back) so earned badges match the live counts.
+function achRemaster() {
+  if (achState._remaster1) return;
+  achState._remaster1 = 1;
+  achState.hwmV = 2;
+  delete achState.hwm.clock; delete achState.hwm.visual; delete achState.hwm.auditory;
+  var cs = (typeof concState !== 'undefined' && concState) ? concState : {};
+  ((cs.history) || []).forEach(function(h) {
+    if (typeof isClockSession === 'function' && isClockSession(h) && h.seconds) achState.hwm.clock = Math.max(achState.hwm.clock || 0, h.seconds);
+    if (h.type === 'visualization' && h.seconds) achState.hwm.visual = Math.max(achState.hwm.visual || 0, h.seconds);
+    if (h.type === 'auditory' && h.seconds) achState.hwm.auditory = Math.max(achState.hwm.auditory || 0, h.seconds);
+  });
+  var m = achMasteryCounts();
+  var refund = 0;
+  achState.revoked = achState.revoked || {};
+  ACH_GROUPS.forEach(function(g) {
+    g.items.forEach(function(b) {
+      if (b.group !== 'master' && b.group !== 'fullm') return;
+      var live = b.group === 'master' ? m.some : m.full;
+      if (achState.earned[b.id] && live < b.target) {
+        delete achState.earned[b.id];
+        achState.revoked[b.id] = Date.now();
+        refund += b.reward;
+      }
+    });
+  });
+  if (refund > 0 && typeof omniaState !== 'undefined' && omniaState) {
+    omniaState.akasha = Math.max(0, (omniaState.akasha || 0) - refund);
+    omniaState.totalAkashaEarned = Math.max(0, (omniaState.totalAkashaEarned || 0) - refund);
+    if (typeof saveOmniaState === 'function') saveOmniaState();
+  }
+  achSave();
+}
 function achEvaluate(silent) {
   if (typeof omniaState === 'undefined' || !omniaState) return;
-  achSeed(); achEnsureMonth(); achTouchLogin();
+  achSeed(); achRemaster(); achEnsureMonth(); achTouchLogin();
   var p = achProviders();
   var newly = [];
   ACH_GROUPS.forEach(function(g) {
@@ -10717,8 +10755,25 @@ function mergeAchPull(localStr, cloudStr) {
   out.earned = unionEarned(a.earned, b.earned);
   out.exCount = Math.max(a.exCount || 0, b.exCount || 0);
   out.seeded = !!(a.seeded || b.seeded);
-  out.hwm = a.hwm || {};
-  Object.keys(b.hwm || {}).forEach(function(k) { out.hwm[k] = Math.max(out.hwm[k] || 0, b.hwm[k] || 0); });
+  var av = a.hwmV || 1, bv = b.hwmV || 1;
+  if (av !== bv) {
+    // A repaired (higher-version) hwm replaces a polluted one wholesale —
+    // max-merging would resurrect the bad values.
+    out.hwm = (av > bv ? a.hwm : b.hwm) || {};
+  } else {
+    out.hwm = a.hwm || {};
+    Object.keys(b.hwm || {}).forEach(function(k) { out.hwm[k] = Math.max(out.hwm[k] || 0, b.hwm[k] || 0); });
+  }
+  out.hwmV = Math.max(av, bv);
+  out._remaster1 = (a._remaster1 || b._remaster1) ? 1 : 0;
+  var revoked = a.revoked || {};
+  Object.keys(b.revoked || {}).forEach(function(k) { revoked[k] = Math.max(revoked[k] || 0, (b.revoked || {})[k] || 0); });
+  out.revoked = revoked;
+  Object.keys(revoked).forEach(function(id) {
+    // Drop stale copies of a revoked badge; a genuinely re-earned one (newer
+    // timestamp than the revocation) survives.
+    if (out.earned[id] && out.earned[id] <= revoked[id]) delete out.earned[id];
+  });
   out.flags = Object.assign({}, b.flags || {}, a.flags || {});
   out.counters = a.counters || {};
   Object.keys(b.counters || {}).forEach(function(k) { out.counters[k] = Math.max(out.counters[k] || 0, (b.counters || {})[k] || 0); });
