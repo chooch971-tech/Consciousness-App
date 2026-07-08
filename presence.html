@@ -728,10 +728,6 @@
     .faq-empty { font-size:11.5px; font-style:italic; color:rgba(221,216,206,.7); line-height:1.6; }
 
     /* ── Achievements screen ── */
-    /* Full-width banner bar (the app's sub-screen idiom): the whole bar is the
-       back button, arrow at the left, title centered over it. */
-    #achScreen .top-bar .history-back { flex:1 1 100%; width:100%; height:52px; border-radius:14px; justify-content:flex-start; padding:0 17px; font-size:16px; }
-    #achScreen .top-bar .wordmark { z-index:1; }
     .ach-detail { position:fixed; left:12px; right:12px; bottom:calc(env(safe-area-inset-bottom, 0px) + 12px); z-index:9705; border:1px solid rgba(232,200,122,.4); border-radius:14px; background:#10121a; padding:14px 16px; box-shadow:0 10px 40px rgba(0,0,0,.6); max-height:46vh; overflow-y:auto; }
     .ach-detail-close { position:absolute; top:8px; right:10px; background:none; border:none; color:rgba(221,216,206,.6); font-size:14px; cursor:pointer; padding:6px; }
     .ach-detail-kicker { font-family:'DM Mono',monospace; font-size:8px; letter-spacing:.24em; text-transform:uppercase; color:#e8c87a; margin-bottom:5px; }
@@ -5236,9 +5232,35 @@ body:not(.tut-live) #tutCorgi {
 
   <!-- ACHIEVEMENTS -->
   <div class="screen" id="achScreen">
-    <div class="top-bar">
-      <span class="wordmark">Achievements</span>
-      <button class="history-back" id="achBackBtn">←</button>
+    <button class="history-back" id="achBackBtn" aria-label="Back" style="margin:2px 0 12px;">←</button>
+    <div class="ex-banner" style="--exb-rgb:232,200,122; --exb-light:#f0d8ac; margin:0 0 14px; height:140px;">
+      <div class="exb-motes" aria-hidden="true">
+        <i style="width:4px;height:4px;left:12%;top:28%;animation-delay:0s;animation-duration:4.4s;"></i>
+        <i style="width:3px;height:3px;left:30%;top:66%;animation-delay:1.4s;animation-duration:5.2s;"></i>
+        <i style="width:5px;height:5px;left:52%;top:30%;animation-delay:.7s;animation-duration:4.6s;"></i>
+        <i style="width:3px;height:3px;left:86%;top:24%;animation-delay:2.8s;animation-duration:5.4s;"></i>
+        <i style="width:4px;height:4px;left:92%;top:64%;animation-delay:1.2s;animation-duration:4.8s;"></i>
+      </div>
+      <div class="exb-text">
+        <div class="exb-label">The Record</div>
+        <div class="exb-title">Achievements</div>
+        <div class="exb-tagline" id="achBannerTagline">Every badge earned pays akasha.</div>
+      </div>
+      <div class="exb-right">
+        <div class="exb-glow"></div>
+        <div class="exb-ripple"></div><div class="exb-ripple"></div><div class="exb-ripple"></div>
+        <div class="exb-sym">
+          <svg width="92" height="92" viewBox="0 0 100 100" fill="none" aria-hidden="true">
+            <circle cx="50" cy="50" r="38" stroke="#f0d8ac" stroke-width="2" opacity="0.55"/>
+            <circle cx="50" cy="50" r="27" stroke="#f0d8ac" stroke-width="1.4" opacity="0.3"/>
+            <path d="M50 20 L56.5 43.5 L80 50 L56.5 56.5 L50 80 L43.5 56.5 L20 50 L43.5 43.5 Z" fill="#f0d8ac" opacity="0.92"/>
+            <circle cx="50" cy="12" r="2" fill="#f0d8ac" opacity="0.7"/>
+            <circle cx="50" cy="88" r="2" fill="#f0d8ac" opacity="0.7"/>
+            <circle cx="12" cy="50" r="2" fill="#f0d8ac" opacity="0.7"/>
+            <circle cx="88" cy="50" r="2" fill="#f0d8ac" opacity="0.7"/>
+          </svg>
+        </div>
+      </div>
     </div>
     <div style="flex:1; overflow-y:auto; padding-bottom:24px;">
       <div class="ach-detail" id="achDetail" style="display:none;"></div>
@@ -10400,6 +10422,15 @@ function renderAchScreen() {
   achSeed(); achEnsureMonth();
   var p = achProviders();
   var monthName = new Date().toLocaleString('en', { month:'long' });
+  var tag = document.getElementById('achBannerTagline');
+  if (tag) {
+    var eTot = 0, tTot = 0;
+    ACH_GROUPS.forEach(function(g) {
+      var em = g.monthly ? achState.monthly.earned : achState.earned;
+      g.items.forEach(function(b) { tTot++; if (em[b.id]) eTot++; });
+    });
+    tag.textContent = eTot + ' of ' + tTot + ' earned — every badge pays akasha.';
+  }
   var daysLeft = (function(){ var n = new Date(); return new Date(n.getFullYear(), n.getMonth()+1, 1) - n; })();
   daysLeft = Math.max(1, Math.ceil(daysLeft / 86400000));
   body.innerHTML = ACH_GROUPS.map(function(g) {
