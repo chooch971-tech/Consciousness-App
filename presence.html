@@ -706,6 +706,21 @@
       { animation:none !important; }
     }
 
+    /* ── FAQ screen: one accordion section per exercise ── */
+    .faq-intro { font-size:12px; color:var(--muted); line-height:1.7; margin:4px 0 22px; }
+    .faq-group-label { font-family:'DM Mono',monospace; font-size:9px; letter-spacing:.28em; text-transform:uppercase; color:var(--accent); margin:26px 0 10px; }
+    .faq-group-label:first-of-type { margin-top:0; }
+    .faq-item { border:1px solid var(--border); border-radius:12px; background:rgba(255,255,255,.02); margin-bottom:8px; overflow:hidden; }
+    .faq-item-head { display:flex; align-items:center; gap:13px; width:100%; padding:14px 16px; background:none; border:none; color:var(--text); cursor:pointer; text-align:left; }
+    .faq-icon { width:34px; height:34px; border-radius:9px; flex:0 0 auto; display:flex; align-items:center; justify-content:center; font-size:15px; background:var(--faq-tint, rgba(255,255,255,.05)); }
+    .faq-name { flex:1; font-family:'Cormorant Garamond',serif; font-size:18px; font-weight:300; letter-spacing:.02em; }
+    .faq-sub { display:block; font-family:'DM Mono',monospace; font-size:8px; letter-spacing:.16em; text-transform:uppercase; color:var(--muted); margin-top:2px; }
+    .faq-chev { flex:0 0 auto; color:var(--muted); font-size:10px; transition:transform .25s ease; }
+    .faq-item.open .faq-chev { transform:rotate(180deg); }
+    .faq-body { display:none; padding:2px 16px 14px 63px; }
+    .faq-item.open .faq-body { display:block; }
+    .faq-empty { font-size:11px; font-style:italic; color:var(--muted); line-height:1.6; }
+
     /* MODE TABS */
     .mode-tabs { display:flex; gap:0; margin-bottom:16px; border-bottom:1px solid var(--border); }
     .mode-tab { flex:1; padding:10px 0 8px; text-align:center; font-size:9px; letter-spacing:.25em; text-transform:uppercase; color:var(--muted); background:none; border:none; border-bottom:2px solid transparent; cursor:pointer; font-family:'DM Mono',monospace; transition:all .2s; }
@@ -5171,6 +5186,101 @@ body:not(.tut-live) #tutCorgi {
             </div>
           </a>
         </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- FAQ -->
+  <div class="screen" id="faqScreen">
+    <div class="top-bar">
+      <span class="wordmark">FAQ</span>
+      <button class="history-back" id="faqBackBtn">← back</button>
+    </div>
+    <div style="flex:1; overflow-y:auto; padding-bottom:24px;">
+      <div class="faq-intro">Everything about the practice, one exercise at a time. Tap a section to open it.</div>
+
+      <div class="faq-group-label">Concentration</div>
+      <div class="faq-item"><button class="faq-item-head" data-faq="clock">
+        <span class="faq-icon" style="--faq-tint:rgba(212,149,110,.16);">⏱</span>
+        <span class="faq-name">Clock Exercise<span class="faq-sub">Mental body · unbroken focus</span></span>
+        <span class="faq-chev">▼</span></button>
+        <div class="faq-body"><div class="faq-empty">Answers for this section are being written.</div></div>
+      </div>
+      <div class="faq-item"><button class="faq-item-head" data-faq="visual">
+        <span class="faq-icon" style="--faq-tint:rgba(110,159,212,.16);">👁</span>
+        <span class="faq-name">Visualization<span class="faq-sub">Astral body · the inner eye</span></span>
+        <span class="faq-chev">▼</span></button>
+        <div class="faq-body"><div class="faq-empty">Answers for this section are being written.</div></div>
+      </div>
+      <div class="faq-item"><button class="faq-item-head" data-faq="advanced-visual">
+        <span class="faq-icon" style="--faq-tint:rgba(110,159,212,.16);">🎴</span>
+        <span class="faq-name">Advanced Visualization<span class="faq-sub">Multi-sense &amp; all-angles · earns dark matter</span></span>
+        <span class="faq-chev">▼</span></button>
+        <div class="faq-body"><div class="faq-empty">Answers for this section are being written.</div></div>
+      </div>
+      <div class="faq-item"><button class="faq-item-head" data-faq="auditory">
+        <span class="faq-icon" style="--faq-tint:rgba(110,184,164,.16);">🎧</span>
+        <span class="faq-name">Auditory<span class="faq-sub">Astral body · the inner ear</span></span>
+        <span class="faq-chev">▼</span></button>
+        <div class="faq-body"><div class="faq-empty">Answers for this section are being written.</div></div>
+      </div>
+      <div class="faq-item"><button class="faq-item-head" data-faq="sense">
+        <span class="faq-icon" style="--faq-tint:rgba(232,154,184,.16);">❋</span>
+        <span class="faq-name">Sense Concentration<span class="faq-sub">Astral body · inner sensation</span></span>
+        <span class="faq-chev">▼</span></button>
+        <div class="faq-body"><div class="faq-empty">Answers for this section are being written.</div></div>
+      </div>
+      <div class="faq-item"><button class="faq-item-head" data-faq="thought">
+        <span class="faq-icon" style="--faq-tint:rgba(152,180,204,.16);">◌</span>
+        <span class="faq-name">Thought Control<span class="faq-sub">Mental body · master the mind</span></span>
+        <span class="faq-chev">▼</span></button>
+        <div class="faq-body"><div class="faq-empty">Answers for this section are being written.</div></div>
+      </div>
+      <div class="faq-item"><button class="faq-item-head" data-faq="asana">
+        <span class="faq-icon" style="--faq-tint:rgba(196,120,120,.16);">🧘</span>
+        <span class="faq-name">Asana<span class="faq-sub">Physical body · still the body</span></span>
+        <span class="faq-chev">▼</span></button>
+        <div class="faq-body"><div class="faq-empty">Answers for this section are being written.</div></div>
+      </div>
+
+      <div class="faq-group-label">Daily Practice</div>
+      <div class="faq-item"><button class="faq-item-head" data-faq="awareness">
+        <span class="faq-icon" style="--faq-tint:rgba(126,184,164,.16);">◉</span>
+        <span class="faq-name">Awareness<span class="faq-sub">Reminders through the day</span></span>
+        <span class="faq-chev">▼</span></button>
+        <div class="faq-body"><div class="faq-empty">Answers for this section are being written.</div></div>
+      </div>
+      <div class="faq-item"><button class="faq-item-head" data-faq="prayer">
+        <span class="faq-icon" style="--faq-tint:rgba(196,168,212,.16);">✦</span>
+        <span class="faq-name">Prayer<span class="faq-sub">Devotion &amp; connection</span></span>
+        <span class="faq-chev">▼</span></button>
+        <div class="faq-body"><div class="faq-empty">Answers for this section are being written.</div></div>
+      </div>
+      <div class="faq-item"><button class="faq-item-head" data-faq="soulmirror">
+        <span class="faq-icon" style="--faq-tint:rgba(164,126,184,.16);">◆</span>
+        <span class="faq-name">Soul Mirror<span class="faq-sub">Know thyself</span></span>
+        <span class="faq-chev">▼</span></button>
+        <div class="faq-body"><div class="faq-empty">Answers for this section are being written.</div></div>
+      </div>
+      <div class="faq-item"><button class="faq-item-head" data-faq="pore">
+        <span class="faq-icon" style="--faq-tint:rgba(142,204,224,.16);">≋</span>
+        <span class="faq-name">Pore Breathing<span class="faq-sub">Physical body · vital breath</span></span>
+        <span class="faq-chev">▼</span></button>
+        <div class="faq-body"><div class="faq-empty">Answers for this section are being written.</div></div>
+      </div>
+
+      <div class="faq-group-label">The Path</div>
+      <div class="faq-item"><button class="faq-item-head" data-faq="omnia">
+        <span class="faq-icon" style="--faq-tint:rgba(142,204,224,.16);">✧</span>
+        <span class="faq-name">Omnia &amp; Akasha<span class="faq-sub">Your guide · the generator · ten steps</span></span>
+        <span class="faq-chev">▼</span></button>
+        <div class="faq-body"><div class="faq-empty">Answers for this section are being written.</div></div>
+      </div>
+      <div class="faq-item"><button class="faq-item-head" data-faq="book2">
+        <span class="faq-icon" style="--faq-tint:rgba(232,205,148,.16);">⟡</span>
+        <span class="faq-name">Prestige &amp; Book II<span class="faq-sub">Magical evocation · dark matter</span></span>
+        <span class="faq-chev">▼</span></button>
+        <div class="faq-body"><div class="faq-empty">Answers for this section are being written.</div></div>
       </div>
     </div>
   </div>
@@ -9871,8 +9981,19 @@ document.querySelectorAll('#playgroundScreen .pg-card').forEach(function(card) {
 });
 document.getElementById('drawerFaq').addEventListener('click', function() {
   closeDrawer();
-  showScreen('aboutScreen'); // Reuse about screen until FAQ screen is built
-  // TODO: build dedicated FAQ screen
+  showScreen('faqScreen');
+});
+document.getElementById('faqBackBtn').addEventListener('click', function() {
+  renderHome(); showScreen('homeScreen');
+});
+// FAQ accordion — one section open at a time
+document.querySelectorAll('#faqScreen .faq-item-head').forEach(function(head) {
+  head.addEventListener('click', function() {
+    var item = head.parentElement;
+    var wasOpen = item.classList.contains('open');
+    document.querySelectorAll('#faqScreen .faq-item.open').forEach(function(o) { o.classList.remove('open'); });
+    if (!wasOpen) item.classList.add('open');
+  });
 });
 document.getElementById('confirmModalCancel').addEventListener('click', function() {
   document.getElementById('confirmModal').classList.remove('show');
