@@ -843,6 +843,7 @@ app.post('/api/sync/sync/push', verifyToken, async (req, res) => {
       presence_omnia_v1: data.presence_omnia_v1,
       bardon_rpg_v2: data.bardon_rpg_v2,
       presence_visited: data.presence_visited,
+      presence_ach_v1: data.presence_ach_v1,
       deviceInfo: deviceInfo || 'Unknown device',
       syncedAt: new Date(),
     };
