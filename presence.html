@@ -289,6 +289,33 @@
     .so-ended-start { font-family:'DM Mono',monospace; font-size:11px; letter-spacing:.16em; text-transform:uppercase; background:linear-gradient(100deg,#e8a06a,#ffc88e); color:#160d06; border:none; border-radius:10px; padding:14px 28px; cursor:pointer; width:100%; margin-bottom:8px; box-shadow:0 4px 24px rgba(232,160,106,.35), inset 0 1px 0 rgba(255,255,255,.35); }
     .so-ended-start:active { transform:scale(.985); }
     .so-ended-dismiss { font-family:'DM Mono',monospace; font-size:10px; color:var(--muted); background:none; border:none; cursor:pointer; }
+    /* ── Streak Society overlay ── */
+    #societyOverlay { display:none; position:fixed; inset:0; z-index:9710; background:#07080d; flex-direction:column; padding:0 24px; overflow-y:auto; -webkit-overflow-scrolling:touch; opacity:0; transition:opacity .4s ease; }
+    #societyOverlay.soc-show { display:flex; }
+    #societyOverlay.soc-vis { opacity:1; }
+    .soc-banner-wrap { position:relative; width:100%; max-width:420px; margin:0 auto; padding-top:max(env(safe-area-inset-top),58px); }
+    .soc-banner-title { position:absolute; inset:0; padding-right:136px; z-index:3; display:flex; align-items:center; justify-content:center; font-family:'Cormorant Garamond',serif; font-size:34px; font-weight:300; color:#c8ece0; pointer-events:none; text-shadow:0 0 24px rgba(158,216,196,.3); }
+    .soc-legend { width:100%; max-width:420px; margin:14px auto 0; display:flex; align-items:center; justify-content:space-between; }
+    .soc-section-label { font-family:'DM Mono',monospace; font-size:9px; letter-spacing:.22em; text-transform:uppercase; color:rgba(221,216,206,.62); }
+    .soc-legend-dots { font-family:'DM Mono',monospace; font-size:8px; letter-spacing:.18em; text-transform:uppercase; color:rgba(221,216,206,.5); }
+    .soc-list { width:100%; max-width:420px; margin:12px auto max(env(safe-area-inset-bottom),36px); }
+    .soc-row { border:1px solid var(--border); border-radius:12px; background:rgba(255,255,255,.02); padding:14px 16px; display:flex; gap:13px; align-items:center; margin-bottom:8px; }
+    .soc-row .prof-friend__ring { width:44px; height:44px; font-size:18px; }
+    .soc-row-mid { flex:1; min-width:0; }
+    .soc-name { font-family:'Cormorant Garamond',serif; font-size:17px; font-weight:300; color:var(--fg); line-height:1.2; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .soc-state { font-family:'DM Mono',monospace; font-size:9px; letter-spacing:.16em; text-transform:uppercase; color:rgba(221,216,206,.6); margin-top:4px; }
+    .soc-state.lit { color:#e8c87a; }
+    .soc-state.wait { color:#8ecce0; }
+    .soc-right { display:flex; flex-direction:column; align-items:center; gap:6px; flex:0 0 auto; }
+    .soc-count { display:flex; flex-direction:column; align-items:center; }
+    .soc-count-num { font-family:'Cormorant Garamond',serif; font-size:26px; font-weight:300; line-height:1; color:#f0d8ac; font-variant-numeric:oldstyle-nums; }
+    .soc-count-num.zero { color:rgba(221,216,206,.4); }
+    .soc-count-lbl { font-family:'DM Mono',monospace; font-size:7px; letter-spacing:.16em; text-transform:uppercase; color:rgba(221,216,206,.5); margin-top:3px; }
+    .soc-dots { display:flex; gap:4px; }
+    .soc-dot { width:9px; height:9px; border-radius:50%; border:1px solid rgba(221,216,206,.18); box-sizing:border-box; }
+    .soc-dot.on { background:radial-gradient(circle at 40% 32%, #f0c890, #d4956e 72%); border-color:transparent; box-shadow:0 0 7px rgba(240,168,96,.6); }
+    .soc-msg { width:100%; max-width:340px; margin:64px auto 0; text-align:center; font-family:'Cormorant Garamond',serif; font-style:italic; font-size:17px; color:rgba(221,216,206,.72); line-height:1.6; }
+    .soc-msg-btn { width:auto; display:inline-block; margin:22px auto 0; padding:11px 26px; }
     /* ── Body level award acknowledgment ── */
     .bla-overlay { display:none; position:fixed; inset:0; z-index:9900; background:rgba(7,8,13,.92); flex-direction:column; align-items:center; justify-content:center; padding:24px; opacity:0; transition:opacity .35s ease; }
     .bla-overlay.bla-show { display:flex; }
@@ -8030,6 +8057,29 @@ function backfillPracticedDates() {
   }
 }
 
+// Shared vigil between two practice calendars: consecutive days, ending today
+// or yesterday, on which BOTH practiced. Today is a grace day — a pending
+// partner doesn't break the run until the day is over.
+function calcSharedStreak(mine, theirs, todayISO) {
+  var mineSet = {}; (mine || []).forEach(function(d) { mineSet[d] = true; });
+  var theirSet = {}; (theirs || []).forEach(function(d) { theirSet[d] = true; });
+  var day = todayISO || new Date().toISOString().slice(0, 10);
+  var todayMine = !!mineSet[day];
+  var todayTheirs = !!theirSet[day];
+  var bothToday = todayMine && todayTheirs;
+  var cursor = day;
+  // If the pair hasn't both practiced today, the still-alive run ends yesterday.
+  if (!bothToday) {
+    cursor = new Date(new Date(cursor + 'T00:00:00Z').getTime() - 86400000).toISOString().slice(0, 10);
+  }
+  var streak = 0;
+  while (mineSet[cursor] && theirSet[cursor]) {
+    streak++;
+    cursor = new Date(new Date(cursor + 'T00:00:00Z').getTime() - 86400000).toISOString().slice(0, 10);
+  }
+  return { streak: streak, todayMine: todayMine, todayTheirs: todayTheirs, bothToday: bothToday };
+}
+
 // ── Calendar-derived streak ──────────────────────────────────────────────
 // The streak NUMBER is always recomputed from the practiced-days calendar (plus
 // any days a freeze covered) so it can never drift away from what the user sees
@@ -12399,7 +12449,7 @@ function showStreakScreen() {
     + '</div></div>'
     + '<div class="so-cal-card" id="soCalCard">' + buildStreakCalendar(calYear, calMonth, commit) + '</div>'
     + '<div class="so-goal-card" id="soGoalCard">' + goalCardInner() + '</div>'
-    + '<div class="so-society-card" style="opacity:' + (societyLocked ? '.45' : '1') + '">'
+    + '<div class="so-society-card" id="soSocietyCard" style="opacity:' + (societyLocked ? '.45' : '1') + (societyLocked ? '' : ';cursor:pointer') + '">'
     + '<div class="so-society-icon"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="8.5" r="2.8"/><path d="M3.8 19c.9-3 2.9-4.6 5.2-4.6s4.3 1.6 5.2 4.6"/><circle cx="16.6" cy="9.5" r="2.2"/><path d="M15.4 14.7c2.1.2 3.9 1.7 4.7 4.3"/></svg></div>'
     + '<div class="so-society-text">'
     + '<div class="so-society-title">Streak Society</div>'
@@ -12436,9 +12486,128 @@ function showStreakScreen() {
   }
   document.getElementById('soBackBtn').onclick = closeStreakOverlay;
   document.getElementById('soCloseBtn').onclick = closeStreakOverlay;
+  if (!societyLocked) {
+    var socCard = document.getElementById('soSocietyCard');
+    if (socCard) socCard.onclick = openStreakSociety;
+  }
   wireGoalCard();
   el.classList.add('so-show');
   requestAnimationFrame(function() { requestAnimationFrame(function() { el.classList.add('so-vis'); }); });
+}
+
+// Streak Society — the roster of shared vigils. Each accepted friend pair keeps
+// a run of consecutive days both practiced; today is a grace day.
+function openStreakSociety() {
+  var el = document.getElementById('societyOverlay');
+  if (!el) return;
+
+  function closeSociety() {
+    el.classList.remove('soc-vis');
+    setTimeout(function() { el.classList.remove('soc-show'); }, 420);
+  }
+
+  var bannerHtml =
+    '<div class="soc-banner-wrap">'
+    + '<div class="ex-banner" style="--exb-rgb:126,184,164; --exb-light:#9ed8c4; margin:0; height:140px;">'
+    + '<div class="soc-banner-title">Streak Society</div>'
+    + '<div class="exb-right">'
+    + '<div class="exb-glow"></div>'
+    + '<div class="exb-ripple"></div><div class="exb-ripple"></div><div class="exb-ripple"></div>'
+    + '<div class="exb-sym">'
+    + '<svg width="92" height="92" viewBox="0 0 100 100" fill="none" aria-hidden="true">'
+    + '<circle cx="50" cy="52" r="38" stroke="#9ed8c4" stroke-width="1.6" opacity="0.28"/>'
+    + '<circle cx="50" cy="52" r="27" stroke="#9ed8c4" stroke-width="1.2" opacity="0.18"/>'
+    + '<path d="M42 26 C42 26 57 46 57 60 C57 70 50 75 42 75 C34 75 27 70 27 60 C27 46 42 26 42 26 Z" fill="#9ed8c4" opacity="0.85" stroke="#9ed8c4" stroke-width="1"/>'
+    + '<path d="M60 36 C60 36 70 50 70 60 C70 67 65 71 60 71 C55 71 50 67 50 60 C50 50 60 36 60 36 Z" fill="#c8ece0" opacity="0.95" stroke="#c8ece0" stroke-width="1"/>'
+    + '<path d="M43 52 C43 52 49 60 47.6 65 C46.8 68.5 42.5 68.5 41.4 66 C40.5 64 41.5 60 43 52 Z" fill="#eafaf4" opacity="0.7"/>'
+    + '</svg>'
+    + '</div>'
+    + '</div>'
+    + '</div>'
+    + '</div>';
+
+  el.innerHTML =
+    '<button class="so-back-btn" id="socBackBtn" aria-label="Back">&#8592;</button>'
+    + bannerHtml
+    + '<div id="socBody"></div>';
+
+  document.getElementById('socBackBtn').onclick = closeSociety;
+
+  var body = document.getElementById('socBody');
+
+  function renderSignedOut() {
+    body.innerHTML = '<div class="soc-msg">Sign in to keep vigils with friends.</div>';
+  }
+  function renderUnreachable() {
+    body.innerHTML = '<div class="soc-msg">The society is unreachable &mdash; try again later.</div>';
+  }
+  function renderEmpty() {
+    body.innerHTML = '<div class="soc-msg">A vigil kept together burns brighter. Add a friend to begin.'
+      + '<br><button class="b2t-btn soc-msg-btn" id="socAddBtn">Add Friends</button></div>';
+    var b = document.getElementById('socAddBtn');
+    if (b) b.onclick = function() {
+      closeSociety();
+      if (typeof openFriendsPanel === 'function') openFriendsPanel();
+    };
+  }
+  function renderFriends(friends) {
+    var mine = state.practicedDates || [];
+    var rows = friends.map(function(f) {
+      return { f: f, r: calcSharedStreak(mine, f.practicedDates || []) };
+    });
+    rows.sort(function(a, b) { return b.r.streak - a.r.streak; });
+    var html = '<div class="soc-legend"><span class="soc-section-label">Shared Vigils</span>'
+      + '<span class="soc-legend-dots">You &middot; Them</span></div>'
+      + '<div class="soc-list">';
+    rows.forEach(function(row) {
+      var f = row.f, r = row.r;
+      var uname = f.username || '?';
+      var stateTxt, stateCls = '';
+      // No shared run yet: a "waiting" label would imply a streak in jeopardy,
+      // so the zero case wins outright. The waiting states below only apply
+      // once there's an active shared vigil to keep alive.
+      if (r.streak === 0) { stateTxt = 'Practice the same day to begin'; }
+      else if (r.bothToday) { stateTxt = 'Extended today'; stateCls = ' lit'; }
+      else if (r.todayMine && !r.todayTheirs) { stateTxt = 'Waiting on them'; stateCls = ' wait'; }
+      else if (!r.todayMine && r.todayTheirs) { stateTxt = 'Waiting on you'; stateCls = ' wait'; }
+      else { stateTxt = 'Both needed today'; }
+      html += '<div class="soc-row">'
+        + _friendRingHtml(uname[0], f.profilePic)
+        + '<div class="soc-row-mid">'
+        + '<div class="soc-name">@' + escHtml(uname) + '</div>'
+        + '<div class="soc-state' + stateCls + '">' + stateTxt + '</div>'
+        + '</div>'
+        + '<div class="soc-right">'
+        + '<div class="soc-count"><span class="soc-count-num' + (r.streak === 0 ? ' zero' : '') + '">' + r.streak + '</span>'
+        + '<span class="soc-count-lbl">Days</span></div>'
+        + '<div class="soc-dots">'
+        + '<span class="soc-dot' + (r.todayMine ? ' on' : '') + '" title="You"></span>'
+        + '<span class="soc-dot' + (r.todayTheirs ? ' on' : '') + '" title="Them"></span>'
+        + '</div>'
+        + '</div>'
+        + '</div>';
+    });
+    html += '</div>';
+    body.innerHTML = html;
+  }
+
+  if (!authToken) {
+    renderSignedOut();
+  } else {
+    body.innerHTML = '<div class="soc-msg" style="font-family:\'DM Mono\',monospace;font-size:10px;letter-spacing:.24em;text-transform:uppercase;font-style:normal;">Loading&hellip;</div>';
+    fetch(SYNC_API_URL + '/friends/list', { headers: { 'Authorization': 'Bearer ' + authToken } })
+      .then(function(res) { return res.json(); })
+      .then(function(data) {
+        var friends = (data && data.friends) || [];
+        if (typeof cacheFriends === 'function') cacheFriends(friends);
+        if (!friends.length) renderEmpty();
+        else renderFriends(friends);
+      })
+      .catch(function() { renderUnreachable(); });
+  }
+
+  el.classList.add('soc-show');
+  requestAnimationFrame(function() { requestAnimationFrame(function() { el.classList.add('soc-vis'); }); });
 }
 
 function showStreakEndedPrompt() {
@@ -32458,6 +32627,7 @@ document.addEventListener('DOMContentLoaded',function(){(function(){
 <!-- Post-session tutorial overlay (content built dynamically by showTutorialPostSession) -->
 <div id="tutPostSession"></div>
 <div id="streakOverlay"></div>
+<div id="societyOverlay"></div>
 
 <div id="friendsPanel">
   <div class="fp-header">
