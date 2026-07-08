@@ -728,8 +728,10 @@
     .faq-empty { font-size:11.5px; font-style:italic; color:rgba(221,216,206,.7); line-height:1.6; }
 
     /* ── Achievements screen ── */
+    #achScreen .top-bar .history-back { flex:0 0 auto; width:auto; padding:0 13px; font-family:'DM Mono',monospace; font-size:10px; letter-spacing:.12em; }
     .ach-intro { font-size:12.5px; color:rgba(221,216,206,.82); line-height:1.75; margin:4px 0 18px; }
-    .ach-detail { border:1px solid rgba(232,200,122,.28); border-radius:12px; background:rgba(232,200,122,.04); padding:14px 16px; margin-bottom:20px; }
+    .ach-detail { position:fixed; left:12px; right:12px; bottom:calc(env(safe-area-inset-bottom, 0px) + 12px); z-index:9705; border:1px solid rgba(232,200,122,.4); border-radius:14px; background:#10121a; padding:14px 16px; box-shadow:0 10px 40px rgba(0,0,0,.6); max-height:46vh; overflow-y:auto; }
+    .ach-detail-close { position:absolute; top:8px; right:10px; background:none; border:none; color:rgba(221,216,206,.6); font-size:14px; cursor:pointer; padding:6px; }
     .ach-detail-kicker { font-family:'DM Mono',monospace; font-size:8px; letter-spacing:.24em; text-transform:uppercase; color:#e8c87a; margin-bottom:5px; }
     .ach-detail-name { font-family:'Cormorant Garamond',serif; font-size:21px; font-weight:300; color:var(--text); }
     .ach-detail-desc { font-size:11px; color:rgba(221,216,206,.68); line-height:1.6; margin:5px 0 10px; }
@@ -743,12 +745,23 @@
     .ach-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:10px; }
     .ach-badge { display:flex; flex-direction:column; align-items:center; gap:6px; background:none; border:none; cursor:pointer; padding:4px 2px; color:inherit; font:inherit; border-radius:10px; }
     .ach-badge:focus-visible { outline:1.5px solid #e8c87a; outline-offset:2px; }
-    .ach-medal { width:52px; height:52px; border-radius:50%; display:flex; align-items:center; justify-content:center; border:1px solid rgba(221,216,206,.16); background:rgba(255,255,255,.02); font-family:'Cormorant Garamond',serif; font-size:17px; color:rgba(221,216,206,.45); transition:border-color .25s, box-shadow .25s, color .25s; position:relative; }
+    .ach-medal { width:54px; height:54px; border-radius:50%; display:flex; flex-direction:column; gap:1px; align-items:center; justify-content:center; border:1px solid rgba(221,216,206,.16); background:rgba(255,255,255,.02); font-family:'Cormorant Garamond',serif; color:rgba(221,216,206,.45); transition:border-color .25s, box-shadow .25s, color .25s; position:relative; }
+    .ach-medal svg { width:15px; height:15px; fill:none; stroke:var(--gc,#e8c87a); stroke-width:1.5; stroke-linecap:round; stroke-linejoin:round; opacity:.45; }
+    .ach-medal b { font-weight:300; font-size:14px; line-height:1; }
+    .ach-badge.earned .ach-medal svg { opacity:1; filter:drop-shadow(0 0 4px var(--gc)); }
     .ach-badge.earned .ach-medal { border-color:rgba(232,200,122,.75); color:#f0d8ac; background:radial-gradient(circle at 42% 34%, rgba(232,200,122,.16), rgba(232,200,122,.04) 70%); box-shadow:0 0 12px -2px rgba(232,200,122,.5); }
     .ach-badge.earned .ach-medal::after { content:'✦'; position:absolute; top:-3px; right:-1px; font-size:9px; color:#e8c87a; text-shadow:0 0 6px rgba(232,200,122,.8); }
     .ach-badge.sel .ach-medal { border-color:#e8c87a; box-shadow:0 0 0 1.5px rgba(232,200,122,.55); }
     .ach-badge-lbl { font-family:'DM Mono',monospace; font-size:7.5px; letter-spacing:.1em; text-transform:uppercase; color:rgba(221,216,206,.6); text-align:center; line-height:1.35; }
-    .ach-month-note { font-size:10.5px; font-style:italic; color:rgba(221,216,206,.6); margin:-4px 0 12px; }
+    .ach-month-note { font-size:10.5px; font-style:italic; color:rgba(221,216,206,.6); margin:-2px 0 12px; }
+    .ach-month-panel { border:1px solid rgba(205,214,232,.22); background:rgba(205,214,232,.035); border-radius:14px; padding:2px 13px 14px; margin-bottom:4px; }
+    .ach-month-panel .ach-group-label { color:#cdd6e8; margin-top:14px; }
+    .ach-alltime { display:flex; align-items:center; gap:12px; margin:26px 0 2px; font-family:'DM Mono',monospace; font-size:9px; letter-spacing:.3em; text-transform:uppercase; color:rgba(232,200,122,.85); }
+    .ach-alltime::before, .ach-alltime::after { content:''; flex:1; height:1px; background:rgba(232,200,122,.18); }
+    .prof-badge--earned { border-color:rgba(232,200,122,.6); box-shadow:0 0 10px -3px rgba(232,200,122,.6); opacity:1; color:#f0d8ac; }
+    .prof-badge svg, .prof-ach-item__disc svg { width:16px; height:16px; fill:none; stroke:var(--gc,#e8c87a); stroke-width:1.5; stroke-linecap:round; stroke-linejoin:round; }
+    .prof-badge b, .prof-ach-item__disc b { font-family:'Cormorant Garamond',serif; font-weight:300; font-size:13px; margin-top:1px; }
+    .prof-badge, .prof-ach-item__disc { flex-direction:column; }
 
     /* MODE TABS */
     .mode-tabs { display:flex; gap:0; margin-bottom:16px; border-bottom:1px solid var(--border); }
@@ -9650,22 +9663,58 @@ async function loadProfileFriendStreaks() {
   } catch(e) {}
 }
 
+// Profile · Monthly Badges — this month's set, earned ones lit.
 function renderProfileBadges() {
   var el = document.getElementById('profBadges');
   if (!el) return;
-  var html = '';
-  for (var i = 0; i < 4; i++) html += '<div class="prof-badge prof-badge--locked">🔒</div>';
-  el.innerHTML = html;
+  if (typeof achEnsureMonth !== 'function') return;
+  achSeed(); achEnsureMonth();
+  el.innerHTML = ACH_GROUPS[0].items.map(function(b) {
+    var earned = !!achState.monthly.earned[b.id];
+    var medal = b.target >= 1000 ? (b.target / 1000) + 'k' : b.target;
+    return '<div class="prof-badge' + (earned ? ' prof-badge--earned' : ' prof-badge--locked') + '" style="--gc:' + ACH_COLORS.monthly + '" title="' + b.name + '">'
+      + achIconSvg('monthly') + '<b>' + medal + '</b></div>';
+  }).join('');
 }
 
+// Profile · Achievements — the four lifetime badges nearest completion
+// (earned ones fill in first if fewer than four are in progress).
 function renderProfileAchievements() {
   var el = document.getElementById('profAchievements');
   if (!el) return;
-  var marks = ['🏅', '🎯', '🧘', '🔮'];
-  el.innerHTML = marks.map(function(m) {
-    return '<div class="prof-ach-item"><div class="prof-ach-item__disc">' + m + '</div><div class="prof-ach-item__lbl">Locked</div></div>';
+  if (typeof achProviders !== 'function') return;
+  achSeed(); achEnsureMonth();
+  var p = achProviders();
+  var pending = [], done = [];
+  ACH_GROUPS.forEach(function(g) {
+    if (g.monthly) return;
+    g.items.forEach(function(b) {
+      var item = { b: b, g: g, pct: Math.min(100, Math.round((p[b.key] || 0) / b.target * 100)) };
+      if (achState.earned[b.id]) done.push(item); else pending.push(item);
+    });
+  });
+  pending.sort(function(x, y) { return y.pct - x.pct; });
+  done.sort(function(x, y) { return (achState.earned[y.b.id] || 0) - (achState.earned[x.b.id] || 0); });
+  var picks = pending.slice(0, 4);
+  while (picks.length < 4 && done.length) picks.push(done.shift());
+  el.innerHTML = picks.map(function(it) {
+    var earned = !!achState.earned[it.b.id];
+    var medal = it.b.group === 'step' ? ['','','II','III','IV','V','VI','VII','VIII','IX','X'][it.b.target]
+      : it.b.target >= 1000 ? (it.b.target / 1000) + 'k' : it.b.target;
+    return '<div class="prof-ach-item"' + (earned || it.pct > 0 ? ' style="opacity:1;"' : '') + '>'
+      + '<div class="prof-ach-item__disc" style="--gc:' + (ACH_COLORS[it.g.id] || '#e8c87a') + (earned ? ';border-color:rgba(232,200,122,.6);' : '') + '">'
+      + achIconSvg(it.g.id) + '<b>' + medal + '</b></div>'
+      + '<div class="prof-ach-item__lbl">' + (earned ? 'Earned' : it.pct + '%') + '</div></div>';
   }).join('');
 }
+// "›" buttons on both profile sections open the full Achievements screen.
+['profBadgesMore', 'profAchMore'].forEach(function(id) {
+  var btn = document.getElementById(id);
+  if (btn) btn.addEventListener('click', function() {
+    if (typeof achEvaluate === 'function') achEvaluate(true);
+    renderAchScreen(); showScreen('achScreen');
+  });
+});
 
 // A profile picture must be a clean base64 image data-URL and nothing else.
 // escHtml only escapes <>, so a pic containing a quote could otherwise break
@@ -10057,7 +10106,7 @@ document.querySelectorAll('#faqScreen .faq-item-head').forEach(function(head) {
 // Every badge pays akasha once, on the device where it is first earned.
 var ACH_KEY = 'presence_ach_v1';
 var achState = (function() {
-  var def = { earned:{}, hwm:{}, flags:{}, exCount:0, seeded:false,
+  var def = { earned:{}, hwm:{}, flags:{}, counters:{}, exCount:0, seeded:false,
     monthly:{ key:'', loginDays:[], spentBase:0, fifteen:false, earned:{} },
     monthsCleared:0, clearedKeys:[], friendsSeen:{}, _updatedAt:0 };
   try {
@@ -10075,48 +10124,33 @@ function achSave() {
 function achMonthKey(d) { d = d || new Date(); return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0'); }
 function achToday() { return new Date().toISOString().slice(0,10); }
 
-// ── Mastery asterisks per exercise ──
-// Each entry: array of {n:label, t:test()} — one asterisk each.
-function achSoulMirror() {
-  try { var s = localStorage.getItem('presence_soul_mirror_v1'); var d = s ? JSON.parse(s) : {};
-    return { black:(d.negative||[]).length, white:(d.positive||[]).length }; } catch(e) { return {black:0,white:0}; }
-}
+// ── Mastery per exercise: two tiers — mastered (\u2731) and completely mastered (\u2731\u2731) ──
 function achTCBest(mode) {
   var live = (typeof getTCBestGap === 'function') ? (getTCBestGap(mode) || 0) : 0;
   return Math.max(live, (achState.hwm['tc_' + mode] || 0));
 }
 function achHwm(k, extra) { return Math.max(achState.hwm[k] || 0, extra || 0); }
-function ACH_STAR_DEFS() {
-  var sm = achSoulMirror();
+function ACH_MASTERY_DEFS() {
   var cs = (typeof concState !== 'undefined' && concState) ? concState : {};
+  var ct = achState.counters || {};
+  var clockBest = achHwm('clock', cs.bestSeconds);
+  var tcAll = Math.min(achTCBest('observation'), achTCBest('focus'), achTCBest('vacancy'));
+  var senseAll = Math.min(achHwm('sense_feeling'), achHwm('sense_smell'), achHwm('sense_taste'));
+  var vis = achHwm('visual'), aud = achHwm('auditory'), br = cs.lifetimeBreaths || 0;
   return [
-    { ex:'Clock', stars:[ { n:'15:00 unbroken watch', t: achHwm('clock', cs.bestSeconds) >= 900 } ] },
-    { ex:'Thought Control', stars:[
-      { n:'Observation · 15:00', t: achTCBest('observation') >= 900 },
-      { n:'Focus · 15:00',       t: achTCBest('focus') >= 900 },
-      { n:'Vacancy · 15:00',     t: achTCBest('vacancy') >= 900 } ] },
-    { ex:'Visualization', stars:[
-      { n:'5:00 steady image', t: achHwm('visual') >= 300 },
-      { n:'Multi-sense drill', t: !!achState.flags.multisense },
-      { n:'All-angles drill',  t: !!achState.flags.allangles } ] },
-    { ex:'Auditory', stars:[ { n:'15:00 held listening', t: achHwm('auditory') >= 900 } ] },
-    { ex:'Sense Concentration', stars:[ { n:'5:00 evoked sensation', t: achHwm('sense') >= 300 } ] },
-    { ex:'Asana', stars:[
-      { n:'15:00 stillness', t: achHwm('asana', cs.bestAsanaSeconds) >= 900 },
-      { n:'30:00 stillness', t: achHwm('asana', cs.bestAsanaSeconds) >= 1800 } ] },
-    { ex:'Soul Mirror', stars:[
-      { n:'10 black-mirror entries', t: sm.black >= 10 },
-      { n:'10 white-mirror entries', t: sm.white >= 10 } ] },
-    { ex:'Pore Breathing', stars:[ { n:'500 lifetime breaths', t: (cs.lifetimeBreaths || 0) >= 500 } ] }
+    { ex:'Clock', mDesc:'10:00 unbroken watch', cDesc:'15:00', m: clockBest >= 600, c: clockBest >= 900 },
+    { ex:'Thought Control', mDesc:'all three modes 10:00', cDesc:'15:00', m: tcAll >= 600, c: tcAll >= 900 },
+    { ex:'Visualization', mDesc:'5:00 steady hold', cDesc:'10:00', m: vis >= 300, c: vis >= 600 },
+    { ex:'Auditory', mDesc:'5:00 held listening', cDesc:'10:00', m: aud >= 300, c: aud >= 600 },
+    { ex:'Sense Concentration', mDesc:'feeling, smell & taste 5:00 each', cDesc:'10:00 each', m: senseAll >= 300, c: senseAll >= 600 },
+    { ex:'Asana', mDesc:'seven 30:00 sits', cDesc:'fourteen 60:00 sits', m: (ct.asana30 || 0) >= 7, c: (ct.asana60 || 0) >= 14 },
+    { ex:'Soul Mirror', mDesc:'10 negative traits dissolved', cDesc:'25 dissolved', m: (ct.traitsGone || 0) >= 10, c: (ct.traitsGone || 0) >= 25 },
+    { ex:'Pore Breathing', mDesc:'5,000 lifetime breaths', cDesc:'10,000', m: br >= 5000, c: br >= 10000 }
   ];
 }
 function achMasteryCounts() {
-  var defs = ACH_STAR_DEFS(), some = 0, full = 0;
-  defs.forEach(function(d) {
-    var got = d.stars.filter(function(s){ return s.t; }).length;
-    if (got >= 1) some++;
-    if (got === d.stars.length) full++;
-  });
+  var defs = ACH_MASTERY_DEFS(), some = 0, full = 0;
+  defs.forEach(function(d) { if (d.m || d.c) some++; if (d.c) full++; });
   return { some: some, full: full, total: defs.length, defs: defs };
 }
 
@@ -10146,7 +10180,7 @@ function achProviders() {
 function achTier(group, key, tiers, rewards, name, desc, fmt) {
   return tiers.map(function(t, i) {
     return { id: group + '_' + t, group: group, key: key, target: t, reward: rewards[i],
-      name: name.replace('{n}', typeof fmt === 'function' ? fmt(t) : t), desc: desc.replace('{n}', typeof fmt === 'function' ? fmt(t) : t) };
+      name: name.replace('{n}', typeof fmt === 'function' ? fmt(t) : t), desc: desc.replace('{n}', t.toLocaleString()) };
   });
 }
 var ACH_GROUPS = [
@@ -10164,7 +10198,7 @@ var ACH_GROUPS = [
   { id:'vigil', label:'The Vigil', items:
       achTier('streak','streak',[7,14,21,30,45,60,90,150,365],[500,800,1200,2000,3000,5000,10000,20000,100000],'{n}-Day Vigil','Keep a {n}-day practice streak.') },
   { id:'devotion', label:'Monthly Devotion', items:
-      achTier('clear','clears',[1,2,3,5,7],[2000,4000,8000,15000,30000],'{n} Perfect Months','Complete every monthly badge in {n} different months.', function(n){return n===1?'One Month':n+' Months';}) },
+      achTier('clear','clears',[1,2,3,5,7],[2000,4000,8000,15000,30000],'{n}','Complete every monthly badge in {n} different months.', function(n){return n===1?'One Perfect Month':n+' Perfect Months';}) },
   { id:'conc', label:'Concentration', items:
       achTier('conc','conc',[25,50,80,100,200,300,500,700,777],[800,1500,2500,5000,10000,15000,25000,50000,77700],'Concentration {n}','Reach concentration level {n}.') },
   { id:'aware', label:'Awareness', items:
@@ -10173,6 +10207,21 @@ var ACH_GROUPS = [
       achTier('step','step',[2,3,4,5,6,7,8,9,10],[500,1000,1500,2500,4000,6000,9000,13000,20000],'Step {n}','Guide Omnia to Step {n} of Book I.', function(n){return ['','','II','III','IV','V','VI','VII','VIII','IX','X'][n];}) }
 ];
 var ACH_MONTHLY_IDS = ACH_GROUPS[0].items.map(function(b){ return b.id; });
+var ACH_ICONS = {
+  monthly: '<path d="M14.5 3.5a8.5 8.5 0 1 0 6 14.7A9.5 9.5 0 0 1 14.5 3.5z"/>',
+  volume: '<path d="M5 20v-6M12 20V9M19 20V4"/>',
+  mastery: '<path d="M12 4v16M5.1 8l13.8 8M18.9 8L5.1 16"/>',
+  fullmastery: '<circle cx="12" cy="12" r="9"/><path d="M12 6.5v11M7.2 9.2l9.6 5.6M16.8 9.2l-9.6 5.6"/>',
+  vigil: '<path d="M12 3c3.2 3.8 6 6.3 6 9.8a6 6 0 0 1-12 0C6 9.3 8.8 6.8 12 3z"/>',
+  devotion: '<path d="M12 3.5l1.9 6.1h6.4l-5.2 3.8 2 6.1-5.1-3.8-5.1 3.8 2-6.1-5.2-3.8h6.4z"/>',
+  conc: '<circle cx="12" cy="12" r="8.5"/><path d="M12 6.8V12l3.4 2.1"/>',
+  aware: '<path d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12z"/><circle cx="12" cy="12" r="2.6"/>',
+  path: '<path d="M12 2.5l5 5.5-5 13.5L7 8l5-5.5zM7 8h10"/>'
+};
+var ACH_COLORS = { monthly:'#cdd6e8', volume:'#d4956e', mastery:'#e8c87a', fullmastery:'#f0d8ac', vigil:'#f0a860', devotion:'#c4a8d4', conc:'#e8b060', aware:'#7eb8a4', path:'#8ecce0' };
+function achIconSvg(gid) {
+  return '<svg viewBox="0 0 24 24" aria-hidden="true">' + (ACH_ICONS[gid] || ACH_ICONS.mastery) + '</svg>';
+}
 
 // ── Seeding, month rollover, evaluation ──
 function achSeed() {
@@ -10187,9 +10236,15 @@ function achSeed() {
     ['visual','auditory','sense','asana','clock'].forEach(function(ex) {
       if (st[ex] && st[ex].bestSec) achState.hwm[ex] = Math.max(achState.hwm[ex] || 0, st[ex].bestSec);
     });
+    achState.counters = achState.counters || {};
     ((cs.history) || []).forEach(function(h) {
       if (h.type === 'multi-sense') achState.flags.multisense = true;
       if (h.type === 'all-angles') achState.flags.allangles = true;
+      if (h.exercise === 'sense' && h.mode) achState.hwm['sense_' + h.mode] = Math.max(achState.hwm['sense_' + h.mode] || 0, h.seconds || 0);
+      if (h.exercise === 'asana') {
+        if ((h.seconds || 0) >= 1800) achState.counters.asana30 = (achState.counters.asana30 || 0) + 1;
+        if ((h.seconds || 0) >= 3600) achState.counters.asana60 = (achState.counters.asana60 || 0) + 1;
+      }
     });
   } catch(e) {}
   achSave();
@@ -10265,6 +10320,12 @@ function achOnCompletion(opts) {
     if (e.type === 'all-angles') achState.flags.allangles = true;
     if (ex && sec) achState.hwm[ex] = Math.max(achState.hwm[ex] || 0, e.seconds || sec);
     if (e.mode && opts.exId === 'thought') achState.hwm['tc_' + e.mode] = Math.max(achState.hwm['tc_' + e.mode] || 0, e.seconds || 0);
+    if (ex === 'sense' && e.mode) achState.hwm['sense_' + e.mode] = Math.max(achState.hwm['sense_' + e.mode] || 0, e.seconds || 0);
+    if (ex === 'asana') {
+      achState.counters = achState.counters || {};
+      if (sec >= 1800) achState.counters.asana30 = (achState.counters.asana30 || 0) + 1;
+      if (sec >= 3600) achState.counters.asana60 = (achState.counters.asana60 || 0) + 1;
+    }
     if (sec >= 120) achState.exCount = (achState.exCount || 0) + 1;
     if (sec >= 900) achState.monthly.fifteen = true;
     achSave();
@@ -10301,19 +10362,22 @@ function renderAchScreen() {
   achSeed(); achEnsureMonth();
   var p = achProviders();
   var monthName = new Date().toLocaleString('en', { month:'long' });
+  var daysLeft = (function(){ var n = new Date(); return new Date(n.getFullYear(), n.getMonth()+1, 1) - n; })();
+  daysLeft = Math.max(1, Math.ceil(daysLeft / 86400000));
   body.innerHTML = ACH_GROUPS.map(function(g) {
     var earnedMap = g.monthly ? achState.monthly.earned : achState.earned;
     var earnedN = g.items.filter(function(b){ return earnedMap[b.id]; }).length;
-    var head = '<div class="ach-group-label"><span>' + (g.monthly ? monthName : g.label) + '</span><small>' + earnedN + ' / ' + g.items.length + '</small></div>'
-      + (g.monthly ? '<div class="ach-month-note">Resets on the 1st. A perfect month feeds the Monthly Devotion badges.</div>' : '');
+    var head = '<div class="ach-group-label"><span>' + (g.monthly ? 'Monthly · ' + monthName : g.label) + '</span><small>' + earnedN + ' / ' + g.items.length + '</small></div>'
+      + (g.monthly ? '<div class="ach-month-note">Resets in ' + daysLeft + ' day' + (daysLeft === 1 ? '' : 's') + '. A perfect month feeds the Monthly Devotion badges.</div>' : '');
     var grid = '<div class="ach-grid">' + g.items.map(function(b) {
       var earned = !!earnedMap[b.id];
       var medal = b.group === 'step' ? ['','','II','III','IV','V','VI','VII','VIII','IX','X'][b.target]
         : b.target >= 1000 ? (b.target/1000) + 'k' : b.target;
       return '<button class="ach-badge' + (earned ? ' earned' : '') + (_achSelected === b.id ? ' sel' : '') + '" data-ach="' + b.id + '">'
-        + '<span class="ach-medal">' + medal + '</span>'
+        + '<span class="ach-medal" style="--gc:' + (ACH_COLORS[g.id] || '#e8c87a') + '">' + achIconSvg(g.id) + '<b>' + medal + '</b></span>'
         + '<span class="ach-badge-lbl">' + b.name + '</span></button>';
     }).join('') + '</div>';
+    if (g.monthly) return '<div class="ach-month-panel">' + head + grid + '</div><div class="ach-alltime">All-Time</div>';
     return head + grid;
   }).join('');
   renderAchDetail(p);
@@ -10333,13 +10397,14 @@ function renderAchDetail(p) {
   var extra = '';
   if (badge.group === 'master' || badge.group === 'fullm') {
     var mm = achMasteryCounts();
-    extra = '<div class="ach-detail-desc" style="margin-top:8px;">' + mm.defs.map(function(d) {
-      var got = d.stars.filter(function(s){ return s.t; }).length;
-      return d.ex + ' <span style="color:#e8c87a;">' + Array(got + 1).join('✱') + '</span><span style="opacity:.35;">' + Array(d.stars.length - got + 1).join('✱') + '</span>';
-    }).join(' · ') + '</div>';
+    extra = '<div class="ach-detail-desc" style="margin-top:8px;line-height:1.9;">' + mm.defs.map(function(d) {
+      var stars = d.c ? '<span style="color:#e8c87a;">✱✱</span>' : d.m ? '<span style="color:#e8c87a;">✱</span><span style="opacity:.3;">✱</span>' : '<span style="opacity:.3;">✱✱</span>';
+      return '<span style="white-space:nowrap;">' + d.ex + ' ' + stars + ' <span style="opacity:.55;font-size:10px;">(' + d.mDesc + ' · ✱✱ ' + d.cDesc + ')</span></span>';
+    }).join('<br>') + '</div>';
   }
   box.style.display = '';
-  box.innerHTML = '<div class="ach-detail-kicker">' + (group.monthly ? 'Monthly · resets on the 1st' : group.label) + (earnedAt ? ' · earned ' + new Date(earnedAt).toLocaleDateString() : '') + '</div>'
+  box.innerHTML = '<button class="ach-detail-close" aria-label="Close">✕</button>'
+    + '<div class="ach-detail-kicker">' + (group.monthly ? 'Monthly · resets on the 1st' : group.label) + (earnedAt ? ' · earned ' + new Date(earnedAt).toLocaleDateString() : '') + '</div>'
     + '<div class="ach-detail-name">' + badge.name + '</div>'
     + '<div class="ach-detail-desc">' + badge.desc + '</div>' + extra
     + '<div class="ach-detail-bar"><div class="ach-detail-fill" style="width:' + (earnedAt ? 100 : pct) + '%"></div></div>'
@@ -10350,8 +10415,18 @@ document.getElementById('achBody').addEventListener('click', function(e) {
   var btn = e.target.closest('.ach-badge');
   if (!btn) return;
   _achSelected = btn.dataset.ach === _achSelected ? null : btn.dataset.ach;
-  renderAchScreen();
-  if (_achSelected) document.getElementById('achDetail').scrollIntoView({ behavior:'smooth', block:'nearest' });
+  // Update selection in place — no re-render, no scroll jump, so you can
+  // tab straight through the grid while the sheet updates underneath.
+  document.querySelectorAll('#achBody .ach-badge').forEach(function(b) {
+    b.classList.toggle('sel', b.dataset.ach === _achSelected);
+  });
+  renderAchDetail();
+});
+document.getElementById('achDetail').addEventListener('click', function(e) {
+  if (!e.target.closest('.ach-detail-close')) return;
+  _achSelected = null;
+  document.querySelectorAll('#achBody .ach-badge.sel').forEach(function(b){ b.classList.remove('sel'); });
+  document.getElementById('achDetail').style.display = 'none';
 });
 document.getElementById('drawerAch').addEventListener('click', function() {
   closeDrawer();
@@ -10360,6 +10435,8 @@ document.getElementById('drawerAch').addEventListener('click', function() {
   showScreen('achScreen');
 });
 document.getElementById('achBackBtn').addEventListener('click', function() {
+  _achSelected = null;
+  var d = document.getElementById('achDetail'); if (d) d.style.display = 'none';
   renderHome(); showScreen('homeScreen');
 });
 // Boot: count today's login and settle anything already earned.
@@ -10643,6 +10720,8 @@ function mergeAchPull(localStr, cloudStr) {
   out.hwm = a.hwm || {};
   Object.keys(b.hwm || {}).forEach(function(k) { out.hwm[k] = Math.max(out.hwm[k] || 0, b.hwm[k] || 0); });
   out.flags = Object.assign({}, b.flags || {}, a.flags || {});
+  out.counters = a.counters || {};
+  Object.keys(b.counters || {}).forEach(function(k) { out.counters[k] = Math.max(out.counters[k] || 0, (b.counters || {})[k] || 0); });
   out.friendsSeen = Object.assign({}, b.friendsSeen || {}, a.friendsSeen || {});
   var ck = [].concat(a.clearedKeys || [], b.clearedKeys || []);
   out.clearedKeys = ck.filter(function(k, i) { return ck.indexOf(k) === i; });
@@ -29736,6 +29815,7 @@ function deleteNegativeTrait(i){
     var removed=data.negative.splice(i,1)[0];
     if(data.autosug&&removed&&data.autosug.kind==='negative'&&data.autosug.text===removed.text)delete data.autosug;
     soulExpandedNeg=null; // indices shifted — close any open editor
+    if(removed&&typeof achState!=='undefined'){achState.counters=achState.counters||{};achState.counters.traitsGone=(achState.counters.traitsGone||0)+1;achSave();if(typeof achEvaluate==='function')achEvaluate();}
     saveSoulMirror(data);renderSoulMirrorTraits();renderAutosug();
   });
 }
