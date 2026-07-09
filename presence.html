@@ -14496,6 +14496,37 @@ function renderVisObject(obj, size) {
       + '<circle cx="' + size*0.72 + '" cy="' + size*0.72 + '" r="' + r3 + '" fill="none" stroke="' + col + '" stroke-width="' + sw3 + '" opacity="0.9"/>'
       + '<line x1="' + size*0.78 + '" y1="' + size*0.18 + '" x2="' + size*0.22 + '" y2="' + size*0.82 + '" stroke="' + col + '" stroke-width="' + sw3 + '" stroke-linecap="round" opacity="0.9"/>'
       + '</svg>';
+  } else if (obj.shape === 'pentagram') {
+    // Five-pointed star — these previously fell through to the square
+    // fallback, so "Violet Pentagram" rendered as a violet square.
+    var pR = half * 0.92, pr = pR * 0.382, pPts = [];
+    for (var pi = 0; pi < 10; pi++) {
+      var pa = -Math.PI / 2 + pi * Math.PI / 5;
+      var prad = (pi % 2 === 0) ? pR : pr;
+      pPts.push((half + Math.cos(pa) * prad).toFixed(1) + ',' + (half + Math.sin(pa) * prad).toFixed(1));
+    }
+    return '<svg width="' + size + '" height="' + size + '" viewBox="0 0 ' + size + ' ' + size + '">'
+      + '<polygon points="' + pPts.join(' ') + '" fill="' + col + '" opacity="0.9"/>'
+      + '</svg>';
+  } else if (obj.shape === 'hexagram') {
+    var hR = half * 0.88;
+    var triAt = function(rot) {
+      var pts = [];
+      for (var hi = 0; hi < 3; hi++) {
+        var ha = rot + hi * 2 * Math.PI / 3;
+        pts.push((half + Math.cos(ha) * hR).toFixed(1) + ',' + (half + Math.sin(ha) * hR).toFixed(1));
+      }
+      return pts.join(' ');
+    };
+    return '<svg width="' + size + '" height="' + size + '" viewBox="0 0 ' + size + ' ' + size + '">'
+      + '<polygon points="' + triAt(-Math.PI / 2) + '" fill="' + col + '" opacity="0.75"/>'
+      + '<polygon points="' + triAt(Math.PI / 2) + '" fill="' + col + '" opacity="0.75"/>'
+      + '</svg>';
+  } else if (obj.shape === 'diamond') {
+    var dm = size * 0.08;
+    return '<svg width="' + size + '" height="' + size + '" viewBox="0 0 ' + size + ' ' + size + '">'
+      + '<polygon points="' + half + ',' + dm + ' ' + (size - dm) + ',' + half + ' ' + half + ',' + (size - dm) + ' ' + dm + ',' + half + '" fill="' + col + '" opacity="0.9"/>'
+      + '</svg>';
   } else {
     var m5 = size * 0.075;
     var w2 = size - m5 * 2;
