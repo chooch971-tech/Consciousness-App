@@ -39,15 +39,18 @@ const SCRATCH = '/tmp/claude-0/-home-user-Consciousness-App/b82bdf13-111b-5148-8
   await clean();
   await page.evaluate(() => {
     var st = document.createElement('style');
-    st.textContent = '.clock-face { filter:drop-shadow(0 0 30px rgba(224,150,80,.4)) drop-shadow(0 0 70px rgba(224,140,70,.18)); }';
+    st.textContent = '.clock-face { filter:drop-shadow(0 0 34px rgba(224,150,80,.45)) drop-shadow(0 0 80px rgba(224,140,70,.2)); }'
+      + ' #concSessionLabel { display:block !important; opacity:1 !important; color:#f0c8a0 !important; font-size:13px !important; letter-spacing:.22em; text-shadow:0 0 16px rgba(224,150,80,.5); }';
     document.head.appendChild(st);
+    var lbl = document.getElementById('concSessionLabel');
+    if (lbl) { lbl.textContent = 'focus on the tip of the seconds hand'; lbl.style.display = 'block'; }
   });
   await page.waitForTimeout(300);
   await page.screenshot({ path: SCRATCH + '/store-clock-raw.png' });
 
   // ── VISUALIZATION: force the Violet Pentagram, study phase ──
   await page.evaluate(() => {
-    window.pickVisObject = function() { return { shape:'pentagram', color:'#a855d4', label:'Violet Pentagram' }; };
+    window.pickVisObject = function() { return { shape:'svg_candle', label:'Candle' }; };
     openExerciseSetup('visual');
   });
   await page.waitForTimeout(800);
@@ -59,9 +62,11 @@ const SCRATCH = '/tmp/claude-0/-home-user-Consciousness-App/b82bdf13-111b-5148-8
   await clean();
   await page.evaluate(() => {
     var st = document.createElement('style');
-    st.textContent = '#visStudyObject svg { filter:drop-shadow(0 0 34px rgba(168,85,212,.55)) drop-shadow(0 0 80px rgba(168,85,212,.25)); }'
-      + ' #visStudyScreen { background:radial-gradient(ellipse 92% 52% at 50% 32%, rgba(168,85,212,.11), transparent 70%), #07080d !important; }'
-      + ' #visStudyLabel { color:#c8a8e0 !important; text-shadow:0 0 18px rgba(168,85,212,.4); }';
+    st.textContent = '#visStudyObject svg { filter:brightness(1.22) saturate(1.15) drop-shadow(0 0 30px rgba(255,190,90,.65)) drop-shadow(0 0 90px rgba(255,160,60,.3)); transform:scale(1.15); }'
+      + ' #visStudyScreen { background:radial-gradient(ellipse 95% 55% at 50% 32%, rgba(255,170,70,.12), transparent 70%), #07080d !important; }'
+      + ' #visStudyLabel { color:#f4dcae !important; font-size:24px !important; text-shadow:0 0 20px rgba(255,190,100,.5); }'
+      + ' #visStudyLabel + div { color:rgba(232,222,206,.85) !important; font-size:12px !important; }'
+      + ' .session-title { color:#f0b880 !important; }';
     document.head.appendChild(st);
   });
   await page.waitForTimeout(300);
