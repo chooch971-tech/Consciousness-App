@@ -740,6 +740,7 @@
     }
 
     /* ── FAQ screen: one accordion section per exercise ── */
+    .faq-banner-title { position:absolute; inset:0; padding-right:136px; z-index:3; display:flex; align-items:center; justify-content:center; font-family:'Cormorant Garamond',serif; font-size:38px; font-weight:300; letter-spacing:.04em; color:#c8ece0; pointer-events:none; text-shadow:0 0 24px rgba(158,216,196,.3); }
     .faq-intro { font-size:12.5px; color:rgba(221,216,206,.82); line-height:1.75; margin:4px 0 22px; }
     .faq-group-label { font-family:'DM Mono',monospace; font-size:9px; letter-spacing:.28em; text-transform:uppercase; color:var(--accent); margin:26px 0 10px; }
     .faq-group-label:first-of-type { margin-top:0; }
@@ -5296,9 +5297,32 @@ body:not(.tut-live) #tutCorgi {
 
   <!-- FAQ -->
   <div class="screen" id="faqScreen">
-    <div class="top-bar">
-      <span class="wordmark">FAQ</span>
-      <button class="history-back" id="faqBackBtn">← back</button>
+    <button class="history-back" id="faqBackBtn" aria-label="Back" style="margin:2px 0 12px;">←</button>
+    <div class="ex-banner" style="--exb-rgb:126,184,164; --exb-light:#9ed8c4; margin:0 0 14px; height:140px;">
+      <div class="exb-motes" aria-hidden="true">
+        <i style="width:4px;height:4px;left:12%;top:28%;animation-delay:0s;animation-duration:4.4s;"></i>
+        <i style="width:3px;height:3px;left:30%;top:66%;animation-delay:1.4s;animation-duration:5.2s;"></i>
+        <i style="width:5px;height:5px;left:52%;top:30%;animation-delay:.7s;animation-duration:4.6s;"></i>
+        <i style="width:3px;height:3px;left:86%;top:24%;animation-delay:2.8s;animation-duration:5.4s;"></i>
+        <i style="width:4px;height:4px;left:92%;top:64%;animation-delay:1.2s;animation-duration:4.8s;"></i>
+      </div>
+      <div class="faq-banner-title">FAQ</div>
+      <div class="exb-right">
+        <div class="exb-glow"></div>
+        <div class="exb-ripple"></div><div class="exb-ripple"></div><div class="exb-ripple"></div>
+        <div class="exb-sym">
+          <svg width="92" height="92" viewBox="0 0 100 100" fill="none" aria-hidden="true">
+            <circle cx="50" cy="50" r="38" stroke="#9ed8c4" stroke-width="2" opacity="0.55"/>
+            <circle cx="50" cy="50" r="27" stroke="#9ed8c4" stroke-width="1.4" opacity="0.3"/>
+            <path d="M38 39 a12 12 0 1 1 18 10 c-4 3 -6 5 -6 10" stroke="#9ed8c4" stroke-width="6" stroke-linecap="round" fill="none" opacity="0.95"/>
+            <circle cx="50" cy="70" r="4.4" fill="#9ed8c4" opacity="0.95"/>
+            <circle cx="50" cy="12" r="2" fill="#9ed8c4" opacity="0.7"/>
+            <circle cx="50" cy="88" r="2" fill="#9ed8c4" opacity="0.7"/>
+            <circle cx="12" cy="50" r="2" fill="#9ed8c4" opacity="0.7"/>
+            <circle cx="88" cy="50" r="2" fill="#9ed8c4" opacity="0.7"/>
+          </svg>
+        </div>
+      </div>
     </div>
     <div style="flex:1; overflow-y:auto; padding-bottom:24px;">
       <div class="faq-intro">Everything about the practice, one exercise at a time. Tap a section to open it.</div>
