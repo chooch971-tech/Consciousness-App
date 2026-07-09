@@ -25523,6 +25523,55 @@ function omniaReportTTL(period) {
   return 31 * 86400000;
 }
 
+// Snapshot of today's daily regiment for Omnia's discipline commentary: how
+// much of it is finished, and how many focus exercises (Clock + Thought
+// Control modes) it contains. Only meaningful for the current day.
+function omniaRegimenSnapshot() {
+  if (typeof buildGuideRegimentItems !== 'function') return null;
+  var items;
+  try { items = buildGuideRegimentItems(); } catch(e) { return null; }
+  if (!items || !items.length) return null;
+  var FOCUS = { clock:1, thought:1, observation:1, focus:1, vacancy:1 };
+  var total = 0, completed = 0, focusCount = 0, have = {};
+  items.forEach(function(it) {
+    total++;
+    if (it.done || it.sessionDone) completed++;
+    if (FOCUS[it.id] || FOCUS[it.mode]) { focusCount++; have[it.mode || it.id] = 1; }
+  });
+  // A Thought Control mode they don't already run — what Omnia should suggest
+  // adding when the regiment holds fewer than two focus exercises.
+  var addMode = ['observation','focus','vacancy'].filter(function(m){ return !have[m]; })[0] || 'observation';
+  var TC_LABEL = { observation:'Thought Observation', focus:'Thought Focus', vacancy:'Vacancy of Mind' };
+  return {
+    total: total, completed: completed, complete: total > 0 && completed >= total,
+    focusCount: focusCount, hasTwoFocus: focusCount >= 2,
+    suggestFocus: TC_LABEL[addMode]
+  };
+}
+
+// Consecutive most-recent PRACTICED days with no gain in either best unbroken
+// hold or total focus seconds vs the prior practiced day. Deterministic from
+// history (no stored counter), so viewing old reports never mutates it.
+function omniaDaysWithoutImprovement() {
+  var h = (typeof concState !== 'undefined' && concState.history) ? concState.history : [];
+  var byDay = {};
+  h.forEach(function(e) {
+    if (!e || !e.date) return;
+    var day = e.date.slice(0,10), sec = e.seconds || 0;
+    if (!byDay[day]) byDay[day] = { best:0, total:0 };
+    byDay[day].total += sec;
+    if ((typeof isHoldSession !== 'function' || isHoldSession(e)) && sec > byDay[day].best) byDay[day].best = sec;
+  });
+  var days = Object.keys(byDay).sort();
+  var count = 0;
+  for (var i = days.length - 1; i >= 1; i--) {
+    var cur = byDay[days[i]], prev = byDay[days[i-1]];
+    if (cur.best > prev.best || cur.total > prev.total) break; // improved — stop
+    count++;
+  }
+  return count;
+}
+
 function buildOmniaReportContext(period, offset) {
   var range = getDateRange(period, offset || 0);
   var awNow = filterHistory(state.history, range.start, range.now);
@@ -25605,9 +25654,25 @@ function buildOmniaReportContext(period, offset) {
   for (var _pi = 0; _pi < _pk.length; _pi++) { _pkHash = (_pkHash * 31 + _pk.charCodeAt(_pi)) | 0; }
   var streakWorthMentioning = Math.abs(_pkHash) % 2 === 0;
 
+  // Discipline + trend signals for Omnia's coaching. Regiment state is only
+  // truthful for the live daily view; day-without-improvement is history-based.
+  var _regimen = (period === 'daily' && (offset || 0) === 0) ? omniaRegimenSnapshot() : null;
+  var _noImprove = omniaDaysWithoutImprovement();
+  var _improved = ((awPrevC.length + concPrevC.length) > 0)
+    ? (concBest > concBestPrevC || concSec > concSecPrevC) : null;
+
   return {
     period: period,
     offset: offset || 0,
+    regimen_total: _regimen ? _regimen.total : null,
+    regimen_completed: _regimen ? _regimen.completed : null,
+    regimen_complete: _regimen ? _regimen.complete : null,
+    focus_exercise_count: _regimen ? _regimen.focusCount : null,
+    has_two_focus_exercises: _regimen ? _regimen.hasTwoFocus : null,
+    suggested_focus_exercise: (_regimen && !_regimen.hasTwoFocus) ? _regimen.suggestFocus : null,
+    improved: _improved,
+    days_without_improvement: _noImprove,
+    disapprove: _noImprove >= 3,
     awareness_sessions: awNow.length,
     awareness_minutes: awMin,
     concentration_sessions: concNow.length,
