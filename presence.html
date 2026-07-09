@@ -23707,8 +23707,10 @@ function buildFoundationalGuideItems() {
   if (gate) items.push(gate);
 
   var postponed = guideState.postponed || {};
+  var removed = guideState.removed || {};
   var now = Date.now();
   return items.filter(function(item) {
+    if (removed[item.id]) return false;   // permanently removed from the path
     var until = postponed[item.id];
     return !until || now >= until;
   });
@@ -23902,13 +23904,16 @@ function buildGuideRegimentItems(mode) {
   var info = guideCurrentRegimentInfo(mode);
   var items = info.mode === 'experienced' ? buildExperiencedGuideItems() : buildFoundationalGuideItems();
   items = guideMirrorToPore(guideApplyExRounds(guideMergeAddedItems(items)));
-  // Honor "Remove from path" (postpone) for ALL path modes and on the final
-  // ids. The experienced builder never filtered postponed items, so removing
-  // a fixed card like Soul Mirror had no effect; mirror→pore conversion can
-  // also change an id, so filter here after the full pipeline.
+  // Honor "Remove from path" for ALL path modes and on the final ids. The
+  // experienced builder never filtered these, so removing a fixed card like
+  // Soul Mirror had no effect; mirror→pore conversion can also change an id,
+  // so filter here after the full pipeline. `removed` is a permanent hide
+  // (until re-added via "+"); `postponed` is the legacy timed snooze.
   var postponed = guideState.postponed || {};
+  var removed = guideState.removed || {};
   var now = Date.now();
   return guideAttachSessionDone(items.filter(function(item) {
+    if (removed[item.id]) return false;
     var until = postponed[item.id];
     return !until || now >= until;
   }));
@@ -24058,9 +24063,11 @@ function guideMergeAddedItems(items) {
   var present = {};
   items.forEach(function(it) { present[it.id] = true; });
   var postponed = guideState.postponed || {};
+  var removed = guideState.removed || {};
   var now = Date.now();
   added.forEach(function(exId) {
     if (present[exId]) return;
+    if (removed[exId]) return;
     var until = postponed[exId];
     if (until && now < until) return;
     var it = guideBuildAddedItem(exId, rounds);
@@ -25025,8 +25032,12 @@ function renderPathQuests() {
     if (Array.isArray(guideState._pathAdded)) {
       guideState._pathAdded = guideState._pathAdded.filter(function(id) { return id !== activeExId; });
     }
-    if (!guideState.postponed) guideState.postponed = {};
-    guideState.postponed[activeExId] = Date.now() + 7 * 86400000;
+    // Permanent removal — the item stays off the path until the user brings it
+    // back with "+". (This used to be a 7-day snooze, so removed exercises like
+    // Clock and Soul Mirror quietly returned a week later.)
+    if (!guideState.removed) guideState.removed = {};
+    guideState.removed[activeExId] = true;
+    if (guideState.postponed) delete guideState.postponed[activeExId];
     saveGuideState(guideState);
     if (typeof syncPushData === 'function') syncPushData();
     renderPathQuests();
@@ -25164,8 +25175,9 @@ function renderPathQuests() {
     function doAdd() {
       if (!Array.isArray(guideState._pathAdded)) guideState._pathAdded = [];
       if (guideState._pathAdded.indexOf(exId) === -1) guideState._pathAdded.push(exId);
-      // Clear any active postpone so the freshly-added exercise shows right away.
+      // Clear any active postpone/removal so the freshly-added exercise shows right away.
       if (guideState.postponed && guideState.postponed[exId]) delete guideState.postponed[exId];
+      if (guideState.removed && guideState.removed[exId]) delete guideState.removed[exId];
       saveGuideState(guideState);
       // Push immediately so a reload doesn't pull an older cloud snapshot that
       // lacks this change and overwrite _pathAdded.
