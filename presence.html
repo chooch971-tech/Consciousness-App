@@ -5141,6 +5141,20 @@ body:not(.tut-live) #tutCorgi {
     <div id="accountSettingsBody" style="flex:1; overflow-y:auto; -webkit-overflow-scrolling:touch; scrollbar-width:none; -ms-overflow-style:none;">
       <div class="aset-header" style="margin-bottom:14px;">Cloud Sync</div>
       <div id="accountSyncMount"></div>
+
+      <!-- Privacy — only meaningful with a signed-in account -->
+      <div class="aset-group" id="accountPrivacyGroup" style="display:none; margin-top:30px;">
+        <div class="aset-header">Privacy</div>
+        <div class="aset-card" style="padding:0;">
+          <button class="aset-row" id="settingsPrivateToggle" style="cursor:pointer;">
+            <span class="aset-row__icon">◍</span>
+            <span class="aset-row__label">Private profile
+              <span style="display:block; font-size:9px; color:var(--muted); margin-top:3px; line-height:1.55;">When on, you won't appear in other practitioners' friend search. People you've already added stay connected; anyone else needs your exact username to send a request.</span>
+            </span>
+            <span class="aset-toggle" id="settingsPrivateSwitch" aria-hidden="true"></span>
+          </button>
+        </div>
+      </div>
     </div>
   </div>
 
@@ -9745,6 +9759,23 @@ function setProfilePic(dataUrl) {
   }
 }
 
+// ── PROFILE PRIVACY ─────────────────────────────────────
+// Local flag mirrors the server's user.isPrivate. When on, the account is
+// dropped from friend search server-side (see /friends/search). Hydrated from
+// the sign-in response so it follows the account across devices.
+var PRIVATE_PROFILE_KEY = 'presence_private_profile';
+function isProfilePrivate() { try { return localStorage.getItem(PRIVATE_PROFILE_KEY) === '1'; } catch(e) { return false; } }
+function setProfilePrivate(on) {
+  try { localStorage.setItem(PRIVATE_PROFILE_KEY, on ? '1' : '0'); } catch(e) {}
+  if (authToken) {
+    fetch(SYNC_API_URL + '/privacy', {
+      method: 'PUT',
+      headers: { 'Authorization': 'Bearer ' + authToken, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ isPrivate: !!on })
+    }).catch(function() {});
+  }
+}
+
 function _profOvItem(icon, val, lbl) {
   return '<div class="prof-ov-item"><span class="prof-ov-item__icon">' + icon + '</span>'
     + '<div><div class="prof-ov-item__val">' + val + '</div>'
@@ -10086,8 +10117,29 @@ function openAccountSettings() {
   var blk = document.getElementById('acctSyncBlock');
   if (mount && blk) mount.appendChild(blk);
   if (syncEnabled && authEmail) { _refreshSettingsSyncCardSignedIn(); } else { _refreshSettingsSyncCard(); }
+  _refreshPrivacyToggle();
   showScreen('accountSettingsScreen');
 }
+
+// Show the privacy toggle only for signed-in accounts, and sync its visual state.
+function _refreshPrivacyToggle() {
+  var group = document.getElementById('accountPrivacyGroup');
+  var sw = document.getElementById('settingsPrivateSwitch');
+  if (!group || !sw) return;
+  var signedIn = !!(syncEnabled && authToken);
+  group.style.display = signedIn ? '' : 'none';
+  sw.classList.toggle('on', isProfilePrivate());
+}
+
+(function() {
+  var btn = document.getElementById('settingsPrivateToggle');
+  if (!btn) return;
+  btn.addEventListener('click', function() {
+    if (!authToken) { showToast('Sign in to manage privacy'); return; }
+    setProfilePrivate(!isProfilePrivate());
+    _refreshPrivacyToggle();
+  });
+})();
 
 // Delegated row taps within the Settings exercises lists
 document.getElementById('settingsScrollBody').addEventListener('click', function(e) {
@@ -27420,6 +27472,7 @@ function initGoogleSignIn(containerId, onSuccess) {
         localStorage.setItem('presence_auth_token', authToken);
         localStorage.setItem('presence_auth_email', authEmail);
         if (authUsername) localStorage.setItem('presence_auth_username', authUsername);
+        try { localStorage.setItem(PRIVATE_PROFILE_KEY, result.isPrivate ? '1' : '0'); } catch(e) {}
         syncEnabled = true;
         onSuccess();
       } catch(err) {
@@ -27501,6 +27554,7 @@ async function authRegisterOrLogin(email, password, isRegister, username) {
     localStorage.setItem('presence_auth_token', authToken);
     localStorage.setItem('presence_auth_email', authEmail);
     if (authUsername) localStorage.setItem('presence_auth_username', authUsername);
+    try { localStorage.setItem(PRIVATE_PROFILE_KEY, result.isPrivate ? '1' : '0'); } catch(e) {}
     syncEnabled = true;
 
     console.log('[Auth] Success.');
@@ -27782,6 +27836,7 @@ async function authLogout(options) {
   localStorage.removeItem('presence_auth_token');
   localStorage.removeItem('presence_auth_email');
   localStorage.removeItem('presence_auth_username');
+  localStorage.removeItem('presence_private_profile');
   syncEnabled = false;
   // Deliberate sign-out: wipe local progress so a signed-out device shows a
   // clean slate instead of the previous account's data. The data is safe in the

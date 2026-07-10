@@ -632,7 +632,7 @@ app.post('/api/sync/auth/register', authRateLimit, async (req, res) => {
     if (cleanUsername) userDoc.username = cleanUsername;
     const result = await usersCollection.insertOne(userDoc);
     const token = jwt.sign({ userId: result.insertedId.toString(), email }, JWT_SECRET, { expiresIn: TOKEN_EXPIRY });
-    res.json({ token, userId: result.insertedId, email, username: cleanUsername || null });
+    res.json({ token, userId: result.insertedId, email, username: cleanUsername || null, isPrivate: false });
   } catch (err) {
     console.error('Register error:', err);
     res.status(500).json({ error: 'Registration failed' });
@@ -650,7 +650,7 @@ app.post('/api/sync/auth/login', authRateLimit, async (req, res) => {
     const validPassword = await bcrypt.compare(password, user.passwordHash);
     if (!validPassword) return res.status(401).json({ error: 'Invalid credentials' });
     const token = jwt.sign({ userId: user._id.toString(), email: user.email }, JWT_SECRET, { expiresIn: TOKEN_EXPIRY });
-    res.json({ token, userId: user._id, email: user.email, username: user.username || null });
+    res.json({ token, userId: user._id, email: user.email, username: user.username || null, isPrivate: !!user.isPrivate });
   } catch (err) {
     console.error('Login error:', err);
     res.status(500).json({ error: 'Login failed' });
@@ -752,7 +752,7 @@ app.post('/api/sync/auth/google', async (req, res) => {
         createdAt: new Date(), lastSync: null, lastActive: new Date()
       });
       const token = jwt.sign({ userId: result.insertedId.toString(), email }, JWT_SECRET, { expiresIn: TOKEN_EXPIRY });
-      return res.json({ token, userId: result.insertedId, email, username: null });
+      return res.json({ token, userId: result.insertedId, email, username: null, isPrivate: false });
     }
 
     if (!user.googleId) {
@@ -762,7 +762,7 @@ app.post('/api/sync/auth/google', async (req, res) => {
     }
 
     const token = jwt.sign({ userId: user._id.toString(), email: user.email }, JWT_SECRET, { expiresIn: TOKEN_EXPIRY });
-    res.json({ token, userId: user._id, email: user.email, username: user.username || null });
+    res.json({ token, userId: user._id, email: user.email, username: user.username || null, isPrivate: !!user.isPrivate });
   } catch (err) {
     console.error('[Google Auth] Error:', err.message);
     res.status(401).json({ error: 'Google sign-in failed' });
@@ -1336,7 +1336,10 @@ app.get('/api/sync/friends/search', verifyToken, async (req, res) => {
     const selfId = req.user.userId;
     const users = await usersCollection.find({
       username: { $regex: '^' + q.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), $options: 'i' },
-      _id: { $ne: new ObjectId(selfId) }
+      _id: { $ne: new ObjectId(selfId) },
+      // Private accounts opt out of discovery — they can still be added by anyone
+      // who knows their exact username via /friends/request.
+      isPrivate: { $ne: true }
     }).limit(8).project({ _id: 1, username: 1 }).toArray();
     res.json({ users: users.map(u => ({ userId: u._id.toString(), username: u.username })) });
   } catch (err) {
@@ -1446,6 +1449,22 @@ app.put('/api/sync/profile-pic', verifyToken, async (req, res) => {
   } catch (err) {
     console.error('Profile pic upload error:', err);
     res.status(500).json({ error: 'Upload failed' });
+  }
+});
+
+// PRIVACY — toggle whether this account is discoverable in friend search
+app.put('/api/sync/privacy', verifyToken, async (req, res) => {
+  try {
+    const { isPrivate } = req.body;
+    if (typeof isPrivate !== 'boolean') return res.status(400).json({ error: 'isPrivate boolean required' });
+    await usersCollection.updateOne(
+      { _id: new ObjectId(req.user.userId) },
+      { $set: { isPrivate } }
+    );
+    res.json({ ok: true, isPrivate });
+  } catch (err) {
+    console.error('Privacy update error:', err);
+    res.status(500).json({ error: 'Update failed' });
   }
 });
 
