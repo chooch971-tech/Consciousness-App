@@ -9759,6 +9759,25 @@ function setProfilePic(dataUrl) {
   }
 }
 
+// Apply the identity fields the server returns on /sync/pull (and sign-in) so
+// the signed-in account's own avatar, username, and privacy flag follow them
+// across devices. Server is authoritative here — the pic is pushed immediately
+// on change, so adopting the server copy on pull can't lose a newer local one.
+function applyAccountFields(acct) {
+  if (!acct) return;
+  if (typeof acct.profilePic === 'string' && acct.profilePic && getProfilePic() !== acct.profilePic) {
+    try { localStorage.setItem(PROFILE_PIC_KEY, acct.profilePic); } catch(e) {}
+    if (typeof renderProfile === 'function') { try { renderProfile(); } catch(e) {} }
+  }
+  if (typeof acct.isPrivate === 'boolean') {
+    try { localStorage.setItem(PRIVATE_PROFILE_KEY, acct.isPrivate ? '1' : '0'); } catch(e) {}
+  }
+  if (acct.username && !authUsername) {
+    authUsername = acct.username;
+    try { localStorage.setItem('presence_auth_username', authUsername); } catch(e) {}
+  }
+}
+
 // ── PROFILE PRIVACY ─────────────────────────────────────
 // Local flag mirrors the server's user.isPrivate. When on, the account is
 // dropped from friend search server-side (see /friends/search). Hydrated from
@@ -11163,6 +11182,7 @@ function enterAppAfterSignIn(onEntered) {
       })
       .then(function(result) {
         if (result === null) return;
+        if (result && result.account && typeof applyAccountFields === 'function') applyAccountFields(result.account);
         if (result && result.data) {
           applyPulledData(result.data);
           if (typeof markSynced === 'function') markSynced();
@@ -11391,6 +11411,7 @@ document.addEventListener('visibilitychange', function() {
       headers: { 'Authorization': 'Bearer ' + authToken }
     }).then(function(r) { return r.json(); }).then(function(result) {
       if (typeof markSynced === 'function') markSynced();
+      if (result.account && typeof applyAccountFields === 'function') applyAccountFields(result.account);
       if (!result.data) return;
       var changed = applyPulledData(result.data);
       var surveyShowing = document.getElementById('surveyScreen') && document.getElementById('surveyScreen').classList.contains('active');
@@ -11448,6 +11469,7 @@ if (!localStorage.getItem('presence_auth_token')) {
   function _applyStartupPull(result) {
     window._syncPullPending = false;
     if (typeof markSynced === 'function') markSynced();
+    if (result && result.account && typeof applyAccountFields === 'function') applyAccountFields(result.account);
     if (!result || !result.data) { renderHome(); if (window.__dismissSplash) window.__dismissSplash(); return; }
     var changed = applyPulledData(result.data);
     if (changed) {
@@ -27660,7 +27682,11 @@ async function syncPullData() {
       if (res.status === 401) { authLogout({ message: 'Session expired — sign in via Settings' }); }
       return;
     }
-    
+
+    // Identity fields (avatar/username/privacy) ride alongside the snapshot data
+    // and must apply even when there's no progress snapshot yet.
+    if (result.account) applyAccountFields(result.account);
+
     if (!result.data) {
       window._syncPullPending = false;
       console.log('[Sync] No data on cloud yet');

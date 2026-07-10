@@ -1125,13 +1125,31 @@ app.get('/api/sync/sync/pull', verifyToken, async (req, res) => {
       { userId: new ObjectId(req.user.userId) }
     ).sort({ syncedAt: -1 }).limit(20).toArray();
 
-    if (!snapshots.length) return res.json({ data: null, message: 'No sync data found' });
+    // Identity fields live on the user doc (set via dedicated endpoints), not in
+    // the localStorage snapshots — return them so every signed-in device stays
+    // current, including one that's been signed in for a while and won't re-hit
+    // the login response.
+    let account = null;
+    try {
+      const user = await usersCollection.findOne(
+        { _id: new ObjectId(req.user.userId) },
+        { projection: { profilePic: 1, username: 1, isPrivate: 1 } }
+      );
+      if (user) account = {
+        profilePic: user.profilePic || null,
+        username: user.username || null,
+        isPrivate: !!user.isPrivate,
+      };
+    } catch (e) {}
+
+    if (!snapshots.length) return res.json({ data: null, account, message: 'No sync data found' });
 
     const merged = mergeSnapshots(snapshots);
     const newest = snapshots[0];
 
     res.json({
       data: merged,
+      account,
       syncedAt: newest.syncedAt,
       deviceInfo: newest.deviceInfo,
       merged: true,
