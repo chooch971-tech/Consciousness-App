@@ -707,8 +707,8 @@
     .btn:active { transform:scale(.97); }
     .btn.primary { background:var(--accent-dim); border-color:rgba(126,184,164,.35); color:var(--accent2); }
     .btn.ghost { background:transparent; border-color:transparent; color:var(--muted); }
-    .toast { position:fixed; bottom:max(env(safe-area-inset-bottom),28px); left:50%; transform:translateX(-50%) translateY(16px); background:var(--surface2); border:1px solid var(--border2); padding:10px 22px; border-radius:100px; font-size:10px; letter-spacing:.15em; color:var(--muted); opacity:0; transition:opacity .3s, transform .3s; white-space:nowrap; z-index:200; pointer-events:none; }
-    .toast.show { opacity:1; transform:translateX(-50%) translateY(0); }
+    .toast { position:fixed; bottom:max(env(safe-area-inset-bottom),28px); left:0; right:0; margin-inline:auto; width:max-content; max-width:calc(100vw - 32px); box-sizing:border-box; transform:translateY(16px); background:var(--surface2); border:1px solid var(--border2); padding:10px 22px; border-radius:22px; font-size:10px; letter-spacing:.15em; color:var(--muted); opacity:0; transition:opacity .3s, transform .3s; white-space:normal; text-align:center; line-height:1.5; z-index:200; pointer-events:none; }
+    .toast.show { opacity:1; transform:translateY(0); }
     .toast--gold { border-color:rgba(226,196,140,.5); color:#e8cd94; box-shadow:0 0 18px -6px rgba(226,196,140,.5); }
     .toast--violet { border-color:rgba(196,168,220,.5); color:#d8c4f4; }
     .toast--teal { border-color:rgba(126,184,164,.5); color:#9ed8c0; }
