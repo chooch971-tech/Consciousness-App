@@ -705,6 +705,27 @@
     .status-ov__btn { flex:1; padding:11px; border-radius:10px; font-family:'DM Mono',monospace; font-size:9px; letter-spacing:.16em; text-transform:uppercase; cursor:pointer; border:1px solid var(--border); background:transparent; color:var(--muted); }
     .status-ov__btn--save { background:var(--accent); color:#07080d; border-color:var(--accent); font-weight:600; }
     .status-ov__btn--clear { color:#c47a7a; border-color:rgba(196,122,122,.3); }
+
+    /* Achievement info popover (tap an achievement on any profile) */
+    .ach-info-ov { position:fixed; inset:0; z-index:9800; background:rgba(7,8,13,.9); display:none; align-items:center; justify-content:center; padding:24px; }
+    .ach-info-ov.on { display:flex; }
+    .ach-info-card { position:relative; width:100%; max-width:360px; background:var(--surface); border:1px solid var(--border2); border-radius:16px; padding:28px 22px 22px; text-align:center; }
+    .ach-info-close { position:absolute; top:12px; right:14px; background:none; border:none; color:var(--muted); font-size:15px; cursor:pointer; }
+    .ach-info-medal { width:74px; height:74px; margin:0 auto 14px; border-radius:18px; background:rgba(255,255,255,.04); border:1px solid var(--gc,#e8c87a); display:flex; align-items:center; justify-content:center; gap:5px; position:relative; }
+    .ach-info-medal svg { width:34px; height:34px; fill:none; stroke:var(--gc,#e8c87a); stroke-width:1.4; stroke-linecap:round; stroke-linejoin:round; }
+    .ach-info-medal b { font-family:'Cormorant Garamond',serif; font-weight:300; font-size:18px; color:var(--text); }
+    .ach-info-kicker { font-size:9px; letter-spacing:.2em; text-transform:uppercase; color:var(--muted); font-family:'DM Mono',monospace; margin-bottom:7px; }
+    .ach-info-name { font-family:'Cormorant Garamond',serif; font-size:22px; font-weight:300; color:var(--text); margin-bottom:9px; }
+    .ach-info-desc { font-size:12px; color:var(--muted); line-height:1.7; font-family:'DM Mono',monospace; }
+    .ach-info-status { margin-top:18px; font-size:10px; letter-spacing:.14em; text-transform:uppercase; font-family:'DM Mono',monospace; color:var(--accent); }
+    .ach-info-bar { height:4px; border-radius:2px; background:rgba(255,255,255,.08); margin:18px 0 8px; overflow:hidden; }
+    .ach-info-fill { height:100%; background:var(--gc,#e8c87a); border-radius:2px; }
+    .ach-info-row { display:flex; justify-content:space-between; font-size:9px; letter-spacing:.08em; text-transform:uppercase; color:var(--muted); font-family:'DM Mono',monospace; }
+    .ach-info-reward { color:var(--accent); }
+    /* Friend earned-achievement strip: fixed-width discs that scroll horizontally */
+    .friend-ach-strip { overflow-x:auto; scrollbar-width:none; -ms-overflow-style:none; padding-bottom:2px; }
+    .friend-ach-strip::-webkit-scrollbar { display:none; }
+    .friend-ach-strip .prof-ach-item { flex:0 0 auto; width:60px; opacity:1; }
     /* exercise settings sub-page placeholder */
     .aset-placeholder { text-align:center; padding:44px 24px; }
     .aset-placeholder__mark { font-size:30px; opacity:.35; margin-bottom:16px; }
@@ -10022,7 +10043,7 @@ function renderProfileBadges() {
   el.innerHTML = ACH_GROUPS[0].items.map(function(b) {
     var earned = !!achState.monthly.earned[b.id];
     var medal = b.target >= 1000 ? (b.target / 1000) + 'k' : b.target;
-    return '<div class="prof-badge' + (earned ? ' prof-badge--earned' : ' prof-badge--locked') + '" style="--gc:' + ACH_COLORS.monthly + '" title="' + b.name + '">'
+    return '<div class="prof-badge' + (earned ? ' prof-badge--earned' : ' prof-badge--locked') + '" style="--gc:' + ACH_COLORS.monthly + ';cursor:pointer;" data-ach="' + b.id + '" title="' + b.name + '">'
       + achIconSvg('monthly') + '<b>' + medal + '</b></div>';
   }).join('');
 }
@@ -10051,7 +10072,7 @@ function renderProfileAchievements() {
     var earned = !!achState.earned[it.b.id];
     var medal = it.b.group === 'step' ? ['','','II','III','IV','V','VI','VII','VIII','IX','X'][it.b.target]
       : it.b.target >= 1000 ? (it.b.target / 1000) + 'k' : it.b.target;
-    return '<div class="prof-ach-item"' + (earned || it.pct > 0 ? ' style="opacity:1;"' : '') + '>'
+    return '<div class="prof-ach-item" data-ach="' + it.b.id + '" style="cursor:pointer;' + (earned || it.pct > 0 ? 'opacity:1;' : '') + '">'
       + '<div class="prof-ach-item__disc" style="--gc:' + (ACH_COLORS[it.g.id] || '#e8c87a') + (earned ? ';border-color:rgba(232,200,122,.6);' : '') + '">'
       + achIconSvg(it.g.id) + '<b>' + medal + '</b></div>'
       + '<div class="prof-ach-item__lbl">' + (earned ? 'Earned' : it.pct + '%') + '</div></div>';
@@ -10106,6 +10127,7 @@ function openFriendProfile(userId) {
 }
 function renderFriendProfile(f) {
   if (!f) return;
+  _currentFriendProfile = f;
   var uname = f.username || 'friend';
   document.getElementById('friendProfTopName').textContent = '@' + uname;
   document.getElementById('friendProfName').textContent = '@' + uname;
@@ -10152,13 +10174,55 @@ function renderFriendProfile(f) {
     + _profOvItem('🌀', Math.floor(f.akasha || 0).toLocaleString(), 'Akasha');
 
   renderFriendProfSimilar(f.userId);
+  renderFriendAchievements(f);
+}
 
-  var bh = '';
-  for (var i = 0; i < 4; i++) bh += '<div class="prof-badge prof-badge--locked">🔒</div>';
-  document.getElementById('friendProfBadges').innerHTML = bh;
-  document.getElementById('friendProfAch').innerHTML = ['🏅', '🎯', '🧘', '🔮'].map(function(m) {
-    return '<div class="prof-ach-item"><div class="prof-ach-item__disc">' + m + '</div><div class="prof-ach-item__lbl">Locked</div></div>';
-  }).join('');
+// Show only the achievements a friend has actually earned (read-only, tappable).
+function renderFriendAchievements(f) {
+  var badgesEl = document.getElementById('friendProfBadges');
+  var achEl = document.getElementById('friendProfAch');
+
+  // Monthly badges — only if the friend's snapshot is from the current month.
+  if (badgesEl) {
+    var monthMatch = f.achMonthlyKey && (typeof achMonthKey === 'function') && (f.achMonthlyKey === achMonthKey());
+    var fMonthly = monthMatch ? (f.achMonthlyEarned || {}) : {};
+    var monthlyEarned = ACH_GROUPS[0].items.filter(function(b) { return fMonthly[b.id]; });
+    if (monthlyEarned.length) {
+      badgesEl.innerHTML = monthlyEarned.map(function(b) {
+        var medal = b.target >= 1000 ? (b.target / 1000) + 'k' : b.target;
+        return '<div class="prof-badge prof-badge--earned" style="--gc:' + ACH_COLORS.monthly + ';cursor:pointer;" data-ach="' + b.id + '" data-earned="' + escHtml(String(fMonthly[b.id])) + '" title="' + escHtml(b.name) + '">'
+          + achIconSvg('monthly') + '<b>' + medal + '</b></div>';
+      }).join('');
+    } else {
+      badgesEl.innerHTML = '<div class="prof-empty-note">No monthly badges earned yet this month.</div>';
+    }
+  }
+
+  // All-time achievements the friend has earned, most recent first.
+  if (achEl) {
+    var life = f.achEarned || {};
+    var earnedAch = [];
+    ACH_GROUPS.forEach(function(g) {
+      if (g.monthly) return;
+      g.items.forEach(function(b) { if (life[b.id]) earnedAch.push({ b: b, g: g }); });
+    });
+    if (earnedAch.length) {
+      earnedAch.sort(function(x, y) { return (life[y.b.id] || 0) - (life[x.b.id] || 0); });
+      achEl.classList.add('friend-ach-strip');
+      achEl.innerHTML = earnedAch.map(function(it) {
+        var b = it.b, g = it.g;
+        var medal = b.group === 'step' ? ['','','II','III','IV','V','VI','VII','VIII','IX','X'][b.target]
+          : b.target >= 1000 ? (b.target / 1000) + 'k' : b.target;
+        return '<div class="prof-ach-item" data-ach="' + b.id + '" data-earned="' + escHtml(String(life[b.id])) + '" style="cursor:pointer;opacity:1;">'
+          + '<div class="prof-ach-item__disc" style="--gc:' + (ACH_COLORS[g.id] || '#e8c87a') + ';border-color:rgba(232,200,122,.5);">'
+          + achIconSvg(g.id) + '<b>' + medal + '</b></div>'
+          + '<div class="prof-ach-item__lbl">Earned</div></div>';
+      }).join('');
+    } else {
+      achEl.classList.remove('friend-ach-strip');
+      achEl.innerHTML = '<div class="prof-empty-note">No achievements reached yet.</div>';
+    }
+  }
 }
 function renderFriendProfSimilar(excludeId) {
   var el = document.getElementById('friendProfSimilar');
@@ -10792,6 +10856,57 @@ function achSeeFriends(friends) {
 
 // ── Screen ──
 var _achSelected = null;
+
+// ── Achievement info popover (tap an achievement on a profile) ──
+// Works on the user's own Profile (shows progress + reward) and on a friend's
+// Profile (read-only, earned date). Copy in the ACH_GROUPS data — never from the
+// friend payload — so a friend's stored fields can't inject markup.
+var _currentFriendProfile = null;
+function _achMedalText(b) {
+  return b.group === 'step' ? ['','','II','III','IV','V','VI','VII','VIII','IX','X'][b.target]
+    : b.target >= 1000 ? (b.target / 1000) + 'k' : b.target;
+}
+function showAchInfo(id, friend, earnedAt) {
+  var badge = null, group = null;
+  ACH_GROUPS.forEach(function(g) { g.items.forEach(function(b) { if (b.id === id) { badge = b; group = g; } }); });
+  if (!badge) return;
+  var ov = document.getElementById('achInfoOverlay'), body = document.getElementById('achInfoBody');
+  if (!ov || !body) return;
+  var gc = ACH_COLORS[group.id] || '#e8c87a';
+  var statusHtml;
+  if (friend) {
+    var d = earnedAt ? new Date(Number(earnedAt) || earnedAt) : null;
+    statusHtml = '<div class="ach-info-status">✦ Earned' + (d && !isNaN(d.getTime()) ? ' · ' + d.toLocaleDateString() : '') + '</div>';
+  } else {
+    var earnedMap = group.monthly ? achState.monthly.earned : achState.earned;
+    var eAt = earnedMap[badge.id];
+    var p = achProviders();
+    var cur = Math.min(p[badge.key] || 0, badge.target);
+    var pct = eAt ? 100 : Math.min(100, Math.round(cur / badge.target * 100));
+    statusHtml = '<div class="ach-info-bar"><div class="ach-info-fill" style="width:' + pct + '%;--gc:' + gc + '"></div></div>'
+      + '<div class="ach-info-row"><span>' + (eAt ? 'Complete' : cur.toLocaleString() + ' / ' + badge.target.toLocaleString()) + '</span>'
+      + '<span class="ach-info-reward">' + (eAt ? 'Earned ' + new Date(eAt).toLocaleDateString() : '✦ +' + badge.reward.toLocaleString() + ' Akasha') + '</span></div>';
+  }
+  body.innerHTML = '<button class="ach-info-close" aria-label="Close">✕</button>'
+    + '<div class="ach-info-medal" style="--gc:' + gc + '">' + achIconSvg(group.id) + '<b>' + _achMedalText(badge) + '</b></div>'
+    + '<div class="ach-info-kicker">' + (group.monthly ? 'Monthly Badge' : escHtml(group.label)) + '</div>'
+    + '<div class="ach-info-name">' + escHtml(badge.name) + '</div>'
+    + '<div class="ach-info-desc">' + escHtml(badge.desc) + '</div>'
+    + statusHtml;
+  ov.classList.add('on');
+}
+function closeAchInfo() { var ov = document.getElementById('achInfoOverlay'); if (ov) ov.classList.remove('on'); }
+(function() {
+  var ov = document.getElementById('achInfoOverlay');
+  if (ov) ov.addEventListener('click', function(e) { if (e.target === ov || e.target.closest('.ach-info-close')) closeAchInfo(); });
+  function ownHandler(e) { var it = e.target.closest('[data-ach]'); if (it) showAchInfo(it.getAttribute('data-ach'), null); }
+  function friendHandler(e) {
+    var it = e.target.closest('[data-ach]');
+    if (it && _currentFriendProfile) showAchInfo(it.getAttribute('data-ach'), _currentFriendProfile, it.getAttribute('data-earned'));
+  }
+  ['profAchievements', 'profBadges'].forEach(function(id) { var el = document.getElementById(id); if (el) el.addEventListener('click', ownHandler); });
+  ['friendProfAch', 'friendProfBadges'].forEach(function(id) { var el = document.getElementById(id); if (el) el.addEventListener('click', friendHandler); });
+})();
 function renderAchScreen() {
   var body = document.getElementById('achBody');
   if (!body) return;
@@ -33489,6 +33604,9 @@ document.addEventListener('DOMContentLoaded',function(){(function(){
     </div>
   </div>
 </div>
+
+<!-- Achievement info popover -->
+<div class="ach-info-ov" id="achInfoOverlay"><div class="ach-info-card" id="achInfoBody"></div></div>
 
 <!-- Daily status editor -->
 <div class="status-ov" id="statusOverlay">

@@ -1295,6 +1295,8 @@ app.get('/api/sync/friends/list', verifyToken, async (req, res) => {
       let bodies = { physical: 1, astral: 1, mental: 1 };
       // Practice calendar + last session date feed the client-side Streak Society shared-streak computation.
       let practicedDates = [], lastSessionDate = null;
+      // Earned achievements so a friend's profile can show what they've reached.
+      let achEarned = {}, achMonthlyEarned = {}, achMonthlyKey = null;
 
       if (latestSync) {
         try {
@@ -1328,6 +1330,16 @@ app.get('/api/sync/friends/list', verifyToken, async (req, res) => {
             if (omnia.bodies) bodies = omnia.bodies;
           }
         } catch(e) {}
+        try {
+          const ach = latestSync.presence_ach_v1 ? JSON.parse(latestSync.presence_ach_v1) : null;
+          if (ach) {
+            if (ach.earned && typeof ach.earned === 'object') achEarned = ach.earned;
+            if (ach.monthly && typeof ach.monthly === 'object') {
+              if (ach.monthly.earned && typeof ach.monthly.earned === 'object') achMonthlyEarned = ach.monthly.earned;
+              if (ach.monthly.key) achMonthlyKey = ach.monthly.key;
+            }
+          }
+        } catch(e) {}
       }
 
       friends.push({
@@ -1338,7 +1350,8 @@ app.get('/api/sync/friends/list', verifyToken, async (req, res) => {
         lastSync: latestSync ? latestSync.syncedAt : null,
         lastActive: otherUser.lastActive || null,
         streak, concLevel, concXp, akasha, bardonStep, bodies,
-        practicedDates, lastSessionDate
+        practicedDates, lastSessionDate,
+        achEarned, achMonthlyEarned, achMonthlyKey
       });
     }
     res.json({ friends });
