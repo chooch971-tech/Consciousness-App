@@ -797,6 +797,28 @@
     .prof-badge b, .prof-ach-item__disc b { font-family:'Cormorant Garamond',serif; font-weight:300; font-size:13px; margin-top:1px; }
     .prof-badge, .prof-ach-item__disc { flex-direction:column; }
 
+    /* ── Seven-Day Devotion: a custom-goal streak for a permanent +2% akasha ── */
+    .dev-card { border:1px solid rgba(232,200,122,.28); border-radius:14px; background:linear-gradient(160deg, rgba(232,200,122,.06), rgba(255,255,255,.015)); padding:16px 17px; margin:0 0 14px; position:relative; overflow:hidden; }
+    .dev-card.earned { border-color:rgba(232,200,122,.55); }
+    .dev-head { display:flex; justify-content:space-between; align-items:baseline; margin-bottom:3px; }
+    .dev-title { font-family:'Cormorant Garamond',serif; font-size:19px; font-weight:300; color:#f0d8ac; }
+    .dev-reward { font-family:'DM Mono',monospace; font-size:9px; letter-spacing:.14em; color:#e8c87a; }
+    .dev-sub { font-size:10px; color:rgba(221,216,206,.62); line-height:1.55; margin-bottom:12px; }
+    .dev-pips { display:flex; gap:6px; margin-bottom:13px; }
+    .dev-pip { flex:1; height:6px; border-radius:3px; background:rgba(221,216,206,.1); transition:background .3s, box-shadow .3s; }
+    .dev-pip.on { background:linear-gradient(90deg,#b86820,#e8c87a); box-shadow:0 0 7px rgba(232,200,122,.45); }
+    .dev-pip.today { background:rgba(232,200,122,.35); }
+    .dev-goal-label { font-family:'DM Mono',monospace; font-size:8px; letter-spacing:.2em; text-transform:uppercase; color:rgba(221,216,206,.55); margin-bottom:7px; }
+    .dev-goal-text { font-family:'Cormorant Garamond',serif; font-size:16px; font-style:italic; color:var(--text); line-height:1.4; margin-bottom:12px; }
+    .dev-input { width:100%; box-sizing:border-box; padding:10px 12px; border:1px solid var(--border); border-radius:9px; background:rgba(255,255,255,.03); color:var(--text); font-family:'Cormorant Garamond',serif; font-size:15px; outline:none; margin-bottom:10px; }
+    .dev-input::placeholder { color:rgba(221,216,206,.4); font-style:italic; }
+    .dev-btn { width:100%; padding:11px; border-radius:8px; border:1px solid rgba(232,200,122,.4); background:rgba(232,200,122,.08); color:#e8c87a; font-family:'DM Mono',monospace; font-size:10px; letter-spacing:.2em; text-transform:uppercase; cursor:pointer; }
+    .dev-btn:active { transform:scale(.985); }
+    .dev-btn--done { border-color:rgba(126,184,164,.4); background:rgba(126,184,164,.08); color:#9ed8c0; }
+    .dev-status { font-size:11px; font-style:italic; color:rgba(221,216,206,.7); text-align:center; padding:4px 0 2px; }
+    .dev-earned-line { display:flex; align-items:center; gap:9px; }
+    .dev-earned-line .dev-seal { width:34px; height:34px; border-radius:50%; flex-shrink:0; display:flex; align-items:center; justify-content:center; color:#0e0f17; font-size:16px; background:radial-gradient(circle at 40% 32%, #f4e2b0, #d4a94e 70%); box-shadow:0 0 14px rgba(232,200,122,.5); }
+
     /* MODE TABS */
     .mode-tabs { display:flex; gap:0; margin-bottom:16px; border-bottom:1px solid var(--border); }
     .mode-tab { flex:1; padding:10px 0 8px; text-align:center; font-size:9px; letter-spacing:.25em; text-transform:uppercase; color:var(--muted); background:none; border:none; border-bottom:2px solid transparent; cursor:pointer; font-family:'DM Mono',monospace; transition:all .2s; }
@@ -6126,6 +6148,7 @@ body:not(.tut-live) #tutCorgi {
       </div>
     </div>
     <div class="path-quest-root" id="pathQuestRoot"></div>
+    <div id="devotionCardRoot"></div>
 
     <!-- Omnia character (Path tab — aura centerpiece) -->
     <div class="guide-path-omnia-wrap">
@@ -12934,8 +12957,7 @@ function claimMorningOffering() {
   omniaState.totalAkashaEarned = (omniaState.totalAkashaEarned || 0) + gift;
   saveOmniaState();
   if (syncEnabled && authToken) syncPushData();
-  var verse = WB_VERSES[Math.floor(Math.random() * WB_VERSES.length)];
-  showToast('+' + gift + ' akasha \u00b7 \u201C' + verse + '\u201D', 4200, 'gold');
+  showToast('+' + gift + ' akasha', 3200, 'gold');
   updateOmniaGiftBtn();
   if (typeof renderOmniaEngine === 'function' && document.getElementById('omniaEngine')) { try { renderOmniaEngine(); } catch(e) {} }
 }
@@ -20359,7 +20381,7 @@ function omniaAccrue() {
   var now = Date.now();
   var elapsedHours = Math.max(0, (now - (omniaState.lastTick || now)) / 3600000);
   if (elapsedHours > 0) {
-    var gain = Math.floor(elapsedHours * omniaRatePerHour() * omniaPrestigeMult());
+    var gain = Math.floor(elapsedHours * omniaRatePerHour() * omniaPrestigeMult() * omniaDevotionMult());
     if (gain > 0) {
       omniaState.reservoir = Math.min(omniaReservoirCap(), (omniaState.reservoir || 0) + gain);
       omniaState.totalAkashaEarned = (omniaState.totalAkashaEarned || 0) + gain;
@@ -21149,8 +21171,11 @@ function omniaExerciseReward(exId, seconds, recommended, extraBoost) {
   // stack at 3x keeps bonuses feeling rewarding without trivializing the
   // akasha economy, while leaving non-paying players (max ~2.54x) untouched.
   var bonusMult = Math.min(streakMult * recMult * (extraBoost || 1), OMNIA_BONUS_STACK_CAP);
-  return Math.max(42, Math.floor(base * effMult * stepPenalty * catchup * bonusMult * omniaPrestigeMult()));
+  return Math.max(42, Math.floor(base * effMult * stepPenalty * catchup * bonusMult * omniaPrestigeMult() * omniaDevotionMult()));
 }
+// Permanent +2% akasha from completing the Seven-Day Devotion (one-time). The
+// earned flag lives on omniaState so the reward follows the account across sync.
+function omniaDevotionMult() { return (typeof omniaState !== 'undefined' && omniaState && omniaState.devotionEarned) ? 1.02 : 1; }
 
 var OMNIA_BONUS_STACK_CAP = 3.0;
 
@@ -24611,6 +24636,131 @@ function colorToTint(hex, alpha) {
   return 'rgba(' + r + ',' + g + ',' + b + ',' + alpha + ')';
 }
 
+// ── Seven-Day Devotion ────────────────────────────────────────────────────────
+// Set a custom goal each day and keep it. Seven days in a row grants a one-time
+// permanent +2% akasha. The daily progress is local; the earned reward lives on
+// omniaState (omniaDevotionMult) so it follows the account across sync.
+function _devToday() { return new Date().toISOString().slice(0, 10); }
+function _devYesterday() { return new Date(Date.now() - 86400000).toISOString().slice(0, 10); }
+function loadDevotion() {
+  var def = { earned: false, count: 0, lastDoneDate: null, today: { date: _devToday(), goal: '', done: false } };
+  try {
+    var s = localStorage.getItem('presence_devotion_v1');
+    if (s) { var p = JSON.parse(s); ['earned', 'count', 'lastDoneDate', 'today'].forEach(function(k) { if (p[k] != null) def[k] = p[k]; }); }
+  } catch (e) {}
+  if (!def.today || typeof def.today !== 'object') def.today = { date: _devToday(), goal: '', done: false };
+  // Keep the earned flag in step with omniaState (the synced source of truth).
+  if (typeof omniaState !== 'undefined' && omniaState && omniaState.devotionEarned) def.earned = true;
+  return def;
+}
+function saveDevotion(s) { try { localStorage.setItem('presence_devotion_v1', JSON.stringify(s)); } catch (e) {} }
+function devotionNormalize(s) {
+  var today = _devToday();
+  if (s.today.date !== today) {
+    // A day rolled over. If the last kept day is neither today nor yesterday, the
+    // seven-in-a-row chain broke — reset (unless already earned).
+    if (!s.earned && s.count > 0 && s.lastDoneDate !== today && s.lastDoneDate !== _devYesterday()) {
+      s.count = 0; s.lastDoneDate = null;
+    }
+    s.today = { date: today, goal: '', done: false };
+  }
+  return s;
+}
+function devotionSetGoal(text) {
+  var s = devotionNormalize(loadDevotion());
+  s.today.goal = text; saveDevotion(s); renderDevotionCard();
+}
+function devotionComplete() {
+  var s = devotionNormalize(loadDevotion());
+  if (s.earned || !s.today.goal || s.today.done) return;
+  s.today.done = true;
+  s.count = (s.lastDoneDate === _devYesterday()) ? (s.count + 1) : 1;
+  s.lastDoneDate = _devToday();
+  saveDevotion(s);
+  if (s.count >= 7) devotionAward(); else if (typeof showToast === 'function') showToast('Day ' + s.count + ' of 7 kept', 2400, 'gold');
+  renderDevotionCard();
+}
+function devotionAward() {
+  var s = loadDevotion();
+  s.earned = true; s.count = 7; saveDevotion(s);
+  if (typeof omniaState !== 'undefined' && omniaState && !omniaState.devotionEarned) {
+    omniaState.devotionEarned = true;
+    if (typeof saveOmniaState === 'function') saveOmniaState();
+    if (typeof syncEnabled !== 'undefined' && syncEnabled && typeof authToken !== 'undefined' && authToken && typeof syncPushData === 'function') syncPushData();
+  }
+  if (typeof showToast === 'function') showToast('✦ Seven days kept · +2% akasha, forever', 4600, 'gold');
+  if (typeof renderOmniaEngine === 'function' && document.getElementById('omniaEngine')) { try { renderOmniaEngine(); } catch (e) {} }
+}
+// Hidden test affordance: long-press the card to walk one day forward, so the
+// whole seven-day run (and the reward) can be exercised without waiting a week.
+function devotionTestAdvance() {
+  var s = devotionNormalize(loadDevotion());
+  if (s.earned) { if (typeof showToast === 'function') showToast('Already earned · +2% akasha active', 2200, 'gold'); return; }
+  s.count = Math.min(7, (s.count || 0) + 1);
+  s.lastDoneDate = _devToday();
+  s.today = { date: _devToday(), goal: s.today.goal || 'Test vow', done: true };
+  saveDevotion(s);
+  if (s.count >= 7) devotionAward();
+  else { if (typeof showToast === 'function') showToast('Day ' + s.count + ' of 7 (test)', 1600); renderDevotionCard(); }
+}
+function _devAttachLongPress(el) {
+  if (!el || el._devLp) return; el._devLp = true;
+  var timer = null;
+  var start = function() { timer = setTimeout(devotionTestAdvance, 650); };
+  var cancel = function() { if (timer) { clearTimeout(timer); timer = null; } };
+  el.addEventListener('touchstart', start, { passive: true });
+  ['touchend', 'touchmove', 'touchcancel'].forEach(function(ev) { el.addEventListener(ev, cancel); });
+  el.addEventListener('mousedown', start);
+  ['mouseup', 'mouseleave'].forEach(function(ev) { el.addEventListener(ev, cancel); });
+}
+function renderDevotionCard() {
+  var root = document.getElementById('devotionCardRoot');
+  if (!root) return;
+  var s = devotionNormalize(loadDevotion());
+  saveDevotion(s);
+  if (s.earned) {
+    root.innerHTML = '<div class="dev-card earned">'
+      + '<div class="dev-head"><span class="dev-title">Seven-Day Devotion</span><span class="dev-reward">EARNED</span></div>'
+      + '<div class="dev-earned-line"><span class="dev-seal">✦</span><div>'
+      + '<div style="font-family:Cormorant Garamond,serif;font-size:16px;color:#f0d8ac;">+2% akasha, forever</div>'
+      + '<div style="font-size:10px;color:rgba(221,216,206,.6);">You kept seven days of your own vows.</div></div></div></div>';
+    return;
+  }
+  var pips = '';
+  for (var i = 0; i < 7; i++) {
+    var isDone = i < s.count;
+    var isToday = i === s.count && s.today.done;
+    pips += '<div class="dev-pip' + (isDone ? ' on' : (isToday ? ' today' : '')) + '"></div>';
+  }
+  var body;
+  if (!s.today.goal) {
+    body = '<div class="dev-goal-label">Today’s Vow</div>'
+      + '<input class="dev-input" id="devGoalInput" placeholder="Set a goal for today…" maxlength="80"/>'
+      + '<button class="dev-btn" id="devSetBtn">Set today’s vow</button>';
+  } else if (!s.today.done) {
+    body = '<div class="dev-goal-label">Today’s Vow</div>'
+      + '<div class="dev-goal-text">“' + escHtml(s.today.goal) + '”</div>'
+      + '<button class="dev-btn dev-btn--done" id="devDoneBtn">Mark today complete</button>';
+  } else {
+    body = '<div class="dev-goal-label">Today’s Vow · Kept</div>'
+      + '<div class="dev-goal-text">“' + escHtml(s.today.goal) + '”</div>'
+      + '<div class="dev-status">Day ' + s.count + ' of 7 kept — return tomorrow.</div>';
+  }
+  root.innerHTML = '<div class="dev-card" id="devCard">'
+    + '<div class="dev-head"><span class="dev-title">Seven-Day Devotion</span><span class="dev-reward">+2% AKASHA · FOREVER</span></div>'
+    + '<div class="dev-sub">Set a goal each day and keep it. Seven days in a row earns a permanent +2% akasha. Miss a day and the vow resets.</div>'
+    + '<div class="dev-pips">' + pips + '</div>' + body + '</div>';
+  var setBtn = document.getElementById('devSetBtn');
+  if (setBtn) setBtn.onclick = function() {
+    var v = (document.getElementById('devGoalInput').value || '').trim();
+    if (!v) { if (typeof showToast === 'function') showToast('Write a goal first', 1800); return; }
+    devotionSetGoal(v);
+  };
+  var doneBtn = document.getElementById('devDoneBtn');
+  if (doneBtn) doneBtn.onclick = devotionComplete;
+  _devAttachLongPress(document.getElementById('devCard'));
+}
+
 function renderPathQuests() {
   var root = document.getElementById('pathQuestRoot');
   if (!root) return;
@@ -24892,6 +25042,7 @@ function renderPathQuests() {
     + '</div>';
 
   root.innerHTML = html;
+  if (typeof renderDevotionCard === 'function') renderDevotionCard();
 
   var pqTwoADayBtn = root.querySelector('#pqTwoADayBtn');
   if (pqTwoADayBtn) {
