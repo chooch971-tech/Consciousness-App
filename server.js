@@ -1133,12 +1133,13 @@ app.get('/api/sync/sync/pull', verifyToken, async (req, res) => {
     try {
       const user = await usersCollection.findOne(
         { _id: new ObjectId(req.user.userId) },
-        { projection: { profilePic: 1, username: 1, isPrivate: 1 } }
+        { projection: { profilePic: 1, username: 1, isPrivate: 1, status: 1 } }
       );
       if (user) account = {
         profilePic: user.profilePic || null,
         username: user.username || null,
         isPrivate: !!user.isPrivate,
+        status: user.status || null,
       };
     } catch (e) {}
 
@@ -1333,6 +1334,7 @@ app.get('/api/sync/friends/list', verifyToken, async (req, res) => {
         userId: otherId,
         username: otherUser.username || ('practitioner_' + String(otherId).slice(-5)),
         profilePic: otherUser.profilePic || null,
+        status: otherUser.status || null,
         lastSync: latestSync ? latestSync.syncedAt : null,
         lastActive: otherUser.lastActive || null,
         streak, concLevel, concXp, akasha, bardonStep, bodies,
@@ -1467,6 +1469,25 @@ app.put('/api/sync/profile-pic', verifyToken, async (req, res) => {
   } catch (err) {
     console.error('Profile pic upload error:', err);
     res.status(500).json({ error: 'Upload failed' });
+  }
+});
+
+// STATUS — set the short daily status shared with friends. Empty text clears it
+// but still carries a timestamp so the clear propagates monotonically.
+app.put('/api/sync/status', verifyToken, async (req, res) => {
+  try {
+    let { text } = req.body;
+    if (typeof text !== 'string') return res.status(400).json({ error: 'text required' });
+    text = text.replace(/[\u0000-\u001f\u007f]/g, ' ').trim().slice(0, 140);
+    const status = { text, updatedAt: new Date() };
+    await usersCollection.updateOne(
+      { _id: new ObjectId(req.user.userId) },
+      { $set: { status } }
+    );
+    res.json({ ok: true, status });
+  } catch (err) {
+    console.error('Status update error:', err);
+    res.status(500).json({ error: 'Update failed' });
   }
 });
 

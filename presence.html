@@ -685,6 +685,26 @@
     .prof-ach-item__disc { width:60px; height:60px; border-radius:14px; background:rgba(255,255,255,.04); border:1px solid var(--border); display:flex; align-items:center; justify-content:center; font-size:24px; }
     .prof-ach-item__lbl { font-size:8px; letter-spacing:.1em; text-transform:uppercase; color:var(--muted); font-family:'DM Mono',monospace; }
     .prof-empty-note { font-size:10px; color:var(--muted); font-family:'DM Mono',monospace; letter-spacing:.04em; line-height:1.7; opacity:.7; }
+
+    /* Daily status */
+    .prof-status { display:block; width:100%; text-align:left; background:var(--surface2); border:1px solid var(--border); border-radius:12px; padding:14px 16px; cursor:pointer; font-family:'DM Mono',monospace; }
+    .prof-status__text { font-size:12.5px; color:var(--text); line-height:1.6; white-space:pre-wrap; word-break:break-word; }
+    .prof-status__text--empty { color:var(--muted); font-style:italic; }
+    .prof-status__meta { display:flex; justify-content:space-between; align-items:center; font-size:9px; letter-spacing:.06em; color:var(--muted); margin-top:10px; }
+    .prof-status__edit { color:var(--accent); text-transform:uppercase; letter-spacing:.14em; }
+    .prof-hero__status { font-size:12px; color:var(--text); font-family:'DM Mono',monospace; line-height:1.6; margin-top:14px; max-width:290px; background:var(--surface2); border:1px solid var(--border); border-radius:10px; padding:11px 15px; white-space:pre-wrap; word-break:break-word; }
+    .fp-friend-status { font-size:11px; color:var(--text); font-family:'DM Mono',monospace; line-height:1.5; margin-top:9px; opacity:.9; white-space:pre-wrap; word-break:break-word; }
+    .status-ov { position:fixed; inset:0; z-index:9800; background:rgba(7,8,13,.9); display:none; align-items:center; justify-content:center; padding:24px; }
+    .status-ov.on { display:flex; }
+    .status-ov__card { width:100%; max-width:420px; background:var(--surface); border:1px solid var(--border2); border-radius:16px; padding:22px; }
+    .status-ov__title { font-family:'Cormorant Garamond',serif; font-size:21px; font-weight:300; color:var(--text); margin-bottom:4px; }
+    .status-ov__sub { font-size:10px; color:var(--muted); font-family:'DM Mono',monospace; letter-spacing:.05em; margin-bottom:16px; }
+    .status-ov__ta { width:100%; box-sizing:border-box; min-height:90px; resize:none; background:rgba(0,0,0,.25); border:1px solid var(--border); border-radius:10px; color:var(--text); font-family:'DM Mono',monospace; font-size:13px; line-height:1.6; padding:12px 14px; outline:none; }
+    .status-ov__count { text-align:right; font-size:9px; color:var(--muted); font-family:'DM Mono',monospace; margin-top:6px; }
+    .status-ov__row { display:flex; gap:10px; margin-top:16px; }
+    .status-ov__btn { flex:1; padding:11px; border-radius:10px; font-family:'DM Mono',monospace; font-size:9px; letter-spacing:.16em; text-transform:uppercase; cursor:pointer; border:1px solid var(--border); background:transparent; color:var(--muted); }
+    .status-ov__btn--save { background:var(--accent); color:#07080d; border-color:var(--accent); font-weight:600; }
+    .status-ov__btn--clear { color:#c47a7a; border-color:rgba(196,122,122,.3); }
     /* exercise settings sub-page placeholder */
     .aset-placeholder { text-align:center; padding:44px 24px; }
     .aset-placeholder__mark { font-size:30px; opacity:.35; margin-bottom:16px; }
@@ -5177,6 +5197,11 @@ body:not(.tut-live) #tutCorgi {
       </div>
       <input type="file" id="profPicInput" accept="image/*" style="display:none;"/>
 
+      <div class="prof-section" id="profStatusSection" style="display:none;">
+        <div class="prof-section__head"><span>Today's Status</span></div>
+        <button class="prof-status" id="profStatusBtn"></button>
+      </div>
+
       <div class="prof-section">
         <div class="prof-section__head"><span>Overview</span></div>
         <div class="prof-overview" id="profOverview"></div>
@@ -5212,6 +5237,7 @@ body:not(.tut-live) #tutCorgi {
         </div>
         <div class="prof-hero__name" id="friendProfName">@friend</div>
         <div class="prof-hero__handle" id="friendProfHandle"></div>
+        <div class="prof-hero__status" id="friendProfStatus" style="display:none;"></div>
       </div>
 
       <div class="prof-section">
@@ -9776,7 +9802,104 @@ function applyAccountFields(acct) {
     authUsername = acct.username;
     try { localStorage.setItem('presence_auth_username', authUsername); } catch(e) {}
   }
+  // Daily status: adopt the server copy when it's at least as recent as the local
+  // one (updatedAt is monotonic, and a cleared status carries a newer timestamp
+  // with empty text, so clears propagate too).
+  if (acct.status && typeof acct.status.text === 'string') {
+    var _loc = getMyStatus();
+    var _srvT = acct.status.updatedAt ? new Date(acct.status.updatedAt).getTime() : 0;
+    var _locT = (_loc && _loc.updatedAt) ? new Date(_loc.updatedAt).getTime() : 0;
+    if (_srvT >= _locT) {
+      try { localStorage.setItem(STATUS_KEY, JSON.stringify({ text: acct.status.text, updatedAt: acct.status.updatedAt })); } catch(e) {}
+    }
+  }
 }
+
+// ── DAILY STATUS ────────────────────────────────────────
+// A short message shared with friends. Stored on the user doc server-side (like
+// the avatar), surfaced to friends via /friends/list, and synced to the user's
+// own devices via applyAccountFields. Empty text with a timestamp = "cleared".
+var STATUS_KEY = 'presence_status_v1';
+var STATUS_MAX = 140;
+var STATUS_FRESH_MS = 3 * 24 * 60 * 60 * 1000; // a status older than 3 days stops showing
+function getMyStatus() {
+  try { var s = JSON.parse(localStorage.getItem(STATUS_KEY)); return (s && typeof s.text === 'string') ? s : null; } catch(e) { return null; }
+}
+function statusIsFresh(s) {
+  return !!(s && s.text && s.updatedAt && (Date.now() - new Date(s.updatedAt).getTime() < STATUS_FRESH_MS));
+}
+function setMyStatus(text) {
+  text = String(text || '').replace(/[\u0000-\u001f\u007f]/g, ' ').trim().slice(0, STATUS_MAX);
+  var s = { text: text, updatedAt: new Date().toISOString() };
+  try { localStorage.setItem(STATUS_KEY, JSON.stringify(s)); } catch(e) {}
+  if (authToken) {
+    fetch(SYNC_API_URL + '/status', {
+      method: 'PUT',
+      headers: { 'Authorization': 'Bearer ' + authToken, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ text: text })
+    }).catch(function() {});
+  }
+  return s;
+}
+function renderMyStatus(signedIn) {
+  var sec = document.getElementById('profStatusSection');
+  var btn = document.getElementById('profStatusBtn');
+  if (!sec || !btn) return;
+  if (!signedIn) { sec.style.display = 'none'; return; }
+  sec.style.display = '';
+  var s = getMyStatus();
+  if (statusIsFresh(s)) {
+    btn.innerHTML = '<div class="prof-status__text">' + escHtml(s.text) + '</div>'
+      + '<div class="prof-status__meta"><span>' + timeAgo(new Date(s.updatedAt)) + '</span><span class="prof-status__edit">Edit</span></div>';
+  } else {
+    btn.innerHTML = '<div class="prof-status__text prof-status__text--empty">Share what’s present for you today…</div>'
+      + '<div class="prof-status__meta"><span></span><span class="prof-status__edit">Add status</span></div>';
+  }
+}
+function openStatusEditor() {
+  if (!authToken) { showToast('Sign in to share a status'); return; }
+  var ov = document.getElementById('statusOverlay');
+  var ta = document.getElementById('statusInput');
+  var cnt = document.getElementById('statusCount');
+  if (!ov || !ta) return;
+  var cur = getMyStatus();
+  ta.value = (cur && cur.text) ? cur.text : '';
+  if (cnt) cnt.textContent = ta.value.length;
+  ov.classList.add('on');
+  setTimeout(function() { try { ta.focus(); } catch(e) {} }, 50);
+}
+function closeStatusEditor() {
+  var ov = document.getElementById('statusOverlay');
+  if (ov) ov.classList.remove('on');
+}
+(function() {
+  var btn = document.getElementById('profStatusBtn');
+  if (btn) btn.addEventListener('click', openStatusEditor);
+  var ta = document.getElementById('statusInput');
+  var cnt = document.getElementById('statusCount');
+  if (ta && cnt) ta.addEventListener('input', function() { cnt.textContent = ta.value.length; });
+  function signedInNow() { return !!(syncEnabled && (authEmail || authUsername)); }
+  var save = document.getElementById('statusSaveBtn');
+  if (save) save.addEventListener('click', function() {
+    setMyStatus(ta ? ta.value : '');
+    closeStatusEditor();
+    renderMyStatus(signedInNow());
+    showToast('Status shared', 1800, 'gold');
+  });
+  var clr = document.getElementById('statusClearBtn');
+  if (clr) clr.addEventListener('click', function() {
+    setMyStatus('');
+    if (ta) ta.value = '';
+    if (cnt) cnt.textContent = '0';
+    closeStatusEditor();
+    renderMyStatus(signedInNow());
+    showToast('Status cleared', 1600);
+  });
+  var cancel = document.getElementById('statusCancelBtn');
+  if (cancel) cancel.addEventListener('click', closeStatusEditor);
+  var ov = document.getElementById('statusOverlay');
+  if (ov) ov.addEventListener('click', function(e) { if (e.target === ov) closeStatusEditor(); });
+})();
 
 // ── PROFILE PRIVACY ─────────────────────────────────────
 // Local flag mirrors the server's user.isPrivate. When on, the account is
@@ -9839,6 +9962,7 @@ function renderProfile() {
     + _profOvItem('<span style="color:var(--accent);">◎</span>', 'Level ' + state.level, getRankTitle(state.level))
     + _profOvItem('<span style="color:#d4956e;">◉</span>', 'Level ' + concState.level, getConcRank(concState.level));
 
+  renderMyStatus(signedIn);
   renderProfileFriendStreaks(signedIn);
   renderProfileBadges();
   renderProfileAchievements();
@@ -10006,6 +10130,17 @@ function renderFriendProfile(f) {
     : (f.lastActive ? 'Active ' + timeAgo(new Date(f.lastActive))
     : (f.lastSync ? 'Synced ' + timeAgo(new Date(f.lastSync)) : 'Friend'));
   document.getElementById('friendProfHandle').textContent = statusText;
+
+  var fst = document.getElementById('friendProfStatus');
+  if (fst) {
+    if (statusIsFresh(f.status)) {
+      fst.style.display = '';
+      fst.innerHTML = '“' + escHtml(f.status.text) + '”';
+    } else {
+      fst.style.display = 'none';
+      fst.textContent = '';
+    }
+  }
 
   var bodies = f.bodies || { physical: 1, astral: 1, mental: 1 };
   var bodyTotal = (bodies.physical || 1) + (bodies.astral || 1) + (bodies.mental || 1);
@@ -27885,6 +28020,7 @@ async function authLogout(options) {
   localStorage.removeItem('presence_auth_email');
   localStorage.removeItem('presence_auth_username');
   localStorage.removeItem('presence_private_profile');
+  try { localStorage.removeItem(STATUS_KEY); } catch(e) {}
   try { localStorage.removeItem(FRIENDS_CACHE_KEY); } catch(e) {}
   _friendProfileCache = {};
   syncEnabled = false;
@@ -33354,6 +33490,21 @@ document.addEventListener('DOMContentLoaded',function(){(function(){
   </div>
 </div>
 
+<!-- Daily status editor -->
+<div class="status-ov" id="statusOverlay">
+  <div class="status-ov__card">
+    <div class="status-ov__title">Today's Status</div>
+    <div class="status-ov__sub">Share a thought with your friends</div>
+    <textarea class="status-ov__ta" id="statusInput" maxlength="140" placeholder="What's present for you today?"></textarea>
+    <div class="status-ov__count"><span id="statusCount">0</span>/140</div>
+    <div class="status-ov__row">
+      <button class="status-ov__btn status-ov__btn--clear" id="statusClearBtn">Clear</button>
+      <button class="status-ov__btn" id="statusCancelBtn">Cancel</button>
+      <button class="status-ov__btn status-ov__btn--save" id="statusSaveBtn">Save</button>
+    </div>
+  </div>
+</div>
+
 <!-- Streak continuation celebration (shown after session extends streak) -->
 <div id="streakCelebOverlay"></div>
 <div id="prestigeCeremony"></div>
@@ -33432,6 +33583,7 @@ function renderFriendsList(friends) {
       + '<div class="fp-friend-active">' + statusText + '</div></div>'
       + '<button class="fp-remove-btn" onclick="removeFriend(\'' + f.userId + '\')">Remove</button>'
       + '</div>'
+      + (statusIsFresh(f.status) ? '<div class="fp-friend-status">“' + escHtml(f.status.text) + '”</div>' : '')
       + '<div class="fp-friend-stats">'
       + '<div class="fp-stat"><div class="fp-stat-val">' + (f.streak||0) + '</div><div class="fp-stat-lbl">Streak</div></div>'
       + '<div class="fp-stat"><div class="fp-stat-val">' + (f.concLevel||1) + '</div><div class="fp-stat-lbl">Conc Lvl</div></div>'
