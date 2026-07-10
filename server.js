@@ -990,6 +990,10 @@ function mergeOmniaKey(snaps) {
   base.prestige = gen;
   snaps.forEach((s) => {
     const o = parseSafe(s.presence_omnia_v1); if (!o) return;
+    // Daily-gift claim marker: keep the later date so a device that already
+    // claimed today's offering can't have it reopened by another snapshot.
+    // Folded ahead of the reset guard — a progress reset shouldn't reopen it.
+    if ((o.offeringDay || '') > (base.offeringDay || '')) base.offeringDay = o.offeringDay;
     if (((o._resetAt) || 0) !== baseReset) return;
     // Permanent across turnings: magical tools, Book II bodies, story.
     const oT = ((o.bookII || {}).tools) || {};
@@ -1026,11 +1030,71 @@ function mergeOmniaKey(snaps) {
   return JSON.stringify(base);
 }
 
+// Achievements are monotonic: a badge, once earned on any device, stays earned
+// everywhere. Union the earned maps (and the supporting counters) across every
+// snapshot so a pull never hands a device an emptier set than it had — which is
+// what let already-earned achievements re-award akasha on a second device.
+function mergeAchKey(snaps) {
+  const objs = [];
+  snaps.forEach((s) => { const o = parseSafe(s.presence_ach_v1); if (o) objs.push(o); });
+  if (!objs.length) return null;
+  let maxV = 1, monthKey = '';
+  objs.forEach((o) => { maxV = Math.max(maxV, Number(o.hwmV) || 1); const mk = String((o.monthly || {}).key || ''); if (mk > monthKey) monthKey = mk; });
+  const out = { earned: {}, hwm: {}, hwmV: maxV, flags: {}, counters: {}, friendsSeen: {},
+    clearedKeys: [], revoked: {}, exCount: 0, seeded: false, _remaster1: 0, monthsCleared: 0,
+    monthly: { key: monthKey, earned: {}, loginDays: [], fifteen: false, spentBase: Infinity }, _updatedAt: 0 };
+  // Revocations first, so a revoked badge can be dropped from the union below.
+  objs.forEach((o) => { const r = o.revoked || {}; Object.keys(r).forEach((k) => { out.revoked[k] = Math.max(out.revoked[k] || 0, Number(r[k]) || 0); }); });
+  const cleared = {};
+  objs.forEach((o) => {
+    const e = o.earned || {}; Object.keys(e).forEach((k) => { const t = Number(e[k]) || 0; if (!out.earned[k] || t < out.earned[k]) out.earned[k] = t; });
+    out.exCount = Math.max(out.exCount, Number(o.exCount) || 0);
+    out.seeded = out.seeded || !!o.seeded;
+    out._remaster1 = (out._remaster1 || o._remaster1) ? 1 : 0;
+    if ((Number(o.hwmV) || 1) === maxV) { const h = o.hwm || {}; Object.keys(h).forEach((k) => { out.hwm[k] = Math.max(out.hwm[k] || 0, Number(h[k]) || 0); }); }
+    const c = o.counters || {}; Object.keys(c).forEach((k) => { out.counters[k] = Math.max(out.counters[k] || 0, Number(c[k]) || 0); });
+    const f = o.flags || {}; Object.keys(f).forEach((k) => { if (out.flags[k] == null) out.flags[k] = f[k]; });
+    const fs = o.friendsSeen || {}; Object.keys(fs).forEach((k) => { if (out.friendsSeen[k] == null) out.friendsSeen[k] = fs[k]; });
+    (o.clearedKeys || []).forEach((k) => { cleared[k] = true; });
+    const m = o.monthly || {};
+    if (String(m.key || '') === monthKey) {
+      const me = m.earned || {}; Object.keys(me).forEach((k) => { const t = Number(me[k]) || 0; if (!out.monthly.earned[k] || t < out.monthly.earned[k]) out.monthly.earned[k] = t; });
+      out.monthly.fifteen = out.monthly.fifteen || !!m.fifteen;
+      (m.loginDays || []).forEach((d) => { if (out.monthly.loginDays.indexOf(d) === -1) out.monthly.loginDays.push(d); });
+      out.monthly.spentBase = Math.min(out.monthly.spentBase, Number(m.spentBase) || 0);
+    }
+    out._updatedAt = Math.max(out._updatedAt, Number(o._updatedAt) || 0);
+  });
+  Object.keys(out.revoked).forEach((id) => { if (out.earned[id] && out.earned[id] <= out.revoked[id]) delete out.earned[id]; });
+  if (!isFinite(out.monthly.spentBase)) out.monthly.spentBase = 0;
+  out.clearedKeys = Object.keys(cleared);
+  out.monthsCleared = out.clearedKeys.length;
+  return JSON.stringify(out);
+}
+
+// The Seven Gifts path is monotonic too: started/claimed/done only ever move
+// forward, so union them so a pull can't reopen a gift already claimed elsewhere.
+function mergeGiftPathKey(snaps) {
+  let out = null;
+  snaps.forEach((s) => {
+    const o = parseSafe(s.presence_giftpath_v1); if (!o) return;
+    if (!out) out = { started: false, startDate: null, claimed: [false, false, false, false, false, false, false], done: {} };
+    out.started = out.started || !!o.started;
+    if (o.startDate && (!out.startDate || o.startDate < out.startDate)) out.startDate = o.startDate;
+    const oc = Array.isArray(o.claimed) ? o.claimed : [];
+    for (let i = 0; i < 7; i++) out.claimed[i] = out.claimed[i] || !!oc[i];
+    const od = o.done || {}; Object.keys(od).forEach((k) => { if (od[k]) out.done[k] = true; });
+  });
+  return out ? JSON.stringify(out) : null;
+}
+
 function mergeSnapshots(snaps) {
-  const KEYS = ['presence_v3','presence_conc_v1','presence_prayer_v1','presence_journal_v1','presence_soul_mirror_v1','presence_ai_report_comments_v1','presence_guide_v1','presence_omnia_v1','bardon_rpg_v2','presence_visited'];
+  const KEYS = ['presence_v3','presence_conc_v1','presence_prayer_v1','presence_journal_v1','presence_soul_mirror_v1','presence_ai_report_comments_v1','presence_guide_v1','presence_omnia_v1','bardon_rpg_v2','presence_visited','presence_ach_v1','presence_giftpath_v1'];
   const out = {};
   KEYS.forEach((k) => {
     if (k === 'presence_omnia_v1') out[k] = mergeOmniaKey(snaps);
+    else if (k === 'presence_ach_v1') out[k] = mergeAchKey(snaps);
+    else if (k === 'presence_giftpath_v1') out[k] = mergeGiftPathKey(snaps);
     else if (SRV_HISTORY_MERGE[k]) out[k] = mergeHistoryKey(k, snaps);
     else out[k] = pickBestValue(k, snaps);
   });

@@ -10470,6 +10470,12 @@ function achRemaster() {
 function achEvaluate(silent) {
   if (typeof omniaState === 'undefined' || !omniaState) return;
   achSeed(); achRemaster(); achEnsureMonth(); achTouchLogin();
+  // A startup cloud pull still in flight means the earned map may not have
+  // merged yet. Awarding now would re-grant akasha for achievements already
+  // earned on another device (the sync double-award bug). Date/login
+  // bookkeeping above is safe; defer awarding until the pull settles — the
+  // boot settle-waiter and post-pull evaluate re-run this once it clears.
+  if (window._syncPullPending) { achSave(); return; }
   var p = achProviders();
   var newly = [];
   ACH_GROUPS.forEach(function(g) {
@@ -10655,8 +10661,13 @@ document.getElementById('achBackBtn').addEventListener('click', function() {
   var d = document.getElementById('achDetail'); if (d) d.style.display = 'none';
   renderHome(); showScreen('homeScreen');
 });
-// Boot: count today's login and settle anything already earned.
-setTimeout(function(){ try { achEvaluate(); } catch(e) {} }, 1600);
+// Boot: count today's login and settle anything already earned — but only once
+// any startup cloud pull has finished merging, so a fresh device never awards
+// akasha for achievements it's about to receive as already-earned from the cloud.
+(function _achBootSettle(waited){
+  if (window._syncPullPending && waited < 30000) { setTimeout(function(){ _achBootSettle(waited + 400); }, 400); return; }
+  try { achEvaluate(); } catch(e) {}
+})(0);
 document.getElementById('confirmModalCancel').addEventListener('click', function() {
   document.getElementById('confirmModal').classList.remove('show');
 });
@@ -13001,7 +13012,15 @@ var WB_VERSES = [
   'Stillness earned this. Sit, and earn more.'
 ];
 function _wbTodayKey() { return new Date().toISOString().slice(0, 10); }
-function offeringAvailable() { return localStorage.getItem('presence_offering_day') !== _wbTodayKey(); }
+function offeringAvailable() {
+  var today = _wbTodayKey();
+  // The claim marker lives on omniaState so it syncs across devices. Honor the
+  // legacy standalone key too (pre-sync installs) if it's newer, so upgrading
+  // doesn't reopen a gift already claimed today.
+  var last = (typeof omniaState !== 'undefined' && omniaState && omniaState.offeringDay) || '';
+  try { var legacy = localStorage.getItem('presence_offering_day') || ''; if (legacy > last) last = legacy; } catch(e) {}
+  return last !== today;
+}
 function morningOfferingAmount() {
   return Math.min(500, 150 + 25 * ((typeof state !== 'undefined' && state.streak) || 0));
 }
@@ -13012,7 +13031,9 @@ function updateOmniaGiftBtn() {
 }
 function claimMorningOffering() {
   if (!offeringAvailable()) return;
-  try { localStorage.setItem('presence_offering_day', _wbTodayKey()); } catch(e) {}
+  var today = _wbTodayKey();
+  if (typeof omniaState !== 'undefined' && omniaState) omniaState.offeringDay = today;
+  try { localStorage.setItem('presence_offering_day', today); } catch(e) {}
   var gift = morningOfferingAmount();
   omniaState.akasha = (omniaState.akasha || 0) + gift;
   omniaState.totalAkashaEarned = (omniaState.totalAkashaEarned || 0) + gift;
@@ -19381,6 +19402,9 @@ function mergeOmniaPull(localStr, cloudStr) {
     var oc = (other && other.cosmetics) || {};
     if ((Number(oc._updatedAt) || 0) > (Number(bc._updatedAt) || 0)) base.cosmetics = oc;
   })();
+  // Daily-gift claim marker: keep the later date so a device that already
+  // claimed today's offering can't have it reopened by a stale snapshot.
+  if ((other.offeringDay || '') > (base.offeringDay || '')) base.offeringDay = other.offeringDay;
   // Only fold monotonic progress across snapshots when neither side was deliberately
   // reset relative to the other — otherwise honor the reset and keep base as-is.
   var sameReset = ((localObj && localObj._resetAt) || 0) === ((cloudObj && cloudObj._resetAt) || 0);
