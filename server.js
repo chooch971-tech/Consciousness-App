@@ -846,6 +846,7 @@ app.post('/api/sync/sync/push', verifyToken, async (req, res) => {
       bardon_rpg_v2: data.bardon_rpg_v2,
       presence_visited: data.presence_visited,
       presence_ach_v1: data.presence_ach_v1,
+      presence_giftpath_v1: data.presence_giftpath_v1,
       deviceInfo: deviceInfo || 'Unknown device',
       syncedAt: new Date(),
     };

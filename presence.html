@@ -10169,7 +10169,7 @@ document.getElementById('settingsEmailSubmit').addEventListener('click', async f
 
 // ── EXPORT ──────────────────────────────────────────────
 document.getElementById('exportBtn').addEventListener('click', function() {
-  var keys = ['presence_v3','presence_conc_v1','presence_prayer_v1','presence_journal_v1','presence_soul_mirror_v1','presence_ai_report_comments_v1','presence_guide_v1','presence_omnia_v1','bardon_rpg_v2','presence_visited','presence_ach_v1'];
+  var keys = ['presence_v3','presence_conc_v1','presence_prayer_v1','presence_journal_v1','presence_soul_mirror_v1','presence_ai_report_comments_v1','presence_guide_v1','presence_omnia_v1','bardon_rpg_v2','presence_visited','presence_ach_v1','presence_giftpath_v1'];
   var backup = { version: 1, exportedAt: new Date().toISOString(), data: {} };
   keys.forEach(function(k) {
     var val = localStorage.getItem(k);
@@ -10200,7 +10200,7 @@ document.getElementById('importFile').addEventListener('change', function(e) {
       if (!backup.data || backup.version !== 1) throw new Error('Invalid backup file.');
       // Allowlist: only restore keys that the export writes. Prevents a malicious
       // backup from overwriting auth tokens or injecting unknown localStorage keys.
-      var ALLOWED_KEYS = ['presence_v3','presence_conc_v1','presence_prayer_v1','presence_journal_v1','presence_soul_mirror_v1','presence_ai_report_comments_v1','presence_guide_v1','presence_omnia_v1','bardon_rpg_v2','presence_visited','presence_ach_v1'];
+      var ALLOWED_KEYS = ['presence_v3','presence_conc_v1','presence_prayer_v1','presence_journal_v1','presence_soul_mirror_v1','presence_ai_report_comments_v1','presence_guide_v1','presence_omnia_v1','bardon_rpg_v2','presence_visited','presence_ach_v1','presence_giftpath_v1'];
       var count = 0, skipped = 0;
       Object.entries(backup.data).forEach(function([k, v]) {
         if (ALLOWED_KEYS.indexOf(k) === -1) { skipped++; return; }
@@ -10919,6 +10919,28 @@ function syncMeaningfulDelta(key, localStr, mergedStr) {
 // Merge a cloud achievements snapshot into local: badges are monotonic, so
 // union earned maps (keeping the earliest timestamp), take the max of every
 // counter/high-water mark, and keep whichever monthly block is newer.
+// Merge a cloud Seven-Gifts snapshot into local. Progress is monotonic, so a
+// stale device can never roll it back: OR the started flag and each claimed
+// slot, union the completed-challenge map, and keep the earliest start date.
+function mergeGiftPathPull(localStr, cloudStr) {
+  if (!cloudStr) return null;
+  if (!localStr) return cloudStr;
+  var a, b;
+  try { a = JSON.parse(localStr); b = JSON.parse(cloudStr); } catch(e) { return null; }
+  var out = a;
+  out.started = !!(a.started || b.started);
+  var ad = a.startDate, bd = b.startDate;
+  out.startDate = (ad && bd) ? (ad < bd ? ad : bd) : (ad || bd || null);
+  var ac = Array.isArray(a.claimed) ? a.claimed : [];
+  var bc = Array.isArray(b.claimed) ? b.claimed : [];
+  out.claimed = [];
+  for (var i = 0; i < 7; i++) out.claimed[i] = !!(ac[i] || bc[i]);
+  out.done = a.done || {};
+  var bDone = b.done || {};
+  Object.keys(bDone).forEach(function(k){ if (bDone[k]) out.done[k] = true; });
+  return JSON.stringify(out);
+}
+
 function mergeAchPull(localStr, cloudStr) {
   if (!cloudStr) return null;
   if (!localStr) return cloudStr;
@@ -10988,6 +11010,15 @@ function applyPulledData(data) {
       if (mergedAch !== null && mergedAch !== local) {
         localStorage.setItem(k, mergedAch);
         try { achState = JSON.parse(mergedAch); } catch(e) {}
+        changed = true;
+      }
+      return;
+    }
+    if (k === 'presence_giftpath_v1') {
+      var mergedGp = mergeGiftPathPull(local, v);
+      if (mergedGp !== null && mergedGp !== local) {
+        localStorage.setItem(k, mergedGp);
+        if (typeof updateGiftPathButton === 'function') { try { updateGiftPathButton(); } catch(e) {} }
         changed = true;
       }
       return;
