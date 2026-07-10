@@ -994,6 +994,10 @@ function mergeOmniaKey(snaps) {
     // claimed today's offering can't have it reopened by another snapshot.
     // Folded ahead of the reset guard — a progress reset shouldn't reopen it.
     if ((o.offeringDay || '') > (base.offeringDay || '')) base.offeringDay = o.offeringDay;
+    // Seven-Gifts devotion is a permanent loyalty reward — keep the higher
+    // stack count (capped at 24 / +48%) and OR the legacy flag, ungated.
+    base.devotionStacks = Math.min(24, Math.max(Number(base.devotionStacks) || 0, Number(o.devotionStacks) || 0));
+    base.devotionEarned = !!(base.devotionEarned || o.devotionEarned);
     if (((o._resetAt) || 0) !== baseReset) return;
     // Permanent across turnings: magical tools, Book II bodies, story.
     const oT = ((o.bookII || {}).tools) || {};
@@ -1072,20 +1076,32 @@ function mergeAchKey(snaps) {
   return JSON.stringify(out);
 }
 
-// The Seven Gifts path is monotonic too: started/claimed/done only ever move
-// forward, so union them so a pull can't reopen a gift already claimed elsewhere.
+// The Seven Gifts path: the completed-months set (cleared) is monotonic — union
+// it across every snapshot so a pull can never un-clear a month (which drives
+// the stacking +2% devotion). The in-progress run is month-scoped: keep only the
+// newest month across snapshots and union claimed/done among snapshots on that
+// month, so last month's leftover claims can't block a new month's reset.
 function mergeGiftPathKey(snaps) {
-  let out = null;
-  snaps.forEach((s) => {
-    const o = parseSafe(s.presence_giftpath_v1); if (!o) return;
-    if (!out) out = { started: false, startDate: null, claimed: [false, false, false, false, false, false, false], done: {} };
-    out.started = out.started || !!o.started;
+  const objs = [];
+  snaps.forEach((s) => { const o = parseSafe(s.presence_giftpath_v1); if (o) objs.push(o); });
+  if (!objs.length) return null;
+  const clearedSeen = {}, cleared = [];
+  let month = null, started = false;
+  objs.forEach((o) => {
+    (Array.isArray(o.cleared) ? o.cleared : []).forEach((m) => { if (m && !clearedSeen[m]) { clearedSeen[m] = 1; cleared.push(m); } });
+    if (o.month && String(o.month) > String(month || '')) month = o.month;
+    started = started || !!o.started;
+  });
+  const out = { cleared, month, started, startDate: null, claimed: [false, false, false, false, false, false, false], done: {} };
+  objs.forEach((o) => {
+    if ((o.month || null) !== month) return; // only fold the current month's run
     if (o.startDate && (!out.startDate || o.startDate < out.startDate)) out.startDate = o.startDate;
     const oc = Array.isArray(o.claimed) ? o.claimed : [];
     for (let i = 0; i < 7; i++) out.claimed[i] = out.claimed[i] || !!oc[i];
     const od = o.done || {}; Object.keys(od).forEach((k) => { if (od[k]) out.done[k] = true; });
   });
-  return out ? JSON.stringify(out) : null;
+  if (!out.startDate && month) out.startDate = month + '-01';
+  return JSON.stringify(out);
 }
 
 function mergeSnapshots(snaps) {

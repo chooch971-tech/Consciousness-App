@@ -10930,25 +10930,43 @@ function syncMeaningfulDelta(key, localStr, mergedStr) {
 // Merge a cloud achievements snapshot into local: badges are monotonic, so
 // union earned maps (keeping the earliest timestamp), take the max of every
 // counter/high-water mark, and keep whichever monthly block is newer.
-// Merge a cloud Seven-Gifts snapshot into local. Progress is monotonic, so a
-// stale device can never roll it back: OR the started flag and each claimed
-// slot, union the completed-challenge map, and keep the earliest start date.
+// Merge a cloud Seven-Gifts snapshot into local. The completed-months set
+// (cleared) is monotonic — union it so a stale device can never un-clear a
+// month, and it drives the stacking +2% devotion. The in-progress run
+// (month/claimed/done) is month-scoped: union it only when both sides are on
+// the same month; otherwise the newer month's fresh run wins, so last month's
+// leftover claims can't bleed into a new month (which would block the reset).
 function mergeGiftPathPull(localStr, cloudStr) {
   if (!cloudStr) return null;
   if (!localStr) return cloudStr;
   var a, b;
   try { a = JSON.parse(localStr); b = JSON.parse(cloudStr); } catch(e) { return null; }
-  var out = a;
+  var out = {};
+  var ac = Array.isArray(a.cleared) ? a.cleared : [];
+  var bc = Array.isArray(b.cleared) ? b.cleared : [];
+  var seen = {}; out.cleared = [];
+  ac.concat(bc).forEach(function(m){ if (m && !seen[m]) { seen[m] = 1; out.cleared.push(m); } });
+  var am = a.month || null, bm = b.month || null;
+  if (am && bm && am === bm) {
+    out.month = am;
+    var acl = Array.isArray(a.claimed) ? a.claimed : [];
+    var bcl = Array.isArray(b.claimed) ? b.claimed : [];
+    out.claimed = [];
+    for (var i = 0; i < 7; i++) out.claimed[i] = !!(acl[i] || bcl[i]);
+    out.done = a.done || {};
+    var bDone = b.done || {};
+    Object.keys(bDone).forEach(function(k){ if (bDone[k]) out.done[k] = true; });
+    var ad = a.startDate, bd = b.startDate;
+    out.startDate = (ad && bd) ? (ad < bd ? ad : bd) : (ad || bd || null);
+  } else {
+    // Different (or missing) months → take the newer month's run wholesale.
+    var newer = (String(bm || '') > String(am || '')) ? b : a;
+    out.month = newer.month || null;
+    out.claimed = Array.isArray(newer.claimed) && newer.claimed.length === 7 ? newer.claimed.slice() : [false,false,false,false,false,false,false];
+    out.done = newer.done || {};
+    out.startDate = newer.startDate || null;
+  }
   out.started = !!(a.started || b.started);
-  var ad = a.startDate, bd = b.startDate;
-  out.startDate = (ad && bd) ? (ad < bd ? ad : bd) : (ad || bd || null);
-  var ac = Array.isArray(a.claimed) ? a.claimed : [];
-  var bc = Array.isArray(b.claimed) ? b.claimed : [];
-  out.claimed = [];
-  for (var i = 0; i < 7; i++) out.claimed[i] = !!(ac[i] || bc[i]);
-  out.done = a.done || {};
-  var bDone = b.done || {};
-  Object.keys(bDone).forEach(function(k){ if (bDone[k]) out.done[k] = true; });
   return JSON.stringify(out);
 }
 
@@ -19405,6 +19423,10 @@ function mergeOmniaPull(localStr, cloudStr) {
   // Daily-gift claim marker: keep the later date so a device that already
   // claimed today's offering can't have it reopened by a stale snapshot.
   if ((other.offeringDay || '') > (base.offeringDay || '')) base.offeringDay = other.offeringDay;
+  // Seven-Gifts devotion is a permanent loyalty reward (survives prestige), so
+  // fold it ungated: keep the higher stack count and OR the legacy flag.
+  base.devotionStacks = Math.min(24, Math.max(Number(base.devotionStacks) || 0, Number(other.devotionStacks) || 0));
+  base.devotionEarned = !!(base.devotionEarned || other.devotionEarned);
   // Only fold monotonic progress across snapshots when neither side was deliberately
   // reset relative to the other — otherwise honor the reset and keep base as-is.
   var sameReset = ((localObj && localObj._resetAt) || 0) === ((cloudObj && cloudObj._resetAt) || 0);
@@ -21260,7 +21282,17 @@ function omniaExerciseReward(exId, seconds, recommended, extraBoost) {
 }
 // Permanent +2% akasha from completing the Seven-Day Devotion (one-time). The
 // earned flag lives on omniaState so the reward follows the account across sync.
-function omniaDevotionMult() { return (typeof omniaState !== 'undefined' && omniaState && omniaState.devotionEarned) ? 1.02 : 1; }
+// The Seven Gifts grant a stacking +2% akasha per month completed, capped at
+// +48% (24 devotions). devotionStacks is the synced count; the old one-time
+// devotionEarned boolean counts as a single stack for players who earned it
+// before the monthly rework.
+function omniaDevotionStacks() {
+  if (typeof omniaState === 'undefined' || !omniaState) return 0;
+  var stacks = omniaState.devotionStacks || 0;
+  if (!stacks && omniaState.devotionEarned) stacks = 1;
+  return Math.min(24, stacks);
+}
+function omniaDevotionMult() { return 1 + 0.02 * omniaDevotionStacks(); }
 
 var OMNIA_BONUS_STACK_CAP = 3.0;
 
@@ -24721,23 +24753,62 @@ function colorToTint(hex, alpha) {
   return 'rgba(' + r + ',' + g + ',' + b + ',' + alpha + ')';
 }
 
-// ── The Seven Gifts (temporary event → permanent +2% akasha) ──────────────────
+// ── The Seven Gifts (monthly event → stacking +2% akasha, capped at +48%) ─────
 // Seven gifts, each unlocked by completing its challenges. Gifts pay escalating
-// akasha; the seventh also grants a one-time permanent +2% akasha, reusing the
-// omniaState.devotionEarned flag (omniaDevotionMult). Progress is measured from
-// the moment the event starts, so long-time players still take the journey.
+// akasha; claiming the seventh completes the month and adds a permanent +2%
+// akasha stack (omniaState.devotionStacks → omniaDevotionMult, capped at 24
+// stacks / +48%). The path refreshes on the 1st of each calendar month: the
+// in-progress run (claimed/done) resets, while the durable set of completed
+// months (cleared) persists and syncs. Challenges measure the current month's
+// practice, so each month is genuinely re-earned.
 var GIFT_PATH_KEY = 'presence_giftpath_v1';
 function _gpToday() { return new Date().toISOString().slice(0, 10); }
+function gpCurrentMonth() { return new Date().toISOString().slice(0, 7); }
+function _gpBlankClaimed() { return [false,false,false,false,false,false,false]; }
 function loadGiftPath() {
-  var def = { started: false, startDate: null, claimed: [false,false,false,false,false,false,false], done: {} };
-  try { var s = localStorage.getItem(GIFT_PATH_KEY); if (s) { var p = JSON.parse(s); ['started','startDate','claimed','done'].forEach(function(k){ if (p[k] != null) def[k] = p[k]; }); } } catch(e) {}
-  if (!Array.isArray(def.claimed) || def.claimed.length !== 7) def.claimed = [false,false,false,false,false,false,false];
+  var def = { cleared: [], month: null, started: false, startDate: null, claimed: _gpBlankClaimed(), done: {} };
+  try { var s = localStorage.getItem(GIFT_PATH_KEY); if (s) { var p = JSON.parse(s); ['cleared','month','started','startDate','claimed','done'].forEach(function(k){ if (p[k] != null) def[k] = p[k]; });
+    // Migrate pre-monthly saves (no `cleared`/`month`): a finished old run — the
+    // seventh gift claimed, or the legacy one-time devotion — counts as one
+    // cleared month so the earned +2% carries into the stacking model.
+    if (p.cleared == null) {
+      def.month = p.startDate ? p.startDate.slice(0, 7) : gpCurrentMonth();
+      var wasDone = (Array.isArray(p.claimed) && p.claimed[6]) || (typeof omniaState !== 'undefined' && omniaState && omniaState.devotionEarned);
+      if (wasDone && def.cleared.indexOf(def.month) === -1) def.cleared.push(def.month);
+    }
+  } } catch(e) {}
+  if (!Array.isArray(def.cleared)) def.cleared = [];
+  if (!Array.isArray(def.claimed) || def.claimed.length !== 7) def.claimed = _gpBlankClaimed();
   if (!def.done || typeof def.done !== 'object') def.done = {};
   return def;
 }
 function saveGiftPath(s) { try { localStorage.setItem(GIFT_PATH_KEY, JSON.stringify(s)); } catch(e) {} }
-function giftPathEarned() { return !!(typeof omniaState !== 'undefined' && omniaState && omniaState.devotionEarned); }
-function ensureGiftPathStarted() { var s = loadGiftPath(); if (!s.started) { s.started = true; s.startDate = _gpToday(); saveGiftPath(s); } return s; }
+// "Earned" now means the CURRENT month's path is already complete — the button
+// hides and evaluation stops until next month's fresh run.
+function giftPathEarned() { return loadGiftPath().cleared.indexOf(gpCurrentMonth()) !== -1; }
+function ensureGiftPathStarted() {
+  var s = loadGiftPath();
+  var m = gpCurrentMonth();
+  if (s.month !== m) {
+    // New calendar month → fresh run. cleared (durable) is untouched.
+    s.month = m; s.startDate = m + '-01'; s.claimed = _gpBlankClaimed(); s.done = {}; s.started = true;
+    saveGiftPath(s);
+  } else if (!s.started) {
+    s.started = true; if (!s.startDate) s.startDate = m + '-01'; saveGiftPath(s);
+  }
+  return s;
+}
+// One-time reconciliation so devotionStacks reflects completed months (and any
+// legacy one-time devotion) for the multiplier's fast path.
+function migrateDevotionStacks() {
+  if (typeof omniaState === 'undefined' || !omniaState) return;
+  var gp = loadGiftPath();
+  var want = Math.min(24, Math.max(gp.cleared.length, omniaState.devotionEarned ? 1 : 0));
+  if ((omniaState.devotionStacks || 0) < want) {
+    omniaState.devotionStacks = want;
+    if (typeof saveOmniaState === 'function') saveOmniaState();
+  }
+}
 
 function _gpConc() { return (typeof concState !== 'undefined' && concState.history) ? concState.history : []; }
 function _gpAw() { return (typeof state !== 'undefined' && state.history) ? state.history : []; }
@@ -24785,8 +24856,7 @@ function gpReadyCount() { var s = loadGiftPath(); var n = 0; for (var i = 0; i <
 
 function evaluateGiftPath() {
   if (giftPathEarned()) return;
-  var s = loadGiftPath();
-  if (!s.started) return;
+  var s = ensureGiftPathStarted();
   var changed = false;
   GIFT_PATH_DEFS.forEach(function(g){ g.ch.forEach(function(ch){ if (!s.done[ch.id] && gpChDone(s, ch)) { s.done[ch.id] = true; changed = true; } }); });
   if (changed) saveGiftPath(s);
@@ -24795,6 +24865,7 @@ function evaluateGiftPath() {
 }
 function updateGiftPathButton() {
   var btn = document.getElementById('omniaGiftPathBtn'); if (!btn) return;
+  if (typeof migrateDevotionStacks === 'function') migrateDevotionStacks();
   if (giftPathEarned()) { btn.style.display = 'none'; return; }
   ensureGiftPathStarted();
   evaluateGiftPath();
@@ -24806,19 +24877,33 @@ function updateGiftPathButton() {
 function claimGift(idx) {
   var s = loadGiftPath();
   if (!gpGiftClaimable(s, idx)) return;
-  s.claimed[idx] = true; saveGiftPath(s);
+  s.claimed[idx] = true;
+  var addedStack = false, atCap = false;
+  if (idx === 6) {
+    var m = s.month || gpCurrentMonth();
+    if (s.cleared.indexOf(m) === -1) s.cleared.push(m);
+  }
+  saveGiftPath(s);
   var g = GIFT_PATH_DEFS[idx];
   if (typeof omniaState !== 'undefined' && omniaState) {
     var cap = (typeof omniaAkashaCap === 'function') ? omniaAkashaCap() : Infinity;
     var pre = omniaState.akasha || 0;
     omniaState.akasha = Math.min(cap, pre + g.akasha);
     omniaState.totalAkashaEarned = (omniaState.totalAkashaEarned || 0) + Math.max(0, Math.round(omniaState.akasha - pre));
-    if (idx === 6) omniaState.devotionEarned = true;
+    if (idx === 6) {
+      var prevStacks = omniaState.devotionStacks || 0;
+      var nextStacks = Math.min(24, s.cleared.length);
+      addedStack = nextStacks > prevStacks;
+      atCap = nextStacks >= 24;
+      omniaState.devotionStacks = Math.max(prevStacks, nextStacks);
+      omniaState.devotionEarned = true; // keep legacy flag truthy for old checks
+    }
     if (typeof saveOmniaState === 'function') saveOmniaState();
     if (typeof syncEnabled !== 'undefined' && syncEnabled && typeof authToken !== 'undefined' && authToken && typeof syncPushData === 'function') syncPushData();
   }
+  var seventhNote = atCap ? ' · devotion maxed (+48%)' : (addedStack ? ' · +2% akasha forever' : '');
   if (typeof showToast === 'function') showToast(idx === 6
-    ? ('✦ ' + g.name + ' · +' + g.akasha.toLocaleString() + ' akasha · +2% forever')
+    ? ('✦ ' + g.name + ' · +' + g.akasha.toLocaleString() + ' akasha' + seventhNote)
     : ('✦ ' + g.name + ' · +' + g.akasha.toLocaleString() + ' akasha'), 4200, 'gold');
   if (typeof renderOmniaEngine === 'function' && document.getElementById('omniaEngine')) { try { renderOmniaEngine(); } catch(e) {} }
   renderGiftPathScreen(); updateGiftPathButton();
@@ -24847,7 +24932,10 @@ function gpGiftSvg(state) {
 var _gpTab = 'gifts';
 function renderGiftPathScreen() {
   var el = document.getElementById('giftPathOverlay'); if (!el) return;
+  ensureGiftPathStarted();
   var s = loadGiftPath(); var earned = giftPathEarned();
+  var stacks = (typeof omniaDevotionStacks === 'function') ? omniaDevotionStacks() : 0;
+  var atCap = stacks >= 24;
   var giftsTab = '<div class="gp-gifts">';
   GIFT_PATH_DEFS.forEach(function(g, i) {
     var state = s.claimed[i] ? 'claimed' : (gpGiftClaimable(s, i) ? 'ready' : 'locked');
@@ -24857,7 +24945,7 @@ function renderGiftPathScreen() {
       + '<span class="gp-gift-box">' + gpGiftSvg(state) + '</span>'
       + '<span class="gp-gift-n">Gift ' + (i+1) + '</span>'
       + '<span class="gp-gift-name">' + g.name + '</span>'
-      + '<span class="gp-gift-reward">+' + g.akasha.toLocaleString() + ' akasha' + (isFinal ? '<span class="plus2">+2% AKASHA · FOREVER</span>' : '') + '</span>'
+      + '<span class="gp-gift-reward">+' + g.akasha.toLocaleString() + ' akasha' + (isFinal ? '<span class="plus2">' + (atCap ? '+48% AKASHA · MAXED' : '+2% AKASHA · MONTHLY') + '</span>' : '') + '</span>'
       + '<span class="gp-gift-state">' + stateTxt + '</span></button>';
   });
   giftsTab += '</div>';
@@ -24878,7 +24966,8 @@ function renderGiftPathScreen() {
       + '<span class="gp-ch-reward">+' + g.akasha.toLocaleString() + (i === 6 ? ' · +2%' : '') + '</span></div>' + rows + '</div>';
   });
   el.innerHTML = '<div class="gp-top"><button class="gp-back" id="gpBack" aria-label="Back">←</button><div class="gp-title">The Seven Gifts</div></div>'
-    + '<div class="gp-sub">Complete each gift’s challenges to open it. The seventh grants a permanent <b>+2% akasha</b>.' + (earned ? ' <b>· Earned</b>' : '') + '</div>'
+    + '<div class="gp-sub">Complete all seven each month for a permanent <b>+2% akasha</b>, stacking up to <b>+48%</b>. Current devotion: <b>+' + (stacks * 2) + '%</b>.'
+    + (atCap ? ' <b>· Maxed</b>' : (earned ? ' <b>· This month complete</b>' : '')) + '</div>'
     + '<div class="gp-tabs"><button class="gp-tab' + (_gpTab === 'gifts' ? ' on' : '') + '" data-gptab="gifts">The Gifts</button>'
     + '<button class="gp-tab' + (_gpTab === 'challenges' ? ' on' : '') + '" data-gptab="challenges">Challenges</button></div>'
     + '<div class="gp-body" id="gpBody">' + (_gpTab === 'gifts' ? giftsTab : chTab) + '</div>';
