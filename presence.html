@@ -797,27 +797,54 @@
     .prof-badge b, .prof-ach-item__disc b { font-family:'Cormorant Garamond',serif; font-weight:300; font-size:13px; margin-top:1px; }
     .prof-badge, .prof-ach-item__disc { flex-direction:column; }
 
-    /* ── Seven-Day Devotion: a custom-goal streak for a permanent +2% akasha ── */
-    .dev-card { border:1px solid rgba(232,200,122,.28); border-radius:14px; background:linear-gradient(160deg, rgba(232,200,122,.06), rgba(255,255,255,.015)); padding:16px 17px; margin:0 0 14px; position:relative; overflow:hidden; }
-    .dev-card.earned { border-color:rgba(232,200,122,.55); }
-    .dev-head { display:flex; justify-content:space-between; align-items:baseline; margin-bottom:3px; }
-    .dev-title { font-family:'Cormorant Garamond',serif; font-size:19px; font-weight:300; color:#f0d8ac; }
-    .dev-reward { font-family:'DM Mono',monospace; font-size:9px; letter-spacing:.14em; color:#e8c87a; }
-    .dev-sub { font-size:10px; color:rgba(221,216,206,.62); line-height:1.55; margin-bottom:12px; }
-    .dev-pips { display:flex; gap:6px; margin-bottom:13px; }
-    .dev-pip { flex:1; height:6px; border-radius:3px; background:rgba(221,216,206,.1); transition:background .3s, box-shadow .3s; }
-    .dev-pip.on { background:linear-gradient(90deg,#b86820,#e8c87a); box-shadow:0 0 7px rgba(232,200,122,.45); }
-    .dev-pip.today { background:rgba(232,200,122,.35); }
-    .dev-goal-label { font-family:'DM Mono',monospace; font-size:8px; letter-spacing:.2em; text-transform:uppercase; color:rgba(221,216,206,.55); margin-bottom:7px; }
-    .dev-goal-text { font-family:'Cormorant Garamond',serif; font-size:16px; font-style:italic; color:var(--text); line-height:1.4; margin-bottom:12px; }
-    .dev-input { width:100%; box-sizing:border-box; padding:10px 12px; border:1px solid var(--border); border-radius:9px; background:rgba(255,255,255,.03); color:var(--text); font-family:'Cormorant Garamond',serif; font-size:15px; outline:none; margin-bottom:10px; }
-    .dev-input::placeholder { color:rgba(221,216,206,.4); font-style:italic; }
-    .dev-btn { width:100%; padding:11px; border-radius:8px; border:1px solid rgba(232,200,122,.4); background:rgba(232,200,122,.08); color:#e8c87a; font-family:'DM Mono',monospace; font-size:10px; letter-spacing:.2em; text-transform:uppercase; cursor:pointer; }
-    .dev-btn:active { transform:scale(.985); }
-    .dev-btn--done { border-color:rgba(126,184,164,.4); background:rgba(126,184,164,.08); color:#9ed8c0; }
-    .dev-status { font-size:11px; font-style:italic; color:rgba(221,216,206,.7); text-align:center; padding:4px 0 2px; }
-    .dev-earned-line { display:flex; align-items:center; gap:9px; }
-    .dev-earned-line .dev-seal { width:34px; height:34px; border-radius:50%; flex-shrink:0; display:flex; align-items:center; justify-content:center; color:#0e0f17; font-size:16px; background:radial-gradient(circle at 40% 32%, #f4e2b0, #d4a94e 70%); box-shadow:0 0 14px rgba(232,200,122,.5); }
+    /* ── Seven Gifts: temporary event button + screen ── */
+    .oe-giftpath-btn { position:absolute; top:108px; left:14px; z-index:6; width:42px; height:42px; border-radius:50%; display:flex; align-items:center; justify-content:center; color:#e8c87a; background:rgba(232,200,122,.09); border:1px solid rgba(232,200,122,.4); cursor:pointer; box-shadow:0 0 16px rgba(232,200,122,.28); animation:oeGiftPulse 2.6s ease-in-out infinite; transition:background .2s, transform .2s; }
+    .oe-giftpath-btn:hover { background:rgba(232,200,122,.16); transform:translateY(-1px); }
+    .oe-giftpath-btn:active { transform:scale(.94); }
+    .oe-giftpath-btn .gp-badge { position:absolute; top:-4px; right:-4px; min-width:15px; height:15px; padding:0 3px; box-sizing:border-box; border-radius:8px; background:#e8554f; color:#fff; font-family:'DM Mono',monospace; font-size:8px; line-height:15px; text-align:center; }
+    .gp-overlay { display:none; position:fixed; inset:0; z-index:9720; background:#07080d; flex-direction:column; opacity:0; transition:opacity .4s ease; }
+    .gp-overlay.gp-show { display:flex; }
+    .gp-overlay.gp-vis { opacity:1; }
+    .gp-top { display:flex; align-items:center; gap:12px; padding:max(env(safe-area-inset-top),18px) 20px 6px; }
+    .gp-back { background:rgba(255,255,255,.05); border:1px solid rgba(255,255,255,.12); border-radius:50%; width:38px; height:38px; display:flex; align-items:center; justify-content:center; cursor:pointer; color:rgba(221,216,206,.8); font-size:17px; padding:0; flex-shrink:0; }
+    .gp-title { font-family:'Cormorant Garamond',serif; font-size:24px; font-weight:300; color:#f0d8ac; }
+    .gp-sub { font-size:11px; color:rgba(221,216,206,.6); line-height:1.6; padding:0 20px; margin-bottom:14px; }
+    .gp-sub b { color:#e8c87a; font-weight:400; }
+    .gp-tabs { display:flex; gap:0; margin:0 20px 14px; border-bottom:1px solid var(--border); flex-shrink:0; }
+    .gp-tab { flex:1; background:none; border:none; padding:11px 0; font-family:'DM Mono',monospace; font-size:10px; letter-spacing:.18em; text-transform:uppercase; color:rgba(221,216,206,.5); cursor:pointer; border-bottom:2px solid transparent; margin-bottom:-1px; }
+    .gp-tab.on { color:#e8c87a; border-bottom-color:#e8c87a; }
+    .gp-body { flex:1; overflow-y:auto; -webkit-overflow-scrolling:touch; padding:0 20px 32px; }
+    .gp-gifts { display:grid; grid-template-columns:repeat(2,1fr); gap:12px; }
+    .gp-gift { position:relative; border:1px solid var(--border); border-radius:14px; background:rgba(255,255,255,.02); padding:16px 12px 14px; text-align:center; display:flex; flex-direction:column; align-items:center; gap:5px; transition:border-color .25s, box-shadow .25s; }
+    .gp-gift.locked { opacity:.5; }
+    .gp-gift.ready { border-color:rgba(232,200,122,.6); box-shadow:0 0 20px -6px rgba(232,200,122,.7); cursor:pointer; animation:oeGiftPulse 2.4s ease-in-out infinite; }
+    .gp-gift.claimed { border-color:rgba(126,184,164,.4); }
+    .gp-gift.final { grid-column:1 / -1; }
+    .gp-gift-box { width:56px; height:56px; display:flex; align-items:center; justify-content:center; }
+    .gp-gift-box svg { width:52px; height:52px; }
+    .gp-gift-n { font-family:'DM Mono',monospace; font-size:8px; letter-spacing:.2em; text-transform:uppercase; color:rgba(221,216,206,.5); }
+    .gp-gift-name { font-family:'Cormorant Garamond',serif; font-size:17px; font-weight:300; color:var(--text); line-height:1.1; }
+    .gp-gift-reward { font-family:'DM Mono',monospace; font-size:9px; letter-spacing:.06em; color:#e8c87a; }
+    .gp-gift-reward .plus2 { display:block; color:#9ed8c0; margin-top:2px; }
+    .gp-gift-state { font-family:'DM Mono',monospace; font-size:8px; letter-spacing:.16em; text-transform:uppercase; margin-top:2px; }
+    .gp-gift.ready .gp-gift-state { color:#e8c87a; }
+    .gp-gift.claimed .gp-gift-state { color:#9ed8c0; }
+    .gp-gift.locked .gp-gift-state { color:rgba(221,216,206,.4); }
+    .gp-ch-group { border:1px solid var(--border); border-radius:13px; background:rgba(255,255,255,.02); padding:14px 15px; margin-bottom:11px; }
+    .gp-ch-group.done { border-color:rgba(126,184,164,.35); }
+    .gp-ch-head { display:flex; justify-content:space-between; align-items:baseline; margin-bottom:10px; }
+    .gp-ch-title { font-family:'Cormorant Garamond',serif; font-size:16px; font-weight:300; color:var(--text); }
+    .gp-ch-title span { font-family:'DM Mono',monospace; font-size:8px; letter-spacing:.16em; text-transform:uppercase; color:rgba(221,216,206,.45); margin-right:7px; }
+    .gp-ch-reward { font-family:'DM Mono',monospace; font-size:9px; color:#e8c87a; }
+    .gp-ch-row { display:flex; align-items:center; gap:10px; padding:6px 0; }
+    .gp-ch-tick { width:17px; height:17px; border-radius:50%; border:1.5px solid rgba(221,216,206,.28); flex-shrink:0; display:flex; align-items:center; justify-content:center; }
+    .gp-ch-row.met .gp-ch-tick { border-color:#7eb8a4; background:rgba(126,184,164,.18); color:#9ed8c0; font-size:10px; }
+    .gp-ch-info { flex:1; min-width:0; }
+    .gp-ch-label { font-size:12px; color:var(--text); line-height:1.4; }
+    .gp-ch-row.met .gp-ch-label { color:rgba(221,216,206,.6); }
+    .gp-ch-bar { height:3px; border-radius:2px; background:rgba(221,216,206,.1); margin-top:5px; overflow:hidden; }
+    .gp-ch-bar > div { height:100%; background:linear-gradient(90deg,#b86820,#e8c87a); border-radius:2px; transition:width .4s ease; }
+    .gp-ch-num { font-family:'DM Mono',monospace; font-size:9px; color:rgba(221,216,206,.5); flex-shrink:0; }
 
     /* MODE TABS */
     .mode-tabs { display:flex; gap:0; margin-bottom:16px; border-bottom:1px solid var(--border); }
@@ -5887,6 +5914,7 @@ body:not(.tut-live) #tutCorgi {
         </svg>
         <span class="oe-chat-badge" id="omniaChatBadge" style="display:none;">0</span>
       </button>
+      <button class="oe-giftpath-btn" id="omniaGiftPathBtn" style="display:none;" aria-label="The Seven Gifts" onclick="openGiftPath()"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 8H4v3h16V8z"/><path d="M18.5 11v9h-13v-9"/><path d="M12 8v12"/><path d="M12 8S9.5 8 8.4 6.4 8.6 3.6 10 4.2 12 8 12 8z"/><path d="M12 8s2.5 0 3.6-1.6S15.4 3.6 14 4.2 12 8 12 8z"/></svg><span class="gp-badge" id="omniaGiftPathBadge">7</span></button>
 
       <!-- Full story log -->
       <div class="oe-chat-overlay" id="omniaChatOverlay" onclick="if(event.target===this)closeOmniaChat()">
@@ -6148,7 +6176,6 @@ body:not(.tut-live) #tutCorgi {
       </div>
     </div>
     <div class="path-quest-root" id="pathQuestRoot"></div>
-    <div id="devotionCardRoot"></div>
 
     <!-- Omnia character (Path tab — aura centerpiece) -->
     <div class="guide-path-omnia-wrap">
@@ -8021,6 +8048,7 @@ function recordExerciseCompletion(opts) {
     awardOmniaForExercise(opts.exId, opts.omniaSeconds, opts.reachedRec);
   }
   if (typeof achOnCompletion === 'function') achOnCompletion(opts);
+  if (typeof evaluateGiftPath === 'function') { evaluateGiftPath(); updateGiftPathButton(); }
   return (typeof omniaState !== 'undefined' && omniaState) ? Math.round(omniaState.akasha - pre) : 0;
 }
 
@@ -8478,6 +8506,7 @@ document.addEventListener('DOMContentLoaded', function() {
   setTimeout(clearStaleInteractionLocks, 1000);
   if (typeof checkStreakStatus === 'function') checkStreakStatus();
   if (typeof updateOmniaGiftBtn === 'function') { try { updateOmniaGiftBtn(); } catch(e) {} }
+  if (typeof updateGiftPathButton === 'function') { try { updateGiftPathButton(); } catch(e) {} }
   if (typeof checkRemindersOnLoad === 'function') checkRemindersOnLoad();
   // Apply saved entity/palette cosmetics to the guide banner and drawer icon
   // on every page load so Seraph/etc. show immediately without visiting Upgrade.
@@ -9051,6 +9080,7 @@ function submitSurvey() {
   if (state.history.length > 100) state.history.length = 100;
   saveState();
   if (typeof achOnAwarenessSession === 'function') achOnAwarenessSession(surveyDurationMin);
+  if (typeof evaluateGiftPath === 'function') { evaluateGiftPath(); updateGiftPathButton(); }
 
   // Credit awareness quest minutes (awareness sessions are the main meditation sessions)
   if (typeof pathQuestRecordAwarenessMinutes === 'function' && typeof guideState !== 'undefined') {
@@ -24636,130 +24666,191 @@ function colorToTint(hex, alpha) {
   return 'rgba(' + r + ',' + g + ',' + b + ',' + alpha + ')';
 }
 
-// ── Seven-Day Devotion ────────────────────────────────────────────────────────
-// Set a custom goal each day and keep it. Seven days in a row grants a one-time
-// permanent +2% akasha. The daily progress is local; the earned reward lives on
-// omniaState (omniaDevotionMult) so it follows the account across sync.
-function _devToday() { return new Date().toISOString().slice(0, 10); }
-function _devYesterday() { return new Date(Date.now() - 86400000).toISOString().slice(0, 10); }
-function loadDevotion() {
-  var def = { earned: false, count: 0, lastDoneDate: null, today: { date: _devToday(), goal: '', done: false } };
-  try {
-    var s = localStorage.getItem('presence_devotion_v1');
-    if (s) { var p = JSON.parse(s); ['earned', 'count', 'lastDoneDate', 'today'].forEach(function(k) { if (p[k] != null) def[k] = p[k]; }); }
-  } catch (e) {}
-  if (!def.today || typeof def.today !== 'object') def.today = { date: _devToday(), goal: '', done: false };
-  // Keep the earned flag in step with omniaState (the synced source of truth).
-  if (typeof omniaState !== 'undefined' && omniaState && omniaState.devotionEarned) def.earned = true;
+// ── The Seven Gifts (temporary event → permanent +2% akasha) ──────────────────
+// Seven gifts, each unlocked by completing its challenges. Gifts pay escalating
+// akasha; the seventh also grants a one-time permanent +2% akasha, reusing the
+// omniaState.devotionEarned flag (omniaDevotionMult). Progress is measured from
+// the moment the event starts, so long-time players still take the journey.
+var GIFT_PATH_KEY = 'presence_giftpath_v1';
+function _gpToday() { return new Date().toISOString().slice(0, 10); }
+function loadGiftPath() {
+  var def = { started: false, startDate: null, claimed: [false,false,false,false,false,false,false], done: {} };
+  try { var s = localStorage.getItem(GIFT_PATH_KEY); if (s) { var p = JSON.parse(s); ['started','startDate','claimed','done'].forEach(function(k){ if (p[k] != null) def[k] = p[k]; }); } } catch(e) {}
+  if (!Array.isArray(def.claimed) || def.claimed.length !== 7) def.claimed = [false,false,false,false,false,false,false];
+  if (!def.done || typeof def.done !== 'object') def.done = {};
   return def;
 }
-function saveDevotion(s) { try { localStorage.setItem('presence_devotion_v1', JSON.stringify(s)); } catch (e) {} }
-function devotionNormalize(s) {
-  var today = _devToday();
-  if (s.today.date !== today) {
-    // A day rolled over. If the last kept day is neither today nor yesterday, the
-    // seven-in-a-row chain broke — reset (unless already earned).
-    if (!s.earned && s.count > 0 && s.lastDoneDate !== today && s.lastDoneDate !== _devYesterday()) {
-      s.count = 0; s.lastDoneDate = null;
-    }
-    s.today = { date: today, goal: '', done: false };
-  }
-  return s;
+function saveGiftPath(s) { try { localStorage.setItem(GIFT_PATH_KEY, JSON.stringify(s)); } catch(e) {} }
+function giftPathEarned() { return !!(typeof omniaState !== 'undefined' && omniaState && omniaState.devotionEarned); }
+function ensureGiftPathStarted() { var s = loadGiftPath(); if (!s.started) { s.started = true; s.startDate = _gpToday(); saveGiftPath(s); } return s; }
+
+function _gpConc() { return (typeof concState !== 'undefined' && concState.history) ? concState.history : []; }
+function _gpAw() { return (typeof state !== 'undefined' && state.history) ? state.history : []; }
+function gpSessions(sd) { var n = 0; _gpConc().forEach(function(h){ if (h && h.date && h.date.slice(0,10) >= sd) n++; }); _gpAw().forEach(function(h){ if (h && h.date && h.date.slice(0,10) >= sd) n++; }); return n; }
+function gpDays(sd) { var set = {}; _gpConc().forEach(function(h){ if (h && h.date && h.date.slice(0,10) >= sd) set[h.date.slice(0,10)] = 1; }); _gpAw().forEach(function(h){ if (h && h.date && h.date.slice(0,10) >= sd) set[h.date.slice(0,10)] = 1; }); return Object.keys(set).length; }
+function gpTypes(sd) { var set = {}; _gpConc().forEach(function(h){ if (h && h.date && h.date.slice(0,10) >= sd) { var id = (typeof guideHistoryExerciseId === 'function') ? guideHistoryExerciseId(h) : (h.type || h.exercise || 'clock'); set[id] = 1; } }); return Object.keys(set).length; }
+function gpHasType(sd, want) { return _gpConc().some(function(h){ if (!h || !h.date || h.date.slice(0,10) < sd) return false; var id = (typeof guideHistoryExerciseId === 'function') ? guideHistoryExerciseId(h) : (h.type || h.exercise || 'clock'); return id === want; }); }
+function gpBestHold(sd) { var best = 0; _gpConc().forEach(function(h){ if (h && h.date && h.date.slice(0,10) >= sd) { var isHold = (typeof isHoldSession !== 'function') || isHoldSession(h); if (isHold && (h.seconds||0) > best) best = h.seconds || 0; } }); return best; }
+function gpRegimenComplete() { var r = (typeof omniaRegimenSnapshot === 'function') ? omniaRegimenSnapshot() : null; return !!(r && r.complete); }
+function gpGiftCollected() { return typeof offeringAvailable === 'function' && !offeringAvailable(); }
+
+var GIFT_PATH_DEFS = [
+  { name:'First Light', akasha:500, ch:[
+    { id:'g1a', label:'Complete 2 practice sessions', target:2, cur:function(s){ return gpSessions(s.startDate); } },
+    { id:'g1b', label:'Collect a daily offering', test:function(){ return gpGiftCollected(); } } ] },
+  { name:'Steady Flame', akasha:800, ch:[
+    { id:'g2a', label:'Complete 4 practice sessions', target:4, cur:function(s){ return gpSessions(s.startDate); } },
+    { id:'g2b', label:'Practice on 2 different days', target:2, cur:function(s){ return gpDays(s.startDate); } } ] },
+  { name:'The Full Vessel', akasha:1200, ch:[
+    { id:'g3a', label:'Finish your full daily stack', test:function(){ return gpRegimenComplete(); } },
+    { id:'g3b', label:'Practice Clock and Thought Control', test:function(s){ return gpHasType(s.startDate,'clock') && gpHasType(s.startDate,'thought'); } } ] },
+  { name:'Deepening', akasha:1800, ch:[
+    { id:'g4a', label:'Practice on 4 different days', target:4, cur:function(s){ return gpDays(s.startDate); } },
+    { id:'g4b', label:'Hold a single focus for 10 minutes', test:function(s){ return gpBestHold(s.startDate) >= 600; } } ] },
+  { name:'The Widening', akasha:2800, ch:[
+    { id:'g5a', label:'Complete 12 practice sessions', target:12, cur:function(s){ return gpSessions(s.startDate); } },
+    { id:'g5b', label:'Practice 3 different exercises', target:3, cur:function(s){ return gpTypes(s.startDate); } } ] },
+  { name:'The Long Sit', akasha:4500, ch:[
+    { id:'g6a', label:'Practice on 6 different days', target:6, cur:function(s){ return gpDays(s.startDate); } },
+    { id:'g6b', label:'Hold a single focus for 15 minutes', test:function(s){ return gpBestHold(s.startDate) >= 900; } } ] },
+  { name:'The Seventh Seal', akasha:7000, ch:[
+    { id:'g7a', label:'Practice on 7 different days', target:7, cur:function(s){ return gpDays(s.startDate); } },
+    { id:'g7b', label:'Complete 20 practice sessions', target:20, cur:function(s){ return gpSessions(s.startDate); } } ] }
+];
+
+function gpChDone(s, ch) { if (s.done[ch.id]) return true; return ch.test ? !!ch.test(s) : (ch.cur(s) >= ch.target); }
+function gpChProgress(s, ch) {
+  var met = !!s.done[ch.id] || gpChDone(s, ch);
+  if (ch.test) return { met: met, cur: met ? 1 : 0, target: 1, numeric: false };
+  return { met: met, cur: met ? ch.target : Math.min(ch.cur(s), ch.target), target: ch.target, numeric: true };
 }
-function devotionSetGoal(text) {
-  var s = devotionNormalize(loadDevotion());
-  s.today.goal = text; saveDevotion(s); renderDevotionCard();
+function gpGiftAllDone(s, idx) { return GIFT_PATH_DEFS[idx].ch.every(function(ch){ return !!s.done[ch.id]; }); }
+function gpGiftClaimable(s, idx) { if (s.claimed[idx]) return false; if (idx > 0 && !s.claimed[idx-1]) return false; return gpGiftAllDone(s, idx); }
+function gpReadyCount() { var s = loadGiftPath(); var n = 0; for (var i = 0; i < 7; i++) { if (gpGiftClaimable(s, i)) n++; } return n; }
+
+function evaluateGiftPath() {
+  if (giftPathEarned()) return;
+  var s = loadGiftPath();
+  if (!s.started) return;
+  var changed = false;
+  GIFT_PATH_DEFS.forEach(function(g){ g.ch.forEach(function(ch){ if (!s.done[ch.id] && gpChDone(s, ch)) { s.done[ch.id] = true; changed = true; } }); });
+  if (changed) saveGiftPath(s);
+  var ov = document.getElementById('giftPathOverlay');
+  if (ov && ov.classList.contains('gp-show')) renderGiftPathScreen();
 }
-function devotionComplete() {
-  var s = devotionNormalize(loadDevotion());
-  if (s.earned || !s.today.goal || s.today.done) return;
-  s.today.done = true;
-  s.count = (s.lastDoneDate === _devYesterday()) ? (s.count + 1) : 1;
-  s.lastDoneDate = _devToday();
-  saveDevotion(s);
-  if (s.count >= 7) devotionAward(); else if (typeof showToast === 'function') showToast('Day ' + s.count + ' of 7 kept', 2400, 'gold');
-  renderDevotionCard();
+function updateGiftPathButton() {
+  var btn = document.getElementById('omniaGiftPathBtn'); if (!btn) return;
+  if (giftPathEarned()) { btn.style.display = 'none'; return; }
+  ensureGiftPathStarted();
+  evaluateGiftPath();
+  btn.style.display = 'flex';
+  var ready = gpReadyCount();
+  var badge = document.getElementById('omniaGiftPathBadge');
+  if (badge) { if (ready > 0) { badge.textContent = String(ready); badge.style.display = ''; } else { badge.style.display = 'none'; } }
 }
-function devotionAward() {
-  var s = loadDevotion();
-  s.earned = true; s.count = 7; saveDevotion(s);
-  if (typeof omniaState !== 'undefined' && omniaState && !omniaState.devotionEarned) {
-    omniaState.devotionEarned = true;
+function claimGift(idx) {
+  var s = loadGiftPath();
+  if (!gpGiftClaimable(s, idx)) return;
+  s.claimed[idx] = true; saveGiftPath(s);
+  var g = GIFT_PATH_DEFS[idx];
+  if (typeof omniaState !== 'undefined' && omniaState) {
+    var cap = (typeof omniaAkashaCap === 'function') ? omniaAkashaCap() : Infinity;
+    var pre = omniaState.akasha || 0;
+    omniaState.akasha = Math.min(cap, pre + g.akasha);
+    omniaState.totalAkashaEarned = (omniaState.totalAkashaEarned || 0) + Math.max(0, Math.round(omniaState.akasha - pre));
+    if (idx === 6) omniaState.devotionEarned = true;
     if (typeof saveOmniaState === 'function') saveOmniaState();
     if (typeof syncEnabled !== 'undefined' && syncEnabled && typeof authToken !== 'undefined' && authToken && typeof syncPushData === 'function') syncPushData();
   }
-  if (typeof showToast === 'function') showToast('✦ Seven days kept · +2% akasha, forever', 4600, 'gold');
-  if (typeof renderOmniaEngine === 'function' && document.getElementById('omniaEngine')) { try { renderOmniaEngine(); } catch (e) {} }
+  if (typeof showToast === 'function') showToast(idx === 6
+    ? ('✦ ' + g.name + ' · +' + g.akasha.toLocaleString() + ' akasha · +2% forever')
+    : ('✦ ' + g.name + ' · +' + g.akasha.toLocaleString() + ' akasha'), 4200, 'gold');
+  if (typeof renderOmniaEngine === 'function' && document.getElementById('omniaEngine')) { try { renderOmniaEngine(); } catch(e) {} }
+  renderGiftPathScreen(); updateGiftPathButton();
 }
-// Hidden test affordance: long-press the card to walk one day forward, so the
-// whole seven-day run (and the reward) can be exercised without waiting a week.
-function devotionTestAdvance() {
-  var s = devotionNormalize(loadDevotion());
-  if (s.earned) { if (typeof showToast === 'function') showToast('Already earned · +2% akasha active', 2200, 'gold'); return; }
-  s.count = Math.min(7, (s.count || 0) + 1);
-  s.lastDoneDate = _devToday();
-  s.today = { date: _devToday(), goal: s.today.goal || 'Test vow', done: true };
-  saveDevotion(s);
-  if (s.count >= 7) devotionAward();
-  else { if (typeof showToast === 'function') showToast('Day ' + s.count + ' of 7 (test)', 1600); renderDevotionCard(); }
-}
-function _devAttachLongPress(el) {
-  if (!el || el._devLp) return; el._devLp = true;
-  var timer = null;
-  var start = function() { timer = setTimeout(devotionTestAdvance, 650); };
-  var cancel = function() { if (timer) { clearTimeout(timer); timer = null; } };
-  el.addEventListener('touchstart', start, { passive: true });
-  ['touchend', 'touchmove', 'touchcancel'].forEach(function(ev) { el.addEventListener(ev, cancel); });
-  el.addEventListener('mousedown', start);
-  ['mouseup', 'mouseleave'].forEach(function(ev) { el.addEventListener(ev, cancel); });
-}
-function renderDevotionCard() {
-  var root = document.getElementById('devotionCardRoot');
-  if (!root) return;
-  var s = devotionNormalize(loadDevotion());
-  saveDevotion(s);
-  if (s.earned) {
-    root.innerHTML = '<div class="dev-card earned">'
-      + '<div class="dev-head"><span class="dev-title">Seven-Day Devotion</span><span class="dev-reward">EARNED</span></div>'
-      + '<div class="dev-earned-line"><span class="dev-seal">✦</span><div>'
-      + '<div style="font-family:Cormorant Garamond,serif;font-size:16px;color:#f0d8ac;">+2% akasha, forever</div>'
-      + '<div style="font-size:10px;color:rgba(221,216,206,.6);">You kept seven days of your own vows.</div></div></div></div>';
-    return;
-  }
-  var pips = '';
+// Hidden test affordance: long-press the gifts grid to unlock the next gift.
+function giftPathTestAdvance() {
+  var s = loadGiftPath();
   for (var i = 0; i < 7; i++) {
-    var isDone = i < s.count;
-    var isToday = i === s.count && s.today.done;
-    pips += '<div class="dev-pip' + (isDone ? ' on' : (isToday ? ' today' : '')) + '"></div>';
+    if (!s.claimed[i]) { GIFT_PATH_DEFS[i].ch.forEach(function(ch){ s.done[ch.id] = true; }); saveGiftPath(s);
+      if (typeof showToast === 'function') showToast('Gift ' + (i+1) + ' unlocked (test) — tap to open', 2200, 'gold');
+      renderGiftPathScreen(); updateGiftPathButton(); return; }
   }
-  var body;
-  if (!s.today.goal) {
-    body = '<div class="dev-goal-label">Today’s Vow</div>'
-      + '<input class="dev-input" id="devGoalInput" placeholder="Set a goal for today…" maxlength="80"/>'
-      + '<button class="dev-btn" id="devSetBtn">Set today’s vow</button>';
-  } else if (!s.today.done) {
-    body = '<div class="dev-goal-label">Today’s Vow</div>'
-      + '<div class="dev-goal-text">“' + escHtml(s.today.goal) + '”</div>'
-      + '<button class="dev-btn dev-btn--done" id="devDoneBtn">Mark today complete</button>';
-  } else {
-    body = '<div class="dev-goal-label">Today’s Vow · Kept</div>'
-      + '<div class="dev-goal-text">“' + escHtml(s.today.goal) + '”</div>'
-      + '<div class="dev-status">Day ' + s.count + ' of 7 kept — return tomorrow.</div>';
-  }
-  root.innerHTML = '<div class="dev-card" id="devCard">'
-    + '<div class="dev-head"><span class="dev-title">Seven-Day Devotion</span><span class="dev-reward">+2% AKASHA · FOREVER</span></div>'
-    + '<div class="dev-sub">Set a goal each day and keep it. Seven days in a row earns a permanent +2% akasha. Miss a day and the vow resets.</div>'
-    + '<div class="dev-pips">' + pips + '</div>' + body + '</div>';
-  var setBtn = document.getElementById('devSetBtn');
-  if (setBtn) setBtn.onclick = function() {
-    var v = (document.getElementById('devGoalInput').value || '').trim();
-    if (!v) { if (typeof showToast === 'function') showToast('Write a goal first', 1800); return; }
-    devotionSetGoal(v);
-  };
-  var doneBtn = document.getElementById('devDoneBtn');
-  if (doneBtn) doneBtn.onclick = devotionComplete;
-  _devAttachLongPress(document.getElementById('devCard'));
+  if (typeof showToast === 'function') showToast('All seven gifts claimed', 1800);
 }
+function gpGiftSvg(state) {
+  var lid = state === 'claimed' ? '#9ed8c0' : '#e8c87a';
+  var body = state === 'locked' ? 'rgba(221,216,206,.35)' : '#e8c87a';
+  return '<svg viewBox="0 0 48 48" fill="none" stroke="' + body + '" stroke-width="1.6" stroke-linejoin="round">'
+    + '<rect x="9" y="18" width="30" height="7" rx="1.5"/>'
+    + '<path d="M11 25h26v16a1.5 1.5 0 0 1-1.5 1.5h-23A1.5 1.5 0 0 1 11 41V25z"/>'
+    + '<path d="M24 18v24" stroke="' + lid + '"/>'
+    + '<path d="M24 18s-5 0-7-3.2 .8-5 3.6-3.6S24 18 24 18z" stroke="' + lid + '"/>'
+    + '<path d="M24 18s5 0 7-3.2-.8-5-3.6-3.6S24 18 24 18z" stroke="' + lid + '"/>'
+    + (state !== 'locked' ? '<circle cx="24" cy="30" r="1.6" fill="' + lid + '" stroke="none"/>' : '') + '</svg>';
+}
+var _gpTab = 'gifts';
+function renderGiftPathScreen() {
+  var el = document.getElementById('giftPathOverlay'); if (!el) return;
+  var s = loadGiftPath(); var earned = giftPathEarned();
+  var giftsTab = '<div class="gp-gifts">';
+  GIFT_PATH_DEFS.forEach(function(g, i) {
+    var state = s.claimed[i] ? 'claimed' : (gpGiftClaimable(s, i) ? 'ready' : 'locked');
+    var stateTxt = state === 'claimed' ? 'Claimed' : (state === 'ready' ? 'Tap to open' : 'Locked');
+    var isFinal = i === 6;
+    giftsTab += '<button class="gp-gift ' + state + (isFinal ? ' final' : '') + '" ' + (state === 'ready' ? 'data-claim="' + i + '"' : '') + '>'
+      + '<span class="gp-gift-box">' + gpGiftSvg(state) + '</span>'
+      + '<span class="gp-gift-n">Gift ' + (i+1) + '</span>'
+      + '<span class="gp-gift-name">' + g.name + '</span>'
+      + '<span class="gp-gift-reward">+' + g.akasha.toLocaleString() + ' akasha' + (isFinal ? '<span class="plus2">+2% AKASHA · FOREVER</span>' : '') + '</span>'
+      + '<span class="gp-gift-state">' + stateTxt + '</span></button>';
+  });
+  giftsTab += '</div>';
+  var chTab = '';
+  GIFT_PATH_DEFS.forEach(function(g, i) {
+    var rows = '';
+    g.ch.forEach(function(ch) {
+      var p = gpChProgress(s, ch);
+      rows += '<div class="gp-ch-row' + (p.met ? ' met' : '') + '">'
+        + '<span class="gp-ch-tick">' + (p.met ? '✓' : '') + '</span>'
+        + '<span class="gp-ch-info"><span class="gp-ch-label">' + ch.label + '</span>'
+        + (p.numeric && !p.met ? '<span class="gp-ch-bar"><div style="width:' + Math.round(p.cur / p.target * 100) + '%"></div></span>' : '')
+        + '</span>'
+        + (p.numeric ? '<span class="gp-ch-num">' + p.cur + ' / ' + p.target + '</span>' : '') + '</div>';
+    });
+    chTab += '<div class="gp-ch-group' + (s.claimed[i] ? ' done' : '') + '">'
+      + '<div class="gp-ch-head"><span class="gp-ch-title"><span>Gift ' + (i+1) + '</span>' + g.name + '</span>'
+      + '<span class="gp-ch-reward">+' + g.akasha.toLocaleString() + (i === 6 ? ' · +2%' : '') + '</span></div>' + rows + '</div>';
+  });
+  el.innerHTML = '<div class="gp-top"><button class="gp-back" id="gpBack" aria-label="Back">←</button><div class="gp-title">The Seven Gifts</div></div>'
+    + '<div class="gp-sub">Complete each gift’s challenges to open it. The seventh grants a permanent <b>+2% akasha</b>.' + (earned ? ' <b>· Earned</b>' : '') + '</div>'
+    + '<div class="gp-tabs"><button class="gp-tab' + (_gpTab === 'gifts' ? ' on' : '') + '" data-gptab="gifts">The Gifts</button>'
+    + '<button class="gp-tab' + (_gpTab === 'challenges' ? ' on' : '') + '" data-gptab="challenges">Challenges</button></div>'
+    + '<div class="gp-body" id="gpBody">' + (_gpTab === 'gifts' ? giftsTab : chTab) + '</div>';
+  document.getElementById('gpBack').onclick = closeGiftPath;
+  el.querySelectorAll('.gp-tab').forEach(function(b){ b.onclick = function(){ _gpTab = b.dataset.gptab; renderGiftPathScreen(); }; });
+  el.querySelectorAll('[data-claim]').forEach(function(b){ b.onclick = function(){ claimGift(parseInt(b.dataset.claim, 10)); }; });
+  var grid = el.querySelector('.gp-gifts'); if (grid) _gpAttachLong(grid);
+}
+function _gpAttachLong(host) {
+  if (!host || host._gpLp) return; host._gpLp = true;
+  var timer = null;
+  var start = function(){ timer = setTimeout(giftPathTestAdvance, 700); };
+  var cancel = function(){ if (timer) { clearTimeout(timer); timer = null; } };
+  host.addEventListener('touchstart', start, { passive: true });
+  ['touchend','touchmove','touchcancel'].forEach(function(ev){ host.addEventListener(ev, cancel); });
+  host.addEventListener('mousedown', start); ['mouseup','mouseleave'].forEach(function(ev){ host.addEventListener(ev, cancel); });
+}
+function openGiftPath() {
+  ensureGiftPathStarted(); evaluateGiftPath();
+  var el = document.getElementById('giftPathOverlay');
+  if (el.parentNode !== document.body) document.body.appendChild(el);
+  renderGiftPathScreen();
+  el.classList.add('gp-show');
+  requestAnimationFrame(function(){ requestAnimationFrame(function(){ el.classList.add('gp-vis'); }); });
+}
+function closeGiftPath() { var el = document.getElementById('giftPathOverlay'); el.classList.remove('gp-vis'); setTimeout(function(){ el.classList.remove('gp-show'); }, 400); }
+
 
 function renderPathQuests() {
   var root = document.getElementById('pathQuestRoot');
@@ -25042,7 +25133,6 @@ function renderPathQuests() {
     + '</div>';
 
   root.innerHTML = html;
-  if (typeof renderDevotionCard === 'function') renderDevotionCard();
 
   var pqTwoADayBtn = root.querySelector('#pqTwoADayBtn');
   if (pqTwoADayBtn) {
@@ -32988,6 +33078,7 @@ document.addEventListener('DOMContentLoaded',function(){(function(){
 <div id="tutPostSession"></div>
 <div id="streakOverlay"></div>
 <div id="societyOverlay"></div>
+<div class="gp-overlay" id="giftPathOverlay"></div>
 
 <div id="friendsPanel">
   <div class="fp-header">
