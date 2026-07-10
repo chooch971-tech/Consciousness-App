@@ -9855,8 +9855,26 @@ function renderProfileFriendStreaks(signedIn) {
     el.innerHTML = html;
     return;
   }
-  el.innerHTML = '<div class="prof-friend"><button class="prof-friend__ring prof-friend__ring--add" data-prof-addfriend="1">+</button><div class="prof-friend__name">Add</div></div>';
+  // Paint instantly from the persisted cache (avatars and all), then refresh
+  // from the network. First-ever load with no cache shows just the Add button.
+  var cached = getCachedFriendsList();
+  el.innerHTML = cached.length ? _friendStripHtml(cached)
+    : '<div class="prof-friend"><button class="prof-friend__ring prof-friend__ring--add" data-prof-addfriend="1">+</button><div class="prof-friend__name">Add</div></div>';
   loadProfileFriendStreaks();
+}
+
+function _friendStripHtml(friends) {
+  var html = '';
+  (friends || []).slice(0, 4).forEach(function(f) {
+    var nm = f.username || '?';
+    html += '<div class="prof-friend" data-friend-id="' + escHtml(f.userId) + '">'
+      + _friendRingHtml(nm[0] || '?', f.profilePic || '')
+      + '<div class="prof-friend__name">@' + escHtml(nm) + '</div>'
+      + '<div class="prof-friend__streak">🔥 ' + (f.streak || 0) + '</div>'
+      + '</div>';
+  });
+  html += '<div class="prof-friend"><button class="prof-friend__ring prof-friend__ring--add" data-prof-addfriend="1">+</button><div class="prof-friend__name">Add</div></div>';
+  return html;
 }
 
 async function loadProfileFriendStreaks() {
@@ -9865,20 +9883,9 @@ async function loadProfileFriendStreaks() {
     var res = await fetch(SYNC_API_URL + '/friends/list', { headers: { 'Authorization': 'Bearer ' + authToken } });
     var data = await res.json();
     cacheFriends(data.friends || []);
-    var friends = (data.friends || []).slice(0, 4);
     var el = document.getElementById('profFriendStreaks');
     if (!el) return;
-    var html = '';
-    friends.forEach(function(f) {
-      var nm = f.username || '?';
-      html += '<div class="prof-friend" data-friend-id="' + escHtml(f.userId) + '">'
-        + _friendRingHtml(nm[0] || '?', f.profilePic || '')
-        + '<div class="prof-friend__name">@' + escHtml(nm) + '</div>'
-        + '<div class="prof-friend__streak">🔥 ' + (f.streak || 0) + '</div>'
-        + '</div>';
-    });
-    html += '<div class="prof-friend"><button class="prof-friend__ring prof-friend__ring--add" data-prof-addfriend="1">+</button><div class="prof-friend__name">Add</div></div>';
-    el.innerHTML = html;
+    el.innerHTML = _friendStripHtml(data.friends || []);
   } catch(e) {}
 }
 
@@ -9952,9 +9959,20 @@ function _friendRingHtml(initial, pic) {
 
 // ── Friend profile view (mirrors the user's own Profile layout) ──
 var _friendProfileCache = {};
+// Persist the friends list (avatars included) so every friend surface can paint
+// instantly from cache on open, instead of leaving blank rings until the
+// /friends/list round-trip returns and the avatars "pop in".
+var FRIENDS_CACHE_KEY = 'presence_friends_cache_v1';
 function cacheFriends(list) {
   (list || []).forEach(function(f) { if (f && f.userId) _friendProfileCache[f.userId] = f; });
+  try { localStorage.setItem(FRIENDS_CACHE_KEY, JSON.stringify((list || []).slice(0, 60))); } catch(e) {}
 }
+function getCachedFriendsList() {
+  try { var a = JSON.parse(localStorage.getItem(FRIENDS_CACHE_KEY)); return Array.isArray(a) ? a : []; } catch(e) { return []; }
+}
+// Warm the in-memory profile cache from persisted friends at startup so a tap
+// straight into a friend's profile has their data before any fetch resolves.
+(function(){ getCachedFriendsList().forEach(function(f){ if (f && f.userId) _friendProfileCache[f.userId] = f; }); })();
 function openFriendProfile(userId) {
   var f = _friendProfileCache[userId];
   if (!f) return;
@@ -12825,7 +12843,11 @@ function openStreakSociety() {
   if (!authToken) {
     renderSignedOut();
   } else {
-    body.innerHTML = '<div class="soc-msg" style="font-family:\'DM Mono\',monospace;font-size:10px;letter-spacing:.24em;text-transform:uppercase;font-style:normal;">Loading&hellip;</div>';
+    // Paint from cache first (avatars included) so vigils show immediately; the
+    // network refresh below then updates streak state.
+    var _socCached = (typeof getCachedFriendsList === 'function') ? getCachedFriendsList() : [];
+    if (_socCached.length) renderFriends(_socCached);
+    else body.innerHTML = '<div class="soc-msg" style="font-family:\'DM Mono\',monospace;font-size:10px;letter-spacing:.24em;text-transform:uppercase;font-style:normal;">Loading&hellip;</div>';
     fetch(SYNC_API_URL + '/friends/list', { headers: { 'Authorization': 'Bearer ' + authToken } })
       .then(function(res) { return res.json(); })
       .then(function(data) {
@@ -27863,6 +27885,8 @@ async function authLogout(options) {
   localStorage.removeItem('presence_auth_email');
   localStorage.removeItem('presence_auth_username');
   localStorage.removeItem('presence_private_profile');
+  try { localStorage.removeItem(FRIENDS_CACHE_KEY); } catch(e) {}
+  _friendProfileCache = {};
   syncEnabled = false;
   // Deliberate sign-out: wipe local progress so a signed-out device shows a
   // clean slate instead of the previous account's data. The data is safe in the
@@ -33371,6 +33395,10 @@ function closeFriendsPanel() {
 
 async function loadFriendsPanel() {
   if (!authToken) return;
+  // Paint the last-known list instantly so the panel isn't blank while the
+  // network round-trip is in flight.
+  var _cached = getCachedFriendsList();
+  if (_cached.length) renderFriendsList(_cached);
   // Load friends list
   try {
     var res = await fetch(SYNC_API_URL + '/friends/list', { headers: { 'Authorization': 'Bearer ' + authToken } });
