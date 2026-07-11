@@ -742,13 +742,40 @@
     .lodge-csend { padding:8px 13px; border:1px solid rgba(126,184,164,.35); border-radius:8px; background:rgba(126,184,164,.08); color:#7eb8a4; font-family:'DM Mono',monospace; font-size:9px; letter-spacing:.12em; text-transform:uppercase; cursor:pointer; }
     .likers-row { font-family:'DM Mono',monospace; font-size:12px; color:var(--text); padding:9px 2px; border-bottom:1px solid var(--border); }
     .likers-row.private { color:var(--muted); font-style:italic; }
-    /* Lodge banner + tabs + blogs */
-    .lodge-banner { position:relative; background:linear-gradient(135deg, rgba(126,184,164,.14), rgba(232,200,122,.07)); border:1px solid rgba(126,184,164,.22); border-radius:14px; padding:18px; margin-bottom:16px; display:flex; align-items:center; justify-content:space-between; gap:14px; overflow:hidden; }
-    .lodge-banner__label { font-size:9px; letter-spacing:.22em; text-transform:uppercase; color:var(--accent); margin-bottom:6px; font-family:'DM Mono',monospace; }
-    .lodge-banner__sub { font-size:11px; color:var(--muted); line-height:1.6; font-family:'DM Mono',monospace; }
-    .lodge-banner__pen { font-size:32px; flex-shrink:0; filter:drop-shadow(0 0 10px rgba(232,200,122,.45)); }
-    .lodge-tab { flex:1; padding:9px; border-radius:9px; border:1px solid var(--border); background:transparent; color:var(--muted); font-family:'DM Mono',monospace; font-size:9px; letter-spacing:.16em; text-transform:uppercase; cursor:pointer; }
-    .lodge-tab.on { border-color:rgba(126,184,164,.45); color:var(--accent); background:rgba(126,184,164,.08); }
+    /* Lodge banner (Playground-scale) + tabs + blogs */
+    .lodge-banner { position:relative; height:150px; border-radius:20px; overflow:hidden; margin-bottom:18px;
+      display:flex; align-items:center; padding:0 24px;
+      background:linear-gradient(145deg,#101c22 0%,#14262a 44%,#0c161c 100%);
+      border:1px solid rgba(126,184,164,.2); }
+    .lodge-banner::before { content:''; position:absolute; inset:0; pointer-events:none;
+      background:radial-gradient(ellipse 55% 70% at 80% 52%,rgba(126,184,164,.28) 0%,transparent 68%); }
+    .lodge-banner::after { content:''; position:absolute; inset:0; pointer-events:none;
+      background:radial-gradient(ellipse 42% 55% at 72% 46%,rgba(232,200,122,.18) 0%,transparent 60%); }
+    .lodge-banner-text { position:relative; z-index:3; display:flex; flex-direction:column; gap:5px; }
+    .lodge-banner__label { font-size:8px; letter-spacing:.28em; text-transform:uppercase; color:rgba(142,204,192,.85); font-family:'DM Mono',monospace; }
+    .lodge-banner__title { font-family:'Cormorant Garamond',serif; font-size:30px; font-weight:300; line-height:1; color:#e6f0e8; }
+    .lodge-banner__sub { font-size:9px; color:rgba(196,220,206,.6); line-height:1.55; max-width:190px; letter-spacing:.02em; font-family:'DM Mono',monospace; }
+    .lodge-banner__pen { position:relative; z-index:2; margin-left:auto; font-size:46px;
+      filter:drop-shadow(0 0 16px rgba(232,200,122,.55)); animation:lodgePenFloat 5s ease-in-out infinite; }
+    @keyframes lodgePenFloat { 0%,100%{transform:translateY(0) rotate(-6deg);} 50%{transform:translateY(-7px) rotate(5deg);} }
+    .lodge-ink { position:absolute; border-radius:50%; opacity:0; pointer-events:none; z-index:1;
+      background:radial-gradient(circle at 35% 30%, rgba(240,222,170,.6), rgba(232,200,122,.12));
+      animation:lodgeInk 6.5s ease-in infinite; }
+    @keyframes lodgeInk { 0%{transform:translateY(0) scale(1); opacity:0;} 12%{opacity:.85;} 100%{transform:translateY(-110px) scale(.4); opacity:0;} }
+    #lodgeTabs { display:flex; gap:10px; margin-bottom:16px; }
+    .lodge-tab { flex:1; display:flex; flex-direction:column; align-items:center; gap:4px; padding:15px 10px 13px;
+      border-radius:14px; border:1px solid var(--border); background:var(--surface); cursor:pointer;
+      font-family:'DM Mono',monospace; color:var(--muted); transition:border-color .18s, background .18s, box-shadow .18s, color .18s; }
+    .lodge-tab__icon { font-size:19px; line-height:1; opacity:.75; }
+    .lodge-tab__name { font-size:11px; letter-spacing:.2em; text-transform:uppercase; font-weight:600; }
+    .lodge-tab__sub { font-size:8.5px; letter-spacing:.04em; opacity:.75; }
+    .lodge-tab.on { border-color:rgba(126,184,164,.55); color:#8eccc0;
+      background:linear-gradient(160deg, rgba(126,184,164,.17), rgba(126,184,164,.05));
+      box-shadow:0 0 20px -6px rgba(126,184,164,.5); }
+    .lodge-tab.on[data-lodge-tab="blog"] { border-color:rgba(232,200,122,.55); color:#e8c87a;
+      background:linear-gradient(160deg, rgba(232,200,122,.15), rgba(232,200,122,.04));
+      box-shadow:0 0 20px -6px rgba(232,200,122,.5); }
+    .lodge-tab.on .lodge-tab__icon { opacity:1; }
     .lodge-blog-title { font-family:'Cormorant Garamond',serif; font-size:19px; font-weight:400; color:var(--text); margin-bottom:6px; line-height:1.3; }
     /* Lodge chat */
     .chat-row { display:flex; }
@@ -5347,15 +5374,28 @@ body:not(.tut-live) #tutCorgi {
     </div>
     <div id="lodgeBody" style="flex:1; overflow-y:auto; -webkit-overflow-scrolling:touch; scrollbar-width:none; -ms-overflow-style:none;">
       <div class="lodge-banner" id="lodgeBanner">
-        <div>
+        <i class="lodge-ink" style="width:9px;height:9px;left:60%;bottom:18px;animation-delay:0s;"></i>
+        <i class="lodge-ink" style="width:6px;height:6px;left:68%;bottom:12px;animation-delay:1.4s;"></i>
+        <i class="lodge-ink" style="width:11px;height:11px;left:75%;bottom:24px;animation-delay:2.6s;"></i>
+        <i class="lodge-ink" style="width:5px;height:5px;left:82%;bottom:16px;animation-delay:3.8s;"></i>
+        <div class="lodge-banner-text">
           <div class="lodge-banner__label">The Shared Record</div>
-          <div class="lodge-banner__sub">Short notes and longer essays from practitioners on the path.</div>
+          <div class="lodge-banner__title">The Lodge</div>
+          <div class="lodge-banner__sub">Notes and essays from practitioners walking the path beside you</div>
         </div>
         <div class="lodge-banner__pen">&#10002;&#65039;</div>
       </div>
-      <div id="lodgeTabs" style="display:flex; gap:8px; margin-bottom:14px;">
-        <button class="lodge-tab on" data-lodge-tab="note">Posts</button>
-        <button class="lodge-tab" data-lodge-tab="blog">Blogs</button>
+      <div id="lodgeTabs">
+        <button class="lodge-tab on" data-lodge-tab="note">
+          <span class="lodge-tab__icon">✧</span>
+          <span class="lodge-tab__name">Posts</span>
+          <span class="lodge-tab__sub">quick notes</span>
+        </button>
+        <button class="lodge-tab" data-lodge-tab="blog">
+          <span class="lodge-tab__icon">✒</span>
+          <span class="lodge-tab__name">Blogs</span>
+          <span class="lodge-tab__sub">longer essays</span>
+        </button>
       </div>
       <button class="prof-status" id="lodgeComposer" style="width:100%; margin-bottom:18px;">
         <div class="prof-status__text prof-status__text--empty" id="lodgeComposerHint">Share what’s present for you today…</div>
@@ -33859,7 +33899,7 @@ function _lodgeSetTabUi() {
 }
 function openLodge() {
   _lodgeUserFilter = null;
-  document.getElementById('lodgeTitle').textContent = 'The Lodge';
+  document.getElementById('lodgeTitle').textContent = '';
   document.getElementById('lodgeComposer').style.display = '';
   document.getElementById('lodgeBanner').style.display = '';
   document.getElementById('lodgeTabs').style.display = '';
