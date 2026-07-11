@@ -5235,6 +5235,7 @@ body:not(.tut-live) #tutCorgi {
         </button>
         <div class="prof-hero__name" id="profDisplayName">Guest</div>
         <div class="prof-hero__handle" id="profHandle"></div>
+        <div class="prof-hero__handle" id="profFollowCounts" style="margin-top:4px;"></div>
         <button class="prof-cta" id="profCtaBtn">Complete Profile</button>
       </div>
       <input type="file" id="profPicInput" accept="image/*" style="display:none;"/>
@@ -5280,6 +5281,14 @@ body:not(.tut-live) #tutCorgi {
         <div class="prof-hero__name" id="friendProfName">@friend</div>
         <div class="prof-hero__handle" id="friendProfHandle"></div>
         <div class="prof-hero__status" id="friendProfStatus" style="display:none;"></div>
+        <div id="friendProfSocial" style="margin-top:14px; display:none; flex-direction:column; align-items:center; gap:10px;">
+          <div id="friendProfCounts" style="font-size:10px; color:var(--muted); font-family:'DM Mono',monospace; letter-spacing:.08em;"></div>
+          <button id="friendFollowBtn" class="prof-cta" style="margin-top:0; padding:10px 24px;"></button>
+          <div style="display:flex; gap:18px;">
+            <button id="friendBlockBtn" class="lodge-act">Block</button>
+            <button id="friendReportBtn" class="lodge-act">&#9873; Report</button>
+          </div>
+        </div>
       </div>
 
       <div class="prof-section">
@@ -5308,7 +5317,10 @@ body:not(.tut-live) #tutCorgi {
   <div class="screen" id="lodgeScreen" style="flex-direction:column;">
     <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; flex-shrink:0;">
       <div style="font-family:Cormorant Garamond,serif; font-size:24px; font-weight:300;">The Lodge</div>
-      <button class="history-back" id="lodgeBack">← back</button>
+      <div style="display:flex; align-items:center; gap:16px;">
+        <button id="lodgeBell" class="lodge-act" style="font-size:15px; position:relative;" aria-label="Notifications">&#128276;<span id="lodgeBellBadge" style="display:none; position:absolute; top:-5px; right:-8px; background:#d4956e; color:#0e0f17; border-radius:8px; font-size:8px; padding:1px 4px; font-family:'DM Mono',monospace;"></span></button>
+        <button class="history-back" id="lodgeBack">← back</button>
+      </div>
     </div>
     <div id="lodgeBody" style="flex:1; overflow-y:auto; -webkit-overflow-scrolling:touch; scrollbar-width:none; -ms-overflow-style:none;">
       <button class="prof-status" id="lodgeComposer" style="width:100%; margin-bottom:18px;">
@@ -10014,6 +10026,16 @@ function renderProfile() {
   document.getElementById('profDisplayName').textContent = display;
   var handleEl = document.getElementById('profHandle');
   handleEl.textContent = signedIn ? (authUsername ? '@' + authUsername : (authEmail || '')) : 'Not signed in';
+  var fcEl = document.getElementById('profFollowCounts');
+  if (fcEl) {
+    fcEl.textContent = '';
+    if (signedIn && authToken) {
+      fetch(SERVER_URL + '/api/social/users/me/summary', { headers: { 'Authorization': 'Bearer ' + authToken } })
+        .then(function(r) { return r.json(); })
+        .then(function(s) { if (s && typeof s.followers === 'number') fcEl.textContent = s.followers + ' followers · ' + s.following + ' following'; })
+        .catch(function() {});
+    }
+  }
 
   // Avatar (uploaded picture or initial)
   var av = document.getElementById('profAvatar');
@@ -10236,6 +10258,7 @@ function renderFriendProfile(f) {
 
   renderFriendProfSimilar(f.userId);
   renderFriendAchievements(f);
+  if (typeof loadFriendSocial === 'function') loadFriendSocial(f);
 }
 
 // Show only the achievements a friend has actually earned (read-only, tappable).
@@ -33678,6 +33701,15 @@ document.addEventListener('DOMContentLoaded',function(){(function(){
   </div>
 </div>
 
+<!-- Notifications list -->
+<div class="status-ov" id="notifOverlay">
+  <div class="status-ov__card">
+    <div class="status-ov__title">Notifications</div>
+    <div id="notifList" style="max-height:55vh; overflow-y:auto; margin-top:6px;"></div>
+    <div class="status-ov__row"><button class="status-ov__btn" id="notifCloseBtn">Close</button></div>
+  </div>
+</div>
+
 <!-- Daily status editor -->
 <div class="status-ov" id="statusOverlay">
   <div class="status-ov__card">
@@ -33732,6 +33764,7 @@ function openLodge() {
   _lodgePosts = _lodgeCachedList();
   renderLodgeFeed();
   loadLodgeFeed();
+  loadLodgeNotifs();
 }
 
 async function loadLodgeFeed(cursor) {
@@ -33763,7 +33796,8 @@ function _lodgePostHtml(p) {
     + '<button class="lodge-act' + (p.likedByMe ? ' liked' : '') + '" data-lodge-like>' + (p.likedByMe ? '♥' : '♡')
     + ' <span data-like-count>' + (p.likeCount || 0) + '</span></button>'
     + '<button class="lodge-act" data-lodge-comments>◌ <span data-comment-count>' + (p.commentCount || 0) + '</span></button>'
-    + (p.mine ? '<button class="lodge-act lodge-del" data-lodge-del aria-label="Delete post">✕</button>' : '')
+    + (p.mine ? '<button class="lodge-act lodge-del" data-lodge-del aria-label="Delete post">✕</button>'
+               : '<button class="lodge-act lodge-del" data-lodge-report aria-label="Report post">⚑</button>')
     + '</div>'
     + '<div class="lodge-comments"><div data-comment-list></div>'
     + '<div class="lodge-crow"><input class="lodge-cinput" maxlength="280" placeholder="Add a comment…"/>'
@@ -33895,6 +33929,7 @@ document.getElementById('lodgeFeed').addEventListener('click', function(e) {
   if (e.target.closest('[data-lodge-like]')) { toggleLodgeLike(pid, card); return; }
   if (e.target.closest('[data-lodge-comments]')) { toggleLodgeComments(pid, card); return; }
   if (e.target.closest('[data-lodge-del]')) { deleteLodgePost(pid, card); return; }
+  if (e.target.closest('[data-lodge-report]')) { reportLodgeContent('post', pid); return; }
   if (e.target.closest('.lodge-csend')) { sendLodgeComment(pid, card); return; }
 });
 document.getElementById('lodgeComposer').addEventListener('click', function() { openStatusEditor(); });
@@ -33908,6 +33943,131 @@ document.getElementById('drawerLodge').addEventListener('click', function() {
 (function() {
   var ov = document.getElementById('likersOverlay');
   document.getElementById('likersCloseBtn').addEventListener('click', function() { ov.classList.remove('on'); });
+  ov.addEventListener('click', function(e) { if (e.target === ov) ov.classList.remove('on'); });
+})();
+
+// ── Lodge Phase 2: follows, block/report, notifications ──
+async function followUser(userId, btn) {
+  if (!authToken) { showToast('Sign in to follow'); return; }
+  if (btn) btn.disabled = true;
+  try {
+    var res = await fetch(SERVER_URL + '/api/social/follow', {
+      method: 'POST',
+      headers: { 'Authorization': 'Bearer ' + authToken, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ userId: userId })
+    });
+    var d = await res.json();
+    if (res.ok) { if (btn) { btn.textContent = d.status === 'pending' ? 'Requested' : 'Following'; btn.style.opacity = '.5'; } }
+    else { if (btn) btn.disabled = false; showToast(d.error || 'Follow failed'); }
+  } catch(e) { if (btn) btn.disabled = false; }
+}
+
+async function approveFollow(userId) {
+  try {
+    await fetch(SERVER_URL + '/api/social/follow/approve', {
+      method: 'POST', headers: { 'Authorization': 'Bearer ' + authToken, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ userId: userId })
+    });
+  } catch(e) {}
+  loadFriendsPanel();
+}
+async function declineFollow(userId) {
+  try {
+    await fetch(SERVER_URL + '/api/social/follow/decline', {
+      method: 'POST', headers: { 'Authorization': 'Bearer ' + authToken, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ userId: userId })
+    });
+  } catch(e) {}
+  loadFriendsPanel();
+}
+
+async function reportLodgeContent(kind, refId) {
+  var reason = window.prompt('Why are you reporting this? (optional)') || '';
+  try {
+    await fetch(SERVER_URL + '/api/social/report', {
+      method: 'POST', headers: { 'Authorization': 'Bearer ' + authToken, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ kind: kind, refId: refId, reason: reason })
+    });
+    showToast('Reported. Thank you.');
+  } catch(e) {}
+}
+
+// Friend profile: counts + follow/block/report controls.
+async function loadFriendSocial(f) {
+  var box = document.getElementById('friendProfSocial');
+  if (!box || !authToken || !f || !f.userId) return;
+  box.style.display = 'flex';
+  var counts = document.getElementById('friendProfCounts');
+  var btn = document.getElementById('friendFollowBtn');
+  counts.textContent = ''; btn.textContent = '…'; btn.disabled = true;
+  try {
+    var res = await fetch(SERVER_URL + '/api/social/users/' + encodeURIComponent(f.userId) + '/summary', {
+      headers: { 'Authorization': 'Bearer ' + authToken }
+    });
+    if (!res.ok) { box.style.display = 'none'; return; }
+    var s = await res.json();
+    counts.textContent = (s.followers || 0) + ' followers · ' + (s.following || 0) + ' following';
+    btn.disabled = false;
+    btn.textContent = s.blocked ? 'Unblock' : s.iFollow === 'active' ? 'Following ✓' : s.iFollow === 'pending' ? 'Requested' : 'Follow';
+    btn.onclick = async function() {
+      btn.disabled = true;
+      var ep = s.blocked ? '/unblock' : s.iFollow ? '/unfollow' : '/follow';
+      if (ep === '/unfollow' && !window.confirm('Unfollow @' + (f.username || '') + '?')) { btn.disabled = false; return; }
+      try {
+        await fetch(SERVER_URL + '/api/social' + ep, {
+          method: 'POST', headers: { 'Authorization': 'Bearer ' + authToken, 'Content-Type': 'application/json' },
+          body: JSON.stringify({ userId: f.userId })
+        });
+      } catch(e) {}
+      loadFriendSocial(f);
+    };
+    var bb = document.getElementById('friendBlockBtn');
+    bb.style.display = s.blocked ? 'none' : '';
+    bb.onclick = async function() {
+      if (!window.confirm('Block @' + (f.username || '') + '? They will be removed from your friends and follows, both ways.')) return;
+      try {
+        await fetch(SERVER_URL + '/api/social/block', {
+          method: 'POST', headers: { 'Authorization': 'Bearer ' + authToken, 'Content-Type': 'application/json' },
+          body: JSON.stringify({ userId: f.userId })
+        });
+      } catch(e) {}
+      showToast('Blocked');
+      loadFriendSocial(f);
+    };
+    document.getElementById('friendReportBtn').onclick = function() { reportLodgeContent('user', f.userId); };
+  } catch(e) { box.style.display = 'none'; }
+}
+
+// Notifications bell.
+var _lodgeNotifs = [];
+var NOTIF_COPY = { like: 'liked your post', comment: 'commented on your post', follow: 'now follows you', follow_req: 'requested to follow you', approved: 'approved your follow request' };
+async function loadLodgeNotifs() {
+  if (!authToken) return;
+  try {
+    var res = await fetch(SERVER_URL + '/api/social/notifications', { headers: { 'Authorization': 'Bearer ' + authToken } });
+    if (!res.ok) return;
+    var d = await res.json();
+    _lodgeNotifs = d.notifications || [];
+    var b = document.getElementById('lodgeBellBadge');
+    if (d.unseen > 0) { b.style.display = ''; b.textContent = d.unseen > 9 ? '9+' : d.unseen; }
+    else b.style.display = 'none';
+  } catch(e) {}
+}
+function openLodgeNotifs() {
+  var ov = document.getElementById('notifOverlay');
+  var list = document.getElementById('notifList');
+  list.innerHTML = _lodgeNotifs.length ? _lodgeNotifs.map(function(n) {
+    return '<div class="likers-row">@' + escHtml(n.username || '?')
+      + ' <span style="color:var(--muted);">' + (NOTIF_COPY[n.kind] || n.kind) + ' · ' + timeAgo(new Date(n.createdAt)) + '</span></div>';
+  }).join('') : '<div class="likers-row private">Nothing yet.</div>';
+  ov.classList.add('on');
+  fetch(SERVER_URL + '/api/social/notifications/seen', { method: 'POST', headers: { 'Authorization': 'Bearer ' + authToken } }).catch(function() {});
+  document.getElementById('lodgeBellBadge').style.display = 'none';
+}
+document.getElementById('lodgeBell').addEventListener('click', openLodgeNotifs);
+(function() {
+  var ov = document.getElementById('notifOverlay');
+  document.getElementById('notifCloseBtn').addEventListener('click', function() { ov.classList.remove('on'); });
   ov.addEventListener('click', function(e) { if (e.target === ov) ov.classList.remove('on'); });
 })();
 
@@ -33939,12 +34099,19 @@ async function loadFriendsPanel() {
     if (typeof achSeeFriends === 'function') achSeeFriends(data.friends || []);
     renderFriendsList(data.friends || []);
   } catch(e) { console.warn('Friends load failed', e); }
-  // Load pending requests
+  // Load pending requests (friend requests + follow requests from private-account gating)
+  var _freq = [], _folreq = [];
   try {
     var rres = await fetch(SYNC_API_URL + '/friends/requests', { headers: { 'Authorization': 'Bearer ' + authToken } });
     var rdata = await rres.json();
-    renderFriendRequests(rdata.requests || []);
+    _freq = rdata.requests || [];
   } catch(e) {}
+  try {
+    var fres = await fetch(SERVER_URL + '/api/social/follow/requests', { headers: { 'Authorization': 'Bearer ' + authToken } });
+    var fdata = await fres.json();
+    _folreq = fdata.requests || [];
+  } catch(e) {}
+  renderFriendRequests(_freq, _folreq);
 }
 
 function renderFriendsList(friends) {
@@ -33977,11 +34144,12 @@ function renderFriendsList(friends) {
   }).join('');
 }
 
-function renderFriendRequests(requests) {
+function renderFriendRequests(requests, followReqs) {
+  requests = requests || []; followReqs = followReqs || [];
   var sec = document.getElementById('fpRequestsSection');
   var el = document.getElementById('fpRequestsList');
   if (!sec || !el) return;
-  if (!requests.length) { sec.style.display='none'; return; }
+  if (!requests.length && !followReqs.length) { sec.style.display='none'; return; }
   sec.style.display='block';
   el.innerHTML = requests.map(function(r) {
     return '<div class="fp-request-row">'
@@ -33989,6 +34157,13 @@ function renderFriendRequests(requests) {
       + '<div style="display:flex;gap:6px;">'
       + '<button class="fp-accept-btn" onclick="acceptFriend(\'' + r.userId + '\')">Accept</button>'
       + '<button class="fp-decline-btn" onclick="declineFriend(\'' + r.userId + '\')">Decline</button>'
+      + '</div></div>';
+  }).join('') + followReqs.map(function(r) {
+    return '<div class="fp-request-row">'
+      + '<span class="fp-user-name">@' + escHtml(r.username) + ' <span style="color:var(--muted);font-size:9px;">wants to follow you</span></span>'
+      + '<div style="display:flex;gap:6px;">'
+      + '<button class="fp-accept-btn" onclick="approveFollow(\'' + escHtml(r.userId) + '\')">Approve</button>'
+      + '<button class="fp-decline-btn" onclick="declineFollow(\'' + escHtml(r.userId) + '\')">Decline</button>'
       + '</div></div>';
   }).join('');
 }
@@ -34006,8 +34181,10 @@ async function searchFriends() {
     resultsEl.innerHTML = users.map(function(u) {
       return '<div class="fp-user-row">'
         + '<span class="fp-user-name">@' + escHtml(u.username) + '</span>'
+        + '<div style="display:flex;gap:6px;">'
+        + '<button class="fp-add-btn" onclick="followUser(\'' + escHtml(u.userId) + '\', this)">Follow</button>'
         + '<button class="fp-add-btn" onclick="sendFriendRequest(\'' + escHtml(u.username) + '\', this)">Add</button>'
-        + '</div>';
+        + '</div></div>';
     }).join('');
   } catch(e) { resultsEl.innerHTML = '<div class="fp-empty">Search failed.</div>'; }
 }

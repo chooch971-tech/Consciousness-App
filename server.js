@@ -68,6 +68,9 @@ let followsCollection;
 let postsCollection;
 let likesCollection;
 let commentsCollection;
+let blocksCollection;
+let reportsCollection;
+let notificationsCollection;
 let subscriptions = [];
 let prayerSchedules = [];
 let practiceSchedules = [];
@@ -142,6 +145,11 @@ async function connectDB() {
     try { await postsCollection.createIndex({ createdAt: -1 }); } catch(e) {}
     try { await likesCollection.createIndex({ postId: 1, userId: 1 }, { unique: true }); } catch(e) {}
     try { await commentsCollection.createIndex({ postId: 1, createdAt: 1 }); } catch(e) {}
+    blocksCollection = db.collection('blocks');
+    reportsCollection = db.collection('reports');
+    notificationsCollection = db.collection('notifications');
+    try { await blocksCollection.createIndex({ userId: 1, blockedId: 1 }, { unique: true }); } catch(e) {}
+    try { await notificationsCollection.createIndex({ userId: 1, createdAt: -1 }); } catch(e) {}
     // TTL: let MongoDB sweep stale beacons automatically (reads also guard on expiresAt)
     try { await beaconsCollection.createIndex({ expiresAt: 1 }, { expireAfterSeconds: 0 }); } catch(e) {}
     // Compound index makes every pull O(1) instead of a full collection scan
@@ -1708,6 +1716,7 @@ app.post('/api/social/posts/:id/like', verifyToken, async (req, res) => {
         await postsCollection.updateOne({ _id: post._id }, { $inc: { likeCount: 1 } });
       } catch(e) {} // unique-index race: already liked
       liked = true;
+      notify(post.userId, 'like', userId, postId);
     }
     const fresh = await postsCollection.findOne({ _id: post._id });
     res.json({ liked, likeCount: Math.max(0, (fresh && fresh.likeCount) || 0) });
@@ -1720,7 +1729,9 @@ app.post('/api/social/posts/:id/like', verifyToken, async (req, res) => {
 app.get('/api/social/posts/:id/likers', verifyToken, async (req, res) => {
   try {
     const viewerId = req.user.userId;
-    const likes = await likesCollection.find({ postId: req.params.id }).sort({ createdAt: -1 }).limit(100).toArray();
+    let likes = await likesCollection.find({ postId: req.params.id }).sort({ createdAt: -1 }).limit(100).toArray();
+    const hiddenL = await blockedIdSet(viewerId);
+    likes = likes.filter(l => !hiddenL.has(l.userId));
     const ids = likes.map(l => l.userId);
     if (!ids.length) return res.json({ likers: [] });
     const users = await usersCollection.find({ _id: { $in: ids.map(id => new ObjectId(id)) } })
@@ -1744,7 +1755,9 @@ app.get('/api/social/posts/:id/likers', verifyToken, async (req, res) => {
 // COMMENTS — list / add / delete own.
 app.get('/api/social/posts/:id/comments', verifyToken, async (req, res) => {
   try {
-    const comments = await commentsCollection.find({ postId: req.params.id }).sort({ createdAt: 1 }).limit(200).toArray();
+    let comments = await commentsCollection.find({ postId: req.params.id }).sort({ createdAt: 1 }).limit(200).toArray();
+    const hidden = await blockedIdSet(req.user.userId);
+    comments = comments.filter(c => !hidden.has(c.userId));
     const ids = [...new Set(comments.map(c => c.userId))];
     const users = ids.length ? await usersCollection.find({ _id: { $in: ids.map(id => new ObjectId(id)) } })
       .project({ username: 1 }).toArray() : [];
@@ -1775,6 +1788,7 @@ app.post('/api/social/posts/:id/comments', verifyToken, async (req, res) => {
     const c = { postId: post._id.toString(), userId, text, createdAt: new Date() };
     const r = await commentsCollection.insertOne(c);
     await postsCollection.updateOne({ _id: post._id }, { $inc: { commentCount: 1 } });
+    notify(post.userId, 'comment', userId, post._id.toString());
     const me = await usersCollection.findOne({ _id: new ObjectId(userId) }, { projection: { username: 1 } });
     res.json({ ok: true, comment: {
       id: r.insertedId.toString(), userId,
@@ -1797,6 +1811,181 @@ app.delete('/api/social/comments/:id', verifyToken, async (req, res) => {
   } catch (err) {
     res.status(500).json({ error: 'Delete failed' });
   }
+});
+
+// ── THE LODGE Phase 2: follows, blocks, reports, notifications ──
+
+// Users blocked by-or-blocking userId (filter both directions on reads).
+async function blockedIdSet(userId) {
+  const rows = await blocksCollection.find({ $or: [{ userId }, { blockedId: userId }] }).toArray();
+  const s = new Set();
+  rows.forEach(r => s.add(r.userId === userId ? r.blockedId : r.userId));
+  return s;
+}
+
+// Upsert-dedup notification: like/unlike cycles can't spam the target.
+async function notify(userId, kind, actorId, refId) {
+  if (!userId || userId === actorId) return;
+  try {
+    await notificationsCollection.updateOne(
+      { userId, kind, actorId, refId: refId || null },
+      { $set: { createdAt: new Date(), seenAt: null }, $setOnInsert: { userId, kind, actorId, refId: refId || null } },
+      { upsert: true }
+    );
+  } catch(e) {}
+}
+
+app.post('/api/social/follow', verifyToken, async (req, res) => {
+  try {
+    const selfId = req.user.userId; const { userId } = req.body;
+    if (!userId || typeof userId !== 'string') return res.status(400).json({ error: 'userId required' });
+    if (userId === selfId) return res.status(400).json({ error: 'Cannot follow yourself' });
+    const target = await usersCollection.findOne({ _id: new ObjectId(userId) });
+    if (!target) return res.status(404).json({ error: 'User not found' });
+    const blockedEither = await blocksCollection.findOne({ $or: [{ userId: selfId, blockedId: userId }, { userId, blockedId: selfId }] });
+    if (blockedEither) return res.status(403).json({ error: 'Unable to follow' });
+    const existing = await followsCollection.findOne({ followerId: selfId, followeeId: userId });
+    if (existing) return res.json({ status: existing.status });
+    const status = target.isPrivate ? 'pending' : 'active';
+    try { await followsCollection.insertOne({ followerId: selfId, followeeId: userId, status, createdAt: new Date() }); } catch(e) {}
+    notify(userId, status === 'pending' ? 'follow_req' : 'follow', selfId, null);
+    res.json({ status });
+  } catch (err) { res.status(500).json({ error: 'Follow failed' }); }
+});
+
+app.post('/api/social/unfollow', verifyToken, async (req, res) => {
+  try {
+    const { userId } = req.body;
+    if (!userId || typeof userId !== 'string') return res.status(400).json({ error: 'userId required' });
+    await followsCollection.deleteOne({ followerId: req.user.userId, followeeId: userId });
+    res.json({ ok: true });
+  } catch (err) { res.status(500).json({ error: 'Unfollow failed' }); }
+});
+
+app.get('/api/social/follow/requests', verifyToken, async (req, res) => {
+  try {
+    const selfId = req.user.userId;
+    const rows = await followsCollection.find({ followeeId: selfId, status: 'pending' }).sort({ createdAt: -1 }).limit(50).toArray();
+    const ids = rows.map(r => r.followerId);
+    const users = ids.length ? await usersCollection.find({ _id: { $in: ids.map(id => new ObjectId(id)) } }).project({ username: 1 }).toArray() : [];
+    const byId = {}; users.forEach(u => { byId[u._id.toString()] = u; });
+    res.json({ requests: rows.map(r => ({
+      userId: r.followerId,
+      username: (byId[r.followerId] && byId[r.followerId].username) || ('practitioner_' + String(r.followerId).slice(-5))
+    })) });
+  } catch (err) { res.status(500).json({ error: 'Requests failed' }); }
+});
+
+app.post('/api/social/follow/approve', verifyToken, async (req, res) => {
+  try {
+    const selfId = req.user.userId; const { userId } = req.body;
+    if (!userId || typeof userId !== 'string') return res.status(400).json({ error: 'userId required' });
+    const r = await followsCollection.updateOne(
+      { followerId: userId, followeeId: selfId, status: 'pending' },
+      { $set: { status: 'active' } }
+    );
+    if (r.matchedCount === 0) return res.status(404).json({ error: 'Request not found' });
+    notify(userId, 'approved', selfId, null);
+    res.json({ ok: true });
+  } catch (err) { res.status(500).json({ error: 'Approve failed' }); }
+});
+
+app.post('/api/social/follow/decline', verifyToken, async (req, res) => {
+  try {
+    const { userId } = req.body;
+    if (!userId || typeof userId !== 'string') return res.status(400).json({ error: 'userId required' });
+    await followsCollection.deleteOne({ followerId: userId, followeeId: req.user.userId, status: 'pending' });
+    res.json({ ok: true });
+  } catch (err) { res.status(500).json({ error: 'Decline failed' }); }
+});
+
+// Follower/following counts + viewer's relationship to :id ('me' = self).
+app.get('/api/social/users/:id/summary', verifyToken, async (req, res) => {
+  try {
+    const viewerId = req.user.userId;
+    const targetId = req.params.id === 'me' ? viewerId : req.params.id;
+    const followers = await followsCollection.countDocuments({ followeeId: targetId, status: 'active' });
+    const following = await followsCollection.countDocuments({ followerId: targetId, status: 'active' });
+    let iFollow = null, blocked = false;
+    if (targetId !== viewerId) {
+      const edge = await followsCollection.findOne({ followerId: viewerId, followeeId: targetId });
+      iFollow = edge ? edge.status : null;
+      blocked = !!(await blocksCollection.findOne({ userId: viewerId, blockedId: targetId }));
+    }
+    res.json({ followers, following, iFollow, blocked });
+  } catch (err) { res.status(500).json({ error: 'Summary failed' }); }
+});
+
+// BLOCK — severs follows AND the legacy friendship both ways.
+app.post('/api/social/block', verifyToken, async (req, res) => {
+  try {
+    const selfId = req.user.userId; const { userId } = req.body;
+    if (!userId || typeof userId !== 'string') return res.status(400).json({ error: 'userId required' });
+    if (userId === selfId) return res.status(400).json({ error: 'Cannot block yourself' });
+    await blocksCollection.updateOne(
+      { userId: selfId, blockedId: userId },
+      { $setOnInsert: { userId: selfId, blockedId: userId, createdAt: new Date() } },
+      { upsert: true }
+    );
+    await followsCollection.deleteMany({ $or: [{ followerId: selfId, followeeId: userId }, { followerId: userId, followeeId: selfId }] });
+    await friendsCollection.deleteMany({ $or: [{ userId: selfId, friendId: userId }, { userId, friendId: selfId }] });
+    res.json({ ok: true });
+  } catch (err) { res.status(500).json({ error: 'Block failed' }); }
+});
+
+app.post('/api/social/unblock', verifyToken, async (req, res) => {
+  try {
+    const { userId } = req.body;
+    if (!userId || typeof userId !== 'string') return res.status(400).json({ error: 'userId required' });
+    await blocksCollection.deleteOne({ userId: req.user.userId, blockedId: userId });
+    res.json({ ok: true });
+  } catch (err) { res.status(500).json({ error: 'Unblock failed' }); }
+});
+
+app.post('/api/social/report', verifyToken, async (req, res) => {
+  try {
+    const { kind, refId } = req.body;
+    if (['post', 'comment', 'user', 'message'].indexOf(kind) === -1) return res.status(400).json({ error: 'Invalid kind' });
+    if (!refId || typeof refId !== 'string' || refId.length > 64) return res.status(400).json({ error: 'refId required' });
+    const reason = sanitizeSocialText(req.body.reason || '', POST_MAX_LEN) || '';
+    const dayStart = new Date(); dayStart.setHours(0, 0, 0, 0);
+    const n = await reportsCollection.countDocuments({ reporterId: req.user.userId, createdAt: { $gte: dayStart } });
+    if (n >= 20) return res.status(429).json({ error: 'Daily report limit reached' });
+    await reportsCollection.insertOne({ reporterId: req.user.userId, kind, refId, reason, createdAt: new Date(), resolved: false });
+    res.json({ ok: true });
+  } catch (err) { res.status(500).json({ error: 'Report failed' }); }
+});
+
+// Admin review of the report queue (x-admin-secret header).
+app.get('/api/social/reports', verifyAdmin, async (req, res) => {
+  try {
+    const reports = await reportsCollection.find({ resolved: false }).sort({ createdAt: -1 }).limit(100).toArray();
+    res.json({ reports });
+  } catch (err) { res.status(500).json({ error: 'Reports failed' }); }
+});
+
+app.get('/api/social/notifications', verifyToken, async (req, res) => {
+  try {
+    const userId = req.user.userId;
+    const rows = await notificationsCollection.find({ userId }).sort({ createdAt: -1 }).limit(30).toArray();
+    const ids = [...new Set(rows.map(r => r.actorId))];
+    const users = ids.length ? await usersCollection.find({ _id: { $in: ids.map(id => new ObjectId(id)) } }).project({ username: 1 }).toArray() : [];
+    const byId = {}; users.forEach(u => { byId[u._id.toString()] = u; });
+    res.json({
+      unseen: rows.filter(r => !r.seenAt).length,
+      notifications: rows.map(r => ({
+        kind: r.kind, createdAt: r.createdAt, refId: r.refId || null,
+        username: (byId[r.actorId] && byId[r.actorId].username) || 'practitioner'
+      }))
+    });
+  } catch (err) { res.status(500).json({ error: 'Notifications failed' }); }
+});
+
+app.post('/api/social/notifications/seen', verifyToken, async (req, res) => {
+  try {
+    await notificationsCollection.updateMany({ userId: req.user.userId, seenAt: null }, { $set: { seenAt: new Date() } });
+    res.json({ ok: true });
+  } catch (err) { res.status(500).json({ error: 'Failed' }); }
 });
 
 // ── EXISTING ROUTES ──────────────────────────────────────
