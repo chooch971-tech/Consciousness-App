@@ -1421,6 +1421,7 @@
     .omnia-body-actions { display:flex; justify-content:space-between; align-items:center; gap:10px; margin-top:8px; }
     .omnia-body-effect { font-size:9px; color:var(--muted); line-height:1.4; }
     .omnia-mini-btn { border:1px solid rgba(142,204,224,.22); background:transparent; color:#8ecce0; border-radius:4px; padding:6px 8px; font-family:'DM Mono',monospace; font-size:8px; letter-spacing:.12em; text-transform:uppercase; cursor:pointer; white-space:nowrap; user-select:none; -webkit-user-select:none; -webkit-touch-callout:none; touch-action:manipulation; }
+    .omnia-mini-btn--building { border-color:rgba(232,200,122,.4); color:#e8c87a; background:rgba(232,200,122,.06); cursor:default; opacity:1; }
     .omnia-mini-btn:disabled { color:rgba(142,204,224,.45); border-color:rgba(142,204,224,.18); cursor:default; }
     .omnia-rec-card { border:1px solid rgba(212,149,110,.18); background:rgba(212,149,110,.045); border-radius:10px; padding:13px 14px; margin-bottom:12px; }
     .omnia-rec-top { display:flex; justify-content:space-between; gap:12px; align-items:flex-start; margin-bottom:7px; }
@@ -22042,6 +22043,7 @@ function showBodyLevelAward(award) {
 }
 
 function renderOmniaEngine() {
+  omniaResolveUpgradeBuilds();
   omniaAccrue();
   applyOmniaMetaMarks();
   applyOmniaCosmetics();
@@ -22301,13 +22303,22 @@ function renderOmniaEngine() {
       var stepMax = omniaUpgradeStepMax(upg.id);
       var capped = isFinite(stepMax);
       var atMax = capped && lvl >= stepMax;
+      var buildingUntil = omniaUpgradeBuilding(upg.id);
       var sub = upg.sub;
       if (upg.id === 'current') sub += ' · next +' + 55 + '/hr';
-      var btnHtml = atMax
-        ? '<button class="omnia-mini-btn" disabled style="opacity:.45;cursor:default;">Step max</button>'
-        : '<button class="omnia-mini-btn" data-omnia-upgrade="' + upg.id + '"' + ((omniaState.akasha || 0) < cost ? ' disabled' : '') + '>Upgrade ' + cost + '</button>';
+      var btnHtml;
+      if (buildingUntil) {
+        btnHtml = '<button class="omnia-mini-btn omnia-mini-btn--building" disabled>◷ <span data-build-countdown="' + upg.id + '">' + omniaBuildLabel(buildingUntil) + '</span></button>';
+      } else if (atMax) {
+        btnHtml = '<button class="omnia-mini-btn" disabled style="opacity:.45;cursor:default;">Step max</button>';
+      } else {
+        btnHtml = '<button class="omnia-mini-btn" data-omnia-upgrade="' + upg.id + '"' + ((omniaState.akasha || 0) < cost ? ' disabled' : '') + '>Upgrade ' + cost + '</button>';
+      }
+      var nameTail = buildingUntil
+        ? ' <span style="font-size:8px;color:#8eccc0;letter-spacing:.1em;">→ ' + (lvl + 1) + ' · building</span>'
+        : (atMax || !capped ? '' : ' <span style="font-size:8px;color:var(--muted);letter-spacing:.1em;">/ ' + stepMax + '</span>');
       return '<div class="omnia-upgrade-row">'
-        + '<div><div class="omnia-upgrade-name">' + upg.name + ' ' + lvl + (atMax || !capped ? '' : ' <span style="font-size:8px;color:var(--muted);letter-spacing:.1em;">/ ' + stepMax + '</span>') + '</div><div class="omnia-upgrade-sub">' + sub + '</div></div>'
+        + '<div><div class="omnia-upgrade-name">' + upg.name + ' ' + lvl + nameTail + '</div><div class="omnia-upgrade-sub">' + sub + '</div></div>'
         + btnHtml
         + '</div>';
     }).join('');
@@ -22444,15 +22455,58 @@ function fireOmniaBodyBurst(body) {
 // synthesized click doesn't apply one more on release.
 var _omniaUpgradeHeld = false;
 
+// ── Generator upgrade build timers ────────────────────────────────────────
+// Buying an upgrade starts an idle-style construction timer rather than
+// applying instantly; the level takes effect when the timer completes. Timers
+// are wall-clock (persisted as a completion timestamp), so they keep running
+// while the app is closed and resolve on return.
+function omniaBuildDurationMs(targetLevel) {
+  // Grows with the level being built, eased by Attunement (the same discount
+  // that cheapens cost). ~30s early → up to a 6h ceiling on the deepest levels.
+  var secs = Math.floor(30 * Math.pow(Math.max(1, targetLevel), 1.3) * omniaDiscountMult());
+  secs = Math.max(20, Math.min(secs, 6 * 3600));
+  return secs * 1000;
+}
+function omniaUpgradeBuilding(id) {
+  var b = omniaState.upgradeBuilds && omniaState.upgradeBuilds[id];
+  return (typeof b === 'number' && b > Date.now()) ? b : 0;
+}
+// Apply any builds whose timer has elapsed. Returns the list of completed
+// upgrade ids so callers can announce them.
+function omniaResolveUpgradeBuilds() {
+  if (!omniaState.upgradeBuilds) return [];
+  var now = Date.now(), done = [];
+  Object.keys(omniaState.upgradeBuilds).forEach(function(id) {
+    var t = omniaState.upgradeBuilds[id];
+    if (typeof t === 'number' && t <= now) {
+      if (!omniaUpgradeAtMax(id)) omniaState.upgrades[id] = (omniaState.upgrades[id] || 1) + 1;
+      delete omniaState.upgradeBuilds[id];
+      done.push(id);
+    }
+  });
+  if (done.length) saveOmniaState();
+  return done;
+}
+function omniaBuildLabel(untilMs) {
+  var s = Math.max(0, Math.ceil((untilMs - Date.now()) / 1000));
+  if (s >= 3600) return Math.floor(s / 3600) + 'h ' + Math.floor((s % 3600) / 60) + 'm';
+  if (s >= 60) return Math.floor(s / 60) + 'm ' + (s % 60) + 's';
+  return s + 's';
+}
+
 function buyOmniaUpgrade(id) {
   var upg = OMNIA_UPGRADES.find(function(u) { return u.id === id; });
   if (!upg) return false;
   if (omniaUpgradeAtMax(id)) return false;
+  if (omniaUpgradeBuilding(id)) return false;   // one build per track at a time
   var cost = omniaUpgradeCost(upg);
   if ((omniaState.akasha || 0) < cost) return false;
   omniaState.akasha -= cost;
   omniaState.totalAkashaSpent = (omniaState.totalAkashaSpent || 0) + cost;
-  omniaState.upgrades[id] = (omniaState.upgrades[id] || 1) + 1;
+  // Spend now, but the level lands only when construction finishes.
+  var targetLevel = (omniaState.upgrades[id] || 1) + 1;
+  if (!omniaState.upgradeBuilds || typeof omniaState.upgradeBuilds !== 'object') omniaState.upgradeBuilds = {};
+  omniaState.upgradeBuilds[id] = Date.now() + omniaBuildDurationMs(targetLevel);
   saveOmniaState();
   renderOmniaEngine();
   if (navigator.vibrate) { try { navigator.vibrate(5); } catch(e) {} }
@@ -26471,6 +26525,36 @@ document.getElementById('omniaEngine').addEventListener('click', function(e) {
   });
   window.addEventListener('pointerup', stopHold);
   window.addEventListener('pointercancel', stopHold);
+})();
+
+// Generator build-timer ticker: completes elapsed builds (even off the panel)
+// and live-updates visible countdowns once a second. Cheap no-op when idle.
+(function() {
+  setInterval(function() {
+    if (typeof omniaState === 'undefined' || !omniaState || !omniaState.upgradeBuilds) return;
+    var ids = Object.keys(omniaState.upgradeBuilds);
+    if (!ids.length) return;
+    var now = Date.now();
+    var engine = document.getElementById('omniaEngine');
+    var visible = engine && engine.offsetParent !== null;
+    var completed = ids.filter(function(id) { return omniaState.upgradeBuilds[id] <= now; });
+    if (completed.length) {
+      var done = omniaResolveUpgradeBuilds();
+      if (done.length && visible && typeof renderOmniaEngine === 'function') renderOmniaEngine();
+      done.forEach(function(id) {
+        var u = OMNIA_UPGRADES.find(function(x) { return x.id === id; });
+        if (u && typeof showToast === 'function') showToast('✦ ' + u.name + ' upgraded', 2600, 'gold');
+      });
+      if (done.length && typeof syncEnabled !== 'undefined' && syncEnabled && typeof authToken !== 'undefined' && authToken && typeof syncPushData === 'function') syncPushData();
+      return;
+    }
+    if (visible) {
+      ids.forEach(function(id) {
+        var el = document.querySelector('[data-build-countdown="' + id + '"]');
+        if (el) el.textContent = omniaBuildLabel(omniaState.upgradeBuilds[id]);
+      });
+    }
+  }, 1000);
 })();
 
 // Settings toggle (inline accordion)
