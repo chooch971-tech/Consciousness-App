@@ -28313,6 +28313,7 @@ async function authLogout(options) {
   localStorage.removeItem('presence_private_profile');
   try { localStorage.removeItem(STATUS_KEY); } catch(e) {}
   try { localStorage.removeItem(FRIENDS_CACHE_KEY); } catch(e) {}
+  try { localStorage.removeItem('presence_lodge_feed_v1'); } catch(e) {}
   _friendProfileCache = {};
   syncEnabled = false;
   // Deliberate sign-out: wipe local progress so a signed-out device shows a

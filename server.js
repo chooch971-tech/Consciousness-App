@@ -1723,12 +1723,15 @@ app.post('/api/social/posts/:id/like', verifyToken, async (req, res) => {
   try {
     const post = await postsCollection.findOne({ _id: new ObjectId(req.params.id) });
     if (!post) return res.status(404).json({ error: 'Post not found' });
+    if (!(await canEngagePost(req.user.userId, post))) return res.status(403).json({ error: 'Not available' });
     const postId = post._id.toString(), userId = req.user.userId;
     const existing = await likesCollection.findOne({ postId, userId });
     let liked;
     if (existing) {
-      await likesCollection.deleteOne({ _id: existing._id });
-      await postsCollection.updateOne({ _id: post._id }, { $inc: { likeCount: -1 } });
+      const del = await likesCollection.deleteOne({ _id: existing._id });
+      // Only decrement when this call actually removed the like — a concurrent
+      // duplicate unlike must not drive the counter negative.
+      if (del.deletedCount === 1) await postsCollection.updateOne({ _id: post._id }, { $inc: { likeCount: -1 } });
       liked = false;
     } else {
       try {
@@ -1749,6 +1752,9 @@ app.post('/api/social/posts/:id/like', verifyToken, async (req, res) => {
 app.get('/api/social/posts/:id/likers', verifyToken, async (req, res) => {
   try {
     const viewerId = req.user.userId;
+    const lp = await postsCollection.findOne({ _id: new ObjectId(req.params.id) });
+    if (!lp) return res.status(404).json({ error: 'Post not found' });
+    if (!(await canEngagePost(viewerId, lp))) return res.status(403).json({ error: 'Not available' });
     let likes = await likesCollection.find({ postId: req.params.id }).sort({ createdAt: -1 }).limit(100).toArray();
     const hiddenL = await blockedIdSet(viewerId);
     likes = likes.filter(l => !hiddenL.has(l.userId));
@@ -1775,6 +1781,9 @@ app.get('/api/social/posts/:id/likers', verifyToken, async (req, res) => {
 // COMMENTS — list / add / delete own.
 app.get('/api/social/posts/:id/comments', verifyToken, async (req, res) => {
   try {
+    const cp = await postsCollection.findOne({ _id: new ObjectId(req.params.id) });
+    if (!cp) return res.status(404).json({ error: 'Post not found' });
+    if (!(await canEngagePost(req.user.userId, cp))) return res.status(403).json({ error: 'Not available' });
     let comments = await commentsCollection.find({ postId: req.params.id }).sort({ createdAt: 1 }).limit(200).toArray();
     const hidden = await blockedIdSet(req.user.userId);
     comments = comments.filter(c => !hidden.has(c.userId));
@@ -1801,6 +1810,7 @@ app.post('/api/social/posts/:id/comments', verifyToken, async (req, res) => {
     if (!text) return res.status(400).json({ error: 'text required' });
     const post = await postsCollection.findOne({ _id: new ObjectId(req.params.id) });
     if (!post) return res.status(404).json({ error: 'Post not found' });
+    if (!(await canEngagePost(req.user.userId, post))) return res.status(403).json({ error: 'Not available' });
     const userId = req.user.userId;
     const dayStart = new Date(); dayStart.setHours(0, 0, 0, 0);
     const todayCount = await commentsCollection.countDocuments({ userId, createdAt: { $gte: dayStart } });
@@ -1825,8 +1835,8 @@ app.delete('/api/social/comments/:id', verifyToken, async (req, res) => {
     const c = await commentsCollection.findOne({ _id: new ObjectId(req.params.id) });
     if (!c) return res.status(404).json({ error: 'Not found' });
     if (c.userId !== req.user.userId) return res.status(403).json({ error: 'Not yours' });
-    await commentsCollection.deleteOne({ _id: c._id });
-    await postsCollection.updateOne({ _id: new ObjectId(c.postId) }, { $inc: { commentCount: -1 } });
+    const delc = await commentsCollection.deleteOne({ _id: c._id });
+    if (delc.deletedCount === 1) await postsCollection.updateOne({ _id: new ObjectId(c.postId) }, { $inc: { commentCount: -1 } });
     res.json({ ok: true });
   } catch (err) {
     res.status(500).json({ error: 'Delete failed' });
@@ -1834,6 +1844,24 @@ app.delete('/api/social/comments/:id', verifyToken, async (req, res) => {
 });
 
 // ── THE LODGE Phase 2: follows, blocks, reports, notifications ──
+
+// Whether viewer may interact with (like/comment on/read comments of) a post.
+// Guards two leaks: a blocked user re-using cached postIds to attach content
+// the owner can't see, and strangers engaging a private account's posts.
+async function canEngagePost(viewerId, post) {
+  if (post.userId === viewerId) return true;
+  const blockedEither = await blocksCollection.findOne({ $or: [
+    { userId: viewerId, blockedId: post.userId },
+    { userId: post.userId, blockedId: viewerId }
+  ] });
+  if (blockedEither) return false;
+  const owner = await usersCollection.findOne({ _id: new ObjectId(post.userId) }, { projection: { isPrivate: 1 } });
+  if (owner && owner.isPrivate) {
+    const edge = await followsCollection.findOne({ followerId: viewerId, followeeId: post.userId, status: 'active' });
+    if (!edge) return false;
+  }
+  return true;
+}
 
 // Users blocked by-or-blocking userId (filter both directions on reads).
 async function blockedIdSet(userId) {
@@ -1866,6 +1894,9 @@ app.post('/api/social/follow', verifyToken, async (req, res) => {
     if (blockedEither) return res.status(403).json({ error: 'Unable to follow' });
     const existing = await followsCollection.findOne({ followerId: selfId, followeeId: userId });
     if (existing) return res.json({ status: existing.status });
+    const dayStart = new Date(); dayStart.setHours(0, 0, 0, 0);
+    const todayFollows = await followsCollection.countDocuments({ followerId: selfId, createdAt: { $gte: dayStart } });
+    if (todayFollows >= 100) return res.status(429).json({ error: 'Daily follow limit reached' });
     const status = target.isPrivate ? 'pending' : 'active';
     try { await followsCollection.insertOne({ followerId: selfId, followeeId: userId, status, createdAt: new Date() }); } catch(e) {}
     notify(userId, status === 'pending' ? 'follow_req' : 'follow', selfId, null);
