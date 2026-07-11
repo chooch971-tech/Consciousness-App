@@ -949,6 +949,59 @@ function clampProgressSnapshot(incomingStr, prevStr, prevSyncedAt, opts) {
   }
 }
 
+// Plausibility clamp for the lifetime achievements map (presence_ach_v1.earned)
+// shown on friend profiles. Achievements are awarded client-side and can't be
+// re-derived cheaply here, so — like the other clamps — we rate-limit the
+// *count* of newly-earned achievements rather than validate each one. Friends
+// read the latest single snapshot, so trimming it protects the friend-facing
+// surface even though a pull re-unions the user's own history.
+//
+// Honest play adds a badge or two on a big day; flipping every achievement adds
+// dozens at once. When over budget, keep everything already earned in the prior
+// snapshot plus the oldest-timestamped new ones (a mass-flip stamps them all at
+// once, so the oldest are the most likely genuine). Wrongly-trimmed badges are
+// re-awarded client-side and return within a day as the budget grows.
+const ACH_FIRST_SYNC_CAP = 25;     // brand-new account: absolute ceiling
+const ACH_NEW_PER_SYNC = 8;        // base new-badge allowance per push
+const ACH_NEW_PER_DAY = 4;         // plus this many per elapsed day
+
+function clampAchSnapshot(incomingStr, prevSnap) {
+  if (!incomingStr) return { str: incomingStr, clamped: false };
+  try {
+    const incoming = JSON.parse(incomingStr);
+    if (!incoming || !incoming.earned || typeof incoming.earned !== 'object') return { str: incomingStr, clamped: false };
+    const earned = incoming.earned;
+    const incKeys = Object.keys(earned);
+
+    let prevKeys = [];
+    let allowed;
+    if (!prevSnap || !prevSnap.presence_ach_v1) {
+      allowed = ACH_FIRST_SYNC_CAP;
+    } else {
+      const prev = JSON.parse(prevSnap.presence_ach_v1) || {};
+      prevKeys = Object.keys(prev.earned || {});
+      const elapsedDays = Math.max(1 / 24, (Date.now() - new Date(prevSnap.syncedAt).getTime()) / 86400000);
+      allowed = prevKeys.length + ACH_NEW_PER_SYNC + Math.ceil(elapsedDays * ACH_NEW_PER_DAY);
+    }
+    if (incKeys.length <= allowed) return { str: incomingStr, clamped: false };
+
+    // Always retain everything earned in the prior snapshot; ration only the new.
+    const prevSet = new Set(prevKeys);
+    const keep = new Set(prevKeys.filter((k) => k in earned));
+    const budget = Math.max(0, allowed - keep.size);
+    const newKeys = incKeys.filter((k) => !prevSet.has(k))
+      .sort((a, b) => (Number(earned[a]) || 0) - (Number(earned[b]) || 0));
+    newKeys.slice(0, budget).forEach((k) => keep.add(k));
+
+    const trimmed = {};
+    incKeys.forEach((k) => { if (keep.has(k)) trimmed[k] = earned[k]; });
+    incoming.earned = trimmed;
+    return { str: JSON.stringify(incoming), clamped: true };
+  } catch (e) {
+    return { str: incomingStr, clamped: false };
+  }
+}
+
 // PUSH DATA
 app.post('/api/sync/sync/push', verifyToken, async (req, res) => {
   try {
@@ -974,6 +1027,11 @@ app.post('/api/sync/sync/push', verifyToken, async (req, res) => {
       const r = clampProgressSnapshot(data.presence_conc_v1, prevSnap && prevSnap.presence_conc_v1, prevSnap && prevSnap.syncedAt,
         { firstLevelCap: 40, maxLevelPerDay: 6 });
       data.presence_conc_v1 = r.str;
+      if (r.clamped) anyClamped = true;
+    }
+    if (data.presence_ach_v1) {
+      const r = clampAchSnapshot(data.presence_ach_v1, prevSnap);
+      data.presence_ach_v1 = r.str;
       if (r.clamped) anyClamped = true;
     }
     const omniaClamped = anyClamped;

@@ -250,8 +250,13 @@ the first-sync gap where a brand-new account's initial push had no history
 to diff against and went through unclamped. All caps are rate-of-change
 since the last stored snapshot (or generous absolute ceilings on first
 sync), so honest play is never touched but an implausible jump gets capped
-before it reaches a friend's screen. Achievements remain unclamped (union
-merge, not snapshot-diff) — a known, accepted gap, not solved here.
+before it reaches a friend's screen. Achievements are now clamped too: clampAchSnapshot rate-limits newly-earned
+lifetime badges per push (first-sync cap 25; established: prev count + 8 +
+4/elapsed-day), keeping all previously-earned and rationing the rest by oldest
+timestamp. Friends read the latest single snapshot, so trimming it protects the
+friend-facing profile even though the user's own pull re-unions history;
+wrongly-trimmed badges self-heal (client re-awards, budget grows). Monthly
+badges (few, ephemeral) intentionally left unclamped.
 
 ## 9. Risks & honest constraints
 
