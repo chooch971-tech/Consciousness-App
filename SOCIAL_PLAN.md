@@ -242,6 +242,17 @@ the Lodge now has Posts (280) and Blogs (≤5000 chars + optional title) tabs;
 blog cards render title + preview with inline Read more, and only short posts
 double as the user's status. Plus a banner with the pen mark.
 
+**Economic integrity (separate from the social feature, same review pass):**
+extended the sync-push plausibility clamp beyond Omnia (akasha/bodies/dark
+matter) to cover Awareness streak/level, Concentration level, Bardon step,
+and prestige — the numbers actually shown on friend cards/profiles. Closed
+the first-sync gap where a brand-new account's initial push had no history
+to diff against and went through unclamped. All caps are rate-of-change
+since the last stored snapshot (or generous absolute ceilings on first
+sync), so honest play is never touched but an implausible jump gets capped
+before it reaches a friend's screen. Achievements remain unclamped (union
+merge, not snapshot-diff) — a known, accepted gap, not solved here.
+
 ## 9. Risks & honest constraints
 
 - **Render cold starts** make the first feed/chat load slow after idle periods;

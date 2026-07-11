@@ -825,13 +825,39 @@ app.post('/api/sync/auth/google', async (req, res) => {
 // Honest play tops out around ~15k akasha and ~12 body levels per day, so a
 // generous 50k/day and 25 levels/day ceiling never touches real users but
 // stops console-cheated values from leaking into friend profiles via sync.
+//
+// A brand-new account has no prevSnap to diff against, so its first-ever push
+// used to go through completely unclamped — set a billion akasha before the
+// first sync and it was accepted as the honest baseline forever after. Cap
+// that first push against generous absolute ceilings (a very dedicated
+// practitioner's first few days) instead of skipping the check entirely.
+const FIRST_SYNC_CAPS = { akasha: 400000, totalAkashaEarned: 400000, darkMatter: 24000, totalDarkMatterEarned: 24000, bodyLevels: 90 };
+
 function clampOmniaSnapshot(incomingStr, prevSnap) {
-  if (!incomingStr || !prevSnap || !prevSnap.presence_omnia_v1) return { str: incomingStr, clamped: false };
+  if (!incomingStr) return { str: incomingStr, clamped: false };
+  const isFirstSync = !prevSnap || !prevSnap.presence_omnia_v1;
   try {
     const incoming = JSON.parse(incomingStr);
+    let clamped = false;
+
+    if (isFirstSync) {
+      const total = (b) => b ? (b.physical || 0) + (b.astral || 0) + (b.mental || 0) : 0;
+      if ((incoming.akasha || 0) > FIRST_SYNC_CAPS.akasha) { incoming.akasha = FIRST_SYNC_CAPS.akasha; clamped = true; }
+      if ((incoming.totalAkashaEarned || 0) > FIRST_SYNC_CAPS.totalAkashaEarned) { incoming.totalAkashaEarned = FIRST_SYNC_CAPS.totalAkashaEarned; clamped = true; }
+      if ((incoming.darkMatter || 0) > FIRST_SYNC_CAPS.darkMatter) { incoming.darkMatter = FIRST_SYNC_CAPS.darkMatter; clamped = true; }
+      if ((incoming.totalDarkMatterEarned || 0) > FIRST_SYNC_CAPS.totalDarkMatterEarned) { incoming.totalDarkMatterEarned = FIRST_SYNC_CAPS.totalDarkMatterEarned; clamped = true; }
+      if (incoming.bodies && total(incoming.bodies) > FIRST_SYNC_CAPS.bodyLevels) {
+        const scale = FIRST_SYNC_CAPS.bodyLevels / total(incoming.bodies);
+        ['physical', 'astral', 'mental'].forEach((b) => { incoming.bodies[b] = Math.max(1, Math.floor((incoming.bodies[b] || 0) * scale)); });
+        clamped = true;
+      }
+      if ((incoming.bardonStep || 1) > 3) { incoming.bardonStep = 3; clamped = true; }
+      if ((incoming.prestige || 0) > 0) { incoming.prestige = 0; clamped = true; }
+      return { str: clamped ? JSON.stringify(incoming) : incomingStr, clamped };
+    }
+
     const prev = JSON.parse(prevSnap.presence_omnia_v1);
     const elapsedDays = Math.max(1 / 24, (Date.now() - new Date(prevSnap.syncedAt).getTime()) / 86400000);
-    let clamped = false;
     const maxAkashaGain = Math.ceil(elapsedDays * 50000);
     const prevEarned = prev.totalAkashaEarned || 0;
     if ((incoming.totalAkashaEarned || 0) > prevEarned + maxAkashaGain) {
@@ -865,6 +891,58 @@ function clampOmniaSnapshot(incomingStr, prevSnap) {
       incoming.darkMatter = prevDm + maxDmGain;
       clamped = true;
     }
+    // Bardon step: honest players advance one step roughly every 1-2 weeks at
+    // minimum, so allow 1 step per 3 days — generous, but a friend seeing
+    // "Step X" the day after adding someone is now impossible, not just rare.
+    const maxStepGain = Math.max(1, Math.ceil(elapsedDays / 3));
+    const prevStep = prev.bardonStep || 1;
+    if ((incoming.bardonStep || 1) > prevStep + maxStepGain) {
+      incoming.bardonStep = prevStep + maxStepGain;
+      clamped = true;
+    }
+    // Prestige resets bardonStep to 1 and increments this counter — completing
+    // Book I over again honestly takes a long time, so 1 per 14 days is ample.
+    const maxPrestigeGain = Math.max(1, Math.ceil(elapsedDays / 14));
+    const prevPrestige = prev.prestige || 0;
+    if ((incoming.prestige || 0) > prevPrestige + maxPrestigeGain) {
+      incoming.prestige = prevPrestige + maxPrestigeGain;
+      clamped = true;
+    }
+    return { str: clamped ? JSON.stringify(incoming) : incomingStr, clamped };
+  } catch (e) {
+    return { str: incomingStr, clamped: false };
+  }
+}
+
+// Plausibility clamp for Awareness (presence_v3) and Concentration
+// (presence_conc_v1) — the streak and level numbers shown on friend cards
+// and profiles. Same rate-of-change-since-last-sync pattern as Omnia.
+// prevSyncedAt is the timestamp of the previous stored snapshot (the server's
+// own record, not client-supplied data) so elapsed real time can't be forged.
+function clampProgressSnapshot(incomingStr, prevStr, prevSyncedAt, opts) {
+  if (!incomingStr) return { str: incomingStr, clamped: false };
+  try {
+    const incoming = JSON.parse(incomingStr);
+    let clamped = false;
+    if (!prevStr) {
+      // First sync: no history to diff against — cap to generous absolutes.
+      if (opts.streakKey && (incoming[opts.streakKey] || 0) > opts.firstStreakCap) { incoming[opts.streakKey] = opts.firstStreakCap; clamped = true; }
+      if ((incoming.level || 0) > opts.firstLevelCap) { incoming.level = opts.firstLevelCap; clamped = true; }
+      return { str: clamped ? JSON.stringify(incoming) : incomingStr, clamped };
+    }
+    const prev = JSON.parse(prevStr);
+    const elapsedDays = Math.max(1 / 24, (Date.now() - new Date(prevSyncedAt).getTime()) / 86400000);
+    // A streak can only ever gain at most 1 per real calendar day since the
+    // last sync (plus 1 day of slack for timezone/boundary rounding).
+    if (opts.streakKey) {
+      const prevStreak = prev[opts.streakKey] || 0;
+      const maxStreak = prevStreak + Math.ceil(elapsedDays) + 1;
+      if ((incoming[opts.streakKey] || 0) > maxStreak) { incoming[opts.streakKey] = maxStreak; clamped = true; }
+    }
+    // Level: generous per-day cap, same pattern as Omnia's body levels.
+    const maxLevelGain = Math.max(1, Math.ceil(elapsedDays * opts.maxLevelPerDay));
+    const prevLevel = prev.level || 1;
+    if ((incoming.level || 0) > prevLevel + maxLevelGain) { incoming.level = prevLevel + maxLevelGain; clamped = true; }
     return { str: clamped ? JSON.stringify(incoming) : incomingStr, clamped };
   } catch (e) {
     return { str: incomingStr, clamped: false };
@@ -876,15 +954,30 @@ app.post('/api/sync/sync/push', verifyToken, async (req, res) => {
   try {
     const { data, deviceInfo } = req.body;
     if (!data) return res.status(400).json({ error: 'No data to sync' });
-    let omniaClamped = false;
+    let anyClamped = false;
+    // Fetch once, reuse for Omnia + Awareness + Concentration — they all diff
+    // against the same previous snapshot / timestamp.
+    const prevSnap = await syncDataCollection.find({ userId: new ObjectId(req.user.userId) })
+      .sort({ syncedAt: -1 }).limit(1).next();
     if (data.presence_omnia_v1) {
-      const prevSnap = await syncDataCollection.find({ userId: new ObjectId(req.user.userId) })
-        .sort({ syncedAt: -1 }).limit(1).next();
       const r = clampOmniaSnapshot(data.presence_omnia_v1, prevSnap);
       data.presence_omnia_v1 = r.str;
-      omniaClamped = r.clamped;
-      if (omniaClamped) console.warn(`[Sync] Clamped implausible Omnia progression for user ${req.user.userId}`);
+      if (r.clamped) anyClamped = true;
     }
+    if (data.presence_v3) {
+      const r = clampProgressSnapshot(data.presence_v3, prevSnap && prevSnap.presence_v3, prevSnap && prevSnap.syncedAt,
+        { streakKey: 'streak', firstStreakCap: 14, firstLevelCap: 20, maxLevelPerDay: 3 });
+      data.presence_v3 = r.str;
+      if (r.clamped) anyClamped = true;
+    }
+    if (data.presence_conc_v1) {
+      const r = clampProgressSnapshot(data.presence_conc_v1, prevSnap && prevSnap.presence_conc_v1, prevSnap && prevSnap.syncedAt,
+        { firstLevelCap: 40, maxLevelPerDay: 6 });
+      data.presence_conc_v1 = r.str;
+      if (r.clamped) anyClamped = true;
+    }
+    const omniaClamped = anyClamped;
+    if (anyClamped) console.warn(`[Sync] Clamped implausible progression for user ${req.user.userId}`);
     const syncData = {
       userId: new ObjectId(req.user.userId),
       presence_v3: data.presence_v3,
