@@ -9841,7 +9841,7 @@ function applyAccountFields(acct) {
 // the avatar), surfaced to friends via /friends/list, and synced to the user's
 // own devices via applyAccountFields. Empty text with a timestamp = "cleared".
 var STATUS_KEY = 'presence_status_v1';
-var STATUS_MAX = 140;
+var STATUS_MAX = 180;
 var STATUS_FRESH_MS = 3 * 24 * 60 * 60 * 1000; // a status older than 3 days stops showing
 function getMyStatus() {
   try { var s = JSON.parse(localStorage.getItem(STATUS_KEY)); return (s && typeof s.text === 'string') ? s : null; } catch(e) { return null; }
@@ -9893,7 +9893,11 @@ function closeStatusEditor() {
   var ov = document.getElementById('statusOverlay');
   if (ov) ov.classList.remove('on');
 }
-(function() {
+// Wire the status editor once the DOM exists. This script block runs during
+// parse, long before the overlay markup further down the page, so binding must
+// wait for DOMContentLoaded or the listeners attach to null and silently do
+// nothing (counter stuck at 0, Save inert).
+function _wireStatusEditor() {
   var btn = document.getElementById('profStatusBtn');
   if (btn) btn.addEventListener('click', openStatusEditor);
   var ta = document.getElementById('statusInput');
@@ -9920,7 +9924,9 @@ function closeStatusEditor() {
   if (cancel) cancel.addEventListener('click', closeStatusEditor);
   var ov = document.getElementById('statusOverlay');
   if (ov) ov.addEventListener('click', function(e) { if (e.target === ov) closeStatusEditor(); });
-})();
+}
+if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', _wireStatusEditor);
+else _wireStatusEditor();
 
 // ── PROFILE PRIVACY ─────────────────────────────────────
 // Local flag mirrors the server's user.isPrivate. When on, the account is
@@ -33613,8 +33619,8 @@ document.addEventListener('DOMContentLoaded',function(){(function(){
   <div class="status-ov__card">
     <div class="status-ov__title">Today's Status</div>
     <div class="status-ov__sub">Share a thought with your friends</div>
-    <textarea class="status-ov__ta" id="statusInput" maxlength="140" placeholder="What's present for you today?"></textarea>
-    <div class="status-ov__count"><span id="statusCount">0</span>/140</div>
+    <textarea class="status-ov__ta" id="statusInput" maxlength="180" placeholder="What's present for you today?"></textarea>
+    <div class="status-ov__count"><span id="statusCount">0</span>/180</div>
     <div class="status-ov__row">
       <button class="status-ov__btn status-ov__btn--clear" id="statusClearBtn">Clear</button>
       <button class="status-ov__btn" id="statusCancelBtn">Cancel</button>

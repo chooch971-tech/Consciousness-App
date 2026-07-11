@@ -1491,7 +1491,7 @@ app.put('/api/sync/status', verifyToken, async (req, res) => {
   try {
     let { text } = req.body;
     if (typeof text !== 'string') return res.status(400).json({ error: 'text required' });
-    text = text.replace(/[\u0000-\u001f\u007f]/g, ' ').trim().slice(0, 140);
+    text = text.replace(/[\u0000-\u001f\u007f]/g, ' ').trim().slice(0, 180);
     const status = { text, updatedAt: new Date() };
     await usersCollection.updateOne(
       { _id: new ObjectId(req.user.userId) },
