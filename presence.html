@@ -20980,11 +20980,19 @@ function omniaAkashaCap() {
 
 function omniaUpgradeStepMax(upgId) {
   // Book II (Magical Evocation) sits past Step X — caps are fully open there,
-  // since bardonStep is reset to 1 and no longer advances.
-  if (typeof darkMatterUnlocked === 'function' && darkMatterUnlocked()) return 999;
+  // since bardonStep is reset to 1 and no longer advances. Infinity → the UI
+  // renders it as uncapped rather than a placeholder number.
+  if (typeof darkMatterUnlocked === 'function' && darkMatterUnlocked()) return Infinity;
   var step = omniaState.bardonStep || 1;
-  var caps = { current:[3,6,10,15,999], vessel:[3,6,10,15,999], attunement:[2,4,7,11,999] };
-  return (caps[upgId] || [999])[Math.min(step - 1, 4)];
+  // One finite cap per Step I–X, continuing the early progression's widening
+  // deltas (current/vessel +3,+4,+5,…; attunement +2,+3,+4,…) so each step
+  // opens a few more levels rather than jumping to an "unlimited" placeholder.
+  var caps = {
+    current:    [3, 6, 10, 15, 21, 28, 36, 45, 55, 66],
+    vessel:     [3, 6, 10, 15, 21, 28, 36, 45, 55, 66],
+    attunement: [2, 4, 7, 11, 16, 22, 29, 37, 46, 56]
+  };
+  return (caps[upgId] || caps.current)[Math.min(step - 1, 9)];
 }
 
 function omniaUpgradeAtMax(upgId) {
@@ -22291,14 +22299,15 @@ function renderOmniaEngine() {
       var lvl = omniaState.upgrades[upg.id] || 1;
       var cost = omniaUpgradeCost(upg);
       var stepMax = omniaUpgradeStepMax(upg.id);
-      var atMax = lvl >= stepMax;
+      var capped = isFinite(stepMax);
+      var atMax = capped && lvl >= stepMax;
       var sub = upg.sub;
       if (upg.id === 'current') sub += ' · next +' + 55 + '/hr';
       var btnHtml = atMax
         ? '<button class="omnia-mini-btn" disabled style="opacity:.45;cursor:default;">Step max</button>'
         : '<button class="omnia-mini-btn" data-omnia-upgrade="' + upg.id + '"' + ((omniaState.akasha || 0) < cost ? ' disabled' : '') + '>Upgrade ' + cost + '</button>';
       return '<div class="omnia-upgrade-row">'
-        + '<div><div class="omnia-upgrade-name">' + upg.name + ' ' + lvl + (atMax ? '' : ' <span style="font-size:8px;color:var(--muted);letter-spacing:.1em;">/ ' + stepMax + '</span>') + '</div><div class="omnia-upgrade-sub">' + sub + '</div></div>'
+        + '<div><div class="omnia-upgrade-name">' + upg.name + ' ' + lvl + (atMax || !capped ? '' : ' <span style="font-size:8px;color:var(--muted);letter-spacing:.1em;">/ ' + stepMax + '</span>') + '</div><div class="omnia-upgrade-sub">' + sub + '</div></div>'
         + btnHtml
         + '</div>';
     }).join('');
