@@ -742,6 +742,14 @@
     .lodge-csend { padding:8px 13px; border:1px solid rgba(126,184,164,.35); border-radius:8px; background:rgba(126,184,164,.08); color:#7eb8a4; font-family:'DM Mono',monospace; font-size:9px; letter-spacing:.12em; text-transform:uppercase; cursor:pointer; }
     .likers-row { font-family:'DM Mono',monospace; font-size:12px; color:var(--text); padding:9px 2px; border-bottom:1px solid var(--border); }
     .likers-row.private { color:var(--muted); font-style:italic; }
+    /* Lodge banner + tabs + blogs */
+    .lodge-banner { position:relative; background:linear-gradient(135deg, rgba(126,184,164,.14), rgba(232,200,122,.07)); border:1px solid rgba(126,184,164,.22); border-radius:14px; padding:18px; margin-bottom:16px; display:flex; align-items:center; justify-content:space-between; gap:14px; overflow:hidden; }
+    .lodge-banner__label { font-size:9px; letter-spacing:.22em; text-transform:uppercase; color:var(--accent); margin-bottom:6px; font-family:'DM Mono',monospace; }
+    .lodge-banner__sub { font-size:11px; color:var(--muted); line-height:1.6; font-family:'DM Mono',monospace; }
+    .lodge-banner__pen { font-size:32px; flex-shrink:0; filter:drop-shadow(0 0 10px rgba(232,200,122,.45)); }
+    .lodge-tab { flex:1; padding:9px; border-radius:9px; border:1px solid var(--border); background:transparent; color:var(--muted); font-family:'DM Mono',monospace; font-size:9px; letter-spacing:.16em; text-transform:uppercase; cursor:pointer; }
+    .lodge-tab.on { border-color:rgba(126,184,164,.45); color:var(--accent); background:rgba(126,184,164,.08); }
+    .lodge-blog-title { font-family:'Cormorant Garamond',serif; font-size:19px; font-weight:400; color:var(--text); margin-bottom:6px; line-height:1.3; }
     /* Lodge chat */
     .chat-row { display:flex; }
     .chat-row.chat-mine { justify-content:flex-end; }
@@ -5338,9 +5346,20 @@ body:not(.tut-live) #tutCorgi {
       </div>
     </div>
     <div id="lodgeBody" style="flex:1; overflow-y:auto; -webkit-overflow-scrolling:touch; scrollbar-width:none; -ms-overflow-style:none;">
+      <div class="lodge-banner" id="lodgeBanner">
+        <div>
+          <div class="lodge-banner__label">The Shared Record</div>
+          <div class="lodge-banner__sub">Short notes and longer essays from practitioners on the path.</div>
+        </div>
+        <div class="lodge-banner__pen">&#10002;&#65039;</div>
+      </div>
+      <div id="lodgeTabs" style="display:flex; gap:8px; margin-bottom:14px;">
+        <button class="lodge-tab on" data-lodge-tab="note">Posts</button>
+        <button class="lodge-tab" data-lodge-tab="blog">Blogs</button>
+      </div>
       <button class="prof-status" id="lodgeComposer" style="width:100%; margin-bottom:18px;">
-        <div class="prof-status__text prof-status__text--empty">Share what’s present for you today…</div>
-        <div class="prof-status__meta"><span></span><span class="prof-status__edit">Post</span></div>
+        <div class="prof-status__text prof-status__text--empty" id="lodgeComposerHint">Share what’s present for you today…</div>
+        <div class="prof-status__meta"><span></span><span class="prof-status__edit" id="lodgeComposerCta">Post</span></div>
       </button>
       <div id="lodgeFeed"></div>
       <div id="lodgeEmpty" class="prof-empty-note" style="display:none; text-align:center; padding:26px 20px;">Nothing here yet.<br>Post a status, or add friends to see theirs.</div>
@@ -7509,7 +7528,7 @@ body:not(.tut-live) #tutCorgi {
         <span class="drawer-item-icon"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="3.6"/><path d="M5 20c1.2-3.4 3.8-5 7-5s5.8 1.6 7 5"/></svg></span>Profile
       </button>
       <button class="drawer-item" id="drawerLodge">
-        <span class="drawer-item-icon">⌂</span>The Lodge
+        <span class="drawer-item-icon">✒</span>The Lodge
       </button>
       <button class="drawer-item" id="drawerAch">
         <span class="drawer-item-icon">✦</span>Achievements
@@ -33764,6 +33783,21 @@ document.addEventListener('DOMContentLoaded',function(){(function(){
   </div>
 </div>
 
+<!-- Blog (essay) editor -->
+<div class="status-ov" id="blogOverlay">
+  <div class="status-ov__card">
+    <div class="status-ov__title">New Blog</div>
+    <div class="status-ov__sub">Longer-form writing for the Lodge</div>
+    <input id="blogTitleInput" class="lodge-cinput" maxlength="80" placeholder="Title (optional)" autocomplete="off" style="width:100%; box-sizing:border-box; font-size:13px; padding:10px 12px; margin-bottom:8px; color:var(--text);"/>
+    <textarea class="status-ov__ta" id="blogInput" maxlength="5000" style="min-height:180px;" placeholder="Write…"></textarea>
+    <div class="status-ov__count"><span id="blogCount">0</span>/5000</div>
+    <div class="status-ov__row">
+      <button class="status-ov__btn" id="blogCancelBtn">Cancel</button>
+      <button class="status-ov__btn status-ov__btn--save" id="blogSaveBtn">Publish</button>
+    </div>
+  </div>
+</div>
+
 <!-- Daily status editor -->
 <div class="status-ov" id="statusOverlay">
   <div class="status-ov__card">
@@ -33813,10 +33847,23 @@ function _lodgeCachedList() {
 }
 
 var _lodgeUserFilter = null; // {userId, username} → viewing one practitioner's posts
+var _lodgeTab = 'note';      // 'note' (280-char posts) | 'blog' (long-form)
+function _lodgeSetTabUi() {
+  document.querySelectorAll('#lodgeTabs .lodge-tab').forEach(function(t) {
+    t.classList.toggle('on', t.getAttribute('data-lodge-tab') === _lodgeTab);
+  });
+  var hint = document.getElementById('lodgeComposerHint');
+  var cta = document.getElementById('lodgeComposerCta');
+  if (hint) hint.textContent = _lodgeTab === 'blog' ? 'Write a longer piece…' : 'Share what’s present for you today…';
+  if (cta) cta.textContent = _lodgeTab === 'blog' ? 'Write' : 'Post';
+}
 function openLodge() {
   _lodgeUserFilter = null;
   document.getElementById('lodgeTitle').textContent = 'The Lodge';
   document.getElementById('lodgeComposer').style.display = '';
+  document.getElementById('lodgeBanner').style.display = '';
+  document.getElementById('lodgeTabs').style.display = '';
+  _lodgeSetTabUi();
   showScreen('lodgeScreen');
   // Instant paint from cache, then network refresh (established pattern).
   _lodgePosts = _lodgeCachedList();
@@ -33830,6 +33877,8 @@ function openLodgeUser(userId, username) {
   _lodgeUserFilter = { userId: userId, username: username };
   document.getElementById('lodgeTitle').textContent = '@' + username;
   document.getElementById('lodgeComposer').style.display = 'none';
+  document.getElementById('lodgeBanner').style.display = 'none';
+  document.getElementById('lodgeTabs').style.display = 'none';
   showScreen('lodgeScreen');
   _lodgePosts = []; _lodgeCursor = null;
   renderLodgeFeed();
@@ -33839,17 +33888,21 @@ function openLodgeUser(userId, username) {
 async function loadLodgeFeed(cursor) {
   if (!authToken) { _lodgePosts = []; renderLodgeFeed(); return; }
   try {
+    var params = [];
+    if (!_lodgeUserFilter && _lodgeTab === 'blog') params.push('type=blog');
+    else if (!_lodgeUserFilter) params.push('type=note');
+    if (cursor) params.push('cursor=' + encodeURIComponent(cursor));
     var base = _lodgeUserFilter
       ? SERVER_URL + '/api/social/users/' + encodeURIComponent(_lodgeUserFilter.userId) + '/posts'
       : SERVER_URL + '/api/social/feed';
-    var url = base + (cursor ? '?cursor=' + encodeURIComponent(cursor) : '');
+    var url = base + (params.length ? '?' + params.join('&') : '');
     var res = await fetch(url, { headers: { 'Authorization': 'Bearer ' + authToken } });
     if (!res.ok) return;
     var data = await res.json();
     var posts = (data && data.posts) || [];
     _lodgePosts = cursor ? _lodgePosts.concat(posts) : posts;
     _lodgeCursor = posts.length === 20 ? posts[posts.length - 1].createdAt : null;
-    if (!cursor && !_lodgeUserFilter) try { localStorage.setItem(LODGE_CACHE_KEY, JSON.stringify(_lodgePosts.slice(0, 20))); } catch(e) {}
+    if (!cursor && !_lodgeUserFilter && _lodgeTab === 'note') try { localStorage.setItem(LODGE_CACHE_KEY, JSON.stringify(_lodgePosts.slice(0, 20))); } catch(e) {}
     renderLodgeFeed();
   } catch(e) { console.warn('Lodge feed failed', e); }
 }
@@ -33870,12 +33923,27 @@ function _lodgeRingHtml(username, profilePic) {
 }
 function _lodgePostHtml(p) {
   var hue = _lodgeHue(p.username);
+  var bodyHtml;
+  if (p.type === 'blog') {
+    var titleHtml = p.title ? '<div class="lodge-blog-title">' + escHtml(p.title) + '</div>' : '';
+    var raw = p.text || '';
+    if (raw.length > 280) {
+      bodyHtml = titleHtml
+        + '<div class="lodge-post__text" data-blog-preview>' + escHtml(raw.slice(0, 280)) + '…</div>'
+        + '<div class="lodge-post__text" data-blog-full style="display:none;">' + escHtml(raw) + '</div>'
+        + '<button class="lodge-act" data-blog-more style="color:var(--accent); margin-top:7px;">Read more ↓</button>';
+    } else {
+      bodyHtml = titleHtml + '<div class="lodge-post__text">' + escHtml(raw) + '</div>';
+    }
+  } else {
+    bodyHtml = '<div class="lodge-post__text">' + escHtml(p.text || '') + '</div>';
+  }
   return '<div class="lodge-post" data-post-id="' + escHtml(p.id) + '">'
     + '<div class="lodge-post__head" data-lodge-user="' + escHtml(p.userId) + '" data-lodge-uname="' + escHtml(p.username || '?') + '" style="cursor:pointer;">'
     + _lodgeRingHtml(p.username, p.profilePic)
     + '<div><div class="lodge-post__name" style="color:' + hue[0] + ';">@' + escHtml(p.username || '?') + '</div>'
     + '<div class="lodge-post__time">' + timeAgo(new Date(p.createdAt)) + '</div></div></div>'
-    + '<div class="lodge-post__text">' + escHtml(p.text || '') + '</div>'
+    + bodyHtml
     + '<div class="lodge-post__bar">'
     + '<button class="lodge-act' + (p.likedByMe ? ' liked' : '') + '" data-lodge-like>' + (p.likedByMe ? '♥' : '♡')
     + ' <span data-like-count>' + (p.likeCount || 0) + '</span></button>'
@@ -33895,6 +33963,9 @@ function renderLodgeFeed() {
   var more = document.getElementById('lodgeMore');
   if (!feed) return;
   feed.innerHTML = _lodgePosts.map(_lodgePostHtml).join('');
+  empty.innerHTML = _lodgeUserFilter ? 'No posts yet.'
+    : _lodgeTab === 'blog' ? 'No blogs yet.<br>Write the first longer piece.'
+    : 'Nothing here yet.<br>Post a status, or add friends to see theirs.';
   empty.style.display = _lodgePosts.length ? 'none' : '';
   more.style.display = _lodgeCursor ? '' : 'none';
 }
@@ -34009,6 +34080,15 @@ document.getElementById('lodgeFeed').addEventListener('click', function(e) {
   var pid = card.getAttribute('data-post-id');
   var uhead = e.target.closest('[data-lodge-user]');
   if (uhead) { openLodgeUser(uhead.getAttribute('data-lodge-user'), uhead.getAttribute('data-lodge-uname')); return; }
+  var more = e.target.closest('[data-blog-more]');
+  if (more) {
+    var pv = card.querySelector('[data-blog-preview]'), fl = card.querySelector('[data-blog-full]');
+    var expanded = fl.style.display !== 'none';
+    fl.style.display = expanded ? 'none' : '';
+    pv.style.display = expanded ? '' : 'none';
+    more.textContent = expanded ? 'Read more ↓' : 'Show less ↑';
+    return;
+  }
   var cdel = e.target.closest('[data-comment-del]');
   if (cdel) { deleteLodgeComment(cdel.getAttribute('data-comment-del'), pid, card); return; }
   if (e.target.closest('[data-like-count]')) { openLikers(pid); return; }
@@ -34018,7 +34098,52 @@ document.getElementById('lodgeFeed').addEventListener('click', function(e) {
   if (e.target.closest('[data-lodge-report]')) { reportLodgeContent('post', pid); return; }
   if (e.target.closest('.lodge-csend')) { sendLodgeComment(pid, card); return; }
 });
-document.getElementById('lodgeComposer').addEventListener('click', function() { openStatusEditor(); });
+document.getElementById('lodgeComposer').addEventListener('click', function() {
+  if (_lodgeTab === 'blog') openBlogEditor(); else openStatusEditor();
+});
+document.getElementById('lodgeTabs').addEventListener('click', function(e) {
+  var t = e.target.closest('[data-lodge-tab]');
+  if (!t || t.getAttribute('data-lodge-tab') === _lodgeTab) return;
+  _lodgeTab = t.getAttribute('data-lodge-tab');
+  _lodgeSetTabUi();
+  _lodgePosts = []; _lodgeCursor = null;
+  renderLodgeFeed();
+  loadLodgeFeed();
+});
+
+// Blog (essay) editor
+function openBlogEditor() {
+  if (!authToken) { showToast('Sign in to write'); return; }
+  var ov = document.getElementById('blogOverlay');
+  document.getElementById('blogTitleInput').value = '';
+  document.getElementById('blogInput').value = '';
+  document.getElementById('blogCount').textContent = '0';
+  ov.classList.add('on');
+  setTimeout(function() { try { document.getElementById('blogTitleInput').focus(); } catch(e) {} }, 50);
+}
+(function() {
+  var ov = document.getElementById('blogOverlay');
+  var ta = document.getElementById('blogInput');
+  ta.addEventListener('input', function() { document.getElementById('blogCount').textContent = ta.value.length; });
+  document.getElementById('blogCancelBtn').addEventListener('click', function() { ov.classList.remove('on'); });
+  ov.addEventListener('click', function(e) { if (e.target === ov) ov.classList.remove('on'); });
+  document.getElementById('blogSaveBtn').addEventListener('click', async function() {
+    var text = (ta.value || '').trim();
+    if (!text) return;
+    try {
+      var res = await fetch(SERVER_URL + '/api/social/posts', {
+        method: 'POST',
+        headers: { 'Authorization': 'Bearer ' + authToken, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ type: 'blog', title: document.getElementById('blogTitleInput').value, text: text })
+      });
+      var dd = await res.json();
+      if (!res.ok) { showToast(dd.error || 'Publish failed'); return; }
+      ov.classList.remove('on');
+      showToast('Published to the Lodge', 1800, 'gold');
+      loadLodgeFeed();
+    } catch(e) { showToast('Publish failed'); }
+  });
+})();
 document.getElementById('lodgeBack').addEventListener('click', function() {
   if (_lodgeUserFilter) { openLodge(); return; }
   showScreen('homeScreen');

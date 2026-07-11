@@ -237,6 +237,11 @@ detached on sign-out), and DM sends push to the recipient's devices with a
 sender/preview banner — skipped when their thread lastRead is <25s old (they're
 actively polling), and dead subscriptions self-clean on 404/410.
 
+**D7 revised by user decision:** long-form shipped as a separate post type —
+the Lodge now has Posts (280) and Blogs (≤5000 chars + optional title) tabs;
+blog cards render title + preview with inline Read more, and only short posts
+double as the user's status. Plus a banner with the pen mark.
+
 ## 9. Risks & honest constraints
 
 - **Render cold starts** make the first feed/chat load slow after idle periods;

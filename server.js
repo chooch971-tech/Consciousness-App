@@ -1623,6 +1623,8 @@ async function decoratePosts(posts, viewerId) {
     username: (byId[p.userId] && byId[p.userId].username) || ('practitioner_' + String(p.userId).slice(-5)),
     profilePic: (byId[p.userId] && byId[p.userId].profilePic) || null,
     text: p.text,
+    type: p.type || 'note',
+    title: p.title || null,
     createdAt: p.createdAt,
     likeCount: Math.max(0, p.likeCount || 0),
     commentCount: Math.max(0, p.commentCount || 0),
@@ -1632,21 +1634,28 @@ async function decoratePosts(posts, viewerId) {
 }
 
 // CREATE POST — doubles as the current status so existing surfaces update.
+const BLOG_MAX_LEN = 5000;
+
 app.post('/api/social/posts', verifyToken, async (req, res) => {
   try {
-    const text = sanitizeSocialText(req.body.text, POST_MAX_LEN);
+    const type = req.body.type === 'blog' ? 'blog' : 'note';
+    const text = sanitizeSocialText(req.body.text, type === 'blog' ? BLOG_MAX_LEN : POST_MAX_LEN);
     if (!text) return res.status(400).json({ error: 'text required' });
+    const title = (type === 'blog' && req.body.title) ? sanitizeSocialText(req.body.title, 80) : null;
     const userId = req.user.userId;
     const dayStart = new Date(); dayStart.setHours(0, 0, 0, 0);
     const todayCount = await postsCollection.countDocuments({ userId, createdAt: { $gte: dayStart } });
     if (todayCount >= 30) return res.status(429).json({ error: 'Daily post limit reached' });
-    const post = { userId, text, createdAt: new Date(), likeCount: 0, commentCount: 0 };
+    const post = { userId, text, type, title, createdAt: new Date(), likeCount: 0, commentCount: 0 };
     const r = await postsCollection.insertOne(post);
-    await usersCollection.updateOne(
-      { _id: new ObjectId(userId) },
-      { $set: { status: { text, updatedAt: post.createdAt } } }
-    );
-    res.json({ ok: true, post: { id: r.insertedId.toString(), text, createdAt: post.createdAt } });
+    // Only short notes double as the current status — an essay isn't a status.
+    if (type === 'note') {
+      await usersCollection.updateOne(
+        { _id: new ObjectId(userId) },
+        { $set: { status: { text, updatedAt: post.createdAt } } }
+      );
+    }
+    res.json({ ok: true, post: { id: r.insertedId.toString(), text, type, title, createdAt: post.createdAt } });
   } catch (err) {
     console.error('Post create error:', err);
     res.status(500).json({ error: 'Post failed' });
@@ -1660,6 +1669,7 @@ app.get('/api/social/feed', verifyToken, async (req, res) => {
     const ids = await lodgeFollowingIds(userId);
     ids.push(userId);
     const q = { userId: { $in: ids } };
+    q.type = req.query.type === 'blog' ? 'blog' : { $ne: 'blog' };
     if (req.query.cursor) {
       const before = new Date(req.query.cursor);
       if (!isNaN(before.getTime())) q.createdAt = { $lt: before };
