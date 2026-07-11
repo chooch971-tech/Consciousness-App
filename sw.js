@@ -1,7 +1,7 @@
 // Service Worker for Presence app
 // Handles background push notifications + shell caching
 // Cache version — bump this string when you need to force-evict all clients
-const CACHE = 'presence-shell-v135';
+const CACHE = 'presence-shell-v136';
 
 const APP_URL = self.registration
   ? self.registration.scope + 'presence.html'
@@ -77,7 +77,7 @@ self.addEventListener('push', event => {
     body: data.body || 'Are you here right now?',
     icon: iconUrl,
     badge: iconUrl,
-    tag: 'presence-reminder',
+    tag: data.tag || 'presence-reminder',
     renotify: true,
     requireInteraction: false,
     data: { url: data.url || APP_URL }

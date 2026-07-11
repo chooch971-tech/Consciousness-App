@@ -73,6 +73,7 @@ let reportsCollection;
 let notificationsCollection;
 let conversationsCollection;
 let messagesCollection;
+let userPushSubsCollection;
 let subscriptions = [];
 let prayerSchedules = [];
 let practiceSchedules = [];
@@ -156,6 +157,9 @@ async function connectDB() {
     messagesCollection = db.collection('messages');
     try { await conversationsCollection.createIndex({ participants: 1 }); } catch(e) {}
     try { await messagesCollection.createIndex({ convId: 1, createdAt: 1 }); } catch(e) {}
+    userPushSubsCollection = db.collection('user_push_subs');
+    try { await userPushSubsCollection.createIndex({ endpoint: 1 }, { unique: true }); } catch(e) {}
+    try { await userPushSubsCollection.createIndex({ userId: 1 }); } catch(e) {}
     // TTL: let MongoDB sweep stale beacons automatically (reads also guard on expiresAt)
     try { await beaconsCollection.createIndex({ expiresAt: 1 }, { expireAfterSeconds: 0 }); } catch(e) {}
     // Compound index makes every pull O(1) instead of a full collection scan
@@ -2080,9 +2084,65 @@ app.post('/api/social/conversations/:id/messages', verifyToken, async (req, res)
       lastMsgAt: m.createdAt, lastPreview: text.slice(0, 60), ['lastRead.' + selfId]: m.createdAt
     } });
     notify(other, 'dm', selfId, convo._id.toString());
+    // Web-push the recipient — unless their lastRead is fresh (<25s), which
+    // means they're actively polling this thread and don't need a banner.
+    const otherRead = (convo.lastRead && convo.lastRead[other]) ? new Date(convo.lastRead[other]).getTime() : 0;
+    if (Date.now() - otherRead > 25000) sendDmPush(other, selfId, text);
     res.json({ ok: true, message: { id: r.insertedId.toString(), text, createdAt: m.createdAt, mine: true } });
   } catch (err) { res.status(500).json({ error: 'Send failed' }); }
 });
+
+// ── THE LODGE Phase 4: per-user push subscriptions + DM push ──
+
+// A device's push subscription maps to whichever account was last signed in
+// on it (endpoint-unique upsert), so pushes never go to a previous user.
+app.post('/api/social/push/register', verifyToken, async (req, res) => {
+  try {
+    const sub = req.body.subscription;
+    if (!sub || typeof sub.endpoint !== 'string' || !sub.keys || !sub.keys.p256dh || !sub.keys.auth) {
+      return res.status(400).json({ error: 'subscription required' });
+    }
+    await userPushSubsCollection.updateOne(
+      { endpoint: sub.endpoint },
+      { $set: { userId: req.user.userId, subscription: { endpoint: sub.endpoint, keys: { p256dh: sub.keys.p256dh, auth: sub.keys.auth } }, updatedAt: new Date() } },
+      { upsert: true }
+    );
+    res.json({ ok: true });
+  } catch (err) { res.status(500).json({ error: 'Register failed' }); }
+});
+
+app.post('/api/social/push/unregister', verifyToken, async (req, res) => {
+  try {
+    const { endpoint } = req.body;
+    if (!endpoint || typeof endpoint !== 'string') return res.status(400).json({ error: 'endpoint required' });
+    await userPushSubsCollection.deleteOne({ endpoint, userId: req.user.userId });
+    res.json({ ok: true });
+  } catch (err) { res.status(500).json({ error: 'Unregister failed' }); }
+});
+
+// Fire-and-forget DM push to every device the recipient is signed in on.
+async function sendDmPush(userId, senderId, text) {
+  try {
+    const subs = await userPushSubsCollection.find({ userId }).limit(5).toArray();
+    if (!subs.length) return;
+    const sender = await usersCollection.findOne({ _id: new ObjectId(senderId) }, { projection: { username: 1 } });
+    const payload = JSON.stringify({
+      title: '@' + ((sender && sender.username) || 'practitioner'),
+      body: text.slice(0, 90),
+      tag: 'presence-dm',
+      url: 'https://chooch971-tech.github.io/Consciousness-App/presence.html'
+    });
+    for (const s of subs) {
+      try {
+        await webpush.sendNotification(s.subscription, payload);
+      } catch (err) {
+        if (err.statusCode === 410 || err.statusCode === 404) {
+          try { await userPushSubsCollection.deleteOne({ _id: s._id }); } catch(e) {}
+        }
+      }
+    }
+  } catch(e) { console.error('[DM Push] ' + e.message); }
+}
 
 // ── EXISTING ROUTES ──────────────────────────────────────
 

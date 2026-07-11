@@ -231,8 +231,11 @@ useful on day one because the friend graph and statuses already exist.
 **Status: P1, P2, and P3 are shipped.** Extras beyond plan: per-user accent
 colors (hashed username → stable ring/name palette) and a per-practitioner
 posts page (tap any post author → their full history via /users/:id/posts).
-Deferred from P3: DM web-push (needs per-user push-subscription storage —
-currently subs are keyed to reminder flows, not accounts).
+P4 (DM web-push) is also shipped: a device's push subscription is upserted
+against the signed-in account (endpoint-unique, re-pointed on account switch,
+detached on sign-out), and DM sends push to the recipient's devices with a
+sender/preview banner — skipped when their thread lastRead is <25s old (they're
+actively polling), and dead subscriptions self-clean on 404/410.
 
 ## 9. Risks & honest constraints
 

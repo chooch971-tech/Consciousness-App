@@ -28244,6 +28244,21 @@ function _refreshSettingsSyncCardSignedIn() {
 
 async function authLogout(options) {
   options = options || {};
+  // Detach this device's push subscription from the account so DMs to the
+  // old account never land on a signed-out (or re-used) device.
+  try {
+    var _tok = authToken;
+    if (_tok && 'serviceWorker' in navigator) {
+      navigator.serviceWorker.ready.then(function(reg) { return reg.pushManager.getSubscription(); }).then(function(sub) {
+        if (!sub) return;
+        return fetch(SERVER_URL + '/api/social/push/unregister', {
+          method: 'POST',
+          headers: { 'Authorization': 'Bearer ' + _tok, 'Content-Type': 'application/json' },
+          body: JSON.stringify({ endpoint: sub.endpoint })
+        });
+      }).catch(function() {});
+    }
+  } catch(e) {}
   // For a deliberate sign-out, flush any unsynced local progress to the cloud
   // FIRST — while the token is still valid — so clearing local data below can't
   // lose work. (Involuntary 401 expiries don't pass clearLocalProgress, so we
@@ -34448,6 +34463,20 @@ document.getElementById('fpFriendsList').addEventListener('click', function(e) {
   }
   sendHeartbeat();
   setInterval(sendHeartbeat, 60000);
+  // Tie this device's existing push subscription to the signed-in account so
+  // DM pushes reach the right user (endpoint-unique upsert server-side).
+  if (authToken && 'serviceWorker' in navigator) {
+    navigator.serviceWorker.ready.then(function(reg) {
+      return reg.pushManager.getSubscription();
+    }).then(function(sub) {
+      if (!sub) return;
+      return fetch(SERVER_URL + '/api/social/push/register', {
+        method: 'POST',
+        headers: { 'Authorization': 'Bearer ' + authToken, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ subscription: sub.toJSON() })
+      });
+    }).catch(function() {});
+  }
 })();
 </script>
 </body>
