@@ -722,6 +722,27 @@
     .ach-info-fill { height:100%; background:var(--gc,#e8c87a); border-radius:2px; }
     .ach-info-row { display:flex; justify-content:space-between; font-size:9px; letter-spacing:.08em; text-transform:uppercase; color:var(--muted); font-family:'DM Mono',monospace; }
     .ach-info-reward { color:var(--accent); }
+    /* The Lodge — social feed */
+    .lodge-post { background:var(--surface); border:1px solid var(--border); border-radius:13px; padding:14px 16px; margin-bottom:12px; }
+    .lodge-post__head { display:flex; align-items:center; gap:10px; margin-bottom:9px; }
+    .lodge-post__ring { width:34px; height:34px; border-radius:50%; flex-shrink:0; display:flex; align-items:center; justify-content:center; background:linear-gradient(135deg,#9ed8c4,#7eb8a4); color:#0e0f17; font-family:'Cormorant Garamond',serif; font-size:15px; background-size:cover; background-position:center; }
+    .lodge-post__name { font-family:'DM Mono',monospace; font-size:11px; color:var(--text); }
+    .lodge-post__time { font-family:'DM Mono',monospace; font-size:9px; color:var(--muted); margin-top:2px; }
+    .lodge-post__text { font-size:13px; color:var(--text); line-height:1.65; white-space:pre-wrap; word-break:break-word; font-family:'DM Mono',monospace; }
+    .lodge-post__bar { display:flex; align-items:center; gap:16px; margin-top:11px; }
+    .lodge-act { background:none; border:none; cursor:pointer; font-family:'DM Mono',monospace; font-size:11px; color:var(--muted); display:flex; align-items:center; gap:5px; padding:2px 0; }
+    .lodge-act.liked { color:#d4956e; }
+    .lodge-del { margin-left:auto; opacity:.55; }
+    .lodge-comments { border-top:1px solid var(--border); margin-top:11px; padding-top:11px; display:none; }
+    .lodge-comment { margin-bottom:9px; font-family:'DM Mono',monospace; }
+    .lodge-comment__name { font-size:9px; color:var(--muted); margin-bottom:2px; }
+    .lodge-comment__text { font-size:11.5px; color:var(--text); line-height:1.55; white-space:pre-wrap; word-break:break-word; }
+    .lodge-crow { display:flex; gap:8px; margin-top:6px; }
+    .lodge-cinput { flex:1; min-width:0; background:rgba(0,0,0,.25); border:1px solid var(--border); border-radius:8px; color:var(--text); font-family:'DM Mono',monospace; font-size:11px; padding:8px 10px; outline:none; }
+    .lodge-csend { padding:8px 13px; border:1px solid rgba(126,184,164,.35); border-radius:8px; background:rgba(126,184,164,.08); color:#7eb8a4; font-family:'DM Mono',monospace; font-size:9px; letter-spacing:.12em; text-transform:uppercase; cursor:pointer; }
+    .likers-row { font-family:'DM Mono',monospace; font-size:12px; color:var(--text); padding:9px 2px; border-bottom:1px solid var(--border); }
+    .likers-row.private { color:var(--muted); font-style:italic; }
+
     /* Friend earned-achievement strip: fixed-width discs that scroll horizontally */
     .friend-ach-strip { overflow-x:auto; scrollbar-width:none; -ms-overflow-style:none; padding-bottom:2px; }
     .friend-ach-strip::-webkit-scrollbar { display:none; }
@@ -5283,6 +5304,23 @@ body:not(.tut-live) #tutCorgi {
     </div>
   </div>
 
+  <!-- THE LODGE (social feed) -->
+  <div class="screen" id="lodgeScreen" style="flex-direction:column;">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; flex-shrink:0;">
+      <div style="font-family:Cormorant Garamond,serif; font-size:24px; font-weight:300;">The Lodge</div>
+      <button class="history-back" id="lodgeBack">← back</button>
+    </div>
+    <div id="lodgeBody" style="flex:1; overflow-y:auto; -webkit-overflow-scrolling:touch; scrollbar-width:none; -ms-overflow-style:none;">
+      <button class="prof-status" id="lodgeComposer" style="width:100%; margin-bottom:18px;">
+        <div class="prof-status__text prof-status__text--empty">Share what’s present for you today…</div>
+        <div class="prof-status__meta"><span></span><span class="prof-status__edit">Post</span></div>
+      </button>
+      <div id="lodgeFeed"></div>
+      <div id="lodgeEmpty" class="prof-empty-note" style="display:none; text-align:center; padding:26px 20px;">Nothing here yet.<br>Post a status, or add friends to see theirs.</div>
+      <button id="lodgeMore" style="display:none; width:100%; margin:6px 0 30px; padding:11px; border:1px solid var(--border); border-radius:10px; background:transparent; color:var(--muted); font-family:'DM Mono',monospace; font-size:9px; letter-spacing:.16em; text-transform:uppercase; cursor:pointer;">Load more</button>
+    </div>
+  </div>
+
   <!-- GUIDE -->
   <!-- PLAYGROUND -->
   <div class="screen" id="playgroundScreen" style="flex-direction:column;">
@@ -7418,6 +7456,9 @@ body:not(.tut-live) #tutCorgi {
       </button>
       <button class="drawer-item" id="drawerProfile">
         <span class="drawer-item-icon"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="3.6"/><path d="M5 20c1.2-3.4 3.8-5 7-5s5.8 1.6 7 5"/></svg></span>Profile
+      </button>
+      <button class="drawer-item" id="drawerLodge">
+        <span class="drawer-item-icon">⌂</span>The Lodge
       </button>
       <button class="drawer-item" id="drawerAch">
         <span class="drawer-item-icon">✦</span>Achievements
@@ -9841,7 +9882,7 @@ function applyAccountFields(acct) {
 // the avatar), surfaced to friends via /friends/list, and synced to the user's
 // own devices via applyAccountFields. Empty text with a timestamp = "cleared".
 var STATUS_KEY = 'presence_status_v1';
-var STATUS_MAX = 180;
+var STATUS_MAX = 280;
 var STATUS_FRESH_MS = 3 * 24 * 60 * 60 * 1000; // a status older than 3 days stops showing
 function getMyStatus() {
   try { var s = JSON.parse(localStorage.getItem(STATUS_KEY)); return (s && typeof s.text === 'string') ? s : null; } catch(e) { return null; }
@@ -9853,12 +9894,21 @@ function setMyStatus(text) {
   text = String(text || '').replace(/[\u0000-\u001f\u007f]/g, ' ').trim().slice(0, STATUS_MAX);
   var s = { text: text, updatedAt: new Date().toISOString() };
   try { localStorage.setItem(STATUS_KEY, JSON.stringify(s)); } catch(e) {}
+  // Non-empty status → a Lodge post (server sets user.status as a side effect).
+  // Clearing (empty text) only clears the status; it never creates a post.
   if (authToken) {
-    fetch(SYNC_API_URL + '/status', {
-      method: 'PUT',
-      headers: { 'Authorization': 'Bearer ' + authToken, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ text: text })
-    }).catch(function() {});
+    var req = text
+      ? fetch(SERVER_URL + '/api/social/posts', {
+          method: 'POST',
+          headers: { 'Authorization': 'Bearer ' + authToken, 'Content-Type': 'application/json' },
+          body: JSON.stringify({ text: text })
+        })
+      : fetch(SYNC_API_URL + '/status', {
+          method: 'PUT',
+          headers: { 'Authorization': 'Bearer ' + authToken, 'Content-Type': 'application/json' },
+          body: JSON.stringify({ text: '' })
+        });
+    s.done = req.catch(function() {});
   }
   return s;
 }
@@ -9906,10 +9956,15 @@ function _wireStatusEditor() {
   function signedInNow() { return !!(syncEnabled && (authEmail || authUsername)); }
   var save = document.getElementById('statusSaveBtn');
   if (save) save.addEventListener('click', function() {
-    setMyStatus(ta ? ta.value : '');
+    var s = setMyStatus(ta ? ta.value : '');
     closeStatusEditor();
     renderMyStatus(signedInNow());
     showToast('Status shared', 1800, 'gold');
+    // If the Lodge is open, refresh the feed once the post lands.
+    var lodgeOpen = document.getElementById('lodgeScreen').classList.contains('active');
+    if (lodgeOpen && typeof loadLodgeFeed === 'function') {
+      (s.done || Promise.resolve()).then(function() { loadLodgeFeed(); });
+    }
   });
   var clr = document.getElementById('statusClearBtn');
   if (clr) clr.addEventListener('click', function() {
@@ -33614,13 +33669,22 @@ document.addEventListener('DOMContentLoaded',function(){(function(){
 <!-- Achievement info popover -->
 <div class="ach-info-ov" id="achInfoOverlay"><div class="ach-info-card" id="achInfoBody"></div></div>
 
+<!-- Post likers list -->
+<div class="status-ov" id="likersOverlay">
+  <div class="status-ov__card">
+    <div class="status-ov__title">Liked by</div>
+    <div id="likersList" style="max-height:50vh; overflow-y:auto; margin-top:6px;"></div>
+    <div class="status-ov__row"><button class="status-ov__btn" id="likersCloseBtn">Close</button></div>
+  </div>
+</div>
+
 <!-- Daily status editor -->
 <div class="status-ov" id="statusOverlay">
   <div class="status-ov__card">
     <div class="status-ov__title">Today's Status</div>
     <div class="status-ov__sub">Share a thought with your friends</div>
-    <textarea class="status-ov__ta" id="statusInput" maxlength="180" placeholder="What's present for you today?"></textarea>
-    <div class="status-ov__count"><span id="statusCount">0</span>/180</div>
+    <textarea class="status-ov__ta" id="statusInput" maxlength="280" placeholder="What's present for you today?"></textarea>
+    <div class="status-ov__count"><span id="statusCount">0</span>/280</div>
     <div class="status-ov__row">
       <button class="status-ov__btn status-ov__btn--clear" id="statusClearBtn">Clear</button>
       <button class="status-ov__btn" id="statusCancelBtn">Cancel</button>
@@ -33653,6 +33717,200 @@ document.addEventListener('DOMContentLoaded',function(){(function(){
 </div>
 
 <script>
+// ── THE LODGE — social feed (Phase 1: posts, likes, comments) ──
+var LODGE_CACHE_KEY = 'presence_lodge_feed_v1';
+var _lodgePosts = [];
+var _lodgeCursor = null;
+
+function _lodgeCachedList() {
+  try { var a = JSON.parse(localStorage.getItem(LODGE_CACHE_KEY)); return Array.isArray(a) ? a : []; } catch(e) { return []; }
+}
+
+function openLodge() {
+  showScreen('lodgeScreen');
+  // Instant paint from cache, then network refresh (established pattern).
+  _lodgePosts = _lodgeCachedList();
+  renderLodgeFeed();
+  loadLodgeFeed();
+}
+
+async function loadLodgeFeed(cursor) {
+  if (!authToken) { _lodgePosts = []; renderLodgeFeed(); return; }
+  try {
+    var url = SERVER_URL + '/api/social/feed' + (cursor ? '?cursor=' + encodeURIComponent(cursor) : '');
+    var res = await fetch(url, { headers: { 'Authorization': 'Bearer ' + authToken } });
+    if (!res.ok) return;
+    var data = await res.json();
+    var posts = (data && data.posts) || [];
+    _lodgePosts = cursor ? _lodgePosts.concat(posts) : posts;
+    _lodgeCursor = posts.length === 20 ? posts[posts.length - 1].createdAt : null;
+    if (!cursor) try { localStorage.setItem(LODGE_CACHE_KEY, JSON.stringify(_lodgePosts.slice(0, 20))); } catch(e) {}
+    renderLodgeFeed();
+  } catch(e) { console.warn('Lodge feed failed', e); }
+}
+
+function _lodgePostHtml(p) {
+  var pic = safeProfilePic(p.profilePic);
+  var ring = pic
+    ? '<div class="lodge-post__ring" style="background-image:url(\'' + pic + '\');color:transparent;"></div>'
+    : '<div class="lodge-post__ring">' + escHtml(String(p.username || '?')[0].toUpperCase()) + '</div>';
+  return '<div class="lodge-post" data-post-id="' + escHtml(p.id) + '">'
+    + '<div class="lodge-post__head">' + ring
+    + '<div><div class="lodge-post__name">@' + escHtml(p.username || '?') + '</div>'
+    + '<div class="lodge-post__time">' + timeAgo(new Date(p.createdAt)) + '</div></div></div>'
+    + '<div class="lodge-post__text">' + escHtml(p.text || '') + '</div>'
+    + '<div class="lodge-post__bar">'
+    + '<button class="lodge-act' + (p.likedByMe ? ' liked' : '') + '" data-lodge-like>' + (p.likedByMe ? '♥' : '♡')
+    + ' <span data-like-count>' + (p.likeCount || 0) + '</span></button>'
+    + '<button class="lodge-act" data-lodge-comments>◌ <span data-comment-count>' + (p.commentCount || 0) + '</span></button>'
+    + (p.mine ? '<button class="lodge-act lodge-del" data-lodge-del aria-label="Delete post">✕</button>' : '')
+    + '</div>'
+    + '<div class="lodge-comments"><div data-comment-list></div>'
+    + '<div class="lodge-crow"><input class="lodge-cinput" maxlength="280" placeholder="Add a comment…"/>'
+    + '<button class="lodge-csend">Send</button></div>'
+    + '</div></div>';
+}
+
+function renderLodgeFeed() {
+  var feed = document.getElementById('lodgeFeed');
+  var empty = document.getElementById('lodgeEmpty');
+  var more = document.getElementById('lodgeMore');
+  if (!feed) return;
+  feed.innerHTML = _lodgePosts.map(_lodgePostHtml).join('');
+  empty.style.display = _lodgePosts.length ? 'none' : '';
+  more.style.display = _lodgeCursor ? '' : 'none';
+}
+
+function _lodgeCommentHtml(c) {
+  return '<div class="lodge-comment" data-comment-id="' + escHtml(c.id) + '">'
+    + '<div class="lodge-comment__name">@' + escHtml(c.username || '?') + ' · ' + timeAgo(new Date(c.createdAt))
+    + (c.mine ? ' <button class="lodge-act lodge-del" data-comment-del="' + escHtml(c.id) + '" style="display:inline-flex;padding:0 4px;" aria-label="Delete comment">✕</button>' : '')
+    + '</div><div class="lodge-comment__text">' + escHtml(c.text || '') + '</div></div>';
+}
+
+async function toggleLodgeLike(pid, card) {
+  try {
+    var res = await fetch(SERVER_URL + '/api/social/posts/' + pid + '/like', {
+      method: 'POST', headers: { 'Authorization': 'Bearer ' + authToken }
+    });
+    if (!res.ok) return;
+    var d = await res.json();
+    var btn = card.querySelector('[data-lodge-like]');
+    btn.classList.toggle('liked', !!d.liked);
+    btn.childNodes[0].textContent = (d.liked ? '♥' : '♡') + ' ';
+    card.querySelector('[data-like-count]').textContent = d.likeCount;
+    var p = _lodgePosts.find(function(x) { return x.id === pid; });
+    if (p) { p.likedByMe = !!d.liked; p.likeCount = d.likeCount; }
+  } catch(e) {}
+}
+
+async function openLikers(pid) {
+  var ov = document.getElementById('likersOverlay');
+  var list = document.getElementById('likersList');
+  list.innerHTML = '<div class="likers-row private">Loading…</div>';
+  ov.classList.add('on');
+  try {
+    var res = await fetch(SERVER_URL + '/api/social/posts/' + pid + '/likers', {
+      headers: { 'Authorization': 'Bearer ' + authToken }
+    });
+    var d = await res.json();
+    var rows = (d.likers || []).map(function(l) {
+      return l.private
+        ? '<div class="likers-row private">a private practitioner</div>'
+        : '<div class="likers-row">@' + escHtml(l.username) + '</div>';
+    });
+    list.innerHTML = rows.length ? rows.join('') : '<div class="likers-row private">No likes yet.</div>';
+  } catch(e) { list.innerHTML = '<div class="likers-row private">Couldn’t load.</div>'; }
+}
+
+async function toggleLodgeComments(pid, card) {
+  var box = card.querySelector('.lodge-comments');
+  var open = box.style.display === 'block';
+  box.style.display = open ? 'none' : 'block';
+  if (open) return;
+  var list = card.querySelector('[data-comment-list]');
+  list.innerHTML = '<div class="lodge-comment__name">Loading…</div>';
+  try {
+    var res = await fetch(SERVER_URL + '/api/social/posts/' + pid + '/comments', {
+      headers: { 'Authorization': 'Bearer ' + authToken }
+    });
+    var d = await res.json();
+    list.innerHTML = (d.comments || []).map(_lodgeCommentHtml).join('');
+  } catch(e) { list.innerHTML = ''; }
+}
+
+async function sendLodgeComment(pid, card) {
+  var input = card.querySelector('.lodge-cinput');
+  var text = (input.value || '').trim();
+  if (!text) return;
+  try {
+    var res = await fetch(SERVER_URL + '/api/social/posts/' + pid + '/comments', {
+      method: 'POST',
+      headers: { 'Authorization': 'Bearer ' + authToken, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ text: text })
+    });
+    var d = await res.json();
+    if (!res.ok) { showToast(d.error || 'Comment failed'); return; }
+    input.value = '';
+    card.querySelector('[data-comment-list]').insertAdjacentHTML('beforeend', _lodgeCommentHtml(d.comment));
+    var cnt = card.querySelector('[data-comment-count]');
+    cnt.textContent = (parseInt(cnt.textContent, 10) || 0) + 1;
+  } catch(e) { showToast('Comment failed'); }
+}
+
+async function deleteLodgePost(pid, card) {
+  if (!window.confirm('Delete this post?')) return;
+  try {
+    var res = await fetch(SERVER_URL + '/api/social/posts/' + pid, {
+      method: 'DELETE', headers: { 'Authorization': 'Bearer ' + authToken }
+    });
+    if (!res.ok) return;
+    card.remove();
+    _lodgePosts = _lodgePosts.filter(function(p) { return p.id !== pid; });
+    try { localStorage.setItem(LODGE_CACHE_KEY, JSON.stringify(_lodgePosts.slice(0, 20))); } catch(e) {}
+    if (!_lodgePosts.length) renderLodgeFeed();
+  } catch(e) {}
+}
+
+async function deleteLodgeComment(cid, pid, card) {
+  try {
+    var res = await fetch(SERVER_URL + '/api/social/comments/' + cid, {
+      method: 'DELETE', headers: { 'Authorization': 'Bearer ' + authToken }
+    });
+    if (!res.ok) return;
+    var row = card.querySelector('[data-comment-id="' + cid + '"]');
+    if (row) row.remove();
+    var cnt = card.querySelector('[data-comment-count]');
+    cnt.textContent = Math.max(0, (parseInt(cnt.textContent, 10) || 1) - 1);
+  } catch(e) {}
+}
+
+document.getElementById('lodgeFeed').addEventListener('click', function(e) {
+  var card = e.target.closest('.lodge-post');
+  if (!card) return;
+  var pid = card.getAttribute('data-post-id');
+  var cdel = e.target.closest('[data-comment-del]');
+  if (cdel) { deleteLodgeComment(cdel.getAttribute('data-comment-del'), pid, card); return; }
+  if (e.target.closest('[data-like-count]')) { openLikers(pid); return; }
+  if (e.target.closest('[data-lodge-like]')) { toggleLodgeLike(pid, card); return; }
+  if (e.target.closest('[data-lodge-comments]')) { toggleLodgeComments(pid, card); return; }
+  if (e.target.closest('[data-lodge-del]')) { deleteLodgePost(pid, card); return; }
+  if (e.target.closest('.lodge-csend')) { sendLodgeComment(pid, card); return; }
+});
+document.getElementById('lodgeComposer').addEventListener('click', function() { openStatusEditor(); });
+document.getElementById('lodgeBack').addEventListener('click', function() { showScreen('homeScreen'); });
+document.getElementById('lodgeMore').addEventListener('click', function() { if (_lodgeCursor) loadLodgeFeed(_lodgeCursor); });
+document.getElementById('drawerLodge').addEventListener('click', function() {
+  closeDrawer();
+  if (!authToken) { showToast('Sign in to enter the Lodge'); return; }
+  openLodge();
+});
+(function() {
+  var ov = document.getElementById('likersOverlay');
+  document.getElementById('likersCloseBtn').addEventListener('click', function() { ov.classList.remove('on'); });
+  ov.addEventListener('click', function(e) { if (e.target === ov) ov.classList.remove('on'); });
+})();
+
 function openFriendsPanel() {
   var el = document.getElementById('friendsPanel');
   if (!el) return;

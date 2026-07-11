@@ -40,17 +40,17 @@ redeploy, and the stack is plain Express + Mongo — no websockets assumed.
 
 ## 3. Core decisions (resolved)
 
-- **D1 — Two independent graphs: friends (mutual) + follows (one-way).**
-  Friends is the *existing* system, unchanged: request → accept → mutual,
-  drives streaks and friend cards. **Follows is new**: anyone can follow
-  anyone's feed one-way, no acceptance needed — except a **private** account's
-  follow requests sit `pending` until approved (mirrors the existing
-  private-search behavior).
-  **Accepting a friend request auto-creates a mutual follow both ways**, so a
-  new friend's posts appear in your feed immediately with no extra step.
-  After that, the two graphs are independent: unfollowing a friend's feed
-  doesn't unfriend them, and unfriending doesn't auto-unfollow — each is its
-  own action.
+- **D1 — One graph: follows. "Friend" = mutual follow (derived, not stored).**
+  A follow is one-way and instant for public accounts; a **private** account's
+  follows sit `pending` until approved (mirrors existing private-search
+  behavior, and approval doubles as the "accept" moment). Two people are
+  friends the moment both directions are active — no separate friendship
+  record or accept ceremony. Everything that asks "are they friends?"
+  (Shared Vigils, DMs, achievements) checks mutuality instead.
+  **Migration:** each accepted pair in the legacy `friendsCollection` becomes
+  two active `follows` docs — idempotent, runs at server boot. The legacy
+  friends endpoints keep working during transition (accept/remove also
+  write/remove follow edges) until the UI fully switches in Phase 2.
 - **D2 — Posting:** `POST /api/social/posts` inserts a post AND sets
   `user.status` as a side effect, so every existing status surface (profile
   card, friend cards) keeps working unchanged. Multiple posts/day allowed;
@@ -221,7 +221,7 @@ Nothing screens post/comment/DM text before it's stored beyond sanitization
 
 | Phase | Scope | Ships |
 |-------|-------|-------|
-| **P1 — Feed core** | `posts` (280 char), feed (friends only for now), likes + liker list, text comments, delete own, feed screen + post detail | server + client + redeploy |
+| **P1 — Feed core** | `follows` collection + friends→follows migration, `posts` (280 char), feed (mutual follows only for now), likes + liker list, text comments, delete own, Lodge feed screen | server + client + redeploy |
 | **P2 — Follows & safety** | `follows` (+ private approval, auto-follow on friend-accept), follower counts, block, report, in-app notifications | server + client + redeploy |
 | **P3 — Chat** | conversations/messages, polling thread UI, per-user push subscriptions in Mongo, DM push | server + client + redeploy |
 
@@ -246,8 +246,8 @@ useful on day one because the friend graph and statuses already exist.
 ## 10. Decisions log
 
 1. **Name** — The Lodge.
-2. **Graph** — friends (mutual, existing) + follows (one-way, new), with
-   friend-accept auto-creating a mutual follow. See D1.
+2. **Graph** — unified follows; "friend" is a derived state (mutual follow),
+   with a one-time migration from the legacy friends collection. See D1.
 3. **Likes** — count shown; tap reveals liker usernames; private likers shown
    as "a private practitioner" to non-friends. See D6.
 4. **Post length** — 280, single constant, long-form deliberately deferred as

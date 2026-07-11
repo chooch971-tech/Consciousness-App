@@ -64,6 +64,10 @@ let syncDataCollection;
 let friendsCollection;
 let beaconsCollection;
 let practiceCollection;
+let followsCollection;
+let postsCollection;
+let likesCollection;
+let commentsCollection;
 let subscriptions = [];
 let prayerSchedules = [];
 let practiceSchedules = [];
@@ -97,6 +101,26 @@ async function migrateLegacyUsernames() {
   console.log(`[Migration] Sanitized ${fixed} legacy username(s).`);
 }
 
+// Unified graph migration: each accepted friendship becomes two active follow
+// edges. Idempotent ($setOnInsert upserts), runs every boot; "friend" is now a
+// derived state — a mutual pair of active follows.
+async function migrateFriendsToFollows() {
+  const accepted = await friendsCollection.find({ status: 'accepted' }).toArray();
+  if (!accepted.length) return;
+  const ops = [];
+  for (const f of accepted) {
+    for (const [a, b] of [[f.userId, f.friendId], [f.friendId, f.userId]]) {
+      ops.push({ updateOne: {
+        filter: { followerId: a, followeeId: b },
+        update: { $setOnInsert: { followerId: a, followeeId: b, status: 'active', createdAt: f.createdAt || new Date() } },
+        upsert: true
+      } });
+    }
+  }
+  const res = await followsCollection.bulkWrite(ops, { ordered: false });
+  if (res.upsertedCount) console.log(`[Migration] Created ${res.upsertedCount} follow edge(s) from friendships.`);
+}
+
 async function connectDB() {
   try {
     mongoClient = new MongoClient(MONGO_URI, { tls: true, tlsAllowInvalidCertificates: false });
@@ -109,6 +133,15 @@ async function connectDB() {
     friendsCollection = db.collection('friends');
     beaconsCollection = db.collection('presence_beacons');
     practiceCollection = db.collection('practice_schedules');
+    followsCollection = db.collection('follows');
+    postsCollection = db.collection('posts');
+    likesCollection = db.collection('likes');
+    commentsCollection = db.collection('comments');
+    try { await followsCollection.createIndex({ followerId: 1, followeeId: 1 }, { unique: true }); } catch(e) {}
+    try { await postsCollection.createIndex({ userId: 1, createdAt: -1 }); } catch(e) {}
+    try { await postsCollection.createIndex({ createdAt: -1 }); } catch(e) {}
+    try { await likesCollection.createIndex({ postId: 1, userId: 1 }, { unique: true }); } catch(e) {}
+    try { await commentsCollection.createIndex({ postId: 1, createdAt: 1 }); } catch(e) {}
     // TTL: let MongoDB sweep stale beacons automatically (reads also guard on expiresAt)
     try { await beaconsCollection.createIndex({ expiresAt: 1 }, { expireAfterSeconds: 0 }); } catch(e) {}
     // Compound index makes every pull O(1) instead of a full collection scan
@@ -138,6 +171,7 @@ async function connectDB() {
     prayerSchedules = await prayerCollection.find({}).toArray();
     practiceSchedules = await practiceCollection.find({}).toArray();
     try { await migrateLegacyUsernames(); } catch (e) { console.error('Username migration skipped:', e.message); }
+    try { await migrateFriendsToFollows(); } catch (e) { console.error('Follows migration skipped:', e.message); }
     console.log(`Connected to MongoDB. ${subscriptions.length} subscribers, ${prayerSchedules.length} prayer schedules, ${practiceSchedules.length} practice schedules.`);
   } catch(err) {
     console.error('MongoDB connection failed:', err.message);
@@ -1417,6 +1451,16 @@ app.post('/api/sync/friends/accept', verifyToken, async (req, res) => {
       { $set: { status: 'accepted' } }
     );
     if (result.matchedCount === 0) return res.status(404).json({ error: 'Request not found' });
+    // Unified graph: friendship = mutual follow. Keep edges in sync.
+    for (const [a, b] of [[selfId, requesterId], [requesterId, selfId]]) {
+      try {
+        await followsCollection.updateOne(
+          { followerId: a, followeeId: b },
+          { $set: { status: 'active' }, $setOnInsert: { followerId: a, followeeId: b, createdAt: new Date() } },
+          { upsert: true }
+        );
+      } catch(e) {}
+    }
     res.json({ message: 'Friend request accepted' });
   } catch (err) {
     console.error('Accept friend error:', err);
@@ -1436,6 +1480,13 @@ app.post('/api/sync/friends/decline', verifyToken, async (req, res) => {
         { userId: userId, friendId: selfId }
       ]
     });
+    // Sever both follow directions too — unfriending ends the mutual follow.
+    try {
+      await followsCollection.deleteMany({ $or: [
+        { followerId: selfId, followeeId: userId },
+        { followerId: userId, followeeId: selfId }
+      ] });
+    } catch(e) {}
     res.json({ message: 'Friend removed' });
   } catch (err) {
     console.error('Decline friend error:', err);
@@ -1491,7 +1542,7 @@ app.put('/api/sync/status', verifyToken, async (req, res) => {
   try {
     let { text } = req.body;
     if (typeof text !== 'string') return res.status(400).json({ error: 'text required' });
-    text = text.replace(/[\u0000-\u001f\u007f]/g, ' ').trim().slice(0, 180);
+    text = text.replace(/[\u0000-\u001f\u007f]/g, ' ').trim().slice(0, 280);
     const status = { text, updatedAt: new Date() };
     await usersCollection.updateOne(
       { _id: new ObjectId(req.user.userId) },
@@ -1517,6 +1568,234 @@ app.put('/api/sync/privacy', verifyToken, async (req, res) => {
   } catch (err) {
     console.error('Privacy update error:', err);
     res.status(500).json({ error: 'Update failed' });
+  }
+});
+
+// ── THE LODGE — social feed (see SOCIAL_PLAN.md) ─────────
+// Phase 1: posts + likes + comments over the unified follows graph.
+// No automated moderation in v1 by decision — sanitizeSocialText() is the
+// single choke point where a moderation call would slot in later.
+const POST_MAX_LEN = 280;
+
+function sanitizeSocialText(text, maxLen) {
+  if (typeof text !== 'string') return null;
+  const clean = text.replace(/[\u0000-\u001f\u007f]/g, ' ').trim().slice(0, maxLen);
+  return clean.length ? clean : null;
+}
+
+async function lodgeFollowingIds(userId) {
+  const rows = await followsCollection.find({ followerId: userId, status: 'active' })
+    .project({ followeeId: 1 }).toArray();
+  return rows.map(r => r.followeeId);
+}
+
+// Attach author identity + viewer's like state to a page of posts.
+async function decoratePosts(posts, viewerId) {
+  const userIds = [...new Set(posts.map(p => p.userId))];
+  const users = userIds.length ? await usersCollection.find(
+    { _id: { $in: userIds.map(id => new ObjectId(id)) } }
+  ).project({ username: 1, profilePic: 1 }).toArray() : [];
+  const byId = {}; users.forEach(u => { byId[u._id.toString()] = u; });
+  const postIds = posts.map(p => p._id.toString());
+  const myLikes = postIds.length ? await likesCollection.find({ postId: { $in: postIds }, userId: viewerId }).toArray() : [];
+  const likedSet = new Set(myLikes.map(l => l.postId));
+  return posts.map(p => ({
+    id: p._id.toString(),
+    userId: p.userId,
+    username: (byId[p.userId] && byId[p.userId].username) || ('practitioner_' + String(p.userId).slice(-5)),
+    profilePic: (byId[p.userId] && byId[p.userId].profilePic) || null,
+    text: p.text,
+    createdAt: p.createdAt,
+    likeCount: Math.max(0, p.likeCount || 0),
+    commentCount: Math.max(0, p.commentCount || 0),
+    likedByMe: likedSet.has(p._id.toString()),
+    mine: p.userId === viewerId
+  }));
+}
+
+// CREATE POST — doubles as the current status so existing surfaces update.
+app.post('/api/social/posts', verifyToken, async (req, res) => {
+  try {
+    const text = sanitizeSocialText(req.body.text, POST_MAX_LEN);
+    if (!text) return res.status(400).json({ error: 'text required' });
+    const userId = req.user.userId;
+    const dayStart = new Date(); dayStart.setHours(0, 0, 0, 0);
+    const todayCount = await postsCollection.countDocuments({ userId, createdAt: { $gte: dayStart } });
+    if (todayCount >= 30) return res.status(429).json({ error: 'Daily post limit reached' });
+    const post = { userId, text, createdAt: new Date(), likeCount: 0, commentCount: 0 };
+    const r = await postsCollection.insertOne(post);
+    await usersCollection.updateOne(
+      { _id: new ObjectId(userId) },
+      { $set: { status: { text, updatedAt: post.createdAt } } }
+    );
+    res.json({ ok: true, post: { id: r.insertedId.toString(), text, createdAt: post.createdAt } });
+  } catch (err) {
+    console.error('Post create error:', err);
+    res.status(500).json({ error: 'Post failed' });
+  }
+});
+
+// FEED — chronological, own posts + people you follow, cursor-paginated.
+app.get('/api/social/feed', verifyToken, async (req, res) => {
+  try {
+    const userId = req.user.userId;
+    const ids = await lodgeFollowingIds(userId);
+    ids.push(userId);
+    const q = { userId: { $in: ids } };
+    if (req.query.cursor) {
+      const before = new Date(req.query.cursor);
+      if (!isNaN(before.getTime())) q.createdAt = { $lt: before };
+    }
+    const posts = await postsCollection.find(q).sort({ createdAt: -1 }).limit(20).toArray();
+    res.json({ posts: await decoratePosts(posts, userId) });
+  } catch (err) {
+    console.error('Feed error:', err);
+    res.status(500).json({ error: 'Feed failed' });
+  }
+});
+
+// A USER'S POST HISTORY — self, or someone you actively follow.
+app.get('/api/social/users/:id/posts', verifyToken, async (req, res) => {
+  try {
+    const viewerId = req.user.userId, targetId = req.params.id;
+    if (targetId !== viewerId) {
+      const edge = await followsCollection.findOne({ followerId: viewerId, followeeId: targetId, status: 'active' });
+      if (!edge) return res.status(403).json({ error: 'Not following this practitioner' });
+    }
+    const q = { userId: targetId };
+    if (req.query.cursor) {
+      const before = new Date(req.query.cursor);
+      if (!isNaN(before.getTime())) q.createdAt = { $lt: before };
+    }
+    const posts = await postsCollection.find(q).sort({ createdAt: -1 }).limit(20).toArray();
+    res.json({ posts: await decoratePosts(posts, viewerId) });
+  } catch (err) {
+    res.status(500).json({ error: 'Posts failed' });
+  }
+});
+
+// DELETE OWN POST — takes its likes and comments with it.
+app.delete('/api/social/posts/:id', verifyToken, async (req, res) => {
+  try {
+    const post = await postsCollection.findOne({ _id: new ObjectId(req.params.id) });
+    if (!post) return res.status(404).json({ error: 'Not found' });
+    if (post.userId !== req.user.userId) return res.status(403).json({ error: 'Not yours' });
+    await postsCollection.deleteOne({ _id: post._id });
+    const pid = post._id.toString();
+    await likesCollection.deleteMany({ postId: pid });
+    await commentsCollection.deleteMany({ postId: pid });
+    res.json({ ok: true });
+  } catch (err) {
+    res.status(500).json({ error: 'Delete failed' });
+  }
+});
+
+// LIKE TOGGLE
+app.post('/api/social/posts/:id/like', verifyToken, async (req, res) => {
+  try {
+    const post = await postsCollection.findOne({ _id: new ObjectId(req.params.id) });
+    if (!post) return res.status(404).json({ error: 'Post not found' });
+    const postId = post._id.toString(), userId = req.user.userId;
+    const existing = await likesCollection.findOne({ postId, userId });
+    let liked;
+    if (existing) {
+      await likesCollection.deleteOne({ _id: existing._id });
+      await postsCollection.updateOne({ _id: post._id }, { $inc: { likeCount: -1 } });
+      liked = false;
+    } else {
+      try {
+        await likesCollection.insertOne({ postId, userId, createdAt: new Date() });
+        await postsCollection.updateOne({ _id: post._id }, { $inc: { likeCount: 1 } });
+      } catch(e) {} // unique-index race: already liked
+      liked = true;
+    }
+    const fresh = await postsCollection.findOne({ _id: post._id });
+    res.json({ liked, likeCount: Math.max(0, (fresh && fresh.likeCount) || 0) });
+  } catch (err) {
+    res.status(500).json({ error: 'Like failed' });
+  }
+});
+
+// LIKERS — usernames; private accounts redacted unless mutual with viewer.
+app.get('/api/social/posts/:id/likers', verifyToken, async (req, res) => {
+  try {
+    const viewerId = req.user.userId;
+    const likes = await likesCollection.find({ postId: req.params.id }).sort({ createdAt: -1 }).limit(100).toArray();
+    const ids = likes.map(l => l.userId);
+    if (!ids.length) return res.json({ likers: [] });
+    const users = await usersCollection.find({ _id: { $in: ids.map(id => new ObjectId(id)) } })
+      .project({ username: 1, isPrivate: 1 }).toArray();
+    const iFollow = new Set((await followsCollection.find(
+      { followerId: viewerId, followeeId: { $in: ids }, status: 'active' }).toArray()).map(f => f.followeeId));
+    const followMe = new Set((await followsCollection.find(
+      { followeeId: viewerId, followerId: { $in: ids }, status: 'active' }).toArray()).map(f => f.followerId));
+    const likers = users.map(u => {
+      const id = u._id.toString();
+      const mutual = id === viewerId || (iFollow.has(id) && followMe.has(id));
+      if (u.isPrivate && !mutual) return { private: true };
+      return { username: u.username || ('practitioner_' + id.slice(-5)) };
+    });
+    res.json({ likers });
+  } catch (err) {
+    res.status(500).json({ error: 'Likers failed' });
+  }
+});
+
+// COMMENTS — list / add / delete own.
+app.get('/api/social/posts/:id/comments', verifyToken, async (req, res) => {
+  try {
+    const comments = await commentsCollection.find({ postId: req.params.id }).sort({ createdAt: 1 }).limit(200).toArray();
+    const ids = [...new Set(comments.map(c => c.userId))];
+    const users = ids.length ? await usersCollection.find({ _id: { $in: ids.map(id => new ObjectId(id)) } })
+      .project({ username: 1 }).toArray() : [];
+    const byId = {}; users.forEach(u => { byId[u._id.toString()] = u; });
+    res.json({ comments: comments.map(c => ({
+      id: c._id.toString(),
+      userId: c.userId,
+      username: (byId[c.userId] && byId[c.userId].username) || ('practitioner_' + String(c.userId).slice(-5)),
+      text: c.text,
+      createdAt: c.createdAt,
+      mine: c.userId === req.user.userId
+    })) });
+  } catch (err) {
+    res.status(500).json({ error: 'Comments failed' });
+  }
+});
+
+app.post('/api/social/posts/:id/comments', verifyToken, async (req, res) => {
+  try {
+    const text = sanitizeSocialText(req.body.text, POST_MAX_LEN);
+    if (!text) return res.status(400).json({ error: 'text required' });
+    const post = await postsCollection.findOne({ _id: new ObjectId(req.params.id) });
+    if (!post) return res.status(404).json({ error: 'Post not found' });
+    const userId = req.user.userId;
+    const dayStart = new Date(); dayStart.setHours(0, 0, 0, 0);
+    const todayCount = await commentsCollection.countDocuments({ userId, createdAt: { $gte: dayStart } });
+    if (todayCount >= 120) return res.status(429).json({ error: 'Daily comment limit reached' });
+    const c = { postId: post._id.toString(), userId, text, createdAt: new Date() };
+    const r = await commentsCollection.insertOne(c);
+    await postsCollection.updateOne({ _id: post._id }, { $inc: { commentCount: 1 } });
+    const me = await usersCollection.findOne({ _id: new ObjectId(userId) }, { projection: { username: 1 } });
+    res.json({ ok: true, comment: {
+      id: r.insertedId.toString(), userId,
+      username: (me && me.username) || ('practitioner_' + userId.slice(-5)),
+      text, createdAt: c.createdAt, mine: true
+    } });
+  } catch (err) {
+    res.status(500).json({ error: 'Comment failed' });
+  }
+});
+
+app.delete('/api/social/comments/:id', verifyToken, async (req, res) => {
+  try {
+    const c = await commentsCollection.findOne({ _id: new ObjectId(req.params.id) });
+    if (!c) return res.status(404).json({ error: 'Not found' });
+    if (c.userId !== req.user.userId) return res.status(403).json({ error: 'Not yours' });
+    await commentsCollection.deleteOne({ _id: c._id });
+    await postsCollection.updateOne({ _id: new ObjectId(c.postId) }, { $inc: { commentCount: -1 } });
+    res.json({ ok: true });
+  } catch (err) {
+    res.status(500).json({ error: 'Delete failed' });
   }
 });
 
