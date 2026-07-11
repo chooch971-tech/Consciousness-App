@@ -23899,7 +23899,8 @@ function guideThoughtTargetMinutes(mode, thoughtStats) {
   var natural = guideAllThoughtModesMastered(thoughtStats)
     ? guideClamp(10 + Math.floor(countForTarget / 6), 10, 15)
     : guideClamp(5 + Math.floor(countForTarget / 2), 5, 10);
-  return guideAdvancedTarget('thought', natural);
+  // Per-mode floor: Vacancy's override doesn't move Observation or Focus.
+  return guideAdvancedTarget(mode, natural);
 }
 
 function guideClockTargetMinutes(clockStats) {
@@ -23954,6 +23955,34 @@ function guideIsExperienced(exId) {
 // user sets one. Without an override, the exercise climbs naturally as before.
 var GUIDE_TIMED_EXERCISES = ['clock','visual','auditory','thought','observation','focus','vacancy','asana'];
 var GUIDE_FLOOR_CAP = 120;
+
+// Thought Control is three independent disciplines (Observation, Focus,
+// Vacancy), each with its own advanced floor. A card carries its mode, so the
+// floor for one mode never bleeds into the others. Everything else keys by exId.
+var GUIDE_THOUGHT_MODES = { observation:1, focus:1, vacancy:1 };
+function guideFloorKey(exId, mode) {
+  if (exId === 'thought' && mode && GUIDE_THOUGHT_MODES[mode]) return mode;
+  return exId;
+}
+
+// One-time cleanup: earlier builds stored a single shared 'thought' floor that
+// (incorrectly) drove all three thought disciplines at once. That key is no
+// longer read, so remove it once — the user re-sets per form, which now stays
+// isolated. Clearing (rather than guessing a mode) avoids surprising a form
+// the user never meant to change.
+(function migrateThoughtFloor() {
+  try {
+    if (!guideState || guideState._tcFloorMigrated) return;
+    var f = guideState._advancedFloors;
+    if (f && Object.prototype.hasOwnProperty.call(f, 'thought')) {
+      delete f.thought;
+      if (guideState._advanceAuto) delete guideState._advanceAuto.thought;
+      if (guideState._advanceSetAt) delete guideState._advanceSetAt.thought;
+    }
+    guideState._tcFloorMigrated = true;
+    saveGuideState(guideState);
+  } catch (e) {}
+})();
 
 function guideFloorMin(exId) {
   var f = guideState && guideState._advancedFloors && guideState._advancedFloors[exId];
@@ -24013,6 +24042,9 @@ function guideAdvancedTarget(exId, naturalMin) {
 // Used to seed the "I'm Advanced" dialog with a sensible default.
 function guideRecommendedMinutes(exId) {
   try {
+    // A specific thought discipline (observation/focus/vacancy) computes its
+    // own natural target — used to seed the dialog and label its own card.
+    if (GUIDE_THOUGHT_MODES[exId]) return guideThoughtTargetMinutes(exId, guideThoughtStats()) || 5;
     if (exId === 'asana') return guideAsanaStats().qualTarget || 5;
     if (exId === 'auditory') return guideAuditoryStats().qualTarget || 5;
     if (exId === 'clock') return guideClockFinalTarget(guideClockStats()) || 5;
@@ -25858,7 +25890,7 @@ function renderPathQuests() {
         advItem.textContent = guideState.poreAdvanced ? 'Restart progression · 7 breaths' : 'I\'m Advanced · 40 breaths';
         advItem.style.display = 'block';
       } else if (isTimedEx(activeExId)) {
-        var floor = guideFloorMin(activeExId);
+        var floor = guideFloorMin(guideFloorKey(activeExId, activeExMode));
         advItem.textContent = floor ? ('I\'m Advanced · ' + floor + ' min') : 'I\'m Advanced';
         advItem.style.display = 'block';
       } else {
@@ -25900,12 +25932,17 @@ function renderPathQuests() {
   }
   function openAdvDialog() {
     if (!activeExId || !isTimedEx(activeExId)) return;
-    var floor = guideFloorMin(activeExId);
-    advMinutes = floor || guideClamp(guideRecommendedMinutes(activeExId), 1, GUIDE_FLOOR_CAP);
+    var key = guideFloorKey(activeExId, activeExMode);
+    var floor = guideFloorMin(key);
+    advMinutes = floor || guideClamp(guideRecommendedMinutes(key), 1, GUIDE_FLOOR_CAP);
     // New overrides default to auto-advance on; existing ones keep their saved choice.
-    advAuto = floor ? guideAutoAdvanceOn(activeExId) : true;
+    advAuto = floor ? guideAutoAdvanceOn(key) : true;
     var titleEl = document.getElementById('pqAdvancedTitle');
-    if (titleEl) titleEl.textContent = 'I\'m Advanced · ' + (EX_DISPLAY_NAMES[activeExId] || '');
+    // For a thought discipline, name the specific form (e.g. "Vacancy of Mind").
+    var dispName = (activeExId === 'thought' && activeExMode && GUIDE_FOUNDATION_THOUGHT_LABELS[activeExMode])
+      ? GUIDE_FOUNDATION_THOUGHT_LABELS[activeExMode]
+      : (EX_DISPLAY_NAMES[activeExId] || '');
+    if (titleEl) titleEl.textContent = 'I\'m Advanced · ' + dispName;
     renderAdvDialog();
     if (advOverlay) advOverlay.style.display = 'flex';
   }
@@ -25985,13 +26022,13 @@ function renderPathQuests() {
   });
   var advSaveBtn = document.getElementById('pqAdvSave');
   if (advSaveBtn) advSaveBtn.addEventListener('click', function() {
-    if (activeExId) guideSetAdvanced(activeExId, advMinutes, advAuto);
+    if (activeExId) guideSetAdvanced(guideFloorKey(activeExId, activeExMode), advMinutes, advAuto);
     closeAdvDialog();
     renderPathQuests();
   });
   var advClearBtn = document.getElementById('pqAdvClear');
   if (advClearBtn) advClearBtn.addEventListener('click', function() {
-    if (activeExId) guideClearAdvanced(activeExId);
+    if (activeExId) guideClearAdvanced(guideFloorKey(activeExId, activeExMode));
     closeAdvDialog();
     renderPathQuests();
   });
