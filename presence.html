@@ -742,6 +742,17 @@
     .lodge-csend { padding:8px 13px; border:1px solid rgba(126,184,164,.35); border-radius:8px; background:rgba(126,184,164,.08); color:#7eb8a4; font-family:'DM Mono',monospace; font-size:9px; letter-spacing:.12em; text-transform:uppercase; cursor:pointer; }
     .likers-row { font-family:'DM Mono',monospace; font-size:12px; color:var(--text); padding:9px 2px; border-bottom:1px solid var(--border); }
     .likers-row.private { color:var(--muted); font-style:italic; }
+    /* Lodge chat */
+    .chat-row { display:flex; }
+    .chat-row.chat-mine { justify-content:flex-end; }
+    .chat-bubble { max-width:78%; padding:9px 12px; border-radius:12px; font-size:12px; line-height:1.55; font-family:'DM Mono',monospace; white-space:pre-wrap; word-break:break-word; color:var(--text); }
+    .chat-mine .chat-bubble { background:rgba(126,184,164,.16); border:1px solid rgba(126,184,164,.3); border-bottom-right-radius:4px; }
+    .chat-theirs .chat-bubble { background:var(--surface2); border:1px solid var(--border); border-bottom-left-radius:4px; }
+    .chat-time { font-size:8px; color:var(--muted); margin-top:3px; text-align:right; }
+    .chat-conv { display:flex; align-items:center; gap:11px; padding:12px 4px; border-bottom:1px solid var(--border); cursor:pointer; }
+    .chat-conv__name { font-size:11px; color:var(--text); font-family:'DM Mono',monospace; }
+    .chat-conv__preview { font-size:10px; color:var(--muted); font-family:'DM Mono',monospace; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:220px; margin-top:2px; }
+    .chat-unread { width:8px; height:8px; border-radius:50%; background:#d4956e; margin-left:auto; flex-shrink:0; }
 
     /* Friend earned-achievement strip: fixed-width discs that scroll horizontally */
     .friend-ach-strip { overflow-x:auto; scrollbar-width:none; -ms-overflow-style:none; padding-bottom:2px; }
@@ -5283,7 +5294,10 @@ body:not(.tut-live) #tutCorgi {
         <div class="prof-hero__status" id="friendProfStatus" style="display:none;"></div>
         <div id="friendProfSocial" style="margin-top:14px; display:none; flex-direction:column; align-items:center; gap:10px;">
           <div id="friendProfCounts" style="font-size:10px; color:var(--muted); font-family:'DM Mono',monospace; letter-spacing:.08em;"></div>
-          <button id="friendFollowBtn" class="prof-cta" style="margin-top:0; padding:10px 24px;"></button>
+          <div style="display:flex; gap:8px;">
+            <button id="friendFollowBtn" class="prof-cta" style="margin-top:0; padding:10px 24px;"></button>
+            <button id="friendMsgBtn" class="prof-cta" style="margin-top:0; padding:10px 24px; display:none; background:var(--surface2); color:var(--accent); border:1px solid rgba(126,184,164,.4); box-shadow:none;">Message</button>
+          </div>
           <div style="display:flex; gap:18px;">
             <button id="friendBlockBtn" class="lodge-act">Block</button>
             <button id="friendReportBtn" class="lodge-act">&#9873; Report</button>
@@ -5316,9 +5330,10 @@ body:not(.tut-live) #tutCorgi {
   <!-- THE LODGE (social feed) -->
   <div class="screen" id="lodgeScreen" style="flex-direction:column;">
     <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; flex-shrink:0;">
-      <div style="font-family:Cormorant Garamond,serif; font-size:24px; font-weight:300;">The Lodge</div>
+      <div id="lodgeTitle" style="font-family:Cormorant Garamond,serif; font-size:24px; font-weight:300;">The Lodge</div>
       <div style="display:flex; align-items:center; gap:16px;">
-        <button id="lodgeBell" class="lodge-act" style="font-size:15px; position:relative;" aria-label="Notifications">&#128276;<span id="lodgeBellBadge" style="display:none; position:absolute; top:-5px; right:-8px; background:#d4956e; color:#0e0f17; border-radius:8px; font-size:8px; padding:1px 4px; font-family:'DM Mono',monospace;"></span></button>
+        <button id="lodgeChats" class="lodge-act" style="font-size:15px; color:#8eccc0;" aria-label="Messages">&#9993;</button>
+        <button id="lodgeBell" class="lodge-act" style="font-size:15px; position:relative; color:#e8c87a;" aria-label="Notifications">&#128276;<span id="lodgeBellBadge" style="display:none; position:absolute; top:-5px; right:-8px; background:#d4956e; color:#0e0f17; border-radius:8px; font-size:8px; padding:1px 4px; font-family:'DM Mono',monospace;"></span></button>
         <button class="history-back" id="lodgeBack">← back</button>
       </div>
     </div>
@@ -5330,6 +5345,30 @@ body:not(.tut-live) #tutCorgi {
       <div id="lodgeFeed"></div>
       <div id="lodgeEmpty" class="prof-empty-note" style="display:none; text-align:center; padding:26px 20px;">Nothing here yet.<br>Post a status, or add friends to see theirs.</div>
       <button id="lodgeMore" style="display:none; width:100%; margin:6px 0 30px; padding:11px; border:1px solid var(--border); border-radius:10px; background:transparent; color:var(--muted); font-family:'DM Mono',monospace; font-size:9px; letter-spacing:.16em; text-transform:uppercase; cursor:pointer;">Load more</button>
+    </div>
+  </div>
+
+  <!-- LODGE CHAT -->
+  <div class="screen" id="chatListScreen" style="flex-direction:column;">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; flex-shrink:0;">
+      <div style="font-family:Cormorant Garamond,serif; font-size:24px; font-weight:300;">Messages</div>
+      <button class="history-back" id="chatListBack">← back</button>
+    </div>
+    <div style="flex:1; overflow-y:auto; -webkit-overflow-scrolling:touch; scrollbar-width:none;">
+      <div id="chatList"></div>
+      <div id="chatListEmpty" class="prof-empty-note" style="display:none; text-align:center; padding:26px 20px;">No conversations yet.<br>Message a mutual follow from their profile.</div>
+    </div>
+  </div>
+  <div class="screen" id="chatThreadScreen" style="flex-direction:column;">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; flex-shrink:0;">
+      <div id="chatThreadName" style="font-family:Cormorant Garamond,serif; font-size:22px; font-weight:300;">@</div>
+      <button class="history-back" id="chatThreadBack">← back</button>
+    </div>
+    <div style="font-size:8px; letter-spacing:.1em; color:var(--muted); text-align:center; margin-bottom:10px; text-transform:uppercase;">Private · not end-to-end encrypted</div>
+    <div id="chatMsgs" style="flex:1; overflow-y:auto; -webkit-overflow-scrolling:touch; display:flex; flex-direction:column; gap:8px; padding-bottom:10px; scrollbar-width:none;"></div>
+    <div class="lodge-crow" style="margin:8px 0 4px; flex-shrink:0;">
+      <input id="chatInput" class="lodge-cinput" maxlength="1000" placeholder="Message…" autocomplete="off"/>
+      <button id="chatSend" class="lodge-csend">Send</button>
     </div>
   </div>
 
@@ -33758,7 +33797,11 @@ function _lodgeCachedList() {
   try { var a = JSON.parse(localStorage.getItem(LODGE_CACHE_KEY)); return Array.isArray(a) ? a : []; } catch(e) { return []; }
 }
 
+var _lodgeUserFilter = null; // {userId, username} → viewing one practitioner's posts
 function openLodge() {
+  _lodgeUserFilter = null;
+  document.getElementById('lodgeTitle').textContent = 'The Lodge';
+  document.getElementById('lodgeComposer').style.display = '';
   showScreen('lodgeScreen');
   // Instant paint from cache, then network refresh (established pattern).
   _lodgePosts = _lodgeCachedList();
@@ -33767,29 +33810,55 @@ function openLodge() {
   loadLodgeNotifs();
 }
 
+// One practitioner's full post history on its own page.
+function openLodgeUser(userId, username) {
+  _lodgeUserFilter = { userId: userId, username: username };
+  document.getElementById('lodgeTitle').textContent = '@' + username;
+  document.getElementById('lodgeComposer').style.display = 'none';
+  showScreen('lodgeScreen');
+  _lodgePosts = []; _lodgeCursor = null;
+  renderLodgeFeed();
+  loadLodgeFeed();
+}
+
 async function loadLodgeFeed(cursor) {
   if (!authToken) { _lodgePosts = []; renderLodgeFeed(); return; }
   try {
-    var url = SERVER_URL + '/api/social/feed' + (cursor ? '?cursor=' + encodeURIComponent(cursor) : '');
+    var base = _lodgeUserFilter
+      ? SERVER_URL + '/api/social/users/' + encodeURIComponent(_lodgeUserFilter.userId) + '/posts'
+      : SERVER_URL + '/api/social/feed';
+    var url = base + (cursor ? '?cursor=' + encodeURIComponent(cursor) : '');
     var res = await fetch(url, { headers: { 'Authorization': 'Bearer ' + authToken } });
     if (!res.ok) return;
     var data = await res.json();
     var posts = (data && data.posts) || [];
     _lodgePosts = cursor ? _lodgePosts.concat(posts) : posts;
     _lodgeCursor = posts.length === 20 ? posts[posts.length - 1].createdAt : null;
-    if (!cursor) try { localStorage.setItem(LODGE_CACHE_KEY, JSON.stringify(_lodgePosts.slice(0, 20))); } catch(e) {}
+    if (!cursor && !_lodgeUserFilter) try { localStorage.setItem(LODGE_CACHE_KEY, JSON.stringify(_lodgePosts.slice(0, 20))); } catch(e) {}
     renderLodgeFeed();
   } catch(e) { console.warn('Lodge feed failed', e); }
 }
 
+// Deterministic per-user accent: hash the username into a small palette so
+// every practitioner gets a stable ring gradient + name tint across surfaces.
+var LODGE_HUES = [['#9ed8c4','#7eb8a4'],['#e8c87a','#d4956e'],['#b58ed8','#8e6ec4'],['#7ec4d8','#5e9ec0'],['#e89e9e','#c47a7a'],['#a8d88e','#7eb87e']];
+function _lodgeHue(name) {
+  var h = 0; name = String(name || '');
+  for (var i = 0; i < name.length; i++) h = (h * 31 + name.charCodeAt(i)) >>> 0;
+  return LODGE_HUES[h % LODGE_HUES.length];
+}
+function _lodgeRingHtml(username, profilePic) {
+  var pic = safeProfilePic(profilePic);
+  if (pic) return '<div class="lodge-post__ring" style="background-image:url(\'' + pic + '\');color:transparent;"></div>';
+  var hue = _lodgeHue(username);
+  return '<div class="lodge-post__ring" style="background:linear-gradient(135deg,' + hue[0] + ',' + hue[1] + ');">' + escHtml(String(username || '?')[0].toUpperCase()) + '</div>';
+}
 function _lodgePostHtml(p) {
-  var pic = safeProfilePic(p.profilePic);
-  var ring = pic
-    ? '<div class="lodge-post__ring" style="background-image:url(\'' + pic + '\');color:transparent;"></div>'
-    : '<div class="lodge-post__ring">' + escHtml(String(p.username || '?')[0].toUpperCase()) + '</div>';
+  var hue = _lodgeHue(p.username);
   return '<div class="lodge-post" data-post-id="' + escHtml(p.id) + '">'
-    + '<div class="lodge-post__head">' + ring
-    + '<div><div class="lodge-post__name">@' + escHtml(p.username || '?') + '</div>'
+    + '<div class="lodge-post__head" data-lodge-user="' + escHtml(p.userId) + '" data-lodge-uname="' + escHtml(p.username || '?') + '" style="cursor:pointer;">'
+    + _lodgeRingHtml(p.username, p.profilePic)
+    + '<div><div class="lodge-post__name" style="color:' + hue[0] + ';">@' + escHtml(p.username || '?') + '</div>'
     + '<div class="lodge-post__time">' + timeAgo(new Date(p.createdAt)) + '</div></div></div>'
     + '<div class="lodge-post__text">' + escHtml(p.text || '') + '</div>'
     + '<div class="lodge-post__bar">'
@@ -33817,7 +33886,7 @@ function renderLodgeFeed() {
 
 function _lodgeCommentHtml(c) {
   return '<div class="lodge-comment" data-comment-id="' + escHtml(c.id) + '">'
-    + '<div class="lodge-comment__name">@' + escHtml(c.username || '?') + ' · ' + timeAgo(new Date(c.createdAt))
+    + '<div class="lodge-comment__name"><span style="color:' + _lodgeHue(c.username)[0] + ';opacity:.8;">@' + escHtml(c.username || '?') + '</span> · ' + timeAgo(new Date(c.createdAt))
     + (c.mine ? ' <button class="lodge-act lodge-del" data-comment-del="' + escHtml(c.id) + '" style="display:inline-flex;padding:0 4px;" aria-label="Delete comment">✕</button>' : '')
     + '</div><div class="lodge-comment__text">' + escHtml(c.text || '') + '</div></div>';
 }
@@ -33923,6 +33992,8 @@ document.getElementById('lodgeFeed').addEventListener('click', function(e) {
   var card = e.target.closest('.lodge-post');
   if (!card) return;
   var pid = card.getAttribute('data-post-id');
+  var uhead = e.target.closest('[data-lodge-user]');
+  if (uhead) { openLodgeUser(uhead.getAttribute('data-lodge-user'), uhead.getAttribute('data-lodge-uname')); return; }
   var cdel = e.target.closest('[data-comment-del]');
   if (cdel) { deleteLodgeComment(cdel.getAttribute('data-comment-del'), pid, card); return; }
   if (e.target.closest('[data-like-count]')) { openLikers(pid); return; }
@@ -33933,7 +34004,10 @@ document.getElementById('lodgeFeed').addEventListener('click', function(e) {
   if (e.target.closest('.lodge-csend')) { sendLodgeComment(pid, card); return; }
 });
 document.getElementById('lodgeComposer').addEventListener('click', function() { openStatusEditor(); });
-document.getElementById('lodgeBack').addEventListener('click', function() { showScreen('homeScreen'); });
+document.getElementById('lodgeBack').addEventListener('click', function() {
+  if (_lodgeUserFilter) { openLodge(); return; }
+  showScreen('homeScreen');
+});
 document.getElementById('lodgeMore').addEventListener('click', function() { if (_lodgeCursor) loadLodgeFeed(_lodgeCursor); });
 document.getElementById('drawerLodge').addEventListener('click', function() {
   closeDrawer();
@@ -34035,12 +34109,17 @@ async function loadFriendSocial(f) {
       loadFriendSocial(f);
     };
     document.getElementById('friendReportBtn').onclick = function() { reportLodgeContent('user', f.userId); };
+    var mb = document.getElementById('friendMsgBtn');
+    if (mb) {
+      mb.style.display = (s.iFollow === 'active' && s.followsMe && !s.blocked) ? '' : 'none';
+      mb.onclick = function() { messageFriend(f.userId, f.username || ''); };
+    }
   } catch(e) { box.style.display = 'none'; }
 }
 
 // Notifications bell.
 var _lodgeNotifs = [];
-var NOTIF_COPY = { like: 'liked your post', comment: 'commented on your post', follow: 'now follows you', follow_req: 'requested to follow you', approved: 'approved your follow request' };
+var NOTIF_COPY = { like: 'liked your post', comment: 'commented on your post', follow: 'now follows you', follow_req: 'requested to follow you', approved: 'approved your follow request', dm: 'sent you a message' };
 async function loadLodgeNotifs() {
   if (!authToken) return;
   try {
@@ -34070,6 +34149,108 @@ document.getElementById('lodgeBell').addEventListener('click', openLodgeNotifs);
   document.getElementById('notifCloseBtn').addEventListener('click', function() { ov.classList.remove('on'); });
   ov.addEventListener('click', function(e) { if (e.target === ov) ov.classList.remove('on'); });
 })();
+
+// ── Lodge Phase 3: private chat (polling, mutual follows only) ──
+var _chatConvId = null, _chatPoll = null;
+
+function stopChatPoll() { if (_chatPoll) { clearInterval(_chatPoll); _chatPoll = null; } }
+function startChatPoll() {
+  stopChatPoll();
+  _chatPoll = setInterval(function() {
+    var scr = document.getElementById('chatThreadScreen');
+    if (scr && scr.classList.contains('active')) loadChatMsgs();
+    else stopChatPoll();
+  }, 8000);
+}
+
+async function openChatList() {
+  stopChatPoll();
+  showScreen('chatListScreen');
+  var list = document.getElementById('chatList');
+  var empty = document.getElementById('chatListEmpty');
+  try {
+    var res = await fetch(SERVER_URL + '/api/social/conversations', { headers: { 'Authorization': 'Bearer ' + authToken } });
+    if (!res.ok) return;
+    var d = await res.json();
+    var convos = d.conversations || [];
+    list.innerHTML = convos.map(function(c) {
+      return '<div class="chat-conv" data-conv-id="' + escHtml(c.id) + '" data-conv-name="' + escHtml(c.username) + '">'
+        + _lodgeRingHtml(c.username, c.profilePic)
+        + '<div style="min-width:0;"><div class="chat-conv__name" style="color:' + _lodgeHue(c.username)[0] + ';">@' + escHtml(c.username) + '</div>'
+        + '<div class="chat-conv__preview">' + escHtml(c.lastPreview || '') + '</div></div>'
+        + (c.unread > 0 ? '<span class="chat-unread"></span>' : '')
+        + '</div>';
+    }).join('');
+    empty.style.display = convos.length ? 'none' : '';
+  } catch(e) {}
+}
+
+async function openChatThread(convId, username) {
+  _chatConvId = convId;
+  document.getElementById('chatThreadName').textContent = '@' + username;
+  document.getElementById('chatMsgs').innerHTML = '';
+  showScreen('chatThreadScreen');
+  await loadChatMsgs();
+  startChatPoll();
+}
+
+function _chatMsgHtml(m) {
+  return '<div class="chat-row ' + (m.mine ? 'chat-mine' : 'chat-theirs') + '"><div class="chat-bubble">'
+    + escHtml(m.text) + '<div class="chat-time">' + timeAgo(new Date(m.createdAt)) + '</div></div></div>';
+}
+
+async function loadChatMsgs() {
+  if (!_chatConvId || !authToken) return;
+  try {
+    var res = await fetch(SERVER_URL + '/api/social/conversations/' + _chatConvId + '/messages', { headers: { 'Authorization': 'Bearer ' + authToken } });
+    if (!res.ok) return;
+    var d = await res.json();
+    var box = document.getElementById('chatMsgs');
+    box.innerHTML = (d.messages || []).map(_chatMsgHtml).join('');
+    box.scrollTop = box.scrollHeight;
+  } catch(e) {}
+}
+
+async function sendChatMsg() {
+  var input = document.getElementById('chatInput');
+  var text = (input.value || '').trim();
+  if (!text || !_chatConvId) return;
+  try {
+    var res = await fetch(SERVER_URL + '/api/social/conversations/' + _chatConvId + '/messages', {
+      method: 'POST', headers: { 'Authorization': 'Bearer ' + authToken, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ text: text })
+    });
+    var d = await res.json();
+    if (!res.ok) { showToast(d.error || 'Send failed'); return; }
+    input.value = '';
+    var box = document.getElementById('chatMsgs');
+    box.insertAdjacentHTML('beforeend', _chatMsgHtml(d.message));
+    box.scrollTop = box.scrollHeight;
+  } catch(e) { showToast('Send failed'); }
+}
+
+async function messageFriend(userId, username) {
+  if (!authToken) return;
+  try {
+    var res = await fetch(SERVER_URL + '/api/social/conversations/open', {
+      method: 'POST', headers: { 'Authorization': 'Bearer ' + authToken, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ userId: userId })
+    });
+    var d = await res.json();
+    if (!res.ok) { showToast(d.error || 'Unable to message'); return; }
+    openChatThread(d.id, username);
+  } catch(e) {}
+}
+
+document.getElementById('lodgeChats').addEventListener('click', function() { openChatList(); });
+document.getElementById('chatListBack').addEventListener('click', function() { stopChatPoll(); showScreen('lodgeScreen'); });
+document.getElementById('chatThreadBack').addEventListener('click', function() { stopChatPoll(); openChatList(); });
+document.getElementById('chatList').addEventListener('click', function(e) {
+  var row = e.target.closest('[data-conv-id]');
+  if (row) openChatThread(row.getAttribute('data-conv-id'), row.getAttribute('data-conv-name'));
+});
+document.getElementById('chatSend').addEventListener('click', sendChatMsg);
+document.getElementById('chatInput').addEventListener('keydown', function(e) { if (e.key === 'Enter') sendChatMsg(); });
 
 function openFriendsPanel() {
   var el = document.getElementById('friendsPanel');

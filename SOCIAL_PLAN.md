@@ -228,6 +228,12 @@ Nothing screens post/comment/DM text before it's stored beyond sanitization
 Each phase is independently shippable and roughly one working session. P1 is
 useful on day one because the friend graph and statuses already exist.
 
+**Status: P1, P2, and P3 are shipped.** Extras beyond plan: per-user accent
+colors (hashed username → stable ring/name palette) and a per-practitioner
+posts page (tap any post author → their full history via /users/:id/posts).
+Deferred from P3: DM web-push (needs per-user push-subscription storage —
+currently subs are keyed to reminder flows, not accounts).
+
 ## 9. Risks & honest constraints
 
 - **Render cold starts** make the first feed/chat load slow after idle periods;

@@ -71,6 +71,8 @@ let commentsCollection;
 let blocksCollection;
 let reportsCollection;
 let notificationsCollection;
+let conversationsCollection;
+let messagesCollection;
 let subscriptions = [];
 let prayerSchedules = [];
 let practiceSchedules = [];
@@ -150,6 +152,10 @@ async function connectDB() {
     notificationsCollection = db.collection('notifications');
     try { await blocksCollection.createIndex({ userId: 1, blockedId: 1 }, { unique: true }); } catch(e) {}
     try { await notificationsCollection.createIndex({ userId: 1, createdAt: -1 }); } catch(e) {}
+    conversationsCollection = db.collection('conversations');
+    messagesCollection = db.collection('messages');
+    try { await conversationsCollection.createIndex({ participants: 1 }); } catch(e) {}
+    try { await messagesCollection.createIndex({ convId: 1, createdAt: 1 }); } catch(e) {}
     // TTL: let MongoDB sweep stale beacons automatically (reads also guard on expiresAt)
     try { await beaconsCollection.createIndex({ expiresAt: 1 }, { expireAfterSeconds: 0 }); } catch(e) {}
     // Compound index makes every pull O(1) instead of a full collection scan
@@ -1906,13 +1912,14 @@ app.get('/api/social/users/:id/summary', verifyToken, async (req, res) => {
     const targetId = req.params.id === 'me' ? viewerId : req.params.id;
     const followers = await followsCollection.countDocuments({ followeeId: targetId, status: 'active' });
     const following = await followsCollection.countDocuments({ followerId: targetId, status: 'active' });
-    let iFollow = null, blocked = false;
+    let iFollow = null, followsMe = false, blocked = false;
     if (targetId !== viewerId) {
       const edge = await followsCollection.findOne({ followerId: viewerId, followeeId: targetId });
       iFollow = edge ? edge.status : null;
+      followsMe = !!(await followsCollection.findOne({ followerId: targetId, followeeId: viewerId, status: 'active' }));
       blocked = !!(await blocksCollection.findOne({ userId: viewerId, blockedId: targetId }));
     }
-    res.json({ followers, following, iFollow, blocked });
+    res.json({ followers, following, iFollow, followsMe, blocked });
   } catch (err) { res.status(500).json({ error: 'Summary failed' }); }
 });
 
@@ -1986,6 +1993,95 @@ app.post('/api/social/notifications/seen', verifyToken, async (req, res) => {
     await notificationsCollection.updateMany({ userId: req.user.userId, seenAt: null }, { $set: { seenAt: new Date() } });
     res.json({ ok: true });
   } catch (err) { res.status(500).json({ error: 'Failed' }); }
+});
+
+// ── THE LODGE Phase 3: private chat (mutual follows only, polling) ──
+// No E2E encryption — messages are plaintext in the DB; the client says so.
+const DM_MAX_LEN = 1000;
+
+async function isMutualFollow(a, b) {
+  const x = await followsCollection.findOne({ followerId: a, followeeId: b, status: 'active' });
+  if (!x) return false;
+  return !!(await followsCollection.findOne({ followerId: b, followeeId: a, status: 'active' }));
+}
+
+app.post('/api/social/conversations/open', verifyToken, async (req, res) => {
+  try {
+    const selfId = req.user.userId; const { userId } = req.body;
+    if (!userId || typeof userId !== 'string') return res.status(400).json({ error: 'userId required' });
+    if (userId === selfId) return res.status(400).json({ error: 'Cannot message yourself' });
+    const blockedEither = await blocksCollection.findOne({ $or: [{ userId: selfId, blockedId: userId }, { userId, blockedId: selfId }] });
+    if (blockedEither) return res.status(403).json({ error: 'Unable to message' });
+    if (!(await isMutualFollow(selfId, userId))) return res.status(403).json({ error: 'You can only message practitioners who follow you back' });
+    const participants = [selfId, userId].sort();
+    let convo = await conversationsCollection.findOne({ participants });
+    if (!convo) {
+      const doc = { participants, createdAt: new Date(), lastMsgAt: null, lastPreview: '', lastRead: {} };
+      const r = await conversationsCollection.insertOne(doc);
+      convo = Object.assign({ _id: r.insertedId }, doc);
+    }
+    res.json({ id: convo._id.toString() });
+  } catch (err) { res.status(500).json({ error: 'Open failed' }); }
+});
+
+app.get('/api/social/conversations', verifyToken, async (req, res) => {
+  try {
+    const selfId = req.user.userId;
+    const convos = await conversationsCollection.find({ participants: selfId }).sort({ lastMsgAt: -1 }).limit(50).toArray();
+    const otherIds = convos.map(c => (c.participants || []).find(x => x !== selfId)).filter(Boolean);
+    const users = otherIds.length ? await usersCollection.find({ _id: { $in: otherIds.map(id => new ObjectId(id)) } }).project({ username: 1, profilePic: 1 }).toArray() : [];
+    const byId = {}; users.forEach(u => { byId[u._id.toString()] = u; });
+    const out = [];
+    for (const c of convos) {
+      const other = (c.participants || []).find(x => x !== selfId);
+      const lastRead = (c.lastRead && c.lastRead[selfId]) ? new Date(c.lastRead[selfId]) : new Date(0);
+      const unread = await messagesCollection.countDocuments({ convId: c._id.toString(), senderId: { $ne: selfId }, createdAt: { $gt: lastRead } });
+      out.push({
+        id: c._id.toString(), userId: other,
+        username: (byId[other] && byId[other].username) || ('practitioner_' + String(other).slice(-5)),
+        profilePic: (byId[other] && byId[other].profilePic) || null,
+        lastPreview: c.lastPreview || '', lastMsgAt: c.lastMsgAt, unread
+      });
+    }
+    res.json({ conversations: out });
+  } catch (err) { res.status(500).json({ error: 'Conversations failed' }); }
+});
+
+app.get('/api/social/conversations/:id/messages', verifyToken, async (req, res) => {
+  try {
+    const selfId = req.user.userId;
+    const convo = await conversationsCollection.findOne({ _id: new ObjectId(req.params.id) });
+    if (!convo || (convo.participants || []).indexOf(selfId) === -1) return res.status(404).json({ error: 'Not found' });
+    let msgs = await messagesCollection.find({ convId: convo._id.toString() }).sort({ createdAt: -1 }).limit(50).toArray();
+    msgs.reverse();
+    await conversationsCollection.updateOne({ _id: convo._id }, { $set: { ['lastRead.' + selfId]: new Date() } });
+    res.json({ messages: msgs.map(m => ({
+      id: m._id.toString(), text: m.text, createdAt: m.createdAt, mine: m.senderId === selfId
+    })) });
+  } catch (err) { res.status(500).json({ error: 'Messages failed' }); }
+});
+
+app.post('/api/social/conversations/:id/messages', verifyToken, async (req, res) => {
+  try {
+    const selfId = req.user.userId;
+    const text = sanitizeSocialText(req.body.text, DM_MAX_LEN);
+    if (!text) return res.status(400).json({ error: 'text required' });
+    const convo = await conversationsCollection.findOne({ _id: new ObjectId(req.params.id) });
+    if (!convo || (convo.participants || []).indexOf(selfId) === -1) return res.status(404).json({ error: 'Not found' });
+    const other = (convo.participants || []).find(x => x !== selfId);
+    const blockedEither = await blocksCollection.findOne({ $or: [{ userId: selfId, blockedId: other }, { userId: other, blockedId: selfId }] });
+    if (blockedEither) return res.status(403).json({ error: 'Unable to message' });
+    const dayStart = new Date(); dayStart.setHours(0, 0, 0, 0);
+    const n = await messagesCollection.countDocuments({ senderId: selfId, createdAt: { $gte: dayStart } });
+    if (n >= 500) return res.status(429).json({ error: 'Daily message limit reached' });
+    const m = { convId: convo._id.toString(), senderId: selfId, text, createdAt: new Date() };
+    const r = await messagesCollection.insertOne(m);
+    await conversationsCollection.updateOne({ _id: convo._id }, { $set: {
+      lastMsgAt: m.createdAt, lastPreview: text.slice(0, 60), ['lastRead.' + selfId]: m.createdAt
+    } });
+    notify(other, 'dm', selfId, convo._id.toString());
+    res.json({ ok: true, message: { id: r.insertedId.toString(), text, createdAt: m.createdAt, mine: true } });
+  } catch (err) { res.status(500).json({ error: 'Send failed' }); }
 });
 
 // ── EXISTING ROUTES ──────────────────────────────────────
