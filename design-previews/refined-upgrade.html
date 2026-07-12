@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Presence · Refined Upgrade Preview</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;1,300&family=DM+Mono:wght@300;400&family=Space+Grotesk:wght@500;600&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg:#07080d; --surface:#0e0f17; --surface2:#13141f;
+      --border:rgba(255,255,255,.07); --border2:rgba(255,255,255,.12);
+      --text:#ddd8ce; --muted:rgba(221,216,206,.42); --readable:rgba(221,216,206,.68);
+      --accent:#7eb8a4; --guide:#9b8ec4; --blue:#8ecce0; --gold:#d4b08e;
+      --physical:#d49898; --astral:#c4a8d4; --mental:#98b4cc;
+    }
+    * { box-sizing:border-box; margin:0; padding:0; -webkit-tap-highlight-color:transparent; }
+    html { background:var(--bg); }
+    body { min-height:100vh; background:var(--bg); color:var(--text); font-family:'DM Mono',monospace; }
+    body::before { content:''; position:fixed; inset:0; pointer-events:none; background:radial-gradient(ellipse 70% 48% at 30% 0%,rgba(126,184,164,.055),transparent 66%),radial-gradient(ellipse 58% 38% at 90% 100%,rgba(100,90,160,.05),transparent 65%); }
+    button { font:inherit; }
+    .app { position:relative; width:min(100%,430px); min-height:100vh; margin:0 auto; padding:max(env(safe-area-inset-top),14px) 24px max(env(safe-area-inset-bottom),30px); overflow:hidden; }
+    .top-bar { position:relative; display:flex; justify-content:space-between; align-items:center; height:28px; margin-bottom:8px; }
+    .hamburger { width:44px; height:44px; margin-left:-12px; background:none; border:none; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:5px; cursor:pointer; }
+    .hamburger span { width:20px; height:1.5px; border-radius:2px; background:var(--muted); }
+    .wordmark { position:absolute; left:50%; transform:translateX(-50%); font-family:'Cormorant Garamond',serif; font-size:11px; letter-spacing:.35em; text-transform:uppercase; color:var(--accent); white-space:nowrap; }
+    .streak { font-size:10px; letter-spacing:.15em; color:var(--muted); }
+    .streak b { color:var(--accent); font-weight:400; }
+    .mode-tabs { display:flex; border-bottom:1px solid var(--border); margin-bottom:12px; }
+    .mode-tab { flex:1; min-width:0; padding:10px 0 8px; border:0; border-bottom:2px solid transparent; background:none; color:var(--muted); font-size:9px; letter-spacing:.2em; text-transform:uppercase; white-space:nowrap; }
+    .mode-tab.active { color:var(--guide); border-bottom-color:var(--guide); }
+    .guide-dots { display:flex; justify-content:center; align-items:center; height:54px; }
+    .guide-dot { width:26px; height:26px; border:0; background:radial-gradient(circle,rgba(255,255,255,.18) 0 3px,transparent 3.5px); }
+    .guide-dot.active { background:radial-gradient(circle,var(--blue) 0 4px,transparent 4.5px); }
+    .stage-strip { display:flex; align-items:center; justify-content:space-between; gap:12px; padding:12px 14px 10px; border:1px solid var(--border); border-radius:12px; background:rgba(255,255,255,.022); }
+    .stage-kicker { font-size:7px; letter-spacing:.28em; text-transform:uppercase; color:var(--blue); }
+    .stage-name { margin-top:4px; font-family:'Cormorant Garamond',serif; font-size:18px; font-weight:300; color:var(--text); }
+    .akasha { flex-shrink:0; padding:7px 12px; border:1px solid rgba(142,204,224,.24); border-radius:999px; background:rgba(142,204,224,.06); color:#b8eaff; cursor:pointer; }
+    .akasha-value { font-family:'Cormorant Garamond',serif; font-size:18px; }
+    .akasha-key { margin-left:4px; font-size:7px; letter-spacing:.2em; text-transform:uppercase; color:rgba(221,216,206,.55); }
+    .bardon-track { display:flex; gap:5px; margin-top:9px; }
+    .bardon-track span { flex:1; height:3px; border-radius:999px; background:rgba(255,255,255,.07); }
+    .bardon-track .done { background:rgba(142,204,224,.45); }
+    .bardon-track .active { background:var(--blue); box-shadow:0 0 8px rgba(142,204,224,.55); }
+    .center { position:relative; display:flex; flex-direction:column; align-items:center; padding:16px 0 8px; }
+    .omnia-stage { position:relative; width:190px; height:205px; display:grid; place-items:center; }
+    .aura { position:absolute; inset:0; border-radius:50%; background:radial-gradient(circle at 50% 52%,rgba(152,180,204,.35),rgba(196,168,212,.14) 40%,transparent 68%); transition:background .35s; }
+    .omnia { position:relative; width:126px; height:184px; border:0; background:none; filter:drop-shadow(0 0 16px rgba(160,210,240,.45)); animation:float 4.5s ease-in-out infinite; cursor:pointer; z-index:2; }
+    .omnia svg { width:100%; height:100%; overflow:visible; }
+    .omnia.building { animation:buildPulse .55s ease; }
+    @keyframes float { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-7px)} }
+    @keyframes buildPulse { 0%{transform:scale(1)} 48%{transform:scale(1.1);filter:drop-shadow(0 0 28px currentColor)} 100%{transform:scale(1)} }
+    .step-copy { text-align:center; max-width:320px; }
+    .step-label { font-size:8px; letter-spacing:.24em; text-transform:uppercase; color:var(--muted); }
+    .step-title { margin-top:4px; font-family:'Cormorant Garamond',serif; font-size:18px; font-weight:300; color:var(--text); }
+    .step-text { margin-top:7px; color:var(--readable); font-family:'Cormorant Garamond',serif; font-size:15px; font-style:italic; line-height:1.55; }
+    .body-heading { margin-top:18px; display:flex; align-items:end; justify-content:space-between; gap:12px; }
+    .section-label { font-size:8px; letter-spacing:.24em; text-transform:uppercase; color:var(--muted); }
+    .section-title { margin-top:4px; font-family:'Cormorant Garamond',serif; font-size:20px; font-weight:300; }
+    .recommendation { color:var(--blue); font-size:8px; letter-spacing:.12em; text-transform:uppercase; }
+    .body-selectors { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; margin-top:10px; }
+    .body-tab { position:relative; min-width:0; min-height:76px; padding:10px 7px; border:1px solid var(--border); border-radius:10px; background:rgba(255,255,255,.02); color:var(--muted); text-align:left; cursor:pointer; transition:border-color .2s,background .2s,transform .15s; }
+    .body-tab:active { transform:scale(.98); }
+    .body-tab.active { border-color:var(--body-color); background:color-mix(in srgb,var(--body-color) 8%,transparent); color:var(--text); }
+    .body-tab-name { color:var(--body-color); font-size:8px; letter-spacing:.16em; text-transform:uppercase; white-space:nowrap; }
+    .body-tab-level { margin-top:7px; font-family:'Cormorant Garamond',serif; font-size:24px; font-weight:300; line-height:1; color:var(--text); }
+    .body-tab-meta { margin-top:3px; font-size:8px; color:rgba(221,216,206,.56); }
+    .body-detail { position:relative; margin-top:9px; padding:15px 14px 13px; border:1px solid var(--body-color); border-radius:12px; background:rgba(255,255,255,.022); overflow:hidden; }
+    .body-detail::before { content:''; position:absolute; inset:0; pointer-events:none; background:radial-gradient(circle at 90% 0%,color-mix(in srgb,var(--body-color) 15%,transparent),transparent 52%); }
+    .body-detail > * { position:relative; }
+    .detail-head { display:flex; align-items:flex-start; justify-content:space-between; gap:12px; }
+    .detail-name { font-family:'Cormorant Garamond',serif; font-size:22px; font-weight:300; color:var(--text); }
+    .detail-level { flex-shrink:0; color:var(--body-color); font-size:9px; letter-spacing:.1em; }
+    .detail-copy { margin-top:7px; color:var(--readable); font-size:10px; line-height:1.55; }
+    .progress { height:3px; border-radius:999px; background:rgba(255,255,255,.07); margin-top:12px; overflow:hidden; }
+    .progress-fill { height:100%; width:0; background:var(--body-color); transition:width .4s; }
+    .build-row { display:flex; align-items:center; justify-content:space-between; gap:12px; margin-top:12px; }
+    .build-cost { color:rgba(221,216,206,.62); font-family:'Cormorant Garamond',serif; font-size:14px; }
+    .build { min-width:132px; min-height:44px; padding:0 14px; border:1px solid var(--body-color); border-radius:7px; background:transparent; color:var(--body-color); font-size:8px; letter-spacing:.16em; text-transform:uppercase; cursor:pointer; transition:background .2s,transform .15s; }
+    .build:active { transform:scale(.98); background:color-mix(in srgb,var(--body-color) 12%,transparent); }
+    .build:disabled { opacity:.4; cursor:default; }
+    .gate { margin-top:14px; padding:13px 2px; border-top:1px solid var(--border); border-bottom:1px solid var(--border); }
+    .gate-top { display:flex; align-items:center; justify-content:space-between; gap:12px; }
+    .gate-title { font-size:9px; letter-spacing:.16em; text-transform:uppercase; color:var(--text); }
+    .gate-value { color:var(--blue); font-size:9px; }
+    .gate-copy { margin-top:5px; color:rgba(221,216,206,.58); font-size:9px; line-height:1.5; }
+    .gate-bar { height:3px; margin-top:9px; background:rgba(255,255,255,.07); overflow:hidden; }
+    .gate-bar span { display:block; width:78.5%; height:100%; background:linear-gradient(90deg,var(--guide),var(--blue)); }
+    .status { min-height:18px; margin-top:12px; text-align:center; color:var(--accent); font-size:9px; letter-spacing:.08em; }
+    @media (max-width:360px) { .app{padding-left:18px;padding-right:18px}.mode-tab{letter-spacing:.13em}.body-tab-name{letter-spacing:.1em}.build{min-width:112px} }
+    @media (prefers-reduced-motion:reduce) { .omnia{animation:none}.progress-fill,.body-tab{transition:none} }
+  </style>
+</head>
+<body>
+  <main class="app">
+    <header class="top-bar">
+      <button class="hamburger" aria-label="Menu"><span></span><span></span><span></span></button>
+      <div class="wordmark">Presence</div>
+      <div class="streak">streak <b>12d</b></div>
+    </header>
+    <nav class="mode-tabs" aria-label="Main sections">
+      <button class="mode-tab active">Guide</button><button class="mode-tab">Concentration</button><button class="mode-tab">Awareness</button>
+    </nav>
+    <div class="guide-dots" aria-label="Guide pages"><button class="guide-dot" aria-label="Path"></button><button class="guide-dot active" aria-label="Upgrade"></button><button class="guide-dot" aria-label="Tree"></button></div>
+
+    <section class="stage-strip">
+      <div style="min-width:0;flex:1"><div class="stage-kicker">Current stage</div><div class="stage-name">Step IV · Polarity</div><div class="bardon-track" aria-label="Step progress"><span class="done"></span><span class="done"></span><span class="done"></span><span class="active"></span><span></span><span></span><span></span><span></span><span></span><span></span></div></div>
+      <button class="akasha" id="akashaBank" aria-label="Akasha balance"><span class="akasha-value" id="akashaValue">7,757</span><span class="akasha-key">Akasha</span></button>
+    </section>
+
+    <section class="center">
+      <div class="omnia-stage"><div class="aura" id="aura"></div><button class="omnia" id="omnia" aria-label="Reveal an Omnia symbol">
+        <svg viewBox="0 0 80 130" aria-hidden="true"><defs><linearGradient id="og1" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#ddf0ff" stop-opacity=".92"/><stop offset="1" stop-color="#6ab8d8" stop-opacity=".48"/></linearGradient><linearGradient id="og2" x1="1" y1="0" x2="0" y2="1"><stop stop-color="#fff" stop-opacity=".78"/><stop offset="1" stop-color="#4a9ec0" stop-opacity=".22"/></linearGradient><radialGradient id="og3"><stop stop-color="#b8eaff" stop-opacity=".42"/><stop offset="1" stop-color="#2878a0" stop-opacity="0"/></radialGradient><filter id="glow" x="-30%" y="-30%" width="160%" height="160%"><feGaussianBlur stdDeviation="2.5" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter></defs><ellipse cx="40" cy="68" rx="28" ry="48" fill="url(#og3)" opacity=".62"/><polygon points="40,3 54,14 40,25 26,14" fill="url(#og1)" stroke="#90cce8" stroke-width=".55" filter="url(#glow)"/><polygon points="40,3 54,14 40,13" fill="#ceeaff" opacity=".72"/><polygon points="40,25 60,36 64,58 40,70 16,58 20,36" fill="url(#og1)" stroke="#88c4e0" stroke-width=".55"/><polygon points="40,25 60,36 40,44" fill="#d4ecff" opacity=".52"/><line x1="40" y1="25" x2="40" y2="70" stroke="#a8d8f2" stroke-width=".38" opacity=".48"/><polygon points="16,58 64,58 40,70" fill="url(#og2)" opacity=".38"/><polygon points="40,70 64,58 56,88 40,100 24,88 16,58" fill="url(#og1)" stroke="#88c4e0" stroke-width=".55" opacity=".88"/><polygon points="40,100 56,88 40,114" fill="url(#og2)" stroke="#88c4e0" stroke-width=".48" opacity=".72"/><polygon points="40,100 24,88 40,114" fill="#b4dcf4" stroke="#88c4e0" stroke-width=".48" opacity=".52"/><g opacity=".55"><line x1="6" y1="22" x2="12" y2="22" stroke="#b8eaff"/><line x1="9" y1="19" x2="9" y2="25" stroke="#b8eaff"/><line x1="68" y1="48" x2="74" y2="48" stroke="#b8eaff"/><line x1="71" y1="45" x2="71" y2="51" stroke="#b8eaff"/></g></svg>
+      </button></div>
+      <div class="step-copy"><div class="step-label">Now Building</div><div class="step-title">Step IV · Polarity</div><div class="step-text">Omnia is balancing the physical, astral, and mental bodies into one working field.</div></div>
+    </section>
+
+    <section>
+      <div class="body-heading"><div><div class="section-label">Three bodies</div><h1 class="section-title">Choose where Omnia grows</h1></div><div class="recommendation" id="recommendation">Recommended · Mental</div></div>
+      <div class="body-selectors" id="bodySelectors">
+        <button class="body-tab" style="--body-color:var(--physical)" data-body="physical" aria-pressed="false"><div class="body-tab-name">Physical</div><div class="body-tab-level" data-level>45</div><div class="body-tab-meta" data-meta>45 / 100</div></button>
+        <button class="body-tab" style="--body-color:var(--astral)" data-body="astral" aria-pressed="false"><div class="body-tab-name">Astral</div><div class="body-tab-level" data-level>61</div><div class="body-tab-meta" data-meta>61 / 100</div></button>
+        <button class="body-tab active" style="--body-color:var(--mental)" data-body="mental" aria-pressed="true"><div class="body-tab-name">Mental</div><div class="body-tab-level" data-level>63</div><div class="body-tab-meta" data-meta>63 / 100</div></button>
+      </div>
+
+      <div class="body-detail" id="bodyDetail" style="--body-color:var(--mental)">
+        <div class="detail-head"><div class="detail-name" id="detailName">Mental Body</div><div class="detail-level" id="detailLevel">Level 63</div></div>
+        <div class="detail-copy" id="detailCopy">Strengthens concentration recommendations and unlocks Omnia's next Polarity insight.</div>
+        <div class="progress"><div class="progress-fill" id="progressFill" style="width:63%"></div></div>
+        <div class="build-row"><div class="build-cost" id="buildCost">334 Akasha</div><button class="build" id="buildBtn">Build Mental</button></div>
+      </div>
+
+      <div class="gate"><div class="gate-top"><div class="gate-title">Next gate · Step V</div><div class="gate-value">55 / 70 sessions</div></div><div class="gate-copy">The body levels are visible at a glance; the detailed requirement appears only for the body you select.</div><div class="gate-bar"><span></span></div></div>
+      <div class="status" id="status" role="status" aria-live="polite"></div>
+    </section>
+  </main>
+  <script>
+    const bodies={
+      physical:{name:'Physical',level:45,cost:248,color:'var(--physical)',copy:'Improves steadiness, Asana endurance, and the physical foundation needed for Step IV.'},
+      astral:{name:'Astral',level:61,cost:325,color:'var(--astral)',copy:'Deepens Soul Mirror work and strengthens emotional equilibrium throughout the path.'},
+      mental:{name:'Mental',level:63,cost:334,color:'var(--mental)',copy:"Strengthens concentration recommendations and unlocks Omnia's next Polarity insight."}
+    };
+    let selected='mental',bank=7757;
+    const render=()=>{
+      const body=bodies[selected];
+      document.querySelectorAll('.body-tab').forEach(tab=>{const active=tab.dataset.body===selected;tab.classList.toggle('active',active);tab.setAttribute('aria-pressed',String(active));const data=bodies[tab.dataset.body];tab.querySelector('[data-level]').textContent=data.level;tab.querySelector('[data-meta]').textContent=`${data.level} / 100`;});
+      const detail=document.getElementById('bodyDetail');detail.style.setProperty('--body-color',body.color);
+      document.getElementById('detailName').textContent=`${body.name} Body`;
+      document.getElementById('detailLevel').textContent=`Level ${body.level}`;
+      document.getElementById('detailCopy').textContent=body.copy;
+      document.getElementById('progressFill').style.width=`${body.level}%`;
+      document.getElementById('buildCost').textContent=`${body.cost.toLocaleString()} Akasha`;
+      document.getElementById('buildBtn').textContent=`Build ${body.name}`;
+      document.getElementById('buildBtn').disabled=bank<body.cost||body.level>=100;
+      document.getElementById('akashaValue').textContent=bank.toLocaleString();
+      document.getElementById('recommendation').textContent=selected==='mental'?'Recommended · Mental':`Selected · ${body.name}`;
+      document.getElementById('aura').style.background=`radial-gradient(circle at 50% 52%,color-mix(in srgb,${body.color} 34%,transparent),rgba(196,168,212,.11) 42%,transparent 68%)`;
+    };
+    document.querySelectorAll('.body-tab').forEach(tab=>tab.addEventListener('click',()=>{selected=tab.dataset.body;document.getElementById('status').textContent=`${bodies[selected].name} Body selected.`;render();}));
+    document.getElementById('buildBtn').addEventListener('click',()=>{const body=bodies[selected];if(bank<body.cost||body.level>=100)return;bank-=body.cost;body.level++;body.cost=Math.round(body.cost*1.06);const omnia=document.getElementById('omnia');omnia.classList.add('building');setTimeout(()=>omnia.classList.remove('building'),560);document.getElementById('status').textContent=`${body.name} Body reached level ${body.level}.`;render();});
+    document.getElementById('omnia').addEventListener('click',()=>{document.getElementById('status').textContent='Omnia is becoming balanced.';});
+    render();
+  </script>
+</body>
+</html>
