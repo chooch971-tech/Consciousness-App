@@ -22401,6 +22401,27 @@ function playAkashaPop() {
   } catch(e) {}
 }
 
+// Soft hollow "nothing to collect" thunk — a muted descending tap, deliberately
+// duller than the bright collect pop, played when the pump reservoir is empty.
+function playCollectEmpty() {
+  if (typeof appSoundEnabled === 'function' && !appSoundEnabled()) return;
+  try {
+    var ctx = new (window.AudioContext || window.webkitAudioContext)();
+    var t = ctx.currentTime + 0.01;
+    var osc = ctx.createOscillator(); osc.type = 'sine';
+    osc.frequency.setValueAtTime(230, t);
+    osc.frequency.exponentialRampToValueAtTime(130, t + 0.12);
+    var lp = ctx.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 500;
+    var gain = ctx.createGain();
+    gain.gain.setValueAtTime(0.0001, t);
+    gain.gain.exponentialRampToValueAtTime(0.07, t + 0.012);
+    gain.gain.exponentialRampToValueAtTime(0.0006, t + 0.16);
+    osc.connect(lp); lp.connect(gain); gain.connect(ctx.destination);
+    osc.start(t); osc.stop(t + 0.18);
+    setTimeout(function() { try { ctx.close(); } catch(e) {} }, 400);
+  } catch(e) {}
+}
+
 // Light double hammer-tap on wood — plays when a pump upgrade is bought, so
 // starting construction has a tactile "put to work" feel.
 function playUpgradeHammer() {
@@ -22664,6 +22685,13 @@ function omniaBuildLabel(untilMs) {
   if (s >= 60) return Math.floor(s / 60) + 'm ' + (s % 60) + 's';
   return s + 's';
 }
+// Compact "how long this upgrade takes to build" label from a raw duration.
+function omniaBuildSpanLabel(ms) {
+  var s = Math.max(0, Math.round(ms / 1000));
+  if (s >= 3600) { var h = Math.floor(s / 3600), m = Math.round((s % 3600) / 60); return h + 'h' + (m ? ' ' + m + 'm' : ''); }
+  if (s >= 60) return Math.round(s / 60) + 'm';
+  return s + 's';
+}
 
 // ── Generator yard (pictured, Clash-style) + upgrade sheet ────────────────
 // Tap a generator with akasha waiting (◈ badge) → collect, +N pops above it.
@@ -22762,9 +22790,15 @@ function renderGenSheet(gid) {
     else if (pumpBusyId) btn = '<button class="omnia-mini-btn" disabled style="opacity:.4;cursor:default;">Waiting</button>';
     else if (atMax) btn = '<button class="omnia-mini-btn" disabled style="opacity:.45;cursor:default;">Step max</button>';
     else btn = '<button class="omnia-mini-btn" data-sheet-buy="' + id + '"' + ((omniaState.akasha || 0) < cost ? ' disabled' : '') + '>Upgrade ' + cost + '</button>';
+    // Build time for the NEXT level, shown under the button so cost + duration
+    // sit together. Hidden at max (no next level) and while building (the button
+    // already counts the live remaining time down).
+    var timeLabel = (atMax || building) ? '' : omniaBuildSpanLabel(omniaBuildDurationMs(lvl + 1, id));
+    var right = '<div style="display:flex; flex-direction:column; align-items:flex-end; gap:4px; flex-shrink:0;">' + btn
+      + (timeLabel ? '<span style="font-size:8px; letter-spacing:.08em; color:rgba(196,168,212,.9);">◷ ' + timeLabel + ' build</span>' : '') + '</div>';
     return '<div class="omnia-upgrade-row" style="border-left:2px solid ' + accent + '55; padding-left:11px;">'
       + '<div><div class="omnia-upgrade-name" style="color:' + accent + ';"><span style="opacity:.9;margin-right:6px;">' + glyph + '</span>' + name + ' ' + lvl + (capped && !atMax ? ' <span style="font-size:8px;color:rgba(200,230,245,.55);letter-spacing:.1em;">/ ' + stepMax + '</span>' : '') + '</div>'
-      + '<div class="omnia-upgrade-sub">' + sub + '</div></div>' + btn + '</div>';
+      + '<div class="omnia-upgrade-sub">' + sub + '</div></div>' + right + '</div>';
   }
 
   var contrib = omniaGenContribution(idx);
@@ -22772,12 +22806,16 @@ function renderGenSheet(gid) {
   var glvl = (omniaState.upgrades && omniaState.upgrades[gid]) || 1;
   var pumpRes = Math.floor((omniaState.reservoirs || {})[gid] || 0);
   var pumpCap = omniaPumpReservoirCap(idx);
+  var canCollectSheet = !building && pumpRes >= 1;
   body.innerHTML = '<button class="ach-info-close" id="genSheetClose" aria-label="Close">✕</button>'
-    + '<div class="ach-info-medal" style="--gc:#8eccc0;">' + _genPictureSvg(idx, pumpCap > 0 ? pumpRes / pumpCap : 0, glvl) + '</div>'
+    + '<div class="ach-info-medal" id="genSheetMedal" style="--gc:#8eccc0; position:relative;' + (canCollectSheet ? ' cursor:pointer;' : '') + '">'
+    + (canCollectSheet ? '<div class="oe-gen-collectbadge">+' + pumpRes.toLocaleString() + '</div>' : '')
+    + _genPictureSvg(idx, pumpCap > 0 ? pumpRes / pumpCap : 0, glvl) + '</div>'
     + '<div class="ach-info-kicker">Akasha Generator</div>'
     + '<div class="ach-info-name">Generator ' + meta.roman + '</div>'
     + '<div class="ach-info-desc">+' + contrib + '/hr · reservoir ' + pumpRes.toLocaleString() + ' / ' + pumpCap.toLocaleString()
-    + (building ? ' · <span style="color:#e8c87a;">offline while upgrading</span>' : '') + '</div>'
+    + (building ? ' · <span style="color:#e8c87a;">offline while upgrading</span>'
+       : canCollectSheet ? ' · <span style="color:#8eccc0;">tap the pump to collect</span>' : '') + '</div>'
     + '<div style="text-align:left; margin-top:16px;">'
     + row(gid, 'Akashic Current', 'Generate akasha more quickly each hour · next +' + (OMNIA_GEN_PER[idx] || 10) + '/hr', '#8ecce0', '◈')
     + row(meta.vessel, 'Deep Vessel', 'This pump\'s reservoir capacity', '#9ed8c4', '▽')
@@ -22790,7 +22828,17 @@ function renderGenSheet(gid) {
   // parsed, so a parse-time listener would attach to nothing.
   body.onclick = function(e) {
     var b = e.target.closest('[data-sheet-buy]');
-    if (b && !b.disabled && buyOmniaUpgrade(b.getAttribute('data-sheet-buy')) && _genSheetId) renderGenSheet(_genSheetId);
+    if (b && !b.disabled && buyOmniaUpgrade(b.getAttribute('data-sheet-buy')) && _genSheetId) { renderGenSheet(_genSheetId); return; }
+    // Tap the pump picture to collect its akasha without leaving the menu. If
+    // there's nothing waiting (or it's mid-build), play the hollow empty thunk.
+    var medalEl = e.target.closest('#genSheetMedal');
+    if (medalEl && _genSheetId) {
+      omniaAccrue();
+      var avail = Math.floor((omniaState.reservoirs || {})[_genSheetId] || 0);
+      var busy = omniaPumpBuildingId(_pumpOfUpgrade(_genSheetId));
+      if (!busy && avail >= 1) { collectOmniaAkasha(medalEl, _genSheetId); renderGenSheet(_genSheetId); }
+      else playCollectEmpty();
+    }
   };
 }
 function openGenSheet(gid) {
