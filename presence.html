@@ -19668,63 +19668,63 @@ var OMNIA_BARDON_STEPS = [
     roman:'II',
     name:'Step II · Imagination',
     text:'Omnia now has all the fundamentals to begin more advanced work: training the imagination and deepening the concentration.',
-    req:{ physical:25, astral:25, mental:25, recommended:12 }
+    req:{ physical:23, astral:23, mental:23, recommended:12 }
   },
   {
     step:3,
     roman:'III',
     name:'Step III · The Elements',
     text:'Omnia makes contact with the elements while deepening the senses. This is where the work begins to go above subjective experience.',
-    req:{ physical:45, astral:45, mental:45, recommended:30 }
+    req:{ physical:38, astral:38, mental:38, recommended:25 }
   },
   {
     step:4,
     roman:'IV',
     name:'Step IV · Polarity',
     text:'Omnia learns how to transfer his consciousness into any being. The abilities are getting stronger, everything is becoming balanced.',
-    req:{ physical:100, astral:100, mental:100, recommended:65 }
+    req:{ physical:62, astral:62, mental:62, recommended:45 }
   },
   {
     step:5,
     roman:'V',
     name:'Step V · Element Mastery',
     text:'Fire, Air, Water, and Earth arrange themselves in cardinal balance around Omnia. The luminous mantle wraps the entire form. The being is no longer only a vessel — it is a working compass of the elements.',
-    req:{ physical:195, astral:195, mental:195, recommended:140 }
+    req:{ physical:96, astral:96, mental:96, recommended:75 }
   },
   {
     step:6,
     roman:'VI',
     name:'Step VI · Etheric Echo',
     text:'Omnia\'s presence now echoes across the subtle planes. Each session leaves a luminous trace — a ghost of mastery that follows and teaches. The practitioner begins to perceive the etheric body of all matter.',
-    req:{ physical:350, astral:350, mental:350, recommended:200 }
+    req:{ physical:140, astral:140, mental:140, recommended:110 }
   },
   {
     step:7,
     roman:'VII',
     name:'Step VII · Awakened Senses',
     text:'The subtle senses fully awaken. Omnia perceives beyond ordinary sight — sensing etheric currents of thought, emotional fields, and the living web of awareness that underlies all phenomena.',
-    req:{ physical:600, astral:600, mental:600, recommended:275 }
+    req:{ physical:195, astral:195, mental:195, recommended:150 }
   },
   {
     step:8,
     roman:'VIII',
     name:'Step VIII · Living Currents',
     text:'The great currents of the universe flow through and around Omnia. Electric and magnetic forces are felt, directed, and woven into the daily work. The body becomes a conductor of cosmic intelligence.',
-    req:{ physical:970, astral:970, mental:970, recommended:360 }
+    req:{ physical:260, astral:260, mental:260, recommended:195 }
   },
   {
     step:9,
     roman:'IX',
     name:'Step IX · Astral Mirror',
     text:'The astral mirror comes alive. Omnia can project consciousness into the reflection of reality — examining events, spaces, and beings from within the subtle plane with perfect clarity.',
-    req:{ physical:1460, astral:1460, mental:1460, recommended:460 }
+    req:{ physical:335, astral:335, mental:335, recommended:245 }
   },
   {
     step:10,
     roman:'X',
     name:'Step X · Apotheosis',
     text:'The final integration. Omnia becomes a living axis between worlds — a consecrated form through which the divine current flows freely. Sacred geometry crowns the work. The journey is eternal.',
-    req:{ physical:2195, astral:2195, mental:2195, recommended:600 }
+    req:{ physical:430, astral:430, mental:430, recommended:300 }
   }
 ];
 
@@ -21146,8 +21146,9 @@ function omniaAccrue() {
       var gain = elapsedHours * (shares[gid] || 0) * mult;
       if (gain <= 0) continue;
       var cap = omniaPumpReservoirCap(i);
-      omniaState.reservoirs[gid] = Math.min(cap, (omniaState.reservoirs[gid] || 0) + gain);
-      earned += gain;
+      var before = omniaState.reservoirs[gid] || 0;
+      omniaState.reservoirs[gid] = Math.min(cap, before + gain);
+      earned += Math.max(0, omniaState.reservoirs[gid] - before);
     }
     if (earned > 0) omniaState.totalAkashaEarned = Math.floor((omniaState.totalAkashaEarned || 0) + earned);
   }
@@ -21921,8 +21922,9 @@ function omniaExerciseReward(exId, seconds, recommended, extraBoost) {
   var base = Math.max(95, Math.min(1100, Math.floor(akashaSeconds * 0.4) + 120));
   // The soft cap decays with body total, but a step-scaled mastery floor keeps
   // sessions paying a meaningful fraction of a body level at every rank — this
-  // is what makes practice volume matter all game (tuned: ~2yr casual / ~1.4yr
-  // dedicated to finish Step X at 1-2h/day).
+  // is what makes practice volume matter all game. Together with the Step gates,
+  // streaks, achievements, offerings, and monthly gifts, this targets a first
+  // Prestige in roughly 5-6 months at 30-45 min/day and 3-4 months at 60-90 min/day.
   var progressionSoftCap = 1 / (1 + Math.max(0, total - 36) / 420);
   var effMult = Math.max(progressionSoftCap, stepNum * 0.102);
   var stepPenalty = 1 - Math.min(0.24, Math.max(0, stepNum - 1) * 0.07);
@@ -22099,9 +22101,10 @@ function awardOmniaForExercise(exId, seconds, reachedRec) {
   }
   omniaState.akasha = (omniaState.akasha || 0) + gain;
   omniaState.totalAkashaEarned = (omniaState.totalAkashaEarned || 0) + gain;
-  // Any exercise = 1 session credit, max once per hour
+  // A completed Omnia recommendation earns 1 path-session credit, max once per
+  // hour. Other exercises still pay Akasha and XP, but do not bypass the Path.
   var now = Date.now();
-  if (now - (omniaState.lastSessionCreditMs || 0) >= 3600000) {
+  if (recommended && reachedRec !== false && now - (omniaState.lastSessionCreditMs || 0) >= 3600000) {
     omniaState.completedRecommended = (omniaState.completedRecommended || 0) + 1;
     omniaState.lastSessionCreditMs = now;
   }
