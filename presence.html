@@ -1628,6 +1628,23 @@
     .oe-genpip:nth-child(2){ animation-delay:.5s; } .oe-genpip:nth-child(3){ animation-delay:1s; }
     @keyframes oePipPulse { 0%,100%{opacity:.6;} 50%{opacity:1;} }
     .oe-genpip--off { background:#e8c87a; box-shadow:none; animation:none; opacity:.4; }
+    /* Generator yard: each generator is a tappable pictured building */
+    .oe-genyard { display:flex; justify-content:center; gap:10px; padding:10px 0 0; }
+    .oe-genpic { position:relative; flex:1; max-width:132px; min-width:0; cursor:pointer; text-align:center; background:none; border:none; transition:transform .1s; }
+    .oe-genpic:active { transform:scale(.96); }
+    .oe-genpic-svg { width:100%; max-width:118px; height:auto; filter:drop-shadow(0 0 10px rgba(90,184,224,.25)); }
+    .oe-genpic:not(.building):hover .oe-genpic-svg { filter:drop-shadow(0 0 14px rgba(142,204,224,.5)); }
+    .oe-genpic.building .oe-genpic-svg { filter:sepia(.6) hue-rotate(-28deg) saturate(1.4) drop-shadow(0 0 10px rgba(232,200,122,.35)); opacity:.85; }
+    .oe-genpic-ring { transform-origin:50px 48px; animation:oeSealSpinSlow 26s linear infinite; }
+    @keyframes oeSealSpinSlow { to { transform:rotate(360deg); } }
+    .oe-genpic-num { font-family:'Cormorant Garamond',serif; font-size:9px; fill:#8eccc0; letter-spacing:.2em; }
+    .oe-genpic-lvl { font-family:'DM Mono',monospace; font-size:9px; color:var(--muted); letter-spacing:.1em; margin-top:2px; }
+    .oe-genpic-build { color:#e8c87a; font-size:8px; letter-spacing:.06em; }
+    .oe-gen-collectbadge { position:absolute; top:-13px; left:50%; font-size:19px; color:#e8c87a; text-shadow:0 0 12px rgba(232,200,122,.95); pointer-events:none; z-index:2; animation:genBadgeBob 1.6s ease-in-out infinite; }
+    @keyframes genBadgeBob { 0%,100%{ transform:translate(-50%,0);} 50%{ transform:translate(-50%,-7px);} }
+    .oe-gen-slim { text-align:center; font-family:'DM Mono',monospace; font-size:8px; color:rgba(142,204,224,.62); letter-spacing:.08em; margin-top:10px; line-height:1.7; }
+    #genSheetBody .ach-info-medal { width:84px; height:94px; border:none; background:none; }
+    #genSheetBody .ach-info-medal svg { width:100%; height:100%; }
     .oe-gen-offline { color:#e8c87a; opacity:.9; letter-spacing:.06em; }
     /* Tappable generator cores (Clash-style: tap to open its upgrade sheet) */
     .oe-gen-core-row { display:flex; gap:9px; }
@@ -6236,77 +6253,9 @@ body:not(.tut-live) #tutCorgi {
                   <span class="oe-gen-rate-unit">/ hour</span>
                 </div>
               </div>
-              <div class="oe-well-stage">
-                <div class="oe-well" id="omniaWell" role="button" tabindex="0" aria-label="Collect akasha from the reservoir">
-                  <svg class="oe-well-svg" viewBox="0 0 150 150" xmlns="http://www.w3.org/2000/svg">
-                    <defs>
-                      <clipPath id="oeWellClip"><circle cx="75" cy="75" r="61"/></clipPath>
-                      <linearGradient id="oeWellFluidG" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="0%" stop-color="#9adcff" stop-opacity=".95"/>
-                        <stop offset="55%" stop-color="#3a9cc8" stop-opacity=".85"/>
-                        <stop offset="100%" stop-color="#15527e" stop-opacity=".92"/>
-                      </linearGradient>
-                      <radialGradient id="oeWellGlassG" cx="50%" cy="36%" r="68%">
-                        <stop offset="0%" stop-color="#b8eaff" stop-opacity=".13"/>
-                        <stop offset="70%" stop-color="#2878a0" stop-opacity=".05"/>
-                        <stop offset="100%" stop-color="#0a2138" stop-opacity=".28"/>
-                      </radialGradient>
-                    </defs>
-                    <g class="oe-well-seal">
-                      <circle cx="75" cy="75" r="71.5" fill="none" stroke="rgba(184,224,244,.3)" stroke-width=".6"/>
-                      <circle cx="75" cy="75" r="65.5" fill="none" stroke="rgba(184,224,244,.18)" stroke-width=".5"/>
-                      <g class="oe-seal-spin">
-                        <circle cx="75" cy="75" r="68.5" fill="none" stroke="rgba(142,204,224,.45)" stroke-width="2.2" stroke-dasharray=".7 13.65" stroke-linecap="round"/>
-                      </g>
-                      <g class="oe-seal-spin2">
-                        <path class="oe-seal-glyph" d="M75,2 L77.8,6.5 L75,11 L72.2,6.5 Z"/>
-                        <path class="oe-seal-glyph" transform="rotate(90 75 75)" d="M75,2 L77.8,6.5 L75,11 L72.2,6.5 Z"/>
-                        <path class="oe-seal-glyph" transform="rotate(180 75 75)" d="M75,2 L77.8,6.5 L75,11 L72.2,6.5 Z"/>
-                        <path class="oe-seal-glyph" transform="rotate(270 75 75)" d="M75,2 L77.8,6.5 L75,11 L72.2,6.5 Z"/>
-                        <circle class="oe-seal-node" cx="123.4" cy="26.6" r="1.7"/>
-                        <circle class="oe-seal-node" cx="123.4" cy="123.4" r="1.7"/>
-                        <circle class="oe-seal-node" cx="26.6" cy="123.4" r="1.7"/>
-                        <circle class="oe-seal-node" cx="26.6" cy="26.6" r="1.7"/>
-                      </g>
-                    </g>
-                    <circle cx="75" cy="75" r="61" fill="url(#oeWellGlassG)"/>
-                    <g clip-path="url(#oeWellClip)">
-                      <g class="oe-well-fluid" id="omniaWellFluid" style="transform:translateY(125px);">
-                        <g class="oe-well-drift">
-                          <path d="M0,14 Q18.75,22 37.5,14 T75,14 T112.5,14 T150,14 T187.5,14 T225,14 T262.5,14 T300,14 V175 H0 Z" fill="#5ab8e0" opacity=".42"/>
-                        </g>
-                        <g class="oe-well-drift oe-well-drift2">
-                          <path d="M0,12 Q18.75,4 37.5,12 T75,12 T112.5,12 T150,12 T187.5,12 T225,12 T262.5,12 T300,12 V175 H0 Z" fill="url(#oeWellFluidG)"/>
-                        </g>
-                        <g>
-                          <circle class="oe-bub" cx="52" cy="72" r="2.2"/>
-                          <circle class="oe-bub b2" cx="78" cy="94" r="1.6"/>
-                          <circle class="oe-bub b3" cx="98" cy="76" r="2.6"/>
-                          <circle class="oe-bub b4" cx="65" cy="106" r="1.4"/>
-                        </g>
-                      </g>
-                    </g>
-                    <circle cx="75" cy="75" r="61" fill="none" stroke="rgba(184,234,255,.5)" stroke-width="1.2" class="oe-well-rim"/>
-                  </svg>
-                  <div class="oe-well-label">
-                    <div class="oe-well-amt" id="omniaWellAmt">0</div>
-                    <div class="oe-well-sub" id="omniaWellSub">filling…</div>
-                  </div>
-                </div>
-              </div>
-              <div class="oe-gen-res-row">
-                <span class="oe-gen-res-label">Reservoir</span>
-                <span class="oe-gen-res-val" id="omniaReservoirText">0 / 0</span>
-              </div>
-              <button class="oe-gen-collect" id="omniaCollectBtn">Collect Akasha</button>
-              <div class="oe-gen-rate" id="omniaRateText"></div>
+              <div class="oe-genyard" id="omniaGenYard"></div>
+              <div class="oe-gen-slim" id="omniaGenSlim"></div>
             </div>
-          <div class="oe-gen-upgrades">
-            <div class="oe-gen-upg-label">Generators</div>
-            <div class="oe-gen-core-row" id="omniaGenCores"></div>
-            <div class="oe-gen-upg-label" style="margin-top:16px;">Upgrades</div>
-            <div class="omnia-upgrades" id="omniaUpgradeGrid"></div>
-          </div>
         </div>
 
         <details class="oe-accordion" open>
@@ -22189,8 +22138,7 @@ function renderOmniaEngine() {
   // Compact generator indicator: one glowing diamond per active generator
   // (base + Step V + Step IX, all three in Book II) — shows how many are
   // running without a wordy label. Offline note appears while the Current builds.
-  if (rateText) rateText.textContent = 'Resonance ' + (omniaState.recStreak || 0);
-  renderOmniaGenCores();
+  renderOmniaGenYard();
 
   var _inBookII = typeof darkMatterUnlocked === 'function' && darkMatterUnlocked();
   var stepLabelEl = document.querySelector('#omniaEngine .oe-stage-step-label');
@@ -22381,7 +22329,7 @@ function renderOmniaEngine() {
   evaluateOmniaStory();
 }
 
-function collectOmniaAkasha() {
+function collectOmniaAkasha(anchorEl) {
   omniaAccrue();
   var amount = Math.floor(omniaState.reservoir || 0);
   if (amount < 1) return;
@@ -22396,7 +22344,8 @@ function collectOmniaAkasha() {
 
   // floating "+N" burst + spark shower from the well
   if (collected > 0) {
-    var anchor = document.getElementById('omniaWell') || document.getElementById('omniaCollectBtn');
+    var anchor = (anchorEl && anchorEl instanceof Element ? anchorEl : null)
+      || document.getElementById('omniaGenYard') || document.getElementById('omniaWell') || document.getElementById('omniaCollectBtn');
     if (anchor) {
       var rect = anchor.getBoundingClientRect();
       var cx = rect.left + rect.width / 2;
@@ -22563,59 +22512,108 @@ function omniaBuildLabel(untilMs) {
   return s + 's';
 }
 
-// ── Generator cores (tappable) + upgrade sheet ────────────────────────────
+// ── Generator yard (pictured, Clash-style) + upgrade sheet ────────────────
+// Tap a generator with akasha waiting (◈ badge) → collect, +N pops above it.
+// Tap it with nothing to collect → its upgrade menu opens.
 var _genSheetId = null;
-function renderOmniaGenCores() {
-  var el = document.getElementById('omniaGenCores');
-  if (!el) return;
+
+function _genPictureSvg(idx, fillFrac) {
+  var op = (0.06 + 0.5 * Math.max(0, Math.min(1, fillFrac || 0))).toFixed(2);
+  return '<svg class="oe-genpic-svg" viewBox="0 0 100 112" aria-hidden="true">'
+    + '<ellipse cx="50" cy="105" rx="30" ry="4.5" fill="rgba(142,204,224,.08)"/>'
+    + '<path d="M30 92 L70 92 L76 103 L24 103 Z" fill="rgba(142,204,224,.08)" stroke="rgba(142,204,224,.45)" stroke-width="1.1"/>'
+    + '<path d="M35 92 L37 66" stroke="rgba(142,204,224,.5)" stroke-width="1.4"/>'
+    + '<path d="M65 92 L63 66" stroke="rgba(142,204,224,.5)" stroke-width="1.4"/>'
+    + '<circle cx="50" cy="48" r="23" fill="rgba(90,184,224,' + op + ')" stroke="rgba(184,234,255,.65)" stroke-width="1.2"/>'
+    + '<circle cx="50" cy="48" r="29" fill="none" stroke="rgba(142,204,224,.3)" stroke-width=".8" stroke-dasharray="2 6" class="oe-genpic-ring"/>'
+    + '<path d="M50 10 L52.6 15.5 L50 21 L47.4 15.5 Z" fill="#bfeaff" opacity=".9"/>'
+    + '<text x="50" y="100" text-anchor="middle" class="oe-genpic-num">' + OMNIA_GEN_META[idx].roman + '</text>'
+    + '</svg>';
+}
+
+function renderOmniaGenYard() {
+  var yard = document.getElementById('omniaGenYard');
+  if (!yard) return;
   var n = omniaGenUnlockedCount();
+  var reservoir = Math.floor(omniaState.reservoir || 0);
+  var cap = omniaReservoirCap();
+  var frac = cap > 0 ? (omniaState.reservoir || 0) / cap : 0;
+  var canCollect = reservoir >= 1;
   var html = '';
   for (var i = 0; i < n; i++) {
     var meta = OMNIA_GEN_META[i];
     var lvl = (omniaState.upgrades && omniaState.upgrades[meta.id]) || 1;
     var building = omniaUpgradeBuilding(meta.id);
-    html += '<button class="oe-gen-core' + (building ? ' building' : '') + '" data-gen-open="' + meta.id + '">'
-      + '<span class="oe-gen-core-sym">◆</span>'
-      + '<span class="oe-gen-core-name">Gen ' + meta.roman + '</span>'
-      + '<span class="oe-gen-core-lvl">' + (building ? ('◷ <span data-build-countdown="' + meta.id + '">' + omniaBuildLabel(building) + '</span>') : ('Lv ' + lvl)) + '</span>'
+    html += '<button class="oe-genpic' + (building ? ' building' : '') + '" data-gen-tap="' + meta.id + '" aria-label="Akasha Generator ' + meta.roman + '">'
+      + (canCollect ? '<div class="oe-gen-collectbadge">◈</div>' : '')
+      + _genPictureSvg(i, frac)
+      + '<div class="oe-genpic-lvl">' + (building
+          ? '<span class="oe-genpic-build">◷ <span data-build-countdown="' + meta.id + '">' + omniaBuildLabel(building) + '</span></span>'
+          : 'Lv ' + lvl) + '</div>'
       + '</button>';
   }
-  el.innerHTML = html;
+  yard.innerHTML = html;
+  var slim = document.getElementById('omniaGenSlim');
+  if (slim) slim.textContent = 'Reservoir ' + reservoir + ' / ' + cap
+    + ' · Resonance ' + (omniaState.recStreak || 0)
+    + (canCollect ? ' · tap a generator to collect' : '');
 }
+
 function renderGenSheet(gid) {
   var body = document.getElementById('genSheetBody');
   var idx = OMNIA_GEN_META.findIndex(function(g) { return g.id === gid; });
   if (!body || idx < 0) return;
   var meta = OMNIA_GEN_META[idx];
-  var upg = OMNIA_UPGRADES.find(function(u) { return u.id === gid; });
-  var lvl = (omniaState.upgrades && omniaState.upgrades[gid]) || 1;
-  var cost = omniaUpgradeCost(upg);
-  var stepMax = omniaUpgradeStepMax(gid);
-  var capped = isFinite(stepMax);
-  var atMax = capped && lvl >= stepMax;
-  var building = omniaUpgradeBuilding(gid);
+
+  function row(id, name, sub) {
+    var upg = OMNIA_UPGRADES.find(function(u) { return u.id === id; });
+    var lvl = (omniaState.upgrades && omniaState.upgrades[id]) || 1;
+    var cost = omniaUpgradeCost(upg);
+    var stepMax = omniaUpgradeStepMax(id);
+    var capped = isFinite(stepMax);
+    var atMax = capped && lvl >= stepMax;
+    var building = omniaUpgradeBuilding(id);
+    var btn;
+    if (building) btn = '<button class="omnia-mini-btn omnia-mini-btn--building" disabled>◷ <span data-build-countdown="' + id + '">' + omniaBuildLabel(building) + '</span></button>';
+    else if (atMax) btn = '<button class="omnia-mini-btn" disabled style="opacity:.45;cursor:default;">Step max</button>';
+    else btn = '<button class="omnia-mini-btn" data-sheet-buy="' + id + '"' + ((omniaState.akasha || 0) < cost ? ' disabled' : '') + '>Upgrade ' + cost + '</button>';
+    return '<div class="omnia-upgrade-row">'
+      + '<div><div class="omnia-upgrade-name">' + name + ' ' + lvl + (capped && !atMax ? ' <span style="font-size:8px;color:var(--muted);letter-spacing:.1em;">/ ' + stepMax + '</span>' : '') + '</div>'
+      + '<div class="omnia-upgrade-sub">' + sub + '</div></div>' + btn + '</div>';
+  }
+
   var contrib = omniaGenContribution(idx);
-  var btn;
-  if (building) btn = '<button class="status-ov__btn" disabled>◷ <span data-build-countdown="' + gid + '">' + omniaBuildLabel(building) + '</span> · building</button>';
-  else if (atMax) btn = '<button class="status-ov__btn" disabled>Fully upgraded</button>';
-  else btn = '<button class="status-ov__btn status-ov__btn--save" id="genSheetBuy"' + ((omniaState.akasha || 0) < cost ? ' disabled' : '') + '>Upgrade · ' + cost + ' akasha</button>';
+  var building = omniaUpgradeBuilding(gid);
   body.innerHTML = '<button class="ach-info-close" id="genSheetClose" aria-label="Close">✕</button>'
-    + '<div class="ach-info-medal" style="--gc:#8eccc0;"><span style="font-size:30px;color:#8eccc0;text-shadow:0 0 12px rgba(142,204,192,.7);">◆</span></div>'
+    + '<div class="ach-info-medal" style="--gc:#8eccc0;">' + _genPictureSvg(idx, 0.6) + '</div>'
     + '<div class="ach-info-kicker">Akasha Generator</div>'
     + '<div class="ach-info-name">Generator ' + meta.roman + '</div>'
-    + '<div class="ach-info-desc">Level ' + lvl + (capped ? ' <span style="opacity:.6;">/ ' + stepMax + '</span>' : '') + ' · +' + contrib + '/hr'
-    + (building ? '<br><span style="color:#e8c87a;">offline while upgrading</span>' : '') + '</div>'
-    + '<div class="status-ov__row" style="margin-top:18px;">' + btn + '</div>';
-  var cl = document.getElementById('genSheetClose'); if (cl) cl.onclick = closeGenSheet;
-  var by = document.getElementById('genSheetBuy');
-  if (by) by.onclick = function() {
-    if (buyOmniaUpgrade(gid)) { renderGenSheet(gid); renderOmniaGenCores(); }
+    + '<div class="ach-info-desc">+' + contrib + '/hr'
+    + (building ? ' · <span style="color:#e8c87a;">offline while upgrading</span>' : '') + '</div>'
+    + '<div style="text-align:left; margin-top:16px;">'
+    + row(gid, 'Akashic Current', 'Generate akasha more quickly each hour · next +' + (OMNIA_GEN_PER[idx] || 10) + '/hr')
+    + '<div class="oe-gen-upg-label" style="margin:14px 0 6px;">Shared Systems</div>'
+    + row('vessel', 'Deep Vessel', 'Reservoir capacity before overflow')
+    + row('attunement', 'Attunement', 'Cheapens cosmetics, engine upgrades, and body levels')
+    + row('quickening', 'Quickening', 'Speeds generator upgrade construction')
+    + '</div>';
+  var cl = document.getElementById('genSheetClose');
+  if (cl) cl.onclick = closeGenSheet;
+  // Bound at render time — this script runs before the #genSheet markup is
+  // parsed, so a parse-time listener would attach to nothing.
+  body.onclick = function(e) {
+    var b = e.target.closest('[data-sheet-buy]');
+    if (b && !b.disabled && buyOmniaUpgrade(b.getAttribute('data-sheet-buy')) && _genSheetId) renderGenSheet(_genSheetId);
   };
 }
 function openGenSheet(gid) {
   _genSheetId = gid;
   renderGenSheet(gid);
   var ov = document.getElementById('genSheet');
+  if (ov && !ov._backdropBound) {
+    ov._backdropBound = 1;
+    ov.addEventListener('click', function(e) { if (e.target === ov) closeGenSheet(); });
+  }
   if (ov) ov.classList.add('on');
 }
 function closeGenSheet() {
@@ -22624,13 +22622,14 @@ function closeGenSheet() {
   if (ov) ov.classList.remove('on');
 }
 (function() {
-  var cores = document.getElementById('omniaGenCores');
-  if (cores) cores.addEventListener('click', function(e) {
-    var b = e.target.closest('[data-gen-open]');
-    if (b) openGenSheet(b.getAttribute('data-gen-open'));
+  var yard = document.getElementById('omniaGenYard');
+  if (yard) yard.addEventListener('click', function(e) {
+    var g = e.target.closest('[data-gen-tap]');
+    if (!g) return;
+    omniaAccrue();
+    if (Math.floor(omniaState.reservoir || 0) >= 1) { collectOmniaAkasha(g); return; }
+    openGenSheet(g.getAttribute('data-gen-tap'));
   });
-  var ov = document.getElementById('genSheet');
-  if (ov) ov.addEventListener('click', function(e) { if (e.target === ov) closeGenSheet(); });
 })();
 
 function buyOmniaUpgrade(id) {
@@ -26472,25 +26471,6 @@ function _hideGuideTabTip(el, tab) {
   panel.addEventListener('mousemove', function(e) { if (startX != null) handleMove(e.clientX, e.clientY); });
   panel.addEventListener('mouseup', function(e) { handleEnd(e.clientX); });
   panel.addEventListener('mouseleave', function() { startX = null; dragging = false; });
-})();
-document.getElementById('omniaCollectBtn').addEventListener('click', collectOmniaAkasha);
-(function() {
-  var well = document.getElementById('omniaWell');
-  if (!well) return;
-  well.addEventListener('click', function() {
-    omniaAccrue();
-    if (Math.floor(omniaState.reservoir || 0) < 1) {
-      well.classList.remove('shake');
-      void well.offsetWidth;
-      well.classList.add('shake');
-      setTimeout(function() { well.classList.remove('shake'); }, 350);
-      return;
-    }
-    collectOmniaAkasha();
-  });
-  well.addEventListener('keydown', function(e) {
-    if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); well.click(); }
-  });
 })();
 document.getElementById('guideOmniaFigure').addEventListener('click', morphGuideOmnia);
 document.getElementById('guideOmniaFigure').addEventListener('keydown', function(e) {
