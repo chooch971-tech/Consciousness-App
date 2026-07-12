@@ -11259,7 +11259,7 @@ function createOmniaResetState(resetAt) {
   omnia.reservoir = 0;
   omnia.lastTick = resetAt;
   omnia.bodies = { physical:1, astral:1, mental:1 };
-  omnia.upgrades = { current:1, vessel:1, attunement:1 };
+  omnia.upgrades = { current:1, vessel:1, attunement:1, quickening:1 };
   omnia.bardonStep = 1;
   omnia.rec = null;
   omnia.recStreak = 0;
@@ -19431,7 +19431,7 @@ var OMNIA_DEFAULT = {
   reservoir: 0,
   lastTick: Date.now(),
   bodies: { physical:1, astral:1, mental:1 },
-  upgrades: { current:1, vessel:1, attunement:1 },
+  upgrades: { current:1, vessel:1, attunement:1, quickening:1 },
   bardonStep:1,
   prestige:0,
   darkMatter:0,
@@ -19474,7 +19474,8 @@ var OMNIA_EXERCISE_META = {
 var OMNIA_UPGRADES = [
   { id:'current', name:'Akashic Current', sub:'Generate akasha more quickly each hour', base:520, step:260 },
   { id:'vessel', name:'Deep Vessel', sub:'Reservoir capacity before overflow', base:480, step:240 },
-  { id:'attunement', name:'Attunement', sub:'Cheapens cosmetics, engine upgrades, and body levels', base:640, step:320 }
+  { id:'attunement', name:'Attunement', sub:'Cheapens cosmetics, engine upgrades, and body levels', base:640, step:320 },
+  { id:'quickening', name:'Quickening', sub:'Speeds generator upgrade construction', base:600, step:300 }
 ];
 
 // Cosmetic pricing. `_price` is the canonical tier price (also used by
@@ -20991,7 +20992,8 @@ function omniaUpgradeStepMax(upgId) {
   var caps = {
     current:    [3, 6, 10, 15, 21, 28, 36, 45, 55, 66],
     vessel:     [3, 6, 10, 15, 21, 28, 36, 45, 55, 66],
-    attunement: [2, 4, 7, 11, 16, 22, 29, 37, 46, 56]
+    attunement: [2, 4, 7, 11, 16, 22, 29, 37, 46, 56],
+    quickening: [2, 4, 7, 11, 16, 22, 29, 37, 46, 56]
   };
   return (caps[upgId] || caps.current)[Math.min(step - 1, 9)];
 }
@@ -22460,11 +22462,18 @@ var _omniaUpgradeHeld = false;
 // applying instantly; the level takes effect when the timer completes. Timers
 // are wall-clock (persisted as a completion timestamp), so they keep running
 // while the app is closed and resolve on return.
+// The Quickening upgrade shortens construction, up to 60% faster at its cap.
+// (Attunement no longer touches build time — it's cost-only again.)
+function omniaBuildSpeedMult() {
+  var q = (omniaState.upgrades && omniaState.upgrades.quickening) || 1;
+  return Math.max(0.4, 1 - (q - 1) * 0.06);
+}
 function omniaBuildDurationMs(targetLevel) {
-  // Grows with the level being built, eased by Attunement (the same discount
-  // that cheapens cost). ~30s early → up to a 6h ceiling on the deepest levels.
-  var secs = Math.floor(30 * Math.pow(Math.max(1, targetLevel), 1.3) * omniaDiscountMult());
-  secs = Math.max(20, Math.min(secs, 6 * 3600));
+  // Weighty idle construction: grows steeply with the level being built so deep
+  // upgrades are real commitments. ≈1m early → ~1h at level 16 → ~20h at level
+  // 66, then eased by the Quickening upgrade. Floored 20s, capped 24h.
+  var secs = Math.floor(11 * Math.pow(Math.max(1, targetLevel), 2.1) * omniaBuildSpeedMult());
+  secs = Math.max(20, Math.min(secs, 24 * 3600));
   return secs * 1000;
 }
 function omniaUpgradeBuilding(id) {
