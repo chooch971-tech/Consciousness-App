@@ -11276,6 +11276,8 @@ function resetAllProgressSnapshot() {
     presence_guide_v1: JSON.stringify({_resetAt:resetAt}),
     presence_omnia_v1: JSON.stringify(omnia),
     bardon_rpg_v2: JSON.stringify({_resetAt:resetAt}),
+    presence_ach_v1: JSON.stringify({_resetAt:resetAt}),
+    presence_giftpath_v1: JSON.stringify({_resetAt:resetAt}),
     presence_visited: '1'
   };
 }
@@ -11325,9 +11327,9 @@ function shouldTakeCloudValue(key, local, cloud) {
     var cloudReset = (cloudObj && cloudObj._resetAt) || 0;
     if (localReset || cloudReset) {
       if (cloudReset !== localReset) {
-        // If local was reset but cloud was never deliberately reset and has real
-        // progress, the local reset was a sign-out clear — prefer cloud.
-        if (localReset > 0 && cloudReset === 0 && syncProgressScore(key, cloudObj) > 0) return true;
+        // Sign-out clears remove _resetAt before their next cloud pull. A marker
+        // here therefore always represents a deliberate Reset All Progress and
+        // must win over an older, meaningful cloud snapshot.
         return cloudReset > localReset;
       }
       return syncProgressScore(key, cloudObj) >= syncProgressScore(key, localObj);
@@ -11430,6 +11432,9 @@ function mergeGiftPathPull(localStr, cloudStr) {
   if (!localStr) return cloudStr;
   var a, b;
   try { a = JSON.parse(localStr); b = JSON.parse(cloudStr); } catch(e) { return null; }
+  if ((a._resetAt || 0) !== (b._resetAt || 0)) {
+    return shouldTakeCloudValue('presence_giftpath_v1', localStr, cloudStr) ? cloudStr : localStr;
+  }
   var out = {};
   var ac = Array.isArray(a.cleared) ? a.cleared : [];
   var bc = Array.isArray(b.cleared) ? b.cleared : [];
@@ -11456,6 +11461,7 @@ function mergeGiftPathPull(localStr, cloudStr) {
     out.startDate = newer.startDate || null;
   }
   out.started = !!(a.started || b.started);
+  if (a._resetAt) out._resetAt = a._resetAt;
   return JSON.stringify(out);
 }
 
@@ -11464,6 +11470,9 @@ function mergeAchPull(localStr, cloudStr) {
   if (!localStr) return cloudStr;
   var a, b;
   try { a = JSON.parse(localStr); b = JSON.parse(cloudStr); } catch(e) { return null; }
+  if ((a._resetAt || 0) !== (b._resetAt || 0)) {
+    return shouldTakeCloudValue('presence_ach_v1', localStr, cloudStr) ? cloudStr : localStr;
+  }
   var out = a;
   var unionEarned = function(x, y) {
     x = x || {}; y = y || {};
@@ -11511,6 +11520,7 @@ function mergeAchPull(localStr, cloudStr) {
     out.monthly = (String(bm.key || '') > String(am.key || '')) ? bm : am;
   }
   out._updatedAt = Math.max(a._updatedAt || 0, b._updatedAt || 0);
+  if (a._resetAt) out._resetAt = a._resetAt;
   return JSON.stringify(out);
 }
 
@@ -11648,6 +11658,8 @@ async function pushResetSnapshotToCloud() {
       presence_guide_v1: localStorage.getItem('presence_guide_v1'),
       presence_omnia_v1: localStorage.getItem('presence_omnia_v1'),
       bardon_rpg_v2: localStorage.getItem('bardon_rpg_v2'),
+      presence_ach_v1: localStorage.getItem('presence_ach_v1'),
+      presence_giftpath_v1: localStorage.getItem('presence_giftpath_v1'),
       presence_visited: localStorage.getItem('presence_visited')
     };
     var res = await fetch(SYNC_API_URL + '/sync/push', {
@@ -11668,7 +11680,8 @@ async function resetAllProgress() {
   var keys = [
     'presence_v3','presence_session','presence_guide_v1','presence_omnia_v1',
     'presence_conc_v1','presence_prayer_v1','presence_journal_v1',
-    'presence_soul_mirror_v1','presence_ai_report_comments_v1','bardon_rpg_v2','presence_visited'
+    'presence_soul_mirror_v1','presence_ai_report_comments_v1','bardon_rpg_v2',
+    'presence_ach_v1','presence_giftpath_v1','presence_visited'
   ];
   keys.forEach(function(k) { localStorage.removeItem(k); });
   var resetData = resetAllProgressSnapshot();
@@ -11689,7 +11702,8 @@ function applyLocalProgressSnapshot(snapshot) {
   var keys = [
     'presence_v3','presence_session','presence_guide_v1','presence_omnia_v1',
     'presence_conc_v1','presence_prayer_v1','presence_journal_v1',
-    'presence_soul_mirror_v1','presence_ai_report_comments_v1','bardon_rpg_v2','presence_visited'
+    'presence_soul_mirror_v1','presence_ai_report_comments_v1','bardon_rpg_v2',
+    'presence_ach_v1','presence_giftpath_v1','presence_visited'
   ];
   keys.forEach(function(k) { localStorage.removeItem(k); });
   Object.keys(snapshot).forEach(function(k) { localStorage.setItem(k, snapshot[k]); });
@@ -11708,7 +11722,8 @@ function resetLocalProgressForSignedOut() {
   // Without it, shouldTakeCloudValue will correctly prefer cloud data on next pull.
   var snapshot = resetAllProgressSnapshot();
   ['presence_v3','presence_conc_v1','presence_prayer_v1','presence_journal_v1',
-   'presence_soul_mirror_v1','presence_guide_v1','presence_omnia_v1','bardon_rpg_v2'].forEach(function(k) {
+   'presence_soul_mirror_v1','presence_guide_v1','presence_omnia_v1','bardon_rpg_v2',
+   'presence_ach_v1','presence_giftpath_v1'].forEach(function(k) {
     if (snapshot[k]) {
       try { var o = JSON.parse(snapshot[k]); delete o._resetAt; snapshot[k] = JSON.stringify(o); } catch(e) {}
     }
@@ -25746,8 +25761,9 @@ function _gpToday() { return new Date().toISOString().slice(0, 10); }
 function gpCurrentMonth() { return new Date().toISOString().slice(0, 7); }
 function _gpBlankClaimed() { return [false,false,false,false,false,false,false]; }
 function loadGiftPath() {
-  var def = { cleared: [], month: null, started: false, startDate: null, claimed: _gpBlankClaimed(), done: {} };
+  var def = { cleared: [], month: null, started: false, startDate: null, claimed: _gpBlankClaimed(), done: {}, _resetAt: 0 };
   try { var s = localStorage.getItem(GIFT_PATH_KEY); if (s) { var p = JSON.parse(s); ['cleared','month','started','startDate','claimed','done'].forEach(function(k){ if (p[k] != null) def[k] = p[k]; });
+    if (p._resetAt) def._resetAt = p._resetAt;
     // Migrate pre-monthly saves (no `cleared`/`month`): a finished old run — the
     // seventh gift claimed, or the legacy one-time devotion — counts as one
     // cleared month so the earned +2% carries into the stacking model.
@@ -28550,6 +28566,8 @@ async function syncPushData() {
       presence_guide_v1: localStorage.getItem('presence_guide_v1'),
       presence_omnia_v1: localStorage.getItem('presence_omnia_v1'),
       bardon_rpg_v2: localStorage.getItem('bardon_rpg_v2'),
+      presence_ach_v1: localStorage.getItem('presence_ach_v1'),
+      presence_giftpath_v1: localStorage.getItem('presence_giftpath_v1'),
       presence_visited: localStorage.getItem('presence_visited'),
     };
 
@@ -28560,12 +28578,17 @@ async function syncPushData() {
         var v3 = data.presence_v3 ? JSON.parse(data.presence_v3) : null;
         var conc = data.presence_conc_v1 ? JSON.parse(data.presence_conc_v1) : null;
         var omnia = data.presence_omnia_v1 ? JSON.parse(data.presence_omnia_v1) : null;
+        var achievements = data.presence_ach_v1 ? JSON.parse(data.presence_ach_v1) : null;
+        var giftPath = data.presence_giftpath_v1 ? JSON.parse(data.presence_giftpath_v1) : null;
         var hasAwareness = v3 && ((v3.xp || 0) > 0 || (v3.totalSessions || 0) > 0 || (v3.streak || 0) > 0);
         var hasConc = conc && ((conc.xp || 0) > 0 || (conc.totalSessions || 0) > 0);
         var hasOmnia = omnia && ((omnia.akasha || 0) > 0 || (omnia.totalAkashaEarned || 0) > 0
           || ((omnia.bodies && (omnia.bodies.physical > 1 || omnia.bodies.astral > 1 || omnia.bodies.mental > 1))));
         var hasJournal = data.presence_journal_v1 && data.presence_journal_v1.length > 50;
-        return hasAwareness || hasConc || hasOmnia || hasJournal;
+        var hasAchievements = achievements && (Object.keys(achievements.earned || {}).length > 0
+          || Object.keys(achievements.hwm || {}).length > 0 || (achievements.exCount || 0) > 0);
+        var hasGiftPath = giftPath && ((giftPath.cleared || []).length > 0 || (giftPath.claimed || []).some(Boolean));
+        return hasAwareness || hasConc || hasOmnia || hasJournal || hasAchievements || hasGiftPath;
       } catch(e) { return true; }
     })();
     if (!hasMeaningfulData) {

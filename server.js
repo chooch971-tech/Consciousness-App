@@ -1242,8 +1242,13 @@ function mergeOmniaKey(snaps) {
 // snapshot so a pull never hands a device an emptier set than it had — which is
 // what let already-earned achievements re-award akasha on a second device.
 function mergeAchKey(snaps) {
+  const best = parseSafe(pickBestValue('presence_ach_v1', snaps));
+  const resetAt = (best && best._resetAt) || 0;
   const objs = [];
-  snaps.forEach((s) => { const o = parseSafe(s.presence_ach_v1); if (o) objs.push(o); });
+  snaps.forEach((s) => {
+    const o = parseSafe(s.presence_ach_v1);
+    if (o && ((o._resetAt || 0) === resetAt)) objs.push(o);
+  });
   if (!objs.length) return null;
   let maxV = 1, monthKey = '';
   objs.forEach((o) => { maxV = Math.max(maxV, Number(o.hwmV) || 1); const mk = String((o.monthly || {}).key || ''); if (mk > monthKey) monthKey = mk; });
@@ -1276,6 +1281,7 @@ function mergeAchKey(snaps) {
   if (!isFinite(out.monthly.spentBase)) out.monthly.spentBase = 0;
   out.clearedKeys = Object.keys(cleared);
   out.monthsCleared = out.clearedKeys.length;
+  if (resetAt) out._resetAt = resetAt;
   return JSON.stringify(out);
 }
 
@@ -1285,8 +1291,13 @@ function mergeAchKey(snaps) {
 // newest month across snapshots and union claimed/done among snapshots on that
 // month, so last month's leftover claims can't block a new month's reset.
 function mergeGiftPathKey(snaps) {
+  const best = parseSafe(pickBestValue('presence_giftpath_v1', snaps));
+  const resetAt = (best && best._resetAt) || 0;
   const objs = [];
-  snaps.forEach((s) => { const o = parseSafe(s.presence_giftpath_v1); if (o) objs.push(o); });
+  snaps.forEach((s) => {
+    const o = parseSafe(s.presence_giftpath_v1);
+    if (o && ((o._resetAt || 0) === resetAt)) objs.push(o);
+  });
   if (!objs.length) return null;
   const clearedSeen = {}, cleared = [];
   let month = null, started = false;
@@ -1304,6 +1315,7 @@ function mergeGiftPathKey(snaps) {
     const od = o.done || {}; Object.keys(od).forEach((k) => { if (od[k]) out.done[k] = true; });
   });
   if (!out.startDate && month) out.startDate = month + '-01';
+  if (resetAt) out._resetAt = resetAt;
   return JSON.stringify(out);
 }
 
@@ -2455,9 +2467,9 @@ app.post('/api/pavlok/link', async (req, res) => {
       body: JSON.stringify({ user: { email, password } }),
     });
     const data = await r.json();
-    console.log('Pavlok login response status:', r.status, '— token', token ? 'received' : 'missing');
     // Token field name varies — try all known variants
     const token = data?.user?.token || data?.token || data?.access_token || data?.auth_token || data?.data?.token;
+    console.log('Pavlok login response status:', r.status, '— token', token ? 'received' : 'missing');
     if (!r.ok || !token) {
       return res.status(401).json({ error: data?.message || data?.error || data?.detail || 'Pavlok login failed' });
     }
