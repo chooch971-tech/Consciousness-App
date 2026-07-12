@@ -1623,6 +1623,11 @@
     .oe-gen-collect:hover:not(:disabled) { background:linear-gradient(180deg,rgba(90,184,224,.32),rgba(58,156,200,.16)); border-color:rgba(142,204,224,.65); box-shadow:0 0 16px rgba(90,184,224,.25); }
     .oe-gen-collect:disabled { opacity:.4; cursor:default; }
     .oe-gen-rate { font-size:8px; color:rgba(142,204,224,.62); letter-spacing:.08em; margin-top:11px; text-align:center; line-height:1.55; }
+    .oe-genpips { display:inline-flex; gap:4px; vertical-align:middle; margin-left:2px; }
+    .oe-genpip { width:6px; height:6px; transform:rotate(45deg); border-radius:1px; background:#8eccc0; box-shadow:0 0 6px rgba(142,204,192,.85); animation:oePipPulse 3s ease-in-out infinite; }
+    .oe-genpip:nth-child(2){ animation-delay:.5s; } .oe-genpip:nth-child(3){ animation-delay:1s; }
+    @keyframes oePipPulse { 0%,100%{opacity:.6;} 50%{opacity:1;} }
+    .oe-gen-offline { color:#e8c87a; opacity:.9; letter-spacing:.06em; }
     /* ── Akasha Well: tappable liquid-orb reservoir ───────────────── */
     .oe-well-stage { display:flex; justify-content:center; padding:4px 0 12px; }
     .oe-well { position:relative; width:158px; height:158px; cursor:pointer; outline:none; -webkit-tap-highlight-color:transparent; transition:transform .15s ease; }
@@ -20946,13 +20951,20 @@ function omniaRatePerHour() {
     var b2b = bookIIBodies();
     total += (b2b.astral || 1) + (b2b.mental || 1) + (b2b.wisdom || 1);
   }
+  // The generator is offline while its own engine (Akashic Current) is under
+  // construction — no akasha accrues until that upgrade lands. Other tracks
+  // (vessel/attunement/quickening) don't pause the flow.
+  if (typeof omniaUpgradeBuilding === 'function' && omniaUpgradeBuilding('current')) return 0;
   var currentLvl = omniaState.upgrades.current || 1;
   var stepNum = omniaState.bardonStep || 1;
   var earlyBoost = total < 48 ? Math.floor((48 - total) * 1.5) : 0;
   var stepTax = Math.max(0, stepNum - 1) * 16;
   var bodyBonus = Math.floor(Math.sqrt(Math.max(0, total)) * 9);
+  // Generators unlock with the path: second at Step V, third at Step IX. Each
+  // scales with the Current level and helps offset the rising step tax.
   var secondGen = (stepNum >= 5 || inBookII) ? Math.floor(18 + currentLvl * 8) : 0;
-  var base = 10 + currentLvl * 12 + Math.floor(bodyBonus * 0.5) + Math.floor(earlyBoost * 0.3) - stepTax + secondGen;
+  var thirdGen = (stepNum >= 9 || inBookII) ? Math.floor(24 + currentLvl * 10) : 0;
+  var base = 10 + currentLvl * 12 + Math.floor(bodyBonus * 0.5) + Math.floor(earlyBoost * 0.3) - stepTax + secondGen + thirdGen;
   // The generator hums when you practice: idle days trickle at 55%, and each
   // session today restores 15%, reaching full flow at 3 sessions.
   var practiceMult = Math.min(1, 0.55 + 0.15 * Math.min(3, omniaSessionsToday()));
@@ -22145,9 +22157,17 @@ function renderOmniaEngine() {
       genBoostEl.style.display = 'none';
     }
   }
-  var rateLabel = 'Resonance ' + (omniaState.recStreak || 0);
-  if (stepNum2 >= 5) rateLabel += ' · dual generator active';
-  if (rateText) rateText.textContent = rateLabel;
+  // Compact generator indicator: one glowing diamond per active generator
+  // (base + Step V + Step IX, all three in Book II) — shows how many are
+  // running without a wordy label. Offline note appears while the Current builds.
+  var _rInBookII = typeof darkMatterUnlocked === 'function' && darkMatterUnlocked();
+  var genCount = _rInBookII ? 3 : (1 + (stepNum2 >= 5 ? 1 : 0) + (stepNum2 >= 9 ? 1 : 0));
+  var _pips = '';
+  for (var _gp = 0; _gp < genCount; _gp++) _pips += '<i class="oe-genpip"></i>';
+  var _curBuilding = typeof omniaUpgradeBuilding === 'function' && omniaUpgradeBuilding('current');
+  if (rateText) rateText.innerHTML = 'Resonance ' + (omniaState.recStreak || 0)
+    + ' · <span class="oe-genpips" title="' + genCount + ' generator' + (genCount > 1 ? 's' : '') + ' active">' + _pips + '</span>'
+    + (_curBuilding ? '<br><span class="oe-gen-offline">◷ generator offline · upgrading current</span>' : '');
 
   var _inBookII = typeof darkMatterUnlocked === 'function' && darkMatterUnlocked();
   var stepLabelEl = document.querySelector('#omniaEngine .oe-stage-step-label');
@@ -22469,11 +22489,11 @@ function omniaBuildSpeedMult() {
   return Math.max(0.4, 1 - (q - 1) * 0.06);
 }
 function omniaBuildDurationMs(targetLevel) {
-  // Weighty idle construction: grows steeply with the level being built so deep
-  // upgrades are real commitments. ≈1m early → ~1h at level 16 → ~20h at level
-  // 66, then eased by the Quickening upgrade. Floored 20s, capped 24h.
-  var secs = Math.floor(11 * Math.pow(Math.max(1, targetLevel), 2.1) * omniaBuildSpeedMult());
-  secs = Math.max(20, Math.min(secs, 24 * 3600));
+  // Weighty idle construction with a real early floor: every upgrade is at least
+  // ~5m, then grows steeply so deep ones are day-long commitments. ≈5m early →
+  // ~1h at level 16 → ~4h at 30 → ~20h at 66, eased by Quickening. Capped 24h.
+  var secs = Math.floor((300 + 11 * Math.pow(Math.max(1, targetLevel), 2.1)) * omniaBuildSpeedMult());
+  secs = Math.max(60, Math.min(secs, 24 * 3600));
   return secs * 1000;
 }
 function omniaUpgradeBuilding(id) {
