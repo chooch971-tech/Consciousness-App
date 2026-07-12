@@ -1615,7 +1615,7 @@
     .oe-gen-res-val { font-family:'DM Mono',monospace; font-size:11px; letter-spacing:.04em; color:#bfeaff; }
     .oe-gen-bar { height:10px; border-radius:999px; background:rgba(255,255,255,.06); overflow:hidden; box-shadow:inset 0 0 4px rgba(0,0,0,.35); }
     .oe-gen-bar-fill { height:100%; border-radius:999px; width:0%; background:linear-gradient(90deg,#3a9cc8,#8ecce0 58%,#e0f2ff); box-shadow:0 0 10px rgba(142,204,224,.65); transition:width .4s ease; }
-    @keyframes akashaFloat { 0%{opacity:1;transform:translateX(-50%) translateY(0);} 25%{opacity:1;} 100%{opacity:0;transform:translateX(-50%) translateY(-64px);} }
+    @keyframes akashaFloat { 0%{opacity:0;transform:translateX(-50%) translateY(2px) scale(.45);} 14%{opacity:1;transform:translateX(-50%) translateY(-6px) scale(1.32);} 28%{opacity:1;transform:translateX(-50%) translateY(-11px) scale(.98);} 40%{transform:translateX(-50%) translateY(-15px) scale(1.03);} 100%{opacity:0;transform:translateX(-50%) translateY(-66px) scale(1);} }
     @keyframes akashaCollectGlow { 0%{box-shadow:0 6px 26px rgba(16,80,140,.2),inset 0 1px 0 rgba(184,234,255,.09);} 35%{box-shadow:0 6px 40px rgba(90,184,224,.4),inset 0 1px 0 rgba(184,234,255,.22),0 0 36px rgba(142,204,224,.22);} 100%{box-shadow:0 6px 26px rgba(16,80,140,.2),inset 0 1px 0 rgba(184,234,255,.09);} }
     .oe-collect-burst { position:fixed; transform:translateX(-50%); font-family:'Cormorant Garamond',serif; font-size:22px; font-weight:300; color:#bfeaff; pointer-events:none; white-space:nowrap; z-index:9999; text-shadow:0 0 16px rgba(142,204,224,.95); animation:akashaFloat 1s ease-out forwards; }
     .oe-gen-card.collect-flash { animation:akashaCollectGlow .75s ease-out forwards; }
@@ -1654,9 +1654,9 @@
     /* Generator upgrade drawer — slides in from the right */
     .gen-drawer { position:fixed; inset:0; z-index:9800; background:rgba(7,8,13,0); pointer-events:none; transition:background .3s ease; }
     .gen-drawer.on { background:rgba(7,8,13,.72); pointer-events:auto; }
-    .gen-drawer__panel { position:absolute; top:0; right:0; bottom:0; width:min(390px,88vw); box-sizing:border-box; overflow-y:auto; -webkit-overflow-scrolling:touch; scrollbar-width:none; text-align:center; padding:26px 22px calc(30px + env(safe-area-inset-bottom)); background:linear-gradient(165deg,#13141d 0%,#0c0d14 100%); border-left:1px solid var(--border2); box-shadow:-20px 0 46px -14px rgba(0,0,0,.65); transform:translateX(100%); transition:transform .33s cubic-bezier(.4,0,.2,1); }
+    .gen-drawer__panel { position:absolute; top:50%; right:0; width:min(390px,88vw); max-height:92vh; box-sizing:border-box; overflow-y:auto; -webkit-overflow-scrolling:touch; scrollbar-width:none; text-align:center; padding:26px 22px calc(30px + env(safe-area-inset-bottom)); background:linear-gradient(165deg,#13141d 0%,#0c0d14 100%); border:1px solid var(--border2); border-right:none; border-radius:22px 0 0 22px; box-shadow:-20px 0 46px -14px rgba(0,0,0,.65); transform:translate(100%,-50%); transition:transform .33s cubic-bezier(.4,0,.2,1); }
     .gen-drawer__panel::-webkit-scrollbar { display:none; }
-    .gen-drawer.on .gen-drawer__panel { transform:translateX(0); }
+    .gen-drawer.on .gen-drawer__panel { transform:translate(0,-50%); }
     .oe-gen-offline { color:#e8c87a; opacity:.9; letter-spacing:.06em; }
     /* Tappable generator cores (Clash-style: tap to open its upgrade sheet) */
     .oe-gen-core-row { display:flex; gap:9px; }
@@ -6256,7 +6256,7 @@ body:not(.tut-live) #tutCorgi {
           <div class="oe-gen-card">
               <div class="oe-gen-header">
                 <div class="oe-gen-titles">
-                  <div class="oe-gen-title">Akasha Generator</div>
+                  <div class="oe-gen-title" id="omniaGenTitle">Akasha Generator</div>
                   <div class="oe-gen-sub">Fills over time</div>
                   <div class="oe-gen-boost" id="omniaGenBoost"><span>⚡</span><span>+<span id="omniaGenBoostPct">0</span>% boost · <span id="omniaGenBoostTime"></span></span></div>
                 </div>
@@ -22157,6 +22157,8 @@ function renderOmniaEngine() {
   var stepNum2 = omniaState.bardonStep || 1;
   var rateBadge = document.getElementById('omniaGenRateNum');
   if (rateBadge) rateBadge.textContent = omniaRatePerHour();
+  var genTitleEl = document.getElementById('omniaGenTitle');
+  if (genTitleEl) genTitleEl.textContent = 'Akasha Generator' + (omniaGenUnlockedCount() >= 2 ? 's' : '');
   var genBoostEl = document.getElementById('omniaGenBoost');
   if (genBoostEl) {
     var genBoostMult = getActiveAkashaBoost();
@@ -22365,6 +22367,25 @@ function renderOmniaEngine() {
   evaluateOmniaStory();
 }
 
+function playAkashaPop() {
+  if (typeof appSoundEnabled === 'function' && !appSoundEnabled()) return;
+  try {
+    var ctx = new (window.AudioContext || window.webkitAudioContext)();
+    var t = ctx.currentTime + 0.01;
+    // quick pitch-up "pop": rising blip with a fast decay
+    var osc = ctx.createOscillator(); osc.type = 'triangle';
+    osc.frequency.setValueAtTime(420, t);
+    osc.frequency.exponentialRampToValueAtTime(1180, t + 0.09);
+    var gain = ctx.createGain();
+    gain.gain.setValueAtTime(0.0001, t);
+    gain.gain.exponentialRampToValueAtTime(0.16, t + 0.015);
+    gain.gain.exponentialRampToValueAtTime(0.0008, t + 0.16);
+    osc.connect(gain); gain.connect(ctx.destination);
+    osc.start(t); osc.stop(t + 0.18);
+    setTimeout(function() { try { ctx.close(); } catch(e) {} }, 400);
+  } catch(e) {}
+}
+
 function collectOmniaAkasha(anchorEl, gid) {
   omniaAccrue();
   var res = omniaState.reservoirs || (omniaState.reservoirs = {});
@@ -22388,6 +22409,7 @@ function collectOmniaAkasha(anchorEl, gid) {
 
   // floating "+N" burst + spark shower from the well
   if (collected > 0) {
+    playAkashaPop();
     var anchor = (anchorEl && anchorEl instanceof Element ? anchorEl : null)
       || document.getElementById('omniaGenYard') || document.getElementById('omniaWell') || document.getElementById('omniaCollectBtn');
     if (anchor) {
