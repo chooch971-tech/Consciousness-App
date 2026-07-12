@@ -723,30 +723,73 @@
     .ach-info-fill { height:100%; background:var(--gc,#e8c87a); border-radius:2px; }
     .ach-info-row { display:flex; justify-content:space-between; font-size:9px; letter-spacing:.08em; text-transform:uppercase; color:var(--muted); font-family:'DM Mono',monospace; }
     .ach-info-reward { color:var(--accent); }
-    /* The Lodge — social feed */
-    .lodge-post { background:var(--surface); border:1px solid var(--border); border-radius:13px; padding:14px 16px; margin-bottom:12px; }
-    .lodge-post__head { display:flex; align-items:center; gap:10px; margin-bottom:9px; }
-    .lodge-post__ring { width:34px; height:34px; border-radius:50%; flex-shrink:0; display:flex; align-items:center; justify-content:center; background:linear-gradient(135deg,#9ed8c4,#7eb8a4); color:#0e0f17; font-family:'Cormorant Garamond',serif; font-size:15px; background-size:cover; background-position:center; }
-    .lodge-post__name { font-family:'DM Mono',monospace; font-size:11px; color:var(--text); }
-    .lodge-post__time { font-family:'DM Mono',monospace; font-size:9px; color:var(--muted); margin-top:2px; }
-    .lodge-post__text { font-size:13px; color:var(--text); line-height:1.65; white-space:pre-wrap; word-break:break-word; font-family:'DM Mono',monospace; }
-    .lodge-post__bar { display:flex; align-items:center; gap:16px; margin-top:11px; }
-    .lodge-act { background:none; border:none; cursor:pointer; font-family:'DM Mono',monospace; font-size:11px; color:var(--muted); display:flex; align-items:center; gap:5px; padding:2px 0; }
+    /* The Lodge — a quiet shared practice record */
+    #lodgeScreen { padding-left:0; padding-right:0; padding-bottom:0; }
+    .lodge-topbar { min-height:54px; display:grid; grid-template-columns:44px 1fr auto; align-items:center; gap:10px; padding:0 18px 12px; border-bottom:1px solid rgba(255,255,255,.06); flex-shrink:0; }
+    .lodge-back { width:44px; height:44px; border:0; background:transparent; color:rgba(221,216,206,.78); display:flex; align-items:center; justify-content:center; cursor:pointer; }
+    .lodge-back svg,.lodge-tool svg { width:18px; height:18px; }
+    .lodge-heading { min-width:0; }
+    .lodge-heading__kicker { font-family:'DM Mono',monospace; font-size:8px; letter-spacing:.24em; text-transform:uppercase; color:rgba(232,200,122,.72); margin-bottom:2px; }
+    .lodge-heading__title { font-family:'Cormorant Garamond',serif; font-size:24px; line-height:1; font-weight:300; color:var(--text); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+    .lodge-tools { display:flex; align-items:center; gap:2px; }
+    .lodge-tool { position:relative; width:44px; height:44px; border:0; border-radius:8px; background:transparent; color:rgba(221,216,206,.7); display:flex; align-items:center; justify-content:center; cursor:pointer; transition:background .18s,color .18s; }
+    .lodge-tool:hover { background:rgba(255,255,255,.045); color:var(--text); }
+    .lodge-tool--messages { color:#8eccc0; }
+    .lodge-tool--notifs { color:#e8c87a; }
+    .lodge-badge { position:absolute; top:4px; right:2px; min-width:15px; height:15px; box-sizing:border-box; padding:0 4px; border-radius:8px; background:#d4956e; color:#0e0f17; font-family:'DM Mono',monospace; font-size:8px; line-height:15px; text-align:center; }
+    .lodge-scroll { flex:1; overflow-y:auto; -webkit-overflow-scrolling:touch; scrollbar-width:none; padding:18px 20px max(env(safe-area-inset-bottom),32px); }
+    .lodge-scroll::-webkit-scrollbar { display:none; }
+    .lodge-stream { width:100%; max-width:680px; margin:0 auto; }
+    .lodge-intro { display:grid; grid-template-columns:46px 1fr; gap:14px; align-items:center; padding:3px 2px 17px; }
+    .lodge-intro__mark { width:46px; height:46px; display:flex; align-items:center; justify-content:center; color:#e8c87a; border:1px solid rgba(232,200,122,.24); border-radius:50%; background:rgba(232,200,122,.045); box-shadow:0 0 22px rgba(232,200,122,.07); }
+    .lodge-intro__mark svg { width:25px; height:25px; }
+    .lodge-intro__label { font-family:'DM Mono',monospace; font-size:8px; letter-spacing:.24em; text-transform:uppercase; color:#e8c87a; margin-bottom:4px; }
+    .lodge-intro__text { font-family:'Cormorant Garamond',serif; font-size:16px; line-height:1.35; color:rgba(237,232,222,.78); }
+    #lodgeTabs { margin:0 0 14px; border-bottom-color:rgba(255,255,255,.07); }
+    #lodgeTabs .mode-tab { min-height:44px; font-size:9px; color:rgba(221,216,206,.5); }
+    #lodgeTabs .mode-tab.on { color:#8eccc0; border-bottom-color:#8eccc0; }
+    #lodgeTabs .mode-tab.on[data-lodge-tab="blog"] { color:#e8c87a; border-bottom-color:#e8c87a; }
+    .lodge-compose { width:100%; min-height:64px; display:grid; grid-template-columns:38px 1fr auto; align-items:center; gap:12px; padding:11px 12px; margin:0 0 18px; text-align:left; border:1px solid rgba(142,204,192,.18); border-radius:8px; background:rgba(142,204,192,.035); color:var(--text); cursor:pointer; transition:border-color .2s,background .2s; }
+    .lodge-compose:hover { border-color:rgba(142,204,192,.34); background:rgba(142,204,192,.06); }
+    .lodge-compose__mark { width:38px; height:38px; border-radius:50%; display:flex; align-items:center; justify-content:center; color:#8eccc0; background:rgba(142,204,192,.1); border:1px solid rgba(142,204,192,.18); }
+    .lodge-compose__mark svg { width:17px; height:17px; }
+    .lodge-compose__hint { font-family:'Cormorant Garamond',serif; font-size:16px; line-height:1.25; color:rgba(237,232,222,.66); }
+    .lodge-compose__cta { min-height:36px; padding:0 12px; display:flex; align-items:center; border-left:1px solid rgba(255,255,255,.07); color:#8eccc0; font-family:'DM Mono',monospace; font-size:8px; letter-spacing:.18em; text-transform:uppercase; }
+    .lodge-post { --lodge-hue:#8eccc0; position:relative; background:rgba(255,255,255,.022); border:1px solid rgba(255,255,255,.075); border-radius:8px; padding:16px 17px 10px; margin-bottom:12px; overflow:hidden; }
+    .lodge-post::before { content:''; position:absolute; left:0; top:0; bottom:0; width:2px; background:var(--lodge-hue); opacity:.55; }
+    .lodge-post.is-blog { background:rgba(232,200,122,.025); }
+    .lodge-post__head { display:flex; align-items:center; gap:11px; margin-bottom:13px; }
+    .lodge-post__ring { width:38px; height:38px; border-radius:50%; flex-shrink:0; display:flex; align-items:center; justify-content:center; color:#0e0f17; font-family:'Cormorant Garamond',serif; font-size:16px; background-size:cover!important; background-position:center!important; box-shadow:0 0 0 1px rgba(255,255,255,.09); }
+    .lodge-post__identity { min-width:0; flex:1; }
+    .lodge-post__name { font-family:'Space Grotesk',sans-serif; font-size:12px; font-weight:600; color:var(--lodge-hue); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+    .lodge-post__time { font-family:'DM Mono',monospace; font-size:8px; letter-spacing:.07em; color:rgba(221,216,206,.45); margin-top:2px; }
+    .lodge-post__kind { flex-shrink:0; font-family:'DM Mono',monospace; font-size:7.5px; letter-spacing:.18em; text-transform:uppercase; color:rgba(221,216,206,.42); }
+    .lodge-post__body { padding:0 1px 3px; }
+    .lodge-post__text { font-family:'Cormorant Garamond',serif; font-size:17px; color:rgba(241,237,229,.9); line-height:1.62; white-space:pre-wrap; word-break:break-word; }
+    .lodge-blog-title { font-family:'Cormorant Garamond',serif; font-size:23px; font-weight:500; color:var(--text); margin-bottom:7px; line-height:1.18; }
+    .lodge-post__bar { display:flex; align-items:center; gap:2px; margin-top:10px; min-height:44px; border-top:1px solid rgba(255,255,255,.055); }
+    .lodge-act { min-width:44px; min-height:44px; padding:0 10px; border:0; background:none; cursor:pointer; font-family:'DM Mono',monospace; font-size:10px; color:rgba(221,216,206,.48); display:flex; align-items:center; justify-content:center; gap:6px; border-radius:7px; transition:background .16s,color .16s; }
+    .lodge-act:hover { background:rgba(255,255,255,.035); color:rgba(221,216,206,.76); }
     .lodge-act.liked { color:#d4956e; }
-    .lodge-del { margin-left:auto; opacity:.55; }
-    .lodge-comments { border-top:1px solid var(--border); margin-top:11px; padding-top:11px; display:none; }
-    .lodge-comment { margin-bottom:9px; font-family:'DM Mono',monospace; }
-    .lodge-comment__name { font-size:9px; color:var(--muted); margin-bottom:2px; }
-    .lodge-comment__text { font-size:11.5px; color:var(--text); line-height:1.55; white-space:pre-wrap; word-break:break-word; }
-    .lodge-crow { display:flex; gap:8px; margin-top:6px; }
-    .lodge-cinput { flex:1; min-width:0; background:rgba(0,0,0,.25); border:1px solid var(--border); border-radius:8px; color:var(--text); font-family:'DM Mono',monospace; font-size:11px; padding:8px 10px; outline:none; }
-    .lodge-csend { padding:8px 13px; border:1px solid rgba(126,184,164,.35); border-radius:8px; background:rgba(126,184,164,.08); color:#7eb8a4; font-family:'DM Mono',monospace; font-size:9px; letter-spacing:.12em; text-transform:uppercase; cursor:pointer; }
+    .lodge-read-more { justify-content:flex-start; width:auto; min-height:36px; padding:0; color:#8eccc0; }
+    .lodge-del { margin-left:auto; opacity:.72; }
+    .lodge-comments { border-top:1px solid rgba(255,255,255,.06); margin-top:0; padding:13px 0 5px; display:none; }
+    .lodge-comment { margin-bottom:12px; padding-left:10px; border-left:1px solid rgba(142,204,192,.18); font-family:'DM Mono',monospace; }
+    .lodge-comment__name { font-size:8px; letter-spacing:.05em; color:rgba(221,216,206,.48); margin-bottom:4px; }
+    .lodge-comment__text { font-size:11px; color:rgba(237,232,222,.82); line-height:1.65; white-space:pre-wrap; word-break:break-word; }
+    .lodge-crow { display:flex; gap:8px; margin-top:8px; }
+    .lodge-cinput { flex:1; min-width:0; min-height:44px; box-sizing:border-box; background:rgba(0,0,0,.22); border:1px solid rgba(255,255,255,.09); border-radius:8px; color:var(--text); font-family:'DM Mono',monospace; font-size:11px; padding:10px 12px; outline:none; }
+    .lodge-cinput:focus { border-color:rgba(142,204,192,.38); }
+    .lodge-csend { min-height:44px; padding:0 15px; border:1px solid rgba(126,184,164,.3); border-radius:8px; background:rgba(126,184,164,.07); color:#8eccc0; font-family:'DM Mono',monospace; font-size:8px; letter-spacing:.14em; text-transform:uppercase; cursor:pointer; }
+    .lodge-empty { text-align:center; padding:46px 22px 52px; color:rgba(221,216,206,.5); }
+    .lodge-empty__mark { width:48px; height:48px; margin:0 auto 13px; border-radius:50%; border:1px solid rgba(232,200,122,.18); display:flex; align-items:center; justify-content:center; color:rgba(232,200,122,.7); font-family:'Cormorant Garamond',serif; font-size:22px; }
+    .lodge-empty__title { font-family:'Cormorant Garamond',serif; font-size:19px; color:rgba(237,232,222,.82); margin-bottom:5px; }
+    .lodge-empty__sub { max-width:290px; margin:0 auto; font-family:'DM Mono',monospace; font-size:9px; line-height:1.7; letter-spacing:.04em; }
+    .lodge-skeleton { height:118px; border:1px solid rgba(255,255,255,.055); border-radius:8px; margin-bottom:12px; background:linear-gradient(100deg,rgba(255,255,255,.018) 25%,rgba(255,255,255,.055) 42%,rgba(255,255,255,.018) 58%); background-size:250% 100%; animation:lodgeShimmer 1.4s linear infinite; }
+    @keyframes lodgeShimmer { to { background-position-x:-250%; } }
+    .lodge-more { width:100%; min-height:44px; margin:8px 0 20px; border:1px solid rgba(255,255,255,.08); border-radius:8px; background:transparent; color:rgba(221,216,206,.55); font-family:'DM Mono',monospace; font-size:8px; letter-spacing:.16em; text-transform:uppercase; cursor:pointer; }
     .likers-row { font-family:'DM Mono',monospace; font-size:12px; color:var(--text); padding:9px 2px; border-bottom:1px solid var(--border); }
     .likers-row.private { color:var(--muted); font-style:italic; }
-    /* Lodge tabs (home-page mode-tabs treatment) + blogs */
-    #lodgeTabs .mode-tab.on { color:var(--accent); border-bottom-color:var(--accent); }
-    #lodgeTabs .mode-tab.on[data-lodge-tab="blog"] { color:#e8c87a; border-bottom-color:#e8c87a; }
-    .lodge-blog-title { font-family:'Cormorant Garamond',serif; font-size:19px; font-weight:400; color:var(--text); margin-bottom:6px; line-height:1.3; }
     /* Lodge chat */
     .chat-row { display:flex; }
     .chat-row.chat-mine { justify-content:flex-end; }
@@ -2284,14 +2327,28 @@
     .drawer-header { padding:0 24px 24px; border-bottom:1px solid var(--border); margin-bottom:8px; }
     .drawer-wordmark { font-family:Cormorant Garamond,serif; font-size:11px; font-weight:300; letter-spacing:.35em; text-transform:uppercase; color:var(--accent); }
     .drawer-level { font-size:9px; letter-spacing:.15em; color:var(--muted); margin-top:4px; }
-    .drawer-items { flex:1; display:flex; flex-direction:column; padding:8px 0; }
-    .drawer-item { display:flex; align-items:center; gap:14px; padding:16px 24px; cursor:pointer; border:none; background:none; color:var(--text); font-family:'DM Mono',monospace; font-size:11px; letter-spacing:.1em; text-align:left; width:100%; transition:background .15s; }
-    .drawer-item:hover { background:rgba(126,184,164,0.05); }
-    .drawer-item-icon { font-size:14px; opacity:0.7; width:18px; text-align:center; display:inline-flex; align-items:center; justify-content:center; }
+    .drawer-items { flex:1; display:flex; flex-direction:column; padding:7px 0; overflow-y:auto; scrollbar-width:none; }
+    .drawer-items::-webkit-scrollbar { display:none; }
+    .drawer-section-label { padding:11px 24px 5px; font-family:'DM Mono',monospace; font-size:7.5px; letter-spacing:.24em; text-transform:uppercase; color:rgba(221,216,206,.32); }
+    .drawer-item { --drawer-accent:#8eccc0; --drawer-tint:rgba(142,204,192,.055); position:relative; min-height:48px; display:flex; align-items:center; gap:14px; padding:11px 24px; cursor:pointer; border:none; background:none; color:var(--text); font-family:'DM Mono',monospace; font-size:10.5px; letter-spacing:.08em; text-align:left; width:100%; transition:background .15s,color .15s; }
+    .drawer-item::before { content:''; position:absolute; left:0; top:10px; bottom:10px; width:2px; border-radius:0 2px 2px 0; background:var(--drawer-accent); opacity:0; transform:scaleY(.35); transition:opacity .16s,transform .16s; }
+    .drawer-item:hover { background:var(--drawer-tint); }
+    .drawer-item:hover::before { opacity:.68; transform:scaleY(1); }
+    .drawer-item-icon { font-size:14px; color:var(--drawer-accent); opacity:.86; width:18px; text-align:center; display:inline-flex; align-items:center; justify-content:center; }
+    #drawerReports { --drawer-accent:#8ecce0; --drawer-tint:rgba(142,204,224,.055); }
+    #drawerJournal { --drawer-accent:#d49898; --drawer-tint:rgba(212,152,152,.055); }
+    #drawerPlayground { --drawer-accent:#c4a8d4; --drawer-tint:rgba(196,168,212,.055); }
+    #drawerAch { --drawer-accent:#e8c87a; --drawer-tint:rgba(232,200,122,.055); }
+    #drawerProfile { --drawer-accent:#8eccc0; --drawer-tint:rgba(142,204,192,.055); }
+    #drawerLodge { --drawer-accent:#e8c87a; --drawer-tint:rgba(232,200,122,.065); }
+    #drawerFaq { --drawer-accent:#98b4cc; --drawer-tint:rgba(152,180,204,.05); }
+    #drawerAbout { --drawer-accent:#b8eaff; --drawer-tint:rgba(184,234,255,.045); }
+    #drawerSettings { --drawer-accent:#aaa6b8; --drawer-tint:rgba(170,166,184,.05); }
+    #drawerDonate { --drawer-accent:#d4a06e; --drawer-tint:rgba(212,160,110,.055); }
     .drawer-divider { height:1px; background:var(--border); margin:8px 24px; }
     @keyframes drawerPulse { 0%,100%{background:transparent} 50%{background:rgba(126,184,164,.12)} }
     .drawer-item-pulse { animation:drawerPulse 1.2s ease-in-out 3; }
-    .drawer-item.danger { color:var(--danger); }
+    .drawer-item.danger { --drawer-accent:var(--danger); --drawer-tint:rgba(196,122,122,.06); color:var(--danger); }
     .drawer-item.danger .drawer-item-icon { opacity:0.8; }
     .drawer-footer { padding:16px 24px 0; border-top:1px solid var(--border); }
     .drawer-version { font-size:9px; letter-spacing:.15em; color:var(--muted); opacity:.5; }
@@ -5468,56 +5525,50 @@ body:not(.tut-live) #tutCorgi {
 
   <!-- THE LODGE (social feed) -->
   <div class="screen" id="lodgeScreen" style="flex-direction:column;">
-    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; flex-shrink:0;">
-      <div id="lodgeTitle" style="font-family:Cormorant Garamond,serif; font-size:24px; font-weight:300;">The Lodge</div>
-      <div style="display:flex; align-items:center; gap:16px;">
-        <button id="lodgeChats" class="lodge-act" style="font-size:15px; color:#8eccc0;" aria-label="Messages">&#9993;</button>
-        <button id="lodgeBell" class="lodge-act" style="font-size:15px; position:relative; color:#e8c87a;" aria-label="Notifications">&#128276;<span id="lodgeBellBadge" style="display:none; position:absolute; top:-5px; right:-8px; background:#d4956e; color:#0e0f17; border-radius:8px; font-size:8px; padding:1px 4px; font-family:'DM Mono',monospace;"></span></button>
-        <button class="history-back" id="lodgeBack">← back</button>
+    <div class="lodge-topbar">
+      <button class="lodge-back" id="lodgeBack" aria-label="Back">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg>
+      </button>
+      <div class="lodge-heading">
+        <div class="lodge-heading__kicker">Community</div>
+        <div class="lodge-heading__title" id="lodgeTitle">The Lodge</div>
+      </div>
+      <div class="lodge-tools">
+        <button id="lodgeChats" class="lodge-tool lodge-tool--messages" aria-label="Messages" title="Messages">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15a4 4 0 0 1-4 4H8l-5 3V7a4 4 0 0 1 4-4h10a4 4 0 0 1 4 4z"/><path d="M8 9h8M8 13h5"/></svg>
+        </button>
+        <button id="lodgeBell" class="lodge-tool lodge-tool--notifs" aria-label="Notifications" title="Notifications">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9"/><path d="M10 21h4"/></svg>
+          <span id="lodgeBellBadge" class="lodge-badge" style="display:none;"></span>
+        </button>
       </div>
     </div>
-    <div id="lodgeBody" style="flex:1; overflow-y:auto; -webkit-overflow-scrolling:touch; scrollbar-width:none; -ms-overflow-style:none;">
-      <div class="ex-banner" id="lodgeBanner" style="--exb-rgb:232,200,122; --exb-light:#f0d8ac; margin:0 0 14px; height:140px;">
-        <div class="exb-motes" aria-hidden="true">
-          <i style="width:4px;height:4px;left:12%;top:28%;animation-delay:0s;animation-duration:4.4s;"></i>
-          <i style="width:3px;height:3px;left:30%;top:66%;animation-delay:1.4s;animation-duration:5.2s;"></i>
-          <i style="width:5px;height:5px;left:52%;top:30%;animation-delay:.7s;animation-duration:4.6s;"></i>
-          <i style="width:3px;height:3px;left:86%;top:24%;animation-delay:2.8s;animation-duration:5.4s;"></i>
-          <i style="width:4px;height:4px;left:92%;top:64%;animation-delay:1.2s;animation-duration:4.8s;"></i>
-        </div>
-        <div class="exb-text">
-          <div class="exb-label">The Shared Record</div>
-          <div class="exb-title">The Lodge</div>
-          <div class="exb-tagline">Notes &amp; essays from practitioners walking the path beside you.</div>
-        </div>
-        <div class="exb-right">
-          <div class="exb-glow"></div>
-          <div class="exb-ripple"></div><div class="exb-ripple"></div><div class="exb-ripple"></div>
-          <div class="exb-sym">
-            <svg width="92" height="92" viewBox="0 0 100 100" fill="none" aria-hidden="true">
-              <circle cx="50" cy="50" r="38" stroke="#f0d8ac" stroke-width="2" opacity="0.5"/>
-              <circle cx="50" cy="50" r="27" stroke="#f0d8ac" stroke-width="1.2" opacity="0.28"/>
-              <path d="M50 22 C62 34 66 47 62 61 L50 73 L38 61 C34 47 38 34 50 22 Z" stroke="#f0d8ac" stroke-width="2.2" fill="rgba(240,216,172,0.13)"/>
-              <line x1="50" y1="42" x2="50" y2="66" stroke="#f0d8ac" stroke-width="1.6" opacity="0.85"/>
-              <circle cx="50" cy="40" r="3.2" stroke="#f0d8ac" stroke-width="1.6"/>
-              <circle cx="50" cy="82" r="2.4" fill="#f0d8ac" opacity="0.8"/>
-              <circle cx="20" cy="26" r="1.8" fill="#f0d8ac" opacity="0.6"/>
-              <circle cx="80" cy="74" r="1.8" fill="#f0d8ac" opacity="0.6"/>
-            </svg>
+    <div id="lodgeBody" class="lodge-scroll">
+      <div class="lodge-stream">
+        <div class="lodge-intro" id="lodgeBanner">
+          <div class="lodge-intro__mark" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3c3 3 4.5 6.3 3.6 10L12 18l-3.6-5C7.5 9.3 9 6 12 3z"/><path d="M12 9v7"/><circle cx="12" cy="21" r="1" fill="currentColor" stroke="none"/></svg>
+          </div>
+          <div>
+            <div class="lodge-intro__label">The Shared Record</div>
+            <div class="lodge-intro__text">Notes and essays from practitioners walking the path beside you.</div>
           </div>
         </div>
+        <div class="mode-tabs" id="lodgeTabs">
+          <button class="mode-tab on" data-lodge-tab="note">Reflections</button>
+          <button class="mode-tab" data-lodge-tab="blog">Essays</button>
+        </div>
+        <button class="lodge-compose" id="lodgeComposer">
+          <span class="lodge-compose__mark" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L8 18l-4 1 1-4z"/></svg>
+          </span>
+          <span class="lodge-compose__hint" id="lodgeComposerHint">Share what is present for you today...</span>
+          <span class="lodge-compose__cta" id="lodgeComposerCta">Write</span>
+        </button>
+        <div id="lodgeFeed"></div>
+        <div id="lodgeEmpty" class="lodge-empty" style="display:none;"></div>
+        <button id="lodgeMore" class="lodge-more" style="display:none;">Continue reading</button>
       </div>
-      <div class="mode-tabs" id="lodgeTabs">
-        <button class="mode-tab on" data-lodge-tab="note">Posts</button>
-        <button class="mode-tab" data-lodge-tab="blog">Blogs</button>
-      </div>
-      <button class="prof-status" id="lodgeComposer" style="width:100%; margin-bottom:18px;">
-        <div class="prof-status__text prof-status__text--empty" id="lodgeComposerHint">Share what’s present for you today…</div>
-        <div class="prof-status__meta"><span></span><span class="prof-status__edit" id="lodgeComposerCta">Post</span></div>
-      </button>
-      <div id="lodgeFeed"></div>
-      <div id="lodgeEmpty" class="prof-empty-note" style="display:none; text-align:center; padding:26px 20px;">Nothing here yet.<br>Post a status, or add friends to see theirs.</div>
-      <button id="lodgeMore" style="display:none; width:100%; margin:6px 0 30px; padding:11px; border:1px solid var(--border); border-radius:10px; background:transparent; color:var(--muted); font-family:'DM Mono',monospace; font-size:9px; letter-spacing:.16em; text-transform:uppercase; cursor:pointer;">Load more</button>
     </div>
   </div>
 
@@ -7603,6 +7654,7 @@ body:not(.tut-live) #tutCorgi {
       <div class="drawer-level" id="drawerLevel">Level 1 · Initiate</div>
     </div>
     <div class="drawer-items">
+      <div class="drawer-section-label">Practice</div>
       <button class="drawer-item" id="drawerReports">
         <span class="drawer-item-icon">◈</span>Progress Reports
       </button>
@@ -7612,15 +7664,25 @@ body:not(.tut-live) #tutCorgi {
       <button class="drawer-item" id="drawerPlayground">
         <span class="drawer-item-icon"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M10 3h4M11 3v6l-4.5 8A2 2 0 0 0 8.3 20h7.4a2 2 0 0 0 1.8-3L13 9V3"/><path d="M8.5 15h7"/></svg></span>Playground
       </button>
+      <button class="drawer-item" id="drawerAch">
+        <span class="drawer-item-icon">✦</span>Achievements
+      </button>
+      <button class="drawer-item" id="drawerGuide" style="display:none;">
+        <span class="drawer-item-icon">✦</span>Prayer
+      </button>
+      <button class="drawer-item" id="drawerBardon" style="display:none;">
+        <span class="drawer-item-icon"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 6c-1.6-1.4-3.8-2-6.5-2v14c2.7 0 4.9.6 6.5 2 1.6-1.4 3.8-2 6.5-2V4c-2.7 0-4.9.6-6.5 2z"/><path d="M12 6v14"/></svg></span>The Path <span style="color:var(--muted); font-size:10px;">(Idle game)</span>
+      </button>
+      <div class="drawer-divider"></div>
+      <div class="drawer-section-label">Community</div>
       <button class="drawer-item" id="drawerProfile">
         <span class="drawer-item-icon"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="3.6"/><path d="M5 20c1.2-3.4 3.8-5 7-5s5.8 1.6 7 5"/></svg></span>Profile
       </button>
       <button class="drawer-item" id="drawerLodge">
         <span class="drawer-item-icon">✒</span>The Lodge
       </button>
-      <button class="drawer-item" id="drawerAch">
-        <span class="drawer-item-icon">✦</span>Achievements
-      </button>
+      <div class="drawer-divider"></div>
+      <div class="drawer-section-label">Presence</div>
       <button class="drawer-item" id="drawerFaq">
         <span class="drawer-item-icon"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H9l-5 4V6z"/></svg></span>FAQ
       </button>
@@ -7632,12 +7694,6 @@ body:not(.tut-live) #tutCorgi {
       </button>
       <button class="drawer-item" id="drawerDonate">
         <span class="drawer-item-icon"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 8h11v7a4 4 0 0 1-4 4H9a4 4 0 0 1-4-4V8z"/><path d="M16 9.5h2a2.5 2.5 0 0 1 0 5h-2"/><path d="M8 4.5c0 1 .8 1 .8 2M11.5 4.5c0 1 .8 1 .8 2"/></svg></span>Donate
-      </button>
-      <button class="drawer-item" id="drawerGuide" style="display:none;">
-        <span class="drawer-item-icon">✦</span>Prayer
-      </button>
-      <button class="drawer-item" id="drawerBardon" style="display:none;">
-        <span class="drawer-item-icon"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 6c-1.6-1.4-3.8-2-6.5-2v14c2.7 0 4.9.6 6.5 2 1.6-1.4 3.8-2 6.5-2V4c-2.7 0-4.9.6-6.5 2z"/><path d="M12 6v14"/></svg></span>The Path <span style="color:var(--muted); font-size:10px;">(Idle game)</span>
       </button>
       <div class="drawer-divider"></div>
       <button class="drawer-item danger" id="drawerResetAll">
@@ -34367,8 +34423,8 @@ document.addEventListener('DOMContentLoaded',function(){(function(){
 <!-- Blog (essay) editor -->
 <div class="status-ov" id="blogOverlay">
   <div class="status-ov__card">
-    <div class="status-ov__title">New Blog</div>
-    <div class="status-ov__sub">Longer-form writing for the Lodge</div>
+    <div class="status-ov__title">New Essay</div>
+    <div class="status-ov__sub">Longer-form writing for the shared record</div>
     <input id="blogTitleInput" class="lodge-cinput" maxlength="80" placeholder="Title (optional)" autocomplete="off" style="width:100%; box-sizing:border-box; font-size:13px; padding:10px 12px; margin-bottom:8px; color:var(--text);"/>
     <textarea class="status-ov__ta" id="blogInput" maxlength="5000" style="min-height:180px;" placeholder="Write…"></textarea>
     <div class="status-ov__count"><span id="blogCount">0</span>/5000</div>
@@ -34382,14 +34438,14 @@ document.addEventListener('DOMContentLoaded',function(){(function(){
 <!-- Daily status editor -->
 <div class="status-ov" id="statusOverlay">
   <div class="status-ov__card">
-    <div class="status-ov__title">Today's Status</div>
-    <div class="status-ov__sub">Share a thought with your friends</div>
-    <textarea class="status-ov__ta" id="statusInput" maxlength="280" placeholder="What's present for you today?"></textarea>
+    <div class="status-ov__title">New Reflection</div>
+    <div class="status-ov__sub">Share one clear note from your practice</div>
+    <textarea class="status-ov__ta" id="statusInput" maxlength="280" placeholder="What is present for you today?"></textarea>
     <div class="status-ov__count"><span id="statusCount">0</span>/280</div>
     <div class="status-ov__row">
       <button class="status-ov__btn status-ov__btn--clear" id="statusClearBtn">Clear</button>
       <button class="status-ov__btn" id="statusCancelBtn">Cancel</button>
-      <button class="status-ov__btn status-ov__btn--save" id="statusSaveBtn">Save</button>
+      <button class="status-ov__btn status-ov__btn--save" id="statusSaveBtn">Publish</button>
     </div>
   </div>
 </div>
@@ -34422,6 +34478,7 @@ document.addEventListener('DOMContentLoaded',function(){(function(){
 var LODGE_CACHE_KEY = 'presence_lodge_feed_v1';
 var _lodgePosts = [];
 var _lodgeCursor = null;
+var _lodgeLoading = false;
 
 function _lodgeCachedList() {
   try { var a = JSON.parse(localStorage.getItem(LODGE_CACHE_KEY)); return Array.isArray(a) ? a : []; } catch(e) { return []; }
@@ -34435,12 +34492,13 @@ function _lodgeSetTabUi() {
   });
   var hint = document.getElementById('lodgeComposerHint');
   var cta = document.getElementById('lodgeComposerCta');
-  if (hint) hint.textContent = _lodgeTab === 'blog' ? 'Write a longer piece…' : 'Share what’s present for you today…';
-  if (cta) cta.textContent = _lodgeTab === 'blog' ? 'Write' : 'Post';
+  if (hint) hint.textContent = _lodgeTab === 'blog' ? 'Begin a longer piece...' : 'Share what is present for you today...';
+  if (cta) cta.textContent = _lodgeTab === 'blog' ? 'New essay' : 'New reflection';
 }
 function openLodge() {
   _lodgeUserFilter = null;
-  document.getElementById('lodgeTitle').textContent = '';
+  document.getElementById('lodgeTitle').textContent = 'The Lodge';
+  document.querySelector('.lodge-heading__kicker').textContent = 'Community';
   document.getElementById('lodgeComposer').style.display = '';
   document.getElementById('lodgeBanner').style.display = '';
   document.getElementById('lodgeTabs').style.display = '';
@@ -34448,6 +34506,7 @@ function openLodge() {
   showScreen('lodgeScreen');
   // Instant paint from cache, then network refresh (established pattern).
   _lodgePosts = _lodgeCachedList();
+  _lodgeLoading = !_lodgePosts.length;
   renderLodgeFeed();
   loadLodgeFeed();
   loadLodgeNotifs();
@@ -34457,17 +34516,19 @@ function openLodge() {
 function openLodgeUser(userId, username) {
   _lodgeUserFilter = { userId: userId, username: username };
   document.getElementById('lodgeTitle').textContent = '@' + username;
+  document.querySelector('.lodge-heading__kicker').textContent = 'Practitioner';
   document.getElementById('lodgeComposer').style.display = 'none';
   document.getElementById('lodgeBanner').style.display = 'none';
   document.getElementById('lodgeTabs').style.display = 'none';
   showScreen('lodgeScreen');
-  _lodgePosts = []; _lodgeCursor = null;
+  _lodgePosts = []; _lodgeCursor = null; _lodgeLoading = true;
   renderLodgeFeed();
   loadLodgeFeed();
 }
 
 async function loadLodgeFeed(cursor) {
-  if (!authToken) { _lodgePosts = []; renderLodgeFeed(); return; }
+  if (!authToken) { _lodgePosts = []; _lodgeLoading = false; renderLodgeFeed(); return; }
+  if (!cursor && !_lodgePosts.length) { _lodgeLoading = true; renderLodgeFeed(); }
   try {
     var params = [];
     if (!_lodgeUserFilter && _lodgeTab === 'blog') params.push('type=blog');
@@ -34484,8 +34545,8 @@ async function loadLodgeFeed(cursor) {
     _lodgePosts = cursor ? _lodgePosts.concat(posts) : posts;
     _lodgeCursor = posts.length === 20 ? posts[posts.length - 1].createdAt : null;
     if (!cursor && !_lodgeUserFilter && _lodgeTab === 'note') try { localStorage.setItem(LODGE_CACHE_KEY, JSON.stringify(_lodgePosts.slice(0, 20))); } catch(e) {}
-    renderLodgeFeed();
   } catch(e) { console.warn('Lodge feed failed', e); }
+  finally { _lodgeLoading = false; renderLodgeFeed(); }
 }
 
 // Deterministic per-user accent: hash the username into a small palette so
@@ -34512,19 +34573,21 @@ function _lodgePostHtml(p) {
       bodyHtml = titleHtml
         + '<div class="lodge-post__text" data-blog-preview>' + escHtml(raw.slice(0, 280)) + '…</div>'
         + '<div class="lodge-post__text" data-blog-full style="display:none;">' + escHtml(raw) + '</div>'
-        + '<button class="lodge-act" data-blog-more style="color:var(--accent); margin-top:7px;">Read more ↓</button>';
+        + '<button class="lodge-act lodge-read-more" data-blog-more>Continue reading</button>';
     } else {
       bodyHtml = titleHtml + '<div class="lodge-post__text">' + escHtml(raw) + '</div>';
     }
   } else {
     bodyHtml = '<div class="lodge-post__text">' + escHtml(p.text || '') + '</div>';
   }
-  return '<div class="lodge-post" data-post-id="' + escHtml(p.id) + '">'
+  var kind = p.type === 'blog' ? 'Essay' : 'Reflection';
+  return '<article class="lodge-post' + (p.type === 'blog' ? ' is-blog' : '') + '" data-post-id="' + escHtml(p.id) + '" style="--lodge-hue:' + hue[0] + ';">'
     + '<div class="lodge-post__head" data-lodge-user="' + escHtml(p.userId) + '" data-lodge-uname="' + escHtml(p.username || '?') + '" style="cursor:pointer;">'
     + _lodgeRingHtml(p.username, p.profilePic)
-    + '<div><div class="lodge-post__name" style="color:' + hue[0] + ';">@' + escHtml(p.username || '?') + '</div>'
-    + '<div class="lodge-post__time">' + timeAgo(new Date(p.createdAt)) + '</div></div></div>'
-    + bodyHtml
+    + '<div class="lodge-post__identity"><div class="lodge-post__name">@' + escHtml(p.username || '?') + '</div>'
+    + '<div class="lodge-post__time">' + timeAgo(new Date(p.createdAt)) + '</div></div>'
+    + '<div class="lodge-post__kind">' + kind + '</div></div>'
+    + '<div class="lodge-post__body">' + bodyHtml + '</div>'
     + '<div class="lodge-post__bar">'
     + '<button class="lodge-act' + (p.likedByMe ? ' liked' : '') + '" data-lodge-like>' + (p.likedByMe ? '♥' : '♡')
     + ' <span data-like-count>' + (p.likeCount || 0) + '</span></button>'
@@ -34535,7 +34598,7 @@ function _lodgePostHtml(p) {
     + '<div class="lodge-comments"><div data-comment-list></div>'
     + '<div class="lodge-crow"><input class="lodge-cinput" maxlength="280" placeholder="Add a comment…"/>'
     + '<button class="lodge-csend">Send</button></div>'
-    + '</div></div>';
+    + '</div></article>';
 }
 
 function renderLodgeFeed() {
@@ -34543,12 +34606,17 @@ function renderLodgeFeed() {
   var empty = document.getElementById('lodgeEmpty');
   var more = document.getElementById('lodgeMore');
   if (!feed) return;
-  feed.innerHTML = _lodgePosts.map(_lodgePostHtml).join('');
-  empty.innerHTML = _lodgeUserFilter ? 'No posts yet.'
-    : _lodgeTab === 'blog' ? 'No blogs yet.<br>Write the first longer piece.'
-    : 'Nothing here yet.<br>Post a status, or add friends to see theirs.';
-  empty.style.display = _lodgePosts.length ? 'none' : '';
-  more.style.display = _lodgeCursor ? '' : 'none';
+  feed.innerHTML = _lodgeLoading && !_lodgePosts.length
+    ? '<div class="lodge-skeleton"></div><div class="lodge-skeleton"></div><div class="lodge-skeleton"></div>'
+    : _lodgePosts.map(_lodgePostHtml).join('');
+  var emptyTitle = _lodgeUserFilter ? 'No shared writing yet'
+    : _lodgeTab === 'blog' ? 'The essay room is quiet' : 'The record is waiting';
+  var emptySub = _lodgeUserFilter ? 'This practitioner has not published anything here.'
+    : _lodgeTab === 'blog' ? 'Begin the first longer piece, or return when another practitioner has written.'
+    : 'Share a reflection above, or follow practitioners to bring their writing into your Lodge.';
+  empty.innerHTML = '<div class="lodge-empty__mark">✒</div><div class="lodge-empty__title">' + emptyTitle + '</div><div class="lodge-empty__sub">' + emptySub + '</div>';
+  empty.style.display = (!_lodgeLoading && !_lodgePosts.length) ? '' : 'none';
+  more.style.display = (!_lodgeLoading && _lodgeCursor) ? '' : 'none';
 }
 
 function _lodgeCommentHtml(c) {
@@ -34667,7 +34735,7 @@ document.getElementById('lodgeFeed').addEventListener('click', function(e) {
     var expanded = fl.style.display !== 'none';
     fl.style.display = expanded ? 'none' : '';
     pv.style.display = expanded ? '' : 'none';
-    more.textContent = expanded ? 'Read more ↓' : 'Show less ↑';
+    more.textContent = expanded ? 'Continue reading' : 'Show less';
     return;
   }
   var cdel = e.target.closest('[data-comment-del]');
@@ -34687,7 +34755,7 @@ document.getElementById('lodgeTabs').addEventListener('click', function(e) {
   if (!t || t.getAttribute('data-lodge-tab') === _lodgeTab) return;
   _lodgeTab = t.getAttribute('data-lodge-tab');
   _lodgeSetTabUi();
-  _lodgePosts = []; _lodgeCursor = null;
+  _lodgePosts = []; _lodgeCursor = null; _lodgeLoading = true;
   renderLodgeFeed();
   loadLodgeFeed();
 });
