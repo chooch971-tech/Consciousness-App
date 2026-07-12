@@ -4813,6 +4813,56 @@ body:not(.tut-live) #tutCorgi {
 #concentrationPanel .level-ring { margin-bottom:6px; }
 #awarenessPanel .level-ring { margin-bottom:6px; }
 .home-actions { padding-bottom:24px; }
+
+/* ── Readable UI floor + generous touch targets ───────────────────────
+   Keep the tiny mono treatment for true metadata, but never make instructions
+   or actual controls depend on 8–9px text. The invisible hit-area extensions
+   let the visual composition stay delicate while common phone actions remain
+   comfortably tappable. */
+.mode-tab { position:relative; font-size:10px; }
+.mode-tab::before { content:''; position:absolute; inset:-8px 0; }
+.hamburger { position:relative; }
+.hamburger::before { content:''; position:absolute; inset:-11px; }
+.guide-dot { position:relative; }
+.guide-dot::before { content:''; position:absolute; inset:-9px; }
+
+.path-ex-meta,
+.path-streak-sub,
+.guide-plan-tip,
+.guide-plan-note,
+.guide-route-text,
+.guide-confirm-text,
+.guide-locked-text { font-size:11px; }
+.path-day-frac { font-size:11px; }
+
+.path-ex-begin,
+.pq-ex-start,
+.guide-plan-start,
+.guide-confirm-btn { font-size:14px; }
+.guide-opt,
+.guide-cadence-toggle,
+.oe-collect-btn-mini,
+.oe-body-btn,
+.oe-advance-btn { font-size:11px; }
+.pq-ex-dur { font-size:11px; }
+
+.path-ex-right { gap:14px; }
+.path-ex-begin,
+.pq-ex-start,
+.pq-menu-btn,
+.pq-add-ex-btn,
+.guide-plan-start,
+.guide-confirm-btn,
+.guide-opt,
+.guide-cadence-toggle { position:relative; }
+.path-ex-begin::before,
+.pq-ex-start::before { content:''; position:absolute; inset:-7px -4px; }
+.pq-menu-btn::before { content:''; position:absolute; inset:-8px; }
+.pq-add-ex-btn::before { content:''; position:absolute; inset:-11px; }
+.guide-plan-start::before,
+.guide-confirm-btn::before,
+.guide-opt::before,
+.guide-cadence-toggle::before { content:''; position:absolute; inset:-12px -5px; }
 </style>
 <script>
   // Set safe-area padding variables before first paint.
@@ -26101,7 +26151,7 @@ function renderPathQuests() {
     var checkHtml = item.done
       ? '<div style="width:22px;height:22px;border-radius:50%;background:rgba(126,184,164,.15);color:var(--accent);display:flex;align-items:center;justify-content:center;font-size:11px;">✓</div>'
       : '<div style="width:22px;height:22px;border-radius:50%;border:1px solid var(--border);"></div>';
-    var beginStyle = 'padding:8px 14px;border-radius:8px;border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.04);color:var(--text);font-family:\'DM Mono\',monospace;font-size:9px;letter-spacing:.2em;text-transform:uppercase;cursor:pointer;'
+    var beginStyle = 'padding:8px 14px;border-radius:8px;border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.04);color:var(--text);font-family:\'DM Mono\',monospace;letter-spacing:.2em;text-transform:uppercase;cursor:pointer;'
       + (item.done ? 'opacity:.35;cursor:default;pointer-events:none;' : '');
     var beginHtml = item.open
       ? '<button class="pq-ex-start" style="' + beginStyle + '"' + startAttrs + (item.done ? ' disabled' : '') + '>' + (item.done ? 'Done' : 'Begin') + '</button>'
