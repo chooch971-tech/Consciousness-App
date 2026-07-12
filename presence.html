@@ -17266,7 +17266,10 @@ function saveAudResult() {
       object: getAudSoundLabel(currentSound)
     },
     exId: 'auditory',
-    omniaSeconds: totalXP,
+    // Reward on full wall-clock length like every other exercise (was totalXP =
+    // sum of unbroken rep seconds, which quietly under-paid any sit with halts).
+    // Still capped at 15 min / 1100 akasha inside omniaExerciseReward.
+    omniaSeconds: audSessionDurationSec,
     reachedRec: omniaReachedRecommendation('auditory', audSessionDurationSec)
   });
   var _concDidLevelUpAud = concDidLevelUpA;
