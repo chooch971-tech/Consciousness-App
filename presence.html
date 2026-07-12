@@ -1651,6 +1651,12 @@
     .oe-gen-slim { text-align:center; font-family:'DM Mono',monospace; font-size:8px; color:rgba(142,204,224,.62); letter-spacing:.08em; margin-top:10px; line-height:1.7; }
     #genSheetBody .ach-info-medal { width:84px; height:94px; border:none; background:none; }
     #genSheetBody .ach-info-medal svg { width:100%; height:100%; }
+    /* Generator upgrade drawer — slides in from the right */
+    .gen-drawer { position:fixed; inset:0; z-index:9800; background:rgba(7,8,13,0); pointer-events:none; transition:background .3s ease; }
+    .gen-drawer.on { background:rgba(7,8,13,.72); pointer-events:auto; }
+    .gen-drawer__panel { position:absolute; top:0; right:0; bottom:0; width:min(390px,88vw); box-sizing:border-box; overflow-y:auto; -webkit-overflow-scrolling:touch; scrollbar-width:none; text-align:center; padding:26px 22px calc(30px + env(safe-area-inset-bottom)); background:linear-gradient(165deg,#13141d 0%,#0c0d14 100%); border-left:1px solid var(--border2); box-shadow:-20px 0 46px -14px rgba(0,0,0,.65); transform:translateX(100%); transition:transform .33s cubic-bezier(.4,0,.2,1); }
+    .gen-drawer__panel::-webkit-scrollbar { display:none; }
+    .gen-drawer.on .gen-drawer__panel { transform:translateX(0); }
     .oe-gen-offline { color:#e8c87a; opacity:.9; letter-spacing:.06em; }
     /* Tappable generator cores (Clash-style: tap to open its upgrade sheet) */
     .oe-gen-core-row { display:flex; gap:9px; }
@@ -11233,7 +11239,7 @@ function createOmniaResetState(resetAt) {
   omnia.reservoir = 0;
   omnia.lastTick = resetAt;
   omnia.bodies = { physical:1, astral:1, mental:1 };
-  omnia.upgrades = { current:1, current2:1, current3:1, vessel:1, attunement:1, quickening:1 };
+  omnia.upgrades = { current:1, gen2:1, gen3:1, vessel:1, attunement:1, quickening:1 };
   omnia.bardonStep = 1;
   omnia.rec = null;
   omnia.recStreak = 0;
@@ -19405,7 +19411,7 @@ var OMNIA_DEFAULT = {
   reservoir: 0,
   lastTick: Date.now(),
   bodies: { physical:1, astral:1, mental:1 },
-  upgrades: { current:1, current2:1, current3:1, vessel:1, attunement:1, quickening:1 },
+  upgrades: { current:1, gen2:1, gen3:1, vessel:1, attunement:1, quickening:1 },
   bardonStep:1,
   prestige:0,
   darkMatter:0,
@@ -19447,8 +19453,8 @@ var OMNIA_EXERCISE_META = {
 
 var OMNIA_UPGRADES = [
   { id:'current', name:'Generator I', sub:'Akashic current — akasha generated per hour', base:520, step:260 },
-  { id:'current2', name:'Generator II', sub:'A second akashic current (opens at Step V)', base:520, step:260 },
-  { id:'current3', name:'Generator III', sub:'A third akashic current (opens at Step IX)', base:520, step:260 },
+  { id:'gen2', name:'Generator II', sub:'A second akashic current (opens at Step V)', base:520, step:260 },
+  { id:'gen3', name:'Generator III', sub:'A third akashic current (opens at Step IX)', base:520, step:260 },
   { id:'vessel', name:'Deep Vessel', sub:'Reservoir capacity before overflow', base:480, step:240 },
   { id:'attunement', name:'Attunement', sub:'Cheapens cosmetics, engine upgrades, and body levels', base:640, step:320 },
   { id:'quickening', name:'Quickening', sub:'Speeds generator upgrade construction', base:600, step:300 }
@@ -19979,14 +19985,10 @@ function loadOmniaState() {
     merged.bodies = Object.assign(cloneOmniaDefault().bodies, parsed.bodies || {});
     clampOmniaBodies(merged);
     merged.upgrades = Object.assign(cloneOmniaDefault().upgrades, parsed.upgrades || {});
-    // Generators II and III are independent tracks that begin at level 1. An
-    // earlier build briefly seeded them from Generator I's level — undo that
-    // once so they start fresh as intended.
-    if (merged._genSplitV1 && !merged._genResetV2) {
-      merged.upgrades.current2 = 1;
-      merged.upgrades.current3 = 1;
-    }
-    merged._genResetV2 = 1;
+    // Generators II and III use their own keys (gen2/gen3) that begin at level 1
+    // — independent of Generator I. (An earlier build stored them under
+    // current2/current3 and briefly seeded them from Generator I; those keys are
+    // now abandoned, so the new tracks start fresh and merge cleanly.)
     merged.cosmetics = Object.assign(cloneOmniaDefault().cosmetics, parsed.cosmetics || {});
     merged.cosmetics.unlockedPalettes = merged.cosmetics.unlockedPalettes || ['aether'];
     merged.cosmetics.unlockedEntities = merged.cosmetics.unlockedEntities || ['omnia'];
@@ -20985,8 +20987,8 @@ function omniaUpgradeStepMax(upgId) {
   // opens a few more levels rather than jumping to an "unlimited" placeholder.
   var caps = {
     current:    [3, 6, 10, 15, 21, 28, 36, 45, 55, 66],
-    current2:   [3, 6, 10, 15, 21, 28, 36, 45, 55, 66],
-    current3:   [3, 6, 10, 15, 21, 28, 36, 45, 55, 66],
+    gen2:       [3, 6, 10, 15, 21, 28, 36, 45, 55, 66],
+    gen3:       [3, 6, 10, 15, 21, 28, 36, 45, 55, 66],
     vessel:     [3, 6, 10, 15, 21, 28, 36, 45, 55, 66],
     attunement: [2, 4, 7, 11, 16, 22, 29, 37, 46, 56],
     quickening: [2, 4, 7, 11, 16, 22, 29, 37, 46, 56]
@@ -22296,10 +22298,10 @@ function renderOmniaEngine() {
 
   var upGrid = document.getElementById('omniaUpgradeGrid');
   if (upGrid) {
-    // Generators (current/current2/current3) live in the tappable cores + sheet
+    // Generators (current/gen2/gen3) live in the tappable pumps + sheet
     // above; this shared list is Deep Vessel / Attunement / Quickening only.
     upGrid.innerHTML = OMNIA_UPGRADES.filter(function(upg) {
-      return upg.id !== 'current' && upg.id !== 'current2' && upg.id !== 'current3';
+      return upg.id !== 'current' && upg.id !== 'gen2' && upg.id !== 'gen3';
     }).map(function(upg) {
       var lvl = omniaState.upgrades[upg.id] || 1;
       var cost = omniaUpgradeCost(upg);
@@ -22464,7 +22466,7 @@ var _omniaUpgradeHeld = false;
 // are wall-clock (persisted as a completion timestamp), so they keep running
 // while the app is closed and resolve on return.
 // The three generator cores share one collection but upgrade independently.
-var OMNIA_GEN_META = [ { id:'current', roman:'I' }, { id:'current2', roman:'II' }, { id:'current3', roman:'III' } ];
+var OMNIA_GEN_META = [ { id:'current', roman:'I' }, { id:'gen2', roman:'II' }, { id:'gen3', roman:'III' } ];
 var OMNIA_GEN_BASE = [10, 18, 24], OMNIA_GEN_PER = [12, 10, 10];
 function omniaGenUnlockedCount() {
   if (typeof darkMatterUnlocked === 'function' && darkMatterUnlocked()) return 3;
@@ -34070,8 +34072,8 @@ document.addEventListener('DOMContentLoaded',function(){(function(){
 <!-- Achievement info popover -->
 <div class="ach-info-ov" id="achInfoOverlay"><div class="ach-info-card" id="achInfoBody"></div></div>
 
-<!-- Generator upgrade sheet (tap a generator core) -->
-<div class="ach-info-ov" id="genSheet"><div class="ach-info-card" id="genSheetBody"></div></div>
+<!-- Generator upgrade drawer (slides in from the right when a pump is tapped) -->
+<div class="gen-drawer" id="genSheet"><div class="gen-drawer__panel" id="genSheetBody"></div></div>
 
 <!-- Post likers list -->
 <div class="status-ov" id="likersOverlay">
