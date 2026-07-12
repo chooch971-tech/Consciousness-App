@@ -22643,10 +22643,11 @@ function omniaBuildSpeedMult(upgId) {
   return Math.max(0.4, 1 - (q - 1) * 0.06);
 }
 function omniaBuildDurationMs(targetLevel, upgId) {
-  // Weighty idle construction with a real early floor: every upgrade is at least
-  // ~5m, then grows steeply so deep ones are day-long commitments. ≈5m early →
-  // ~1h at level 16 → ~4h at 30 → ~20h at 66, eased by Quickening. Capped 24h.
-  var secs = Math.floor((300 + 11 * Math.pow(Math.max(1, targetLevel), 2.1)) * omniaBuildSpeedMult(upgId));
+  // Weighty idle construction on a cubic curve, so deep upgrades are genuine
+  // multi-hour (eventually day-long) commitments and Quickening — which shaves
+  // up to 60% off — carries real weight. ≈11m at L2 → ~27m at L5 → ~2.4h at
+  // L10 → ~9h at L16 → ~20h near max, capped at 24h, eased by Quickening.
+  var secs = Math.floor((600 + 8 * Math.pow(Math.max(1, targetLevel), 3)) * omniaBuildSpeedMult(upgId));
   secs = Math.max(60, Math.min(secs, 24 * 3600));
   return secs * 1000;
 }
