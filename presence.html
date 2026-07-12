@@ -35,6 +35,7 @@
       --bg: #07080d; --surface: #0e0f17; --surface2: #13141f;
       --border: rgba(255,255,255,0.07); --border2: rgba(255,255,255,0.12);
       --text: #ddd8ce; --muted: rgba(221,216,206,0.38);
+      --muted-readable: rgba(221,216,206,0.58);
       --accent: #7eb8a4; --accent2: #a4c4b8; --accent-dim: rgba(126,184,164,0.12);
       --danger: #b87070;
       --safe-top: 8px; --safe-top-lg: 12px;
@@ -4858,6 +4859,47 @@ body:not(.tut-live) #tutCorgi {
 .guide-confirm-btn::before,
 .guide-opt::before,
 .guide-cadence-toggle::before { content:''; position:absolute; inset:-12px -5px; }
+
+/* Preserve faint metadata while giving actual explanations and instructions
+   dependable contrast on dim phone displays. Typography and spacing stay put. */
+.intro-para,
+.intro-how-text,
+.intro-how-note,
+.so-ended-sub,
+.adapt-text,
+.ach-info-desc,
+.history-notes,
+.aset-placeholder__sub,
+.conc-instruction,
+.guide-plan-tip,
+.guide-plan-note,
+.guide-route-text,
+.guide-confirm-text,
+.guide-locked-text,
+.omnia-rec-text,
+.omnia-upgrade-sub,
+.omnia-cosmetic-sub,
+.omnia-step-text,
+.oe-turnings-hint,
+.oe-chat-empty,
+.oe-stage-step-need,
+.oe-body-need,
+.oe-rate,
+.oe-cos-detail-sub,
+.oe-cos-summary,
+.oe-step-meta-text,
+.vis-mid-card-desc,
+.vis-instruction,
+.tc-instruction,
+.rpt-omnia-text--dim,
+.rpt-omnia-bubble-text--dim,
+.rpt-cap,
+.rpt-empty,
+.modal-sub,
+.omnia-speak,
+.entity-preview-text,
+.pg-card-desc,
+.clk-step-txt { color:var(--muted-readable); }
 </style>
 <script>
   // Set safe-area padding variables before first paint.
