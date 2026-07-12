@@ -1627,6 +1627,7 @@
     .oe-genpip { width:6px; height:6px; transform:rotate(45deg); border-radius:1px; background:#8eccc0; box-shadow:0 0 6px rgba(142,204,192,.85); animation:oePipPulse 3s ease-in-out infinite; }
     .oe-genpip:nth-child(2){ animation-delay:.5s; } .oe-genpip:nth-child(3){ animation-delay:1s; }
     @keyframes oePipPulse { 0%,100%{opacity:.6;} 50%{opacity:1;} }
+    .oe-genpip--off { background:#e8c87a; box-shadow:none; animation:none; opacity:.4; }
     .oe-gen-offline { color:#e8c87a; opacity:.9; letter-spacing:.06em; }
     /* ── Akasha Well: tappable liquid-orb reservoir ───────────────── */
     .oe-well-stage { display:flex; justify-content:center; padding:4px 0 12px; }
@@ -11264,7 +11265,7 @@ function createOmniaResetState(resetAt) {
   omnia.reservoir = 0;
   omnia.lastTick = resetAt;
   omnia.bodies = { physical:1, astral:1, mental:1 };
-  omnia.upgrades = { current:1, vessel:1, attunement:1, quickening:1 };
+  omnia.upgrades = { current:1, current2:1, current3:1, vessel:1, attunement:1, quickening:1 };
   omnia.bardonStep = 1;
   omnia.rec = null;
   omnia.recStreak = 0;
@@ -19436,7 +19437,7 @@ var OMNIA_DEFAULT = {
   reservoir: 0,
   lastTick: Date.now(),
   bodies: { physical:1, astral:1, mental:1 },
-  upgrades: { current:1, vessel:1, attunement:1, quickening:1 },
+  upgrades: { current:1, current2:1, current3:1, vessel:1, attunement:1, quickening:1 },
   bardonStep:1,
   prestige:0,
   darkMatter:0,
@@ -19477,7 +19478,9 @@ var OMNIA_EXERCISE_META = {
 };
 
 var OMNIA_UPGRADES = [
-  { id:'current', name:'Akashic Current', sub:'Generate akasha more quickly each hour', base:520, step:260 },
+  { id:'current', name:'Generator I', sub:'Akashic current — akasha generated per hour', base:520, step:260 },
+  { id:'current2', name:'Generator II', sub:'A second akashic current (opens at Step V)', base:520, step:260 },
+  { id:'current3', name:'Generator III', sub:'A third akashic current (opens at Step IX)', base:520, step:260 },
   { id:'vessel', name:'Deep Vessel', sub:'Reservoir capacity before overflow', base:480, step:240 },
   { id:'attunement', name:'Attunement', sub:'Cheapens cosmetics, engine upgrades, and body levels', base:640, step:320 },
   { id:'quickening', name:'Quickening', sub:'Speeds generator upgrade construction', base:600, step:300 }
@@ -20008,6 +20011,15 @@ function loadOmniaState() {
     merged.bodies = Object.assign(cloneOmniaDefault().bodies, parsed.bodies || {});
     clampOmniaBodies(merged);
     merged.upgrades = Object.assign(cloneOmniaDefault().upgrades, parsed.upgrades || {});
+    // Generators split into independent tracks (I/II/III). Seed the new tracks
+    // from the old single Akashic Current level once, so existing practitioners
+    // keep the power their second/third generator used to derive from it.
+    if (!merged._genSplitV1) {
+      var _c = merged.upgrades.current || 1;
+      if (!(merged.upgrades.current2 > 1)) merged.upgrades.current2 = _c;
+      if (!(merged.upgrades.current3 > 1)) merged.upgrades.current3 = _c;
+      merged._genSplitV1 = 1;
+    }
     merged.cosmetics = Object.assign(cloneOmniaDefault().cosmetics, parsed.cosmetics || {});
     merged.cosmetics.unlockedPalettes = merged.cosmetics.unlockedPalettes || ['aether'];
     merged.cosmetics.unlockedEntities = merged.cosmetics.unlockedEntities || ['omnia'];
@@ -20951,20 +20963,26 @@ function omniaRatePerHour() {
     var b2b = bookIIBodies();
     total += (b2b.astral || 1) + (b2b.mental || 1) + (b2b.wisdom || 1);
   }
-  // The generator is offline while its own engine (Akashic Current) is under
-  // construction — no akasha accrues until that upgrade lands. Other tracks
-  // (vessel/attunement/quickening) don't pause the flow.
-  if (typeof omniaUpgradeBuilding === 'function' && omniaUpgradeBuilding('current')) return 0;
-  var currentLvl = omniaState.upgrades.current || 1;
   var stepNum = omniaState.bardonStep || 1;
   var earlyBoost = total < 48 ? Math.floor((48 - total) * 1.5) : 0;
   var stepTax = Math.max(0, stepNum - 1) * 16;
   var bodyBonus = Math.floor(Math.sqrt(Math.max(0, total)) * 9);
-  // Generators unlock with the path: second at Step V, third at Step IX. Each
-  // scales with the Current level and helps offset the rising step tax.
-  var secondGen = (stepNum >= 5 || inBookII) ? Math.floor(18 + currentLvl * 8) : 0;
-  var thirdGen = (stepNum >= 9 || inBookII) ? Math.floor(24 + currentLvl * 10) : 0;
-  var base = 10 + currentLvl * 12 + Math.floor(bodyBonus * 0.5) + Math.floor(earlyBoost * 0.3) - stepTax + secondGen + thirdGen;
+  // Each unlocked generator (I always; II at Step V; III at Step IX; all three
+  // in Book II) is its own upgrade track and contributes from its OWN level. A
+  // generator earns nothing while it is itself under construction; the others
+  // keep running. If every active generator is offline, the flow is 0.
+  var genCount = inBookII ? 3 : (1 + (stepNum >= 5 ? 1 : 0) + (stepNum >= 9 ? 1 : 0));
+  var GEN_BASE = [10, 18, 24], GEN_PER = [12, 10, 10];
+  var genSum = 0, genActive = 0;
+  for (var gi = 0; gi < genCount; gi++) {
+    var gid = gi === 0 ? 'current' : ('current' + (gi + 1));
+    if (typeof omniaUpgradeBuilding === 'function' && omniaUpgradeBuilding(gid)) continue;
+    var glvl = (omniaState.upgrades && omniaState.upgrades[gid]) || 1;
+    genSum += (GEN_BASE[gi] || 24) + glvl * (GEN_PER[gi] || 10);
+    genActive++;
+  }
+  if (genActive === 0) return 0; // every generator is mid-upgrade
+  var base = genSum + Math.floor(bodyBonus * 0.5) + Math.floor(earlyBoost * 0.3) - stepTax;
   // The generator hums when you practice: idle days trickle at 55%, and each
   // session today restores 15%, reaching full flow at 3 sessions.
   var practiceMult = Math.min(1, 0.55 + 0.15 * Math.min(3, omniaSessionsToday()));
@@ -21003,6 +21021,8 @@ function omniaUpgradeStepMax(upgId) {
   // opens a few more levels rather than jumping to an "unlimited" placeholder.
   var caps = {
     current:    [3, 6, 10, 15, 21, 28, 36, 45, 55, 66],
+    current2:   [3, 6, 10, 15, 21, 28, 36, 45, 55, 66],
+    current3:   [3, 6, 10, 15, 21, 28, 36, 45, 55, 66],
     vessel:     [3, 6, 10, 15, 21, 28, 36, 45, 55, 66],
     attunement: [2, 4, 7, 11, 16, 22, 29, 37, 46, 56],
     quickening: [2, 4, 7, 11, 16, 22, 29, 37, 46, 56]
@@ -22162,12 +22182,17 @@ function renderOmniaEngine() {
   // running without a wordy label. Offline note appears while the Current builds.
   var _rInBookII = typeof darkMatterUnlocked === 'function' && darkMatterUnlocked();
   var genCount = _rInBookII ? 3 : (1 + (stepNum2 >= 5 ? 1 : 0) + (stepNum2 >= 9 ? 1 : 0));
-  var _pips = '';
-  for (var _gp = 0; _gp < genCount; _gp++) _pips += '<i class="oe-genpip"></i>';
-  var _curBuilding = typeof omniaUpgradeBuilding === 'function' && omniaUpgradeBuilding('current');
+  // One diamond per generator; a dimmed amber diamond means that generator is
+  // offline while its own upgrade builds.
+  var _pips = '', _offCount = 0;
+  for (var _gp = 0; _gp < genCount; _gp++) {
+    var _gid = _gp === 0 ? 'current' : ('current' + (_gp + 1));
+    var _off = typeof omniaUpgradeBuilding === 'function' && omniaUpgradeBuilding(_gid);
+    if (_off) _offCount++;
+    _pips += '<i class="oe-genpip' + (_off ? ' oe-genpip--off' : '') + '"></i>';
+  }
   if (rateText) rateText.innerHTML = 'Resonance ' + (omniaState.recStreak || 0)
-    + ' · <span class="oe-genpips" title="' + genCount + ' generator' + (genCount > 1 ? 's' : '') + ' active">' + _pips + '</span>'
-    + (_curBuilding ? '<br><span class="oe-gen-offline">◷ generator offline · upgrading current</span>' : '');
+    + ' · <span class="oe-genpips" title="' + genCount + ' generator' + (genCount > 1 ? 's' : '') + (_offCount ? ', ' + _offCount + ' upgrading' : ' active') + '">' + _pips + '</span>';
 
   var _inBookII = typeof darkMatterUnlocked === 'function' && darkMatterUnlocked();
   var stepLabelEl = document.querySelector('#omniaEngine .oe-stage-step-label');
@@ -22319,7 +22344,13 @@ function renderOmniaEngine() {
 
   var upGrid = document.getElementById('omniaUpgradeGrid');
   if (upGrid) {
-    upGrid.innerHTML = OMNIA_UPGRADES.map(function(upg) {
+    // Generator II/III only appear once unlocked (Step V / Step IX; all in Book II).
+    var _genShown = _inBookII ? 3 : (1 + (stepNum2 >= 5 ? 1 : 0) + (stepNum2 >= 9 ? 1 : 0));
+    upGrid.innerHTML = OMNIA_UPGRADES.filter(function(upg) {
+      if (upg.id === 'current2') return _genShown >= 2;
+      if (upg.id === 'current3') return _genShown >= 3;
+      return true;
+    }).map(function(upg) {
       var lvl = omniaState.upgrades[upg.id] || 1;
       var cost = omniaUpgradeCost(upg);
       var stepMax = omniaUpgradeStepMax(upg.id);
@@ -22327,7 +22358,6 @@ function renderOmniaEngine() {
       var atMax = capped && lvl >= stepMax;
       var buildingUntil = omniaUpgradeBuilding(upg.id);
       var sub = upg.sub;
-      if (upg.id === 'current') sub += ' · next +' + 55 + '/hr';
       var btnHtml;
       if (buildingUntil) {
         btnHtml = '<button class="omnia-mini-btn omnia-mini-btn--building" disabled>◷ <span data-build-countdown="' + upg.id + '">' + omniaBuildLabel(buildingUntil) + '</span></button>';
