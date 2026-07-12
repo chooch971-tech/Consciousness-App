@@ -1629,6 +1629,17 @@
     @keyframes oePipPulse { 0%,100%{opacity:.6;} 50%{opacity:1;} }
     .oe-genpip--off { background:#e8c87a; box-shadow:none; animation:none; opacity:.4; }
     .oe-gen-offline { color:#e8c87a; opacity:.9; letter-spacing:.06em; }
+    /* Tappable generator cores (Clash-style: tap to open its upgrade sheet) */
+    .oe-gen-core-row { display:flex; gap:9px; }
+    .oe-gen-core { flex:1; min-width:0; display:flex; flex-direction:column; align-items:center; gap:4px; padding:13px 8px 11px; border-radius:14px; border:1px solid rgba(142,204,192,.28); background:linear-gradient(160deg,rgba(142,204,192,.12),rgba(142,204,192,.03)); cursor:pointer; font-family:'DM Mono',monospace; color:#8eccc0; transition:border-color .18s,box-shadow .18s,transform .1s; }
+    .oe-gen-core:active { transform:scale(.97); }
+    .oe-gen-core:not(.building):hover { border-color:rgba(142,204,192,.55); box-shadow:0 0 18px -6px rgba(142,204,192,.55); }
+    .oe-gen-core.building { border-color:rgba(232,200,122,.4); color:#e8c87a; background:linear-gradient(160deg,rgba(232,200,122,.1),rgba(232,200,122,.02)); }
+    .oe-gen-core-sym { font-size:20px; line-height:1; text-shadow:0 0 9px rgba(142,204,192,.7); }
+    .oe-gen-core.building .oe-gen-core-sym { text-shadow:0 0 9px rgba(232,200,122,.7); }
+    .oe-gen-core-name { font-size:10px; letter-spacing:.16em; text-transform:uppercase; font-weight:600; }
+    .oe-gen-core-lvl { font-size:9px; letter-spacing:.06em; color:var(--muted); }
+    .oe-gen-core.building .oe-gen-core-lvl { color:#e8c87a; opacity:.9; }
     /* ── Akasha Well: tappable liquid-orb reservoir ───────────────── */
     .oe-well-stage { display:flex; justify-content:center; padding:4px 0 12px; }
     .oe-well { position:relative; width:158px; height:158px; cursor:pointer; outline:none; -webkit-tap-highlight-color:transparent; transition:transform .15s ease; }
@@ -6291,7 +6302,9 @@ body:not(.tut-live) #tutCorgi {
               <div class="oe-gen-rate" id="omniaRateText"></div>
             </div>
           <div class="oe-gen-upgrades">
-            <div class="oe-gen-upg-label">Generator Upgrades</div>
+            <div class="oe-gen-upg-label">Generators</div>
+            <div class="oe-gen-core-row" id="omniaGenCores"></div>
+            <div class="oe-gen-upg-label" style="margin-top:16px;">Upgrades</div>
             <div class="omnia-upgrades" id="omniaUpgradeGrid"></div>
           </div>
         </div>
@@ -20011,15 +20024,14 @@ function loadOmniaState() {
     merged.bodies = Object.assign(cloneOmniaDefault().bodies, parsed.bodies || {});
     clampOmniaBodies(merged);
     merged.upgrades = Object.assign(cloneOmniaDefault().upgrades, parsed.upgrades || {});
-    // Generators split into independent tracks (I/II/III). Seed the new tracks
-    // from the old single Akashic Current level once, so existing practitioners
-    // keep the power their second/third generator used to derive from it.
-    if (!merged._genSplitV1) {
-      var _c = merged.upgrades.current || 1;
-      if (!(merged.upgrades.current2 > 1)) merged.upgrades.current2 = _c;
-      if (!(merged.upgrades.current3 > 1)) merged.upgrades.current3 = _c;
-      merged._genSplitV1 = 1;
+    // Generators II and III are independent tracks that begin at level 1. An
+    // earlier build briefly seeded them from Generator I's level — undo that
+    // once so they start fresh as intended.
+    if (merged._genSplitV1 && !merged._genResetV2) {
+      merged.upgrades.current2 = 1;
+      merged.upgrades.current3 = 1;
     }
+    merged._genResetV2 = 1;
     merged.cosmetics = Object.assign(cloneOmniaDefault().cosmetics, parsed.cosmetics || {});
     merged.cosmetics.unlockedPalettes = merged.cosmetics.unlockedPalettes || ['aether'];
     merged.cosmetics.unlockedEntities = merged.cosmetics.unlockedEntities || ['omnia'];
@@ -20972,13 +20984,10 @@ function omniaRatePerHour() {
   // generator earns nothing while it is itself under construction; the others
   // keep running. If every active generator is offline, the flow is 0.
   var genCount = inBookII ? 3 : (1 + (stepNum >= 5 ? 1 : 0) + (stepNum >= 9 ? 1 : 0));
-  var GEN_BASE = [10, 18, 24], GEN_PER = [12, 10, 10];
   var genSum = 0, genActive = 0;
   for (var gi = 0; gi < genCount; gi++) {
-    var gid = gi === 0 ? 'current' : ('current' + (gi + 1));
-    if (typeof omniaUpgradeBuilding === 'function' && omniaUpgradeBuilding(gid)) continue;
-    var glvl = (omniaState.upgrades && omniaState.upgrades[gid]) || 1;
-    genSum += (GEN_BASE[gi] || 24) + glvl * (GEN_PER[gi] || 10);
+    if (typeof omniaUpgradeBuilding === 'function' && omniaUpgradeBuilding(OMNIA_GEN_META[gi].id)) continue;
+    genSum += omniaGenContribution(gi);
     genActive++;
   }
   if (genActive === 0) return 0; // every generator is mid-upgrade
@@ -22180,19 +22189,8 @@ function renderOmniaEngine() {
   // Compact generator indicator: one glowing diamond per active generator
   // (base + Step V + Step IX, all three in Book II) — shows how many are
   // running without a wordy label. Offline note appears while the Current builds.
-  var _rInBookII = typeof darkMatterUnlocked === 'function' && darkMatterUnlocked();
-  var genCount = _rInBookII ? 3 : (1 + (stepNum2 >= 5 ? 1 : 0) + (stepNum2 >= 9 ? 1 : 0));
-  // One diamond per generator; a dimmed amber diamond means that generator is
-  // offline while its own upgrade builds.
-  var _pips = '', _offCount = 0;
-  for (var _gp = 0; _gp < genCount; _gp++) {
-    var _gid = _gp === 0 ? 'current' : ('current' + (_gp + 1));
-    var _off = typeof omniaUpgradeBuilding === 'function' && omniaUpgradeBuilding(_gid);
-    if (_off) _offCount++;
-    _pips += '<i class="oe-genpip' + (_off ? ' oe-genpip--off' : '') + '"></i>';
-  }
-  if (rateText) rateText.innerHTML = 'Resonance ' + (omniaState.recStreak || 0)
-    + ' · <span class="oe-genpips" title="' + genCount + ' generator' + (genCount > 1 ? 's' : '') + (_offCount ? ', ' + _offCount + ' upgrading' : ' active') + '">' + _pips + '</span>';
+  if (rateText) rateText.textContent = 'Resonance ' + (omniaState.recStreak || 0);
+  renderOmniaGenCores();
 
   var _inBookII = typeof darkMatterUnlocked === 'function' && darkMatterUnlocked();
   var stepLabelEl = document.querySelector('#omniaEngine .oe-stage-step-label');
@@ -22344,12 +22342,10 @@ function renderOmniaEngine() {
 
   var upGrid = document.getElementById('omniaUpgradeGrid');
   if (upGrid) {
-    // Generator II/III only appear once unlocked (Step V / Step IX; all in Book II).
-    var _genShown = _inBookII ? 3 : (1 + (stepNum2 >= 5 ? 1 : 0) + (stepNum2 >= 9 ? 1 : 0));
+    // Generators (current/current2/current3) live in the tappable cores + sheet
+    // above; this shared list is Deep Vessel / Attunement / Quickening only.
     upGrid.innerHTML = OMNIA_UPGRADES.filter(function(upg) {
-      if (upg.id === 'current2') return _genShown >= 2;
-      if (upg.id === 'current3') return _genShown >= 3;
-      return true;
+      return upg.id !== 'current' && upg.id !== 'current2' && upg.id !== 'current3';
     }).map(function(upg) {
       var lvl = omniaState.upgrades[upg.id] || 1;
       var cost = omniaUpgradeCost(upg);
@@ -22512,6 +22508,20 @@ var _omniaUpgradeHeld = false;
 // applying instantly; the level takes effect when the timer completes. Timers
 // are wall-clock (persisted as a completion timestamp), so they keep running
 // while the app is closed and resolve on return.
+// The three generator cores share one collection but upgrade independently.
+var OMNIA_GEN_META = [ { id:'current', roman:'I' }, { id:'current2', roman:'II' }, { id:'current3', roman:'III' } ];
+var OMNIA_GEN_BASE = [10, 18, 24], OMNIA_GEN_PER = [12, 10, 10];
+function omniaGenUnlockedCount() {
+  if (typeof darkMatterUnlocked === 'function' && darkMatterUnlocked()) return 3;
+  var s = omniaState.bardonStep || 1;
+  return 1 + (s >= 5 ? 1 : 0) + (s >= 9 ? 1 : 0);
+}
+function omniaGenContribution(idx) {
+  var gid = OMNIA_GEN_META[idx].id;
+  var lvl = (omniaState.upgrades && omniaState.upgrades[gid]) || 1;
+  return (OMNIA_GEN_BASE[idx] || 24) + lvl * (OMNIA_GEN_PER[idx] || 10);
+}
+
 // The Quickening upgrade shortens construction, up to 60% faster at its cap.
 // (Attunement no longer touches build time — it's cost-only again.)
 function omniaBuildSpeedMult() {
@@ -22552,6 +22562,76 @@ function omniaBuildLabel(untilMs) {
   if (s >= 60) return Math.floor(s / 60) + 'm ' + (s % 60) + 's';
   return s + 's';
 }
+
+// ── Generator cores (tappable) + upgrade sheet ────────────────────────────
+var _genSheetId = null;
+function renderOmniaGenCores() {
+  var el = document.getElementById('omniaGenCores');
+  if (!el) return;
+  var n = omniaGenUnlockedCount();
+  var html = '';
+  for (var i = 0; i < n; i++) {
+    var meta = OMNIA_GEN_META[i];
+    var lvl = (omniaState.upgrades && omniaState.upgrades[meta.id]) || 1;
+    var building = omniaUpgradeBuilding(meta.id);
+    html += '<button class="oe-gen-core' + (building ? ' building' : '') + '" data-gen-open="' + meta.id + '">'
+      + '<span class="oe-gen-core-sym">◆</span>'
+      + '<span class="oe-gen-core-name">Gen ' + meta.roman + '</span>'
+      + '<span class="oe-gen-core-lvl">' + (building ? ('◷ <span data-build-countdown="' + meta.id + '">' + omniaBuildLabel(building) + '</span>') : ('Lv ' + lvl)) + '</span>'
+      + '</button>';
+  }
+  el.innerHTML = html;
+}
+function renderGenSheet(gid) {
+  var body = document.getElementById('genSheetBody');
+  var idx = OMNIA_GEN_META.findIndex(function(g) { return g.id === gid; });
+  if (!body || idx < 0) return;
+  var meta = OMNIA_GEN_META[idx];
+  var upg = OMNIA_UPGRADES.find(function(u) { return u.id === gid; });
+  var lvl = (omniaState.upgrades && omniaState.upgrades[gid]) || 1;
+  var cost = omniaUpgradeCost(upg);
+  var stepMax = omniaUpgradeStepMax(gid);
+  var capped = isFinite(stepMax);
+  var atMax = capped && lvl >= stepMax;
+  var building = omniaUpgradeBuilding(gid);
+  var contrib = omniaGenContribution(idx);
+  var btn;
+  if (building) btn = '<button class="status-ov__btn" disabled>◷ <span data-build-countdown="' + gid + '">' + omniaBuildLabel(building) + '</span> · building</button>';
+  else if (atMax) btn = '<button class="status-ov__btn" disabled>Fully upgraded</button>';
+  else btn = '<button class="status-ov__btn status-ov__btn--save" id="genSheetBuy"' + ((omniaState.akasha || 0) < cost ? ' disabled' : '') + '>Upgrade · ' + cost + ' akasha</button>';
+  body.innerHTML = '<button class="ach-info-close" id="genSheetClose" aria-label="Close">✕</button>'
+    + '<div class="ach-info-medal" style="--gc:#8eccc0;"><span style="font-size:30px;color:#8eccc0;text-shadow:0 0 12px rgba(142,204,192,.7);">◆</span></div>'
+    + '<div class="ach-info-kicker">Akasha Generator</div>'
+    + '<div class="ach-info-name">Generator ' + meta.roman + '</div>'
+    + '<div class="ach-info-desc">Level ' + lvl + (capped ? ' <span style="opacity:.6;">/ ' + stepMax + '</span>' : '') + ' · +' + contrib + '/hr'
+    + (building ? '<br><span style="color:#e8c87a;">offline while upgrading</span>' : '') + '</div>'
+    + '<div class="status-ov__row" style="margin-top:18px;">' + btn + '</div>';
+  var cl = document.getElementById('genSheetClose'); if (cl) cl.onclick = closeGenSheet;
+  var by = document.getElementById('genSheetBuy');
+  if (by) by.onclick = function() {
+    if (buyOmniaUpgrade(gid)) { renderGenSheet(gid); renderOmniaGenCores(); }
+  };
+}
+function openGenSheet(gid) {
+  _genSheetId = gid;
+  renderGenSheet(gid);
+  var ov = document.getElementById('genSheet');
+  if (ov) ov.classList.add('on');
+}
+function closeGenSheet() {
+  _genSheetId = null;
+  var ov = document.getElementById('genSheet');
+  if (ov) ov.classList.remove('on');
+}
+(function() {
+  var cores = document.getElementById('omniaGenCores');
+  if (cores) cores.addEventListener('click', function(e) {
+    var b = e.target.closest('[data-gen-open]');
+    if (b) openGenSheet(b.getAttribute('data-gen-open'));
+  });
+  var ov = document.getElementById('genSheet');
+  if (ov) ov.addEventListener('click', function(e) { if (e.target === ov) closeGenSheet(); });
+})();
 
 function buyOmniaUpgrade(id) {
   var upg = OMNIA_UPGRADES.find(function(u) { return u.id === id; });
@@ -26600,6 +26680,7 @@ document.getElementById('omniaEngine').addEventListener('click', function(e) {
     if (completed.length) {
       var done = omniaResolveUpgradeBuilds();
       if (done.length && visible && typeof renderOmniaEngine === 'function') renderOmniaEngine();
+      if (done.length && _genSheetId && typeof renderGenSheet === 'function') renderGenSheet(_genSheetId);
       done.forEach(function(id) {
         var u = OMNIA_UPGRADES.find(function(x) { return x.id === id; });
         if (u && typeof showToast === 'function') showToast('✦ ' + u.name + ' upgraded', 2600, 'gold');
@@ -33973,6 +34054,9 @@ document.addEventListener('DOMContentLoaded',function(){(function(){
 
 <!-- Achievement info popover -->
 <div class="ach-info-ov" id="achInfoOverlay"><div class="ach-info-card" id="achInfoBody"></div></div>
+
+<!-- Generator upgrade sheet (tap a generator core) -->
+<div class="ach-info-ov" id="genSheet"><div class="ach-info-card" id="genSheetBody"></div></div>
 
 <!-- Post likers list -->
 <div class="status-ov" id="likersOverlay">
