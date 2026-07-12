@@ -1235,9 +1235,6 @@
     .path-day-frac { font-size:9px; color:var(--text); letter-spacing:.05em; }
     .path-day-frac strong { color:var(--text); }
     .path-ex-list { display:flex; flex-direction:column; gap:8px; margin-top:10px; }
-    .path-ex-group { display:flex; flex-direction:column; border-radius:14px; overflow:hidden; border:1px solid var(--border); }
-    .path-ex-group .path-ex-card { border-radius:0; border:none; border-bottom:1px solid var(--border); }
-    .path-ex-group .path-ex-card:last-child { border-bottom:none; }
     .path-ex-card { display:flex; align-items:center; gap:14px; background:var(--surface); border:1px solid var(--border); border-radius:14px; padding:13px 14px; overflow:visible; transition:border-color .2s; cursor:pointer; }
     .path-ex-card:hover { border-color:rgba(255,255,255,.12); }
     .path-ex-card.done { opacity:.55; }
@@ -1258,10 +1255,6 @@
     /* Card that will grant a body level when completed now */
     .pq-grants-body { animation:pebGlow 2.6s ease-in-out infinite; }
     @keyframes pebGlow { 0%,100%{box-shadow:0 0 0 1px rgba(216,184,106,.16), 0 0 18px -8px rgba(216,184,106,.4);} 50%{box-shadow:0 0 0 1px rgba(216,184,106,.32), 0 0 26px -4px rgba(216,184,106,.72);} }
-    /* Same highlight for a card inside a grouped (overflow:hidden) frame — uses an
-       inset ring so it isn't clipped by the parent and wraps the full row. */
-    .pq-grants-body-inset { animation:pebGlowInset 2.6s ease-in-out infinite; }
-    @keyframes pebGlowInset { 0%,100%{box-shadow:inset 0 0 0 1.5px rgba(216,184,106,.34), inset 0 0 18px -6px rgba(216,184,106,.4);} 50%{box-shadow:inset 0 0 0 1.5px rgba(216,184,106,.55), inset 0 0 26px -2px rgba(216,184,106,.62);} }
     .pq-ex-bodybadge { display:inline-flex; align-items:center; gap:4px; margin-top:6px; font-family:'DM Mono',monospace; font-size:8px; letter-spacing:.12em; text-transform:uppercase; color:#e8cd8e; background:rgba(216,184,106,.13); border:1px solid rgba(216,184,106,.32); border-radius:5px; padding:3px 7px; text-shadow:0 0 8px rgba(216,184,106,.4); }
     .path-streak-nudge { display:flex; align-items:center; gap:12px; margin-top:12px; border:1px solid var(--border); border-radius:12px; background:rgba(255,255,255,.02); padding:12px 16px; }
     .path-streak-icon { font-size:20px; }
@@ -21837,18 +21830,6 @@ function omniaHighlightCap() {
   var byStep = step <= 3 ? 2 : step <= 5 ? 3 : step <= 7 ? 4 : step <= 9 ? 5 : 6;
   return Math.min(byStep, omniaBodyAwardsPerDay());
 }
-// Cluster all thought-family items together at the first one's position —
-// shared by the guided-path render and the highlight calculation below so
-// their orderings always match.
-function omniaClusterGuideItems(items) {
-  var isTC = function(id) { return id === 'thought' || id === 'observation' || id === 'focus' || id === 'vacancy'; };
-  var seen = false, ordered = [];
-  items.forEach(function(it) {
-    if (isTC(it.id)) { if (!seen) { seen = true; items.forEach(function(t) { if (isTC(t.id)) ordered.push(t); }); } }
-    else ordered.push(it);
-  });
-  return ordered;
-}
 // The set of OMNIA_EXERCISE_META ids that currently grant a body level if
 // completed right now, mapped to the specific path-card id that earns it —
 // the ✦ glow on guided-path cards and the actual award in
@@ -21864,9 +21845,9 @@ function omniaHighlightedExerciseIds() {
   if (cap <= 0) return result;
 
   if (typeof guideState !== 'undefined' && guideState._pathLockedV2 && typeof buildGuideRegimentItems === 'function') {
-    var items = omniaClusterGuideItems(buildGuideRegimentItems().filter(function(item) {
+    var items = buildGuideRegimentItems().filter(function(item) {
       return item && omniaMetaIdForExercise(item.id);
-    }));
+    });
     for (var i = 0; i < items.length && cap > 0; i++) {
       if (items[i].done) continue;
       var metaId = omniaMetaIdForExercise(items[i].id);
@@ -25401,15 +25382,6 @@ function renderGuidePlan(mode, skipScroll) {
   if (bannerSub) bannerSub.textContent = focus;
 
   var _isTC = function(id) { return id === 'thought' || id === 'observation' || id === 'focus' || id === 'vacancy'; };
-  // Sort: gather all thought-family items together at the position of the first one
-  var _firstTCIdx = -1;
-  items.forEach(function(it, i) { if (_firstTCIdx < 0 && _isTC(it.id)) _firstTCIdx = i; });
-  if (_firstTCIdx >= 0) {
-    var _tcItems = items.filter(function(it) { return _isTC(it.id); });
-    var _otherItems = items.filter(function(it) { return !_isTC(it.id); });
-    items = _otherItems.slice(0, _firstTCIdx).concat(_tcItems).concat(_otherItems.slice(_firstTCIdx));
-  }
-
   function _buildCardHtml(item) {
     var durLabel = item.durationLabel || (item.duration ? item.duration + ' min' : 'Open-ended');
     var modeLabel = item.mode ? ' · ' + (GUIDE_FOUNDATION_THOUGHT_LABELS[item.mode] || item.mode) : '';
@@ -25443,22 +25415,7 @@ function renderGuidePlan(mode, skipScroll) {
       + '</div>';
   }
 
-  var cardsHTML = '';
-  var _ci = 0;
-  while (_ci < items.length) {
-    if (_isTC(items[_ci].id)) {
-      var _tcRun = [];
-      while (_ci < items.length && _isTC(items[_ci].id)) { _tcRun.push(items[_ci]); _ci++; }
-      if (_tcRun.length > 1) {
-        cardsHTML += '<div class="path-ex-group">' + _tcRun.map(_buildCardHtml).join('') + '</div>';
-      } else {
-        cardsHTML += _buildCardHtml(_tcRun[0]);
-      }
-    } else {
-      cardsHTML += _buildCardHtml(items[_ci]);
-      _ci++;
-    }
-  }
+  var cardsHTML = items.map(_buildCardHtml).join('');
 
   var note = mode === 'beginner' ? guideFoundationalNote() : '';
   document.getElementById('guidePlanCards').innerHTML = cardsHTML
@@ -26156,14 +26113,12 @@ function renderPathQuests() {
     + '</div>';
   html += '<div style="display:flex;flex-direction:column;gap:8px;">';
   var _isTC = function(id) { return id === 'thought' || id === 'observation' || id === 'focus' || id === 'vacancy'; };
-  // Cluster all thought-family items together at the first one's position.
-  items = omniaClusterGuideItems(items);
   // Sort: uncompleted exercises to the top, completed to the bottom (stable).
   items.sort(function(a, b) { if (a.done === b.done) return 0; return a.done ? 1 : -1; });
   // Exercises that currently grant a body level if completed — the glow
   // below and the actual award in awardOmniaForExercise always agree.
   var _highlighted = (typeof omniaHighlightedExerciseIds === 'function') ? omniaHighlightedExerciseIds() : {};
-  var _pqBuildCard = function(item, grouped, last) {
+  var _pqBuildCard = function(item) {
     var rounds = item.rounds != null ? item.rounds : (item.durationLabel && item.durationLabel.indexOf('x2') !== -1) ? 2 : 1;
     var modeText = item.mode ? (GUIDE_FOUNDATION_THOUGHT_LABELS[item.mode] || item.mode) : '';
     var metaParts = [];
@@ -26229,17 +26184,10 @@ function renderPathQuests() {
       var _bm = (typeof OMNIA_BODY_META !== 'undefined' && OMNIA_BODY_META[grantsBodyName]) ? OMNIA_BODY_META[grantsBodyName].name.replace(' Body', '') : grantsBodyName;
       bodyBadgeHtml = '<div class="pq-ex-bodybadge">✦ +1 ' + _bm + '</div>';
     }
-    var outerStyle = 'display:flex;flex-direction:column;background:var(--surface);' + cardPadding + (item.done ? 'opacity:.5;' : '');
-    outerStyle += grouped ? (last ? '' : 'border-bottom:1px solid var(--border);') : 'border:1px solid var(--border);border-radius:14px;';
-    // Grouped cards live inside an overflow:hidden frame, so the standalone outer
-    // glow gets clipped and a border-color only tints the divider line. Tint the
-    // background and switch to an inset ring so the whole row reads as highlighted.
-    if (grantsBodyName) {
-      outerStyle += grouped
-        ? 'background:linear-gradient(0deg,rgba(216,184,106,.07),rgba(216,184,106,.07)),var(--surface);position:relative;z-index:1;border-radius:14px;'
-        : 'border-color:rgba(216,184,106,.5);';
-    }
-    var grantsClass = grantsBodyName ? (grouped ? 'pq-grants-body-inset' : 'pq-grants-body') : '';
+    var outerStyle = 'display:flex;flex-direction:column;background:var(--surface);' + cardPadding
+      + (item.done ? 'opacity:.5;' : '') + 'border:1px solid var(--border);border-radius:14px;';
+    if (grantsBodyName) outerStyle += 'border-color:rgba(216,184,106,.5);';
+    var grantsClass = grantsBodyName ? 'pq-grants-body' : '';
     return '<div' + (grantsClass ? ' class="' + grantsClass + '"' : '') + ' style="' + outerStyle + '">'
       + '<div style="display:flex;align-items:center;gap:14px;">'
       + '<div style="' + badgeStyle + '">' + icon + '</div>'
@@ -26254,26 +26202,7 @@ function renderPathQuests() {
       + (extraHtml ? '<div style="padding:8px 0 0;">' + extraHtml + '</div>' : '')
       + '</div>';
   };
-  // Render cards, wrapping each run of thought-family cards in one grouped frame.
-  (function() {
-    var i = 0;
-    while (i < items.length) {
-      if (_isTC(items[i].id)) {
-        var run = [];
-        while (i < items.length && _isTC(items[i].id)) { run.push(items[i]); i++; }
-        if (run.length > 1) {
-          html += '<div style="display:flex;flex-direction:column;border:1px solid var(--border);border-radius:14px;overflow:hidden;">';
-          run.forEach(function(it, idx) { html += _pqBuildCard(it, true, idx === run.length - 1); });
-          html += '</div>';
-        } else {
-          html += _pqBuildCard(run[0], false, false);
-        }
-      } else {
-        html += _pqBuildCard(items[i], false, false);
-        i++;
-      }
-    }
-  })();
+  items.forEach(function(item) { html += _pqBuildCard(item); });
   html += '</div>';  // close cards container
   html += '</div>';  // close label+cards wrapper
 
