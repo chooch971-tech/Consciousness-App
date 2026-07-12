@@ -1635,8 +1635,14 @@
     .oe-genpic-svg { width:100%; max-width:118px; height:auto; filter:drop-shadow(0 0 10px rgba(90,184,224,.25)); }
     .oe-genpic:not(.building):hover .oe-genpic-svg { filter:drop-shadow(0 0 14px rgba(142,204,224,.5)); }
     .oe-genpic.building .oe-genpic-svg { filter:sepia(.6) hue-rotate(-28deg) saturate(1.4) drop-shadow(0 0 10px rgba(232,200,122,.35)); opacity:.85; }
-    .oe-genpic-ring { transform-origin:50px 48px; animation:oeSealSpinSlow 26s linear infinite; }
-    @keyframes oeSealSpinSlow { to { transform:rotate(360deg); } }
+    .oe-pump-beam { transform-origin:50px 26px; animation:oePumpRock 2.8s ease-in-out infinite; }
+    @keyframes oePumpRock { 0%,100%{ transform:rotate(-3.5deg); } 50%{ transform:rotate(3deg); } }
+    .oe-pump-rod { animation:oePumpRod 2.8s ease-in-out infinite; }
+    @keyframes oePumpRod { 0%,100%{ transform:translateY(-1.8px); } 50%{ transform:translateY(1.8px); } }
+    .oe-pump-bub { fill:rgba(191,234,255,.75); animation:oePumpBub 3.4s ease-in infinite; }
+    .oe-pump-bub.b2 { animation-delay:1.6s; }
+    @keyframes oePumpBub { 0%{ transform:translateY(0); opacity:0; } 18%{ opacity:.85; } 100%{ transform:translateY(-24px); opacity:0; } }
+    .oe-genpic.building .oe-pump-beam, .oe-genpic.building .oe-pump-rod, .oe-genpic.building .oe-pump-bub { animation-play-state:paused; }
     .oe-genpic-num { font-family:'Cormorant Garamond',serif; font-size:9px; fill:#8eccc0; letter-spacing:.2em; }
     .oe-genpic-lvl { font-family:'DM Mono',monospace; font-size:9px; color:var(--muted); letter-spacing:.1em; margin-top:2px; }
     .oe-genpic-build { color:#e8c87a; font-size:8px; letter-spacing:.06em; }
@@ -22517,17 +22523,45 @@ function omniaBuildLabel(untilMs) {
 // Tap it with nothing to collect → its upgrade menu opens.
 var _genSheetId = null;
 
-function _genPictureSvg(idx, fillFrac) {
-  var op = (0.06 + 0.5 * Math.max(0, Math.min(1, fillFrac || 0))).toFixed(2);
+// Akasha pump: a rocking beam-pump over a glass vat of akasha (elixir-pump
+// homage). The vat's fluid level tracks the shared reservoir; the beam rocks
+// while the pump is producing and freezes while it's offline upgrading.
+// Pumps grow richer with THEIR OWN level: gold tank fittings at 10+, a gold
+// counterweight and crown gem at 20+. clipPath ids are uniqued per render.
+var _pumpUid = 0;
+function _genPictureSvg(idx, fillFrac, lvl) {
+  lvl = lvl || 1;
+  var frac = Math.max(0, Math.min(1, fillFrac || 0));
+  var fluidTop = (96 - 34 * Math.max(frac, 0.07)).toFixed(1);
+  var uid = 'oePumpClip' + (++_pumpUid);
+  var gold = lvl >= 10, crown = lvl >= 20;
+  var rim = gold ? 'rgba(232,200,122,.75)' : 'rgba(184,234,255,.55)';
+  var band = gold ? 'rgba(232,200,122,.4)' : 'rgba(142,204,224,.25)';
   return '<svg class="oe-genpic-svg" viewBox="0 0 100 112" aria-hidden="true">'
-    + '<ellipse cx="50" cy="105" rx="30" ry="4.5" fill="rgba(142,204,224,.08)"/>'
-    + '<path d="M30 92 L70 92 L76 103 L24 103 Z" fill="rgba(142,204,224,.08)" stroke="rgba(142,204,224,.45)" stroke-width="1.1"/>'
-    + '<path d="M35 92 L37 66" stroke="rgba(142,204,224,.5)" stroke-width="1.4"/>'
-    + '<path d="M65 92 L63 66" stroke="rgba(142,204,224,.5)" stroke-width="1.4"/>'
-    + '<circle cx="50" cy="48" r="23" fill="rgba(90,184,224,' + op + ')" stroke="rgba(184,234,255,.65)" stroke-width="1.2"/>'
-    + '<circle cx="50" cy="48" r="29" fill="none" stroke="rgba(142,204,224,.3)" stroke-width=".8" stroke-dasharray="2 6" class="oe-genpic-ring"/>'
-    + '<path d="M50 10 L52.6 15.5 L50 21 L47.4 15.5 Z" fill="#bfeaff" opacity=".9"/>'
-    + '<text x="50" y="100" text-anchor="middle" class="oe-genpic-num">' + OMNIA_GEN_META[idx].roman + '</text>'
+    + '<defs><clipPath id="' + uid + '"><rect x="25" y="61" width="50" height="36" rx="9"/></clipPath></defs>'
+    + '<ellipse cx="50" cy="107" rx="33" ry="4.5" fill="rgba(142,204,224,.07)"/>'
+    + '<path d="M20 100 L80 100 L85 109 L15 109 Z" fill="rgba(142,204,224,.08)" stroke="rgba(142,204,224,.4)" stroke-width="1"/>'
+    + '<rect x="24" y="60" width="52" height="38" rx="10" fill="rgba(8,16,24,.55)" stroke="' + rim + '" stroke-width="1.4"/>'
+    + '<g clip-path="url(#' + uid + ')">'
+    +   '<rect x="25" y="' + fluidTop + '" width="50" height="40" fill="rgba(90,184,224,.5)"/>'
+    +   '<rect x="25" y="' + fluidTop + '" width="50" height="3" fill="rgba(191,234,255,.55)"/>'
+    +   '<circle class="oe-pump-bub" cx="42" cy="94" r="1.7"/>'
+    +   '<circle class="oe-pump-bub b2" cx="57" cy="95" r="1.2"/>'
+    + '</g>'
+    + '<path d="M24 78 H76" stroke="' + band + '" stroke-width="1"/>'
+    + '<path d="M24 88 H76" stroke="' + band + '" stroke-width="1"/>'
+    + '<path d="M44 60 L50 25 L56 60" fill="none" stroke="rgba(142,204,224,.8)" stroke-width="1.8"/>'
+    + (crown ? '<path d="M50 11 L53 16.5 L50 22 L47 16.5 Z" fill="#e8c87a" opacity=".95"/>' : '')
+    + '<g class="oe-pump-beam">'
+    +   '<path d="M32 28.5 L70 24" stroke="rgba(191,234,255,.85)" stroke-width="2.4" stroke-linecap="round"/>'
+    +   '<circle cx="32" cy="28.5" r="4.6" fill="' + (crown ? 'rgba(232,200,122,.45)' : 'rgba(142,204,224,.3)') + '" stroke="' + (crown ? '#e8c87a' : '#bfeaff') + '" stroke-width="1.2"/>'
+    + '</g>'
+    + '<circle cx="50" cy="26" r="2.3" fill="#bfeaff"/>'
+    + '<g class="oe-pump-rod">'
+    +   '<line x1="70" y1="23" x2="70" y2="54" stroke="rgba(191,234,255,.6)" stroke-width="1.6"/>'
+    +   '<rect x="65.5" y="52" width="9" height="6.5" rx="2" fill="rgba(142,204,224,.35)" stroke="rgba(191,234,255,.7)" stroke-width="1"/>'
+    + '</g>'
+    + '<text x="50" y="106.5" text-anchor="middle" class="oe-genpic-num">' + OMNIA_GEN_META[idx].roman + '</text>'
     + '</svg>';
 }
 
@@ -22546,7 +22580,7 @@ function renderOmniaGenYard() {
     var building = omniaUpgradeBuilding(meta.id);
     html += '<button class="oe-genpic' + (building ? ' building' : '') + '" data-gen-tap="' + meta.id + '" aria-label="Akasha Generator ' + meta.roman + '">'
       + (canCollect ? '<div class="oe-gen-collectbadge">◈</div>' : '')
-      + _genPictureSvg(i, frac)
+      + _genPictureSvg(i, frac, lvl)
       + '<div class="oe-genpic-lvl">' + (building
           ? '<span class="oe-genpic-build">◷ <span data-build-countdown="' + meta.id + '">' + omniaBuildLabel(building) + '</span></span>'
           : 'Lv ' + lvl) + '</div>'
@@ -22584,8 +22618,9 @@ function renderGenSheet(gid) {
 
   var contrib = omniaGenContribution(idx);
   var building = omniaUpgradeBuilding(gid);
+  var glvl = (omniaState.upgrades && omniaState.upgrades[gid]) || 1;
   body.innerHTML = '<button class="ach-info-close" id="genSheetClose" aria-label="Close">✕</button>'
-    + '<div class="ach-info-medal" style="--gc:#8eccc0;">' + _genPictureSvg(idx, 0.6) + '</div>'
+    + '<div class="ach-info-medal" style="--gc:#8eccc0;">' + _genPictureSvg(idx, 0.6, glvl) + '</div>'
     + '<div class="ach-info-kicker">Akasha Generator</div>'
     + '<div class="ach-info-name">Generator ' + meta.roman + '</div>'
     + '<div class="ach-info-desc">+' + contrib + '/hr'
