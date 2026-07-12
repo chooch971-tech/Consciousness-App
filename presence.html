@@ -1646,8 +1646,8 @@
     .oe-genpic-num { font-family:'Cormorant Garamond',serif; font-size:9px; fill:#8eccc0; letter-spacing:.2em; }
     .oe-genpic-lvl { font-family:'DM Mono',monospace; font-size:9px; color:var(--muted); letter-spacing:.1em; margin-top:2px; }
     .oe-genpic-build { color:#e8c87a; font-size:8px; letter-spacing:.06em; }
-    .oe-gen-collectbadge { position:absolute; top:-13px; left:50%; font-size:19px; color:#e8c87a; text-shadow:0 0 12px rgba(232,200,122,.95); pointer-events:none; z-index:2; animation:genBadgeBob 1.6s ease-in-out infinite; }
-    @keyframes genBadgeBob { 0%,100%{ transform:translate(-50%,0);} 50%{ transform:translate(-50%,-7px);} }
+    .oe-gen-collectbadge { position:absolute; top:-13px; left:50%; transform:translateX(-50%); background:linear-gradient(180deg,#f2dc98,#e6b544); color:#1a1204; font-family:'DM Mono',monospace; font-size:9px; font-weight:600; letter-spacing:.02em; padding:2px 8px; border-radius:11px; white-space:nowrap; box-shadow:0 0 13px rgba(232,200,122,.85); pointer-events:none; z-index:3; animation:genBadgeFlash 1s ease-in-out infinite; }
+    @keyframes genBadgeFlash { 0%,100%{ transform:translate(-50%,0) scale(1); opacity:1;} 50%{ transform:translate(-50%,-4px) scale(1.09); opacity:.72;} }
     .oe-gen-slim { text-align:center; font-family:'DM Mono',monospace; font-size:8px; color:rgba(142,204,224,.62); letter-spacing:.08em; margin-top:10px; line-height:1.7; }
     #genSheetBody .ach-info-medal { width:84px; height:94px; border:none; background:none; }
     #genSheetBody .ach-info-medal svg { width:100%; height:100%; }
@@ -11239,7 +11239,7 @@ function createOmniaResetState(resetAt) {
   omnia.reservoir = 0;
   omnia.lastTick = resetAt;
   omnia.bodies = { physical:1, astral:1, mental:1 };
-  omnia.upgrades = { current:1, gen2:1, gen3:1, vessel:1, attunement:1, quickening:1 };
+  omnia.upgrades = { current:1, gen2:1, gen3:1, vessel:1, attunement:1, quickening:1, vessel2:1, attune2:1, quick2:1, vessel3:1, attune3:1, quick3:1 };
   omnia.bardonStep = 1;
   omnia.rec = null;
   omnia.recStreak = 0;
@@ -19411,7 +19411,7 @@ var OMNIA_DEFAULT = {
   reservoir: 0,
   lastTick: Date.now(),
   bodies: { physical:1, astral:1, mental:1 },
-  upgrades: { current:1, gen2:1, gen3:1, vessel:1, attunement:1, quickening:1 },
+  upgrades: { current:1, gen2:1, gen3:1, vessel:1, attunement:1, quickening:1, vessel2:1, attune2:1, quick2:1, vessel3:1, attune3:1, quick3:1 },
   bardonStep:1,
   prestige:0,
   darkMatter:0,
@@ -19457,7 +19457,13 @@ var OMNIA_UPGRADES = [
   { id:'gen3', name:'Generator III', sub:'A third akashic current (opens at Step IX)', base:520, step:260 },
   { id:'vessel', name:'Deep Vessel', sub:'Reservoir capacity before overflow', base:480, step:240 },
   { id:'attunement', name:'Attunement', sub:'Cheapens cosmetics, engine upgrades, and body levels', base:640, step:320 },
-  { id:'quickening', name:'Quickening', sub:'Speeds generator upgrade construction', base:600, step:300 }
+  { id:'quickening', name:'Quickening', sub:'Speeds generator upgrade construction', base:600, step:300 },
+  { id:'vessel2', name:'Deep Vessel', sub:'Reservoir capacity before overflow', base:480, step:240 },
+  { id:'attune2', name:'Attunement', sub:'Cheapens this generator\'s upgrades', base:640, step:320 },
+  { id:'quick2', name:'Quickening', sub:'Speeds this generator\'s construction', base:600, step:300 },
+  { id:'vessel3', name:'Deep Vessel', sub:'Reservoir capacity before overflow', base:480, step:240 },
+  { id:'attune3', name:'Attunement', sub:'Cheapens this generator\'s upgrades', base:640, step:320 },
+  { id:'quick3', name:'Quickening', sub:'Speeds this generator\'s construction', base:600, step:300 }
 ];
 
 // Cosmetic pricing. `_price` is the canonical tier price (also used by
@@ -19989,6 +19995,10 @@ function loadOmniaState() {
     // — independent of Generator I. (An earlier build stored them under
     // current2/current3 and briefly seeded them from Generator I; those keys are
     // now abandoned, so the new tracks start fresh and merge cleanly.)
+    // Per-pump reservoirs: fold the old single reservoir into Generator I once.
+    if (!merged.reservoirs || typeof merged.reservoirs !== 'object') {
+      merged.reservoirs = (merged.reservoir > 0) ? { current: merged.reservoir } : {};
+    }
     merged.cosmetics = Object.assign(cloneOmniaDefault().cosmetics, parsed.cosmetics || {});
     merged.cosmetics.unlockedPalettes = merged.cosmetics.unlockedPalettes || ['aether'];
     merged.cosmetics.unlockedEntities = merged.cosmetics.unlockedEntities || ['omnia'];
@@ -20990,8 +21000,14 @@ function omniaUpgradeStepMax(upgId) {
     gen2:       [3, 6, 10, 15, 21, 28, 36, 45, 55, 66],
     gen3:       [3, 6, 10, 15, 21, 28, 36, 45, 55, 66],
     vessel:     [3, 6, 10, 15, 21, 28, 36, 45, 55, 66],
+    vessel2:    [3, 6, 10, 15, 21, 28, 36, 45, 55, 66],
+    vessel3:    [3, 6, 10, 15, 21, 28, 36, 45, 55, 66],
     attunement: [2, 4, 7, 11, 16, 22, 29, 37, 46, 56],
-    quickening: [2, 4, 7, 11, 16, 22, 29, 37, 46, 56]
+    attune2:    [2, 4, 7, 11, 16, 22, 29, 37, 46, 56],
+    attune3:    [2, 4, 7, 11, 16, 22, 29, 37, 46, 56],
+    quickening: [2, 4, 7, 11, 16, 22, 29, 37, 46, 56],
+    quick2:     [2, 4, 7, 11, 16, 22, 29, 37, 46, 56],
+    quick3:     [2, 4, 7, 11, 16, 22, 29, 37, 46, 56]
   };
   return (caps[upgId] || caps.current)[Math.min(step - 1, 9)];
 }
@@ -21004,11 +21020,19 @@ function omniaAccrue() {
   var now = Date.now();
   var elapsedHours = Math.max(0, (now - (omniaState.lastTick || now)) / 3600000);
   if (elapsedHours > 0) {
-    var gain = Math.floor(elapsedHours * omniaRatePerHour() * omniaPrestigeMult() * omniaDevotionMult());
-    if (gain > 0) {
-      omniaState.reservoir = Math.min(omniaReservoirCap(), (omniaState.reservoir || 0) + gain);
-      omniaState.totalAkashaEarned = (omniaState.totalAkashaEarned || 0) + gain;
+    if (!omniaState.reservoirs || typeof omniaState.reservoirs !== 'object') omniaState.reservoirs = {};
+    var mult = omniaPrestigeMult() * omniaDevotionMult();
+    var shares = omniaPumpShares();
+    var n = omniaGenUnlockedCount(), earned = 0;
+    for (var i = 0; i < n; i++) {
+      var gid = OMNIA_GEN_META[i].id;
+      var gain = Math.floor(elapsedHours * (shares[gid] || 0) * mult);
+      if (gain <= 0) continue;
+      var cap = omniaPumpReservoirCap(i);
+      omniaState.reservoirs[gid] = Math.min(cap, (omniaState.reservoirs[gid] || 0) + gain);
+      earned += gain;
     }
+    if (earned > 0) omniaState.totalAkashaEarned = (omniaState.totalAkashaEarned || 0) + earned;
   }
   omniaState.lastTick = now;
   saveOmniaState();
@@ -21053,7 +21077,11 @@ function omniaCosmeticCost(item) {
 function omniaUpgradeCost(upg) {
   var lvl = omniaState.upgrades[upg.id] || 1;
   var raw = Math.floor((upg.base + (lvl - 1) * upg.step) * Math.pow(1.14, Math.max(0, lvl - 1)));
-  return Math.floor(raw * omniaDiscountMult());
+  // A pump upgrade is cheapened by that pump's own Attunement; anything else
+  // uses the global Attunement (Generator I's).
+  var pump = _pumpOfUpgrade(upg.id);
+  var att = pump ? (omniaState.upgrades[pump.attune] || 1) : (omniaState.upgrades.attunement || 1);
+  return Math.floor(raw * Math.max(0.5, 1 - (att - 1) * 0.05));
 }
 
 // ── Prestige (Magical Evocation) ─────────────────────────────────
@@ -22337,16 +22365,24 @@ function renderOmniaEngine() {
   evaluateOmniaStory();
 }
 
-function collectOmniaAkasha(anchorEl) {
+function collectOmniaAkasha(anchorEl, gid) {
   omniaAccrue();
-  var amount = Math.floor(omniaState.reservoir || 0);
+  var res = omniaState.reservoirs || (omniaState.reservoirs = {});
+  var ids = gid ? [gid] : Object.keys(res);
+  var amount = 0;
+  ids.forEach(function(k) { amount += Math.floor(res[k] || 0); });
   if (amount < 1) return;
   var cap = omniaAkashaCap();
   var current = omniaState.akasha || 0;
   var room = Math.max(0, cap - current);
   var collected = Math.min(amount, room);
+  var remaining = collected;
+  ids.forEach(function(k) {
+    var take = Math.min(Math.floor(res[k] || 0), remaining);
+    res[k] = (res[k] || 0) - take; remaining -= take;
+    if (res[k] < 0.5) res[k] = 0;
+  });
   omniaState.akasha = current + collected;
-  omniaState.reservoir = 0;
   saveOmniaState();
   renderOmniaEngine();
 
@@ -22466,7 +22502,36 @@ var _omniaUpgradeHeld = false;
 // are wall-clock (persisted as a completion timestamp), so they keep running
 // while the app is closed and resolve on return.
 // The three generator cores share one collection but upgrade independently.
-var OMNIA_GEN_META = [ { id:'current', roman:'I' }, { id:'gen2', roman:'II' }, { id:'gen3', roman:'III' } ];
+var OMNIA_GEN_META = [
+  { id:'current', roman:'I',   vessel:'vessel',  attune:'attunement', quick:'quickening' },
+  { id:'gen2',    roman:'II',  vessel:'vessel2', attune:'attune2',    quick:'quick2' },
+  { id:'gen3',    roman:'III', vessel:'vessel3', attune:'attune3',    quick:'quick3' }
+];
+function _pumpOfUpgrade(id) {
+  for (var i = 0; i < OMNIA_GEN_META.length; i++) {
+    var m = OMNIA_GEN_META[i];
+    if (id === m.id || id === m.vessel || id === m.attune || id === m.quick) return m;
+  }
+  return null;
+}
+function omniaPumpReservoirCap(idx) {
+  var vLvl = (omniaState.upgrades && omniaState.upgrades[OMNIA_GEN_META[idx].vessel]) || 1;
+  var bodyTotal = Math.max(0, omniaBodyTotal());
+  return Math.floor(120 + Math.pow(vLvl - 1, 2) * 30 + Math.pow(bodyTotal, 1.15) * 3);
+}
+// Split the (multiplier-applied) total rate across active pumps by contribution.
+function omniaPumpShares() {
+  var total = omniaRatePerHour();
+  var n = omniaGenUnlockedCount(), contribs = [], sum = 0;
+  for (var i = 0; i < n; i++) {
+    var gid = OMNIA_GEN_META[i].id;
+    var c = omniaUpgradeBuilding(gid) ? 0 : omniaGenContribution(i);
+    contribs.push(c); sum += c;
+  }
+  var out = {};
+  for (var j = 0; j < n; j++) out[OMNIA_GEN_META[j].id] = sum > 0 ? total * (contribs[j] / sum) : 0;
+  return out;
+}
 var OMNIA_GEN_BASE = [10, 18, 24], OMNIA_GEN_PER = [12, 10, 10];
 function omniaGenUnlockedCount() {
   if (typeof darkMatterUnlocked === 'function' && darkMatterUnlocked()) return 3;
@@ -22481,15 +22546,16 @@ function omniaGenContribution(idx) {
 
 // The Quickening upgrade shortens construction, up to 60% faster at its cap.
 // (Attunement no longer touches build time — it's cost-only again.)
-function omniaBuildSpeedMult() {
-  var q = (omniaState.upgrades && omniaState.upgrades.quickening) || 1;
+function omniaBuildSpeedMult(upgId) {
+  var pump = _pumpOfUpgrade(upgId);
+  var q = (pump ? omniaState.upgrades[pump.quick] : (omniaState.upgrades && omniaState.upgrades.quickening)) || 1;
   return Math.max(0.4, 1 - (q - 1) * 0.06);
 }
-function omniaBuildDurationMs(targetLevel) {
+function omniaBuildDurationMs(targetLevel, upgId) {
   // Weighty idle construction with a real early floor: every upgrade is at least
   // ~5m, then grows steeply so deep ones are day-long commitments. ≈5m early →
   // ~1h at level 16 → ~4h at 30 → ~20h at 66, eased by Quickening. Capped 24h.
-  var secs = Math.floor((300 + 11 * Math.pow(Math.max(1, targetLevel), 2.1)) * omniaBuildSpeedMult());
+  var secs = Math.floor((300 + 11 * Math.pow(Math.max(1, targetLevel), 2.1)) * omniaBuildSpeedMult(upgId));
   secs = Math.max(60, Math.min(secs, 24 * 3600));
   return secs * 1000;
 }
@@ -22571,17 +22637,18 @@ function renderOmniaGenYard() {
   var yard = document.getElementById('omniaGenYard');
   if (!yard) return;
   var n = omniaGenUnlockedCount();
-  var reservoir = Math.floor(omniaState.reservoir || 0);
-  var cap = omniaReservoirCap();
-  var frac = cap > 0 ? (omniaState.reservoir || 0) / cap : 0;
-  var canCollect = reservoir >= 1;
+  var res = omniaState.reservoirs || {};
   var html = '';
   for (var i = 0; i < n; i++) {
     var meta = OMNIA_GEN_META[i];
     var lvl = (omniaState.upgrades && omniaState.upgrades[meta.id]) || 1;
     var building = omniaUpgradeBuilding(meta.id);
+    var pumpRes = Math.floor(res[meta.id] || 0);
+    var pumpCap = omniaPumpReservoirCap(i);
+    var frac = pumpCap > 0 ? (res[meta.id] || 0) / pumpCap : 0;
+    var canCollect = !building && pumpRes >= 1;
     html += '<button class="oe-genpic' + (building ? ' building' : '') + '" data-gen-tap="' + meta.id + '" aria-label="Akasha Generator ' + meta.roman + '">'
-      + (canCollect ? '<div class="oe-gen-collectbadge">◈</div>' : '')
+      + (canCollect ? '<div class="oe-gen-collectbadge">+' + pumpRes.toLocaleString() + '</div>' : '')
       + _genPictureSvg(i, frac, lvl)
       + '<div class="oe-genpic-lvl">' + (building
           ? '<span class="oe-genpic-build">◷ <span data-build-countdown="' + meta.id + '">' + omniaBuildLabel(building) + '</span></span>'
@@ -22590,9 +22657,7 @@ function renderOmniaGenYard() {
   }
   yard.innerHTML = html;
   var slim = document.getElementById('omniaGenSlim');
-  if (slim) slim.textContent = 'Reservoir ' + reservoir + ' / ' + cap
-    + ' · Resonance ' + (omniaState.recStreak || 0)
-    + (canCollect ? ' · tap a generator to collect' : '');
+  if (slim) slim.textContent = 'Resonance ' + (omniaState.recStreak || 0) + ' · tap a full pump to collect, or a pump to upgrade';
 }
 
 function renderGenSheet(gid) {
@@ -22621,18 +22686,19 @@ function renderGenSheet(gid) {
   var contrib = omniaGenContribution(idx);
   var building = omniaUpgradeBuilding(gid);
   var glvl = (omniaState.upgrades && omniaState.upgrades[gid]) || 1;
+  var pumpRes = Math.floor((omniaState.reservoirs || {})[gid] || 0);
+  var pumpCap = omniaPumpReservoirCap(idx);
   body.innerHTML = '<button class="ach-info-close" id="genSheetClose" aria-label="Close">✕</button>'
-    + '<div class="ach-info-medal" style="--gc:#8eccc0;">' + _genPictureSvg(idx, 0.6, glvl) + '</div>'
+    + '<div class="ach-info-medal" style="--gc:#8eccc0;">' + _genPictureSvg(idx, pumpCap > 0 ? pumpRes / pumpCap : 0, glvl) + '</div>'
     + '<div class="ach-info-kicker">Akasha Generator</div>'
     + '<div class="ach-info-name">Generator ' + meta.roman + '</div>'
-    + '<div class="ach-info-desc">+' + contrib + '/hr'
+    + '<div class="ach-info-desc">+' + contrib + '/hr · reservoir ' + pumpRes.toLocaleString() + ' / ' + pumpCap.toLocaleString()
     + (building ? ' · <span style="color:#e8c87a;">offline while upgrading</span>' : '') + '</div>'
     + '<div style="text-align:left; margin-top:16px;">'
     + row(gid, 'Akashic Current', 'Generate akasha more quickly each hour · next +' + (OMNIA_GEN_PER[idx] || 10) + '/hr')
-    + '<div class="oe-gen-upg-label" style="margin:14px 0 6px;">Shared Systems</div>'
-    + row('vessel', 'Deep Vessel', 'Reservoir capacity before overflow')
-    + row('attunement', 'Attunement', 'Cheapens cosmetics, engine upgrades, and body levels')
-    + row('quickening', 'Quickening', 'Speeds generator upgrade construction')
+    + row(meta.vessel, 'Deep Vessel', 'This pump\'s reservoir capacity')
+    + row(meta.attune, 'Attunement', 'Cheapens this pump\'s upgrades')
+    + row(meta.quick, 'Quickening', 'Speeds this pump\'s construction')
     + '</div>';
   var cl = document.getElementById('genSheetClose');
   if (cl) cl.onclick = closeGenSheet;
@@ -22663,9 +22729,10 @@ function closeGenSheet() {
   if (yard) yard.addEventListener('click', function(e) {
     var g = e.target.closest('[data-gen-tap]');
     if (!g) return;
+    var gid = g.getAttribute('data-gen-tap');
     omniaAccrue();
-    if (Math.floor(omniaState.reservoir || 0) >= 1) { collectOmniaAkasha(g); return; }
-    openGenSheet(g.getAttribute('data-gen-tap'));
+    if (!omniaUpgradeBuilding(gid) && Math.floor((omniaState.reservoirs || {})[gid] || 0) >= 1) { collectOmniaAkasha(g, gid); return; }
+    openGenSheet(gid);
   });
 })();
 
@@ -22681,7 +22748,7 @@ function buyOmniaUpgrade(id) {
   // Spend now, but the level lands only when construction finishes.
   var targetLevel = (omniaState.upgrades[id] || 1) + 1;
   if (!omniaState.upgradeBuilds || typeof omniaState.upgradeBuilds !== 'object') omniaState.upgradeBuilds = {};
-  omniaState.upgradeBuilds[id] = Date.now() + omniaBuildDurationMs(targetLevel);
+  omniaState.upgradeBuilds[id] = Date.now() + omniaBuildDurationMs(targetLevel, id);
   saveOmniaState();
   renderOmniaEngine();
   if (navigator.vibrate) { try { navigator.vibrate(5); } catch(e) {} }
