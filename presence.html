@@ -1651,6 +1651,14 @@
     .oe-gen-slim { text-align:center; font-family:'DM Mono',monospace; font-size:8px; color:rgba(142,204,224,.62); letter-spacing:.08em; margin-top:10px; line-height:1.7; }
     #genSheetBody .ach-info-medal { width:84px; height:94px; border:none; background:none; }
     #genSheetBody .ach-info-medal svg { width:100%; height:100%; }
+    /* Brighter, more colourful upgrade drawer (defaults are heavily muted grey) */
+    #genSheetBody .ach-info-kicker { color:#8eccc0; }
+    #genSheetBody .ach-info-name { color:#eaf6ff; }
+    #genSheetBody .ach-info-desc { color:rgba(206,232,246,.82); }
+    #genSheetBody .omnia-upgrade-row { border-top-color:rgba(142,204,224,.16); }
+    #genSheetBody .omnia-upgrade-sub { color:rgba(190,220,236,.66); }
+    #genSheetBody .omnia-mini-btn { border-color:rgba(142,204,224,.4); background:rgba(90,184,224,.1); color:#bfeaff; }
+    #genSheetBody .omnia-mini-btn:disabled { color:rgba(142,204,224,.5); background:transparent; }
     /* Generator upgrade drawer — slides in from the right */
     .gen-drawer { position:fixed; inset:0; z-index:9800; background:rgba(7,8,13,0); pointer-events:none; transition:background .3s ease; }
     .gen-drawer.on { background:rgba(7,8,13,.72); pointer-events:auto; }
@@ -21026,13 +21034,17 @@ function omniaAccrue() {
     var n = omniaGenUnlockedCount(), earned = 0;
     for (var i = 0; i < n; i++) {
       var gid = OMNIA_GEN_META[i].id;
-      var gain = Math.floor(elapsedHours * (shares[gid] || 0) * mult);
+      // Keep the gain fractional: flooring here would throw away any sub-unit
+      // remainder every call, so frequent accrual (the once-a-second live tick)
+      // would never move slowly-filling pumps. Reservoirs hold floats; the UI
+      // floors them only for display.
+      var gain = elapsedHours * (shares[gid] || 0) * mult;
       if (gain <= 0) continue;
       var cap = omniaPumpReservoirCap(i);
       omniaState.reservoirs[gid] = Math.min(cap, (omniaState.reservoirs[gid] || 0) + gain);
       earned += gain;
     }
-    if (earned > 0) omniaState.totalAkashaEarned = (omniaState.totalAkashaEarned || 0) + earned;
+    if (earned > 0) omniaState.totalAkashaEarned = Math.floor((omniaState.totalAkashaEarned || 0) + earned);
   }
   omniaState.lastTick = now;
   saveOmniaState();
@@ -22546,8 +22558,7 @@ function omniaPumpShares() {
   var total = omniaRatePerHour();
   var n = omniaGenUnlockedCount(), contribs = [], sum = 0;
   for (var i = 0; i < n; i++) {
-    var gid = OMNIA_GEN_META[i].id;
-    var c = omniaUpgradeBuilding(gid) ? 0 : omniaGenContribution(i);
+    var c = omniaPumpBuildingId(OMNIA_GEN_META[i]) ? 0 : omniaGenContribution(i);
     contribs.push(c); sum += c;
   }
   var out = {};
@@ -22584,6 +22595,15 @@ function omniaBuildDurationMs(targetLevel, upgId) {
 function omniaUpgradeBuilding(id) {
   var b = omniaState.upgradeBuilds && omniaState.upgradeBuilds[id];
   return (typeof b === 'number' && b > Date.now()) ? b : 0;
+}
+// A pump can only build ONE upgrade at a time. Returns the id of whichever of
+// its four tracks is currently under construction (0 if the pump is free).
+// While building, the whole pump goes offline — it neither produces nor collects.
+function omniaPumpBuildingId(meta) {
+  if (!meta) return 0;
+  var ids = [meta.id, meta.vessel, meta.attune, meta.quick];
+  for (var i = 0; i < ids.length; i++) { if (omniaUpgradeBuilding(ids[i])) return ids[i]; }
+  return 0;
 }
 // Apply any builds whose timer has elapsed. Returns the list of completed
 // upgrade ids so callers can announce them.
@@ -22664,7 +22684,8 @@ function renderOmniaGenYard() {
   for (var i = 0; i < n; i++) {
     var meta = OMNIA_GEN_META[i];
     var lvl = (omniaState.upgrades && omniaState.upgrades[meta.id]) || 1;
-    var building = omniaUpgradeBuilding(meta.id);
+    var buildingId = omniaPumpBuildingId(meta);
+    var building = buildingId ? omniaUpgradeBuilding(buildingId) : 0;
     var pumpRes = Math.floor(res[meta.id] || 0);
     var pumpCap = omniaPumpReservoirCap(i);
     var frac = pumpCap > 0 ? (res[meta.id] || 0) / pumpCap : 0;
@@ -22673,7 +22694,7 @@ function renderOmniaGenYard() {
       + (canCollect ? '<div class="oe-gen-collectbadge">+' + pumpRes.toLocaleString() + '</div>' : '')
       + _genPictureSvg(i, frac, lvl)
       + '<div class="oe-genpic-lvl">' + (building
-          ? '<span class="oe-genpic-build">◷ <span data-build-countdown="' + meta.id + '">' + omniaBuildLabel(building) + '</span></span>'
+          ? '<span class="oe-genpic-build">◷ <span data-build-countdown="' + buildingId + '">' + omniaBuildLabel(building) + '</span></span>'
           : 'Lv ' + lvl) + '</div>'
       + '</button>';
   }
@@ -22688,7 +22709,10 @@ function renderGenSheet(gid) {
   if (!body || idx < 0) return;
   var meta = OMNIA_GEN_META[idx];
 
-  function row(id, name, sub) {
+  // While the pump is building one track, the others are blocked (one upgrade
+  // per pump). Show them as "waiting" rather than a live buy button.
+  var pumpBusyId = omniaPumpBuildingId(meta);
+  function row(id, name, sub, accent, glyph) {
     var upg = OMNIA_UPGRADES.find(function(u) { return u.id === id; });
     var lvl = (omniaState.upgrades && omniaState.upgrades[id]) || 1;
     var cost = omniaUpgradeCost(upg);
@@ -22698,15 +22722,16 @@ function renderGenSheet(gid) {
     var building = omniaUpgradeBuilding(id);
     var btn;
     if (building) btn = '<button class="omnia-mini-btn omnia-mini-btn--building" disabled>◷ <span data-build-countdown="' + id + '">' + omniaBuildLabel(building) + '</span></button>';
+    else if (pumpBusyId) btn = '<button class="omnia-mini-btn" disabled style="opacity:.4;cursor:default;">Waiting</button>';
     else if (atMax) btn = '<button class="omnia-mini-btn" disabled style="opacity:.45;cursor:default;">Step max</button>';
     else btn = '<button class="omnia-mini-btn" data-sheet-buy="' + id + '"' + ((omniaState.akasha || 0) < cost ? ' disabled' : '') + '>Upgrade ' + cost + '</button>';
-    return '<div class="omnia-upgrade-row">'
-      + '<div><div class="omnia-upgrade-name">' + name + ' ' + lvl + (capped && !atMax ? ' <span style="font-size:8px;color:var(--muted);letter-spacing:.1em;">/ ' + stepMax + '</span>' : '') + '</div>'
+    return '<div class="omnia-upgrade-row" style="border-left:2px solid ' + accent + '55; padding-left:11px;">'
+      + '<div><div class="omnia-upgrade-name" style="color:' + accent + ';"><span style="opacity:.9;margin-right:6px;">' + glyph + '</span>' + name + ' ' + lvl + (capped && !atMax ? ' <span style="font-size:8px;color:rgba(200,230,245,.55);letter-spacing:.1em;">/ ' + stepMax + '</span>' : '') + '</div>'
       + '<div class="omnia-upgrade-sub">' + sub + '</div></div>' + btn + '</div>';
   }
 
   var contrib = omniaGenContribution(idx);
-  var building = omniaUpgradeBuilding(gid);
+  var building = pumpBusyId ? omniaUpgradeBuilding(pumpBusyId) : 0;
   var glvl = (omniaState.upgrades && omniaState.upgrades[gid]) || 1;
   var pumpRes = Math.floor((omniaState.reservoirs || {})[gid] || 0);
   var pumpCap = omniaPumpReservoirCap(idx);
@@ -22717,10 +22742,10 @@ function renderGenSheet(gid) {
     + '<div class="ach-info-desc">+' + contrib + '/hr · reservoir ' + pumpRes.toLocaleString() + ' / ' + pumpCap.toLocaleString()
     + (building ? ' · <span style="color:#e8c87a;">offline while upgrading</span>' : '') + '</div>'
     + '<div style="text-align:left; margin-top:16px;">'
-    + row(gid, 'Akashic Current', 'Generate akasha more quickly each hour · next +' + (OMNIA_GEN_PER[idx] || 10) + '/hr')
-    + row(meta.vessel, 'Deep Vessel', 'This pump\'s reservoir capacity')
-    + row(meta.attune, 'Attunement', 'Cheapens this pump\'s upgrades')
-    + row(meta.quick, 'Quickening', 'Speeds this pump\'s construction')
+    + row(gid, 'Akashic Current', 'Generate akasha more quickly each hour · next +' + (OMNIA_GEN_PER[idx] || 10) + '/hr', '#8ecce0', '◈')
+    + row(meta.vessel, 'Deep Vessel', 'This pump\'s reservoir capacity', '#9ed8c4', '▽')
+    + row(meta.attune, 'Attunement', 'Cheapens this pump\'s upgrades', '#e8c87a', '✧')
+    + row(meta.quick, 'Quickening', 'Speeds this pump\'s construction', '#c4a8d4', '◷')
     + '</div>';
   var cl = document.getElementById('genSheetClose');
   if (cl) cl.onclick = closeGenSheet;
@@ -22753,7 +22778,7 @@ function closeGenSheet() {
     if (!g) return;
     var gid = g.getAttribute('data-gen-tap');
     omniaAccrue();
-    if (!omniaUpgradeBuilding(gid) && Math.floor((omniaState.reservoirs || {})[gid] || 0) >= 1) { collectOmniaAkasha(g, gid); return; }
+    if (!omniaPumpBuildingId(_pumpOfUpgrade(gid)) && Math.floor((omniaState.reservoirs || {})[gid] || 0) >= 1) { collectOmniaAkasha(g, gid); return; }
     openGenSheet(gid);
   });
 })();
@@ -22762,7 +22787,9 @@ function buyOmniaUpgrade(id) {
   var upg = OMNIA_UPGRADES.find(function(u) { return u.id === id; });
   if (!upg) return false;
   if (omniaUpgradeAtMax(id)) return false;
-  if (omniaUpgradeBuilding(id)) return false;   // one build per track at a time
+  if (omniaUpgradeBuilding(id)) return false;   // this track already building
+  var _pump = _pumpOfUpgrade(id);
+  if (_pump && omniaPumpBuildingId(_pump)) return false;  // one upgrade per pump at a time
   var cost = omniaUpgradeCost(upg);
   if ((omniaState.akasha || 0) < cost) return false;
   omniaState.akasha -= cost;
@@ -26775,13 +26802,39 @@ document.getElementById('omniaEngine').addEventListener('click', function(e) {
 // Generator build-timer ticker: completes elapsed builds (even off the panel)
 // and live-updates visible countdowns once a second. Cheap no-op when idle.
 (function() {
+  var _liveSig = '';
   setInterval(function() {
-    if (typeof omniaState === 'undefined' || !omniaState || !omniaState.upgradeBuilds) return;
+    if (typeof omniaState === 'undefined' || !omniaState) return;
+    var engine = document.getElementById('omniaEngine');
+    var visible = engine && engine.offsetParent !== null;
+
+    // Live pump refresh: akasha now accrues fractionally, so the reservoir fill
+    // and "+N" collect badges climb on-screen in real time without leaving and
+    // coming back. Only re-render when a displayed integer actually changed, so
+    // the badge pulse doesn't restart every second.
+    if (visible && typeof omniaAccrue === 'function') {
+      omniaAccrue();
+      var _res = omniaState.reservoirs || {};
+      var sig = omniaGenUnlockedCount() + '|' + Math.floor(omniaState.akasha || 0);
+      for (var s = 0; s < OMNIA_GEN_META.length; s++) {
+        var _m = OMNIA_GEN_META[s];
+        sig += '|' + Math.floor(_res[_m.id] || 0) + (omniaPumpBuildingId(_m) ? 'b' : '');
+      }
+      if (sig !== _liveSig) {
+        _liveSig = sig;
+        if (typeof renderOmniaGenYard === 'function') renderOmniaGenYard();
+        var wc = document.getElementById('omniaAkashaWalletCorner');
+        if (wc) wc.textContent = Math.floor(omniaState.akasha || 0).toLocaleString();
+        var wl = document.getElementById('omniaAkashaWallet');
+        if (wl) wl.textContent = Math.floor(omniaState.akasha || 0);
+        if (_genSheetId && typeof renderGenSheet === 'function') renderGenSheet(_genSheetId);
+      }
+    }
+
+    if (!omniaState.upgradeBuilds) return;
     var ids = Object.keys(omniaState.upgradeBuilds);
     if (!ids.length) return;
     var now = Date.now();
-    var engine = document.getElementById('omniaEngine');
-    var visible = engine && engine.offsetParent !== null;
     var completed = ids.filter(function(id) { return omniaState.upgradeBuilds[id] <= now; });
     if (completed.length) {
       var done = omniaResolveUpgradeBuilds();
