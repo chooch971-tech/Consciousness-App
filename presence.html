@@ -26,6 +26,7 @@
   <meta name="theme-color" content="#07080d"/>
   <title>Presence</title>
   <script src="sync-contract.js"></script>
+  <script src="progress-state.js"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com"/>
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300;1,400&family=DM+Mono:wght@300;400&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet"/>
@@ -7758,6 +7759,8 @@ body:not(.tut-live) #tutCorgi {
 <script>
 var PRESENCE_SYNC = window.PresenceSyncContract;
 if (!PRESENCE_SYNC) throw new Error('Presence sync contract failed to load');
+var PRESENCE_PROGRESS = window.PresenceProgressState;
+if (!PRESENCE_PROGRESS) throw new Error('Presence progress-state module failed to load');
 // ═══════════════════════════════════════
 // PROMPTS
 // ═══════════════════════════════════════
@@ -11328,43 +11331,17 @@ document.getElementById('settingsResetPrayer').addEventListener('click', functio
 });
 
 function createOmniaResetState(resetAt) {
-  var omnia = cloneOmniaDefault();
-  omnia.akasha = 0;
-  omnia.reservoir = 0;
-  omnia.lastTick = resetAt;
-  omnia.bodies = { physical:1, astral:1, mental:1 };
-  omnia.upgrades = { current:1, gen2:1, gen3:1, vessel:1, attunement:1, quickening:1, vessel2:1, attune2:1, quick2:1, vessel3:1, attune3:1, quick3:1 };
-  omnia.bardonStep = 1;
-  omnia.rec = null;
-  omnia.recStreak = 0;
-  omnia.completedRecommended = 0;
-  omnia.totalAkashaEarned = 0;
-  omnia.cosmetics = cloneOmniaDefault().cosmetics;
-  omnia._resetAt = resetAt;
-  return omnia;
+  return PRESENCE_PROGRESS.createOmniaResetState(OMNIA_DEFAULT, resetAt);
 }
 
-function resetAllProgressSnapshot() {
-  var resetAt = Date.now();
-  var awareness = Object.assign({}, DEFAULT_STATE);
-  var concentration = Object.assign({}, CONC_DEFAULT);
-  var prayer = Object.assign({}, PRAYER_DEFAULT);
-  var omnia = createOmniaResetState(resetAt);
-  awareness._resetAt = resetAt;
-  concentration._resetAt = resetAt;
-  prayer._resetAt = resetAt;
-  return {
-    presence_v3: JSON.stringify(awareness),
-    presence_conc_v1: JSON.stringify(concentration),
-    presence_prayer_v1: JSON.stringify(prayer),
-    presence_journal_v1: JSON.stringify({_resetAt:resetAt}),
-    presence_soul_mirror_v1: JSON.stringify({positive:[], negative:[], notes:'', _resetAt:resetAt}),
-    presence_guide_v1: JSON.stringify({_resetAt:resetAt}),
-    presence_omnia_v1: JSON.stringify(omnia),
-    presence_ach_v1: JSON.stringify({_resetAt:resetAt}),
-    presence_giftpath_v1: JSON.stringify({_resetAt:resetAt}),
-    presence_visited: '1'
-  };
+function resetAllProgressSnapshot(resetAt) {
+  return PRESENCE_PROGRESS.createResetSnapshot({
+    resetAt: resetAt || Date.now(),
+    awarenessDefault: DEFAULT_STATE,
+    concentrationDefault: CONC_DEFAULT,
+    prayerDefault: PRAYER_DEFAULT,
+    omniaDefault: OMNIA_DEFAULT
+  });
 }
 
 function syncProgressScore(key, obj) {
@@ -11718,16 +11695,7 @@ function enterAppAfterSignIn(onEntered) {
 
 (function preserveTutorialVisitedAfterReset() {
   if (localStorage.getItem('presence_visited')) return;
-  var resetKeys = ['presence_v3','presence_conc_v1','presence_omnia_v1'];
-  var hasResetSnapshot = resetKeys.some(function(key) {
-    try {
-      var raw = localStorage.getItem(key);
-      return raw && !!JSON.parse(raw)._resetAt;
-    } catch(e) {
-      return false;
-    }
-  });
-  if (hasResetSnapshot) localStorage.setItem('presence_visited', '1');
+  if (PRESENCE_PROGRESS.hasResetMarker(localStorage)) localStorage.setItem('presence_visited', '1');
 })();
 
 async function pushResetSnapshotToCloud() {
@@ -11749,9 +11717,8 @@ async function pushResetSnapshotToCloud() {
 }
 
 async function resetAllProgress() {
-  PRESENCE_SYNC.LOCAL_PROGRESS_KEYS.forEach(function(k) { localStorage.removeItem(k); });
   var resetData = resetAllProgressSnapshot();
-  Object.keys(resetData).forEach(function(k) { localStorage.setItem(k, resetData[k]); });
+  PRESENCE_PROGRESS.replaceStorageSnapshot(localStorage, PRESENCE_SYNC.LOCAL_PROGRESS_KEYS, resetData);
   sessionStorage.setItem('presence_reset_all_pending', String(Date.now()));
   omniaState = loadOmniaState();
   guideState = loadGuideState();
@@ -11765,8 +11732,7 @@ async function resetAllProgress() {
 }
 
 function applyLocalProgressSnapshot(snapshot) {
-  PRESENCE_SYNC.LOCAL_PROGRESS_KEYS.forEach(function(k) { localStorage.removeItem(k); });
-  Object.keys(snapshot).forEach(function(k) { localStorage.setItem(k, snapshot[k]); });
+  PRESENCE_PROGRESS.replaceStorageSnapshot(localStorage, PRESENCE_SYNC.LOCAL_PROGRESS_KEYS, snapshot);
   state = loadState();
   concState = loadConcState();
   omniaState = loadOmniaState();
@@ -11780,12 +11746,7 @@ function applyLocalProgressSnapshot(snapshot) {
 function resetLocalProgressForSignedOut() {
   // Don't use _resetAt here — that flag is for deliberate "Reset All Progress" only.
   // Without it, shouldTakeCloudValue will correctly prefer cloud data on next pull.
-  var snapshot = resetAllProgressSnapshot();
-  Object.keys(snapshot).filter(function(k) { return k !== 'presence_visited'; }).forEach(function(k) {
-    if (snapshot[k]) {
-      try { var o = JSON.parse(snapshot[k]); delete o._resetAt; snapshot[k] = JSON.stringify(o); } catch(e) {}
-    }
-  });
+  var snapshot = PRESENCE_PROGRESS.withoutResetMarkers(resetAllProgressSnapshot());
   applyLocalProgressSnapshot(snapshot);
 }
 

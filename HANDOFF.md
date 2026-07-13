@@ -15,8 +15,10 @@ system, achievements, streaks, and social/friends features.
   push notifications, and Omnia AI reports.
 - **`sync-contract.js`** — the shared browser/server allowlist for synchronized
   state. Add or remove cloud keys here instead of creating another key array.
+- **`progress-state.js`** — pure reset/snapshot/storage operations shared by the
+  browser reset, sign-out, and local snapshot flows. Keep reset semantics here.
 - **`sw.js`** — service worker. Caches the shell as `presence-shell-vNNN`
-  (currently **v158**). **Bump this version string on every shippable change to
+  (currently **v159**). **Bump this version string on every shippable change to
   `presence.html`** or returning devices run stale code.
 - `marketing/` — App Store card generators (Playwright screenshot scripts).
 
@@ -62,6 +64,8 @@ can never roll back progress.
 - **If you add a new synced key:** register it once in `sync-contract.js`, then
   add any key-specific client/server merge and reset behavior. Generic keys are
   automatically allowlisted for backup, import, push, and server pull.
+- Deliberate reset snapshots, signed-out clean-state snapshots, and storage
+  replacement live in `progress-state.js` and have fixed-timestamp unit tests.
 - **Server changes require a backend redeploy** to take effect — the client can't
   work around a server that won't return a key.
 

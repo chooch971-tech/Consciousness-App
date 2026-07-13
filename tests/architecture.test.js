@@ -14,12 +14,17 @@ test('production code does not ship the retired Bardon RPG', () => {
   assert.doesNotMatch(server, /bardon_rpg_v2/);
 });
 
-test('browser loads the shared sync contract before app code', () => {
+test('browser loads shared state modules before app code', () => {
   const contractTag = presence.indexOf('<script src="sync-contract.js"></script>');
+  const progressTag = presence.indexOf('<script src="progress-state.js"></script>');
   const appUse = presence.indexOf('var PRESENCE_SYNC = window.PresenceSyncContract;');
   assert.notEqual(contractTag, -1);
+  assert.notEqual(progressTag, -1);
   assert.notEqual(appUse, -1);
-  assert.ok(contractTag < appUse);
+  assert.ok(contractTag < progressTag);
+  assert.ok(progressTag < appUse);
+  assert.match(presence, /PRESENCE_PROGRESS\.replaceStorageSnapshot/);
+  assert.match(presence, /PRESENCE_PROGRESS\.withoutResetMarkers/);
 });
 
 test('server imports the shared sync allowlist instead of declaring another one', () => {

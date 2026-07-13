@@ -61,6 +61,7 @@ Last updated: 2026-07-13
 ### Cleanup
 - [x] Remove Bardon RPG dead code
 - [x] Centralize browser/server cloud-sync keys in `sync-contract.js`
+- [x] Extract reset and signed-out snapshot behavior into `progress-state.js`
 - [x] Consolidate duplicate global HTML escaping helpers
 - [ ] Remove `/api/sync/sync/diagnose` debug endpoint from server.js
 
