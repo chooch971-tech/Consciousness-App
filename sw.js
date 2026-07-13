@@ -1,7 +1,7 @@
 // Service Worker for Presence app
 // Handles background push notifications + shell caching
 // Cache version — bump this string when you need to force-evict all clients
-const CACHE = 'presence-shell-v157';
+const CACHE = 'presence-shell-v158';
 
 const APP_URL = self.registration
   ? self.registration.scope + 'presence.html'
@@ -10,6 +10,7 @@ const APP_URL = self.registration
 // Assets to precache on install (small, stable files)
 const PRECACHE = [
   'manifest.webmanifest',
+  'sync-contract.js',
   'apple-touch-icon.png',
 ];
 

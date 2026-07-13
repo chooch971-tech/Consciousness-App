@@ -1,35 +1,29 @@
-# Presence — Session Handoff
-
-Paste this into a fresh Claude Code session to resume immediately.
+# Presence — Engineering Handoff
 
 ## What the app is
-**Presence** — a single-file meditation / occult-training PWA based on Franz
+**Presence** — a mostly self-contained meditation / occult-training PWA based on Franz
 Bardon's Hermetics. Users train Clock, Thought Control, Visualization, Auditory,
 Senses, Asana, Soul Mirror, and Pore Breathing, and grow a companion entity
 ("Omnia") through Bardon's Steps I–X. There's an "Akasha" currency, a prestige
 system, achievements, streaks, and social/friends features.
 
-## Files (the whole app is basically 3 files)
-- **`presence.html`** (~33k lines) — the entire client: markup, CSS, and all JS
-  in `<script>` blocks. Everything (UI, game logic, sync client) lives here.
-- **`server.js`** (~1.8k lines) — Node/Express + MongoDB + JWT + web-push +
+## Core files
+- **`presence.html`** (~34k lines) — the client: markup, CSS, and most browser JS
+  in `<script>` blocks. Most UI, game logic, and the sync client live here.
+- **`server.js`** (~2.7k lines) — Node/Express + MongoDB + JWT + web-push +
   OpenAI. Handles auth, cloud sync (`/api/sync/sync/push` + `/pull`), friends,
   push notifications, and Omnia AI reports.
+- **`sync-contract.js`** — the shared browser/server allowlist for synchronized
+  state. Add or remove cloud keys here instead of creating another key array.
 - **`sw.js`** — service worker. Caches the shell as `presence-shell-vNNN`
-  (currently **v126**). **Bump this version string on every shippable change to
+  (currently **v158**). **Bump this version string on every shippable change to
   `presence.html`** or returning devices run stale code.
 - `marketing/` — App Store card generators (Playwright screenshot scripts).
 
-## Git workflow (IMPORTANT — follow exactly)
-- Develop on branch **`claude/presence-app-layout-change-qb1Ko`**.
-- Every commit must set author: `git config user.email noreply@anthropic.com && git config user.name Claude`.
-- Push to **BOTH** refs every time:
-  ```
-  git push -u origin claude/presence-app-layout-change-qb1Ko:main
-  git push -u origin claude/presence-app-layout-change-qb1Ko
-  ```
-- GitHub repo (MCP tools only, `mcp__github__*`): `chooch971-tech/consciousness-app`.
-- Do NOT open PRs unless explicitly asked.
+## Git workflow
+- Read `git status` before editing and preserve unrelated user changes.
+- Verify locally before committing.
+- Push the reviewed commit to `main`; do not deploy to Netlify unless explicitly requested.
 
 ## Verification harness (use this before every commit)
 1. **Parse check** — every `<script>` block must compile:
@@ -53,8 +47,8 @@ system, achievements, streaks, and social/friends features.
      `#splash`/`#loginScreen`.
 
 ## Sync architecture (touched constantly — read before editing sync)
-Client keeps a `keys` list + `ALLOWED_KEYS` of synced localStorage keys. On push,
-the client sends them; the server stores a snapshot per push. On **pull**, the
+`sync-contract.js` owns the synchronized localStorage key allowlist. On push,
+the client sends those keys; the server stores a snapshot per push. On **pull**, the
 server's `mergeSnapshots(snaps)` merges the last 20 snapshots and returns ONE
 merged payload; the client's `applyPulledData` then field-merges that into local.
 
@@ -65,11 +59,9 @@ can never roll back progress.
   - client: `mergeOmniaPull`, `mergeAchPull`, `mergeGiftPathPull`, `mergeHistoryPull`
   - server: `mergeOmniaKey`, `mergeAchKey`, `mergeGiftPathKey`, `mergeHistoryKey`
   - everything else: server `pickBestValue` (score-based newest wins).
-- **If you add a new synced key you must add it in FIVE places:** client `keys`
-  list, client `ALLOWED_KEYS`, `applyPulledData` route, server push whitelist
-  (the `syncData` object ~server.js:836), AND server `mergeSnapshots` KEYS
-  (~server.js:1090). Missing the last one = "stored but never returned" (this was
-  the achievements double-award bug).
+- **If you add a new synced key:** register it once in `sync-contract.js`, then
+  add any key-specific client/server merge and reset behavior. Generic keys are
+  automatically allowlisted for backup, import, push, and server pull.
 - **Server changes require a backend redeploy** to take effect — the client can't
   work around a server that won't return a key.
 

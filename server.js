@@ -7,6 +7,7 @@ const bcrypt  = require('bcryptjs');
 const jwt     = require('jsonwebtoken');
 const { OAuth2Client } = require('google-auth-library');
 const { enforceOmniaReportPolicy } = require('./omnia-report-policy');
+const { SYNC_KEYS, selectSyncData } = require('./sync-contract');
 const {
   moderateUsername,
   moderatePublicText,
@@ -1050,18 +1051,7 @@ app.post('/api/sync/sync/push', verifyToken, async (req, res) => {
     if (anyClamped) console.warn(`[Sync] Clamped implausible progression for user ${req.user.userId}`);
     const syncData = {
       userId: new ObjectId(req.user.userId),
-      presence_v3: data.presence_v3,
-      presence_conc_v1: data.presence_conc_v1,
-      presence_prayer_v1: data.presence_prayer_v1,
-      presence_journal_v1: data.presence_journal_v1,
-      presence_soul_mirror_v1: data.presence_soul_mirror_v1,
-      presence_ai_report_comments_v1: data.presence_ai_report_comments_v1,
-      presence_guide_v1: data.presence_guide_v1,
-      presence_omnia_v1: data.presence_omnia_v1,
-      bardon_rpg_v2: data.bardon_rpg_v2,
-      presence_visited: data.presence_visited,
-      presence_ach_v1: data.presence_ach_v1,
-      presence_giftpath_v1: data.presence_giftpath_v1,
+      ...selectSyncData(data),
       deviceInfo: deviceInfo || 'Unknown device',
       syncedAt: new Date(),
     };
@@ -1332,9 +1322,8 @@ function mergeGiftPathKey(snaps) {
 }
 
 function mergeSnapshots(snaps) {
-  const KEYS = ['presence_v3','presence_conc_v1','presence_prayer_v1','presence_journal_v1','presence_soul_mirror_v1','presence_ai_report_comments_v1','presence_guide_v1','presence_omnia_v1','bardon_rpg_v2','presence_visited','presence_ach_v1','presence_giftpath_v1'];
   const out = {};
-  KEYS.forEach((k) => {
+  SYNC_KEYS.forEach((k) => {
     if (k === 'presence_omnia_v1') out[k] = mergeOmniaKey(snaps);
     else if (k === 'presence_ach_v1') out[k] = mergeAchKey(snaps);
     else if (k === 'presence_giftpath_v1') out[k] = mergeGiftPathKey(snaps);
