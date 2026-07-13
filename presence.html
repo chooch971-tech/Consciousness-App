@@ -743,11 +743,13 @@
     .lodge-intro { position:relative; height:148px; box-sizing:border-box; display:flex; align-items:center; justify-content:space-between; padding:0 22px; margin:0 0 14px; overflow:hidden; border-radius:18px; background:linear-gradient(145deg,#0b1f1a 0%,#12352c 44%,#0d251f 100%); }
     .lodge-intro::before { content:''; position:absolute; inset:0; pointer-events:none; background:radial-gradient(ellipse 60% 70% at 76% 54%,rgba(126,184,164,.2) 0%,transparent 70%); }
     .lodge-intro::after { content:''; position:absolute; inset:0; pointer-events:none; background:radial-gradient(ellipse 40% 50% at 72% 48%,rgba(232,200,122,.14) 0%,transparent 62%); }
-    .lodge-intro__copy { position:relative; z-index:2; min-width:0; }
-    .lodge-intro__title { font-family:'Cormorant Garamond',serif; font-size:27px; line-height:1.1; color:#e7f2e9; font-weight:300; }
+    .lodge-intro__copy { position:relative; z-index:2; min-width:0; padding-bottom:12px; }
+    .lodge-intro__copy::after { content:''; position:absolute; left:1px; bottom:0; width:42px; height:1px; background:linear-gradient(90deg,#e8c87a,rgba(232,200,122,0)); box-shadow:0 0 8px rgba(232,200,122,.28); }
+    .lodge-intro__title { font-family:'Cormorant Garamond',serif; font-size:29px; line-height:1.1; color:#e7f2e9; font-weight:300; }
+    .lodge-intro__rules { position:absolute; inset:0; pointer-events:none; opacity:.34; background:repeating-linear-gradient(180deg,transparent 0,transparent 25px,rgba(196,226,211,.075) 25px,rgba(196,226,211,.075) 26px); -webkit-mask-image:linear-gradient(90deg,rgba(0,0,0,.42),transparent 72%); mask-image:linear-gradient(90deg,rgba(0,0,0,.42),transparent 72%); }
     .lodge-intro__glow { position:absolute; right:6px; top:50%; width:170px; height:170px; transform:translateY(-50%); background:radial-gradient(circle,rgba(232,200,122,.2) 0%,rgba(126,184,164,.12) 40%,transparent 70%); pointer-events:none; }
-    .lodge-intro__art { position:relative; z-index:2; width:82px; height:112px; display:flex; align-items:center; justify-content:center; flex-shrink:0; color:#e8c87a; filter:drop-shadow(0 0 16px rgba(232,200,122,.38)); animation:omniaFloat 4.5s ease-in-out infinite; }
-    .lodge-intro__art svg { width:78px; height:102px; overflow:visible; }
+    .lodge-intro__art { position:relative; z-index:2; width:98px; height:116px; display:flex; align-items:center; justify-content:center; flex-shrink:0; color:#e8c87a; filter:drop-shadow(0 0 16px rgba(232,200,122,.32)); animation:omniaFloat 4.5s ease-in-out infinite; }
+    .lodge-intro__art svg { width:94px; height:104px; overflow:visible; }
     .lodge-feed-nav { position:relative; display:grid; grid-template-columns:minmax(0,1fr) 44px; align-items:end; gap:8px; margin-bottom:14px; }
     #lodgeTabs { margin:0; border-bottom-color:rgba(255,255,255,.07); }
     #lodgeTabs .mode-tab { min-height:44px; font-size:9px; color:rgba(221,216,206,.5); }
@@ -820,7 +822,7 @@
     .chat-unread { width:8px; height:8px; border-radius:50%; background:#d4956e; margin-left:auto; flex-shrink:0; }
     @media (max-width:420px) {
       .lodge-intro { padding:0 18px; }
-      .lodge-intro__art { width:76px; }
+      .lodge-intro__art { width:90px; }
     }
 
     /* Friend earned-achievement strip: fixed-width discs that scroll horizontally */
@@ -5569,14 +5571,21 @@ body:not(.tut-live) #tutCorgi {
           <div class="lodge-intro__copy">
             <div class="lodge-intro__title">The Lodge</div>
           </div>
+          <div class="lodge-intro__rules"></div>
           <div class="lodge-intro__glow"></div>
           <div class="lodge-intro__art" aria-hidden="true">
-            <svg viewBox="0 0 80 104" fill="none">
+            <svg viewBox="0 0 96 104" fill="none">
               <defs>
                 <linearGradient id="lodgePencilBody" x1="31" y1="10" x2="49" y2="76" gradientUnits="userSpaceOnUse"><stop stop-color="#fff0b8"/><stop offset=".55" stop-color="#e8c87a"/><stop offset="1" stop-color="#b98d45"/></linearGradient>
                 <filter id="lodgePenGlow" x="-80%" y="-60%" width="260%" height="240%"><feGaussianBlur stdDeviation="2" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
               </defs>
-              <g transform="rotate(34 40 52)" filter="url(#lodgePenGlow)">
+              <g opacity=".68">
+                <rect x="7" y="12" width="56" height="78" rx="5" fill="#dff2e7" fill-opacity=".075" stroke="#b8dfcd" stroke-opacity=".46"/>
+                <path d="M17 32h30M17 43h36M17 54h27M17 65h34M17 76h22" stroke="#b8dfcd" stroke-width=".8" stroke-linecap="round" opacity=".45"/>
+                <path d="M49 12v14h14" stroke="#e8c87a" stroke-width=".8" opacity=".42"/>
+              </g>
+              <path d="M22 84c10-4 19-4 29-1" stroke="#e8c87a" stroke-width="1" stroke-linecap="round" opacity=".45"/>
+              <g transform="translate(18 0) rotate(34 40 52)" filter="url(#lodgePenGlow)">
                 <rect x="30" y="10" width="20" height="65" rx="3" fill="url(#lodgePencilBody)" stroke="#fff0bd" stroke-width="1"/>
                 <path d="M30 25h20M36.5 25v50M43.5 25v50" stroke="#9f7437" stroke-width=".8" opacity=".55"/>
                 <path d="M30 75 40 98 50 75Z" fill="#e5c69a" stroke="#f7dfb7" stroke-width="1"/>
@@ -5584,7 +5593,7 @@ body:not(.tut-live) #tutCorgi {
                 <path d="M30 10h20v15H30z" fill="#8eccc0" fill-opacity=".82" stroke="#c6eee3" stroke-width=".8"/>
                 <path d="M30 22h20" stroke="#e7f2e9" stroke-width="1" opacity=".72"/>
               </g>
-              <circle cx="13" cy="24" r="2.2" fill="#8eccc0" opacity=".78"/><circle cx="67" cy="17" r="1.7" fill="#e8c87a" opacity=".85"/><circle cx="68" cy="82" r="1.3" fill="#e7f2e9" opacity=".62"/>
+              <circle cx="8" cy="25" r="2.2" fill="#8eccc0" opacity=".78"/><circle cx="84" cy="16" r="1.7" fill="#e8c87a" opacity=".85"/><circle cx="84" cy="84" r="1.3" fill="#e7f2e9" opacity=".62"/>
             </svg>
           </div>
           <div style="position:absolute;inset:0;pointer-events:none;">
