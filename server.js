@@ -6,6 +6,7 @@ const { MongoClient, ObjectId } = require('mongodb');
 const bcrypt  = require('bcryptjs');
 const jwt     = require('jsonwebtoken');
 const { OAuth2Client } = require('google-auth-library');
+const { enforceOmniaReportPolicy } = require('./omnia-report-policy');
 const {
   moderateUsername,
   moderatePublicText,
@@ -51,6 +52,7 @@ const JWT_SECRET    = process.env.JWT_SECRET;
 const ADMIN_SECRET  = process.env.ADMIN_SECRET;
 const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
 const OPENAI_MODEL = process.env.OPENAI_MODEL || 'gpt-4o-mini';
+const OMNIA_REPORT_VERSION = 2;
 
 if (!VAPID_PRIVATE_KEY || !MONGO_URI || !JWT_SECRET) {
   console.error('Missing required environment variables: VAPID_PRIVATE_KEY, MONGO_URI, JWT_SECRET');
@@ -394,7 +396,7 @@ function compactContext(value, depth = 0) {
   if (Array.isArray(value)) return value.slice(0, 16).map(item => compactContext(item, depth + 1));
   if (value && typeof value === 'object') {
     const out = {};
-    Object.keys(value).slice(0, 36).forEach(key => {
+    Object.keys(value).slice(0, 64).forEach(key => {
       out[clampText(key, 40)] = compactContext(value[key], depth + 1);
     });
     return out;
@@ -416,13 +418,13 @@ async function generateAiMessage(feature, context) {
     progress_report:
       'You are Omnia, a deeply perceptive guide inside Presence who sees the user\'s growth clearly. Write a progress-report reflection that makes the user feel genuinely seen. Open by acknowledging a specific number or achievement from their data — not with atmosphere or metaphor, but with direct recognition. Then give real encouragement rooted in what they actually did. Close with one forward-looking thought that builds momentum. Be warm, direct, and enthusiastic — never generic, never poetic filler. The user should feel like Omnia truly watched and noticed them. Do not mention AI, data, or reports. STRICT word limits: daily 40-55 words, weekly 50-65 words, monthly 60-75 words, yearly 75-90 words.',
     omnia_report:
-      'You are Omnia, a personalized concentration coach inside Presence, a serious mental-training app rooted in Franz Bardon\'s hermetic concentration exercises (Clock, Visualization, Auditory, Thought Control, Asana). Your focus is the user\'s CONCENTRATION training above all else. Center your commentary on their concentration work: cite a specific concentration number (best hold in seconds, sessions, or total time), comment on which exercises they trained and — when relevant — gently point to a concentration exercise in concentration_exercises_untried they haven\'t tried, framed as a next step. Only ever suggest an exercise that appears in concentration_exercises_untried; never name an exercise that is not in that list. If ready_for_new_exercises is false, do NOT suggest moving on to Visualization, Auditory, or Asana — instead keep the user focused on deepening Clock and Thought Control until they reach a ten-minute interval. Treat seconds of unbroken focus as the core metric of progress. '
-      + 'GROUNDING — these rules override tone: previous_period holds the prior period\'s real numbers. Only claim improvement, decline, stagnation, or "no progress" when comparing the current numbers against previous_period actually supports it. If has_previous_data is false, NEVER speak of progress or its absence — there is nothing to compare against; recognize what was done this period as it stands. Never invent trends. '
-      + 'RECOGNITION: Always open with one specific, earned recognition of something they actually did (a number, a new best, a streak) before any critique — at every candor level; at the highest candor one short clause is enough. If is_new_best_hold is true, celebrate it explicitly as a new personal best. '
-      + 'STREAK: If streak_worth_mentioning is true and concentration_streak_days or practice_streak_days is 3 or more, weave the streak in as fuel (e.g. "six days unbroken"). Otherwise leave streaks unmentioned. '
-      + 'DISCIPLINE — the daily practice, when these fields are present (not null): If regimen_complete is false, note plainly that today\'s practice is unfinished (regimen_completed of regimen_total done) and nudge them to close it out — weight the bluntness to the candor level. If has_two_focus_exercises is false, recommend they add a second focus exercise — specifically the Thought Control drill named in suggested_focus_exercise — to their daily practice, because concentration must be trained from more than one angle and Clock plus Thought Control are the foundation. This focus recommendation is authorized by has_two_focus_exercises and, for Thought Control only, overrides the "untried list" restriction above. '
-      + 'IMPROVEMENT — trend truth: improved says whether this period beat the last on best hold or total focus time. days_without_improvement counts consecutive PRACTICED days with no such gain. When disapprove is true (three or more such days) the plateau is real and must be named directly and unflinchingly, as genuine disapproval, even at low candor — they are showing up but not progressing, and that must not be smoothed over. Still open with the one earned recognition first, then hold them to account. Never speak of stagnation or "no improvement" when has_previous_data is false or days_without_improvement is 0 — absence of data is not a plateau. '
-      + 'Awareness training is optional. If awareness_sessions is 0, do not mention awareness at all. If awareness_sessions > 0, you may briefly acknowledge it as a positive — never frame zero awareness as a gap or something to improve. Be direct, knowledgeable, and honest — like a demanding but encouraging teacher, never a generic chatbot, never poetic filler. No greeting, no sign-off. 35-60 words.'
+      'You are Omnia, a personalized concentration coach inside Presence, a serious mental-training app rooted in Franz Bardon\'s hermetic concentration exercises. Examine completed_exercises for this report day and compare them with comparison_baseline, which is the preceding seven days for a daily report. Cite a specific real number: a best hold, session duration, total practice time, or session count. Treat both practicing for longer and achieving a longer unbroken focus as meaningful progress. Do not force an exercise recommendation into every report. '
+      + 'GROUNDING — these rules override tone: progress_signals and comparison_baseline contain the real comparison. Only claim improvement when best_focus_improved, practice_duration_improved, or improved_exercises supports it. If has_previous_data is false, do not claim improvement, decline, stagnation, or "no progress"; recognize the completed work as it stands. Never invent a trend. '
+      + 'RECOGNITION — always open with one specific earned recognition before critique. When progress_signals shows longer practice or longer focus, commend that progress clearly. If is_new_best_hold is true, celebrate it explicitly as a new personal best. '
+      + 'RECOMMENDATIONS — only suggest an exercise in allowed_recommendations. Never recommend anything in recommendation_exclusions. If avoid_clock_recommendation is true or thought_control_stack_count is 2 or more, NEVER recommend Clock, even if Clock was untried; you may still praise a Clock result the user actually completed. Two Thought Control exercises already constitute substantial foundational focus work, so encourage depth in that existing stack or omit an exercise recommendation. If ready_for_new_exercises is false, do not suggest Visualization, Auditory, or Asana. '
+      + 'CURRENT REGIMEN — current_regimen_exercises describes what is already scheduled now. Do not recommend adding an exercise already represented adequately in that stack. Only discuss regimen completion when regimen_complete is not null. '
+      + 'PLATEAU — days_without_improvement counts consecutive practiced days without a longer focus or longer practice duration against a trailing seven-day baseline. Only when needs_push is true (five or more such practiced days) give a firm, concrete push. Name the plateau honestly, but do not shame or scold. When needs_push is false, do not manufacture concern. '
+      + 'STREAK — mention a streak only when streak_worth_mentioning is true and a supplied streak is at least 3 days. Awareness is optional: acknowledge it only when awareness_sessions is above zero, and never frame zero awareness as a gap. ALWAYS finish with genuine encouragement or confidence in the user\'s capacity to improve, regardless of candor. Be direct, knowledgeable, and specific; no greeting, sign-off, generic filler, or invented facts. 40-65 words.'
   };
 
   // Omnia's Candor (1–5): the user-set dial for how blunt the criticism is.
@@ -431,7 +433,7 @@ async function generateAiMessage(feature, context) {
     2: 'TONE: Honest but kind. Acknowledge effort, then name gaps plainly but with care. Stay supportive.',
     3: 'TONE: Direct coach. State weaknesses and missed work plainly with no cushioning. Praise only what is earned. Be matter-of-fact.',
     4: 'TONE: Demanding teacher. Expect more. Call out slippage, low numbers, and avoided exercises bluntly. Minimal praise — it must be earned. No coddling.',
-    5: 'TONE: Pitiless. Be brutally honest and unsparing, in the spirit of Bardon\'s "be pitiless with yourself — no ego here." Confront every weakness, excuse, and avoided exercise head-on. Do not flatter. Demand rigor. Still factual and grounded in their numbers — harsh, never cruel for its own sake.'
+    5: 'TONE: Uncompromising but constructive. Confront demonstrated weakness directly, demand rigor, and do not flatter. Remain factual, never shame the user, and end with earned encouragement and a concrete sense that improvement is possible.'
   };
   let systemContent = prompts[feature] || prompts.progress_report;
   if (feature === 'omnia_report') {
@@ -444,7 +446,7 @@ async function generateAiMessage(feature, context) {
     model: OPENAI_MODEL,
     messages: [
       { role: 'system', content: systemContent },
-      { role: 'user', content: JSON.stringify(compactContext(context)).slice(0, 4200) }
+      { role: 'user', content: JSON.stringify(compactContext(context)).slice(0, 9000) }
     ],
     max_tokens: 500
   };
@@ -473,7 +475,8 @@ async function generateAiMessage(feature, context) {
   const text = (data.choices && data.choices[0] && data.choices[0].message && data.choices[0].message.content) || '';
   // 60-word reflections can run ~400 chars; clamp generously and on a word
   // boundary so the message is never sliced mid-word.
-  const message = clampText(text.trim(), 600);
+  let message = clampText(text.trim(), 600);
+  if (feature === 'omnia_report') message = enforceOmniaReportPolicy(message, context || {});
   if (!message) {
     const err = new Error('OpenAI returned an empty message');
     err.status = 502;
@@ -2466,7 +2469,7 @@ app.post('/api/sync/omnia/report', aiRateLimit, aiGlobalBudget, async (req, res)
     const periodKey = serverPeriodKey(period, offset);
 
     // Return cached if fresh — this is the once-per-period guard
-    const cached = await col.findOne({ userId, period, periodKey });
+    const cached = await col.findOne({ userId, period, periodKey, version: OMNIA_REPORT_VERSION });
     if (cached && cached.commentary) {
       return res.json({ commentary: cached.commentary });
     }
@@ -2478,13 +2481,13 @@ app.post('/api/sync/omnia/report', aiRateLimit, aiGlobalBudget, async (req, res)
     // Only the current period (offset 0) gets a TTL so it can refresh as the
     // period is still in progress.
     const isPast = Number.isFinite(parseInt(offset, 10)) && parseInt(offset, 10) < 0;
-    const doc = { userId, period, periodKey, commentary, generatedAt: new Date() };
+    const doc = { userId, period, periodKey, version: OMNIA_REPORT_VERSION, commentary, generatedAt: new Date() };
     if (!isPast) {
       const ttlMs = period === 'daily' ? 86400000 : period === 'weekly' ? 7 * 86400000 : 31 * 86400000;
       doc.expiresAt = new Date(Date.now() + ttlMs);
     }
     await col.updateOne(
-      { userId, period, periodKey },
+      { userId, period, periodKey, version: OMNIA_REPORT_VERSION },
       { $set: doc, $unset: isPast ? { expiresAt: '' } : {} },
       { upsert: true }
     );

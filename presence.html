@@ -27167,7 +27167,7 @@ function omniaReportPeriodKey(period, offset) {
 }
 
 function omniaReportCacheKey(period, offset) {
-  return 'presence_omnia_report_' + omniaReportPeriodKey(period, offset);
+  return 'presence_omnia_report_v2_' + omniaReportPeriodKey(period, offset);
 }
 
 function omniaReportTTL(period) {
@@ -27185,11 +27185,16 @@ function omniaRegimenSnapshot() {
   try { items = buildGuideRegimentItems(); } catch(e) { return null; }
   if (!items || !items.length) return null;
   var FOCUS = { clock:1, thought:1, observation:1, focus:1, vacancy:1 };
-  var total = 0, completed = 0, focusCount = 0, have = {};
+  var THOUGHT = { thought:1, observation:1, focus:1, vacancy:1 };
+  var total = 0, completed = 0, focusCount = 0, thoughtCount = 0, clockCount = 0, have = {}, stack = [];
   items.forEach(function(it) {
+    var key = it.tcMode || it.mode || it.id;
     total++;
     if (it.done || it.sessionDone) completed++;
-    if (FOCUS[it.id] || FOCUS[it.mode]) { focusCount++; have[it.mode || it.id] = 1; }
+    if (FOCUS[it.id] || FOCUS[key]) { focusCount++; have[key] = 1; }
+    if (THOUGHT[it.id] || THOUGHT[key]) thoughtCount++;
+    if (it.id === 'clock' || key === 'clock') clockCount++;
+    stack.push(it.name || key || 'Exercise');
   });
   // A Thought Control mode they don't already run — what Omnia should suggest
   // adding when the regiment holds fewer than two focus exercises.
@@ -27198,31 +27203,66 @@ function omniaRegimenSnapshot() {
   return {
     total: total, completed: completed, complete: total > 0 && completed >= total,
     focusCount: focusCount, hasTwoFocus: focusCount >= 2,
+    thoughtCount: thoughtCount, hasTwoThoughtControls: thoughtCount >= 2,
+    clockCount: clockCount, exercises: stack,
     suggestFocus: TC_LABEL[addMode]
   };
 }
 
 // Consecutive most-recent PRACTICED days with no gain in either best unbroken
-// hold or total focus seconds vs the prior practiced day. Deterministic from
-// history (no stored counter), so viewing old reports never mutates it.
-function omniaDaysWithoutImprovement() {
+// hold or practiced duration against a trailing seven-practiced-day baseline.
+// Deterministic from history, so viewing old reports never mutates it.
+function omniaPracticeSeconds(h) {
+  if (!h) return 0;
+  if (h.type === 'thought' && typeof guideThoughtDuration === 'function') return guideThoughtDuration(h);
+  if (typeof guideSessionSec === 'function') return guideSessionSec(h);
+  return Math.max(0, parseInt(h.sessionDurationSec,10) || parseInt(h.durationSec,10) || parseInt(h.seconds,10) || 0);
+}
+
+function omniaDaysWithoutImprovement(endExclusive) {
   var h = (typeof concState !== 'undefined' && concState.history) ? concState.history : [];
   var byDay = {};
   h.forEach(function(e) {
     if (!e || !e.date) return;
-    var day = e.date.slice(0,10), sec = e.seconds || 0;
+    var when = new Date(e.date);
+    if (endExclusive && !isNaN(when) && when >= endExclusive) return;
+    var day = e.date.slice(0,10), sec = omniaPracticeSeconds(e), hold = isHoldSession(e) ? (e.seconds || 0) : 0;
     if (!byDay[day]) byDay[day] = { best:0, total:0 };
     byDay[day].total += sec;
-    if ((typeof isHoldSession !== 'function' || isHoldSession(e)) && sec > byDay[day].best) byDay[day].best = sec;
+    if (hold > byDay[day].best) byDay[day].best = hold;
   });
   var days = Object.keys(byDay).sort();
+  var improved = [];
+  days.forEach(function(day, index) {
+    if (index === 0) { improved.push(true); return; }
+    var priorDays = days.slice(Math.max(0, index - 7), index);
+    var priorBest = Math.max.apply(null, priorDays.map(function(d){ return byDay[d].best; }));
+    var priorAvgTotal = priorDays.reduce(function(sum, d){ return sum + byDay[d].total; }, 0) / priorDays.length;
+    improved.push(byDay[day].best > priorBest || byDay[day].total > priorAvgTotal);
+  });
   var count = 0;
-  for (var i = days.length - 1; i >= 1; i--) {
-    var cur = byDay[days[i]], prev = byDay[days[i-1]];
-    if (cur.best > prev.best || cur.total > prev.total) break; // improved — stop
+  for (var i = improved.length - 1; i >= 1; i--) {
+    if (improved[i]) break;
     count++;
   }
   return count;
+}
+
+function omniaConcentrationBreakdown(history) {
+  var byExercise = {}, practicedDays = {};
+  (history || []).forEach(function(h) {
+    if (!h) return;
+    var ex = h.type || h.exercise || 'clock';
+    var sec = omniaPracticeSeconds(h);
+    var hold = isHoldSession(h) ? (h.seconds || 0) : 0;
+    var day = h.date ? h.date.slice(0,10) : null;
+    if (!byExercise[ex]) byExercise[ex] = { sessions:0, total_sec:0, best_sec:0, days:{} };
+    byExercise[ex].sessions++;
+    byExercise[ex].total_sec += sec;
+    if (hold > byExercise[ex].best_sec) byExercise[ex].best_sec = hold;
+    if (day) { byExercise[ex].days[day] = 1; practicedDays[day] = 1; }
+  });
+  return { byExercise:byExercise, practicedDays:Object.keys(practicedDays) };
 }
 
 function buildOmniaReportContext(period, offset) {
@@ -27230,31 +27270,35 @@ function buildOmniaReportContext(period, offset) {
   var awNow = filterHistory(state.history, range.start, range.now);
   var concNow = filterHistory(concState.history, range.start, range.now);
   var awMin = sumMinutes(awNow);
-  var concSec = concNow.reduce(function(a,h){return a+(h.seconds||0);},0);
+  var concSec = concNow.reduce(function(a,h){return a+omniaPracticeSeconds(h);},0);
   var _concHold = concNow.filter(isHoldSession);
   var concBest = _concHold.length ? Math.max.apply(null,_concHold.map(function(h){return h.seconds||0;})) : 0;
+  // The current Guide stack constrains recommendations in every report, even
+  // when the report reflects on an earlier or longer period. Completion fields
+  // remain live-daily data only; the stack is recommendation context elsewhere.
+  var _currentRegimen = omniaRegimenSnapshot();
 
   // Per-exercise concentration breakdown (clock entries have no `type` field)
   var EX_LABELS = { clock:'Clock', visualization:'Visualization', auditory:'Auditory', thought:'Thought Control', asana:'Asana', pore_breathing:'Pore Breathing', autosuggestion:'Autosuggestion', 'all-angles':'All Angles', 'multi-sense':'Multi-Sense' };
   // Only the five core Bardon exercises are candidates for "try this next" —
   // the rest are unlockable extras Omnia shouldn't push.
   var CORE_EX = ['clock', 'visualization', 'auditory', 'thought', 'asana'];
-  var byEx = {};
-  concNow.forEach(function(h){
-    var ex = h.type || h.exercise || 'clock';
-    if (!byEx[ex]) byEx[ex] = { sessions:0, total_sec:0, best_sec:0 };
-    byEx[ex].sessions++;
-    byEx[ex].total_sec += (h.seconds||0);
-    if ((h.seconds||0) > byEx[ex].best_sec) byEx[ex].best_sec = (h.seconds||0);
-  });
+  var byEx = omniaConcentrationBreakdown(concNow).byExercise;
   var concByExercise = {};
   Object.keys(byEx).forEach(function(ex){
-    concByExercise[EX_LABELS[ex] || ex] = byEx[ex];
+    concByExercise[EX_LABELS[ex] || ex] = {
+      sessions:byEx[ex].sessions,
+      total_sec:byEx[ex].total_sec,
+      best_sec:byEx[ex].best_sec
+    };
   });
   // Which core exercises has the user never touched this period?
   var untried = CORE_EX
     .filter(function(ex){ return !byEx[ex]; })
     .map(function(ex){ return EX_LABELS[ex]; });
+  if (_currentRegimen && _currentRegimen.hasTwoThoughtControls) {
+    untried = untried.filter(function(name){ return name !== 'Clock'; });
+  }
 
   // Foundation gate: don't suggest moving on to the later exercises
   // (Visualization, Auditory, Asana) until the user has reached a 10-minute
@@ -27289,16 +27333,54 @@ function buildOmniaReportContext(period, offset) {
     _streakDay.setDate(_streakDay.getDate() - 1);
   }
 
-  // Previous period, so the model can make TRUTHFUL trend claims (without
-  // this it has fabricated "no progress" on record-setting days).
-  var awPrevC = filterHistory(state.history, range.prevStart, range.prevEnd);
-  var concPrevC = filterHistory(concState.history, range.prevStart, range.prevEnd);
-  var concSecPrevC = concPrevC.reduce(function(a,h){return a+(h.seconds||0);},0);
-  var _concHoldPrev = concPrevC.filter(isHoldSession);
-  var concBestPrevC = _concHoldPrev.length ? Math.max.apply(null,_concHoldPrev.map(function(h){return h.seconds||0;})) : 0;
+  // Daily coaching compares this day with the seven calendar days immediately
+  // before it. Weekly/monthly reports retain their natural prior-period window.
+  var comparisonStart = new Date(range.prevStart);
+  var comparisonEnd = new Date(range.prevEnd);
+  if (period === 'daily') {
+    comparisonEnd = new Date(range.start);
+    comparisonStart = new Date(range.start);
+    comparisonStart.setDate(comparisonStart.getDate() - 7);
+  }
+  var comparisonAw = filterHistory(state.history, comparisonStart, comparisonEnd);
+  var comparisonConc = filterHistory(concState.history, comparisonStart, comparisonEnd);
+  var comparisonSummary = omniaConcentrationBreakdown(comparisonConc);
+  var comparisonByEx = comparisonSummary.byExercise;
+  var comparisonTotalSec = comparisonConc.reduce(function(sum,h){ return sum + omniaPracticeSeconds(h); }, 0);
+  var comparisonHolds = comparisonConc.filter(isHoldSession);
+  var comparisonBestSec = comparisonHolds.length ? Math.max.apply(null,comparisonHolds.map(function(h){ return h.seconds || 0; })) : 0;
+  var comparisonPracticedDays = comparisonSummary.practicedDays.length;
+  var comparisonAvgDailySec = comparisonPracticedDays ? comparisonTotalSec / comparisonPracticedDays : 0;
+  var exerciseProgress = {}, improvedExercises = [], newlyPracticedExercises = [];
+  Object.keys(byEx).forEach(function(ex) {
+    var current = byEx[ex], prior = comparisonByEx[ex] || null;
+    var priorDays = prior ? Object.keys(prior.days || {}).length : 0;
+    var priorAvg = priorDays ? prior.total_sec / priorDays : 0;
+    var label = EX_LABELS[ex] || ex;
+    var focusImproved = !!prior && current.best_sec > prior.best_sec;
+    var durationImproved = !!prior && current.total_sec > priorAvg;
+    if (!prior) newlyPracticedExercises.push(label);
+    if (focusImproved || durationImproved) improvedExercises.push(label);
+    exerciseProgress[label] = {
+      current_sessions:current.sessions,
+      current_total_sec:current.total_sec,
+      current_best_sec:current.best_sec,
+      baseline_sessions:prior ? prior.sessions : 0,
+      baseline_best_sec:prior ? prior.best_sec : 0,
+      baseline_avg_practiced_day_sec:Math.round(priorAvg),
+      best_focus_improved:focusImproved,
+      practice_duration_improved:durationImproved
+    };
+  });
+  var hasComparisonConcentration = comparisonConc.length > 0;
+  var bestFocusImproved = hasComparisonConcentration && concBest > comparisonBestSec;
+  var practiceDurationImproved = hasComparisonConcentration && concSec > (period === 'daily' ? comparisonAvgDailySec : comparisonTotalSec);
 
   // Did this period set the all-time best hold?
-  var isNewBestHold = concBest > 0 && concBest >= (concState.bestSeconds || 0);
+  var priorConc = filterHistory(concState.history, new Date(0), range.start);
+  var priorHolds = priorConc.filter(isHoldSession);
+  var priorAllTimeBest = priorHolds.length ? Math.max.apply(null,priorHolds.map(function(h){ return h.seconds || 0; })) : 0;
+  var isNewBestHold = concBest > priorAllTimeBest && concBest > 0;
 
   // Deterministic per-report hint so the streak gets woven in occasionally —
   // not every single report, and not never.
@@ -27307,45 +27389,69 @@ function buildOmniaReportContext(period, offset) {
   for (var _pi = 0; _pi < _pk.length; _pi++) { _pkHash = (_pkHash * 31 + _pk.charCodeAt(_pi)) | 0; }
   var streakWorthMentioning = Math.abs(_pkHash) % 2 === 0;
 
-  // Discipline + trend signals for Omnia's coaching. Regiment state is only
-  // truthful for the live daily view; day-without-improvement is history-based.
-  var _regimen = (period === 'daily' && (offset || 0) === 0) ? omniaRegimenSnapshot() : null;
-  var _noImprove = omniaDaysWithoutImprovement();
-  var _improved = ((awPrevC.length + concPrevC.length) > 0)
-    ? (concBest > concBestPrevC || concSec > concSecPrevC) : null;
+  // Only a live daily report may discuss completion of today's regimen. The
+  // current stack still constrains recommendations on historical daily reports.
+  var _regimen = (period === 'daily' && (offset || 0) === 0) ? _currentRegimen : null;
+  var _noImprove = omniaDaysWithoutImprovement(range.now);
+  var _needsPush = _noImprove >= 5;
+  var _improved = hasComparisonConcentration ? (bestFocusImproved || practiceDurationImproved || improvedExercises.length > 0) : null;
+  var recommendationExclusions = [];
+  if (_currentRegimen && _currentRegimen.hasTwoThoughtControls) {
+    recommendationExclusions.push('Clock', 'Thought Control');
+    untried = untried.filter(function(name){ return name !== 'Clock' && name !== 'Thought Control'; });
+  }
 
   return {
+    report_policy_version: 2,
     period: period,
     offset: offset || 0,
     regimen_total: _regimen ? _regimen.total : null,
     regimen_completed: _regimen ? _regimen.completed : null,
     regimen_complete: _regimen ? _regimen.complete : null,
-    focus_exercise_count: _regimen ? _regimen.focusCount : null,
-    has_two_focus_exercises: _regimen ? _regimen.hasTwoFocus : null,
-    suggested_focus_exercise: (_regimen && !_regimen.hasTwoFocus) ? _regimen.suggestFocus : null,
+    current_regimen_exercises: _currentRegimen ? _currentRegimen.exercises : [],
+    focus_exercise_count: _currentRegimen ? _currentRegimen.focusCount : null,
+    has_two_focus_exercises: _currentRegimen ? _currentRegimen.hasTwoFocus : null,
+    thought_control_stack_count: _currentRegimen ? _currentRegimen.thoughtCount : 0,
+    has_two_thought_control_exercises: !!(_currentRegimen && _currentRegimen.hasTwoThoughtControls),
+    suggested_focus_exercise: (_currentRegimen && !_currentRegimen.hasTwoFocus) ? _currentRegimen.suggestFocus : null,
+    avoid_clock_recommendation: !!(_currentRegimen && _currentRegimen.hasTwoThoughtControls),
+    recommendation_exclusions: recommendationExclusions,
+    allowed_recommendations: untried.slice(),
     improved: _improved,
     days_without_improvement: _noImprove,
-    disapprove: _noImprove >= 3,
+    needs_push: _needsPush,
     awareness_sessions: awNow.length,
     awareness_minutes: awMin,
     concentration_sessions: concNow.length,
     concentration_total_sec: concSec,
     concentration_best_sec: concBest,
+    completed_exercises: Object.keys(concByExercise),
     concentration_by_exercise: concByExercise,
+    exercise_progress: exerciseProgress,
     concentration_exercises_untried: untried,
     ready_for_new_exercises: readyForNewExercises,
     concentration_streak_days: concStreakDays,
     practice_streak_days: state.streak || 0,
     clock_alltime_pb_sec: concState.bestSeconds || 0,
     is_new_best_hold: isNewBestHold,
-    previous_period: {
-      awareness_sessions: awPrevC.length,
-      awareness_minutes: sumMinutes(awPrevC),
-      concentration_sessions: concPrevC.length,
-      concentration_total_sec: concSecPrevC,
-      concentration_best_hold_sec: concBestPrevC
+    progress_signals: {
+      best_focus_improved: bestFocusImproved,
+      practice_duration_improved: practiceDurationImproved,
+      improved_exercises: improvedExercises,
+      newly_practiced_exercises: newlyPracticedExercises
     },
-    has_previous_data: (awPrevC.length + concPrevC.length) > 0,
+    comparison_baseline: {
+      window: period === 'daily' ? 'preceding_7_days' : 'previous_' + period,
+      start_date: comparisonStart.toISOString().slice(0,10),
+      end_date_exclusive: comparisonEnd.toISOString().slice(0,10),
+      awareness_sessions: comparisonAw.length,
+      concentration_sessions: comparisonConc.length,
+      concentration_practiced_days: comparisonPracticedDays,
+      concentration_total_sec: comparisonTotalSec,
+      concentration_avg_practiced_day_sec: Math.round(comparisonAvgDailySec),
+      concentration_best_hold_sec: comparisonBestSec
+    },
+    has_previous_data: (comparisonAw.length + comparisonConc.length) > 0,
     streak_worth_mentioning: streakWorthMentioning,
     omnia_candor: getOmniaCandor()
   };
