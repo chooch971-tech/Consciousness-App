@@ -17,8 +17,10 @@ system, achievements, streaks, and social/friends features.
   state. Add or remove cloud keys here instead of creating another key array.
 - **`progress-state.js`** — pure reset/snapshot/storage operations shared by the
   browser reset, sign-out, and local snapshot flows. Keep reset semantics here.
+- **`sync-merge.js`** — pure history and Seven Gifts conflict resolution shared
+  by browser pulls and server snapshot merges. Keep those two merge specs here.
 - **`sw.js`** — service worker. Caches the shell as `presence-shell-vNNN`
-  (currently **v159**). **Bump this version string on every shippable change to
+  (currently **v160**). **Bump this version string on every shippable change to
   `presence.html`** or returning devices run stale code.
 - `marketing/` — App Store card generators (Playwright screenshot scripts).
 
@@ -60,6 +62,8 @@ can never roll back progress.
 - Special keys route to dedicated merge fns on BOTH sides:
   - client: `mergeOmniaPull`, `mergeAchPull`, `mergeGiftPathPull`, `mergeHistoryPull`
   - server: `mergeOmniaKey`, `mergeAchKey`, `mergeGiftPathKey`, `mergeHistoryKey`
+  - history and Seven Gifts adapters both delegate to `sync-merge.js`; add their
+    field rules there once instead of changing the client and server separately.
   - everything else: server `pickBestValue` (score-based newest wins).
 - **If you add a new synced key:** register it once in `sync-contract.js`, then
   add any key-specific client/server merge and reset behavior. Generic keys are

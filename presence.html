@@ -27,6 +27,7 @@
   <title>Presence</title>
   <script src="sync-contract.js"></script>
   <script src="progress-state.js"></script>
+  <script src="sync-merge.js"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com"/>
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300;1,400&family=DM+Mono:wght@300;400&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet"/>
@@ -7761,6 +7762,8 @@ var PRESENCE_SYNC = window.PresenceSyncContract;
 if (!PRESENCE_SYNC) throw new Error('Presence sync contract failed to load');
 var PRESENCE_PROGRESS = window.PresenceProgressState;
 if (!PRESENCE_PROGRESS) throw new Error('Presence progress-state module failed to load');
+var PRESENCE_MERGE = window.PresenceSyncMerge;
+if (!PRESENCE_MERGE) throw new Error('Presence sync-merge module failed to load');
 // ═══════════════════════════════════════
 // PROMPTS
 // ═══════════════════════════════════════
@@ -11402,60 +11405,14 @@ function shouldTakeCloudValue(key, local, cloud) {
   }
 }
 
-// Union two session-history arrays, deduping by the entry's ISO `date` (unique
-// per session, millisecond precision). Keeps newest-first ordering and caps the
-// result so storage stays bounded. This is what lets sessions recorded on
-// different devices all appear together in Progress Reports.
-function mergeSyncHistoryArrays(a, b, cap) {
-  a = Array.isArray(a) ? a : [];
-  b = Array.isArray(b) ? b : [];
-  var seen = {}, out = [];
-  a.concat(b).forEach(function(h) {
-    if (!h || typeof h !== 'object') return;
-    var id = h.date || JSON.stringify(h);
-    if (seen[id]) return;
-    seen[id] = true;
-    out.push(h);
-  });
-  out.sort(function(x, y) {
-    return (y.date ? new Date(y.date).getTime() : 0) - (x.date ? new Date(x.date).getTime() : 0);
-  });
-  if (cap && out.length > cap) out = out.slice(0, cap);
-  return out;
-}
-
-// Per-key spec for which arrays to union and which scalar counters to keep
-// monotonic (max) when merging a cloud snapshot into local on pull.
-var SYNC_HISTORY_MERGE = {
-  presence_conc_v1: { arrays:['history'], maxNums:['xp','totalSessions','bestSeconds','bestAsanaSeconds','level'] },
-  presence_v3:      { arrays:['history','weeklyScores'], maxNums:['xp','totalSessions','streak','longestStreak','level'] }
-};
-
-// Field-merge a history-bearing key (concentration / awareness) so no device's
-// sessions are ever lost. Returns a JSON string to store, or null to skip.
+// Field-merge a history-bearing key (concentration / awareness) through the
+// shared browser/server contract. Cloud comes first so equal-score preferences
+// match the pull behavior while all progress fields remain monotonic.
 function mergeHistoryPull(key, localStr, cloudStr) {
-  var spec = SYNC_HISTORY_MERGE[key];
-  if (!spec) return shouldTakeCloudValue(key, localStr, cloudStr) ? cloudStr : null;
   if (!cloudStr) return null;
   if (!localStr) return cloudStr;
-  var localObj, cloudObj;
-  try { localObj = JSON.parse(localStr); cloudObj = JSON.parse(cloudStr); } catch(e) { return null; }
-  // Honor a deliberate reset on either side — don't merge across a reset boundary.
-  var lr = (localObj && localObj._resetAt) || 0;
-  var cr = (cloudObj && cloudObj._resetAt) || 0;
-  if (lr !== cr) return shouldTakeCloudValue(key, localStr, cloudStr) ? cloudStr : null;
-  // Base = higher-scoring snapshot (keeps its other scalar fields); fold the
-  // other side's histories and monotonic counters in.
-  var takeCloud = syncProgressScore(key, cloudObj) >= syncProgressScore(key, localObj);
-  var base = takeCloud ? cloudObj : localObj;
-  var other = takeCloud ? localObj : cloudObj;
-  spec.arrays.forEach(function(f) { base[f] = mergeSyncHistoryArrays(base[f], other[f], 100); });
-  spec.maxNums.forEach(function(f) {
-    if (base[f] != null || other[f] != null) base[f] = Math.max(Number(base[f]) || 0, Number(other[f]) || 0);
-  });
-  // Preserve a customised clock theme even when the base snapshot lacks one.
-  if (key === 'presence_conc_v1' && !base.clockTheme && other.clockTheme) base.clockTheme = other.clockTheme;
-  return JSON.stringify(base);
+  var merged = PRESENCE_MERGE.mergeHistoryValues(key, [cloudStr, localStr]);
+  return merged ? JSON.stringify(merged) : null;
 }
 
 // Did a merge produce materially new progress (vs just re-serialised bytes)?
@@ -11492,39 +11449,8 @@ function syncMeaningfulDelta(key, localStr, mergedStr) {
 function mergeGiftPathPull(localStr, cloudStr) {
   if (!cloudStr) return null;
   if (!localStr) return cloudStr;
-  var a, b;
-  try { a = JSON.parse(localStr); b = JSON.parse(cloudStr); } catch(e) { return null; }
-  if ((a._resetAt || 0) !== (b._resetAt || 0)) {
-    return shouldTakeCloudValue('presence_giftpath_v1', localStr, cloudStr) ? cloudStr : localStr;
-  }
-  var out = {};
-  var ac = Array.isArray(a.cleared) ? a.cleared : [];
-  var bc = Array.isArray(b.cleared) ? b.cleared : [];
-  var seen = {}; out.cleared = [];
-  ac.concat(bc).forEach(function(m){ if (m && !seen[m]) { seen[m] = 1; out.cleared.push(m); } });
-  var am = a.month || null, bm = b.month || null;
-  if (am && bm && am === bm) {
-    out.month = am;
-    var acl = Array.isArray(a.claimed) ? a.claimed : [];
-    var bcl = Array.isArray(b.claimed) ? b.claimed : [];
-    out.claimed = [];
-    for (var i = 0; i < 7; i++) out.claimed[i] = !!(acl[i] || bcl[i]);
-    out.done = a.done || {};
-    var bDone = b.done || {};
-    Object.keys(bDone).forEach(function(k){ if (bDone[k]) out.done[k] = true; });
-    var ad = a.startDate, bd = b.startDate;
-    out.startDate = (ad && bd) ? (ad < bd ? ad : bd) : (ad || bd || null);
-  } else {
-    // Different (or missing) months → take the newer month's run wholesale.
-    var newer = (String(bm || '') > String(am || '')) ? b : a;
-    out.month = newer.month || null;
-    out.claimed = Array.isArray(newer.claimed) && newer.claimed.length === 7 ? newer.claimed.slice() : [false,false,false,false,false,false,false];
-    out.done = newer.done || {};
-    out.startDate = newer.startDate || null;
-  }
-  out.started = !!(a.started || b.started);
-  if (a._resetAt) out._resetAt = a._resetAt;
-  return JSON.stringify(out);
+  var merged = PRESENCE_MERGE.mergeGiftPathValues([localStr, cloudStr]);
+  return merged ? JSON.stringify(merged) : null;
 }
 
 function mergeAchPull(localStr, cloudStr) {

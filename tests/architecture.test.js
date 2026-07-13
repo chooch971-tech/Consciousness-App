@@ -17,18 +17,31 @@ test('production code does not ship the retired Bardon RPG', () => {
 test('browser loads shared state modules before app code', () => {
   const contractTag = presence.indexOf('<script src="sync-contract.js"></script>');
   const progressTag = presence.indexOf('<script src="progress-state.js"></script>');
+  const mergeTag = presence.indexOf('<script src="sync-merge.js"></script>');
   const appUse = presence.indexOf('var PRESENCE_SYNC = window.PresenceSyncContract;');
   assert.notEqual(contractTag, -1);
   assert.notEqual(progressTag, -1);
+  assert.notEqual(mergeTag, -1);
   assert.notEqual(appUse, -1);
   assert.ok(contractTag < progressTag);
-  assert.ok(progressTag < appUse);
+  assert.ok(progressTag < mergeTag);
+  assert.ok(mergeTag < appUse);
   assert.match(presence, /PRESENCE_PROGRESS\.replaceStorageSnapshot/);
   assert.match(presence, /PRESENCE_PROGRESS\.withoutResetMarkers/);
+  assert.match(presence, /PRESENCE_MERGE\.mergeHistoryValues/);
+  assert.match(presence, /PRESENCE_MERGE\.mergeGiftPathValues/);
 });
 
 test('server imports the shared sync allowlist instead of declaring another one', () => {
   assert.match(server, /require\('\.\/sync-contract'\)/);
   assert.match(server, /SYNC_KEYS\.forEach/);
   assert.doesNotMatch(server, /const\s+KEYS\s*=\s*\[\s*['"]presence_v3/);
+});
+
+test('history and Gift Path merge contracts are shared by browser and server', () => {
+  assert.match(server, /require\('\.\/sync-merge'\)/);
+  assert.match(server, /mergeHistoryValues/);
+  assert.match(server, /mergeGiftPathValues/);
+  assert.doesNotMatch(presence, /function\s+mergeSyncHistoryArrays|SYNC_HISTORY_MERGE/);
+  assert.doesNotMatch(server, /function\s+mergeHistoryArraysSrv|SRV_HISTORY_MERGE/);
 });

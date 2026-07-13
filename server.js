@@ -8,6 +8,7 @@ const jwt     = require('jsonwebtoken');
 const { OAuth2Client } = require('google-auth-library');
 const { enforceOmniaReportPolicy } = require('./omnia-report-policy');
 const { SYNC_KEYS, selectSyncData } = require('./sync-contract');
+const { isHistoryKey, mergeHistoryValues, mergeGiftPathValues } = require('./sync-merge');
 const {
   moderateUsername,
   moderatePublicText,
@@ -1136,41 +1137,9 @@ function pickBestValue(key, snaps) {
   return bestStr;
 }
 
-function mergeHistoryArraysSrv(a, b, cap) {
-  a = Array.isArray(a) ? a : []; b = Array.isArray(b) ? b : [];
-  const seen = {}, out = [];
-  a.concat(b).forEach((h) => {
-    if (!h || typeof h !== 'object') return;
-    const id = h.date || JSON.stringify(h);
-    if (seen[id]) return;
-    seen[id] = true; out.push(h);
-  });
-  out.sort((x, y) => (y.date ? new Date(y.date).getTime() : 0) - (x.date ? new Date(x.date).getTime() : 0));
-  return cap && out.length > cap ? out.slice(0, cap) : out;
-}
-
-const SRV_HISTORY_MERGE = {
-  presence_conc_v1: { arrays: ['history'], maxNums: ['xp','totalSessions','bestSeconds','bestAsanaSeconds','level'] },
-  presence_v3:      { arrays: ['history','weeklyScores'], maxNums: ['xp','totalSessions','streak','longestStreak','level'] },
-};
-
 function mergeHistoryKey(key, snaps) {
-  const spec = SRV_HISTORY_MERGE[key];
-  const baseStr = pickBestValue(key, snaps);
-  if (!spec || !baseStr) return baseStr;
-  const base = parseSafe(baseStr);
-  if (!base) return baseStr;
-  const baseReset = (base._resetAt) || 0;
-  snaps.forEach((s) => {
-    const o = parseSafe(s[key]); if (!o) return;
-    if (((o._resetAt) || 0) !== baseReset) return; // don't merge across a reset boundary
-    spec.arrays.forEach((f) => { base[f] = mergeHistoryArraysSrv(base[f], o[f], 100); });
-    spec.maxNums.forEach((f) => {
-      if (base[f] != null || o[f] != null) base[f] = Math.max(Number(base[f]) || 0, Number(o[f]) || 0);
-    });
-    if (key === 'presence_conc_v1' && !base.clockTheme && o.clockTheme) base.clockTheme = o.clockTheme;
-  });
-  return JSON.stringify(base);
+  const merged = mergeHistoryValues(key, snaps.map((snapshot) => snapshot[key]));
+  return merged ? JSON.stringify(merged) : null;
 }
 
 function mergeOmniaKey(snaps) {
@@ -1293,32 +1262,11 @@ function mergeAchKey(snaps) {
 // newest month across snapshots and union claimed/done among snapshots on that
 // month, so last month's leftover claims can't block a new month's reset.
 function mergeGiftPathKey(snaps) {
-  const best = parseSafe(pickBestValue('presence_giftpath_v1', snaps));
-  const resetAt = (best && best._resetAt) || 0;
-  const objs = [];
-  snaps.forEach((s) => {
-    const o = parseSafe(s.presence_giftpath_v1);
-    if (o && ((o._resetAt || 0) === resetAt)) objs.push(o);
-  });
-  if (!objs.length) return null;
-  const clearedSeen = {}, cleared = [];
-  let month = null, started = false;
-  objs.forEach((o) => {
-    (Array.isArray(o.cleared) ? o.cleared : []).forEach((m) => { if (m && !clearedSeen[m]) { clearedSeen[m] = 1; cleared.push(m); } });
-    if (o.month && String(o.month) > String(month || '')) month = o.month;
-    started = started || !!o.started;
-  });
-  const out = { cleared, month, started, startDate: null, claimed: [false, false, false, false, false, false, false], done: {} };
-  objs.forEach((o) => {
-    if ((o.month || null) !== month) return; // only fold the current month's run
-    if (o.startDate && (!out.startDate || o.startDate < out.startDate)) out.startDate = o.startDate;
-    const oc = Array.isArray(o.claimed) ? o.claimed : [];
-    for (let i = 0; i < 7; i++) out.claimed[i] = out.claimed[i] || !!oc[i];
-    const od = o.done || {}; Object.keys(od).forEach((k) => { if (od[k]) out.done[k] = true; });
-  });
-  if (!out.startDate && month) out.startDate = month + '-01';
-  if (resetAt) out._resetAt = resetAt;
-  return JSON.stringify(out);
+  const merged = mergeGiftPathValues(
+    snaps.map((snapshot) => snapshot.presence_giftpath_v1),
+    { inferStartDate: true }
+  );
+  return merged ? JSON.stringify(merged) : null;
 }
 
 function mergeSnapshots(snaps) {
@@ -1327,7 +1275,7 @@ function mergeSnapshots(snaps) {
     if (k === 'presence_omnia_v1') out[k] = mergeOmniaKey(snaps);
     else if (k === 'presence_ach_v1') out[k] = mergeAchKey(snaps);
     else if (k === 'presence_giftpath_v1') out[k] = mergeGiftPathKey(snaps);
-    else if (SRV_HISTORY_MERGE[k]) out[k] = mergeHistoryKey(k, snaps);
+    else if (isHistoryKey(k)) out[k] = mergeHistoryKey(k, snaps);
     else out[k] = pickBestValue(k, snaps);
   });
   return out;
