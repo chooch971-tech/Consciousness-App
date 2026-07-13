@@ -820,6 +820,7 @@
     .chat-conv__name { font-size:11px; color:var(--text); font-family:'DM Mono',monospace; }
     .chat-conv__preview { font-size:10px; color:var(--muted); font-family:'DM Mono',monospace; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:220px; margin-top:2px; }
     .chat-unread { width:8px; height:8px; border-radius:50%; background:#d4956e; margin-left:auto; flex-shrink:0; }
+    .chat-conv-skeleton { height:63px; margin-bottom:1px; border-bottom:1px solid var(--border); background:linear-gradient(100deg,transparent 20%,rgba(255,255,255,.04) 42%,transparent 62%); background-size:240% 100%; animation:lodgeShimmer 1.35s linear infinite; }
     @media (max-width:420px) {
       .lodge-intro { padding:0 18px; }
       .lodge-intro__art { width:90px; }
@@ -34598,6 +34599,7 @@ function openLodge() {
   renderLodgeFeed();
   loadLodgeFeed();
   loadLodgeNotifs();
+  loadChatList(false);
 }
 
 // One practitioner's full post history on its own page.
@@ -35057,6 +35059,7 @@ document.getElementById('lodgeBell').addEventListener('click', openLodgeNotifs);
 
 // ── Lodge Phase 3: private chat (polling, mutual follows only) ──
 var _chatConvId = null, _chatPoll = null;
+var _chatConversations = [], _chatListLoaded = false, _chatListPromise = null, _chatCacheToken = null;
 
 function stopChatPoll() { if (_chatPoll) { clearInterval(_chatPoll); _chatPoll = null; } }
 function startChatPoll() {
@@ -35068,30 +35071,70 @@ function startChatPoll() {
   }, 8000);
 }
 
-async function openChatList() {
-  stopChatPoll();
-  showScreen('chatListScreen');
+function _chatEnsureCacheOwner() {
+  if (_chatCacheToken === authToken) return;
+  _chatCacheToken = authToken;
+  _chatConversations = [];
+  _chatListLoaded = false;
+  _chatListPromise = null;
+}
+
+function renderChatList(loading) {
   var list = document.getElementById('chatList');
   var empty = document.getElementById('chatListEmpty');
-  try {
-    var res = await fetch(SERVER_URL + '/api/social/conversations', { headers: { 'Authorization': 'Bearer ' + authToken } });
-    if (!res.ok) return;
-    var d = await res.json();
-    var convos = d.conversations || [];
-    list.innerHTML = convos.map(function(c) {
-      return '<div class="chat-conv" data-conv-id="' + escHtml(c.id) + '" data-conv-name="' + escHtml(c.username) + '">'
-        + _lodgeRingHtml(c.username, c.profilePic)
-        + '<div style="min-width:0;"><div class="chat-conv__name" style="color:' + _lodgeHue(c.username)[0] + ';">@' + escHtml(c.username) + '</div>'
-        + '<div class="chat-conv__preview">' + escHtml(c.lastPreview || '') + '</div></div>'
-        + (c.unread > 0 ? '<span class="chat-unread"></span>' : '')
-        + '</div>';
-    }).join('');
-    empty.style.display = convos.length ? 'none' : '';
-  } catch(e) {}
+  if (loading && !_chatConversations.length) {
+    list.innerHTML = '<div class="chat-conv-skeleton"></div><div class="chat-conv-skeleton"></div><div class="chat-conv-skeleton"></div>';
+    empty.style.display = 'none';
+    return;
+  }
+  list.innerHTML = _chatConversations.map(function(c) {
+    return '<div class="chat-conv" data-conv-id="' + escHtml(c.id) + '" data-conv-name="' + escHtml(c.username) + '">'
+      + _lodgeRingHtml(c.username, c.profilePic)
+      + '<div style="min-width:0;"><div class="chat-conv__name" style="color:' + _lodgeHue(c.username)[0] + ';">@' + escHtml(c.username) + '</div>'
+      + '<div class="chat-conv__preview">' + escHtml(c.lastPreview || '') + '</div></div>'
+      + (c.unread > 0 ? '<span class="chat-unread"></span>' : '')
+      + '</div>';
+  }).join('');
+  empty.style.display = _chatConversations.length ? 'none' : '';
+}
+
+async function loadChatList(paint) {
+  _chatEnsureCacheOwner();
+  if (!authToken) return;
+  if (_chatListPromise) {
+    await _chatListPromise;
+    if (paint && document.getElementById('chatListScreen').classList.contains('active')) renderChatList(false);
+    return;
+  }
+  var requestToken = authToken;
+  var request = (async function() {
+    try {
+      var res = await fetch(SERVER_URL + '/api/social/conversations', { headers: { 'Authorization': 'Bearer ' + requestToken } });
+      if (!res.ok) return;
+      var d = await res.json();
+      if (authToken !== requestToken) return;
+      _chatConversations = d.conversations || [];
+      _chatListLoaded = true;
+    } catch(e) {}
+  })();
+  _chatListPromise = request;
+  await request;
+  if (_chatListPromise === request) _chatListPromise = null;
+  if (paint && document.getElementById('chatListScreen').classList.contains('active')) renderChatList(false);
+}
+
+function openChatList() {
+  stopChatPoll();
+  _chatEnsureCacheOwner();
+  renderChatList(!_chatListLoaded);
+  showScreen('chatListScreen');
+  loadChatList(true);
 }
 
 async function openChatThread(convId, username) {
   _chatConvId = convId;
+  var cachedConversation = _chatConversations.find(function(c) { return c.id === convId; });
+  if (cachedConversation) cachedConversation.unread = 0;
   document.getElementById('chatThreadName').textContent = '@' + username;
   document.getElementById('chatMsgs').innerHTML = '';
   showScreen('chatThreadScreen');
@@ -35128,6 +35171,14 @@ async function sendChatMsg() {
     var d = await res.json();
     if (!res.ok) { showToast(d.error || 'Send failed'); return; }
     input.value = '';
+    var cachedIndex = _chatConversations.findIndex(function(c) { return c.id === _chatConvId; });
+    if (cachedIndex >= 0) {
+      var cached = _chatConversations[cachedIndex];
+      cached.lastPreview = text;
+      cached.unread = 0;
+      _chatConversations.splice(cachedIndex, 1);
+      _chatConversations.unshift(cached);
+    }
     var box = document.getElementById('chatMsgs');
     box.insertAdjacentHTML('beforeend', _chatMsgHtml(d.message));
     box.scrollTop = box.scrollHeight;

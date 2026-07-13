@@ -163,6 +163,7 @@ async function connectDB() {
     messagesCollection = db.collection('messages');
     try { await conversationsCollection.createIndex({ participants: 1 }); } catch(e) {}
     try { await messagesCollection.createIndex({ convId: 1, createdAt: 1 }); } catch(e) {}
+    try { await messagesCollection.createIndex({ convId: 1, senderId: 1, createdAt: 1 }); } catch(e) {}
     userPushSubsCollection = db.collection('user_push_subs');
     try { await userPushSubsCollection.createIndex({ endpoint: 1 }, { unique: true }); } catch(e) {}
     try { await userPushSubsCollection.createIndex({ userId: 1 }); } catch(e) {}
@@ -2270,13 +2271,25 @@ app.get('/api/social/conversations', verifyToken, async (req, res) => {
     const selfId = req.user.userId;
     const convos = await conversationsCollection.find({ participants: selfId }).sort({ lastMsgAt: -1 }).limit(50).toArray();
     const otherIds = convos.map(c => (c.participants || []).find(x => x !== selfId)).filter(Boolean);
-    const users = otherIds.length ? await usersCollection.find({ _id: { $in: otherIds.map(id => new ObjectId(id)) } }).project({ username: 1, profilePic: 1 }).toArray() : [];
+    const unreadConditions = convos.map(c => ({
+      convId: c._id.toString(),
+      senderId: { $ne: selfId },
+      createdAt: { $gt: (c.lastRead && c.lastRead[selfId]) ? new Date(c.lastRead[selfId]) : new Date(0) }
+    }));
+    const usersPromise = otherIds.length
+      ? usersCollection.find({ _id: { $in: otherIds.map(id => new ObjectId(id)) } }).project({ username: 1, profilePic: 1 }).toArray()
+      : Promise.resolve([]);
+    const unreadPromise = unreadConditions.length ? messagesCollection.aggregate([
+      { $match: { $or: unreadConditions } },
+      { $group: { _id: '$convId', count: { $sum: 1 } } }
+    ]).toArray() : Promise.resolve([]);
+    const [users, unreadRows] = await Promise.all([usersPromise, unreadPromise]);
     const byId = {}; users.forEach(u => { byId[u._id.toString()] = u; });
+    const unreadByConversation = new Map(unreadRows.map(row => [row._id, row.count]));
     const out = [];
     for (const c of convos) {
       const other = (c.participants || []).find(x => x !== selfId);
-      const lastRead = (c.lastRead && c.lastRead[selfId]) ? new Date(c.lastRead[selfId]) : new Date(0);
-      const unread = await messagesCollection.countDocuments({ convId: c._id.toString(), senderId: { $ne: selfId }, createdAt: { $gt: lastRead } });
+      const unread = unreadByConversation.get(c._id.toString()) || 0;
       out.push({
         id: c._id.toString(), userId: other,
         username: (byId[other] && byId[other].username) || ('practitioner_' + String(other).slice(-5)),
