@@ -730,6 +730,7 @@
     .lodge-back svg,.lodge-tool svg { width:18px; height:18px; }
     .lodge-heading { min-width:0; }
     .lodge-heading__title { font-family:'Cormorant Garamond',serif; font-size:24px; line-height:1; font-weight:300; color:var(--text); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+    .lodge-heading__title:empty { display:none; }
     .lodge-tools { display:flex; align-items:center; gap:2px; }
     .lodge-tool { position:relative; width:44px; height:44px; border:0; border-radius:8px; background:transparent; color:rgba(221,216,206,.7); display:flex; align-items:center; justify-content:center; cursor:pointer; transition:background .18s,color .18s; }
     .lodge-tool:hover { background:rgba(255,255,255,.045); color:var(--text); }
@@ -739,16 +740,14 @@
     .lodge-scroll { flex:1; overflow-y:auto; -webkit-overflow-scrolling:touch; scrollbar-width:none; padding:18px 20px max(env(safe-area-inset-bottom),32px); }
     .lodge-scroll::-webkit-scrollbar { display:none; }
     .lodge-stream { width:100%; max-width:680px; margin:0 auto; }
-    .lodge-intro { position:relative; height:148px; box-sizing:border-box; display:flex; align-items:center; justify-content:space-between; padding:0 22px; margin:0 0 14px; overflow:hidden; border-radius:18px; background:linear-gradient(145deg,#0a1a2e 0%,#0d2a3a 40%,#0c1e30 100%); }
-    .lodge-intro::before { content:''; position:absolute; inset:0; pointer-events:none; background:radial-gradient(ellipse 60% 70% at 76% 54%,rgba(100,190,220,.18) 0%,transparent 70%); }
-    .lodge-intro::after { content:''; position:absolute; inset:0; pointer-events:none; background:radial-gradient(ellipse 40% 50% at 72% 48%,rgba(232,200,122,.11) 0%,transparent 62%); }
-    .lodge-intro__copy { position:relative; z-index:2; min-width:0; display:flex; flex-direction:column; gap:3px; }
-    .lodge-intro__label { font-family:'DM Mono',monospace; font-size:8px; letter-spacing:.28em; text-transform:uppercase; color:rgba(142,204,224,.7); }
-    .lodge-intro__title { font-family:'Cormorant Garamond',serif; font-size:24px; line-height:1.1; color:#d8f0ff; font-weight:300; }
-    .lodge-intro__text { font-family:'DM Mono',monospace; font-size:9px; line-height:1.35; letter-spacing:.1em; color:rgba(200,230,245,.42); }
-    .lodge-intro__glow { position:absolute; right:6px; top:50%; width:170px; height:170px; transform:translateY(-50%); background:radial-gradient(circle,rgba(184,234,255,.22) 0%,rgba(232,200,122,.1) 38%,transparent 70%); pointer-events:none; }
+    .lodge-intro { position:relative; height:148px; box-sizing:border-box; display:flex; align-items:center; justify-content:space-between; padding:0 22px; margin:0 0 14px; overflow:hidden; border-radius:18px; background:linear-gradient(145deg,#0b1f1a 0%,#12352c 44%,#0d251f 100%); }
+    .lodge-intro::before { content:''; position:absolute; inset:0; pointer-events:none; background:radial-gradient(ellipse 60% 70% at 76% 54%,rgba(126,184,164,.2) 0%,transparent 70%); }
+    .lodge-intro::after { content:''; position:absolute; inset:0; pointer-events:none; background:radial-gradient(ellipse 40% 50% at 72% 48%,rgba(232,200,122,.14) 0%,transparent 62%); }
+    .lodge-intro__copy { position:relative; z-index:2; min-width:0; }
+    .lodge-intro__title { font-family:'Cormorant Garamond',serif; font-size:27px; line-height:1.1; color:#e7f2e9; font-weight:300; }
+    .lodge-intro__glow { position:absolute; right:6px; top:50%; width:170px; height:170px; transform:translateY(-50%); background:radial-gradient(circle,rgba(232,200,122,.2) 0%,rgba(126,184,164,.12) 40%,transparent 70%); pointer-events:none; }
     .lodge-intro__art { position:relative; z-index:2; width:82px; height:112px; display:flex; align-items:center; justify-content:center; flex-shrink:0; color:#e8c87a; filter:drop-shadow(0 0 16px rgba(232,200,122,.38)); animation:omniaFloat 4.5s ease-in-out infinite; }
-    .lodge-intro__art svg { width:76px; height:96px; overflow:visible; }
+    .lodge-intro__art svg { width:78px; height:102px; overflow:visible; }
     .lodge-feed-nav { position:relative; display:grid; grid-template-columns:minmax(0,1fr) 44px; align-items:end; gap:8px; margin-bottom:14px; }
     #lodgeTabs { margin:0; border-bottom-color:rgba(255,255,255,.07); }
     #lodgeTabs .mode-tab { min-height:44px; font-size:9px; color:rgba(221,216,206,.5); }
@@ -5552,7 +5551,7 @@ body:not(.tut-live) #tutCorgi {
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg>
       </button>
       <div class="lodge-heading">
-        <div class="lodge-heading__title" id="lodgeTitle">The Lodge</div>
+        <div class="lodge-heading__title" id="lodgeTitle"></div>
       </div>
       <div class="lodge-tools">
         <button id="lodgeChats" class="lodge-tool lodge-tool--messages" aria-label="Messages" title="Messages">
@@ -5568,28 +5567,30 @@ body:not(.tut-live) #tutCorgi {
       <div class="lodge-stream">
         <div class="lodge-intro" id="lodgeBanner">
           <div class="lodge-intro__copy">
-            <div class="lodge-intro__label">The Shared Record</div>
-            <div class="lodge-intro__title">Share Your Practice</div>
-            <div class="lodge-intro__text">Reflections · Essays</div>
+            <div class="lodge-intro__title">The Lodge</div>
           </div>
           <div class="lodge-intro__glow"></div>
           <div class="lodge-intro__art" aria-hidden="true">
-            <svg viewBox="0 0 80 100" fill="none">
+            <svg viewBox="0 0 80 104" fill="none">
               <defs>
-                <linearGradient id="lodgePenFill" x1="17" y1="14" x2="62" y2="87" gradientUnits="userSpaceOnUse"><stop stop-color="#fff2c7"/><stop offset=".52" stop-color="#e8c87a" stop-opacity=".88"/><stop offset="1" stop-color="#8eccc0" stop-opacity=".46"/></linearGradient>
+                <linearGradient id="lodgePencilBody" x1="31" y1="10" x2="49" y2="76" gradientUnits="userSpaceOnUse"><stop stop-color="#fff0b8"/><stop offset=".55" stop-color="#e8c87a"/><stop offset="1" stop-color="#b98d45"/></linearGradient>
                 <filter id="lodgePenGlow" x="-80%" y="-60%" width="260%" height="240%"><feGaussianBlur stdDeviation="2" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
               </defs>
-              <path d="M40 5 65 30 53 70 40 92 27 70 15 30Z" fill="url(#lodgePenFill)" fill-opacity=".16" stroke="url(#lodgePenFill)" stroke-width="1.4" filter="url(#lodgePenGlow)"/>
-              <path d="M15 30 40 43 65 30M40 48v34M27 70h26" stroke="#f7e5ad" stroke-width="1.15" stroke-linecap="round" stroke-linejoin="round" opacity=".78"/>
-              <circle cx="40" cy="43" r="5" fill="#0d2a3a" stroke="#fff0bd" stroke-width="1.25"/>
-              <path d="M40 38v10" stroke="#e8c87a" stroke-width="1"/>
-              <circle cx="14" cy="18" r="2.2" fill="#8eccc0" opacity=".75"/><circle cx="68" cy="18" r="1.7" fill="#e8c87a" opacity=".8"/><circle cx="68" cy="76" r="1.3" fill="#d8f0ff" opacity=".58"/>
+              <g transform="rotate(34 40 52)" filter="url(#lodgePenGlow)">
+                <rect x="30" y="10" width="20" height="65" rx="3" fill="url(#lodgePencilBody)" stroke="#fff0bd" stroke-width="1"/>
+                <path d="M30 25h20M36.5 25v50M43.5 25v50" stroke="#9f7437" stroke-width=".8" opacity=".55"/>
+                <path d="M30 75 40 98 50 75Z" fill="#e5c69a" stroke="#f7dfb7" stroke-width="1"/>
+                <path d="m37.3 91.8 2.7 6.2 2.7-6.2Z" fill="#3a332d"/>
+                <path d="M30 10h20v15H30z" fill="#8eccc0" fill-opacity=".82" stroke="#c6eee3" stroke-width=".8"/>
+                <path d="M30 22h20" stroke="#e7f2e9" stroke-width="1" opacity=".72"/>
+              </g>
+              <circle cx="13" cy="24" r="2.2" fill="#8eccc0" opacity=".78"/><circle cx="67" cy="17" r="1.7" fill="#e8c87a" opacity=".85"/><circle cx="68" cy="82" r="1.3" fill="#e7f2e9" opacity=".62"/>
             </svg>
           </div>
           <div style="position:absolute;inset:0;pointer-events:none;">
-            <div style="position:absolute;width:7px;height:7px;border-radius:50%;background:rgba(180,220,255,.5);left:54%;top:35%;animation:heroFloat 4s ease-in-out infinite;"></div>
+            <div style="position:absolute;width:7px;height:7px;border-radius:50%;background:rgba(174,220,198,.52);left:54%;top:35%;animation:heroFloat 4s ease-in-out infinite;"></div>
             <div style="position:absolute;width:5px;height:5px;border-radius:50%;background:rgba(232,200,122,.45);left:42%;top:62%;animation:heroFloat 4s ease-in-out infinite;animation-delay:1.2s;"></div>
-            <div style="position:absolute;width:4px;height:4px;border-radius:50%;background:rgba(180,220,255,.32);left:62%;top:69%;animation:heroFloat 4s ease-in-out infinite;animation-delay:.6s;"></div>
+            <div style="position:absolute;width:4px;height:4px;border-radius:50%;background:rgba(210,238,224,.34);left:62%;top:69%;animation:heroFloat 4s ease-in-out infinite;animation-delay:.6s;"></div>
           </div>
         </div>
         <div class="lodge-feed-nav" id="lodgeFeedNav">
@@ -34574,7 +34575,7 @@ function _lodgeCloseSortMenu() {
 }
 function openLodge() {
   _lodgeUserFilter = null;
-  document.getElementById('lodgeTitle').textContent = 'The Lodge';
+  document.getElementById('lodgeTitle').textContent = '';
   document.getElementById('lodgeComposer').style.display = '';
   document.getElementById('lodgeBanner').style.display = '';
   document.getElementById('lodgeFeedNav').style.display = '';
