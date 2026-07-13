@@ -6,6 +6,13 @@ const { MongoClient, ObjectId } = require('mongodb');
 const bcrypt  = require('bcryptjs');
 const jwt     = require('jsonwebtoken');
 const { OAuth2Client } = require('google-auth-library');
+const {
+  moderateUsername,
+  moderatePublicText,
+  moderatePrivateText,
+  normalizeSort,
+  rankLodgePosts
+} = require('./social-safety');
 
 const app = express();
 
@@ -79,21 +86,19 @@ let prayerSchedules = [];
 let practiceSchedules = [];
 
 let mongoClient;
-// One-time sanitization of usernames stored before the charset rule was
-// enforced at registration (latent stored-XSS if any render path ever skips
-// escaping). Only touches usernames that violate [a-z0-9_]{3,24}; resolves
-// collisions and empties by appending a short id-derived suffix. Idempotent —
-// after the first run the offending set is empty and it's a no-op.
+// Sanitize legacy usernames that violate either the charset or community rule.
+// The migration is idempotent and resolves replacement-name collisions.
 async function migrateLegacyUsernames() {
   if (!usersCollection) return;
-  const bad = await usersCollection.find({
-    username: { $exists: true, $ne: null, $type: 'string', $not: /^[a-z0-9_]{3,24}$/ }
+  const candidates = await usersCollection.find({
+    username: { $exists: true, $ne: null, $type: 'string' }
   }).project({ _id: 1, username: 1 }).toArray();
+  const bad = candidates.filter(u => !/^[a-z0-9_]{3,24}$/.test(u.username) || !moderateUsername(u.username).ok);
   if (!bad.length) return;
   let fixed = 0;
   for (const u of bad) {
     let clean = String(u.username).trim().toLowerCase().replace(/[^a-z0-9_]/g, '').slice(0, 24);
-    if (clean.length < 3) clean = 'practitioner_' + String(u._id).slice(-5);
+    if (clean.length < 3 || !moderateUsername(clean).ok) clean = 'practitioner_' + String(u._id).slice(-5);
     // Resolve collisions against any OTHER user holding the cleaned name.
     let candidate = clean, n = 0;
     while (await usersCollection.findOne({ username: candidate, _id: { $ne: u._id } })) {
@@ -104,7 +109,7 @@ async function migrateLegacyUsernames() {
     await usersCollection.updateOne({ _id: u._id }, { $set: { username: candidate } });
     fixed++;
   }
-  console.log(`[Migration] Sanitized ${fixed} legacy username(s).`);
+  console.log(`[Migration] Replaced ${fixed} legacy username(s).`);
 }
 
 // Unified graph migration: each accepted friendship becomes two active follow
@@ -145,6 +150,7 @@ async function connectDB() {
     commentsCollection = db.collection('comments');
     try { await followsCollection.createIndex({ followerId: 1, followeeId: 1 }, { unique: true }); } catch(e) {}
     try { await postsCollection.createIndex({ userId: 1, createdAt: -1 }); } catch(e) {}
+    try { await postsCollection.createIndex({ userId: 1, type: 1, createdAt: -1 }); } catch(e) {}
     try { await postsCollection.createIndex({ createdAt: -1 }); } catch(e) {}
     try { await likesCollection.createIndex({ postId: 1, userId: 1 }, { unique: true }); } catch(e) {}
     try { await commentsCollection.createIndex({ postId: 1, createdAt: 1 }); } catch(e) {}
@@ -672,6 +678,7 @@ app.post('/api/sync/auth/register', authRateLimit, async (req, res) => {
       cleanUsername = username.trim().toLowerCase().replace(/[^a-z0-9_]/g, '');
       if (cleanUsername.length < 3) return res.status(400).json({ error: 'Username must be at least 3 characters (letters, numbers, underscores)' });
       if (cleanUsername.length > 24) return res.status(400).json({ error: 'Username too long (max 24 characters)' });
+      if (!moderateUsername(cleanUsername).ok) return res.status(400).json({ error: 'Choose a different username' });
     }
     const existingUser = await usersCollection.findOne({ email });
     if (existingUser) return res.status(400).json({ error: 'Email already in use' });
@@ -734,6 +741,7 @@ app.post('/api/sync/auth/set-username', verifyToken, async (req, res) => {
     const clean = username.trim().toLowerCase().replace(/[^a-z0-9_]/g, '');
     if (clean.length < 3) return res.status(400).json({ error: 'Username must be at least 3 characters (letters, numbers, underscores)' });
     if (clean.length > 24) return res.status(400).json({ error: 'Username too long (max 24 characters)' });
+    if (!moderateUsername(clean).ok) return res.status(400).json({ error: 'Choose a different username' });
     const existing = await usersCollection.findOne({ username: clean });
     if (existing && existing._id.toString() !== req.user.userId) return res.status(400).json({ error: 'Username already taken' });
     await usersCollection.updateOne({ _id: new ObjectId(req.user.userId) }, { $set: { username: clean } });
@@ -1724,6 +1732,7 @@ app.put('/api/sync/status', verifyToken, async (req, res) => {
     let { text } = req.body;
     if (typeof text !== 'string') return res.status(400).json({ error: 'text required' });
     text = text.replace(/[\u0000-\u001f\u007f]/g, ' ').trim().slice(0, 280);
+    if (text && !moderatePublicText(text).ok) return res.status(400).json({ error: 'This update cannot be published' });
     const status = { text, updatedAt: new Date() };
     await usersCollection.updateOne(
       { _id: new ObjectId(req.user.userId) },
@@ -1753,9 +1762,8 @@ app.put('/api/sync/privacy', verifyToken, async (req, res) => {
 });
 
 // ── THE LODGE — social feed (see SOCIAL_PLAN.md) ─────────
-// Phase 1: posts + likes + comments over the unified follows graph.
-// No automated moderation in v1 by decision — sanitizeSocialText() is the
-// single choke point where a moderation call would slot in later.
+// Posts + likes + comments over the unified follows graph. Submission routes
+// enforce moderation here on the server; client checks are only explanatory.
 const POST_MAX_LEN = 280;
 
 function sanitizeSocialText(text, maxLen) {
@@ -1770,8 +1778,14 @@ async function lodgeFollowingIds(userId) {
   return rows.map(r => r.followeeId);
 }
 
+function lodgePostAllowed(post) {
+  return !!(post && moderatePublicText(post.text || '').ok
+    && (!post.title || moderatePublicText(post.title).ok));
+}
+
 // Attach author identity + viewer's like state to a page of posts.
 async function decoratePosts(posts, viewerId) {
+  posts = posts.filter(lodgePostAllowed);
   const userIds = [...new Set(posts.map(p => p.userId))];
   const users = userIds.length ? await usersCollection.find(
     { _id: { $in: userIds.map(id => new ObjectId(id)) } }
@@ -1805,6 +1819,9 @@ app.post('/api/social/posts', verifyToken, async (req, res) => {
     const text = sanitizeSocialText(req.body.text, type === 'blog' ? BLOG_MAX_LEN : POST_MAX_LEN);
     if (!text) return res.status(400).json({ error: 'text required' });
     const title = (type === 'blog' && req.body.title) ? sanitizeSocialText(req.body.title, 80) : null;
+    if (!moderatePublicText(text).ok || (title && !moderatePublicText(title).ok)) {
+      return res.status(400).json({ error: 'This writing cannot be published' });
+    }
     const userId = req.user.userId;
     const dayStart = new Date(); dayStart.setHours(0, 0, 0, 0);
     const todayCount = await postsCollection.countDocuments({ userId, createdAt: { $gte: dayStart } });
@@ -1825,20 +1842,35 @@ app.post('/api/social/posts', verifyToken, async (req, res) => {
   }
 });
 
-// FEED — chronological, own posts + people you follow, cursor-paginated.
+// FEED — own posts + people followed. Newest uses a timestamp cursor; ranked
+// views use an offset cursor over a bounded six-month candidate window.
 app.get('/api/social/feed', verifyToken, async (req, res) => {
   try {
     const userId = req.user.userId;
+    const sort = normalizeSort(req.query.sort);
     const ids = await lodgeFollowingIds(userId);
     ids.push(userId);
     const q = { userId: { $in: ids } };
     q.type = req.query.type === 'blog' ? 'blog' : { $ne: 'blog' };
-    if (req.query.cursor) {
+    if (sort === 'newest' && req.query.cursor) {
       const before = new Date(req.query.cursor);
       if (!isNaN(before.getTime())) q.createdAt = { $lt: before };
     }
-    const posts = await postsCollection.find(q).sort({ createdAt: -1 }).limit(20).toArray();
-    res.json({ posts: await decoratePosts(posts, userId) });
+    if (sort === 'newest') {
+      const posts = await postsCollection.find(q).sort({ createdAt: -1 }).limit(20).toArray();
+      const nextCursor = posts.length === 20 ? posts[posts.length - 1].createdAt.toISOString() : null;
+      return res.json({ posts: await decoratePosts(posts, userId), sort, nextCursor });
+    }
+
+    const horizon = new Date(Date.now() - 180 * 24 * 60 * 60 * 1000);
+    q.createdAt = { $gte: horizon };
+    const match = /^rank:([a-z]+):(\d+)$/.exec(String(req.query.cursor || ''));
+    const offset = match && match[1] === sort ? Math.min(480, Number(match[2]) || 0) : 0;
+    const candidates = await postsCollection.find(q).sort({ createdAt: -1 }).limit(500).toArray();
+    const ranked = rankLodgePosts(candidates.filter(lodgePostAllowed), sort);
+    const posts = ranked.slice(offset, offset + 20);
+    const nextCursor = offset + 20 < ranked.length ? `rank:${sort}:${offset + 20}` : null;
+    res.json({ posts: await decoratePosts(posts, userId), sort, nextCursor });
   } catch (err) {
     console.error('Feed error:', err);
     res.status(500).json({ error: 'Feed failed' });
@@ -1949,7 +1981,7 @@ app.get('/api/social/posts/:id/comments', verifyToken, async (req, res) => {
     if (!(await canEngagePost(req.user.userId, cp))) return res.status(403).json({ error: 'Not available' });
     let comments = await commentsCollection.find({ postId: req.params.id }).sort({ createdAt: 1 }).limit(200).toArray();
     const hidden = await blockedIdSet(req.user.userId);
-    comments = comments.filter(c => !hidden.has(c.userId));
+    comments = comments.filter(c => !hidden.has(c.userId) && moderatePublicText(c.text || '').ok);
     const ids = [...new Set(comments.map(c => c.userId))];
     const users = ids.length ? await usersCollection.find({ _id: { $in: ids.map(id => new ObjectId(id)) } })
       .project({ username: 1 }).toArray() : [];
@@ -1971,6 +2003,7 @@ app.post('/api/social/posts/:id/comments', verifyToken, async (req, res) => {
   try {
     const text = sanitizeSocialText(req.body.text, POST_MAX_LEN);
     if (!text) return res.status(400).json({ error: 'text required' });
+    if (!moderatePublicText(text).ok) return res.status(400).json({ error: 'This comment cannot be published' });
     const post = await postsCollection.findOne({ _id: new ObjectId(req.params.id) });
     if (!post) return res.status(404).json({ error: 'Post not found' });
     if (!(await canEngagePost(req.user.userId, post))) return res.status(403).json({ error: 'Not available' });
@@ -2248,7 +2281,7 @@ app.get('/api/social/conversations', verifyToken, async (req, res) => {
         id: c._id.toString(), userId: other,
         username: (byId[other] && byId[other].username) || ('practitioner_' + String(other).slice(-5)),
         profilePic: (byId[other] && byId[other].profilePic) || null,
-        lastPreview: c.lastPreview || '', lastMsgAt: c.lastMsgAt, unread
+        lastPreview: moderatePrivateText(c.lastPreview || '').ok ? (c.lastPreview || '') : '', lastMsgAt: c.lastMsgAt, unread
       });
     }
     res.json({ conversations: out });
@@ -2262,6 +2295,7 @@ app.get('/api/social/conversations/:id/messages', verifyToken, async (req, res) 
     if (!convo || (convo.participants || []).indexOf(selfId) === -1) return res.status(404).json({ error: 'Not found' });
     let msgs = await messagesCollection.find({ convId: convo._id.toString() }).sort({ createdAt: -1 }).limit(50).toArray();
     msgs.reverse();
+    msgs = msgs.filter(m => moderatePrivateText(m.text || '').ok);
     await conversationsCollection.updateOne({ _id: convo._id }, { $set: { ['lastRead.' + selfId]: new Date() } });
     res.json({ messages: msgs.map(m => ({
       id: m._id.toString(), text: m.text, createdAt: m.createdAt, mine: m.senderId === selfId
@@ -2274,6 +2308,7 @@ app.post('/api/social/conversations/:id/messages', verifyToken, async (req, res)
     const selfId = req.user.userId;
     const text = sanitizeSocialText(req.body.text, DM_MAX_LEN);
     if (!text) return res.status(400).json({ error: 'text required' });
+    if (!moderatePrivateText(text).ok) return res.status(400).json({ error: 'This message cannot be sent' });
     const convo = await conversationsCollection.findOne({ _id: new ObjectId(req.params.id) });
     if (!convo || (convo.participants || []).indexOf(selfId) === -1) return res.status(404).json({ error: 'Not found' });
     const other = (convo.participants || []).find(x => x !== selfId);

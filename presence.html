@@ -740,15 +740,25 @@
     .lodge-scroll { flex:1; overflow-y:auto; -webkit-overflow-scrolling:touch; scrollbar-width:none; padding:18px 20px max(env(safe-area-inset-bottom),32px); }
     .lodge-scroll::-webkit-scrollbar { display:none; }
     .lodge-stream { width:100%; max-width:680px; margin:0 auto; }
-    .lodge-intro { display:grid; grid-template-columns:46px 1fr; gap:14px; align-items:center; padding:3px 2px 17px; }
-    .lodge-intro__mark { width:46px; height:46px; display:flex; align-items:center; justify-content:center; color:#e8c87a; border:1px solid rgba(232,200,122,.24); border-radius:50%; background:rgba(232,200,122,.045); box-shadow:0 0 22px rgba(232,200,122,.07); }
-    .lodge-intro__mark svg { width:25px; height:25px; }
-    .lodge-intro__label { font-family:'DM Mono',monospace; font-size:8px; letter-spacing:.24em; text-transform:uppercase; color:#e8c87a; margin-bottom:4px; }
-    .lodge-intro__text { font-family:'Cormorant Garamond',serif; font-size:16px; line-height:1.35; color:rgba(237,232,222,.78); }
+    .lodge-intro { position:relative; min-height:126px; box-sizing:border-box; display:grid; grid-template-columns:minmax(0,1fr) 116px; align-items:center; gap:8px; padding:20px 12px 20px 20px; margin:0 0 16px; overflow:hidden; border:1px solid rgba(232,200,122,.16); border-radius:8px; background:#11141c; }
+    .lodge-intro::before { content:''; position:absolute; inset:0; pointer-events:none; background:linear-gradient(108deg,rgba(126,184,164,.1),transparent 42%,rgba(181,142,216,.07) 72%,rgba(232,200,122,.08)); }
+    .lodge-intro::after { content:''; position:absolute; left:20px; bottom:0; width:44px; height:1px; background:#e8c87a; box-shadow:50px 0 #8eccc0,100px 0 rgba(181,142,216,.7); opacity:.8; }
+    .lodge-intro__copy { position:relative; z-index:1; min-width:0; }
+    .lodge-intro__label { font-family:'DM Mono',monospace; font-size:8px; letter-spacing:.24em; text-transform:uppercase; color:#8eccc0; margin-bottom:7px; }
+    .lodge-intro__title { font-family:'Cormorant Garamond',serif; font-size:27px; line-height:1; color:#f0eadf; font-weight:400; margin-bottom:7px; }
+    .lodge-intro__text { max-width:330px; font-family:'Cormorant Garamond',serif; font-size:15px; line-height:1.38; color:rgba(237,232,222,.68); }
+    .lodge-intro__art { position:relative; z-index:1; width:112px; height:92px; color:#e8c87a; opacity:.9; justify-self:end; }
+    .lodge-intro__art svg { width:100%; height:100%; overflow:visible; }
     #lodgeTabs { margin:0 0 14px; border-bottom-color:rgba(255,255,255,.07); }
     #lodgeTabs .mode-tab { min-height:44px; font-size:9px; color:rgba(221,216,206,.5); }
     #lodgeTabs .mode-tab.on { color:#8eccc0; border-bottom-color:#8eccc0; }
     #lodgeTabs .mode-tab.on[data-lodge-tab="blog"] { color:#e8c87a; border-bottom-color:#e8c87a; }
+    .lodge-sort { display:flex; align-items:center; gap:6px; margin:-3px 0 14px; padding:0 0 2px; overflow-x:auto; scrollbar-width:none; }
+    .lodge-sort::-webkit-scrollbar { display:none; }
+    .lodge-sort__btn { flex:0 0 auto; min-height:44px; padding:0 12px; border:0; border-bottom:1px solid rgba(255,255,255,.08); background:transparent; color:rgba(221,216,206,.45); font-family:'DM Mono',monospace; font-size:8px; letter-spacing:.1em; text-transform:uppercase; cursor:pointer; transition:color .18s,border-color .18s,background .18s; }
+    .lodge-sort__btn.on { color:#8eccc0; border-bottom-color:#8eccc0; background:rgba(142,204,192,.035); }
+    .lodge-sort__btn[data-lodge-sort="hot"].on { color:#d4956e; border-bottom-color:#d4956e; background:rgba(212,149,110,.035); }
+    .lodge-sort__btn[data-lodge-sort="controversial"].on { color:#b58ed8; border-bottom-color:#b58ed8; background:rgba(181,142,216,.035); }
     .lodge-compose { width:100%; min-height:64px; display:grid; grid-template-columns:38px 1fr auto; align-items:center; gap:12px; padding:11px 12px; margin:0 0 18px; text-align:left; border:1px solid rgba(142,204,192,.18); border-radius:8px; background:rgba(142,204,192,.035); color:var(--text); cursor:pointer; transition:border-color .2s,background .2s; }
     .lodge-compose:hover { border-color:rgba(142,204,192,.34); background:rgba(142,204,192,.06); }
     .lodge-compose__mark { width:38px; height:38px; border-radius:50%; display:flex; align-items:center; justify-content:center; color:#8eccc0; background:rgba(142,204,192,.1); border:1px solid rgba(142,204,192,.18); }
@@ -801,6 +811,12 @@
     .chat-conv__name { font-size:11px; color:var(--text); font-family:'DM Mono',monospace; }
     .chat-conv__preview { font-size:10px; color:var(--muted); font-family:'DM Mono',monospace; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:220px; margin-top:2px; }
     .chat-unread { width:8px; height:8px; border-radius:50%; background:#d4956e; margin-left:auto; flex-shrink:0; }
+    @media (max-width:420px) {
+      .lodge-intro { grid-template-columns:minmax(0,1fr) 88px; min-height:122px; padding:18px 8px 18px 17px; }
+      .lodge-intro__art { width:88px; height:82px; }
+      .lodge-intro__title { font-size:24px; }
+      .lodge-intro__text { font-size:14px; }
+    }
 
     /* Friend earned-achievement strip: fixed-width discs that scroll horizontally */
     .friend-ach-strip { overflow-x:auto; scrollbar-width:none; -ms-overflow-style:none; padding-bottom:2px; }
@@ -5546,17 +5562,34 @@ body:not(.tut-live) #tutCorgi {
     <div id="lodgeBody" class="lodge-scroll">
       <div class="lodge-stream">
         <div class="lodge-intro" id="lodgeBanner">
-          <div class="lodge-intro__mark" aria-hidden="true">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3c3 3 4.5 6.3 3.6 10L12 18l-3.6-5C7.5 9.3 9 6 12 3z"/><path d="M12 9v7"/><circle cx="12" cy="21" r="1" fill="currentColor" stroke="none"/></svg>
-          </div>
-          <div>
+          <div class="lodge-intro__copy">
             <div class="lodge-intro__label">The Shared Record</div>
-            <div class="lodge-intro__text">Notes and essays from practitioners walking the path beside you.</div>
+            <div class="lodge-intro__title">Practice, witnessed.</div>
+            <div class="lodge-intro__text">Reflections and essays from practitioners walking beside you.</div>
+          </div>
+          <div class="lodge-intro__art" aria-hidden="true">
+            <svg viewBox="0 0 112 92" fill="none">
+              <path d="M22 82V36C22 17 37 5 56 5s34 12 34 31v46" stroke="currentColor" stroke-width="1.2" opacity=".32"/>
+              <path d="M31 82V38c0-14 11-24 25-24s25 10 25 24v44" stroke="#8eccc0" stroke-width="1" opacity=".38"/>
+              <path d="M42 82V42c0-9 6-16 14-16s14 7 14 16v40" stroke="#b58ed8" stroke-width="1" opacity=".5"/>
+              <circle cx="56" cy="48" r="8" stroke="currentColor" stroke-width="1.2"/>
+              <circle cx="56" cy="48" r="2" fill="#8eccc0"/>
+              <path d="M56 56v26M12 82h88" stroke="currentColor" stroke-width="1" opacity=".55"/>
+              <circle cx="22" cy="23" r="2" fill="#8eccc0"/><circle cx="90" cy="25" r="2" fill="#b58ed8"/><circle cx="96" cy="59" r="1.5" fill="currentColor"/>
+              <path d="M22 23 43 40M90 25 69 40M96 59 66 51" stroke="currentColor" stroke-width=".7" opacity=".3"/>
+            </svg>
           </div>
         </div>
         <div class="mode-tabs" id="lodgeTabs">
           <button class="mode-tab on" data-lodge-tab="note">Reflections</button>
           <button class="mode-tab" data-lodge-tab="blog">Essays</button>
+        </div>
+        <div class="lodge-sort" id="lodgeSort" role="tablist" aria-label="Sort Lodge posts">
+          <button class="lodge-sort__btn on" role="tab" aria-selected="true" data-lodge-sort="newest" title="Newest first">Newest</button>
+          <button class="lodge-sort__btn" role="tab" aria-selected="false" data-lodge-sort="liked" title="Highest like count first">Most liked</button>
+          <button class="lodge-sort__btn" role="tab" aria-selected="false" data-lodge-sort="commented" title="Highest comment count first">Most commented</button>
+          <button class="lodge-sort__btn" role="tab" aria-selected="false" data-lodge-sort="hot" title="Recent posts weighted by likes and discussion">Hot</button>
+          <button class="lodge-sort__btn" role="tab" aria-selected="false" data-lodge-sort="controversial" title="High discussion relative to likes">Controversial</button>
         </div>
         <button class="lodge-compose" id="lodgeComposer">
           <span class="lodge-compose__mark" aria-hidden="true">
@@ -10104,14 +10137,12 @@ function getMyStatus() {
 function statusIsFresh(s) {
   return !!(s && s.text && s.updatedAt && (Date.now() - new Date(s.updatedAt).getTime() < STATUS_FRESH_MS));
 }
-function setMyStatus(text) {
+async function setMyStatus(text) {
   text = String(text || '').replace(/[\u0000-\u001f\u007f]/g, ' ').trim().slice(0, STATUS_MAX);
-  var s = { text: text, updatedAt: new Date().toISOString() };
-  try { localStorage.setItem(STATUS_KEY, JSON.stringify(s)); } catch(e) {}
   // Non-empty status → a Lodge post (server sets user.status as a side effect).
   // Clearing (empty text) only clears the status; it never creates a post.
   if (authToken) {
-    var req = text
+    var res = await (text
       ? fetch(SERVER_URL + '/api/social/posts', {
           method: 'POST',
           headers: { 'Authorization': 'Bearer ' + authToken, 'Content-Type': 'application/json' },
@@ -10121,9 +10152,12 @@ function setMyStatus(text) {
           method: 'PUT',
           headers: { 'Authorization': 'Bearer ' + authToken, 'Content-Type': 'application/json' },
           body: JSON.stringify({ text: '' })
-        });
-    s.done = req.catch(function() {});
+        }));
+    var data = await res.json().catch(function() { return {}; });
+    if (!res.ok) throw new Error(data.error || 'Status could not be shared');
   }
+  var s = { text: text, updatedAt: new Date().toISOString() };
+  try { localStorage.setItem(STATUS_KEY, JSON.stringify(s)); } catch(e) {}
   return s;
 }
 function renderMyStatus(signedIn) {
@@ -10169,25 +10203,29 @@ function _wireStatusEditor() {
   if (ta && cnt) ta.addEventListener('input', function() { cnt.textContent = ta.value.length; });
   function signedInNow() { return !!(syncEnabled && (authEmail || authUsername)); }
   var save = document.getElementById('statusSaveBtn');
-  if (save) save.addEventListener('click', function() {
-    var s = setMyStatus(ta ? ta.value : '');
-    closeStatusEditor();
-    renderMyStatus(signedInNow());
-    showToast('Status shared', 1800, 'gold');
-    // If the Lodge is open, refresh the feed once the post lands.
-    var lodgeOpen = document.getElementById('lodgeScreen').classList.contains('active');
-    if (lodgeOpen && typeof loadLodgeFeed === 'function') {
-      (s.done || Promise.resolve()).then(function() { loadLodgeFeed(); });
-    }
+  if (save) save.addEventListener('click', async function() {
+    if (save.disabled) return;
+    save.disabled = true;
+    try {
+      var s = await setMyStatus(ta ? ta.value : '');
+      closeStatusEditor();
+      renderMyStatus(signedInNow());
+      showToast('Status shared', 1800, 'gold');
+      var lodgeOpen = document.getElementById('lodgeScreen').classList.contains('active');
+      if (lodgeOpen && typeof loadLodgeFeed === 'function') loadLodgeFeed();
+    } catch(e) { showToast(e.message || 'Status could not be shared'); }
+    finally { save.disabled = false; }
   });
   var clr = document.getElementById('statusClearBtn');
-  if (clr) clr.addEventListener('click', function() {
-    setMyStatus('');
-    if (ta) ta.value = '';
-    if (cnt) cnt.textContent = '0';
-    closeStatusEditor();
-    renderMyStatus(signedInNow());
-    showToast('Status cleared', 1600);
+  if (clr) clr.addEventListener('click', async function() {
+    try {
+      await setMyStatus('');
+      if (ta) ta.value = '';
+      if (cnt) cnt.textContent = '0';
+      closeStatusEditor();
+      renderMyStatus(signedInNow());
+      showToast('Status cleared', 1600);
+    } catch(e) { showToast(e.message || 'Status could not be cleared'); }
   });
   var cancel = document.getElementById('statusCancelBtn');
   if (cancel) cancel.addEventListener('click', closeStatusEditor);
@@ -34479,8 +34517,10 @@ var LODGE_CACHE_KEY = 'presence_lodge_feed_v1';
 var _lodgePosts = [];
 var _lodgeCursor = null;
 var _lodgeLoading = false;
+var _lodgeSort = 'newest';
 
 function _lodgeCachedList() {
+  if (_lodgeSort !== 'newest') return [];
   try { var a = JSON.parse(localStorage.getItem(LODGE_CACHE_KEY)); return Array.isArray(a) ? a : []; } catch(e) { return []; }
 }
 
@@ -34495,6 +34535,13 @@ function _lodgeSetTabUi() {
   if (hint) hint.textContent = _lodgeTab === 'blog' ? 'Begin a longer piece...' : 'Share what is present for you today...';
   if (cta) cta.textContent = _lodgeTab === 'blog' ? 'New essay' : 'New reflection';
 }
+function _lodgeSetSortUi() {
+  document.querySelectorAll('#lodgeSort [data-lodge-sort]').forEach(function(btn) {
+    var on = btn.getAttribute('data-lodge-sort') === _lodgeSort;
+    btn.classList.toggle('on', on);
+    btn.setAttribute('aria-selected', on ? 'true' : 'false');
+  });
+}
 function openLodge() {
   _lodgeUserFilter = null;
   document.getElementById('lodgeTitle').textContent = 'The Lodge';
@@ -34502,7 +34549,9 @@ function openLodge() {
   document.getElementById('lodgeComposer').style.display = '';
   document.getElementById('lodgeBanner').style.display = '';
   document.getElementById('lodgeTabs').style.display = '';
+  document.getElementById('lodgeSort').style.display = '';
   _lodgeSetTabUi();
+  _lodgeSetSortUi();
   showScreen('lodgeScreen');
   // Instant paint from cache, then network refresh (established pattern).
   _lodgePosts = _lodgeCachedList();
@@ -34520,6 +34569,7 @@ function openLodgeUser(userId, username) {
   document.getElementById('lodgeComposer').style.display = 'none';
   document.getElementById('lodgeBanner').style.display = 'none';
   document.getElementById('lodgeTabs').style.display = 'none';
+  document.getElementById('lodgeSort').style.display = 'none';
   showScreen('lodgeScreen');
   _lodgePosts = []; _lodgeCursor = null; _lodgeLoading = true;
   renderLodgeFeed();
@@ -34533,6 +34583,7 @@ async function loadLodgeFeed(cursor) {
     var params = [];
     if (!_lodgeUserFilter && _lodgeTab === 'blog') params.push('type=blog');
     else if (!_lodgeUserFilter) params.push('type=note');
+    if (!_lodgeUserFilter) params.push('sort=' + encodeURIComponent(_lodgeSort));
     if (cursor) params.push('cursor=' + encodeURIComponent(cursor));
     var base = _lodgeUserFilter
       ? SERVER_URL + '/api/social/users/' + encodeURIComponent(_lodgeUserFilter.userId) + '/posts'
@@ -34543,8 +34594,10 @@ async function loadLodgeFeed(cursor) {
     var data = await res.json();
     var posts = (data && data.posts) || [];
     _lodgePosts = cursor ? _lodgePosts.concat(posts) : posts;
-    _lodgeCursor = posts.length === 20 ? posts[posts.length - 1].createdAt : null;
-    if (!cursor && !_lodgeUserFilter && _lodgeTab === 'note') try { localStorage.setItem(LODGE_CACHE_KEY, JSON.stringify(_lodgePosts.slice(0, 20))); } catch(e) {}
+    _lodgeCursor = Object.prototype.hasOwnProperty.call(data, 'nextCursor')
+      ? data.nextCursor
+      : (posts.length === 20 ? posts[posts.length - 1].createdAt : null);
+    if (!cursor && !_lodgeUserFilter && _lodgeTab === 'note' && _lodgeSort === 'newest') try { localStorage.setItem(LODGE_CACHE_KEY, JSON.stringify(_lodgePosts.slice(0, 20))); } catch(e) {}
   } catch(e) { console.warn('Lodge feed failed', e); }
   finally { _lodgeLoading = false; renderLodgeFeed(); }
 }
@@ -34705,7 +34758,7 @@ async function deleteLodgePost(pid, card) {
     if (!res.ok) return;
     card.remove();
     _lodgePosts = _lodgePosts.filter(function(p) { return p.id !== pid; });
-    try { localStorage.setItem(LODGE_CACHE_KEY, JSON.stringify(_lodgePosts.slice(0, 20))); } catch(e) {}
+    if (_lodgeSort === 'newest') try { localStorage.setItem(LODGE_CACHE_KEY, JSON.stringify(_lodgePosts.slice(0, 20))); } catch(e) {}
     if (!_lodgePosts.length) renderLodgeFeed();
   } catch(e) {}
 }
@@ -34755,6 +34808,17 @@ document.getElementById('lodgeTabs').addEventListener('click', function(e) {
   if (!t || t.getAttribute('data-lodge-tab') === _lodgeTab) return;
   _lodgeTab = t.getAttribute('data-lodge-tab');
   _lodgeSetTabUi();
+  _lodgePosts = []; _lodgeCursor = null; _lodgeLoading = true;
+  renderLodgeFeed();
+  loadLodgeFeed();
+});
+document.getElementById('lodgeSort').addEventListener('click', function(e) {
+  var btn = e.target.closest('[data-lodge-sort]');
+  if (!btn) return;
+  var next = btn.getAttribute('data-lodge-sort');
+  if (next === _lodgeSort) return;
+  _lodgeSort = next;
+  _lodgeSetSortUi();
   _lodgePosts = []; _lodgeCursor = null; _lodgeLoading = true;
   renderLodgeFeed();
   loadLodgeFeed();
