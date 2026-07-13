@@ -729,7 +729,6 @@
     .lodge-back { width:44px; height:44px; border:0; background:transparent; color:rgba(221,216,206,.78); display:flex; align-items:center; justify-content:center; cursor:pointer; }
     .lodge-back svg,.lodge-tool svg { width:18px; height:18px; }
     .lodge-heading { min-width:0; }
-    .lodge-heading__kicker { font-family:'DM Mono',monospace; font-size:8px; letter-spacing:.24em; text-transform:uppercase; color:rgba(232,200,122,.72); margin-bottom:2px; }
     .lodge-heading__title { font-family:'Cormorant Garamond',serif; font-size:24px; line-height:1; font-weight:300; color:var(--text); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
     .lodge-tools { display:flex; align-items:center; gap:2px; }
     .lodge-tool { position:relative; width:44px; height:44px; border:0; border-radius:8px; background:transparent; color:rgba(221,216,206,.7); display:flex; align-items:center; justify-content:center; cursor:pointer; transition:background .18s,color .18s; }
@@ -740,25 +739,34 @@
     .lodge-scroll { flex:1; overflow-y:auto; -webkit-overflow-scrolling:touch; scrollbar-width:none; padding:18px 20px max(env(safe-area-inset-bottom),32px); }
     .lodge-scroll::-webkit-scrollbar { display:none; }
     .lodge-stream { width:100%; max-width:680px; margin:0 auto; }
-    .lodge-intro { position:relative; min-height:126px; box-sizing:border-box; display:grid; grid-template-columns:minmax(0,1fr) 116px; align-items:center; gap:8px; padding:20px 12px 20px 20px; margin:0 0 16px; overflow:hidden; border:1px solid rgba(232,200,122,.16); border-radius:8px; background:#11141c; }
-    .lodge-intro::before { content:''; position:absolute; inset:0; pointer-events:none; background:linear-gradient(108deg,rgba(126,184,164,.1),transparent 42%,rgba(181,142,216,.07) 72%,rgba(232,200,122,.08)); }
-    .lodge-intro::after { content:''; position:absolute; left:20px; bottom:0; width:44px; height:1px; background:#e8c87a; box-shadow:50px 0 #8eccc0,100px 0 rgba(181,142,216,.7); opacity:.8; }
-    .lodge-intro__copy { position:relative; z-index:1; min-width:0; }
-    .lodge-intro__label { font-family:'DM Mono',monospace; font-size:8px; letter-spacing:.24em; text-transform:uppercase; color:#8eccc0; margin-bottom:7px; }
-    .lodge-intro__title { font-family:'Cormorant Garamond',serif; font-size:27px; line-height:1; color:#f0eadf; font-weight:400; margin-bottom:7px; }
-    .lodge-intro__text { max-width:330px; font-family:'Cormorant Garamond',serif; font-size:15px; line-height:1.38; color:rgba(237,232,222,.68); }
-    .lodge-intro__art { position:relative; z-index:1; width:112px; height:92px; color:#e8c87a; opacity:.9; justify-self:end; }
-    .lodge-intro__art svg { width:100%; height:100%; overflow:visible; }
-    #lodgeTabs { margin:0 0 14px; border-bottom-color:rgba(255,255,255,.07); }
+    .lodge-intro { position:relative; height:148px; box-sizing:border-box; display:flex; align-items:center; justify-content:space-between; padding:0 22px; margin:0 0 14px; overflow:hidden; border-radius:18px; background:linear-gradient(145deg,#0a1a2e 0%,#0d2a3a 40%,#0c1e30 100%); }
+    .lodge-intro::before { content:''; position:absolute; inset:0; pointer-events:none; background:radial-gradient(ellipse 60% 70% at 76% 54%,rgba(100,190,220,.18) 0%,transparent 70%); }
+    .lodge-intro::after { content:''; position:absolute; inset:0; pointer-events:none; background:radial-gradient(ellipse 40% 50% at 72% 48%,rgba(232,200,122,.11) 0%,transparent 62%); }
+    .lodge-intro__copy { position:relative; z-index:2; min-width:0; display:flex; flex-direction:column; gap:3px; }
+    .lodge-intro__label { font-family:'DM Mono',monospace; font-size:8px; letter-spacing:.28em; text-transform:uppercase; color:rgba(142,204,224,.7); }
+    .lodge-intro__title { font-family:'Cormorant Garamond',serif; font-size:24px; line-height:1.1; color:#d8f0ff; font-weight:300; }
+    .lodge-intro__text { font-family:'DM Mono',monospace; font-size:9px; line-height:1.35; letter-spacing:.1em; color:rgba(200,230,245,.42); }
+    .lodge-intro__glow { position:absolute; right:6px; top:50%; width:170px; height:170px; transform:translateY(-50%); background:radial-gradient(circle,rgba(184,234,255,.22) 0%,rgba(232,200,122,.1) 38%,transparent 70%); pointer-events:none; }
+    .lodge-intro__art { position:relative; z-index:2; width:82px; height:112px; display:flex; align-items:center; justify-content:center; flex-shrink:0; color:#e8c87a; filter:drop-shadow(0 0 16px rgba(232,200,122,.38)); animation:omniaFloat 4.5s ease-in-out infinite; }
+    .lodge-intro__art svg { width:76px; height:96px; overflow:visible; }
+    .lodge-feed-nav { position:relative; display:grid; grid-template-columns:minmax(0,1fr) 44px; align-items:end; gap:8px; margin-bottom:14px; }
+    #lodgeTabs { margin:0; border-bottom-color:rgba(255,255,255,.07); }
     #lodgeTabs .mode-tab { min-height:44px; font-size:9px; color:rgba(221,216,206,.5); }
     #lodgeTabs .mode-tab.on { color:#8eccc0; border-bottom-color:#8eccc0; }
     #lodgeTabs .mode-tab.on[data-lodge-tab="blog"] { color:#e8c87a; border-bottom-color:#e8c87a; }
-    .lodge-sort { display:flex; align-items:center; gap:6px; margin:-3px 0 14px; padding:0 0 2px; overflow-x:auto; scrollbar-width:none; }
-    .lodge-sort::-webkit-scrollbar { display:none; }
-    .lodge-sort__btn { flex:0 0 auto; min-height:44px; padding:0 12px; border:0; border-bottom:1px solid rgba(255,255,255,.08); background:transparent; color:rgba(221,216,206,.45); font-family:'DM Mono',monospace; font-size:8px; letter-spacing:.1em; text-transform:uppercase; cursor:pointer; transition:color .18s,border-color .18s,background .18s; }
-    .lodge-sort__btn.on { color:#8eccc0; border-bottom-color:#8eccc0; background:rgba(142,204,192,.035); }
-    .lodge-sort__btn[data-lodge-sort="hot"].on { color:#d4956e; border-bottom-color:#d4956e; background:rgba(212,149,110,.035); }
-    .lodge-sort__btn[data-lodge-sort="controversial"].on { color:#b58ed8; border-bottom-color:#b58ed8; background:rgba(181,142,216,.035); }
+    .lodge-filter { position:relative; width:44px; height:44px; display:flex; align-items:center; justify-content:center; border:1px solid rgba(255,255,255,.09); border-radius:10px; background:rgba(255,255,255,.04); color:rgba(221,216,206,.55); cursor:pointer; transition:background .16s,color .16s,border-color .16s; }
+    .lodge-filter:active,.lodge-filter[aria-expanded="true"] { background:rgba(142,204,192,.08); color:#8eccc0; border-color:rgba(142,204,192,.24); }
+    .lodge-filter svg { width:18px; height:16px; }
+    .lodge-filter::after { content:''; position:absolute; top:6px; right:6px; width:5px; height:5px; border-radius:50%; background:#d4956e; opacity:0; box-shadow:0 0 7px rgba(212,149,110,.7); }
+    .lodge-filter.active::after { opacity:1; }
+    .lodge-sort { position:absolute; top:calc(100% + 7px); right:0; z-index:70; min-width:218px; padding:6px; border:1px solid rgba(255,255,255,.1); border-radius:14px; background:#1c1d2e; box-shadow:0 12px 32px rgba(0,0,0,.62); }
+    .lodge-sort__btn { width:100%; min-height:48px; display:grid; grid-template-columns:minmax(0,1fr) 18px; align-items:center; gap:10px; padding:8px 12px; border:0; border-radius:10px; background:transparent; text-align:left; cursor:pointer; transition:background .15s; }
+    .lodge-sort__btn:active { background:rgba(255,255,255,.07); }
+    .lodge-sort__btn.on { background:rgba(142,204,192,.09); }
+    .lodge-sort__label { display:block; font-family:'Cormorant Garamond',serif; font-size:17px; font-weight:300; line-height:1.1; color:var(--text); }
+    .lodge-sort__sub { display:block; margin-top:3px; font-family:'DM Mono',monospace; font-size:8px; letter-spacing:.1em; text-transform:uppercase; color:var(--muted); }
+    .lodge-sort__check { color:#8eccc0; font-size:13px; opacity:0; text-align:center; }
+    .lodge-sort__btn.on .lodge-sort__check { opacity:1; }
     .lodge-compose { width:100%; min-height:64px; display:grid; grid-template-columns:38px 1fr auto; align-items:center; gap:12px; padding:11px 12px; margin:0 0 18px; text-align:left; border:1px solid rgba(142,204,192,.18); border-radius:8px; background:rgba(142,204,192,.035); color:var(--text); cursor:pointer; transition:border-color .2s,background .2s; }
     .lodge-compose:hover { border-color:rgba(142,204,192,.34); background:rgba(142,204,192,.06); }
     .lodge-compose__mark { width:38px; height:38px; border-radius:50%; display:flex; align-items:center; justify-content:center; color:#8eccc0; background:rgba(142,204,192,.1); border:1px solid rgba(142,204,192,.18); }
@@ -812,10 +820,8 @@
     .chat-conv__preview { font-size:10px; color:var(--muted); font-family:'DM Mono',monospace; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:220px; margin-top:2px; }
     .chat-unread { width:8px; height:8px; border-radius:50%; background:#d4956e; margin-left:auto; flex-shrink:0; }
     @media (max-width:420px) {
-      .lodge-intro { grid-template-columns:minmax(0,1fr) 88px; min-height:122px; padding:18px 8px 18px 17px; }
-      .lodge-intro__art { width:88px; height:82px; }
-      .lodge-intro__title { font-size:24px; }
-      .lodge-intro__text { font-size:14px; }
+      .lodge-intro { padding:0 18px; }
+      .lodge-intro__art { width:76px; }
     }
 
     /* Friend earned-achievement strip: fixed-width discs that scroll horizontally */
@@ -5546,7 +5552,6 @@ body:not(.tut-live) #tutCorgi {
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg>
       </button>
       <div class="lodge-heading">
-        <div class="lodge-heading__kicker">Community</div>
         <div class="lodge-heading__title" id="lodgeTitle">The Lodge</div>
       </div>
       <div class="lodge-tools">
@@ -5564,32 +5569,44 @@ body:not(.tut-live) #tutCorgi {
         <div class="lodge-intro" id="lodgeBanner">
           <div class="lodge-intro__copy">
             <div class="lodge-intro__label">The Shared Record</div>
-            <div class="lodge-intro__title">Practice, witnessed.</div>
-            <div class="lodge-intro__text">Reflections and essays from practitioners walking beside you.</div>
+            <div class="lodge-intro__title">Share Your Practice</div>
+            <div class="lodge-intro__text">Reflections · Essays</div>
           </div>
+          <div class="lodge-intro__glow"></div>
           <div class="lodge-intro__art" aria-hidden="true">
-            <svg viewBox="0 0 112 92" fill="none">
-              <path d="M22 82V36C22 17 37 5 56 5s34 12 34 31v46" stroke="currentColor" stroke-width="1.2" opacity=".32"/>
-              <path d="M31 82V38c0-14 11-24 25-24s25 10 25 24v44" stroke="#8eccc0" stroke-width="1" opacity=".38"/>
-              <path d="M42 82V42c0-9 6-16 14-16s14 7 14 16v40" stroke="#b58ed8" stroke-width="1" opacity=".5"/>
-              <circle cx="56" cy="48" r="8" stroke="currentColor" stroke-width="1.2"/>
-              <circle cx="56" cy="48" r="2" fill="#8eccc0"/>
-              <path d="M56 56v26M12 82h88" stroke="currentColor" stroke-width="1" opacity=".55"/>
-              <circle cx="22" cy="23" r="2" fill="#8eccc0"/><circle cx="90" cy="25" r="2" fill="#b58ed8"/><circle cx="96" cy="59" r="1.5" fill="currentColor"/>
-              <path d="M22 23 43 40M90 25 69 40M96 59 66 51" stroke="currentColor" stroke-width=".7" opacity=".3"/>
+            <svg viewBox="0 0 80 100" fill="none">
+              <defs>
+                <linearGradient id="lodgePenFill" x1="17" y1="14" x2="62" y2="87" gradientUnits="userSpaceOnUse"><stop stop-color="#fff2c7"/><stop offset=".52" stop-color="#e8c87a" stop-opacity=".88"/><stop offset="1" stop-color="#8eccc0" stop-opacity=".46"/></linearGradient>
+                <filter id="lodgePenGlow" x="-80%" y="-60%" width="260%" height="240%"><feGaussianBlur stdDeviation="2" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+              </defs>
+              <path d="M40 5 65 30 53 70 40 92 27 70 15 30Z" fill="url(#lodgePenFill)" fill-opacity=".16" stroke="url(#lodgePenFill)" stroke-width="1.4" filter="url(#lodgePenGlow)"/>
+              <path d="M15 30 40 43 65 30M40 48v34M27 70h26" stroke="#f7e5ad" stroke-width="1.15" stroke-linecap="round" stroke-linejoin="round" opacity=".78"/>
+              <circle cx="40" cy="43" r="5" fill="#0d2a3a" stroke="#fff0bd" stroke-width="1.25"/>
+              <path d="M40 38v10" stroke="#e8c87a" stroke-width="1"/>
+              <circle cx="14" cy="18" r="2.2" fill="#8eccc0" opacity=".75"/><circle cx="68" cy="18" r="1.7" fill="#e8c87a" opacity=".8"/><circle cx="68" cy="76" r="1.3" fill="#d8f0ff" opacity=".58"/>
             </svg>
           </div>
+          <div style="position:absolute;inset:0;pointer-events:none;">
+            <div style="position:absolute;width:7px;height:7px;border-radius:50%;background:rgba(180,220,255,.5);left:54%;top:35%;animation:heroFloat 4s ease-in-out infinite;"></div>
+            <div style="position:absolute;width:5px;height:5px;border-radius:50%;background:rgba(232,200,122,.45);left:42%;top:62%;animation:heroFloat 4s ease-in-out infinite;animation-delay:1.2s;"></div>
+            <div style="position:absolute;width:4px;height:4px;border-radius:50%;background:rgba(180,220,255,.32);left:62%;top:69%;animation:heroFloat 4s ease-in-out infinite;animation-delay:.6s;"></div>
+          </div>
         </div>
-        <div class="mode-tabs" id="lodgeTabs">
-          <button class="mode-tab on" data-lodge-tab="note">Reflections</button>
-          <button class="mode-tab" data-lodge-tab="blog">Essays</button>
-        </div>
-        <div class="lodge-sort" id="lodgeSort" role="tablist" aria-label="Sort Lodge posts">
-          <button class="lodge-sort__btn on" role="tab" aria-selected="true" data-lodge-sort="newest" title="Newest first">Newest</button>
-          <button class="lodge-sort__btn" role="tab" aria-selected="false" data-lodge-sort="liked" title="Highest like count first">Most liked</button>
-          <button class="lodge-sort__btn" role="tab" aria-selected="false" data-lodge-sort="commented" title="Highest comment count first">Most commented</button>
-          <button class="lodge-sort__btn" role="tab" aria-selected="false" data-lodge-sort="hot" title="Recent posts weighted by likes and discussion">Hot</button>
-          <button class="lodge-sort__btn" role="tab" aria-selected="false" data-lodge-sort="controversial" title="High discussion relative to likes">Controversial</button>
+        <div class="lodge-feed-nav" id="lodgeFeedNav">
+          <div class="mode-tabs" id="lodgeTabs">
+            <button class="mode-tab on" data-lodge-tab="note">Reflections</button>
+            <button class="mode-tab" data-lodge-tab="blog">Essays</button>
+          </div>
+          <button class="lodge-filter" id="lodgeSortBtn" aria-label="Sort posts" aria-expanded="false" aria-controls="lodgeSort" title="Sort posts">
+            <svg viewBox="0 0 18 15" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" aria-hidden="true"><line x1="1" y1="2.5" x2="17" y2="2.5"/><circle cx="5.5" cy="2.5" r="2" fill="var(--bg)"/><line x1="1" y1="7.5" x2="17" y2="7.5"/><circle cx="12.5" cy="7.5" r="2" fill="var(--bg)"/><line x1="1" y1="12.5" x2="17" y2="12.5"/><circle cx="7.5" cy="12.5" r="2" fill="var(--bg)"/></svg>
+          </button>
+          <div class="lodge-sort" id="lodgeSort" role="menu" aria-label="Sort Lodge posts" style="display:none;">
+            <button class="lodge-sort__btn on" role="menuitemradio" aria-checked="true" data-lodge-sort="newest"><span><span class="lodge-sort__label">Newest</span><span class="lodge-sort__sub">Latest first</span></span><span class="lodge-sort__check">✓</span></button>
+            <button class="lodge-sort__btn" role="menuitemradio" aria-checked="false" data-lodge-sort="liked"><span><span class="lodge-sort__label">Most liked</span><span class="lodge-sort__sub">Highest praise</span></span><span class="lodge-sort__check">✓</span></button>
+            <button class="lodge-sort__btn" role="menuitemradio" aria-checked="false" data-lodge-sort="commented"><span><span class="lodge-sort__label">Most commented</span><span class="lodge-sort__sub">Most discussed</span></span><span class="lodge-sort__check">✓</span></button>
+            <button class="lodge-sort__btn" role="menuitemradio" aria-checked="false" data-lodge-sort="hot"><span><span class="lodge-sort__label">Hot</span><span class="lodge-sort__sub">Fresh and active</span></span><span class="lodge-sort__check">✓</span></button>
+            <button class="lodge-sort__btn" role="menuitemradio" aria-checked="false" data-lodge-sort="controversial"><span><span class="lodge-sort__label">Controversial</span><span class="lodge-sort__sub">High discussion, fewer likes</span></span><span class="lodge-sort__check">✓</span></button>
+          </div>
         </div>
         <button class="lodge-compose" id="lodgeComposer">
           <span class="lodge-compose__mark" aria-hidden="true">
@@ -34539,17 +34556,29 @@ function _lodgeSetSortUi() {
   document.querySelectorAll('#lodgeSort [data-lodge-sort]').forEach(function(btn) {
     var on = btn.getAttribute('data-lodge-sort') === _lodgeSort;
     btn.classList.toggle('on', on);
-    btn.setAttribute('aria-selected', on ? 'true' : 'false');
+    btn.setAttribute('aria-checked', on ? 'true' : 'false');
   });
+  var filter = document.getElementById('lodgeSortBtn');
+  if (filter) {
+    var labels = { newest:'Newest', liked:'Most liked', commented:'Most commented', hot:'Hot', controversial:'Controversial' };
+    filter.classList.toggle('active', _lodgeSort !== 'newest');
+    filter.setAttribute('aria-label', 'Sort posts: ' + (labels[_lodgeSort] || 'Newest'));
+    filter.title = 'Sort posts: ' + (labels[_lodgeSort] || 'Newest');
+  }
+}
+function _lodgeCloseSortMenu() {
+  var menu = document.getElementById('lodgeSort');
+  var btn = document.getElementById('lodgeSortBtn');
+  if (menu) menu.style.display = 'none';
+  if (btn) btn.setAttribute('aria-expanded', 'false');
 }
 function openLodge() {
   _lodgeUserFilter = null;
   document.getElementById('lodgeTitle').textContent = 'The Lodge';
-  document.querySelector('.lodge-heading__kicker').textContent = 'Community';
   document.getElementById('lodgeComposer').style.display = '';
   document.getElementById('lodgeBanner').style.display = '';
-  document.getElementById('lodgeTabs').style.display = '';
-  document.getElementById('lodgeSort').style.display = '';
+  document.getElementById('lodgeFeedNav').style.display = '';
+  _lodgeCloseSortMenu();
   _lodgeSetTabUi();
   _lodgeSetSortUi();
   showScreen('lodgeScreen');
@@ -34565,11 +34594,10 @@ function openLodge() {
 function openLodgeUser(userId, username) {
   _lodgeUserFilter = { userId: userId, username: username };
   document.getElementById('lodgeTitle').textContent = '@' + username;
-  document.querySelector('.lodge-heading__kicker').textContent = 'Practitioner';
   document.getElementById('lodgeComposer').style.display = 'none';
   document.getElementById('lodgeBanner').style.display = 'none';
-  document.getElementById('lodgeTabs').style.display = 'none';
-  document.getElementById('lodgeSort').style.display = 'none';
+  document.getElementById('lodgeFeedNav').style.display = 'none';
+  _lodgeCloseSortMenu();
   showScreen('lodgeScreen');
   _lodgePosts = []; _lodgeCursor = null; _lodgeLoading = true;
   renderLodgeFeed();
@@ -34816,12 +34844,26 @@ document.getElementById('lodgeSort').addEventListener('click', function(e) {
   var btn = e.target.closest('[data-lodge-sort]');
   if (!btn) return;
   var next = btn.getAttribute('data-lodge-sort');
+  _lodgeCloseSortMenu();
   if (next === _lodgeSort) return;
   _lodgeSort = next;
   _lodgeSetSortUi();
   _lodgePosts = []; _lodgeCursor = null; _lodgeLoading = true;
   renderLodgeFeed();
   loadLodgeFeed();
+});
+document.getElementById('lodgeSortBtn').addEventListener('click', function(e) {
+  e.stopPropagation();
+  var menu = document.getElementById('lodgeSort');
+  var open = menu.style.display !== 'none';
+  menu.style.display = open ? 'none' : '';
+  this.setAttribute('aria-expanded', open ? 'false' : 'true');
+});
+document.addEventListener('click', function(e) {
+  if (!e.target.closest('#lodgeFeedNav')) _lodgeCloseSortMenu();
+});
+document.addEventListener('keydown', function(e) {
+  if (e.key === 'Escape') _lodgeCloseSortMenu();
 });
 
 // Blog (essay) editor
