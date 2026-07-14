@@ -1629,7 +1629,19 @@
     @keyframes oePipPulse { 0%,100%{opacity:.6;} 50%{opacity:1;} }
     .oe-genpip--off { background:#e8c87a; box-shadow:none; animation:none; opacity:.4; }
     /* Generator yard: each generator is a tappable pictured building */
-    .oe-genyard { display:flex; justify-content:center; gap:10px; padding:10px 0 0; }
+    .oe-genyard { padding:10px 0 0; }
+    .oe-genyard-row { display:flex; justify-content:center; gap:10px; }
+    /* Dark Matter pump row (Book II) */
+    .oe-dm-divider { display:flex; align-items:center; gap:8px; margin:15px 4px 3px; }
+    .oe-dm-divider::before { content:''; flex:1; height:1px; background:linear-gradient(90deg,transparent,rgba(196,168,212,.32)); }
+    .oe-dm-divider::after { content:''; flex:1; height:1px; background:linear-gradient(90deg,rgba(196,168,212,.32),transparent); }
+    .oe-dm-divider span { font-size:8px; letter-spacing:.24em; text-transform:uppercase; color:#c4a8d4; white-space:nowrap; }
+    .oe-genpic--locked { opacity:.32; filter:grayscale(.65); cursor:default; }
+    .oe-genpic-lock { font-size:8px; color:#c4a8d4; letter-spacing:.08em; }
+    .oe-gen-collectbadge--dm { background:linear-gradient(180deg,#d8c4f4,#9a6ae8); color:#160b26; box-shadow:0 0 13px rgba(154,106,232,.85); }
+    .oe-dm-crystal { transform-origin:50px 34px; animation:oeDmFloat 4.2s ease-in-out infinite; }
+    @keyframes oeDmFloat { 0%,100%{ transform:translateY(0); } 50%{ transform:translateY(-3.5px); } }
+    .oe-genpic.building .oe-dm-crystal { animation-play-state:paused; }
     .oe-genpic { position:relative; flex:1; max-width:132px; min-width:0; cursor:pointer; text-align:center; background:none; border:none; transition:transform .1s; }
     .oe-genpic:active { transform:scale(.96); }
     .oe-genpic-svg { width:100%; max-width:118px; height:auto; filter:drop-shadow(0 0 10px rgba(90,184,224,.25)); }
@@ -16271,7 +16283,7 @@ document.getElementById('visIntermediateFadedBtn').addEventListener('click', fun
     },
     skipOmnia: true // intermediate visual drills earn XP only, no Omnia award
   });
-  var _dm = mintDarkMatter(DARK_MATTER_PER_ADVANCED);
+  var _dm = mintDarkMatterFromPractice(DARK_MATTER_PER_ADVANCED);
   showToast('+' + xpEarned + ' XP' + (_dm ? ' · +' + _dm + ' ◆ Dark Matter' : ''));
   if(didLevelUp) setTimeout(function(){showConcLevelUp(concState.level);},600);
   renderConcHome();
@@ -20998,6 +21010,8 @@ function omniaAkashaCap() {
 }
 
 function omniaUpgradeStepMax(upgId) {
+  // Dark Matter pumps keep their own finite cap even in Book II.
+  if (typeof dmGenIdx === 'function' && dmGenIdx(upgId) >= 0) return DM_GEN_LEVEL_CAP;
   // Book II (Magical Evocation) sits past Step X — caps are fully open there,
   // since bardonStep is reset to 1 and no longer advances. Infinity → the UI
   // renders it as uncapped rather than a placeholder number.
@@ -21048,6 +21062,16 @@ function omniaAccrue() {
       earned += gain;
     }
     if (earned > 0) omniaState.totalAkashaEarned = Math.floor((omniaState.totalAkashaEarned || 0) + earned);
+    // Dark Matter pumps drip in the same pass. No prestige/devotion/boost
+    // multipliers apply — ◆ stays scarce by design. A pump that is upgrading
+    // is offline, like the akasha pumps.
+    var dn = (typeof dmGenUnlockedCount === 'function') ? dmGenUnlockedCount() : 0;
+    for (var di = 0; di < dn; di++) {
+      var dgid = DM_GEN_META[di].id;
+      if (omniaUpgradeBuilding(dgid)) continue;
+      var dcap = dmPumpReservoirCap(di);
+      omniaState.reservoirs[dgid] = Math.min(dcap, (omniaState.reservoirs[dgid] || 0) + elapsedHours * dmGenRatePerDay(di) / 24);
+    }
   }
   omniaState.lastTick = now;
   saveOmniaState();
@@ -21118,6 +21142,22 @@ function mintDarkMatter(amount) {
   omniaState.totalDarkMatterEarned = (omniaState.totalDarkMatterEarned || 0) + amount;
   saveOmniaState(); // completion pipeline already pushes the sync
   return amount;
+}
+// Practice-minted ◆ (advanced drills) is clamped like akasha awards: mints
+// must be ≥60s apart and cap at 10 per day, so quick-tapping through drill
+// completions can't out-earn genuine practice. Pump collection bypasses this
+// (it's already rate-limited by the pumps' own drip).
+var DM_MINT_DAILY_CAP = 10;
+function mintDarkMatterFromPractice(amount) {
+  if (!darkMatterUnlocked() || amount <= 0) return 0;
+  var now = Date.now();
+  if (now - (omniaState.lastDmMintMs || 0) < 60000) return 0;
+  var todayStr = new Date().toISOString().slice(0, 10);
+  if (omniaState.dmMintDate !== todayStr) { omniaState.dmMintDate = todayStr; omniaState.dmMintCount = 0; }
+  if ((omniaState.dmMintCount || 0) >= DM_MINT_DAILY_CAP) return 0;
+  omniaState.dmMintCount = (omniaState.dmMintCount || 0) + 1;
+  omniaState.lastDmMintMs = now;
+  return mintDarkMatter(amount);
 }
 
 // ── Book II: the fifteen magical tools ─────────────────────────
@@ -22694,6 +22734,115 @@ function omniaBuildSpanLabel(ms) {
   return s + 's';
 }
 
+// ── Dark Matter pumps (Book II) ────────────────────────────────────────────
+// Idle ◆ condensers that come online at Prestige 3 / 5 / 8. Deliberately
+// slower than practice: at cap all three together (~137 ◆/day) roughly match
+// two daily advanced drills, so sitting with the work stays the primary
+// current. Rates are per DAY, not per hour — ◆ is scarce. Each pump has one
+// upgrade track (Dark Current), paid in ◆, with the same build-to-finish +
+// offline-while-building model as the akasha pumps. Levels live in
+// omniaState.upgrades (dm1/dm2/dm3) and reservoirs in omniaState.reservoirs,
+// so sync-merge (monotonic Math.max / generational fold) is inherited free.
+var DM_GEN_META = [
+  { id:'dm1', roman:'I',   prestige:3 },
+  { id:'dm2', roman:'II',  prestige:5 },
+  { id:'dm3', roman:'III', prestige:8 }
+];
+var DM_GEN_LEVEL_CAP = 10;
+var DM_GEN_BASE_DAY = [12, 18, 26], DM_GEN_PER_DAY = [2, 3, 4];
+function dmGenIdx(id) {
+  for (var i = 0; i < DM_GEN_META.length; i++) if (DM_GEN_META[i].id === id) return i;
+  return -1;
+}
+function dmGenUnlockedCount() {
+  if (typeof darkMatterUnlocked !== 'function' || !darkMatterUnlocked()) return 0;
+  var p = omniaState.prestige || 0, n = 0;
+  DM_GEN_META.forEach(function(m) { if (p >= m.prestige) n++; });
+  return n;
+}
+function dmGenRatePerDay(idx) {
+  var lvl = (omniaState.upgrades && omniaState.upgrades[DM_GEN_META[idx].id]) || 1;
+  return DM_GEN_BASE_DAY[idx] + DM_GEN_PER_DAY[idx] * (lvl - 1);
+}
+// Two days of production fit in the vat, so a daily check-in never overflows
+// but the pump can't bank a week unattended.
+function dmPumpReservoirCap(idx) { return Math.floor(dmGenRatePerDay(idx) * 2); }
+function dmUpgradeCost(id) {
+  var lvl = (omniaState.upgrades && omniaState.upgrades[id]) || 1;
+  return Math.floor(30 * Math.pow(1.3, lvl - 1));
+}
+// Slightly heavier than the akasha curve, and no Quickening applies — the
+// dark current cannot be hurried.
+function dmBuildDurationMs(targetLevel) {
+  var secs = Math.floor(900 + 12 * Math.pow(Math.max(1, targetLevel), 3));
+  return Math.max(60, Math.min(secs, 24 * 3600)) * 1000;
+}
+function buyDmUpgrade(id) {
+  var idx = dmGenIdx(id);
+  if (idx < 0 || idx >= dmGenUnlockedCount()) return false;
+  var lvl = (omniaState.upgrades && omniaState.upgrades[id]) || 1;
+  if (lvl >= DM_GEN_LEVEL_CAP) return false;
+  if (omniaUpgradeBuilding(id)) return false;
+  var cost = dmUpgradeCost(id);
+  if ((omniaState.darkMatter || 0) < cost) return false;
+  omniaState.darkMatter -= cost;
+  omniaState.totalDarkMatterSpent = (omniaState.totalDarkMatterSpent || 0) + cost;
+  if (!omniaState.upgradeBuilds || typeof omniaState.upgradeBuilds !== 'object') omniaState.upgradeBuilds = {};
+  omniaState.upgradeBuilds[id] = Date.now() + dmBuildDurationMs(lvl + 1);
+  saveOmniaState();
+  renderOmniaEngine();
+  playUpgradeHammer();
+  if (navigator.vibrate) { try { navigator.vibrate(5); } catch(e) {} }
+  return true;
+}
+function collectDmPump(anchorEl, gid) {
+  omniaAccrue();
+  var res = omniaState.reservoirs || (omniaState.reservoirs = {});
+  var amount = Math.floor(res[gid] || 0);
+  if (amount < 1 || omniaUpgradeBuilding(gid)) return;
+  res[gid] = (res[gid] || 0) - amount;
+  if (res[gid] < 0.5) res[gid] = 0;
+  mintDarkMatter(amount);
+  renderOmniaEngine();
+  playAkashaPop();
+  if (anchorEl && anchorEl.getBoundingClientRect) {
+    var rect = anchorEl.getBoundingClientRect();
+    var burst = document.createElement('div');
+    burst.className = 'oe-collect-burst';
+    burst.style.color = '#d8c4f4';
+    burst.style.textShadow = '0 0 16px rgba(196,168,212,.95)';
+    burst.textContent = '+' + amount + ' ◆';
+    burst.style.left = (rect.left + rect.width / 2) + 'px';
+    burst.style.top = (rect.top - 4) + 'px';
+    document.body.appendChild(burst);
+    setTimeout(function() { burst.remove(); }, 1050);
+  }
+}
+// Violet condenser vat with a floating dark crystal; fluid level = reservoir.
+function _dmPictureSvg(idx, fillFrac, lvl) {
+  var frac = Math.max(0, Math.min(1, fillFrac || 0));
+  var fluidTop = (92 - 30 * Math.max(frac, 0.07)).toFixed(1);
+  var uid = 'oeDmClip' + (++_pumpUid);
+  var crowned = (lvl || 1) >= 8;
+  return '<svg class="oe-genpic-svg" viewBox="0 0 100 112" aria-hidden="true">'
+    + '<defs><clipPath id="' + uid + '"><rect x="27" y="60" width="46" height="34" rx="8"/></clipPath></defs>'
+    + '<ellipse cx="50" cy="106" rx="30" ry="4" fill="rgba(196,168,212,.08)"/>'
+    + '<path d="M22 99 L78 99 L83 108 L17 108 Z" fill="rgba(196,168,212,.08)" stroke="rgba(196,168,212,.4)" stroke-width="1"/>'
+    + '<rect x="26" y="59" width="48" height="36" rx="9" fill="rgba(14,8,22,.6)" stroke="' + (crowned ? 'rgba(232,200,122,.7)' : 'rgba(216,196,244,.5)') + '" stroke-width="1.4"/>'
+    + '<g clip-path="url(#' + uid + ')">'
+    +   '<rect x="27" y="' + fluidTop + '" width="46" height="38" fill="rgba(154,106,232,.45)"/>'
+    +   '<rect x="27" y="' + fluidTop + '" width="46" height="3" fill="rgba(216,196,244,.55)"/>'
+    + '</g>'
+    + '<path d="M36 56 L50 47 L64 56" fill="none" stroke="rgba(196,168,212,.55)" stroke-width="1.4"/>'
+    + '<g class="oe-dm-crystal">'
+    +   '<path d="M50 12 L60 32 L50 52 L40 32 Z" fill="rgba(154,106,232,.35)" stroke="#c4a8d4" stroke-width="1.6"/>'
+    +   '<path d="M50 20 L55 32 L50 44 L45 32 Z" fill="rgba(216,196,244,.5)"/>'
+    +   (crowned ? '<path d="M50 4 L53 9 L50 14 L47 9 Z" fill="#e8c87a" opacity=".95"/>' : '')
+    + '</g>'
+    + '<text x="50" y="105.5" text-anchor="middle" class="oe-genpic-num" style="fill:#c4a8d4;">' + DM_GEN_META[idx].roman + '</text>'
+    + '</svg>';
+}
+
 // ── Generator yard (pictured, Clash-style) + upgrade sheet ────────────────
 // Tap a generator with akasha waiting (◈ badge) → collect, +N pops above it.
 // Tap it with nothing to collect → its upgrade menu opens.
@@ -22764,12 +22913,92 @@ function renderOmniaGenYard() {
           : 'Lv ' + lvl) + '</div>'
       + '</button>';
   }
+  html = '<div class="oe-genyard-row">' + html + '</div>';
+  // Book II: the Dark Matter pump row appears below the akasha pumps, with
+  // future pumps ghosted until their prestige is reached.
+  if (typeof darkMatterUnlocked === 'function' && darkMatterUnlocked()) {
+    var dmUnlocked = dmGenUnlockedCount(), dmRow = '';
+    for (var d = 0; d < DM_GEN_META.length; d++) {
+      var dmeta = DM_GEN_META[d];
+      if (d >= dmUnlocked) {
+        dmRow += '<div class="oe-genpic oe-genpic--locked">' + _dmPictureSvg(d, 0, 1)
+          + '<div class="oe-genpic-lvl oe-genpic-lock">Prestige ' + dmeta.prestige + '</div></div>';
+        continue;
+      }
+      var dLvl = (omniaState.upgrades && omniaState.upgrades[dmeta.id]) || 1;
+      var dBuild = omniaUpgradeBuilding(dmeta.id);
+      var dRes = Math.floor(res[dmeta.id] || 0);
+      var dCap = dmPumpReservoirCap(d);
+      var dFrac = dCap > 0 ? (res[dmeta.id] || 0) / dCap : 0;
+      dmRow += '<button class="oe-genpic' + (dBuild ? ' building' : '') + '" data-dm-tap="' + dmeta.id + '" aria-label="Dark Matter Pump ' + dmeta.roman + '">'
+        + (!dBuild && dRes >= 1 ? '<div class="oe-gen-collectbadge oe-gen-collectbadge--dm">+' + dRes + ' ◆</div>' : '')
+        + _dmPictureSvg(d, dFrac, dLvl)
+        + '<div class="oe-genpic-lvl">' + (dBuild
+            ? '<span class="oe-genpic-build">◷ <span data-build-countdown="' + dmeta.id + '">' + omniaBuildLabel(dBuild) + '</span></span>'
+            : 'Lv ' + dLvl) + '</div>'
+        + '</button>';
+    }
+    html += '<div class="oe-dm-divider"><span>Dark Matter Pumps · ' + Math.floor(omniaState.darkMatter || 0).toLocaleString() + ' ◆</span></div>'
+      + '<div class="oe-genyard-row">' + dmRow + '</div>';
+  }
   yard.innerHTML = html;
   var slim = document.getElementById('omniaGenSlim');
   if (slim) slim.textContent = 'Resonance ' + (omniaState.recStreak || 0) + ' · tap a full pump to collect, or a pump to upgrade';
 }
 
+function renderDmSheet(gid) {
+  var body = document.getElementById('genSheetBody');
+  var idx = dmGenIdx(gid);
+  if (!body || idx < 0) return;
+  var meta = DM_GEN_META[idx];
+  var lvl = (omniaState.upgrades && omniaState.upgrades[gid]) || 1;
+  var building = omniaUpgradeBuilding(gid);
+  var res = Math.floor((omniaState.reservoirs || {})[gid] || 0);
+  var cap = dmPumpReservoirCap(idx);
+  var canCollect = !building && res >= 1;
+  var atMax = lvl >= DM_GEN_LEVEL_CAP;
+  var cost = dmUpgradeCost(gid);
+  var btn;
+  if (building) btn = '<button class="omnia-mini-btn omnia-mini-btn--building" disabled>◷ <span data-build-countdown="' + gid + '">' + omniaBuildLabel(building) + '</span></button>';
+  else if (atMax) btn = '<button class="omnia-mini-btn" disabled style="opacity:.45;cursor:default;">Max</button>';
+  else btn = '<button class="omnia-mini-btn" data-dm-buy="' + gid + '"' + ((omniaState.darkMatter || 0) < cost ? ' disabled' : '') + '>Upgrade ' + cost + ' ◆</button>';
+  var timeLabel = (atMax || building) ? '' : omniaBuildSpanLabel(dmBuildDurationMs(lvl + 1));
+  body.innerHTML = '<button class="ach-info-close" id="genSheetClose" aria-label="Close">✕</button>'
+    + '<div class="ach-info-medal" id="genSheetMedal" style="--gc:#c4a8d4; position:relative;' + (canCollect ? ' cursor:pointer;' : '') + '">'
+    + (canCollect ? '<div class="oe-gen-collectbadge oe-gen-collectbadge--dm">+' + res.toLocaleString() + ' ◆</div>' : '')
+    + _dmPictureSvg(idx, cap > 0 ? res / cap : 0, lvl) + '</div>'
+    + '<div class="ach-info-kicker" style="color:#c4a8d4;">Dark Matter Pump</div>'
+    + '<div class="ach-info-name">Pump ' + meta.roman + '</div>'
+    + '<div class="ach-info-desc">+' + dmGenRatePerDay(idx) + ' ◆ / day · vat ' + res.toLocaleString() + ' / ' + cap.toLocaleString()
+    + (building ? ' · <span style="color:#e8c87a;">offline while upgrading</span>'
+       : canCollect ? ' · <span style="color:#c4a8d4;">tap the pump to collect</span>' : '') + '</div>'
+    + '<div style="text-align:left; margin-top:16px;">'
+    + '<div class="omnia-upgrade-row" style="border-left:2px solid #9a6ae855; padding-left:11px;">'
+    + '<div><div class="omnia-upgrade-name" style="color:#c4a8d4;"><span style="opacity:.9;margin-right:6px;">◆</span>Dark Current ' + lvl + (atMax ? '' : ' <span style="font-size:8px;color:rgba(200,230,245,.55);letter-spacing:.1em;">/ ' + DM_GEN_LEVEL_CAP + '</span>') + '</div>'
+    + '<div class="omnia-upgrade-sub">Condenses dark matter more quickly · next +' + DM_GEN_PER_DAY[idx] + ' ◆/day</div></div>'
+    + '<div style="display:flex; flex-direction:column; align-items:flex-end; gap:4px; flex-shrink:0;">' + btn
+    + (timeLabel ? '<span style="font-size:8px; letter-spacing:.08em; color:rgba(196,168,212,.9);">◷ ' + timeLabel + ' build</span>' : '') + '</div>'
+    + '</div></div>';
+  var cl = document.getElementById('genSheetClose');
+  if (cl) cl.onclick = closeGenSheet;
+  body.onclick = function(e) {
+    var b = e.target.closest('[data-dm-buy]');
+    if (b && !b.disabled && buyDmUpgrade(b.getAttribute('data-dm-buy')) && _genSheetId) { renderGenSheet(_genSheetId); return; }
+    var medalEl = e.target.closest('#genSheetMedal');
+    if (medalEl && _genSheetId) {
+      omniaAccrue();
+      var avail = Math.floor((omniaState.reservoirs || {})[_genSheetId] || 0);
+      if (!omniaUpgradeBuilding(_genSheetId) && avail >= 1) { collectDmPump(medalEl, _genSheetId); renderGenSheet(_genSheetId); }
+      else playCollectEmpty();
+    }
+  };
+}
+
 function renderGenSheet(gid) {
+  // Dark Matter pumps share the drawer shell but render their own sheet, so
+  // every existing refresh path (ticker, collect, buy) keeps working via
+  // renderGenSheet(_genSheetId).
+  if (typeof dmGenIdx === 'function' && dmGenIdx(gid) >= 0) return renderDmSheet(gid);
   var body = document.getElementById('genSheetBody');
   var idx = OMNIA_GEN_META.findIndex(function(g) { return g.id === gid; });
   if (!body || idx < 0) return;
@@ -22860,6 +23089,14 @@ function closeGenSheet() {
 (function() {
   var yard = document.getElementById('omniaGenYard');
   if (yard) yard.addEventListener('click', function(e) {
+    var dg = e.target.closest('[data-dm-tap]');
+    if (dg) {
+      var did = dg.getAttribute('data-dm-tap');
+      omniaAccrue();
+      if (!omniaUpgradeBuilding(did) && Math.floor((omniaState.reservoirs || {})[did] || 0) >= 1) { collectDmPump(dg, did); return; }
+      openGenSheet(did);
+      return;
+    }
     var g = e.target.closest('[data-gen-tap]');
     if (!g) return;
     var gid = g.getAttribute('data-gen-tap');
@@ -26907,6 +27144,10 @@ document.getElementById('omniaEngine').addEventListener('click', function(e) {
         var _m = OMNIA_GEN_META[s];
         sig += '|' + Math.floor(_res[_m.id] || 0) + (omniaPumpBuildingId(_m) ? 'b' : '');
       }
+      sig += '|' + Math.floor(omniaState.darkMatter || 0);
+      for (var ds = 0; ds < DM_GEN_META.length; ds++) {
+        sig += '|' + Math.floor(_res[DM_GEN_META[ds].id] || 0) + (omniaUpgradeBuilding(DM_GEN_META[ds].id) ? 'b' : '');
+      }
       if (sig !== _liveSig) {
         _liveSig = sig;
         if (typeof renderOmniaGenYard === 'function') renderOmniaGenYard();
@@ -26929,7 +27170,9 @@ document.getElementById('omniaEngine').addEventListener('click', function(e) {
       if (done.length && _genSheetId && typeof renderGenSheet === 'function') renderGenSheet(_genSheetId);
       done.forEach(function(id) {
         var u = OMNIA_UPGRADES.find(function(x) { return x.id === id; });
-        if (u && typeof showToast === 'function') showToast('✦ ' + u.name + ' upgraded', 2600, 'gold');
+        var nm = u ? u.name
+          : (typeof dmGenIdx === 'function' && dmGenIdx(id) >= 0 ? 'Dark Matter Pump ' + DM_GEN_META[dmGenIdx(id)].roman : null);
+        if (nm && typeof showToast === 'function') showToast('✦ ' + nm + ' upgraded', 2600, 'gold');
       });
       if (done.length && typeof syncEnabled !== 'undefined' && syncEnabled && typeof authToken !== 'undefined' && authToken && typeof syncPushData === 'function') syncPushData();
       return;
