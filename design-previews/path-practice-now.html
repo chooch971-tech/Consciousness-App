@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Presence · Practice Now Preview</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;1,300&family=DM+Mono:wght@300;400&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg:#07080d; --surface:#0e0f17; --surface2:#13141f;
+      --border:rgba(255,255,255,.07); --border2:rgba(255,255,255,.12);
+      --text:#ddd8ce; --muted:rgba(221,216,206,.42); --readable:rgba(221,216,206,.68);
+      --accent:#7eb8a4; --guide:#9b8ec4; --blue:#8ecce0; --gold:#d4b08e;
+    }
+    * { box-sizing:border-box; margin:0; padding:0; -webkit-tap-highlight-color:transparent; }
+    html { background:var(--bg); }
+    body { min-height:100vh; background:var(--bg); color:var(--text); font-family:'DM Mono',monospace; }
+    body::before { content:''; position:fixed; inset:0; pointer-events:none; background:radial-gradient(ellipse 70% 48% at 30% 0%,rgba(126,184,164,.055),transparent 66%),radial-gradient(ellipse 58% 38% at 90% 100%,rgba(100,90,160,.05),transparent 65%); }
+    button { font:inherit; }
+    .app { position:relative; width:min(100%,430px); min-height:100vh; margin:0 auto; padding:max(env(safe-area-inset-top),14px) 24px max(env(safe-area-inset-bottom),30px); overflow:hidden; }
+    .top-bar { position:relative; display:flex; justify-content:space-between; align-items:center; height:28px; margin-bottom:8px; }
+    .hamburger { width:44px; height:44px; margin-left:-12px; background:none; border:none; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:5px; cursor:pointer; }
+    .hamburger span { width:20px; height:1.5px; border-radius:2px; background:var(--muted); }
+    .wordmark { position:absolute; left:50%; transform:translateX(-50%); font-family:'Cormorant Garamond',serif; font-size:11px; letter-spacing:.35em; text-transform:uppercase; color:var(--accent); white-space:nowrap; }
+    .streak { font-size:10px; letter-spacing:.15em; color:var(--muted); }
+    .streak b { color:var(--accent); font-weight:400; }
+    .mode-tabs { display:flex; border-bottom:1px solid var(--border); margin-bottom:12px; }
+    .mode-tab { flex:1; min-width:0; padding:10px 0 8px; border:0; border-bottom:2px solid transparent; background:none; color:var(--muted); font-family:'DM Mono',monospace; font-size:9px; letter-spacing:.2em; text-transform:uppercase; white-space:nowrap; }
+    .mode-tab.active { color:var(--guide); border-bottom-color:var(--guide); }
+    .guide-dots { display:flex; justify-content:center; align-items:center; height:54px; }
+    .guide-dot { width:26px; height:26px; border:0; background:radial-gradient(circle,rgba(255,255,255,.18) 0 3px,transparent 3.5px); }
+    .guide-dot.active { background:radial-gradient(circle,var(--blue) 0 4px,transparent 4.5px); }
+    .path-banner { position:relative; height:132px; border-radius:16px; background:linear-gradient(145deg,#0a1a2e 0%,#0d2a3a 40%,#0c1e30 100%); overflow:hidden; display:flex; align-items:center; justify-content:space-between; padding:0 20px; }
+    .path-banner::before { content:''; position:absolute; inset:0; background:radial-gradient(ellipse 60% 70% at 74% 55%,rgba(100,190,220,.18),transparent 70%); }
+    .path-banner-text { position:relative; z-index:2; }
+    .eyebrow { font-size:8px; letter-spacing:.26em; text-transform:uppercase; color:rgba(142,204,224,.72); }
+    .path-banner-title { margin-top:4px; font-family:'Cormorant Garamond',serif; font-size:25px; font-weight:300; color:#d8f0ff; line-height:1; }
+    .path-banner-sub { margin-top:7px; font-size:9px; letter-spacing:.08em; color:rgba(200,230,245,.5); }
+    .omnia { position:relative; z-index:2; width:76px; height:118px; top:8px; filter:drop-shadow(0 0 16px rgba(140,200,230,.45)); animation:float 4.5s ease-in-out infinite; cursor:pointer; border:0; background:none; }
+    .omnia svg { width:100%; height:100%; overflow:visible; }
+    @keyframes float { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-6px)} }
+    .now-card { position:relative; margin-top:14px; border:1px solid rgba(142,204,224,.32); border-radius:12px; padding:16px; background:linear-gradient(145deg,rgba(17,36,58,.82),rgba(10,18,31,.94)); box-shadow:0 0 28px rgba(74,148,184,.08) inset; overflow:hidden; }
+    .now-card::before { content:''; position:absolute; inset:0; pointer-events:none; background:radial-gradient(circle at 90% 0%,rgba(142,204,224,.12),transparent 48%); }
+    .now-card > * { position:relative; }
+    .now-head { display:flex; align-items:flex-start; justify-content:space-between; gap:12px; }
+    .now-label { font-size:8px; letter-spacing:.25em; text-transform:uppercase; color:var(--blue); }
+    .now-title { margin-top:5px; font-family:'Cormorant Garamond',serif; font-size:26px; font-weight:300; color:#e8f5ff; line-height:1; }
+    .reward { flex-shrink:0; padding:5px 8px; border:1px solid rgba(216,184,106,.3); border-radius:5px; color:#e8cd8e; background:rgba(216,184,106,.08); font-size:8px; letter-spacing:.12em; text-transform:uppercase; }
+    .now-reason { margin-top:12px; color:var(--readable); font-family:'Cormorant Garamond',serif; font-size:16px; font-style:italic; line-height:1.55; }
+    .now-meta { display:flex; flex-wrap:wrap; gap:7px 14px; margin-top:12px; color:rgba(221,216,206,.64); font-size:9px; letter-spacing:.08em; }
+    .begin { width:100%; min-height:44px; margin-top:14px; border:1px solid rgba(142,204,224,.36); border-radius:7px; background:rgba(142,204,224,.09); color:#b8eaff; font-family:'DM Mono',monospace; font-size:9px; letter-spacing:.22em; text-transform:uppercase; cursor:pointer; transition:background .2s,transform .15s; }
+    .begin:active { transform:scale(.985); background:rgba(142,204,224,.16); }
+    .begin:disabled { opacity:.45; cursor:default; }
+    .day-head { display:flex; align-items:center; justify-content:space-between; margin-top:20px; padding:0 2px; }
+    .day-name { font-family:'Space Grotesk',sans-serif; font-size:16px; font-weight:700; color:var(--text); }
+    .day-count { font-size:10px; color:var(--text); }
+    .agenda { margin-top:10px; border:1px solid var(--border); border-radius:12px; overflow:hidden; }
+    .agenda-row { display:flex; align-items:center; gap:13px; min-height:70px; padding:11px 13px; background:rgba(255,255,255,.018); border-bottom:1px solid var(--border); transition:opacity .25s; }
+    .agenda-row:last-child { border-bottom:0; }
+    .agenda-row.done { opacity:.48; }
+    .agenda-icon { position:relative; width:42px; height:42px; border-radius:10px; display:grid; place-items:center; flex-shrink:0; font-size:18px; color:var(--row-color); background:color-mix(in srgb,var(--row-color) 12%,transparent); border:1px solid color-mix(in srgb,var(--row-color) 32%,transparent); }
+    .agenda-info { flex:1; min-width:0; }
+    .agenda-name { font-family:'Space Grotesk',sans-serif; font-size:12px; font-weight:600; color:var(--text); }
+    .agenda-meta { margin-top:4px; font-size:9px; letter-spacing:.04em; color:rgba(221,216,206,.65); line-height:1.45; }
+    .agenda-state { font-size:8px; letter-spacing:.14em; text-transform:uppercase; color:var(--muted); }
+    .agenda-row.active .agenda-state { color:var(--blue); }
+    .agenda-row.done .agenda-state { color:var(--accent); }
+    .more { display:flex; align-items:center; justify-content:space-between; width:100%; min-height:44px; margin-top:12px; padding:0 4px; border:0; background:none; color:rgba(221,216,206,.58); font-size:9px; letter-spacing:.14em; text-transform:uppercase; cursor:pointer; }
+    .more .chev { transition:transform .25s; }
+    .more.open .chev { transform:rotate(180deg); }
+    .secondary { display:grid; grid-template-rows:0fr; opacity:0; transition:grid-template-rows .3s,opacity .25s; }
+    .secondary.open { grid-template-rows:1fr; opacity:1; }
+    .secondary-inner { overflow:hidden; }
+    .quest-row { display:flex; align-items:center; justify-content:space-between; gap:12px; padding:13px 4px; border-top:1px solid var(--border); }
+    .quest-title { font-size:10px; color:var(--text); }
+    .quest-sub { margin-top:3px; color:rgba(221,216,206,.58); font-size:9px; }
+    .quest-reward { color:var(--gold); font-size:9px; white-space:nowrap; }
+    .status { min-height:18px; margin-top:12px; text-align:center; color:var(--accent); font-size:9px; letter-spacing:.08em; }
+    @media (max-width:360px) { .app{padding-left:18px;padding-right:18px}.mode-tab{letter-spacing:.13em}.now-title{font-size:24px} }
+    @media (prefers-reduced-motion:reduce) { .omnia{animation:none}.secondary,.begin{transition:none} }
+  </style>
+</head>
+<body>
+  <main class="app">
+    <header class="top-bar">
+      <button class="hamburger" aria-label="Menu"><span></span><span></span><span></span></button>
+      <div class="wordmark">Presence</div>
+      <div class="streak">streak <b>12d</b></div>
+    </header>
+    <nav class="mode-tabs" aria-label="Main sections">
+      <button class="mode-tab active">Guide</button><button class="mode-tab">Concentration</button><button class="mode-tab">Awareness</button>
+    </nav>
+    <div class="guide-dots" aria-label="Guide pages"><button class="guide-dot active" aria-label="Path"></button><button class="guide-dot" aria-label="Upgrade"></button><button class="guide-dot" aria-label="Tree"></button></div>
+
+    <section class="path-banner">
+      <div class="path-banner-text"><div class="eyebrow">Omnia's Path</div><div class="path-banner-title">Practice Now</div><div class="path-banner-sub">Foundational Path · 2× / day</div></div>
+      <button class="omnia" aria-label="Reveal an Omnia symbol">
+        <svg viewBox="0 0 80 130" aria-hidden="true"><defs><linearGradient id="pg1" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#ddf0ff" stop-opacity=".92"/><stop offset="1" stop-color="#6ab8d8" stop-opacity=".48"/></linearGradient><linearGradient id="pg2" x1="1" y1="0" x2="0" y2="1"><stop stop-color="#fff" stop-opacity=".78"/><stop offset="1" stop-color="#4a9ec0" stop-opacity=".22"/></linearGradient><radialGradient id="pg3"><stop stop-color="#b8eaff" stop-opacity=".42"/><stop offset="1" stop-color="#2878a0" stop-opacity="0"/></radialGradient></defs><ellipse cx="40" cy="68" rx="28" ry="48" fill="url(#pg3)" opacity=".62"/><polygon points="40,3 54,14 40,25 26,14" fill="url(#pg1)" stroke="#90cce8" stroke-width=".55"/><polygon points="40,3 54,14 40,13" fill="#ceeaff" opacity=".72"/><polygon points="40,25 60,36 64,58 40,70 16,58 20,36" fill="url(#pg1)" stroke="#88c4e0" stroke-width=".55"/><polygon points="40,25 60,36 40,44" fill="#d4ecff" opacity=".52"/><polygon points="16,58 64,58 40,70" fill="url(#pg2)" opacity=".38"/><polygon points="40,70 64,58 56,88 40,100 24,88 16,58" fill="url(#pg1)" stroke="#88c4e0" stroke-width=".55" opacity=".88"/><polygon points="40,100 56,88 40,114" fill="url(#pg2)" stroke="#88c4e0" stroke-width=".48" opacity=".72"/><polygon points="40,100 24,88 40,114" fill="#b4dcf4" stroke="#88c4e0" stroke-width=".48" opacity=".52"/></svg>
+      </button>
+    </section>
+
+    <section class="now-card">
+      <div class="now-head"><div><div class="now-label">Omnia recommends</div><h1 class="now-title" id="nowTitle">Clock</h1></div><div class="reward" id="reward">✦ +1 Mental</div></div>
+      <p class="now-reason" id="nowReason">Begin with five minutes of complete attention. Nothing else needs your concern yet.</p>
+      <div class="now-meta"><span id="duration">5 min</span><span id="sessionLabel">First session</span><span id="progressText">0 of 3 complete</span></div>
+      <button class="begin" id="beginBtn">Begin Clock</button>
+    </section>
+
+    <section>
+      <div class="day-head"><h2 class="day-name">Today's agenda</h2><div class="day-count"><strong id="doneCount">0</strong> / 3 done</div></div>
+      <div class="agenda" id="agenda">
+        <div class="agenda-row active" style="--row-color:#d4956e" data-index="0"><div class="agenda-icon">⊙</div><div class="agenda-info"><div class="agenda-name">Clock</div><div class="agenda-meta">5 min · complete focus</div></div><div class="agenda-state">Now</div></div>
+        <div class="agenda-row" style="--row-color:#8ea6c4" data-index="1"><div class="agenda-icon">◌</div><div class="agenda-info"><div class="agenda-name">Thought Observation</div><div class="agenda-meta">5 min · observe without attachment</div></div><div class="agenda-state">Next</div></div>
+        <div class="agenda-row" style="--row-color:#c4a8d4" data-index="2"><div class="agenda-icon">◆</div><div class="agenda-info"><div class="agenda-name">Soul Mirror</div><div class="agenda-meta">One honest reflection</div></div><div class="agenda-state">Later</div></div>
+      </div>
+      <button class="more" id="moreBtn" aria-expanded="false"><span>Quests and streak</span><span class="chev">⌄</span></button>
+      <div class="secondary" id="secondary"><div class="secondary-inner"><div class="quest-row"><div><div class="quest-title">Daily Quest</div><div class="quest-sub">Complete your next 2 exercises</div></div><div class="quest-reward">+30 Akasha</div></div><div class="quest-row"><div><div class="quest-title">Keep your streak alive</div><div class="quest-sub">Complete today's practice before midnight</div></div><div class="quest-reward">12d</div></div></div></div>
+      <div class="status" id="status" role="status" aria-live="polite"></div>
+    </section>
+  </main>
+  <script>
+    const practices=[
+      {title:'Clock',duration:'5 min',session:'First session',reward:'✦ +1 Mental',reason:'Begin with five minutes of complete attention. Nothing else needs your concern yet.'},
+      {title:'Thought Observation',duration:'5 min',session:'Second practice',reward:'✦ +1 Mental',reason:'Good. Now observe the movement of thought without following it or forcing silence.'},
+      {title:'Soul Mirror',duration:'Reflection',session:'Final practice',reward:'✦ +1 Astral',reason:'Finish with one honest reflection. Clarity is enough; judgment is unnecessary.'}
+    ];
+    let completed=0;
+    const beginBtn=document.getElementById('beginBtn');
+    const render=()=>{
+      const done=completed>=practices.length;
+      const current=practices[Math.min(completed,practices.length-1)];
+      document.getElementById('nowTitle').textContent=done?'Agenda Complete':current.title;
+      document.getElementById('duration').textContent=done?'Return tomorrow':current.duration;
+      document.getElementById('sessionLabel').textContent=done?'Let the work settle':current.session;
+      document.getElementById('reward').textContent=done?'Day complete':current.reward;
+      document.getElementById('nowReason').textContent=done?'Enough for today. Omnia will prepare the next useful pressure point tomorrow.':current.reason;
+      document.getElementById('progressText').textContent=`${completed} of 3 complete`;
+      document.getElementById('doneCount').textContent=completed;
+      beginBtn.textContent=done?'Completed':`Begin ${current.title}`;
+      beginBtn.disabled=done;
+      document.querySelectorAll('.agenda-row').forEach((row,index)=>{row.classList.toggle('done',index<completed);row.classList.toggle('active',index===completed);row.querySelector('.agenda-state').textContent=index<completed?'Done':index===completed?'Now':index===completed+1?'Next':'Later';});
+    };
+    beginBtn.addEventListener('click',()=>{if(completed>=practices.length)return;const name=practices[completed].title;completed++;document.getElementById('status').textContent=`${name} completed. Omnia has prepared the next practice.`;render();});
+    document.getElementById('moreBtn').addEventListener('click',event=>{const open=document.getElementById('secondary').classList.toggle('open');event.currentTarget.classList.toggle('open',open);event.currentTarget.setAttribute('aria-expanded',String(open));});
+    render();
+  </script>
+</body>
+</html>

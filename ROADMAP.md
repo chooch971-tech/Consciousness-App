@@ -1,6 +1,6 @@
 # Presence — Roadmap
 
-Last updated: 2026-05-25
+Last updated: 2026-07-13
 
 ---
 
@@ -14,7 +14,7 @@ Last updated: 2026-05-25
 - [ ] Redesign everything below "Advance to Step II"
 - [ ] Biblically accurate angel asset
 - [ ] Test all cosmetics
-- [ ] Remove all Bardon RPG code (`bardonScreen`, `bardon_rpg_v2` localStorage key, related JS/CSS)
+- [x] Remove all Bardon RPG code (`bardonScreen`, `bardon_rpg_v2` localStorage key, related JS/CSS)
 
 ### Star Screen
 - [ ] Fix borked menus
@@ -59,7 +59,11 @@ Last updated: 2026-05-25
 - [ ] Write content
 
 ### Cleanup
-- [ ] Remove Bardon RPG dead code
+- [x] Remove Bardon RPG dead code
+- [x] Centralize browser/server cloud-sync keys in `sync-contract.js`
+- [x] Extract reset and signed-out snapshot behavior into `progress-state.js`
+- [x] Share history and Seven Gifts merge behavior in `sync-merge.js`
+- [x] Consolidate duplicate global HTML escaping helpers
 - [ ] Remove `/api/sync/sync/diagnose` debug endpoint from server.js
 
 ---

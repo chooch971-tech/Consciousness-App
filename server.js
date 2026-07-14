@@ -6,6 +6,16 @@ const { MongoClient, ObjectId } = require('mongodb');
 const bcrypt  = require('bcryptjs');
 const jwt     = require('jsonwebtoken');
 const { OAuth2Client } = require('google-auth-library');
+const { enforceOmniaReportPolicy } = require('./omnia-report-policy');
+const { SYNC_KEYS, selectSyncData } = require('./sync-contract');
+const { isHistoryKey, mergeHistoryValues, mergeGiftPathValues } = require('./sync-merge');
+const {
+  moderateUsername,
+  moderatePublicText,
+  moderatePrivateText,
+  normalizeSort,
+  rankLodgePosts
+} = require('./social-safety');
 
 const app = express();
 
@@ -44,6 +54,7 @@ const JWT_SECRET    = process.env.JWT_SECRET;
 const ADMIN_SECRET  = process.env.ADMIN_SECRET;
 const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
 const OPENAI_MODEL = process.env.OPENAI_MODEL || 'gpt-4o-mini';
+const OMNIA_REPORT_VERSION = 2;
 
 if (!VAPID_PRIVATE_KEY || !MONGO_URI || !JWT_SECRET) {
   console.error('Missing required environment variables: VAPID_PRIVATE_KEY, MONGO_URI, JWT_SECRET');
@@ -79,21 +90,19 @@ let prayerSchedules = [];
 let practiceSchedules = [];
 
 let mongoClient;
-// One-time sanitization of usernames stored before the charset rule was
-// enforced at registration (latent stored-XSS if any render path ever skips
-// escaping). Only touches usernames that violate [a-z0-9_]{3,24}; resolves
-// collisions and empties by appending a short id-derived suffix. Idempotent —
-// after the first run the offending set is empty and it's a no-op.
+// Sanitize legacy usernames that violate either the charset or community rule.
+// The migration is idempotent and resolves replacement-name collisions.
 async function migrateLegacyUsernames() {
   if (!usersCollection) return;
-  const bad = await usersCollection.find({
-    username: { $exists: true, $ne: null, $type: 'string', $not: /^[a-z0-9_]{3,24}$/ }
+  const candidates = await usersCollection.find({
+    username: { $exists: true, $ne: null, $type: 'string' }
   }).project({ _id: 1, username: 1 }).toArray();
+  const bad = candidates.filter(u => !/^[a-z0-9_]{3,24}$/.test(u.username) || !moderateUsername(u.username).ok);
   if (!bad.length) return;
   let fixed = 0;
   for (const u of bad) {
     let clean = String(u.username).trim().toLowerCase().replace(/[^a-z0-9_]/g, '').slice(0, 24);
-    if (clean.length < 3) clean = 'practitioner_' + String(u._id).slice(-5);
+    if (clean.length < 3 || !moderateUsername(clean).ok) clean = 'practitioner_' + String(u._id).slice(-5);
     // Resolve collisions against any OTHER user holding the cleaned name.
     let candidate = clean, n = 0;
     while (await usersCollection.findOne({ username: candidate, _id: { $ne: u._id } })) {
@@ -104,7 +113,7 @@ async function migrateLegacyUsernames() {
     await usersCollection.updateOne({ _id: u._id }, { $set: { username: candidate } });
     fixed++;
   }
-  console.log(`[Migration] Sanitized ${fixed} legacy username(s).`);
+  console.log(`[Migration] Replaced ${fixed} legacy username(s).`);
 }
 
 // Unified graph migration: each accepted friendship becomes two active follow
@@ -145,6 +154,7 @@ async function connectDB() {
     commentsCollection = db.collection('comments');
     try { await followsCollection.createIndex({ followerId: 1, followeeId: 1 }, { unique: true }); } catch(e) {}
     try { await postsCollection.createIndex({ userId: 1, createdAt: -1 }); } catch(e) {}
+    try { await postsCollection.createIndex({ userId: 1, type: 1, createdAt: -1 }); } catch(e) {}
     try { await postsCollection.createIndex({ createdAt: -1 }); } catch(e) {}
     try { await likesCollection.createIndex({ postId: 1, userId: 1 }, { unique: true }); } catch(e) {}
     try { await commentsCollection.createIndex({ postId: 1, createdAt: 1 }); } catch(e) {}
@@ -157,6 +167,7 @@ async function connectDB() {
     messagesCollection = db.collection('messages');
     try { await conversationsCollection.createIndex({ participants: 1 }); } catch(e) {}
     try { await messagesCollection.createIndex({ convId: 1, createdAt: 1 }); } catch(e) {}
+    try { await messagesCollection.createIndex({ convId: 1, senderId: 1, createdAt: 1 }); } catch(e) {}
     userPushSubsCollection = db.collection('user_push_subs');
     try { await userPushSubsCollection.createIndex({ endpoint: 1 }, { unique: true }); } catch(e) {}
     try { await userPushSubsCollection.createIndex({ userId: 1 }); } catch(e) {}
@@ -387,7 +398,7 @@ function compactContext(value, depth = 0) {
   if (Array.isArray(value)) return value.slice(0, 16).map(item => compactContext(item, depth + 1));
   if (value && typeof value === 'object') {
     const out = {};
-    Object.keys(value).slice(0, 36).forEach(key => {
+    Object.keys(value).slice(0, 64).forEach(key => {
       out[clampText(key, 40)] = compactContext(value[key], depth + 1);
     });
     return out;
@@ -409,13 +420,13 @@ async function generateAiMessage(feature, context) {
     progress_report:
       'You are Omnia, a deeply perceptive guide inside Presence who sees the user\'s growth clearly. Write a progress-report reflection that makes the user feel genuinely seen. Open by acknowledging a specific number or achievement from their data — not with atmosphere or metaphor, but with direct recognition. Then give real encouragement rooted in what they actually did. Close with one forward-looking thought that builds momentum. Be warm, direct, and enthusiastic — never generic, never poetic filler. The user should feel like Omnia truly watched and noticed them. Do not mention AI, data, or reports. STRICT word limits: daily 40-55 words, weekly 50-65 words, monthly 60-75 words, yearly 75-90 words.',
     omnia_report:
-      'You are Omnia, a personalized concentration coach inside Presence, a serious mental-training app rooted in Franz Bardon\'s hermetic concentration exercises (Clock, Visualization, Auditory, Thought Control, Asana). Your focus is the user\'s CONCENTRATION training above all else. Center your commentary on their concentration work: cite a specific concentration number (best hold in seconds, sessions, or total time), comment on which exercises they trained and — when relevant — gently point to a concentration exercise in concentration_exercises_untried they haven\'t tried, framed as a next step. Only ever suggest an exercise that appears in concentration_exercises_untried; never name an exercise that is not in that list. If ready_for_new_exercises is false, do NOT suggest moving on to Visualization, Auditory, or Asana — instead keep the user focused on deepening Clock and Thought Control until they reach a ten-minute interval. Treat seconds of unbroken focus as the core metric of progress. '
-      + 'GROUNDING — these rules override tone: previous_period holds the prior period\'s real numbers. Only claim improvement, decline, stagnation, or "no progress" when comparing the current numbers against previous_period actually supports it. If has_previous_data is false, NEVER speak of progress or its absence — there is nothing to compare against; recognize what was done this period as it stands. Never invent trends. '
-      + 'RECOGNITION: Always open with one specific, earned recognition of something they actually did (a number, a new best, a streak) before any critique — at every candor level; at the highest candor one short clause is enough. If is_new_best_hold is true, celebrate it explicitly as a new personal best. '
-      + 'STREAK: If streak_worth_mentioning is true and concentration_streak_days or practice_streak_days is 3 or more, weave the streak in as fuel (e.g. "six days unbroken"). Otherwise leave streaks unmentioned. '
-      + 'DISCIPLINE — the daily practice, when these fields are present (not null): If regimen_complete is false, note plainly that today\'s practice is unfinished (regimen_completed of regimen_total done) and nudge them to close it out — weight the bluntness to the candor level. If has_two_focus_exercises is false, recommend they add a second focus exercise — specifically the Thought Control drill named in suggested_focus_exercise — to their daily practice, because concentration must be trained from more than one angle and Clock plus Thought Control are the foundation. This focus recommendation is authorized by has_two_focus_exercises and, for Thought Control only, overrides the "untried list" restriction above. '
-      + 'IMPROVEMENT — trend truth: improved says whether this period beat the last on best hold or total focus time. days_without_improvement counts consecutive PRACTICED days with no such gain. When disapprove is true (three or more such days) the plateau is real and must be named directly and unflinchingly, as genuine disapproval, even at low candor — they are showing up but not progressing, and that must not be smoothed over. Still open with the one earned recognition first, then hold them to account. Never speak of stagnation or "no improvement" when has_previous_data is false or days_without_improvement is 0 — absence of data is not a plateau. '
-      + 'Awareness training is optional. If awareness_sessions is 0, do not mention awareness at all. If awareness_sessions > 0, you may briefly acknowledge it as a positive — never frame zero awareness as a gap or something to improve. Be direct, knowledgeable, and honest — like a demanding but encouraging teacher, never a generic chatbot, never poetic filler. No greeting, no sign-off. 35-60 words.'
+      'You are Omnia, a personalized concentration coach inside Presence, a serious mental-training app rooted in Franz Bardon\'s hermetic concentration exercises. Examine completed_exercises for this report day and compare them with comparison_baseline, which is the preceding seven days for a daily report. Cite a specific real number: a best hold, session duration, total practice time, or session count. Treat both practicing for longer and achieving a longer unbroken focus as meaningful progress. Do not force an exercise recommendation into every report. '
+      + 'GROUNDING — these rules override tone: progress_signals and comparison_baseline contain the real comparison. Only claim improvement when best_focus_improved, practice_duration_improved, or improved_exercises supports it. If has_previous_data is false, do not claim improvement, decline, stagnation, or "no progress"; recognize the completed work as it stands. Never invent a trend. '
+      + 'RECOGNITION — always open with one specific earned recognition before critique. When progress_signals shows longer practice or longer focus, commend that progress clearly. If is_new_best_hold is true, celebrate it explicitly as a new personal best. '
+      + 'RECOMMENDATIONS — only suggest an exercise in allowed_recommendations. Never recommend anything in recommendation_exclusions. If avoid_clock_recommendation is true or thought_control_stack_count is 2 or more, NEVER recommend Clock, even if Clock was untried; you may still praise a Clock result the user actually completed. Two Thought Control exercises already constitute substantial foundational focus work, so encourage depth in that existing stack or omit an exercise recommendation. If ready_for_new_exercises is false, do not suggest Visualization, Auditory, or Asana. '
+      + 'CURRENT REGIMEN — current_regimen_exercises describes what is already scheduled now. Do not recommend adding an exercise already represented adequately in that stack. Only discuss regimen completion when regimen_complete is not null. '
+      + 'PLATEAU — days_without_improvement counts consecutive practiced days without a longer focus or longer practice duration against a trailing seven-day baseline. Only when needs_push is true (five or more such practiced days) give a firm, concrete push. Name the plateau honestly, but do not shame or scold. When needs_push is false, do not manufacture concern. '
+      + 'STREAK — mention a streak only when streak_worth_mentioning is true and a supplied streak is at least 3 days. Awareness is optional: acknowledge it only when awareness_sessions is above zero, and never frame zero awareness as a gap. ALWAYS finish with genuine encouragement or confidence in the user\'s capacity to improve, regardless of candor. Be direct, knowledgeable, and specific; no greeting, sign-off, generic filler, or invented facts. 40-65 words.'
   };
 
   // Omnia's Candor (1–5): the user-set dial for how blunt the criticism is.
@@ -424,7 +435,7 @@ async function generateAiMessage(feature, context) {
     2: 'TONE: Honest but kind. Acknowledge effort, then name gaps plainly but with care. Stay supportive.',
     3: 'TONE: Direct coach. State weaknesses and missed work plainly with no cushioning. Praise only what is earned. Be matter-of-fact.',
     4: 'TONE: Demanding teacher. Expect more. Call out slippage, low numbers, and avoided exercises bluntly. Minimal praise — it must be earned. No coddling.',
-    5: 'TONE: Pitiless. Be brutally honest and unsparing, in the spirit of Bardon\'s "be pitiless with yourself — no ego here." Confront every weakness, excuse, and avoided exercise head-on. Do not flatter. Demand rigor. Still factual and grounded in their numbers — harsh, never cruel for its own sake.'
+    5: 'TONE: Uncompromising but constructive. Confront demonstrated weakness directly, demand rigor, and do not flatter. Remain factual, never shame the user, and end with earned encouragement and a concrete sense that improvement is possible.'
   };
   let systemContent = prompts[feature] || prompts.progress_report;
   if (feature === 'omnia_report') {
@@ -437,7 +448,7 @@ async function generateAiMessage(feature, context) {
     model: OPENAI_MODEL,
     messages: [
       { role: 'system', content: systemContent },
-      { role: 'user', content: JSON.stringify(compactContext(context)).slice(0, 4200) }
+      { role: 'user', content: JSON.stringify(compactContext(context)).slice(0, 9000) }
     ],
     max_tokens: 500
   };
@@ -466,7 +477,8 @@ async function generateAiMessage(feature, context) {
   const text = (data.choices && data.choices[0] && data.choices[0].message && data.choices[0].message.content) || '';
   // 60-word reflections can run ~400 chars; clamp generously and on a word
   // boundary so the message is never sliced mid-word.
-  const message = clampText(text.trim(), 600);
+  let message = clampText(text.trim(), 600);
+  if (feature === 'omnia_report') message = enforceOmniaReportPolicy(message, context || {});
   if (!message) {
     const err = new Error('OpenAI returned an empty message');
     err.status = 502;
@@ -672,6 +684,7 @@ app.post('/api/sync/auth/register', authRateLimit, async (req, res) => {
       cleanUsername = username.trim().toLowerCase().replace(/[^a-z0-9_]/g, '');
       if (cleanUsername.length < 3) return res.status(400).json({ error: 'Username must be at least 3 characters (letters, numbers, underscores)' });
       if (cleanUsername.length > 24) return res.status(400).json({ error: 'Username too long (max 24 characters)' });
+      if (!moderateUsername(cleanUsername).ok) return res.status(400).json({ error: 'Choose a different username' });
     }
     const existingUser = await usersCollection.findOne({ email });
     if (existingUser) return res.status(400).json({ error: 'Email already in use' });
@@ -734,6 +747,7 @@ app.post('/api/sync/auth/set-username', verifyToken, async (req, res) => {
     const clean = username.trim().toLowerCase().replace(/[^a-z0-9_]/g, '');
     if (clean.length < 3) return res.status(400).json({ error: 'Username must be at least 3 characters (letters, numbers, underscores)' });
     if (clean.length > 24) return res.status(400).json({ error: 'Username too long (max 24 characters)' });
+    if (!moderateUsername(clean).ok) return res.status(400).json({ error: 'Choose a different username' });
     const existing = await usersCollection.findOne({ username: clean });
     if (existing && existing._id.toString() !== req.user.userId) return res.status(400).json({ error: 'Username already taken' });
     await usersCollection.updateOne({ _id: new ObjectId(req.user.userId) }, { $set: { username: clean } });
@@ -1038,18 +1052,7 @@ app.post('/api/sync/sync/push', verifyToken, async (req, res) => {
     if (anyClamped) console.warn(`[Sync] Clamped implausible progression for user ${req.user.userId}`);
     const syncData = {
       userId: new ObjectId(req.user.userId),
-      presence_v3: data.presence_v3,
-      presence_conc_v1: data.presence_conc_v1,
-      presence_prayer_v1: data.presence_prayer_v1,
-      presence_journal_v1: data.presence_journal_v1,
-      presence_soul_mirror_v1: data.presence_soul_mirror_v1,
-      presence_ai_report_comments_v1: data.presence_ai_report_comments_v1,
-      presence_guide_v1: data.presence_guide_v1,
-      presence_omnia_v1: data.presence_omnia_v1,
-      bardon_rpg_v2: data.bardon_rpg_v2,
-      presence_visited: data.presence_visited,
-      presence_ach_v1: data.presence_ach_v1,
-      presence_giftpath_v1: data.presence_giftpath_v1,
+      ...selectSyncData(data),
       deviceInfo: deviceInfo || 'Unknown device',
       syncedAt: new Date(),
     };
@@ -1134,41 +1137,9 @@ function pickBestValue(key, snaps) {
   return bestStr;
 }
 
-function mergeHistoryArraysSrv(a, b, cap) {
-  a = Array.isArray(a) ? a : []; b = Array.isArray(b) ? b : [];
-  const seen = {}, out = [];
-  a.concat(b).forEach((h) => {
-    if (!h || typeof h !== 'object') return;
-    const id = h.date || JSON.stringify(h);
-    if (seen[id]) return;
-    seen[id] = true; out.push(h);
-  });
-  out.sort((x, y) => (y.date ? new Date(y.date).getTime() : 0) - (x.date ? new Date(x.date).getTime() : 0));
-  return cap && out.length > cap ? out.slice(0, cap) : out;
-}
-
-const SRV_HISTORY_MERGE = {
-  presence_conc_v1: { arrays: ['history'], maxNums: ['xp','totalSessions','bestSeconds','bestAsanaSeconds','level'] },
-  presence_v3:      { arrays: ['history','weeklyScores'], maxNums: ['xp','totalSessions','streak','longestStreak','level'] },
-};
-
 function mergeHistoryKey(key, snaps) {
-  const spec = SRV_HISTORY_MERGE[key];
-  const baseStr = pickBestValue(key, snaps);
-  if (!spec || !baseStr) return baseStr;
-  const base = parseSafe(baseStr);
-  if (!base) return baseStr;
-  const baseReset = (base._resetAt) || 0;
-  snaps.forEach((s) => {
-    const o = parseSafe(s[key]); if (!o) return;
-    if (((o._resetAt) || 0) !== baseReset) return; // don't merge across a reset boundary
-    spec.arrays.forEach((f) => { base[f] = mergeHistoryArraysSrv(base[f], o[f], 100); });
-    spec.maxNums.forEach((f) => {
-      if (base[f] != null || o[f] != null) base[f] = Math.max(Number(base[f]) || 0, Number(o[f]) || 0);
-    });
-    if (key === 'presence_conc_v1' && !base.clockTheme && o.clockTheme) base.clockTheme = o.clockTheme;
-  });
-  return JSON.stringify(base);
+  const merged = mergeHistoryValues(key, snaps.map((snapshot) => snapshot[key]));
+  return merged ? JSON.stringify(merged) : null;
 }
 
 function mergeOmniaKey(snaps) {
@@ -1242,8 +1213,13 @@ function mergeOmniaKey(snaps) {
 // snapshot so a pull never hands a device an emptier set than it had — which is
 // what let already-earned achievements re-award akasha on a second device.
 function mergeAchKey(snaps) {
+  const best = parseSafe(pickBestValue('presence_ach_v1', snaps));
+  const resetAt = (best && best._resetAt) || 0;
   const objs = [];
-  snaps.forEach((s) => { const o = parseSafe(s.presence_ach_v1); if (o) objs.push(o); });
+  snaps.forEach((s) => {
+    const o = parseSafe(s.presence_ach_v1);
+    if (o && ((o._resetAt || 0) === resetAt)) objs.push(o);
+  });
   if (!objs.length) return null;
   let maxV = 1, monthKey = '';
   objs.forEach((o) => { maxV = Math.max(maxV, Number(o.hwmV) || 1); const mk = String((o.monthly || {}).key || ''); if (mk > monthKey) monthKey = mk; });
@@ -1276,6 +1252,7 @@ function mergeAchKey(snaps) {
   if (!isFinite(out.monthly.spentBase)) out.monthly.spentBase = 0;
   out.clearedKeys = Object.keys(cleared);
   out.monthsCleared = out.clearedKeys.length;
+  if (resetAt) out._resetAt = resetAt;
   return JSON.stringify(out);
 }
 
@@ -1285,36 +1262,20 @@ function mergeAchKey(snaps) {
 // newest month across snapshots and union claimed/done among snapshots on that
 // month, so last month's leftover claims can't block a new month's reset.
 function mergeGiftPathKey(snaps) {
-  const objs = [];
-  snaps.forEach((s) => { const o = parseSafe(s.presence_giftpath_v1); if (o) objs.push(o); });
-  if (!objs.length) return null;
-  const clearedSeen = {}, cleared = [];
-  let month = null, started = false;
-  objs.forEach((o) => {
-    (Array.isArray(o.cleared) ? o.cleared : []).forEach((m) => { if (m && !clearedSeen[m]) { clearedSeen[m] = 1; cleared.push(m); } });
-    if (o.month && String(o.month) > String(month || '')) month = o.month;
-    started = started || !!o.started;
-  });
-  const out = { cleared, month, started, startDate: null, claimed: [false, false, false, false, false, false, false], done: {} };
-  objs.forEach((o) => {
-    if ((o.month || null) !== month) return; // only fold the current month's run
-    if (o.startDate && (!out.startDate || o.startDate < out.startDate)) out.startDate = o.startDate;
-    const oc = Array.isArray(o.claimed) ? o.claimed : [];
-    for (let i = 0; i < 7; i++) out.claimed[i] = out.claimed[i] || !!oc[i];
-    const od = o.done || {}; Object.keys(od).forEach((k) => { if (od[k]) out.done[k] = true; });
-  });
-  if (!out.startDate && month) out.startDate = month + '-01';
-  return JSON.stringify(out);
+  const merged = mergeGiftPathValues(
+    snaps.map((snapshot) => snapshot.presence_giftpath_v1),
+    { inferStartDate: true }
+  );
+  return merged ? JSON.stringify(merged) : null;
 }
 
 function mergeSnapshots(snaps) {
-  const KEYS = ['presence_v3','presence_conc_v1','presence_prayer_v1','presence_journal_v1','presence_soul_mirror_v1','presence_ai_report_comments_v1','presence_guide_v1','presence_omnia_v1','bardon_rpg_v2','presence_visited','presence_ach_v1','presence_giftpath_v1'];
   const out = {};
-  KEYS.forEach((k) => {
+  SYNC_KEYS.forEach((k) => {
     if (k === 'presence_omnia_v1') out[k] = mergeOmniaKey(snaps);
     else if (k === 'presence_ach_v1') out[k] = mergeAchKey(snaps);
     else if (k === 'presence_giftpath_v1') out[k] = mergeGiftPathKey(snaps);
-    else if (SRV_HISTORY_MERGE[k]) out[k] = mergeHistoryKey(k, snaps);
+    else if (isHistoryKey(k)) out[k] = mergeHistoryKey(k, snaps);
     else out[k] = pickBestValue(k, snaps);
   });
   return out;
@@ -1712,6 +1673,7 @@ app.put('/api/sync/status', verifyToken, async (req, res) => {
     let { text } = req.body;
     if (typeof text !== 'string') return res.status(400).json({ error: 'text required' });
     text = text.replace(/[\u0000-\u001f\u007f]/g, ' ').trim().slice(0, 280);
+    if (text && !moderatePublicText(text).ok) return res.status(400).json({ error: 'This update cannot be published' });
     const status = { text, updatedAt: new Date() };
     await usersCollection.updateOne(
       { _id: new ObjectId(req.user.userId) },
@@ -1741,9 +1703,8 @@ app.put('/api/sync/privacy', verifyToken, async (req, res) => {
 });
 
 // ── THE LODGE — social feed (see SOCIAL_PLAN.md) ─────────
-// Phase 1: posts + likes + comments over the unified follows graph.
-// No automated moderation in v1 by decision — sanitizeSocialText() is the
-// single choke point where a moderation call would slot in later.
+// Posts + likes + comments over the unified follows graph. Submission routes
+// enforce moderation here on the server; client checks are only explanatory.
 const POST_MAX_LEN = 280;
 
 function sanitizeSocialText(text, maxLen) {
@@ -1758,8 +1719,14 @@ async function lodgeFollowingIds(userId) {
   return rows.map(r => r.followeeId);
 }
 
+function lodgePostAllowed(post) {
+  return !!(post && moderatePublicText(post.text || '').ok
+    && (!post.title || moderatePublicText(post.title).ok));
+}
+
 // Attach author identity + viewer's like state to a page of posts.
 async function decoratePosts(posts, viewerId) {
+  posts = posts.filter(lodgePostAllowed);
   const userIds = [...new Set(posts.map(p => p.userId))];
   const users = userIds.length ? await usersCollection.find(
     { _id: { $in: userIds.map(id => new ObjectId(id)) } }
@@ -1793,6 +1760,9 @@ app.post('/api/social/posts', verifyToken, async (req, res) => {
     const text = sanitizeSocialText(req.body.text, type === 'blog' ? BLOG_MAX_LEN : POST_MAX_LEN);
     if (!text) return res.status(400).json({ error: 'text required' });
     const title = (type === 'blog' && req.body.title) ? sanitizeSocialText(req.body.title, 80) : null;
+    if (!moderatePublicText(text).ok || (title && !moderatePublicText(title).ok)) {
+      return res.status(400).json({ error: 'This writing cannot be published' });
+    }
     const userId = req.user.userId;
     const dayStart = new Date(); dayStart.setHours(0, 0, 0, 0);
     const todayCount = await postsCollection.countDocuments({ userId, createdAt: { $gte: dayStart } });
@@ -1813,20 +1783,35 @@ app.post('/api/social/posts', verifyToken, async (req, res) => {
   }
 });
 
-// FEED — chronological, own posts + people you follow, cursor-paginated.
+// FEED — own posts + people followed. Newest uses a timestamp cursor; ranked
+// views use an offset cursor over a bounded six-month candidate window.
 app.get('/api/social/feed', verifyToken, async (req, res) => {
   try {
     const userId = req.user.userId;
+    const sort = normalizeSort(req.query.sort);
     const ids = await lodgeFollowingIds(userId);
     ids.push(userId);
     const q = { userId: { $in: ids } };
     q.type = req.query.type === 'blog' ? 'blog' : { $ne: 'blog' };
-    if (req.query.cursor) {
+    if (sort === 'newest' && req.query.cursor) {
       const before = new Date(req.query.cursor);
       if (!isNaN(before.getTime())) q.createdAt = { $lt: before };
     }
-    const posts = await postsCollection.find(q).sort({ createdAt: -1 }).limit(20).toArray();
-    res.json({ posts: await decoratePosts(posts, userId) });
+    if (sort === 'newest') {
+      const posts = await postsCollection.find(q).sort({ createdAt: -1 }).limit(20).toArray();
+      const nextCursor = posts.length === 20 ? posts[posts.length - 1].createdAt.toISOString() : null;
+      return res.json({ posts: await decoratePosts(posts, userId), sort, nextCursor });
+    }
+
+    const horizon = new Date(Date.now() - 180 * 24 * 60 * 60 * 1000);
+    q.createdAt = { $gte: horizon };
+    const match = /^rank:([a-z]+):(\d+)$/.exec(String(req.query.cursor || ''));
+    const offset = match && match[1] === sort ? Math.min(480, Number(match[2]) || 0) : 0;
+    const candidates = await postsCollection.find(q).sort({ createdAt: -1 }).limit(500).toArray();
+    const ranked = rankLodgePosts(candidates.filter(lodgePostAllowed), sort);
+    const posts = ranked.slice(offset, offset + 20);
+    const nextCursor = offset + 20 < ranked.length ? `rank:${sort}:${offset + 20}` : null;
+    res.json({ posts: await decoratePosts(posts, userId), sort, nextCursor });
   } catch (err) {
     console.error('Feed error:', err);
     res.status(500).json({ error: 'Feed failed' });
@@ -1937,7 +1922,7 @@ app.get('/api/social/posts/:id/comments', verifyToken, async (req, res) => {
     if (!(await canEngagePost(req.user.userId, cp))) return res.status(403).json({ error: 'Not available' });
     let comments = await commentsCollection.find({ postId: req.params.id }).sort({ createdAt: 1 }).limit(200).toArray();
     const hidden = await blockedIdSet(req.user.userId);
-    comments = comments.filter(c => !hidden.has(c.userId));
+    comments = comments.filter(c => !hidden.has(c.userId) && moderatePublicText(c.text || '').ok);
     const ids = [...new Set(comments.map(c => c.userId))];
     const users = ids.length ? await usersCollection.find({ _id: { $in: ids.map(id => new ObjectId(id)) } })
       .project({ username: 1 }).toArray() : [];
@@ -1959,6 +1944,7 @@ app.post('/api/social/posts/:id/comments', verifyToken, async (req, res) => {
   try {
     const text = sanitizeSocialText(req.body.text, POST_MAX_LEN);
     if (!text) return res.status(400).json({ error: 'text required' });
+    if (!moderatePublicText(text).ok) return res.status(400).json({ error: 'This comment cannot be published' });
     const post = await postsCollection.findOne({ _id: new ObjectId(req.params.id) });
     if (!post) return res.status(404).json({ error: 'Post not found' });
     if (!(await canEngagePost(req.user.userId, post))) return res.status(403).json({ error: 'Not available' });
@@ -2225,18 +2211,30 @@ app.get('/api/social/conversations', verifyToken, async (req, res) => {
     const selfId = req.user.userId;
     const convos = await conversationsCollection.find({ participants: selfId }).sort({ lastMsgAt: -1 }).limit(50).toArray();
     const otherIds = convos.map(c => (c.participants || []).find(x => x !== selfId)).filter(Boolean);
-    const users = otherIds.length ? await usersCollection.find({ _id: { $in: otherIds.map(id => new ObjectId(id)) } }).project({ username: 1, profilePic: 1 }).toArray() : [];
+    const unreadConditions = convos.map(c => ({
+      convId: c._id.toString(),
+      senderId: { $ne: selfId },
+      createdAt: { $gt: (c.lastRead && c.lastRead[selfId]) ? new Date(c.lastRead[selfId]) : new Date(0) }
+    }));
+    const usersPromise = otherIds.length
+      ? usersCollection.find({ _id: { $in: otherIds.map(id => new ObjectId(id)) } }).project({ username: 1, profilePic: 1 }).toArray()
+      : Promise.resolve([]);
+    const unreadPromise = unreadConditions.length ? messagesCollection.aggregate([
+      { $match: { $or: unreadConditions } },
+      { $group: { _id: '$convId', count: { $sum: 1 } } }
+    ]).toArray() : Promise.resolve([]);
+    const [users, unreadRows] = await Promise.all([usersPromise, unreadPromise]);
     const byId = {}; users.forEach(u => { byId[u._id.toString()] = u; });
+    const unreadByConversation = new Map(unreadRows.map(row => [row._id, row.count]));
     const out = [];
     for (const c of convos) {
       const other = (c.participants || []).find(x => x !== selfId);
-      const lastRead = (c.lastRead && c.lastRead[selfId]) ? new Date(c.lastRead[selfId]) : new Date(0);
-      const unread = await messagesCollection.countDocuments({ convId: c._id.toString(), senderId: { $ne: selfId }, createdAt: { $gt: lastRead } });
+      const unread = unreadByConversation.get(c._id.toString()) || 0;
       out.push({
         id: c._id.toString(), userId: other,
         username: (byId[other] && byId[other].username) || ('practitioner_' + String(other).slice(-5)),
         profilePic: (byId[other] && byId[other].profilePic) || null,
-        lastPreview: c.lastPreview || '', lastMsgAt: c.lastMsgAt, unread
+        lastPreview: moderatePrivateText(c.lastPreview || '').ok ? (c.lastPreview || '') : '', lastMsgAt: c.lastMsgAt, unread
       });
     }
     res.json({ conversations: out });
@@ -2250,6 +2248,7 @@ app.get('/api/social/conversations/:id/messages', verifyToken, async (req, res) 
     if (!convo || (convo.participants || []).indexOf(selfId) === -1) return res.status(404).json({ error: 'Not found' });
     let msgs = await messagesCollection.find({ convId: convo._id.toString() }).sort({ createdAt: -1 }).limit(50).toArray();
     msgs.reverse();
+    msgs = msgs.filter(m => moderatePrivateText(m.text || '').ok);
     await conversationsCollection.updateOne({ _id: convo._id }, { $set: { ['lastRead.' + selfId]: new Date() } });
     res.json({ messages: msgs.map(m => ({
       id: m._id.toString(), text: m.text, createdAt: m.createdAt, mine: m.senderId === selfId
@@ -2262,6 +2261,7 @@ app.post('/api/social/conversations/:id/messages', verifyToken, async (req, res)
     const selfId = req.user.userId;
     const text = sanitizeSocialText(req.body.text, DM_MAX_LEN);
     if (!text) return res.status(400).json({ error: 'text required' });
+    if (!moderatePrivateText(text).ok) return res.status(400).json({ error: 'This message cannot be sent' });
     const convo = await conversationsCollection.findOne({ _id: new ObjectId(req.params.id) });
     if (!convo || (convo.participants || []).indexOf(selfId) === -1) return res.status(404).json({ error: 'Not found' });
     const other = (convo.participants || []).find(x => x !== selfId);
@@ -2406,7 +2406,7 @@ app.post('/api/sync/omnia/report', aiRateLimit, aiGlobalBudget, async (req, res)
     const periodKey = serverPeriodKey(period, offset);
 
     // Return cached if fresh — this is the once-per-period guard
-    const cached = await col.findOne({ userId, period, periodKey });
+    const cached = await col.findOne({ userId, period, periodKey, version: OMNIA_REPORT_VERSION });
     if (cached && cached.commentary) {
       return res.json({ commentary: cached.commentary });
     }
@@ -2418,13 +2418,13 @@ app.post('/api/sync/omnia/report', aiRateLimit, aiGlobalBudget, async (req, res)
     // Only the current period (offset 0) gets a TTL so it can refresh as the
     // period is still in progress.
     const isPast = Number.isFinite(parseInt(offset, 10)) && parseInt(offset, 10) < 0;
-    const doc = { userId, period, periodKey, commentary, generatedAt: new Date() };
+    const doc = { userId, period, periodKey, version: OMNIA_REPORT_VERSION, commentary, generatedAt: new Date() };
     if (!isPast) {
       const ttlMs = period === 'daily' ? 86400000 : period === 'weekly' ? 7 * 86400000 : 31 * 86400000;
       doc.expiresAt = new Date(Date.now() + ttlMs);
     }
     await col.updateOne(
-      { userId, period, periodKey },
+      { userId, period, periodKey, version: OMNIA_REPORT_VERSION },
       { $set: doc, $unset: isPast ? { expiresAt: '' } : {} },
       { upsert: true }
     );
@@ -2455,9 +2455,9 @@ app.post('/api/pavlok/link', async (req, res) => {
       body: JSON.stringify({ user: { email, password } }),
     });
     const data = await r.json();
-    console.log('Pavlok login response status:', r.status, '— token', token ? 'received' : 'missing');
     // Token field name varies — try all known variants
     const token = data?.user?.token || data?.token || data?.access_token || data?.auth_token || data?.data?.token;
+    console.log('Pavlok login response status:', r.status, '— token', token ? 'received' : 'missing');
     if (!r.ok || !token) {
       return res.status(401).json({ error: data?.message || data?.error || data?.detail || 'Pavlok login failed' });
     }
