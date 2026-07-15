@@ -35,8 +35,11 @@ system, achievements, streaks, and social/friends features.
 - **`soul-mirror-client.js`** — Soul Mirror trait storage, elemental and
   severity classification, filtering, completion state, and Autosuggestion
   practice behavior. It loads after the core runtime and before Progress Reports.
+- **`achievements-client.js`** — achievement state, badge evaluation, mastery
+  tracking, profile popovers, and the Achievements screen. Its script tag splits
+  the core inline runtime so its boot initializer retains the original timing.
 - **`sw.js`** — service worker. Caches the shell as `presence-shell-vNNN`
-  (currently **v166**). **Bump this version string on every shippable change to
+  (currently **v168**). **Bump this version string on every shippable change to
   `presence.html`** or returning devices run stale code.
 - `marketing/` — App Store card generators (Playwright screenshot scripts).
 
@@ -54,7 +57,7 @@ system, achievements, streaks, and social/friends features.
    let ok=0,t=0;for(const s of b){if(!s.trim())continue;t++;try{new Function(s);ok++;}catch(e){console.log("FAIL",e.message.slice(0,120));}}
    console.log(ok+"/"+t+" parse");'
    ```
-   Expect **12/12 parse**. For server: `node --check server.js`.
+   Expect **14/14 parse**. For server: `node --check server.js`.
 2. **Browser harness** — headless Chromium via Playwright at
    `/tmp/node_modules/playwright`, launch with
    `executablePath:'/opt/pw-browsers/chromium-1194/chrome-linux/chrome'`.

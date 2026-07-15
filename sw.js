@@ -13,6 +13,7 @@ const PRECACHE = [
   'sync-contract.js',
   'progress-state.js',
   'sync-merge.js',
+  'achievements-client.js',
   'soul-mirror-client.js',
   'reports-client.js',
   'platform-client.js',

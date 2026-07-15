@@ -10,6 +10,7 @@ const presence = fs.readFileSync(path.join(root, 'presence.html'), 'utf8');
 const server = fs.readFileSync(path.join(root, 'server.js'), 'utf8');
 const reportsClient = fs.readFileSync(path.join(root, 'reports-client.js'), 'utf8');
 const platformClient = fs.readFileSync(path.join(root, 'platform-client.js'), 'utf8');
+const achievementsClient = fs.readFileSync(path.join(root, 'achievements-client.js'), 'utf8');
 const soulMirrorClient = fs.readFileSync(path.join(root, 'soul-mirror-client.js'), 'utf8');
 const journalClient = fs.readFileSync(path.join(root, 'journal-client.js'), 'utf8');
 const socialClient = fs.readFileSync(path.join(root, 'social-client.js'), 'utf8');
@@ -126,4 +127,23 @@ test('Soul Mirror and Autosuggestion load through their own client boundary', ()
   assert.match(soulMirrorClient, /function\s+autosugFinish\s*\(/);
   assert.match(soulMirrorClient, /function\s+renderAutosug\s*\(/);
   assert.doesNotThrow(() => new Function(soulMirrorClient));
+});
+
+test('Achievements load through their own client boundary at boot time', () => {
+  const achievementsTag = presence.indexOf('<script src="achievements-client.js"></script>');
+  const appUse = presence.indexOf('var PRESENCE_SYNC = window.PresenceSyncContract;');
+  const resetControls = presence.indexOf("document.getElementById('confirmModalCancel')");
+  assert.notEqual(achievementsTag, -1);
+  assert.ok(appUse < achievementsTag, 'Achievements need initialized core state');
+  assert.ok(achievementsTag < resetControls, 'Achievements must retain their original boot position');
+  assert.equal(presence.split('<script src="achievements-client.js"></script>').length - 1, 1);
+  assert.doesNotMatch(presence, /function\s+achEvaluate\s*\(|function\s+renderAchScreen\s*\(/);
+  assert.match(achievementsClient, /function\s+achEvaluate\s*\(/);
+  assert.match(achievementsClient, /function\s+achOnCompletion\s*\(/);
+  assert.match(achievementsClient, /function\s+showAchInfo\s*\(/);
+  assert.match(achievementsClient, /function\s+renderAchScreen\s*\(/);
+  assert.match(achievementsClient, /\(function\s+_achBootSettle\s*\(/);
+  assert.match(presence, /function\s+refreshGuidePathLayoutIfReady\s*\(\)/);
+  assert.match(presence, /typeof\s+scheduleGuidePathLayoutRefresh\s*===\s*['"]function['"]/);
+  assert.doesNotThrow(() => new Function(achievementsClient));
 });
