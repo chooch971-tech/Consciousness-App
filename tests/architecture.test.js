@@ -9,6 +9,7 @@ const root = path.join(__dirname, '..');
 const presence = fs.readFileSync(path.join(root, 'presence.html'), 'utf8');
 const server = fs.readFileSync(path.join(root, 'server.js'), 'utf8');
 const awarenessClient = fs.readFileSync(path.join(root, 'awareness-client.js'), 'utf8');
+const visualizationClient = fs.readFileSync(path.join(root, 'visualization-client.js'), 'utf8');
 const reportsClient = fs.readFileSync(path.join(root, 'reports-client.js'), 'utf8');
 const platformClient = fs.readFileSync(path.join(root, 'platform-client.js'), 'utf8');
 const profileClient = fs.readFileSync(path.join(root, 'profile-client.js'), 'utf8');
@@ -74,6 +75,27 @@ test('Awareness practice owns its dedicated client boundary', () => {
   assert.match(awarenessClient, /function\s+submitSurvey\s*\(/);
   assert.match(awarenessClient, /function\s+renderHistory\s*\(/);
   assert.doesNotThrow(() => new Function(awarenessClient));
+});
+
+test('Visualization and the shared exercise gateway load before Auditory', () => {
+  const visualizationTag = presence.indexOf('<script src="visualization-client.js"></script>');
+  const concentrationState = presence.indexOf('function getConcRank(level)');
+  const modeDeclaration = presence.indexOf('var currentMode;');
+  const auditoryStart = presence.indexOf('var SOUNDS = [');
+  assert.notEqual(visualizationTag, -1);
+  assert.ok(concentrationState < visualizationTag, 'Visualization requires Concentration state');
+  assert.ok(modeDeclaration < visualizationTag, 'shared mode state must be declared before startup and exercise clients');
+  assert.ok(visualizationTag < auditoryStart, 'Visualization must initialize before Auditory');
+  assert.equal(presence.split('<script src="visualization-client.js"></script>').length - 1, 1);
+  assert.doesNotMatch(presence, /function\s+openExerciseSetup\s*\(|function\s+startVisSession\s*\(/);
+  assert.doesNotMatch(presence, /function\s+endVisSession\s*\(|function\s+showConcLevelUp\s*\(/);
+  assert.match(visualizationClient, /function\s+openExerciseSetup\s*\(/);
+  assert.match(visualizationClient, /function\s+startVisSession\s*\(/);
+  assert.match(visualizationClient, /function\s+endVisSession\s*\(/);
+  assert.match(visualizationClient, /function\s+renderVisIntermediateSession\s*\(/);
+  assert.match(visualizationClient, /document\.getElementById\('exerciseGrid'\)\.addEventListener/);
+  assert.match(visualizationClient, /function\s+showConcLevelUp\s*\(/);
+  assert.doesNotThrow(() => new Function(visualizationClient));
 });
 
 test('Lodge, messages, and friends live behind the social client boundary', () => {

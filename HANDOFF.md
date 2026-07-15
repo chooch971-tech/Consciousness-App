@@ -8,7 +8,7 @@ Senses, Asana, Soul Mirror, and Pore Breathing, and grow a companion entity
 system, achievements, streaks, and social/friends features.
 
 ## Core files
-- **`presence.html`** (~24k lines) — the client shell: markup, CSS, and the
+- **`presence.html`** (~22k lines) — the client shell: markup, CSS, and the
   remaining core browser runtime. Feature and platform boundaries are being
   extracted into the client modules listed below.
 - **`server.js`** (~2.7k lines) — Node/Express + MongoDB + JWT + web-push +
@@ -51,11 +51,15 @@ system, achievements, streaks, and social/friends features.
   catalog, practice state, idle progression, session and survey flow, level-up,
   and Awareness history. It loads immediately after shared state contracts and
   before the app-shell event wiring that calls its globals.
+- **`visualization-client.js`** — Visualization object catalogs and sessions,
+  custom images, intermediate and multi-sense scenes, the shared exercise-card
+  gateway, and Concentration level-up overlay. It retains its original position
+  after Concentration state and before Auditory.
 - **`tutorial-client.js`** — the first-time tutorial state machine, dialogue,
   spotlight sequencing, Omnia morph choreography, path choice, and replay hook.
   It loads at the end of the body after the complete tutorial markup.
 - **`sw.js`** — service worker. Caches the shell as `presence-shell-vNNN`
-  (currently **v174**). **Bump this version string on every shippable change to
+  (currently **v175**). **Bump this version string on every shippable change to
   `presence.html`** or returning devices run stale code.
 - `marketing/` — App Store card generators (Playwright screenshot scripts).
 
@@ -73,7 +77,7 @@ system, achievements, streaks, and social/friends features.
    let ok=0,t=0;for(const s of b){if(!s.trim())continue;t++;try{new Function(s);ok++;}catch(e){console.log("FAIL",e.message.slice(0,120));}}
    console.log(ok+"/"+t+" parse");'
    ```
-   Expect **21/21 parse**. For server: `node --check server.js`.
+   Expect **23/23 parse**. For server: `node --check server.js`.
 2. **Browser harness** — headless Chromium via Playwright at
    `/tmp/node_modules/playwright`, launch with
    `executablePath:'/opt/pw-browsers/chromium-1194/chrome-linux/chrome'`.
