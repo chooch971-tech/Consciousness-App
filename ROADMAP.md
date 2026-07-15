@@ -91,6 +91,7 @@ Last updated: 2026-07-13
 - [x] Extract Omnia cosmetic previews, applied visuals, wardrobe rendering, and selection into `omnia-appearance-client.js`
 - [x] Extract Omnia economy rates, caps, accrual, costs, prestige multiplier, and Dark Matter minting into `omnia-economy-client.js`
 - [x] Extract Omnia Book II tools, refined bodies, spheres, prestige rules, and ceremony into `omnia-book2-client.js`
+- [x] Extract Omnia recommendations, body-award budgeting, exercise rewards, boosts, and early-end guards into `omnia-rewards-client.js`
 - [x] Consolidate duplicate global HTML escaping helpers
 - [ ] Remove `/api/sync/sync/diagnose` debug endpoint from server.js
 
