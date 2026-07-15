@@ -25,6 +25,7 @@ const omniaStoryClient = fs.readFileSync(path.join(root, 'omnia-story-client.js'
 const omniaStateClient = fs.readFileSync(path.join(root, 'omnia-state-client.js'), 'utf8');
 const omniaAppearanceClient = fs.readFileSync(path.join(root, 'omnia-appearance-client.js'), 'utf8');
 const omniaEconomyClient = fs.readFileSync(path.join(root, 'omnia-economy-client.js'), 'utf8');
+const omniaBook2Client = fs.readFileSync(path.join(root, 'omnia-book2-client.js'), 'utf8');
 const reportsClient = fs.readFileSync(path.join(root, 'reports-client.js'), 'utf8');
 const platformClient = fs.readFileSync(path.join(root, 'platform-client.js'), 'utf8');
 const profileClient = fs.readFileSync(path.join(root, 'profile-client.js'), 'utf8');
@@ -366,10 +367,10 @@ test('Omnia cosmetic rendering and selection live in a dedicated client boundary
 test('Omnia core economy math lives in a dedicated client boundary', () => {
   const appearanceTag = presence.indexOf('<script src="omnia-appearance-client.js"></script>');
   const economyTag = presence.indexOf('<script src="omnia-economy-client.js"></script>');
-  const bookTwoRuntime = presence.indexOf('var BOOK2_TOOLS =');
+  const bookTwoTag = presence.indexOf('<script src="omnia-book2-client.js"></script>');
   assert.notEqual(economyTag, -1);
   assert.ok(appearanceTag < economyTag, 'Core economy loads after appearance behavior');
-  assert.ok(economyTag < bookTwoRuntime, 'Core economy loads before Book II progression');
+  assert.ok(economyTag < bookTwoTag, 'Core economy loads before Book II progression');
   assert.equal(presence.split('<script src="omnia-economy-client.js"></script>').length - 1, 1);
   assert.doesNotMatch(presence, /function\s+omniaBodyTotal\s*\(/);
   assert.doesNotMatch(presence, /function\s+omniaAccrue\s*\(/);
@@ -381,6 +382,27 @@ test('Omnia core economy math lives in a dedicated client boundary', () => {
   assert.match(omniaEconomyClient, /function\s+omniaBodyCost\s*\(/);
   assert.match(omniaEconomyClient, /function\s+mintDarkMatterFromPractice\s*\(/);
   assert.doesNotThrow(() => new Function(omniaEconomyClient));
+});
+
+test('Omnia Book II and prestige progression live in a dedicated client boundary', () => {
+  const economyTag = presence.indexOf('<script src="omnia-economy-client.js"></script>');
+  const bookTwoTag = presence.indexOf('<script src="omnia-book2-client.js"></script>');
+  const rewardRuntime = presence.indexOf('function omniaCurrentStep(');
+  assert.notEqual(bookTwoTag, -1);
+  assert.ok(economyTag < bookTwoTag, 'Book II progression loads after core economy math');
+  assert.ok(bookTwoTag < rewardRuntime, 'Book II progression loads before recommendation and reward behavior');
+  assert.equal(presence.split('<script src="omnia-book2-client.js"></script>').length - 1, 1);
+  assert.doesNotMatch(presence, /var\s+BOOK2_TOOLS\s*=\s*\[/);
+  assert.doesNotMatch(presence, /function\s+omniaBuildToolPhase\s*\(/);
+  assert.doesNotMatch(presence, /function\s+omniaTravelSphere\s*\(/);
+  assert.doesNotMatch(presence, /function\s+omniaPrestige\s*\(/);
+  assert.match(omniaBook2Client, /var\s+BOOK2_TOOLS\s*=\s*\[/);
+  assert.match(omniaBook2Client, /function\s+omniaBuildToolPhase\s*\(/);
+  assert.match(omniaBook2Client, /function\s+omniaBuildBookIIBody\s*\(/);
+  assert.match(omniaBook2Client, /function\s+omniaTravelSphere\s*\(/);
+  assert.match(omniaBook2Client, /function\s+omniaPrestige\s*\(/);
+  assert.match(omniaBook2Client, /function\s+showPrestigeCeremony\s*\(/);
+  assert.doesNotThrow(() => new Function(omniaBook2Client));
 });
 
 test('Lodge, messages, and friends live behind the social client boundary', () => {

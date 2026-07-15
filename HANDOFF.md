@@ -100,11 +100,14 @@ system, achievements, streaks, and social/friends features.
 - **`omnia-economy-client.js`** — Omnia body totals, generator rates and caps,
   offline accrual, body/cosmetic/upgrade costs, the prestige multiplier, and
   Dark Matter minting. It loads before Book II progression.
+- **`omnia-book2-client.js`** — Book II magical-tool construction, refined body
+  progression, planetary spheres, turning requirements, prestige state changes,
+  and the prestige ceremony. It loads before recommendations and rewards.
 - **`tutorial-client.js`** — the first-time tutorial state machine, dialogue,
   spotlight sequencing, Omnia morph choreography, path choice, and replay hook.
   It loads at the end of the body after the complete tutorial markup.
 - **`sw.js`** — service worker. Caches the shell as `presence-shell-vNNN`
-  (currently **v194**). **Bump this version string on every shippable change to
+  (currently **v195**). **Bump this version string on every shippable change to
   `presence.html`** or returning devices run stale code.
 - `marketing/` — App Store card generators (Playwright screenshot scripts).
 
