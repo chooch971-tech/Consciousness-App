@@ -8316,6 +8316,11 @@ function applyPulledData(data) {
 // This pulls cloud data, applies it in place, re-inits every in-memory state
 // slice, and renders home — same as the tutorial path, no reload.
 function enterAppAfterSignIn(onEntered) {
+  // Signing into an existing account = a returning user, so the first-run
+  // tutorial must never launch (its poller fires the moment home shows). Set
+  // the visited flag up front, before any home render, independent of whether
+  // the cloud pull restores it. Only the login screen calls this path.
+  try { localStorage.setItem('presence_visited', '1'); } catch(e) {}
   if (window.__showSplash) window.__showSplash('Restoring your progress…');
   window._syncPullPending = true;
   var attempt = 0;

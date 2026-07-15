@@ -1388,6 +1388,11 @@ document.addEventListener('DOMContentLoaded',function(){(function(){
     });
   }
 
+  // The Skip button is shown throughout the tutorial but was never wired up —
+  // tapping it did nothing, trapping the user. End the tutorial on tap (and
+  // stop the tap from also advancing a step via the overlay handler).
+  if(sk) sk.addEventListener('click',function(e){ e.stopPropagation(); end(); });
+
   /* ── Tap handlers ── */
   ov.addEventListener('click',function(){
     if(!rdy) return;
