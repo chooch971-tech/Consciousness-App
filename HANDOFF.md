@@ -67,11 +67,14 @@ system, achievements, streaks, and social/friends features.
 - **`senses-client.js`** — Feeling, Smell, and Taste mode definitions, rotating
   cues, setup controls, countdown, completion, persistence, and screen wiring.
   It loads after Asana and before the app-shell mode switcher.
+- **`app-shell-client.js`** — primary tab mode state and switching, the
+  Awareness/Prayer submenu, rank-control bindings, and main navigation events.
+  It loads after exercise clients and before Omnia's ambient animation runtime.
 - **`tutorial-client.js`** — the first-time tutorial state machine, dialogue,
   spotlight sequencing, Omnia morph choreography, path choice, and replay hook.
   It loads at the end of the body after the complete tutorial markup.
 - **`sw.js`** — service worker. Caches the shell as `presence-shell-vNNN`
-  (currently **v183**). **Bump this version string on every shippable change to
+  (currently **v184**). **Bump this version string on every shippable change to
   `presence.html`** or returning devices run stale code.
 - `marketing/` — App Store card generators (Playwright screenshot scripts).
 
@@ -89,7 +92,7 @@ system, achievements, streaks, and social/friends features.
    let ok=0,t=0;for(const s of b){if(!s.trim())continue;t++;try{new Function(s);ok++;}catch(e){console.log("FAIL",e.message.slice(0,120));}}
    console.log(ok+"/"+t+" parse");'
    ```
-   Expect **27/27 parse**. For server: `node --check server.js`.
+   Expect **28/28 parse**. For server: `node --check server.js`.
 2. **Browser harness** — headless Chromium via Playwright at
    `/tmp/node_modules/playwright`, launch with
    `executablePath:'/opt/pw-browsers/chromium-1194/chrome-linux/chrome'`.

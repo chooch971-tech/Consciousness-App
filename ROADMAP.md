@@ -79,6 +79,7 @@ Last updated: 2026-07-13
 - [x] Extract Thought Control modes, progress, alarms, sessions, results, and event wiring into `thought-control-client.js`
 - [x] Extract Asana sessions, results, event wiring, and the shared exercise wake lock into `asana-client.js`
 - [x] Extract Senses modes, cues, setup, sessions, results, and event wiring into `senses-client.js`
+- [x] Extract primary tab navigation, mode switching, rank controls, and Awareness/Prayer submenu wiring into `app-shell-client.js`
 - [x] Consolidate duplicate global HTML escaping helpers
 - [ ] Remove `/api/sync/sync/diagnose` debug endpoint from server.js
 
