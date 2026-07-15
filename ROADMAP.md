@@ -77,6 +77,7 @@ Last updated: 2026-07-13
 - [x] Extract Visualization practice, multi-sense scenes, exercise-card routing, and Concentration level-up into `visualization-client.js`
 - [x] Extract Auditory sound synthesis, picker, rep sessions, results, and event wiring into `auditory-client.js`
 - [x] Extract Thought Control modes, progress, alarms, sessions, results, and event wiring into `thought-control-client.js`
+- [x] Extract Asana sessions, results, event wiring, and the shared exercise wake lock into `asana-client.js`
 - [x] Consolidate duplicate global HTML escaping helpers
 - [ ] Remove `/api/sync/sync/diagnose` debug endpoint from server.js
 

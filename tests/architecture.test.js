@@ -12,6 +12,7 @@ const awarenessClient = fs.readFileSync(path.join(root, 'awareness-client.js'), 
 const visualizationClient = fs.readFileSync(path.join(root, 'visualization-client.js'), 'utf8');
 const auditoryClient = fs.readFileSync(path.join(root, 'auditory-client.js'), 'utf8');
 const thoughtControlClient = fs.readFileSync(path.join(root, 'thought-control-client.js'), 'utf8');
+const asanaClient = fs.readFileSync(path.join(root, 'asana-client.js'), 'utf8');
 const reportsClient = fs.readFileSync(path.join(root, 'reports-client.js'), 'utf8');
 const platformClient = fs.readFileSync(path.join(root, 'platform-client.js'), 'utf8');
 const profileClient = fs.readFileSync(path.join(root, 'profile-client.js'), 'utf8');
@@ -121,10 +122,10 @@ test('Auditory sound and session behavior load before Thought Control', () => {
 test('Thought Control modes and sessions load before Asana', () => {
   const auditoryTag = presence.indexOf('<script src="auditory-client.js"></script>');
   const thoughtTag = presence.indexOf('<script src="thought-control-client.js"></script>');
-  const asanaStart = presence.indexOf('var asanaStartTime = null;');
+  const asanaTag = presence.indexOf('<script src="asana-client.js"></script>');
   assert.notEqual(thoughtTag, -1);
   assert.ok(auditoryTag < thoughtTag, 'Thought Control loads after Auditory');
-  assert.ok(thoughtTag < asanaStart, 'Thought Control must initialize before Asana');
+  assert.ok(thoughtTag < asanaTag, 'Thought Control must initialize before Asana');
   assert.equal(presence.split('<script src="thought-control-client.js"></script>').length - 1, 1);
   assert.doesNotMatch(presence, /function\s+buildTCSetupHTML\s*\(|function\s+startThoughtControl\s*\(/);
   assert.doesNotMatch(presence, /function\s+endThoughtControl\s*\(|function\s+saveTCResult\s*\(/);
@@ -135,6 +136,25 @@ test('Thought Control modes and sessions load before Asana', () => {
   assert.match(thoughtControlClient, /function\s+saveTCResult\s*\(/);
   assert.match(thoughtControlClient, /document\.getElementById\('tcTapArea'\)\.addEventListener/);
   assert.doesNotThrow(() => new Function(thoughtControlClient));
+});
+
+test('Asana and the shared wake lock load before Senses', () => {
+  const thoughtTag = presence.indexOf('<script src="thought-control-client.js"></script>');
+  const asanaTag = presence.indexOf('<script src="asana-client.js"></script>');
+  const sensesStart = presence.indexOf("var senseMode = 'feeling';");
+  assert.notEqual(asanaTag, -1);
+  assert.ok(thoughtTag < asanaTag, 'Asana loads after Thought Control');
+  assert.ok(asanaTag < sensesStart, 'Asana must initialize before Senses');
+  assert.equal(presence.split('<script src="asana-client.js"></script>').length - 1, 1);
+  assert.doesNotMatch(presence, /function\s+requestExerciseWakeLock\s*\(|function\s+startAsana\s*\(/);
+  assert.doesNotMatch(presence, /function\s+endAsana\s*\(|function\s+saveAsanaResult\s*\(/);
+  assert.match(asanaClient, /function\s+requestExerciseWakeLock\s*\(/);
+  assert.match(asanaClient, /function\s+releaseExerciseWakeLock\s*\(/);
+  assert.match(asanaClient, /function\s+startAsana\s*\(/);
+  assert.match(asanaClient, /function\s+endAsana\s*\(/);
+  assert.match(asanaClient, /function\s+saveAsanaResult\s*\(/);
+  assert.match(asanaClient, /document\.getElementById\('asanaEndBtn'\)\.addEventListener/);
+  assert.doesNotThrow(() => new Function(asanaClient));
 });
 
 test('Lodge, messages, and friends live behind the social client boundary', () => {
