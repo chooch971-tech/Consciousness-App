@@ -8,8 +8,9 @@ Senses, Asana, Soul Mirror, and Pore Breathing, and grow a companion entity
 system, achievements, streaks, and social/friends features.
 
 ## Core files
-- **`presence.html`** (~34k lines) — the client: markup, CSS, and most browser JS
-  in `<script>` blocks. Most UI, game logic, and the sync client live here.
+- **`presence.html`** (~30k lines) — the client shell: markup, CSS, and the
+  remaining core browser runtime. Feature and platform boundaries are being
+  extracted into the client modules listed below.
 - **`server.js`** (~2.7k lines) — Node/Express + MongoDB + JWT + web-push +
   OpenAI. Handles auth, cloud sync (`/api/sync/sync/push` + `/pull`), friends,
   push notifications, and Omnia AI reports.
@@ -27,8 +28,12 @@ system, achievements, streaks, and social/friends features.
 - **`reports-client.js`** — Progress Reports rendering, charts, date navigation,
   Omnia report context/cache behavior, and report-control wiring. It loads after
   the main runtime and before Journal.
+- **`platform-client.js`** — authentication, cloud sync, browser presence
+  beacons, web push, Google sign-in, and app-update handling. It loads in the
+  document head after the shared state modules and before the main app runtime,
+  whose immediate startup path calls its platform globals.
 - **`sw.js`** — service worker. Caches the shell as `presence-shell-vNNN`
-  (currently **v164**). **Bump this version string on every shippable change to
+  (currently **v165**). **Bump this version string on every shippable change to
   `presence.html`** or returning devices run stale code.
 - `marketing/` — App Store card generators (Playwright screenshot scripts).
 
@@ -41,11 +46,12 @@ system, achievements, streaks, and social/friends features.
 1. **Parse check** — every `<script>` block must compile:
    ```
    node -e 'const fs=require("fs");const h=fs.readFileSync("presence.html","utf8");
-   const b=[...h.matchAll(/<script\b[^>]*>([\s\S]*?)<\/script>/g)].map(m=>m[1]);
+   const b=[...h.matchAll(/<script\b([^>]*)>([\s\S]*?)<\/script>/g)].map(m=>{
+     const src=(m[1].match(/src="([^"]+)"/)||[])[1];return src?fs.readFileSync(src,"utf8"):m[2]});
    let ok=0,t=0;for(const s of b){if(!s.trim())continue;t++;try{new Function(s);ok++;}catch(e){console.log("FAIL",e.message.slice(0,120));}}
    console.log(ok+"/"+t+" parse");'
    ```
-   Expect **5/5 parse**. For server: `node --check server.js`.
+   Expect **11/11 parse**. For server: `node --check server.js`.
 2. **Browser harness** — headless Chromium via Playwright at
    `/tmp/node_modules/playwright`, launch with
    `executablePath:'/opt/pw-browsers/chromium-1194/chrome-linux/chrome'`.

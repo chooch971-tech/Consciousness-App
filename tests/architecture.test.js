@@ -9,6 +9,7 @@ const root = path.join(__dirname, '..');
 const presence = fs.readFileSync(path.join(root, 'presence.html'), 'utf8');
 const server = fs.readFileSync(path.join(root, 'server.js'), 'utf8');
 const reportsClient = fs.readFileSync(path.join(root, 'reports-client.js'), 'utf8');
+const platformClient = fs.readFileSync(path.join(root, 'platform-client.js'), 'utf8');
 const journalClient = fs.readFileSync(path.join(root, 'journal-client.js'), 'utf8');
 const socialClient = fs.readFileSync(path.join(root, 'social-client.js'), 'utf8');
 
@@ -91,4 +92,21 @@ test('Progress Reports load through their own client boundary', () => {
   assert.match(reportsClient, /function\s+getDateRange\s*\(/);
   assert.match(reportsClient, /document\.getElementById\('reportFilterBtn'\)/);
   assert.doesNotThrow(() => new Function(reportsClient));
+});
+
+test('browser platform services load through their own client boundary', () => {
+  const mergeTag = presence.indexOf('<script src="sync-merge.js"></script>');
+  const platformTag = presence.indexOf('<script src="platform-client.js"></script>');
+  const appUse = presence.indexOf('var PRESENCE_SYNC = window.PresenceSyncContract;');
+  assert.notEqual(platformTag, -1);
+  assert.ok(mergeTag < platformTag, 'platform services load after shared state modules');
+  assert.ok(platformTag < appUse, 'platform globals must exist before the app runtime starts');
+  assert.equal(presence.split('<script src="platform-client.js"></script>').length - 1, 1);
+  assert.doesNotMatch(presence, /function\s+authRegisterOrLogin\s*\(|function\s+syncPushData\s*\(/);
+  assert.doesNotMatch(presence, /function\s+registerWebPush\s*\(|function\s+showAppUpdateBanner\s*\(/);
+  assert.match(platformClient, /function\s+authRegisterOrLogin\s*\(/);
+  assert.match(platformClient, /function\s+syncPushData\s*\(/);
+  assert.match(platformClient, /function\s+registerWebPush\s*\(/);
+  assert.match(platformClient, /function\s+showAppUpdateBanner\s*\(/);
+  assert.doesNotThrow(() => new Function(platformClient));
 });
