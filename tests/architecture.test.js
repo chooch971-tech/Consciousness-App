@@ -8,10 +8,17 @@ const path = require('node:path');
 const root = path.join(__dirname, '..');
 const presence = fs.readFileSync(path.join(root, 'presence.html'), 'utf8');
 const server = fs.readFileSync(path.join(root, 'server.js'), 'utf8');
+const awarenessClient = fs.readFileSync(path.join(root, 'awareness-client.js'), 'utf8');
+const visualizationClient = fs.readFileSync(path.join(root, 'visualization-client.js'), 'utf8');
+const auditoryClient = fs.readFileSync(path.join(root, 'auditory-client.js'), 'utf8');
+const thoughtControlClient = fs.readFileSync(path.join(root, 'thought-control-client.js'), 'utf8');
+const asanaClient = fs.readFileSync(path.join(root, 'asana-client.js'), 'utf8');
 const reportsClient = fs.readFileSync(path.join(root, 'reports-client.js'), 'utf8');
 const platformClient = fs.readFileSync(path.join(root, 'platform-client.js'), 'utf8');
 const profileClient = fs.readFileSync(path.join(root, 'profile-client.js'), 'utf8');
+const settingsClient = fs.readFileSync(path.join(root, 'settings-client.js'), 'utf8');
 const achievementsClient = fs.readFileSync(path.join(root, 'achievements-client.js'), 'utf8');
+const prayerClient = fs.readFileSync(path.join(root, 'prayer-client.js'), 'utf8');
 const tutorialClient = fs.readFileSync(path.join(root, 'tutorial-client.js'), 'utf8');
 const soulMirrorClient = fs.readFileSync(path.join(root, 'soul-mirror-client.js'), 'utf8');
 const journalClient = fs.readFileSync(path.join(root, 'journal-client.js'), 'utf8');
@@ -52,6 +59,102 @@ test('history and Gift Path merge contracts are shared by browser and server', (
   assert.match(server, /mergeGiftPathValues/);
   assert.doesNotMatch(presence, /function\s+mergeSyncHistoryArrays|SYNC_HISTORY_MERGE/);
   assert.doesNotMatch(server, /function\s+mergeHistoryArraysSrv|SRV_HISTORY_MERGE/);
+});
+
+test('Awareness practice owns its dedicated client boundary', () => {
+  const awarenessTag = presence.indexOf('<script src="awareness-client.js"></script>');
+  const appUse = presence.indexOf('var PRESENCE_SYNC = window.PresenceSyncContract;');
+  const appEvents = presence.indexOf("document.getElementById('customCancelBtn').addEventListener");
+  assert.notEqual(awarenessTag, -1);
+  assert.ok(appUse < awarenessTag, 'Awareness loads after shared state contracts');
+  assert.ok(awarenessTag < appEvents, 'Awareness functions must exist before app event wiring');
+  assert.equal(presence.split('<script src="awareness-client.js"></script>').length - 1, 1);
+  assert.doesNotMatch(presence, /function\s+loadState\s*\(|function\s+renderHome\s*\(/);
+  assert.doesNotMatch(presence, /function\s+startSession\s*\(|function\s+renderHistory\s*\(/);
+  assert.match(awarenessClient, /const\s+RANK_TITLES\s*=\s*\[/);
+  assert.match(awarenessClient, /function\s+loadState\s*\(/);
+  assert.match(awarenessClient, /function\s+renderHome\s*\(/);
+  assert.match(awarenessClient, /function\s+startSession\s*\(/);
+  assert.match(awarenessClient, /function\s+submitSurvey\s*\(/);
+  assert.match(awarenessClient, /function\s+renderHistory\s*\(/);
+  assert.doesNotThrow(() => new Function(awarenessClient));
+});
+
+test('Visualization and the shared exercise gateway load before Auditory', () => {
+  const visualizationTag = presence.indexOf('<script src="visualization-client.js"></script>');
+  const concentrationState = presence.indexOf('function getConcRank(level)');
+  const modeDeclaration = presence.indexOf('var currentMode;');
+  const auditoryTag = presence.indexOf('<script src="auditory-client.js"></script>');
+  assert.notEqual(visualizationTag, -1);
+  assert.ok(concentrationState < visualizationTag, 'Visualization requires Concentration state');
+  assert.ok(modeDeclaration < visualizationTag, 'shared mode state must be declared before startup and exercise clients');
+  assert.ok(visualizationTag < auditoryTag, 'Visualization must initialize before Auditory');
+  assert.equal(presence.split('<script src="visualization-client.js"></script>').length - 1, 1);
+  assert.doesNotMatch(presence, /function\s+openExerciseSetup\s*\(|function\s+startVisSession\s*\(/);
+  assert.doesNotMatch(presence, /function\s+endVisSession\s*\(|function\s+showConcLevelUp\s*\(/);
+  assert.match(visualizationClient, /function\s+openExerciseSetup\s*\(/);
+  assert.match(visualizationClient, /function\s+startVisSession\s*\(/);
+  assert.match(visualizationClient, /function\s+endVisSession\s*\(/);
+  assert.match(visualizationClient, /function\s+renderVisIntermediateSession\s*\(/);
+  assert.match(visualizationClient, /document\.getElementById\('exerciseGrid'\)\.addEventListener/);
+  assert.match(visualizationClient, /function\s+showConcLevelUp\s*\(/);
+  assert.doesNotThrow(() => new Function(visualizationClient));
+});
+
+test('Auditory sound and session behavior load before Thought Control', () => {
+  const visualizationTag = presence.indexOf('<script src="visualization-client.js"></script>');
+  const auditoryTag = presence.indexOf('<script src="auditory-client.js"></script>');
+  const thoughtTag = presence.indexOf('<script src="thought-control-client.js"></script>');
+  assert.notEqual(auditoryTag, -1);
+  assert.ok(visualizationTag < auditoryTag, 'Auditory loads after the shared exercise gateway');
+  assert.ok(auditoryTag < thoughtTag, 'Auditory must initialize before Thought Control');
+  assert.equal(presence.split('<script src="auditory-client.js"></script>').length - 1, 1);
+  assert.doesNotMatch(presence, /function\s+stopAllAudio\s*\(|function\s+startAuditorySession\s*\(/);
+  assert.doesNotMatch(presence, /function\s+buildSoundGrid\s*\(|function\s+saveAudResult\s*\(/);
+  assert.match(auditoryClient, /function\s+stopAllAudio\s*\(/);
+  assert.match(auditoryClient, /function\s+buildSoundGrid\s*\(/);
+  assert.match(auditoryClient, /function\s+startAuditorySession\s*\(/);
+  assert.match(auditoryClient, /function\s+saveAudResult\s*\(/);
+  assert.match(auditoryClient, /document\.getElementById\('audSessionScreen'\)\.addEventListener/);
+  assert.doesNotThrow(() => new Function(auditoryClient));
+});
+
+test('Thought Control modes and sessions load before Asana', () => {
+  const auditoryTag = presence.indexOf('<script src="auditory-client.js"></script>');
+  const thoughtTag = presence.indexOf('<script src="thought-control-client.js"></script>');
+  const asanaTag = presence.indexOf('<script src="asana-client.js"></script>');
+  assert.notEqual(thoughtTag, -1);
+  assert.ok(auditoryTag < thoughtTag, 'Thought Control loads after Auditory');
+  assert.ok(thoughtTag < asanaTag, 'Thought Control must initialize before Asana');
+  assert.equal(presence.split('<script src="thought-control-client.js"></script>').length - 1, 1);
+  assert.doesNotMatch(presence, /function\s+buildTCSetupHTML\s*\(|function\s+startThoughtControl\s*\(/);
+  assert.doesNotMatch(presence, /function\s+endThoughtControl\s*\(|function\s+saveTCResult\s*\(/);
+  assert.match(thoughtControlClient, /var\s+TC_MODE_DEFS\s*=\s*\{/);
+  assert.match(thoughtControlClient, /function\s+buildTCSetupHTML\s*\(/);
+  assert.match(thoughtControlClient, /function\s+startThoughtControl\s*\(/);
+  assert.match(thoughtControlClient, /function\s+endThoughtControl\s*\(/);
+  assert.match(thoughtControlClient, /function\s+saveTCResult\s*\(/);
+  assert.match(thoughtControlClient, /document\.getElementById\('tcTapArea'\)\.addEventListener/);
+  assert.doesNotThrow(() => new Function(thoughtControlClient));
+});
+
+test('Asana and the shared wake lock load before Senses', () => {
+  const thoughtTag = presence.indexOf('<script src="thought-control-client.js"></script>');
+  const asanaTag = presence.indexOf('<script src="asana-client.js"></script>');
+  const sensesStart = presence.indexOf("var senseMode = 'feeling';");
+  assert.notEqual(asanaTag, -1);
+  assert.ok(thoughtTag < asanaTag, 'Asana loads after Thought Control');
+  assert.ok(asanaTag < sensesStart, 'Asana must initialize before Senses');
+  assert.equal(presence.split('<script src="asana-client.js"></script>').length - 1, 1);
+  assert.doesNotMatch(presence, /function\s+requestExerciseWakeLock\s*\(|function\s+startAsana\s*\(/);
+  assert.doesNotMatch(presence, /function\s+endAsana\s*\(|function\s+saveAsanaResult\s*\(/);
+  assert.match(asanaClient, /function\s+requestExerciseWakeLock\s*\(/);
+  assert.match(asanaClient, /function\s+releaseExerciseWakeLock\s*\(/);
+  assert.match(asanaClient, /function\s+startAsana\s*\(/);
+  assert.match(asanaClient, /function\s+endAsana\s*\(/);
+  assert.match(asanaClient, /function\s+saveAsanaResult\s*\(/);
+  assert.match(asanaClient, /document\.getElementById\('asanaEndBtn'\)\.addEventListener/);
+  assert.doesNotThrow(() => new Function(asanaClient));
 });
 
 test('Lodge, messages, and friends live behind the social client boundary', () => {
@@ -145,17 +248,17 @@ test('Achievements load through their own client boundary at boot time', () => {
   assert.match(achievementsClient, /function\s+showAchInfo\s*\(/);
   assert.match(achievementsClient, /function\s+renderAchScreen\s*\(/);
   assert.match(achievementsClient, /\(function\s+_achBootSettle\s*\(/);
-  assert.match(presence, /function\s+refreshGuidePathLayoutIfReady\s*\(\)/);
-  assert.match(presence, /typeof\s+scheduleGuidePathLayoutRefresh\s*===\s*['"]function['"]/);
+  assert.match(awarenessClient, /function\s+refreshGuidePathLayoutIfReady\s*\(\)/);
+  assert.match(awarenessClient, /typeof\s+scheduleGuidePathLayoutRefresh\s*===\s*['"]function['"]/);
   assert.doesNotThrow(() => new Function(achievementsClient));
 });
 
 test('Profile and account identity behavior load before Achievements', () => {
   const profileTag = presence.indexOf('<script src="profile-client.js"></script>');
+  const settingsTag = presence.indexOf('<script src="settings-client.js"></script>');
   const achievementsTag = presence.indexOf('<script src="achievements-client.js"></script>');
-  const settingsUse = presence.indexOf('function openExerciseSettings(id)');
   assert.notEqual(profileTag, -1);
-  assert.ok(profileTag < settingsUse, 'Profile retains its original parse-time position');
+  assert.ok(profileTag < settingsTag, 'Profile account helpers initialize before Settings');
   assert.ok(profileTag < achievementsTag, 'Profile badge hooks initialize before Achievements');
   assert.equal(presence.split('<script src="profile-client.js"></script>').length - 1, 1);
   assert.doesNotMatch(presence, /function\s+renderProfile\s*\(|function\s+openFriendProfile\s*\(/);
@@ -166,6 +269,43 @@ test('Profile and account identity behavior load before Achievements', () => {
   assert.match(profileClient, /function\s+setMyStatus\s*\(/);
   assert.match(profileClient, /document\.addEventListener\(['"]DOMContentLoaded['"], _wireStatusEditor\)/);
   assert.doesNotThrow(() => new Function(profileClient));
+});
+
+test('Settings and utility screens load through their own client boundary', () => {
+  const profileTag = presence.indexOf('<script src="profile-client.js"></script>');
+  const settingsTag = presence.indexOf('<script src="settings-client.js"></script>');
+  const achievementsTag = presence.indexOf('<script src="achievements-client.js"></script>');
+  assert.notEqual(settingsTag, -1);
+  assert.ok(profileTag < settingsTag, 'Settings privacy controls require Profile helpers');
+  assert.ok(settingsTag < achievementsTag, 'Settings retains its boot position before Achievements');
+  assert.equal(presence.split('<script src="settings-client.js"></script>').length - 1, 1);
+  assert.doesNotMatch(presence, /function\s+renderSettingsExerciseList\s*\(|function\s+openAccountSettings\s*\(/);
+  assert.doesNotMatch(presence, /function\s+addAudioUrlSound\s*\(|\bEXERCISE_SETTINGS_LIST\s*=\s*\[/);
+  assert.match(settingsClient, /function\s+renderSettingsExerciseList\s*\(/);
+  assert.match(settingsClient, /function\s+openAccountSettings\s*\(/);
+  assert.match(settingsClient, /function\s+addAudioUrlSound\s*\(/);
+  assert.match(settingsClient, /document\.getElementById\('importFile'\)\.addEventListener/);
+  assert.match(settingsClient, /document\.querySelectorAll\('#faqScreen \.faq-item-head'\)/);
+  assert.doesNotThrow(() => new Function(settingsClient));
+});
+
+test('Prayer state and practice flow load before the Guide engine', () => {
+  const prayerTag = presence.indexOf('<script src="prayer-client.js"></script>');
+  const guideStart = presence.indexOf('var GUIDE_DAILY_PLANS = [');
+  const appUse = presence.indexOf('var PRESENCE_SYNC = window.PresenceSyncContract;');
+  assert.notEqual(prayerTag, -1);
+  assert.ok(appUse < prayerTag, 'Prayer requires initialized core practice state');
+  assert.ok(prayerTag < guideStart, 'Prayer retains its original position before Guide');
+  assert.equal(presence.split('<script src="prayer-client.js"></script>').length - 1, 1);
+  assert.doesNotMatch(presence, /function\s+loadPrayerState\s*\(|function\s+beginPrayer\s*\(/);
+  assert.doesNotMatch(presence, /function\s+renderPrayerHistory\s*\(|function\s+beginMantra\s*\(/);
+  assert.match(prayerClient, /function\s+loadPrayerState\s*\(/);
+  assert.match(prayerClient, /function\s+renderPrayerPanel\s*\(/);
+  assert.match(prayerClient, /function\s+beginPrayer\s*\(/);
+  assert.match(prayerClient, /function\s+renderPrayerHistory\s*\(/);
+  assert.match(prayerClient, /function\s+beginMantra\s*\(/);
+  assert.match(prayerClient, /document\.getElementById\('prayerConcludeBtn'\)\.addEventListener/);
+  assert.doesNotThrow(() => new Function(prayerClient));
 });
 
 test('first-time tutorial loads through its own end-of-body client boundary', () => {
