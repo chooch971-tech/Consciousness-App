@@ -995,6 +995,9 @@ function suppressTutorialForExerciseEntry() {
   window.__tutBoot = null;
   clearStaleInteractionLocks();
 }
+// TEMP: auto-reopen the drawer when backing out of a menu is disabled while we
+// diagnose reported lag. Set true to restore it.
+var DRAWER_REOPEN_ON_BACK = false;
 function showScreen(id) {
   if (id === 'homeScreen') {
     document.querySelectorAll('.screen').forEach(function(s) { s.classList.remove('active'); });
@@ -1003,7 +1006,7 @@ function showScreen(id) {
     // hamburger menu, bring the menu back so the user returns where they were.
     if (window._returnToDrawer) {
       window._returnToDrawer = false;
-      if (typeof openDrawer === 'function') openDrawer(true); // snap open, no anim
+      if (DRAWER_REOPEN_ON_BACK && typeof openDrawer === 'function') openDrawer(true);
     }
   } else {
     var el = document.getElementById(id);
