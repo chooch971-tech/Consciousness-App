@@ -89,6 +89,7 @@ Last updated: 2026-07-13
 - [x] Extract Omnia story evaluation, unread state, and chat rendering into `omnia-story-client.js`
 - [x] Extract Omnia state loading, migration, cloud reconciliation, and persistence into `omnia-state-client.js`
 - [x] Extract Omnia cosmetic previews, applied visuals, wardrobe rendering, and selection into `omnia-appearance-client.js`
+- [x] Extract Omnia economy rates, caps, accrual, costs, prestige multiplier, and Dark Matter minting into `omnia-economy-client.js`
 - [x] Consolidate duplicate global HTML escaping helpers
 - [ ] Remove `/api/sync/sync/diagnose` debug endpoint from server.js
 

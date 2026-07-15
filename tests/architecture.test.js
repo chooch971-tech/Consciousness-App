@@ -24,6 +24,7 @@ const omniaProgressionConfigClient = fs.readFileSync(path.join(root, 'omnia-prog
 const omniaStoryClient = fs.readFileSync(path.join(root, 'omnia-story-client.js'), 'utf8');
 const omniaStateClient = fs.readFileSync(path.join(root, 'omnia-state-client.js'), 'utf8');
 const omniaAppearanceClient = fs.readFileSync(path.join(root, 'omnia-appearance-client.js'), 'utf8');
+const omniaEconomyClient = fs.readFileSync(path.join(root, 'omnia-economy-client.js'), 'utf8');
 const reportsClient = fs.readFileSync(path.join(root, 'reports-client.js'), 'utf8');
 const platformClient = fs.readFileSync(path.join(root, 'platform-client.js'), 'utf8');
 const profileClient = fs.readFileSync(path.join(root, 'profile-client.js'), 'utf8');
@@ -346,10 +347,10 @@ test('Omnia persistence and cloud reconciliation live in a dedicated client boun
 test('Omnia cosmetic rendering and selection live in a dedicated client boundary', () => {
   const stateTag = presence.indexOf('<script src="omnia-state-client.js"></script>');
   const appearanceTag = presence.indexOf('<script src="omnia-appearance-client.js"></script>');
-  const economyRuntime = presence.indexOf('function omniaBodyTotal(');
+  const economyTag = presence.indexOf('<script src="omnia-economy-client.js"></script>');
   assert.notEqual(appearanceTag, -1);
   assert.ok(stateTag < appearanceTag, 'Appearance behavior loads after Omnia state');
-  assert.ok(appearanceTag < economyRuntime, 'Appearance behavior loads before economy runtime');
+  assert.ok(appearanceTag < economyTag, 'Appearance behavior loads before economy runtime');
   assert.equal(presence.split('<script src="omnia-appearance-client.js"></script>').length - 1, 1);
   assert.doesNotMatch(presence, /function\s+omniaFindCosmetic\s*\(/);
   assert.doesNotMatch(presence, /function\s+renderOmniaAppearance\s*\(/);
@@ -360,6 +361,26 @@ test('Omnia cosmetic rendering and selection live in a dedicated client boundary
   assert.match(omniaAppearanceClient, /function\s+renderOmniaAppearance\s*\(/);
   assert.match(omniaAppearanceClient, /function\s+unlockOrSelectOmniaCosmetic\s*\(/);
   assert.doesNotThrow(() => new Function(omniaAppearanceClient));
+});
+
+test('Omnia core economy math lives in a dedicated client boundary', () => {
+  const appearanceTag = presence.indexOf('<script src="omnia-appearance-client.js"></script>');
+  const economyTag = presence.indexOf('<script src="omnia-economy-client.js"></script>');
+  const bookTwoRuntime = presence.indexOf('var BOOK2_TOOLS =');
+  assert.notEqual(economyTag, -1);
+  assert.ok(appearanceTag < economyTag, 'Core economy loads after appearance behavior');
+  assert.ok(economyTag < bookTwoRuntime, 'Core economy loads before Book II progression');
+  assert.equal(presence.split('<script src="omnia-economy-client.js"></script>').length - 1, 1);
+  assert.doesNotMatch(presence, /function\s+omniaBodyTotal\s*\(/);
+  assert.doesNotMatch(presence, /function\s+omniaAccrue\s*\(/);
+  assert.doesNotMatch(presence, /function\s+omniaBodyCost\s*\(/);
+  assert.doesNotMatch(presence, /function\s+mintDarkMatterFromPractice\s*\(/);
+  assert.match(omniaEconomyClient, /function\s+omniaBodyTotal\s*\(/);
+  assert.match(omniaEconomyClient, /function\s+omniaRatePerHour\s*\(/);
+  assert.match(omniaEconomyClient, /function\s+omniaAccrue\s*\(/);
+  assert.match(omniaEconomyClient, /function\s+omniaBodyCost\s*\(/);
+  assert.match(omniaEconomyClient, /function\s+mintDarkMatterFromPractice\s*\(/);
+  assert.doesNotThrow(() => new Function(omniaEconomyClient));
 });
 
 test('Lodge, messages, and friends live behind the social client boundary', () => {
