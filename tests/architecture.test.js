@@ -143,5 +143,7 @@ test('Achievements load through their own client boundary at boot time', () => {
   assert.match(achievementsClient, /function\s+showAchInfo\s*\(/);
   assert.match(achievementsClient, /function\s+renderAchScreen\s*\(/);
   assert.match(achievementsClient, /\(function\s+_achBootSettle\s*\(/);
+  assert.match(presence, /function\s+refreshGuidePathLayoutIfReady\s*\(\)/);
+  assert.match(presence, /typeof\s+scheduleGuidePathLayoutRefresh\s*===\s*['"]function['"]/);
   assert.doesNotThrow(() => new Function(achievementsClient));
 });

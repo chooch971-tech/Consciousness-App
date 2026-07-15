@@ -39,7 +39,7 @@ system, achievements, streaks, and social/friends features.
   tracking, profile popovers, and the Achievements screen. Its script tag splits
   the core inline runtime so its boot initializer retains the original timing.
 - **`sw.js`** — service worker. Caches the shell as `presence-shell-vNNN`
-  (currently **v167**). **Bump this version string on every shippable change to
+  (currently **v168**). **Bump this version string on every shippable change to
   `presence.html`** or returning devices run stale code.
 - `marketing/` — App Store card generators (Playwright screenshot scripts).
 

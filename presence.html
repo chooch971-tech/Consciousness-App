@@ -8809,15 +8809,14 @@ function prefetchOmniaReport() {
   } catch (e) {}
 }
 
-window.addEventListener('pageshow', function() {
-  scheduleGuidePathLayoutRefresh(false);
-});
-window.addEventListener('resize', function() {
-  scheduleGuidePathLayoutRefresh(false);
-});
-window.addEventListener('orientationchange', function() {
-  scheduleGuidePathLayoutRefresh(false);
-});
+function refreshGuidePathLayoutIfReady() {
+  if (typeof scheduleGuidePathLayoutRefresh === 'function') {
+    scheduleGuidePathLayoutRefresh(false);
+  }
+}
+window.addEventListener('pageshow', refreshGuidePathLayoutIfReady);
+window.addEventListener('resize', refreshGuidePathLayoutIfReady);
+window.addEventListener('orientationchange', refreshGuidePathLayoutIfReady);
 function randomPrompt(exclude) { var p; do { p = PROMPTS[Math.floor(Math.random() * PROMPTS.length)]; } while (p === exclude); return p; }
 
 // ═══════════════════════════════════════
