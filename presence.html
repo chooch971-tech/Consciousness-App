@@ -20184,11 +20184,12 @@ function applyOmniaMetaMarks() {
 
 function applyOmniaStepVisuals() {
   var step = (omniaState && omniaState.bardonStep) || 1;
-  // Once the Wheel has turned, Step X was genuinely completed — Omnia keeps
-  // her full regalia (orbit, crown, pillars, elements … apotheosis) through
-  // every later walk and the sphere journeys, rather than regressing to a
-  // bare crystal each turning.
-  if (omniaState && (omniaState.prestige || 0) > 0) step = 10;
+  // The first two turnings (P1, P2) genuinely re-walk Book I: the regalia
+  // resets to the bare crystal and rebuilds Step I → X with the path, so each
+  // walk is felt. Only at the 3rd Prestige — when Dark Matter and Book II
+  // awaken — does Omnia keep her full Step X regalia permanently (bardonStep
+  // no longer advances past there) and gain the sphere sigil overhead.
+  if (omniaState && (omniaState.prestige || 0) >= PRESTIGE_BOOK2) step = 10;
   document.body.classList.toggle('omnia-tier-orbit',      step >= 2);
   document.body.classList.toggle('omnia-tier-crown',      step >= 3);
   document.body.classList.toggle('omnia-tier-polar',      step >= 4);
