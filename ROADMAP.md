@@ -69,6 +69,7 @@ Last updated: 2026-07-13
 - [x] Extract browser platform services into `platform-client.js`
 - [x] Extract Soul Mirror and Autosuggestion into `soul-mirror-client.js`
 - [x] Extract Achievements into `achievements-client.js`
+- [x] Extract the first-time tutorial into `tutorial-client.js`
 - [x] Consolidate duplicate global HTML escaping helpers
 - [ ] Remove `/api/sync/sync/diagnose` debug endpoint from server.js
 

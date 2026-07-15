@@ -11,6 +11,7 @@ const server = fs.readFileSync(path.join(root, 'server.js'), 'utf8');
 const reportsClient = fs.readFileSync(path.join(root, 'reports-client.js'), 'utf8');
 const platformClient = fs.readFileSync(path.join(root, 'platform-client.js'), 'utf8');
 const achievementsClient = fs.readFileSync(path.join(root, 'achievements-client.js'), 'utf8');
+const tutorialClient = fs.readFileSync(path.join(root, 'tutorial-client.js'), 'utf8');
 const soulMirrorClient = fs.readFileSync(path.join(root, 'soul-mirror-client.js'), 'utf8');
 const journalClient = fs.readFileSync(path.join(root, 'journal-client.js'), 'utf8');
 const socialClient = fs.readFileSync(path.join(root, 'social-client.js'), 'utf8');
@@ -146,4 +147,20 @@ test('Achievements load through their own client boundary at boot time', () => {
   assert.match(presence, /function\s+refreshGuidePathLayoutIfReady\s*\(\)/);
   assert.match(presence, /typeof\s+scheduleGuidePathLayoutRefresh\s*===\s*['"]function['"]/);
   assert.doesNotThrow(() => new Function(achievementsClient));
+});
+
+test('first-time tutorial loads through its own end-of-body client boundary', () => {
+  const tutorialTag = presence.indexOf('<script src="tutorial-client.js"></script>');
+  const soulMirrorTag = presence.indexOf('<script src="soul-mirror-client.js"></script>');
+  const tutorialMarkup = presence.indexOf('<div id="tutOverlay">');
+  assert.notEqual(tutorialTag, -1);
+  assert.ok(tutorialMarkup < tutorialTag, 'tutorial behavior loads after its complete markup');
+  assert.ok(tutorialTag < soulMirrorTag, 'tutorial initializes before later feature clients');
+  assert.equal(presence.split('<script src="tutorial-client.js"></script>').length - 1, 1);
+  assert.doesNotMatch(presence, /var\s+STEPS\s*=\s*\[/);
+  assert.match(tutorialClient, /document\.addEventListener\(['"]DOMContentLoaded['"]/);
+  assert.match(tutorialClient, /var\s+STEPS\s*=\s*\[/);
+  assert.match(tutorialClient, /window\.__tutReplay\s*=/);
+  assert.match(tutorialClient, /function\s+go\s*\(/);
+  assert.doesNotThrow(() => new Function(tutorialClient));
 });
