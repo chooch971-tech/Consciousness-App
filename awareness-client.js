@@ -1001,14 +1001,15 @@ function suppressTutorialForExerciseEntry() {
 var DRAWER_REOPEN_ON_BACK = true;
 function showScreen(id) {
   if (id === 'homeScreen') {
+    // Backing out of a menu opened from the hamburger: raise the drawer FIRST,
+    // while the menu screen is still up, so the drawer overlay masks the swap
+    // to home underneath. Otherwise the bare home screen flashes for a frame
+    // before the drawer appears.
+    var _reopen = window._returnToDrawer && DRAWER_REOPEN_ON_BACK && typeof openDrawer === 'function';
+    window._returnToDrawer = false;
+    if (_reopen) openDrawer(true);
     document.querySelectorAll('.screen').forEach(function(s) { s.classList.remove('active'); });
     document.getElementById('homeScreen').style.display = 'flex';
-    // If we landed home by backing out of a screen that was opened from the
-    // hamburger menu, bring the menu back so the user returns where they were.
-    if (window._returnToDrawer) {
-      window._returnToDrawer = false;
-      if (DRAWER_REOPEN_ON_BACK && typeof openDrawer === 'function') openDrawer(true);
-    }
   } else {
     var el = document.getElementById(id);
     if (!el) { console.error('[showScreen] No element:', id); return; }
