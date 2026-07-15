@@ -11476,6 +11476,16 @@ startPrayerScheduler();
     showBehind(prevEl);
     var overlay = addOverlay(prevEl);
 
+    // If this screen was opened from the hamburger menu, reveal the DRAWER
+    // behind the peeling screen instead of bare home — otherwise the home
+    // screen flashes during the drag before the menu reappears. Lift the
+    // sliding screen above the drawer overlay (z300) so it peels back over it.
+    var fromDrawer = prevIsHome && !!window._returnToDrawer
+      && ((typeof DRAWER_REOPEN_ON_BACK === 'undefined') || DRAWER_REOPEN_ON_BACK)
+      && typeof openDrawer === 'function';
+    if (fromDrawer) { openDrawer(true); screenEl.style.zIndex = '320'; }
+    sw._fromDrawer = fromDrawer;
+
     screenEl.style.transition = 'none';
     screenEl.style.willChange = 'transform';
 
@@ -11545,6 +11555,7 @@ startPrayerScheduler();
       screenEl.style.transform  = '';
       screenEl.style.transition = '';
       screenEl.style.willChange = '';
+      screenEl.style.zIndex     = ''; // drop the temporary lift used to peel over the drawer
     }, 260);
   }
 
@@ -11572,9 +11583,14 @@ startPrayerScheduler();
       // Re-hide both: homeScreen goes back to display:none (sub-screen still active)
       if (prevIsHome) prevEl.style.display = 'none';
 
+      // We opened the drawer to reveal it during the drag; the user stayed on
+      // the screen, so close it again and drop the temporary z-index.
+      if (sw._fromDrawer && typeof closeDrawer === 'function') closeDrawer();
+
       screenEl.style.transition = '';
       screenEl.style.transform  = '';
       screenEl.style.willChange = '';
+      screenEl.style.zIndex     = '';
     }, 220);
   }
 
