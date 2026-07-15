@@ -10,6 +10,7 @@ const presence = fs.readFileSync(path.join(root, 'presence.html'), 'utf8');
 const server = fs.readFileSync(path.join(root, 'server.js'), 'utf8');
 const reportsClient = fs.readFileSync(path.join(root, 'reports-client.js'), 'utf8');
 const platformClient = fs.readFileSync(path.join(root, 'platform-client.js'), 'utf8');
+const profileClient = fs.readFileSync(path.join(root, 'profile-client.js'), 'utf8');
 const achievementsClient = fs.readFileSync(path.join(root, 'achievements-client.js'), 'utf8');
 const tutorialClient = fs.readFileSync(path.join(root, 'tutorial-client.js'), 'utf8');
 const soulMirrorClient = fs.readFileSync(path.join(root, 'soul-mirror-client.js'), 'utf8');
@@ -147,6 +148,24 @@ test('Achievements load through their own client boundary at boot time', () => {
   assert.match(presence, /function\s+refreshGuidePathLayoutIfReady\s*\(\)/);
   assert.match(presence, /typeof\s+scheduleGuidePathLayoutRefresh\s*===\s*['"]function['"]/);
   assert.doesNotThrow(() => new Function(achievementsClient));
+});
+
+test('Profile and account identity behavior load before Achievements', () => {
+  const profileTag = presence.indexOf('<script src="profile-client.js"></script>');
+  const achievementsTag = presence.indexOf('<script src="achievements-client.js"></script>');
+  const settingsUse = presence.indexOf('function openExerciseSettings(id)');
+  assert.notEqual(profileTag, -1);
+  assert.ok(profileTag < settingsUse, 'Profile retains its original parse-time position');
+  assert.ok(profileTag < achievementsTag, 'Profile badge hooks initialize before Achievements');
+  assert.equal(presence.split('<script src="profile-client.js"></script>').length - 1, 1);
+  assert.doesNotMatch(presence, /function\s+renderProfile\s*\(|function\s+openFriendProfile\s*\(/);
+  assert.doesNotMatch(presence, /function\s+applyAccountFields\s*\(|function\s+setMyStatus\s*\(/);
+  assert.match(profileClient, /function\s+renderProfile\s*\(/);
+  assert.match(profileClient, /function\s+openFriendProfile\s*\(/);
+  assert.match(profileClient, /function\s+applyAccountFields\s*\(/);
+  assert.match(profileClient, /function\s+setMyStatus\s*\(/);
+  assert.match(profileClient, /document\.addEventListener\(['"]DOMContentLoaded['"], _wireStatusEditor\)/);
+  assert.doesNotThrow(() => new Function(profileClient));
 });
 
 test('first-time tutorial loads through its own end-of-body client boundary', () => {
