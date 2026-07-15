@@ -426,7 +426,7 @@ document.getElementById('importFile').addEventListener('change', function(e) {
   e.target.value = '';
 });
 document.getElementById('drawerDonate').addEventListener('click', function() {
-  closeDrawer();
+  closeDrawer(true); // instant — window.open backgrounds the app; an animated close would freeze
   window.open('https://buymeacoffee.com/presence_app', '_blank');
 });
 document.getElementById('drawerPlayground').addEventListener('click', function() {

@@ -7926,8 +7926,19 @@ function openDrawer(instant) {
     ov.classList.add('show');
   }
 }
-function closeDrawer() {
-  document.getElementById('drawerOverlay').classList.remove('show');
+function closeDrawer(instant) {
+  var ov = document.getElementById('drawerOverlay');
+  if (instant) {
+    // Snap shut with no animation — used before window.open (Donate) so the
+    // fade/slide can't freeze mid-way when iOS suspends the app, which left the
+    // scrim stuck on screen blocking taps.
+    ov.classList.add('drawer-instant');
+    ov.classList.remove('show');
+    void ov.offsetWidth;                 // commit the hidden state, no transition
+    ov.classList.remove('drawer-instant'); // synchronous — next open animates normally
+  } else {
+    ov.classList.remove('show');
+  }
   // Timestamp the close so showScreen can tell whether the screen it's about to
   // show was opened FROM the drawer — if so, backing out reopens the drawer.
   window._drawerClosedAt = Date.now();
@@ -11481,16 +11492,6 @@ startPrayerScheduler();
     showBehind(prevEl);
     var overlay = addOverlay(prevEl);
 
-    // If this screen was opened from the hamburger menu, reveal the DRAWER
-    // behind the peeling screen instead of bare home — otherwise the home
-    // screen flashes during the drag before the menu reappears. Lift the
-    // sliding screen above the drawer overlay (z300) so it peels back over it.
-    var fromDrawer = prevIsHome && !!window._returnToDrawer
-      && ((typeof DRAWER_REOPEN_ON_BACK === 'undefined') || DRAWER_REOPEN_ON_BACK)
-      && typeof openDrawer === 'function';
-    if (fromDrawer) { openDrawer(true); screenEl.style.zIndex = '320'; }
-    sw._fromDrawer = fromDrawer;
-
     screenEl.style.transition = 'none';
     screenEl.style.willChange = 'transform';
 
@@ -11552,6 +11553,11 @@ startPrayerScheduler();
       // Prevent a flash: disable transition on current screen before .active is removed
       screenEl.style.transition = 'none';
 
+      // A swipe-out goes cleanly to the already-revealed home — it must NOT also
+      // pop the drawer back open (that reopen is only for the explicit Back
+      // button, whose own click path keeps the flag set).
+      window._returnToDrawer = false;
+
       // Fire the back action — handles state cleanup and calls showScreen,
       // which removes .active from screenEl (making it display:none via CSS)
       backBtn.click();
@@ -11560,7 +11566,6 @@ startPrayerScheduler();
       screenEl.style.transform  = '';
       screenEl.style.transition = '';
       screenEl.style.willChange = '';
-      screenEl.style.zIndex     = ''; // drop the temporary lift used to peel over the drawer
     }, 260);
   }
 
@@ -11588,14 +11593,9 @@ startPrayerScheduler();
       // Re-hide both: homeScreen goes back to display:none (sub-screen still active)
       if (prevIsHome) prevEl.style.display = 'none';
 
-      // We opened the drawer to reveal it during the drag; the user stayed on
-      // the screen, so close it again and drop the temporary z-index.
-      if (sw._fromDrawer && typeof closeDrawer === 'function') closeDrawer();
-
       screenEl.style.transition = '';
       screenEl.style.transform  = '';
       screenEl.style.willChange = '';
-      screenEl.style.zIndex     = '';
     }, 220);
   }
 
@@ -11618,7 +11618,7 @@ startPrayerScheduler();
     // an accidental edge swipe shouldn't exit it.
     if (screenEl.id === 'concSessionScreen' && !concPendingBegin) return;
 
-    var backBtn = screenEl.querySelector('.history-back, .jl-editor-back, .conc-sess-back');
+    var backBtn = screenEl.querySelector('.history-back, .jl-editor-back, .conc-sess-back, .lodge-back');
     if (!backBtn) return;
 
     sw._pending = { screenEl: screenEl, backBtn: backBtn, x: t.clientX, y: t.clientY };
