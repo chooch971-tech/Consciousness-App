@@ -7905,6 +7905,9 @@ function openDrawer() {
 }
 function closeDrawer() {
   document.getElementById('drawerOverlay').classList.remove('show');
+  // Timestamp the close so showScreen can tell whether the screen it's about to
+  // show was opened FROM the drawer — if so, backing out reopens the drawer.
+  window._drawerClosedAt = Date.now();
 }
 
 document.getElementById('hamburgerBtn').addEventListener('click', openDrawer);

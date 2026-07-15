@@ -483,16 +483,33 @@ function gpGiftSvg(state) {
     + (state !== 'locked' ? '<circle cx="24" cy="30" r="1.6" fill="' + lid + '" stroke="none"/>' : '') + '</svg>';
 }
 var _gpTab = 'gifts';
+// Days remaining in the current calendar month (including today) — the Seven
+// Gifts is a monthly run, so this is the real "time left", not a per-gift clock.
+function gpDaysLeftInMonth() {
+  var now = new Date();
+  var lastDay = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
+  return lastDay - now.getDate() + 1;
+}
 function renderGiftPathScreen() {
   var el = document.getElementById('giftPathOverlay'); if (!el) return;
   ensureGiftPathStarted();
   var s = loadGiftPath(); var earned = giftPathEarned();
   var stacks = (typeof omniaDevotionStacks === 'function') ? omniaDevotionStacks() : 0;
   var atCap = stacks >= 24;
+  // The first unclaimed gift gates every gift after it (claim in order). Used to
+  // tell the player which gift they're actually on, and why later ones — even
+  // with their tasks done — can't be collected yet.
+  var nextClaimIdx = s.claimed.indexOf(false);
   var giftsTab = '<div class="gp-gifts">';
   GIFT_PATH_DEFS.forEach(function(g, i) {
-    var state = s.claimed[i] ? 'claimed' : (gpGiftClaimable(s, i) ? 'ready' : 'locked');
-    var stateTxt = state === 'claimed' ? 'Claimed' : (state === 'ready' ? 'Tap to open' : 'Locked');
+    var claimable = gpGiftClaimable(s, i);
+    var state = s.claimed[i] ? 'claimed' : (claimable ? 'ready' : 'locked');
+    var stateTxt;
+    if (s.claimed[i]) stateTxt = 'Collected';
+    else if (claimable) stateTxt = 'Tap to collect';
+    else if (gpGiftAllDone(s, i) && nextClaimIdx !== -1 && i > nextClaimIdx) stateTxt = 'Done · collect Gift ' + (nextClaimIdx + 1) + ' first';
+    else if (i === nextClaimIdx) stateTxt = 'In progress';
+    else stateTxt = 'Locked';
     var isFinal = i === 6;
     giftsTab += '<button class="gp-gift ' + state + (isFinal ? ' final' : '') + '" ' + (state === 'ready' ? 'data-claim="' + i + '"' : '') + '>'
       + '<span class="gp-gift-box">' + gpGiftSvg(state) + '</span>'
@@ -518,9 +535,17 @@ function renderGiftPathScreen() {
       + '<div class="gp-ch-head"><span class="gp-ch-title"><span>Gift ' + (i+1) + '</span>' + g.name + '</span>'
       + '<span class="gp-ch-reward">+' + g.akasha.toLocaleString() + (i === 6 ? ' · +2%' : '') + '</span></div>' + rows + '</div>';
   });
+  var daysLeft = gpDaysLeftInMonth();
+  var statusLine = earned
+    ? 'All seven collected this month — nothing to lose, the +2% is banked. Fresh gifts on the 1st.'
+    : (nextClaimIdx === -1
+        ? 'All gifts done — collect the Seventh Seal!'
+        : 'You\'re on <b>Gift ' + (nextClaimIdx + 1) + ' · ' + GIFT_PATH_DEFS[nextClaimIdx].name + '</b>. Gifts unlock in order, so collect each before the next — later gifts wait even if their tasks are done.')
+      + ' <span style="opacity:.72;">Monthly run · ' + daysLeft + ' day' + (daysLeft === 1 ? '' : 's') + ' left — you can\'t fall behind mid-month.</span>';
   el.innerHTML = '<div class="gp-top"><button class="gp-back" id="gpBack" aria-label="Back">←</button><div class="gp-title">The Seven Gifts</div></div>'
     + '<div class="gp-sub">Complete all seven each month for a permanent <b>+2% akasha</b>, stacking up to <b>+48%</b>. Current devotion: <b>+' + (stacks * 2) + '%</b>.'
     + (atCap ? ' <b>· Maxed</b>' : (earned ? ' <b>· This month complete</b>' : '')) + '</div>'
+    + '<div class="gp-sub" style="margin-top:-4px; color:var(--muted);">' + statusLine + '</div>'
     + '<div class="gp-tabs"><button class="gp-tab' + (_gpTab === 'gifts' ? ' on' : '') + '" data-gptab="gifts">The Gifts</button>'
     + '<button class="gp-tab' + (_gpTab === 'challenges' ? ' on' : '') + '" data-gptab="challenges">Challenges</button></div>'
     + '<div class="gp-body" id="gpBody">' + (_gpTab === 'gifts' ? giftsTab : chTab) + '</div>';

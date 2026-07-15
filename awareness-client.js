@@ -999,12 +999,20 @@ function showScreen(id) {
   if (id === 'homeScreen') {
     document.querySelectorAll('.screen').forEach(function(s) { s.classList.remove('active'); });
     document.getElementById('homeScreen').style.display = 'flex';
+    // If we landed home by backing out of a screen that was opened from the
+    // hamburger menu, bring the menu back so the user returns where they were.
+    if (window._returnToDrawer) {
+      window._returnToDrawer = false;
+      if (typeof openDrawer === 'function') openDrawer();
+    }
   } else {
     var el = document.getElementById(id);
     if (!el) { console.error('[showScreen] No element:', id); return; }
     document.querySelectorAll('.screen').forEach(function(s) { s.classList.remove('active'); });
     document.getElementById('homeScreen').style.display = 'none';
     el.classList.add('active');
+    // A screen shown right after the drawer closed was opened FROM the drawer.
+    if (Date.now() - (window._drawerClosedAt || 0) < 500) window._returnToDrawer = true;
     if (window._omniaQuickDismiss) window._omniaQuickDismiss();
   }
 }
