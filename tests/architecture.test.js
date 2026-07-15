@@ -27,6 +27,7 @@ const omniaAppearanceClient = fs.readFileSync(path.join(root, 'omnia-appearance-
 const omniaEconomyClient = fs.readFileSync(path.join(root, 'omnia-economy-client.js'), 'utf8');
 const omniaBook2Client = fs.readFileSync(path.join(root, 'omnia-book2-client.js'), 'utf8');
 const omniaRewardsClient = fs.readFileSync(path.join(root, 'omnia-rewards-client.js'), 'utf8');
+const omniaEngineClient = fs.readFileSync(path.join(root, 'omnia-engine-client.js'), 'utf8');
 const reportsClient = fs.readFileSync(path.join(root, 'reports-client.js'), 'utf8');
 const platformClient = fs.readFileSync(path.join(root, 'platform-client.js'), 'utf8');
 const profileClient = fs.readFileSync(path.join(root, 'profile-client.js'), 'utf8');
@@ -409,10 +410,10 @@ test('Omnia Book II and prestige progression live in a dedicated client boundary
 test('Omnia recommendations and exercise rewards live in a dedicated client boundary', () => {
   const bookTwoTag = presence.indexOf('<script src="omnia-book2-client.js"></script>');
   const rewardsTag = presence.indexOf('<script src="omnia-rewards-client.js"></script>');
-  const engineRuntime = presence.indexOf('function renderOmniaEngine(');
+  const engineTag = presence.indexOf('<script src="omnia-engine-client.js"></script>');
   assert.notEqual(rewardsTag, -1);
   assert.ok(bookTwoTag < rewardsTag, 'Rewards load after Book II progression');
-  assert.ok(rewardsTag < engineRuntime, 'Rewards load before engine rendering');
+  assert.ok(rewardsTag < engineTag, 'Rewards load before engine rendering');
   assert.equal(presence.split('<script src="omnia-rewards-client.js"></script>').length - 1, 1);
   assert.doesNotMatch(presence, /function\s+omniaPickRecommendation\s*\(/);
   assert.doesNotMatch(presence, /function\s+omniaExerciseReward\s*\(/);
@@ -425,6 +426,28 @@ test('Omnia recommendations and exercise rewards live in a dedicated client boun
   assert.match(omniaRewardsClient, /function\s+awardOmniaForExercise\s*\(/);
   assert.match(omniaRewardsClient, /function\s+showBodyLevelAward\s*\(/);
   assert.doesNotThrow(() => new Function(omniaRewardsClient));
+});
+
+test('Omnia engine rendering and generator controls live in a dedicated client boundary', () => {
+  const rewardsTag = presence.indexOf('<script src="omnia-rewards-client.js"></script>');
+  const engineTag = presence.indexOf('<script src="omnia-engine-client.js"></script>');
+  const morphRuntime = presence.indexOf('var OMNIA_ENTITY_MORPH_SYMBOLS =');
+  assert.notEqual(engineTag, -1);
+  assert.ok(rewardsTag < engineTag, 'Engine rendering loads after reward behavior');
+  assert.ok(engineTag < morphRuntime, 'Engine rendering loads before click-morph animation data');
+  assert.equal(presence.split('<script src="omnia-engine-client.js"></script>').length - 1, 1);
+  assert.doesNotMatch(presence, /function\s+renderOmniaEngine\s*\(/);
+  assert.doesNotMatch(presence, /function\s+renderOmniaGenYard\s*\(/);
+  assert.doesNotMatch(presence, /function\s+buyOmniaUpgrade\s*\(/);
+  assert.match(omniaEngineClient, /function\s+renderOmniaEngine\s*\(/);
+  assert.match(omniaEngineClient, /function\s+collectOmniaAkasha\s*\(/);
+  assert.match(omniaEngineClient, /function\s+buildOmniaBody\s*\(/);
+  assert.match(omniaEngineClient, /var\s+OMNIA_GEN_META\s*=\s*\[/);
+  assert.match(omniaEngineClient, /var\s+DM_GEN_META\s*=\s*\[/);
+  assert.match(omniaEngineClient, /function\s+renderOmniaGenYard\s*\(/);
+  assert.match(omniaEngineClient, /function\s+buyOmniaUpgrade\s*\(/);
+  assert.match(omniaEngineClient, /function\s+beginOmniaRecommendation\s*\(/);
+  assert.doesNotThrow(() => new Function(omniaEngineClient));
 });
 
 test('Lodge, messages, and friends live behind the social client boundary', () => {
