@@ -112,6 +112,10 @@ system, achievements, streaks, and social/friends features.
 - **`omnia-morph-client.js`** — per-entity symbol catalogs, shard geometry,
   interpolation and outline rendering, animation lifecycle, and Guide/Upgrade/
   Path-banner morph entry points. It loads immediately before Guide state.
+- **Architecture status (2026-07-15)** — the Phase 4 Omnia extraction is complete
+  and audited. The next boundary is Guide runtime: first adaptive path planning,
+  then Path Quests/Seven Gifts. Remaining unrelated inline clusters should be
+  audited only after those two Guide modules are established.
 - **`tutorial-client.js`** — the first-time tutorial state machine, dialogue,
   spotlight sequencing, Omnia morph choreography, path choice, and replay hook.
   It loads at the end of the body after the complete tutorial markup.
