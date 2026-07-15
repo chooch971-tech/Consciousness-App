@@ -4934,10 +4934,23 @@ body:not(.tut-live) #tutCorgi {
 (function() {
   var s = document.getElementById('splash');
   var dismissed = false;
+  // Minimum time the splash stays up. The app now loads fast enough that the
+  // cloud pull calls dismiss() almost immediately, so without a floor the
+  // wordmark barely flashes. Hold it long enough for the intro to breathe.
+  var SPLASH_MIN_MS = 1800;
+  var shownAt = Date.now();
+  var dismissScheduled = false;
   // Idempotent splash dismiss — exposed so the startup cloud-pull can call it
   // the moment a signed-in user's real progress is in localStorage and rendered.
+  // Honors the minimum display time: an early call re-arms itself for the
+  // remainder rather than hiding the splash before it's been seen.
   function dismiss() {
     if (dismissed) return;
+    var remaining = SPLASH_MIN_MS - (Date.now() - shownAt);
+    if (remaining > 0) {
+      if (!dismissScheduled) { dismissScheduled = true; setTimeout(dismiss, remaining); }
+      return;
+    }
     dismissed = true;
     s.classList.add('splash-out');
     setTimeout(function() { s.style.display = 'none'; }, 950);
@@ -4948,6 +4961,8 @@ body:not(.tut-live) #tutCorgi {
   // cloud pull runs — instead of a frozen login screen or a blank flash.
   window.__showSplash = function(note) {
     dismissed = false;
+    dismissScheduled = false;
+    shownAt = Date.now();
     s.style.display = '';
     s.classList.remove('splash-out');
     var t = s.querySelector('.splash-tagline');
