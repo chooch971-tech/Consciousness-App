@@ -1591,6 +1591,8 @@ app.post('/api/sync/friends/accept', verifyToken, async (req, res) => {
         );
       } catch(e) {}
     }
+    // Accepting makes both edges active — they're friends now, tell them both.
+    await notifyMutualFollow(selfId, requesterId);
     res.json({ message: 'Friend request accepted' });
   } catch (err) {
     console.error('Accept friend error:', err);
@@ -2020,6 +2022,21 @@ async function notify(userId, kind, actorId, refId) {
   } catch(e) {}
 }
 
+// When BOTH directions of a follow are active the two users are "friends" (a
+// mutual follow). Call this right after an edge becomes active: if it completes
+// the pair, notify each of them that they're now friends and return true.
+async function notifyMutualFollow(a, b) {
+  try {
+    const [ab, ba] = await Promise.all([
+      followsCollection.findOne({ followerId: a, followeeId: b, status: 'active' }),
+      followsCollection.findOne({ followerId: b, followeeId: a, status: 'active' })
+    ]);
+    if (!ab || !ba) return false;
+    await Promise.all([notify(a, 'friend', b, null), notify(b, 'friend', a, null)]);
+    return true;
+  } catch(e) { return false; }
+}
+
 app.post('/api/social/follow', verifyToken, async (req, res) => {
   try {
     const selfId = req.user.userId; const { userId } = req.body;
@@ -2036,8 +2053,11 @@ app.post('/api/social/follow', verifyToken, async (req, res) => {
     if (todayFollows >= 100) return res.status(429).json({ error: 'Daily follow limit reached' });
     const status = target.isPrivate ? 'pending' : 'active';
     try { await followsCollection.insertOne({ followerId: selfId, followeeId: userId, status, createdAt: new Date() }); } catch(e) {}
-    notify(userId, status === 'pending' ? 'follow_req' : 'follow', selfId, null);
-    res.json({ status });
+    // If following back completes a mutual pair, both are now friends — send the
+    // "you're now friends" notice to each instead of a plain "now follows you".
+    const becameFriends = status === 'active' ? await notifyMutualFollow(selfId, userId) : false;
+    if (!becameFriends) notify(userId, status === 'pending' ? 'follow_req' : 'follow', selfId, null);
+    res.json({ status, friends: becameFriends });
   } catch (err) { res.status(500).json({ error: 'Follow failed' }); }
 });
 
@@ -2073,8 +2093,11 @@ app.post('/api/social/follow/approve', verifyToken, async (req, res) => {
       { $set: { status: 'active' } }
     );
     if (r.matchedCount === 0) return res.status(404).json({ error: 'Request not found' });
-    notify(userId, 'approved', selfId, null);
-    res.json({ ok: true });
+    // Approving their request may complete a mutual pair (if I already follow
+    // them back) — in that case we're now friends.
+    const becameFriends = await notifyMutualFollow(selfId, userId);
+    if (!becameFriends) notify(userId, 'approved', selfId, null);
+    res.json({ ok: true, friends: becameFriends });
   } catch (err) { res.status(500).json({ error: 'Approve failed' }); }
 });
 

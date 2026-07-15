@@ -581,7 +581,10 @@
     /* HISTORY */
     #historyScreen { overflow-y:auto; }
     #historyScreen::-webkit-scrollbar { display:none; }
-    .history-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:24px; padding-top:8px; }
+    .history-header { display:flex; justify-content:flex-start; align-items:center; gap:14px; margin-bottom:24px; padding-top:8px; }
+    /* Back button on the LEFT (before the title), consistent with every other
+       screen. The markup order is title-then-back, so pull it left with order. */
+    .history-header .history-back { order:-1; }
     .history-title { font-family:Cormorant Garamond,serif; font-size:26px; font-weight:300; color:var(--text); }
     .history-back { width:36px; height:36px; display:flex; align-items:center; justify-content:center; border-radius:10px; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.06); color:rgba(221,216,206,.75); cursor:pointer; transition:background .15s, border-color .15s; flex-shrink:0; padding:0; }
     .history-back:active { background:rgba(255,255,255,.12); border-color:rgba(255,255,255,.18); }
@@ -4931,10 +4934,23 @@ body:not(.tut-live) #tutCorgi {
 (function() {
   var s = document.getElementById('splash');
   var dismissed = false;
+  // Minimum time the splash stays up. The app now loads fast enough that the
+  // cloud pull calls dismiss() almost immediately, so without a floor the
+  // wordmark barely flashes. Hold it long enough for the intro to breathe.
+  var SPLASH_MIN_MS = 1800;
+  var shownAt = Date.now();
+  var dismissScheduled = false;
   // Idempotent splash dismiss — exposed so the startup cloud-pull can call it
   // the moment a signed-in user's real progress is in localStorage and rendered.
+  // Honors the minimum display time: an early call re-arms itself for the
+  // remainder rather than hiding the splash before it's been seen.
   function dismiss() {
     if (dismissed) return;
+    var remaining = SPLASH_MIN_MS - (Date.now() - shownAt);
+    if (remaining > 0) {
+      if (!dismissScheduled) { dismissScheduled = true; setTimeout(dismiss, remaining); }
+      return;
+    }
     dismissed = true;
     s.classList.add('splash-out');
     setTimeout(function() { s.style.display = 'none'; }, 950);
@@ -4945,6 +4961,8 @@ body:not(.tut-live) #tutCorgi {
   // cloud pull runs — instead of a frozen login screen or a blank flash.
   window.__showSplash = function(note) {
     dismissed = false;
+    dismissScheduled = false;
+    shownAt = Date.now();
     s.style.display = '';
     s.classList.remove('splash-out');
     var t = s.querySelector('.splash-tagline');
@@ -13097,7 +13115,10 @@ function omniaUpgradeCost(upg) {
 // Each prestige grants a permanent +25% akasha and cuts the step requirements
 // (see omniaReqFactor): the first re-walk is halved, then 0.4, then the 0.3
 // floor as Book II opens — so re-walking is genuinely faster each turning.
-function omniaPrestigeMult() { return 1 + 0.25 * (omniaState.prestige || 0); }
+// +25% akasha per prestige, capped at +75% (P3). Akasha retires as the gate
+// when Dark Matter / Book II opens at the 3rd Prestige, so the bonus stops
+// climbing there — the reward past P3 is Book II depth, not more akasha.
+function omniaPrestigeMult() { return 1 + 0.25 * Math.min(PRESTIGE_BOOK2, omniaState.prestige || 0); }
 // ── Dark Matter (Book II currency) ─────────────────────────────
 // A second current that only awakens at the 3rd Prestige, minted by the advanced
 // exercises. Book II upgrades (tools, spheres) will spend it alongside akasha.
@@ -13555,7 +13576,7 @@ function omniaConfirmPrestige() {
   var next = (omniaState.prestige || 0) + 1;
   var body = (omniaState.prestige || 0) >= PRESTIGE_BOOK2
     ? 'The spheres close behind Omnia — instruments and bodies kept — to be walked again at greater depth.\n\n'
-      + 'Permanent boon: +' + (25 * next) + '% akasha.'
+      + 'Your +75% akasha holds; the reward now is the deeper walk.'
     : 'Omnia returns to Step I and rebuilds her three bodies from the beginning — '
       + 'but keeps all akasha, upgrades, cosmetics, level and your streak.\n\n'
       + 'Permanent boon: +' + (25 * next) + '% akasha, and every step requirement ahead is eased.';

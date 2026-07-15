@@ -484,7 +484,7 @@ async function loadFriendSocial(f) {
 
 // Notifications bell.
 var _lodgeNotifs = [];
-var NOTIF_COPY = { like: 'liked your post', comment: 'commented on your post', follow: 'now follows you', follow_req: 'requested to follow you', approved: 'approved your follow request', dm: 'sent you a message' };
+var NOTIF_COPY = { like: 'liked your post', comment: 'commented on your post', follow: 'now follows you', follow_req: 'requested to follow you', approved: 'approved your follow request', dm: 'sent you a message', friend: 'is now your friend — you follow each other' };
 async function loadLodgeNotifs() {
   if (!authToken) return;
   try {
@@ -501,7 +501,9 @@ function openLodgeNotifs() {
   var ov = document.getElementById('notifOverlay');
   var list = document.getElementById('notifList');
   list.innerHTML = _lodgeNotifs.length ? _lodgeNotifs.map(function(n) {
-    return '<div class="likers-row">@' + escHtml(n.username || '?')
+    var isFriend = n.kind === 'friend';
+    return '<div class="likers-row"' + (isFriend ? ' style="color:#7eb8a4;"' : '') + '>'
+      + (isFriend ? '✦ ' : '') + '@' + escHtml(n.username || '?')
       + ' <span style="color:var(--muted);">' + (NOTIF_COPY[n.kind] || n.kind) + ' · ' + timeAgo(new Date(n.createdAt)) + '</span></div>';
   }).join('') : '<div class="likers-row private">Nothing yet.</div>';
   ov.classList.add('on');
