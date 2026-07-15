@@ -103,6 +103,7 @@ test('top-level drawer screens reveal the open drawer during swipe-back', () => 
   assert.match(presence, /function makeDrawerPreview\(host\)[\s\S]*cloneNode\(true\)[\s\S]*host\.appendChild\(preview\)/);
   assert.match(presence, /var drawerPreview = revealsDrawer \? makeDrawerPreview\(prevEl\) : null/);
   assert.match(presence, /if \(drawerPreview\) \{\s*openDrawer\(true\);\s*drawerPreview\.remove\(\);/);
+  assert.match(presence, /\.drawer-overlay\.swipe-back-preview \.omnia-mantle[\s\S]*?display:none !important/);
   assert.match(presence, /querySelector\('[^']*\.lodge-back[^']*'\)/);
   assert.match(presence, /visibilitychange[\s\S]*abortInterruptedSwipe/);
 });

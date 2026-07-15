@@ -2383,6 +2383,21 @@
     /* The swipe preview lives inside homeScreen, under the active page. This
        keeps the already-rendered Home page visible beneath its menu scrim. */
     .drawer-overlay.swipe-back-preview { position:absolute; z-index:2; pointer-events:none; }
+    /* The preview has its IDs removed, so #drawerOmniaBtn's compact tier rules
+       cannot apply. Hide progression regalia here rather than letting the
+       full-size Step layers briefly inherit their Guide-screen dimensions. */
+    .drawer-overlay.swipe-back-preview .omnia-triad-orbit,
+    .drawer-overlay.swipe-back-preview .omnia-crown,
+    .drawer-overlay.swipe-back-preview .omnia-polar,
+    .drawer-overlay.swipe-back-preview .omnia-elements,
+    .drawer-overlay.swipe-back-preview .omnia-mantle,
+    .drawer-overlay.swipe-back-preview .omnia-mandorla,
+    .drawer-overlay.swipe-back-preview .omnia-axis,
+    .drawer-overlay.swipe-back-preview .omnia-geo,
+    .drawer-overlay.swipe-back-preview .omnia-halo10,
+    .drawer-overlay.swipe-back-preview .omnia-diadem,
+    .drawer-overlay.swipe-back-preview .omnia-cap,
+    .drawer-overlay.swipe-back-preview .omnia-apo-card { display:none !important; }
     .drawer-header { padding:0 24px 24px; border-bottom:1px solid var(--border); margin-bottom:8px; }
     .drawer-wordmark { font-family:Cormorant Garamond,serif; font-size:11px; font-weight:300; letter-spacing:.35em; text-transform:uppercase; color:var(--accent); }
     .drawer-level { font-size:9px; letter-spacing:.15em; color:var(--muted); margin-top:4px; }
