@@ -13,6 +13,24 @@ const visualizationClient = fs.readFileSync(path.join(root, 'visualization-clien
 const auditoryClient = fs.readFileSync(path.join(root, 'auditory-client.js'), 'utf8');
 const thoughtControlClient = fs.readFileSync(path.join(root, 'thought-control-client.js'), 'utf8');
 const asanaClient = fs.readFileSync(path.join(root, 'asana-client.js'), 'utf8');
+const sensesClient = fs.readFileSync(path.join(root, 'senses-client.js'), 'utf8');
+const appShellClient = fs.readFileSync(path.join(root, 'app-shell-client.js'), 'utf8');
+const omniaAmbientClient = fs.readFileSync(path.join(root, 'omnia-ambient-client.js'), 'utf8');
+const concentrationControlsClient = fs.readFileSync(path.join(root, 'concentration-controls-client.js'), 'utf8');
+const guideConfigClient = fs.readFileSync(path.join(root, 'guide-config-client.js'), 'utf8');
+const omniaEconomyConfigClient = fs.readFileSync(path.join(root, 'omnia-economy-config-client.js'), 'utf8');
+const omniaCosmeticsConfigClient = fs.readFileSync(path.join(root, 'omnia-cosmetics-config-client.js'), 'utf8');
+const omniaProgressionConfigClient = fs.readFileSync(path.join(root, 'omnia-progression-config-client.js'), 'utf8');
+const omniaStoryClient = fs.readFileSync(path.join(root, 'omnia-story-client.js'), 'utf8');
+const omniaStateClient = fs.readFileSync(path.join(root, 'omnia-state-client.js'), 'utf8');
+const omniaAppearanceClient = fs.readFileSync(path.join(root, 'omnia-appearance-client.js'), 'utf8');
+const omniaEconomyClient = fs.readFileSync(path.join(root, 'omnia-economy-client.js'), 'utf8');
+const omniaBook2Client = fs.readFileSync(path.join(root, 'omnia-book2-client.js'), 'utf8');
+const omniaRewardsClient = fs.readFileSync(path.join(root, 'omnia-rewards-client.js'), 'utf8');
+const omniaEngineClient = fs.readFileSync(path.join(root, 'omnia-engine-client.js'), 'utf8');
+const omniaMorphClient = fs.readFileSync(path.join(root, 'omnia-morph-client.js'), 'utf8');
+const guidePathClient = fs.readFileSync(path.join(root, 'guide-path-client.js'), 'utf8');
+const guideQuestsClient = fs.readFileSync(path.join(root, 'guide-quests-client.js'), 'utf8');
 const reportsClient = fs.readFileSync(path.join(root, 'reports-client.js'), 'utf8');
 const platformClient = fs.readFileSync(path.join(root, 'platform-client.js'), 'utf8');
 const profileClient = fs.readFileSync(path.join(root, 'profile-client.js'), 'utf8');
@@ -141,10 +159,10 @@ test('Thought Control modes and sessions load before Asana', () => {
 test('Asana and the shared wake lock load before Senses', () => {
   const thoughtTag = presence.indexOf('<script src="thought-control-client.js"></script>');
   const asanaTag = presence.indexOf('<script src="asana-client.js"></script>');
-  const sensesStart = presence.indexOf("var senseMode = 'feeling';");
+  const sensesTag = presence.indexOf('<script src="senses-client.js"></script>');
   assert.notEqual(asanaTag, -1);
   assert.ok(thoughtTag < asanaTag, 'Asana loads after Thought Control');
-  assert.ok(asanaTag < sensesStart, 'Asana must initialize before Senses');
+  assert.ok(asanaTag < sensesTag, 'Asana must initialize before Senses');
   assert.equal(presence.split('<script src="asana-client.js"></script>').length - 1, 1);
   assert.doesNotMatch(presence, /function\s+requestExerciseWakeLock\s*\(|function\s+startAsana\s*\(/);
   assert.doesNotMatch(presence, /function\s+endAsana\s*\(|function\s+saveAsanaResult\s*\(/);
@@ -155,6 +173,348 @@ test('Asana and the shared wake lock load before Senses', () => {
   assert.match(asanaClient, /function\s+saveAsanaResult\s*\(/);
   assert.match(asanaClient, /document\.getElementById\('asanaEndBtn'\)\.addEventListener/);
   assert.doesNotThrow(() => new Function(asanaClient));
+});
+
+test('Senses setup and sessions load before app mode switching', () => {
+  const asanaTag = presence.indexOf('<script src="asana-client.js"></script>');
+  const sensesTag = presence.indexOf('<script src="senses-client.js"></script>');
+  const appShellTag = presence.indexOf('<script src="app-shell-client.js"></script>');
+  assert.notEqual(sensesTag, -1);
+  assert.ok(asanaTag < sensesTag, 'Senses requires the shared Asana alarm and wake lock');
+  assert.ok(sensesTag < appShellTag, 'Senses retains its original position before app mode switching');
+  assert.equal(presence.split('<script src="senses-client.js"></script>').length - 1, 1);
+  assert.doesNotMatch(presence, /function\s+buildSenseSetupHTML\s*\(|function\s+startSenseSession\s*\(/);
+  assert.doesNotMatch(presence, /function\s+endSenseSession\s*\(|function\s+showSenseResult\s*\(/);
+  assert.match(sensesClient, /var\s+SENSE_MODE_DEFS\s*=\s*\{/);
+  assert.match(sensesClient, /function\s+buildSenseSetupHTML\s*\(/);
+  assert.match(sensesClient, /function\s+startSenseSession\s*\(/);
+  assert.match(sensesClient, /function\s+endSenseSession\s*\(/);
+  assert.match(sensesClient, /function\s+showSenseResult\s*\(/);
+  assert.match(sensesClient, /document\.getElementById\('senseEndBtn'\)\.addEventListener/);
+  assert.doesNotThrow(() => new Function(sensesClient));
+});
+
+test('app shell owns mode switching and primary navigation wiring', () => {
+  const sensesTag = presence.indexOf('<script src="senses-client.js"></script>');
+  const appShellTag = presence.indexOf('<script src="app-shell-client.js"></script>');
+  const omniaAmbientTag = presence.indexOf('<script src="omnia-ambient-client.js"></script>');
+  assert.notEqual(appShellTag, -1);
+  assert.ok(sensesTag < appShellTag, 'app navigation loads after exercise clients');
+  assert.ok(appShellTag < omniaAmbientTag, 'navigation exists before Omnia ambient animations initialize');
+  assert.equal(presence.split('<script src="app-shell-client.js"></script>').length - 1, 1);
+  assert.doesNotMatch(presence, /function\s+openAwarenessSubMenu\s*\(|function\s+switchMode\s*\(/);
+  assert.match(appShellClient, /var\s+currentMode\s*=\s*['"]guide['"]/);
+  assert.match(appShellClient, /function\s+openAwarenessSubMenu\s*\(/);
+  assert.match(appShellClient, /function\s+closeAwarenessSubMenu\s*\(/);
+  assert.match(appShellClient, /function\s+switchMode\s*\(/);
+  assert.match(appShellClient, /document\.getElementById\('modeAwareness'\)\.addEventListener/);
+  assert.match(appShellClient, /document\.getElementById\('modeConcentration'\)\.addEventListener/);
+  assert.match(appShellClient, /document\.getElementById\('modePrayer'\)\.addEventListener/);
+  assert.doesNotThrow(() => new Function(appShellClient));
+});
+
+test('Omnia ambient animation scheduling owns its client boundary', () => {
+  const appShellTag = presence.indexOf('<script src="app-shell-client.js"></script>');
+  const omniaAmbientTag = presence.indexOf('<script src="omnia-ambient-client.js"></script>');
+  const concentrationControlsTag = presence.indexOf('<script src="concentration-controls-client.js"></script>');
+  assert.notEqual(omniaAmbientTag, -1);
+  assert.ok(appShellTag < omniaAmbientTag, 'ambient animations require current app mode state');
+  assert.ok(omniaAmbientTag < concentrationControlsTag, 'ambient startup retains its original event-wiring position');
+  assert.equal(presence.split('<script src="omnia-ambient-client.js"></script>').length - 1, 1);
+  assert.doesNotMatch(presence, /function\s+initOmniaAnims\s*\(/);
+  assert.match(omniaAmbientClient, /function\s+initOmniaAnims\s*\(/);
+  assert.match(omniaAmbientClient, /window\._omniaQuickDismiss\s*=\s*function/);
+  assert.match(omniaAmbientClient, /function\s+scheduleAmbient\s*\(/);
+  assert.match(omniaAmbientClient, /peek\.addEventListener\('click'/);
+  assert.match(omniaAmbientClient, /setTimeout\(trigger,\s*8000\)/);
+  assert.doesNotThrow(() => new Function(omniaAmbientClient));
+});
+
+test('Concentration controls own their navigation and session wiring', () => {
+  const omniaAmbientTag = presence.indexOf('<script src="omnia-ambient-client.js"></script>');
+  const concentrationControlsTag = presence.indexOf('<script src="concentration-controls-client.js"></script>');
+  const prayerTag = presence.indexOf('<script src="prayer-client.js"></script>');
+  assert.notEqual(concentrationControlsTag, -1);
+  assert.ok(omniaAmbientTag < concentrationControlsTag, 'Concentration controls retain their post-ambient position');
+  assert.ok(concentrationControlsTag < prayerTag, 'Concentration controls initialize before Prayer');
+  assert.equal(presence.split('<script src="concentration-controls-client.js"></script>').length - 1, 1);
+  assert.doesNotMatch(presence, /document\.getElementById\('concStopBtn'\)\.addEventListener/);
+  assert.match(concentrationControlsClient, /document\.getElementById\('concStopBtn'\)\.addEventListener/);
+  assert.match(concentrationControlsClient, /document\.getElementById\('concStopBtn2'\)\.addEventListener/);
+  assert.match(concentrationControlsClient, /document\.getElementById\('concHistoryBtn'\)\.addEventListener/);
+  assert.match(concentrationControlsClient, /document\.getElementById\('concHistoryBack'\)\.addEventListener/);
+  assert.match(concentrationControlsClient, /document\.getElementById\('concSaveBtn'\)\.addEventListener/);
+  assert.doesNotThrow(() => new Function(concentrationControlsClient));
+});
+
+test('Guide recommendation tables live in a static configuration boundary', () => {
+  const prayerTag = presence.indexOf('<script src="prayer-client.js"></script>');
+  const guideConfigTag = presence.indexOf('<script src="guide-config-client.js"></script>');
+  const omniaEconomyConfigTag = presence.indexOf('<script src="omnia-economy-config-client.js"></script>');
+  assert.notEqual(guideConfigTag, -1);
+  assert.ok(prayerTag < guideConfigTag, 'Guide configuration loads after Prayer');
+  assert.ok(guideConfigTag < omniaEconomyConfigTag, 'Guide configuration exists before the Omnia economy configuration');
+  assert.equal(presence.split('<script src="guide-config-client.js"></script>').length - 1, 1);
+  assert.doesNotMatch(presence, /var\s+GUIDE_DAILY_PLANS\s*=\s*\[/);
+  assert.doesNotMatch(presence, /var\s+GUIDE_EXERCISES\s*=\s*\[/);
+  assert.match(guideConfigClient, /var\s+GUIDE_DAILY_PLANS\s*=\s*\[/);
+  assert.match(guideConfigClient, /var\s+GUIDE_EXERCISES\s*=\s*\[/);
+  assert.match(guideConfigClient, /focus:\s*['"]Rest & Inward Turning['"]/);
+  assert.match(guideConfigClient, /id:\s*['"]soulmirror['"]/);
+  assert.doesNotThrow(() => new Function(guideConfigClient));
+});
+
+test('Omnia economy defaults and metadata live in a static configuration boundary', () => {
+  const guideConfigTag = presence.indexOf('<script src="guide-config-client.js"></script>');
+  const omniaEconomyConfigTag = presence.indexOf('<script src="omnia-economy-config-client.js"></script>');
+  const cosmeticsConfigTag = presence.indexOf('<script src="omnia-cosmetics-config-client.js"></script>');
+  assert.notEqual(omniaEconomyConfigTag, -1);
+  assert.ok(guideConfigTag < omniaEconomyConfigTag, 'Omnia economy configuration loads after Guide configuration');
+  assert.ok(omniaEconomyConfigTag < cosmeticsConfigTag, 'Omnia economy configuration loads before cosmetic configuration');
+  assert.equal(presence.split('<script src="omnia-economy-config-client.js"></script>').length - 1, 1);
+  assert.doesNotMatch(presence, /var\s+OMNIA_DEFAULT\s*=\s*\{/);
+  assert.doesNotMatch(presence, /var\s+OMNIA_UPGRADES\s*=\s*\[/);
+  assert.match(omniaEconomyConfigClient, /bodies:\s*\{\s*physical:1,\s*astral:1,\s*mental:1\s*\}/);
+  assert.match(omniaEconomyConfigClient, /var\s+OMNIA_EXERCISE_META\s*=\s*\{/);
+  assert.match(omniaEconomyConfigClient, /id:['"]current['"],\s*name:['"]Generator I['"]/);
+  assert.doesNotThrow(() => new Function(omniaEconomyConfigClient));
+});
+
+test('Omnia cosmetic catalogs live in a static configuration boundary', () => {
+  const economyTag = presence.indexOf('<script src="omnia-economy-config-client.js"></script>');
+  const cosmeticsTag = presence.indexOf('<script src="omnia-cosmetics-config-client.js"></script>');
+  const paletteRuntime = presence.indexOf('function omniaPaletteFilterFor(');
+  assert.notEqual(cosmeticsTag, -1);
+  assert.ok(economyTag < cosmeticsTag, 'Cosmetic configuration loads after economy defaults');
+  assert.ok(cosmeticsTag < paletteRuntime, 'Cosmetic configuration loads before appearance behavior');
+  assert.equal(presence.split('<script src="omnia-cosmetics-config-client.js"></script>').length - 1, 1);
+  assert.doesNotMatch(presence, /var\s+OMNIA_PALETTES\s*=\s*\[/);
+  assert.doesNotMatch(presence, /var\s+OMNIA_COMPANIONS\s*=\s*\[/);
+  assert.match(omniaCosmeticsConfigClient, /id:['"]aether['"],\s*name:['"]Aether Blue['"]/);
+  assert.match(omniaCosmeticsConfigClient, /id:['"]corgi['"],\s*name:['"]Astral Corgi['"]/);
+  assert.match(omniaCosmeticsConfigClient, /var\s+OMNIA_ENTITY_NATIVE_PALETTE\s*=\s*\{/);
+  assert.doesNotThrow(() => new Function(omniaCosmeticsConfigClient));
+});
+
+test('Omnia progression thresholds and story beats live in a static configuration boundary', () => {
+  const cosmeticsTag = presence.indexOf('<script src="omnia-cosmetics-config-client.js"></script>');
+  const progressionTag = presence.indexOf('<script src="omnia-progression-config-client.js"></script>');
+  const storyTag = presence.indexOf('<script src="omnia-story-client.js"></script>');
+  assert.notEqual(progressionTag, -1);
+  assert.ok(cosmeticsTag < progressionTag, 'Progression configuration loads after cosmetic configuration');
+  assert.ok(progressionTag < storyTag, 'Progression configuration loads before story behavior');
+  assert.equal(presence.split('<script src="omnia-progression-config-client.js"></script>').length - 1, 1);
+  assert.doesNotMatch(presence, /var\s+OMNIA_BARDON_STEPS\s*=\s*\[/);
+  assert.doesNotMatch(presence, /var\s+OMNIA_STORY\s*=\s*\[/);
+  assert.match(omniaProgressionConfigClient, /step:10,[\s\S]*?physical:430,\s*astral:430,\s*mental:430/);
+  assert.match(omniaProgressionConfigClient, /id:['"]s10_final['"]/);
+  assert.doesNotThrow(() => new Function(omniaProgressionConfigClient));
+});
+
+test('Omnia story evaluation and chat UI live in a dedicated client boundary', () => {
+  const progressionTag = presence.indexOf('<script src="omnia-progression-config-client.js"></script>');
+  const storyTag = presence.indexOf('<script src="omnia-story-client.js"></script>');
+  const stateTag = presence.indexOf('<script src="omnia-state-client.js"></script>');
+  assert.notEqual(storyTag, -1);
+  assert.ok(progressionTag < storyTag, 'Story behavior loads after progression configuration');
+  assert.ok(storyTag < stateTag, 'Story behavior loads before Omnia state runtime');
+  assert.equal(presence.split('<script src="omnia-story-client.js"></script>').length - 1, 1);
+  assert.doesNotMatch(presence, /function\s+omniaStoryBeatUnlocked\s*\(/);
+  assert.doesNotMatch(presence, /function\s+openOmniaChat\s*\(/);
+  assert.match(omniaStoryClient, /function\s+omniaStoryBeatUnlocked\s*\(/);
+  assert.match(omniaStoryClient, /function\s+evaluateOmniaStory\s*\(/);
+  assert.match(omniaStoryClient, /function\s+updateOmniaChatBadge\s*\(/);
+  assert.match(omniaStoryClient, /function\s+openOmniaChat\s*\(/);
+  assert.match(omniaStoryClient, /function\s+closeOmniaChat\s*\(/);
+  assert.doesNotThrow(() => new Function(omniaStoryClient));
+});
+
+test('Omnia persistence and cloud reconciliation live in a dedicated client boundary', () => {
+  const storyTag = presence.indexOf('<script src="omnia-story-client.js"></script>');
+  const stateTag = presence.indexOf('<script src="omnia-state-client.js"></script>');
+  const appearanceTag = presence.indexOf('<script src="omnia-appearance-client.js"></script>');
+  assert.notEqual(stateTag, -1);
+  assert.ok(storyTag < stateTag, 'Omnia state loads after story behavior');
+  assert.ok(stateTag < appearanceTag, 'Omnia state initializes before appearance behavior');
+  assert.equal(presence.split('<script src="omnia-state-client.js"></script>').length - 1, 1);
+  assert.doesNotMatch(presence, /function\s+cloneOmniaDefault\s*\(/);
+  assert.doesNotMatch(presence, /function\s+mergeOmniaPull\s*\(/);
+  assert.doesNotMatch(presence, /function\s+loadOmniaState\s*\(/);
+  assert.doesNotMatch(presence, /function\s+saveOmniaState\s*\(/);
+  assert.match(omniaStateClient, /function\s+cloneOmniaDefault\s*\(/);
+  assert.match(omniaStateClient, /function\s+clampOmniaBodies\s*\(/);
+  assert.match(omniaStateClient, /function\s+mergeOmniaPull\s*\(/);
+  assert.match(omniaStateClient, /function\s+loadOmniaState\s*\(/);
+  assert.match(omniaStateClient, /function\s+saveOmniaState\s*\(/);
+  assert.match(omniaStateClient, /var\s+omniaState\s*=\s*loadOmniaState\(\)/);
+  assert.doesNotThrow(() => new Function(omniaStateClient));
+});
+
+test('Omnia cosmetic rendering and selection live in a dedicated client boundary', () => {
+  const stateTag = presence.indexOf('<script src="omnia-state-client.js"></script>');
+  const appearanceTag = presence.indexOf('<script src="omnia-appearance-client.js"></script>');
+  const economyTag = presence.indexOf('<script src="omnia-economy-client.js"></script>');
+  assert.notEqual(appearanceTag, -1);
+  assert.ok(stateTag < appearanceTag, 'Appearance behavior loads after Omnia state');
+  assert.ok(appearanceTag < economyTag, 'Appearance behavior loads before economy runtime');
+  assert.equal(presence.split('<script src="omnia-appearance-client.js"></script>').length - 1, 1);
+  assert.doesNotMatch(presence, /function\s+omniaFindCosmetic\s*\(/);
+  assert.doesNotMatch(presence, /function\s+renderOmniaAppearance\s*\(/);
+  assert.doesNotMatch(presence, /function\s+unlockOrSelectOmniaCosmetic\s*\(/);
+  assert.match(omniaAppearanceClient, /function\s+omniaFindCosmetic\s*\(/);
+  assert.match(omniaAppearanceClient, /function\s+renderOmniaEntityPreview\s*\(/);
+  assert.match(omniaAppearanceClient, /function\s+applyOmniaCosmetics\s*\(/);
+  assert.match(omniaAppearanceClient, /function\s+renderOmniaAppearance\s*\(/);
+  assert.match(omniaAppearanceClient, /function\s+unlockOrSelectOmniaCosmetic\s*\(/);
+  assert.doesNotThrow(() => new Function(omniaAppearanceClient));
+});
+
+test('Omnia core economy math lives in a dedicated client boundary', () => {
+  const appearanceTag = presence.indexOf('<script src="omnia-appearance-client.js"></script>');
+  const economyTag = presence.indexOf('<script src="omnia-economy-client.js"></script>');
+  const bookTwoTag = presence.indexOf('<script src="omnia-book2-client.js"></script>');
+  assert.notEqual(economyTag, -1);
+  assert.ok(appearanceTag < economyTag, 'Core economy loads after appearance behavior');
+  assert.ok(economyTag < bookTwoTag, 'Core economy loads before Book II progression');
+  assert.equal(presence.split('<script src="omnia-economy-client.js"></script>').length - 1, 1);
+  assert.doesNotMatch(presence, /function\s+omniaBodyTotal\s*\(/);
+  assert.doesNotMatch(presence, /function\s+omniaAccrue\s*\(/);
+  assert.doesNotMatch(presence, /function\s+omniaBodyCost\s*\(/);
+  assert.doesNotMatch(presence, /function\s+mintDarkMatterFromPractice\s*\(/);
+  assert.match(omniaEconomyClient, /function\s+omniaBodyTotal\s*\(/);
+  assert.match(omniaEconomyClient, /function\s+omniaRatePerHour\s*\(/);
+  assert.match(omniaEconomyClient, /function\s+omniaAccrue\s*\(/);
+  assert.match(omniaEconomyClient, /function\s+omniaBodyCost\s*\(/);
+  assert.match(omniaEconomyClient, /function\s+mintDarkMatterFromPractice\s*\(/);
+  assert.doesNotThrow(() => new Function(omniaEconomyClient));
+});
+
+test('Omnia Book II and prestige progression live in a dedicated client boundary', () => {
+  const economyTag = presence.indexOf('<script src="omnia-economy-client.js"></script>');
+  const bookTwoTag = presence.indexOf('<script src="omnia-book2-client.js"></script>');
+  const rewardsTag = presence.indexOf('<script src="omnia-rewards-client.js"></script>');
+  assert.notEqual(bookTwoTag, -1);
+  assert.ok(economyTag < bookTwoTag, 'Book II progression loads after core economy math');
+  assert.ok(bookTwoTag < rewardsTag, 'Book II progression loads before recommendation and reward behavior');
+  assert.equal(presence.split('<script src="omnia-book2-client.js"></script>').length - 1, 1);
+  assert.doesNotMatch(presence, /var\s+BOOK2_TOOLS\s*=\s*\[/);
+  assert.doesNotMatch(presence, /function\s+omniaBuildToolPhase\s*\(/);
+  assert.doesNotMatch(presence, /function\s+omniaTravelSphere\s*\(/);
+  assert.doesNotMatch(presence, /function\s+omniaPrestige\s*\(/);
+  assert.match(omniaBook2Client, /var\s+BOOK2_TOOLS\s*=\s*\[/);
+  assert.match(omniaBook2Client, /function\s+omniaBuildToolPhase\s*\(/);
+  assert.match(omniaBook2Client, /function\s+omniaBuildBookIIBody\s*\(/);
+  assert.match(omniaBook2Client, /function\s+omniaTravelSphere\s*\(/);
+  assert.match(omniaBook2Client, /function\s+omniaPrestige\s*\(/);
+  assert.match(omniaBook2Client, /function\s+showPrestigeCeremony\s*\(/);
+  assert.doesNotThrow(() => new Function(omniaBook2Client));
+});
+
+test('Omnia recommendations and exercise rewards live in a dedicated client boundary', () => {
+  const bookTwoTag = presence.indexOf('<script src="omnia-book2-client.js"></script>');
+  const rewardsTag = presence.indexOf('<script src="omnia-rewards-client.js"></script>');
+  const engineTag = presence.indexOf('<script src="omnia-engine-client.js"></script>');
+  assert.notEqual(rewardsTag, -1);
+  assert.ok(bookTwoTag < rewardsTag, 'Rewards load after Book II progression');
+  assert.ok(rewardsTag < engineTag, 'Rewards load before engine rendering');
+  assert.equal(presence.split('<script src="omnia-rewards-client.js"></script>').length - 1, 1);
+  assert.doesNotMatch(presence, /function\s+omniaPickRecommendation\s*\(/);
+  assert.doesNotMatch(presence, /function\s+omniaExerciseReward\s*\(/);
+  assert.doesNotMatch(presence, /function\s+awardOmniaForExercise\s*\(/);
+  assert.match(omniaRewardsClient, /function\s+omniaCurrentStep\s*\(/);
+  assert.match(omniaRewardsClient, /function\s+omniaPickRecommendation\s*\(/);
+  assert.match(omniaRewardsClient, /function\s+omniaHighlightedExerciseIds\s*\(/);
+  assert.match(omniaRewardsClient, /function\s+omniaExerciseReward\s*\(/);
+  assert.match(omniaRewardsClient, /function\s+omniaConfirmEarlyEnd\s*\(/);
+  assert.match(omniaRewardsClient, /function\s+awardOmniaForExercise\s*\(/);
+  assert.match(omniaRewardsClient, /function\s+showBodyLevelAward\s*\(/);
+  assert.doesNotThrow(() => new Function(omniaRewardsClient));
+});
+
+test('Omnia engine rendering and generator controls live in a dedicated client boundary', () => {
+  const rewardsTag = presence.indexOf('<script src="omnia-rewards-client.js"></script>');
+  const engineTag = presence.indexOf('<script src="omnia-engine-client.js"></script>');
+  const morphTag = presence.indexOf('<script src="omnia-morph-client.js"></script>');
+  assert.notEqual(engineTag, -1);
+  assert.ok(rewardsTag < engineTag, 'Engine rendering loads after reward behavior');
+  assert.ok(engineTag < morphTag, 'Engine rendering loads before click-morph animation data');
+  assert.equal(presence.split('<script src="omnia-engine-client.js"></script>').length - 1, 1);
+  assert.doesNotMatch(presence, /function\s+renderOmniaEngine\s*\(/);
+  assert.doesNotMatch(presence, /function\s+renderOmniaGenYard\s*\(/);
+  assert.doesNotMatch(presence, /function\s+buyOmniaUpgrade\s*\(/);
+  assert.match(omniaEngineClient, /function\s+renderOmniaEngine\s*\(/);
+  assert.match(omniaEngineClient, /function\s+collectOmniaAkasha\s*\(/);
+  assert.match(omniaEngineClient, /function\s+buildOmniaBody\s*\(/);
+  assert.match(omniaEngineClient, /var\s+OMNIA_GEN_META\s*=\s*\[/);
+  assert.match(omniaEngineClient, /var\s+DM_GEN_META\s*=\s*\[/);
+  assert.match(omniaEngineClient, /function\s+renderOmniaGenYard\s*\(/);
+  assert.match(omniaEngineClient, /function\s+buyOmniaUpgrade\s*\(/);
+  assert.match(omniaEngineClient, /function\s+beginOmniaRecommendation\s*\(/);
+  assert.doesNotThrow(() => new Function(omniaEngineClient));
+});
+
+test('Omnia click-morph geometry and animation live in a dedicated client boundary', () => {
+  const engineTag = presence.indexOf('<script src="omnia-engine-client.js"></script>');
+  const morphTag = presence.indexOf('<script src="omnia-morph-client.js"></script>');
+  const guidePathTag = presence.indexOf('<script src="guide-path-client.js"></script>');
+  assert.notEqual(morphTag, -1);
+  assert.ok(engineTag < morphTag, 'Click-morph behavior loads after the Omnia engine');
+  assert.ok(morphTag < guidePathTag, 'Click-morph behavior loads before Guide state');
+  assert.equal(presence.split('<script src="omnia-morph-client.js"></script>').length - 1, 1);
+  assert.doesNotMatch(presence, /var\s+OMNIA_ENTITY_MORPH_SYMBOLS\s*=\s*\{/);
+  assert.doesNotMatch(presence, /function\s+animateOmniaShardMorph\s*\(/);
+  assert.doesNotMatch(presence, /function\s+morphGuideOmnia\s*\(/);
+  assert.match(omniaMorphClient, /var\s+OMNIA_ENTITY_MORPH_SYMBOLS\s*=\s*\{/);
+  assert.match(omniaMorphClient, /var\s+OMNIA_MORPH_TARGETS\s*=\s*\{/);
+  assert.match(omniaMorphClient, /function\s+animateOmniaShardMorph\s*\(/);
+  assert.match(omniaMorphClient, /function\s+renderOmniaMorphSymbol\s*\(/);
+  assert.match(omniaMorphClient, /function\s+morphGuideOmnia\s*\(/);
+  assert.match(omniaMorphClient, /function\s+morphPathBannerOmnia\s*\(/);
+  assert.doesNotThrow(() => new Function(omniaMorphClient));
+});
+
+test('Guide path assessment and adaptive agenda live in a dedicated client boundary', () => {
+  const morphTag = presence.indexOf('<script src="omnia-morph-client.js"></script>');
+  const guidePathTag = presence.indexOf('<script src="guide-path-client.js"></script>');
+  const questsTag = presence.indexOf('<script src="guide-quests-client.js"></script>');
+  assert.notEqual(guidePathTag, -1);
+  assert.ok(morphTag < guidePathTag, 'Guide path loads after Omnia morph behavior');
+  assert.ok(guidePathTag < questsTag, 'Guide path loads before Path Quest tracking');
+  assert.equal(presence.split('<script src="guide-path-client.js"></script>').length - 1, 1);
+  assert.doesNotMatch(presence, /function\s+loadGuideState\s*\(/);
+  assert.doesNotMatch(presence, /function\s+buildExperiencedGuideItems\s*\(/);
+  assert.doesNotMatch(presence, /function\s+renderGuidePlan\s*\(/);
+  assert.match(guidePathClient, /function\s+loadGuideState\s*\(/);
+  assert.match(guidePathClient, /function\s+renderPracticeTree\s*\(/);
+  assert.match(guidePathClient, /function\s+guideExerciseStats\s*\(/);
+  assert.match(guidePathClient, /function\s+buildExperiencedGuideItems\s*\(/);
+  assert.match(guidePathClient, /function\s+buildFoundationalGuideItems\s*\(/);
+  assert.match(guidePathClient, /function\s+guideDetectAdaptedLevel\s*\(/);
+  assert.match(guidePathClient, /function\s+renderGuidePlan\s*\(/);
+  assert.match(guidePathClient, /function\s+beginGuidePlanItem\s*\(/);
+  assert.doesNotThrow(() => new Function(guidePathClient));
+});
+
+test('Path Quests and Seven Gifts live in a dedicated client boundary', () => {
+  const guidePathTag = presence.indexOf('<script src="guide-path-client.js"></script>');
+  const questsTag = presence.indexOf('<script src="guide-quests-client.js"></script>');
+  const guideShellRuntime = presence.indexOf('function openGuide(');
+  assert.notEqual(questsTag, -1);
+  assert.ok(guidePathTag < questsTag, 'Guide quests load after adaptive path planning');
+  assert.ok(questsTag < guideShellRuntime, 'Guide quests load before Guide shell initialization');
+  assert.equal(presence.split('<script src="guide-quests-client.js"></script>').length - 1, 1);
+  assert.doesNotMatch(presence, /function\s+pathQuestState\s*\(/);
+  assert.doesNotMatch(presence, /function\s+renderGiftPathScreen\s*\(/);
+  assert.doesNotMatch(presence, /function\s+renderPathQuests\s*\(/);
+  assert.match(guideQuestsClient, /function\s+pathQuestState\s*\(/);
+  assert.match(guideQuestsClient, /function\s+claimPathQuestReward\s*\(/);
+  assert.match(guideQuestsClient, /function\s+playChestOpenAnimation\s*\(/);
+  assert.match(guideQuestsClient, /var\s+GIFT_PATH_DEFS\s*=\s*\[/);
+  assert.match(guideQuestsClient, /function\s+claimGift\s*\(/);
+  assert.match(guideQuestsClient, /function\s+renderGiftPathScreen\s*\(/);
+  assert.match(guideQuestsClient, /function\s+renderPathQuests\s*\(/);
+  assert.match(guideQuestsClient, /window\.pqOpenAddMenu\s*=\s*function/);
+  assert.doesNotThrow(() => new Function(guideQuestsClient));
 });
 
 test('Lodge, messages, and friends live behind the social client boundary', () => {
@@ -291,7 +651,7 @@ test('Settings and utility screens load through their own client boundary', () =
 
 test('Prayer state and practice flow load before the Guide engine', () => {
   const prayerTag = presence.indexOf('<script src="prayer-client.js"></script>');
-  const guideStart = presence.indexOf('var GUIDE_DAILY_PLANS = [');
+  const guideStart = presence.indexOf('<script src="guide-config-client.js"></script>');
   const appUse = presence.indexOf('var PRESENCE_SYNC = window.PresenceSyncContract;');
   assert.notEqual(prayerTag, -1);
   assert.ok(appUse < prayerTag, 'Prayer requires initialized core practice state');

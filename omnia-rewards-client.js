@@ -1,0 +1,490 @@
+function omniaCurrentStep() {
+  var stepNum = omniaState.bardonStep || 1;
+  return OMNIA_BARDON_STEPS.find(function(s) { return s.step === stepNum; }) || OMNIA_BARDON_STEPS[0];
+}
+
+function omniaStepReady(step) {
+  return (omniaState.bodies.physical || 0) >= omniaStepReqVal(step, 'physical')
+    && (omniaState.bodies.astral || 0) >= omniaStepReqVal(step, 'astral')
+    && (omniaState.bodies.mental || 0) >= omniaStepReqVal(step, 'mental')
+    && (omniaState.completedRecommended || 0) >= omniaStepReqVal(step, 'recommended');
+}
+
+function renderOmniaStepReq(label, current, target) {
+  var done = current >= target;
+  return '<div class="omnia-step-req' + (done ? ' done' : '') + '"><span>' + label + '</span><span>' + Math.min(current, target) + ' / ' + target + '</span></div>';
+}
+
+function omniaPickRecommendation(forceNew) {
+  var guided = omniaPickGuidedPathRecommendation(forceNew);
+  if (guided) return guided;
+  if (!forceNew && omniaState.rec && OMNIA_EXERCISE_META[omniaState.rec.id]) return omniaState.rec;
+
+  var history = (typeof concState !== 'undefined' && concState.history) ? concState.history : [];
+  var bodies = omniaState.bodies;
+  var allIds = Object.keys(OMNIA_EXERCISE_META);
+
+  // Count how many times each exercise appears in all history (lifetime) and last 20 sessions (affinity)
+  var lifetimeCounts = {}, recentCounts = {};
+  allIds.forEach(function(id) { lifetimeCounts[id] = 0; recentCounts[id] = 0; });
+  history.forEach(function(h, i) {
+    allIds.forEach(function(id) {
+      if (omniaHistoryMatches(id, h)) {
+        lifetimeCounts[id]++;
+        if (i < 20) recentCounts[id]++;
+      }
+    });
+  });
+
+  // Strongest body level — used to normalize balance nudge
+  var bodyKeys = ['mental', 'astral', 'physical'];
+  var maxBody = Math.max.apply(null, bodyKeys.map(function(b) { return bodies[b] || 0; }));
+  maxBody = Math.max(1, maxBody);
+
+  var lastRecId = omniaState.rec ? omniaState.rec.id : null;
+  var clockBest = (typeof concState !== 'undefined' && concState.bestSeconds) ? concState.bestSeconds : 0;
+
+  var scored = allIds.map(function(id) {
+    var meta = OMNIA_EXERCISE_META[id];
+    var bodyLevel = bodies[meta.body] || 0;
+
+    // Novelty: exercises done fewer than 10 times ever get a push (0–8 pts)
+    var novelty = Math.max(0, 10 - lifetimeCounts[id]) / 10 * 8;
+
+    // Affinity: how often the player chooses this exercise (capped at 8 to not overwhelm novelty)
+    var affinity = Math.min(8, recentCounts[id]);
+
+    // Balance nudge: gentle tilt toward weaker bodies (0–2 pts)
+    var balance = (1 - bodyLevel / maxBody) * 2;
+
+    // Clock mastery bonus: if clock hasn't been held for 3+ minutes, keep nudging it
+    var mastery = (id === 'clock' && clockBest < 180) ? 3 : 0;
+
+    // Avoid recommending the same exercise twice in a row
+    var sameAsLast = (id === lastRecId) ? -12 : 0;
+
+    // Mild penalty for the most recently completed exercise
+    var justDone = (omniaLastDoneIndex(id, history) === 0) ? -4 : 0;
+
+    return { id: id, score: novelty + affinity + balance + mastery + sameAsLast + justDone };
+  });
+
+  scored.sort(function(a, b) { return b.score - a.score; });
+  var id = scored[0].id || 'clock';
+  omniaState.rec = { id: id, setAt: Date.now() };
+  saveOmniaState();
+  return omniaState.rec;
+}
+
+function omniaPickGuidedPathRecommendation(forceNew) {
+  if (typeof guideState === 'undefined' || typeof buildGuideRegimentItems !== 'function') return null;
+  if (!guideState._pathLockedV2) return null;
+  var items = buildGuideRegimentItems().filter(function(item) {
+    return item && OMNIA_EXERCISE_META[item.id];
+  });
+  if (!items.length) return null;
+  var choice = items.find(function(item) { return !item.done; }) || items[0];
+  if (!forceNew && omniaState.rec && omniaState.rec.guidedPath && omniaState.rec.id === choice.id) return omniaState.rec;
+  omniaState.rec = { id:choice.id, setAt:Date.now(), guidedPath:true };
+  saveOmniaState();
+  return omniaState.rec;
+}
+
+// Map a guided-path card id to the OMNIA_EXERCISE_META key whose body it
+// trains. Thought sub-modes all feed the mental body via Thought Control;
+// Soul Mirror and the advanced visual drills don't grant body levels.
+function omniaMetaIdForExercise(id) {
+  if (id === 'observation' || id === 'focus' || id === 'vacancy') return 'thought';
+  if (id === 'pore') return 'pore_breathing';
+  if (OMNIA_EXERCISE_META[id]) return id;
+  return null;
+}
+
+function omniaExerciseIsGuidedAgenda(exId) {
+  if (typeof guideState === 'undefined' || typeof buildGuideRegimentItems !== 'function') return false;
+  if (!guideState._pathLockedV2) return false;
+  return buildGuideRegimentItems().some(function(item) {
+    return omniaMetaIdForExercise(item.id) === exId;
+  });
+}
+
+// ── Daily body-level budget ───────────────────────────────────────────────
+// A player can earn at most omniaBodyAwardsPerDay() free body levels per
+// calendar day (1 per recommended session). The budget grows with rank —
+// 3/day at Step I up to 6/day at Step IX+ — so deeper practice keeps paying.
+function omniaBodyAwardsPerDay() {
+  var step = (omniaState && omniaState.bardonStep) || 1;
+  return 3 + Math.floor(step / 3);
+}
+function omniaBodyAwardsRemaining() {
+  if (!omniaState) return 0;
+  var todayStr = new Date().toISOString().slice(0, 10);
+  if (omniaState.bodyAwardsDate !== todayStr) return omniaBodyAwardsPerDay();
+  return Math.max(0, omniaBodyAwardsPerDay() - (omniaState.bodyAwardsToday || 0));
+}
+function omniaConsumeBodyAward() {
+  var todayStr = new Date().toISOString().slice(0, 10);
+  if (omniaState.bodyAwardsDate !== todayStr) {
+    omniaState.bodyAwardsDate = todayStr;
+    omniaState.bodyAwardsToday = 0;
+  }
+  omniaState.bodyAwardsToday = (omniaState.bodyAwardsToday || 0) + 1;
+}
+// The body a given exercise will actually raise: its natural body, or — if that
+// one is already capped for the current step — the next uncapped body, in the
+// order mental → astral → physical. Returns null when all three are capped.
+function omniaPickAwardBody(preferred) {
+  var order = [preferred, 'mental', 'astral', 'physical'];
+  for (var i = 0; i < order.length; i++) {
+    if (order[i] && !omniaBodyAtCap(order[i])) return order[i];
+  }
+  return null;
+}
+// How many exercises can glow with a body-level highlight (and therefore
+// actually grant one) at once. Starts low and rises with rank alongside
+// the daily budget, but never exceeds it.
+function omniaHighlightCap() {
+  var step = (omniaState && omniaState.bardonStep) || 1;
+  var byStep = step <= 3 ? 2 : step <= 5 ? 3 : step <= 7 ? 4 : step <= 9 ? 5 : 6;
+  return Math.min(byStep, omniaBodyAwardsPerDay());
+}
+// The set of OMNIA_EXERCISE_META ids that currently grant a body level if
+// completed right now, mapped to the specific path-card id that earns it —
+// the ✦ glow on guided-path cards and the actual award in
+// awardOmniaForExercise both consult this, so they always agree. Several
+// cards (e.g. Vacancy of Mind, Thought Observation) can share a metaId
+// ('thought'); only the first such card is marked, so the glow never lights
+// up more cards than the body level they'd actually grant.
+function omniaHighlightedExerciseIds() {
+  var result = {};
+  var remaining = omniaBodyAwardsRemaining();
+  if (remaining <= 0) return result;
+  var cap = Math.min(omniaHighlightCap(), remaining);
+  if (cap <= 0) return result;
+
+  if (typeof guideState !== 'undefined' && guideState._pathLockedV2 && typeof buildGuideRegimentItems === 'function') {
+    var items = buildGuideRegimentItems().filter(function(item) {
+      return item && omniaMetaIdForExercise(item.id);
+    });
+    for (var i = 0; i < items.length && cap > 0; i++) {
+      if (items[i].done) continue;
+      var metaId = omniaMetaIdForExercise(items[i].id);
+      if (!metaId || result[metaId]) continue;
+      result[metaId] = items[i].id;
+      cap--;
+    }
+    return result;
+  }
+  // No locked path — the single rotating recommendation is the only candidate.
+  var rec = omniaPickRecommendation(false);
+  if (rec && OMNIA_EXERCISE_META[rec.id]) result[rec.id] = rec.id;
+  return result;
+}
+// Would completing this path card right now grant a body level? Used to
+// highlight the card. Honours the daily budget, eligibility, and the cap
+// cascade (so a capped mental body still highlights when astral can take it).
+function omniaCardGrantsBodyLevel(cardId, isDone, highlighted) {
+  if (isDone) return null;
+  var metaId = omniaMetaIdForExercise(cardId);
+  if (!metaId) return null;
+  if (highlighted[metaId] !== cardId) return null;
+  return omniaPickAwardBody(OMNIA_EXERCISE_META[metaId].body); // body name or null
+}
+
+function omniaLastDoneIndex(id, history) {
+  for (var i = 0; i < history.length; i++) {
+    if (omniaHistoryMatches(id, history[i])) return i;
+  }
+  return 999;
+}
+
+function omniaHistoryMatches(id, h) {
+  if (!h) return false;
+  if (id === 'clock') return !h.type && !h.exercise;
+  if (id === 'visual') return h.type === 'visualization';
+  if (id === 'auditory') return h.type === 'auditory';
+  if (id === 'thought') return h.type === 'thought';
+  if (id === 'asana') return h.exercise === 'asana';
+  if (id === 'pore_breathing') return h.exercise === 'pore_breathing';
+  return false;
+}
+
+// extraBoost is the caller's cosmetic + temporary akasha-boost multiplier
+// (getActiveAkashaBoost() * getOmniaCosmeticBoost()) — folded in here so
+// OMNIA_BONUS_STACK_CAP can limit the *combined* stack, not just streak/rec.
+function omniaExerciseReward(exId, seconds, recommended, extraBoost) {
+  var total = omniaBodyTotal();
+  var stepNum = omniaState.bardonStep || 1;
+  // Akasha only rewards the first 15 minutes of a session — beyond that is
+  // unnecessary for the economy, though XP/time still tracks the full length.
+  var akashaSeconds = Math.min(seconds || 0, 900);
+  var base = Math.max(95, Math.min(1100, Math.floor(akashaSeconds * 0.4) + 120));
+  // The soft cap decays with body total, but a step-scaled mastery floor keeps
+  // sessions paying a meaningful fraction of a body level at every rank — this
+  // is what makes practice volume matter all game. Together with the Step gates,
+  // streaks, achievements, offerings, and monthly gifts, this targets a first
+  // Prestige in roughly 5-6 months at 30-45 min/day and 3-4 months at 60-90 min/day.
+  var progressionSoftCap = 1 / (1 + Math.max(0, total - 36) / 420);
+  var effMult = Math.max(progressionSoftCap, stepNum * 0.102);
+  var stepPenalty = 1 - Math.min(0.24, Math.max(0, stepNum - 1) * 0.07);
+  var catchup = total < 42 ? 1 + (42 - total) / 120 : 1;
+  var streakMult = 1 + Math.min(0.45, (omniaState.recStreak || 0) * 0.08);
+  var recMult = recommended ? 1.75 : 1;
+  // Streak + "recommended" bonuses combine with cosmetic/temporary-boost
+  // bonuses (extraBoost, from the caller) to multiply a single session's
+  // reward. Without a cap, a maxed streak (+45%) and "recommended" bonus
+  // (+75%) already multiply by ~2.5x, and a player with every cosmetic
+  // unlocked (+64%, the $3.99/mo perk) plus an active quest-chest boost
+  // (+20-30%) could reach ~5.4x — turning one session into thousands of
+  // akasha versus a ~100-150 akasha body-level cost. Capping the combined
+  // stack at 3x keeps bonuses feeling rewarding without trivializing the
+  // akasha economy, while leaving non-paying players (max ~2.54x) untouched.
+  var bonusMult = Math.min(streakMult * recMult * (extraBoost || 1), OMNIA_BONUS_STACK_CAP);
+  return Math.max(42, Math.floor(base * effMult * stepPenalty * catchup * bonusMult * omniaPrestigeMult() * omniaDevotionMult()));
+}
+// Permanent +2% akasha from completing the Seven-Day Devotion (one-time). The
+// earned flag lives on omniaState so the reward follows the account across sync.
+// The Seven Gifts grant a stacking +2% akasha per month completed, capped at
+// +48% (24 devotions). devotionStacks is the synced count; the old one-time
+// devotionEarned boolean counts as a single stack for players who earned it
+// before the monthly rework.
+function omniaDevotionStacks() {
+  if (typeof omniaState === 'undefined' || !omniaState) return 0;
+  var stacks = omniaState.devotionStacks || 0;
+  if (!stacks && omniaState.devotionEarned) stacks = 1;
+  return Math.min(24, stacks);
+}
+function omniaDevotionMult() { return 1 + 0.02 * omniaDevotionStacks(); }
+
+var OMNIA_BONUS_STACK_CAP = 3.0;
+
+// Unlocked entities/companions grant a permanent Akasha bonus scaled to each
+// item's real price tier (_price). Owning is enough — no need to equip — and
+// every unlocked item stacks, so the full collection reaches +64%.
+function omniaCosmeticBonusPct(item) {
+  return Math.round((item && item._price || 0) / 2000);
+}
+
+// Sum the bonus of every unlocked entity and companion, then combine
+// multiplicatively with any active temporary boost.
+function getOmniaCosmeticBoost() {
+  if (!omniaState.cosmetics) return 1;
+  var pct = 0;
+  var ownedE = omniaState.cosmetics.unlockedEntities || [];
+  var ownedC = omniaState.cosmetics.unlockedCompanions || [];
+  OMNIA_ENTITIES.forEach(function(e) { if (ownedE.indexOf(e.id) !== -1) pct += omniaCosmeticBonusPct(e); });
+  OMNIA_COMPANIONS.forEach(function(c) { if (ownedC.indexOf(c.id) !== -1) pct += omniaCosmeticBonusPct(c); });
+  return 1 + pct / 100;
+}
+
+function getActiveAkashaBoost() {
+  var now = Date.now();
+  var boosts = omniaState.akashaBoosts || [];
+  var active = boosts.filter(function(b) { return b.expiresAt > now; });
+  if (active.length !== boosts.length) { omniaState.akashaBoosts = active; saveOmniaState(); }
+  if (!active.length) return 1;
+  return active.reduce(function(acc, b) { return acc * b.mult; }, 1);
+}
+
+// Minutes until the soonest-expiring active boost ends (when the combined % will next drop).
+function getAkashaBoostRemainingMin() {
+  var now = Date.now();
+  var active = (omniaState.akashaBoosts || []).filter(function(b) { return b.expiresAt > now; });
+  if (!active.length) return 0;
+  var soonest = active.reduce(function(min, b) { return Math.min(min, b.expiresAt); }, Infinity);
+  return Math.max(1, Math.ceil((soonest - now) / 60000));
+}
+
+function renderAkashaBoostBadge() {
+  var mult = (typeof omniaState !== 'undefined' && omniaState) ? getActiveAkashaBoost() : 1;
+  var pct = Math.round((mult - 1) * 100);
+  var remainLabel = pct > 0 ? fmtDuration(getAkashaBoostRemainingMin()) + ' left' : '';
+  ['awBoostBadge', 'concBoostBadge'].forEach(function(id) {
+    var el = document.getElementById(id);
+    if (!el) return;
+    if (pct > 0) {
+      el.style.display = 'flex';
+      var pctEl = el.querySelector('.boost-badge__pct');
+      if (pctEl) pctEl.textContent = pct;
+      var timeEl = el.querySelector('.boost-badge__time');
+      if (timeEl) timeEl.textContent = remainLabel;
+    } else {
+      el.style.display = 'none';
+    }
+  });
+}
+
+// ── Early-end guard: Omnia's recommended duration ─────────────────────────
+// A session only earns "completion" (daily plan credit + any pending body
+// level) once it reaches Omnia's recommended length. These helpers let the
+// per-exercise End buttons warn before forfeiting that, and let the award
+// path gate the body level on it.
+function omniaRecommendedSec(exId) {
+  try {
+    var m = guideRecommendedMinutes(exId);
+    return (typeof m === 'number' && m > 0) ? Math.round(m * 60) : 0;
+  } catch (e) { return 0; }
+}
+
+// True when a body level is currently waiting on this exercise (the ✦ the
+// player saw before starting) and would be lost by ending early.
+function omniaExercisePendingBody(exId) {
+  try { return !!(omniaHighlightedExerciseIds() || {})[exId]; } catch (e) { return false; }
+}
+
+// 5s grace for tap-timing variance, matching the guide's daily-completion grace.
+function omniaReachedRecommendation(exId, elapsedSec, recSecOverride) {
+  var recSec = (typeof recSecOverride === 'number') ? recSecOverride : omniaRecommendedSec(exId);
+  if (!recSec) return true; // no recommendation to enforce
+  return (elapsedSec || 0) + 5 >= recSec;
+}
+
+// Confirm before ending early. Runs onProceed() immediately if the
+// recommendation is already met (or none exists); otherwise shows a warning
+// and only proceeds if the user accepts. Countdown exercises (asana/sense)
+// pass their own session target via recSecOverride.
+function omniaConfirmEarlyEnd(exId, elapsedSec, onProceed, recSecOverride) {
+  var recSec = (typeof recSecOverride === 'number') ? recSecOverride : omniaRecommendedSec(exId);
+  if (!recSec || (elapsedSec || 0) + 5 >= recSec) { onProceed(); return; }
+  var recMin = Math.round(recSec / 60);
+  var msg = "You haven't reached Omnia's recommended " + recMin + " minute" + (recMin === 1 ? '' : 's') + " yet.\n\n"
+          + "If you end now, this won't count as a completed session toward today's plan";
+  if (omniaExercisePendingBody(exId)) {
+    msg += ", and you'll forfeit the body-level award waiting on this exercise";
+  }
+  msg += ".\n\nEnd anyway?";
+  showConfirm('End Early?', msg, onProceed);
+}
+
+function awardOmniaForExercise(exId, seconds, reachedRec) {
+  omniaAccrue();
+  // ── Plausibility clamps ──────────────────────────────────────────────────
+  // Awards can't arrive faster than real practice: ignore calls < 30s apart,
+  // and a session can't claim more time than has actually elapsed since the
+  // previous award (with 5 min grace), nor more than 3 hours total.
+  var nowClamp = Date.now();
+  var sinceLast = nowClamp - (omniaState.lastAwardMs || 0);
+  if (omniaState.lastAwardMs && sinceLast < 30000) return;
+  var maxSec = omniaState.lastAwardMs ? Math.min(3 * 3600, sinceLast / 1000 + 300) : 3 * 3600;
+  seconds = Math.max(0, Math.min(seconds || 0, maxSec));
+  omniaState.lastAwardMs = nowClamp;
+  // Track sessions completed today — feeds the generator practice multiplier.
+  var todayStr = new Date().toISOString().slice(0, 10);
+  if (omniaState.sessionsTodayDate !== todayStr) {
+    omniaState.sessionsTodayDate = todayStr;
+    omniaState.sessionsTodayCount = 0;
+  }
+  omniaState.sessionsTodayCount = (omniaState.sessionsTodayCount || 0) + 1;
+
+  var rec = omniaPickRecommendation(false);
+  var recommended = rec && rec.id === exId;
+  if (!recommended && omniaExerciseIsGuidedAgenda(exId)) recommended = true;
+  var meta = OMNIA_EXERCISE_META[exId] || OMNIA_EXERCISE_META.clock;
+  var boost = getActiveAkashaBoost() * getOmniaCosmeticBoost();
+  var gain = omniaExerciseReward(exId, seconds || 0, recommended, boost);
+  // The Clock can be repeated endlessly, so it only pays akasha for the first
+  // two qualifying sessions each day (sessions under 10s are dropped earlier in
+  // saveConcResult). Further clock sessions still log time/XP but earn nothing.
+  var clockAkashaCapped = false;
+  if (exId === 'clock') {
+    if (omniaState.clockAkashaDate !== todayStr) {
+      omniaState.clockAkashaDate = todayStr;
+      omniaState.clockAkashaCount = 0;
+    }
+    if ((omniaState.clockAkashaCount || 0) >= 2) {
+      gain = 0;
+      clockAkashaCapped = true;
+    } else {
+      omniaState.clockAkashaCount = (omniaState.clockAkashaCount || 0) + 1;
+    }
+  }
+  omniaState.akasha = (omniaState.akasha || 0) + gain;
+  omniaState.totalAkashaEarned = (omniaState.totalAkashaEarned || 0) + gain;
+  // A completed Omnia recommendation earns 1 path-session credit, max once per
+  // hour. Other exercises still pay Akasha and XP, but do not bypass the Path.
+  var now = Date.now();
+  if (recommended && reachedRec !== false && now - (omniaState.lastSessionCreditMs || 0) >= 3600000) {
+    omniaState.completedRecommended = (omniaState.completedRecommended || 0) + 1;
+    omniaState.lastSessionCreditMs = now;
+  }
+  // Names must be computed BEFORE the award below — this used to read
+  // activityName ahead of its declaration, leaving lastBodyAward.exercise
+  // permanently undefined.
+  var activityName = meta && meta.name ? meta.name : 'Exercise';
+  var awardedBody = false;
+  if (recommended) {
+    omniaState.recStreak = (omniaState.recStreak || 0) + 1;
+    // A body level is only granted if this exercise is currently one of the
+    // ✦-highlighted cards (omniaHighlightedExerciseIds) — so the award and
+    // the highlight the player saw before starting always agree. The natural
+    // body is raised unless it's capped, in which case the level cascades to
+    // the next uncapped body (mental → astral → physical). A clock session
+    // past its daily akasha cap earns no body level either, so it can't be farmed.
+    // The session must also have reached Omnia's recommended duration: ending
+    // early forfeits the body level (reachedRec === false). Callers that don't
+    // pass the flag (tutorial clock, pore breathing) are unaffected.
+    if (!clockAkashaCapped && reachedRec !== false && omniaHighlightedExerciseIds()[exId]) {
+      var targetBody = omniaPickAwardBody(meta.body);
+      if (targetBody) {
+        omniaState.bodies[targetBody] = (omniaState.bodies[targetBody] || 0) + 1;
+        omniaConsumeBodyAward();
+        omniaState.lastBodyAward = { body: targetBody, exercise: activityName, level: omniaState.bodies[targetBody] };
+        awardedBody = true;
+      }
+    }
+    omniaPickRecommendation(true);
+  } else {
+    omniaState.recStreak = Math.max(0, (omniaState.recStreak || 0) - 1);
+  }
+  saveOmniaState();
+  var boostLabel = boost > 1 ? ' · +' + Math.round((boost - 1) * 100) + '% boost' : '';
+  if (clockAkashaCapped) {
+    showToast(activityName + ' complete · daily akasha reached — return tomorrow', 3600);
+  } else {
+    showToast(activityName + ' complete · +' + gain + ' akasha' + boostLabel, 3200);
+  }
+  // The body level gets a real acknowledgment screen, not just a toast —
+  // shown once the session-complete legend has been dismissed.
+  if (awardedBody) setTimeout(maybeShowBodyLevelAward, 1200);
+}
+
+// Show the pending body-level award as soon as no session-complete legend is
+// covering the screen; the player dismisses it explicitly.
+function maybeShowBodyLevelAward() {
+  if (!omniaState || !omniaState.lastBodyAward) return;
+  var sc = document.getElementById('sessionComplete');
+  if (sc && sc.classList.contains('sc-show')) {
+    setTimeout(maybeShowBodyLevelAward, 700);
+    return;
+  }
+  showBodyLevelAward(omniaState.lastBodyAward);
+}
+
+function showBodyLevelAward(award) {
+  if (document.getElementById('bodyLevelAwardOverlay')) return;
+  var bodyMeta = OMNIA_BODY_META[award.body];
+  if (!bodyMeta) { omniaState.lastBodyAward = null; saveOmniaState(); return; }
+  var color = bodyMeta.color;
+  var lvl = award.level || (omniaState.bodies && omniaState.bodies[award.body]) || 1;
+  var overlay = document.createElement('div');
+  overlay.className = 'bla-overlay';
+  overlay.id = 'bodyLevelAwardOverlay';
+  overlay.innerHTML = '<div class="bla-card" style="--bla-c:' + color + ';--bla-cl:' + color + ';">'
+    + '<div class="bla-aura"><div class="bla-ring"></div><div class="bla-plus">+1</div></div>'
+    + '<div class="bla-kicker">You received a body level!</div>'
+    + '<div class="bla-title">' + bodyMeta.name + ' +1</div>'
+    + '<div class="bla-sub">Now Lvl ' + lvl + (award.exercise ? ' · earned from ' + award.exercise : '') + '</div>'
+    + '<button class="bla-btn" id="blaAckBtn">Continue →</button>'
+    + '</div>';
+  document.body.appendChild(overlay);
+  document.getElementById('blaAckBtn').onclick = function() {
+    omniaState.lastBodyAward = null;
+    saveOmniaState();
+    overlay.classList.remove('bla-vis');
+    setTimeout(function() { if (overlay.parentNode) overlay.parentNode.removeChild(overlay); }, 360);
+  };
+  requestAnimationFrame(function() {
+    overlay.classList.add('bla-show');
+    requestAnimationFrame(function() { overlay.classList.add('bla-vis'); });
+  });
+}

@@ -78,6 +78,26 @@ Last updated: 2026-07-13
 - [x] Extract Auditory sound synthesis, picker, rep sessions, results, and event wiring into `auditory-client.js`
 - [x] Extract Thought Control modes, progress, alarms, sessions, results, and event wiring into `thought-control-client.js`
 - [x] Extract Asana sessions, results, event wiring, and the shared exercise wake lock into `asana-client.js`
+- [x] Extract Senses modes, cues, setup, sessions, results, and event wiring into `senses-client.js`
+- [x] Extract primary tab navigation, mode switching, rank controls, and Awareness/Prayer submenu wiring into `app-shell-client.js`
+- [x] Extract Omnia's home-screen ambient animation scheduler, side-peek lifecycle, and effects into `omnia-ambient-client.js`
+- [x] Extract Concentration begin/stop, history navigation, and result-save controls into `concentration-controls-client.js`
+- [x] Extract Guide daily recommendation tables and exercise assessment metadata into `guide-config-client.js`
+- [x] Extract Omnia economy defaults, body/exercise metadata, and generator definitions into `omnia-economy-config-client.js`
+- [x] Extract Omnia palettes, entities, veils, and companions into `omnia-cosmetics-config-client.js`
+- [x] Extract Omnia step thresholds and narrative beats into `omnia-progression-config-client.js`
+- [x] Extract Omnia story evaluation, unread state, and chat rendering into `omnia-story-client.js`
+- [x] Extract Omnia state loading, migration, cloud reconciliation, and persistence into `omnia-state-client.js`
+- [x] Extract Omnia cosmetic previews, applied visuals, wardrobe rendering, and selection into `omnia-appearance-client.js`
+- [x] Extract Omnia economy rates, caps, accrual, costs, prestige multiplier, and Dark Matter minting into `omnia-economy-client.js`
+- [x] Extract Omnia Book II tools, refined bodies, spheres, prestige rules, and ceremony into `omnia-book2-client.js`
+- [x] Extract Omnia recommendations, body-award budgeting, exercise rewards, boosts, and early-end guards into `omnia-rewards-client.js`
+- [x] Extract Omnia engine rendering, collection/build effects, generators, upgrade sheets, and engine actions into `omnia-engine-client.js`
+- [x] Extract Omnia click-morph geometry, animation lifecycle, and figure entry points into `omnia-morph-client.js`
+- [x] Complete the Phase 4 Omnia boundary audit: verify load order, service-worker coverage, source identity, parser checks, tests, and mobile startup
+- [x] Extract Guide path state, assessment, adaptive planning, and agenda rendering into `guide-path-client.js`
+- [x] Extract Path Quests and Seven Gifts state, rewards, and overlay rendering into `guide-quests-client.js`
+- [ ] Audit the remaining inline Concentration completion, streak, reminder, companion, and integration clusters
 - [x] Consolidate duplicate global HTML escaping helpers
 - [ ] Remove `/api/sync/sync/diagnose` debug endpoint from server.js
 

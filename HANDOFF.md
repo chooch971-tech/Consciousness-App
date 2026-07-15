@@ -64,11 +64,71 @@ system, achievements, streaks, and social/friends features.
 - **`asana-client.js`** — shared exercise wake-lock handling plus Asana posture,
   timer, alarm, completion, persistence, and screen wiring. It loads after
   Thought Control and before Senses.
+- **`senses-client.js`** — Feeling, Smell, and Taste mode definitions, rotating
+  cues, setup controls, countdown, completion, persistence, and screen wiring.
+  It loads after Asana and before the app-shell mode switcher.
+- **`app-shell-client.js`** — primary tab mode state and switching, the
+  Awareness/Prayer submenu, rank-control bindings, and main navigation events.
+  It loads after exercise clients and before Omnia's ambient animation runtime.
+- **`omnia-ambient-client.js`** — Omnia's home-screen animation scheduler,
+  side-peek positioning and effects, dismissal hook, and tab-trigger wiring. It
+  loads after app-shell mode state and before remaining Concentration controls.
+- **`concentration-controls-client.js`** — Clock begin/stop controls,
+  Concentration history navigation, and result-save event bindings. It loads at
+  the former inline boundary after Omnia ambient startup and before Prayer.
+- **`guide-config-client.js`** — static seven-day beginner/experienced practice
+  suggestions and Guide assessment exercise metadata. It loads after Prayer and
+  before the Omnia economy configuration.
+- **`omnia-economy-config-client.js`** — Omnia's level-one reset defaults, body
+  and exercise metadata, and generator upgrade definitions. It loads after the
+  Guide tables and before the cosmetic catalog.
+- **`omnia-cosmetics-config-client.js`** — Omnia's palette, veil, entity, and
+  companion catalogs plus native palette relationships. It loads after economy
+  defaults and before progression configuration.
+- **`omnia-progression-config-client.js`** — all ten Omnia/Bardon step thresholds
+  and the complete narrative beat catalog. It loads after cosmetic data and
+  before story and chat behavior.
+- **`omnia-story-client.js`** — story trigger evaluation, revealed-beat ordering,
+  unread badge state, chapter labels, and Omnia chat rendering/open/close behavior.
+  It loads after progression data and before Omnia state persistence.
+- **`omnia-state-client.js`** — Omnia default cloning, body-cap normalization,
+  cloud reconciliation, local migrations, state initialization, and debounced
+  persistence. It loads after story behavior and before appearance/runtime logic.
+- **`omnia-appearance-client.js`** — cosmetic lookup and unlock state, entity and
+  companion previews, step-dependent visual marks, applied cosmetics, wardrobe
+  rendering, purchasing, and selection. It loads after state and before economy runtime.
+- **`omnia-economy-client.js`** — Omnia body totals, generator rates and caps,
+  offline accrual, body/cosmetic/upgrade costs, the prestige multiplier, and
+  Dark Matter minting. It loads before Book II progression.
+- **`omnia-book2-client.js`** — Book II magical-tool construction, refined body
+  progression, planetary spheres, turning requirements, prestige state changes,
+  and the prestige ceremony. It loads before recommendations and rewards.
+- **`omnia-rewards-client.js`** — step readiness, guided and adaptive exercise
+  recommendations, daily body-level budgeting, Akasha and body rewards, active
+  boosts, early-end guards, and body-level award presentation.
+- **`omnia-engine-client.js`** — Upgrade-screen rendering, collection and build
+  effects, Akasha and Dark Matter generator yards, construction timers, upgrade
+  sheets, body building, step actions, and recommendation launch behavior.
+- **`omnia-morph-client.js`** — per-entity symbol catalogs, shard geometry,
+  interpolation and outline rendering, animation lifecycle, and Guide/Upgrade/
+  Path-banner morph entry points. It loads immediately before Guide state.
+- **Architecture status (2026-07-15)** — the Phase 4 Omnia extraction is complete
+  and audited. The next boundary is Guide runtime: first adaptive path planning,
+  then Path Quests/Seven Gifts. Remaining unrelated inline clusters should be
+  audited only after those two Guide modules are established.
+- **`guide-path-client.js`** — Guide state persistence, practice-tree rendering,
+  route selection and confirmation, exercise-history assessment, adaptive and
+  foundational regimen construction, agenda rendering, and exercise launching.
+  It loads after Omnia morph behavior and before Path Quest tracking.
+- **`guide-quests-client.js`** — daily, weekend, and Awareness quest state and
+  rewards; chest animation; monthly Seven Gifts persistence and claims; quest,
+  gift, exercise-menu, advanced-target, and add-exercise overlay rendering.
+  It loads after Guide planning and before Guide shell initialization.
 - **`tutorial-client.js`** — the first-time tutorial state machine, dialogue,
   spotlight sequencing, Omnia morph choreography, path choice, and replay hook.
   It loads at the end of the body after the complete tutorial markup.
 - **`sw.js`** — service worker. Caches the shell as `presence-shell-vNNN`
-  (currently **v178**). **Bump this version string on every shippable change to
+  (currently **v200**). **Bump this version string on every shippable change to
   `presence.html`** or returning devices run stale code.
 - `marketing/` — App Store card generators (Playwright screenshot scripts).
 
@@ -86,7 +146,7 @@ system, achievements, streaks, and social/friends features.
    let ok=0,t=0;for(const s of b){if(!s.trim())continue;t++;try{new Function(s);ok++;}catch(e){console.log("FAIL",e.message.slice(0,120));}}
    console.log(ok+"/"+t+" parse");'
    ```
-   Expect **26/26 parse**. For server: `node --check server.js`.
+   Expect **30/30 parse**. For server: `node --check server.js`.
 2. **Browser harness** — headless Chromium via Playwright at
    `/tmp/node_modules/playwright`, launch with
    `executablePath:'/opt/pw-browsers/chromium-1194/chrome-linux/chrome'`.

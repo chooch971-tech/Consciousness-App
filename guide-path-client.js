@@ -1,0 +1,2014 @@
+function loadGuideState() {
+  try { var s = localStorage.getItem('presence_guide_v1'); return s ? JSON.parse(s) : {}; } catch(e) { return {}; }
+}
+function saveGuideState(st) {
+  try { localStorage.setItem('presence_guide_v1', JSON.stringify(st)); } catch(e) {}
+}
+
+var guideState = loadGuideState(); // {[exerciseId]: selectedOption string}
+var guidePathMode = guideState._pathModeV2 || null;
+var guideActiveTab = 'path';
+var guidePendingPathMode = null;
+
+var GUIDE_FOUNDATION_THOUGHT_ORDER = ['observation','focus','vacancy'];
+var GUIDE_FOUNDATION_THOUGHT_LABELS = {
+  observation:'Thought Observation',
+  focus:'Thought Focus',
+  vacancy:'Vacancy of Mind'
+};
+var GUIDE_FOUNDATION_THOUGHT_TIPS = {
+  observation:'Watch thoughts arise and pass without entering them.',
+  focus:'Choose one thought, word, or simple idea and hold only that.',
+  vacancy:'Let the mind stay empty; tap at the first sign of content.'
+};
+
+// ── Practice Tree ─────────────────────────────────────────
+
+// Soul Mirror star brightness — driven by inventory + transformation
+// milestones rather than raw session count. Each benchmark raises a floor
+// (Math.max), so the independent "build the mirror" and "transform traits"
+// tracks both contribute and the star maxes at 20 once 20 negative traits
+// have been transformed.
+function soulMirrorStarBrightness() {
+  var data;
+  try { data = loadSoulMirror(); } catch(e) { return 0; }
+  var neg = data.negative || [], pos = data.positive || [];
+  var negDone = neg.filter(function(t){ return t.done; }).length;
+  var mirrorComplete = neg.length >= SOUL_MIRROR_NEG_GOAL && pos.length >= SOUL_MIRROR_POS_GOAL;
+  var practiced4 = neg.some(function(t){ return (t.sessions||0) >= 4; });
+  var b = 0;
+  if (mirrorComplete) b = Math.max(b, 2);   // 100 neg + 60 pos added
+  if (practiced4)     b = Math.max(b, 4);   // a trait worked 4+ autosug sessions
+  if (negDone >= 1)   b = Math.max(b, 6);   // first trait transformed
+  if (negDone >= 3)   b = Math.max(b, 8);
+  if (negDone >= 5)   b = Math.max(b, 11);
+  if (negDone >= 8)   b = Math.max(b, 13);
+  if (negDone >= 12)  b = Math.max(b, 16);
+  if (negDone >= 15)  b = Math.max(b, 18);
+  if (negDone >= 20)  b = Math.max(b, 20);  // fully lit
+  return b;
+}
+
+function practiceTreeNodeBrightness(exId, stats) {
+  var st = stats[exId] || { bestSec:0, count:0 };
+  if (exId === 'clock') return Math.min(15, Math.floor((st.bestSec||0)/60));
+  if (exId === 'observation' || exId === 'focus' || exId === 'vacancy') {
+    return Math.min(20, Math.floor((st.bestSec||0)/45));
+  }
+  if (exId === 'asana') return Math.min(20, Math.floor((st.bestSec||0)/90));
+  if (exId === 'soulmirror') return soulMirrorStarBrightness();
+  if (exId === 'pore') {
+    // Independent of Soul Mirror: maxes at 10,000 lifetime breaths (500/level).
+    var breaths = (typeof concState !== 'undefined' && concState.lifetimeBreaths) ? concState.lifetimeBreaths : 0;
+    return Math.min(20, Math.floor(breaths / 500));
+  }
+  if (exId === 'visual') return Math.min(20, Math.floor((st.bestSec||0)/30));
+  if (exId === 'auditory') return Math.min(20, Math.floor((st.bestSec||0)/30));
+  if (exId === 'kether') {
+    var score = 0;
+    // Each contributor lights its share at a brightness threshold. Vacancy is
+    // held to full brightness (20 = best gap ≥ 15 min, at /45); the rest keep
+    // their halfway mark (10).
+    [['clock',10],['vacancy',20],['asana',10],['soulmirror',10],['visual',10],['auditory',10]].forEach(function(pair) {
+      if (practiceTreeNodeBrightness(pair[0], stats) >= pair[1]) score++;
+    });
+    return Math.round(score / 6 * 20);
+  }
+  return 0;
+}
+
+// Most recent pore_breathing session timestamp (history is newest-first).
+function poreLastSessionMs() {
+  var h = (typeof concState !== 'undefined' && concState.history) ? concState.history : [];
+  for (var i = 0; i < h.length; i++) {
+    if (h[i] && h[i].exercise === 'pore_breathing' && h[i].date) return new Date(h[i].date).getTime();
+  }
+  return 0;
+}
+
+function practiceTreeNodeRecency(exId, stats) {
+  var ms;
+  if (exId === 'pore') ms = poreLastSessionMs();
+  else if (exId === 'kether') return 0.15;
+  else ms = (stats[exId] || {}).lastMs || 0;
+  if (!ms) return 0.15;
+  var days = (Date.now() - ms) / 86400000;
+  if (days <= 7) return 1.0;
+  if (days >= 60) return 0.2;
+  return 1.0 - (days - 7) / 53 * 0.8;
+}
+
+function practiceTreeNodeDepth(exId, stats) {
+  if (exId === 'pore') {
+    // Ring layers grow with lifetime breaths: 2,500 / 5,000 / 7,500.
+    var breaths = (typeof concState !== 'undefined' && concState.lifetimeBreaths) ? concState.lifetimeBreaths : 0;
+    return Math.min(3, Math.floor(breaths / 2500));
+  }
+  return Math.min(3, Math.floor(((stats[exId] || {}).count||0) / 10));
+}
+
+function renderPracticeTree() {
+  var el = document.getElementById('guideTreeSVGWrap');
+  if (!el) return;
+
+  var stats = guideExerciseStats();
+  // Inject per-mode thought stats so observation/focus/vacancy nodes render independently
+  var _tStats = guideThoughtStats();
+  ['observation','focus','vacancy'].forEach(function(m) { stats[m] = _tStats[m] || { count:0, bestSec:0, lastMs:0 }; });
+
+  var NODES = [
+    { id:'kether',    ex:'kether',      cx:170, cy:48,  color:'#c8a848', lc:'#f8f0cc', label:'FUNDAMENTALS', label2:'MASTERY', fs:5.5, gf:'pt-gf-gold' },
+    { id:'chokmah',   ex:'visual',      cx:242, cy:115, color:'#6e9fd4', lc:'#c4dff8', label:'VISUALIZATION', fs:6.5, gf:'pt-gf-blue' },
+    { id:'binah',     ex:'vacancy',     cx:98,  cy:115, color:'#7898b8', lc:'#ccdaec', label:'VACANCY',       fs:6.5, gf:'pt-gf-purple' },
+    { id:'chesed',    ex:'auditory',    cx:242, cy:190, color:'#6eb8a4', lc:'#c4ece4', label:'AUDITORY',      fs:6.5, gf:'pt-gf-teal-sm' },
+    { id:'geburah',   ex:'focus',       cx:98,  cy:190, color:'#7898b8', lc:'#ccdaec', label:'THT FOCUS',     fs:6.5, gf:'pt-gf-teal-sm' },
+    { id:'tiphareth', ex:'observation', cx:170, cy:260, color:'#7898b8', lc:'#ccdaec', label:'THOUGHT OBS.',  fs:7,   gf:'pt-gf-teal' },
+    { id:'netzach',   ex:'pore',        cx:242, cy:340, color:'#a47eb8', lc:'#e4d0f4', label:'PORE BREATH',   fs:6.5, gf:'pt-gf-blue' },
+    { id:'hod',       ex:'soulmirror',  cx:98,  cy:340, color:'#a47eb8', lc:'#e4d0f4', label:'SOUL MIRROR',   fs:6.5, gf:'pt-gf-purple' },
+    { id:'yesod',     ex:'asana',       cx:170, cy:400, color:'#c47878', lc:'#f4d0d0', label:'ASANA',         fs:7,   gf:'pt-gf-rose' },
+    { id:'malkuth',   ex:'clock',       cx:170, cy:490, color:'#d4956e', lc:'#f8dcc0', label:'CLOCK',         fs:7.5, gf:'pt-gf-teal' }
+  ];
+
+  var bMap = {};
+  NODES.forEach(function(n) { bMap[n.id] = practiceTreeNodeBrightness(n.ex, stats); });
+
+  function pathLine(x1, y1, x2, y2, stroke, srcId) {
+    var b = bMap[srcId] || 0;
+    var op = Math.max(0.06, Math.min(0.45, 0.07 + b * 0.022));
+    var sw = (0.7 + b * 0.04).toFixed(1);
+    var dash = b > 2 ? '' : ' stroke-dasharray="3 3"';
+    return '<line x1="'+x1+'" y1="'+y1+'" x2="'+x2+'" y2="'+y2+'" stroke="'+stroke+'" stroke-width="'+sw+'" stroke-opacity="'+op.toFixed(3)+'"'+dash+'/>';
+  }
+
+  function nodeCircles(n) {
+    var b = bMap[n.id];
+    var rec = practiceTreeNodeRecency(n.ex, stats);
+    var dep = practiceTreeNodeDepth(n.ex, stats);
+    // Increased minimum sizes/opacities so all nodes are visible even at brightness 0
+    var starR = Math.max(3.5, 3 + b * 0.55);
+    var auraR = (starR * (1.3 + rec * 0.5)).toFixed(1);
+    var coronaR = (starR * 4.2).toFixed(1);
+    var coreR = Math.max(1.5, starR * 0.38).toFixed(1);
+    var coronaOp = Math.min(0.14, 0.04 + b * 0.005).toFixed(3);
+    var auraOp = (0.07 + rec * 0.1).toFixed(3);
+    var starOp = Math.min(0.97, 0.32 + b * 0.04).toFixed(3);
+    var coreOp = b > 4 ? '1' : b > 1 ? '0.6' : '0.25';
+    var labelY = (n.cy - starR - 5).toFixed(1);
+    var labelOp = b > 5 ? '1' : b > 2 ? '0.9' : '0.78';
+
+    var rings = '';
+    for (var r = 1; r <= dep; r++) {
+      var rr = (starR * (1.9 + r * 0.8)).toFixed(1);
+      var rop = (0.14 - r * 0.02).toFixed(3);
+      rings += '<circle cx="'+n.cx+'" cy="'+n.cy+'" r="'+rr+'" fill="none" stroke="'+n.color+'" stroke-width=".6" stroke-opacity="'+rop+'" stroke-dasharray="2 2"/>';
+    }
+
+    var pulse = '';
+    if (rec > 0.5 && b > 0) {
+      var pr = (starR * 3.2).toFixed(1);
+      var pr0 = (starR * 1.8).toFixed(1);
+      pulse = '<circle cx="'+n.cx+'" cy="'+n.cy+'" r="'+pr+'" fill="'+n.color+'">'
+        + '<animate attributeName="r" values="'+pr0+';'+pr+';'+pr0+'" dur="5s" repeatCount="indefinite"/>'
+        + '<animate attributeName="opacity" values=".08;0;.08" dur="5s" repeatCount="indefinite"/>'
+        + '</circle>';
+    }
+
+    var tapR = Math.max(starR * 2.5, 16).toFixed(1);
+    return '<circle cx="'+n.cx+'" cy="'+n.cy+'" r="'+coronaR+'" fill="'+n.color+'" opacity="'+coronaOp+'"/>'
+      + rings
+      + '<circle cx="'+n.cx+'" cy="'+n.cy+'" r="'+auraR+'" fill="'+n.lc+'" opacity="'+auraOp+'" filter="url(#'+n.gf+')"/>'
+      + pulse
+      + '<circle cx="'+n.cx+'" cy="'+n.cy+'" r="'+(starR.toFixed(1))+'" fill="'+n.lc+'" opacity="'+starOp+'" filter="url(#'+n.gf+')"/>'
+      + '<circle cx="'+n.cx+'" cy="'+n.cy+'" r="'+coreR+'" fill="#ffffff" opacity="'+coreOp+'"/>'
+      + (n.label2
+        ? '<text x="'+n.cx+'" y="'+(parseFloat(labelY)-6).toFixed(1)+'" text-anchor="middle" font-family="DM Mono,monospace" font-size="'+n.fs+'" letter-spacing=".12em" fill="'+n.lc+'" paint-order="stroke fill" stroke="rgba(5,8,15,.88)" stroke-width="2.8" stroke-linejoin="round" opacity="'+labelOp+'">'+n.label+'</text>'
+          +'<text x="'+n.cx+'" y="'+labelY+'" text-anchor="middle" font-family="DM Mono,monospace" font-size="'+n.fs+'" letter-spacing=".12em" fill="'+n.lc+'" paint-order="stroke fill" stroke="rgba(5,8,15,.88)" stroke-width="2.8" stroke-linejoin="round" opacity="'+labelOp+'">'+n.label2+'</text>'
+        : '<text x="'+n.cx+'" y="'+labelY+'" text-anchor="middle" font-family="DM Mono,monospace" font-size="'+n.fs+'" letter-spacing=".12em" fill="'+n.lc+'" paint-order="stroke fill" stroke="rgba(5,8,15,.88)" stroke-width="2.8" stroke-linejoin="round" opacity="'+labelOp+'">'+n.label+'</text>'
+      )
+      + '<circle cx="'+n.cx+'" cy="'+n.cy+'" r="'+tapR+'" fill="transparent" data-node="'+n.id+'" class="ptree-tap-area" style="cursor:pointer;"/>';
+  }
+
+  var bgStars = '<g opacity=".28"><circle cx="18" cy="62" r=".6" fill="#e8e4dc"/><circle cx="305" cy="88" r=".5" fill="#e8e4dc"/><circle cx="28" cy="200" r=".7" fill="#e8e4dc"/><circle cx="316" cy="220" r=".5" fill="#e8e4dc"/><circle cx="12" cy="360" r=".6" fill="#e8e4dc"/><circle cx="328" cy="380" r=".5" fill="#e8e4dc"/><circle cx="62" cy="490" r=".4" fill="#e8e4dc"/><circle cx="278" cy="500" r=".6" fill="#e8e4dc"/><circle cx="44" cy="130" r=".5" fill="#e8e4dc"/><circle cx="298" cy="145" r=".4" fill="#e8e4dc"/><circle cx="170" cy="22" r=".5" fill="#e8e4dc"/><circle cx="90" cy="46" r=".4" fill="#e8e4dc"/><circle cx="250" cy="38" r=".5" fill="#e8e4dc"/></g>';
+
+  var paths = [
+    pathLine(170,490,170,400,'#8ecce0','malkuth'),
+    pathLine(170,400,98,340,'#8ecce0','yesod'),
+    pathLine(170,400,242,340,'#8ecce0','yesod'),
+    pathLine(98,340,170,260,'#8ecce0','hod'),
+    pathLine(242,340,170,260,'#8ecce0','netzach'),
+    pathLine(170,260,98,190,'#98b4cc','tiphareth'),
+    pathLine(170,260,242,190,'#8ecce0','tiphareth'),
+    pathLine(98,190,98,115,'#98b4cc','geburah'),
+    pathLine(242,190,242,115,'#8ab8e0','chesed'),
+    pathLine(98,115,170,48,'#c4a8d4','binah'),
+    pathLine(242,115,170,48,'#8ab8e0','chokmah'),
+    '<line x1="98" y1="340" x2="242" y2="340" stroke="rgba(255,255,255,.055)" stroke-width=".6" stroke-dasharray="2 4"/>',
+    '<line x1="98" y1="190" x2="242" y2="190" stroke="rgba(255,255,255,.045)" stroke-width=".5" stroke-dasharray="2 4"/>',
+    '<line x1="98" y1="115" x2="242" y2="115" stroke="rgba(255,255,255,.035)" stroke-width=".5" stroke-dasharray="2 4"/>'
+  ].join('');
+
+  var nodesStr = NODES.map(nodeCircles).join('');
+
+  var svg = '<svg class="ptree-svg" viewBox="0 0 340 540" xmlns="http://www.w3.org/2000/svg">'
+    + '<defs>'
+    + '<radialGradient id="pt-neb1" cx="50%" cy="48%" r="42%"><stop offset="0%" stop-color="#8ecce0" stop-opacity=".04"/><stop offset="100%" stop-color="#8ecce0" stop-opacity="0"/></radialGradient>'
+    + '<radialGradient id="pt-neb2" cx="50%" cy="80%" r="30%"><stop offset="0%" stop-color="#d4b08e" stop-opacity=".03"/><stop offset="100%" stop-color="#d4b08e" stop-opacity="0"/></radialGradient>'
+    + '<radialGradient id="pt-neb3" cx="50%" cy="12%" r="28%"><stop offset="0%" stop-color="#c4a8d4" stop-opacity=".04"/><stop offset="100%" stop-color="#c4a8d4" stop-opacity="0"/></radialGradient>'
+    + '<filter id="pt-gf-teal" x="-100%" y="-100%" width="300%" height="300%"><feGaussianBlur stdDeviation="5" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>'
+    + '<filter id="pt-gf-teal-sm" x="-80%" y="-80%" width="260%" height="260%"><feGaussianBlur stdDeviation="3.5" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>'
+    + '<filter id="pt-gf-gold" x="-80%" y="-80%" width="260%" height="260%"><feGaussianBlur stdDeviation="4" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>'
+    + '<filter id="pt-gf-purple" x="-80%" y="-80%" width="260%" height="260%"><feGaussianBlur stdDeviation="3.5" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>'
+    + '<filter id="pt-gf-rose" x="-80%" y="-80%" width="260%" height="260%"><feGaussianBlur stdDeviation="3" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>'
+    + '<filter id="pt-gf-blue" x="-80%" y="-80%" width="260%" height="260%"><feGaussianBlur stdDeviation="3" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>'
+    + '</defs>'
+    + '<rect x="0" y="0" width="340" height="540" fill="url(#pt-neb1)"/>'
+    + '<rect x="0" y="0" width="340" height="540" fill="url(#pt-neb2)"/>'
+    + '<rect x="0" y="0" width="340" height="540" fill="url(#pt-neb3)"/>'
+    + bgStars
+    + paths
+    + nodesStr
+    + '</svg>';
+
+  el.innerHTML = svg;
+
+  // Node info data
+  var nameMap = {
+    kether:'Fundamentals Mastery', chokmah:'Visualization', binah:'Vacancy of Mind',
+    chesed:'Auditory', geburah:'Thought Focus', tiphareth:'Thought Observation',
+    netzach:'Pore Breathing', hod:'Soul Mirror', yesod:'Asana', malkuth:'Clock'
+  };
+  var descMap = {
+    kether:'Lights up as all exercises approach mastery.',
+    chokmah:'Hold a mental image clearly for five minutes without halting.',
+    binah:'Let the mind stay empty — note the first sign of content.',
+    chesed:'Concentrated listening on a single sound.',
+    geburah:'Fix attention on one thought or word and hold it.',
+    tiphareth:'Watch thoughts arise and pass without entering them.',
+    netzach:'Breathing through every pore of the body simultaneously.',
+    hod:'Honest daily reflection on traits and patterns.',
+    yesod:'Seated stillness — no movement for the full duration.',
+    malkuth:'Follow the seconds hand without losing awareness.'
+  };
+  var maxMap = { malkuth:15 };
+
+  var sheet = document.getElementById('ptreeSheet');
+  var sheetBackdrop = document.getElementById('ptreeSheetBackdrop');
+  var sheetName = document.getElementById('ptreeSheetName');
+  var sheetSub = document.getElementById('ptreeSheetSub');
+  var sheetBar = document.getElementById('ptreeSheetBar');
+  var sheetStat = document.getElementById('ptreeSheetStat');
+  var sheetClose = document.getElementById('ptreeSheetClose');
+  var sheetBegin = document.getElementById('ptreeSheetBegin');
+
+  function closePtreeSheet() {
+    if (sheet) { sheet.style.transition = ''; sheet.style.transform = ''; sheet.classList.remove('open'); sheet.__openNode = null; }
+    if (sheetBackdrop) sheetBackdrop.classList.remove('open');
+  }
+
+  // One-time setup: relocate the sheet + backdrop to <body> so they aren't
+  // positioned relative to #guidePanel (which gets a transform applied,
+  // breaking position:fixed) and bind the persistent gesture handlers.
+  if (sheet && !sheet.__ptreeBound) {
+    sheet.__ptreeBound = true;
+    if (sheetBackdrop && sheetBackdrop.parentNode !== document.body) document.body.appendChild(sheetBackdrop);
+    if (sheet.parentNode !== document.body) document.body.appendChild(sheet);
+
+    if (sheetBackdrop) sheetBackdrop.addEventListener('click', closePtreeSheet);
+    if (sheetClose) sheetClose.addEventListener('click', closePtreeSheet);
+
+    // Swipe-down-to-dismiss — only the sheet moves; preventDefault stops the
+    // page/panel behind it from scrolling along with the drag.
+    var _swY = null, _swTracking = false, _swLastY = null, _swLastT = null, _swVel = 0;
+    sheet.addEventListener('touchstart', function(e) {
+      if (sheet.scrollTop > 4) { _swTracking = false; return; }
+      _swY = e.touches[0].clientY; _swLastY = _swY; _swLastT = Date.now();
+      _swTracking = true; _swVel = 0;
+      sheet.style.transition = 'none';
+    }, {passive: true});
+    sheet.addEventListener('touchmove', function(e) {
+      if (!_swTracking) return;
+      var y = e.touches[0].clientY;
+      var dy = y - _swY;
+      if (dy <= 0) { sheet.style.transform = ''; return; } // upward → allow normal scroll
+      if (e.cancelable) e.preventDefault();
+      var now = Date.now(); var dt = Math.max(1, now - _swLastT);
+      _swVel = (_swVel * 0.6) + ((y - _swLastY) / dt * 1000 * 0.4);
+      _swLastY = y; _swLastT = now;
+      sheet.style.transform = 'translateY(' + dy + 'px)';
+    }, {passive: false});
+    sheet.addEventListener('touchend', function(e) {
+      if (!_swTracking) return;
+      _swTracking = false;
+      sheet.style.transition = '';
+      var dy = Math.max(0, e.changedTouches[0].clientY - _swY);
+      if (dy > 80 || _swVel > 500) { closePtreeSheet(); }
+      else { sheet.style.transform = ''; }
+    }, {passive: true});
+
+    // Begin Practice button — reads the currently-open node's exercise,
+    // stored on the element so this one-time handler stays in sync.
+    if (sheetBegin) {
+      sheetBegin.addEventListener('click', function() {
+        var ex = sheet.__currentEx;
+        if (!ex) return;
+        closePtreeSheet();
+        setTimeout(function() {
+          if (ex === 'soulmirror') {
+            showScreen('soulMirrorScreen');
+            if (window.soulMirrorInit) window.soulMirrorInit();
+          } else if (ex === 'pore') {
+            showScreen('soulMirrorScreen');
+            if (window.soulMirrorInit) window.soulMirrorInit();
+            setTimeout(function() {
+              var pbTab = document.querySelector('#soulMirrorTabs [data-tab="breathing"]');
+              if (pbTab) pbTab.click();
+            }, 320);
+          } else if (ex && ex !== 'kether') {
+            openExerciseSetup(ex);
+          }
+        }, 320);
+      });
+    }
+  }
+
+  el.querySelectorAll('.ptree-tap-area').forEach(function(area) {
+    area.addEventListener('click', function() {
+      var nodeId = area.dataset.node;
+      if (sheet && sheet.__openNode === nodeId) { closePtreeSheet(); return; }
+      var node = NODES.find(function(n) { return n.id === nodeId; });
+      if (!node || !sheet) return;
+      sheet.__openNode = nodeId;
+      sheet.__currentEx = node.ex;
+      var b = bMap[nodeId];
+      var max = maxMap[nodeId] || 20;
+      var dep = practiceTreeNodeDepth(node.ex, stats);
+      var rec = practiceTreeNodeRecency(node.ex, stats);
+      var isPore = (node.ex === 'pore');
+      var isMirror = (node.ex === 'soulmirror');
+      var poreBreaths = isPore ? ((typeof concState !== 'undefined' && concState.lifetimeBreaths) ? concState.lifetimeBreaths : 0) : 0;
+      var lookupId = isPore ? null
+        : (node.ex === 'observation' || node.ex === 'focus' || node.ex === 'vacancy') ? 'thought'
+        : node.ex === 'kether' ? null : node.ex;
+      var st = lookupId ? (stats[lookupId] || {}) : {};
+      var sessions = st.count || 0;
+      var bestSec = st.bestSec || 0;
+      var recencyStr = rec >= 0.99 ? 'this week'
+        : rec <= 0.21 ? '60+ days ago'
+        : Math.round((1 - rec) / 0.8 * 53 + 7) + ' days ago';
+
+      sheet.style.setProperty('--ptree-accent', node.color);
+      sheetName.textContent = nameMap[nodeId] || node.label;
+      if (sheetSub) sheetSub.textContent = descMap[nodeId] || '';
+      if (sheetBar) sheetBar.style.width = Math.round(b / max * 100) + '%';
+      if (sheetBar) sheetBar.style.background = node.color;
+
+      var statLines = [];
+      statLines.push('<strong>Brightness</strong> ' + b + ' / ' + max);
+      if (isPore) {
+        statLines.push('<strong>Breaths</strong> ' + poreBreaths.toLocaleString() + ' / 10,000' + (dep > 0 ? ' · ' + dep + ' depth ring' + (dep > 1 ? 's' : '') : ''));
+        if (poreBreaths > 0) statLines.push('<strong>Last practiced</strong> ' + recencyStr);
+      } else if (isMirror) {
+        var _sm; try { _sm = loadSoulMirror(); } catch(e) { _sm = { positive:[], negative:[] }; }
+        var _neg = _sm.negative || [], _pos = _sm.positive || [];
+        var _negDone = _neg.filter(function(t){ return t.done; }).length;
+        var _inProg = _neg.filter(function(t){ return !t.done && (t.sessions||0) > 0; }).length;
+        var _mc = _neg.length >= SOUL_MIRROR_NEG_GOAL && _pos.length >= SOUL_MIRROR_POS_GOAL;
+        statLines.push('<strong>Inventory</strong> ' + (_mc ? '✓ complete' : (_neg.length + ' / 100 neg · ' + _pos.length + ' / 60 pos')));
+        statLines.push('<strong>Transformed</strong> ' + _negDone + ' / 20 trait' + (_negDone === 1 ? '' : 's'));
+        if (_inProg > 0) statLines.push('<strong>In progress</strong> ' + _inProg + ' trait' + (_inProg === 1 ? '' : 's'));
+      } else {
+        statLines.push('<strong>Sessions</strong> ' + sessions + (dep > 0 ? ' · ' + dep + ' depth ring' + (dep > 1 ? 's' : '') : ''));
+        if (bestSec > 0) statLines.push('<strong>Best hold</strong> ' + (bestSec >= 60 ? Math.floor(bestSec/60) + 'm ' + (bestSec%60) + 's' : bestSec + 's'));
+        if (sessions > 0) statLines.push('<strong>Last practiced</strong> ' + recencyStr);
+      }
+      sheetStat.innerHTML = statLines.join('<br>');
+
+      // Show Begin button for all practisable nodes (not kether which is a mastery summary)
+      if (sheetBegin) sheetBegin.style.display = (node.ex === 'kether') ? 'none' : 'block';
+
+      sheet.scrollTop = 0;
+      sheet.classList.add('open');
+      sheetBackdrop.classList.add('open');
+    });
+  });
+
+  // Close sheet when tapping SVG background
+  el.querySelector('.ptree-svg').addEventListener('click', function(e) {
+    if (!e.target.classList.contains('ptree-tap-area')) closePtreeSheet();
+  });
+}
+
+function refreshGuidePanelLayout(resetScroll) {
+  var gp = document.getElementById('guidePanel');
+  if (!gp) return;
+  gp.style.flex = '1 1 auto';
+  gp.style.height = '';
+  var home = document.getElementById('homeScreen');
+  if (home && home.style.display !== 'none' && window.innerWidth >= 700) {
+    var homeRect = home.getBoundingClientRect();
+    var panelRect = gp.getBoundingClientRect();
+    var homeStyle = window.getComputedStyle ? window.getComputedStyle(home) : null;
+    var padBottom = homeStyle ? (parseFloat(homeStyle.paddingBottom) || 0) : 0;
+    var available = Math.floor(homeRect.bottom - panelRect.top - padBottom);
+    if (available > 180) gp.style.height = available + 'px';
+  }
+  document.body.classList.add('guide-layout-refresh');
+  void gp.offsetHeight;
+  if (resetScroll) gp.scrollTop = 0;
+  requestAnimationFrame(function() {
+    void gp.offsetHeight;
+    if (resetScroll) gp.scrollTop = 0;
+    requestAnimationFrame(function() {
+      document.body.classList.remove('guide-layout-refresh');
+    });
+  });
+  setTimeout(function() {
+    void gp.offsetHeight;
+  }, 120);
+}
+
+function isStandalonePresenceApp() {
+  return window.navigator.standalone === true
+    || (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches);
+}
+
+function refreshGuidePathIfActive(resetScroll) {
+  if (typeof currentMode === 'undefined' || typeof guideActiveTab === 'undefined') return;
+  if (currentMode !== 'guide') return;
+  if (guideActiveTab !== 'path') return;
+  if (typeof renderPathQuests === 'function') renderPathQuests();
+  refreshGuidePanelLayout(resetScroll);
+}
+
+var guidePathLayoutTimers = [];
+function scheduleGuidePathLayoutRefresh(resetScroll) {
+  guidePathLayoutTimers.forEach(function(timer) { clearTimeout(timer); });
+  guidePathLayoutTimers = [];
+  refreshGuidePathIfActive(resetScroll);
+  [40, 120, 280, 700, 1400].forEach(function(delay) {
+    guidePathLayoutTimers.push(setTimeout(function() {
+      refreshGuidePathIfActive(resetScroll);
+    }, delay));
+  });
+}
+
+// The star-map detail sheet is appended to <body>, so it overlays everything
+// until explicitly closed. Call this on any navigation away from the tree.
+function closeStarMapSheet() {
+  var s = document.getElementById('ptreeSheet'), b = document.getElementById('ptreeSheetBackdrop');
+  if (s) { s.style.transition = ''; s.style.transform = ''; s.classList.remove('open'); s.__openNode = null; }
+  if (b) b.classList.remove('open');
+}
+
+function switchGuideTab(tab) {
+  guideActiveTab = tab;
+  var pathPanel = document.getElementById('guidePathPanel');
+  var omniaPanel = document.getElementById('guideOmniaPanel');
+  var treePanel = document.getElementById('guideTreePanel');
+  var pathTab = document.getElementById('guidePathTab');
+  var omniaTab = document.getElementById('guideOmniaTab');
+  var treeTab = document.getElementById('guideTreeTab');
+  if (pathPanel) pathPanel.classList.toggle('guide-tab-hidden', tab !== 'path');
+  if (omniaPanel) omniaPanel.classList.toggle('guide-tab-hidden', tab !== 'omnia');
+  if (treePanel) treePanel.classList.toggle('guide-tab-hidden', tab !== 'tree');
+  if (tab !== 'tree') closeStarMapSheet();
+  if (pathTab) pathTab.classList.toggle('active', tab === 'path');
+  if (omniaTab) omniaTab.classList.toggle('active', tab === 'omnia');
+  if (treeTab) treeTab.classList.toggle('active', tab === 'tree');
+  document.body.classList.toggle('upgrade-stage', tab === 'omnia');
+  if (tab === 'omnia') { renderOmniaEngine(); _showGuideTabTip('omnia'); }
+  if (tab === 'tree') { renderPracticeTree(); _showGuideTabTip('tree'); }
+  if (tab === 'path' && typeof renderPathQuests === 'function') renderPathQuests();
+  var gp = document.getElementById('guidePanel');
+  if (gp) gp.scrollTop = 0;
+  refreshGuidePanelLayout(false);
+}
+
+// ── Render exercise assessment rows ───────────────────────
+function renderGuideExRows() {
+  var container = document.getElementById('guideExRows');
+  if (!container) return;
+  container.innerHTML = GUIDE_EXERCISES.map(function(ex) {
+    var opts = ex.opts.map(function(opt) {
+      var sel = guideState[ex.id] === opt ? ' sel' : '';
+      return '<button class="guide-opt' + sel + '" data-ex="' + ex.id + '" data-opt="' + opt.replace(/"/g,'&quot;') + '">' + opt + '</button>';
+    }).join('');
+    return '<div class="guide-ex-row">'
+      + '<div class="guide-ex-label"><div class="guide-ex-name">' + ex.name + '</div><div class="guide-ex-sub">' + ex.sub + '</div></div>'
+      + '<div class="guide-opt-row">' + opts + '</div>'
+      + '</div>';
+  }).join('');
+  if (!container._advWired) {
+    container._advWired = true;
+    container.addEventListener('click', function(e) {
+      var btn = e.target.closest('.guide-opt');
+      if (!btn) return;
+      var exId = btn.dataset.ex;
+      var opt  = btn.dataset.opt;
+      guideState[exId] = opt;
+      saveGuideState(guideState);
+      container.querySelectorAll('.guide-opt[data-ex="' + exId + '"]').forEach(function(b) {
+        b.classList.toggle('sel', b.dataset.opt === opt);
+      });
+    });
+  }
+}
+
+function setGuidePathMode(mode, lockChoice) {
+  guidePathMode = mode;
+  if (mode) guideState._pathModeV2 = mode;
+  if (lockChoice) guideState._pathLockedV2 = true;
+  saveGuideState(guideState);
+  guidePendingPathMode = null;
+  var beginnerBtn = document.getElementById('guideBeginnerPathBtn');
+  var experiencedBtn = document.getElementById('guideExperiencedPathBtn');
+  var routeGrid = document.getElementById('guideRouteGrid');
+  var confirmPanel = document.getElementById('guideConfirmPanel');
+  var locked = document.getElementById('guideLockedPath');
+  var lockedTitle = document.getElementById('guideLockedTitle');
+  var lockedText = document.getElementById('guideLockedText');
+  var cadence = document.getElementById('guideCadenceControl');
+  var panel = document.getElementById('guideAssessmentPanel');
+  var isLocked = !!guideState._pathLockedV2 && !!mode;
+  if (routeGrid) routeGrid.style.display = isLocked ? 'none' : 'grid';
+  if (confirmPanel) confirmPanel.style.display = 'none';
+  if (locked) locked.style.display = 'none';
+  if (cadence) cadence.style.display = 'none';
+  if (lockedTitle) lockedTitle.textContent = mode === 'experienced' ? 'Tell Omnia where I am' : 'Foundational Path';
+  if (lockedText) lockedText.textContent = mode === 'experienced'
+    ? 'Omnia will keep watching your completed exercises and refine recommendations from your current capacities.'
+    : 'Omnia will keep you on the foundation sequence and adjust the next session from your completed practice.';
+  if (beginnerBtn) beginnerBtn.classList.toggle('active', mode === 'beginner');
+  if (experiencedBtn) experiencedBtn.classList.toggle('active', mode === 'experienced');
+  if (panel) panel.style.display = 'none';
+  renderGuideCadenceControl();
+  if (!isLocked) {
+    if (beginnerBtn) beginnerBtn.classList.remove('active');
+    if (experiencedBtn) experiencedBtn.classList.remove('active');
+  }
+  if (isLocked && mode === 'experienced') renderGuideExRows();
+}
+
+function showGuideRouteChoice() {
+  guidePendingPathMode = null;
+  var routeGrid = document.getElementById('guideRouteGrid');
+  var confirmPanel = document.getElementById('guideConfirmPanel');
+  var locked = document.getElementById('guideLockedPath');
+  var panel = document.getElementById('guideAssessmentPanel');
+  var plan = document.getElementById('guidePlanOutput');
+  if (routeGrid) routeGrid.style.display = 'grid';
+  if (confirmPanel) confirmPanel.style.display = 'none';
+  if (locked) locked.style.display = 'none';
+  if (panel) panel.style.display = 'none';
+  if (plan) plan.style.display = 'none';
+  document.getElementById('guideBeginnerPathBtn').classList.remove('active');
+  document.getElementById('guideExperiencedPathBtn').classList.remove('active');
+}
+
+function showGuidePathConfirmation(mode) {
+  guidePendingPathMode = mode;
+  guidePathMode = mode;
+  var routeGrid = document.getElementById('guideRouteGrid');
+  var confirmPanel = document.getElementById('guideConfirmPanel');
+  var confirmTitle = document.getElementById('guideConfirmTitle');
+  var confirmText = document.getElementById('guideConfirmText');
+  var confirmBtn = document.getElementById('guideConfirmCommitBtn');
+  var confirmActions = document.getElementById('guideConfirmActions');
+  var confirmCadence = document.getElementById('guideConfirmCadenceControl');
+  var panel = document.getElementById('guideAssessmentPanel');
+  var generateBtn = document.getElementById('guideGenerateBtn');
+  var plan = document.getElementById('guidePlanOutput');
+  if (routeGrid) routeGrid.style.display = 'none';
+  if (confirmPanel) confirmPanel.style.display = 'block';
+  if (plan) plan.style.display = 'none';
+  if (confirmTitle) confirmTitle.textContent = mode === 'experienced' ? 'Tell Omnia where I am' : 'I am new to this';
+  if (confirmText) confirmText.textContent = mode === 'experienced'
+    ? 'Set your current capacity below. When you confirm, Omnia will use your answers and your completed sessions to make today\'s agenda.'
+    : 'Omnia will start you with Clock and Thought Control only, then open new exercises after your practice earns them.';
+  if (confirmBtn) confirmBtn.textContent = mode === 'experienced' ? 'Create Agenda' : 'Begin Path';
+  if (confirmBtn) confirmBtn.style.display = mode === 'experienced' ? 'none' : '';
+  if (confirmActions) confirmActions.style.gridTemplateColumns = mode === 'experienced' ? '1fr' : '1fr 1.35fr';
+  if (confirmCadence) confirmCadence.style.display = mode === 'beginner' ? 'flex' : 'none';
+  if (panel) panel.style.display = mode === 'experienced' ? 'block' : 'none';
+  if (generateBtn) generateBtn.textContent = mode === 'experienced' ? 'Confirm & Create Agenda' : 'Ask Omnia for recommendations →';
+  document.getElementById('guideBeginnerPathBtn').classList.toggle('active', mode === 'beginner');
+  document.getElementById('guideExperiencedPathBtn').classList.toggle('active', mode === 'experienced');
+  if (mode === 'experienced') renderGuideExRows();
+  renderGuideCadenceControl();
+}
+
+function commitGuidePath(mode) {
+  if (!mode) return;
+  setGuidePathMode(mode, true);
+  renderGuidePlan(mode);
+}
+
+function guideClamp(n, min, max) {
+  return Math.max(min, Math.min(max, n));
+}
+
+function guideLocalDayKey(value) {
+  var d = value ? new Date(value) : new Date();
+  if (isNaN(d.getTime())) return '';
+  var m = String(d.getMonth() + 1).padStart(2, '0');
+  var day = String(d.getDate()).padStart(2, '0');
+  return d.getFullYear() + '-' + m + '-' + day;
+}
+
+function guideIsToday(value) {
+  return guideLocalDayKey(value) === guideLocalDayKey();
+}
+
+function guideFmtTime(sec) {
+  sec = Math.max(0, Math.round(sec || 0));
+  var m = Math.floor(sec / 60);
+  var s = sec % 60;
+  if (m && s) return m + 'm ' + s + 's';
+  if (m) return m + 'm';
+  return s + 's';
+}
+
+function guideTwoADayEnabled() {
+  return guideState._twoADayV1 !== false;
+}
+
+// Per-exercise rounds override — returns 1 or 2, consulting the per-exercise
+// setting first then falling back to the global 2x/day toggle.
+function guideExRounds(exId) {
+  var ov = guideState._exRounds && guideState._exRounds[exId];
+  if (ov === 1 || ov === 2) return ov;
+  return guideTwoADayEnabled() ? 2 : 1;
+}
+
+// Post-process items: if an exercise has a per-exercise rounds override that
+// differs from the global setting, re-derive done and durationLabel from it.
+// Called last in buildGuideRegimentItems so it also fixes added items.
+function guideApplyExRounds(items) {
+  if (!guideState._exRounds || !Object.keys(guideState._exRounds).length) return items;
+  var globalR = guideTwoADayEnabled() ? 2 : 1;
+  // Lazy-load stats only if needed (avoids scanning history when nothing is overridden)
+  var _stats = null, _ts = null;
+  function getStats() { if (!_stats) _stats = guideExerciseStats(); return _stats; }
+  function getTS()    { if (!_ts)   _ts   = guideThoughtStats();    return _ts;   }
+  return items.map(function(it) {
+    var ov = guideState._exRounds && guideState._exRounds[it.id];
+    if (ov !== 1 && ov !== 2) return it;
+    if (ov === globalR) return it;           // override matches global — no change
+    if (!it.duration && it.duration !== 0) return it; // open-ended (soulmirror, pore)
+    var todaySec;
+    var isThought = (it.id === 'thought' || it.id === 'observation' || it.id === 'focus' || it.id === 'vacancy');
+    if (isThought) {
+      var mode = it.mode || it.id;
+      todaySec = (getTS()[mode] || {}).todaySec || 0;
+    } else {
+      todaySec = (getStats()[it.id] || {}).todaySec || 0;
+    }
+    var done = todaySec + 5 * ov >= it.duration * 60 * ov;
+    var durationLabel = it.duration + ' min' + (ov > 1 ? ' x2' : '');
+    return Object.assign({}, it, { done: done, durationLabel: durationLabel });
+  });
+}
+
+function renderGuideCadenceControl() {
+  var on = guideTwoADayEnabled();
+  ['guideTwoADayBtn','guideConfirmTwoADayBtn','guidePlanTwoADayBtn'].forEach(function(id) {
+    var btn = document.getElementById(id);
+    if (!btn) return;
+    btn.textContent = on ? '2x/day on' : '2x/day off';
+    btn.classList.toggle('off', !on);
+  });
+}
+
+function guideIsClockHistory(h) {
+  return !!h && !h.type && !h.exercise;
+}
+
+function guideHistorySeconds(h) {
+  return Math.max(0, parseInt(h && h.seconds, 10) || 0);
+}
+
+function guideThoughtDurationFromObject(text) {
+  var m = String(text || '').match(/in\s+(\d+):(\d{2})/);
+  if (!m) return 0;
+  return parseInt(m[1], 10) * 60 + parseInt(m[2], 10);
+}
+
+function guideThoughtDuration(h) {
+  if (!h) return 0;
+  return Math.max(0,
+    parseInt(h.durationSec, 10)
+    || parseInt(h.elapsedSec, 10)
+    || guideThoughtDurationFromObject(h.object)
+    || guideHistorySeconds(h)
+  );
+}
+
+// A Clock session "qualifies" toward the next tier based on the total time
+// spent in the session (covering restarts/breaks), not just unbroken focus —
+// players whose attention resets mid-session still get credit for showing up
+// and putting in the full duration. Falls back to best-rep/XP for older
+// history entries recorded before sessionDurationSec was tracked.
+function guideClockSessionSec(h) {
+  return guideSessionSec(h);
+}
+
+// Generalized "time actually practiced" for one session: prefers the recorded
+// wall-clock duration, then summed active reps (xpEarned), then the stored
+// seconds. Lets rep-based exercises (auditory) get credit for the whole sit —
+// and for the sum of several sits in a day — instead of only the best rep.
+function guideSessionSec(h) {
+  var sec = guideHistorySeconds(h);
+  var xp = parseInt(h && h.xpEarned, 10) || 0;
+  var dur = parseInt(h && h.sessionDurationSec, 10) || 0;
+  return Math.max(dur, xp, sec);
+}
+
+function guideClockStats() {
+  var out = { count:0, totalSec:0, bestSec:0, todaySec:0, todayBestSec:0, todayCount:0, firstMs:0, lastMs:0, qualTarget:5, qualTenCount:0 };
+  var history = (typeof concState !== 'undefined' && concState.history) ? concState.history : [];
+  // Collect clock sessions sorted oldest-first for tier simulation
+  var clockSessions = [];
+  history.forEach(function(h) {
+    if (!guideIsClockHistory(h)) return;
+    var sec = guideHistorySeconds(h);
+    var ms = h.date ? new Date(h.date).getTime() : 0;
+    out.count++;
+    out.totalSec += sec;
+    if (sec > out.bestSec) out.bestSec = sec;
+    if (ms && (!out.firstMs || ms < out.firstMs)) out.firstMs = ms;
+    if (ms && ms > out.lastMs) out.lastMs = ms;
+    var sessionSec = guideClockSessionSec(h);
+    if (guideIsToday(h.date)) {
+      out.todayCount++;
+      out.todaySec += sessionSec;
+      if (sec > out.todayBestSec) out.todayBestSec = sec;
+    }
+    clockSessions.push({ sec:sessionSec, ms:ms });
+  });
+  // Recommendation rule: completing TWO sessions at a given length earns the
+  // next minute. The target is therefore the lowest minute (>=5) at which the
+  // player has fewer than two qualifying sessions — two 6-min sits recommend 7,
+  // two 7-min recommend 8, and so on, capped at 10. (5s grace for tap timing.)
+  function clockQualCount(min) {
+    var n = 0;
+    for (var i = 0; i < clockSessions.length; i++) {
+      if (clockSessions[i].sec + 5 >= min * 60) n++;
+    }
+    return n;
+  }
+  var tier = 5;
+  while (tier < 10 && clockQualCount(tier) >= 2) tier++;
+  out.qualTarget = tier;
+  out.qualAtTier = Math.min(clockQualCount(tier), 2); // sessions toward the next minute
+  out.qualTenCount = clockQualCount(10);
+  return out;
+}
+
+function asanaTierRequired(tier) {
+  return tier % 5 === 0 ? 7 : 1;
+}
+
+function guideAsanaStats() {
+  var out = { count:0, totalSec:0, bestSec:0, todaySec:0, todayCount:0, qualTarget:5, qualAtTier:0, atCap:false, tierRequired:7, locked:false, showStepper:false };
+  var history = (typeof concState !== 'undefined' && concState.history) ? concState.history : [];
+  var sessions = [];
+  history.forEach(function(h) {
+    if (!h || h.exercise !== 'asana') return;
+    var sec = Math.max(0, parseInt(h.seconds, 10) || 0);
+    var ms = h.date ? new Date(h.date).getTime() : 0;
+    out.count++;
+    out.totalSec += sec;
+    if (sec > out.bestSec) out.bestSec = sec;
+    if (guideIsToday(h.date)) { out.todayCount++; out.todaySec += sec; }
+    sessions.push({ sec:sec, ms:ms });
+  });
+  sessions.sort(function(a, b) { return a.ms - b.ms; });
+
+  var floor = guideFloorMin('asana');
+  var auto = guideAutoAdvanceOn('asana');
+
+  // Advanced floor with auto-advance OFF → suggestion is locked at the floor;
+  // the setup screen shows a manual stepper editing that floor.
+  if (floor > 0 && !auto) {
+    out.qualTarget = floor;
+    out.locked = true;
+    out.showStepper = true;
+    out.cap = GUIDE_FLOOR_CAP;
+    return out;
+  }
+
+  // Otherwise climb the tier ladder. Floor (when set) raises both the starting
+  // rung and the ceiling (to 120); without a floor it's the standard 5→30 ladder.
+  var cap = floor > 0 ? GUIDE_FLOOR_CAP : 30;
+  var tier = floor > 0 ? floor : 5, qualAtTier = 0;
+  // With an advanced floor, the chosen minute IS the starting recommendation;
+  // only sessions logged after it was set count toward climbing higher.
+  var setAt = floor > 0 ? guideAdvanceSetAt('asana') : 0;
+  sessions.forEach(function(s) {
+    if (tier >= cap) return;
+    if (setAt && s.ms <= setAt) return;
+    var required = asanaTierRequired(tier);
+    if (s.sec + 5 >= tier * 60) {
+      qualAtTier++;
+      if (qualAtTier >= required) { tier++; qualAtTier = 0; }
+    }
+  });
+  out.atCap = tier >= cap;
+  out.cap = cap;
+  out.qualAtTier = qualAtTier;
+  out.tierRequired = asanaTierRequired(Math.min(tier, cap - 1));
+  // At the foundational 30-min ceiling the user picks any duration manually.
+  if (out.atCap && floor === 0) {
+    out.qualTarget = guideClamp(parseInt(localStorage.getItem('presence_asana_duration'), 10) || cap, cap, GUIDE_FLOOR_CAP);
+    out.showStepper = true;
+  } else {
+    out.qualTarget = tier;
+    out.showStepper = out.atCap;
+  }
+  return out;
+}
+
+// Auditory's own minute-by-minute ladder: plateau at 5 min for 6 sessions,
+// climb 6→9 (2 sessions/min), plateau at 10 for 24, climb 11→14, plateau at
+// 15 for 24, climb 16→19, cap at 20.
+function auditoryTierRequired(tier) {
+  if (tier === 5) return 6;
+  if (tier === 10 || tier === 15 || tier === 20) return 24;
+  return 2;
+}
+
+function guideAuditoryStats() {
+  var out = { count:0, totalSec:0, bestSec:0, todaySec:0, todayCount:0, qualTarget:5, qualAtTier:0, atCap:false, tierRequired:6, locked:false };
+  var history = (typeof concState !== 'undefined' && concState.history) ? concState.history : [];
+  var sessions = [];
+  history.forEach(function(h) {
+    if (!h || h.type !== 'auditory') return;
+    var sec = guideSessionSec(h);                            // time practiced (whole sit)
+    var repSec = Math.max(0, parseInt(h.seconds, 10) || 0);  // best unbroken rep
+    var ms = h.date ? new Date(h.date).getTime() : 0;
+    out.count++;
+    out.totalSec += sec;
+    if (repSec > out.bestSec) out.bestSec = repSec;
+    if (guideIsToday(h.date)) { out.todayCount++; out.todaySec += sec; }
+    sessions.push({ sec:sec, ms:ms });
+  });
+  sessions.sort(function(a, b) { return a.ms - b.ms; });
+
+  var floor = guideFloorMin('auditory');
+  var auto = guideAutoAdvanceOn('auditory');
+
+  if (floor > 0 && !auto) {
+    out.qualTarget = floor;
+    out.locked = true;
+    return out;
+  }
+
+  var cap = floor > 0 ? GUIDE_FLOOR_CAP : 20;
+  var tier = floor > 0 ? floor : 5, qualAtTier = 0;
+  // With an advanced floor, the chosen minute IS the starting recommendation;
+  // only sessions logged after it was set count toward climbing higher.
+  var setAt = floor > 0 ? guideAdvanceSetAt('auditory') : 0;
+  sessions.forEach(function(s) {
+    if (tier >= cap) return;
+    if (setAt && s.ms <= setAt) return;
+    var required = auditoryTierRequired(tier);
+    if (s.sec + 5 >= tier * 60) { // 5s grace for tap-timing variance
+      qualAtTier++;
+      if (qualAtTier >= required) { tier++; qualAtTier = 0; }
+    }
+  });
+  out.atCap = tier >= cap;
+  out.qualTarget = tier;
+  out.qualAtTier = qualAtTier;
+  out.tierRequired = auditoryTierRequired(Math.min(tier, cap));
+  return out;
+}
+
+function guideThoughtStats() {
+  var out = {};
+  GUIDE_FOUNDATION_THOUGHT_ORDER.forEach(function(mode) {
+    out[mode] = { count:0, totalSec:0, bestSec:0, todaySec:0, todayCount:0, lastMs:0 };
+  });
+  var history = (typeof concState !== 'undefined' && concState.history) ? concState.history : [];
+  history.forEach(function(h) {
+    if (!h || h.type !== 'thought') return;
+    var mode = h.tcMode || 'observation';
+    if (!out[mode]) out[mode] = { count:0, totalSec:0, bestSec:0, todaySec:0, todayCount:0, lastMs:0 };
+    var dur = guideThoughtDuration(h);
+    var best = guideHistorySeconds(h);
+    var ms = h.date ? new Date(h.date).getTime() : 0;
+    out[mode].count++;
+    out[mode].totalSec += dur;
+    if (best > out[mode].bestSec) out[mode].bestSec = best;
+    if (ms > out[mode].lastMs) out[mode].lastMs = ms;
+    if (guideIsToday(h.date)) {
+      out[mode].todayCount++;
+      out[mode].todaySec += dur;
+    }
+  });
+  return out;
+}
+
+function guideAllThoughtModesMastered(thoughtStats) {
+  return GUIDE_FOUNDATION_THOUGHT_ORDER.every(function(mode) {
+    return (thoughtStats[mode] && thoughtStats[mode].bestSec >= 600);
+  });
+}
+
+// Returns true once the student has completed ≥2 thought control sessions
+// (any mode), meaning they have advanced past the initial 5-min tier.
+function guideThoughtFirstTierMastered() {
+  var ts = guideThoughtStats();
+  var total = GUIDE_FOUNDATION_THOUGHT_ORDER.reduce(function(acc, mode) {
+    return acc + ((ts[mode] && ts[mode].count) || 0);
+  }, 0);
+  return total >= 2;
+}
+
+function guideLeastRecentThoughtMode(thoughtStats) {
+  return GUIDE_FOUNDATION_THOUGHT_ORDER.slice().sort(function(a, b) {
+    var aa = thoughtStats[a] || { lastMs:0, count:0 };
+    var bb = thoughtStats[b] || { lastMs:0, count:0 };
+    if (aa.todayCount !== bb.todayCount) return aa.todayCount - bb.todayCount;
+    if (aa.lastMs !== bb.lastMs) return aa.lastMs - bb.lastMs;
+    return aa.count - bb.count;
+  })[0];
+}
+
+function guideCurrentThoughtMode(thoughtStats) {
+  for (var i = 0; i < GUIDE_FOUNDATION_THOUGHT_ORDER.length; i++) {
+    var mode = GUIDE_FOUNDATION_THOUGHT_ORDER[i];
+    if (!thoughtStats[mode] || thoughtStats[mode].bestSec < 600) return mode;
+  }
+  return guideLeastRecentThoughtMode(thoughtStats);
+}
+
+function guideThoughtTargetMinutes(mode, thoughtStats) {
+  var st = thoughtStats[mode] || { count:0, todayCount:0 };
+  // Use count before today so completing a session mid-day doesn't raise the
+  // target above what was required when you started — keeps "done" stable.
+  var countForTarget = Math.max(0, (st.count || 0) - (st.todayCount || 0));
+  var natural = guideAllThoughtModesMastered(thoughtStats)
+    ? guideClamp(10 + Math.floor(countForTarget / 6), 10, 15)
+    : guideClamp(5 + Math.floor(countForTarget / 2), 5, 10);
+  // Per-mode floor: Vacancy's override doesn't move Observation or Focus.
+  return guideAdvancedTarget(mode, natural);
+}
+
+function guideClockTargetMinutes(clockStats) {
+  return clockStats.qualTarget || 5;
+}
+
+function guideClockFinalTarget(clockStats) {
+  var auto = guideClockTargetMinutes(clockStats);
+  if (auto >= 10 && guideState.clockUserTarget != null) {
+    auto = guideClamp(guideState.clockUserTarget, 10, 15);
+  }
+  // An advanced starting floor overrides/raises the natural clock target.
+  return guideAdvancedTarget('clock', auto);
+}
+
+function guideClockAtCap(clockStats) {
+  return guideClockTargetMinutes(clockStats) >= 10;
+}
+
+function guideClockShowUpsell(clockStats) {
+  // The 10→15 upsell is moot once an advanced floor governs the clock target.
+  if (guideFloorMin('clock')) return false;
+  // Show upsell after 14 qualifying 10-min sessions and user hasn't set a manual target yet
+  return guideClockAtCap(clockStats) && (clockStats.qualTenCount || 0) >= 14 && guideState.clockUserTarget == null;
+}
+
+function guideClockAttentionTargetSec(clockStats) {
+  if (!clockStats.bestSec) return 0;
+  var days = clockStats.firstMs ? Math.floor((Date.now() - clockStats.firstMs) / 86400000) + 1 : 1;
+  if (days <= 21) return guideClamp(Math.ceil(clockStats.bestSec * 3 / 15) * 15, 120, 600);
+  return guideClamp(Math.ceil((clockStats.bestSec + 60) / 60) * 60, 600, 900);
+}
+
+function guideExerciseBreadth(stats) {
+  return ['clock','visual','auditory','thought','asana'].reduce(function(sum, id) {
+    return sum + ((stats[id] && stats[id].count > 0) ? 1 : 0);
+  }, 0);
+}
+
+// ── Determine if user counts as "experienced" for an exercise ─
+function guideIsExperienced(exId) {
+  var sel = guideState[exId];
+  if (!sel || sel === 'New to me') return false;
+  return true;
+}
+
+// ── "I'm Advanced" per-exercise override ──────────────────────────────────────
+// From a Path card's ··· menu, a practitioner can set where Omnia's suggestions
+// START for that one discipline (capped at 120 min) and whether Omnia should
+// keep raising the bar from there. This is opt-in per exercise and independent
+// of the beginner/experienced path: an exercise has an override only once the
+// user sets one. Without an override, the exercise climbs naturally as before.
+var GUIDE_TIMED_EXERCISES = ['clock','visual','auditory','thought','observation','focus','vacancy','asana'];
+var GUIDE_FLOOR_CAP = 120;
+
+// Thought Control is three independent disciplines (Observation, Focus,
+// Vacancy), each with its own advanced floor. A card carries its mode, so the
+// floor for one mode never bleeds into the others. Everything else keys by exId.
+var GUIDE_THOUGHT_MODES = { observation:1, focus:1, vacancy:1 };
+function guideFloorKey(exId, mode) {
+  if (exId === 'thought' && mode && GUIDE_THOUGHT_MODES[mode]) return mode;
+  return exId;
+}
+
+// One-time cleanup: earlier builds stored a single shared 'thought' floor that
+// (incorrectly) drove all three thought disciplines at once. That key is no
+// longer read, so remove it once — the user re-sets per form, which now stays
+// isolated. Clearing (rather than guessing a mode) avoids surprising a form
+// the user never meant to change.
+(function migrateThoughtFloor() {
+  try {
+    if (!guideState || guideState._tcFloorMigrated) return;
+    var f = guideState._advancedFloors;
+    if (f && Object.prototype.hasOwnProperty.call(f, 'thought')) {
+      delete f.thought;
+      if (guideState._advanceAuto) delete guideState._advanceAuto.thought;
+      if (guideState._advanceSetAt) delete guideState._advanceSetAt.thought;
+    }
+    guideState._tcFloorMigrated = true;
+    saveGuideState(guideState);
+  } catch (e) {}
+})();
+
+function guideFloorMin(exId) {
+  var f = guideState && guideState._advancedFloors && guideState._advancedFloors[exId];
+  return (typeof f === 'number' && f >= 1) ? f : 0;
+}
+
+function guideAutoAdvanceOn(exId) {
+  // No override → natural progression always climbs. Override → per-exercise
+  // checkbox, default ON (climbs past the chosen start) unless explicitly turned off.
+  if (!guideFloorMin(exId)) return true;
+  var auto = guideState._advanceAuto && guideState._advanceAuto[exId];
+  return auto === undefined ? true : !!auto;
+}
+
+function guideAdvancedActive(exId) {
+  return guideFloorMin(exId) > 0;
+}
+
+function guideSetAdvanced(exId, minutes, autoOn) {
+  if (!guideState._advancedFloors || typeof guideState._advancedFloors !== 'object') guideState._advancedFloors = {};
+  if (!guideState._advanceAuto || typeof guideState._advanceAuto !== 'object') guideState._advanceAuto = {};
+  if (!guideState._advanceSetAt || typeof guideState._advanceSetAt !== 'object') guideState._advanceSetAt = {};
+  guideState._advancedFloors[exId] = guideClamp(parseInt(minutes, 10) || 5, 1, GUIDE_FLOOR_CAP);
+  guideState._advanceAuto[exId] = !!autoOn;
+  // Remember when the floor was set: only practice from this point on should
+  // climb the bar past the chosen start, so declaring a start never snaps the
+  // recommendation upward off the back of pre-existing history.
+  guideState._advanceSetAt[exId] = Date.now();
+  saveGuideState(guideState);
+}
+
+function guideClearAdvanced(exId) {
+  if (guideState._advancedFloors) delete guideState._advancedFloors[exId];
+  if (guideState._advanceAuto) delete guideState._advanceAuto[exId];
+  if (guideState._advanceSetAt) delete guideState._advanceSetAt[exId];
+  saveGuideState(guideState);
+}
+
+// Timestamp (ms) when the advanced floor for an exercise was set, or 0. Sessions
+// at or before this only establish the starting point; later ones climb past it.
+function guideAdvanceSetAt(exId) {
+  var t = guideState && guideState._advanceSetAt && guideState._advanceSetAt[exId];
+  return (typeof t === 'number' && t > 0) ? t : 0;
+}
+
+// Apply any advanced override to a naturally-computed minute target. No override
+// → unchanged. Override + auto off → locked at the floor. Override + auto on →
+// never below the floor, but may climb past it.
+function guideAdvancedTarget(exId, naturalMin) {
+  var floor = guideFloorMin(exId);
+  if (!floor) return naturalMin;
+  if (!guideAutoAdvanceOn(exId)) return floor;
+  return Math.max(floor, naturalMin || 0);
+}
+
+// Current recommended minutes for an exercise (already folds in any override).
+// Used to seed the "I'm Advanced" dialog with a sensible default.
+function guideRecommendedMinutes(exId) {
+  try {
+    // A specific thought discipline (observation/focus/vacancy) computes its
+    // own natural target — used to seed the dialog and label its own card.
+    if (GUIDE_THOUGHT_MODES[exId]) return guideThoughtTargetMinutes(exId, guideThoughtStats()) || 5;
+    if (exId === 'asana') return guideAsanaStats().qualTarget || 5;
+    if (exId === 'auditory') return guideAuditoryStats().qualTarget || 5;
+    if (exId === 'clock') return guideClockFinalTarget(guideClockStats()) || 5;
+    if (exId === 'thought') {
+      var ts = guideThoughtStats();
+      var mode = guideState.thoughtModeForced || guideCurrentThoughtMode(ts);
+      return guideThoughtTargetMinutes(mode, ts) || 5;
+    }
+    var st = guideExerciseStats();
+    return guideDurationForScore(guideMonitoredScore(exId, st)) || 5;
+  } catch (e) { return 5; }
+}
+
+function guideExperienceScore(exId) {
+  var sel = guideState[exId];
+  if (!sel || sel === 'New to me') return 0;
+  if (sel === 'Familiar') return 2;
+  if (sel.indexOf('15') === 0) return 3;
+  if (sel.indexOf('10') === 0) return 2;
+  if (sel.indexOf('5') === 0) return 1;
+  return 0;
+}
+
+function guideHistoryExerciseId(h) {
+  if (!h) return 'clock';
+  if (h.exercise === 'asana') return 'asana';
+  if (h.exercise === 'sense') return 'sense';
+  if (h.exercise === 'pore_breathing') return 'soulmirror';
+  if (h.exercise === 'autosuggestion') return 'soulmirror';
+  if (h.type === 'visualization') return 'visual';
+  if (h.type === 'all-angles' || h.type === 'multi-sense') return 'visual';
+  if (h.type === 'auditory') return 'auditory';
+  if (h.type === 'thought') return 'thought';
+  return 'clock';
+}
+
+function guideExerciseStats() {
+  var stats = {};
+  var recentCutoff = Date.now() - 14 * 86400000;
+  GUIDE_EXERCISES.forEach(function(ex) {
+    stats[ex.id] = { count:0, bestSec:0, preTodayBestSec:0, totalSec:0, todaySec:0, todayCount:0, lastMs:0, recentCount:0, recentSec:0 };
+  });
+  var history = (typeof concState !== 'undefined' && concState.history) ? concState.history : [];
+  history.forEach(function(h) {
+    var id = guideHistoryExerciseId(h);
+    if (!stats[id]) return;
+    var sec = id === 'thought' ? guideThoughtDuration(h)
+            : (id === 'auditory' || id === 'clock') ? guideSessionSec(h)
+            : (h.seconds || 0);
+    var bestSec = h.seconds || sec;
+    var ms = h.date ? new Date(h.date).getTime() : 0;
+    stats[id].count++;
+    stats[id].totalSec += sec;
+    if (bestSec > stats[id].bestSec) stats[id].bestSec = bestSec;
+    if (!guideIsToday(h.date) && bestSec > stats[id].preTodayBestSec) stats[id].preTodayBestSec = bestSec;
+    if (guideIsToday(h.date)) {
+      stats[id].todayCount++;
+      stats[id].todaySec += sec;
+    }
+    if (ms && ms >= recentCutoff) {
+      stats[id].recentCount++;
+      stats[id].recentSec += sec;
+    }
+    if (ms > stats[id].lastMs) stats[id].lastMs = ms;
+  });
+  return stats;
+}
+
+function guideMonitoredScore(exId, stats) {
+  var score = guideExperienceScore(exId);
+  var st = stats[exId] || { count:0, bestSec:0, lastMs:0 };
+  if (st.count >= 3) score = Math.max(score, 1);
+  if (st.bestSec >= 600) score = Math.max(score, 2);
+  if (st.bestSec >= 900 || st.count >= 10) score = Math.max(score, 3);
+  return score;
+}
+
+function guideDurationForScore(score) {
+  if (score <= 0) return 5;
+  if (score === 1) return 10;
+  if (score === 2) return 15;
+  return 20;
+}
+
+function guideExerciseById(id) {
+  return GUIDE_EXERCISES.find(function(ex) { return ex.id === id; }) || GUIDE_EXERCISES[0];
+}
+
+function buildExperiencedGuideItems() {
+  var stats = guideExerciseStats();
+  var thought = guideThoughtStats();
+  var now = Date.now();
+  var rounds = guideTwoADayEnabled() ? 2 : 1;
+
+  // ── Fixed anchors: Clock and Thought Control always appear ──────────────────
+  var clockStats = guideClockStats();
+  var clockScore = guideMonitoredScore('clock', stats);
+  var clockMinutes = guideClockFinalTarget(clockStats);
+  var clockDailyTarget = clockMinutes * 60 * rounds;
+  var atCap = guideClockAtCap(clockStats);
+  var showUpsell = guideClockShowUpsell(clockStats);
+  var clockExtra = showUpsell ? 'upsell' : atCap ? 'stepper' : null;
+  var tierProgress = !atCap
+    ? ' (' + (clockStats.qualAtTier || 0) + '/2 sessions toward ' + (clockMinutes + 1) + ' min)'
+    : '';
+  var clockDurLabel = clockMinutes + ' min' + (rounds > 1 ? ' x2' : '');
+
+  var thoughtMode = guideState.thoughtModeForced || guideCurrentThoughtMode(thought);
+  var thoughtModeStats = thought[thoughtMode] || { count:0, bestSec:0, todaySec:0 };
+  var thoughtMinutes = guideThoughtTargetMinutes(thoughtMode, thought);
+  var thoughtDailyTarget = thoughtMinutes * 60 * rounds;
+  var thoughtDurLabel = thoughtMinutes + ' min' + (rounds > 1 ? ' x2' : '');
+  var nextThought = thoughtMode === 'observation'
+    ? 'When observation reaches a ten-minute gap, Omnia will move you to Thought Focus at five minutes.'
+    : thoughtMode === 'focus'
+      ? 'When focus reaches a ten-minute gap, Omnia will move you to Vacancy at five minutes.'
+      : 'When vacancy reaches a ten-minute gap, Omnia will cycle all three forms.';
+
+  var fixedItems = [
+    {
+      id:'clock',
+      name:'Clock',
+      duration:clockMinutes,
+      durationLabel:clockDurLabel,
+      done:clockStats.todaySec + 5 * rounds >= clockDailyTarget,
+      todayCount:clockStats.todayCount || 0,
+      progress:'today ' + guideFmtTime(clockStats.todaySec) + ' / ' + guideFmtTime(clockDailyTarget) + (atCap ? '' : ' · ' + (clockStats.qualAtTier || 0) + '/2 → ' + (clockMinutes + 1) + 'min'),
+      tip:'Complete the full session to count toward the next tier. Two qualifying sessions unlock the next minute.' + tierProgress,
+      open:'clock',
+      clockExtra:clockExtra
+    },
+    {
+      id:'thought',
+      name:'Thought Control',
+      mode:thoughtMode,
+      duration:thoughtMinutes,
+      durationLabel:thoughtDurLabel,
+      done:thoughtModeStats.todaySec + 5 * rounds >= thoughtDailyTarget,
+      todayCount:thoughtModeStats.todayCount || 0,
+      progress:'today ' + guideFmtTime(thoughtModeStats.todaySec) + ' / ' + guideFmtTime(thoughtDailyTarget) + ' · best gap ' + guideFmtTime(thoughtModeStats.bestSec || 0),
+      tip:GUIDE_FOUNDATION_THOUGHT_TIPS[thoughtMode] + ' ' + nextThought,
+      open:'thought'
+    }
+  ];
+
+  // ── Rotating gate: most neglected from {visual, auditory, asana} ────────────
+  // Visualization and Auditory are never recommended together (same astral
+  // faculty). Since only one gate rotates here, the anti-pair rule is naturally
+  // satisfied — whichever ranks most neglected appears alone.
+  var GATE_IDS = ['visual', 'auditory', 'asana', 'sense'];
+  var gateCandidates = GATE_IDS.map(function(id) {
+    var ex = guideExerciseById(id);
+    var st = stats[id] || { count:0, bestSec:0, lastMs:0 };
+    var score = guideMonitoredScore(id, stats);
+    var daysSince = st.lastMs ? (now - st.lastMs) / 86400000 : 999;
+    var priority = score * 10 + Math.min(st.count, 8) - Math.min(daysSince, 14) * 0.35;
+    return { ex:ex, score:score, count:st.count, daysSince:daysSince, priority:priority };
+  }).sort(function(a, b) {
+    if (a.priority !== b.priority) return a.priority - b.priority;
+    return a.ex.id.localeCompare(b.ex.id);
+  });
+
+  var gateById = {};
+  gateCandidates.forEach(function(c) { gateById[c.ex.id] = c; });
+
+  // Pin today's gate pick so done-state doesn't drift mid-day.
+  var dayKey = guideLocalDayKey();
+  var pick = guideState._dailyPick;
+  var fresh = pick && pick.day === dayKey && pick.v === 4 && Array.isArray(pick.ids) && pick.ids.length === 1;
+  var gateId = fresh ? pick.ids[0] : null;
+  if (!gateId || !gateById[gateId]) {
+    var pool = gateCandidates.map(function(c) { return c.ex.id; });
+    var lastGateId = (pick && Array.isArray(pick.ids) && pick.ids.length === 1) ? pick.ids[0] : null;
+    // Respect a manually forced gate (set via "Switch to X" button) if it's still a valid candidate
+    var forced = guideState.gateForced;
+    if (forced && gateById[forced]) {
+      gateId = forced;
+    } else {
+      gateId = pool[0];
+      // Same-gate repeat penalty: if it's the same as yesterday's, pick the next
+      if (gateId === lastGateId && pool.length > 1) gateId = pool[1];
+    }
+    guideState._dailyPick = { day: dayKey, ids: [gateId], v: 4 };
+    saveGuideState(guideState);
+  }
+
+  var gc = gateById[gateId] || { ex:guideExerciseById(gateId), score:guideExperienceScore(gateId), count:0 };
+  var gScore = gc.score;
+  // Use pre-today bestSec so the target doesn't jump mid-day after completing a session
+  var gSt = stats[gateId] || {};
+  var gStableBest = typeof gSt.preTodayBestSec === 'number' ? gSt.preTodayBestSec : (gSt.bestSec || 0);
+  var gStableScore = guideExperienceScore(gateId);
+  if ((gSt.count || 0) >= 3) gStableScore = Math.max(gStableScore, 1);
+  if (gStableBest >= 600) gStableScore = Math.max(gStableScore, 2);
+  if (gStableBest >= 900 || (gSt.count || 0) >= 10) gStableScore = Math.max(gStableScore, 3);
+  var gDur = guideAdvancedTarget(gateId, guideDurationForScore(gStableScore));
+  if (gateId === 'asana') {
+    gDur = guideAsanaStats().qualTarget;
+  } else if (gateId === 'auditory') {
+    gDur = guideAuditoryStats().qualTarget;
+  } else if (gateId === 'sense') {
+    // Senses is held to its own 2/5/10 duration model, so the score-scaled
+    // target never asks for a length the setup screen can't offer.
+    gDur = Math.min(10, guideDurationForScore(gStableScore));
+  }
+  var gTip;
+  if (gScore === 0) {
+    gTip = 'This is the neglected gate. Begin modestly and let accuracy matter more than duration.';
+  } else if (gScore === 1) {
+    gTip = 'You have the beginning. Add a little pressure without making the practice theatrical.';
+  } else if (gScore === 2) {
+    gTip = 'You are ready for a clean consolidation session. Hold form, reduce drift, record honestly.';
+  } else {
+    gTip = 'This is already strong. Use it as a stabilizing pillar, then notice what remains undeveloped.';
+  }
+
+  var gateProgress = gc.count ? gc.count + ' recorded' : 'no completed sessions recorded';
+  if (gateId === 'auditory') {
+    var _aup = guideAuditoryStats();
+    if (_aup.locked) {
+      gateProgress = 'held at ' + _aup.qualTarget + ' min · ' + gc.count + ' recorded';
+    } else if (_aup.atCap) {
+      gateProgress = 'ceiling reached · ' + gc.count + ' recorded';
+    } else {
+      gateProgress = _aup.qualAtTier + ' / ' + _aup.tierRequired + ' sessions at ' + _aup.qualTarget + ' min';
+    }
+  } else if (gateId === 'asana') {
+    var _asp = guideAsanaStats();
+    if (_asp.locked) {
+      gateProgress = 'held at ' + _asp.qualTarget + ' min · ' + gc.count + ' recorded';
+    } else if (_asp.atCap) {
+      gateProgress = 'ceiling reached · ' + gc.count + ' recorded';
+    } else {
+      gateProgress = _asp.qualAtTier + ' / ' + _asp.tierRequired + ' sessions at ' + _asp.qualTarget + ' min';
+    }
+  }
+  var gateItem = {
+    id:gateId,
+    name:gc.ex.name,
+    duration:gDur,
+    durationLabel:gDur + ' min' + (rounds > 1 ? ' x' + rounds : ''),
+    done:(stats[gateId] && stats[gateId].todaySec + 5 * rounds >= gDur * 60 * rounds) || false,
+    todayCount:stats[gateId] ? (stats[gateId].todayCount || 0) : 0,
+    progress:gateProgress,
+    tip:gTip + (gc.count ? ' Omnia has recorded ' + gc.count + ' completed session' + (gc.count === 1 ? '' : 's') + ' here.' : ' Omnia has no completed sessions recorded here yet.'),
+    open:gateId
+  };
+
+  fixedItems.push(gateItem);
+  fixedItems.push({
+    id:'soulmirror',
+    name:'Soul Mirror',
+    duration:null,
+    durationLabel:'Reflection',
+    done:(function(){ var sm = loadSoulMirror(); return !!(sm._lastEditDate && sm._lastEditDate === guideLocalDayKey()); })(),
+    progress:'',
+    tip:'Open the mirror and make one honest edit — add a trait, revise one, or write a note. That is all Omnia asks today.',
+    open:'soulmirror'
+  });
+
+  return fixedItems;
+}
+
+function buildFoundationalGuideItems() {
+  var rounds = guideTwoADayEnabled() ? 2 : 1;
+  var clock = guideClockStats();
+  var thought = guideThoughtStats();
+  var mode = guideState.thoughtModeForced || guideCurrentThoughtMode(thought);
+  var modeStats = thought[mode] || { count:0, bestSec:0, todaySec:0 };
+  var clockMinutes = guideClockFinalTarget(clock);
+  var clockDailyTarget = clockMinutes * 60 * rounds;
+  var thoughtMinutes = guideThoughtTargetMinutes(mode, thought);
+  var thoughtDailyTarget = thoughtMinutes * 60 * rounds;
+  var attentionTarget = guideClockAttentionTargetSec(clock);
+  var atCap = guideClockAtCap(clock);
+  var showUpsell = guideClockShowUpsell(clock);
+  var attentionText = attentionTarget
+    ? ' Your concentration target is ' + guideFmtTime(attentionTarget) + ', based on the first-weeks rule of three times your best recorded hold.'
+    : ' First establish a clean baseline; after that Omnia sets the clock target at three times your best hold.';
+  var tierProgress = !atCap
+    ? ' (' + (clock.qualAtTier || 0) + '/2 sessions toward ' + (clockMinutes + 1) + ' min)'
+    : '';
+  var nextThought = mode === 'observation'
+    ? 'When observation reaches a ten-minute gap, Omnia will move you to Thought Focus at five minutes.'
+    : mode === 'focus'
+      ? 'When focus reaches a ten-minute gap, Omnia will move you to Vacancy at five minutes.'
+      : 'When vacancy reaches a ten-minute gap, Omnia will cycle all three forms instead of adding more volume.';
+
+  var clockExtra = showUpsell ? 'upsell' : atCap ? 'stepper' : null;
+  var clockDurLabel2 = clockMinutes + ' min' + (rounds > 1 ? ' x2' : '');
+  var thoughtDurLabel2 = thoughtMinutes + ' min' + (rounds > 1 ? ' x2' : '');
+
+  var items = [
+    {
+      id:'clock',
+      name:'Clock',
+      duration:clockMinutes,
+      durationLabel:clockDurLabel2,
+      done:clock.todaySec + 5 * rounds >= clockDailyTarget,
+      todayCount:clock.todayCount || 0,
+      progress:'today ' + guideFmtTime(clock.todaySec) + ' / ' + guideFmtTime(clockDailyTarget) + (atCap ? '' : ' · ' + (clock.qualAtTier || 0) + '/2 → ' + (clockMinutes + 1) + 'min'),
+      tip:'Complete the full session to count toward the next tier. Two qualifying sessions unlock the next minute.' + tierProgress + attentionText,
+      open:'clock',
+      clockExtra:clockExtra
+    },
+    {
+      id:'thought',
+      name:'Thought Control',
+      mode:mode,
+      duration:thoughtMinutes,
+      durationLabel:thoughtDurLabel2,
+      done:modeStats.todaySec + 5 * rounds >= thoughtDailyTarget,
+      todayCount:modeStats.todayCount || 0,
+      progress:'today ' + guideFmtTime(modeStats.todaySec) + ' / ' + guideFmtTime(thoughtDailyTarget) + ' · best gap ' + guideFmtTime(modeStats.bestSec || 0),
+      tip:GUIDE_FOUNDATION_THOUGHT_TIPS[mode] + ' Omnia adds one minute after every two completed sessions in this form, up to ten minutes. ' + nextThought,
+      open:'thought'
+    },
+    {
+      id:'soulmirror',
+      name:'Soul Mirror',
+      duration:null,
+      durationLabel:'Reflection',
+      done:(function(){ var sm = loadSoulMirror(); return !!(sm._lastEditDate && sm._lastEditDate === guideLocalDayKey()); })(),
+      progress:'',
+      tip:'Open the mirror and make one honest edit — add a trait, revise one, or write a note. That is all Omnia asks today.',
+      open:'soulmirror'
+    }
+  ];
+
+  var stats = guideExerciseStats();
+  var gate = guideFoundationNewGate(stats, thought, rounds);
+  var gateForced = guideState.gateForced;
+  if (gateForced && (!gate || gate.id !== gateForced)) {
+    var dailyTarget5 = 5 * 60 * rounds;
+    var forcedGateItems = {
+      asana: (function() { var _asp2 = guideAsanaStats(); var _ad = _asp2.qualTarget; var _at = _ad * 60 * rounds; var _prog = _asp2.locked ? ('held at ' + _ad + ' min · ' + (_asp2.count||0) + ' recorded') : _asp2.atCap ? ('ceiling reached · ' + (_asp2.count||0) + ' recorded') : (_asp2.qualAtTier + ' / ' + _asp2.tierRequired + ' sessions at ' + _asp2.qualTarget + ' min'); return { id:'asana', name:'Asana', duration:_ad, durationLabel:_ad + ' min' + (rounds > 1 ? ' x2' : ''), done:(stats.asana||{}).todaySec + 5 * rounds >= _at, progress:_prog, tip:'Begin building stillness. Sit upright and complete the whole period without negotiating with each impulse.', open:'asana' }; })(),
+      visual: { id:'visual', name:'Visualization', duration:5, durationLabel:'5 min' + (rounds > 1 ? ' x2' : ''), done:(stats.visual||{}).todaySec + 5 * rounds >= dailyTarget5, progress:'new gate · ' + ((stats.visual||{}).count||0) + ' recorded', tip:'Hold a simple mental image clearly. Clarity matters more than complexity.', open:'visual' },
+      auditory: { id:'auditory', name:'Auditory', duration:5, durationLabel:'5 min' + (rounds > 1 ? ' x2' : ''), done:(stats.auditory||{}).todaySec + 5 * rounds >= dailyTarget5, progress:'astral refinement gate · ' + ((stats.auditory||{}).count||0) + ' recorded', tip:'Focused listening on a single sound. Broaden the astral body steadily.', open:'auditory' }
+    };
+    gate = forcedGateItems[gateForced] || gate;
+  }
+  if (gate) items.push(gate);
+
+  var postponed = guideState.postponed || {};
+  var removed = guideState.removed || {};
+  var now = Date.now();
+  return items.filter(function(item) {
+    if (removed[item.id]) return false;   // permanently removed from the path
+    var until = postponed[item.id];
+    return !until || now >= until;
+  });
+}
+
+function guideFoundationNewGate(stats, thoughtStats, rounds) {
+  var visual = stats.visual || { count:0, todaySec:0 };
+  var asana = stats.asana || { count:0, todaySec:0 };
+  var auditory = stats.auditory || { count:0, todaySec:0 };
+  var clock = guideClockStats();
+  var obs = thoughtStats.observation || { bestSec:0 };
+  var focus = thoughtStats.focus || { bestSec:0 };
+  var vacancy = thoughtStats.vacancy || { bestSec:0 };
+  var dailyTarget = 5 * 60 * rounds;
+  if (guideExerciseBreadth(stats) >= 5) return null;
+  if (visual.count < 3 && clock.totalSec >= 1800 && obs.bestSec >= 600) {
+    return {
+      id:'visual',
+      name:'Visualization',
+      duration:5,
+      durationLabel:'5 min' + (rounds > 1 ? ' x2' : ''),
+      done:visual.todaySec + 5 * rounds >= dailyTarget,
+      progress:'new gate · ' + visual.count + ' recorded',
+      tip:'Now that attention and observation have some weight, Omnia permits a small image practice. Keep it simple; clarity matters more than ambition.',
+      open:'visual'
+    };
+  }
+  if (asana.count < 3 && clock.bestSec >= 300 && focus.bestSec >= 300) {
+    var _adNew = guideAsanaStats().qualTarget;
+    return {
+      id:'asana',
+      name:'Asana',
+      duration:_adNew,
+      durationLabel:_adNew + ' min',
+      done:asana.todaySec + 5 >= _adNew * 60,
+      progress:'physical body gate · ' + asana.count + ' recorded',
+      tip:'Begin building Omnia\'s physical body through stillness. Sit upright and complete the whole period without negotiating with each impulse.',
+      open:'asana'
+    };
+  }
+  if (auditory.count < 3 && visual.count >= 3 && focus.bestSec >= 600 && vacancy.bestSec >= 300) {
+    return {
+      id:'auditory',
+      name:'Auditory',
+      duration:5,
+      durationLabel:'5 min',
+      done:auditory.todaySec + 5 >= 300,
+      progress:'astral refinement gate · ' + auditory.count + ' recorded',
+      tip:'Add sound only after the earlier gates are stable. This broadens the astral body without turning the agenda into a checklist.',
+      open:'auditory'
+    };
+  }
+  return null;
+}
+
+function guideFoundationalNote() {
+  var stats = guideExerciseStats();
+  var clock = guideClockStats();
+  var thought = guideThoughtStats();
+  var obs = thought.observation || { bestSec:0 };
+  if (guideExerciseBreadth(stats) >= 5) {
+    return 'Omnia is keeping the agenda narrow now because you have touched the main disciplines. The work becomes steadiness, not collecting more exercises.';
+  }
+  if (clock.totalSec < 1800 || obs.bestSec < 600) {
+    return 'Visualization remains available in Concentration, but Omnia is not placing it on the agenda yet. Build enough attention first so the image work has a real base.';
+  }
+  return '';
+}
+
+function guideSelfRatedExperienceCount() {
+  return GUIDE_EXERCISES.reduce(function(sum, ex) {
+    return sum + (guideIsExperienced(ex.id) ? 1 : 0);
+  }, 0);
+}
+
+function guideAdvancedPracticeProfile(stats) {
+  var advancedIds = ['visual','auditory','thought','asana','soulmirror'];
+  var profile = { total:0, recent:0, active:0, strong:0 };
+  advancedIds.forEach(function(id) {
+    var st = stats[id] || { count:0, bestSec:0, recentCount:0 };
+    var count = st.count || 0;
+    var recent = st.recentCount || 0;
+    profile.total += count;
+    profile.recent += recent;
+    if (count >= 2 || recent >= 2 || st.bestSec >= 300) profile.active++;
+    if (count >= 4 || recent >= 3 || st.bestSec >= 600) profile.strong++;
+  });
+  return profile;
+}
+
+function guideDetectAdaptedLevel(stats) {
+  var history = (typeof concState !== 'undefined' && concState.history) ? concState.history : [];
+  if (history.length < 5) return { level:null, confidence:0, sessions:history.length };
+
+  var recent = history.slice(0, 10);
+  var totalSec = 0;
+  var advancedCount = 0;
+  var longCount = 0;
+  recent.forEach(function(h) {
+    var id = guideHistoryExerciseId(h);
+    var sec = id === 'thought' ? guideThoughtDuration(h) : (h.seconds || 0);
+    totalSec += sec;
+    if (id !== 'clock') advancedCount++;
+    if (sec >= 600) longCount++;
+  });
+
+  var avgSec = recent.length ? totalSec / recent.length : 0;
+  var profile = guideAdvancedPracticeProfile(stats || guideExerciseStats());
+  var score = 0;
+  if (avgSec >= 300) score++;
+  if (avgSec >= 600) score++;
+  if (longCount >= 3) score += 2;
+  if (advancedCount >= 4) score += 2;
+  if (guideExerciseBreadth(stats || guideExerciseStats()) >= 3) score++;
+  if (profile.strong >= 1) score++;
+  if (profile.recent >= 4) score++;
+
+  if (score >= 4) {
+    return {
+      level:'advanced',
+      confidence:guideClamp(55 + score * 8, 70, 96),
+      sessions:history.length,
+      avgSec:avgSec,
+      advancedCount:advancedCount
+    };
+  }
+
+  if (history.length >= 8 && avgSec < 120 && advancedCount === 0) {
+    return { level:'beginner', confidence:72, sessions:history.length, avgSec:avgSec, advancedCount:advancedCount };
+  }
+
+  return { level:null, confidence:0, sessions:history.length, avgSec:avgSec, advancedCount:advancedCount };
+}
+
+function guideShouldUseExperiencedRegiment(stats) {
+  // Only leave the foundational track if the user explicitly chose experienced
+  // mode or has genuinely substantial practice — the old thresholds were far
+  // too easy (5 sessions across 4 exercises), which silently dropped users
+  // off the structured track they were relying on.
+  if (guideState._pathModeV2 === 'experienced') return true;
+  if (guideSelfRatedExperienceCount() >= 4) return true; // rated 4+ exercises as experienced
+
+  var detected = guideDetectAdaptedLevel(stats || guideExerciseStats());
+  if (detected.level === 'advanced' && detected.confidence >= 85) return true; // raised from 70
+
+  var profile = guideAdvancedPracticeProfile(stats || guideExerciseStats());
+  // Require breadth across all 5 concentration gates AND substantial history
+  if (guideExerciseBreadth(stats || guideExerciseStats()) >= 5 && profile.total >= 20) return true;
+  return false;
+}
+
+function guideCurrentRegimentInfo(mode) {
+  var baseMode = mode || guidePathMode || guideState._pathModeV2 || 'beginner';
+  var stats = guideExerciseStats();
+  var detected = guideDetectAdaptedLevel(stats);
+  var experienced = guideShouldUseExperiencedRegiment(stats);
+  var resolvedMode = experienced ? 'experienced' : 'beginner';
+  var autoAdapted = resolvedMode === 'experienced' && baseMode !== 'experienced';
+  return {
+    mode: resolvedMode,
+    selectedMode: baseMode,
+    autoAdapted: autoAdapted,
+    detectedLevel: detected.level,
+    confidence: detected.confidence || 0,
+    focus: resolvedMode === 'experienced'
+      ? (autoAdapted ? 'Adaptive Regiment' : 'Personal Recommendations')
+      : 'Foundational Path' + (guideTwoADayEnabled() ? ' · 2x/day' : ''),
+    dayLabel: resolvedMode === 'experienced' ? (autoAdapted ? 'Adaptive' : 'Custom') : null
+  };
+}
+
+function guideMaybeNoticeAdaptation(info) {
+  if (!info || !info.autoAdapted || info.detectedLevel !== 'advanced') return;
+  if (guideState._omniaAdaptNoticeV1 === 'advanced') return;
+  guideState._omniaAdaptNoticeV1 = 'advanced';
+  guideState._detectedLevelV1 = 'advanced';
+  if (!guideState._adaptationHistoryV1) guideState._adaptationHistoryV1 = [];
+  guideState._adaptationHistoryV1.push({
+    date:new Date().toISOString(),
+    fromLevel:info.selectedMode || 'beginner',
+    toLevel:'advanced',
+    confidence:info.confidence || 0
+  });
+  saveGuideState(guideState);
+  if (typeof showToast === 'function') {
+    showToast('Omnia noticed your practice changing · regiment adapted', 4200);
+  }
+}
+
+function buildGuideRegimentItems(mode) {
+  var info = guideCurrentRegimentInfo(mode);
+  var items = info.mode === 'experienced' ? buildExperiencedGuideItems() : buildFoundationalGuideItems();
+  items = guideMirrorToPore(guideApplyExRounds(guideMergeAddedItems(items)));
+  // Honor "Remove from path" for ALL path modes and on the final ids. The
+  // experienced builder never filtered these, so removing a fixed card like
+  // Soul Mirror had no effect; mirror→pore conversion can also change an id,
+  // so filter here after the full pipeline. `removed` is a permanent hide
+  // (until re-added via "+"); `postponed` is the legacy timed snooze.
+  var postponed = guideState.postponed || {};
+  var removed = guideState.removed || {};
+  var now = Date.now();
+  return guideAttachSessionDone(items.filter(function(item) {
+    if (removed[item.id]) return false;
+    var until = postponed[item.id];
+    return !until || now >= until;
+  }));
+}
+
+// Mark a timed Path exercise as session-complete once the day's required number
+// of sessions has been recorded — even if each ended before Omnia's recommended
+// duration (ending early only forfeits the body-level award, not the daily Path
+// credit). This is stored as a SEPARATE flag (item.sessionDone), never folded
+// into item.done here, so the body-award highlight (omniaHighlightedExerciseIds)
+// and the recommendation picker — both of which read item.done — are unchanged.
+// The Path renderers fold sessionDone into done for display only.
+function guideAttachSessionDone(items) {
+  var exStats = null, thStats = null;
+  var thoughtModes = { thought:1, observation:1, focus:1, vacancy:1 };
+  items.forEach(function(it) {
+    if (it.done) return;                            // already complete by duration
+    if (typeof it.duration !== 'number') return;    // open-ended (soulmirror/pore) keep own logic
+    if (it.id === 'soulmirror' || it.id === 'pore' || it.id === 'pore_breathing') return;
+    var rounds = 1;
+    var ov = guideState._exRounds && guideState._exRounds[it.id];
+    if (ov === 1 || ov === 2) rounds = ov;
+    else rounds = guideTwoADayEnabled() ? 2 : 1;
+    var todayCount;
+    if (typeof it.todayCount === 'number') {
+      todayCount = it.todayCount;
+    } else if (thoughtModes[it.id]) {
+      if (!thStats) thStats = guideThoughtStats();
+      todayCount = ((thStats[it.mode || it.id]) || {}).todayCount || 0;
+    } else {
+      if (!exStats) exStats = guideExerciseStats();
+      todayCount = ((exStats[it.id]) || {}).todayCount || 0;
+    }
+    if (todayCount >= rounds) it.sessionDone = true;
+  });
+  return items;
+}
+
+// Has a Pore Breathing session been logged today?
+function guidePoreSessionsDoneToday() {
+  var h = (typeof concState !== 'undefined' && concState.history) ? concState.history : [];
+  var today = guideLocalDayKey();
+  return h.filter(function(e) { return e && e.exercise === 'pore_breathing' && guideLocalDayKey(e.date) === today; }).length;
+}
+function guidePoreBreathTarget() {
+  if (guideState.poreAdvanced) return 40;
+  return Math.min(40, Math.max(7, guideState.poreBreaths || 7));
+}
+function guidePoreDoneToday() {
+  var rounds = guideState.poreRounds || 1;
+  return guidePoreSessionsDoneToday() >= rounds;
+}
+
+// A Pore Breathing path card with auto-progressing breath target (7 → 40).
+function guidePoreItem(added) {
+  var target = guidePoreBreathTarget();
+  var rounds = guideState.poreRounds || 1;
+  var done = guidePoreDoneToday();
+  var sessToday = guidePoreSessionsDoneToday();
+  var durLabel = target + ' breaths' + (rounds > 1 ? ' ×' + rounds : '');
+  var poreRemaining = rounds - sessToday;
+  var prog = rounds > 1 && !done && poreRemaining > 0 ? (poreRemaining === 1 ? '×1 remaining' : '×' + rounds + ' sessions') : '';
+  return {
+    id:'pore', name:'Pore Breathing', duration:null, durationLabel:durLabel,
+    done:done, progress:prog, open:'pore', added:!!added,
+    rounds: rounds, todayCount: sessToday,
+    tip:'Draw vital force through the whole body. Pore breathing transforms what the mirror revealed — let the breath fill every pore.'
+  };
+}
+
+// Once the user has finished with the Mirror, the daily Soul Mirror reflection
+// card becomes Pore Breathing. The Mirror stays editable; only the recommended
+// path item changes.
+function guideMirrorToPore(items) {
+  if (!soulMirrorIsFinished()) return items;
+  return items.map(function(it) {
+    if (it && it.id === 'soulmirror' && it.open === 'soulmirror') return guidePoreItem(it.added);
+    return it;
+  });
+}
+
+// ── Manually-added exercises ("+" on the Path) ──────────────
+// The user can pull an exercise into their daily path before Omnia gates it.
+// These persist in guideState._pathAdded and are scaled by the normal
+// per-exercise progression (start at 5 min, climb over sessions).
+function guideBuildAddedItem(exId, rounds) {
+  rounds = rounds || 1;
+  var stats = guideExerciseStats();
+  if (exId === 'asana') {
+    var asp = guideAsanaStats();
+    var ad = asp.qualTarget;
+    var at = ad * 60 * rounds;
+    var prog = asp.locked ? ('held at ' + ad + ' min · ' + (asp.count || 0) + ' recorded')
+      : asp.atCap ? ('ceiling reached · ' + (asp.count || 0) + ' recorded')
+      : (asp.qualAtTier + ' / ' + asp.tierRequired + ' sessions at ' + ad + ' min');
+    return { id:'asana', name:'Asana', duration:ad, durationLabel:ad + ' min' + (rounds > 1 ? ' x2' : ''), done:(stats.asana || {}).todaySec >= at, progress:prog, tip:'Added by you. Sit upright and complete the whole period without negotiating with each impulse.', open:'asana', added:true };
+  }
+  if (exId === 'visual' || exId === 'auditory') {
+    var min = guideClamp(guideRecommendedMinutes(exId), 1, GUIDE_FLOOR_CAP);
+    var target = min * 60 * rounds;
+    var st = stats[exId] || { count:0, todaySec:0 };
+    var names = { visual:'Visualization', auditory:'Auditory' };
+    var tips = { visual:'Added by you. Hold a simple mental image clearly — clarity matters more than complexity.', auditory:'Added by you. Focused listening on a single sound; broaden the astral body steadily.' };
+    return { id:exId, name:names[exId], duration:min, durationLabel:min + ' min' + (rounds > 1 ? ' x2' : ''), done:st.todaySec >= target, progress:'added · ' + (st.count || 0) + ' recorded', tip:tips[exId], open:exId, added:true };
+  }
+  if (exId === 'multisense' || exId === 'allangles') {
+    var advNames = { multisense:'Multi-Sense', allangles:'All Angles' };
+    var advTips  = { multisense:'Added by you. Hold a full scene — sight, sound, texture, smell — completely in mind.', allangles:'Added by you. Rotate an object through every angle; build a complete three-dimensional image.' };
+    var advSt = stats.visual || { count:0, todaySec:0 };
+    var advDur = 10;
+    return { id:exId, name:advNames[exId], duration:advDur, durationLabel:advDur + ' min' + (rounds > 1 ? ' x2' : ''), done:advSt.todaySec >= advDur * 60 * rounds, progress:'advanced · ' + (advSt.count || 0) + ' visual sessions', tip:advTips[exId], open:exId, added:true };
+  }
+  if (exId === 'soulmirror') {
+    return { id:'soulmirror', name:'Soul Mirror', duration:null, durationLabel:'Reflection', done:(function(){ var sm = loadSoulMirror(); return !!(sm._lastEditDate && sm._lastEditDate === guideLocalDayKey()); })(), progress:'', tip:'Added by you. Open the mirror and make one honest edit — add a trait, revise one, or write a note.', open:'soulmirror', added:true };
+  }
+  if (exId === 'pore') {
+    return guidePoreItem(true);
+  }
+  if (exId === 'clock') {
+    var c = guideClockStats();
+    var cm = guideClockFinalTarget(c);
+    var ct = cm * 60 * rounds;
+    return { id:'clock', name:'Clock', duration:cm, durationLabel:cm + ' min' + (rounds > 1 ? ' x2' : ''), done:c.todaySec >= ct, progress:'added · today ' + guideFmtTime(c.todaySec), tip:'Added by you. Attention on the seconds hand; complete the full session.', open:'clock', added:true };
+  }
+  if (exId === 'thought') {
+    var ts = guideThoughtStats();
+    var m = guideState.thoughtModeForced || guideCurrentThoughtMode(ts);
+    var tm = guideThoughtTargetMinutes(m, ts);
+    var ms = ts[m] || { todaySec:0, todayCount:0 };
+    var tt = tm * 60 * rounds;
+    return { id:'thought', name:'Thought Control', mode:m, duration:tm, durationLabel:tm + ' min' + (rounds > 1 ? ' x2' : ''), done:ms.todaySec >= tt, todayCount:ms.todayCount || 0, progress:'added', tip:(GUIDE_FOUNDATION_THOUGHT_TIPS[m] || 'Practice thought control.'), open:'thought', added:true };
+  }
+  if (exId === 'observation' || exId === 'focus' || exId === 'vacancy') {
+    var ts2 = guideThoughtStats();
+    var tm2 = guideThoughtTargetMinutes(exId, ts2);
+    var ms2 = ts2[exId] || { todaySec:0, todayCount:0 };
+    var tt2 = tm2 * 60 * rounds;
+    return { id:exId, name:'Thought Control', mode:exId, duration:tm2, durationLabel:tm2 + ' min' + (rounds > 1 ? ' x2' : ''), done:ms2.todaySec >= tt2, todayCount:ms2.todayCount || 0, progress:'added · ' + (ms2.count || 0) + ' recorded', tip:(GUIDE_FOUNDATION_THOUGHT_TIPS[exId] || 'Practice thought control.'), open:'thought', tcMode:exId, added:true };
+  }
+  return null;
+}
+
+function guideMergeAddedItems(items) {
+  var added = (guideState && Array.isArray(guideState._pathAdded)) ? guideState._pathAdded : [];
+  if (!added.length) return items;
+  var rounds = guideTwoADayEnabled() ? 2 : 1;
+  var present = {};
+  items.forEach(function(it) { present[it.id] = true; });
+  var postponed = guideState.postponed || {};
+  var removed = guideState.removed || {};
+  var now = Date.now();
+  added.forEach(function(exId) {
+    if (present[exId]) return;
+    if (removed[exId]) return;
+    var until = postponed[exId];
+    if (until && now < until) return;
+    var it = guideBuildAddedItem(exId, rounds);
+    if (it) { items.push(it); present[exId] = true; }
+  });
+  return items;
+}
+
+// Exercises the user could still add (not already on today's path).
+function guidePathAddableExercises() {
+  var items = buildGuideRegimentItems();
+  var present = {};
+  items.forEach(function(it) { present[it.id] = true; });
+  var addable = GUIDE_EXERCISES.filter(function(ex) { return !present[ex.id]; });
+  // Offer thought sub-modes that are NOT the current active mode (already on
+  // the path under the 'thought' item) and NOT already added independently.
+  var activeMode = guideState.thoughtModeForced || guideCurrentThoughtMode(guideThoughtStats());
+  GUIDE_FOUNDATION_THOUGHT_ORDER.forEach(function(mode) {
+    if (present[mode]) return;   // already an independent card on the path
+    if (mode === activeMode) return; // already covered by the 'thought' item
+    addable.push({ id: mode });
+  });
+  // Pore Breathing — addable any time it isn't already on the path.
+  if (!present['pore']) addable.push({ id: 'pore' });
+  // Advanced concentration exercises — offered last so they appear at the bottom.
+  // All Angles is currently shown as "coming soon", so only Multi-Sense is addable.
+  ['multisense'].forEach(function(id) {
+    if (!present[id]) addable.push({ id: id });
+  });
+  return addable;
+}
+
+function guideApplyTutorialPathChoice(mode, experienceBars, launchChoice, goal) {
+  var st = loadGuideState();
+  var bars = parseInt(experienceBars, 10) || 1;
+  st._pathModeV2 = mode;
+  st._pathLockedV2 = true;
+  st._tutorialExperienceBarsV1 = bars;
+  if (launchChoice) st._tutorialLaunchChoiceV1 = launchChoice;
+  if (goal) st._tutorialGoalV1 = goal;
+
+  if (mode === 'experienced') {
+    var opt = bars >= 5 ? '15+ min' : bars >= 4 ? '10 min' : '5 min';
+    ['clock','visual','auditory','thought'].forEach(function(id) {
+      if (!st[id] || st[id] === 'New to me') st[id] = opt;
+    });
+    if (bars >= 4 && (!st.asana || st.asana === 'New to me')) st.asana = '10 min';
+    if (bars >= 4 && (!st.soulmirror || st.soulmirror === 'New to me')) st.soulmirror = 'Familiar';
+  }
+
+  // Serious daily goal → unlock Asana immediately in the foundational plan
+  if (goal === '30 min / day' || goal === '60+ min / day') {
+    if (!st.gateForced) st.gateForced = 'asana';
+  }
+
+  saveGuideState(st);
+  guideState = st;
+  guidePathMode = st._pathModeV2 || guidePathMode;
+}
+
+// ── Render the daily plan output ──────────────────────────
+function renderGuidePlan(mode, skipScroll) {
+  var regiment = guideCurrentRegimentInfo(mode);
+  mode = regiment.mode;
+  var dayIdx = new Date().getDay(); // 0–6
+
+  var items = buildGuideRegimentItems(regiment.selectedMode);
+  // An exercise whose day's sessions were completed (even if ended early) shows
+  // as done on the Path — display only; body-award logic uses the untouched flag.
+  items.forEach(function(it) { if (it.sessionDone) it.done = true; });
+  var focus = regiment.focus;
+
+  var dayNames = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+  var monthNames2 = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+  var _n2 = new Date(); var _d2 = _n2.getDate();
+  var _o2 = _d2===1||_d2===21||_d2===31?'st':_d2===2||_d2===22?'nd':_d2===3||_d2===23?'rd':'th';
+  var fullDayLabel = dayNames[dayIdx] + ', ' + monthNames2[_n2.getMonth()] + ' ' + _d2 + _o2;
+  var dayLabelEl = document.getElementById('guidePlanDayLabel');
+  if (dayLabelEl) dayLabelEl.textContent = regiment.dayLabel || fullDayLabel;
+  var focusEl = document.getElementById('guidePlanFocus');
+  if (focusEl) focusEl.textContent = focus;
+  var planControls = document.getElementById('guidePlanControls');
+  if (planControls) planControls.style.display = 'flex';
+  renderGuideCadenceControl();
+
+  // Exercise icons by type
+  var exIcon = { clock:'⊙', visual:'◉', auditory:'◈', sense:'✺', thought:'◌', observation:'◌', focus:'◌', vacancy:'◌', asana:'✦', soulmirror:'◆', pore:'≋' };
+
+  var doneCount = items.filter(function(i){ return i.done; }).length;
+  var totalCount = items.length;
+
+  // Update arc ring
+  var ringFill = document.getElementById('guidePlanRingFill');
+  if (ringFill) {
+    var pct = totalCount > 0 ? doneCount / totalCount : 0;
+    ringFill.setAttribute('stroke-dashoffset', (81.68 * (1 - pct)).toFixed(2));
+  }
+  var fracEl = document.getElementById('guidePlanFrac');
+  if (fracEl) fracEl.innerHTML = '<strong>' + doneCount + '</strong> / ' + totalCount + ' done';
+
+  // Update banner sub-text with step/focus
+  var bannerSub = document.getElementById('pathBannerSub');
+  if (bannerSub) bannerSub.textContent = focus;
+
+  var _isTC = function(id) { return id === 'thought' || id === 'observation' || id === 'focus' || id === 'vacancy'; };
+  function _buildCardHtml(item) {
+    var durLabel = item.durationLabel || (item.duration ? item.duration + ' min' : 'Open-ended');
+    var modeLabel = item.mode ? ' · ' + (GUIDE_FOUNDATION_THOUGHT_LABELS[item.mode] || item.mode) : '';
+    var accentColor = item.id === 'clock' ? '#d4b08e'
+      : item.id === 'visual'   ? '#8ab8e0'
+      : item.id === 'auditory' ? '#8eccc0'
+      : _isTC(item.id) ? '#98b4cc'
+      : item.id === 'asana'    ? '#d49898'
+      : item.id === 'pore'     ? '#8ecce0'
+      : '#c4a8d4';
+    var icon = exIcon[item.id] || exIcon['thought'] || '◆';
+    var startAttrs = item.open
+      ? ' data-guide-start="' + item.open + '"'
+        + (item.mode ? ' data-guide-mode="' + item.mode + '"' : '')
+        + (item.duration ? ' data-guide-duration="' + item.duration + '"' : '')
+      : '';
+    var checkHtml = item.done
+      ? '<div class="path-ex-check done">✓</div>'
+      : '<div class="path-ex-check empty"></div>';
+    var beginHtml = item.open
+      ? '<button class="path-ex-begin guide-plan-start"' + startAttrs + (item.done ? ' disabled' : '') + '>' + (item.done ? 'Done' : 'Begin') + '</button>'
+      : '';
+    return '<div class="path-ex-card' + (item.done ? ' done' : '') + '">'
+      + '<div class="path-ex-icon" style="background:' + accentColor + '1e;border:1px solid ' + accentColor + '38;color:' + accentColor + ';">' + icon + '</div>'
+      + '<div class="path-ex-info">'
+      + '<div class="path-ex-name" style="color:' + accentColor + ';">' + item.name + modeLabel + '</div>'
+      + '<div class="path-ex-meta">' + durLabel + (item.progress ? ' · ' + item.progress : '') + '</div>'
+      + '</div>'
+      + '<div class="path-ex-right">' + checkHtml + beginHtml + '</div>'
+      + '<button class="pq-menu-btn" data-ex-id="' + item.id + '"' + (item.mode ? ' data-ex-mode="' + item.mode + '"' : '') + (item.added ? ' data-ex-added="1"' : '') + ' title="Options">···</button>'
+      + '</div>';
+  }
+
+  var cardsHTML = items.map(_buildCardHtml).join('');
+
+  var note = mode === 'beginner' ? guideFoundationalNote() : '';
+  document.getElementById('guidePlanCards').innerHTML = cardsHTML
+    + (note ? '<div class="guide-plan-note">' + note + '</div>' : '');
+
+  // Show streak nudge if user has a streak going
+  var streakNudge = document.getElementById('guideStreakNudge');
+  var streakVal = document.getElementById('guideStreakVal');
+  if (streakNudge && typeof state !== 'undefined' && state.streak > 0) {
+    streakNudge.style.display = 'flex';
+    if (streakVal) streakVal.textContent = state.streak + 'd';
+  } else if (streakNudge) {
+    streakNudge.style.display = 'none';
+  }
+
+  document.getElementById('guidePlanOutput').style.display = 'block';
+  // Scroll to plan only when triggered by an explicit user action
+  if (!skipScroll) {
+    setTimeout(function() {
+      var out = document.getElementById('guidePlanOutput');
+      if (out) out.scrollIntoView({ behavior:'smooth', block:'start' });
+    }, 120);
+  }
+}
+
+function beginGuidePlanItem(btn) {
+  if (!btn || btn.disabled) return;
+  // Don't let a player launch a fresh exercise from Omnia's Path while an
+  // Awareness session is still running in the background.
+  if (sessionStartTime) {
+    showToast('Finish your current session first', 2600);
+    return;
+  }
+  var ex = btn.dataset.guideStart;
+  var duration = parseInt(btn.dataset.guideDuration, 10);
+  var mode = btn.dataset.guideMode;
+  if (ex === 'thought') {
+    if (mode && TC_MODE_DEFS[mode]) tcMode = mode;
+    if (duration) tcDuration = duration;
+  }
+  if (ex === 'sense' && duration) senseDuration = duration;
+  if (ex === 'soulmirror') {
+    switchMode('concentration');
+    suppressTutorialForExerciseEntry();
+    renderSoulMirrorTraits();
+    showScreen('soulMirrorScreen');
+    return;
+  }
+  if (ex === 'pore') {
+    switchMode('concentration');
+    suppressTutorialForExerciseEntry();
+    renderSoulMirrorTraits();
+    showScreen('soulMirrorScreen');
+    var pbTab = document.querySelector('#soulMirrorTabs [data-tab="breathing"]');
+    if (pbTab) pbTab.click();
+    // Pre-seed slider to the path breath target so the user doesn't have to adjust it.
+    setTimeout(function() {
+      var t = (typeof guidePoreBreathTarget === 'function') ? guidePoreBreathTarget() : 7;
+      var sl = document.getElementById('poreBreathSlider');
+      var disp = document.getElementById('poreBreathCountDisplay');
+      if (sl) { sl.value = t; poreBreathTotal = t; if (disp) disp.textContent = t; }
+    }, 0);
+    return;
+  }
+  if (ex === 'multisense' || ex === 'allangles') {
+    var def = typeof EXERCISE_DEFS !== 'undefined' && EXERCISE_DEFS[ex];
+    if (def && def.begin) def.begin();
+    return;
+  }
+  openExerciseSetup(ex);
+}
