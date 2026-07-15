@@ -10,6 +10,7 @@ const presence = fs.readFileSync(path.join(root, 'presence.html'), 'utf8');
 const server = fs.readFileSync(path.join(root, 'server.js'), 'utf8');
 const awarenessClient = fs.readFileSync(path.join(root, 'awareness-client.js'), 'utf8');
 const visualizationClient = fs.readFileSync(path.join(root, 'visualization-client.js'), 'utf8');
+const auditoryClient = fs.readFileSync(path.join(root, 'auditory-client.js'), 'utf8');
 const reportsClient = fs.readFileSync(path.join(root, 'reports-client.js'), 'utf8');
 const platformClient = fs.readFileSync(path.join(root, 'platform-client.js'), 'utf8');
 const profileClient = fs.readFileSync(path.join(root, 'profile-client.js'), 'utf8');
@@ -81,11 +82,11 @@ test('Visualization and the shared exercise gateway load before Auditory', () =>
   const visualizationTag = presence.indexOf('<script src="visualization-client.js"></script>');
   const concentrationState = presence.indexOf('function getConcRank(level)');
   const modeDeclaration = presence.indexOf('var currentMode;');
-  const auditoryStart = presence.indexOf('var SOUNDS = [');
+  const auditoryTag = presence.indexOf('<script src="auditory-client.js"></script>');
   assert.notEqual(visualizationTag, -1);
   assert.ok(concentrationState < visualizationTag, 'Visualization requires Concentration state');
   assert.ok(modeDeclaration < visualizationTag, 'shared mode state must be declared before startup and exercise clients');
-  assert.ok(visualizationTag < auditoryStart, 'Visualization must initialize before Auditory');
+  assert.ok(visualizationTag < auditoryTag, 'Visualization must initialize before Auditory');
   assert.equal(presence.split('<script src="visualization-client.js"></script>').length - 1, 1);
   assert.doesNotMatch(presence, /function\s+openExerciseSetup\s*\(|function\s+startVisSession\s*\(/);
   assert.doesNotMatch(presence, /function\s+endVisSession\s*\(|function\s+showConcLevelUp\s*\(/);
@@ -96,6 +97,24 @@ test('Visualization and the shared exercise gateway load before Auditory', () =>
   assert.match(visualizationClient, /document\.getElementById\('exerciseGrid'\)\.addEventListener/);
   assert.match(visualizationClient, /function\s+showConcLevelUp\s*\(/);
   assert.doesNotThrow(() => new Function(visualizationClient));
+});
+
+test('Auditory sound and session behavior load before Thought Control', () => {
+  const visualizationTag = presence.indexOf('<script src="visualization-client.js"></script>');
+  const auditoryTag = presence.indexOf('<script src="auditory-client.js"></script>');
+  const thoughtStart = presence.indexOf("var tcMode = 'observation';");
+  assert.notEqual(auditoryTag, -1);
+  assert.ok(visualizationTag < auditoryTag, 'Auditory loads after the shared exercise gateway');
+  assert.ok(auditoryTag < thoughtStart, 'Auditory must initialize before Thought Control');
+  assert.equal(presence.split('<script src="auditory-client.js"></script>').length - 1, 1);
+  assert.doesNotMatch(presence, /function\s+stopAllAudio\s*\(|function\s+startAuditorySession\s*\(/);
+  assert.doesNotMatch(presence, /function\s+buildSoundGrid\s*\(|function\s+saveAudResult\s*\(/);
+  assert.match(auditoryClient, /function\s+stopAllAudio\s*\(/);
+  assert.match(auditoryClient, /function\s+buildSoundGrid\s*\(/);
+  assert.match(auditoryClient, /function\s+startAuditorySession\s*\(/);
+  assert.match(auditoryClient, /function\s+saveAudResult\s*\(/);
+  assert.match(auditoryClient, /document\.getElementById\('audSessionScreen'\)\.addEventListener/);
+  assert.doesNotThrow(() => new Function(auditoryClient));
 });
 
 test('Lodge, messages, and friends live behind the social client boundary', () => {

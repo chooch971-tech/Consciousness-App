@@ -75,6 +75,7 @@ Last updated: 2026-07-13
 - [x] Extract Prayer state, scheduling, sessions, history, reflections, and mantra into `prayer-client.js`
 - [x] Extract Awareness ranks, state, idle progression, sessions, survey, and history into `awareness-client.js`
 - [x] Extract Visualization practice, multi-sense scenes, exercise-card routing, and Concentration level-up into `visualization-client.js`
+- [x] Extract Auditory sound synthesis, picker, rep sessions, results, and event wiring into `auditory-client.js`
 - [x] Consolidate duplicate global HTML escaping helpers
 - [ ] Remove `/api/sync/sync/diagnose` debug endpoint from server.js
 
