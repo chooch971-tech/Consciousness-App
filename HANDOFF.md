@@ -24,8 +24,11 @@ system, achievements, streaks, and social/friends features.
   DOM and the main runtime dependencies exist.
 - **`journal-client.js`** — Journal list, daily-entry editor, progress snapshots,
   and Journal event wiring. It loads after the main runtime and before social.
+- **`reports-client.js`** — Progress Reports rendering, charts, date navigation,
+  Omnia report context/cache behavior, and report-control wiring. It loads after
+  the main runtime and before Journal.
 - **`sw.js`** — service worker. Caches the shell as `presence-shell-vNNN`
-  (currently **v163**). **Bump this version string on every shippable change to
+  (currently **v164**). **Bump this version string on every shippable change to
   `presence.html`** or returning devices run stale code.
 - `marketing/` — App Store card generators (Playwright screenshot scripts).
 

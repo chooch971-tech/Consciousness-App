@@ -8,6 +8,7 @@ const path = require('node:path');
 const root = path.join(__dirname, '..');
 const presence = fs.readFileSync(path.join(root, 'presence.html'), 'utf8');
 const server = fs.readFileSync(path.join(root, 'server.js'), 'utf8');
+const reportsClient = fs.readFileSync(path.join(root, 'reports-client.js'), 'utf8');
 const journalClient = fs.readFileSync(path.join(root, 'journal-client.js'), 'utf8');
 const socialClient = fs.readFileSync(path.join(root, 'social-client.js'), 'utf8');
 
@@ -74,4 +75,20 @@ test('Journal behavior loads through its own client boundary', () => {
   assert.match(journalClient, /function\s+openJournalEntry\s*\(/);
   assert.match(journalClient, /document\.getElementById\('journalBack'\)\.addEventListener/);
   assert.doesNotThrow(() => new Function(journalClient));
+});
+
+test('Progress Reports load through their own client boundary', () => {
+  const reportsTag = presence.indexOf('<script src="reports-client.js"></script>');
+  const journalTag = presence.indexOf('<script src="journal-client.js"></script>');
+  const appUse = presence.indexOf('var PRESENCE_SYNC = window.PresenceSyncContract;');
+  assert.notEqual(reportsTag, -1);
+  assert.ok(appUse < reportsTag, 'reports client must load after shared app state');
+  assert.ok(reportsTag < journalTag, 'reports must initialize before Journal');
+  assert.equal(presence.split('<script src="reports-client.js"></script>').length - 1, 1);
+  assert.doesNotMatch(presence, /function\s+showReports\s*\(|function\s+renderReport\s*\(/);
+  assert.match(reportsClient, /function\s+showReports\s*\(/);
+  assert.match(reportsClient, /function\s+renderReport\s*\(/);
+  assert.match(reportsClient, /function\s+getDateRange\s*\(/);
+  assert.match(reportsClient, /document\.getElementById\('reportFilterBtn'\)/);
+  assert.doesNotThrow(() => new Function(reportsClient));
 });
