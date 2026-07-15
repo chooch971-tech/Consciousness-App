@@ -120,11 +120,15 @@ system, achievements, streaks, and social/friends features.
   route selection and confirmation, exercise-history assessment, adaptive and
   foundational regimen construction, agenda rendering, and exercise launching.
   It loads after Omnia morph behavior and before Path Quest tracking.
+- **`guide-quests-client.js`** — daily, weekend, and Awareness quest state and
+  rewards; chest animation; monthly Seven Gifts persistence and claims; quest,
+  gift, exercise-menu, advanced-target, and add-exercise overlay rendering.
+  It loads after Guide planning and before Guide shell initialization.
 - **`tutorial-client.js`** — the first-time tutorial state machine, dialogue,
   spotlight sequencing, Omnia morph choreography, path choice, and replay hook.
   It loads at the end of the body after the complete tutorial markup.
 - **`sw.js`** — service worker. Caches the shell as `presence-shell-vNNN`
-  (currently **v199**). **Bump this version string on every shippable change to
+  (currently **v200**). **Bump this version string on every shippable change to
   `presence.html`** or returning devices run stale code.
 - `marketing/` — App Store card generators (Playwright screenshot scripts).
 
