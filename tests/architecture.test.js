@@ -10,6 +10,7 @@ const presence = fs.readFileSync(path.join(root, 'presence.html'), 'utf8');
 const server = fs.readFileSync(path.join(root, 'server.js'), 'utf8');
 const reportsClient = fs.readFileSync(path.join(root, 'reports-client.js'), 'utf8');
 const platformClient = fs.readFileSync(path.join(root, 'platform-client.js'), 'utf8');
+const soulMirrorClient = fs.readFileSync(path.join(root, 'soul-mirror-client.js'), 'utf8');
 const journalClient = fs.readFileSync(path.join(root, 'journal-client.js'), 'utf8');
 const socialClient = fs.readFileSync(path.join(root, 'social-client.js'), 'utf8');
 
@@ -109,4 +110,20 @@ test('browser platform services load through their own client boundary', () => {
   assert.match(platformClient, /function\s+registerWebPush\s*\(/);
   assert.match(platformClient, /function\s+showAppUpdateBanner\s*\(/);
   assert.doesNotThrow(() => new Function(platformClient));
+});
+
+test('Soul Mirror and Autosuggestion load through their own client boundary', () => {
+  const soulMirrorTag = presence.indexOf('<script src="soul-mirror-client.js"></script>');
+  const reportsTag = presence.indexOf('<script src="reports-client.js"></script>');
+  const appUse = presence.indexOf('var PRESENCE_SYNC = window.PresenceSyncContract;');
+  assert.notEqual(soulMirrorTag, -1);
+  assert.ok(appUse < soulMirrorTag, 'Soul Mirror needs the completed core runtime');
+  assert.ok(soulMirrorTag < reportsTag, 'Soul Mirror initializes before later feature clients');
+  assert.equal(presence.split('<script src="soul-mirror-client.js"></script>').length - 1, 1);
+  assert.doesNotMatch(presence, /function\s+loadSoulMirror\s*\(|function\s+renderAutosug\s*\(/);
+  assert.match(soulMirrorClient, /function\s+loadSoulMirror\s*\(/);
+  assert.match(soulMirrorClient, /function\s+renderSoulMirrorTraits\s*\(/);
+  assert.match(soulMirrorClient, /function\s+autosugFinish\s*\(/);
+  assert.match(soulMirrorClient, /function\s+renderAutosug\s*\(/);
+  assert.doesNotThrow(() => new Function(soulMirrorClient));
 });
