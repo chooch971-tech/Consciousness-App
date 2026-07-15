@@ -19,6 +19,7 @@ const omniaAmbientClient = fs.readFileSync(path.join(root, 'omnia-ambient-client
 const concentrationControlsClient = fs.readFileSync(path.join(root, 'concentration-controls-client.js'), 'utf8');
 const guideConfigClient = fs.readFileSync(path.join(root, 'guide-config-client.js'), 'utf8');
 const omniaEconomyConfigClient = fs.readFileSync(path.join(root, 'omnia-economy-config-client.js'), 'utf8');
+const omniaCosmeticsConfigClient = fs.readFileSync(path.join(root, 'omnia-cosmetics-config-client.js'), 'utf8');
 const reportsClient = fs.readFileSync(path.join(root, 'reports-client.js'), 'utf8');
 const platformClient = fs.readFileSync(path.join(root, 'platform-client.js'), 'utf8');
 const profileClient = fs.readFileSync(path.join(root, 'profile-client.js'), 'utf8');
@@ -255,10 +256,10 @@ test('Guide recommendation tables live in a static configuration boundary', () =
 test('Omnia economy defaults and metadata live in a static configuration boundary', () => {
   const guideConfigTag = presence.indexOf('<script src="guide-config-client.js"></script>');
   const omniaEconomyConfigTag = presence.indexOf('<script src="omnia-economy-config-client.js"></script>');
-  const cosmeticsRuntime = presence.indexOf('var OMNIA_PALETTES = [');
+  const cosmeticsConfigTag = presence.indexOf('<script src="omnia-cosmetics-config-client.js"></script>');
   assert.notEqual(omniaEconomyConfigTag, -1);
   assert.ok(guideConfigTag < omniaEconomyConfigTag, 'Omnia economy configuration loads after Guide configuration');
-  assert.ok(omniaEconomyConfigTag < cosmeticsRuntime, 'Omnia economy configuration loads before the remaining Omnia runtime');
+  assert.ok(omniaEconomyConfigTag < cosmeticsConfigTag, 'Omnia economy configuration loads before cosmetic configuration');
   assert.equal(presence.split('<script src="omnia-economy-config-client.js"></script>').length - 1, 1);
   assert.doesNotMatch(presence, /var\s+OMNIA_DEFAULT\s*=\s*\{/);
   assert.doesNotMatch(presence, /var\s+OMNIA_UPGRADES\s*=\s*\[/);
@@ -266,6 +267,22 @@ test('Omnia economy defaults and metadata live in a static configuration boundar
   assert.match(omniaEconomyConfigClient, /var\s+OMNIA_EXERCISE_META\s*=\s*\{/);
   assert.match(omniaEconomyConfigClient, /id:['"]current['"],\s*name:['"]Generator I['"]/);
   assert.doesNotThrow(() => new Function(omniaEconomyConfigClient));
+});
+
+test('Omnia cosmetic catalogs live in a static configuration boundary', () => {
+  const economyTag = presence.indexOf('<script src="omnia-economy-config-client.js"></script>');
+  const cosmeticsTag = presence.indexOf('<script src="omnia-cosmetics-config-client.js"></script>');
+  const paletteRuntime = presence.indexOf('function omniaPaletteFilterFor(');
+  assert.notEqual(cosmeticsTag, -1);
+  assert.ok(economyTag < cosmeticsTag, 'Cosmetic configuration loads after economy defaults');
+  assert.ok(cosmeticsTag < paletteRuntime, 'Cosmetic configuration loads before appearance behavior');
+  assert.equal(presence.split('<script src="omnia-cosmetics-config-client.js"></script>').length - 1, 1);
+  assert.doesNotMatch(presence, /var\s+OMNIA_PALETTES\s*=\s*\[/);
+  assert.doesNotMatch(presence, /var\s+OMNIA_COMPANIONS\s*=\s*\[/);
+  assert.match(omniaCosmeticsConfigClient, /id:['"]aether['"],\s*name:['"]Aether Blue['"]/);
+  assert.match(omniaCosmeticsConfigClient, /id:['"]corgi['"],\s*name:['"]Astral Corgi['"]/);
+  assert.match(omniaCosmeticsConfigClient, /var\s+OMNIA_ENTITY_NATIVE_PALETTE\s*=\s*\{/);
+  assert.doesNotThrow(() => new Function(omniaCosmeticsConfigClient));
 });
 
 test('Lodge, messages, and friends live behind the social client boundary', () => {

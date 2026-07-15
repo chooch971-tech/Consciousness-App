@@ -81,12 +81,15 @@ system, achievements, streaks, and social/friends features.
   before the Omnia economy configuration.
 - **`omnia-economy-config-client.js`** — Omnia's level-one reset defaults, body
   and exercise metadata, and generator upgrade definitions. It loads after the
-  Guide tables and before the remaining Omnia growth, cosmetic, and story runtime.
+  Guide tables and before the cosmetic catalog.
+- **`omnia-cosmetics-config-client.js`** — Omnia's palette, veil, entity, and
+  companion catalogs plus native palette relationships. It loads after economy
+  defaults and before appearance rendering and purchase behavior.
 - **`tutorial-client.js`** — the first-time tutorial state machine, dialogue,
   spotlight sequencing, Omnia morph choreography, path choice, and replay hook.
   It loads at the end of the body after the complete tutorial markup.
 - **`sw.js`** — service worker. Caches the shell as `presence-shell-vNNN`
-  (currently **v188**). **Bump this version string on every shippable change to
+  (currently **v189**). **Bump this version string on every shippable change to
   `presence.html`** or returning devices run stale code.
 - `marketing/` — App Store card generators (Playwright screenshot scripts).
 
