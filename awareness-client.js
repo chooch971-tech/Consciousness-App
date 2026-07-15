@@ -995,9 +995,10 @@ function suppressTutorialForExerciseEntry() {
   window.__tutBoot = null;
   clearStaleInteractionLocks();
 }
-// TEMP: auto-reopen the drawer when backing out of a menu is disabled while we
-// diagnose reported lag. Set true to restore it.
-var DRAWER_REOPEN_ON_BACK = false;
+// Auto-reopen the drawer when backing out of a menu opened from it. (The
+// reported "lag"/"not loading" was actually a leftover drawerAbout handler
+// throwing and unbinding later drawer handlers — not this feature.)
+var DRAWER_REOPEN_ON_BACK = true;
 function showScreen(id) {
   if (id === 'homeScreen') {
     document.querySelectorAll('.screen').forEach(function(s) { s.classList.remove('active'); });

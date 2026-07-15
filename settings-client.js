@@ -425,9 +425,6 @@ document.getElementById('importFile').addEventListener('change', function(e) {
   status.textContent = 'Reading backup…';
   e.target.value = '';
 });
-document.getElementById('drawerAbout').addEventListener('click', function() {
-  closeDrawer(); showScreen('aboutScreen');
-});
 document.getElementById('drawerDonate').addEventListener('click', function() {
   closeDrawer();
   window.open('https://buymeacoffee.com/presence_app', '_blank');
