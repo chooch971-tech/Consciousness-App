@@ -315,11 +315,15 @@ function colorToTint(hex, alpha) {
 // practice, so each month is genuinely re-earned.
 var GIFT_PATH_KEY = 'presence_giftpath_v1';
 var GIFT_PATH_WINDOW_DAYS = 7; // the event runs on days 1–7 of each month
+// TEMP preview: while the Seven Gifts is still being revised, keep it visible
+// every day so it can be worked on. Set false to restore the real 1st–7th
+// window before launch.
+var GIFT_PATH_PREVIEW = true;
 function _gpToday() { return new Date().toISOString().slice(0, 10); }
 function gpCurrentMonth() { return new Date().toISOString().slice(0, 7); }
 // The Seven Gifts is a 7-day sprint: it opens on the 1st and closes after the
 // 7th, then returns on the 1st of the next month. Active only within that window.
-function gpWindowActive() { return new Date().getDate() <= GIFT_PATH_WINDOW_DAYS; }
+function gpWindowActive() { return GIFT_PATH_PREVIEW || new Date().getDate() <= GIFT_PATH_WINDOW_DAYS; }
 function gpEventDay() { return Math.min(Math.max(new Date().getDate(), 1), GIFT_PATH_WINDOW_DAYS); }
 function gpDaysLeftInWindow() { return Math.max(0, GIFT_PATH_WINDOW_DAYS - new Date().getDate() + 1); }
 // Pictorial countdown: seven pips, one per event day — days already spent are
