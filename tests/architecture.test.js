@@ -15,6 +15,7 @@ const thoughtControlClient = fs.readFileSync(path.join(root, 'thought-control-cl
 const asanaClient = fs.readFileSync(path.join(root, 'asana-client.js'), 'utf8');
 const sensesClient = fs.readFileSync(path.join(root, 'senses-client.js'), 'utf8');
 const appShellClient = fs.readFileSync(path.join(root, 'app-shell-client.js'), 'utf8');
+const omniaAmbientClient = fs.readFileSync(path.join(root, 'omnia-ambient-client.js'), 'utf8');
 const reportsClient = fs.readFileSync(path.join(root, 'reports-client.js'), 'utf8');
 const platformClient = fs.readFileSync(path.join(root, 'platform-client.js'), 'utf8');
 const profileClient = fs.readFileSync(path.join(root, 'profile-client.js'), 'utf8');
@@ -181,10 +182,10 @@ test('Senses setup and sessions load before app mode switching', () => {
 test('app shell owns mode switching and primary navigation wiring', () => {
   const sensesTag = presence.indexOf('<script src="senses-client.js"></script>');
   const appShellTag = presence.indexOf('<script src="app-shell-client.js"></script>');
-  const omniaAnimations = presence.indexOf('function initOmniaAnims()');
+  const omniaAmbientTag = presence.indexOf('<script src="omnia-ambient-client.js"></script>');
   assert.notEqual(appShellTag, -1);
   assert.ok(sensesTag < appShellTag, 'app navigation loads after exercise clients');
-  assert.ok(appShellTag < omniaAnimations, 'navigation exists before Omnia ambient animations initialize');
+  assert.ok(appShellTag < omniaAmbientTag, 'navigation exists before Omnia ambient animations initialize');
   assert.equal(presence.split('<script src="app-shell-client.js"></script>').length - 1, 1);
   assert.doesNotMatch(presence, /function\s+openAwarenessSubMenu\s*\(|function\s+switchMode\s*\(/);
   assert.match(appShellClient, /var\s+currentMode\s*=\s*['"]guide['"]/);
@@ -195,6 +196,23 @@ test('app shell owns mode switching and primary navigation wiring', () => {
   assert.match(appShellClient, /document\.getElementById\('modeConcentration'\)\.addEventListener/);
   assert.match(appShellClient, /document\.getElementById\('modePrayer'\)\.addEventListener/);
   assert.doesNotThrow(() => new Function(appShellClient));
+});
+
+test('Omnia ambient animation scheduling owns its client boundary', () => {
+  const appShellTag = presence.indexOf('<script src="app-shell-client.js"></script>');
+  const omniaAmbientTag = presence.indexOf('<script src="omnia-ambient-client.js"></script>');
+  const concentrationWiring = presence.indexOf("document.getElementById('concStopBtn').addEventListener");
+  assert.notEqual(omniaAmbientTag, -1);
+  assert.ok(appShellTag < omniaAmbientTag, 'ambient animations require current app mode state');
+  assert.ok(omniaAmbientTag < concentrationWiring, 'ambient startup retains its original event-wiring position');
+  assert.equal(presence.split('<script src="omnia-ambient-client.js"></script>').length - 1, 1);
+  assert.doesNotMatch(presence, /function\s+initOmniaAnims\s*\(/);
+  assert.match(omniaAmbientClient, /function\s+initOmniaAnims\s*\(/);
+  assert.match(omniaAmbientClient, /window\._omniaQuickDismiss\s*=\s*function/);
+  assert.match(omniaAmbientClient, /function\s+scheduleAmbient\s*\(/);
+  assert.match(omniaAmbientClient, /peek\.addEventListener\('click'/);
+  assert.match(omniaAmbientClient, /setTimeout\(trigger,\s*8000\)/);
+  assert.doesNotThrow(() => new Function(omniaAmbientClient));
 });
 
 test('Lodge, messages, and friends live behind the social client boundary', () => {
