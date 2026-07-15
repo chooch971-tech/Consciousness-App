@@ -41,11 +41,14 @@ system, achievements, streaks, and social/friends features.
 - **`profile-client.js`** — own-profile rendering, avatars, daily status,
   account privacy, cached friend profiles, and profile interaction wiring. Its
   script tag retains the original parse-time position before Achievements.
+- **`settings-client.js`** — exercise/account settings, custom image and sound
+  controls, email sign-in UI, backup/import, and FAQ/About utility navigation.
+  It loads after Profile helpers and before Achievements.
 - **`tutorial-client.js`** — the first-time tutorial state machine, dialogue,
   spotlight sequencing, Omnia morph choreography, path choice, and replay hook.
   It loads at the end of the body after the complete tutorial markup.
 - **`sw.js`** — service worker. Caches the shell as `presence-shell-vNNN`
-  (currently **v170**). **Bump this version string on every shippable change to
+  (currently **v171**). **Bump this version string on every shippable change to
   `presence.html`** or returning devices run stale code.
 - `marketing/` — App Store card generators (Playwright screenshot scripts).
 

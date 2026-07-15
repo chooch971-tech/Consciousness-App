@@ -11,6 +11,7 @@ const server = fs.readFileSync(path.join(root, 'server.js'), 'utf8');
 const reportsClient = fs.readFileSync(path.join(root, 'reports-client.js'), 'utf8');
 const platformClient = fs.readFileSync(path.join(root, 'platform-client.js'), 'utf8');
 const profileClient = fs.readFileSync(path.join(root, 'profile-client.js'), 'utf8');
+const settingsClient = fs.readFileSync(path.join(root, 'settings-client.js'), 'utf8');
 const achievementsClient = fs.readFileSync(path.join(root, 'achievements-client.js'), 'utf8');
 const tutorialClient = fs.readFileSync(path.join(root, 'tutorial-client.js'), 'utf8');
 const soulMirrorClient = fs.readFileSync(path.join(root, 'soul-mirror-client.js'), 'utf8');
@@ -152,10 +153,10 @@ test('Achievements load through their own client boundary at boot time', () => {
 
 test('Profile and account identity behavior load before Achievements', () => {
   const profileTag = presence.indexOf('<script src="profile-client.js"></script>');
+  const settingsTag = presence.indexOf('<script src="settings-client.js"></script>');
   const achievementsTag = presence.indexOf('<script src="achievements-client.js"></script>');
-  const settingsUse = presence.indexOf('function openExerciseSettings(id)');
   assert.notEqual(profileTag, -1);
-  assert.ok(profileTag < settingsUse, 'Profile retains its original parse-time position');
+  assert.ok(profileTag < settingsTag, 'Profile account helpers initialize before Settings');
   assert.ok(profileTag < achievementsTag, 'Profile badge hooks initialize before Achievements');
   assert.equal(presence.split('<script src="profile-client.js"></script>').length - 1, 1);
   assert.doesNotMatch(presence, /function\s+renderProfile\s*\(|function\s+openFriendProfile\s*\(/);
@@ -166,6 +167,24 @@ test('Profile and account identity behavior load before Achievements', () => {
   assert.match(profileClient, /function\s+setMyStatus\s*\(/);
   assert.match(profileClient, /document\.addEventListener\(['"]DOMContentLoaded['"], _wireStatusEditor\)/);
   assert.doesNotThrow(() => new Function(profileClient));
+});
+
+test('Settings and utility screens load through their own client boundary', () => {
+  const profileTag = presence.indexOf('<script src="profile-client.js"></script>');
+  const settingsTag = presence.indexOf('<script src="settings-client.js"></script>');
+  const achievementsTag = presence.indexOf('<script src="achievements-client.js"></script>');
+  assert.notEqual(settingsTag, -1);
+  assert.ok(profileTag < settingsTag, 'Settings privacy controls require Profile helpers');
+  assert.ok(settingsTag < achievementsTag, 'Settings retains its boot position before Achievements');
+  assert.equal(presence.split('<script src="settings-client.js"></script>').length - 1, 1);
+  assert.doesNotMatch(presence, /function\s+renderSettingsExerciseList\s*\(|function\s+openAccountSettings\s*\(/);
+  assert.doesNotMatch(presence, /function\s+addAudioUrlSound\s*\(|\bEXERCISE_SETTINGS_LIST\s*=\s*\[/);
+  assert.match(settingsClient, /function\s+renderSettingsExerciseList\s*\(/);
+  assert.match(settingsClient, /function\s+openAccountSettings\s*\(/);
+  assert.match(settingsClient, /function\s+addAudioUrlSound\s*\(/);
+  assert.match(settingsClient, /document\.getElementById\('importFile'\)\.addEventListener/);
+  assert.match(settingsClient, /document\.querySelectorAll\('#faqScreen \.faq-item-head'\)/);
+  assert.doesNotThrow(() => new Function(settingsClient));
 });
 
 test('first-time tutorial loads through its own end-of-body client boundary', () => {

@@ -71,6 +71,7 @@ Last updated: 2026-07-13
 - [x] Extract Achievements into `achievements-client.js`
 - [x] Extract the first-time tutorial into `tutorial-client.js`
 - [x] Extract Profile, daily status, privacy, and friend profiles into `profile-client.js`
+- [x] Extract Settings, custom media controls, backup/import, and utility screens into `settings-client.js`
 - [x] Consolidate duplicate global HTML escaping helpers
 - [ ] Remove `/api/sync/sync/diagnose` debug endpoint from server.js
 
