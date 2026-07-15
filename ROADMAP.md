@@ -95,7 +95,7 @@ Last updated: 2026-07-13
 - [x] Extract Omnia engine rendering, collection/build effects, generators, upgrade sheets, and engine actions into `omnia-engine-client.js`
 - [x] Extract Omnia click-morph geometry, animation lifecycle, and figure entry points into `omnia-morph-client.js`
 - [x] Complete the Phase 4 Omnia boundary audit: verify load order, service-worker coverage, source identity, parser checks, tests, and mobile startup
-- [ ] Extract Guide path state, assessment, adaptive planning, and agenda rendering into `guide-path-client.js`
+- [x] Extract Guide path state, assessment, adaptive planning, and agenda rendering into `guide-path-client.js`
 - [ ] Extract Path Quests and Seven Gifts state, rewards, and overlay rendering into `guide-quests-client.js`
 - [ ] Audit the remaining inline Concentration completion, streak, reminder, companion, and integration clusters
 - [x] Consolidate duplicate global HTML escaping helpers

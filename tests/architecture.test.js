@@ -29,6 +29,7 @@ const omniaBook2Client = fs.readFileSync(path.join(root, 'omnia-book2-client.js'
 const omniaRewardsClient = fs.readFileSync(path.join(root, 'omnia-rewards-client.js'), 'utf8');
 const omniaEngineClient = fs.readFileSync(path.join(root, 'omnia-engine-client.js'), 'utf8');
 const omniaMorphClient = fs.readFileSync(path.join(root, 'omnia-morph-client.js'), 'utf8');
+const guidePathClient = fs.readFileSync(path.join(root, 'guide-path-client.js'), 'utf8');
 const reportsClient = fs.readFileSync(path.join(root, 'reports-client.js'), 'utf8');
 const platformClient = fs.readFileSync(path.join(root, 'platform-client.js'), 'utf8');
 const profileClient = fs.readFileSync(path.join(root, 'profile-client.js'), 'utf8');
@@ -454,10 +455,10 @@ test('Omnia engine rendering and generator controls live in a dedicated client b
 test('Omnia click-morph geometry and animation live in a dedicated client boundary', () => {
   const engineTag = presence.indexOf('<script src="omnia-engine-client.js"></script>');
   const morphTag = presence.indexOf('<script src="omnia-morph-client.js"></script>');
-  const guideRuntime = presence.indexOf('function loadGuideState(');
+  const guidePathTag = presence.indexOf('<script src="guide-path-client.js"></script>');
   assert.notEqual(morphTag, -1);
   assert.ok(engineTag < morphTag, 'Click-morph behavior loads after the Omnia engine');
-  assert.ok(morphTag < guideRuntime, 'Click-morph behavior loads before Guide state');
+  assert.ok(morphTag < guidePathTag, 'Click-morph behavior loads before Guide state');
   assert.equal(presence.split('<script src="omnia-morph-client.js"></script>').length - 1, 1);
   assert.doesNotMatch(presence, /var\s+OMNIA_ENTITY_MORPH_SYMBOLS\s*=\s*\{/);
   assert.doesNotMatch(presence, /function\s+animateOmniaShardMorph\s*\(/);
@@ -469,6 +470,28 @@ test('Omnia click-morph geometry and animation live in a dedicated client bounda
   assert.match(omniaMorphClient, /function\s+morphGuideOmnia\s*\(/);
   assert.match(omniaMorphClient, /function\s+morphPathBannerOmnia\s*\(/);
   assert.doesNotThrow(() => new Function(omniaMorphClient));
+});
+
+test('Guide path assessment and adaptive agenda live in a dedicated client boundary', () => {
+  const morphTag = presence.indexOf('<script src="omnia-morph-client.js"></script>');
+  const guidePathTag = presence.indexOf('<script src="guide-path-client.js"></script>');
+  const questRuntime = presence.indexOf('function pathQuestTodayKey(');
+  assert.notEqual(guidePathTag, -1);
+  assert.ok(morphTag < guidePathTag, 'Guide path loads after Omnia morph behavior');
+  assert.ok(guidePathTag < questRuntime, 'Guide path loads before Path Quest tracking');
+  assert.equal(presence.split('<script src="guide-path-client.js"></script>').length - 1, 1);
+  assert.doesNotMatch(presence, /function\s+loadGuideState\s*\(/);
+  assert.doesNotMatch(presence, /function\s+buildExperiencedGuideItems\s*\(/);
+  assert.doesNotMatch(presence, /function\s+renderGuidePlan\s*\(/);
+  assert.match(guidePathClient, /function\s+loadGuideState\s*\(/);
+  assert.match(guidePathClient, /function\s+renderPracticeTree\s*\(/);
+  assert.match(guidePathClient, /function\s+guideExerciseStats\s*\(/);
+  assert.match(guidePathClient, /function\s+buildExperiencedGuideItems\s*\(/);
+  assert.match(guidePathClient, /function\s+buildFoundationalGuideItems\s*\(/);
+  assert.match(guidePathClient, /function\s+guideDetectAdaptedLevel\s*\(/);
+  assert.match(guidePathClient, /function\s+renderGuidePlan\s*\(/);
+  assert.match(guidePathClient, /function\s+beginGuidePlanItem\s*\(/);
+  assert.doesNotThrow(() => new Function(guidePathClient));
 });
 
 test('Lodge, messages, and friends live behind the social client boundary', () => {

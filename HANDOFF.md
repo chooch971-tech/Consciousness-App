@@ -116,11 +116,15 @@ system, achievements, streaks, and social/friends features.
   and audited. The next boundary is Guide runtime: first adaptive path planning,
   then Path Quests/Seven Gifts. Remaining unrelated inline clusters should be
   audited only after those two Guide modules are established.
+- **`guide-path-client.js`** — Guide state persistence, practice-tree rendering,
+  route selection and confirmation, exercise-history assessment, adaptive and
+  foundational regimen construction, agenda rendering, and exercise launching.
+  It loads after Omnia morph behavior and before Path Quest tracking.
 - **`tutorial-client.js`** — the first-time tutorial state machine, dialogue,
   spotlight sequencing, Omnia morph choreography, path choice, and replay hook.
   It loads at the end of the body after the complete tutorial markup.
 - **`sw.js`** — service worker. Caches the shell as `presence-shell-vNNN`
-  (currently **v198**). **Bump this version string on every shippable change to
+  (currently **v199**). **Bump this version string on every shippable change to
   `presence.html`** or returning devices run stale code.
 - `marketing/` — App Store card generators (Playwright screenshot scripts).
 
