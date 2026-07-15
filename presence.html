@@ -2383,7 +2383,6 @@
     #drawerProfile { --drawer-accent:#8eccc0; --drawer-tint:rgba(142,204,192,.055); }
     #drawerLodge { --drawer-accent:#e8c87a; --drawer-tint:rgba(232,200,122,.065); }
     #drawerFaq { --drawer-accent:#98b4cc; --drawer-tint:rgba(152,180,204,.05); }
-    #drawerAbout { --drawer-accent:#b8eaff; --drawer-tint:rgba(184,234,255,.045); }
     #drawerSettings { --drawer-accent:#aaa6b8; --drawer-tint:rgba(170,166,184,.05); }
     #drawerDonate { --drawer-accent:#d4a06e; --drawer-tint:rgba(212,160,110,.055); }
     .drawer-divider { height:1px; background:var(--border); margin:8px 24px; }
@@ -6168,11 +6167,6 @@ body:not(.tut-live) #tutCorgi {
               <div class="exercise-card-name" style="color:#d4c88e;">Multi-Sense</div>
               <div class="exercise-card-desc">Hold an object using sight, sound, texture, and weight simultaneously.</div>
             </div>
-            <div class="exercise-card" style="--conc-card-accent:#88b87e; border-color:rgba(136,184,126,.2); background:rgba(136,184,126,.04); opacity:.5; pointer-events:none;">
-              <div class="exercise-card-icon"><svg width="22" height="22" viewBox="0 0 100 100" fill="none"><rect x="30" y="30" width="40" height="40" stroke="#88b87e" stroke-width="4" opacity=".9"/><line x1="30" y1="30" x2="18" y2="18" stroke="#88b87e" stroke-width="3" stroke-linecap="round" opacity=".6"/><line x1="70" y1="30" x2="82" y2="18" stroke="#88b87e" stroke-width="3" stroke-linecap="round" opacity=".6"/><line x1="70" y1="70" x2="82" y2="82" stroke="#88b87e" stroke-width="3" stroke-linecap="round" opacity=".6"/><line x1="30" y1="70" x2="18" y2="82" stroke="#88b87e" stroke-width="3" stroke-linecap="round" opacity=".6"/></svg></div>
-              <div class="exercise-card-name" style="color:#a8c89e;">All Angles<span style="font-size:8px; letter-spacing:.15em; text-transform:uppercase; color:rgba(255,255,255,.68); margin-left:6px;">· Coming Soon</span></div>
-              <div class="exercise-card-desc">Rotate an object through every perspective. Mouni Sadhu&#39;s method.</div>
-            </div>
             <div class="exercise-card" style="--conc-card-accent:#6e9fd4; border-color:rgba(110,159,212,.2); background:rgba(110,159,212,.04); opacity:.5; pointer-events:none;">
               <div class="exercise-card-icon"><svg width="22" height="22" viewBox="0 0 100 100" fill="none"><path d="M30 18 L42 40 L18 40 Z" stroke="#6e9fd4" stroke-width="3" stroke-linejoin="round"/><path d="M70 18 L82 40 L58 40 Z" stroke="#6e9fd4" stroke-width="3" stroke-linejoin="round"/><line x1="62" y1="33" x2="78" y2="33" stroke="#6e9fd4" stroke-width="3" stroke-linecap="round"/><path d="M18 56 L42 56 L30 78 Z" stroke="#6e9fd4" stroke-width="3" stroke-linejoin="round"/><path d="M58 56 L82 56 L70 78 Z" stroke="#6e9fd4" stroke-width="3" stroke-linejoin="round"/><line x1="62" y1="64" x2="78" y2="64" stroke="#6e9fd4" stroke-width="3" stroke-linecap="round"/></svg></div>
               <div class="exercise-card-name" style="color:#9ec4e0;">Elemental Work<span style="font-size:8px; letter-spacing:.15em; text-transform:uppercase; color:rgba(255,255,255,.68); margin-left:6px;">· Coming Soon</span></div>
@@ -7465,7 +7459,7 @@ body:not(.tut-live) #tutCorgi {
 
   <!-- REPORTS -->
   <div class="screen" id="reportsScreen">
-    <div style="display:flex; justify-content:flex-end; align-items:center; flex-shrink:0; margin-bottom:4px;">
+    <div style="display:flex; justify-content:flex-start; align-items:center; flex-shrink:0; margin-bottom:4px;">
       <button class="history-back" id="reportsBack">← back</button>
     </div>
     <div class="rpt-banner" id="reportsBanner">
@@ -7535,9 +7529,9 @@ body:not(.tut-live) #tutCorgi {
 
   <!-- JOURNAL LOG SCREEN -->
   <div class="screen" id="journalScreen" style="padding:0; flex-direction:column; background:#0d0e1c;">
-    <div style="padding:var(--safe-top) 24px 12px; display:flex; justify-content:space-between; align-items:center; flex-shrink:0;">
-      <div style="font-family:Cormorant Garamond,serif; font-size:34px; font-weight:400; color:#ffffff; letter-spacing:-.01em;">Journal</div>
+    <div style="padding:var(--safe-top) 24px 12px; display:flex; justify-content:flex-start; gap:14px; align-items:center; flex-shrink:0;">
       <button class="history-back" id="journalBack" style="color:rgba(255,255,255,.5);">← back</button>
+      <div style="font-family:Cormorant Garamond,serif; font-size:34px; font-weight:400; color:#ffffff; letter-spacing:-.01em;">Journal</div>
     </div>
     <div id="journalContent" style="flex:1; overflow-y:auto; -webkit-overflow-scrolling:touch; padding-bottom:max(env(safe-area-inset-bottom),20px);"></div>
     <button class="jl-fab" id="journalFab" aria-label="New entry">+</button>
@@ -7649,9 +7643,6 @@ body:not(.tut-live) #tutCorgi {
       <div class="drawer-section-label">Presence</div>
       <button class="drawer-item" id="drawerFaq">
         <span class="drawer-item-icon"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H9l-5 4V6z"/></svg></span>FAQ
-      </button>
-      <button class="drawer-item" id="drawerAbout">
-        <span class="drawer-item-icon">◎</span>About
       </button>
       <button class="drawer-item" id="drawerSettings">
         <span class="drawer-item-icon"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M12 2.8v2.6M12 18.6v2.6M2.8 12h2.6M18.6 12h2.6M5.5 5.5l1.8 1.8M16.7 16.7l1.8 1.8M18.5 5.5l-1.8 1.8M7.3 16.7l-1.8 1.8"/></svg></span>Settings
