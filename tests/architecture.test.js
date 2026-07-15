@@ -11,6 +11,7 @@ const server = fs.readFileSync(path.join(root, 'server.js'), 'utf8');
 const awarenessClient = fs.readFileSync(path.join(root, 'awareness-client.js'), 'utf8');
 const visualizationClient = fs.readFileSync(path.join(root, 'visualization-client.js'), 'utf8');
 const auditoryClient = fs.readFileSync(path.join(root, 'auditory-client.js'), 'utf8');
+const thoughtControlClient = fs.readFileSync(path.join(root, 'thought-control-client.js'), 'utf8');
 const reportsClient = fs.readFileSync(path.join(root, 'reports-client.js'), 'utf8');
 const platformClient = fs.readFileSync(path.join(root, 'platform-client.js'), 'utf8');
 const profileClient = fs.readFileSync(path.join(root, 'profile-client.js'), 'utf8');
@@ -102,10 +103,10 @@ test('Visualization and the shared exercise gateway load before Auditory', () =>
 test('Auditory sound and session behavior load before Thought Control', () => {
   const visualizationTag = presence.indexOf('<script src="visualization-client.js"></script>');
   const auditoryTag = presence.indexOf('<script src="auditory-client.js"></script>');
-  const thoughtStart = presence.indexOf("var tcMode = 'observation';");
+  const thoughtTag = presence.indexOf('<script src="thought-control-client.js"></script>');
   assert.notEqual(auditoryTag, -1);
   assert.ok(visualizationTag < auditoryTag, 'Auditory loads after the shared exercise gateway');
-  assert.ok(auditoryTag < thoughtStart, 'Auditory must initialize before Thought Control');
+  assert.ok(auditoryTag < thoughtTag, 'Auditory must initialize before Thought Control');
   assert.equal(presence.split('<script src="auditory-client.js"></script>').length - 1, 1);
   assert.doesNotMatch(presence, /function\s+stopAllAudio\s*\(|function\s+startAuditorySession\s*\(/);
   assert.doesNotMatch(presence, /function\s+buildSoundGrid\s*\(|function\s+saveAudResult\s*\(/);
@@ -115,6 +116,25 @@ test('Auditory sound and session behavior load before Thought Control', () => {
   assert.match(auditoryClient, /function\s+saveAudResult\s*\(/);
   assert.match(auditoryClient, /document\.getElementById\('audSessionScreen'\)\.addEventListener/);
   assert.doesNotThrow(() => new Function(auditoryClient));
+});
+
+test('Thought Control modes and sessions load before Asana', () => {
+  const auditoryTag = presence.indexOf('<script src="auditory-client.js"></script>');
+  const thoughtTag = presence.indexOf('<script src="thought-control-client.js"></script>');
+  const asanaStart = presence.indexOf('var asanaStartTime = null;');
+  assert.notEqual(thoughtTag, -1);
+  assert.ok(auditoryTag < thoughtTag, 'Thought Control loads after Auditory');
+  assert.ok(thoughtTag < asanaStart, 'Thought Control must initialize before Asana');
+  assert.equal(presence.split('<script src="thought-control-client.js"></script>').length - 1, 1);
+  assert.doesNotMatch(presence, /function\s+buildTCSetupHTML\s*\(|function\s+startThoughtControl\s*\(/);
+  assert.doesNotMatch(presence, /function\s+endThoughtControl\s*\(|function\s+saveTCResult\s*\(/);
+  assert.match(thoughtControlClient, /var\s+TC_MODE_DEFS\s*=\s*\{/);
+  assert.match(thoughtControlClient, /function\s+buildTCSetupHTML\s*\(/);
+  assert.match(thoughtControlClient, /function\s+startThoughtControl\s*\(/);
+  assert.match(thoughtControlClient, /function\s+endThoughtControl\s*\(/);
+  assert.match(thoughtControlClient, /function\s+saveTCResult\s*\(/);
+  assert.match(thoughtControlClient, /document\.getElementById\('tcTapArea'\)\.addEventListener/);
+  assert.doesNotThrow(() => new Function(thoughtControlClient));
 });
 
 test('Lodge, messages, and friends live behind the social client boundary', () => {

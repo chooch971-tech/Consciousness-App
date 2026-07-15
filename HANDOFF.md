@@ -58,11 +58,14 @@ system, achievements, streaks, and social/friends features.
 - **`auditory-client.js`** — Auditory sound catalogs and Web Audio generators,
   custom sound playback, waveform and picker UI, rep sessions, results, and
   event wiring. It loads after Visualization and before Thought Control.
+- **`thought-control-client.js`** — Thought Observation, Focus, and Vacancy
+  mode definitions, progress summaries, timer and alarm lifecycle, intrusion
+  tracking, result persistence, and screen wiring. It loads before Asana.
 - **`tutorial-client.js`** — the first-time tutorial state machine, dialogue,
   spotlight sequencing, Omnia morph choreography, path choice, and replay hook.
   It loads at the end of the body after the complete tutorial markup.
 - **`sw.js`** — service worker. Caches the shell as `presence-shell-vNNN`
-  (currently **v176**). **Bump this version string on every shippable change to
+  (currently **v177**). **Bump this version string on every shippable change to
   `presence.html`** or returning devices run stale code.
 - `marketing/` — App Store card generators (Playwright screenshot scripts).
 
@@ -80,7 +83,7 @@ system, achievements, streaks, and social/friends features.
    let ok=0,t=0;for(const s of b){if(!s.trim())continue;t++;try{new Function(s);ok++;}catch(e){console.log("FAIL",e.message.slice(0,120));}}
    console.log(ok+"/"+t+" parse");'
    ```
-   Expect **24/24 parse**. For server: `node --check server.js`.
+   Expect **25/25 parse**. For server: `node --check server.js`.
 2. **Browser harness** — headless Chromium via Playwright at
    `/tmp/node_modules/playwright`, launch with
    `executablePath:'/opt/pw-browsers/chromium-1194/chrome-linux/chrome'`.
