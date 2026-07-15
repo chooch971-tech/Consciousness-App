@@ -2370,8 +2370,12 @@
     .hamburger { background:none; border:none; cursor:pointer; padding:4px; display:flex; flex-direction:column; gap:5px; justify-content:center; }
     .hamburger span { display:block; width:20px; height:1.5px; background:var(--muted); border-radius:2px; transition:background .2s; }
     .hamburger:hover span { background:var(--accent); }
-    .drawer-overlay { position:fixed; inset:0; z-index:300; background:rgba(7,8,13,0.7); backdrop-filter:blur(4px); opacity:0; pointer-events:none; transition:opacity .3s; }
+    /* No backdrop-filter blur: animating a full-screen blur repaints every frame
+       and janks the drawer on mobile. The 70%-opaque scrim separates fine. */
+    .drawer-overlay { position:fixed; inset:0; z-index:300; background:rgba(7,8,13,0.72); opacity:0; pointer-events:none; transition:opacity .3s; }
     .drawer-overlay.show { opacity:1; pointer-events:all; }
+    /* Restoring the drawer after backing out of a menu snaps in with no anim. */
+    .drawer-overlay.drawer-instant, .drawer-overlay.drawer-instant .drawer { transition:none; }
     .drawer { position:fixed; top:0; left:0; bottom:0; width:72%; max-width:280px; background:var(--surface); border-right:1px solid var(--border); z-index:301; transform:translateX(-100%); transition:transform .3s cubic-bezier(.4,0,.2,1); padding:var(--safe-top-lg) 0 max(env(safe-area-inset-bottom),32px); display:flex; flex-direction:column; }
     .drawer-overlay.show .drawer { transform:translateX(0); }
     .drawer-header { padding:0 24px 24px; border-bottom:1px solid var(--border); margin-bottom:8px; }
@@ -7894,7 +7898,7 @@ document.getElementById('historyBack').addEventListener('click', function() {
   renderHome(); showScreen('homeScreen');
 });
 // ── Hamburger / Drawer ──
-function openDrawer() {
+function openDrawer(instant) {
   if (typeof closeStarMapSheet === 'function') closeStarMapSheet();
   var drawerLevelEl = document.getElementById('drawerLevel');
   if (drawerLevelEl) {
@@ -7910,7 +7914,17 @@ function openDrawer() {
   // afterwards to restore the orbiting tier decorations.
   if (typeof updateDrawerEntityBtn === 'function') updateDrawerEntityBtn();
   if (typeof applyOmniaStepVisuals === 'function') applyOmniaStepVisuals();
-  document.getElementById('drawerOverlay').classList.add('show');
+  var ov = document.getElementById('drawerOverlay');
+  if (instant) {
+    // Snap open with no slide/fade — used when restoring the drawer after the
+    // user backs out of a menu, so there's no second animation to jank.
+    ov.classList.add('drawer-instant');
+    ov.classList.add('show');
+    void ov.offsetWidth;
+    requestAnimationFrame(function() { ov.classList.remove('drawer-instant'); });
+  } else {
+    ov.classList.add('show');
+  }
 }
 function closeDrawer() {
   document.getElementById('drawerOverlay').classList.remove('show');

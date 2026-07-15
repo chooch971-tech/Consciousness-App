@@ -1003,7 +1003,7 @@ function showScreen(id) {
     // hamburger menu, bring the menu back so the user returns where they were.
     if (window._returnToDrawer) {
       window._returnToDrawer = false;
-      if (typeof openDrawer === 'function') openDrawer();
+      if (typeof openDrawer === 'function') openDrawer(true); // snap open, no anim
     }
   } else {
     var el = document.getElementById(id);
