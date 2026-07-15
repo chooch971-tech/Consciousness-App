@@ -83,6 +83,7 @@ Last updated: 2026-07-13
 - [x] Extract Omnia's home-screen ambient animation scheduler, side-peek lifecycle, and effects into `omnia-ambient-client.js`
 - [x] Extract Concentration begin/stop, history navigation, and result-save controls into `concentration-controls-client.js`
 - [x] Extract Guide daily recommendation tables and exercise assessment metadata into `guide-config-client.js`
+- [x] Extract Omnia economy defaults, body/exercise metadata, and generator definitions into `omnia-economy-config-client.js`
 - [x] Consolidate duplicate global HTML escaping helpers
 - [ ] Remove `/api/sync/sync/diagnose` debug endpoint from server.js
 

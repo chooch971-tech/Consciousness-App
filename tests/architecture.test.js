@@ -18,6 +18,7 @@ const appShellClient = fs.readFileSync(path.join(root, 'app-shell-client.js'), '
 const omniaAmbientClient = fs.readFileSync(path.join(root, 'omnia-ambient-client.js'), 'utf8');
 const concentrationControlsClient = fs.readFileSync(path.join(root, 'concentration-controls-client.js'), 'utf8');
 const guideConfigClient = fs.readFileSync(path.join(root, 'guide-config-client.js'), 'utf8');
+const omniaEconomyConfigClient = fs.readFileSync(path.join(root, 'omnia-economy-config-client.js'), 'utf8');
 const reportsClient = fs.readFileSync(path.join(root, 'reports-client.js'), 'utf8');
 const platformClient = fs.readFileSync(path.join(root, 'platform-client.js'), 'utf8');
 const profileClient = fs.readFileSync(path.join(root, 'profile-client.js'), 'utf8');
@@ -237,10 +238,10 @@ test('Concentration controls own their navigation and session wiring', () => {
 test('Guide recommendation tables live in a static configuration boundary', () => {
   const prayerTag = presence.indexOf('<script src="prayer-client.js"></script>');
   const guideConfigTag = presence.indexOf('<script src="guide-config-client.js"></script>');
-  const omniaGrowth = presence.indexOf('var OMNIA_DEFAULT = {');
+  const omniaEconomyConfigTag = presence.indexOf('<script src="omnia-economy-config-client.js"></script>');
   assert.notEqual(guideConfigTag, -1);
   assert.ok(prayerTag < guideConfigTag, 'Guide configuration loads after Prayer');
-  assert.ok(guideConfigTag < omniaGrowth, 'Guide configuration exists before the Omnia runtime');
+  assert.ok(guideConfigTag < omniaEconomyConfigTag, 'Guide configuration exists before the Omnia economy configuration');
   assert.equal(presence.split('<script src="guide-config-client.js"></script>').length - 1, 1);
   assert.doesNotMatch(presence, /var\s+GUIDE_DAILY_PLANS\s*=\s*\[/);
   assert.doesNotMatch(presence, /var\s+GUIDE_EXERCISES\s*=\s*\[/);
@@ -249,6 +250,22 @@ test('Guide recommendation tables live in a static configuration boundary', () =
   assert.match(guideConfigClient, /focus:\s*['"]Rest & Inward Turning['"]/);
   assert.match(guideConfigClient, /id:\s*['"]soulmirror['"]/);
   assert.doesNotThrow(() => new Function(guideConfigClient));
+});
+
+test('Omnia economy defaults and metadata live in a static configuration boundary', () => {
+  const guideConfigTag = presence.indexOf('<script src="guide-config-client.js"></script>');
+  const omniaEconomyConfigTag = presence.indexOf('<script src="omnia-economy-config-client.js"></script>');
+  const cosmeticsRuntime = presence.indexOf('var OMNIA_PALETTES = [');
+  assert.notEqual(omniaEconomyConfigTag, -1);
+  assert.ok(guideConfigTag < omniaEconomyConfigTag, 'Omnia economy configuration loads after Guide configuration');
+  assert.ok(omniaEconomyConfigTag < cosmeticsRuntime, 'Omnia economy configuration loads before the remaining Omnia runtime');
+  assert.equal(presence.split('<script src="omnia-economy-config-client.js"></script>').length - 1, 1);
+  assert.doesNotMatch(presence, /var\s+OMNIA_DEFAULT\s*=\s*\{/);
+  assert.doesNotMatch(presence, /var\s+OMNIA_UPGRADES\s*=\s*\[/);
+  assert.match(omniaEconomyConfigClient, /bodies:\s*\{\s*physical:1,\s*astral:1,\s*mental:1\s*\}/);
+  assert.match(omniaEconomyConfigClient, /var\s+OMNIA_EXERCISE_META\s*=\s*\{/);
+  assert.match(omniaEconomyConfigClient, /id:['"]current['"],\s*name:['"]Generator I['"]/);
+  assert.doesNotThrow(() => new Function(omniaEconomyConfigClient));
 });
 
 test('Lodge, messages, and friends live behind the social client boundary', () => {
