@@ -100,8 +100,9 @@ test('Awareness practice owns its dedicated client boundary', () => {
 
 test('top-level drawer screens reveal the open drawer during swipe-back', () => {
   assert.match(presence, /var revealsDrawer = prevIsHome && !!window\._returnToDrawer/);
-  assert.match(presence, /drawerOverlay\.classList\.add\('swipe-back-preview'\);[\s\S]*?prevEl\.classList\.add\('drawer-swipe-home-preview'\);\s*openDrawer\(\);/);
-  assert.match(presence, /if \(drawerOverlay\) \{\s*closeDrawer\(\);[\s\S]*?drawerOverlay\.classList\.remove\('swipe-back-preview'\);/);
+  assert.match(presence, /function makeDrawerPreview\(host\)[\s\S]*cloneNode\(true\)[\s\S]*host\.appendChild\(preview\)/);
+  assert.match(presence, /var drawerPreview = revealsDrawer \? makeDrawerPreview\(prevEl\) : null/);
+  assert.match(presence, /if \(drawerPreview\) \{\s*openDrawer\(true\);\s*drawerPreview\.remove\(\);/);
   assert.match(presence, /querySelector\('[^']*\.lodge-back[^']*'\)/);
   assert.match(presence, /visibilitychange[\s\S]*abortInterruptedSwipe/);
 });
