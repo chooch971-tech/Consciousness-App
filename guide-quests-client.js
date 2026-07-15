@@ -314,8 +314,27 @@ function colorToTint(hex, alpha) {
 // months (cleared) persists and syncs. Challenges measure the current month's
 // practice, so each month is genuinely re-earned.
 var GIFT_PATH_KEY = 'presence_giftpath_v1';
+var GIFT_PATH_WINDOW_DAYS = 7; // the event runs on days 1–7 of each month
 function _gpToday() { return new Date().toISOString().slice(0, 10); }
 function gpCurrentMonth() { return new Date().toISOString().slice(0, 7); }
+// The Seven Gifts is a 7-day sprint: it opens on the 1st and closes after the
+// 7th, then returns on the 1st of the next month. Active only within that window.
+function gpWindowActive() { return new Date().getDate() <= GIFT_PATH_WINDOW_DAYS; }
+function gpEventDay() { return Math.min(Math.max(new Date().getDate(), 1), GIFT_PATH_WINDOW_DAYS); }
+function gpDaysLeftInWindow() { return Math.max(0, GIFT_PATH_WINDOW_DAYS - new Date().getDate() + 1); }
+// Pictorial countdown: seven pips, one per event day — days already spent are
+// filled, today glows, days still to come are hollow.
+function gpTimePips() {
+  var day = new Date().getDate(), cur = gpEventDay(), left = gpDaysLeftInWindow();
+  var pips = '';
+  for (var d = 1; d <= GIFT_PATH_WINDOW_DAYS; d++) {
+    var cls = d < day ? 'spent' : (d === day ? 'today' : 'future');
+    pips += '<span class="gp-daypip gp-daypip--' + cls + '">' + d + '</span>';
+  }
+  return '<div class="gp-timeline"><div class="gp-timeline-pips">' + pips + '</div>'
+    + '<div class="gp-timeline-label">Day ' + cur + ' of ' + GIFT_PATH_WINDOW_DAYS
+    + ' · <b>' + left + ' day' + (left === 1 ? '' : 's') + ' left</b></div></div>';
+}
 function _gpBlankClaimed() { return [false,false,false,false,false,false,false]; }
 function loadGiftPath() {
   var def = { cleared: [], month: null, started: false, startDate: null, claimed: _gpBlankClaimed(), done: {}, _resetAt: 0 };
@@ -408,7 +427,7 @@ function gpGiftClaimable(s, idx) { if (s.claimed[idx]) return false; if (idx > 0
 function gpReadyCount() { var s = loadGiftPath(); var n = 0; for (var i = 0; i < 7; i++) { if (gpGiftClaimable(s, i)) n++; } return n; }
 
 function evaluateGiftPath() {
-  if (giftPathEarned()) return;
+  if (giftPathEarned() || !gpWindowActive()) return;
   var s = ensureGiftPathStarted();
   var changed = false;
   GIFT_PATH_DEFS.forEach(function(g){ g.ch.forEach(function(ch){ if (!s.done[ch.id] && gpChDone(s, ch)) { s.done[ch.id] = true; changed = true; } }); });
@@ -419,7 +438,8 @@ function evaluateGiftPath() {
 function updateGiftPathButton() {
   var btn = document.getElementById('omniaGiftPathBtn'); if (!btn) return;
   if (typeof migrateDevotionStacks === 'function') migrateDevotionStacks();
-  if (giftPathEarned()) { btn.style.display = 'none'; return; }
+  // Only visible during the 1st–7th window (and if this month isn't already done).
+  if (!gpWindowActive() || giftPathEarned()) { btn.style.display = 'none'; return; }
   ensureGiftPathStarted();
   evaluateGiftPath();
   btn.style.display = 'flex';
@@ -483,13 +503,6 @@ function gpGiftSvg(state) {
     + (state !== 'locked' ? '<circle cx="24" cy="30" r="1.6" fill="' + lid + '" stroke="none"/>' : '') + '</svg>';
 }
 var _gpTab = 'gifts';
-// Days remaining in the current calendar month (including today) — the Seven
-// Gifts is a monthly run, so this is the real "time left", not a per-gift clock.
-function gpDaysLeftInMonth() {
-  var now = new Date();
-  var lastDay = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
-  return lastDay - now.getDate() + 1;
-}
 function renderGiftPathScreen() {
   var el = document.getElementById('giftPathOverlay'); if (!el) return;
   ensureGiftPathStarted();
@@ -535,17 +548,16 @@ function renderGiftPathScreen() {
       + '<div class="gp-ch-head"><span class="gp-ch-title"><span>Gift ' + (i+1) + '</span>' + g.name + '</span>'
       + '<span class="gp-ch-reward">+' + g.akasha.toLocaleString() + (i === 6 ? ' · +2%' : '') + '</span></div>' + rows + '</div>';
   });
-  var daysLeft = gpDaysLeftInMonth();
   var statusLine = earned
-    ? 'All seven collected this month — nothing to lose, the +2% is banked. Fresh gifts on the 1st.'
+    ? 'All seven collected this month — the +2% is banked. The gifts return on the 1st.'
     : (nextClaimIdx === -1
-        ? 'All gifts done — collect the Seventh Seal!'
-        : 'You\'re on <b>Gift ' + (nextClaimIdx + 1) + ' · ' + GIFT_PATH_DEFS[nextClaimIdx].name + '</b>. Gifts unlock in order, so collect each before the next — later gifts wait even if their tasks are done.')
-      + ' <span style="opacity:.72;">Monthly run · ' + daysLeft + ' day' + (daysLeft === 1 ? '' : 's') + ' left — you can\'t fall behind mid-month.</span>';
+        ? 'All gifts done — collect the Seventh Seal before the window closes!'
+        : 'You\'re on <b>Gift ' + (nextClaimIdx + 1) + ' · ' + GIFT_PATH_DEFS[nextClaimIdx].name + '</b>. Gifts unlock in order — collect each before the next, even if a later gift\'s tasks are already done.');
   el.innerHTML = '<div class="gp-top"><button class="gp-back" id="gpBack" aria-label="Back">←</button><div class="gp-title">The Seven Gifts</div></div>'
-    + '<div class="gp-sub">Complete all seven each month for a permanent <b>+2% akasha</b>, stacking up to <b>+48%</b>. Current devotion: <b>+' + (stacks * 2) + '%</b>.'
+    + '<div class="gp-sub">A seven-day sprint (the 1st through the 7th). Collect all seven for a permanent <b>+2% akasha</b>, stacking up to <b>+48%</b>. Current devotion: <b>+' + (stacks * 2) + '%</b>.'
     + (atCap ? ' <b>· Maxed</b>' : (earned ? ' <b>· This month complete</b>' : '')) + '</div>'
-    + '<div class="gp-sub" style="margin-top:-4px; color:var(--muted);">' + statusLine + '</div>'
+    + (earned ? '' : gpTimePips())
+    + '<div class="gp-sub" style="margin-top:2px; color:var(--muted);">' + statusLine + '</div>'
     + '<div class="gp-tabs"><button class="gp-tab' + (_gpTab === 'gifts' ? ' on' : '') + '" data-gptab="gifts">The Gifts</button>'
     + '<button class="gp-tab' + (_gpTab === 'challenges' ? ' on' : '') + '" data-gptab="challenges">Challenges</button></div>'
     + '<div class="gp-body" id="gpBody">' + (_gpTab === 'gifts' ? giftsTab : chTab) + '</div>';
