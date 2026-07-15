@@ -16,6 +16,7 @@ const asanaClient = fs.readFileSync(path.join(root, 'asana-client.js'), 'utf8');
 const sensesClient = fs.readFileSync(path.join(root, 'senses-client.js'), 'utf8');
 const appShellClient = fs.readFileSync(path.join(root, 'app-shell-client.js'), 'utf8');
 const omniaAmbientClient = fs.readFileSync(path.join(root, 'omnia-ambient-client.js'), 'utf8');
+const concentrationControlsClient = fs.readFileSync(path.join(root, 'concentration-controls-client.js'), 'utf8');
 const reportsClient = fs.readFileSync(path.join(root, 'reports-client.js'), 'utf8');
 const platformClient = fs.readFileSync(path.join(root, 'platform-client.js'), 'utf8');
 const profileClient = fs.readFileSync(path.join(root, 'profile-client.js'), 'utf8');
@@ -201,10 +202,10 @@ test('app shell owns mode switching and primary navigation wiring', () => {
 test('Omnia ambient animation scheduling owns its client boundary', () => {
   const appShellTag = presence.indexOf('<script src="app-shell-client.js"></script>');
   const omniaAmbientTag = presence.indexOf('<script src="omnia-ambient-client.js"></script>');
-  const concentrationWiring = presence.indexOf("document.getElementById('concStopBtn').addEventListener");
+  const concentrationControlsTag = presence.indexOf('<script src="concentration-controls-client.js"></script>');
   assert.notEqual(omniaAmbientTag, -1);
   assert.ok(appShellTag < omniaAmbientTag, 'ambient animations require current app mode state');
-  assert.ok(omniaAmbientTag < concentrationWiring, 'ambient startup retains its original event-wiring position');
+  assert.ok(omniaAmbientTag < concentrationControlsTag, 'ambient startup retains its original event-wiring position');
   assert.equal(presence.split('<script src="omnia-ambient-client.js"></script>').length - 1, 1);
   assert.doesNotMatch(presence, /function\s+initOmniaAnims\s*\(/);
   assert.match(omniaAmbientClient, /function\s+initOmniaAnims\s*\(/);
@@ -213,6 +214,23 @@ test('Omnia ambient animation scheduling owns its client boundary', () => {
   assert.match(omniaAmbientClient, /peek\.addEventListener\('click'/);
   assert.match(omniaAmbientClient, /setTimeout\(trigger,\s*8000\)/);
   assert.doesNotThrow(() => new Function(omniaAmbientClient));
+});
+
+test('Concentration controls own their navigation and session wiring', () => {
+  const omniaAmbientTag = presence.indexOf('<script src="omnia-ambient-client.js"></script>');
+  const concentrationControlsTag = presence.indexOf('<script src="concentration-controls-client.js"></script>');
+  const prayerTag = presence.indexOf('<script src="prayer-client.js"></script>');
+  assert.notEqual(concentrationControlsTag, -1);
+  assert.ok(omniaAmbientTag < concentrationControlsTag, 'Concentration controls retain their post-ambient position');
+  assert.ok(concentrationControlsTag < prayerTag, 'Concentration controls initialize before Prayer');
+  assert.equal(presence.split('<script src="concentration-controls-client.js"></script>').length - 1, 1);
+  assert.doesNotMatch(presence, /document\.getElementById\('concStopBtn'\)\.addEventListener/);
+  assert.match(concentrationControlsClient, /document\.getElementById\('concStopBtn'\)\.addEventListener/);
+  assert.match(concentrationControlsClient, /document\.getElementById\('concStopBtn2'\)\.addEventListener/);
+  assert.match(concentrationControlsClient, /document\.getElementById\('concHistoryBtn'\)\.addEventListener/);
+  assert.match(concentrationControlsClient, /document\.getElementById\('concHistoryBack'\)\.addEventListener/);
+  assert.match(concentrationControlsClient, /document\.getElementById\('concSaveBtn'\)\.addEventListener/);
+  assert.doesNotThrow(() => new Function(concentrationControlsClient));
 });
 
 test('Lodge, messages, and friends live behind the social client boundary', () => {
