@@ -23,7 +23,7 @@ system, achievements, streaks, and social/friends features.
   friends-panel behavior. It loads at the end of `presence.html`, after both its
   DOM and the main runtime dependencies exist.
 - **`sw.js`** — service worker. Caches the shell as `presence-shell-vNNN`
-  (currently **v161**). **Bump this version string on every shippable change to
+  (currently **v162**). **Bump this version string on every shippable change to
   `presence.html`** or returning devices run stale code.
 - `marketing/` — App Store card generators (Playwright screenshot scripts).
 
