@@ -2657,8 +2657,8 @@ body.omnia-tier-polar .omnia-polar { display:block; }
 #drawerOmniaBtn .omnia-polar-pillar { width:2px; height:22px; }
 /* The drawer crystal is ~48px — the later tier layers are pure clutter there. */
 #drawerOmniaBtn .omnia-elements, #drawerOmniaBtn .omnia-mantle,
-#drawerOmniaBtn .omnia-echo, #drawerOmniaBtn .omnia-senses, #drawerOmniaBtn .omnia-currents,
-#drawerOmniaBtn .omnia-mirror, #drawerOmniaBtn .omnia-apotheosis { display:none !important; }
+#drawerOmniaBtn .omnia-geo, #drawerOmniaBtn .omnia-halo10,
+#drawerOmniaBtn .omnia-axis { display:none !important; }
 @keyframes polarPillar { 0%,100%{opacity:.4; transform:translateY(-50%) scaleY(.9);} 50%{opacity:.92; transform:translateY(-50%) scaleY(1.06);} }
 
 /* ── Step V permanent add-on: Element Wheel + Luminous Mantle ──────── */
@@ -2683,71 +2683,52 @@ body.omnia-tier-elements .omnia-figure { filter:drop-shadow(0 0 18px rgba(255,23
 @keyframes omniaMantleSpin  { from{transform:rotate(0deg);}   to{transform:rotate(360deg);} }
 @keyframes omniaMantlePulse { 0%,100%{opacity:.72;} 50%{opacity:1;} }
 
-/* ── Step VI permanent add-on: Etheric Echo ───────────────────────
-   Twin etheric doubles breathe at either shoulder — clearly visible,
-   always behind the true form, never drawing lines across it. */
-.omnia-echo { position:absolute; inset:0; pointer-events:none; z-index:0; display:none; }
-body.omnia-tier-echo .omnia-echo { display:block; }
-.omnia-echo-ghost { position:absolute; inset:0; opacity:0; animation:omniaEchoFloat 7s ease-in-out infinite; }
-.omnia-echo-ghost:nth-child(1) { animation-delay:0s; }
-.omnia-echo-ghost:nth-child(2) { animation-delay:3.5s; }
-@keyframes omniaEchoFloat { 0%,100%{opacity:0.16;} 50%{opacity:0.38;} }
-
-/* ── Step VII permanent add-on: Ring of Senses ───────────────────────
-   A slow constellation of perception-motes circling OUTSIDE the figure —
-   replaces the old radial beams + center iris that crossed the body. */
-.omnia-senses { --sense-radius:80px; position:absolute; inset:0; pointer-events:none; z-index:2; display:none; }
-body.omnia-tier-senses .omnia-senses { display:block; animation:omniaSensesSpin 50s linear infinite; }
-.oe-omnia-figure .omnia-senses { --sense-radius:118px; }
-.omnia-sense-mote { position:absolute; top:50%; left:50%; width:4px; height:4px; margin:-2px 0 0 -2px; border-radius:50%; background:#b0e0e6; box-shadow:0 0 6px rgba(176,224,230,.8), 0 0 12px rgba(176,224,230,.4); animation:omniaSensesPulse 6s ease-in-out infinite; }
-.omnia-sense-mote:nth-child(1) { transform:rotate(0deg)   translateX(var(--sense-radius)); animation-delay:0s;    }
-.omnia-sense-mote:nth-child(2) { transform:rotate(45deg)  translateX(var(--sense-radius)); animation-delay:0.75s; }
-.omnia-sense-mote:nth-child(3) { transform:rotate(90deg)  translateX(var(--sense-radius)); animation-delay:1.5s;  }
-.omnia-sense-mote:nth-child(4) { transform:rotate(135deg) translateX(var(--sense-radius)); animation-delay:2.25s; }
-.omnia-sense-mote:nth-child(5) { transform:rotate(180deg) translateX(var(--sense-radius)); animation-delay:3s;    }
-.omnia-sense-mote:nth-child(6) { transform:rotate(225deg) translateX(var(--sense-radius)); animation-delay:3.75s; }
-.omnia-sense-mote:nth-child(7) { transform:rotate(270deg) translateX(var(--sense-radius)); animation-delay:4.5s;  }
-.omnia-sense-mote:nth-child(8) { transform:rotate(315deg) translateX(var(--sense-radius)); animation-delay:5.25s; }
-@keyframes omniaSensesPulse { 0%,100%{opacity:.35;} 50%{opacity:1;} }
-@keyframes omniaSensesSpin  { from{transform:rotate(0deg);} to{transform:rotate(360deg);} }
-
-/* ── Step VIII permanent add-on: Living Currents ───────────────────────
-   Aurora curtains streaming along the OUTER edges of the aura — moved off
-   the body (they used to run straight down the crystal's face). */
-.omnia-currents { position:absolute; inset:-8%; pointer-events:none; z-index:3; display:none; overflow:hidden; border-radius:50%; }
-body.omnia-tier-currents .omnia-currents { display:block; }
-.omnia-current-stream { position:absolute; width:2.5px; border-radius:2px; opacity:0; filter:blur(.5px); animation:omniaCurrentFlow 5.5s ease-in-out infinite; }
-.omnia-current-stream.cs-1 { left:3%;  top:26%; height:40%; background:linear-gradient(180deg,transparent,rgba(100,180,255,0.6),transparent); animation-delay:0s; }
-.omnia-current-stream.cs-2 { left:9%;  top:40%; height:34%; background:linear-gradient(180deg,transparent,rgba(255,155,138,0.5),transparent); animation-delay:1.1s; }
-.omnia-current-stream.cs-3 { right:9%; top:24%; height:36%; background:linear-gradient(180deg,transparent,rgba(255,155,138,0.5),transparent); animation-delay:2.2s; }
-.omnia-current-stream.cs-4 { right:3%; top:38%; height:40%; background:linear-gradient(180deg,transparent,rgba(100,180,255,0.5),transparent); animation-delay:3.3s; }
-.omnia-current-stream.cs-5 { left:6%;  top:56%; height:28%; background:linear-gradient(180deg,transparent,rgba(100,180,255,0.4),transparent); animation-delay:4.4s; }
-@keyframes omniaCurrentFlow { 0%{opacity:0;transform:translateY(0);} 30%{opacity:1;} 70%{opacity:1;} 100%{opacity:0;transform:translateY(-26px);} }
-
-/* ── Step IX permanent add-on: Astral Mirror Disc ─────────────────────── */
-.omnia-mirror { position:absolute; bottom:-20%; left:50%; transform:translateX(-50%) rotateX(72deg); width:88%; height:38%; border-radius:50%; pointer-events:none; z-index:0; display:none;
-  background:radial-gradient(ellipse at center,rgba(160,210,240,0.24) 0%,rgba(160,210,240,0.10) 42%,transparent 70%);
-  border:1px solid rgba(160,210,240,0.28); animation:omniaMirrorPulse 5.5s ease-in-out infinite; }
-body.omnia-tier-mirror .omnia-mirror { display:block; }
-.omnia-mirror-reflection { position:absolute; top:0; left:50%; transform:translateX(-50%); width:55%; height:100%; background:linear-gradient(180deg,rgba(200,230,255,0.14) 0%,transparent 60%); border-radius:50%; filter:blur(3px); }
-@keyframes omniaMirrorPulse { 0%,100%{opacity:0.55;} 50%{opacity:1;} }
-
-/* ── Step X permanent add-on: Apotheosis Mandala ───────────────────────
-   Rings sized so no arc crosses the crystal — the mandala frames the form. */
-.omnia-apotheosis { position:absolute; inset:-52%; pointer-events:none; z-index:0; display:none; }
-body.omnia-tier-apotheosis .omnia-apotheosis { display:block; animation:omniaApotheosisSpin 70s linear infinite; }
-.omnia-apo-ring { position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); border-radius:50%; border:1px solid; animation:omniaApotheosisPulse 8s ease-in-out infinite; }
-.omnia-apo-ring:nth-child(1) { width:68%; height:68%; border-color:rgba(255,238,200,0.24); animation-delay:0s; }
-.omnia-apo-ring:nth-child(2) { width:84%; height:84%; border-color:rgba(220,180,140,0.16); animation-delay:1.2s; }
-.omnia-apo-ring:nth-child(3) { width:100%; height:100%; border-color:rgba(200,160,120,0.10); animation-delay:2.4s; }
-.omnia-apo-dot { position:absolute; width:4px; height:4px; margin:-2px 0 0 -2px; border-radius:50%; background:rgba(255,238,200,0.65); animation:omniaApoDotPulse 4.5s ease-in-out infinite; }
+/* ── Steps VI–X: the Geometry of Light ────────────────────────────────
+   From Step VI the ornament ladder inverts: instead of accumulating
+   objects the figure distills. VI dissolves the retinue into a single
+   breathing mandorla under a crowning star; VII deepens it with a
+   counter-breathing inner ring and side nodes; VIII joins the four
+   light-stations into a diamond; IX ghosts the mirrored rectangle
+   behind it; X ignites the whole geometry gold inside a final halo.
+   Tier class names (echo/senses/currents/mirror/apotheosis) are kept. */
+.omnia-mandorla { position:absolute; left:50%; top:50%; width:114%; height:130%; transform:translate(-50%,-50%); border-radius:50%; border:1.5px solid rgba(196,228,246,.65); box-shadow:0 0 20px rgba(142,204,224,.35); pointer-events:none; z-index:1; display:none; animation:omniaMandorlaBreathe 6s ease-in-out infinite; }
+body.omnia-tier-echo .omnia-mandorla { display:block; }
+.omnia-mandorla::before { content:''; position:absolute; left:50%; top:-6px; width:11px; height:11px; transform:translateX(-50%) rotate(45deg); border-radius:2px; background:#e0f2ff; box-shadow:0 0 16px rgba(184,234,255,1), 0 0 30px rgba(184,234,255,.5); }
+.omnia-mandorla::after { content:''; position:absolute; left:50%; bottom:-4px; width:5px; height:5px; transform:translateX(-50%) rotate(45deg); border-radius:1px; background:rgba(184,234,255,.7); box-shadow:0 0 8px rgba(184,234,255,.7); }
+.omnia-axis { position:absolute; left:50%; top:-12%; height:24%; width:2.5px; transform:translateX(-50%); pointer-events:none; border-radius:2px; z-index:1; display:none; background:linear-gradient(180deg, rgba(224,242,255,.95), rgba(184,234,255,.55) 60%, rgba(184,234,255,0)); box-shadow:0 0 10px rgba(184,234,255,.6); animation:omniaMandorlaBreathe 6s ease-in-out infinite; animation-delay:-1.5s; }
+body.omnia-tier-echo .omnia-axis { display:block; }
+@keyframes omniaMandorlaBreathe { 0%,100%{ opacity:.5; } 50%{ opacity:1; } }
+/* VII: the inner ring, counter-phase, side nodes replacing top/bottom marks */
+.omnia-mandorla--inner { width:92%; height:106%; border-color:rgba(196,228,246,.42); box-shadow:0 0 14px rgba(142,204,224,.22); animation-delay:-3s; display:none; }
+body.omnia-tier-senses .omnia-mandorla--inner { display:block; }
+.omnia-mandorla--inner::before { top:50%; left:-3.5px; bottom:auto; width:6px; height:6px; transform:translateY(-50%) rotate(45deg); border-radius:1px; background:rgba(224,242,255,.9); box-shadow:0 0 9px rgba(184,234,255,.85); }
+.omnia-mandorla--inner::after { top:50%; right:-3.5px; left:auto; bottom:auto; width:6px; height:6px; transform:translateY(-50%) rotate(45deg); border-radius:1px; background:rgba(224,242,255,.9); box-shadow:0 0 9px rgba(184,234,255,.85); }
+/* VIII/IX: joined geometry — SVG line-work spanning the outer ring's box */
+.omnia-geo { position:absolute; left:50%; top:50%; width:114%; height:130%; transform:translate(-50%,-50%); pointer-events:none; z-index:1; display:none; }
+body.omnia-tier-currents .omnia-geo--diamond { display:block; }
+body.omnia-tier-mirror .omnia-geo--mirror { display:block; }
+.omnia-geo svg { width:100%; height:100%; overflow:visible; display:block; }
+.omnia-geo--diamond polygon { stroke:rgba(210,238,252,.55); filter:drop-shadow(0 0 6px rgba(184,234,255,.6)); }
+.omnia-geo--mirror polygon { stroke:rgba(210,238,252,.3); }
+/* X: apotheosis — the geometry ignites gold inside one final halo */
+.omnia-halo10 { position:absolute; left:50%; top:50%; width:134%; height:148%; transform:translate(-50%,-50%); border-radius:50%; border:1px solid rgba(232,205,148,.35); box-shadow:0 0 26px rgba(232,205,148,.25); pointer-events:none; z-index:1; display:none; }
+body.omnia-tier-apotheosis .omnia-halo10 { display:block; }
+body.omnia-tier-apotheosis .omnia-mandorla { border-color:rgba(232,205,148,.8); box-shadow:0 0 22px rgba(232,205,148,.45); }
+body.omnia-tier-apotheosis .omnia-mandorla::before { background:#f4e2b0; box-shadow:0 0 18px rgba(232,205,148,1), 0 0 34px rgba(232,205,148,.55); }
+body.omnia-tier-apotheosis .omnia-mandorla::after { background:rgba(244,226,176,.85); box-shadow:0 0 9px rgba(232,205,148,.8); }
+body.omnia-tier-apotheosis .omnia-mandorla--inner { border-color:rgba(232,205,148,.5); }
+body.omnia-tier-apotheosis .omnia-mandorla--inner::before, body.omnia-tier-apotheosis .omnia-mandorla--inner::after { background:rgba(244,226,176,.95); box-shadow:0 0 10px rgba(232,205,148,.9); }
+body.omnia-tier-apotheosis .omnia-axis { background:linear-gradient(180deg,#f4e2b0,rgba(232,205,148,.7) 55%,rgba(232,205,148,0)); box-shadow:0 0 13px rgba(232,205,148,.95); }
+body.omnia-tier-apotheosis .omnia-geo--diamond polygon { stroke:rgba(240,220,160,.7); filter:drop-shadow(0 0 6px rgba(232,205,148,.65)); }
+body.omnia-tier-apotheosis .omnia-geo--mirror polygon { stroke:rgba(240,220,160,.4); }
+/* From VI the earlier retinue dissolves into the enclosing light.
+   !important beats the per-tier display:block rules that follow later. */
+body.omnia-tier-echo .omnia-triad-orbit, body.omnia-tier-echo .omnia-polar,
+body.omnia-tier-echo .omnia-elements, body.omnia-tier-echo .omnia-diadem { display:none !important; }
 body.omnia-tier-apotheosis .omnia-figure { filter:drop-shadow(0 0 22px rgba(255,238,200,.40)) drop-shadow(0 0 50px rgba(255,238,200,.18)); }
 /* Sphere aura composes over the tier glow (sphere colour + gold undertone).
    Placed after the tier rules so it wins the cascade. */
 body[data-sphere-form] .omnia-figure { filter:drop-shadow(0 0 16px var(--sphere-glow, rgba(160,210,240,.45))) drop-shadow(0 0 36px rgba(255,238,200,.20)); }
-@keyframes omniaApotheosisSpin { from{transform:rotate(0deg);} to{transform:rotate(360deg);} }
-@keyframes omniaApotheosisPulse { 0%,100%{opacity:0.55;} 50%{opacity:1;} }
-@keyframes omniaApoDotPulse { 0%,100%{transform:translate(-50%,-50%) scale(1);opacity:0.65;} 50%{transform:translate(-50%,-50%) scale(1.6);opacity:1;} }
 
 /* ── Regalia enhancements: diadem (III), pillar caps (IV), cardinal diamonds (X) ── */
 @keyframes omniaEnhTwinkle { 0%,100%{opacity:.5;transform:scale(.9);} 50%{opacity:1;transform:scale(1.15);} }
@@ -20131,66 +20112,64 @@ function injectOmniaElements(fig) {
   wheel.innerHTML = '<div class="omnia-element e-fire"></div><div class="omnia-element e-air"></div><div class="omnia-element e-water"></div><div class="omnia-element e-earth"></div>';
   fig.appendChild(wheel);
 }
+// ── Steps VI–X: the Geometry of Light ──────────────────────────────────────
+// From VI the ornament ladder inverts: instead of accumulating objects the
+// figure distills. Function names keep their historical tier names (echo,
+// senses, currents, mirror, apotheosis) so applyOmniaStepVisuals and the
+// body tier classes stay untouched.
 function injectOmniaEcho(fig) {
-  if (!fig || fig.querySelector('.omnia-echo')) return;
-  var echo = document.createElement('div');
-  echo.className = 'omnia-echo';
-  echo.setAttribute('aria-hidden', 'true');
-  var crystalClone = fig.querySelector('.omnia-crystal-layer');
-  var inner = crystalClone ? crystalClone.innerHTML : '';
-  [
-    'translate(-22px,2px) scale(0.86)',
-    'translate(22px,2px) scale(0.86)'
-  ].forEach(function(t, i) {
-    echo.innerHTML += '<div class="omnia-echo-ghost" style="transform:' + t + ';filter:blur(1.5px) hue-rotate(' + (i ? -30 : 30) + 'deg);">'
-      + '<svg viewBox="0 0 80 130" style="width:100%;height:100%;opacity:0.5;">' + inner + '</svg>'
-      + '</div>';
-  });
-  fig.insertBefore(echo, fig.firstChild);
+  // Step VI: the mandorla — one breathing ring enclosing the whole figure,
+  // a crowning star at its apex, a ray descending to the crystal. (Replaces
+  // the twin etheric doubles, whose cloned SVG defs duplicated the crystal's
+  // gradient ids and ghosted the true form whenever the clones were hidden.)
+  if (!fig || fig.querySelector('.omnia-mandorla')) return;
+  var m = document.createElement('div');
+  m.className = 'omnia-mandorla';
+  m.setAttribute('aria-hidden', 'true');
+  fig.appendChild(m);
+  var ax = document.createElement('div');
+  ax.className = 'omnia-axis';
+  ax.setAttribute('aria-hidden', 'true');
+  fig.appendChild(ax);
 }
 function injectOmniaSenses(fig) {
-  if (!fig || fig.querySelector('.omnia-senses')) return;
+  // Step VII: the enclosure deepens — an inner ring breathing in counter-
+  // phase with the outer, a small diamond node taking station at each side.
+  if (!fig || fig.querySelector('.omnia-mandorla--inner')) return;
+  var m = document.createElement('div');
+  m.className = 'omnia-mandorla omnia-mandorla--inner';
+  m.setAttribute('aria-hidden', 'true');
+  fig.appendChild(m);
+}
+function _omniaGeoSvg(cls, points) {
   var el = document.createElement('div');
-  el.className = 'omnia-senses';
+  el.className = 'omnia-geo ' + cls;
   el.setAttribute('aria-hidden', 'true');
-  for (var i = 0; i < 8; i++) el.innerHTML += '<div class="omnia-sense-mote"></div>';
-  fig.insertBefore(el, fig.firstChild);
+  el.innerHTML = '<svg viewBox="0 0 100 100" preserveAspectRatio="none">'
+    + '<polygon points="' + points + '" fill="none" stroke-width="1" vector-effect="non-scaling-stroke"/>'
+    + '</svg>';
+  return el;
 }
 function injectOmniaCurrents(fig) {
-  if (!fig || fig.querySelector('.omnia-currents')) return;
-  var el = document.createElement('div');
-  el.className = 'omnia-currents';
-  el.setAttribute('aria-hidden', 'true');
-  el.innerHTML = '<div class="omnia-current-stream cs-1"></div>'
-    + '<div class="omnia-current-stream cs-2"></div>'
-    + '<div class="omnia-current-stream cs-3"></div>'
-    + '<div class="omnia-current-stream cs-4"></div>'
-    + '<div class="omnia-current-stream cs-5"></div>';
-  fig.appendChild(el);
+  // Step VIII: the four light-stations (crowning star, base spark, side
+  // nodes) join into a single diamond of light framing the crystal.
+  if (!fig || fig.querySelector('.omnia-geo--diamond')) return;
+  fig.appendChild(_omniaGeoSvg('omnia-geo--diamond', '50,0 90.4,50 50,100 9.6,50'));
 }
 function injectOmniaMirror(fig) {
-  if (!fig || fig.querySelector('.omnia-mirror')) return;
-  var el = document.createElement('div');
-  el.className = 'omnia-mirror';
-  el.setAttribute('aria-hidden', 'true');
-  el.innerHTML = '<div class="omnia-mirror-reflection"></div>';
-  fig.appendChild(el);
+  // Step IX: the mirror — the geometry doubles, a faint upright rectangle
+  // ghosted behind the diamond ("as above, so below").
+  if (!fig || fig.querySelector('.omnia-geo--mirror')) return;
+  fig.appendChild(_omniaGeoSvg('omnia-geo--mirror', '78.5,14.6 78.5,85.4 21.5,85.4 21.5,14.6'));
 }
 function injectOmniaApotheosis(fig) {
-  if (!fig || fig.querySelector('.omnia-apotheosis')) return;
-  var el = document.createElement('div');
-  el.className = 'omnia-apotheosis';
-  el.setAttribute('aria-hidden', 'true');
-  el.innerHTML = '<div class="omnia-apo-ring"></div><div class="omnia-apo-ring"></div><div class="omnia-apo-ring"></div>'
-    + '<b class="omnia-apo-card c1">◆</b><b class="omnia-apo-card c2">◆</b><b class="omnia-apo-card c3">◆</b><b class="omnia-apo-card c4">◆</b>';
-  var angles = [0,30,60,90,120,150,180,210,240,270,300,330];
-  angles.forEach(function(a) {
-    var rad = a * Math.PI / 180;
-    var x = 50 + 42 * Math.cos(rad);
-    var y = 50 + 42 * Math.sin(rad);
-    el.innerHTML += '<div class="omnia-apo-dot" style="left:' + x.toFixed(1) + '%;top:' + y.toFixed(1) + '%;"></div>';
-  });
-  fig.insertBefore(el, fig.firstChild);
+  // Step X: apotheosis — nothing new is added; the built geometry ignites
+  // gold (tier CSS overrides) inside one final enclosing halo.
+  if (!fig || fig.querySelector('.omnia-halo10')) return;
+  var h = document.createElement('div');
+  h.className = 'omnia-halo10';
+  h.setAttribute('aria-hidden', 'true');
+  fig.appendChild(h);
 }
 // Prestige aura + sphere-touched form markers on <body> — applied on load and
 // on every Omnia render so the Path banner is correct before Upgrade is visited.
