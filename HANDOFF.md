@@ -19,8 +19,11 @@ system, achievements, streaks, and social/friends features.
   browser reset, sign-out, and local snapshot flows. Keep reset semantics here.
 - **`sync-merge.js`** — pure history and Seven Gifts conflict resolution shared
   by browser pulls and server snapshot merges. Keep those two merge specs here.
+- **`social-client.js`** — Lodge, direct messages, social notifications, and
+  friends-panel behavior. It loads at the end of `presence.html`, after both its
+  DOM and the main runtime dependencies exist.
 - **`sw.js`** — service worker. Caches the shell as `presence-shell-vNNN`
-  (currently **v160**). **Bump this version string on every shippable change to
+  (currently **v161**). **Bump this version string on every shippable change to
   `presence.html`** or returning devices run stale code.
 - `marketing/` — App Store card generators (Playwright screenshot scripts).
 
