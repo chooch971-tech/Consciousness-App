@@ -44,11 +44,14 @@ system, achievements, streaks, and social/friends features.
 - **`settings-client.js`** — exercise/account settings, custom image and sound
   controls, email sign-in UI, backup/import, and FAQ/About utility navigation.
   It loads after Profile helpers and before Achievements.
+- **`prayer-client.js`** — Prayer prompts and persistence, sacred-hour scheduler,
+  prayer sessions and reflections, history, settings, and mantra bead practice.
+  It loads at the original core-runtime boundary immediately before Guide.
 - **`tutorial-client.js`** — the first-time tutorial state machine, dialogue,
   spotlight sequencing, Omnia morph choreography, path choice, and replay hook.
   It loads at the end of the body after the complete tutorial markup.
 - **`sw.js`** — service worker. Caches the shell as `presence-shell-vNNN`
-  (currently **v172**). **Bump this version string on every shippable change to
+  (currently **v173**). **Bump this version string on every shippable change to
   `presence.html`** or returning devices run stale code.
 - `marketing/` — App Store card generators (Playwright screenshot scripts).
 
@@ -66,7 +69,7 @@ system, achievements, streaks, and social/friends features.
    let ok=0,t=0;for(const s of b){if(!s.trim())continue;t++;try{new Function(s);ok++;}catch(e){console.log("FAIL",e.message.slice(0,120));}}
    console.log(ok+"/"+t+" parse");'
    ```
-   Expect **17/17 parse**. For server: `node --check server.js`.
+   Expect **19/19 parse**. For server: `node --check server.js`.
 2. **Browser harness** — headless Chromium via Playwright at
    `/tmp/node_modules/playwright`, launch with
    `executablePath:'/opt/pw-browsers/chromium-1194/chrome-linux/chrome'`.

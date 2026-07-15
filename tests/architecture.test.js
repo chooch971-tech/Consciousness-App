@@ -13,6 +13,7 @@ const platformClient = fs.readFileSync(path.join(root, 'platform-client.js'), 'u
 const profileClient = fs.readFileSync(path.join(root, 'profile-client.js'), 'utf8');
 const settingsClient = fs.readFileSync(path.join(root, 'settings-client.js'), 'utf8');
 const achievementsClient = fs.readFileSync(path.join(root, 'achievements-client.js'), 'utf8');
+const prayerClient = fs.readFileSync(path.join(root, 'prayer-client.js'), 'utf8');
 const tutorialClient = fs.readFileSync(path.join(root, 'tutorial-client.js'), 'utf8');
 const soulMirrorClient = fs.readFileSync(path.join(root, 'soul-mirror-client.js'), 'utf8');
 const journalClient = fs.readFileSync(path.join(root, 'journal-client.js'), 'utf8');
@@ -185,6 +186,25 @@ test('Settings and utility screens load through their own client boundary', () =
   assert.match(settingsClient, /document\.getElementById\('importFile'\)\.addEventListener/);
   assert.match(settingsClient, /document\.querySelectorAll\('#faqScreen \.faq-item-head'\)/);
   assert.doesNotThrow(() => new Function(settingsClient));
+});
+
+test('Prayer state and practice flow load before the Guide engine', () => {
+  const prayerTag = presence.indexOf('<script src="prayer-client.js"></script>');
+  const guideStart = presence.indexOf('var GUIDE_DAILY_PLANS = [');
+  const appUse = presence.indexOf('var PRESENCE_SYNC = window.PresenceSyncContract;');
+  assert.notEqual(prayerTag, -1);
+  assert.ok(appUse < prayerTag, 'Prayer requires initialized core practice state');
+  assert.ok(prayerTag < guideStart, 'Prayer retains its original position before Guide');
+  assert.equal(presence.split('<script src="prayer-client.js"></script>').length - 1, 1);
+  assert.doesNotMatch(presence, /function\s+loadPrayerState\s*\(|function\s+beginPrayer\s*\(/);
+  assert.doesNotMatch(presence, /function\s+renderPrayerHistory\s*\(|function\s+beginMantra\s*\(/);
+  assert.match(prayerClient, /function\s+loadPrayerState\s*\(/);
+  assert.match(prayerClient, /function\s+renderPrayerPanel\s*\(/);
+  assert.match(prayerClient, /function\s+beginPrayer\s*\(/);
+  assert.match(prayerClient, /function\s+renderPrayerHistory\s*\(/);
+  assert.match(prayerClient, /function\s+beginMantra\s*\(/);
+  assert.match(prayerClient, /document\.getElementById\('prayerConcludeBtn'\)\.addEventListener/);
+  assert.doesNotThrow(() => new Function(prayerClient));
 });
 
 test('first-time tutorial loads through its own end-of-body client boundary', () => {
