@@ -73,6 +73,7 @@ Last updated: 2026-07-13
 - [x] Extract Profile, daily status, privacy, and friend profiles into `profile-client.js`
 - [x] Extract Settings, custom media controls, backup/import, and utility screens into `settings-client.js`
 - [x] Extract Prayer state, scheduling, sessions, history, reflections, and mantra into `prayer-client.js`
+- [x] Extract Awareness ranks, state, idle progression, sessions, survey, and history into `awareness-client.js`
 - [x] Consolidate duplicate global HTML escaping helpers
 - [ ] Remove `/api/sync/sync/diagnose` debug endpoint from server.js
 

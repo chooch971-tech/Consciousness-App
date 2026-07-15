@@ -8,6 +8,7 @@ const path = require('node:path');
 const root = path.join(__dirname, '..');
 const presence = fs.readFileSync(path.join(root, 'presence.html'), 'utf8');
 const server = fs.readFileSync(path.join(root, 'server.js'), 'utf8');
+const awarenessClient = fs.readFileSync(path.join(root, 'awareness-client.js'), 'utf8');
 const reportsClient = fs.readFileSync(path.join(root, 'reports-client.js'), 'utf8');
 const platformClient = fs.readFileSync(path.join(root, 'platform-client.js'), 'utf8');
 const profileClient = fs.readFileSync(path.join(root, 'profile-client.js'), 'utf8');
@@ -54,6 +55,25 @@ test('history and Gift Path merge contracts are shared by browser and server', (
   assert.match(server, /mergeGiftPathValues/);
   assert.doesNotMatch(presence, /function\s+mergeSyncHistoryArrays|SYNC_HISTORY_MERGE/);
   assert.doesNotMatch(server, /function\s+mergeHistoryArraysSrv|SRV_HISTORY_MERGE/);
+});
+
+test('Awareness practice owns its dedicated client boundary', () => {
+  const awarenessTag = presence.indexOf('<script src="awareness-client.js"></script>');
+  const appUse = presence.indexOf('var PRESENCE_SYNC = window.PresenceSyncContract;');
+  const appEvents = presence.indexOf("document.getElementById('customCancelBtn').addEventListener");
+  assert.notEqual(awarenessTag, -1);
+  assert.ok(appUse < awarenessTag, 'Awareness loads after shared state contracts');
+  assert.ok(awarenessTag < appEvents, 'Awareness functions must exist before app event wiring');
+  assert.equal(presence.split('<script src="awareness-client.js"></script>').length - 1, 1);
+  assert.doesNotMatch(presence, /function\s+loadState\s*\(|function\s+renderHome\s*\(/);
+  assert.doesNotMatch(presence, /function\s+startSession\s*\(|function\s+renderHistory\s*\(/);
+  assert.match(awarenessClient, /const\s+RANK_TITLES\s*=\s*\[/);
+  assert.match(awarenessClient, /function\s+loadState\s*\(/);
+  assert.match(awarenessClient, /function\s+renderHome\s*\(/);
+  assert.match(awarenessClient, /function\s+startSession\s*\(/);
+  assert.match(awarenessClient, /function\s+submitSurvey\s*\(/);
+  assert.match(awarenessClient, /function\s+renderHistory\s*\(/);
+  assert.doesNotThrow(() => new Function(awarenessClient));
 });
 
 test('Lodge, messages, and friends live behind the social client boundary', () => {
@@ -147,8 +167,8 @@ test('Achievements load through their own client boundary at boot time', () => {
   assert.match(achievementsClient, /function\s+showAchInfo\s*\(/);
   assert.match(achievementsClient, /function\s+renderAchScreen\s*\(/);
   assert.match(achievementsClient, /\(function\s+_achBootSettle\s*\(/);
-  assert.match(presence, /function\s+refreshGuidePathLayoutIfReady\s*\(\)/);
-  assert.match(presence, /typeof\s+scheduleGuidePathLayoutRefresh\s*===\s*['"]function['"]/);
+  assert.match(awarenessClient, /function\s+refreshGuidePathLayoutIfReady\s*\(\)/);
+  assert.match(awarenessClient, /typeof\s+scheduleGuidePathLayoutRefresh\s*===\s*['"]function['"]/);
   assert.doesNotThrow(() => new Function(achievementsClient));
 });
 
