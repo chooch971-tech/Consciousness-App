@@ -581,7 +581,10 @@
     /* HISTORY */
     #historyScreen { overflow-y:auto; }
     #historyScreen::-webkit-scrollbar { display:none; }
-    .history-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:24px; padding-top:8px; }
+    .history-header { display:flex; justify-content:flex-start; align-items:center; gap:14px; margin-bottom:24px; padding-top:8px; }
+    /* Back button on the LEFT (before the title), consistent with every other
+       screen. The markup order is title-then-back, so pull it left with order. */
+    .history-header .history-back { order:-1; }
     .history-title { font-family:Cormorant Garamond,serif; font-size:26px; font-weight:300; color:var(--text); }
     .history-back { width:36px; height:36px; display:flex; align-items:center; justify-content:center; border-radius:10px; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.06); color:rgba(221,216,206,.75); cursor:pointer; transition:background .15s, border-color .15s; flex-shrink:0; padding:0; }
     .history-back:active { background:rgba(255,255,255,.12); border-color:rgba(255,255,255,.18); }
