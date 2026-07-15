@@ -94,11 +94,14 @@ system, achievements, streaks, and social/friends features.
 - **`omnia-state-client.js`** — Omnia default cloning, body-cap normalization,
   cloud reconciliation, local migrations, state initialization, and debounced
   persistence. It loads after story behavior and before appearance/runtime logic.
+- **`omnia-appearance-client.js`** — cosmetic lookup and unlock state, entity and
+  companion previews, step-dependent visual marks, applied cosmetics, wardrobe
+  rendering, purchasing, and selection. It loads after state and before economy runtime.
 - **`tutorial-client.js`** — the first-time tutorial state machine, dialogue,
   spotlight sequencing, Omnia morph choreography, path choice, and replay hook.
   It loads at the end of the body after the complete tutorial markup.
 - **`sw.js`** — service worker. Caches the shell as `presence-shell-vNNN`
-  (currently **v192**). **Bump this version string on every shippable change to
+  (currently **v193**). **Bump this version string on every shippable change to
   `presence.html`** or returning devices run stale code.
 - `marketing/` — App Store card generators (Playwright screenshot scripts).
 
