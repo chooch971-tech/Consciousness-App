@@ -20072,8 +20072,9 @@ function omniaUpgradeCost(upg) {
 // Completing Bardon Step X lets the practitioner begin the path again, deeper.
 // A prestige resets ONLY the path position (step + bodies + recommended count);
 // akasha, upgrades, cosmetics, streaks, history and level are all preserved.
-// Each prestige grants a permanent +25% akasha and cuts the step requirements so
-// re-walking is genuinely faster (the "half the time each cycle" cadence).
+// Each prestige grants a permanent +25% akasha and cuts the step requirements
+// (see omniaReqFactor): the first re-walk is halved, then 0.4, then the 0.3
+// floor as Book II opens — so re-walking is genuinely faster each turning.
 function omniaPrestigeMult() { return 1 + 0.25 * (omniaState.prestige || 0); }
 // ── Dark Matter (Book II currency) ─────────────────────────────
 // A second current that only awakens at the 3rd Prestige, minted by the advanced
@@ -20483,7 +20484,11 @@ function renderOmniaTurnings() {
 }
 function omniaReqFactor() {
   var p = omniaState.prestige || 0;
-  return p <= 0 ? 1 : Math.max(0.3, Math.pow(0.65, p)); // ~65% per prestige, floored at 30%
+  // Each Book I re-walk drops the step requirements by 10 points of the base:
+  // P1 halves them (0.5), P2 → 0.4, P3 → 0.3 — landing on the floor exactly as
+  // Book II / Dark Matter opens. So the first turning is a true half-length
+  // victory lap and every turning after is distinctly faster than the last.
+  return p <= 0 ? 1 : Math.max(0.3, 0.6 - 0.1 * p);
 }
 // Scaled step requirement for the ADVANCE gate + its display. Sync scoring and
 // body clamps deliberately use raw requirements (they operate on snapshots).
