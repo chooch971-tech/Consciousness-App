@@ -13,6 +13,7 @@ const visualizationClient = fs.readFileSync(path.join(root, 'visualization-clien
 const auditoryClient = fs.readFileSync(path.join(root, 'auditory-client.js'), 'utf8');
 const thoughtControlClient = fs.readFileSync(path.join(root, 'thought-control-client.js'), 'utf8');
 const asanaClient = fs.readFileSync(path.join(root, 'asana-client.js'), 'utf8');
+const sensesClient = fs.readFileSync(path.join(root, 'senses-client.js'), 'utf8');
 const reportsClient = fs.readFileSync(path.join(root, 'reports-client.js'), 'utf8');
 const platformClient = fs.readFileSync(path.join(root, 'platform-client.js'), 'utf8');
 const profileClient = fs.readFileSync(path.join(root, 'profile-client.js'), 'utf8');
@@ -141,10 +142,10 @@ test('Thought Control modes and sessions load before Asana', () => {
 test('Asana and the shared wake lock load before Senses', () => {
   const thoughtTag = presence.indexOf('<script src="thought-control-client.js"></script>');
   const asanaTag = presence.indexOf('<script src="asana-client.js"></script>');
-  const sensesStart = presence.indexOf("var senseMode = 'feeling';");
+  const sensesTag = presence.indexOf('<script src="senses-client.js"></script>');
   assert.notEqual(asanaTag, -1);
   assert.ok(thoughtTag < asanaTag, 'Asana loads after Thought Control');
-  assert.ok(asanaTag < sensesStart, 'Asana must initialize before Senses');
+  assert.ok(asanaTag < sensesTag, 'Asana must initialize before Senses');
   assert.equal(presence.split('<script src="asana-client.js"></script>').length - 1, 1);
   assert.doesNotMatch(presence, /function\s+requestExerciseWakeLock\s*\(|function\s+startAsana\s*\(/);
   assert.doesNotMatch(presence, /function\s+endAsana\s*\(|function\s+saveAsanaResult\s*\(/);
@@ -155,6 +156,25 @@ test('Asana and the shared wake lock load before Senses', () => {
   assert.match(asanaClient, /function\s+saveAsanaResult\s*\(/);
   assert.match(asanaClient, /document\.getElementById\('asanaEndBtn'\)\.addEventListener/);
   assert.doesNotThrow(() => new Function(asanaClient));
+});
+
+test('Senses setup and sessions load before app mode switching', () => {
+  const asanaTag = presence.indexOf('<script src="asana-client.js"></script>');
+  const sensesTag = presence.indexOf('<script src="senses-client.js"></script>');
+  const modeSwitching = presence.indexOf("var currentMode = 'guide';");
+  assert.notEqual(sensesTag, -1);
+  assert.ok(asanaTag < sensesTag, 'Senses requires the shared Asana alarm and wake lock');
+  assert.ok(sensesTag < modeSwitching, 'Senses retains its original position before app mode switching');
+  assert.equal(presence.split('<script src="senses-client.js"></script>').length - 1, 1);
+  assert.doesNotMatch(presence, /function\s+buildSenseSetupHTML\s*\(|function\s+startSenseSession\s*\(/);
+  assert.doesNotMatch(presence, /function\s+endSenseSession\s*\(|function\s+showSenseResult\s*\(/);
+  assert.match(sensesClient, /var\s+SENSE_MODE_DEFS\s*=\s*\{/);
+  assert.match(sensesClient, /function\s+buildSenseSetupHTML\s*\(/);
+  assert.match(sensesClient, /function\s+startSenseSession\s*\(/);
+  assert.match(sensesClient, /function\s+endSenseSession\s*\(/);
+  assert.match(sensesClient, /function\s+showSenseResult\s*\(/);
+  assert.match(sensesClient, /document\.getElementById\('senseEndBtn'\)\.addEventListener/);
+  assert.doesNotThrow(() => new Function(sensesClient));
 });
 
 test('Lodge, messages, and friends live behind the social client boundary', () => {
