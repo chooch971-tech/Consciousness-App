@@ -13320,7 +13320,10 @@ function omniaUpgradeCost(upg) {
 // Each prestige grants a permanent +25% akasha and cuts the step requirements
 // (see omniaReqFactor): the first re-walk is halved, then 0.4, then the 0.3
 // floor as Book II opens — so re-walking is genuinely faster each turning.
-function omniaPrestigeMult() { return 1 + 0.25 * (omniaState.prestige || 0); }
+// +25% akasha per prestige, capped at +75% (P3). Akasha retires as the gate
+// when Dark Matter / Book II opens at the 3rd Prestige, so the bonus stops
+// climbing there — the reward past P3 is Book II depth, not more akasha.
+function omniaPrestigeMult() { return 1 + 0.25 * Math.min(PRESTIGE_BOOK2, omniaState.prestige || 0); }
 // ── Dark Matter (Book II currency) ─────────────────────────────
 // A second current that only awakens at the 3rd Prestige, minted by the advanced
 // exercises. Book II upgrades (tools, spheres) will spend it alongside akasha.
@@ -13778,7 +13781,7 @@ function omniaConfirmPrestige() {
   var next = (omniaState.prestige || 0) + 1;
   var body = (omniaState.prestige || 0) >= PRESTIGE_BOOK2
     ? 'The spheres close behind Omnia — instruments and bodies kept — to be walked again at greater depth.\n\n'
-      + 'Permanent boon: +' + (25 * next) + '% akasha.'
+      + 'Your +75% akasha holds; the reward now is the deeper walk.'
     : 'Omnia returns to Step I and rebuilds her three bodies from the beginning — '
       + 'but keeps all akasha, upgrades, cosmetics, level and your streak.\n\n'
       + 'Permanent boon: +' + (25 * next) + '% akasha, and every step requirement ahead is eased.';
