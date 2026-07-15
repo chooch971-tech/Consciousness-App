@@ -20,6 +20,7 @@ const concentrationControlsClient = fs.readFileSync(path.join(root, 'concentrati
 const guideConfigClient = fs.readFileSync(path.join(root, 'guide-config-client.js'), 'utf8');
 const omniaEconomyConfigClient = fs.readFileSync(path.join(root, 'omnia-economy-config-client.js'), 'utf8');
 const omniaCosmeticsConfigClient = fs.readFileSync(path.join(root, 'omnia-cosmetics-config-client.js'), 'utf8');
+const omniaProgressionConfigClient = fs.readFileSync(path.join(root, 'omnia-progression-config-client.js'), 'utf8');
 const reportsClient = fs.readFileSync(path.join(root, 'reports-client.js'), 'utf8');
 const platformClient = fs.readFileSync(path.join(root, 'platform-client.js'), 'utf8');
 const profileClient = fs.readFileSync(path.join(root, 'profile-client.js'), 'utf8');
@@ -283,6 +284,21 @@ test('Omnia cosmetic catalogs live in a static configuration boundary', () => {
   assert.match(omniaCosmeticsConfigClient, /id:['"]corgi['"],\s*name:['"]Astral Corgi['"]/);
   assert.match(omniaCosmeticsConfigClient, /var\s+OMNIA_ENTITY_NATIVE_PALETTE\s*=\s*\{/);
   assert.doesNotThrow(() => new Function(omniaCosmeticsConfigClient));
+});
+
+test('Omnia progression thresholds and story beats live in a static configuration boundary', () => {
+  const cosmeticsTag = presence.indexOf('<script src="omnia-cosmetics-config-client.js"></script>');
+  const progressionTag = presence.indexOf('<script src="omnia-progression-config-client.js"></script>');
+  const storyRuntime = presence.indexOf('function omniaStoryBeatUnlocked(');
+  assert.notEqual(progressionTag, -1);
+  assert.ok(cosmeticsTag < progressionTag, 'Progression configuration loads after cosmetic configuration');
+  assert.ok(progressionTag < storyRuntime, 'Progression configuration loads before story evaluation behavior');
+  assert.equal(presence.split('<script src="omnia-progression-config-client.js"></script>').length - 1, 1);
+  assert.doesNotMatch(presence, /var\s+OMNIA_BARDON_STEPS\s*=\s*\[/);
+  assert.doesNotMatch(presence, /var\s+OMNIA_STORY\s*=\s*\[/);
+  assert.match(omniaProgressionConfigClient, /step:10,[\s\S]*?physical:430,\s*astral:430,\s*mental:430/);
+  assert.match(omniaProgressionConfigClient, /id:['"]s10_final['"]/);
+  assert.doesNotThrow(() => new Function(omniaProgressionConfigClient));
 });
 
 test('Lodge, messages, and friends live behind the social client boundary', () => {
