@@ -17,6 +17,7 @@ const sensesClient = fs.readFileSync(path.join(root, 'senses-client.js'), 'utf8'
 const appShellClient = fs.readFileSync(path.join(root, 'app-shell-client.js'), 'utf8');
 const omniaAmbientClient = fs.readFileSync(path.join(root, 'omnia-ambient-client.js'), 'utf8');
 const concentrationControlsClient = fs.readFileSync(path.join(root, 'concentration-controls-client.js'), 'utf8');
+const guideConfigClient = fs.readFileSync(path.join(root, 'guide-config-client.js'), 'utf8');
 const reportsClient = fs.readFileSync(path.join(root, 'reports-client.js'), 'utf8');
 const platformClient = fs.readFileSync(path.join(root, 'platform-client.js'), 'utf8');
 const profileClient = fs.readFileSync(path.join(root, 'profile-client.js'), 'utf8');
@@ -233,6 +234,23 @@ test('Concentration controls own their navigation and session wiring', () => {
   assert.doesNotThrow(() => new Function(concentrationControlsClient));
 });
 
+test('Guide recommendation tables live in a static configuration boundary', () => {
+  const prayerTag = presence.indexOf('<script src="prayer-client.js"></script>');
+  const guideConfigTag = presence.indexOf('<script src="guide-config-client.js"></script>');
+  const omniaGrowth = presence.indexOf('var OMNIA_DEFAULT = {');
+  assert.notEqual(guideConfigTag, -1);
+  assert.ok(prayerTag < guideConfigTag, 'Guide configuration loads after Prayer');
+  assert.ok(guideConfigTag < omniaGrowth, 'Guide configuration exists before the Omnia runtime');
+  assert.equal(presence.split('<script src="guide-config-client.js"></script>').length - 1, 1);
+  assert.doesNotMatch(presence, /var\s+GUIDE_DAILY_PLANS\s*=\s*\[/);
+  assert.doesNotMatch(presence, /var\s+GUIDE_EXERCISES\s*=\s*\[/);
+  assert.match(guideConfigClient, /var\s+GUIDE_DAILY_PLANS\s*=\s*\[/);
+  assert.match(guideConfigClient, /var\s+GUIDE_EXERCISES\s*=\s*\[/);
+  assert.match(guideConfigClient, /focus:\s*['"]Rest & Inward Turning['"]/);
+  assert.match(guideConfigClient, /id:\s*['"]soulmirror['"]/);
+  assert.doesNotThrow(() => new Function(guideConfigClient));
+});
+
 test('Lodge, messages, and friends live behind the social client boundary', () => {
   const socialTag = presence.indexOf('<script src="social-client.js"></script>');
   const appUse = presence.indexOf('var PRESENCE_SYNC = window.PresenceSyncContract;');
@@ -367,7 +385,7 @@ test('Settings and utility screens load through their own client boundary', () =
 
 test('Prayer state and practice flow load before the Guide engine', () => {
   const prayerTag = presence.indexOf('<script src="prayer-client.js"></script>');
-  const guideStart = presence.indexOf('var GUIDE_DAILY_PLANS = [');
+  const guideStart = presence.indexOf('<script src="guide-config-client.js"></script>');
   const appUse = presence.indexOf('var PRESENCE_SYNC = window.PresenceSyncContract;');
   assert.notEqual(prayerTag, -1);
   assert.ok(appUse < prayerTag, 'Prayer requires initialized core practice state');

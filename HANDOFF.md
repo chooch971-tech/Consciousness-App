@@ -76,11 +76,14 @@ system, achievements, streaks, and social/friends features.
 - **`concentration-controls-client.js`** — Clock begin/stop controls,
   Concentration history navigation, and result-save event bindings. It loads at
   the former inline boundary after Omnia ambient startup and before Prayer.
+- **`guide-config-client.js`** — static seven-day beginner/experienced practice
+  suggestions and Guide assessment exercise metadata. It loads after Prayer and
+  before the Omnia growth and economy runtime.
 - **`tutorial-client.js`** — the first-time tutorial state machine, dialogue,
   spotlight sequencing, Omnia morph choreography, path choice, and replay hook.
   It loads at the end of the body after the complete tutorial markup.
 - **`sw.js`** — service worker. Caches the shell as `presence-shell-vNNN`
-  (currently **v186**). **Bump this version string on every shippable change to
+  (currently **v187**). **Bump this version string on every shippable change to
   `presence.html`** or returning devices run stale code.
 - `marketing/` — App Store card generators (Playwright screenshot scripts).
 
@@ -98,7 +101,7 @@ system, achievements, streaks, and social/friends features.
    let ok=0,t=0;for(const s of b){if(!s.trim())continue;t++;try{new Function(s);ok++;}catch(e){console.log("FAIL",e.message.slice(0,120));}}
    console.log(ok+"/"+t+" parse");'
    ```
-   Expect **29/29 parse**. For server: `node --check server.js`.
+   Expect **30/30 parse**. For server: `node --check server.js`.
 2. **Browser harness** — headless Chromium via Playwright at
    `/tmp/node_modules/playwright`, launch with
    `executablePath:'/opt/pw-browsers/chromium-1194/chrome-linux/chrome'`.
