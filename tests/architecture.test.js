@@ -22,6 +22,7 @@ const omniaEconomyConfigClient = fs.readFileSync(path.join(root, 'omnia-economy-
 const omniaCosmeticsConfigClient = fs.readFileSync(path.join(root, 'omnia-cosmetics-config-client.js'), 'utf8');
 const omniaProgressionConfigClient = fs.readFileSync(path.join(root, 'omnia-progression-config-client.js'), 'utf8');
 const omniaStoryClient = fs.readFileSync(path.join(root, 'omnia-story-client.js'), 'utf8');
+const omniaStateClient = fs.readFileSync(path.join(root, 'omnia-state-client.js'), 'utf8');
 const reportsClient = fs.readFileSync(path.join(root, 'reports-client.js'), 'utf8');
 const platformClient = fs.readFileSync(path.join(root, 'platform-client.js'), 'utf8');
 const profileClient = fs.readFileSync(path.join(root, 'profile-client.js'), 'utf8');
@@ -305,10 +306,10 @@ test('Omnia progression thresholds and story beats live in a static configuratio
 test('Omnia story evaluation and chat UI live in a dedicated client boundary', () => {
   const progressionTag = presence.indexOf('<script src="omnia-progression-config-client.js"></script>');
   const storyTag = presence.indexOf('<script src="omnia-story-client.js"></script>');
-  const stateRuntime = presence.indexOf('function cloneOmniaDefault()');
+  const stateTag = presence.indexOf('<script src="omnia-state-client.js"></script>');
   assert.notEqual(storyTag, -1);
   assert.ok(progressionTag < storyTag, 'Story behavior loads after progression configuration');
-  assert.ok(storyTag < stateRuntime, 'Story behavior loads before Omnia state runtime');
+  assert.ok(storyTag < stateTag, 'Story behavior loads before Omnia state runtime');
   assert.equal(presence.split('<script src="omnia-story-client.js"></script>').length - 1, 1);
   assert.doesNotMatch(presence, /function\s+omniaStoryBeatUnlocked\s*\(/);
   assert.doesNotMatch(presence, /function\s+openOmniaChat\s*\(/);
@@ -318,6 +319,27 @@ test('Omnia story evaluation and chat UI live in a dedicated client boundary', (
   assert.match(omniaStoryClient, /function\s+openOmniaChat\s*\(/);
   assert.match(omniaStoryClient, /function\s+closeOmniaChat\s*\(/);
   assert.doesNotThrow(() => new Function(omniaStoryClient));
+});
+
+test('Omnia persistence and cloud reconciliation live in a dedicated client boundary', () => {
+  const storyTag = presence.indexOf('<script src="omnia-story-client.js"></script>');
+  const stateTag = presence.indexOf('<script src="omnia-state-client.js"></script>');
+  const appearanceRuntime = presence.indexOf('function omniaFindCosmetic(');
+  assert.notEqual(stateTag, -1);
+  assert.ok(storyTag < stateTag, 'Omnia state loads after story behavior');
+  assert.ok(stateTag < appearanceRuntime, 'Omnia state initializes before appearance behavior');
+  assert.equal(presence.split('<script src="omnia-state-client.js"></script>').length - 1, 1);
+  assert.doesNotMatch(presence, /function\s+cloneOmniaDefault\s*\(/);
+  assert.doesNotMatch(presence, /function\s+mergeOmniaPull\s*\(/);
+  assert.doesNotMatch(presence, /function\s+loadOmniaState\s*\(/);
+  assert.doesNotMatch(presence, /function\s+saveOmniaState\s*\(/);
+  assert.match(omniaStateClient, /function\s+cloneOmniaDefault\s*\(/);
+  assert.match(omniaStateClient, /function\s+clampOmniaBodies\s*\(/);
+  assert.match(omniaStateClient, /function\s+mergeOmniaPull\s*\(/);
+  assert.match(omniaStateClient, /function\s+loadOmniaState\s*\(/);
+  assert.match(omniaStateClient, /function\s+saveOmniaState\s*\(/);
+  assert.match(omniaStateClient, /var\s+omniaState\s*=\s*loadOmniaState\(\)/);
+  assert.doesNotThrow(() => new Function(omniaStateClient));
 });
 
 test('Lodge, messages, and friends live behind the social client boundary', () => {
