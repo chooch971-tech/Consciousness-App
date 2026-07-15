@@ -2378,6 +2378,11 @@
     .drawer-overlay.drawer-instant, .drawer-overlay.drawer-instant .drawer { transition:none; }
     .drawer { position:fixed; top:0; left:0; bottom:0; width:72%; max-width:280px; background:var(--surface); border-right:1px solid var(--border); z-index:301; transform:translateX(-100%); transition:transform .3s cubic-bezier(.4,0,.2,1); padding:var(--safe-top-lg) 0 max(env(safe-area-inset-bottom),32px); display:flex; flex-direction:column; }
     .drawer-overlay.show .drawer { transform:translateX(0); }
+    .drawer-overlay.swipe-back-preview,
+    .drawer-overlay.swipe-back-preview .drawer { transition:none; }
+    .drawer-overlay.swipe-back-preview { z-index:0; }
+    #homeScreen.drawer-swipe-home-preview { background:transparent !important; }
+    #homeScreen.drawer-swipe-home-preview > * { visibility:hidden; }
     .drawer-header { padding:0 24px 24px; border-bottom:1px solid var(--border); margin-bottom:8px; }
     .drawer-wordmark { font-family:Cormorant Garamond,serif; font-size:11px; font-weight:300; letter-spacing:.35em; text-transform:uppercase; color:var(--accent); }
     .drawer-level { font-size:9px; letter-spacing:.15em; color:var(--muted); margin-top:4px; }
@@ -11444,6 +11449,7 @@ startPrayerScheduler();
     dragging: false, _animating: false, _pending: null,
     screenEl: null, backBtn: null,
     prevEl: null, prevIsHome: false, overlay: null,
+    drawerOverlay: null,
     startX: 0, lastX: 0, lastT: 0, velocity: 0
   };
 
@@ -11489,8 +11495,18 @@ startPrayerScheduler();
     var prevEl = document.getElementById(prevId);
     if (!prevEl) return false;
 
+    var revealsDrawer = prevIsHome && !!window._returnToDrawer
+      && ((typeof DRAWER_REOPEN_ON_BACK === 'undefined') || DRAWER_REOPEN_ON_BACK);
+    var drawerOverlay = revealsDrawer ? document.getElementById('drawerOverlay') : null;
+
     showBehind(prevEl);
     var overlay = addOverlay(prevEl);
+
+    if (drawerOverlay) {
+      drawerOverlay.classList.add('swipe-back-preview');
+      prevEl.classList.add('drawer-swipe-home-preview');
+      openDrawer();
+    }
 
     screenEl.style.transition = 'none';
     screenEl.style.willChange = 'transform';
@@ -11501,6 +11517,7 @@ startPrayerScheduler();
     sw.prevEl     = prevEl;
     sw.prevIsHome = prevIsHome;
     sw.overlay    = overlay;
+    sw.drawerOverlay = drawerOverlay;
     sw.startX     = startX;
     sw.lastX      = startX;
     sw.lastT      = Date.now();
@@ -11528,6 +11545,7 @@ startPrayerScheduler();
   function complete() {
     var screenEl = sw.screenEl, prevEl = sw.prevEl;
     var backBtn = sw.backBtn, overlay = sw.overlay, prevIsHome = sw.prevIsHome;
+    var drawerOverlay = sw.drawerOverlay;
     sw.dragging    = false;
     sw._animating  = true;
 
@@ -11562,6 +11580,13 @@ startPrayerScheduler();
       // which removes .active from screenEl (making it display:none via CSS)
       backBtn.click();
 
+      // The destination drawer was already painted beneath the swipe. Restore
+      // its normal transitions now that it is the active surface.
+      if (drawerOverlay) {
+        prevEl.classList.remove('drawer-swipe-home-preview');
+        drawerOverlay.classList.remove('swipe-back-preview');
+      }
+
       // .active is now removed → screenEl is display:none → safe to reset transform
       screenEl.style.transform  = '';
       screenEl.style.transition = '';
@@ -11572,6 +11597,7 @@ startPrayerScheduler();
   function cancel() {
     var screenEl = sw.screenEl, prevEl = sw.prevEl;
     var overlay = sw.overlay, prevIsHome = sw.prevIsHome;
+    var drawerOverlay = sw.drawerOverlay;
     sw.dragging   = false;
     sw._animating = true;
 
@@ -11593,10 +11619,42 @@ startPrayerScheduler();
       // Re-hide both: homeScreen goes back to display:none (sub-screen still active)
       if (prevIsHome) prevEl.style.display = 'none';
 
+      if (drawerOverlay) {
+        closeDrawer();
+        prevEl.classList.remove('drawer-swipe-home-preview');
+        drawerOverlay.classList.remove('swipe-back-preview');
+      }
+
       screenEl.style.transition = '';
       screenEl.style.transform  = '';
       screenEl.style.willChange = '';
     }, 220);
+  }
+
+  // iOS may suspend the page without delivering touchcancel. Roll back the
+  // preview synchronously so its invisible scrim can never block the app when
+  // the user returns.
+  function abortInterruptedSwipe() {
+    if (!sw.dragging) return;
+    sw.dragging = false;
+    sw._animating = false;
+    sw._pending = null;
+
+    if (sw.overlay && sw.overlay.isConnected) sw.overlay.remove();
+    if (sw.prevEl) {
+      cleanPrev(sw.prevEl, sw.prevIsHome);
+      if (sw.prevIsHome) sw.prevEl.style.display = 'none';
+      sw.prevEl.classList.remove('drawer-swipe-home-preview');
+    }
+    if (sw.drawerOverlay) {
+      closeDrawer(true);
+      sw.drawerOverlay.classList.remove('swipe-back-preview');
+    }
+    if (sw.screenEl) {
+      sw.screenEl.style.transition = '';
+      sw.screenEl.style.transform = '';
+      sw.screenEl.style.willChange = '';
+    }
   }
 
   // ── Touch event listeners (document-level for reliability) ──
@@ -11617,6 +11675,8 @@ startPrayerScheduler();
     // "Tap to Begin" state — once the focus session itself is running,
     // an accidental edge swipe shouldn't exit it.
     if (screenEl.id === 'concSessionScreen' && !concPendingBegin) return;
+    // A filtered Lodge profile returns to the Lodge feed, not the drawer.
+    if (screenEl.id === 'lodgeScreen' && typeof _lodgeUserFilter !== 'undefined' && _lodgeUserFilter) return;
 
     var backBtn = screenEl.querySelector('.history-back, .jl-editor-back, .conc-sess-back, .lodge-back');
     if (!backBtn) return;
@@ -11659,6 +11719,11 @@ startPrayerScheduler();
     sw._pending = null;
     if (sw.dragging) cancel();
   }, {passive: true});
+
+  document.addEventListener('visibilitychange', function() {
+    if (document.hidden) abortInterruptedSwipe();
+  });
+  window.addEventListener('pagehide', abortInterruptedSwipe);
 
 })();
 

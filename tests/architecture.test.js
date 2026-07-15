@@ -98,6 +98,14 @@ test('Awareness practice owns its dedicated client boundary', () => {
   assert.doesNotThrow(() => new Function(awarenessClient));
 });
 
+test('top-level drawer screens reveal the open drawer during swipe-back', () => {
+  assert.match(presence, /var revealsDrawer = prevIsHome && !!window\._returnToDrawer/);
+  assert.match(presence, /drawerOverlay\.classList\.add\('swipe-back-preview'\);[\s\S]*?prevEl\.classList\.add\('drawer-swipe-home-preview'\);\s*openDrawer\(\);/);
+  assert.match(presence, /if \(drawerOverlay\) \{\s*closeDrawer\(\);[\s\S]*?drawerOverlay\.classList\.remove\('swipe-back-preview'\);/);
+  assert.match(presence, /querySelector\('[^']*\.lodge-back[^']*'\)/);
+  assert.match(presence, /visibilitychange[\s\S]*abortInterruptedSwipe/);
+});
+
 test('Visualization and the shared exercise gateway load before Auditory', () => {
   const visualizationTag = presence.indexOf('<script src="visualization-client.js"></script>');
   const concentrationState = presence.indexOf('function getConcRank(level)');
