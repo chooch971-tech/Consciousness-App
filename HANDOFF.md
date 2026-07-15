@@ -87,12 +87,15 @@ system, achievements, streaks, and social/friends features.
   defaults and before progression configuration.
 - **`omnia-progression-config-client.js`** — all ten Omnia/Bardon step thresholds
   and the complete narrative beat catalog. It loads after cosmetic data and
-  before story evaluation, progression, and rendering behavior.
+  before story and chat behavior.
+- **`omnia-story-client.js`** — story trigger evaluation, revealed-beat ordering,
+  unread badge state, chapter labels, and Omnia chat rendering/open/close behavior.
+  It loads after progression data and before Omnia state persistence.
 - **`tutorial-client.js`** — the first-time tutorial state machine, dialogue,
   spotlight sequencing, Omnia morph choreography, path choice, and replay hook.
   It loads at the end of the body after the complete tutorial markup.
 - **`sw.js`** — service worker. Caches the shell as `presence-shell-vNNN`
-  (currently **v190**). **Bump this version string on every shippable change to
+  (currently **v191**). **Bump this version string on every shippable change to
   `presence.html`** or returning devices run stale code.
 - `marketing/` — App Store card generators (Playwright screenshot scripts).
 

@@ -86,6 +86,7 @@ Last updated: 2026-07-13
 - [x] Extract Omnia economy defaults, body/exercise metadata, and generator definitions into `omnia-economy-config-client.js`
 - [x] Extract Omnia palettes, entities, veils, and companions into `omnia-cosmetics-config-client.js`
 - [x] Extract Omnia step thresholds and narrative beats into `omnia-progression-config-client.js`
+- [x] Extract Omnia story evaluation, unread state, and chat rendering into `omnia-story-client.js`
 - [x] Consolidate duplicate global HTML escaping helpers
 - [ ] Remove `/api/sync/sync/diagnose` debug endpoint from server.js
 
