@@ -64,6 +64,7 @@ Last updated: 2026-07-13
 - [x] Extract reset and signed-out snapshot behavior into `progress-state.js`
 - [x] Share history and Seven Gifts merge behavior in `sync-merge.js`
 - [x] Begin frontend feature boundaries with `social-client.js` (Lodge, messages, friends)
+- [x] Extract Journal behavior into `journal-client.js`
 - [x] Consolidate duplicate global HTML escaping helpers
 - [ ] Remove `/api/sync/sync/diagnose` debug endpoint from server.js
 
