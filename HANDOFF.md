@@ -109,11 +109,14 @@ system, achievements, streaks, and social/friends features.
 - **`omnia-engine-client.js`** — Upgrade-screen rendering, collection and build
   effects, Akasha and Dark Matter generator yards, construction timers, upgrade
   sheets, body building, step actions, and recommendation launch behavior.
+- **`omnia-morph-client.js`** — per-entity symbol catalogs, shard geometry,
+  interpolation and outline rendering, animation lifecycle, and Guide/Upgrade/
+  Path-banner morph entry points. It loads immediately before Guide state.
 - **`tutorial-client.js`** — the first-time tutorial state machine, dialogue,
   spotlight sequencing, Omnia morph choreography, path choice, and replay hook.
   It loads at the end of the body after the complete tutorial markup.
 - **`sw.js`** — service worker. Caches the shell as `presence-shell-vNNN`
-  (currently **v197**). **Bump this version string on every shippable change to
+  (currently **v198**). **Bump this version string on every shippable change to
   `presence.html`** or returning devices run stale code.
 - `marketing/` — App Store card generators (Playwright screenshot scripts).
 

@@ -28,6 +28,7 @@ const omniaEconomyClient = fs.readFileSync(path.join(root, 'omnia-economy-client
 const omniaBook2Client = fs.readFileSync(path.join(root, 'omnia-book2-client.js'), 'utf8');
 const omniaRewardsClient = fs.readFileSync(path.join(root, 'omnia-rewards-client.js'), 'utf8');
 const omniaEngineClient = fs.readFileSync(path.join(root, 'omnia-engine-client.js'), 'utf8');
+const omniaMorphClient = fs.readFileSync(path.join(root, 'omnia-morph-client.js'), 'utf8');
 const reportsClient = fs.readFileSync(path.join(root, 'reports-client.js'), 'utf8');
 const platformClient = fs.readFileSync(path.join(root, 'platform-client.js'), 'utf8');
 const profileClient = fs.readFileSync(path.join(root, 'profile-client.js'), 'utf8');
@@ -431,10 +432,10 @@ test('Omnia recommendations and exercise rewards live in a dedicated client boun
 test('Omnia engine rendering and generator controls live in a dedicated client boundary', () => {
   const rewardsTag = presence.indexOf('<script src="omnia-rewards-client.js"></script>');
   const engineTag = presence.indexOf('<script src="omnia-engine-client.js"></script>');
-  const morphRuntime = presence.indexOf('var OMNIA_ENTITY_MORPH_SYMBOLS =');
+  const morphTag = presence.indexOf('<script src="omnia-morph-client.js"></script>');
   assert.notEqual(engineTag, -1);
   assert.ok(rewardsTag < engineTag, 'Engine rendering loads after reward behavior');
-  assert.ok(engineTag < morphRuntime, 'Engine rendering loads before click-morph animation data');
+  assert.ok(engineTag < morphTag, 'Engine rendering loads before click-morph animation data');
   assert.equal(presence.split('<script src="omnia-engine-client.js"></script>').length - 1, 1);
   assert.doesNotMatch(presence, /function\s+renderOmniaEngine\s*\(/);
   assert.doesNotMatch(presence, /function\s+renderOmniaGenYard\s*\(/);
@@ -448,6 +449,26 @@ test('Omnia engine rendering and generator controls live in a dedicated client b
   assert.match(omniaEngineClient, /function\s+buyOmniaUpgrade\s*\(/);
   assert.match(omniaEngineClient, /function\s+beginOmniaRecommendation\s*\(/);
   assert.doesNotThrow(() => new Function(omniaEngineClient));
+});
+
+test('Omnia click-morph geometry and animation live in a dedicated client boundary', () => {
+  const engineTag = presence.indexOf('<script src="omnia-engine-client.js"></script>');
+  const morphTag = presence.indexOf('<script src="omnia-morph-client.js"></script>');
+  const guideRuntime = presence.indexOf('function loadGuideState(');
+  assert.notEqual(morphTag, -1);
+  assert.ok(engineTag < morphTag, 'Click-morph behavior loads after the Omnia engine');
+  assert.ok(morphTag < guideRuntime, 'Click-morph behavior loads before Guide state');
+  assert.equal(presence.split('<script src="omnia-morph-client.js"></script>').length - 1, 1);
+  assert.doesNotMatch(presence, /var\s+OMNIA_ENTITY_MORPH_SYMBOLS\s*=\s*\{/);
+  assert.doesNotMatch(presence, /function\s+animateOmniaShardMorph\s*\(/);
+  assert.doesNotMatch(presence, /function\s+morphGuideOmnia\s*\(/);
+  assert.match(omniaMorphClient, /var\s+OMNIA_ENTITY_MORPH_SYMBOLS\s*=\s*\{/);
+  assert.match(omniaMorphClient, /var\s+OMNIA_MORPH_TARGETS\s*=\s*\{/);
+  assert.match(omniaMorphClient, /function\s+animateOmniaShardMorph\s*\(/);
+  assert.match(omniaMorphClient, /function\s+renderOmniaMorphSymbol\s*\(/);
+  assert.match(omniaMorphClient, /function\s+morphGuideOmnia\s*\(/);
+  assert.match(omniaMorphClient, /function\s+morphPathBannerOmnia\s*\(/);
+  assert.doesNotThrow(() => new Function(omniaMorphClient));
 });
 
 test('Lodge, messages, and friends live behind the social client boundary', () => {

@@ -93,6 +93,7 @@ Last updated: 2026-07-13
 - [x] Extract Omnia Book II tools, refined bodies, spheres, prestige rules, and ceremony into `omnia-book2-client.js`
 - [x] Extract Omnia recommendations, body-award budgeting, exercise rewards, boosts, and early-end guards into `omnia-rewards-client.js`
 - [x] Extract Omnia engine rendering, collection/build effects, generators, upgrade sheets, and engine actions into `omnia-engine-client.js`
+- [x] Extract Omnia click-morph geometry, animation lifecycle, and figure entry points into `omnia-morph-client.js`
 - [x] Consolidate duplicate global HTML escaping helpers
 - [ ] Remove `/api/sync/sync/diagnose` debug endpoint from server.js
 
