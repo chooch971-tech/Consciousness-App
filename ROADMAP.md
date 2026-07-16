@@ -109,6 +109,7 @@ Last updated: 2026-07-13
 - [x] Audit the remaining inline Concentration completion, streak, reminder, companion, and integration clusters
 - [x] Consolidate duplicate global HTML escaping helpers
 - [x] Remove `/api/sync/sync/diagnose` debug endpoint from server.js
+- [x] Fail server startup when MongoDB is unavailable instead of serving broken API routes
 
 ---
 

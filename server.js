@@ -204,6 +204,7 @@ async function connectDB() {
     console.log(`Connected to MongoDB. ${subscriptions.length} subscribers, ${prayerSchedules.length} prayer schedules, ${practiceSchedules.length} practice schedules.`);
   } catch(err) {
     console.error('MongoDB connection failed:', err.message);
+    throw err;
   }
 }
 
@@ -2693,4 +2694,6 @@ connectDB().then(() => {
   app.listen(PORT, () => {
     console.log(`Presence server running on port ${PORT}`);
   });
+}).catch(() => {
+  process.exit(1);
 });

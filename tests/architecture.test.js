@@ -61,6 +61,11 @@ test('server does not expose the retired sync diagnostic route', () => {
   assert.doesNotMatch(server, /\/api\/sync\/sync\/diagnose/);
 });
 
+test('server does not accept traffic after a MongoDB startup failure', () => {
+  assert.match(server, /MongoDB connection failed:[\s\S]*?throw err;/);
+  assert.match(server, /connectDB\(\)\.then\([\s\S]*?\}\)\.catch\(\(\) => \{\s*process\.exit\(1\);/);
+});
+
 test('browser loads shared state modules before app code', () => {
   const contractTag = presence.indexOf('<script src="sync-contract.js"></script>');
   const progressTag = presence.indexOf('<script src="progress-state.js"></script>');
