@@ -38,6 +38,7 @@ const profileClient = fs.readFileSync(path.join(root, 'profile-client.js'), 'utf
 const settingsClient = fs.readFileSync(path.join(root, 'settings-client.js'), 'utf8');
 const achievementsClient = fs.readFileSync(path.join(root, 'achievements-client.js'), 'utf8');
 const prayerClient = fs.readFileSync(path.join(root, 'prayer-client.js'), 'utf8');
+const streakCelebrationClient = fs.readFileSync(path.join(root, 'streak-celebration-client.js'), 'utf8');
 const sessionCompleteClient = fs.readFileSync(path.join(root, 'session-complete-client.js'), 'utf8');
 const streakClient = fs.readFileSync(path.join(root, 'streak-client.js'), 'utf8');
 const omniaCompanionClient = fs.readFileSync(path.join(root, 'omnia-companion-client.js'), 'utf8');
@@ -783,6 +784,20 @@ test('Shared session completion UI loads through its own client boundary', () =>
   assert.match(sessionCompleteClient, /window\._pendingStreakBonus/);
   assert.match(serviceWorker, /['"]session-complete-client\.js['"]/);
   assert.doesNotThrow(() => new Function(sessionCompleteClient));
+});
+
+test('Streak ignition celebration loads through its own client boundary', () => {
+  const celebrationTag = presence.indexOf('<script src="streak-celebration-client.js"></script>');
+  const completionTag = presence.indexOf('<script src="session-complete-client.js"></script>');
+  assert.notEqual(celebrationTag, -1);
+  assert.ok(celebrationTag < completionTag, 'streak celebration initializes before completion presentation');
+  assert.equal(presence.split('<script src="streak-celebration-client.js"></script>').length - 1, 1);
+  assert.doesNotMatch(presence, /function\s+showStreakCelebration\s*\(|function\s+playStreakBurstSound\s*\(/);
+  assert.match(streakCelebrationClient, /function\s+showStreakCelebration\s*\(/);
+  assert.match(streakCelebrationClient, /function\s+playStreakBurstSound\s*\(/);
+  assert.match(streakCelebrationClient, /appSoundEnabled/);
+  assert.match(serviceWorker, /['"]streak-celebration-client\.js['"]/);
+  assert.doesNotThrow(() => new Function(streakCelebrationClient));
 });
 
 test('first-time tutorial loads through its own end-of-body client boundary', () => {
