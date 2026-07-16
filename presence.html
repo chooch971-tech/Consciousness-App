@@ -4716,6 +4716,22 @@ body:not(.tut-live) #tutCorgi {
    padding, so no extra insets here. */
 .banner-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; flex-shrink:0; }
 .banner-tut { background:none; border:none; padding:6px; margin:0; cursor:pointer; display:flex; align-items:center; justify-content:center; }
+/* Variant: back button + tutorial crystal worked INTO a hero banner's corners
+   (no separate header row). The dark scrim keeps the back button legible over
+   the banner art; placed after .history-back so it wins the background. */
+.banner-inset-back { position:absolute; top:12px; left:12px; z-index:8;
+  background:rgba(7,8,13,.5); backdrop-filter:blur(3px); -webkit-backdrop-filter:blur(3px); }
+.banner-inset-tut { position:absolute; top:8px; right:12px; z-index:9; margin:0; }
+/* Achievements: shrink + lower the compass so the corner crystal has clean room. */
+#achScreen .exb-right { width:120px; right:2px; top:14px; align-items:center; }
+#achScreen .exb-right svg { width:78px; height:78px; }
+/* Playground banner promoted to a fixed hero header, so the inset back button
+   stays put instead of scrolling away with the cards below. */
+.pg-banner--header { flex-shrink:0; margin:0 16px 6px; }
+/* The label is the top line of the vertically-centred text, so it would sit
+   under the corner back button — indent just the label to clear it, leaving
+   the title/sub flush left. */
+.pg-banner--header .pg-banner-label { padding-left:44px; }
 /* Omnia peeks over the top-right edge of the clock preview card and
    beckons the user to tap her for the tutorial — a shimmering head with a
    gentle bob, glow pulse, and sparkle twinkles to draw the eye. */
@@ -5708,24 +5724,21 @@ body:not(.tut-live) #tutCorgi {
   <!-- GUIDE -->
   <!-- PLAYGROUND -->
   <div class="screen" id="playgroundScreen" style="flex-direction:column;">
-    <div class="banner-header">
-      <button class="history-back" id="playgroundBack" aria-label="Back">←</button>
-      <button type="button" class="banner-tut" onclick="openExExplainer('playground')" aria-label="Open tutorial"><span class="clk-omnia-peek-head"><span class="clk-omnia-spin"></span></span></button>
+    <div class="pg-banner pg-banner--header">
+      <button class="history-back banner-inset-back" id="playgroundBack" aria-label="Back">←</button>
+      <button type="button" class="banner-tut banner-inset-tut" onclick="openExExplainer('playground')" aria-label="Open tutorial"><span class="clk-omnia-peek-head"><span class="clk-omnia-spin"></span></span></button>
+      <i class="pg-bubble" style="width:10px;height:10px;left:58%;bottom:18px;animation-delay:0s;"></i>
+      <i class="pg-bubble" style="width:7px;height:7px;left:66%;bottom:12px;animation-delay:1.4s;"></i>
+      <i class="pg-bubble" style="width:13px;height:13px;left:73%;bottom:24px;animation-delay:2.6s;"></i>
+      <i class="pg-bubble" style="width:6px;height:6px;left:80%;bottom:16px;animation-delay:3.8s;"></i>
+      <div class="pg-banner-text">
+        <div class="pg-banner-label">The Laboratory</div>
+        <div class="pg-banner-title">Playground</div>
+        <div class="pg-banner-sub">Experiments in consciousness — new practices brewing</div>
+      </div>
+      <div class="pg-banner-flask">🧪</div>
     </div>
     <div class="pg-scroll">
-      <div class="pg-banner">
-        <i class="pg-bubble" style="width:10px;height:10px;left:58%;bottom:18px;animation-delay:0s;"></i>
-        <i class="pg-bubble" style="width:7px;height:7px;left:66%;bottom:12px;animation-delay:1.4s;"></i>
-        <i class="pg-bubble" style="width:13px;height:13px;left:73%;bottom:24px;animation-delay:2.6s;"></i>
-        <i class="pg-bubble" style="width:6px;height:6px;left:80%;bottom:16px;animation-delay:3.8s;"></i>
-        <div class="pg-banner-text">
-          <div class="pg-banner-label">The Laboratory</div>
-          <div class="pg-banner-title">Playground</div>
-          <div class="pg-banner-sub">Experiments in consciousness — new practices brewing</div>
-        </div>
-        <div class="pg-banner-flask">🧪</div>
-      </div>
-
       <div class="pg-section-label">Coming Soon</div>
       <div class="pg-grid">
         <button class="pg-card" data-pg-soon="Frequencies" style="--pg-accent:#6fd0e0;">
@@ -5814,11 +5827,9 @@ body:not(.tut-live) #tutCorgi {
 
   <!-- ACHIEVEMENTS -->
   <div class="screen" id="achScreen">
-    <div class="banner-header">
-      <button class="history-back" id="achBackBtn" aria-label="Back">←</button>
-      <button type="button" class="banner-tut" onclick="openExExplainer('achievements')" aria-label="Open tutorial"><span class="clk-omnia-peek-head"><span class="clk-omnia-spin"></span></span></button>
-    </div>
     <div class="ex-banner" style="--exb-rgb:232,200,122; --exb-light:#f0d8ac; margin:0 0 14px; height:140px;">
+      <button class="history-back banner-inset-back" id="achBackBtn" aria-label="Back">←</button>
+      <button type="button" class="banner-tut banner-inset-tut" onclick="openExExplainer('achievements')" aria-label="Open tutorial"><span class="clk-omnia-peek-head"><span class="clk-omnia-spin"></span></span></button>
       <div class="exb-motes" aria-hidden="true">
         <i style="width:4px;height:4px;left:12%;top:28%;animation-delay:0s;animation-duration:4.4s;"></i>
         <i style="width:3px;height:3px;left:30%;top:66%;animation-delay:1.4s;animation-duration:5.2s;"></i>
