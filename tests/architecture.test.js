@@ -57,6 +57,10 @@ test('production code does not ship the retired Bardon RPG', () => {
   assert.doesNotMatch(server, /bardon_rpg_v2/);
 });
 
+test('server does not expose the retired sync diagnostic route', () => {
+  assert.doesNotMatch(server, /\/api\/sync\/sync\/diagnose/);
+});
+
 test('browser loads shared state modules before app code', () => {
   const contractTag = presence.indexOf('<script src="sync-contract.js"></script>');
   const progressTag = presence.indexOf('<script src="progress-state.js"></script>');

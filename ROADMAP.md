@@ -108,7 +108,7 @@ Last updated: 2026-07-13
 - [x] Extract Clock customization, sessions, results, and Concentration history into `concentration-clock-client.js`
 - [x] Audit the remaining inline Concentration completion, streak, reminder, companion, and integration clusters
 - [x] Consolidate duplicate global HTML escaping helpers
-- [ ] Remove `/api/sync/sync/diagnose` debug endpoint from server.js
+- [x] Remove `/api/sync/sync/diagnose` debug endpoint from server.js
 
 ---
 

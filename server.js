@@ -1339,40 +1339,6 @@ app.get('/api/sync/sync/history', verifyToken, async (req, res) => {
   }
 });
 
-// DIAGNOSTIC: inspect all stored snapshots with progress summary
-app.get('/api/sync/sync/diagnose', verifyToken, async (req, res) => {
-  try {
-    const snapshots = await syncDataCollection.find(
-      { userId: new ObjectId(req.user.userId) }
-    ).sort({ syncedAt: -1 }).limit(50).toArray();
-
-    const summary = snapshots.map((s, i) => {
-      let v3info = null, concInfo = null;
-      try {
-        const v3 = s.presence_v3 ? JSON.parse(s.presence_v3) : null;
-        if (v3) v3info = { level: v3.level, xp: v3.xp, totalSessions: v3.totalSessions, streak: v3.streak };
-      } catch(e) { v3info = 'parse error'; }
-      try {
-        const conc = s.presence_conc_v1 ? JSON.parse(s.presence_conc_v1) : null;
-        if (conc) concInfo = { level: conc.level, xp: conc.xp, totalSessions: conc.totalSessions };
-      } catch(e) { concInfo = 'parse error'; }
-      return {
-        index: i,
-        syncedAt: s.syncedAt,
-        deviceInfo: s.deviceInfo,
-        meaningful: snapshotHasMeaningfulProgress(s),
-        awareness: v3info,
-        concentration: concInfo,
-      };
-    });
-
-    res.json({ total: snapshots.length, snapshots: summary });
-  } catch (err) {
-    console.error('Diagnose error:', err.message);
-    res.status(500).json({ error: 'Diagnose failed' });
-  }
-});
-
 // ── LIVE SESSION BEACON ─────────────────────────────────
 // A lightweight, TTL'd marker of an in-progress session so OTHER signed-in
 // devices can show "a session is running elsewhere". This is deliberately
