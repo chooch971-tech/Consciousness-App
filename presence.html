@@ -4525,6 +4525,17 @@ body:not(.tut-live) #tutCorgi {
 @keyframes splashGlow {
   0%   { opacity:0; } 50% { opacity:1; } 100% { opacity:0.4; }
 }
+/* A signed-in startup pull that finds newer cloud data does a real
+   window.location.reload() to reinitialize cleanly (see _pullReloaded).
+   That reload is a genuine navigation, so the splash's own "materialize
+   from nothing" entrance would otherwise replay in full on the fresh page —
+   reading as flash-black-flash instead of one continuous screen. When
+   resuming right after that reload, skip the entrance animation so the
+   wordmark/tagline/glow are already at their settled state on first paint;
+   the brief navigation gap becomes the only interruption. */
+#splash.splash-resumed .splash-wordmark { opacity:1; transform:none; animation:none; }
+#splash.splash-resumed .splash-tagline { color:rgba(221,216,206,0.58); animation:none; }
+#splash.splash-resumed::before { opacity:0.4; animation:none; }
 /* Google sign-in button for Settings */
 .settings-google-btn {
   width:100%; display:flex; align-items:center; justify-content:center; gap:10px;
@@ -4977,6 +4988,10 @@ body:not(.tut-live) #tutCorgi {
 <script>
 (function() {
   var s = document.getElementById('splash');
+  // Resuming right after the startup-pull's window.location.reload() — see
+  // the note on .splash-resumed above. Skip the entrance animation so this
+  // reads as a continuation of the same splash, not a fresh one flashing in.
+  try { if (sessionStorage.getItem('_pullReloaded') === '1') s.classList.add('splash-resumed'); } catch(e) {}
   var dismissed = false;
   // Minimum time the splash stays up. The app now loads fast enough that the
   // cloud pull calls dismiss() almost immediately, so without a floor the
