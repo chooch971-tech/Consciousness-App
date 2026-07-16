@@ -11647,8 +11647,16 @@ startPrayerScheduler();
       window._returnToDrawer = false;
 
       // Fire the back action — handles state cleanup and calls showScreen,
-      // which removes .active from screenEl (making it display:none via CSS)
-      backBtn.click();
+      // which removes .active from screenEl (making it display:none via CSS).
+      // Most drawer pages also call renderHome(); while that refresh runs,
+      // preserve the live Guide figure so its DOM/animation phase survives the
+      // preview-to-real-drawer handoff.
+      window._preserveDrawerGuideAnimation = !!drawerPreview;
+      try {
+        backBtn.click();
+      } finally {
+        window._preserveDrawerGuideAnimation = false;
+      }
 
       // Swap the visual preview for the real drawer in the same frame.
       if (drawerPreview) {

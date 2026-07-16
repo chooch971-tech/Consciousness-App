@@ -442,6 +442,11 @@ function getEntityCrystalSVG(id) {
 var _drawerOmniaBtnOrigSVG = null;
 var _origCrystalHTML = {};
 function updateDrawerEntityBtn() {
+  // During a completed swipe back, the drawer preview is mirroring the live
+  // figure frame-for-frame. Some drawer pages call renderHome(), which reaches
+  // this function through Guide rendering; replacing the button DOM at that
+  // exact handoff restarts its animations and creates a visible jump.
+  if (window._preserveDrawerGuideAnimation) return;
   var btn = document.getElementById('drawerOmniaBtn');
   if (!btn) return;
   // Cache original Omnia crystal HTML on first call

@@ -108,6 +108,8 @@ test('top-level drawer screens reveal the open drawer during swipe-back', () => 
   assert.match(presence, /pair\[1\]\.style\.setProperty\('transform', frame\.transform, 'important'\)/);
   assert.match(presence, /function openDrawer\(instant, preserveGuideAnimation\)/);
   assert.match(presence, /if \(!preserveGuideAnimation\) \{[\s\S]*?updateDrawerEntityBtn/);
+  assert.match(presence, /window\._preserveDrawerGuideAnimation = !!drawerPreview;[\s\S]*?backBtn\.click\(\);[\s\S]*?window\._preserveDrawerGuideAnimation = false;/);
+  assert.match(omniaAppearanceClient, /function updateDrawerEntityBtn\(\) \{\s*[\s\S]*?if \(window\._preserveDrawerGuideAnimation\) return;/);
   assert.match(presence, /if \(drawerPreview\) \{\s*removeDrawerPreview\(drawerPreview\);\s*openDrawer\(true, true\);/);
   assert.match(presence, /querySelector\('[^']*\.lodge-back[^']*'\)/);
   assert.match(presence, /visibilitychange[\s\S]*abortInterruptedSwipe/);
