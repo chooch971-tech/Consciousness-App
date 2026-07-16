@@ -675,7 +675,9 @@ function collectDmPump(anchorEl, gid) {
   if (amount < 1 || omniaUpgradeBuilding(gid)) return;
   res[gid] = (res[gid] || 0) - amount;
   if (res[gid] < 0.5) res[gid] = 0;
-  mintDarkMatter(amount);
+  // mint returns the credited amount (after any Dark Current cosmetic boost),
+  // so the burst shows what the player actually received.
+  amount = mintDarkMatter(amount) || amount;
   renderOmniaEngine();
   playAkashaPop();
   if (anchorEl && anchorEl.getBoundingClientRect) {

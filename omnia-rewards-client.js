@@ -261,7 +261,10 @@ var OMNIA_BONUS_STACK_CAP = 3.0;
 // Unlocked entities/companions grant a permanent Akasha bonus scaled to each
 // item's real price tier (_price). Owning is enough — no need to equip — and
 // every unlocked item stacks, so the full collection reaches +64%.
+// Dark Current items (dm:true) are priced in ◆ and grant no akasha bonus —
+// their dmBonus feeds getOmniaDmBoost instead.
 function omniaCosmeticBonusPct(item) {
+  if (item && item.dm) return 0;
   return Math.round((item && item._price || 0) / 2000);
 }
 
@@ -274,6 +277,19 @@ function getOmniaCosmeticBoost() {
   var ownedC = omniaState.cosmetics.unlockedCompanions || [];
   OMNIA_ENTITIES.forEach(function(e) { if (ownedE.indexOf(e.id) !== -1) pct += omniaCosmeticBonusPct(e); });
   OMNIA_COMPANIONS.forEach(function(c) { if (ownedC.indexOf(c.id) !== -1) pct += omniaCosmeticBonusPct(c); });
+  return 1 + pct / 100;
+}
+
+// The Dark Matter counterpart: any owned item with a dmBonus (the Dark
+// Current cosmetics, plus Seraph's +1%) raises every ◆ mint — pump
+// collections and advanced-drill rewards alike.
+function getOmniaDmBoost() {
+  if (!omniaState.cosmetics) return 1;
+  var pct = 0;
+  var ownedE = omniaState.cosmetics.unlockedEntities || [];
+  var ownedC = omniaState.cosmetics.unlockedCompanions || [];
+  OMNIA_ENTITIES.forEach(function(e) { if (e.dmBonus && ownedE.indexOf(e.id) !== -1) pct += e.dmBonus; });
+  OMNIA_COMPANIONS.forEach(function(c) { if (c.dmBonus && ownedC.indexOf(c.id) !== -1) pct += c.dmBonus; });
   return 1 + pct / 100;
 }
 

@@ -84,6 +84,9 @@ function renderOmniaEntityPreview(item) {
   if (item.id === 'seraph') {
     return getEntityCrystalSVG('seraph');
   }
+  if (item.id === 'darkomnia') {
+    return getEntityCrystalSVG('darkomnia');
+  }
   return '<svg viewBox="0 0 48 58" aria-hidden="true">'
     + '<path d="M24 4 36 20 30 52H18L12 20Z" fill="rgba(255,255,255,.05)" stroke="' + color + '" stroke-width="1.4"/>'
     + '<path d="M24 5v47M13 20h22M18 52l6-32 6 32" fill="none" stroke="' + color + '" stroke-width=".85" opacity=".55"/>'
@@ -152,6 +155,51 @@ function renderOmniaCompanionPreview(item) {
       + '</g>'
       + '</g>'
       + '<circle cx="37" cy="10" r="1.2" fill="' + color + '" opacity=".8"/>'
+      + '</svg>';
+  }
+  if (item.id === 'gnome') {
+    // The Vein Gnome: an earth elemental miner — bent red cap, big beard,
+    // pickaxe over the shoulder, and a lantern holding a live dark-matter
+    // shard. Lantern sways on idle (.gnome-sway); tapped, he swings the
+    // pick (.gnome-mine).
+    return '<svg viewBox="0 0 92 92" aria-hidden="true">'
+      + '<defs><radialGradient id="gnLamp" cx="50%" cy="50%" r="50%"><stop offset="0%" stop-color="rgba(216,196,244,.65)"/><stop offset="100%" stop-color="rgba(216,196,244,0)"/></radialGradient></defs>'
+      // pickaxe over the left shoulder (swings on tap)
+      + '<g class="gnome-pick">'
+      + '<path d="M18 24 30 40" stroke="#8a6f4d" stroke-width="2.6" stroke-linecap="round"/>'
+      + '<path d="M10 27 C14 18 24 16 30 20 C24 20 17 22 14 30 Z" fill="#9b8ab0" stroke="#6f5f86" stroke-width="1" stroke-linejoin="round"/>'
+      + '</g>'
+      // body: earthy tunic, belt with violet buckle, boots
+      + '<path d="M31 52 C31 44 37 40 46 40 C55 40 61 44 61 52 L59 74 C59 78 33 78 33 74 Z" fill="#6f6248" stroke="#4a4030" stroke-width="1.2" stroke-linejoin="round"/>'
+      + '<path d="M32.5 62 L59.5 62" stroke="#3d3526" stroke-width="4"/>'
+      + '<rect x="43" y="59.4" width="6" height="5.2" rx="1" fill="#c4a8d4" stroke="#3d3526" stroke-width=".9"/>'
+      + '<path d="M36 77 c-4 0-6 3-5 5 l9 0 0-5Z M56 77 c4 0 6 3 5 5 l-9 0 0-5Z" fill="#3a3128" stroke="#241e16" stroke-width="1"/>'
+      // beard over the chest
+      + '<path d="M33 38 C31 52 36 62 46 63 C56 62 61 52 59 38 C54 43 38 43 33 38Z" fill="#e8e0d4" stroke="#b8ae9e" stroke-width="1" stroke-linejoin="round"/>'
+      + '<path d="M40 46 C42 52 50 52 52 46" fill="none" stroke="#c9beac" stroke-width=".9" opacity=".8"/>'
+      // face: nose + eyes under the brim
+      + '<path d="M35 33 C35 29 39 26 46 26 C53 26 57 29 57 33 C57 36 53 38 46 38 C39 38 35 36 35 33Z" fill="#e8b48a"/>'
+      + '<ellipse cx="46" cy="37" rx="4.4" ry="3.8" fill="#efc29b" stroke="#c98f60" stroke-width=".9"/>'
+      + '<circle cx="40.5" cy="32.5" r="1.3" fill="#2a2118"/>'
+      + '<circle cx="51.5" cy="32.5" r="1.3" fill="#2a2118"/>'
+      + '<circle cx="41" cy="32" r=".4" fill="#fff"/><circle cx="52" cy="32" r=".4" fill="#fff"/>'
+      // hat: tall dusty-red cone, tip bent
+      + '<path d="M32 30 C32 16 38 6 50 3 C48 8 49 10 55 9 C60 18 61 25 60 30 C52 25 40 25 32 30Z" fill="#a84a42" stroke="#7c332e" stroke-width="1.2" stroke-linejoin="round"/>'
+      + '<path d="M31 30 C40 24 52 24 61 30 C52 28 40 28 31 30Z" fill="#8f3d37" stroke="#7c332e" stroke-width="1"/>'
+      // arm + lantern with a live shard (sways on idle)
+      + '<path d="M59 52 C64 52 67 54 68 57" fill="none" stroke="#6f6248" stroke-width="4" stroke-linecap="round"/>'
+      + '<g class="gnome-lantern">'
+      + '<circle cx="70" cy="58" r="15" fill="url(#gnLamp)"/>'
+      + '<path d="M70 50 v-3" stroke="#4a4030" stroke-width="1.4"/>'
+      + '<rect x="64.5" y="50" width="11" height="14" rx="2.4" fill="rgba(10,7,20,.72)" stroke="#4a4030" stroke-width="1.3"/>'
+      + '<path d="M67.5 50v14M72.5 50v14" stroke="#4a4030" stroke-width=".9" opacity=".8"/>'
+      + '<path d="M70 53 73 57 70 61.5 67 57Z" fill="#d8c4f4"/>'
+      + '<circle cx="70" cy="57" r="1.2" fill="#fff" opacity=".85"/>'
+      + '</g>'
+      // dark-matter motes drifting up from the lamp
+      + '<circle class="gnome-mote" cx="79" cy="46" r="1" fill="#d8c4f4" opacity=".75"/>'
+      + '<circle class="gnome-mote" style="animation-delay:.25s" cx="83" cy="38" r=".7" fill="#d8c4f4" opacity=".5"/>'
+      + '<circle class="gnome-mote" style="animation-delay:.5s" cx="76" cy="31" r=".6" fill="#d8c4f4" opacity=".4"/>'
       + '</svg>';
   }
   if (item.id === 'corgi') {
@@ -433,6 +481,56 @@ function getEntityCrystalSVG(id) {
       // Scaled up 2.1x about center — the radial design otherwise reads small
       // in the guide orb. overflow:visible lets the wings extend past the box.
       + '<g transform="translate(40,62) scale(2.1) translate(-40,-62)">' + svg + '</g>'
+      + '</svg>';
+  }
+  if (id === 'darkomnia') {
+    // Omnia's exact crystal geometry (see OMNIA_CRYSTAL_SVG_RPT), turned to
+    // the dark current: where she casts light this form casts dark — a heavy
+    // near-black aura that dims the space around it. Near-black and white
+    // survive the palette hue-rotate, so every color scheme keeps the
+    // identity; only the glass edges and shard recolor.
+    return '<svg viewBox="0 0 80 130" width="72" height="118" xmlns="http://www.w3.org/2000/svg" style="overflow:visible;">'
+      + '<defs>'
+      + '<radialGradient id="dkoAura" cx="50%" cy="50%" r="50%"><stop offset="0%" stop-color="#000000" stop-opacity="0.9"/><stop offset="55%" stop-color="#050310" stop-opacity="0.8"/><stop offset="82%" stop-color="#0a0718" stop-opacity="0.38"/><stop offset="100%" stop-color="#0a0718" stop-opacity="0"/></radialGradient>'
+      + '<linearGradient id="dkoGlass" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#2a2244" stop-opacity="0.85"/><stop offset="100%" stop-color="#0e0a1e" stop-opacity="0.9"/></linearGradient>'
+      + '<filter id="dkoGlow" x="-40%" y="-40%" width="180%" height="180%"><feGaussianBlur stdDeviation="2" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>'
+      + '</defs>'
+      // the dark aura: a darkness denser than the room, with a faint violet rim
+      + '<ellipse cx="40" cy="63" rx="46" ry="62" fill="url(#dkoAura)"/>'
+      + '<ellipse cx="40" cy="63" rx="39" ry="54" fill="none" stroke="#c4a8d4" stroke-width="0.6" opacity="0.3"/>'
+      // dark motes adrift in the aura
+      + '<circle cx="3" cy="34" r="1" fill="#d8c4f4" opacity="0.4"/>'
+      + '<circle cx="76" cy="50" r="0.8" fill="#d8c4f4" opacity="0.35"/>'
+      + '<circle cx="68" cy="112" r="0.9" fill="#d8c4f4" opacity="0.3"/>'
+      + '<circle cx="8" cy="102" r="0.7" fill="#d8c4f4" opacity="0.35"/>'
+      // the same crystal, glass gone dark: head kite
+      + '<polygon points="40,3 54,14 40,25 26,14" fill="url(#dkoGlass)" stroke="#c4a8d4" stroke-width="0.8"/>'
+      + '<polygon points="40,3 54,14 40,13" fill="#d8c4f4" opacity="0.26"/>'
+      // torso hex
+      + '<polygon points="40,25 60,36 64,58 40,70 16,58 20,36" fill="url(#dkoGlass)" stroke="#c4a8d4" stroke-width="0.8"/>'
+      + '<polygon points="40,25 60,36 40,44" fill="#d8c4f4" opacity="0.14"/>'
+      + '<line x1="40" y1="25" x2="40" y2="70" stroke="#c4a8d4" stroke-width="0.4" opacity="0.4"/>'
+      // lower body + leg facets
+      + '<polygon points="40,70 64,58 56,88 40,100 24,88 16,58" fill="url(#dkoGlass)" stroke="#c4a8d4" stroke-width="0.8" opacity="0.94"/>'
+      + '<polygon points="40,100 56,88 40,114" fill="url(#dkoGlass)" stroke="#c4a8d4" stroke-width="0.7"/>'
+      + '<polygon points="40,100 24,88 40,114" fill="#1a1430" stroke="#c4a8d4" stroke-width="0.7" opacity="0.85"/>'
+      // stars inside the glass
+      + '<circle cx="34" cy="40" r="0.8" fill="#ffffff" opacity="0.8"/>'
+      + '<circle cx="52" cy="50" r="0.6" fill="#ffffff" opacity="0.6"/>'
+      + '<circle cx="43" cy="62" r="0.9" fill="#ffffff" opacity="0.75"/>'
+      + '<circle cx="30" cy="76" r="0.6" fill="#ffffff" opacity="0.5"/>'
+      + '<circle cx="49" cy="84" r="0.7" fill="#ffffff" opacity="0.6"/>'
+      + '<circle cx="40" cy="18" r="0.5" fill="#ffffff" opacity="0.55"/>'
+      + '<circle cx="38" cy="106" r="0.5" fill="#ffffff" opacity="0.45"/>'
+      // the heart: a live dark-matter shard where the torso glow used to be
+      + '<g filter="url(#dkoGlow)">'
+      + '<path d="M40 36 48 47 40 60 32 47Z" fill="#d8c4f4" opacity="0.22"/>'
+      + '<path d="M40 40 45 47 40 56 35 47Z" fill="#d8c4f4" opacity="0.55"/>'
+      + '<circle cx="40" cy="47" r="1.4" fill="#ffffff" opacity="0.85"/>'
+      + '</g>'
+      // sparkles, violet
+      + '<g opacity="0.6"><line x1="6" y1="22" x2="12" y2="22" stroke="#d8c4f4" stroke-width="1"/><line x1="9" y1="19" x2="9" y2="25" stroke="#d8c4f4" stroke-width="1"/></g>'
+      + '<g opacity="0.45"><line x1="68" y1="48" x2="74" y2="48" stroke="#d8c4f4" stroke-width="0.9"/><line x1="71" y1="45" x2="71" y2="51" stroke="#d8c4f4" stroke-width="0.9"/></g>'
       + '</svg>';
   }
   // Default: null = keep existing HTML (Omnia crystal)
@@ -719,15 +817,17 @@ function renderOmniaCosDetail(kind, item) {
   var selected = omniaCosmeticSelected(kind, item.id);
   var liveCost = omniaCosmeticCost(item);
   var label, disabled;
+  var balance = item.dm ? (omniaState.darkMatter || 0) : (omniaState.akasha || 0);
+  var costLabel = item.dm ? liveCost.toLocaleString() + ' ◆' : liveCost.toLocaleString() + ' akasha';
   if (kind === 'veil') {
-    label = selected ? 'Turn Off' : unlocked ? 'Turn On' : liveCost > 0 ? 'Unlock · ' + liveCost.toLocaleString() + ' akasha' : 'Unlock';
-    disabled = !unlocked && (omniaState.akasha || 0) < liveCost;
+    label = selected ? 'Turn Off' : unlocked ? 'Turn On' : liveCost > 0 ? 'Unlock · ' + costLabel : 'Unlock';
+    disabled = !unlocked && balance < liveCost;
   } else {
-    label = selected ? 'Selected' : unlocked ? 'Select' : liveCost > 0 ? 'Unlock ' + liveCost : 'Unlock';
-    disabled = selected || (!unlocked && (omniaState.akasha || 0) < liveCost);
+    label = selected ? 'Selected' : unlocked ? 'Select' : liveCost > 0 ? 'Unlock ' + (item.dm ? liveCost + ' ◆' : liveCost) : 'Unlock';
+    disabled = selected || (!unlocked && balance < liveCost);
   }
   return '<div class="oe-cos-detail">'
-    + '<div><div class="oe-cos-detail-name">' + item.name + '</div><div class="oe-cos-detail-sub">' + item.sub + (!unlocked && liveCost > 0 ? ' · ' + liveCost.toLocaleString() + ' akasha' : '') + '</div></div>'
+    + '<div><div class="oe-cos-detail-name">' + item.name + '</div><div class="oe-cos-detail-sub">' + item.sub + (!unlocked && liveCost > 0 ? ' · ' + costLabel : '') + '</div></div>'
     + '<button class="omnia-mini-btn" data-omnia-cosmetic-kind="' + kind + '" data-omnia-cosmetic-id="' + item.id + '"' + (disabled ? ' disabled' : '') + '>' + label + '</button>'
     + '</div>';
 }
@@ -759,7 +859,9 @@ function renderOmniaAppearance() {
 
   if (tab.kind === 'entity' || tab.kind === 'companion') {
     var totalBonusPct = Math.round((getOmniaCosmeticBoost() - 1) * 100);
-    html += '<div class="oe-cos-summary">Every form and companion you unlock adds its bonus permanently — no need to equip. Currently <strong>+' + totalBonusPct + '% Akasha</strong> from all training.</div>';
+    var totalDmPct = (typeof getOmniaDmBoost === 'function') ? Math.round((getOmniaDmBoost() - 1) * 100) : 0;
+    html += '<div class="oe-cos-summary">Every form and companion you unlock adds its bonus permanently — no need to equip. Currently <strong>+' + totalBonusPct + '% Akasha</strong>'
+      + (totalDmPct > 0 ? ' and <strong>+' + totalDmPct + '% Dark Matter</strong>' : '') + ' from all training.</div>';
   }
 
   if (tab.kind === 'palette') {
@@ -790,16 +892,24 @@ function renderOmniaAppearance() {
       html += '<div style="margin-top:10px;">' + renderOmniaCosDetail('veil', veilFocus) + '</div>';
     }
   } else {
-    html += '<div class="oe-cos-grid">' + tab.items.map(function(item) {
+    // Dark Current cosmetics (◆-priced) only exist once Dark Matter awakens.
+    var inBookII = typeof darkMatterUnlocked === 'function' && darkMatterUnlocked();
+    html += '<div class="oe-cos-grid">' + tab.items.filter(function(item) {
+      return !item.dm || inBookII;
+    }).map(function(item) {
       var unlocked = omniaCosmeticUnlocked(tab.kind, item.id);
       var selected = omniaCosmeticSelected(tab.kind, item.id);
       var liveCost = omniaCosmeticCost(item);
-      var tag = selected ? 'Selected' : unlocked ? 'Owned' : liveCost > 0 ? liveCost.toLocaleString() + ' akasha' : 'Locked';
+      var costTag = item.dm ? liveCost.toLocaleString() + ' ◆' : liveCost.toLocaleString() + ' akasha';
+      var tag = selected ? 'Selected' : unlocked ? 'Owned' : liveCost > 0 ? costTag : 'Locked';
       var attrs = unlocked
         ? 'data-omnia-cosmetic-kind="' + tab.kind + '" data-omnia-cosmetic-id="' + item.id + '"'
         : 'data-omnia-cos-focus="' + item.id + '" data-omnia-cos-kind="' + tab.kind + '"';
       var bonusPct = omniaCosmeticBonusPct(item);
-      var bonusHtml = bonusPct > 0 ? '<div class="oe-cos-card-bonus">+' + bonusPct + '% Akasha</div>' : '';
+      var bonusBits = [];
+      if (bonusPct > 0) bonusBits.push('+' + bonusPct + '% Akasha');
+      if (item.dmBonus) bonusBits.push('+' + item.dmBonus + '% ◆');
+      var bonusHtml = bonusBits.length ? '<div class="oe-cos-card-bonus">' + bonusBits.join(' · ') + '</div>' : '';
       return '<div class="oe-cos-card' + (selected ? ' sel' : '') + (unlocked ? '' : ' locked') + '" ' + attrs + '>'
         + renderOmniaCosmeticPreview(tab.kind, item)
         + '<div class="oe-cos-card-name">' + item.name + '</div>'
@@ -841,9 +951,17 @@ function unlockOrSelectOmniaCosmetic(kind, id) {
   }
   if (!unlocked) {
     var liveCost = omniaCosmeticCost(item);
-    if ((omniaState.akasha || 0) < liveCost) return;
-    omniaState.akasha -= liveCost;
-    omniaState.totalAkashaSpent = (omniaState.totalAkashaSpent || 0) + liveCost;
+    if (item.dm) {
+      // Dark Current items spend Dark Matter, and only exist in Book II.
+      if (typeof darkMatterUnlocked !== 'function' || !darkMatterUnlocked()) return;
+      if ((omniaState.darkMatter || 0) < liveCost) return;
+      omniaState.darkMatter -= liveCost;
+      omniaState.totalDarkMatterSpent = (omniaState.totalDarkMatterSpent || 0) + liveCost;
+    } else {
+      if ((omniaState.akasha || 0) < liveCost) return;
+      omniaState.akasha -= liveCost;
+      omniaState.totalAkashaSpent = (omniaState.totalAkashaSpent || 0) + liveCost;
+    }
     omniaUnlockList(kind).push(id);
   }
   if (kind === 'palette') omniaState.cosmetics.palette = id;
