@@ -190,6 +190,40 @@ function pathQuestChestSVG(unlocked) {
 }
 
 // Omnia opens a treasure chest — celebratory reward animation
+// A bright three-note ascending chime with a shimmer tail — plays when a
+// 7x2 Challenge gift is claimed. More festive than the generic collect pop
+// since claiming a gift is a bigger, rarer event.
+function playGiftOpenSound() {
+  if (typeof appSoundEnabled === 'function' && !appSoundEnabled()) return;
+  try {
+    var ctx = new (window.AudioContext || window.webkitAudioContext)();
+    var t = ctx.currentTime + 0.01;
+    var notes = [660, 880, 1320]; // rising major-ish arpeggio
+    notes.forEach(function(freq, i) {
+      var start = t + i * 0.075;
+      var osc = ctx.createOscillator(); osc.type = 'triangle';
+      osc.frequency.setValueAtTime(freq, start);
+      var gain = ctx.createGain();
+      gain.gain.setValueAtTime(0.0001, start);
+      gain.gain.exponentialRampToValueAtTime(0.14, start + 0.012);
+      gain.gain.exponentialRampToValueAtTime(0.0006, start + 0.32);
+      osc.connect(gain); gain.connect(ctx.destination);
+      osc.start(start); osc.stop(start + 0.34);
+    });
+    // a soft high shimmer under the last note, like light catching gold
+    var shimmerStart = t + 2 * 0.075;
+    var shimmer = ctx.createOscillator(); shimmer.type = 'sine';
+    shimmer.frequency.setValueAtTime(2640, shimmerStart);
+    var sGain = ctx.createGain();
+    sGain.gain.setValueAtTime(0.0001, shimmerStart);
+    sGain.gain.exponentialRampToValueAtTime(0.035, shimmerStart + 0.02);
+    sGain.gain.exponentialRampToValueAtTime(0.0004, shimmerStart + 0.42);
+    shimmer.connect(sGain); sGain.connect(ctx.destination);
+    shimmer.start(shimmerStart); shimmer.stop(shimmerStart + 0.44);
+    setTimeout(function() { try { ctx.close(); } catch(e) {} }, 700);
+  } catch(e) {}
+}
+
 function playChestOpenAnimation(amount, onDone, bonus) {
   var done = false;
   function finish() {
@@ -484,6 +518,7 @@ function updateGiftPathButton() {
 function claimGift(idx) {
   var s = loadGiftPath();
   if (!gpGiftClaimable(s, idx)) return;
+  playGiftOpenSound();
   s.claimed[idx] = true;
   var addedStack = false, atCap = false;
   if (idx === 6) {
