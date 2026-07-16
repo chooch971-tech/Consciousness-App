@@ -6318,7 +6318,7 @@ body:not(.tut-live) #tutCorgi {
         </svg>
         <span class="oe-chat-badge" id="omniaChatBadge" style="display:none;">0</span>
       </button>
-      <button class="oe-giftpath-btn" id="omniaGiftPathBtn" style="display:none;" aria-label="The Seven Gifts" onclick="openGiftPath()"><svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 2.6 16.1 20.5 4.6 6.1 21.2 14.1 2.8 14.1 19.4 6.1 7.9 20.5 Z"/></svg><span class="gp-badge" id="omniaGiftPathBadge">7</span></button>
+      <button class="oe-giftpath-btn" id="omniaGiftPathBtn" style="display:none;" aria-label="7x2 Challenge" onclick="openGiftPath()"><svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 2.6 16.1 20.5 4.6 6.1 21.2 14.1 2.8 14.1 19.4 6.1 7.9 20.5 Z"/></svg><span class="gp-badge" id="omniaGiftPathBadge">7</span></button>
 
       <!-- Full story log -->
       <div class="oe-chat-overlay" id="omniaChatOverlay" onclick="if(event.target===this)closeOmniaChat()">
@@ -7984,6 +7984,63 @@ document.getElementById('hamburgerBtn').addEventListener('click', openDrawer);
     if (!tracking) return;
     tracking = false;
     if (e.changedTouches[0].clientX - startX > 50) openDrawer();
+  }, {passive: true});
+})();
+
+// Swipe right from left edge → dismiss the 7x2 Challenge overlay. It's a
+// full-screen modal (not a `.screen`), so it sits outside the main swipe-back
+// system; home is already rendered underneath it, so sliding it away is
+// enough — no drawer/prev-screen reveal needed.
+(function() {
+  var el, startX, startY, tracking, dragging;
+  var EASE = 'cubic-bezier(0.25,0.46,0.45,0.94)';
+  document.addEventListener('touchstart', function(e) {
+    el = null;
+    var ov = document.getElementById('giftPathOverlay');
+    if (!ov || !ov.classList.contains('gp-show')) return;
+    var t = e.touches[0];
+    if (t.clientX > 44) return;
+    el = ov; startX = t.clientX; startY = t.clientY; tracking = true; dragging = false;
+  }, {passive: true});
+  document.addEventListener('touchmove', function(e) {
+    if (!tracking || !el) return;
+    var t = e.touches[0];
+    var dx = t.clientX - startX;
+    var dy = Math.abs(t.clientY - startY);
+    if (!dragging) {
+      if (dy > Math.abs(dx) + 8) { tracking = false; return; }
+      if (dx <= 6) return;
+      dragging = true;
+      el.style.transition = 'none';
+    }
+    el.style.transform = 'translateX(' + Math.max(0, dx) + 'px)';
+  }, {passive: true});
+  document.addEventListener('touchend', function(e) {
+    if (!tracking) return;
+    tracking = false;
+    if (!el || !dragging) { el = null; return; }
+    var target = el; el = null; dragging = false;
+    var dx = Math.max(0, e.changedTouches[0].clientX - startX);
+    var W = Math.max(window.innerWidth || 375, 320);
+    if (dx > W * 0.3) {
+      target.style.transition = 'transform .26s ' + EASE;
+      target.style.transform = 'translateX(100%)';
+      setTimeout(function() {
+        target.classList.remove('gp-vis');
+        target.classList.remove('gp-show');
+        target.style.transform = '';
+        target.style.transition = '';
+      }, 260);
+    } else {
+      target.style.transition = 'transform .22s ' + EASE;
+      target.style.transform = 'translateX(0)';
+      setTimeout(function() { target.style.transition = ''; }, 220);
+    }
+  }, {passive: true});
+  document.addEventListener('touchcancel', function() {
+    tracking = false;
+    if (el && dragging) { el.style.transition = ''; el.style.transform = ''; }
+    el = null; dragging = false;
   }, {passive: true});
 })();
 

@@ -315,24 +315,43 @@ function colorToTint(hex, alpha) {
 // practice, so each month is genuinely re-earned.
 var GIFT_PATH_KEY = 'presence_giftpath_v1';
 var GIFT_PATH_WINDOW_DAYS = 7; // the event runs on days 1–7 of each month
-// TEMP preview: while the Seven Gifts is still being revised, keep it visible
+// TEMP preview: while the 7x2 Challenge is still being revised, keep it visible
 // every day so it can be worked on. Set false to restore the real 1st–7th
 // window before launch.
 var GIFT_PATH_PREVIEW = true;
+// TEMP: bump this to force every device's current run back to Day 1 (from
+// today) on next load — used while testing so the 7-day countdown can be
+// walked day-by-day instead of picking up wherever the real calendar date
+// falls. Leave alone once testing is done; it only fires once per bump.
+var GIFT_PATH_TEST_RESET_VERSION = 1;
 function _gpToday() { return new Date().toISOString().slice(0, 10); }
 function gpCurrentMonth() { return new Date().toISOString().slice(0, 7); }
-// The Seven Gifts is a 7-day sprint: it opens on the 1st and closes after the
+// Days elapsed since the run's startDate (1-indexed) — the real basis for the
+// 7-day window. In production startDate is the 1st of the month, so this
+// matches the calendar date; during a test restart startDate is "today", so
+// the count genuinely begins at Day 1.
+function gpDaysSinceStart(s) {
+  s = s || loadGiftPath();
+  if (!s.startDate) return 1;
+  var start = new Date(s.startDate + 'T00:00:00');
+  var now = new Date();
+  var diff = Math.floor((Date.UTC(now.getFullYear(), now.getMonth(), now.getDate())
+    - Date.UTC(start.getFullYear(), start.getMonth(), start.getDate())) / 86400000);
+  return diff + 1;
+}
+// The 7x2 Challenge is a 7-day sprint: it opens on the 1st and closes after the
 // 7th, then returns on the 1st of the next month. Active only within that window.
-function gpWindowActive() { return GIFT_PATH_PREVIEW || new Date().getDate() <= GIFT_PATH_WINDOW_DAYS; }
-function gpEventDay() { return Math.min(Math.max(new Date().getDate(), 1), GIFT_PATH_WINDOW_DAYS); }
-function gpDaysLeftInWindow() { return Math.max(0, GIFT_PATH_WINDOW_DAYS - new Date().getDate() + 1); }
+function gpWindowActive(s) { return GIFT_PATH_PREVIEW || gpDaysSinceStart(s) <= GIFT_PATH_WINDOW_DAYS; }
+function gpEventDay(s) { return Math.min(Math.max(gpDaysSinceStart(s), 1), GIFT_PATH_WINDOW_DAYS); }
+function gpDaysLeftInWindow(s) { return Math.max(0, GIFT_PATH_WINDOW_DAYS - gpDaysSinceStart(s) + 1); }
 // Pictorial countdown: seven pips, one per event day — days already spent are
 // filled, today glows, days still to come are hollow.
 function gpTimePips() {
-  var day = new Date().getDate(), cur = gpEventDay(), left = gpDaysLeftInWindow();
+  var s = loadGiftPath();
+  var elapsed = gpDaysSinceStart(s), cur = gpEventDay(s), left = gpDaysLeftInWindow(s);
   var pips = '';
   for (var d = 1; d <= GIFT_PATH_WINDOW_DAYS; d++) {
-    var cls = d < day ? 'spent' : (d === day ? 'today' : 'future');
+    var cls = d < elapsed ? 'spent' : (d === elapsed ? 'today' : 'future');
     pips += '<span class="gp-daypip gp-daypip--' + cls + '">' + d + '</span>';
   }
   return '<div class="gp-timeline"><div class="gp-timeline-pips">' + pips + '</div>'
@@ -341,9 +360,10 @@ function gpTimePips() {
 }
 function _gpBlankClaimed() { return [false,false,false,false,false,false,false]; }
 function loadGiftPath() {
-  var def = { cleared: [], month: null, started: false, startDate: null, claimed: _gpBlankClaimed(), done: {}, _resetAt: 0 };
+  var def = { cleared: [], month: null, started: false, startDate: null, claimed: _gpBlankClaimed(), done: {}, _resetAt: 0, _testResetVersion: 0 };
   try { var s = localStorage.getItem(GIFT_PATH_KEY); if (s) { var p = JSON.parse(s); ['cleared','month','started','startDate','claimed','done'].forEach(function(k){ if (p[k] != null) def[k] = p[k]; });
     if (p._resetAt) def._resetAt = p._resetAt;
+    if (p._testResetVersion) def._testResetVersion = p._testResetVersion;
     // Migrate pre-monthly saves (no `cleared`/`month`): a finished old run — the
     // seventh gift claimed, or the legacy one-time devotion — counts as one
     // cleared month so the earned +2% carries into the stacking model.
@@ -365,6 +385,16 @@ function giftPathEarned() { return loadGiftPath().cleared.indexOf(gpCurrentMonth
 function ensureGiftPathStarted() {
   var s = loadGiftPath();
   var m = gpCurrentMonth();
+  if (s._testResetVersion !== GIFT_PATH_TEST_RESET_VERSION) {
+    // One-time test restart: begin a fresh 7-day run from today so the
+    // countdown can be walked day-by-day, rather than resuming wherever the
+    // real calendar date happens to land this month.
+    s.month = m; s.startDate = _gpToday(); s.claimed = _gpBlankClaimed(); s.done = {}; s.started = true;
+    var ci = s.cleared.indexOf(m); if (ci !== -1) s.cleared.splice(ci, 1);
+    s._testResetVersion = GIFT_PATH_TEST_RESET_VERSION;
+    saveGiftPath(s);
+    return s;
+  }
   if (s.month !== m) {
     // New calendar month → fresh run. cleared (durable) is untouched.
     s.month = m; s.startDate = m + '-01'; s.claimed = _gpBlankClaimed(); s.done = {}; s.started = true;
@@ -554,14 +584,11 @@ function renderGiftPathScreen() {
   });
   var statusLine = earned
     ? 'All seven collected this month — the +2% is banked. The gifts return on the 1st.'
-    : (nextClaimIdx === -1
-        ? 'All gifts done — collect the Seventh Seal before the window closes!'
-        : 'You\'re on <b>Gift ' + (nextClaimIdx + 1) + ' · ' + GIFT_PATH_DEFS[nextClaimIdx].name + '</b>. Gifts unlock in order — collect each before the next, even if a later gift\'s tasks are already done.');
-  el.innerHTML = '<div class="gp-top"><button class="gp-back" id="gpBack" aria-label="Back">←</button><div class="gp-title">The Seven Gifts</div></div>'
-    + '<div class="gp-sub">A seven-day sprint (the 1st through the 7th). Collect all seven for a permanent <b>+2% akasha</b>, stacking up to <b>+48%</b>. Current devotion: <b>+' + (stacks * 2) + '%</b>.'
-    + (atCap ? ' <b>· Maxed</b>' : (earned ? ' <b>· This month complete</b>' : '')) + '</div>'
+    : (nextClaimIdx === -1 ? 'All gifts done — collect the Seventh Seal before the window closes!' : '');
+  el.innerHTML = '<div class="gp-top"><button class="gp-back" id="gpBack" aria-label="Back">←</button><div class="gp-title">7x2 Challenge</div></div>'
+    + '<div class="gp-sub">Complete all challenges with seven days for a permanent 2% akasha boost. The 7x2 challenge will appear on the 1st every month.</div>'
     + (earned ? '' : gpTimePips())
-    + '<div class="gp-sub" style="margin-top:2px; color:var(--muted);">' + statusLine + '</div>'
+    + (statusLine ? '<div class="gp-sub" style="margin-top:2px; color:var(--muted);">' + statusLine + '</div>' : '')
     + '<div class="gp-tabs"><button class="gp-tab' + (_gpTab === 'gifts' ? ' on' : '') + '" data-gptab="gifts">The Gifts</button>'
     + '<button class="gp-tab' + (_gpTab === 'challenges' ? ' on' : '') + '" data-gptab="challenges">Challenges</button></div>'
     + '<div class="gp-body" id="gpBody">' + (_gpTab === 'gifts' ? giftsTab : chTab) + '</div>';
