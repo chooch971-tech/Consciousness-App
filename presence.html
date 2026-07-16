@@ -2401,10 +2401,23 @@
     .drawer-items { flex:1; display:flex; flex-direction:column; padding:7px 0; overflow-y:auto; scrollbar-width:none; }
     .drawer-items::-webkit-scrollbar { display:none; }
     .drawer-section-label { padding:11px 24px 5px; font-family:'DM Mono',monospace; font-size:8px; letter-spacing:.24em; text-transform:uppercase; color:rgba(221,216,206,.5); }
-    .drawer-item { --drawer-accent:#8eccc0; --drawer-tint:rgba(142,204,192,.055); position:relative; min-height:48px; display:flex; align-items:center; gap:14px; padding:11px 24px; cursor:pointer; border:none; background:none; color:var(--text); font-family:'DM Mono',monospace; font-size:10.5px; letter-spacing:.08em; text-align:left; width:100%; transition:background .15s,color .15s; }
+    .drawer-item { --drawer-accent:#8eccc0; --drawer-tint:rgba(142,204,192,.055); position:relative; min-height:48px; display:flex; align-items:center; gap:14px; padding:11px 24px; cursor:pointer; border:none; background:none; color:var(--text); font-family:'DM Mono',monospace; font-size:10.5px; letter-spacing:.08em; text-align:left; width:100%; transition:background .15s,color .15s; touch-action:manipulation; }
     .drawer-item::before { content:''; position:absolute; left:0; top:10px; bottom:10px; width:2px; border-radius:0 2px 2px 0; background:var(--drawer-accent); opacity:0; transform:scaleY(.35); transition:opacity .16s,transform .16s; }
-    .drawer-item:hover { background:var(--drawer-tint); }
-    .drawer-item:hover::before { opacity:.68; transform:scaleY(1); }
+    /* Scoped to real hover devices only: on iOS/touch, a :hover rule that
+       applies on tap can make WebKit treat the first tap as "reveal hover"
+       instead of a click, needing a confirming second tap to actually fire —
+       most noticeable right after the drawer freshly reopens (e.g. backing
+       out of Profile back into the drawer). Touch devices have no real hover
+       to reveal, so this scoping removes the ambiguity outright. */
+    @media (hover:hover) and (pointer:fine) {
+      .drawer-item:hover { background:var(--drawer-tint); }
+      .drawer-item:hover::before { opacity:.68; transform:scaleY(1); }
+    }
+    /* Tap feedback for touch devices — :active fires immediately on press
+       and doesn't carry the :hover ambiguity above, so touch keeps the same
+       visible response without the two-tap issue. */
+    .drawer-item:active { background:var(--drawer-tint); }
+    .drawer-item:active::before { opacity:.68; transform:scaleY(1); }
     .drawer-item-icon { font-size:14px; color:var(--drawer-accent); opacity:.86; width:18px; text-align:center; display:inline-flex; align-items:center; justify-content:center; }
     #drawerReports { --drawer-accent:#8ecce0; --drawer-tint:rgba(142,204,224,.055); }
     #drawerJournal { --drawer-accent:#d49898; --drawer-tint:rgba(212,152,152,.055); }
