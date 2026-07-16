@@ -8,6 +8,7 @@ const path = require('node:path');
 const root = path.join(__dirname, '..');
 const presence = fs.readFileSync(path.join(root, 'presence.html'), 'utf8');
 const server = fs.readFileSync(path.join(root, 'server.js'), 'utf8');
+const serviceWorker = fs.readFileSync(path.join(root, 'sw.js'), 'utf8');
 const awarenessClient = fs.readFileSync(path.join(root, 'awareness-client.js'), 'utf8');
 const visualizationClient = fs.readFileSync(path.join(root, 'visualization-client.js'), 'utf8');
 const auditoryClient = fs.readFileSync(path.join(root, 'auditory-client.js'), 'utf8');
@@ -37,6 +38,7 @@ const profileClient = fs.readFileSync(path.join(root, 'profile-client.js'), 'utf
 const settingsClient = fs.readFileSync(path.join(root, 'settings-client.js'), 'utf8');
 const achievementsClient = fs.readFileSync(path.join(root, 'achievements-client.js'), 'utf8');
 const prayerClient = fs.readFileSync(path.join(root, 'prayer-client.js'), 'utf8');
+const pavlokClient = fs.readFileSync(path.join(root, 'pavlok-client.js'), 'utf8');
 const tutorialClient = fs.readFileSync(path.join(root, 'tutorial-client.js'), 'utf8');
 const soulMirrorClient = fs.readFileSync(path.join(root, 'soul-mirror-client.js'), 'utf8');
 const journalClient = fs.readFileSync(path.join(root, 'journal-client.js'), 'utf8');
@@ -683,6 +685,24 @@ test('Prayer state and practice flow load before the Guide engine', () => {
   assert.match(prayerClient, /function\s+beginMantra\s*\(/);
   assert.match(prayerClient, /document\.getElementById\('prayerConcludeBtn'\)\.addEventListener/);
   assert.doesNotThrow(() => new Function(prayerClient));
+});
+
+test('Pavlok integration loads through its own late-stage client boundary', () => {
+  const platformTag = presence.indexOf('<script src="platform-client.js"></script>');
+  const pavlokTag = presence.indexOf('<script src="pavlok-client.js"></script>');
+  const tutorialTag = presence.indexOf('<script src="tutorial-client.js"></script>');
+  assert.notEqual(pavlokTag, -1);
+  assert.ok(platformTag < pavlokTag, 'Pavlok requires platform notification services');
+  assert.ok(pavlokTag < tutorialTag, 'Pavlok initializes before the tutorial can start exercises');
+  assert.equal(presence.split('<script src="pavlok-client.js"></script>').length - 1, 1);
+  assert.doesNotMatch(presence, /function\s+getPavlokPrefs\s*\(|function\s+sendPavlokStimulus\s*\(/);
+  assert.doesNotMatch(presence, /function\s+renderPavlokSettings\s*\(|\bPAVLOK_DEFAULT_PREFS\s*=\s*\{/);
+  assert.match(pavlokClient, /function\s+getPavlokPrefs\s*\(/);
+  assert.match(pavlokClient, /function\s+sendPavlokStimulus\s*\(/);
+  assert.match(pavlokClient, /function\s+renderPavlokSettings\s*\(/);
+  assert.match(pavlokClient, /function\s+pavlokSetType\s*\(/);
+  assert.match(serviceWorker, /['"]pavlok-client\.js['"]/);
+  assert.doesNotThrow(() => new Function(pavlokClient));
 });
 
 test('first-time tutorial loads through its own end-of-body client boundary', () => {
