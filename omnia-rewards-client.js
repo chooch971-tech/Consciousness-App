@@ -92,9 +92,11 @@ function omniaPickGuidedPathRecommendation(forceNew) {
 
 // Map a guided-path card id to the OMNIA_EXERCISE_META key whose body it
 // trains. Thought sub-modes all feed the mental body via Thought Control;
+// sense sub-modes (Feeling/Smell/Taste) all feed the astral body via Senses;
 // Soul Mirror and the advanced visual drills don't grant body levels.
 function omniaMetaIdForExercise(id) {
   if (id === 'observation' || id === 'focus' || id === 'vacancy') return 'thought';
+  if (id === 'feeling' || id === 'smell' || id === 'taste') return 'sense';
   if (id === 'pore') return 'pore_breathing';
   if (OMNIA_EXERCISE_META[id]) return id;
   return null;

@@ -1036,12 +1036,19 @@ function beginOmniaRecommendation() {
   var rec = omniaPickRecommendation(false);
   // If guided-path recommendation is a thought sub-mode, pre-set tcMode so the
   // session is saved under the correct mode (observation/focus/vacancy).
+  // Same for a sense sub-mode (feeling/smell/taste) and senseMode.
   if (rec.id === 'observation' || rec.id === 'focus' || rec.id === 'vacancy') {
     if (TC_MODE_DEFS[rec.id]) tcMode = rec.id;
   } else if (rec.id === 'thought') {
     var _ts = guideThoughtStats();
     var _m = guideState.thoughtModeForced || guideCurrentThoughtMode(_ts);
     if (TC_MODE_DEFS[_m]) tcMode = _m;
+  } else if (rec.id === 'feeling' || rec.id === 'smell' || rec.id === 'taste') {
+    if (SENSE_MODE_DEFS[rec.id]) senseMode = rec.id;
+  } else if (rec.id === 'sense') {
+    var _ss = guideSenseStats();
+    var _sm = guideState.senseModeForced || guideCurrentSenseMode(_ss);
+    if (SENSE_MODE_DEFS[_sm]) senseMode = _sm;
   }
   var metaId = omniaMetaIdForExercise(rec.id) || rec.id;
   var meta = OMNIA_EXERCISE_META[metaId] || OMNIA_EXERCISE_META.clock;

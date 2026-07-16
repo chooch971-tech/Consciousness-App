@@ -651,8 +651,8 @@ function renderPathQuests() {
   var awarenessDone = awarenessMinutes >= awarenessTarget, awarenessClaimed = !!q.awareness.claimed;
   var awarenessReward = pathQuestReward('awareness');
 
-  var exIcon = { clock:'⊙', visual:'◉', auditory:'◈', sense:'✺', thought:'◌', observation:'◌', focus:'◌', vacancy:'◌', asana:'✦', soulmirror:'◆', pore:'≋' };
-  var exColor = { clock:'#d4b08e', visual:'#8ab8e0', auditory:'#8eccc0', sense:'#e0a8c4', thought:'#98b4cc', observation:'#98b4cc', focus:'#98b4cc', vacancy:'#98b4cc', asana:'#d49898', soulmirror:'#c4a8d4', pore:'#8ecce0' };
+  var exIcon = { clock:'⊙', visual:'◉', auditory:'◈', sense:'✺', feeling:'✺', smell:'✺', taste:'✺', thought:'◌', observation:'◌', focus:'◌', vacancy:'◌', asana:'✦', soulmirror:'◆', pore:'≋' };
+  var exColor = { clock:'#d4b08e', visual:'#8ab8e0', auditory:'#8eccc0', sense:'#e0a8c4', feeling:'#e0a8c4', smell:'#e0a8c4', taste:'#e0a8c4', thought:'#98b4cc', observation:'#98b4cc', focus:'#98b4cc', vacancy:'#98b4cc', asana:'#d49898', soulmirror:'#c4a8d4', pore:'#8ecce0' };
 
   var dayNames = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
   var monthNames = ['January','February','March','April','May','June','July','August','September','October','November','December'];
@@ -691,6 +691,7 @@ function renderPathQuests() {
     + '</div>';
   html += '<div style="display:flex;flex-direction:column;gap:8px;">';
   var _isTC = function(id) { return id === 'thought' || id === 'observation' || id === 'focus' || id === 'vacancy'; };
+  var _isSense = function(id) { return id === 'sense' || id === 'feeling' || id === 'smell' || id === 'taste'; };
   // Sort: uncompleted exercises to the top, completed to the bottom (stable).
   items.sort(function(a, b) { if (a.done === b.done) return 0; return a.done ? 1 : -1; });
   // Exercises that currently grant a body level if completed — the glow
@@ -698,9 +699,9 @@ function renderPathQuests() {
   var _highlighted = (typeof omniaHighlightedExerciseIds === 'function') ? omniaHighlightedExerciseIds() : {};
   var _pqBuildCard = function(item) {
     var rounds = item.rounds != null ? item.rounds : (item.durationLabel && item.durationLabel.indexOf('x2') !== -1) ? 2 : 1;
-    var modeText = item.mode ? (GUIDE_FOUNDATION_THOUGHT_LABELS[item.mode] || item.mode) : '';
+    var modeText = item.mode ? (GUIDE_FOUNDATION_THOUGHT_LABELS[item.mode] || GUIDE_SENSE_LABELS[item.mode] || item.mode) : '';
     var metaParts = [];
-    if (modeText && _isTC(item.id)) metaParts.push(modeText);
+    if (modeText && (_isTC(item.id) || _isSense(item.id))) metaParts.push(modeText);
     if (item.duration) metaParts.push(item.duration + ' min');
     else if (item.durationLabel) metaParts.push(item.durationLabel.replace(/\s*[x×]\d+\s*$/, ''));
     if (rounds > 1 && !item.done) {
@@ -1113,12 +1114,15 @@ function renderPathQuests() {
 (function() {
   var menu = document.getElementById('pqAddMenu');
   if (!menu) return;
-  var ADD_NAMES = { clock:'Clock', visual:'Visualization', auditory:'Auditory', sense:'Senses', thought:'Thought Control', asana:'Asana', soulmirror:'Soul Mirror', pore:'Pore Breathing', observation:'Thought Observation', focus:'Thought Focus', vacancy:'Vacancy of Mind', multisense:'Multi-Sense', allangles:'All Angles' };
+  var ADD_NAMES = { clock:'Clock', visual:'Visualization', auditory:'Auditory', sense:'Senses', feeling:'Feeling', smell:'Smell', taste:'Taste', thought:'Thought Control', asana:'Asana', soulmirror:'Soul Mirror', pore:'Pore Breathing', observation:'Thought Observation', focus:'Thought Focus', vacancy:'Vacancy of Mind', multisense:'Multi-Sense', allangles:'All Angles' };
   var ADD_ICONS = {
     clock:       { icon:'&#9200;',   color:'#d4b08e' },
     visual:      { icon:'&#128065;', color:'#8ab8e0' },
     auditory:    { icon:'&#127911;', color:'#8eccc0' },
     sense:       { icon:'&#10042;',  color:'#e0a8c4' },
+    feeling:     { icon:'&#10042;',  color:'#e0a8c4' },
+    smell:       { icon:'&#10042;',  color:'#e0a8c4' },
+    taste:       { icon:'&#10042;',  color:'#e0a8c4' },
     thought:     { icon:'&#9711;',   color:'#98b4cc' },
     observation: { icon:'&#9711;',   color:'#98b4cc' },
     focus:       { icon:'&#9711;',   color:'#98b4cc' },
