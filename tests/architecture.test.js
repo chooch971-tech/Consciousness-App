@@ -66,6 +66,14 @@ test('server does not accept traffic after a MongoDB startup failure', () => {
   assert.match(server, /connectDB\(\)\.then\([\s\S]*?\}\)\.catch\(\(\) => \{\s*process\.exit\(1\);/);
 });
 
+test('externally costly sign-in and Pavlok routes are rate limited', () => {
+  assert.match(server, /app\.post\('\/api\/sync\/auth\/google', authRateLimit,/);
+  assert.match(server, /function\s+pavlokRateLimit\s*\(/);
+  assert.match(server, /app\.post\('\/api\/pavlok\/link', pavlokRateLimit,/);
+  assert.match(server, /app\.post\('\/api\/pavlok\/stimulus', pavlokRateLimit,/);
+  assert.match(server, /pavlokRateBuckets\.delete/);
+});
+
 test('browser loads shared state modules before app code', () => {
   const contractTag = presence.indexOf('<script src="sync-contract.js"></script>');
   const progressTag = presence.indexOf('<script src="progress-state.js"></script>');

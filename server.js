@@ -354,11 +354,34 @@ function authRateLimit(req, res, next) {
   next();
 }
 
+// Pavlok requests make third-party API calls. Keep a separate, more generous
+// short-window limit so normal session controls stay responsive without
+// letting the proxy become an unauthenticated high-volume relay.
+const pavlokRateBuckets = new Map();
+const PAVLOK_RATE_LIMIT = 30;
+const PAVLOK_RATE_WINDOW_MS = 60 * 1000;
+function pavlokRateLimit(req, res, next) {
+  const now = Date.now();
+  const key = req.ip || 'unknown';
+  const bucket = pavlokRateBuckets.get(key) || { count: 0, resetAt: now + PAVLOK_RATE_WINDOW_MS };
+  if (now > bucket.resetAt) {
+    bucket.count = 0;
+    bucket.resetAt = now + PAVLOK_RATE_WINDOW_MS;
+  }
+  bucket.count++;
+  pavlokRateBuckets.set(key, bucket);
+  if (bucket.count > PAVLOK_RATE_LIMIT) {
+    return res.status(429).json({ error: 'Too many Pavlok requests. Try again shortly.' });
+  }
+  next();
+}
+
 // Periodically clear stale rate-limit + prompt buckets so the Maps don't grow unbounded.
 setInterval(() => {
   const now = Date.now();
   for (const [k, b] of aiRateBuckets) if (now > b.resetAt + AI_RATE_WINDOW_MS) aiRateBuckets.delete(k);
   for (const [k, b] of authRateBuckets) if (now > b.resetAt + AUTH_RATE_WINDOW_MS) authRateBuckets.delete(k);
+  for (const [k, b] of pavlokRateBuckets) if (now > b.resetAt + PAVLOK_RATE_WINDOW_MS) pavlokRateBuckets.delete(k);
   if (usedPrompts.size > 5000) usedPrompts.clear();
 }, 10 * 60 * 1000);
 
@@ -770,7 +793,7 @@ app.post('/api/sync/auth/heartbeat', verifyToken, async (req, res) => {
 });
 
 // GOOGLE SIGN-IN — exchanges authorization code for tokens, then finds/creates user
-app.post('/api/sync/auth/google', async (req, res) => {
+app.post('/api/sync/auth/google', authRateLimit, async (req, res) => {
   const { code, credential } = req.body;
   if (!code && !credential) return res.status(400).json({ error: 'code or credential required' });
   try {
@@ -2435,7 +2458,7 @@ const PAVLOK_VALID_TYPES = new Set(['vibe', 'beep', 'zap']);
 
 // Exchange Pavlok email+password for a bearer token. Token is returned to the
 // client and stored in localStorage — we never persist Pavlok credentials.
-app.post('/api/pavlok/link', async (req, res) => {
+app.post('/api/pavlok/link', pavlokRateLimit, async (req, res) => {
   const { email, password } = req.body || {};
   if (!email || !password) return res.status(400).json({ error: 'Email and password required' });
   try {
@@ -2484,7 +2507,7 @@ async function firePavlokServer(token, type, value) {
 
 // Proxy a stimulus to the Pavlok API.  Token comes from the client (stored
 // in localStorage) so no server-side credential storage is needed.
-app.post('/api/pavlok/stimulus', async (req, res) => {
+app.post('/api/pavlok/stimulus', pavlokRateLimit, async (req, res) => {
   const { token, type, value } = req.body || {};
   if (!token) return res.status(400).json({ error: 'Token required' });
   if (!PAVLOK_VALID_TYPES.has(type)) return res.status(400).json({ error: 'Invalid stimulus type' });
