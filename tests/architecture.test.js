@@ -38,6 +38,7 @@ const profileClient = fs.readFileSync(path.join(root, 'profile-client.js'), 'utf
 const settingsClient = fs.readFileSync(path.join(root, 'settings-client.js'), 'utf8');
 const achievementsClient = fs.readFileSync(path.join(root, 'achievements-client.js'), 'utf8');
 const prayerClient = fs.readFileSync(path.join(root, 'prayer-client.js'), 'utf8');
+const omniaCompanionClient = fs.readFileSync(path.join(root, 'omnia-companion-client.js'), 'utf8');
 const remindersClient = fs.readFileSync(path.join(root, 'reminders-client.js'), 'utf8');
 const pavlokClient = fs.readFileSync(path.join(root, 'pavlok-client.js'), 'utf8');
 const tutorialClient = fs.readFileSync(path.join(root, 'tutorial-client.js'), 'utf8');
@@ -722,6 +723,23 @@ test('Practice reminders load through their own late-stage client boundary', () 
   assert.match(remindersClient, /function\s+renderPracticeReminderSettings\s*\(/);
   assert.match(serviceWorker, /['"]reminders-client\.js['"]/);
   assert.doesNotThrow(() => new Function(remindersClient));
+});
+
+test('Omnia companion interactions load through their own client boundary', () => {
+  const appearanceTag = presence.indexOf('<script src="omnia-appearance-client.js"></script>');
+  const companionTag = presence.indexOf('<script src="omnia-companion-client.js"></script>');
+  const remindersTag = presence.indexOf('<script src="reminders-client.js"></script>');
+  assert.notEqual(companionTag, -1);
+  assert.ok(appearanceTag < companionTag, 'companion behavior extends Omnia appearance rendering');
+  assert.ok(companionTag < remindersTag, 'companion behavior initializes before later integration clients');
+  assert.equal(presence.split('<script src="omnia-companion-client.js"></script>').length - 1, 1);
+  assert.doesNotMatch(presence, /function\s+setupCorgiWander\s*\(|function\s+setupCompanionIdle\s*\(/);
+  assert.doesNotMatch(presence, /\bCOMPANION_TAP_CLASS\s*=\s*\{|\bCOMPANION_IDLE_CLASS\s*=\s*\{/);
+  assert.match(omniaCompanionClient, /function\s+setupCorgiWander\s*\(/);
+  assert.match(omniaCompanionClient, /function\s+setupCompanionIdle\s*\(/);
+  assert.match(omniaCompanionClient, /document\.getElementById\(id\)/);
+  assert.match(serviceWorker, /['"]omnia-companion-client\.js['"]/);
+  assert.doesNotThrow(() => new Function(omniaCompanionClient));
 });
 
 test('first-time tutorial loads through its own end-of-body client boundary', () => {

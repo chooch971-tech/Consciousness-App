@@ -99,6 +99,7 @@ Last updated: 2026-07-13
 - [x] Extract Path Quests and Seven Gifts state, rewards, and overlay rendering into `guide-quests-client.js`
 - [x] Extract Pavlok authentication, stimulus delivery, preferences, and Settings rendering into `pavlok-client.js`
 - [x] Extract in-app reminder scheduling, practice reminder preferences, server sync, and Settings rendering into `reminders-client.js`
+- [x] Extract Omnia companion taps, animation cleanup, Corgi wandering, and idle scheduling into `omnia-companion-client.js`
 - [ ] Audit the remaining inline Concentration completion, streak, reminder, companion, and integration clusters
 - [x] Consolidate duplicate global HTML escaping helpers
 - [ ] Remove `/api/sync/sync/diagnose` debug endpoint from server.js
