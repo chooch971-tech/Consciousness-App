@@ -167,7 +167,10 @@ function omniaDiscountMult() {
 function omniaCosmeticCost(item) {
   // Dark Current items are ◆-priced and flat — like the pumps, the dark
   // current cannot be hurried, so Attunement's discount doesn't apply.
-  if (item && item.dm) return item.cost || 0;
+  if (item && item.dm) {
+    if (typeof DARK_CURRENT_PREVIEW !== 'undefined' && DARK_CURRENT_PREVIEW) return 0; // temp: free while previewing
+    return item.cost || 0;
+  }
   return Math.floor((item.cost || 0) * omniaDiscountMult());
 }
 function omniaUpgradeCost(upg) {

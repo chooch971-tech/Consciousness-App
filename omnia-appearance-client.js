@@ -818,16 +818,17 @@ function renderOmniaCosDetail(kind, item) {
   var liveCost = omniaCosmeticCost(item);
   var label, disabled;
   var balance = item.dm ? (omniaState.darkMatter || 0) : (omniaState.akasha || 0);
-  var costLabel = item.dm ? liveCost.toLocaleString() + ' ◆' : liveCost.toLocaleString() + ' akasha';
+  var dmPreview = item.dm && (typeof DARK_CURRENT_PREVIEW !== 'undefined' && DARK_CURRENT_PREVIEW);
+  var costLabel = item.dm ? (dmPreview ? 'Preview' : liveCost.toLocaleString() + ' ◆') : liveCost.toLocaleString() + ' akasha';
   if (kind === 'veil') {
     label = selected ? 'Turn Off' : unlocked ? 'Turn On' : liveCost > 0 ? 'Unlock · ' + costLabel : 'Unlock';
     disabled = !unlocked && balance < liveCost;
   } else {
-    label = selected ? 'Selected' : unlocked ? 'Select' : liveCost > 0 ? 'Unlock ' + (item.dm ? liveCost + ' ◆' : liveCost) : 'Unlock';
+    label = selected ? 'Selected' : unlocked ? 'Select' : dmPreview ? 'Preview' : liveCost > 0 ? 'Unlock ' + (item.dm ? liveCost + ' ◆' : liveCost) : 'Unlock';
     disabled = selected || (!unlocked && balance < liveCost);
   }
   return '<div class="oe-cos-detail">'
-    + '<div><div class="oe-cos-detail-name">' + item.name + '</div><div class="oe-cos-detail-sub">' + item.sub + (!unlocked && liveCost > 0 ? ' · ' + costLabel : '') + '</div></div>'
+    + '<div><div class="oe-cos-detail-name">' + item.name + '</div><div class="oe-cos-detail-sub">' + item.sub + (!unlocked && (liveCost > 0 || dmPreview) ? ' · ' + costLabel : '') + '</div></div>'
     + '<button class="omnia-mini-btn" data-omnia-cosmetic-kind="' + kind + '" data-omnia-cosmetic-id="' + item.id + '"' + (disabled ? ' disabled' : '') + '>' + label + '</button>'
     + '</div>';
 }
@@ -892,16 +893,18 @@ function renderOmniaAppearance() {
       html += '<div style="margin-top:10px;">' + renderOmniaCosDetail('veil', veilFocus) + '</div>';
     }
   } else {
-    // Dark Current cosmetics (◆-priced) only exist once Dark Matter awakens.
-    var inBookII = typeof darkMatterUnlocked === 'function' && darkMatterUnlocked();
+    // Dark Current cosmetics (◆-priced) only exist once Dark Matter awakens —
+    // unless the temporary preview flag is surfacing them early.
+    var dmPreview = typeof DARK_CURRENT_PREVIEW !== 'undefined' && DARK_CURRENT_PREVIEW;
+    var inBookII = (typeof darkMatterUnlocked === 'function' && darkMatterUnlocked()) || dmPreview;
     html += '<div class="oe-cos-grid">' + tab.items.filter(function(item) {
       return !item.dm || inBookII;
     }).map(function(item) {
       var unlocked = omniaCosmeticUnlocked(tab.kind, item.id);
       var selected = omniaCosmeticSelected(tab.kind, item.id);
       var liveCost = omniaCosmeticCost(item);
-      var costTag = item.dm ? liveCost.toLocaleString() + ' ◆' : liveCost.toLocaleString() + ' akasha';
-      var tag = selected ? 'Selected' : unlocked ? 'Owned' : liveCost > 0 ? costTag : 'Locked';
+      var costTag = item.dm ? (dmPreview ? 'Preview' : liveCost.toLocaleString() + ' ◆') : liveCost.toLocaleString() + ' akasha';
+      var tag = selected ? 'Selected' : unlocked ? 'Owned' : (item.dm ? costTag : liveCost > 0 ? costTag : 'Locked');
       var attrs = unlocked
         ? 'data-omnia-cosmetic-kind="' + tab.kind + '" data-omnia-cosmetic-id="' + item.id + '"'
         : 'data-omnia-cos-focus="' + item.id + '" data-omnia-cos-kind="' + tab.kind + '"';
@@ -952,9 +955,12 @@ function unlockOrSelectOmniaCosmetic(kind, id) {
   if (!unlocked) {
     var liveCost = omniaCosmeticCost(item);
     if (item.dm) {
-      // Dark Current items spend Dark Matter, and only exist in Book II.
-      if (typeof darkMatterUnlocked !== 'function' || !darkMatterUnlocked()) return;
-      if ((omniaState.darkMatter || 0) < liveCost) return;
+      // Dark Current items spend Dark Matter, and only exist in Book II —
+      // unless the temporary preview flag is on, which makes them free so
+      // they can be viewed equipped before Prestige 3.
+      var dmPreview = typeof DARK_CURRENT_PREVIEW !== 'undefined' && DARK_CURRENT_PREVIEW;
+      if (!dmPreview && (typeof darkMatterUnlocked !== 'function' || !darkMatterUnlocked())) return;
+      if ((omniaState.darkMatter || 0) < liveCost) return; // liveCost is 0 while previewing
       omniaState.darkMatter -= liveCost;
       omniaState.totalDarkMatterSpent = (omniaState.totalDarkMatterSpent || 0) + liveCost;
     } else {
