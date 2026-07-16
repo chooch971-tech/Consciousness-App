@@ -9204,6 +9204,21 @@ startPrayerScheduler();
     var idMap = {};
     root.querySelectorAll('[id]').forEach(function(el) {
       var oldId = el.id;
+      // Each drawer item's icon/accent color comes from a #id CSS rule
+      // (e.g. #drawerPlayground { --drawer-accent:... }). Renaming the id
+      // below breaks that match, so every item would fall back to the
+      // shared default accent — a flash of uniform color (green, the
+      // default) until the handoff to the real drawer. Freeze the resolved
+      // color as an inline custom property first so the clone keeps its
+      // own hue regardless of the id it ends up with.
+      var origEl = document.getElementById(oldId);
+      if (origEl) {
+        var cs = getComputedStyle(origEl);
+        var accent = cs.getPropertyValue('--drawer-accent');
+        var tint = cs.getPropertyValue('--drawer-tint');
+        if (accent) el.style.setProperty('--drawer-accent', accent.trim());
+        if (tint) el.style.setProperty('--drawer-tint', tint.trim());
+      }
       idMap[oldId] = prefix + oldId;
       el.id = idMap[oldId];
     });
