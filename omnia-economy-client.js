@@ -165,6 +165,12 @@ function omniaDiscountMult() {
   return Math.max(0.5, 1 - (att - 1) * 0.05);
 }
 function omniaCosmeticCost(item) {
+  // Dark Current items are ◆-priced and flat — like the pumps, the dark
+  // current cannot be hurried, so Attunement's discount doesn't apply.
+  if (item && item.dm) {
+    if (typeof DARK_CURRENT_PREVIEW !== 'undefined' && DARK_CURRENT_PREVIEW) return 0; // temp: free while previewing
+    return item.cost || 0;
+  }
   return Math.floor((item.cost || 0) * omniaDiscountMult());
 }
 function omniaUpgradeCost(upg) {
@@ -196,6 +202,9 @@ var DARK_MATTER_PER_ADVANCED = 30; // sized so total Book II sinks (~11k ◆) �
 function darkMatterUnlocked() { return (omniaState.prestige || 0) >= PRESTIGE_BOOK2; }
 function mintDarkMatter(amount) {
   if (!darkMatterUnlocked() || amount <= 0) return 0;
+  // Dark Current cosmetics (and Seraph) raise every mint. Applied here so
+  // pumps and practice drills both benefit without touching their call sites.
+  if (typeof getOmniaDmBoost === 'function') amount = Math.round(amount * getOmniaDmBoost());
   omniaState.darkMatter = (omniaState.darkMatter || 0) + amount;
   omniaState.totalDarkMatterEarned = (omniaState.totalDarkMatterEarned || 0) + amount;
   saveOmniaState(); // completion pipeline already pushes the sync

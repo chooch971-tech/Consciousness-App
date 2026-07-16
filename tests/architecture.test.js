@@ -737,6 +737,9 @@ test('Omnia companion interactions load through their own client boundary', () =
   assert.doesNotMatch(presence, /\bCOMPANION_TAP_CLASS\s*=\s*\{|\bCOMPANION_IDLE_CLASS\s*=\s*\{/);
   assert.match(omniaCompanionClient, /function\s+setupCorgiWander\s*\(/);
   assert.match(omniaCompanionClient, /function\s+setupCompanionIdle\s*\(/);
+  assert.match(omniaCompanionClient, /gnome:['"]gnome-mine['"]/);
+  assert.match(omniaCompanionClient, /gnome:['"]gnome-sway['"]/);
+  assert.match(omniaCompanionClient, /gnomeLampFlare/);
   assert.match(omniaCompanionClient, /document\.getElementById\(id\)/);
   assert.match(serviceWorker, /['"]omnia-companion-client\.js['"]/);
   assert.doesNotThrow(() => new Function(omniaCompanionClient));

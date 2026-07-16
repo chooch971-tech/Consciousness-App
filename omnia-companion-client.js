@@ -1,7 +1,7 @@
 // Companion taps: the corgi jumps; the wisp spins; the ember crackle-pops;
 // the mote winks. None of them morph the entity behind them.
-var COMPANION_TAP_CLASS = { wisp:'wisp-spin', ember:'ember-pop', mote:'mote-wink' };
-var COMPANION_IDLE_CLASS = { wisp:'wisp-loop', ember:'ember-flare', mote:'mote-scan' };
+var COMPANION_TAP_CLASS = { wisp:'wisp-spin', ember:'ember-pop', mote:'mote-wink', gnome:'gnome-mine' };
+var COMPANION_IDLE_CLASS = { wisp:'wisp-loop', ember:'ember-flare', mote:'mote-scan', gnome:'gnome-sway' };
 ['guideOmniaCompanion', 'omniaCenterCompanion', 'pathBannerOmniaCompanion'].forEach(function(id) {
   var comp = document.getElementById(id);
   if (!comp) return;
@@ -28,6 +28,10 @@ var COMPANION_IDLE_CLASS = { wisp:'wisp-loop', ember:'ember-flare', mote:'mote-s
     if (e.animationName === 'emberFlare') comp.classList.remove('ember-flare');
     if (e.animationName === 'moteWink') comp.classList.remove('mote-wink');
     if (e.animationName === 'moteScan') comp.classList.remove('mote-scan');
+    // gnome-mine drives both the pick swing (.9s) and the lantern flare
+    // (3.2s); drop the class only when the longer flare finishes.
+    if (e.animationName === 'gnomeLampFlare') comp.classList.remove('gnome-mine');
+    if (e.animationName === 'gnomeSway') comp.classList.remove('gnome-sway');
     if (e.animationName !== 'omniaCorgiJump') return;
     comp.classList.remove('corgi-jumping');
     if (comp.dataset.jumpsLeft && parseInt(comp.dataset.jumpsLeft, 10) > 0) {

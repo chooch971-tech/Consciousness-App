@@ -24,6 +24,11 @@ var OMNIA_ENTITY_MORPH_SYMBOLS = {
     { id:'wheel', label:'Wheel of Fire', color:'#f0c860' },
     { id:'eye', label:'Eye of Flame', color:'#f3d486' },
     { id:'sun', label:'Burning Round', color:'#e8b84a' }
+  ],
+  darkomnia: [
+    { id:'eye', label:'Void Eye', color:'#c4a8d4' },
+    { id:'moon', label:'Dark Moon', color:'#9b7fb8' },
+    { id:'triangle', label:'Umbral Triad', color:'#d8c4f4' }
   ]
 };
 var omniaMorphIndexes = { omnia:0, noema:0, aurel:0, elys:0, seraph:0 };
