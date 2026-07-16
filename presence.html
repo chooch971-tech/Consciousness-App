@@ -2383,21 +2383,6 @@
     /* The swipe preview lives inside homeScreen, under the active page. This
        keeps the already-rendered Home page visible beneath its menu scrim. */
     .drawer-overlay.swipe-back-preview { position:absolute; z-index:2; pointer-events:none; }
-    /* The preview has its IDs removed, so #drawerOmniaBtn's compact tier rules
-       cannot apply. Hide progression regalia here rather than letting the
-       full-size Step layers briefly inherit their Guide-screen dimensions. */
-    .drawer-overlay.swipe-back-preview .omnia-triad-orbit,
-    .drawer-overlay.swipe-back-preview .omnia-crown,
-    .drawer-overlay.swipe-back-preview .omnia-polar,
-    .drawer-overlay.swipe-back-preview .omnia-elements,
-    .drawer-overlay.swipe-back-preview .omnia-mantle,
-    .drawer-overlay.swipe-back-preview .omnia-mandorla,
-    .drawer-overlay.swipe-back-preview .omnia-axis,
-    .drawer-overlay.swipe-back-preview .omnia-geo,
-    .drawer-overlay.swipe-back-preview .omnia-halo10,
-    .drawer-overlay.swipe-back-preview .omnia-diadem,
-    .drawer-overlay.swipe-back-preview .omnia-cap,
-    .drawer-overlay.swipe-back-preview .omnia-apo-card { display:none !important; }
     .drawer-header { padding:0 24px 24px; border-bottom:1px solid var(--border); margin-bottom:8px; }
     .drawer-wordmark { font-family:Cormorant Garamond,serif; font-size:11px; font-weight:300; letter-spacing:.35em; text-transform:uppercase; color:var(--accent); }
     .drawer-level { font-size:9px; letter-spacing:.15em; color:var(--muted); margin-top:4px; }
@@ -2655,8 +2640,8 @@ body.omnia-tier-orbit .omnia-triad-orbit { display:block; }
 .omnia-triad-orbit .triad-shard.t-mental   .triad-shard-inner { color:#a8c8e8; }
 .oe-omnia-figure .omnia-triad-orbit { --orbit-radius: 92px; }
 .oe-omnia-figure .omnia-triad-orbit .triad-shard { width:18px; height:22px; margin:-11px 0 0 -9px; }
-#drawerOmniaBtn .omnia-triad-orbit { --orbit-radius: 30px; }
-#drawerOmniaBtn .omnia-triad-orbit .triad-shard { width:9px; height:11px; margin:-5.5px 0 0 -4.5px; }
+#drawerOmniaBtn .omnia-triad-orbit, .drawer-omnia-preview .omnia-triad-orbit { --orbit-radius: 30px; }
+#drawerOmniaBtn .omnia-triad-orbit .triad-shard, .drawer-omnia-preview .omnia-triad-orbit .triad-shard { width:9px; height:11px; margin:-5.5px 0 0 -4.5px; }
 @keyframes omniaTriadSpin {
   from { transform:translate(-50%,-50%) rotateX(72deg) rotateZ(0deg); }
   to   { transform:translate(-50%,-50%) rotateX(72deg) rotateZ(360deg); }
@@ -2671,7 +2656,7 @@ body.omnia-tier-orbit .omnia-triad-orbit { display:block; }
 .omnia-crown::before { content:''; position:absolute; inset:18%; border-radius:50%; border:1px solid rgba(240,220,160,.40); box-shadow:0 0 12px rgba(240,220,160,.36), inset 0 0 8px rgba(240,220,160,.20); }
 body.omnia-tier-crown .omnia-crown { display:block; }
 .oe-omnia-figure .omnia-crown { top:-14px; width:72px; height:72px; }
-#drawerOmniaBtn .omnia-crown { top:-5px; width:32px; height:32px; }
+#drawerOmniaBtn .omnia-crown, .drawer-omnia-preview .omnia-crown { top:-5px; width:32px; height:32px; }
 @keyframes omniaCrownPulse { 0%,100%{opacity:.8;transform:translateX(-50%) scale(.96);} 50%{opacity:1;transform:translateX(-50%) scale(1.06);} }
 
 /* ── Step IV permanent add-on: Polar Currents (twin vertical light pillars) ─ */
@@ -2689,11 +2674,14 @@ body.omnia-tier-polar .omnia-polar { display:block; }
 .oe-omnia-figure .omnia-polar-pillar { width:5px; height:108px; }
 .oe-omnia-figure .omnia-polar-pillar.left  { left:-10px; }
 .oe-omnia-figure .omnia-polar-pillar.right { right:-10px; }
-#drawerOmniaBtn .omnia-polar-pillar { width:2px; height:22px; }
+#drawerOmniaBtn .omnia-polar-pillar, .drawer-omnia-preview .omnia-polar-pillar { width:2px; height:22px; }
 /* The drawer crystal is ~48px — the later tier layers are pure clutter there. */
 #drawerOmniaBtn .omnia-elements, #drawerOmniaBtn .omnia-mantle,
 #drawerOmniaBtn .omnia-geo, #drawerOmniaBtn .omnia-halo10,
-#drawerOmniaBtn .omnia-axis { display:none !important; }
+#drawerOmniaBtn .omnia-axis,
+.drawer-omnia-preview .omnia-elements, .drawer-omnia-preview .omnia-mantle,
+.drawer-omnia-preview .omnia-geo, .drawer-omnia-preview .omnia-halo10,
+.drawer-omnia-preview .omnia-axis { display:none !important; }
 @keyframes polarPillar { 0%,100%{opacity:.4; transform:translateY(-50%) scaleY(.9);} 50%{opacity:.92; transform:translateY(-50%) scaleY(1.06);} }
 
 /* ── Step V permanent add-on: Element Wheel + Luminous Mantle ──────── */
@@ -2781,10 +2769,10 @@ body.omnia-tier-crown .omnia-diadem { display:block; }
 .oe-omnia-figure .omnia-diadem i:nth-child(3) { left:38px; top:3px;  font-size:12px; }
 .oe-omnia-figure .omnia-diadem i:nth-child(4) { left:58px; top:7px;  font-size:10px; }
 .oe-omnia-figure .omnia-diadem i:nth-child(5) { left:74px; top:16px; font-size:8px; }
-#drawerOmniaBtn .omnia-diadem { display:none !important; }
+#drawerOmniaBtn .omnia-diadem, .drawer-omnia-preview .omnia-diadem { display:none !important; }
 .omnia-cap { position:absolute; top:-6px; left:50%; width:7px; height:7px; margin-left:-3.5px; background:#dff0ff; transform:rotate(45deg); box-shadow:0 0 8px #b8e0f8, 0 0 16px rgba(160,210,240,.7); animation:omniaEnhTwinkle 4s ease-in-out infinite; }
 .oe-omnia-figure .omnia-cap { width:9px; height:9px; margin-left:-4.5px; top:-7px; }
-#drawerOmniaBtn .omnia-cap { display:none; }
+#drawerOmniaBtn .omnia-cap, .drawer-omnia-preview .omnia-cap { display:none; }
 .omnia-apo-card { position:absolute; font-style:normal; font-size:7px; color:#f4e2b0; text-shadow:0 0 8px rgba(244,226,176,.8); animation:omniaEnhTwinkle 5s ease-in-out infinite; }
 .omnia-apo-card.c1 { top:5%; left:50%; margin-left:-4px; }
 .omnia-apo-card.c2 { bottom:5%; left:50%; margin-left:-4px; }
@@ -4439,7 +4427,7 @@ body:not(.tut-live) #tutCorgi {
 
 /* Omnia figure in drawer header */
 .drawer-header { display:flex; flex-direction:column; align-items:center; text-align:center; }
-#drawerOmniaBtn {
+#drawerOmniaBtn, .drawer-omnia-preview {
   background:none; border:none; cursor:default; padding:4px;
   opacity:0.65; transition:opacity 0.2s ease, filter 0.2s ease;
   line-height:0; margin-bottom:10px; position:relative;
@@ -11506,6 +11494,8 @@ startPrayerScheduler();
     var source = document.getElementById('drawerOverlay');
     if (!source) return null;
     var preview = source.cloneNode(true);
+    var guideFigure = preview.querySelector('#drawerOmniaBtn');
+    if (guideFigure) guideFigure.classList.add('drawer-omnia-preview');
     preview.removeAttribute('id');
     preview.querySelectorAll('[id]').forEach(function(el) { el.removeAttribute('id'); });
     preview.className = 'drawer-overlay show drawer-instant swipe-back-preview';
