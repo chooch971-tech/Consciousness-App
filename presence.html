@@ -11408,6 +11408,16 @@ startPrayerScheduler();
     uniquifyDrawerPreviewIds(preview);
     preview.className = 'drawer-overlay show drawer-instant swipe-back-preview';
     host.appendChild(preview);
+    // cloneNode drops scrollTop, so a drawer scrolled partway down would render
+    // at the top in the preview and then visibly jump to the real drawer's
+    // scrolled position at handoff ("skips up and then down"). Copy each
+    // scrolled node's position across — node order matches since preview is a
+    // deep clone of source. Must run after append so the clone can accept it.
+    var srcScrollNodes = source.querySelectorAll('*');
+    var cloneScrollNodes = preview.querySelectorAll('*');
+    for (var s = 0; s < srcScrollNodes.length; s++) {
+      if (srcScrollNodes[s].scrollTop) cloneScrollNodes[s].scrollTop = srcScrollNodes[s].scrollTop;
+    }
     startDrawerGuideMirror(sourceGuide, guideClone, preview);
     return preview;
   }
