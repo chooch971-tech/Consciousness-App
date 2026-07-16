@@ -1753,6 +1753,15 @@ function guideBuildAddedItem(exId, rounds) {
     var tips = { visual:'Added by you. Hold a simple mental image clearly — clarity matters more than complexity.', auditory:'Added by you. Focused listening on a single sound; broaden the astral body steadily.' };
     return { id:exId, name:names[exId], duration:min, durationLabel:min + ' min' + (rounds > 1 ? ' x2' : ''), done:st.todaySec >= target, progress:'added · ' + (st.count || 0) + ' recorded', tip:tips[exId], open:exId, added:true };
   }
+  if (exId === 'sense') {
+    // Senses is held to its own 2/5/10 duration model, same as when it
+    // appears as the rotating gate — see the note above in buildExperiencedGuideItems.
+    var senseScore = guideMonitoredScore('sense', stats);
+    var senseDur = Math.min(10, guideDurationForScore(senseScore));
+    var senseTarget = senseDur * 60 * rounds;
+    var senseSt = stats.sense || { count:0, todaySec:0 };
+    return { id:'sense', name:'Senses', duration:senseDur, durationLabel:senseDur + ' min' + (rounds > 1 ? ' x2' : ''), done:senseSt.todaySec >= senseTarget, progress:'added · ' + (senseSt.count || 0) + ' recorded', tip:'Added by you. Imagine a feeling, smell, or taste as vividly as you can — accuracy matters more than intensity.', open:'sense', added:true };
+  }
   if (exId === 'multisense' || exId === 'allangles') {
     var advNames = { multisense:'Multi-Sense', allangles:'All Angles' };
     var advTips  = { multisense:'Added by you. Hold a full scene — sight, sound, texture, smell — completely in mind.', allangles:'Added by you. Rotate an object through every angle; build a complete three-dimensional image.' };

@@ -1113,11 +1113,12 @@ function renderPathQuests() {
 (function() {
   var menu = document.getElementById('pqAddMenu');
   if (!menu) return;
-  var ADD_NAMES = { clock:'Clock', visual:'Visualization', auditory:'Auditory', thought:'Thought Control', asana:'Asana', soulmirror:'Soul Mirror', pore:'Pore Breathing', observation:'Thought Observation', focus:'Thought Focus', vacancy:'Vacancy of Mind', multisense:'Multi-Sense', allangles:'All Angles' };
+  var ADD_NAMES = { clock:'Clock', visual:'Visualization', auditory:'Auditory', sense:'Senses', thought:'Thought Control', asana:'Asana', soulmirror:'Soul Mirror', pore:'Pore Breathing', observation:'Thought Observation', focus:'Thought Focus', vacancy:'Vacancy of Mind', multisense:'Multi-Sense', allangles:'All Angles' };
   var ADD_ICONS = {
     clock:       { icon:'&#9200;',   color:'#d4b08e' },
     visual:      { icon:'&#128065;', color:'#8ab8e0' },
     auditory:    { icon:'&#127911;', color:'#8eccc0' },
+    sense:       { icon:'&#10042;',  color:'#e0a8c4' },
     thought:     { icon:'&#9711;',   color:'#98b4cc' },
     observation: { icon:'&#9711;',   color:'#98b4cc' },
     focus:       { icon:'&#9711;',   color:'#98b4cc' },
