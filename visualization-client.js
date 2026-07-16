@@ -1199,6 +1199,11 @@ function saveVisSessionResult() {
 var currentExercise = 'clock';
 var concHistoryFrom = 'home';
 var concHistoryFilter = 'all';
+// Which tab was active when the exercise setup screen was opened — 'guide'
+// if launched from a Guide Path card, otherwise 'concentration'. Lets the
+// setup screen's Back button return to wherever the user actually came
+// from, the same way a completed session already does via returnAfterExercise.
+var exSetupOriginMode = 'concentration';
 
 var EXERCISE_DEFS = {
   clock: {
@@ -1607,6 +1612,7 @@ function toggleClkOmnia() {
 function openExerciseSetup(ex) {
   suppressTutorialForExerciseEntry();
   currentExercise = ex;
+  exSetupOriginMode = (typeof currentMode !== 'undefined') ? currentMode : 'concentration';
   stopAllAudio();
   var def = EXERCISE_DEFS[ex];
   if (!def) return;
@@ -1887,7 +1893,8 @@ document.getElementById('concViewToggle').addEventListener('click', toggleConcVi
 document.getElementById('exSetupBack').addEventListener('click', function() {
   stopAllAudio();
   showScreen('homeScreen');
-  switchMode('concentration');
+  if (typeof returnAfterExercise === 'function') returnAfterExercise(exSetupOriginMode);
+  else switchMode('concentration');
 });
 document.getElementById('visTutorialBack').addEventListener('click', function() {
   showScreen('exSetupScreen');
