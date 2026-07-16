@@ -100,6 +100,7 @@ Last updated: 2026-07-13
 - [x] Extract Pavlok authentication, stimulus delivery, preferences, and Settings rendering into `pavlok-client.js`
 - [x] Extract in-app reminder scheduling, practice reminder preferences, server sync, and Settings rendering into `reminders-client.js`
 - [x] Extract Omnia companion taps, animation cleanup, Corgi wandering, and idle scheduling into `omnia-companion-client.js`
+- [x] Extract Streak calendar, goals, Society, badge routing, and ended-state UI into `streak-client.js`
 - [ ] Audit the remaining inline Concentration completion, streak, reminder, companion, and integration clusters
 - [x] Consolidate duplicate global HTML escaping helpers
 - [ ] Remove `/api/sync/sync/diagnose` debug endpoint from server.js

@@ -38,6 +38,7 @@ const profileClient = fs.readFileSync(path.join(root, 'profile-client.js'), 'utf
 const settingsClient = fs.readFileSync(path.join(root, 'settings-client.js'), 'utf8');
 const achievementsClient = fs.readFileSync(path.join(root, 'achievements-client.js'), 'utf8');
 const prayerClient = fs.readFileSync(path.join(root, 'prayer-client.js'), 'utf8');
+const streakClient = fs.readFileSync(path.join(root, 'streak-client.js'), 'utf8');
 const omniaCompanionClient = fs.readFileSync(path.join(root, 'omnia-companion-client.js'), 'utf8');
 const remindersClient = fs.readFileSync(path.join(root, 'reminders-client.js'), 'utf8');
 const pavlokClient = fs.readFileSync(path.join(root, 'pavlok-client.js'), 'utf8');
@@ -743,6 +744,26 @@ test('Omnia companion interactions load through their own client boundary', () =
   assert.match(omniaCompanionClient, /document\.getElementById\(id\)/);
   assert.match(serviceWorker, /['"]omnia-companion-client\.js['"]/);
   assert.doesNotThrow(() => new Function(omniaCompanionClient));
+});
+
+test('Streak screen and ended-state UI load through their own client boundary', () => {
+  const profileTag = presence.indexOf('<script src="profile-client.js"></script>');
+  const streakTag = presence.indexOf('<script src="streak-client.js"></script>');
+  const companionTag = presence.indexOf('<script src="omnia-companion-client.js"></script>');
+  assert.notEqual(streakTag, -1);
+  assert.ok(profileTag < streakTag, 'Streak Society requires Profile friend helpers');
+  assert.ok(streakTag < companionTag, 'streak UI initializes before later end-of-body clients');
+  assert.equal(presence.split('<script src="streak-client.js"></script>').length - 1, 1);
+  assert.doesNotMatch(presence, /function\s+buildStreakCalendar\s*\(|function\s+showStreakScreen\s*\(/);
+  assert.doesNotMatch(presence, /function\s+openStreakSociety\s*\(|function\s+showStreakEndedPrompt\s*\(/);
+  assert.doesNotMatch(presence, /\bSTREAK_COMMITS\s*=\s*\[/);
+  assert.match(streakClient, /\bSTREAK_COMMITS\s*=\s*\[/);
+  assert.match(streakClient, /function\s+buildStreakCalendar\s*\(/);
+  assert.match(streakClient, /function\s+showStreakScreen\s*\(/);
+  assert.match(streakClient, /function\s+openStreakSociety\s*\(/);
+  assert.match(streakClient, /function\s+showStreakEndedPrompt\s*\(/);
+  assert.match(serviceWorker, /['"]streak-client\.js['"]/);
+  assert.doesNotThrow(() => new Function(streakClient));
 });
 
 test('first-time tutorial loads through its own end-of-body client boundary', () => {
