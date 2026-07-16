@@ -38,6 +38,7 @@ const profileClient = fs.readFileSync(path.join(root, 'profile-client.js'), 'utf
 const settingsClient = fs.readFileSync(path.join(root, 'settings-client.js'), 'utf8');
 const achievementsClient = fs.readFileSync(path.join(root, 'achievements-client.js'), 'utf8');
 const prayerClient = fs.readFileSync(path.join(root, 'prayer-client.js'), 'utf8');
+const sessionCompleteClient = fs.readFileSync(path.join(root, 'session-complete-client.js'), 'utf8');
 const streakClient = fs.readFileSync(path.join(root, 'streak-client.js'), 'utf8');
 const omniaCompanionClient = fs.readFileSync(path.join(root, 'omnia-companion-client.js'), 'utf8');
 const remindersClient = fs.readFileSync(path.join(root, 'reminders-client.js'), 'utf8');
@@ -764,6 +765,24 @@ test('Streak screen and ended-state UI load through their own client boundary', 
   assert.match(streakClient, /function\s+showStreakEndedPrompt\s*\(/);
   assert.match(serviceWorker, /['"]streak-client\.js['"]/);
   assert.doesNotThrow(() => new Function(streakClient));
+});
+
+test('Shared session completion UI loads through its own client boundary', () => {
+  const controlsTag = presence.indexOf('<script src="concentration-controls-client.js"></script>');
+  const completionTag = presence.indexOf('<script src="session-complete-client.js"></script>');
+  const streakTag = presence.indexOf('<script src="streak-client.js"></script>');
+  assert.notEqual(completionTag, -1);
+  assert.ok(controlsTag < completionTag, 'completion UI loads after concentration controls');
+  assert.ok(completionTag < streakTag, 'completion UI initializes before streak presentation');
+  assert.equal(presence.split('<script src="session-complete-client.js"></script>').length - 1, 1);
+  assert.doesNotMatch(presence, /function\s+playSessionCompleteSound\s*\(|function\s+buildOmniaShowerHtml\s*\(/);
+  assert.doesNotMatch(presence, /function\s+showSessionComplete\s*\(/);
+  assert.match(sessionCompleteClient, /function\s+playSessionCompleteSound\s*\(/);
+  assert.match(sessionCompleteClient, /function\s+buildOmniaShowerHtml\s*\(/);
+  assert.match(sessionCompleteClient, /function\s+showSessionComplete\s*\(/);
+  assert.match(sessionCompleteClient, /window\._pendingStreakBonus/);
+  assert.match(serviceWorker, /['"]session-complete-client\.js['"]/);
+  assert.doesNotThrow(() => new Function(sessionCompleteClient));
 });
 
 test('first-time tutorial loads through its own end-of-body client boundary', () => {
