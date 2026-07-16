@@ -11490,9 +11490,24 @@ startPrayerScheduler();
     if (!isHome) el.style.display = '';
   }
 
+  function syncAnimationTimelines(source, preview) {
+    if (!source || !preview || !source.getAnimations || !preview.getAnimations) return;
+    var sourceAnimations = source.getAnimations({ subtree:true });
+    var previewAnimations = preview.getAnimations({ subtree:true });
+    for (var i = 0; i < Math.min(sourceAnimations.length, previewAnimations.length); i++) {
+      try {
+        if (sourceAnimations[i].currentTime != null) {
+          previewAnimations[i].currentTime = sourceAnimations[i].currentTime;
+        }
+        previewAnimations[i].playbackRate = sourceAnimations[i].playbackRate;
+      } catch (e) {}
+    }
+  }
+
   function makeDrawerPreview(host) {
     var source = document.getElementById('drawerOverlay');
     if (!source) return null;
+    var sourceGuide = source.querySelector('#drawerOmniaBtn');
     var preview = source.cloneNode(true);
     var guideFigure = preview.querySelector('#drawerOmniaBtn');
     if (guideFigure) guideFigure.classList.add('drawer-omnia-preview');
@@ -11500,6 +11515,10 @@ startPrayerScheduler();
     preview.querySelectorAll('[id]').forEach(function(el) { el.removeAttribute('id'); });
     preview.className = 'drawer-overlay show drawer-instant swipe-back-preview';
     host.appendChild(preview);
+    // Force animation objects to exist, then continue each preview animation
+    // from the real drawer figure's current frame instead of restarting it.
+    void preview.offsetWidth;
+    syncAnimationTimelines(sourceGuide, guideFigure);
     return preview;
   }
 

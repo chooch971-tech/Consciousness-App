@@ -106,6 +106,8 @@ test('top-level drawer screens reveal the open drawer during swipe-back', () => 
   assert.match(presence, /guideFigure\.classList\.add\('drawer-omnia-preview'\)/);
   assert.match(presence, /#drawerOmniaBtn, \.drawer-omnia-preview \{/);
   assert.match(presence, /\.drawer-omnia-preview \.omnia-mantle[\s\S]*?display:none !important/);
+  assert.match(presence, /function syncAnimationTimelines\(source, preview\)[\s\S]*?previewAnimations\[i\]\.currentTime = sourceAnimations\[i\]\.currentTime/);
+  assert.match(presence, /syncAnimationTimelines\(sourceGuide, guideFigure\)/);
   assert.match(presence, /querySelector\('[^']*\.lodge-back[^']*'\)/);
   assert.match(presence, /visibilitychange[\s\S]*abortInterruptedSwipe/);
 });
