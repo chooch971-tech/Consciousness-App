@@ -74,6 +74,14 @@ test('externally costly sign-in and Pavlok routes are rate limited', () => {
   assert.match(server, /pavlokRateBuckets\.delete/);
 });
 
+test('server returns JSON for parser, CORS, and unexpected request failures', () => {
+  assert.match(server, /app\.use\(\(err, req, res, next\) => \{/);
+  assert.match(server, /CORS: origin not allowed[\s\S]*?status\(403\)\.json\(\{ error: 'Origin not allowed' \}\)/);
+  assert.match(server, /entity\.too\.large[\s\S]*?status\(413\)\.json\(\{ error: 'Request body too large' \}\)/);
+  assert.match(server, /entity\.parse\.failed[\s\S]*?status\(400\)\.json\(\{ error: 'Invalid JSON body' \}\)/);
+  assert.match(server, /status\(500\)\.json\(\{ error: 'Unexpected server error' \}\)/);
+});
+
 test('browser loads shared state modules before app code', () => {
   const contractTag = presence.indexOf('<script src="sync-contract.js"></script>');
   const progressTag = presence.indexOf('<script src="progress-state.js"></script>');

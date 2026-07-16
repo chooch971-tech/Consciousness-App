@@ -2711,6 +2711,25 @@ app.post('/nuke', verifyAdmin, async (req, res) => {
   }
 });
 
+// Keep malformed client requests in the API's JSON contract instead of
+// falling through to Express's default HTML error page. Route handlers retain
+// their own specific messages; this is only the final boundary for parser,
+// CORS, and unexpected middleware failures.
+app.use((err, req, res, next) => {
+  if (res.headersSent) return next(err);
+  if (err && err.message === 'CORS: origin not allowed') {
+    return res.status(403).json({ error: 'Origin not allowed' });
+  }
+  if (err && err.type === 'entity.too.large') {
+    return res.status(413).json({ error: 'Request body too large' });
+  }
+  if (err && err.type === 'entity.parse.failed') {
+    return res.status(400).json({ error: 'Invalid JSON body' });
+  }
+  console.error('Unhandled request error:', err && err.message ? err.message : err);
+  res.status(500).json({ error: 'Unexpected server error' });
+});
+
 // ── START ────────────────────────────────────────────────
 const PORT = process.env.PORT || 3000;
 connectDB().then(() => {

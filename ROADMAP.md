@@ -111,6 +111,7 @@ Last updated: 2026-07-13
 - [x] Remove `/api/sync/sync/diagnose` debug endpoint from server.js
 - [x] Fail server startup when MongoDB is unavailable instead of serving broken API routes
 - [x] Rate-limit externally costly Google sign-in and Pavlok proxy requests
+- [x] Return consistent JSON for malformed, oversized, rejected-origin, and unexpected API requests
 
 ---
 
