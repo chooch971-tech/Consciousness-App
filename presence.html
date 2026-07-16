@@ -4520,13 +4520,22 @@ body:not(.tut-live) #tutCorgi {
 .splash-wordmark {
   font-family: 'Cormorant Garamond', serif; font-size: 48px; font-weight: 300;
   letter-spacing: 0.14em; color: #e8e0d0;
-  opacity: 0; animation: splashFadeUp 1.2s ease forwards 0.3s;
+  opacity: 0;
 }
+/* The entrance animation only starts once .fonts-ready is added (see the
+   splash init script below) — Cormorant Garamond loads with font-display:
+   swap, so animating it in immediately would fade in the fallback font
+   first and then visibly swap to the real one mid-display (reads as the
+   wordmark flashing bold/different before settling). Waiting for
+   document.fonts.ready means the very first paint of the wordmark is
+   already in its final font. */
+#splash.fonts-ready .splash-wordmark { animation: splashFadeUp 1.2s ease forwards 0.1s; }
 .splash-tagline {
   font-family: 'DM Mono', monospace; font-size: 8px; letter-spacing: 0.32em;
   text-transform: uppercase; color: rgba(221,216,206,0);
-  margin-top: 14px; animation: splashSub 1.4s ease forwards 0.7s;
+  margin-top: 14px;
 }
+#splash.fonts-ready .splash-tagline { animation: splashSub 1.4s ease forwards 0.5s; }
 @keyframes splashFadeUp {
   0%   { opacity:0; transform:translateY(8px); }
   100% { opacity:1; transform:translateY(0); }
@@ -5005,6 +5014,19 @@ body:not(.tut-live) #tutCorgi {
   // the note on .splash-resumed above. Skip the entrance animation so this
   // reads as a continuation of the same splash, not a fresh one flashing in.
   try { if (sessionStorage.getItem('_pullReloaded') === '1') s.classList.add('splash-resumed'); } catch(e) {}
+  // Don't start the wordmark's entrance animation until Cormorant Garamond
+  // has actually loaded — see the note on .fonts-ready above. A short cap
+  // keeps a slow/failed font load from delaying the intro indefinitely; if
+  // it hasn't resolved by then, show it anyway (accepting a possible flash
+  // is better than a longer blank splash).
+  function revealSplashText() { s.classList.add('fonts-ready'); }
+  if (document.fonts && document.fonts.ready) {
+    var fontsRevealed = false;
+    document.fonts.ready.then(function() { if (!fontsRevealed) { fontsRevealed = true; revealSplashText(); } });
+    setTimeout(function() { if (!fontsRevealed) { fontsRevealed = true; revealSplashText(); } }, 500);
+  } else {
+    revealSplashText();
+  }
   var dismissed = false;
   // Minimum time the splash stays up. The app now loads fast enough that the
   // cloud pull calls dismiss() almost immediately, so without a floor the
