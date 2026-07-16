@@ -22,6 +22,17 @@ var GUIDE_FOUNDATION_THOUGHT_TIPS = {
   vacancy:'Let the mind stay empty; tap at the first sign of content.'
 };
 
+// Senses, like Thought Control, trains through distinct sub-modes rather than
+// one blended exercise — see SENSE_MODE_DEFS in senses-client.js for the full
+// descriptions shown on the exercise screen itself.
+var GUIDE_SENSE_ORDER = ['feeling','smell','taste'];
+var GUIDE_SENSE_LABELS = { feeling:'Feeling', smell:'Smell', taste:'Taste' };
+var GUIDE_SENSE_TIPS = {
+  feeling:'Evoke a single physical sensation — warmth, weight, or texture — and hold it as if it were real.',
+  smell:'Summon a scent from imagination alone and hold it steady until it dissolves, then call it back.',
+  taste:'Bring a taste alive on the tongue with nothing in your mouth, and hold its full body.'
+};
+
 // ── Practice Tree ─────────────────────────────────────────
 
 // Soul Mirror star brightness — driven by inventory + transformation
@@ -955,6 +966,68 @@ function guideThoughtTargetMinutes(mode, thoughtStats) {
   return guideAdvancedTarget(mode, natural);
 }
 
+// ── Senses sub-modes: Feeling, Smell, Taste — same distinguishing treatment
+// as Thought Control's Observation/Focus/Vacancy ─────────────────────────
+function guideSenseStats() {
+  var out = {};
+  GUIDE_SENSE_ORDER.forEach(function(mode) {
+    out[mode] = { count:0, totalSec:0, bestSec:0, todaySec:0, todayCount:0, lastMs:0 };
+  });
+  var history = (typeof concState !== 'undefined' && concState.history) ? concState.history : [];
+  history.forEach(function(h) {
+    if (!h || h.exercise !== 'sense') return;
+    var mode = h.mode || 'feeling';
+    if (!out[mode]) out[mode] = { count:0, totalSec:0, bestSec:0, todaySec:0, todayCount:0, lastMs:0 };
+    var sec = h.seconds || 0;
+    var ms = h.date ? new Date(h.date).getTime() : 0;
+    out[mode].count++;
+    out[mode].totalSec += sec;
+    if (sec > out[mode].bestSec) out[mode].bestSec = sec;
+    if (ms > out[mode].lastMs) out[mode].lastMs = ms;
+    if (guideIsToday(h.date)) {
+      out[mode].todayCount++;
+      out[mode].todaySec += sec;
+    }
+  });
+  return out;
+}
+
+function guideAllSenseModesMastered(senseStats) {
+  return GUIDE_SENSE_ORDER.every(function(mode) {
+    return (senseStats[mode] && senseStats[mode].bestSec >= 600);
+  });
+}
+
+function guideLeastRecentSenseMode(senseStats) {
+  return GUIDE_SENSE_ORDER.slice().sort(function(a, b) {
+    var aa = senseStats[a] || { lastMs:0, count:0 };
+    var bb = senseStats[b] || { lastMs:0, count:0 };
+    if (aa.todayCount !== bb.todayCount) return aa.todayCount - bb.todayCount;
+    if (aa.lastMs !== bb.lastMs) return aa.lastMs - bb.lastMs;
+    return aa.count - bb.count;
+  })[0];
+}
+
+function guideCurrentSenseMode(senseStats) {
+  for (var i = 0; i < GUIDE_SENSE_ORDER.length; i++) {
+    var mode = GUIDE_SENSE_ORDER[i];
+    if (!senseStats[mode] || senseStats[mode].bestSec < 600) return mode;
+  }
+  return guideLeastRecentSenseMode(senseStats);
+}
+
+// Senses is held to its own 2/5/10 duration model (matching the exercise's
+// own duration picker), so the same score used by the old flat gate just
+// gets clamped to 10 rather than scaling further like Thought Control does.
+function guideSenseTargetMinutes(mode, senseStats) {
+  var st = senseStats[mode] || { count:0, bestSec:0 };
+  var score = guideExperienceScore('sense');
+  if (st.count >= 3) score = Math.max(score, 1);
+  if (st.bestSec >= 600) score = Math.max(score, 2);
+  if (st.bestSec >= 900 || st.count >= 10) score = Math.max(score, 3);
+  return Math.min(10, guideDurationForScore(score));
+}
+
 function guideClockTargetMinutes(clockStats) {
   return clockStats.qualTarget || 5;
 }
@@ -1293,14 +1366,19 @@ function buildExperiencedGuideItems() {
   if (gStableBest >= 600) gStableScore = Math.max(gStableScore, 2);
   if (gStableBest >= 900 || (gSt.count || 0) >= 10) gStableScore = Math.max(gStableScore, 3);
   var gDur = guideAdvancedTarget(gateId, guideDurationForScore(gStableScore));
+  var gSenseMode = null;
+  var gSenseStats = null;
   if (gateId === 'asana') {
     gDur = guideAsanaStats().qualTarget;
   } else if (gateId === 'auditory') {
     gDur = guideAuditoryStats().qualTarget;
   } else if (gateId === 'sense') {
-    // Senses is held to its own 2/5/10 duration model, so the score-scaled
-    // target never asks for a length the setup screen can't offer.
-    gDur = Math.min(10, guideDurationForScore(gStableScore));
+    // Senses trains through distinct sub-modes (Feeling/Smell/Taste), same
+    // as Thought Control's Observation/Focus/Vacancy — pick whichever is
+    // least mastered and hold to the exercise's own 2/5/10 duration model.
+    gSenseStats = guideSenseStats();
+    gSenseMode = guideState.senseModeForced || guideCurrentSenseMode(gSenseStats);
+    gDur = guideSenseTargetMinutes(gSenseMode, gSenseStats);
   }
   var gTip;
   if (gScore === 0) {
@@ -1311,6 +1389,9 @@ function buildExperiencedGuideItems() {
     gTip = 'You are ready for a clean consolidation session. Hold form, reduce drift, record honestly.';
   } else {
     gTip = 'This is already strong. Use it as a stabilizing pillar, then notice what remains undeveloped.';
+  }
+  if (gateId === 'sense' && gSenseMode && GUIDE_SENSE_TIPS[gSenseMode]) {
+    gTip = GUIDE_SENSE_TIPS[gSenseMode] + ' ' + gTip;
   }
 
   var gateProgress = gc.count ? gc.count + ' recorded' : 'no completed sessions recorded';
@@ -1332,6 +1413,9 @@ function buildExperiencedGuideItems() {
     } else {
       gateProgress = _asp.qualAtTier + ' / ' + _asp.tierRequired + ' sessions at ' + _asp.qualTarget + ' min';
     }
+  } else if (gateId === 'sense' && gSenseMode) {
+    var _senseSt = (gSenseStats && gSenseStats[gSenseMode]) || { count:0 };
+    gateProgress = _senseSt.count + ' ' + GUIDE_SENSE_LABELS[gSenseMode].toLowerCase() + ' recorded';
   }
   var gateItem = {
     id:gateId,
@@ -1344,6 +1428,15 @@ function buildExperiencedGuideItems() {
     tip:gTip + (gc.count ? ' Omnia has recorded ' + gc.count + ' completed session' + (gc.count === 1 ? '' : 's') + ' here.' : ' Omnia has no completed sessions recorded here yet.'),
     open:gateId
   };
+  if (gSenseMode) {
+    // "done" and today's count must key off THIS mode's practice, not the
+    // combined total across all three senses — otherwise finishing Taste
+    // earlier today could mark a freshly-rotated Feeling card done unpracticed.
+    gateItem.mode = gSenseMode;
+    var _gSenseModeSt = (gSenseStats && gSenseStats[gSenseMode]) || { todaySec:0, todayCount:0 };
+    gateItem.done = _gSenseModeSt.todaySec + 5 * rounds >= gDur * 60 * rounds;
+    gateItem.todayCount = _gSenseModeSt.todayCount || 0;
+  }
 
   fixedItems.push(gateItem);
   fixedItems.push({
@@ -1753,6 +1846,25 @@ function guideBuildAddedItem(exId, rounds) {
     var tips = { visual:'Added by you. Hold a simple mental image clearly — clarity matters more than complexity.', auditory:'Added by you. Focused listening on a single sound; broaden the astral body steadily.' };
     return { id:exId, name:names[exId], duration:min, durationLabel:min + ' min' + (rounds > 1 ? ' x2' : ''), done:st.todaySec >= target, progress:'added · ' + (st.count || 0) + ' recorded', tip:tips[exId], open:exId, added:true };
   }
+  if (exId === 'feeling' || exId === 'smell' || exId === 'taste') {
+    // Senses trains through distinct sub-modes, same as Thought Control's
+    // Observation/Focus/Vacancy — see the note above in buildExperiencedGuideItems.
+    var senseStats3 = guideSenseStats();
+    var senseDur3 = guideSenseTargetMinutes(exId, senseStats3);
+    var senseSt3 = senseStats3[exId] || { count:0, todaySec:0, todayCount:0 };
+    var senseTarget3 = senseDur3 * 60 * rounds;
+    return { id:exId, name:'Senses', mode:exId, duration:senseDur3, durationLabel:senseDur3 + ' min' + (rounds > 1 ? ' x2' : ''), done:senseSt3.todaySec >= senseTarget3, todayCount:senseSt3.todayCount || 0, progress:'added · ' + (senseSt3.count || 0) + ' recorded', tip:'Added by you. ' + (GUIDE_SENSE_TIPS[exId] || 'Practice sense concentration.'), open:'sense', added:true };
+  }
+  if (exId === 'sense') {
+    // Legacy: a generic (mode-less) "Senses" addition from before the sense
+    // sub-modes existed. Kept so anything already saved under the bare id
+    // keeps working; new additions always go through feeling/smell/taste above.
+    var senseScore = guideMonitoredScore('sense', stats);
+    var senseDur = Math.min(10, guideDurationForScore(senseScore));
+    var senseTarget = senseDur * 60 * rounds;
+    var senseSt = stats.sense || { count:0, todaySec:0 };
+    return { id:'sense', name:'Senses', duration:senseDur, durationLabel:senseDur + ' min' + (rounds > 1 ? ' x2' : ''), done:senseSt.todaySec >= senseTarget, progress:'added · ' + (senseSt.count || 0) + ' recorded', tip:'Added by you. Imagine a feeling, smell, or taste as vividly as you can — accuracy matters more than intensity.', open:'sense', added:true };
+  }
   if (exId === 'multisense' || exId === 'allangles') {
     var advNames = { multisense:'Multi-Sense', allangles:'All Angles' };
     var advTips  = { multisense:'Added by you. Hold a full scene — sight, sound, texture, smell — completely in mind.', allangles:'Added by you. Rotate an object through every angle; build a complete three-dimensional image.' };
@@ -1815,13 +1927,25 @@ function guidePathAddableExercises() {
   var items = buildGuideRegimentItems();
   var present = {};
   items.forEach(function(it) { present[it.id] = true; });
-  var addable = GUIDE_EXERCISES.filter(function(ex) { return !present[ex.id]; });
+  // The raw 'sense' entry is excluded here — it's ambiguous about which
+  // sense it trains, so it's offered below as three distinguishable
+  // sub-modes instead (Feeling/Smell/Taste), same treatment as Thought
+  // Control's Observation/Focus/Vacancy.
+  var addable = GUIDE_EXERCISES.filter(function(ex) { return !present[ex.id] && ex.id !== 'sense'; });
   // Offer thought sub-modes that are NOT the current active mode (already on
   // the path under the 'thought' item) and NOT already added independently.
   var activeMode = guideState.thoughtModeForced || guideCurrentThoughtMode(guideThoughtStats());
   GUIDE_FOUNDATION_THOUGHT_ORDER.forEach(function(mode) {
     if (present[mode]) return;   // already an independent card on the path
     if (mode === activeMode) return; // already covered by the 'thought' item
+    addable.push({ id: mode });
+  });
+  // Offer sense sub-modes that aren't already on the path, skipping only the
+  // one mode today's rotating gate already covers (if the gate landed on Senses).
+  var activeSenseMode = guideState.senseModeForced || guideCurrentSenseMode(guideSenseStats());
+  GUIDE_SENSE_ORDER.forEach(function(mode) {
+    if (present[mode]) return; // already an independent card on the path
+    if (present['sense'] && mode === activeSenseMode) return; // already covered by today's gate
     addable.push({ id: mode });
   });
   // Pore Breathing — addable any time it isn't already on the path.
@@ -1981,7 +2105,10 @@ function beginGuidePlanItem(btn) {
     if (mode && TC_MODE_DEFS[mode]) tcMode = mode;
     if (duration) tcDuration = duration;
   }
-  if (ex === 'sense' && duration) senseDuration = duration;
+  if (ex === 'sense') {
+    if (mode && typeof SENSE_MODE_DEFS !== 'undefined' && SENSE_MODE_DEFS[mode]) senseMode = mode;
+    if (duration) senseDuration = duration;
+  }
   if (ex === 'soulmirror') {
     switchMode('concentration');
     suppressTutorialForExerciseEntry();
