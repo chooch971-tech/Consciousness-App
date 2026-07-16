@@ -189,12 +189,12 @@ function renderOmniaCompanionPreview(item) {
       // arm + lantern with a live shard (sways on idle)
       + '<path d="M59 52 C64 52 67 54 68 57" fill="none" stroke="#6f6248" stroke-width="4" stroke-linecap="round"/>'
       + '<g class="gnome-lantern">'
-      + '<circle cx="70" cy="58" r="15" fill="url(#gnLamp)"/>'
+      + '<circle class="gnome-glow" cx="70" cy="58" r="15" fill="url(#gnLamp)"/>'
       + '<path d="M70 50 v-3" stroke="#4a4030" stroke-width="1.4"/>'
       + '<rect x="64.5" y="50" width="11" height="14" rx="2.4" fill="rgba(10,7,20,.72)" stroke="#4a4030" stroke-width="1.3"/>'
       + '<path d="M67.5 50v14M72.5 50v14" stroke="#4a4030" stroke-width=".9" opacity=".8"/>'
-      + '<path d="M70 53 73 57 70 61.5 67 57Z" fill="#d8c4f4"/>'
-      + '<circle cx="70" cy="57" r="1.2" fill="#fff" opacity=".85"/>'
+      + '<path class="gnome-shard" d="M70 53 73 57 70 61.5 67 57Z" fill="#d8c4f4"/>'
+      + '<circle class="gnome-shard" cx="70" cy="57" r="1.2" fill="#fff" opacity=".85"/>'
       + '</g>'
       // dark-matter motes drifting up from the lamp
       + '<circle class="gnome-mote" cx="79" cy="46" r="1" fill="#d8c4f4" opacity=".75"/>'

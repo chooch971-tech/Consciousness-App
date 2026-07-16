@@ -2633,6 +2633,13 @@
 @keyframes gnomeMoteRise { 0%{opacity:0; transform:translateY(3px);} 30%{opacity:.85;} 100%{opacity:0; transform:translateY(-9px);} }
 @keyframes gnomeMine { 0%,100%{transform:rotate(0);} 30%{transform:rotate(46deg);} 55%{transform:rotate(-8deg);} 75%{transform:rotate(24deg);} }
 .omnia-companion.gnome-mine .gnome-pick { animation:gnomeMine .9s cubic-bezier(.4,.1,.4,1) both; transform-box:fill-box; transform-origin:85% 90%; }
+/* ...and the strike wakes the shard: the lantern-light swells and blazes for a
+   few seconds before settling. Class cleanup keys on THIS animation (the
+   longest of the tap pair), so the flare isn't cut short by the pick ending. */
+@keyframes gnomeLampFlare { 0%,100%{transform:scale(1);} 14%{transform:scale(1.75);} 72%{transform:scale(1.55);} }
+.omnia-companion.gnome-mine .gnome-glow { animation:gnomeLampFlare 3.2s ease-in-out both; transform-box:fill-box; transform-origin:center; }
+@keyframes gnomeShardFlare { 0%,100%{filter:none;} 14%,72%{filter:brightness(1.9) drop-shadow(0 0 3.5px #d8c4f4);} }
+.omnia-companion.gnome-mine .gnome-shard { animation:gnomeShardFlare 3.2s ease-in-out both; }
 @keyframes corgiWaddle { 0%,100%{transform:translateY(0) rotate(0deg);} 25%{transform:translateY(-2.5px) rotate(2.5deg);} 75%{transform:translateY(-2.5px) rotate(-2.5deg);} }
 .omnia-figure.has-companion .omnia-companion.companion-corgi.corgi-walking { animation:corgiWaddle .45s ease-in-out infinite; }
 @keyframes omniaCorgiJump { 0%{transform:translateY(0) rotate(0deg);} 32%{transform:translateY(-20px) rotate(4deg);} 55%{transform:translateY(-20px) rotate(-3deg);} 80%{transform:translateY(2px) rotate(0deg);} 100%{transform:translateY(0) rotate(0deg);} }
@@ -11150,7 +11157,9 @@ var COMPANION_IDLE_CLASS = { wisp:'wisp-loop', ember:'ember-flare', mote:'mote-s
     if (e.animationName === 'emberFlare') comp.classList.remove('ember-flare');
     if (e.animationName === 'moteWink') comp.classList.remove('mote-wink');
     if (e.animationName === 'moteScan') comp.classList.remove('mote-scan');
-    if (e.animationName === 'gnomeMine') comp.classList.remove('gnome-mine');
+    // gnome-mine drives both the pick swing (.9s) and the lantern flare
+    // (3.2s); drop the class only when the longer flare finishes.
+    if (e.animationName === 'gnomeLampFlare') comp.classList.remove('gnome-mine');
     if (e.animationName === 'gnomeSway') comp.classList.remove('gnome-sway');
     if (e.animationName !== 'omniaCorgiJump') return;
     comp.classList.remove('corgi-jumping');
