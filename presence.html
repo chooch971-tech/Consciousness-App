@@ -2383,6 +2383,15 @@
     /* The swipe preview lives inside homeScreen, under the active page. This
        keeps the already-rendered Home page visible beneath its menu scrim. */
     .drawer-overlay.swipe-back-preview { position:absolute; z-index:2; pointer-events:none; }
+    .drawer-omnia-preview { background:none; border:none; cursor:default; padding:4px; opacity:.65; line-height:0; margin-bottom:10px; position:relative; }
+    .drawer-omnia-preview .omnia-triad-orbit { --orbit-radius:30px; }
+    .drawer-omnia-preview .omnia-triad-orbit .triad-shard { width:9px; height:11px; margin:-5.5px 0 0 -4.5px; }
+    .drawer-omnia-preview .omnia-crown { top:-5px; width:32px; height:32px; }
+    .drawer-omnia-preview .omnia-polar-pillar { width:2px; height:22px; }
+    .drawer-omnia-preview .omnia-elements, .drawer-omnia-preview .omnia-mantle,
+    .drawer-omnia-preview .omnia-geo, .drawer-omnia-preview .omnia-halo10,
+    .drawer-omnia-preview .omnia-axis, .drawer-omnia-preview .omnia-diadem,
+    .drawer-omnia-preview .omnia-cap { display:none !important; }
     .drawer-header { padding:0 24px 24px; border-bottom:1px solid var(--border); margin-bottom:8px; }
     .drawer-wordmark { font-family:Cormorant Garamond,serif; font-size:11px; font-weight:300; letter-spacing:.35em; text-transform:uppercase; color:var(--accent); }
     .drawer-level { font-size:9px; letter-spacing:.15em; color:var(--muted); margin-top:4px; }
@@ -11487,33 +11496,68 @@ startPrayerScheduler();
     if (!isHome) el.style.display = '';
   }
 
+  var drawerPreviewIdSeed = 0;
+  function uniquifyDrawerPreviewIds(root) {
+    var prefix = 'drawer-swipe-' + (++drawerPreviewIdSeed) + '-';
+    var idMap = {};
+    root.querySelectorAll('[id]').forEach(function(el) {
+      var oldId = el.id;
+      idMap[oldId] = prefix + oldId;
+      el.id = idMap[oldId];
+    });
+    root.querySelectorAll('*').forEach(function(el) {
+      Array.from(el.attributes || []).forEach(function(attr) {
+        var value = attr.value;
+        Object.keys(idMap).forEach(function(oldId) {
+          value = value.split('#' + oldId).join('#' + idMap[oldId]);
+        });
+        if (value !== attr.value) el.setAttribute(attr.name, value);
+      });
+    });
+  }
+
   function makeDrawerPreview(host) {
     var source = document.getElementById('drawerOverlay');
     if (!source) return null;
     var sourceGuide = source.querySelector('#drawerOmniaBtn');
     var preview = source.cloneNode(true);
     var guideClone = preview.querySelector('#drawerOmniaBtn');
+    if (guideClone) guideClone.classList.add('drawer-omnia-preview');
     preview.removeAttribute('id');
-    preview.querySelectorAll('[id]').forEach(function(el) { el.removeAttribute('id'); });
+    uniquifyDrawerPreviewIds(preview);
     preview.className = 'drawer-overlay show drawer-instant swipe-back-preview';
     host.appendChild(preview);
-    // Move the live Guide figure into the preview. Reusing the same DOM node
-    // preserves every animation timeline, so there is no cloned-frame handoff.
-    if (sourceGuide && guideClone && sourceGuide.parentNode) {
-      var guideSlot = document.createComment('drawer-guide-slot');
-      sourceGuide.parentNode.insertBefore(guideSlot, sourceGuide);
-      guideClone.replaceWith(sourceGuide);
-      preview._guideFigure = sourceGuide;
-      preview._guideSlot = guideSlot;
-    }
+    startDrawerGuideMirror(sourceGuide, guideClone, preview);
     return preview;
   }
 
-  function restoreDrawerPreview(preview) {
-    if (!preview) return;
-    if (preview._guideFigure && preview._guideSlot && preview._guideSlot.parentNode) {
-      preview._guideSlot.parentNode.replaceChild(preview._guideFigure, preview._guideSlot);
+  function startDrawerGuideMirror(sourceGuide, guideClone, preview) {
+    if (!sourceGuide || !guideClone) return;
+    var sourceNodes = [sourceGuide].concat(Array.from(sourceGuide.querySelectorAll('*')));
+    var cloneNodes = [guideClone].concat(Array.from(guideClone.querySelectorAll('*')));
+    var pairs = [];
+    for (var i = 0; i < Math.min(sourceNodes.length, cloneNodes.length); i++) {
+      if (getComputedStyle(sourceNodes[i]).animationName !== 'none') {
+        cloneNodes[i].style.setProperty('animation', 'none', 'important');
+        pairs.push([sourceNodes[i], cloneNodes[i]]);
+      }
     }
+    function mirrorFrame() {
+      if (!preview.isConnected) return;
+      pairs.forEach(function(pair) {
+        var frame = getComputedStyle(pair[0]);
+        pair[1].style.setProperty('transform', frame.transform, 'important');
+        pair[1].style.setProperty('opacity', frame.opacity, 'important');
+        pair[1].style.setProperty('filter', frame.filter, 'important');
+      });
+      preview._guideMirrorFrame = requestAnimationFrame(mirrorFrame);
+    }
+    mirrorFrame();
+  }
+
+  function removeDrawerPreview(preview) {
+    if (!preview) return;
+    if (preview._guideMirrorFrame) cancelAnimationFrame(preview._guideMirrorFrame);
     preview.remove();
   }
 
@@ -11606,7 +11650,7 @@ startPrayerScheduler();
 
       // Swap the visual preview for the real drawer in the same frame.
       if (drawerPreview) {
-        restoreDrawerPreview(drawerPreview);
+        removeDrawerPreview(drawerPreview);
         openDrawer(true);
       }
 
@@ -11642,7 +11686,7 @@ startPrayerScheduler();
       // Re-hide both: homeScreen goes back to display:none (sub-screen still active)
       if (prevIsHome) prevEl.style.display = 'none';
 
-      restoreDrawerPreview(drawerPreview);
+      removeDrawerPreview(drawerPreview);
 
       screenEl.style.transition = '';
       screenEl.style.transform  = '';
@@ -11664,7 +11708,7 @@ startPrayerScheduler();
       cleanPrev(sw.prevEl, sw.prevIsHome);
       if (sw.prevIsHome) sw.prevEl.style.display = 'none';
     }
-    restoreDrawerPreview(sw.drawerPreview);
+    removeDrawerPreview(sw.drawerPreview);
     if (sw.screenEl) {
       sw.screenEl.style.transition = '';
       sw.screenEl.style.transform = '';

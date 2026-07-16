@@ -102,9 +102,11 @@ test('top-level drawer screens reveal the open drawer during swipe-back', () => 
   assert.match(presence, /var revealsDrawer = prevIsHome && !!window\._returnToDrawer/);
   assert.match(presence, /function makeDrawerPreview\(host\)[\s\S]*cloneNode\(true\)[\s\S]*host\.appendChild\(preview\)/);
   assert.match(presence, /var drawerPreview = revealsDrawer \? makeDrawerPreview\(prevEl\) : null/);
-  assert.match(presence, /guideClone\.replaceWith\(sourceGuide\)/);
-  assert.match(presence, /function restoreDrawerPreview\(preview\)[\s\S]*?replaceChild\(preview\._guideFigure, preview\._guideSlot\)/);
-  assert.match(presence, /if \(drawerPreview\) \{\s*restoreDrawerPreview\(drawerPreview\);\s*openDrawer\(true\);/);
+  assert.match(presence, /guideClone\.classList\.add\('drawer-omnia-preview'\)/);
+  assert.match(presence, /function uniquifyDrawerPreviewIds\(root\)[\s\S]*?value\.split\('#' \+ oldId\)\.join\('#' \+ idMap\[oldId\]\)/);
+  assert.match(presence, /function startDrawerGuideMirror\(sourceGuide, guideClone, preview\)[\s\S]*?requestAnimationFrame\(mirrorFrame\)/);
+  assert.match(presence, /pair\[1\]\.style\.setProperty\('transform', frame\.transform, 'important'\)/);
+  assert.match(presence, /if \(drawerPreview\) \{\s*removeDrawerPreview\(drawerPreview\);\s*openDrawer\(true\);/);
   assert.match(presence, /querySelector\('[^']*\.lodge-back[^']*'\)/);
   assert.match(presence, /visibilitychange[\s\S]*abortInterruptedSwipe/);
 });
