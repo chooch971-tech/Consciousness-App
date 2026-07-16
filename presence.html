@@ -4710,6 +4710,12 @@ body:not(.tut-live) #tutCorgi {
 .clk-hero-card { width:100%; box-sizing:border-box; background:rgba(224,124,58,.06); border:1px solid rgba(224,124,58,.14); border-radius:18px; padding:22px 16px 18px; margin-bottom:16px; display:flex; flex-direction:column; align-items:center;
   box-shadow:0 -1px 0 0 rgba(224,124,58,.18), 0 8px 32px rgba(180,80,20,.12); }
 .clk-hero { position:relative; width:148px; height:148px; margin:0 auto 4px; display:flex; align-items:center; justify-content:center; }
+/* Shared screen header: back button on the left, the Omnia tutorial crystal
+   on the right — same balance as the Soul Mirror header. The crystal opens
+   that screen's tutorial text (openExExplainer). Sits inside the screen's own
+   padding, so no extra insets here. */
+.banner-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; flex-shrink:0; }
+.banner-tut { background:none; border:none; padding:6px; margin:0; cursor:pointer; display:flex; align-items:center; justify-content:center; }
 /* Omnia peeks over the top-right edge of the clock preview card and
    beckons the user to tap her for the tutorial — a shimmering head with a
    gentle bob, glow pulse, and sparkle twinkles to draw the eye. */
@@ -5702,9 +5708,9 @@ body:not(.tut-live) #tutCorgi {
   <!-- GUIDE -->
   <!-- PLAYGROUND -->
   <div class="screen" id="playgroundScreen" style="flex-direction:column;">
-    <div class="history-header">
-      <div class="history-title">Playground</div>
-      <button class="history-back" id="playgroundBack">← back</button>
+    <div class="banner-header">
+      <button class="history-back" id="playgroundBack" aria-label="Back">←</button>
+      <button type="button" class="banner-tut" onclick="openExExplainer('playground')" aria-label="Open tutorial"><span class="clk-omnia-peek-head"><span class="clk-omnia-spin"></span></span></button>
     </div>
     <div class="pg-scroll">
       <div class="pg-banner">
@@ -5808,7 +5814,10 @@ body:not(.tut-live) #tutCorgi {
 
   <!-- ACHIEVEMENTS -->
   <div class="screen" id="achScreen">
-    <button class="history-back" id="achBackBtn" aria-label="Back" style="margin:2px 0 12px;">←</button>
+    <div class="banner-header">
+      <button class="history-back" id="achBackBtn" aria-label="Back">←</button>
+      <button type="button" class="banner-tut" onclick="openExExplainer('achievements')" aria-label="Open tutorial"><span class="clk-omnia-peek-head"><span class="clk-omnia-spin"></span></span></button>
+    </div>
     <div class="ex-banner" style="--exb-rgb:232,200,122; --exb-light:#f0d8ac; margin:0 0 14px; height:140px;">
       <div class="exb-motes" aria-hidden="true">
         <i style="width:4px;height:4px;left:12%;top:28%;animation-delay:0s;animation-duration:4.4s;"></i>
@@ -5842,7 +5851,10 @@ body:not(.tut-live) #tutCorgi {
 
   <!-- FAQ -->
   <div class="screen" id="faqScreen">
-    <button class="history-back" id="faqBackBtn" aria-label="Back" style="margin:2px 0 12px;">←</button>
+    <div class="banner-header">
+      <button class="history-back" id="faqBackBtn" aria-label="Back">←</button>
+      <button type="button" class="banner-tut" onclick="openExExplainer('faq')" aria-label="Open tutorial"><span class="clk-omnia-peek-head"><span class="clk-omnia-spin"></span></span></button>
+    </div>
     <div class="ex-banner" style="--exb-rgb:126,184,164; --exb-light:#9ed8c4; margin:0 0 14px; height:140px;">
       <div class="exb-motes" aria-hidden="true">
         <i style="width:4px;height:4px;left:12%;top:28%;animation-delay:0s;animation-duration:4.4s;"></i>
@@ -9842,6 +9854,15 @@ document.getElementById('stopPoreBreathBtn').addEventListener('click',function()
 (function fillSoulMirrorTutHead(){
   var head = document.getElementById('soulMirrorTutHead');
   if (head && !head.innerHTML.trim()) head.innerHTML = omniaHeadOnlySVG(30, 28);
+})();
+
+// Fill the Omnia tutorial crystal in every shared .banner-header (Achievements,
+// FAQ, Playground …) with the same spinning head. Static markup leaves the
+// .clk-omnia-spin span empty; this populates each one once on load.
+(function fillBannerTutHeads(){
+  document.querySelectorAll('.banner-tut .clk-omnia-spin').forEach(function(spin){
+    if (!spin.innerHTML.trim()) spin.innerHTML = omniaHeadOnlySVG(30, 28);
+  });
 })();
 
 function openSoulMirrorTutorial(){

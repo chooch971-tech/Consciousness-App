@@ -1578,6 +1578,33 @@ var EX_EXPLAINERS = {
       'As you <strong>exhale</strong>, release darkness and fatigue back out through the same pores.',
       'The whole body breathes <strong>as one organ</strong>. With practice, vitality gathers and the breath grows still.'
     ]
+  },
+  achievements: {
+    title: 'Achievements',
+    steps: [
+      'Every milestone you cross — streaks, sessions, hours held, bodies built — is <strong>recorded here</strong>.',
+      'Tap any achievement to see <strong>what it asks</strong> and how close you already are.',
+      'Locked ones show the <strong>path to earn them</strong>; earned ones keep the moment you crossed the threshold.',
+      'They gather quietly as you practice. Return now and then to see <strong>how far you\'ve come</strong>.'
+    ]
+  },
+  faq: {
+    title: 'FAQ',
+    steps: [
+      'Common questions about practice, progress, and the path are <strong>answered here</strong>.',
+      'Tap any question to <strong>expand its answer</strong>; tap again to fold it away.',
+      'The answers cover <strong>sync, streaks, exercises, and Omnia</strong> — scroll to find your topic.',
+      'This page grows as the practice deepens. Return whenever something is <strong>unclear</strong>.'
+    ]
+  },
+  playground: {
+    title: 'Playground',
+    steps: [
+      'The Playground is the <strong>Laboratory</strong> — a look at practices still brewing.',
+      'Each card is an <strong>experiment</strong> in consciousness that isn\'t quite ready yet.',
+      'Cards marked <strong>Soon</strong> are on the way, and will open right here once they\'re done.',
+      'Check back as the work continues — <strong>new practices</strong> arrive over time.'
+    ]
   }
 };
 
