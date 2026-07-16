@@ -112,6 +112,7 @@ Last updated: 2026-07-13
 - [x] Fail server startup when MongoDB is unavailable instead of serving broken API routes
 - [x] Rate-limit externally costly Google sign-in and Pavlok proxy requests
 - [x] Return consistent JSON for malformed, oversized, rejected-origin, and unexpected API requests
+- [x] Reject malformed social resource identifiers before they reach MongoDB
 
 ---
 

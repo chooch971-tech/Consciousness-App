@@ -1699,6 +1699,16 @@ app.put('/api/sync/privacy', verifyToken, async (req, res) => {
 // enforce moderation here on the server; client checks are only explanatory.
 const POST_MAX_LEN = 280;
 
+// Social resource routes use Mongo ObjectIds in their `:id` segment. Reject
+// malformed values once at the router boundary so they cannot turn into a
+// caught database exception and an unhelpful 500 response. The profile
+// summary route deliberately supports `me` as a convenience alias.
+app.param('id', (req, res, next, id) => {
+  const isOwnSummary = id === 'me' && req.path.endsWith('/summary');
+  if (isOwnSummary || /^[a-f\d]{24}$/i.test(id)) return next();
+  res.status(400).json({ error: 'Invalid resource identifier' });
+});
+
 function sanitizeSocialText(text, maxLen) {
   if (typeof text !== 'string') return null;
   const clean = text.replace(/[\u0000-\u001f\u007f]/g, ' ').trim().slice(0, maxLen);

@@ -82,6 +82,13 @@ test('server returns JSON for parser, CORS, and unexpected request failures', ()
   assert.match(server, /status\(500\)\.json\(\{ error: 'Unexpected server error' \}\)/);
 });
 
+test('social resource routes reject malformed identifiers before database access', () => {
+  assert.match(server, /app\.param\('id', \(req, res, next, id\) => \{/);
+  assert.match(server, /id === 'me' && req\.path\.endsWith\('\/summary'\)/);
+  assert.match(server, /\^\[a-f\\d\]\{24\}\$\/i\.test\(id\)/);
+  assert.match(server, /status\(400\)\.json\(\{ error: 'Invalid resource identifier' \}\)/);
+});
+
 test('browser loads shared state modules before app code', () => {
   const contractTag = presence.indexOf('<script src="sync-contract.js"></script>');
   const progressTag = presence.indexOf('<script src="progress-state.js"></script>');
