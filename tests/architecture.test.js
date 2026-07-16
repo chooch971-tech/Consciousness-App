@@ -38,6 +38,7 @@ const profileClient = fs.readFileSync(path.join(root, 'profile-client.js'), 'utf
 const settingsClient = fs.readFileSync(path.join(root, 'settings-client.js'), 'utf8');
 const achievementsClient = fs.readFileSync(path.join(root, 'achievements-client.js'), 'utf8');
 const prayerClient = fs.readFileSync(path.join(root, 'prayer-client.js'), 'utf8');
+const remindersClient = fs.readFileSync(path.join(root, 'reminders-client.js'), 'utf8');
 const pavlokClient = fs.readFileSync(path.join(root, 'pavlok-client.js'), 'utf8');
 const tutorialClient = fs.readFileSync(path.join(root, 'tutorial-client.js'), 'utf8');
 const soulMirrorClient = fs.readFileSync(path.join(root, 'soul-mirror-client.js'), 'utf8');
@@ -703,6 +704,24 @@ test('Pavlok integration loads through its own late-stage client boundary', () =
   assert.match(pavlokClient, /function\s+pavlokSetType\s*\(/);
   assert.match(serviceWorker, /['"]pavlok-client\.js['"]/);
   assert.doesNotThrow(() => new Function(pavlokClient));
+});
+
+test('Practice reminders load through their own late-stage client boundary', () => {
+  const platformTag = presence.indexOf('<script src="platform-client.js"></script>');
+  const remindersTag = presence.indexOf('<script src="reminders-client.js"></script>');
+  const pavlokTag = presence.indexOf('<script src="pavlok-client.js"></script>');
+  assert.notEqual(remindersTag, -1);
+  assert.ok(platformTag < remindersTag, 'reminders require platform push services');
+  assert.ok(remindersTag < pavlokTag, 'reminders initialize before later integration clients');
+  assert.equal(presence.split('<script src="reminders-client.js"></script>').length - 1, 1);
+  assert.doesNotMatch(presence, /function\s+scheduleReminderNotifications\s*\(|function\s+getPracticeReminderPrefs\s*\(/);
+  assert.doesNotMatch(presence, /function\s+renderPracticeReminderSettings\s*\(|\bPRACTICE_REMINDER_LEVELS\s*=\s*\{/);
+  assert.match(remindersClient, /function\s+scheduleReminderNotifications\s*\(/);
+  assert.match(remindersClient, /function\s+getPracticeReminderPrefs\s*\(/);
+  assert.match(remindersClient, /function\s+syncPracticeReminderToServer\s*\(/);
+  assert.match(remindersClient, /function\s+renderPracticeReminderSettings\s*\(/);
+  assert.match(serviceWorker, /['"]reminders-client\.js['"]/);
+  assert.doesNotThrow(() => new Function(remindersClient));
 });
 
 test('first-time tutorial loads through its own end-of-body client boundary', () => {
