@@ -10,6 +10,8 @@ const presence = fs.readFileSync(path.join(root, 'presence.html'), 'utf8');
 const server = fs.readFileSync(path.join(root, 'server.js'), 'utf8');
 const serviceWorker = fs.readFileSync(path.join(root, 'sw.js'), 'utf8');
 const awarenessClient = fs.readFileSync(path.join(root, 'awareness-client.js'), 'utf8');
+const concentrationStateClient = fs.readFileSync(path.join(root, 'concentration-state-client.js'), 'utf8');
+const concentrationClockClient = fs.readFileSync(path.join(root, 'concentration-clock-client.js'), 'utf8');
 const visualizationClient = fs.readFileSync(path.join(root, 'visualization-client.js'), 'utf8');
 const auditoryClient = fs.readFileSync(path.join(root, 'auditory-client.js'), 'utf8');
 const thoughtControlClient = fs.readFileSync(path.join(root, 'thought-control-client.js'), 'utf8');
@@ -106,6 +108,42 @@ test('Awareness practice owns its dedicated client boundary', () => {
   assert.doesNotThrow(() => new Function(awarenessClient));
 });
 
+test('Concentration progression state loads before startup restoration', () => {
+  const awarenessTag = presence.indexOf('<script src="awareness-client.js"></script>');
+  const stateTag = presence.indexOf('<script src="concentration-state-client.js"></script>');
+  const modeDeclaration = presence.indexOf('var currentMode;');
+  assert.notEqual(stateTag, -1);
+  assert.ok(awarenessTag < stateTag, 'Concentration ranks depend on Awareness rank titles');
+  assert.ok(stateTag < modeDeclaration, 'Concentration state must exist before startup restoration');
+  assert.equal(presence.split('<script src="concentration-state-client.js"></script>').length - 1, 1);
+  assert.doesNotMatch(presence, /function\s+getConcRank\s*\(|function\s+loadConcState\s*\(/);
+  assert.doesNotMatch(presence, /\bCONC_DEFAULT\s*=\s*\{/);
+  assert.match(concentrationStateClient, /function\s+getConcRank\s*\(/);
+  assert.match(concentrationStateClient, /function\s+loadConcState\s*\(/);
+  assert.match(concentrationStateClient, /function\s+isConcNewSession\s*\(/);
+  assert.match(concentrationStateClient, /migrateConcLevel/);
+  assert.match(serviceWorker, /['"]concentration-state-client\.js['"]/);
+  assert.doesNotThrow(() => new Function(concentrationStateClient));
+});
+
+test('Clock sessions and Concentration history load through their own client boundary', () => {
+  const stateTag = presence.indexOf('<script src="concentration-state-client.js"></script>');
+  const clockTag = presence.indexOf('<script src="concentration-clock-client.js"></script>');
+  const visualizationTag = presence.indexOf('<script src="visualization-client.js"></script>');
+  assert.notEqual(clockTag, -1);
+  assert.ok(stateTag < clockTag, 'Clock sessions require Concentration state');
+  assert.ok(clockTag < visualizationTag, 'Clock helpers initialize before shared exercise clients');
+  assert.equal(presence.split('<script src="concentration-clock-client.js"></script>').length - 1, 1);
+  assert.doesNotMatch(presence, /function\s+buildClockSVG\s*\(|function\s+startConcentration\s*\(/);
+  assert.doesNotMatch(presence, /function\s+saveConcResult\s*\(|function\s+renderConcHistory\s*\(/);
+  assert.match(concentrationClockClient, /function\s+buildClockSVG\s*\(/);
+  assert.match(concentrationClockClient, /function\s+startConcentration\s*\(/);
+  assert.match(concentrationClockClient, /function\s+saveConcResult\s*\(/);
+  assert.match(concentrationClockClient, /function\s+renderConcHistory\s*\(/);
+  assert.match(serviceWorker, /['"]concentration-clock-client\.js['"]/);
+  assert.doesNotThrow(() => new Function(concentrationClockClient));
+});
+
 test('top-level drawer screens reveal the open drawer during swipe-back', () => {
   assert.match(presence, /var revealsDrawer = prevIsHome && !!window\._returnToDrawer/);
   assert.match(presence, /function makeDrawerPreview\(host\)[\s\S]*cloneNode\(true\)[\s\S]*host\.appendChild\(preview\)/);
@@ -125,11 +163,13 @@ test('top-level drawer screens reveal the open drawer during swipe-back', () => 
 
 test('Visualization and the shared exercise gateway load before Auditory', () => {
   const visualizationTag = presence.indexOf('<script src="visualization-client.js"></script>');
-  const concentrationState = presence.indexOf('function getConcRank(level)');
+  const concentrationStateTag = presence.indexOf('<script src="concentration-state-client.js"></script>');
+  const concentrationClockTag = presence.indexOf('<script src="concentration-clock-client.js"></script>');
   const modeDeclaration = presence.indexOf('var currentMode;');
   const auditoryTag = presence.indexOf('<script src="auditory-client.js"></script>');
   assert.notEqual(visualizationTag, -1);
-  assert.ok(concentrationState < visualizationTag, 'Visualization requires Concentration state');
+  assert.ok(concentrationStateTag < visualizationTag, 'Visualization requires Concentration state');
+  assert.ok(concentrationClockTag < visualizationTag, 'Visualization shares Concentration results and history');
   assert.ok(modeDeclaration < visualizationTag, 'shared mode state must be declared before startup and exercise clients');
   assert.ok(visualizationTag < auditoryTag, 'Visualization must initialize before Auditory');
   assert.equal(presence.split('<script src="visualization-client.js"></script>').length - 1, 1);
