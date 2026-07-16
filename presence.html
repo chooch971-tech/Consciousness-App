@@ -7912,7 +7912,7 @@ document.getElementById('historyBack').addEventListener('click', function() {
   renderHome(); showScreen('homeScreen');
 });
 // ── Hamburger / Drawer ──
-function openDrawer(instant) {
+function openDrawer(instant, preserveGuideAnimation) {
   if (typeof closeStarMapSheet === 'function') closeStarMapSheet();
   var drawerLevelEl = document.getElementById('drawerLevel');
   if (drawerLevelEl) {
@@ -7922,12 +7922,14 @@ function openDrawer(instant) {
       drawerLevelEl.textContent = 'Level ' + state.level + ' · ' + getRankTitle(state.level);
     }
   }
-  // Keep the header guide icon in sync with the chosen entity/palette/step,
-  // even on a fresh load or when the user hasn't opened the Upgrade screen yet.
-  // updateDrawerEntityBtn resets the icon's base SVG, so re-apply step visuals
-  // afterwards to restore the orbiting tier decorations.
-  if (typeof updateDrawerEntityBtn === 'function') updateDrawerEntityBtn();
-  if (typeof applyOmniaStepVisuals === 'function') applyOmniaStepVisuals();
+  // The swipe preview is already mirroring this exact figure. Rebuilding its
+  // SVG during the handoff would restart every CSS animation and cause a jump.
+  if (!preserveGuideAnimation) {
+    // Keep the header guide icon in sync with the chosen entity/palette/step,
+    // even on a fresh load or before the user has opened Upgrade.
+    if (typeof updateDrawerEntityBtn === 'function') updateDrawerEntityBtn();
+    if (typeof applyOmniaStepVisuals === 'function') applyOmniaStepVisuals();
+  }
   var ov = document.getElementById('drawerOverlay');
   if (instant) {
     // Snap open with no slide/fade — used when restoring the drawer after the
@@ -11651,7 +11653,7 @@ startPrayerScheduler();
       // Swap the visual preview for the real drawer in the same frame.
       if (drawerPreview) {
         removeDrawerPreview(drawerPreview);
-        openDrawer(true);
+        openDrawer(true, true);
       }
 
       // .active is now removed → screenEl is display:none → safe to reset transform

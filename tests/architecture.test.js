@@ -106,7 +106,9 @@ test('top-level drawer screens reveal the open drawer during swipe-back', () => 
   assert.match(presence, /function uniquifyDrawerPreviewIds\(root\)[\s\S]*?value\.split\('#' \+ oldId\)\.join\('#' \+ idMap\[oldId\]\)/);
   assert.match(presence, /function startDrawerGuideMirror\(sourceGuide, guideClone, preview\)[\s\S]*?requestAnimationFrame\(mirrorFrame\)/);
   assert.match(presence, /pair\[1\]\.style\.setProperty\('transform', frame\.transform, 'important'\)/);
-  assert.match(presence, /if \(drawerPreview\) \{\s*removeDrawerPreview\(drawerPreview\);\s*openDrawer\(true\);/);
+  assert.match(presence, /function openDrawer\(instant, preserveGuideAnimation\)/);
+  assert.match(presence, /if \(!preserveGuideAnimation\) \{[\s\S]*?updateDrawerEntityBtn/);
+  assert.match(presence, /if \(drawerPreview\) \{\s*removeDrawerPreview\(drawerPreview\);\s*openDrawer\(true, true\);/);
   assert.match(presence, /querySelector\('[^']*\.lodge-back[^']*'\)/);
   assert.match(presence, /visibilitychange[\s\S]*abortInterruptedSwipe/);
 });
