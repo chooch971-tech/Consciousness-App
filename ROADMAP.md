@@ -103,6 +103,7 @@ Last updated: 2026-07-13
 - [x] Extract Streak calendar, goals, Society, badge routing, and ended-state UI into `streak-client.js`
 - [x] Extract shared exercise completion audio, Omnia artwork, rewards, and result overlay into `session-complete-client.js`
 - [x] Extract live streak ignition, weekly progress, number transition, particles, audio, and vibration into `streak-celebration-client.js`
+- [x] Extract tutorial post-session rewards, streak commitment, reminders, account prompt, and Guide handoff into `tutorial-post-session-client.js`
 - [ ] Audit the remaining inline Concentration completion, streak, reminder, companion, and integration clusters
 - [x] Consolidate duplicate global HTML escaping helpers
 - [ ] Remove `/api/sync/sync/diagnose` debug endpoint from server.js

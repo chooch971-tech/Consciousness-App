@@ -44,6 +44,7 @@ const streakClient = fs.readFileSync(path.join(root, 'streak-client.js'), 'utf8'
 const omniaCompanionClient = fs.readFileSync(path.join(root, 'omnia-companion-client.js'), 'utf8');
 const remindersClient = fs.readFileSync(path.join(root, 'reminders-client.js'), 'utf8');
 const pavlokClient = fs.readFileSync(path.join(root, 'pavlok-client.js'), 'utf8');
+const tutorialPostSessionClient = fs.readFileSync(path.join(root, 'tutorial-post-session-client.js'), 'utf8');
 const tutorialClient = fs.readFileSync(path.join(root, 'tutorial-client.js'), 'utf8');
 const soulMirrorClient = fs.readFileSync(path.join(root, 'soul-mirror-client.js'), 'utf8');
 const journalClient = fs.readFileSync(path.join(root, 'journal-client.js'), 'utf8');
@@ -798,6 +799,25 @@ test('Streak ignition celebration loads through its own client boundary', () => 
   assert.match(streakCelebrationClient, /appSoundEnabled/);
   assert.match(serviceWorker, /['"]streak-celebration-client\.js['"]/);
   assert.doesNotThrow(() => new Function(streakCelebrationClient));
+});
+
+test('Tutorial post-session journey loads through its own client boundary', () => {
+  const remindersTag = presence.indexOf('<script src="reminders-client.js"></script>');
+  const postSessionTag = presence.indexOf('<script src="tutorial-post-session-client.js"></script>');
+  const tutorialTag = presence.indexOf('<script src="tutorial-client.js"></script>');
+  assert.notEqual(postSessionTag, -1);
+  assert.ok(remindersTag < postSessionTag, 'post-session tutorial requires reminder helpers');
+  assert.ok(postSessionTag < tutorialTag, 'post-session journey initializes before the main tutorial runtime');
+  assert.equal(presence.split('<script src="tutorial-post-session-client.js"></script>').length - 1, 1);
+  assert.doesNotMatch(presence, /function\s+showTutorialPostSession\s*\(|function\s+tutFadeStage\s*\(/);
+  assert.doesNotMatch(presence, /function\s+showTutorialStreakCelebration\s*\(|function\s+showTutorialAccountPrompt\s*\(/);
+  assert.match(tutorialPostSessionClient, /function\s+showTutorialPostSession\s*\(/);
+  assert.match(tutorialPostSessionClient, /function\s+tutFadeStage\s*\(/);
+  assert.match(tutorialPostSessionClient, /function\s+showTutorialStreakCelebration\s*\(/);
+  assert.match(tutorialPostSessionClient, /function\s+showTutorialAccountPrompt\s*\(/);
+  assert.match(tutorialPostSessionClient, /function\s+showTutorialGuideIntro\s*\(/);
+  assert.match(serviceWorker, /['"]tutorial-post-session-client\.js['"]/);
+  assert.doesNotThrow(() => new Function(tutorialPostSessionClient));
 });
 
 test('first-time tutorial loads through its own end-of-body client boundary', () => {
