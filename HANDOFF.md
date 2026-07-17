@@ -172,6 +172,10 @@ system, achievements, streaks, and social/friends features.
    - Note: without auth the app sits on the login/splash screen. To screenshot an
      overlay, force it visible: set its `style.zIndex/display/opacity` and hide
      `#splash`/`#loginScreen`.
+3. **Behavioral smoke suite** — `npm run test:browser` exercises real phone-size
+   interactions for Concentration exercise entry, Reset All, startup cloud
+   restoration, and sign-out cleanup. GitHub Actions installs Chromium and runs
+   this automatically with the unit suite on pushes and pull requests.
 
 ## Sync architecture (touched constantly — read before editing sync)
 `sync-contract.js` owns the synchronized localStorage key allowlist. On push,

@@ -8258,7 +8258,12 @@ document.getElementById('confirmModalCancel').addEventListener('click', function
 });
 document.getElementById('confirmModalOk').addEventListener('click', function() {
   document.getElementById('confirmModal').classList.remove('show');
-  if (window._confirmCallback) { window._confirmCallback(); window._confirmCallback = null; }
+  // Consume the current callback before invoking it. A callback may open a
+  // second confirmation (Reset All does); clearing afterward would erase the
+  // newly installed callback and make the second Confirm button a no-op.
+  var callback = window._confirmCallback;
+  window._confirmCallback = null;
+  if (callback) callback();
 });
 
 function showConfirm(title, text, onConfirm) {
