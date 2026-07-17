@@ -325,9 +325,11 @@ function renderPracticeTree() {
         closePtreeSheet();
         setTimeout(function() {
           if (ex === 'soulmirror') {
+            if (typeof _smOriginMode !== 'undefined') _smOriginMode = 'guide';
             showScreen('soulMirrorScreen');
             if (window.soulMirrorInit) window.soulMirrorInit();
           } else if (ex === 'pore') {
+            if (typeof _smOriginMode !== 'undefined') _smOriginMode = 'guide';
             showScreen('soulMirrorScreen');
             if (window.soulMirrorInit) window.soulMirrorInit();
             setTimeout(function() {
@@ -456,9 +458,15 @@ function scheduleGuidePathLayoutRefresh(resetScroll) {
   guidePathLayoutTimers.forEach(function(timer) { clearTimeout(timer); });
   guidePathLayoutTimers = [];
   refreshGuidePathIfActive(resetScroll);
+  // The staggered re-measures exist to catch viewport chrome (iOS toolbars,
+  // etc.) settling after navigation — they must NOT keep re-forcing scrollTop
+  // to 0 on every pass, or a user who starts scrolling within this ~1.4s
+  // window gets yanked back to the top, sometimes more than once. Only the
+  // very first, immediate call above may reset scroll; every deferred pass
+  // just re-measures height.
   [40, 120, 280, 700, 1400].forEach(function(delay) {
     guidePathLayoutTimers.push(setTimeout(function() {
-      refreshGuidePathIfActive(resetScroll);
+      refreshGuidePathIfActive(false);
     }, delay));
   });
 }
@@ -2122,6 +2130,7 @@ function beginGuidePlanItem(btn) {
     if (duration) senseDuration = duration;
   }
   if (ex === 'soulmirror') {
+    if (typeof _smOriginMode !== 'undefined') _smOriginMode = 'guide';
     switchMode('concentration');
     suppressTutorialForExerciseEntry();
     renderSoulMirrorTraits();
@@ -2129,6 +2138,7 @@ function beginGuidePlanItem(btn) {
     return;
   }
   if (ex === 'pore') {
+    if (typeof _smOriginMode !== 'undefined') _smOriginMode = 'guide';
     switchMode('concentration');
     suppressTutorialForExerciseEntry();
     renderSoulMirrorTraits();

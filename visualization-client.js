@@ -1749,6 +1749,7 @@ document.getElementById('exerciseGrid').addEventListener('click', function(e) {
   var card = e.target.closest('.exercise-card');
   if (!card || !card.dataset.exercise) return;
   if (card.dataset.exercise === 'soulmirror') {
+    if (typeof _smOriginMode !== 'undefined') _smOriginMode = 'concentration';
     suppressTutorialForExerciseEntry();
     // Reset to mirror tab (in whichever mirror mode was last used)
     document.querySelectorAll('.soul-tab').forEach(function(t) {

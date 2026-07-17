@@ -1,5 +1,11 @@
 // ══════════════════════════════════════════════════════
 
+// Which mode (concentration/guide) to return to when the Soul Mirror /
+// Autosuggestion / Pore Breathing screen's back button is tapped — set at
+// each entry point, same pattern as exSetupOriginMode for every other
+// exercise's setup screen.
+var _smOriginMode = 'concentration';
+
 function loadSoulMirror(){
   var data;
   try{var s=localStorage.getItem('presence_soul_mirror_v1');data=s?JSON.parse(s):{positive:[],negative:[],notes:''};}
@@ -425,7 +431,8 @@ document.getElementById('soulMirrorBack').addEventListener('click',function(){
   var dd=document.getElementById('soulMirrorDropdown');
   if(dd)dd.style.display='none';
   showScreen('homeScreen');
-  switchMode('concentration');
+  if (typeof returnAfterExercise === 'function') returnAfterExercise(_smOriginMode);
+  else switchMode('concentration');
 });
 
 // ══════════════════════════════════════════════════════

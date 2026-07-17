@@ -1058,6 +1058,7 @@ function beginOmniaRecommendation() {
   var metaId = omniaMetaIdForExercise(rec.id) || rec.id;
   var meta = OMNIA_EXERCISE_META[metaId] || OMNIA_EXERCISE_META.clock;
   if (meta.open === 'soulmirror') {
+    if (typeof _smOriginMode !== 'undefined') _smOriginMode = 'guide';
     switchMode('concentration');
     renderSoulMirrorTraits();
     showScreen('soulMirrorScreen');
