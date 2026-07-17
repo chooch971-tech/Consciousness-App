@@ -547,9 +547,8 @@ function claimGift(idx) {
   saveGiftPath(s);
   var g = GIFT_PATH_DEFS[idx];
   if (typeof omniaState !== 'undefined' && omniaState) {
-    var cap = (typeof omniaAkashaCap === 'function') ? omniaAkashaCap() : Infinity;
     var pre = omniaState.akasha || 0;
-    omniaState.akasha = Math.min(cap, pre + g.akasha);
+    omniaState.akasha = pre + g.akasha;
     omniaState.totalAkashaEarned = (omniaState.totalAkashaEarned || 0) + Math.max(0, Math.round(omniaState.akasha - pre));
     if (idx === 6) {
       var prevStacks = omniaState.devotionStacks || 0;

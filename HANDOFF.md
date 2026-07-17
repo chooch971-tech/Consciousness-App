@@ -220,8 +220,9 @@ can never roll back progress.
 
 ## Conventions / gotchas
 - Akasha accrual applies multipliers: `omniaPrestigeMult()` (1+0.25·prestige) ×
-  `omniaDevotionMult()` (Seven Gifts) at the accrual sites (~lines 20469, 21259).
-  Akasha is clamped by `omniaAkashaCap()`.
+  `omniaDevotionMult()` (Seven Gifts). Wallets are uncapped; each generator's
+  reservoir is the idle-income limit. Book I generator shares target 20–42%
+  of a three-session day from Steps I–X, with diminishing upgrade returns.
 - Toasts: `showToast(msg, ms, 'gold')`. Keep toast text short.
 - Don't retry proxy 403 policy denials. Never disable TLS / unset HTTPS_PROXY.
 - When asked which model: use the configured model ID from the system prompt.

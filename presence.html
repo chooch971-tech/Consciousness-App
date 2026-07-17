@@ -1554,10 +1554,6 @@
     .oe-akasha-corner:active { background:rgba(212,180,142,.14); }
     .oe-akasha-corner-val { font-family:Cormorant Garamond,serif; font-size:18px; line-height:1; color:#e8c896; }
     .oe-akasha-corner-key { font-size:8px; letter-spacing:.2em; text-transform:uppercase; color:#d4b08e; }
-    .oe-akasha-corner--capped { border-color:rgba(224,90,90,.5); background:rgba(224,90,90,.16); cursor:pointer; }
-    .oe-akasha-corner--capped .oe-akasha-corner-val { color:#f0a8a8; }
-    .oe-akasha-corner--capped .oe-akasha-corner-key { color:#e89494; }
-
     /* Slim sticky stage strip */
     .oe-strip { padding:12px 14px 10px; background:rgba(255,255,255,.025); border:1px solid var(--border); border-radius:14px; margin:0 14px 4px; }
     .oe-strip-row { display:flex; align-items:center; gap:10px; }
@@ -1671,6 +1667,16 @@
     .oe-body-btn:hover:not(:disabled) { background:color-mix(in srgb, var(--body-color) 18%, transparent); }
     .oe-body-btn:disabled { opacity:.65; cursor:default; border-color:var(--border); color:var(--muted); }
     .oe-body-cost { display:inline-block; margin-left:4px; font-size:9px; letter-spacing:.1em; font-family:Cormorant Garamond,serif; color:rgba(221,216,206,.8); }
+    .oe-apotheosis { margin:0 14px 12px; padding:11px 2px 0; border-top:1px solid rgba(232,200,122,.18); }
+    .oe-apotheosis-head { display:flex; justify-content:space-between; align-items:center; gap:12px; }
+    .oe-apotheosis-label { font-size:8px; letter-spacing:.24em; text-transform:uppercase; color:rgba(232,200,122,.76); }
+    .oe-apotheosis-pct { font-size:9px; color:rgba(232,200,122,.82); }
+    .oe-apotheosis-track { height:3px; margin-top:8px; border-radius:999px; overflow:hidden; background:rgba(255,255,255,.07); }
+    .oe-apotheosis-fill { height:100%; width:0; border-radius:inherit; background:linear-gradient(90deg,#8ecce0,#e8c87a); box-shadow:0 0 10px rgba(232,200,122,.24); transition:width .5s ease; }
+    .oe-apotheosis-meta { margin-top:7px; font-size:9px; line-height:1.45; color:var(--muted); text-align:center; }
+    .oe-apotheosis.near { border-top-color:rgba(232,200,122,.34); }
+    .oe-apotheosis.final .oe-apotheosis-label, .oe-apotheosis.final .oe-apotheosis-pct { color:#e8c87a; }
+    .oe-apotheosis.final .oe-apotheosis-fill { box-shadow:0 0 14px rgba(232,200,122,.42); }
     .oe-session-row { padding:4px 14px 12px; display:flex; flex-direction:column; align-items:center; gap:9px; }
     .oe-session-progress { font-size:9px; letter-spacing:.18em; text-transform:uppercase; color:var(--muted); text-align:center; }
     .oe-session-progress strong { color:#8ecce0; }
@@ -6549,6 +6555,15 @@ body:not(.tut-live) #tutCorgi {
 
       <!-- Body trio: the focus -->
       <div class="oe-bodies" id="omniaBodyGrid"></div>
+
+      <div class="oe-apotheosis" id="omniaApotheosis" style="display:none;">
+        <div class="oe-apotheosis-head">
+          <span class="oe-apotheosis-label">Apotheosis</span>
+          <span class="oe-apotheosis-pct" id="omniaApotheosisPct">0%</span>
+        </div>
+        <div class="oe-apotheosis-track"><div class="oe-apotheosis-fill" id="omniaApotheosisFill"></div></div>
+        <div class="oe-apotheosis-meta" id="omniaApotheosisMeta"></div>
+      </div>
 
       <!-- Inline session progress + advance -->
       <div class="oe-session-row">

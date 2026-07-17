@@ -1613,7 +1613,7 @@ var EX_EXPLAINERS = {
       'Akasha is Omnia\'s currency — the <strong>fuel</strong> that builds her bodies and carries her through each Step.',
       'Earn it by <strong>completing exercises</strong>: reaching or beating your recommendation pays the most.',
       'Collect Omnia\'s <strong>daily gift</strong> and claim gifts from the <strong>7x2 Challenge</strong> for a steady bonus on top.',
-      'Spend it on <strong>generators, upgrades, and forms</strong>. The wallet has a cap that rises with each Step — what you don\'t spend simply waits for the next one.'
+      'Spend it on <strong>generators, upgrades, and forms</strong>. Your wallet has no limit; each generator\'s reservoir fills until you return to collect it.'
     ]
   }
 };

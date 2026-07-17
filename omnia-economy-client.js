@@ -9,37 +9,76 @@ function omniaSessionsToday() {
   return omniaState.sessionsTodayCount || 0;
 }
 
+// The Engine is a supporting current, not the main practice reward. These are
+// the intended shares of a three-session day at full generator investment.
+// Deep upgrades approach the target logarithmically, so adding Generator II
+// and III remains meaningful without letting passive income eclipse practice.
+var OMNIA_ENGINE_SHARE_BY_STEP = [0.20, 0.23, 0.26, 0.29, 0.32, 0.34, 0.36, 0.38, 0.40, 0.42];
+var OMNIA_GEN_LEGACY_BASE = [10, 18, 24];
+var OMNIA_GEN_LEGACY_PER = [12, 10, 10];
+
+function omniaGeneratorTargetShare(stepNum) {
+  return OMNIA_ENGINE_SHARE_BY_STEP[Math.max(0, Math.min(9, (stepNum || 1) - 1))];
+}
+
+function omniaGeneratorContributionCurve(level, idx) {
+  var base = [1, 0.72, 0.55][idx] || 0.55;
+  return base * (1 + 0.55 * Math.log2(Math.max(1, level || 1)));
+}
+
+function omniaLegacyGenContribution(idx) {
+  var gid = OMNIA_GEN_META[idx].id;
+  var lvl = (omniaState.upgrades && omniaState.upgrades[gid]) || 1;
+  return (OMNIA_GEN_LEGACY_BASE[idx] || 24) + lvl * (OMNIA_GEN_LEGACY_PER[idx] || 10);
+}
+
 function omniaRatePerHour() {
-  var total = omniaBodyTotal();
   var inBookII = typeof darkMatterUnlocked === 'function' && darkMatterUnlocked();
-  // Book II: the refined bodies (astral/mental/wisdom) take over feeding the
-  // generator, so income keeps scaling as the operator is built for the spheres.
+  // Book II has its own Akasha + Dark Matter sink model. Preserve its existing
+  // current until that economy receives a dedicated balance pass.
   if (inBookII) {
+    var total = omniaBodyTotal();
     var b2b = bookIIBodies();
     total += (b2b.astral || 1) + (b2b.mental || 1) + (b2b.wisdom || 1);
+    var legacyPower = 0;
+    for (var bi = 0; bi < 3; bi++) {
+      if (typeof omniaUpgradeBuilding === 'function' && omniaUpgradeBuilding(OMNIA_GEN_META[bi].id)) continue;
+      legacyPower += omniaLegacyGenContribution(bi);
+    }
+    if (legacyPower <= 0) return 0;
+    var legacyBodyBonus = Math.floor(Math.sqrt(Math.max(0, total)) * 9);
+    var legacyPractice = Math.min(1, 0.55 + 0.15 * Math.min(3, omniaSessionsToday()));
+    var legacyBoost = (typeof getActiveAkashaBoost === 'function') ? getActiveAkashaBoost() : 1;
+    return Math.max(10, Math.floor((legacyPower + Math.floor(legacyBodyBonus * 0.5)) * legacyPractice * legacyBoost));
   }
+
   var stepNum = omniaState.bardonStep || 1;
-  var earlyBoost = total < 48 ? Math.floor((48 - total) * 1.5) : 0;
-  var stepTax = Math.max(0, stepNum - 1) * 16;
-  var bodyBonus = Math.floor(Math.sqrt(Math.max(0, total)) * 9);
-  // Each unlocked generator (I always; II at Step V; III at Step IX; all three
-  // in Book II) is its own upgrade track and contributes from its OWN level. A
-  // generator earns nothing while it is itself under construction; the others
-  // keep running. If every active generator is offline, the flow is 0.
-  var genCount = inBookII ? 3 : (1 + (stepNum >= 5 ? 1 : 0) + (stepNum >= 9 ? 1 : 0));
-  var genSum = 0, genActive = 0;
+  var genCount = 1 + (stepNum >= 5 ? 1 : 0) + (stepNum >= 9 ? 1 : 0);
+  var activePower = 0, maxPower = 0;
   for (var gi = 0; gi < genCount; gi++) {
-    if (typeof omniaUpgradeBuilding === 'function' && omniaUpgradeBuilding(OMNIA_GEN_META[gi].id)) continue;
-    genSum += omniaGenContribution(gi);
-    genActive++;
+    var meta = OMNIA_GEN_META[gi];
+    var maxLevel = omniaUpgradeStepMax(meta.id);
+    maxPower += omniaGeneratorContributionCurve(maxLevel, gi);
+    if (typeof omniaUpgradeBuilding === 'function' && omniaUpgradeBuilding(meta.id)) continue;
+    activePower += omniaGenContribution(gi);
   }
-  if (genActive === 0) return 0; // every generator is mid-upgrade
-  var base = genSum + Math.floor(bodyBonus * 0.5) + Math.floor(earlyBoost * 0.3) - stepTax;
+  if (activePower <= 0 || maxPower <= 0) return 0;
+
+  var bodies = ['physical', 'astral', 'mental'];
+  var referenceCost = bodies.reduce(function(sum, body) {
+    return sum + omniaEconomyReferenceBodyCost(body);
+  }, 0) / bodies.length;
+  // Three mature ten-minute recommendations establish the active-practice
+  // baseline. The same 42% reference factor is used by the session award.
+  var practiceBaseline = Math.max(95, referenceCost * 0.42) * (1.45 * 1.75) * 3;
+  var targetShare = omniaGeneratorTargetShare(stepNum);
+  var targetDaily = practiceBaseline * targetShare / (1 - targetShare);
+  var investmentMult = 0.65 + 0.35 * Math.min(1, activePower / maxPower);
   // The generator hums when you practice: idle days trickle at 55%, and each
   // session today restores 15%, reaching full flow at 3 sessions.
   var practiceMult = Math.min(1, 0.55 + 0.15 * Math.min(3, omniaSessionsToday()));
   var boost = (typeof getActiveAkashaBoost === 'function' && typeof omniaState !== 'undefined' && omniaState) ? getActiveAkashaBoost() : 1;
-  return Math.max(10, Math.floor(base * practiceMult * boost));
+  return Math.max(1, Math.floor((targetDaily / 24) * investmentMult * practiceMult * boost));
 }
 
 function omniaReservoirCap() {
@@ -47,19 +86,11 @@ function omniaReservoirCap() {
   // you collect. Tuned to start small — so early passive banking is weak and you
   // must actually show up to collect — then scale steeply with the Deep Vessel
   // upgrade and body total so late-game collections become large and rewarding.
-  // Deliberately does NOT touch the earning rate, body costs, or wallet cap, so
-  // the core economy stays balanced; this only governs the idle buffer size.
-  // Start ≈ 130 · Step IV ≈ 3,000 · Step X ≈ 80,000 (was 318 / 3,000 / 42,330).
+  // This governs only the idle buffer. The wallet itself is intentionally
+  // uncapped: earned Akasha belongs to the player once it is collected.
   var vessel = omniaState.upgrades.vessel || 1;
   var bodyTotal = Math.max(0, omniaBodyTotal());
-  return Math.floor(120 + Math.pow(vessel - 1, 2) * 30 + Math.pow(bodyTotal, 1.15) * 3);
-}
-
-function omniaAkashaCap() {
-  // Book II sits past Step X (bardonStep frozen at 1) — keep the endgame cap.
-  if (typeof darkMatterUnlocked === 'function' && darkMatterUnlocked()) return 80000000;
-  var step = omniaState.bardonStep || 1;
-  return [6000, 18000, 45000, 100000, 220000, 800000, 2500000, 8000000, 25000000, 80000000][step - 1] || 80000000;
+  return Math.floor(180 + Math.pow(vessel - 1, 2) * 30 + Math.pow(bodyTotal, 1.15) * 3);
 }
 
 function omniaUpgradeStepMax(upgId) {
@@ -147,7 +178,7 @@ function omniaStage() {
   return { name:'Seed', sub:'A small center of light waits for nourishment.' };
 }
 
-function omniaBodyCost(body) {
+function omniaBodyRawCost(body) {
   var lvl = Math.max(1, omniaState.bodies[body] || 1);
   var built = Math.max(0, lvl - 1);
   var stepNum = omniaState.bardonStep || 1;
@@ -157,7 +188,17 @@ function omniaBodyCost(body) {
   // 11%→13%) so each level is a real commitment without outrunning income.
   var base = 78 + built * 4 + Math.floor(Math.pow(built, 1.18) * 1.2);
   var stepMult = 1 + Math.max(0, stepNum - 1) * 0.13;
-  return Math.floor(base * stepMult * omniaDiscountMult());
+  return Math.floor(base * stepMult);
+}
+
+// Rewards and generator targets follow the body-cost curve, but use a stable
+// reference discount so buying Attunement can never reduce future income.
+function omniaEconomyReferenceBodyCost(body) {
+  return Math.max(1, Math.floor(omniaBodyRawCost(body) * 0.72));
+}
+
+function omniaBodyCost(body) {
+  return Math.floor(omniaBodyRawCost(body) * omniaDiscountMult());
 }
 
 function omniaDiscountMult() {

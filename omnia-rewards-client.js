@@ -132,6 +132,23 @@ function omniaConsumeBodyAward() {
   }
   omniaState.bodyAwardsToday = (omniaState.bodyAwardsToday || 0) + 1;
 }
+
+// Consecutive legitimate exercises should all move the Path. A once-per-hour
+// lock punished users who complete a 30-90 minute practice stack in one sitting,
+// so credits are instead bounded to three reached recommendations per day.
+var OMNIA_SESSION_CREDIT_DAILY_CAP = 3;
+function omniaGrantRecommendedSessionCredit(recommended, reachedRec, todayStr) {
+  if (!recommended || reachedRec === false) return false;
+  if (omniaState.sessionCreditDate !== todayStr) {
+    omniaState.sessionCreditDate = todayStr;
+    omniaState.sessionCreditsToday = 0;
+  }
+  if ((omniaState.sessionCreditsToday || 0) >= OMNIA_SESSION_CREDIT_DAILY_CAP) return false;
+  omniaState.sessionCreditsToday = (omniaState.sessionCreditsToday || 0) + 1;
+  omniaState.completedRecommended = (omniaState.completedRecommended || 0) + 1;
+  omniaState.lastSessionCreditMs = Date.now();
+  return true;
+}
 // The body a given exercise will actually raise: its natural body, or — if that
 // one is already capped for the current step — the next uncapped body, in the
 // order mental → astral → physical. Returns null when all three are capped.
@@ -215,21 +232,17 @@ function omniaHistoryMatches(id, h) {
 // (getActiveAkashaBoost() * getOmniaCosmeticBoost()) — folded in here so
 // OMNIA_BONUS_STACK_CAP can limit the *combined* stack, not just streak/rec.
 function omniaExerciseReward(exId, seconds, recommended, extraBoost) {
-  var total = omniaBodyTotal();
-  var stepNum = omniaState.bardonStep || 1;
   // Akasha only rewards the first 15 minutes of a session — beyond that is
   // unnecessary for the economy, though XP/time still tracks the full length.
   var akashaSeconds = Math.min(seconds || 0, 900);
-  var base = Math.max(95, Math.min(1100, Math.floor(akashaSeconds * 0.4) + 120));
-  // The soft cap decays with body total, but a step-scaled mastery floor keeps
-  // sessions paying a meaningful fraction of a body level at every rank — this
-  // is what makes practice volume matter all game. Together with the Step gates,
-  // streaks, achievements, offerings, and monthly gifts, this targets a first
-  // Prestige in roughly 5-6 months at 30-45 min/day and 3-4 months at 60-90 min/day.
-  var progressionSoftCap = 1 / (1 + Math.max(0, total - 36) / 420);
-  var effMult = Math.max(progressionSoftCap, stepNum * 0.102);
-  var stepPenalty = 1 - Math.min(0.24, Math.max(0, stepNum - 1) * 0.07);
-  var catchup = total < 42 ? 1 + (42 - total) / 120 : 1;
+  var durationMult = 0.25 + 0.75 * Math.min(1.5, akashaSeconds / 600);
+  var meta = OMNIA_EXERCISE_META[exId] || OMNIA_EXERCISE_META.clock;
+  var referenceCost = omniaEconomyReferenceBodyCost(meta.body);
+  // Practice income follows the same cost curve as body construction. This
+  // returns the economy's weight to meditation as generator gains flatten,
+  // while keeping early awards substantial and the first prestige near the
+  // intended 5-6 / 3-4 month activity bands.
+  var base = Math.max(95, referenceCost * 0.42) * durationMult;
   var streakMult = 1 + Math.min(0.45, (omniaState.recStreak || 0) * 0.08);
   var recMult = recommended ? 1.75 : 1;
   // Streak + "recommended" bonuses combine with cosmetic/temporary-boost
@@ -237,12 +250,11 @@ function omniaExerciseReward(exId, seconds, recommended, extraBoost) {
   // reward. Without a cap, a maxed streak (+45%) and "recommended" bonus
   // (+75%) already multiply by ~2.5x, and a player with every cosmetic
   // unlocked (+64%, the $3.99/mo perk) plus an active quest-chest boost
-  // (+20-30%) could reach ~5.4x — turning one session into thousands of
-  // akasha versus a ~100-150 akasha body-level cost. Capping the combined
-  // stack at 3x keeps bonuses feeling rewarding without trivializing the
-  // akasha economy, while leaving non-paying players (max ~2.54x) untouched.
+  // (+20-30%) could reach ~5.4x. Capping the combined stack at 3x keeps
+  // bonuses feeling rewarding without trivializing the body-cost curve,
+  // while leaving non-paying players (max ~2.54x) untouched.
   var bonusMult = Math.min(streakMult * recMult * (extraBoost || 1), OMNIA_BONUS_STACK_CAP);
-  return Math.max(42, Math.floor(base * effMult * stepPenalty * catchup * bonusMult * omniaPrestigeMult() * omniaDevotionMult()));
+  return Math.max(42, Math.floor(base * bonusMult * omniaPrestigeMult() * omniaDevotionMult()));
 }
 // Permanent +2% akasha from completing the Seven-Day Devotion (one-time). The
 // earned flag lives on omniaState so the reward follows the account across sync.
@@ -418,13 +430,9 @@ function awardOmniaForExercise(exId, seconds, reachedRec) {
   }
   omniaState.akasha = (omniaState.akasha || 0) + gain;
   omniaState.totalAkashaEarned = (omniaState.totalAkashaEarned || 0) + gain;
-  // A completed Omnia recommendation earns 1 path-session credit, max once per
-  // hour. Other exercises still pay Akasha and XP, but do not bypass the Path.
-  var now = Date.now();
-  if (recommended && reachedRec !== false && now - (omniaState.lastSessionCreditMs || 0) >= 3600000) {
-    omniaState.completedRecommended = (omniaState.completedRecommended || 0) + 1;
-    omniaState.lastSessionCreditMs = now;
-  }
+  // Up to three reached recommendations count each day, including consecutive
+  // exercises in one practice block. Other exercises still pay Akasha and XP.
+  omniaGrantRecommendedSessionCredit(recommended, reachedRec, todayStr);
   // Names must be computed BEFORE the award below — this used to read
   // activityName ahead of its declaration, leaving lastBodyAward.exercise
   // permanently undefined.

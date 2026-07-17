@@ -22,22 +22,15 @@ function renderOmniaEngine() {
   var stripStep = document.getElementById('omniaStripStep');
   if (stageName) stageName.textContent = stage.name;
   if (stageSub) stageSub.textContent = stage.sub;
-  var akashaCap = omniaAkashaCap();
   var akashaAmt = Math.floor(omniaState.akasha || 0);
   if (wallet) wallet.textContent = akashaAmt;
   var walletCorner = document.getElementById('omniaAkashaWalletCorner');
   if (walletCorner) walletCorner.textContent = akashaAmt.toLocaleString();
   var walletCornerParent = walletCorner && walletCorner.parentElement;
   if (walletCornerParent) {
-    walletCornerParent.title = akashaAmt.toLocaleString() + ' / ' + akashaCap.toLocaleString() + ' akasha';
-    var akashaCapped = akashaAmt >= akashaCap;
-    walletCornerParent.classList.toggle('oe-akasha-corner--capped', akashaCapped);
-    // Always clickable: capped or not, tapping the wallet opens the explainer
-    // (what Akasha is, how to earn it) — capped also gets its own toast first,
-    // since that's an immediate, specific status the explainer's general
-    // "wallet caps per Step" line doesn't say on its own.
+    walletCornerParent.title = akashaAmt.toLocaleString() + ' akasha';
+    walletCornerParent.classList.remove('oe-akasha-corner--capped');
     walletCornerParent.onclick = function() {
-      if (akashaCapped) showToast('You\'ve reached the Akasha cap for your Step!', 3200);
       if (typeof openExExplainer === 'function') openExExplainer('akasha');
     };
   }
@@ -112,6 +105,7 @@ function renderOmniaEngine() {
   renderOmniaGenYard();
 
   var _inBookII = typeof darkMatterUnlocked === 'function' && darkMatterUnlocked();
+  renderOmniaApotheosisProgress(_inBookII);
   var stepLabelEl = document.querySelector('#omniaEngine .oe-stage-step-label');
   var stepName = document.getElementById('omniaStepName');
   var stepText = document.getElementById('omniaStepText');
@@ -381,10 +375,8 @@ function collectOmniaAkasha(anchorEl, gid) {
   var amount = 0;
   ids.forEach(function(k) { amount += Math.floor(res[k] || 0); });
   if (amount < 1) return;
-  var cap = omniaAkashaCap();
   var current = omniaState.akasha || 0;
-  var room = Math.max(0, cap - current);
-  var collected = Math.min(amount, room);
+  var collected = amount;
   var remaining = collected;
   ids.forEach(function(k) {
     var take = Math.min(Math.floor(res[k] || 0), remaining);
@@ -432,9 +424,36 @@ function collectOmniaAkasha(anchorEl, gid) {
     }
   }
 
-  if (collected < amount) {
-    showToast('Wallet full — ' + cap.toLocaleString() + ' akasha cap');
-  }
+}
+
+function renderOmniaApotheosisProgress(inBookII) {
+  var el = document.getElementById('omniaApotheosis');
+  if (!el) return;
+  var stepNum = omniaState.bardonStep || 1;
+  if (inBookII || stepNum < 7) { el.style.display = 'none'; return; }
+  var finalStep = OMNIA_BARDON_STEPS[OMNIA_BARDON_STEPS.length - 1];
+  var bodyKeys = ['physical', 'astral', 'mental'];
+  var bodyCurrent = 0, bodyTarget = 0;
+  bodyKeys.forEach(function(body) {
+    var target = omniaStepReqVal(finalStep, body);
+    bodyTarget += target;
+    bodyCurrent += Math.min(omniaState.bodies[body] || 1, target);
+  });
+  var sessionTarget = omniaStepReqVal(finalStep, 'recommended');
+  var sessionCurrent = Math.min(omniaState.completedRecommended || 0, sessionTarget);
+  var bodyProgress = bodyTarget > 0 ? bodyCurrent / bodyTarget : 0;
+  var sessionProgress = sessionTarget > 0 ? sessionCurrent / sessionTarget : 0;
+  var pct = Math.min(100, Math.round((bodyProgress * 0.75 + sessionProgress * 0.25) * 100));
+  el.style.display = '';
+  el.classList.toggle('near', stepNum >= 9);
+  el.classList.toggle('final', stepNum >= 10);
+  var pctEl = document.getElementById('omniaApotheosisPct');
+  var fill = document.getElementById('omniaApotheosisFill');
+  var meta = document.getElementById('omniaApotheosisMeta');
+  if (pctEl) pctEl.textContent = pct + '%';
+  if (fill) fill.style.width = pct + '%';
+  if (meta) meta.textContent = bodyCurrent.toLocaleString() + ' / ' + bodyTarget.toLocaleString()
+    + ' body levels · ' + sessionCurrent.toLocaleString() + ' / ' + sessionTarget.toLocaleString() + ' guided sessions';
 }
 
 function omniaBodyCap(body) {
@@ -527,7 +546,7 @@ function _pumpOfUpgrade(id) {
 function omniaPumpReservoirCap(idx) {
   var vLvl = (omniaState.upgrades && omniaState.upgrades[OMNIA_GEN_META[idx].vessel]) || 1;
   var bodyTotal = Math.max(0, omniaBodyTotal());
-  return Math.floor(120 + Math.pow(vLvl - 1, 2) * 30 + Math.pow(bodyTotal, 1.15) * 3);
+  return Math.floor(180 + Math.pow(vLvl - 1, 2) * 30 + Math.pow(bodyTotal, 1.15) * 3);
 }
 // Split the (multiplier-applied) total rate across active pumps by contribution.
 function omniaPumpShares() {
@@ -541,7 +560,6 @@ function omniaPumpShares() {
   for (var j = 0; j < n; j++) out[OMNIA_GEN_META[j].id] = sum > 0 ? total * (contribs[j] / sum) : 0;
   return out;
 }
-var OMNIA_GEN_BASE = [10, 18, 24], OMNIA_GEN_PER = [12, 10, 10];
 function omniaGenUnlockedCount() {
   if (typeof darkMatterUnlocked === 'function' && darkMatterUnlocked()) return 3;
   var s = omniaState.bardonStep || 1;
@@ -550,7 +568,8 @@ function omniaGenUnlockedCount() {
 function omniaGenContribution(idx) {
   var gid = OMNIA_GEN_META[idx].id;
   var lvl = (omniaState.upgrades && omniaState.upgrades[gid]) || 1;
-  return (OMNIA_GEN_BASE[idx] || 24) + lvl * (OMNIA_GEN_PER[idx] || 10);
+  if (typeof darkMatterUnlocked === 'function' && darkMatterUnlocked()) return omniaLegacyGenContribution(idx);
+  return omniaGeneratorContributionCurve(lvl, idx);
 }
 
 // The Quickening upgrade shortens construction, up to 60% faster at its cap.
@@ -911,7 +930,7 @@ function renderGenSheet(gid) {
       + '<div class="omnia-upgrade-sub">' + sub + '</div></div>' + right + '</div>';
   }
 
-  var contrib = omniaGenContribution(idx);
+  var contrib = Math.floor((omniaPumpShares()[gid] || 0));
   var building = pumpBusyId ? omniaUpgradeBuilding(pumpBusyId) : 0;
   var glvl = (omniaState.upgrades && omniaState.upgrades[gid]) || 1;
   var pumpRes = Math.floor((omniaState.reservoirs || {})[gid] || 0);
@@ -927,7 +946,7 @@ function renderGenSheet(gid) {
     + (building ? ' · <span style="color:#e8c87a;">offline while upgrading</span>'
        : canCollectSheet ? ' · <span style="color:#8eccc0;">tap the pump to collect</span>' : '') + '</div>'
     + '<div style="text-align:left; margin-top:16px;">'
-    + row(gid, 'Akashic Current', 'Generate akasha more quickly each hour · next +' + (OMNIA_GEN_PER[idx] || 10) + '/hr', '#8ecce0', '◈')
+    + row(gid, 'Akashic Current', 'Generate akasha more quickly each hour · deeper levels give diminishing gains', '#8ecce0', '◈')
     + row(meta.vessel, 'Deep Vessel', 'This pump\'s reservoir capacity', '#9ed8c4', '▽')
     + row(meta.attune, 'Attunement', 'Cheapens this pump\'s upgrades', '#e8c87a', '✧')
     + row(meta.quick, 'Quickening', 'Speeds this pump\'s construction', '#c4a8d4', '◷')

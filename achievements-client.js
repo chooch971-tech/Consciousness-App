@@ -220,9 +220,8 @@ function achEvaluate(silent) {
   if (newly.length) {
     var total = 0;
     newly.forEach(function(b){ total += b.reward; });
-    var cap = (typeof omniaAkashaCap === 'function') ? omniaAkashaCap() : Infinity;
     var pre = omniaState.akasha || 0;
-    omniaState.akasha = Math.min(cap, pre + total);
+    omniaState.akasha = pre + total;
     var got = Math.max(0, Math.round(omniaState.akasha - pre));
     omniaState.totalAkashaEarned = (omniaState.totalAkashaEarned || 0) + got;
     if (typeof saveOmniaState === 'function') saveOmniaState();
