@@ -36,6 +36,7 @@ const omniaEngineClient = fs.readFileSync(path.join(root, 'omnia-engine-client.j
 const omniaMorphClient = fs.readFileSync(path.join(root, 'omnia-morph-client.js'), 'utf8');
 const guidePathClient = fs.readFileSync(path.join(root, 'guide-path-client.js'), 'utf8');
 const guideQuestsClient = fs.readFileSync(path.join(root, 'guide-quests-client.js'), 'utf8');
+const guideShellClient = fs.readFileSync(path.join(root, 'guide-shell-client.js'), 'utf8');
 const reportsClient = fs.readFileSync(path.join(root, 'reports-client.js'), 'utf8');
 const platformClient = fs.readFileSync(path.join(root, 'platform-client.js'), 'utf8');
 const profileClient = fs.readFileSync(path.join(root, 'profile-client.js'), 'utf8');
@@ -638,10 +639,10 @@ test('Guide path assessment and adaptive agenda live in a dedicated client bound
 test('Path Quests and Seven Gifts live in a dedicated client boundary', () => {
   const guidePathTag = presence.indexOf('<script src="guide-path-client.js"></script>');
   const questsTag = presence.indexOf('<script src="guide-quests-client.js"></script>');
-  const guideShellRuntime = presence.indexOf('function openGuide(');
+  const guideShellTag = presence.indexOf('<script src="guide-shell-client.js"></script>');
   assert.notEqual(questsTag, -1);
   assert.ok(guidePathTag < questsTag, 'Guide quests load after adaptive path planning');
-  assert.ok(questsTag < guideShellRuntime, 'Guide quests load before Guide shell initialization');
+  assert.ok(questsTag < guideShellTag, 'Guide quests load before Guide shell initialization');
   assert.equal(presence.split('<script src="guide-quests-client.js"></script>').length - 1, 1);
   assert.doesNotMatch(presence, /function\s+pathQuestState\s*\(/);
   assert.doesNotMatch(presence, /function\s+renderGiftPathScreen\s*\(/);
@@ -655,6 +656,20 @@ test('Path Quests and Seven Gifts live in a dedicated client boundary', () => {
   assert.match(guideQuestsClient, /function\s+renderPathQuests\s*\(/);
   assert.match(guideQuestsClient, /window\.pqOpenAddMenu\s*=\s*function/);
   assert.doesNotThrow(() => new Function(guideQuestsClient));
+});
+
+test('Guide shell navigation loads after planning and quest behavior', () => {
+  const questsTag = presence.indexOf('<script src="guide-quests-client.js"></script>');
+  const shellTag = presence.indexOf('<script src="guide-shell-client.js"></script>');
+  assert.notEqual(shellTag, -1);
+  assert.ok(questsTag < shellTag, 'Guide shell initializes after planning and quest behavior');
+  assert.equal(presence.split('<script src="guide-shell-client.js"></script>').length - 1, 1);
+  assert.doesNotMatch(presence, /function\s+openGuide\s*\(|function\s+toggleGuideTwoADay\s*\(/);
+  assert.match(guideShellClient, /function\s+openGuide\s*\(/);
+  assert.match(guideShellClient, /function\s+toggleGuideTwoADay\s*\(/);
+  assert.match(guideShellClient, /bindGuideTabSwipe/);
+  assert.match(serviceWorker, /['"]guide-shell-client\.js['"]/);
+  assert.doesNotThrow(() => new Function(guideShellClient));
 });
 
 test('Lodge, messages, and friends live behind the social client boundary', () => {

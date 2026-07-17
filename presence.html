@@ -8894,6 +8894,7 @@ function claimMorningOffering() {
 <script src="omnia-morph-client.js"></script>
 <script src="guide-path-client.js"></script>
 <script src="guide-quests-client.js"></script>
+<script src="guide-shell-client.js"></script>
 <script>
 
 
@@ -8920,125 +8921,6 @@ function omniaDisplayColor(palette, entity) {
   return palette.color;
 }
 
-// ── Persistent selections ──────────────────────────────────
-// ── Open / init guide screen ──────────────────────────────
-function openGuide() {
-  guideState = loadGuideState();
-  guidePathMode = guideState._pathModeV2 || 'beginner';
-  var panel = document.getElementById('guideAssessmentPanel');
-  if (panel) panel.style.display = 'none';
-  document.getElementById('guidePlanOutput').style.display = 'none';
-  renderGuideExRows();
-  renderOmniaEngine();
-  // Auto-commit path if not yet locked — regiment is shown directly
-  if (!guideState._pathLockedV2) {
-    setGuidePathMode(guidePathMode, true);
-  }
-  setGuidePathMode(guidePathMode);
-  renderGuidePlan(guidePathMode, true);
-  renderPathQuests();
-  switchGuideTab('path');
-  scheduleGuidePathLayoutRefresh(true);
-}
-
-// ── Event wiring ──────────────────────────────────────────
-
-document.getElementById('guideBeginnerPathBtn').addEventListener('click', function() {
-  showGuidePathConfirmation('beginner');
-});
-
-document.getElementById('guideExperiencedPathBtn').addEventListener('click', function() {
-  showGuidePathConfirmation('experienced');
-});
-
-document.getElementById('guideGenerateBtn').addEventListener('click', function() {
-  commitGuidePath('experienced');
-});
-
-function toggleGuideTwoADay() {
-  guideState._twoADayV1 = !guideTwoADayEnabled();
-  saveGuideState(guideState);
-  renderGuideCadenceControl();
-  if (guideState._pathLockedV2 && guidePathMode) renderGuidePlan(guidePathMode, true);
-  if (document.getElementById('pathQuestRoot')) renderPathQuests();
-}
-
-document.getElementById('guideTwoADayBtn').addEventListener('click', toggleGuideTwoADay);
-document.getElementById('guideConfirmTwoADayBtn').addEventListener('click', toggleGuideTwoADay);
-document.getElementById('guidePlanTwoADayBtn').addEventListener('click', toggleGuideTwoADay);
-document.getElementById('guideConfirmBackBtn').addEventListener('click', showGuideRouteChoice);
-document.getElementById('guideConfirmCommitBtn').addEventListener('click', function() {
-  commitGuidePath(guidePendingPathMode || guidePathMode || 'beginner');
-});
-
-document.getElementById('guidePlanCards').addEventListener('click', function(e) {
-  var btn = e.target.closest('.guide-plan-start');
-  if (btn) beginGuidePlanItem(btn);
-});
-
-document.querySelectorAll('.guide-dot[data-tab]').forEach(function(dot) {
-  dot.addEventListener('click', function() {
-    switchGuideTab(this.dataset.tab);
-  });
-});
-
-// ── Guide tab one-time tip bubbles ───────────────────────────
-var _guideTabTipShown = (function() {
-  try { return JSON.parse(localStorage.getItem('presence_guide_tips_seen') || '{}'); } catch(e) { return {}; }
-})();
-function _showGuideTabTip(tab) {
-  if (_guideTabTipShown[tab]) return;
-  var tipId = tab === 'omnia' ? 'tutOmniaTip' : 'tutTreeTip';
-  var el = document.getElementById(tipId);
-  if (!el) return;
-  el.style.display = 'block';
-  setTimeout(function() { el.classList.add('tut-ct-show'); }, 60);
-  var timer = setTimeout(function() { _hideGuideTabTip(el, tab); }, 7000);
-  el.querySelector('button').onclick = function() { clearTimeout(timer); _hideGuideTabTip(el, tab); };
-}
-function _hideGuideTabTip(el, tab) {
-  if (tab) {
-    _guideTabTipShown[tab] = true;
-    try { localStorage.setItem('presence_guide_tips_seen', JSON.stringify(_guideTabTipShown)); } catch(e) {}
-  }
-  el.classList.remove('tut-ct-show');
-  setTimeout(function() { el.style.display = 'none'; }, 500);
-}
-
-// Horizontal swipe/drag between Path / Upgrade / Tree
-(function() {
-  var panel = document.getElementById('guidePanel');
-  var startX, startY, dragging;
-  var tabOrder = ['path','omnia','tree'];
-
-  function handleStart(x, y) { startX = x; startY = y; dragging = false; }
-  function handleMove(x, y) {
-    if (startX == null) return;
-    var dx = x - startX, dy = y - startY;
-    if (!dragging && Math.abs(dy) > Math.abs(dx)) { startX = null; return; }
-    dragging = true;
-  }
-  function handleEnd(x) {
-    if (startX == null || !dragging) return;
-    var dx = x - startX;
-    startX = null; dragging = false;
-    if (Math.abs(dx) < 40) return;
-    var idx = tabOrder.indexOf(guideActiveTab);
-    if (dx < 0 && idx < tabOrder.length - 1) switchGuideTab(tabOrder[idx + 1]);
-    else if (dx > 0 && idx > 0) switchGuideTab(tabOrder[idx - 1]);
-  }
-
-  // Touch
-  panel.addEventListener('touchstart', function(e) { handleStart(e.touches[0].clientX, e.touches[0].clientY); }, {passive: true});
-  panel.addEventListener('touchmove', function(e) { handleMove(e.touches[0].clientX, e.touches[0].clientY); }, {passive: true});
-  panel.addEventListener('touchend', function(e) { handleEnd(e.changedTouches[0].clientX); }, {passive: true});
-
-  // Mouse (desktop)
-  panel.addEventListener('mousedown', function(e) { handleStart(e.clientX, e.clientY); });
-  panel.addEventListener('mousemove', function(e) { if (startX != null) handleMove(e.clientX, e.clientY); });
-  panel.addEventListener('mouseup', function(e) { handleEnd(e.clientX); });
-  panel.addEventListener('mouseleave', function() { startX = null; dragging = false; });
-})();
 document.getElementById('guideOmniaFigure').addEventListener('click', morphGuideOmnia);
 document.getElementById('guideOmniaFigure').addEventListener('keydown', function(e) {
   if (e.key === 'Enter' || e.key === ' ') {

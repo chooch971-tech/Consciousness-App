@@ -130,6 +130,9 @@ system, achievements, streaks, and social/friends features.
   rewards; chest animation; monthly Seven Gifts persistence and claims; quest,
   gift, exercise-menu, advanced-target, and add-exercise overlay rendering.
   It loads after Guide planning and before Guide shell initialization.
+- **`guide-shell-client.js`** — Guide entry, path controls, one-time tab tips,
+  and tab swipe navigation. It loads after planning and Path Quests, while
+  Omnia engine control wiring remains in the core runtime.
 - **`tutorial-client.js`** — the first-time tutorial state machine, dialogue,
   spotlight sequencing, Omnia morph choreography, path choice, and replay hook.
   It loads at the end of the body after the complete tutorial markup.
