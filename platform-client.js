@@ -424,6 +424,7 @@ function _refreshSettingsSyncCard() {
   var se   = document.getElementById('syncStatusEmail');
   var lb   = document.getElementById('syncLogoutBtn');
   var uc   = document.getElementById('setUsernameCard');
+  var dg   = document.getElementById('accountDeleteGroup');
   if (!wrap) return;
   var syncWarning = localStorage.getItem('presence_sync_warning');
   if (st) st.textContent = syncWarning ? '⚠ Sync disconnected — sign in to reconnect' : 'Not signed in';
@@ -431,6 +432,7 @@ function _refreshSettingsSyncCard() {
   if (se) se.textContent = '';
   if (lb) lb.style.display = 'none';
   if (uc) uc.style.display = 'none';
+  if (dg) dg.style.display = 'none';
   wrap.style.display = 'block';
   if (sgc) {
     sgc.innerHTML = '';
@@ -456,12 +458,35 @@ function _refreshSettingsSyncCardSignedIn() {
   var se   = document.getElementById('syncStatusEmail');
   var lb   = document.getElementById('syncLogoutBtn');
   var uc   = document.getElementById('setUsernameCard');
+  var dg   = document.getElementById('accountDeleteGroup');
   localStorage.removeItem('presence_sync_warning');
   if (st) { st.textContent = syncStatusLabel(); st.style.color = ''; }
   if (se) se.textContent = authUsername ? '@' + authUsername + ' · ' + authEmail : authEmail;
   if (lb) lb.style.display = 'block';
   if (wrap) wrap.style.display = 'none';
   if (uc) uc.style.display = authUsername ? 'none' : 'block';
+  if (dg) dg.style.display = '';
+}
+
+async function clearDeletedAccountFromDevice() {
+  authToken = null;
+  authEmail = null;
+  authUsername = null;
+  syncEnabled = false;
+  try {
+    if ('serviceWorker' in navigator) {
+      var registration = await navigator.serviceWorker.ready;
+      var subscription = await registration.pushManager.getSubscription();
+      if (subscription) await subscription.unsubscribe();
+    }
+  } catch(e) {}
+  try {
+    if (window.indexedDB) indexedDB.deleteDatabase('presence_audio');
+  } catch(e) {}
+  localStorage.clear();
+  sessionStorage.clear();
+  resetLocalProgressForSignedOut();
+  window.location.reload();
 }
 
 async function authLogout(options) {

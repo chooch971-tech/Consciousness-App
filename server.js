@@ -842,6 +842,150 @@ app.post('/api/sync/auth/logout', verifyToken, async (req, res) => {
   }
 });
 
+// Permanently remove an account and every server-side record that belongs to
+// it. The transaction keeps retries safe: either the complete deletion commits
+// or nothing does. The user document is deleted last inside the transaction.
+const ACCOUNT_DELETE_REAUTH_SECONDS = 15 * 60;
+async function deletePresenceAccount(userId) {
+  const userOid = new ObjectId(userId);
+  const session = mongoClient.startSession();
+  let deletedEndpoints = [];
+  try {
+    await session.withTransaction(async () => {
+      // The MongoDB driver requires transaction operations to be sequential on
+      // one session; Promise.all here can fail even though each query is valid.
+      const ownedPosts = await postsCollection.find(
+        { userId }, { session, projection: { _id: 1 } }
+      ).toArray();
+      const ownedComments = await commentsCollection.find(
+        { userId }, { session, projection: { _id: 1, postId: 1 } }
+      ).toArray();
+      const ownedLikes = await likesCollection.find(
+        { userId }, { session, projection: { postId: 1 } }
+      ).toArray();
+      const ownedConversations = await conversationsCollection.find(
+        { participants: userId }, { session, projection: { _id: 1 } }
+      ).toArray();
+      const pushRows = await userPushSubsCollection.find(
+        { userId }, { session, projection: { endpoint: 1 } }
+      ).toArray();
+      const postIds = ownedPosts.map(row => row._id.toString());
+      const postIdSet = new Set(postIds);
+      const conversationIds = ownedConversations.map(row => row._id.toString());
+      const commentIds = ownedComments.map(row => row._id.toString());
+      deletedEndpoints = pushRows.map(row => row.endpoint).filter(Boolean);
+      const affectedPostIds = [...new Set(
+        ownedLikes.map(row => row.postId).concat(ownedComments.map(row => row.postId))
+          .filter(id => id && !postIdSet.has(id))
+      )];
+      const deletedReferenceIds = [userId].concat(postIds, commentIds, conversationIds);
+
+      // Invalidate every existing session before touching dependent records.
+      await usersCollection.updateOne(
+        { _id: userOid },
+        { $inc: { authVersion: 1 }, $set: { deletingAt: new Date() } },
+        { session }
+      );
+
+      await syncDataCollection.deleteMany({ userId: userOid }, { session });
+      await beaconsCollection.deleteMany({ userId: userOid }, { session });
+      await friendsCollection.deleteMany({ $or: [{ userId }, { friendId: userId }] }, { session });
+      await followsCollection.deleteMany({ $or: [{ followerId: userId }, { followeeId: userId }] }, { session });
+      await blocksCollection.deleteMany({ $or: [{ userId }, { blockedId: userId }] }, { session });
+      await notificationsCollection.deleteMany({
+        $or: [{ userId }, { actorId: userId }, { refId: { $in: deletedReferenceIds } }]
+      }, { session });
+      await reportsCollection.deleteMany({
+        $or: [{ reporterId: userId }, { refId: { $in: deletedReferenceIds } }]
+      }, { session });
+
+      await likesCollection.deleteMany({
+        $or: [{ userId }, { postId: { $in: postIds } }]
+      }, { session });
+      await commentsCollection.deleteMany({
+        $or: [{ userId }, { postId: { $in: postIds } }]
+      }, { session });
+      await postsCollection.deleteMany({ userId }, { session });
+
+      if (affectedPostIds.length) {
+        const likeRows = await likesCollection.aggregate([
+          { $match: { postId: { $in: affectedPostIds } } },
+          { $group: { _id: '$postId', count: { $sum: 1 } } }
+        ], { session }).toArray();
+        const commentRows = await commentsCollection.aggregate([
+          { $match: { postId: { $in: affectedPostIds } } },
+          { $group: { _id: '$postId', count: { $sum: 1 } } }
+        ], { session }).toArray();
+        const likeCounts = new Map(likeRows.map(row => [row._id, row.count]));
+        const commentCounts = new Map(commentRows.map(row => [row._id, row.count]));
+        await postsCollection.bulkWrite(affectedPostIds.map(id => ({
+          updateOne: {
+            filter: { _id: new ObjectId(id) },
+            update: { $set: { likeCount: likeCounts.get(id) || 0, commentCount: commentCounts.get(id) || 0 } }
+          }
+        })), { session, ordered: false });
+      }
+
+      if (conversationIds.length) {
+        await messagesCollection.deleteMany({ convId: { $in: conversationIds } }, { session });
+        await conversationsCollection.deleteMany({ _id: { $in: ownedConversations.map(row => row._id) } }, { session });
+      }
+      await messagesCollection.deleteMany({ senderId: userId }, { session });
+      await userPushSubsCollection.deleteMany({ userId }, { session });
+      if (deletedEndpoints.length) {
+        const endpointQuery = { endpoint: { $in: deletedEndpoints } };
+        await subsCollection.deleteMany(endpointQuery, { session });
+        await prayerCollection.deleteMany(endpointQuery, { session });
+        await practiceCollection.deleteMany(endpointQuery, { session });
+      }
+      await mongoClient.db('presence').collection('omnia_reports').deleteMany({ userId }, { session });
+      await usersCollection.deleteOne({ _id: userOid }, { session });
+    });
+  } finally {
+    await session.endSession();
+  }
+
+  if (deletedEndpoints.length) {
+    const removed = new Set(deletedEndpoints);
+    subscriptions = subscriptions.filter(row => !removed.has(row.endpoint));
+    prayerSchedules = prayerSchedules.filter(row => !removed.has(row.endpoint));
+    practiceSchedules = practiceSchedules.filter(row => !removed.has(row.endpoint));
+  }
+}
+
+app.delete('/api/sync/auth/account', verifyToken, mutationRateLimit, async (req, res) => {
+  try {
+    if (!req.body || req.body.confirmation !== 'DELETE') {
+      return res.status(400).json({ error: 'Type DELETE to confirm account deletion' });
+    }
+    const user = await usersCollection.findOne({ _id: new ObjectId(req.user.userId) });
+    if (!user) return res.status(401).json({ error: 'Invalid token' });
+
+    if (user.passwordHash) {
+      if (typeof req.body.password !== 'string' || !req.body.password) {
+        return res.status(403).json({ error: 'Current password required', code: 'password_required' });
+      }
+      if (!(await bcrypt.compare(req.body.password, user.passwordHash))) {
+        return res.status(401).json({ error: 'Current password is incorrect', code: 'invalid_password' });
+      }
+    } else {
+      const tokenAge = Math.floor(Date.now() / 1000) - Number(req.user.iat || 0);
+      if (!req.user.iat || tokenAge < 0 || tokenAge > ACCOUNT_DELETE_REAUTH_SECONDS) {
+        return res.status(403).json({
+          error: 'Sign out and sign back in with Google before deleting your account',
+          code: 'reauth_required'
+        });
+      }
+    }
+
+    await deletePresenceAccount(req.user.userId);
+    res.json({ deleted: true });
+  } catch (err) {
+    console.error('Account deletion failed:', err.message);
+    res.status(500).json({ error: 'Account deletion failed. No partial deletion was committed.' });
+  }
+});
+
 // SET USERNAME — lets existing users claim a username post-registration
 app.post('/api/sync/auth/set-username', verifyToken, mutationRateLimit, async (req, res) => {
   try {

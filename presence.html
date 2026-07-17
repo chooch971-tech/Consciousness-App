@@ -5574,6 +5574,25 @@ body:not(.tut-live) #tutCorgi {
           </button>
         </div>
       </div>
+
+      <div class="aset-group" id="accountDeleteGroup" style="display:none; margin-top:30px; padding-bottom:30px;">
+        <div class="aset-header">Account Data</div>
+        <div class="aset-card" style="padding:16px 18px;">
+          <div style="font-size:12px; color:var(--text); margin-bottom:5px;">Delete account</div>
+          <div style="font-size:11px; color:var(--muted); line-height:1.6; margin-bottom:14px;">Permanently removes your cloud progress, profile, Lodge activity, messages, reports, reminders, and account. This cannot be undone.</div>
+          <button id="accountDeleteReveal" style="width:100%; min-height:44px; border:1px solid rgba(196,120,120,.38); border-radius:6px; background:rgba(196,120,120,.07); color:#c98282; font-family:'DM Mono',monospace; font-size:9px; letter-spacing:.15em; text-transform:uppercase; cursor:pointer;">Delete Account</button>
+          <div id="accountDeleteForm" style="display:none; margin-top:16px; padding-top:16px; border-top:1px solid var(--border);">
+            <label for="accountDeleteConfirm" style="display:block; font-size:11px; color:var(--muted); line-height:1.55; margin-bottom:7px;">Type <span style="color:#c98282;">DELETE</span> to confirm</label>
+            <input id="accountDeleteConfirm" type="text" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="DELETE" style="width:100%; box-sizing:border-box; padding:11px 12px; border:1px solid var(--border); border-radius:7px; background:rgba(255,255,255,.03); color:var(--text); font-family:'DM Mono',monospace; font-size:12px; outline:none; margin-bottom:9px;"/>
+            <input id="accountDeletePassword" type="password" autocomplete="current-password" placeholder="Current password (email accounts)" style="width:100%; box-sizing:border-box; padding:11px 12px; border:1px solid var(--border); border-radius:7px; background:rgba(255,255,255,.03); color:var(--text); font-family:'DM Mono',monospace; font-size:11px; outline:none; margin-bottom:9px;"/>
+            <div id="accountDeleteError" role="alert" style="display:none; color:#d4956e; font-size:11px; line-height:1.5; margin:2px 0 10px;"></div>
+            <div style="display:flex; gap:9px;">
+              <button id="accountDeleteCancel" class="btn ghost" style="flex:1; min-height:44px;">Cancel</button>
+              <button id="accountDeleteSubmit" disabled style="flex:1; min-height:44px; border:1px solid rgba(196,120,120,.4); border-radius:6px; background:rgba(196,120,120,.12); color:#c98282; font-family:'DM Mono',monospace; font-size:9px; letter-spacing:.13em; text-transform:uppercase; cursor:pointer; opacity:.42;">Delete Forever</button>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 

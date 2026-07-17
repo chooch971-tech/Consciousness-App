@@ -103,6 +103,62 @@ document.getElementById('syncLogoutBtn').addEventListener('click', function() {
   });
 });
 
+(function bindAccountDeletion() {
+  var reveal = document.getElementById('accountDeleteReveal');
+  var form = document.getElementById('accountDeleteForm');
+  var confirmInput = document.getElementById('accountDeleteConfirm');
+  var passwordInput = document.getElementById('accountDeletePassword');
+  var submit = document.getElementById('accountDeleteSubmit');
+  var cancel = document.getElementById('accountDeleteCancel');
+  var error = document.getElementById('accountDeleteError');
+  if (!reveal || !form || !confirmInput || !submit) return;
+
+  function closeForm() {
+    form.style.display = 'none';
+    reveal.style.display = '';
+    confirmInput.value = '';
+    passwordInput.value = '';
+    error.style.display = 'none';
+    submit.disabled = true;
+    submit.style.opacity = '.42';
+    submit.textContent = 'Delete Forever';
+  }
+  reveal.addEventListener('click', function() {
+    reveal.style.display = 'none';
+    form.style.display = 'block';
+    confirmInput.focus();
+  });
+  cancel.addEventListener('click', closeForm);
+  confirmInput.addEventListener('input', function() {
+    var ready = confirmInput.value.trim() === 'DELETE';
+    submit.disabled = !ready;
+    submit.style.opacity = ready ? '1' : '.42';
+  });
+  submit.addEventListener('click', async function() {
+    if (confirmInput.value.trim() !== 'DELETE' || !authToken) return;
+    submit.disabled = true;
+    submit.style.opacity = '.65';
+    submit.textContent = 'Deleting…';
+    error.style.display = 'none';
+    try {
+      var response = await fetch(SYNC_API_URL + '/auth/account', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + authToken },
+        body: JSON.stringify({ confirmation: 'DELETE', password: passwordInput.value })
+      });
+      var data = await response.json().catch(function() { return {}; });
+      if (!response.ok) throw new Error(data.error || 'Account deletion failed');
+      await clearDeletedAccountFromDevice();
+    } catch(e) {
+      error.textContent = e.message || 'Account deletion failed. Try again.';
+      error.style.display = 'block';
+      submit.disabled = false;
+      submit.style.opacity = '1';
+      submit.textContent = 'Delete Forever';
+    }
+  });
+})();
+
 document.getElementById('setUsernameBtn').addEventListener('click', async function() {
   var input = document.getElementById('setUsernameInput');
   var errEl = document.getElementById('setUsernameError');

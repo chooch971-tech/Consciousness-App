@@ -195,6 +195,11 @@ can never roll back progress.
   replacement live in `progress-state.js` and have fixed-timestamp unit tests.
 - **Server changes require a backend redeploy** to take effect — the client can't
   work around a server that won't return a key.
+- Account deletion is `DELETE /api/sync/auth/account`. It requires the literal
+  `DELETE`, the current password for email accounts, or a Google token issued
+  within 15 minutes. The Mongo transaction removes sync, social, messages,
+  reports, notifications, push/reminder records, then the user document last.
+  Keep new user-owned collections in `deletePresenceAccount()` as they are added.
 
 ## Recent work completed (this session)
 1. Seven Gifts button icon → elegant `{7/3}` heptagram (Faery star), moved to
