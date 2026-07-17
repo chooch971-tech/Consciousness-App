@@ -79,6 +79,9 @@ system, achievements, streaks, and social/friends features.
 - **`pore-breathing-client.js`** — Pore Breathing cycle state, breath audio,
   shared completion rewards, and control wiring. It loads late in the core
   runtime after its Concentration, Guide, and completion dependencies exist.
+- **`app-preferences-client.js`** — Omnia candor, sound preference, and the
+  one-time browser audio unlock used by feedback throughout the app. It loads
+  beside the late preference controls after their Settings markup exists.
 - **`guide-config-client.js`** — static seven-day beginner/experienced practice
   suggestions and Guide assessment exercise metadata. It loads after Prayer and
   before the Omnia economy configuration.

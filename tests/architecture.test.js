@@ -21,6 +21,7 @@ const appShellClient = fs.readFileSync(path.join(root, 'app-shell-client.js'), '
 const omniaAmbientClient = fs.readFileSync(path.join(root, 'omnia-ambient-client.js'), 'utf8');
 const concentrationControlsClient = fs.readFileSync(path.join(root, 'concentration-controls-client.js'), 'utf8');
 const poreBreathingClient = fs.readFileSync(path.join(root, 'pore-breathing-client.js'), 'utf8');
+const appPreferencesClient = fs.readFileSync(path.join(root, 'app-preferences-client.js'), 'utf8');
 const guideConfigClient = fs.readFileSync(path.join(root, 'guide-config-client.js'), 'utf8');
 const omniaEconomyConfigClient = fs.readFileSync(path.join(root, 'omnia-economy-config-client.js'), 'utf8');
 const omniaCosmeticsConfigClient = fs.readFileSync(path.join(root, 'omnia-cosmetics-config-client.js'), 'utf8');
@@ -199,6 +200,23 @@ test('Pore Breathing loads through its own late runtime boundary', () => {
   assert.match(poreBreathingClient, /recordExerciseCompletion/);
   assert.match(serviceWorker, /['"]pore-breathing-client\.js['"]/);
   assert.doesNotThrow(() => new Function(poreBreathingClient));
+});
+
+test('shared app preferences load through their own late runtime boundary', () => {
+  const poreTag = presence.indexOf('<script src="pore-breathing-client.js"></script>');
+  const preferencesTag = presence.indexOf('<script src="app-preferences-client.js"></script>');
+  const tutorialMarkup = presence.indexOf('<div id="tutOverlay">');
+  assert.notEqual(preferencesTag, -1);
+  assert.ok(poreTag < preferencesTag, 'preferences retain the original post-Pore load order');
+  assert.ok(preferencesTag < tutorialMarkup, 'preferences initialize before later tutorial markup');
+  assert.equal(presence.split('<script src="app-preferences-client.js"></script>').length - 1, 1);
+  assert.doesNotMatch(presence, /function\s+getOmniaCandor\s*\(/);
+  assert.doesNotMatch(presence, /window\.appSoundEnabled\s*=/);
+  assert.match(appPreferencesClient, /function\s+getOmniaCandor\s*\(/);
+  assert.match(appPreferencesClient, /window\.appSoundEnabled\s*=/);
+  assert.match(appPreferencesClient, /unlockAudioOnFirstInteraction/);
+  assert.match(serviceWorker, /['"]app-preferences-client\.js['"]/);
+  assert.doesNotThrow(() => new Function(appPreferencesClient));
 });
 
 test('top-level drawer screens reveal the open drawer during swipe-back', () => {

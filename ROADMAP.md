@@ -107,6 +107,7 @@ Last updated: 2026-07-13
 - [x] Extract Concentration progression state and startup migrations into `concentration-state-client.js`
 - [x] Extract Clock customization, sessions, results, and Concentration history into `concentration-clock-client.js`
 - [x] Extract Pore Breathing session state, audio, completion rewards, and controls into `pore-breathing-client.js`
+- [x] Extract global sound/audio unlock and Omnia candor preferences into `app-preferences-client.js`
 - [x] Audit the remaining inline Concentration completion, streak, reminder, companion, and integration clusters
 - [x] Consolidate duplicate global HTML escaping helpers
 - [x] Remove `/api/sync/sync/diagnose` debug endpoint from server.js
