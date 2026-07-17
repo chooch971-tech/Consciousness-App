@@ -365,14 +365,14 @@ function fetchOmniaReport(period, offset, cb) {
   var ctx = buildOmniaReportContext(period, offset);
   ctx.periodKey = omniaReportPeriodKey(period, offset);
 
-  var headers = { 'Content-Type': 'application/json' };
   var token = authToken || localStorage.getItem('presence_auth_token');
-  if (token) headers['Authorization'] = 'Bearer ' + token;
+  if (!token) return cb('sign-in-required');
+  var headers = { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token };
 
   fetch(SYNC_API_URL + '/omnia/report', {
     method: 'POST',
     headers: headers,
-    body: JSON.stringify({ period: period, deviceId: getOmniaDeviceId(), context: ctx })
+    body: JSON.stringify({ period: period, context: ctx })
   }).then(function(r){ return r.json(); }).then(function(data){
     if (data.commentary) {
       localStorage.setItem(cacheKey, JSON.stringify({ ts: Date.now(), commentary: data.commentary }));

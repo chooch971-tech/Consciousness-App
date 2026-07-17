@@ -867,6 +867,32 @@ test('Pavlok integration loads through its own late-stage client boundary', () =
   assert.doesNotThrow(() => new Function(pavlokClient));
 });
 
+test('high-risk credentials and paid AI routes require revocable authentication', () => {
+  assert.match(server, /const TOKEN_EXPIRY = '7d'/);
+  assert.match(server, /function\s+issueAuthToken\s*\([\s\S]*?authVersion:\s*authVersionFor\(user\)/);
+  assert.match(server, /async function verifyToken\s*\([\s\S]*?usersCollection\.findOne\([\s\S]*?authVersionFor\(user\)/);
+  assert.match(server, /app\.post\('\/api\/sync\/auth\/logout', verifyToken, async[\s\S]*?authVersionFor\(req\.authUser\) \+ 1/);
+  assert.match(server, /app\.post\('\/api\/ai\/progress-comment', verifyToken, aiRateLimit, aiGlobalBudget/);
+  assert.match(server, /app\.post\('\/api\/sync\/omnia\/report', verifyToken, aiRateLimit, aiGlobalBudget/);
+
+  const reportStart = server.indexOf("app.post('/api/sync/omnia/report'");
+  const reportEnd = server.indexOf('// ── Pavlok integration', reportStart);
+  const reportRoute = server.slice(reportStart, reportEnd);
+  assert.doesNotMatch(reportRoute, /deviceId/);
+  assert.match(reportRoute, /const userId = req\.user\.userId/);
+
+  assert.match(platformClient, /function\s+requestPresenceAI\s*\([\s\S]*?['"]Authorization['"]:\s*'Bearer ' \+ authToken/);
+  assert.match(platformClient, /function\s+authLogout\s*\([\s\S]*?\/auth\/logout/);
+  assert.match(platformClient, /payload\.authVersion != null/);
+  assert.match(reportsClient, /function\s+fetchOmniaReport\s*\([\s\S]*?if \(!token\)/);
+  assert.match(reportsClient, /['"]Authorization['"]:\s*'Bearer ' \+ token/);
+
+  assert.doesNotMatch(pavlokClient, /localStorage\.setItem\(['"]presence_pavlok_pass/);
+  assert.doesNotMatch(pavlokClient, /localStorage\.getItem\(['"]presence_pavlok_pass/);
+  assert.doesNotMatch(pavlokClient, /PAVLOK_PASS_KEY/);
+  assert.match(pavlokClient, /localStorage\.removeItem\('presence_pavlok_pass'\)/);
+});
+
 test('Practice reminders load through their own late-stage client boundary', () => {
   const platformTag = presence.indexOf('<script src="platform-client.js"></script>');
   const remindersTag = presence.indexOf('<script src="reminders-client.js"></script>');

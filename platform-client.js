@@ -7,12 +7,13 @@ var SYNC_API_URL = SERVER_URL + '/api/sync';
 var GOOGLE_CLIENT_ID = '311497048186-gast7j1trlbddlpvabsnqn1p25h5u5jc.apps.googleusercontent.com';
 
 function requestPresenceAI(kind, context) {
+  if (!authToken) return Promise.reject(new Error('Sign in required'));
   var path = '/api/ai/progress-comment';
   var controller = window.AbortController ? new AbortController() : null;
   var timer = controller ? setTimeout(function() { controller.abort(); }, 5500) : null;
   return fetch(SERVER_URL + path, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + authToken },
     body: JSON.stringify({ context: context || {} }),
     signal: controller ? controller.signal : undefined
   }).then(function(res) {
@@ -465,27 +466,38 @@ function _refreshSettingsSyncCardSignedIn() {
 
 async function authLogout(options) {
   options = options || {};
+  var logoutToken = authToken;
+  // For a deliberate sign-out, flush any unsynced local progress to the cloud
+  // while the token is still valid. Involuntary 401 handling does not clear or
+  // revoke progress.
+  if (options.clearLocalProgress && syncEnabled && logoutToken) {
+    try { await syncPushData(); } catch(e) {}
+  }
   // Detach this device's push subscription from the account so DMs to the
   // old account never land on a signed-out (or re-used) device.
   try {
-    var _tok = authToken;
-    if (_tok && 'serviceWorker' in navigator) {
-      navigator.serviceWorker.ready.then(function(reg) { return reg.pushManager.getSubscription(); }).then(function(sub) {
-        if (!sub) return;
-        return fetch(SERVER_URL + '/api/social/push/unregister', {
+    if (logoutToken && 'serviceWorker' in navigator) {
+      var registration = await navigator.serviceWorker.ready;
+      var subscription = await registration.pushManager.getSubscription();
+      if (subscription) {
+        await fetch(SERVER_URL + '/api/social/push/unregister', {
           method: 'POST',
-          headers: { 'Authorization': 'Bearer ' + _tok, 'Content-Type': 'application/json' },
-          body: JSON.stringify({ endpoint: sub.endpoint })
+          headers: { 'Authorization': 'Bearer ' + logoutToken, 'Content-Type': 'application/json' },
+          body: JSON.stringify({ endpoint: subscription.endpoint })
         });
-      }).catch(function() {});
+      }
     }
   } catch(e) {}
-  // For a deliberate sign-out, flush any unsynced local progress to the cloud
-  // FIRST — while the token is still valid — so clearing local data below can't
-  // lose work. (Involuntary 401 expiries don't pass clearLocalProgress, so we
-  // never risk wiping unsynced data when the server just rejected the token.)
-  if (options.clearLocalProgress && syncEnabled && authToken) {
-    try { await syncPushData(); } catch(e) {}
+  // Revoke the account's current token generation after this device has
+  // finished its final authenticated writes. This invalidates copied tokens
+  // and sessions left on other devices.
+  if (options.clearLocalProgress && logoutToken) {
+    try {
+      await fetch(SYNC_API_URL + '/auth/logout', {
+        method: 'POST',
+        headers: { 'Authorization': 'Bearer ' + logoutToken }
+      });
+    } catch(e) {}
   }
   authToken = null;
   authEmail = null;
@@ -532,18 +544,18 @@ function detectDevice() {
   return 'Unknown';
 }
 
-// Silently refresh the JWT before it can expire.
-// Decodes the token's iat claim (no library needed — JWT payload is plain base64).
-// Refreshes if the token is older than 20 days so it never reaches the 30-day expiry
-// during normal use.
+// Silently refresh the JWT before it can expire. Legacy tokens without an
+// authVersion refresh immediately into the revocable seven-day format.
 async function maybeRefreshToken() {
   if (!syncEnabled || !authToken) return;
   try {
     var parts = authToken.split('.');
     if (parts.length !== 3) return;
-    var payload = JSON.parse(atob(parts[1].replace(/-/g,'+').replace(/_/g,'/')));
-    var ageMs = Date.now() - (payload.iat || 0) * 1000;
-    if (ageMs < 20 * 24 * 60 * 60 * 1000) return; // under 20 days old — fine
+    var encoded = parts[1].replace(/-/g,'+').replace(/_/g,'/');
+    while (encoded.length % 4) encoded += '=';
+    var payload = JSON.parse(atob(encoded));
+    var remainingMs = (payload.exp || 0) * 1000 - Date.now();
+    if (payload.authVersion != null && remainingMs > 2 * 24 * 60 * 60 * 1000) return;
     var res = await fetch(SYNC_API_URL + '/auth/refresh', {
       method: 'POST',
       headers: { 'Authorization': 'Bearer ' + authToken }

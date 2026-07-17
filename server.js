@@ -67,7 +67,7 @@ if (!VAPID_PRIVATE_KEY || !MONGO_URI || !JWT_SECRET) {
 if (!ADMIN_SECRET) {
   console.warn('[Security] ADMIN_SECRET not set — admin routes will be inaccessible until it is.');
 }
-const TOKEN_EXPIRY = '30d';
+const TOKEN_EXPIRY = '7d';
 
 webpush.setVapidDetails('mailto:placeholder@email.com', VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY);
 
@@ -239,11 +239,34 @@ async function savePracticeSchedule(schedule) {
 }
 
 // ── Cloud Sync Middleware ────────────────────────────────
-function verifyToken(req, res, next) {
+function authVersionFor(user) {
+  const value = Number(user && user.authVersion);
+  return Number.isSafeInteger(value) && value > 0 ? value : 1;
+}
+
+function issueAuthToken(user) {
+  return jwt.sign({
+    userId: user._id.toString(),
+    email: user.email,
+    authVersion: authVersionFor(user)
+  }, JWT_SECRET, { expiresIn: TOKEN_EXPIRY });
+}
+
+async function verifyToken(req, res, next) {
   const token = req.headers.authorization?.split(' ')[1];
   if (!token) return res.status(401).json({ error: 'No token provided' });
   try {
-    req.user = jwt.verify(token, JWT_SECRET);
+    const decoded = jwt.verify(token, JWT_SECRET);
+    if (!decoded.userId || !ObjectId.isValid(decoded.userId)) return res.status(401).json({ error: 'Invalid token' });
+    const user = await usersCollection.findOne(
+      { _id: new ObjectId(decoded.userId) },
+      { projection: { email: 1, authVersion: 1 } }
+    );
+    if (!user || authVersionFor(user) !== (decoded.authVersion == null ? 1 : decoded.authVersion)) {
+      return res.status(401).json({ error: 'Invalid token' });
+    }
+    req.user = decoded;
+    req.authUser = user;
     next();
   } catch (err) {
     res.status(401).json({ error: 'Invalid token' });
@@ -762,10 +785,10 @@ app.post('/api/sync/auth/register', authRateLimit, async (req, res) => {
       if (existingUsername) return res.status(400).json({ error: 'Username already taken' });
     }
     const passwordHash = await bcrypt.hash(password, 10);
-    const userDoc = { email, passwordHash, createdAt: new Date(), lastSync: null };
+    const userDoc = { email, passwordHash, authVersion: 1, createdAt: new Date(), lastSync: null };
     if (cleanUsername) userDoc.username = cleanUsername;
     const result = await usersCollection.insertOne(userDoc);
-    const token = jwt.sign({ userId: result.insertedId.toString(), email }, JWT_SECRET, { expiresIn: TOKEN_EXPIRY });
+    const token = issueAuthToken({ _id: result.insertedId, email, authVersion: 1 });
     res.json({ token, userId: result.insertedId, email, username: cleanUsername || null, isPrivate: false });
   } catch (err) {
     console.error('Register error:', err);
@@ -783,7 +806,7 @@ app.post('/api/sync/auth/login', authRateLimit, async (req, res) => {
     if (!user) return res.status(401).json({ error: 'Invalid credentials' });
     const validPassword = await bcrypt.compare(password, user.passwordHash);
     if (!validPassword) return res.status(401).json({ error: 'Invalid credentials' });
-    const token = jwt.sign({ userId: user._id.toString(), email: user.email }, JWT_SECRET, { expiresIn: TOKEN_EXPIRY });
+    const token = issueAuthToken(user);
     res.json({ token, userId: user._id, email: user.email, username: user.username || null, isPrivate: !!user.isPrivate });
   } catch (err) {
     console.error('Login error:', err);
@@ -794,9 +817,9 @@ app.post('/api/sync/auth/login', authRateLimit, async (req, res) => {
 // REFRESH TOKEN
 app.post('/api/sync/auth/refresh', verifyToken, async (req, res) => {
   try {
-    const user = await usersCollection.findOne({ _id: new ObjectId(req.user.userId) });
+    const user = req.authUser || await usersCollection.findOne({ _id: new ObjectId(req.user.userId) });
     if (!user) return res.status(401).json({ error: 'User not found' });
-    const token = jwt.sign({ userId: user._id.toString(), email: user.email }, JWT_SECRET, { expiresIn: TOKEN_EXPIRY });
+    const token = issueAuthToken(user);
     res.json({ token });
   } catch (err) {
     res.status(500).json({ error: 'Token refresh failed' });
@@ -804,8 +827,16 @@ app.post('/api/sync/auth/refresh', verifyToken, async (req, res) => {
 });
 
 // LOGOUT
-app.post('/api/sync/auth/logout', verifyToken, (req, res) => {
-  res.json({ message: 'Logged out' });
+app.post('/api/sync/auth/logout', verifyToken, async (req, res) => {
+  try {
+    await usersCollection.updateOne(
+      { _id: new ObjectId(req.user.userId) },
+      { $set: { authVersion: authVersionFor(req.authUser) + 1 } }
+    );
+    res.json({ message: 'Logged out on all devices' });
+  } catch (err) {
+    res.status(500).json({ error: 'Logout failed' });
+  }
 });
 
 // SET USERNAME — lets existing users claim a username post-registration
@@ -884,9 +915,9 @@ app.post('/api/sync/auth/google', authRateLimit, async (req, res) => {
     if (!user) {
       const result = await usersCollection.insertOne({
         email, googleId, displayName: name || null,
-        createdAt: new Date(), lastSync: null, lastActive: new Date()
+        authVersion: 1, createdAt: new Date(), lastSync: null, lastActive: new Date()
       });
-      const token = jwt.sign({ userId: result.insertedId.toString(), email }, JWT_SECRET, { expiresIn: TOKEN_EXPIRY });
+      const token = issueAuthToken({ _id: result.insertedId, email, authVersion: 1 });
       return res.json({ token, userId: result.insertedId, email, username: null, isPrivate: false });
     }
 
@@ -896,7 +927,7 @@ app.post('/api/sync/auth/google', authRateLimit, async (req, res) => {
       await usersCollection.updateOne({ _id: user._id }, { $set: { lastActive: new Date() } });
     }
 
-    const token = jwt.sign({ userId: user._id.toString(), email: user.email }, JWT_SECRET, { expiresIn: TOKEN_EXPIRY });
+    const token = issueAuthToken(user);
     res.json({ token, userId: user._id, email: user.email, username: user.username || null, isPrivate: !!user.isPrivate });
   } catch (err) {
     console.error('[Google Auth] Error:', err.message);
@@ -2434,7 +2465,7 @@ app.get('/debug', verifyAdmin, (req, res) => {
 
 app.get('/vapid-public-key', (req, res) => res.json({ publicKey: VAPID_PUBLIC_KEY }));
 
-app.post('/api/ai/progress-comment', aiRateLimit, aiGlobalBudget, async (req, res) => {
+app.post('/api/ai/progress-comment', verifyToken, aiRateLimit, aiGlobalBudget, async (req, res) => {
   try {
     const message = await generateAiMessage('progress_report', req.body?.context || {});
     res.json({ message, model: OPENAI_MODEL });
@@ -2444,26 +2475,12 @@ app.post('/api/ai/progress-comment', aiRateLimit, aiGlobalBudget, async (req, re
   }
 });
 
-app.post('/api/sync/omnia/report', aiRateLimit, aiGlobalBudget, async (req, res) => {
-  const { period, context, deviceId } = req.body || {};
+app.post('/api/sync/omnia/report', verifyToken, aiRateLimit, aiGlobalBudget, async (req, res) => {
+  const { period, context } = req.body || {};
   if (!['daily','weekly','monthly'].includes(period)) {
     return res.status(400).json({ error: 'Invalid period' });
   }
-  // Use JWT userId if logged in, otherwise fall back to deviceId
-  let userId;
-  const authHeader = req.headers.authorization;
-  if (authHeader && authHeader.startsWith('Bearer ')) {
-    try {
-      const decoded = jwt.verify(authHeader.slice(7), JWT_SECRET);
-      userId = decoded.id || decoded.userId;
-    } catch(e) { /* not logged in, use deviceId */ }
-  }
-  if (!userId) {
-    if (!deviceId || typeof deviceId !== 'string' || deviceId.length < 8) {
-      return res.status(400).json({ error: 'deviceId required' });
-    }
-    userId = 'device_' + deviceId.replace(/[^a-zA-Z0-9_-]/g, '').slice(0, 64);
-  }
+  const userId = req.user.userId;
 
   try {
     const col = mongoClient.db('presence').collection('omnia_reports');

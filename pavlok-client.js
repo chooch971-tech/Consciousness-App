@@ -1,13 +1,16 @@
 // ── Pavlok integration ────────────────────────────────────────────────────────
 var PAVLOK_TOKEN_KEY  = 'presence_pavlok_token';
 var PAVLOK_EMAIL_KEY  = 'presence_pavlok_email';
-var PAVLOK_PASS_KEY   = 'presence_pavlok_pass';
 var PAVLOK_PREFS_KEY  = 'presence_pavlok_prefs';
 var PAVLOK_DEFAULT_PREFS = {
   awareness:     { enabled: true,  intensity: 50, type: 'vibe' },
   prayer:        { enabled: true,  intensity: 40 },
   concentration: { enabled: true,  intensity: 60 },
 };
+
+// Older builds persisted the Pavlok password for silent token renewal. Purge
+// that legacy secret immediately; reconnects now require explicit entry.
+try { localStorage.removeItem('presence_pavlok_pass'); } catch(e) {}
 
 function getPavlokToken() { return localStorage.getItem(PAVLOK_TOKEN_KEY) || ''; }
 function getPavlokEmail() { return localStorage.getItem(PAVLOK_EMAIL_KEY) || ''; }
@@ -27,25 +30,9 @@ function sendPavlokStimulus(type, intensity) {
     body: JSON.stringify({ token: token, type: type, value: val }),
   }).then(function(r) {
     if (r.status !== 401) return;
-    // Token expired — silently re-authenticate and retry once
-    var email = getPavlokEmail();
-    var pass  = localStorage.getItem(PAVLOK_PASS_KEY);
-    if (!email || !pass) return;
-    fetch(SERVER_URL + '/api/pavlok/link', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email: email, password: pass }),
-    }).then(function(r2) { return r2.json(); })
-      .then(function(d) {
-        if (!d.token) return;
-        localStorage.setItem(PAVLOK_TOKEN_KEY, d.token);
-        // Retry with fresh token
-        fetch(SERVER_URL + '/api/pavlok/stimulus', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ token: d.token, type: type, value: val }),
-        }).catch(function() {});
-      }).catch(function() {});
+    localStorage.removeItem(PAVLOK_TOKEN_KEY);
+    renderPavlokSettings();
+    showToast('Pavlok session expired — reconnect in Settings');
   }).catch(function() {});
 }
 
@@ -64,7 +51,6 @@ function pavlokConnect(email, password, statusEl) {
     }
     localStorage.setItem(PAVLOK_TOKEN_KEY, res.d.token);
     localStorage.setItem(PAVLOK_EMAIL_KEY, email);
-    localStorage.setItem(PAVLOK_PASS_KEY, password);
     renderPavlokSettings();
     notifyServerPavlokUpdate();
   })
@@ -74,7 +60,7 @@ function pavlokConnect(email, password, statusEl) {
 function pavlokDisconnect() {
   localStorage.removeItem(PAVLOK_TOKEN_KEY);
   localStorage.removeItem(PAVLOK_EMAIL_KEY);
-  localStorage.removeItem(PAVLOK_PASS_KEY);
+  localStorage.removeItem('presence_pavlok_pass');
   renderPavlokSettings();
 }
 
@@ -95,6 +81,8 @@ function pavlokTest() {
     if (res.status === 200) {
       showToast('Pavlok OK — stimulus sent');
     } else if (res.status === 401) {
+      localStorage.removeItem(PAVLOK_TOKEN_KEY);
+      renderPavlokSettings();
       showToast('Token expired — re-link Pavlok in settings');
     } else {
       var msg = (res.d && (res.d.error || JSON.stringify(res.d))) || ('HTTP ' + res.status);
