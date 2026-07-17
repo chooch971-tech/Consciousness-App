@@ -962,7 +962,7 @@ function renderPathQuests() {
   var advOverlay = document.getElementById('pqAdvancedOverlay');
   var advMinutes = 5;        // working value while the dialog is open
   var advAuto = true;
-  var EX_DISPLAY_NAMES = { clock:'Clock', visual:'Visualization', auditory:'Auditory', thought:'Thought Control', asana:'Asana' };
+  var EX_DISPLAY_NAMES = { clock:'Clock', visual:'Visualization', auditory:'Auditory', thought:'Thought Control', asana:'Asana', sense:'Senses', feeling:'Feeling', smell:'Smell', taste:'Taste' };
   function isTimedEx(id) { return GUIDE_TIMED_EXERCISES.indexOf(id) !== -1; }
 
   var freq1Btn = document.getElementById('pqFreq1x');
@@ -1028,10 +1028,13 @@ function renderPathQuests() {
     // New overrides default to auto-advance on; existing ones keep their saved choice.
     advAuto = floor ? guideAutoAdvanceOn(key) : true;
     var titleEl = document.getElementById('pqAdvancedTitle');
-    // For a thought discipline, name the specific form (e.g. "Vacancy of Mind").
+    // For a thought discipline or a sense, name the specific form (e.g.
+    // "Vacancy of Mind" or "Feeling") rather than the generic parent label.
     var dispName = (activeExId === 'thought' && activeExMode && GUIDE_FOUNDATION_THOUGHT_LABELS[activeExMode])
       ? GUIDE_FOUNDATION_THOUGHT_LABELS[activeExMode]
-      : (EX_DISPLAY_NAMES[activeExId] || '');
+      : (activeExId === 'sense' && activeExMode && GUIDE_SENSE_LABELS[activeExMode])
+        ? GUIDE_SENSE_LABELS[activeExMode]
+        : (EX_DISPLAY_NAMES[activeExId] || '');
     if (titleEl) titleEl.textContent = 'I\'m Advanced · ' + dispName;
     renderAdvDialog();
     if (advOverlay) advOverlay.style.display = 'flex';
@@ -1169,16 +1172,53 @@ function renderPathQuests() {
     allangles:   { icon:'&#128260;', color:'#a8c89e' }
   };
 
+  // Thought Control and Senses each train through several distinct forms
+  // (Observation/Focus/Vacancy, Feeling/Smell/Taste), which used to show as
+  // several flat rows in this menu. Group them under one collapsed parent
+  // row per family — tapping it reveals the specific forms — so the "+"
+  // menu doesn't balloon into a long list of near-duplicate entries.
+  var ADD_GROUPS = {
+    thought: { label:'Thought Control', memberIds:{ thought:1, observation:1, focus:1, vacancy:1 } },
+    sense:   { label:'Senses',          memberIds:{ feeling:1, smell:1, taste:1 } }
+  };
+
+  function addItemBtnHTML(ex) {
+    var meta = ADD_ICONS[ex.id] || { icon:'✦', color:'var(--muted)' };
+    return '<button class="pq-skip-item" data-add-ex="' + ex.id + '" style="display:flex;align-items:center;gap:10px;">'
+      + '<span style="font-size:14px;color:' + meta.color + ';flex-shrink:0;opacity:.9;">' + meta.icon + '</span>'
+      + '<span style="color:' + meta.color + ';">' + (ADD_NAMES[ex.id] || ex.name) + '</span>'
+      + '</button>';
+  }
+  function addGroupHTML(groupId, members) {
+    var group = ADD_GROUPS[groupId];
+    var meta = ADD_ICONS[groupId] || { icon:'✦', color:'var(--muted)' };
+    var sub = members.map(addItemBtnHTML).join('');
+    return '<button class="pq-skip-item pq-add-group-toggle" data-add-group="' + groupId + '" style="display:flex;align-items:center;gap:10px;">'
+      + '<span style="font-size:14px;color:' + meta.color + ';flex-shrink:0;opacity:.9;">' + meta.icon + '</span>'
+      + '<span style="color:' + meta.color + ';flex:1;">' + group.label + '</span>'
+      + '<span class="pq-add-group-chevron" style="font-size:9px;color:var(--muted);flex-shrink:0;display:inline-block;transition:transform .18s;">&#9662;</span>'
+      + '</button>'
+      + '<div class="pq-add-group-sub" data-group-sub="' + groupId + '" style="display:none;background:rgba(255,255,255,.02);border-top:1px solid var(--border);">' + sub + '</div>';
+  }
+
   window.pqOpenAddMenu = function(btn) {
     var addable = (typeof guidePathAddableExercises === 'function') ? guidePathAddableExercises() : [];
     if (!addable.length) { menu.style.display = 'none'; return; }
-    menu.innerHTML = addable.map(function(ex) {
-      var meta = ADD_ICONS[ex.id] || { icon:'✦', color:'var(--muted)' };
-      return '<button class="pq-skip-item" data-add-ex="' + ex.id + '" style="display:flex;align-items:center;gap:10px;">'
-        + '<span style="font-size:14px;color:' + meta.color + ';flex-shrink:0;opacity:.9;">' + meta.icon + '</span>'
-        + '<span style="color:' + meta.color + ';">' + (ADD_NAMES[ex.id] || ex.name) + '</span>'
-        + '</button>';
-    }).join('');
+    var groupMembers = { thought:[], sense:[] };
+    addable.forEach(function(ex) {
+      if (ADD_GROUPS.thought.memberIds[ex.id]) groupMembers.thought.push(ex);
+      else if (ADD_GROUPS.sense.memberIds[ex.id]) groupMembers.sense.push(ex);
+    });
+    var groupRendered = { thought:false, sense:false };
+    var html = '';
+    addable.forEach(function(ex) {
+      var groupId = ADD_GROUPS.thought.memberIds[ex.id] ? 'thought' : ADD_GROUPS.sense.memberIds[ex.id] ? 'sense' : null;
+      if (!groupId) { html += addItemBtnHTML(ex); return; }
+      if (groupRendered[groupId]) return; // already emitted this family's group row
+      groupRendered[groupId] = true;
+      html += addGroupHTML(groupId, groupMembers[groupId]);
+    });
+    menu.innerHTML = html;
     var r = btn.getBoundingClientRect();
     menu.style.top = (r.bottom + 4) + 'px';
     menu.style.right = (window.innerWidth - r.right) + 'px';
@@ -1192,6 +1232,16 @@ function renderPathQuests() {
   function closeAddMenu() { menu.style.display = 'none'; }
 
   menu.addEventListener('click', function(e) {
+    var groupToggle = e.target.closest('[data-add-group]');
+    if (groupToggle) {
+      e.stopPropagation();
+      var sub = menu.querySelector('[data-group-sub="' + groupToggle.dataset.addGroup + '"]');
+      if (!sub) return;
+      var expanding = sub.style.display === 'none';
+      sub.style.display = expanding ? 'block' : 'none';
+      groupToggle.classList.toggle('expanded', expanding);
+      return;
+    }
     var b = e.target.closest('[data-add-ex]');
     if (!b) return;
     var exId = b.dataset.addEx;

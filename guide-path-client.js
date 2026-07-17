@@ -1025,7 +1025,9 @@ function guideSenseTargetMinutes(mode, senseStats) {
   if (st.count >= 3) score = Math.max(score, 1);
   if (st.bestSec >= 600) score = Math.max(score, 2);
   if (st.bestSec >= 900 || st.count >= 10) score = Math.max(score, 3);
-  return Math.min(10, guideDurationForScore(score));
+  var natural = Math.min(10, guideDurationForScore(score));
+  // Per-mode floor: an advanced start in Feeling doesn't move Smell or Taste.
+  return guideAdvancedTarget(mode, natural);
 }
 
 function guideClockTargetMinutes(clockStats) {
@@ -1078,15 +1080,19 @@ function guideIsExperienced(exId) {
 // keep raising the bar from there. This is opt-in per exercise and independent
 // of the beginner/experienced path: an exercise has an override only once the
 // user sets one. Without an override, the exercise climbs naturally as before.
-var GUIDE_TIMED_EXERCISES = ['clock','visual','auditory','thought','observation','focus','vacancy','asana'];
+var GUIDE_TIMED_EXERCISES = ['clock','visual','auditory','thought','observation','focus','vacancy','asana','sense','feeling','smell','taste'];
 var GUIDE_FLOOR_CAP = 120;
 
 // Thought Control is three independent disciplines (Observation, Focus,
 // Vacancy), each with its own advanced floor. A card carries its mode, so the
 // floor for one mode never bleeds into the others. Everything else keys by exId.
 var GUIDE_THOUGHT_MODES = { observation:1, focus:1, vacancy:1 };
+// Senses gets the same per-mode treatment as Thought Control — Feeling, Smell,
+// and Taste each hold their own independent floor.
+var GUIDE_SENSE_MODES = { feeling:1, smell:1, taste:1 };
 function guideFloorKey(exId, mode) {
   if (exId === 'thought' && mode && GUIDE_THOUGHT_MODES[mode]) return mode;
+  if (exId === 'sense' && mode && GUIDE_SENSE_MODES[mode]) return mode;
   return exId;
 }
 
@@ -1170,6 +1176,7 @@ function guideRecommendedMinutes(exId) {
     // A specific thought discipline (observation/focus/vacancy) computes its
     // own natural target — used to seed the dialog and label its own card.
     if (GUIDE_THOUGHT_MODES[exId]) return guideThoughtTargetMinutes(exId, guideThoughtStats()) || 5;
+    if (GUIDE_SENSE_MODES[exId]) return guideSenseTargetMinutes(exId, guideSenseStats()) || 5;
     if (exId === 'asana') return guideAsanaStats().qualTarget || 5;
     if (exId === 'auditory') return guideAuditoryStats().qualTarget || 5;
     if (exId === 'clock') return guideClockFinalTarget(guideClockStats()) || 5;
@@ -1177,6 +1184,11 @@ function guideRecommendedMinutes(exId) {
       var ts = guideThoughtStats();
       var mode = guideState.thoughtModeForced || guideCurrentThoughtMode(ts);
       return guideThoughtTargetMinutes(mode, ts) || 5;
+    }
+    if (exId === 'sense') {
+      var ss = guideSenseStats();
+      var smode = guideState.senseModeForced || guideCurrentSenseMode(ss);
+      return guideSenseTargetMinutes(smode, ss) || 5;
     }
     var st = guideExerciseStats();
     return guideDurationForScore(guideMonitoredScore(exId, st)) || 5;
@@ -1860,7 +1872,7 @@ function guideBuildAddedItem(exId, rounds) {
     // sub-modes existed. Kept so anything already saved under the bare id
     // keeps working; new additions always go through feeling/smell/taste above.
     var senseScore = guideMonitoredScore('sense', stats);
-    var senseDur = Math.min(10, guideDurationForScore(senseScore));
+    var senseDur = guideAdvancedTarget('sense', Math.min(10, guideDurationForScore(senseScore)));
     var senseTarget = senseDur * 60 * rounds;
     var senseSt = stats.sense || { count:0, todaySec:0 };
     return { id:'sense', name:'Senses', duration:senseDur, durationLabel:senseDur + ' min' + (rounds > 1 ? ' x2' : ''), done:senseSt.todaySec >= senseTarget, progress:'added · ' + (senseSt.count || 0) + ' recorded', tip:'Added by you. Imagine a feeling, smell, or taste as vividly as you can — accuracy matters more than intensity.', open:'sense', added:true };
