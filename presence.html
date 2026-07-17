@@ -4555,8 +4555,11 @@ body:not(.tut-live) #tutCorgi {
    resuming right after that reload, skip the entrance animation so the
    wordmark/tagline/glow are already at their settled state on first paint;
    the brief navigation gap becomes the only interruption. */
-#splash.splash-resumed .splash-wordmark { opacity:1; transform:none; animation:none; }
-#splash.splash-resumed .splash-tagline { color:rgba(221,216,206,0.58); animation:none; }
+/* Text still waits for .fonts-ready even on resume — the font comes from
+   cache so it's near-instant, and it stops the fallback face from painting
+   for a frame before the swap (the same bold-flash the entrance gate fixes). */
+#splash.splash-resumed.fonts-ready .splash-wordmark { opacity:1; transform:none; animation:none; }
+#splash.splash-resumed.fonts-ready .splash-tagline { color:rgba(221,216,206,0.58); animation:none; }
 #splash.splash-resumed::before { opacity:0.4; animation:none; }
 /* Google sign-in button for Settings */
 .settings-google-btn {
@@ -4716,34 +4719,19 @@ body:not(.tut-live) #tutCorgi {
    padding, so no extra insets here. */
 .banner-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; flex-shrink:0; }
 .banner-tut { background:none; border:none; padding:6px; margin:0; cursor:pointer; display:flex; align-items:center; justify-content:center; }
-/* Variant: back button + tutorial crystal worked INTO a hero banner's corners
-   (no separate header row). Both corners get the SAME small round chip — dark
-   scrim, thin border — so they read as a designed pair of controls rather
-   than elements pasted over the art. Placed after .history-back in the sheet
-   so these rules win the size/background. */
-.banner-inset-back, .banner-inset-tut {
-  position:absolute; top:10px; z-index:9; width:34px; height:34px; padding:0; margin:0;
-  border-radius:50%; border:1px solid rgba(255,255,255,.16); background:rgba(7,8,13,.45);
-  backdrop-filter:blur(3px); -webkit-backdrop-filter:blur(3px);
-  display:flex; align-items:center; justify-content:center; }
-.banner-inset-back { left:10px; }
-.banner-inset-back svg { width:8px; height:13px; }
-.banner-inset-tut { right:10px; }
-/* Crystal sized to sit inside the chip; the bob animation is for the free-
-   floating peek variant and fights the chip frame, so only the spin remains. */
-.banner-inset-tut .clk-omnia-peek-head { animation:none; }
-.banner-inset-tut svg { width:20px; height:19px; }
-/* Achievements: give the compass a touch of clearance from the corner chip
-   without gutting its size. */
+/* Variant: back button worked INTO a hero banner's top-left corner (no
+   separate header row). Keeps the standard .history-back design used on every
+   other screen — same 38px round pill, same border — only swapping the fill
+   for a dark scrim so the chevron stays legible over the banner art. Placed
+   after .history-back in the sheet so the background override wins. */
+.banner-inset-back { position:absolute; top:10px; left:10px; z-index:9;
+  background:rgba(7,8,13,.55); backdrop-filter:blur(3px); -webkit-backdrop-filter:blur(3px); }
+/* Achievements: keep the compass clear of the corner button. */
 #achScreen .exb-right { right:4px; top:10px; }
 #achScreen .exb-right svg { width:84px; height:84px; }
 /* Playground banner promoted to a fixed hero header, so the inset back button
    stays put instead of scrolling away with the cards below. */
 .pg-banner--header { flex-shrink:0; margin:0 16px 6px; }
-/* The label is the top line of the vertically-centred text, so it would sit
-   under the corner chip — indent just the label to clear it, leaving the
-   title/sub flush left. */
-.pg-banner--header .pg-banner-label { padding-left:32px; }
 /* Omnia peeks over the top-right edge of the clock preview card and
    beckons the user to tap her for the tutorial — a shimmering head with a
    gentle bob, glow pulse, and sparkle twinkles to draw the eye. */
@@ -5048,16 +5036,29 @@ body:not(.tut-live) #tutCorgi {
   // the note on .splash-resumed above. Skip the entrance animation so this
   // reads as a continuation of the same splash, not a fresh one flashing in.
   try { if (sessionStorage.getItem('_pullReloaded') === '1') s.classList.add('splash-resumed'); } catch(e) {}
-  // Don't start the wordmark's entrance animation until Cormorant Garamond
-  // has actually loaded — see the note on .fonts-ready above. A short cap
-  // keeps a slow/failed font load from delaying the intro indefinitely; if
-  // it hasn't resolved by then, show it anyway (accepting a possible flash
-  // is better than a longer blank splash).
+  // Don't show the wordmark until Cormorant Garamond is genuinely usable —
+  // see the note on .fonts-ready above. document.fonts.ready is NOT enough:
+  // it resolves once currently-queued loads finish, which can be before the
+  // Google Fonts stylesheet has even registered the faces (nothing queued =
+  // instantly "ready"), letting the fallback font paint first and swap —
+  // the wordmark going bold for a split second. Poll fonts.check() for the
+  // exact face instead (kicking load() so the fetch isn't left to chance),
+  // with a cap so a dead connection can't hold the splash blank; the cap is
+  // well inside the splash's 1800ms minimum, so it never delays the intro.
   function revealSplashText() { s.classList.add('fonts-ready'); }
-  if (document.fonts && document.fonts.ready) {
-    var fontsRevealed = false;
-    document.fonts.ready.then(function() { if (!fontsRevealed) { fontsRevealed = true; revealSplashText(); } });
-    setTimeout(function() { if (!fontsRevealed) { fontsRevealed = true; revealSplashText(); } }, 500);
+  if (document.fonts && document.fonts.check) {
+    var fontSpec = '300 48px "Cormorant Garamond"';
+    var fontWaited = 0;
+    (function pollSplashFont() {
+      var ok = false;
+      try {
+        ok = document.fonts.check(fontSpec);
+        if (!ok) document.fonts.load(fontSpec);
+      } catch (e) { ok = true; }
+      if (ok || fontWaited >= 1200) { revealSplashText(); return; }
+      fontWaited += 50;
+      setTimeout(pollSplashFont, 50);
+    })();
   } else {
     revealSplashText();
   }
@@ -5738,13 +5739,11 @@ body:not(.tut-live) #tutCorgi {
   <div class="screen" id="playgroundScreen" style="flex-direction:column;">
     <div class="pg-banner pg-banner--header">
       <button class="history-back banner-inset-back" id="playgroundBack" aria-label="Back">←</button>
-      <button type="button" class="banner-tut banner-inset-tut" onclick="openExExplainer('playground')" aria-label="Open tutorial"><span class="clk-omnia-peek-head"><span class="clk-omnia-spin"></span></span></button>
       <i class="pg-bubble" style="width:10px;height:10px;left:58%;bottom:18px;animation-delay:0s;"></i>
       <i class="pg-bubble" style="width:7px;height:7px;left:66%;bottom:12px;animation-delay:1.4s;"></i>
       <i class="pg-bubble" style="width:13px;height:13px;left:73%;bottom:24px;animation-delay:2.6s;"></i>
       <i class="pg-bubble" style="width:6px;height:6px;left:80%;bottom:16px;animation-delay:3.8s;"></i>
       <div class="pg-banner-text">
-        <div class="pg-banner-label">The Laboratory</div>
         <div class="pg-banner-title">Playground</div>
         <div class="pg-banner-sub">Experiments in consciousness — new practices brewing</div>
       </div>
@@ -5841,7 +5840,6 @@ body:not(.tut-live) #tutCorgi {
   <div class="screen" id="achScreen">
     <div class="ex-banner" style="--exb-rgb:232,200,122; --exb-light:#f0d8ac; margin:0 0 14px; height:140px;">
       <button class="history-back banner-inset-back" id="achBackBtn" aria-label="Back">←</button>
-      <button type="button" class="banner-tut banner-inset-tut" onclick="openExExplainer('achievements')" aria-label="Open tutorial"><span class="clk-omnia-peek-head"><span class="clk-omnia-spin"></span></span></button>
       <div class="exb-motes" aria-hidden="true">
         <i style="width:4px;height:4px;left:12%;top:28%;animation-delay:0s;animation-duration:4.4s;"></i>
         <i style="width:3px;height:3px;left:30%;top:66%;animation-delay:1.4s;animation-duration:5.2s;"></i>
