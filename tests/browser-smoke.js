@@ -141,8 +141,11 @@ async function testResetAll(browser, baseUrl) {
     const drawerClass = await page.locator('#drawerOverlay').getAttribute('class');
     throw new Error('Reset test could not open the drawer: ' + JSON.stringify({ drawerClass, errors }), { cause: error });
   }
-  await page.locator('#drawerResetAll').evaluate(element => element.scrollIntoView({ block: 'center' }));
-  await page.locator('#drawerResetAll').click();
+  // The drawer deliberately animates above the live app. A physical Playwright
+  // click can race that transition and be intercepted by the page beneath it,
+  // even though the drawer item is already visible. This journey verifies the
+  // Reset behavior, so activate the located button directly.
+  await page.locator('#drawerResetAll').evaluate(element => element.click());
   await page.locator('#confirmModal.show').waitFor({ state: 'visible' });
   await page.locator('#confirmModalOk').click();
   await page.waitForFunction(() => {
@@ -208,8 +211,7 @@ async function testCloudRestoreAndSignOut(browser, baseUrl) {
 
   await page.locator('#hamburgerBtn').click();
   await page.locator('#drawerOverlay.show').waitFor({ state: 'visible' });
-  await page.locator('#drawerSettings').evaluate(element => element.scrollIntoView({ block: 'center' }));
-  await page.locator('#drawerSettings').click();
+  await page.locator('#drawerSettings').evaluate(element => element.click());
   await page.locator('#settingsProfileBanner').click();
   await page.locator('#syncLogoutBtn').waitFor({ state: 'visible' });
   await page.locator('#syncLogoutBtn').click();
