@@ -719,16 +719,18 @@
     .status-ov__btn--save { background:var(--accent); color:#07080d; border-color:var(--accent); font-weight:600; }
     .status-ov__btn--clear { color:#c47a7a; border-color:rgba(196,122,122,.3); }
 
-    /* Achievement info popover (tap an achievement on any profile) */
-    .ach-info-ov { position:fixed; inset:0; z-index:9800; background:rgba(7,8,13,.9); display:none; align-items:center; justify-content:center; padding:24px; }
+    /* Achievement info popover (tap an achievement on any profile) — anchored
+       to the bottom of the screen, same as the Achievements page's own
+       .ach-detail sheet, rather than centered like a dialog. */
+    .ach-info-ov { position:fixed; inset:0; z-index:9800; background:rgba(7,8,13,.9); display:none; align-items:flex-end; justify-content:center; padding:0 12px calc(env(safe-area-inset-bottom,0px) + 12px); }
     .ach-info-ov.on { display:flex; }
     /* .ach-info-card itself is only ever used for #achInfoBody, so it's safe to
        restyle freely — unlike .ach-info-medal/-kicker/-name/-desc below, which
        are also reused by the Omnia generator/Dark Matter pump sheets and the
        star-map "gen" sheet and must keep their current look for those. This
        matches the Achievements screen's own .ach-detail panel (same dark card,
-       left-aligned copy) rather than the old centered/medal-icon layout. */
-    .ach-info-card { position:relative; width:100%; max-width:360px; background:#10121a; border:1px solid rgba(232,200,122,.4); border-radius:14px; padding:16px 18px 14px; text-align:left; max-height:70vh; overflow-y:auto; }
+       left-aligned copy, bottom-anchored) rather than the old centered dialog. */
+    .ach-info-card { position:relative; width:100%; max-width:460px; background:#10121a; border:1px solid rgba(232,200,122,.4); border-radius:14px; padding:16px 18px 14px; text-align:left; max-height:46vh; overflow-y:auto; box-shadow:0 10px 40px rgba(0,0,0,.6); }
     .ach-info-close { position:absolute; top:12px; right:14px; background:none; border:none; color:var(--muted); font-size:15px; cursor:pointer; }
     .ach-info-medal { width:74px; height:74px; margin:0 auto 14px; border-radius:18px; background:rgba(255,255,255,.04); border:1px solid var(--gc,#e8c87a); display:flex; align-items:center; justify-content:center; gap:5px; position:relative; }
     .ach-info-medal svg { width:34px; height:34px; fill:none; stroke:var(--gc,#e8c87a); stroke-width:1.4; stroke-linecap:round; stroke-linejoin:round; }
