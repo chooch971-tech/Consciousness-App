@@ -19,10 +19,10 @@ function clampOmniaBodies(stateObj) {
 }
 
 // Merge a cloud Omnia snapshot into local on sync-pull. Last-writer-wins fields
-// (akasha, reservoir, rec, recStreak, cosmetics, upgrades) follow the existing
-// conflict-resolution winner, but monotonic progress counters take the MAX of both
-// snapshots so a stale snapshot can never roll them backwards. Returns a JSON string
-// to store, or null to leave local untouched.
+// (rec, recStreak) follow the existing conflict-resolution winner; wallet fields
+// (akasha, reservoirs) are reconciled independently by lastTick recency; monotonic
+// progress counters take the MAX of both snapshots so a stale snapshot can never
+// roll them backwards. Returns a JSON string to store, or null to leave local untouched.
 function mergeOmniaPull(localStr, cloudStr) {
   if (!cloudStr) return null;
   if (!localStr) {
@@ -42,6 +42,22 @@ function mergeOmniaPull(localStr, cloudStr) {
     var bc = (base && base.cosmetics) || {};
     var oc = (other && other.cosmetics) || {};
     if ((Number(oc._updatedAt) || 0) > (Number(bc._updatedAt) || 0)) base.cosmetics = oc;
+  })();
+  // Wallet/reservoir state carries no progress score (by design — see
+  // shouldTakeCloudValue), so it can tie even when one side is materially
+  // fresher (e.g. collecting an already-full reservoir doesn't move
+  // totalAkashaEarned). A stale cloud snapshot winning that tie would restore
+  // an already-collected reservoir, letting the same accrual be collected
+  // twice. lastTick advances on every accrue/collect regardless of score, so
+  // use it as an independent recency signal and keep whichever side actually
+  // touched the wallet more recently.
+  (function() {
+    var localTick = Number(localObj.lastTick) || 0;
+    var cloudTick = Number(cloudObj.lastTick) || 0;
+    var fresher = localTick >= cloudTick ? localObj : cloudObj;
+    base.akasha = Number(fresher.akasha) || 0;
+    base.reservoirs = fresher.reservoirs || {};
+    base.lastTick = Math.max(localTick, cloudTick);
   })();
   // Daily-gift claim marker: keep the later date so a device that already
   // claimed today's offering can't have it reopened by a stale snapshot.
