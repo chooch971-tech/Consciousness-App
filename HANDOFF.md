@@ -118,10 +118,12 @@ system, achievements, streaks, and social/friends features.
 - **`omnia-morph-client.js`** — per-entity symbol catalogs, shard geometry,
   interpolation and outline rendering, animation lifecycle, and Guide/Upgrade/
   Path-banner morph entry points. It loads immediately before Guide state.
-- **Architecture status (2026-07-15)** — the Phase 4 Omnia extraction is complete
-  and audited. The next boundary is Guide runtime: first adaptive path planning,
-  then Path Quests/Seven Gifts. Remaining unrelated inline clusters should be
-  audited only after those two Guide modules are established.
+- **Architecture status (2026-07-16)** — Phases 4–6 are complete and audited.
+  Feature runtimes now live behind named client boundaries, every declared
+  client module is parser-checked and service-worker precached, and the
+  remaining inline runtime is intentional application composition: drawer and
+  dialog shell behavior, cloud sync/reset orchestration, and small shared
+  cross-module helpers.
 - **`guide-path-client.js`** — Guide state persistence, practice-tree rendering,
   route selection and confirmation, exercise-history assessment, adaptive and
   foundational regimen construction, agenda rendering, and exercise launching.

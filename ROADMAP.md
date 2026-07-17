@@ -109,6 +109,7 @@ Last updated: 2026-07-13
 - [x] Extract Pore Breathing session state, audio, completion rewards, and controls into `pore-breathing-client.js`
 - [x] Extract global sound/audio unlock and Omnia candor preferences into `app-preferences-client.js`
 - [x] Extract Guide entry, controls, tab tips, and swipe navigation into `guide-shell-client.js`
+- [x] Complete the Phase 6 client-boundary audit: all declared client modules parse and are service-worker precached; remaining inline code is intentional core composition and sync orchestration
 - [x] Audit the remaining inline Concentration completion, streak, reminder, companion, and integration clusters
 - [x] Consolidate duplicate global HTML escaping helpers
 - [x] Remove `/api/sync/sync/diagnose` debug endpoint from server.js

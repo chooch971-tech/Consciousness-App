@@ -55,6 +55,17 @@ const soulMirrorClient = fs.readFileSync(path.join(root, 'soul-mirror-client.js'
 const journalClient = fs.readFileSync(path.join(root, 'journal-client.js'), 'utf8');
 const socialClient = fs.readFileSync(path.join(root, 'social-client.js'), 'utf8');
 
+test('every declared client module parses and is precached', () => {
+  const clientScripts = [...presence.matchAll(/<script\s+src="([^"]+-client\.js)"><\/script>/g)]
+    .map(match => match[1]);
+  assert.ok(clientScripts.length >= 45, 'expected the complete feature-module graph');
+  clientScripts.forEach(file => {
+    const source = fs.readFileSync(path.join(root, file), 'utf8');
+    assert.match(serviceWorker, new RegExp("['\"]" + file.replace('.', '\\.') + "['\"]"));
+    assert.doesNotThrow(() => new Function(source), file + ' must parse');
+  });
+});
+
 test('production code does not ship the retired Bardon RPG', () => {
   assert.doesNotMatch(presence, /bardonScreen|drawerBardon|bardon_rpg_v2|BARDON GAME/);
   assert.doesNotMatch(server, /bardon_rpg_v2/);
