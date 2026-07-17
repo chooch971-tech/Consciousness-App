@@ -455,12 +455,6 @@ function awardOmniaForExercise(exId, seconds, reachedRec) {
     omniaState.recStreak = Math.max(0, (omniaState.recStreak || 0) - 1);
   }
   saveOmniaState();
-  var boostLabel = boost > 1 ? ' · +' + Math.round((boost - 1) * 100) + '% boost' : '';
-  if (clockAkashaCapped) {
-    showToast(activityName + ' complete · daily akasha reached — return tomorrow', 3600);
-  } else {
-    showToast(activityName + ' complete · +' + gain + ' akasha' + boostLabel, 3200);
-  }
   // The body level gets a real acknowledgment screen, not just a toast —
   // shown once the session-complete legend has been dismissed.
   if (awardedBody) setTimeout(maybeShowBodyLevelAward, 1200);
