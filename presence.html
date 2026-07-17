@@ -5040,32 +5040,46 @@ body:not(.tut-live) #tutCorgi {
   // the note on .splash-resumed above. Skip the entrance animation so this
   // reads as a continuation of the same splash, not a fresh one flashing in.
   try { if (sessionStorage.getItem('_pullReloaded') === '1') s.classList.add('splash-resumed'); } catch(e) {}
-  // Don't show the wordmark until Cormorant Garamond is genuinely usable —
-  // see the note on .fonts-ready above. document.fonts.ready is NOT enough:
-  // it resolves once currently-queued loads finish, which can be before the
-  // Google Fonts stylesheet has even registered the faces (nothing queued =
-  // instantly "ready"), letting the fallback font paint first and swap —
-  // the wordmark going bold for a split second. Poll fonts.check() for the
-  // exact face instead (kicking load() so the fetch isn't left to chance),
-  // with a cap so a dead connection can't hold the splash blank; the cap is
-  // well inside the splash's 1800ms minimum, so it never delays the intro.
+  // Don't show the wordmark until Cormorant Garamond is genuinely PAINTING —
+  // see the note on .fonts-ready above. document.fonts.check()/ready both lie
+  // on iOS Safari: they report the face ready a frame or two before it
+  // actually renders, so the light-300 wordmark still flashes in the heavier
+  // fallback serif before swapping. The reliable signal (FontFaceObserver's
+  // technique) is to MEASURE it: render the text in the target font backed by
+  // known fallbacks and watch the width — when the real font paints, the
+  // width diverges from the pure-fallback width. That tracks actual glyph
+  // rendering, not an optimistic flag. Cap it well inside the 1800ms splash
+  // minimum so a dead connection never holds the wordmark blank.
   function revealSplashText() { s.classList.add('fonts-ready'); }
-  if (document.fonts && document.fonts.check) {
-    var fontSpec = '300 48px "Cormorant Garamond"';
-    var fontWaited = 0;
-    (function pollSplashFont() {
-      var ok = false;
-      try {
-        ok = document.fonts.check(fontSpec);
-        if (!ok) document.fonts.load(fontSpec);
-      } catch (e) { ok = true; }
-      if (ok || fontWaited >= 1200) { revealSplashText(); return; }
-      fontWaited += 50;
-      setTimeout(pollSplashFont, 50);
-    })();
-  } else {
-    revealSplashText();
-  }
+  (function observeSplashFont() {
+    if (!document.body) { revealSplashText(); return; }
+    try {
+      var probe = 'PresenceWMil';
+      var mk = function(stack) {
+        var el = document.createElement('span');
+        el.setAttribute('aria-hidden', 'true');
+        el.style.cssText = 'position:absolute;left:-9999px;top:-9999px;visibility:hidden;'
+          + 'font-size:120px;line-height:1;white-space:nowrap;font-weight:300;font-family:' + stack;
+        el.textContent = probe;
+        document.body.appendChild(el);
+        return el;
+      };
+      // Baselines in two dissimilar fallbacks, and the same text asking for the
+      // web font backed by each. While the web font is missing, target == base.
+      var baseMono = mk('monospace'), baseSerif = mk('serif');
+      var monoW = baseMono.offsetWidth, serifW = baseSerif.offsetWidth;
+      var tgtMono = mk('"Cormorant Garamond",monospace');
+      var tgtSerif = mk('"Cormorant Garamond",serif');
+      if (document.fonts && document.fonts.load) { try { document.fonts.load('300 120px "Cormorant Garamond"'); } catch (e) {} }
+      var start = Date.now();
+      var cleanup = function() { [baseMono, baseSerif, tgtMono, tgtSerif].forEach(function(n) { if (n && n.parentNode) n.parentNode.removeChild(n); }); };
+      (function poll() {
+        var painted = (tgtMono.offsetWidth !== monoW) || (tgtSerif.offsetWidth !== serifW);
+        if (painted || Date.now() - start >= 1400) { cleanup(); revealSplashText(); return; }
+        requestAnimationFrame(poll);
+      })();
+    } catch (e) { revealSplashText(); }
+  })();
   var dismissed = false;
   // Minimum time the splash stays up. The app now loads fast enough that the
   // cloud pull calls dismiss() almost immediately, so without a floor the
