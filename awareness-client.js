@@ -1099,6 +1099,7 @@ function renderHome() {
     awBannerSymbol.innerHTML = renderSymbolSVG(awBGroup.id, 'rgba(180,240,210,.75)', 16);
   }
   if (typeof renderAkashaBoostBadge === 'function') renderAkashaBoostBadge();
+  if (typeof updateGuideQuestBadge === 'function') updateGuideQuestBadge();
   var awXPHint = document.getElementById('awXPHint');
   if (awXPHint) {
     if (state.level >= 777) {

@@ -84,6 +84,25 @@ function pathQuestRecordAwarenessMinutes(minutes) {
   saveGuideState(guideState);
   if (document.getElementById('pathQuestRoot')) renderPathQuests();
 }
+// Is any Path Quest finished but not yet claimed? Drives the badge dot on
+// the Guide tab so a reward waiting to be claimed doesn't go unnoticed while
+// the player is off in Concentration/Awareness.
+function pathQuestHasUnclaimed() {
+  var q = pathQuestState();
+  return ['daily', 'weekend', 'awareness'].some(function(type) {
+    var data = q[type];
+    if (!data || data.claimed) return false;
+    var target = type === 'daily' ? 2 : type === 'awareness' ? 15 : pathQuestWeekendTarget();
+    var progress = type === 'awareness' ? (data.minutes || 0) : (data.count || 0);
+    return progress >= target;
+  });
+}
+function updateGuideQuestBadge() {
+  var el = document.getElementById('guideTabQuestBadge');
+  if (!el) return;
+  el.style.display = pathQuestHasUnclaimed() ? 'block' : 'none';
+}
+
 function claimPathQuestReward(type) {
   var q = pathQuestState();
   var data = q[type];
@@ -906,6 +925,7 @@ function renderPathQuests() {
     + '</div>';
 
   root.innerHTML = html;
+  updateGuideQuestBadge();
 
   var pqTwoADayBtn = root.querySelector('#pqTwoADayBtn');
   if (pqTwoADayBtn) {

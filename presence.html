@@ -4593,6 +4593,15 @@ body:not(.tut-live) #tutCorgi {
   color:#e8c87a; backdrop-filter:blur(4px); }
 .boost-badge__icon { font-size:10px; line-height:1; }
 
+/* Small dot on the Guide tab marking a completed-but-unclaimed Path Quest —
+   the tab is visible from every mode, so it's the one place a player who's
+   off doing Concentration/Awareness practice will still notice a reward is
+   waiting. */
+.quest-tab-badge { position:absolute; top:2px; right:2px; width:7px; height:7px; border-radius:50%;
+  background:#f0c75e; box-shadow:0 0 6px rgba(240,199,94,.75); display:none;
+  animation:questBadgePulse 1.8s ease-in-out infinite; }
+@keyframes questBadgePulse { 0%,100%{ opacity:1; transform:scale(1); } 50%{ opacity:.55; transform:scale(.8); } }
+
 .aw-banner  { background:linear-gradient(145deg,#0c2a1e 0%,#113828 42%,#0c2218 100%); }
 .aw-banner::before { background:radial-gradient(ellipse 60% 70% at 72% 55%,rgba(90,210,150,.26) 0%,transparent 70%); }
 .aw-banner::after  { background:radial-gradient(ellipse 40% 50% at 68% 48%,rgba(170,255,215,.12) 0%,transparent 60%); }
@@ -6028,7 +6037,7 @@ body:not(.tut-live) #tutCorgi {
       <span class="streak-badge">streak <span id="streakCount">0</span>d</span>
     </div>
     <div class="mode-tabs">
-      <button class="mode-tab active guide-mode" id="modePrayer">Guide</button>
+      <button class="mode-tab active guide-mode" id="modePrayer">Guide<span class="quest-tab-badge" id="guideTabQuestBadge" aria-label="Quest reward ready to claim"></span></button>
       <button class="mode-tab" id="modeConcentration">Concentration</button>
       <button class="mode-tab" id="modeAwareness"><span id="awarenessTabLabel">Awareness</span><span class="mode-tab-caret">&#9662;</span></button>
     </div>
