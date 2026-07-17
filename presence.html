@@ -691,6 +691,11 @@
     .prof-ach-item { flex:1; display:flex; flex-direction:column; align-items:center; gap:6px; opacity:.4; }
     .prof-ach-item__disc { width:60px; height:60px; border-radius:14px; background:rgba(255,255,255,.04); border:1px solid var(--border); display:flex; align-items:center; justify-content:center; font-size:24px; }
     .prof-ach-item__lbl { font-size:8px; letter-spacing:.1em; text-transform:uppercase; color:var(--muted); font-family:'DM Mono',monospace; }
+    /* The disc above brightens to full opacity once a badge has any real
+       progress (or is earned) — the % / "Earned" label was staying muted
+       regardless, undoing that legibility bump. Brighten it to match. */
+    .prof-ach-item__lbl--active { color:var(--text); }
+    .prof-ach-item__lbl--earned { color:#f0d8ac; }
     .prof-empty-note { font-size:10px; color:var(--muted); font-family:'DM Mono',monospace; letter-spacing:.04em; line-height:1.7; opacity:.7; }
 
     /* Daily status */

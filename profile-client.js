@@ -316,7 +316,7 @@ function renderProfileAchievements() {
     return '<div class="prof-ach-item" data-ach="' + it.b.id + '" style="cursor:pointer;' + (earned || it.pct > 0 ? 'opacity:1;' : '') + '">'
       + '<div class="prof-ach-item__disc" style="--gc:' + (ACH_COLORS[it.g.id] || '#e8c87a') + (earned ? ';border-color:rgba(232,200,122,.6);' : '') + '">'
       + achIconSvg(it.g.id) + '<b>' + medal + '</b></div>'
-      + '<div class="prof-ach-item__lbl">' + (earned ? 'Earned' : it.pct + '%') + '</div></div>';
+      + '<div class="prof-ach-item__lbl' + (earned ? ' prof-ach-item__lbl--earned' : it.pct > 0 ? ' prof-ach-item__lbl--active' : '') + '">' + (earned ? 'Earned' : it.pct + '%') + '</div></div>';
   }).join('');
 }
 // "›" buttons on both profile sections open the full Achievements screen.
@@ -458,7 +458,7 @@ function renderFriendAchievements(f) {
         return '<div class="prof-ach-item" data-ach="' + b.id + '" data-earned="' + escHtml(String(life[b.id])) + '" style="cursor:pointer;opacity:1;">'
           + '<div class="prof-ach-item__disc" style="--gc:' + (ACH_COLORS[g.id] || '#e8c87a') + ';border-color:rgba(232,200,122,.5);">'
           + achIconSvg(g.id) + '<b>' + medal + '</b></div>'
-          + '<div class="prof-ach-item__lbl">Earned</div></div>';
+          + '<div class="prof-ach-item__lbl prof-ach-item__lbl--earned">Earned</div></div>';
       }).join('');
     } else {
       achEl.classList.remove('friend-ach-strip');
