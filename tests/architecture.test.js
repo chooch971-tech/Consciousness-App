@@ -88,6 +88,21 @@ test('externally costly sign-in and Pavlok routes are rate limited', () => {
   assert.match(server, /pavlokRateBuckets\.delete/);
 });
 
+test('medium-risk mutation and push paths have bounded, constant-time guards', () => {
+  assert.match(server, /app\.set\('trust proxy', 1\)/);
+  assert.match(server, /function\s+secretsMatch\s*\([\s\S]*?crypto\.timingSafeEqual/);
+  assert.match(server, /verifyAdmin[\s\S]*?secretsMatch\(provided, ADMIN_SECRET\)/);
+  assert.match(server, /verifyPushOwner[\s\S]*?secretsMatch\(authKey, stored\)/);
+  assert.match(server, /const\s+MUTATION_RATE_LIMIT\s*=\s*90/);
+  assert.match(server, /const\s+SUBSCRIPTION_RATE_LIMIT\s*=\s*12/);
+  assert.match(server, /app\.post\('\/api\/sync\/sync\/push', verifyToken, mutationRateLimit,/);
+  assert.match(server, /app\.post\('\/api\/social\/posts', verifyToken, mutationRateLimit,/);
+  assert.match(server, /app\.post\('\/api\/social\/conversations\/:id\/messages', verifyToken, mutationRateLimit,/);
+  assert.match(server, /app\.post\('\/subscribe', subscriptionRateLimit,/);
+  assert.match(server, /subscription\.endpoint\.length > 2048/);
+  assert.match(server, /typeof deviceId !== 'string' \|\| !deviceId \|\| deviceId\.length > 128/);
+});
+
 test('server returns JSON for parser, CORS, and unexpected request failures', () => {
   assert.match(server, /app\.use\(\(err, req, res, next\) => \{/);
   assert.match(server, /CORS: origin not allowed[\s\S]*?status\(403\)\.json\(\{ error: 'Origin not allowed' \}\)/);

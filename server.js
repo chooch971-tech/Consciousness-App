@@ -5,6 +5,7 @@ const cors    = require('cors');
 const { MongoClient, ObjectId } = require('mongodb');
 const bcrypt  = require('bcryptjs');
 const jwt     = require('jsonwebtoken');
+const crypto  = require('crypto');
 const { OAuth2Client } = require('google-auth-library');
 const { enforceOmniaReportPolicy } = require('./omnia-report-policy');
 const { SYNC_KEYS, selectSyncData } = require('./sync-contract');
@@ -18,6 +19,9 @@ const {
 } = require('./social-safety');
 
 const app = express();
+// Render terminates TLS and forwards the client address through one trusted
+// proxy hop. This lets IP-based anonymous limits distinguish real clients.
+app.set('trust proxy', 1);
 
 // ── Security headers ────────────────────────────────────
 app.use(helmet());
@@ -246,13 +250,20 @@ function verifyToken(req, res, next) {
   }
 }
 
+function secretsMatch(provided, expected) {
+  if (typeof provided !== 'string' || typeof expected !== 'string') return false;
+  const a = Buffer.from(provided);
+  const b = Buffer.from(expected);
+  return a.length === b.length && crypto.timingSafeEqual(a, b);
+}
+
 // ── Admin Middleware ─────────────────────────────────────
 // Protects destructive / broadcast routes.
 // Set ADMIN_SECRET env var; pass as x-admin-secret header.
 function verifyAdmin(req, res, next) {
   if (!ADMIN_SECRET) return res.status(403).json({ error: 'Admin access not configured' });
   const provided = req.headers['x-admin-secret'];
-  if (!provided || provided !== ADMIN_SECRET) {
+  if (!secretsMatch(provided, ADMIN_SECRET)) {
     return res.status(403).json({ error: 'Forbidden' });
   }
   next();
@@ -271,7 +282,7 @@ function verifyPushOwner(req, res, next) {
   const sub = subscriptions.find(s => s.endpoint === endpoint);
   if (!sub) return res.status(404).json({ error: 'Subscriber not found' });
   const stored = sub.keys && sub.keys.auth;
-  if (!stored || !authKey || authKey !== stored) return res.status(403).json({ error: 'Forbidden' });
+  if (!secretsMatch(authKey, stored)) return res.status(403).json({ error: 'Forbidden' });
   req.pushSub = sub;
   next();
 }
@@ -376,12 +387,46 @@ function pavlokRateLimit(req, res, next) {
   next();
 }
 
+// Account mutation limits protect storage and social write paths from a
+// compromised client or accidental retry loop without constraining ordinary use.
+const mutationRateBuckets = new Map();
+const MUTATION_RATE_LIMIT = 90;
+const MUTATION_RATE_WINDOW_MS = 60 * 1000;
+function mutationRateLimit(req, res, next) {
+  const now = Date.now();
+  const key = req.user && req.user.userId ? 'user:' + req.user.userId : 'ip:' + (req.ip || 'unknown');
+  const bucket = mutationRateBuckets.get(key) || { count: 0, resetAt: now + MUTATION_RATE_WINDOW_MS };
+  if (now > bucket.resetAt) { bucket.count = 0; bucket.resetAt = now + MUTATION_RATE_WINDOW_MS; }
+  bucket.count++;
+  mutationRateBuckets.set(key, bucket);
+  if (bucket.count > MUTATION_RATE_LIMIT) return res.status(429).json({ error: 'Too many changes. Try again shortly.' });
+  next();
+}
+
+// Subscription registration is intentionally anonymous, so give it a smaller
+// IP limit and strict shape checks before it can add database records.
+const subscriptionRateBuckets = new Map();
+const SUBSCRIPTION_RATE_LIMIT = 12;
+const SUBSCRIPTION_RATE_WINDOW_MS = 60 * 1000;
+function subscriptionRateLimit(req, res, next) {
+  const now = Date.now();
+  const key = req.ip || 'unknown';
+  const bucket = subscriptionRateBuckets.get(key) || { count: 0, resetAt: now + SUBSCRIPTION_RATE_WINDOW_MS };
+  if (now > bucket.resetAt) { bucket.count = 0; bucket.resetAt = now + SUBSCRIPTION_RATE_WINDOW_MS; }
+  bucket.count++;
+  subscriptionRateBuckets.set(key, bucket);
+  if (bucket.count > SUBSCRIPTION_RATE_LIMIT) return res.status(429).json({ error: 'Too many subscription requests. Try again shortly.' });
+  next();
+}
+
 // Periodically clear stale rate-limit + prompt buckets so the Maps don't grow unbounded.
 setInterval(() => {
   const now = Date.now();
   for (const [k, b] of aiRateBuckets) if (now > b.resetAt + AI_RATE_WINDOW_MS) aiRateBuckets.delete(k);
   for (const [k, b] of authRateBuckets) if (now > b.resetAt + AUTH_RATE_WINDOW_MS) authRateBuckets.delete(k);
   for (const [k, b] of pavlokRateBuckets) if (now > b.resetAt + PAVLOK_RATE_WINDOW_MS) pavlokRateBuckets.delete(k);
+  for (const [k, b] of mutationRateBuckets) if (now > b.resetAt + MUTATION_RATE_WINDOW_MS) mutationRateBuckets.delete(k);
+  for (const [k, b] of subscriptionRateBuckets) if (now > b.resetAt + SUBSCRIPTION_RATE_WINDOW_MS) subscriptionRateBuckets.delete(k);
   if (usedPrompts.size > 5000) usedPrompts.clear();
 }, 10 * 60 * 1000);
 
@@ -764,7 +809,7 @@ app.post('/api/sync/auth/logout', verifyToken, (req, res) => {
 });
 
 // SET USERNAME — lets existing users claim a username post-registration
-app.post('/api/sync/auth/set-username', verifyToken, async (req, res) => {
+app.post('/api/sync/auth/set-username', verifyToken, mutationRateLimit, async (req, res) => {
   try {
     const { username } = req.body;
     if (!username || typeof username !== 'string') return res.status(400).json({ error: 'Username required' });
@@ -1041,7 +1086,7 @@ function clampAchSnapshot(incomingStr, prevSnap) {
 }
 
 // PUSH DATA
-app.post('/api/sync/sync/push', verifyToken, async (req, res) => {
+app.post('/api/sync/sync/push', verifyToken, mutationRateLimit, async (req, res) => {
   try {
     const { data, deviceInfo } = req.body;
     if (!data) return res.status(400).json({ error: 'No data to sync' });
@@ -1077,7 +1122,7 @@ app.post('/api/sync/sync/push', verifyToken, async (req, res) => {
     const syncData = {
       userId: new ObjectId(req.user.userId),
       ...selectSyncData(data),
-      deviceInfo: deviceInfo || 'Unknown device',
+      deviceInfo: typeof deviceInfo === 'string' ? deviceInfo.slice(0, 120) : 'Unknown device',
       syncedAt: new Date(),
     };
     const result = await syncDataCollection.insertOne(syncData);
@@ -1375,7 +1420,7 @@ const BEACON_TTL_MS = 90 * 1000;
 app.post('/api/sync/presence/beacon', verifyToken, async (req, res) => {
   try {
     const { deviceId, mode, exercise, startedAt, device } = req.body || {};
-    if (!deviceId) return res.status(400).json({ error: 'deviceId required' });
+    if (typeof deviceId !== 'string' || !deviceId || deviceId.length > 128) return res.status(400).json({ error: 'Valid deviceId required' });
     const now = Date.now();
     await beaconsCollection.updateOne(
       { userId: new ObjectId(req.user.userId), deviceId: String(deviceId) },
@@ -1401,7 +1446,7 @@ app.post('/api/sync/presence/beacon', verifyToken, async (req, res) => {
 app.post('/api/sync/presence/clear', verifyToken, async (req, res) => {
   try {
     const { deviceId } = req.body || {};
-    if (!deviceId) return res.status(400).json({ error: 'deviceId required' });
+    if (typeof deviceId !== 'string' || !deviceId || deviceId.length > 128) return res.status(400).json({ error: 'Valid deviceId required' });
     await beaconsCollection.deleteOne({ userId: new ObjectId(req.user.userId), deviceId: String(deviceId) });
     res.json({ ok: true });
   } catch (err) {
@@ -1536,7 +1581,7 @@ app.get('/api/sync/friends/search', verifyToken, async (req, res) => {
 });
 
 // SEND FRIEND REQUEST
-app.post('/api/sync/friends/request', verifyToken, async (req, res) => {
+app.post('/api/sync/friends/request', verifyToken, mutationRateLimit, async (req, res) => {
   try {
     const selfId = req.user.userId;
     const { username } = req.body;
@@ -1561,7 +1606,7 @@ app.post('/api/sync/friends/request', verifyToken, async (req, res) => {
 });
 
 // ACCEPT FRIEND REQUEST
-app.post('/api/sync/friends/accept', verifyToken, async (req, res) => {
+app.post('/api/sync/friends/accept', verifyToken, mutationRateLimit, async (req, res) => {
   try {
     const selfId = req.user.userId;
     const { requesterId } = req.body;
@@ -1591,7 +1636,7 @@ app.post('/api/sync/friends/accept', verifyToken, async (req, res) => {
 });
 
 // DECLINE / REMOVE FRIEND
-app.post('/api/sync/friends/decline', verifyToken, async (req, res) => {
+app.post('/api/sync/friends/decline', verifyToken, mutationRateLimit, async (req, res) => {
   try {
     const selfId = req.user.userId;
     const { userId } = req.body;
@@ -1637,7 +1682,7 @@ app.get('/api/sync/friends/requests', verifyToken, async (req, res) => {
 });
 
 // UPLOAD / UPDATE OWN PROFILE PICTURE
-app.put('/api/sync/profile-pic', verifyToken, async (req, res) => {
+app.put('/api/sync/profile-pic', verifyToken, mutationRateLimit, async (req, res) => {
   try {
     const { pic } = req.body;
     if (!pic || typeof pic !== 'string') return res.status(400).json({ error: 'pic required' });
@@ -1660,7 +1705,7 @@ app.put('/api/sync/profile-pic', verifyToken, async (req, res) => {
 
 // STATUS — set the short daily status shared with friends. Empty text clears it
 // but still carries a timestamp so the clear propagates monotonically.
-app.put('/api/sync/status', verifyToken, async (req, res) => {
+app.put('/api/sync/status', verifyToken, mutationRateLimit, async (req, res) => {
   try {
     let { text } = req.body;
     if (typeof text !== 'string') return res.status(400).json({ error: 'text required' });
@@ -1679,7 +1724,7 @@ app.put('/api/sync/status', verifyToken, async (req, res) => {
 });
 
 // PRIVACY — toggle whether this account is discoverable in friend search
-app.put('/api/sync/privacy', verifyToken, async (req, res) => {
+app.put('/api/sync/privacy', verifyToken, mutationRateLimit, async (req, res) => {
   try {
     const { isPrivate } = req.body;
     if (typeof isPrivate !== 'boolean') return res.status(400).json({ error: 'isPrivate boolean required' });
@@ -1756,7 +1801,7 @@ async function decoratePosts(posts, viewerId) {
 // CREATE POST — doubles as the current status so existing surfaces update.
 const BLOG_MAX_LEN = 5000;
 
-app.post('/api/social/posts', verifyToken, async (req, res) => {
+app.post('/api/social/posts', verifyToken, mutationRateLimit, async (req, res) => {
   try {
     const type = req.body.type === 'blog' ? 'blog' : 'note';
     const text = sanitizeSocialText(req.body.text, type === 'blog' ? BLOG_MAX_LEN : POST_MAX_LEN);
@@ -1841,7 +1886,7 @@ app.get('/api/social/users/:id/posts', verifyToken, async (req, res) => {
 });
 
 // DELETE OWN POST — takes its likes and comments with it.
-app.delete('/api/social/posts/:id', verifyToken, async (req, res) => {
+app.delete('/api/social/posts/:id', verifyToken, mutationRateLimit, async (req, res) => {
   try {
     const post = await postsCollection.findOne({ _id: new ObjectId(req.params.id) });
     if (!post) return res.status(404).json({ error: 'Not found' });
@@ -1857,7 +1902,7 @@ app.delete('/api/social/posts/:id', verifyToken, async (req, res) => {
 });
 
 // LIKE TOGGLE
-app.post('/api/social/posts/:id/like', verifyToken, async (req, res) => {
+app.post('/api/social/posts/:id/like', verifyToken, mutationRateLimit, async (req, res) => {
   try {
     const post = await postsCollection.findOne({ _id: new ObjectId(req.params.id) });
     if (!post) return res.status(404).json({ error: 'Post not found' });
@@ -1942,7 +1987,7 @@ app.get('/api/social/posts/:id/comments', verifyToken, async (req, res) => {
   }
 });
 
-app.post('/api/social/posts/:id/comments', verifyToken, async (req, res) => {
+app.post('/api/social/posts/:id/comments', verifyToken, mutationRateLimit, async (req, res) => {
   try {
     const text = sanitizeSocialText(req.body.text, POST_MAX_LEN);
     if (!text) return res.status(400).json({ error: 'text required' });
@@ -1969,7 +2014,7 @@ app.post('/api/social/posts/:id/comments', verifyToken, async (req, res) => {
   }
 });
 
-app.delete('/api/social/comments/:id', verifyToken, async (req, res) => {
+app.delete('/api/social/comments/:id', verifyToken, mutationRateLimit, async (req, res) => {
   try {
     const c = await commentsCollection.findOne({ _id: new ObjectId(req.params.id) });
     if (!c) return res.status(404).json({ error: 'Not found' });
@@ -2037,7 +2082,7 @@ async function notifyMutualFollow(a, b) {
   } catch(e) { return false; }
 }
 
-app.post('/api/social/follow', verifyToken, async (req, res) => {
+app.post('/api/social/follow', verifyToken, mutationRateLimit, async (req, res) => {
   try {
     const selfId = req.user.userId; const { userId } = req.body;
     if (!userId || typeof userId !== 'string') return res.status(400).json({ error: 'userId required' });
@@ -2061,7 +2106,7 @@ app.post('/api/social/follow', verifyToken, async (req, res) => {
   } catch (err) { res.status(500).json({ error: 'Follow failed' }); }
 });
 
-app.post('/api/social/unfollow', verifyToken, async (req, res) => {
+app.post('/api/social/unfollow', verifyToken, mutationRateLimit, async (req, res) => {
   try {
     const { userId } = req.body;
     if (!userId || typeof userId !== 'string') return res.status(400).json({ error: 'userId required' });
@@ -2084,7 +2129,7 @@ app.get('/api/social/follow/requests', verifyToken, async (req, res) => {
   } catch (err) { res.status(500).json({ error: 'Requests failed' }); }
 });
 
-app.post('/api/social/follow/approve', verifyToken, async (req, res) => {
+app.post('/api/social/follow/approve', verifyToken, mutationRateLimit, async (req, res) => {
   try {
     const selfId = req.user.userId; const { userId } = req.body;
     if (!userId || typeof userId !== 'string') return res.status(400).json({ error: 'userId required' });
@@ -2101,7 +2146,7 @@ app.post('/api/social/follow/approve', verifyToken, async (req, res) => {
   } catch (err) { res.status(500).json({ error: 'Approve failed' }); }
 });
 
-app.post('/api/social/follow/decline', verifyToken, async (req, res) => {
+app.post('/api/social/follow/decline', verifyToken, mutationRateLimit, async (req, res) => {
   try {
     const { userId } = req.body;
     if (!userId || typeof userId !== 'string') return res.status(400).json({ error: 'userId required' });
@@ -2129,7 +2174,7 @@ app.get('/api/social/users/:id/summary', verifyToken, async (req, res) => {
 });
 
 // BLOCK — severs follows AND the legacy friendship both ways.
-app.post('/api/social/block', verifyToken, async (req, res) => {
+app.post('/api/social/block', verifyToken, mutationRateLimit, async (req, res) => {
   try {
     const selfId = req.user.userId; const { userId } = req.body;
     if (!userId || typeof userId !== 'string') return res.status(400).json({ error: 'userId required' });
@@ -2145,7 +2190,7 @@ app.post('/api/social/block', verifyToken, async (req, res) => {
   } catch (err) { res.status(500).json({ error: 'Block failed' }); }
 });
 
-app.post('/api/social/unblock', verifyToken, async (req, res) => {
+app.post('/api/social/unblock', verifyToken, mutationRateLimit, async (req, res) => {
   try {
     const { userId } = req.body;
     if (!userId || typeof userId !== 'string') return res.status(400).json({ error: 'userId required' });
@@ -2154,7 +2199,7 @@ app.post('/api/social/unblock', verifyToken, async (req, res) => {
   } catch (err) { res.status(500).json({ error: 'Unblock failed' }); }
 });
 
-app.post('/api/social/report', verifyToken, async (req, res) => {
+app.post('/api/social/report', verifyToken, mutationRateLimit, async (req, res) => {
   try {
     const { kind, refId } = req.body;
     if (['post', 'comment', 'user', 'message'].indexOf(kind) === -1) return res.status(400).json({ error: 'Invalid kind' });
@@ -2193,7 +2238,7 @@ app.get('/api/social/notifications', verifyToken, async (req, res) => {
   } catch (err) { res.status(500).json({ error: 'Notifications failed' }); }
 });
 
-app.post('/api/social/notifications/seen', verifyToken, async (req, res) => {
+app.post('/api/social/notifications/seen', verifyToken, mutationRateLimit, async (req, res) => {
   try {
     await notificationsCollection.updateMany({ userId: req.user.userId, seenAt: null }, { $set: { seenAt: new Date() } });
     res.json({ ok: true });
@@ -2210,7 +2255,7 @@ async function isMutualFollow(a, b) {
   return !!(await followsCollection.findOne({ followerId: b, followeeId: a, status: 'active' }));
 }
 
-app.post('/api/social/conversations/open', verifyToken, async (req, res) => {
+app.post('/api/social/conversations/open', verifyToken, mutationRateLimit, async (req, res) => {
   try {
     const selfId = req.user.userId; const { userId } = req.body;
     if (!userId || typeof userId !== 'string') return res.status(400).json({ error: 'userId required' });
@@ -2279,7 +2324,7 @@ app.get('/api/social/conversations/:id/messages', verifyToken, async (req, res) 
   } catch (err) { res.status(500).json({ error: 'Messages failed' }); }
 });
 
-app.post('/api/social/conversations/:id/messages', verifyToken, async (req, res) => {
+app.post('/api/social/conversations/:id/messages', verifyToken, mutationRateLimit, async (req, res) => {
   try {
     const selfId = req.user.userId;
     const text = sanitizeSocialText(req.body.text, DM_MAX_LEN);
@@ -2311,7 +2356,7 @@ app.post('/api/social/conversations/:id/messages', verifyToken, async (req, res)
 
 // A device's push subscription maps to whichever account was last signed in
 // on it (endpoint-unique upsert), so pushes never go to a previous user.
-app.post('/api/social/push/register', verifyToken, async (req, res) => {
+app.post('/api/social/push/register', verifyToken, mutationRateLimit, async (req, res) => {
   try {
     const sub = req.body.subscription;
     if (!sub || typeof sub.endpoint !== 'string' || !sub.keys || !sub.keys.p256dh || !sub.keys.auth) {
@@ -2326,7 +2371,7 @@ app.post('/api/social/push/register', verifyToken, async (req, res) => {
   } catch (err) { res.status(500).json({ error: 'Register failed' }); }
 });
 
-app.post('/api/social/push/unregister', verifyToken, async (req, res) => {
+app.post('/api/social/push/unregister', verifyToken, mutationRateLimit, async (req, res) => {
   try {
     const { endpoint } = req.body;
     if (!endpoint || typeof endpoint !== 'string') return res.status(400).json({ error: 'endpoint required' });
@@ -2541,9 +2586,13 @@ app.post('/api/pavlok/stimulus', pavlokRateLimit, async (req, res) => {
   }
 });
 
-app.post('/subscribe', async (req, res) => {
+app.post('/subscribe', subscriptionRateLimit, async (req, res) => {
   const subscription = req.body;
-  if (!subscription?.endpoint) return res.status(400).json({ error: 'Invalid subscription' });
+  if (!subscription || typeof subscription.endpoint !== 'string' || subscription.endpoint.length > 2048
+      || !subscription.keys || typeof subscription.keys.p256dh !== 'string' || typeof subscription.keys.auth !== 'string'
+      || subscription.keys.p256dh.length > 512 || subscription.keys.auth.length > 512) {
+    return res.status(400).json({ error: 'Invalid subscription' });
+  }
   const idx = subscriptions.findIndex(s => s.endpoint === subscription.endpoint);
   if (idx === -1) {
     const newSub = { ...subscription, sessionStart: null, lastFiredCycle: -1 };
@@ -2560,7 +2609,7 @@ app.post('/unsubscribe', verifyPushOwner, async (req, res) => {
   res.json({ success: true });
 });
 
-app.post('/session/start', verifyPushOwner, async (req, res) => {
+app.post('/session/start', verifyPushOwner, subscriptionRateLimit, async (req, res) => {
   const { endpoint, intervalSec, durationSec, pavlok } = req.body;
   let sub = subscriptions.find(s => s.endpoint === endpoint);
   if (!sub) return res.status(404).json({ error: 'Subscriber not found' });
@@ -2586,7 +2635,7 @@ app.post('/session/start', verifyPushOwner, async (req, res) => {
 
 // Update the Pavlok config mid-session (e.g. user moves the intensity slider
 // or switches Vibrate/Beep/Zap while the session is running).
-app.post('/session/pavlok', verifyPushOwner, async (req, res) => {
+app.post('/session/pavlok', verifyPushOwner, subscriptionRateLimit, async (req, res) => {
   const { endpoint, pavlok } = req.body;
   const sub = subscriptions.find(s => s.endpoint === endpoint);
   if (!sub) return res.status(404).json({ error: 'Subscriber not found' });
@@ -2603,7 +2652,7 @@ app.post('/session/pavlok', verifyPushOwner, async (req, res) => {
   res.json({ success: true, pavlokManaged: !!sub.pavlok });
 });
 
-app.post('/session/end', verifyPushOwner, async (req, res) => {
+app.post('/session/end', verifyPushOwner, subscriptionRateLimit, async (req, res) => {
   const { endpoint } = req.body;
   const sub = subscriptions.find(s => s.endpoint === endpoint);
   if (!sub) return res.status(404).json({ error: 'Subscriber not found' });
@@ -2614,7 +2663,7 @@ app.post('/session/end', verifyPushOwner, async (req, res) => {
   res.json({ success: true });
 });
 
-app.post('/prayer/schedule', verifyPushOwner, async (req, res) => {
+app.post('/prayer/schedule', verifyPushOwner, subscriptionRateLimit, async (req, res) => {
   const { endpoint, times, enabled, tzOffset } = req.body;
   if (!endpoint) return res.status(400).json({ error: 'endpoint required' });
   const existing = prayerSchedules.find(s => s.endpoint === endpoint);
@@ -2631,7 +2680,7 @@ app.post('/prayer/schedule', verifyPushOwner, async (req, res) => {
   res.json({ success: true });
 });
 
-app.post('/practice/schedule', verifyPushOwner, async (req, res) => {
+app.post('/practice/schedule', verifyPushOwner, subscriptionRateLimit, async (req, res) => {
   const { endpoint, times, enabled, tzOffset } = req.body;
   if (!endpoint) return res.status(400).json({ error: 'endpoint required' });
   const existing = practiceSchedules.find(s => s.endpoint === endpoint);
@@ -2648,7 +2697,7 @@ app.post('/practice/schedule', verifyPushOwner, async (req, res) => {
   res.json({ success: true });
 });
 
-app.post('/prayer/done', verifyPushOwner, async (req, res) => {
+app.post('/prayer/done', verifyPushOwner, subscriptionRateLimit, async (req, res) => {
   const { endpoint, index } = req.body;
   const schedule = prayerSchedules.find(s => s.endpoint === endpoint);
   if (!schedule) return res.status(404).json({ error: 'No prayer schedule found' });
@@ -2661,14 +2710,14 @@ app.post('/prayer/done', verifyPushOwner, async (req, res) => {
   res.json({ success: true });
 });
 
-app.post('/notify', async (req, res) => {
+app.post('/notify', subscriptionRateLimit, async (req, res) => {
   const { endpoint, title, body } = req.body;
   if (endpoint) {
     const sub = subscriptions.find(s => s.endpoint === endpoint);
     if (!sub) return res.status(404).json({ error: 'Not found' });
     // Ownership proof — a captured endpoint alone can't fire app-identity pushes.
     const stored = sub.keys && sub.keys.auth;
-    if (!stored || !req.body.authKey || req.body.authKey !== stored) {
+    if (!secretsMatch(req.body.authKey, stored)) {
       return res.status(403).json({ error: 'Forbidden' });
     }
     const prompt = clampText(body, 140) || randomPromptFor(endpoint);
