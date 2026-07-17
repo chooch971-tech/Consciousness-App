@@ -32,9 +32,14 @@ function renderOmniaEngine() {
     walletCornerParent.title = akashaAmt.toLocaleString() + ' / ' + akashaCap.toLocaleString() + ' akasha';
     var akashaCapped = akashaAmt >= akashaCap;
     walletCornerParent.classList.toggle('oe-akasha-corner--capped', akashaCapped);
-    walletCornerParent.onclick = akashaCapped
-      ? function() { showToast('You\'ve reached the Akasha cap for your Step!', 3200); }
-      : null;
+    // Always clickable: capped or not, tapping the wallet opens the explainer
+    // (what Akasha is, how to earn it) — capped also gets its own toast first,
+    // since that's an immediate, specific status the explainer's general
+    // "wallet caps per Step" line doesn't say on its own.
+    walletCornerParent.onclick = function() {
+      if (akashaCapped) showToast('You\'ve reached the Akasha cap for your Step!', 3200);
+      if (typeof openExExplainer === 'function') openExExplainer('akasha');
+    };
   }
   if (stripStep) stripStep.textContent = 'Step ' + step.roman;
   var bardonTrack = document.getElementById('omniaBardonTrack');

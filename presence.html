@@ -1536,7 +1536,8 @@
     /* ── Upgrade screen v3: Omnia-as-centerpiece, bodies as focus ── */
     body.upgrade-stage .omnia-wrap { display:none; }
     .oe-v2 { display:flex; flex-direction:column; padding:0; background:none; border:none; box-shadow:none; position:relative; --muted:rgba(255,255,255,.72); }
-    .oe-akasha-corner { display:flex; align-items:baseline; gap:5px; padding:7px 13px; border:1px solid rgba(212,180,142,.32); border-radius:999px; background:rgba(212,180,142,.06); transition:background .2s, border-color .2s; }
+    .oe-akasha-corner { display:flex; align-items:baseline; gap:5px; padding:7px 13px; border:1px solid rgba(212,180,142,.32); border-radius:999px; background:rgba(212,180,142,.06); transition:background .2s, border-color .2s; cursor:pointer; }
+    .oe-akasha-corner:active { background:rgba(212,180,142,.14); }
     .oe-akasha-corner-val { font-family:Cormorant Garamond,serif; font-size:18px; line-height:1; color:#e8c896; }
     .oe-akasha-corner-key { font-size:8px; letter-spacing:.2em; text-transform:uppercase; color:#d4b08e; }
     .oe-akasha-corner--capped { border-color:rgba(224,90,90,.5); background:rgba(224,90,90,.16); cursor:pointer; }
@@ -7050,7 +7051,7 @@ body:not(.tut-live) #tutCorgi {
     <div class="ex-explain-card">
       <div class="ex-explain-omnia" id="exExplainOmnia"></div>
       <div class="ex-explain-title" id="exExplainTitle"></div>
-      <div class="ex-explain-omnia-name">Tutorial</div>
+      <div class="ex-explain-omnia-name" id="exExplainKind">Tutorial</div>
       <div class="ex-explain-steps" id="exExplainSteps"></div>
       <button class="ex-explain-close" id="exExplainClose" onclick="closeExExplainer()">Got it</button>
     </div>
@@ -8854,6 +8855,7 @@ function updateOmniaGiftBtn() {
 }
 function claimMorningOffering() {
   if (!offeringAvailable()) return;
+  if (typeof playGiftOpenSound === 'function') playGiftOpenSound();
   var today = _wbTodayKey();
   if (typeof omniaState !== 'undefined' && omniaState) omniaState.offeringDay = today;
   try { localStorage.setItem('presence_offering_day', today); } catch(e) {}

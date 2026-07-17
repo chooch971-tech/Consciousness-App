@@ -1605,6 +1605,16 @@ var EX_EXPLAINERS = {
       'Cards marked <strong>Soon</strong> are on the way, and will open right here once they\'re done.',
       'Check back as the work continues — <strong>new practices</strong> arrive over time.'
     ]
+  },
+  akasha: {
+    title: 'Akasha',
+    kind: 'Currency',
+    steps: [
+      'Akasha is Omnia\'s currency — the <strong>fuel</strong> that builds her bodies and carries her through each Step.',
+      'Earn it by <strong>completing exercises</strong>: reaching or beating your recommendation pays the most.',
+      'Collect Omnia\'s <strong>daily gift</strong> and claim gifts from the <strong>7x2 Challenge</strong> for a steady bonus on top.',
+      'Spend it on <strong>generators, upgrades, and forms</strong>. The wallet has a cap that rises with each Step — what you don\'t spend simply waits for the next one.'
+    ]
   }
 };
 
@@ -1613,9 +1623,11 @@ function openExExplainer(ex) {
   if (!data) return;
   var omniaEl = document.getElementById('exExplainOmnia');
   var titleEl = document.getElementById('exExplainTitle');
+  var kindEl = document.getElementById('exExplainKind');
   var stepsEl = document.getElementById('exExplainSteps');
   if (omniaEl) omniaEl.innerHTML = omniaHeadSVG(54, 88);
   if (titleEl) titleEl.textContent = data.title || 'How it works';
+  if (kindEl) kindEl.textContent = data.kind || 'Tutorial';
   if (stepsEl) stepsEl.innerHTML = data.steps.map(function(s, i) {
     return '<div class="ex-explain-step"><div class="ex-explain-step-num">' + (i + 1) + '</div>'
       + '<div class="ex-explain-step-text">' + s + '</div></div>';
