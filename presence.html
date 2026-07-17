@@ -4732,6 +4732,10 @@ body:not(.tut-live) #tutCorgi {
 /* Playground banner promoted to a fixed hero header, so the inset back button
    stays put instead of scrolling away with the cards below. */
 .pg-banner--header { flex-shrink:0; margin:0 16px 6px; }
+/* Banners whose text hugs the top-left (where the corner button lives) anchor
+   the text block low instead, so title and button never overlap. */
+.pg-banner--header .pg-banner-text { align-self:flex-end; padding-bottom:18px; }
+#reportsScreen .rpt-banner-text { align-self:flex-end; padding-bottom:12px; }
 /* Omnia peeks over the top-right edge of the clock preview card and
    beckons the user to tap her for the tutorial — a shimmering head with a
    gentle bob, glow pulse, and sparkle twinkles to draw the eye. */
@@ -5325,9 +5329,9 @@ body:not(.tut-live) #tutCorgi {
 <div class="app">
   <!-- SETTINGS SCREEN -->
   <div class="screen" id="settingsScreen">
-    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:28px; flex-shrink:0;">
+    <div style="display:flex; justify-content:flex-start; gap:14px; align-items:center; margin-bottom:28px; flex-shrink:0;">
+      <button class="history-back" id="settingsBack" aria-label="Back">←</button>
       <div style="font-family:Cormorant Garamond,serif; font-size:24px; font-weight:300;">Settings</div>
-      <button class="history-back" id="settingsBack">← back</button>
     </div>
     <div id="settingsScrollBody" style="flex:1; overflow-y:auto; -webkit-overflow-scrolling:touch; scrollbar-width:none; -ms-overflow-style:none;">
 
@@ -5495,18 +5499,18 @@ body:not(.tut-live) #tutCorgi {
 
   <!-- EXERCISE SETTINGS SUB-PAGE (Apple-style drill-in) -->
   <div class="screen" id="exerciseSettingsScreen">
-    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:28px; flex-shrink:0;">
+    <div style="display:flex; justify-content:flex-start; gap:14px; align-items:center; margin-bottom:28px; flex-shrink:0;">
+      <button class="history-back" id="exerciseSettingsBack" aria-label="Back">←</button>
       <div id="exerciseSettingsTitle" style="font-family:Cormorant Garamond,serif; font-size:24px; font-weight:300;">Exercise</div>
-      <button class="history-back" id="exerciseSettingsBack">← back</button>
     </div>
     <div id="exerciseSettingsBody" style="flex:1; overflow-y:auto; -webkit-overflow-scrolling:touch; scrollbar-width:none; -ms-overflow-style:none;"></div>
   </div>
 
   <!-- ACCOUNT SUB-PAGE (Apple-style drill-in) -->
   <div class="screen" id="accountSettingsScreen">
-    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:28px; flex-shrink:0;">
+    <div style="display:flex; justify-content:flex-start; gap:14px; align-items:center; margin-bottom:28px; flex-shrink:0;">
+      <button class="history-back" id="accountSettingsBack" aria-label="Back">←</button>
       <div style="font-family:Cormorant Garamond,serif; font-size:24px; font-weight:300;">Account</div>
-      <button class="history-back" id="accountSettingsBack">← back</button>
     </div>
     <div id="accountSettingsBody" style="flex:1; overflow-y:auto; -webkit-overflow-scrolling:touch; scrollbar-width:none; -ms-overflow-style:none;">
       <div class="aset-header" style="margin-bottom:14px;">Cloud Sync</div>
@@ -5872,11 +5876,8 @@ body:not(.tut-live) #tutCorgi {
 
   <!-- FAQ -->
   <div class="screen" id="faqScreen">
-    <div class="banner-header">
-      <button class="history-back" id="faqBackBtn" aria-label="Back">←</button>
-      <button type="button" class="banner-tut" onclick="openExExplainer('faq')" aria-label="Open tutorial"><span class="clk-omnia-peek-head"><span class="clk-omnia-spin"></span></span></button>
-    </div>
     <div class="ex-banner" style="--exb-rgb:126,184,164; --exb-light:#9ed8c4; margin:0 0 14px; height:140px;">
+      <button class="history-back banner-inset-back" id="faqBackBtn" aria-label="Back">←</button>
       <div class="exb-motes" aria-hidden="true">
         <i style="width:4px;height:4px;left:12%;top:28%;animation-delay:0s;animation-duration:4.4s;"></i>
         <i style="width:3px;height:3px;left:30%;top:66%;animation-delay:1.4s;animation-duration:5.2s;"></i>
@@ -7587,10 +7588,8 @@ body:not(.tut-live) #tutCorgi {
 
   <!-- REPORTS -->
   <div class="screen" id="reportsScreen">
-    <div style="display:flex; justify-content:flex-start; align-items:center; flex-shrink:0; margin-bottom:4px;">
-      <button class="history-back" id="reportsBack">← back</button>
-    </div>
     <div class="rpt-banner" id="reportsBanner">
+      <button class="history-back banner-inset-back" id="reportsBack" aria-label="Back">←</button>
       <div class="rpt-banner-text">
         <div class="rpt-banner-label">Your Practice</div>
         <div class="rpt-banner-title">Progress Reports</div>
