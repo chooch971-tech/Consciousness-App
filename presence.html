@@ -25,6 +25,7 @@
   <link rel="manifest" href="manifest.webmanifest"/>
   <meta name="theme-color" content="#07080d"/>
   <title>Presence</title>
+  <script src="calendar.js"></script>
   <script src="sync-contract.js"></script>
   <script src="progress-state.js"></script>
   <script src="sync-merge.js"></script>
@@ -8887,7 +8888,7 @@ var WB_VERSES = [
   'What you left burning, I tended. Begin again.',
   'Stillness earned this. Sit, and earn more.'
 ];
-function _wbTodayKey() { return new Date().toISOString().slice(0, 10); }
+function _wbTodayKey() { return presenceDayKey(); }
 function offeringAvailable() {
   var today = _wbTodayKey();
   // The claim marker lives on omniaState so it syncs across devices. Honor the

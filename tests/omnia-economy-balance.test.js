@@ -3,6 +3,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 const test = require('node:test');
 const vm = require('node:vm');
+const calendar = require('../calendar');
 
 const root = path.join(__dirname, '..');
 const read = (file) => fs.readFileSync(path.join(root, file), 'utf8');
@@ -28,6 +29,7 @@ function createEconomyContext() {
     getActiveAkashaBoost: () => 1,
     omniaUpgradeBuilding: () => 0
   };
+  context.presenceDayKey = calendar.dayKey;
   vm.createContext(context);
   vm.runInContext(read('omnia-economy-client.js'), context);
   context.omniaGenContribution = (idx) => context.omniaGeneratorContributionCurve(

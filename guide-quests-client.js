@@ -1,7 +1,6 @@
 // ── Path Quest tracking ──────────────────────────────
 function pathQuestTodayKey() {
-  var d = new Date();
-  return d.getFullYear() + '-' + (d.getMonth() + 1) + '-' + d.getDate();
+  return presenceDayKey();
 }
 function pathQuestWeekendKey() {
   // Identify the weekend by its Sunday's date; Fri/Sat/Sun share one key
@@ -10,7 +9,7 @@ function pathQuestWeekendKey() {
   var addDays = day === 0 ? 0 : (7 - day);
   var sun = new Date(d.getTime());
   sun.setDate(sun.getDate() + addDays);
-  return sun.getFullYear() + '-' + (sun.getMonth() + 1) + '-' + sun.getDate();
+  return presenceDayKey(sun);
 }
 function isPathQuestWeekendWindow() {
   var d = new Date().getDay();
@@ -18,7 +17,8 @@ function isPathQuestWeekendWindow() {
 }
 function isAwarenessQuestDay() {
   var d = new Date();
-  var dayOfYear = Math.floor((d - new Date(d.getFullYear(), 0, 0)) / 86400000);
+  var dayOfYear = Math.floor((Date.UTC(d.getFullYear(), d.getMonth(), d.getDate())
+    - Date.UTC(d.getFullYear(), 0, 0)) / 86400000);
   return dayOfYear % 2 === 0;
 }
 function pathQuestState() {
@@ -377,8 +377,8 @@ var GIFT_PATH_PREVIEW = true;
 // walked day-by-day instead of picking up wherever the real calendar date
 // falls. Leave alone once testing is done; it only fires once per bump.
 var GIFT_PATH_TEST_RESET_VERSION = 1;
-function _gpToday() { return new Date().toISOString().slice(0, 10); }
-function gpCurrentMonth() { return new Date().toISOString().slice(0, 7); }
+function _gpToday() { return presenceDayKey(); }
+function gpCurrentMonth() { return presenceMonthKey(); }
 // Days elapsed since the run's startDate (1-indexed) — the real basis for the
 // 7-day window. In production startDate is the 1st of the month, so this
 // matches the calendar date; during a test restart startDate is "today", so
@@ -471,11 +471,11 @@ function migrateDevotionStacks() {
 
 function _gpConc() { return (typeof concState !== 'undefined' && concState.history) ? concState.history : []; }
 function _gpAw() { return (typeof state !== 'undefined' && state.history) ? state.history : []; }
-function gpSessions(sd) { var n = 0; _gpConc().forEach(function(h){ if (h && h.date && h.date.slice(0,10) >= sd) n++; }); _gpAw().forEach(function(h){ if (h && h.date && h.date.slice(0,10) >= sd) n++; }); return n; }
-function gpDays(sd) { var set = {}; _gpConc().forEach(function(h){ if (h && h.date && h.date.slice(0,10) >= sd) set[h.date.slice(0,10)] = 1; }); _gpAw().forEach(function(h){ if (h && h.date && h.date.slice(0,10) >= sd) set[h.date.slice(0,10)] = 1; }); return Object.keys(set).length; }
-function gpTypes(sd) { var set = {}; _gpConc().forEach(function(h){ if (h && h.date && h.date.slice(0,10) >= sd) { var id = (typeof guideHistoryExerciseId === 'function') ? guideHistoryExerciseId(h) : (h.type || h.exercise || 'clock'); set[id] = 1; } }); return Object.keys(set).length; }
-function gpHasType(sd, want) { return _gpConc().some(function(h){ if (!h || !h.date || h.date.slice(0,10) < sd) return false; var id = (typeof guideHistoryExerciseId === 'function') ? guideHistoryExerciseId(h) : (h.type || h.exercise || 'clock'); return id === want; }); }
-function gpBestHold(sd) { var best = 0; _gpConc().forEach(function(h){ if (h && h.date && h.date.slice(0,10) >= sd) { var isHold = (typeof isHoldSession !== 'function') || isHoldSession(h); if (isHold && (h.seconds||0) > best) best = h.seconds || 0; } }); return best; }
+function gpSessions(sd) { var n = 0; _gpConc().forEach(function(h){ if (h && h.date && presenceDayKey(h.date) >= sd) n++; }); _gpAw().forEach(function(h){ if (h && h.date && presenceDayKey(h.date) >= sd) n++; }); return n; }
+function gpDays(sd) { var set = {}; _gpConc().forEach(function(h){ var day = h && h.date ? presenceDayKey(h.date) : ''; if (day >= sd) set[day] = 1; }); _gpAw().forEach(function(h){ var day = h && h.date ? presenceDayKey(h.date) : ''; if (day >= sd) set[day] = 1; }); return Object.keys(set).length; }
+function gpTypes(sd) { var set = {}; _gpConc().forEach(function(h){ if (h && h.date && presenceDayKey(h.date) >= sd) { var id = (typeof guideHistoryExerciseId === 'function') ? guideHistoryExerciseId(h) : (h.type || h.exercise || 'clock'); set[id] = 1; } }); return Object.keys(set).length; }
+function gpHasType(sd, want) { return _gpConc().some(function(h){ if (!h || !h.date || presenceDayKey(h.date) < sd) return false; var id = (typeof guideHistoryExerciseId === 'function') ? guideHistoryExerciseId(h) : (h.type || h.exercise || 'clock'); return id === want; }); }
+function gpBestHold(sd) { var best = 0; _gpConc().forEach(function(h){ if (h && h.date && presenceDayKey(h.date) >= sd) { var isHold = (typeof isHoldSession !== 'function') || isHoldSession(h); if (isHold && (h.seconds||0) > best) best = h.seconds || 0; } }); return best; }
 function gpRegimenComplete() { var r = (typeof omniaRegimenSnapshot === 'function') ? omniaRegimenSnapshot() : null; return !!(r && r.complete); }
 function gpGiftCollected() { return typeof offeringAvailable === 'function' && !offeringAvailable(); }
 

@@ -31,13 +31,13 @@ function showStreakCelebration() {
 
   // Week dots: Sun–Sat of the current week
   var now = new Date();
-  var todayISO = now.toISOString().slice(0,10);
+  var todayISO = presenceDayKey(now);
   var dow = now.getDay();
   var practiced = state.practicedDates || [];
   var dayLabels = ['Su','Mo','Tu','We','Th','Fr','Sa'];
   var weekHTML = dayLabels.map(function(lbl, i) {
     var d = new Date(now); d.setDate(d.getDate() - dow + i);
-    var ds = d.toISOString().slice(0,10);
+    var ds = presenceDayKey(d);
     var done = practiced.indexOf(ds) !== -1;
     var isToday = ds === todayISO;
     return '<div class="sco-week-col">'

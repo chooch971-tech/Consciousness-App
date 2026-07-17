@@ -9,16 +9,16 @@ function buildStreakCalendar(year, month, commit) {
   var monthNames = ['January','February','March','April','May','June','July','August','September','October','November','December'];
   var dayNames = ['S','M','T','W','T','F','S'];
   var now = new Date();
-  var todayStr = now.toISOString().slice(0,10);
+  var todayStr = presenceDayKey(now);
   var practiced = state.practicedDates || [];
   var frozen = state.frozenDates || [];
   var firstDow = new Date(year, month, 1).getDay();
   var daysInMonth = new Date(year, month + 1, 0).getDate();
   var goalEndStr = null;
   if (state.streakStartDate && commit) {
-    var sd = new Date(state.streakStartDate);
+    var sd = presenceDateFromDayKey(state.streakStartDate);
     sd.setDate(sd.getDate() + (state.streakGoalBaseDays || 0) + commit - 1);
-    goalEndStr = sd.toISOString().slice(0,10);
+    goalEndStr = presenceDayKey(sd);
   }
   var prefix = year + '-' + String(month+1).padStart(2,'0') + '-';
   var practiced7 = practiced.filter(function(d){ return d.startsWith(prefix); }).length;

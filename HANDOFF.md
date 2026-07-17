@@ -14,6 +14,9 @@ system, achievements, streaks, and social/friends features.
 - **`server.js`** (~2.7k lines) — Node/Express + MongoDB + JWT + web-push +
   OpenAI. Handles auth, cloud sync (`/api/sync/sync/push` + `/pull`), friends,
   push notifications, and Omnia AI reports.
+- **`calendar.js`** — shared local-calendar keys and DST-safe day arithmetic.
+  Gameplay days use the browser's local calendar; the server uses the supplied
+  UTC offset only to mirror per-user report cache periods.
 - **`sync-contract.js`** — the shared browser/server allowlist for synchronized
   state. Add or remove cloud keys here instead of creating another key array.
 - **`progress-state.js`** — pure reset/snapshot/storage operations shared by the
@@ -223,6 +226,9 @@ can never roll back progress.
   `omniaDevotionMult()` (Seven Gifts). Wallets are uncapped; each generator's
   reservoir is the idle-income limit. Book I generator shares target 20–42%
   of a three-session day from Steps I–X, with diminishing upgrade returns.
+- Use `presenceDayKey`, `presenceMonthKey`, and `presenceAddDays` for gameplay
+  calendars. Raw `toISOString().slice(...)` is reserved for genuinely global
+  UTC concerns such as server-wide AI budgets and timestamped backup names.
 - Toasts: `showToast(msg, ms, 'gold')`. Keep toast text short.
 - Don't retry proxy 403 policy denials. Never disable TLS / unset HTTPS_PROXY.
 - When asked which model: use the configured model ID from the system prompt.

@@ -663,8 +663,8 @@ function saveConcSession() {
 
   // Daily akasha cap: counting the session being recorded, only the first 4
   // clock sessions of the day earn akasha.
-  var _todayStr = new Date().toISOString().slice(0, 10);
-  var _clockPrevToday = concState.history.filter(function(h) { return h.date && h.date.slice(0, 10) === _todayStr && !h.type && !h.exercise; }).length;
+  var _todayStr = presenceDayKey();
+  var _clockPrevToday = concState.history.filter(function(h) { return h.date && presenceDayKey(h.date) === _todayStr && !h.type && !h.exercise; }).length;
   var _akashaCapped = _clockPrevToday + 1 > 3;
   var _akashaDelta = recordExerciseCompletion({
     entry: { date: new Date().toISOString(), seconds: bestRep, xpEarned: totalXP, sessionDurationSec: sessionDurationSec, notes: '' },

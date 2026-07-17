@@ -32,15 +32,15 @@ function omniaReportPeriodKey(period, offset) {
   var now = new Date();
   if (period === 'daily') {
     var d = new Date(now); d.setDate(d.getDate() + offset);
-    return d.toISOString().slice(0,10);
+    return presenceDayKey(d);
   }
   if (period === 'weekly') {
     var sun = new Date(now); sun.setDate(now.getDate() - now.getDay() + offset * 7);
-    return 'w-' + sun.toISOString().slice(0,10);
+    return presenceWeekKey(sun);
   }
   if (period === 'monthly') {
     var mo = new Date(now.getFullYear(), now.getMonth() + offset, 1);
-    return 'm-' + mo.getFullYear() + '-' + String(mo.getMonth()+1).padStart(2,'0');
+    return 'm-' + presenceMonthKey(mo);
   }
   return 'y-' + now.getFullYear();
 }
@@ -105,7 +105,7 @@ function omniaDaysWithoutImprovement(endExclusive) {
     if (!e || !e.date) return;
     var when = new Date(e.date);
     if (endExclusive && !isNaN(when) && when >= endExclusive) return;
-    var day = e.date.slice(0,10), sec = omniaPracticeSeconds(e), hold = isHoldSession(e) ? (e.seconds || 0) : 0;
+    var day = presenceDayKey(e.date), sec = omniaPracticeSeconds(e), hold = isHoldSession(e) ? (e.seconds || 0) : 0;
     if (!byDay[day]) byDay[day] = { best:0, total:0 };
     byDay[day].total += sec;
     if (hold > byDay[day].best) byDay[day].best = hold;
@@ -134,7 +134,7 @@ function omniaConcentrationBreakdown(history) {
     var ex = h.type || h.exercise || 'clock';
     var sec = omniaPracticeSeconds(h);
     var hold = isHoldSession(h) ? (h.seconds || 0) : 0;
-    var day = h.date ? h.date.slice(0,10) : null;
+    var day = h.date ? presenceDayKey(h.date) : null;
     if (!byExercise[ex]) byExercise[ex] = { sessions:0, total_sec:0, best_sec:0, days:{} };
     byExercise[ex].sessions++;
     byExercise[ex].total_sec += sec;
@@ -205,8 +205,8 @@ function buildOmniaReportContext(period, offset) {
   _streakDay.setDate(_streakDay.getDate() - 1); // last calendar day inside range
   _streakDay.setHours(0, 0, 0, 0);
   for (var _si = 0; _si < 365; _si++) {
-    var _dStr = _streakDay.toISOString().slice(0, 10);
-    var _hadConc = concState.history.some(function(h) { return h.date && h.date.slice(0, 10) === _dStr; });
+    var _dStr = presenceDayKey(_streakDay);
+    var _hadConc = concState.history.some(function(h) { return h.date && presenceDayKey(h.date) === _dStr; });
     if (!_hadConc) break;
     concStreakDays++;
     _streakDay.setDate(_streakDay.getDate() - 1);
@@ -321,8 +321,8 @@ function buildOmniaReportContext(period, offset) {
     },
     comparison_baseline: {
       window: period === 'daily' ? 'preceding_7_days' : 'previous_' + period,
-      start_date: comparisonStart.toISOString().slice(0,10),
-      end_date_exclusive: comparisonEnd.toISOString().slice(0,10),
+      start_date: presenceDayKey(comparisonStart),
+      end_date_exclusive: presenceDayKey(comparisonEnd),
       awareness_sessions: comparisonAw.length,
       concentration_sessions: comparisonConc.length,
       concentration_practiced_days: comparisonPracticedDays,
@@ -364,6 +364,7 @@ function fetchOmniaReport(period, offset, cb) {
 
   var ctx = buildOmniaReportContext(period, offset);
   ctx.periodKey = omniaReportPeriodKey(period, offset);
+  ctx.utcOffsetMinutes = -new Date().getTimezoneOffset();
 
   var token = authToken || localStorage.getItem('presence_auth_token');
   if (!token) return cb('sign-in-required');

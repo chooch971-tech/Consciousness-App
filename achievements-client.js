@@ -20,7 +20,7 @@ function achSave() {
   try { localStorage.setItem(ACH_KEY, JSON.stringify(achState)); } catch(e) {}
 }
 function achMonthKey(d) { d = d || new Date(); return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0'); }
-function achToday() { return new Date().toISOString().slice(0,10); }
+function achToday() { return presenceDayKey(); }
 
 // ── Mastery per exercise: two tiers — mastered (\u2731) and completely mastered (\u2731\u2731) ──
 function achTCBest(mode) {

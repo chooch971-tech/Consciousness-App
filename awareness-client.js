@@ -565,7 +565,7 @@ function recordExerciseCompletion(opts) {
 
 function touchPracticeStreak() {
   var today = new Date().toDateString();
-  var todayISO = new Date().toISOString().slice(0,10);
+  var todayISO = presenceDayKey();
   if (state.lastSessionDate !== today) {
     var prevStreak = state.streak || 0;
     // Record today's practice first, then derive the streak from the calendar so
@@ -642,7 +642,7 @@ function backfillPracticedDates() {
   function add(dateLike) {
     if (!dateLike) return;
     var iso;
-    try { iso = new Date(dateLike).toISOString().slice(0,10); } catch(e) { return; }
+    try { iso = presenceDayKey(dateLike); } catch(e) { return; }
     if (!iso || seen[iso]) return;
     seen[iso] = true;
     state.practicedDates.push(iso);
@@ -653,7 +653,7 @@ function backfillPracticedDates() {
     concState.history.forEach(function(h) { add(h.date); });
   }
   if (state.lastSessionDate) {
-    try { add(new Date(state.lastSessionDate).toISOString().slice(0,10)); } catch(e) {}
+    try { add(state.lastSessionDate); } catch(e) {}
   }
   if (added) {
     state.practicedDates.sort();
@@ -662,25 +662,53 @@ function backfillPracticedDates() {
   }
 }
 
+// Earlier builds grouped timestamped sessions by their UTC date. Reconcile the
+// recent keys against the actual local dates represented by those timestamps;
+// untouched older keys remain intact because capped history cannot reconstruct
+// them safely.
+function migratePracticedDatesToLocal() {
+  if (state.practicedDatesLocalV1) return;
+  state.practicedDatesLocalV1 = true;
+  var replacements = {};
+  function mapEntry(entry) {
+    if (!entry || !entry.date || typeof entry.date !== 'string' || entry.date.indexOf('T') === -1) return;
+    var legacy = entry.date.slice(0, 10);
+    var local = presenceDayKey(entry.date);
+    if (!local || local === legacy) return;
+    replacements[legacy] = replacements[legacy] || {};
+    replacements[legacy][local] = true;
+  }
+  (state.history || []).forEach(mapEntry);
+  if (typeof concState !== 'undefined' && concState && concState.history) concState.history.forEach(mapEntry);
+  var migrated = {};
+  (state.practicedDates || []).forEach(function(key) {
+    var mapped = replacements[key];
+    if (mapped) Object.keys(mapped).forEach(function(local) { migrated[local] = true; });
+    else if (key) migrated[key] = true;
+  });
+  state.practicedDates = Object.keys(migrated).sort().slice(-365);
+  saveState();
+}
+
 // Shared vigil between two practice calendars: consecutive days, ending today
 // or yesterday, on which BOTH practiced. Today is a grace day — a pending
 // partner doesn't break the run until the day is over.
 function calcSharedStreak(mine, theirs, todayISO) {
   var mineSet = {}; (mine || []).forEach(function(d) { mineSet[d] = true; });
   var theirSet = {}; (theirs || []).forEach(function(d) { theirSet[d] = true; });
-  var day = todayISO || new Date().toISOString().slice(0, 10);
+  var day = todayISO || presenceDayKey();
   var todayMine = !!mineSet[day];
   var todayTheirs = !!theirSet[day];
   var bothToday = todayMine && todayTheirs;
   var cursor = day;
   // If the pair hasn't both practiced today, the still-alive run ends yesterday.
   if (!bothToday) {
-    cursor = new Date(new Date(cursor + 'T00:00:00Z').getTime() - 86400000).toISOString().slice(0, 10);
+    cursor = presenceAddDays(cursor, -1);
   }
   var streak = 0;
   while (mineSet[cursor] && theirSet[cursor]) {
     streak++;
-    cursor = new Date(new Date(cursor + 'T00:00:00Z').getTime() - 86400000).toISOString().slice(0, 10);
+    cursor = presenceAddDays(cursor, -1);
   }
   return { streak: streak, todayMine: todayMine, todayTheirs: todayTheirs, bothToday: bothToday };
 }
@@ -689,7 +717,7 @@ function calcSharedStreak(mine, theirs, todayISO) {
 // The streak NUMBER is always recomputed from the practiced-days calendar (plus
 // any days a freeze covered) so it can never drift away from what the user sees
 // on the calendar. A day counts toward the streak if it was practiced or frozen.
-function _streakISO(d) { return d.toISOString().slice(0, 10); }
+function _streakISO(d) { return presenceDayKey(d); }
 
 var STREAK_FREEZE_CAP = 3;
 
@@ -781,6 +809,7 @@ function syncStreakFromCalendar() {
 
 function checkStreakStatus() {
   backfillPracticedDates();
+  migratePracticedDatesToLocal();
   reconcileLegacyStreak();
   if (!state.lastSessionDate) { syncStreakFromCalendar(); return; }
   var today = new Date(); today.setHours(0,0,0,0);

@@ -6,6 +6,7 @@ const { MongoClient, ObjectId } = require('mongodb');
 const bcrypt  = require('bcryptjs');
 const jwt     = require('jsonwebtoken');
 const crypto  = require('crypto');
+const PresenceCalendar = require('./calendar');
 const { OAuth2Client } = require('google-auth-library');
 const { enforceOmniaReportPolicy } = require('./omnia-report-policy');
 const { SYNC_KEYS, selectSyncData } = require('./sync-contract');
@@ -456,21 +457,23 @@ setInterval(() => {
 // Server-derived report cache key — never trust a client-supplied periodKey.
 // Mirrors the client's omniaReportPeriodKey() but computed here so the once-per-period
 // cache can't be bypassed by sending arbitrary keys. offset is clamped to a sane range.
-function serverPeriodKey(period, offset) {
+function serverPeriodKey(period, offset, utcOffsetMinutes) {
   offset = parseInt(offset, 10);
   if (!Number.isFinite(offset)) offset = 0;
   offset = Math.max(-60, Math.min(0, offset)); // only current + recent past periods
+  let utcOffset = Number(utcOffsetMinutes);
+  if (!Number.isFinite(utcOffset)) utcOffset = 0;
+  utcOffset = Math.max(-840, Math.min(840, utcOffset));
   const now = new Date();
   if (period === 'daily') {
-    const d = new Date(now); d.setUTCDate(d.getUTCDate() + offset);
-    return d.toISOString().slice(0, 10);
+    return PresenceCalendar.dayKeyAtOffset(new Date(now.getTime() + offset * 86400000), utcOffset);
   }
   if (period === 'weekly') {
-    const sun = new Date(now); sun.setUTCDate(now.getUTCDate() - now.getUTCDay() + offset * 7);
-    return 'w-' + sun.toISOString().slice(0, 10);
+    return PresenceCalendar.weekKeyAtOffset(new Date(now.getTime() + offset * 7 * 86400000), utcOffset);
   }
   // monthly
-  const mo = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() + offset, 1));
+  const shifted = new Date(now.getTime() + utcOffset * 60000);
+  const mo = new Date(Date.UTC(shifted.getUTCFullYear(), shifted.getUTCMonth() + offset, 1));
   return 'm-' + mo.getUTCFullYear() + '-' + String(mo.getUTCMonth() + 1).padStart(2, '0');
 }
 
@@ -2488,7 +2491,7 @@ app.post('/api/sync/omnia/report', verifyToken, aiRateLimit, aiGlobalBudget, asy
     // Cache key is derived server-side from period + offset (never the client's raw
     // periodKey string) so the once-per-period cache cannot be bypassed by abuse.
     const offset = context && context.offset;
-    const periodKey = serverPeriodKey(period, offset);
+    const periodKey = serverPeriodKey(period, offset, context && context.utcOffsetMinutes);
 
     // Return cached if fresh — this is the once-per-period guard
     const cached = await col.findOne({ userId, period, periodKey, version: OMNIA_REPORT_VERSION });

@@ -4,7 +4,7 @@ function omniaBodyTotal() {
 
 // Sessions completed today — feeds the generator's practice multiplier.
 function omniaSessionsToday() {
-  var todayStr = new Date().toISOString().slice(0, 10);
+  var todayStr = presenceDayKey();
   if (omniaState.sessionsTodayDate !== todayStr) return 0;
   return omniaState.sessionsTodayCount || 0;
 }
@@ -260,7 +260,7 @@ function mintDarkMatterFromPractice(amount) {
   if (!darkMatterUnlocked() || amount <= 0) return 0;
   var now = Date.now();
   if (now - (omniaState.lastDmMintMs || 0) < 60000) return 0;
-  var todayStr = new Date().toISOString().slice(0, 10);
+  var todayStr = presenceDayKey();
   if (omniaState.dmMintDate !== todayStr) { omniaState.dmMintDate = todayStr; omniaState.dmMintCount = 0; }
   if ((omniaState.dmMintCount || 0) >= DM_MINT_DAILY_CAP) return 0;
   omniaState.dmMintCount = (omniaState.dmMintCount || 0) + 1;

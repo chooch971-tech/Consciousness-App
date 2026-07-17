@@ -120,12 +120,12 @@ function omniaBodyAwardsPerDay() {
 }
 function omniaBodyAwardsRemaining() {
   if (!omniaState) return 0;
-  var todayStr = new Date().toISOString().slice(0, 10);
+  var todayStr = presenceDayKey();
   if (omniaState.bodyAwardsDate !== todayStr) return omniaBodyAwardsPerDay();
   return Math.max(0, omniaBodyAwardsPerDay() - (omniaState.bodyAwardsToday || 0));
 }
 function omniaConsumeBodyAward() {
-  var todayStr = new Date().toISOString().slice(0, 10);
+  var todayStr = presenceDayKey();
   if (omniaState.bodyAwardsDate !== todayStr) {
     omniaState.bodyAwardsDate = todayStr;
     omniaState.bodyAwardsToday = 0;
@@ -399,7 +399,7 @@ function awardOmniaForExercise(exId, seconds, reachedRec) {
   seconds = Math.max(0, Math.min(seconds || 0, maxSec));
   omniaState.lastAwardMs = nowClamp;
   // Track sessions completed today — feeds the generator practice multiplier.
-  var todayStr = new Date().toISOString().slice(0, 10);
+  var todayStr = presenceDayKey();
   if (omniaState.sessionsTodayDate !== todayStr) {
     omniaState.sessionsTodayDate = todayStr;
     omniaState.sessionsTodayCount = 0;
