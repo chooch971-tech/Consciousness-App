@@ -313,33 +313,44 @@ function showAchInfo(id, friend, earnedAt) {
   if (!badge) return;
   var ov = document.getElementById('achInfoOverlay'), body = document.getElementById('achInfoBody');
   if (!ov || !body) return;
+  // Reuses the exact same .ach-detail-* classes as the Achievements screen's
+  // own detail sheet (#achDetail) so this reads as the identical popup —
+  // only the progress fill's color is overridden per-group (e.g. blue for
+  // The Path) instead of the fixed orange gradient .ach-detail-fill uses.
   var gc = ACH_COLORS[group.id] || '#e8c87a';
+  var kicker = group.monthly ? 'Monthly Badge' : escHtml(group.label);
   var statusHtml;
   if (friend) {
     var d = earnedAt ? new Date(Number(earnedAt) || earnedAt) : null;
-    statusHtml = '<div class="ach-info-status">✦ Earned' + (d && !isNaN(d.getTime()) ? ' · ' + d.toLocaleDateString() : '') + '</div>';
+    if (d && !isNaN(d.getTime())) kicker += ' · earned ' + d.toLocaleDateString();
+    statusHtml = '<div class="ach-detail-row"><span class="ach-detail-prog">✦ Earned</span></div>';
   } else {
     var earnedMap = group.monthly ? achState.monthly.earned : achState.earned;
     var eAt = earnedMap[badge.id];
     var p = achProviders();
     var cur = Math.min(p[badge.key] || 0, badge.target);
     var pct = eAt ? 100 : Math.min(100, Math.round(cur / badge.target * 100));
-    statusHtml = '<div class="ach-info-bar"><div class="ach-info-fill" style="width:' + pct + '%;--gc:' + gc + '"></div></div>'
-      + '<div class="ach-info-row"><span>' + (eAt ? 'Complete' : cur.toLocaleString() + ' / ' + badge.target.toLocaleString()) + '</span>'
-      + '<span class="ach-info-reward">' + (eAt ? 'Earned ' + new Date(eAt).toLocaleDateString() : '✦ +' + badge.reward.toLocaleString() + ' Akasha') + '</span></div>';
+    if (eAt) kicker += ' · earned ' + new Date(eAt).toLocaleDateString();
+    statusHtml = '<div class="ach-detail-bar"><div class="ach-detail-fill" style="width:' + pct + '%;background:' + gc + ';"></div></div>'
+      + '<div class="ach-detail-row"><span class="ach-detail-prog">' + (eAt ? 'COMPLETE' : cur.toLocaleString() + ' / ' + badge.target.toLocaleString()) + '</span>'
+      + '<span class="ach-detail-reward">' + (eAt ? '✦ PAID' : '✦ +' + badge.reward.toLocaleString() + ' AKASHA') + '</span></div>';
   }
-  body.innerHTML = '<button class="ach-info-close" aria-label="Close">✕</button>'
-    + '<div class="ach-info-medal" style="--gc:' + gc + '">' + achIconSvg(group.id) + '<b>' + _achMedalText(badge) + '</b></div>'
-    + '<div class="ach-info-kicker">' + (group.monthly ? 'Monthly Badge' : escHtml(group.label)) + '</div>'
-    + '<div class="ach-info-name">' + escHtml(badge.name) + '</div>'
-    + '<div class="ach-info-desc">' + escHtml(badge.desc) + '</div>'
+  body.innerHTML = '<button class="ach-detail-close" aria-label="Close">✕</button>'
+    + '<div class="ach-detail-kicker">' + kicker + '</div>'
+    + '<div class="ach-detail-name">' + escHtml(badge.name) + '</div>'
+    + '<div class="ach-detail-desc">' + escHtml(badge.desc) + '</div>'
     + statusHtml;
   ov.classList.add('on');
 }
 function closeAchInfo() { var ov = document.getElementById('achInfoOverlay'); if (ov) ov.classList.remove('on'); }
-(function() {
+// #achInfoOverlay's markup lives near the end of <body>, well after this
+// script tag — binding here at parse time would silently find `null` and
+// never attach, leaving the popup impossible to close once opened. Defer
+// to DOMContentLoaded (same pattern used elsewhere for scripts that run
+// ahead of their markup).
+function _wireAchInfoOverlay() {
   var ov = document.getElementById('achInfoOverlay');
-  if (ov) ov.addEventListener('click', function(e) { if (e.target === ov || e.target.closest('.ach-info-close')) closeAchInfo(); });
+  if (ov) ov.addEventListener('click', function(e) { if (e.target === ov || e.target.closest('.ach-detail-close')) closeAchInfo(); });
   function ownHandler(e) { var it = e.target.closest('[data-ach]'); if (it) showAchInfo(it.getAttribute('data-ach'), null); }
   function friendHandler(e) {
     var it = e.target.closest('[data-ach]');
@@ -347,7 +358,9 @@ function closeAchInfo() { var ov = document.getElementById('achInfoOverlay'); if
   }
   ['profAchievements', 'profBadges'].forEach(function(id) { var el = document.getElementById(id); if (el) el.addEventListener('click', ownHandler); });
   ['friendProfAch', 'friendProfBadges'].forEach(function(id) { var el = document.getElementById(id); if (el) el.addEventListener('click', friendHandler); });
-})();
+}
+if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', _wireAchInfoOverlay);
+else _wireAchInfoOverlay();
 function renderAchScreen() {
   var body = document.getElementById('achBody');
   if (!body) return;
