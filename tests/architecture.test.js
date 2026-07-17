@@ -20,6 +20,7 @@ const sensesClient = fs.readFileSync(path.join(root, 'senses-client.js'), 'utf8'
 const appShellClient = fs.readFileSync(path.join(root, 'app-shell-client.js'), 'utf8');
 const omniaAmbientClient = fs.readFileSync(path.join(root, 'omnia-ambient-client.js'), 'utf8');
 const concentrationControlsClient = fs.readFileSync(path.join(root, 'concentration-controls-client.js'), 'utf8');
+const poreBreathingClient = fs.readFileSync(path.join(root, 'pore-breathing-client.js'), 'utf8');
 const guideConfigClient = fs.readFileSync(path.join(root, 'guide-config-client.js'), 'utf8');
 const omniaEconomyConfigClient = fs.readFileSync(path.join(root, 'omnia-economy-config-client.js'), 'utf8');
 const omniaCosmeticsConfigClient = fs.readFileSync(path.join(root, 'omnia-cosmetics-config-client.js'), 'utf8');
@@ -184,6 +185,20 @@ test('Clock sessions and Concentration history load through their own client bou
   assert.match(concentrationClockClient, /function\s+renderConcHistory\s*\(/);
   assert.match(serviceWorker, /['"]concentration-clock-client\.js['"]/);
   assert.doesNotThrow(() => new Function(concentrationClockClient));
+});
+
+test('Pore Breathing loads through its own late runtime boundary', () => {
+  const poreTag = presence.indexOf('<script src="pore-breathing-client.js"></script>');
+  const tutorialMarkup = presence.indexOf('<div id="tutOverlay">');
+  assert.notEqual(poreTag, -1);
+  assert.ok(poreTag < tutorialMarkup, 'Pore Breathing initializes before later tutorial markup');
+  assert.equal(presence.split('<script src="pore-breathing-client.js"></script>').length - 1, 1);
+  assert.doesNotMatch(presence, /function\s+startPoreBreath\s*\(|function\s+stopPoreBreath\s*\(/);
+  assert.match(poreBreathingClient, /function\s+startPoreBreath\s*\(/);
+  assert.match(poreBreathingClient, /function\s+stopPoreBreath\s*\(/);
+  assert.match(poreBreathingClient, /recordExerciseCompletion/);
+  assert.match(serviceWorker, /['"]pore-breathing-client\.js['"]/);
+  assert.doesNotThrow(() => new Function(poreBreathingClient));
 });
 
 test('top-level drawer screens reveal the open drawer during swipe-back', () => {

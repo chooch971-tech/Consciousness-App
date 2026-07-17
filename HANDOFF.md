@@ -76,6 +76,9 @@ system, achievements, streaks, and social/friends features.
 - **`concentration-controls-client.js`** — Clock begin/stop controls,
   Concentration history navigation, and result-save event bindings. It loads at
   the former inline boundary after Omnia ambient startup and before Prayer.
+- **`pore-breathing-client.js`** — Pore Breathing cycle state, breath audio,
+  shared completion rewards, and control wiring. It loads late in the core
+  runtime after its Concentration, Guide, and completion dependencies exist.
 - **`guide-config-client.js`** — static seven-day beginner/experienced practice
   suggestions and Guide assessment exercise metadata. It loads after Prayer and
   before the Omnia economy configuration.
