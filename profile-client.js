@@ -186,12 +186,23 @@ function renderProfile() {
   handleEl.textContent = signedIn ? (authUsername ? '@' + authUsername : (authEmail || '')) : 'Not signed in';
   var fcEl = document.getElementById('profFollowCounts');
   if (fcEl) {
-    fcEl.textContent = '';
     if (signedIn && authToken) {
+      // Paint instantly from the last-known counts (same pattern as friend
+      // streaks below), then refresh from the network — otherwise this sits
+      // blank for a beat every time Profile opens while the request round-trips.
+      var cachedSummary = getCachedFollowSummary();
+      fcEl.textContent = cachedSummary ? (cachedSummary.followers + ' followers · ' + cachedSummary.following + ' following') : '';
       fetch(SERVER_URL + '/api/social/users/me/summary', { headers: { 'Authorization': 'Bearer ' + authToken } })
         .then(function(r) { return r.json(); })
-        .then(function(s) { if (s && typeof s.followers === 'number') fcEl.textContent = s.followers + ' followers · ' + s.following + ' following'; })
+        .then(function(s) {
+          if (s && typeof s.followers === 'number') {
+            fcEl.textContent = s.followers + ' followers · ' + s.following + ' following';
+            cacheFollowSummary(s);
+          }
+        })
         .catch(function() {});
+    } else {
+      fcEl.textContent = '';
     }
   }
 
@@ -355,6 +366,15 @@ function cacheFriends(list) {
 }
 function getCachedFriendsList() {
   try { var a = JSON.parse(localStorage.getItem(FRIENDS_CACHE_KEY)); return Array.isArray(a) ? a : []; } catch(e) { return []; }
+}
+// Same instant-paint-from-cache treatment for the follower/following counts.
+var FOLLOW_SUMMARY_CACHE_KEY = 'presence_follow_summary_cache_v1';
+function cacheFollowSummary(s) {
+  if (!s || typeof s.followers !== 'number') return;
+  try { localStorage.setItem(FOLLOW_SUMMARY_CACHE_KEY, JSON.stringify({ followers: s.followers, following: s.following || 0 })); } catch(e) {}
+}
+function getCachedFollowSummary() {
+  try { var s = JSON.parse(localStorage.getItem(FOLLOW_SUMMARY_CACHE_KEY)); return (s && typeof s.followers === 'number') ? s : null; } catch(e) { return null; }
 }
 // Warm the in-memory profile cache from persisted friends at startup so a tap
 // straight into a friend's profile has their data before any fetch resolves.
