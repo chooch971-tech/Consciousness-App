@@ -437,6 +437,12 @@ function awardOmniaForExercise(exId, seconds, reachedRec) {
   // activityName ahead of its declaration, leaving lastBodyAward.exercise
   // permanently undefined.
   var activityName = meta && meta.name ? meta.name : 'Exercise';
+  // TEMPORARY (testing): per-session Akasha log, feeding the debug breakdown
+  // screen reachable by swiping right off the Akasha explainer. Remove
+  // alongside that screen once the economy's been evaluated.
+  if (!omniaState.akashaLog) omniaState.akashaLog = [];
+  omniaState.akashaLog.push({ exId: exId, name: activityName, seconds: seconds || 0, gain: gain, recommended: !!recommended, date: nowClamp });
+  if (omniaState.akashaLog.length > 500) omniaState.akashaLog = omniaState.akashaLog.slice(-500);
   var awardedBody = false;
   if (recommended) {
     omniaState.recStreak = (omniaState.recStreak || 0) + 1;
@@ -466,6 +472,54 @@ function awardOmniaForExercise(exId, seconds, reachedRec) {
   // The body level gets a real acknowledgment screen, not just a toast —
   // shown once the session-complete legend has been dismissed.
   if (awardedBody) setTimeout(maybeShowBodyLevelAward, 1200);
+}
+
+// TEMPORARY (testing): per-exercise Akasha breakdown, built from
+// omniaState.akashaLog (written above in awardOmniaForExercise). Remove
+// alongside akashaStatsScreen and the swipe handler in
+// visualization-client.js once the economy's been evaluated.
+function computeAkashaStatsByExercise() {
+  var log = (omniaState && omniaState.akashaLog) || [];
+  var byEx = {};
+  log.forEach(function(entry) {
+    var key = entry.exId || entry.name || 'unknown';
+    if (!byEx[key]) byEx[key] = { name: entry.name || key, totalGain: 0, sessions: 0, totalSeconds: 0, bestSeconds: 0 };
+    var b = byEx[key];
+    b.totalGain += entry.gain || 0;
+    b.sessions += 1;
+    b.totalSeconds += entry.seconds || 0;
+    if ((entry.seconds || 0) > b.bestSeconds) b.bestSeconds = entry.seconds || 0;
+  });
+  return Object.keys(byEx).map(function(k) { return byEx[k]; }).sort(function(a, b) { return b.totalGain - a.totalGain; });
+}
+function _akashaStatsFmtTime(sec) {
+  sec = Math.max(0, Math.round(sec || 0));
+  var m = Math.floor(sec / 60), s = sec % 60;
+  return m + ':' + String(s).padStart(2, '0');
+}
+function renderAkashaStats() {
+  var body = document.getElementById('akashaStatsBody');
+  if (!body) return;
+  var rows = computeAkashaStatsByExercise();
+  if (!rows.length) {
+    body.innerHTML = '<div style="font-family:\'DM Mono\',monospace; font-size:11px; color:var(--muted); text-align:center; padding:40px 20px; line-height:1.7;">No sessions logged yet.<br>Complete an exercise to start seeing its Akasha breakdown here.</div>';
+    return;
+  }
+  var totalAll = rows.reduce(function(sum, r) { return sum + r.totalGain; }, 0);
+  body.innerHTML = '<div style="font-family:\'DM Mono\',monospace; font-size:9px; letter-spacing:.14em; text-transform:uppercase; color:var(--muted-readable); margin-bottom:16px;">' + rows.length + ' exercise' + (rows.length === 1 ? '' : 's') + ' logged · +' + Math.round(totalAll).toLocaleString() + ' akasha total</div>'
+    + rows.map(function(r) {
+      var perMin = r.totalSeconds > 0 ? (r.totalGain / (r.totalSeconds / 60)) : 0;
+      return '<div style="border:1px solid var(--border); border-radius:12px; padding:14px 16px; margin-bottom:12px; background:rgba(255,255,255,.02);">'
+        + '<div style="display:flex; justify-content:space-between; align-items:baseline; gap:10px; margin-bottom:8px;">'
+        + '<div style="font-family:\'Cormorant Garamond\',serif; font-size:18px; font-weight:300; color:var(--text);">' + escHtml(r.name) + '</div>'
+        + '<div style="font-family:\'DM Mono\',monospace; font-size:15px; color:#e8c87a; flex-shrink:0;">+' + Math.round(r.totalGain).toLocaleString() + '</div>'
+        + '</div>'
+        + '<div style="display:flex; justify-content:space-between; gap:10px; font-family:\'DM Mono\',monospace; font-size:9px; letter-spacing:.05em; color:var(--muted-readable); text-transform:uppercase;">'
+        + '<span>' + r.sessions + ' session' + (r.sessions === 1 ? '' : 's') + ' · ' + _akashaStatsFmtTime(r.totalSeconds) + ' total</span>'
+        + '<span>best ' + _akashaStatsFmtTime(r.bestSeconds) + ' · ' + perMin.toFixed(1) + '/min</span>'
+        + '</div>'
+        + '</div>';
+    }).join('');
 }
 
 // Show the pending body-level award as soon as no session-complete legend is

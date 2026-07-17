@@ -7117,6 +7117,18 @@ body:not(.tut-live) #tutCorgi {
     </div>
   </div>
 
+  <!-- TEMPORARY (testing): per-exercise Akasha breakdown, reachable by
+       swiping right off the Akasha explainer above. Remove this screen (and
+       the swipe handler / akashaLog write in omnia-rewards-client.js) once
+       the economy's been evaluated. -->
+  <div class="screen" id="akashaStatsScreen" style="padding:0; flex-direction:column;">
+    <div style="display:flex; align-items:center; gap:14px; padding:var(--safe-top) 20px 14px; border-bottom:1px solid var(--border); flex-shrink:0;">
+      <button class="history-back" id="akashaStatsBack" aria-label="Back">←</button>
+      <div style="font-family:'Cormorant Garamond',serif; font-size:22px; font-weight:300; color:var(--text);">Akasha by Exercise</div>
+    </div>
+    <div style="flex:1; overflow-y:auto; -webkit-overflow-scrolling:touch; padding:18px 20px max(env(safe-area-inset-bottom),24px);" id="akashaStatsBody"></div>
+  </div>
+
   <!-- CLOCK SETTINGS SCREEN -->
   <div class="screen" id="clockSettingsScreen">
     <button class="clk-cfg-back" id="clkCfgBack">&#8592; back</button>

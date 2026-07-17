@@ -1618,9 +1618,11 @@ var EX_EXPLAINERS = {
   }
 };
 
+var _currentExExplainerKey = null;
 function openExExplainer(ex) {
   var data = EX_EXPLAINERS[ex];
   if (!data) return;
+  _currentExExplainerKey = ex;
   var omniaEl = document.getElementById('exExplainOmnia');
   var titleEl = document.getElementById('exExplainTitle');
   var kindEl = document.getElementById('exExplainKind');
@@ -1640,6 +1642,37 @@ function closeExExplainer() {
   var overlay = document.getElementById('exExplainOverlay');
   if (overlay) overlay.classList.remove('show');
 }
+
+// TEMPORARY (testing): swipe right off the Akasha explainer to reach a
+// per-exercise Akasha breakdown screen. Remove alongside akashaStatsScreen
+// and the akashaLog write in omnia-rewards-client.js once the economy's
+// been evaluated.
+(function() {
+  var overlay = document.getElementById('exExplainOverlay');
+  if (!overlay) return;
+  var startX = 0, startY = 0, tracking = false;
+  overlay.addEventListener('touchstart', function(e) {
+    tracking = _currentExExplainerKey === 'akasha' && e.touches.length === 1;
+    if (!tracking) return;
+    startX = e.touches[0].clientX;
+    startY = e.touches[0].clientY;
+  }, { passive: true });
+  overlay.addEventListener('touchend', function(e) {
+    if (!tracking) return;
+    tracking = false;
+    var touch = e.changedTouches[0];
+    var dx = touch.clientX - startX;
+    var dy = touch.clientY - startY;
+    if (dx > 70 && Math.abs(dy) < 60) {
+      closeExExplainer();
+      if (typeof renderAkashaStats === 'function') renderAkashaStats();
+      showScreen('akashaStatsScreen');
+    }
+  }, { passive: true });
+})();
+document.getElementById('akashaStatsBack').addEventListener('click', function() {
+  showScreen('homeScreen');
+});
 
 // Inline Omnia explainer on the Clock setup screen — expands the steps in place
 // with a gentle crystal pop, rather than opening a modal.
