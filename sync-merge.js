@@ -12,7 +12,17 @@
     }),
     presence_v3: Object.freeze({
       arrays: Object.freeze(['history', 'weeklyScores']),
-      maxNums: Object.freeze(['xp', 'totalSessions', 'streak', 'longestStreak', 'level'])
+      maxNums: Object.freeze(['xp', 'totalSessions', 'streak', 'longestStreak', 'level']),
+      // practicedDates/frozenDates aren't covered by maxNums (they're day-key
+      // lists, not numbers) or arrays (mergeHistoryArrays dedups by an
+      // entry.date field, which plain day-key strings don't have) — without
+      // an explicit merge they just ride along with whichever candidate wins
+      // as `base`. state.streak is recomputed from these on every load, so a
+      // stale cloud snapshot silently becoming base can erase weeks of
+      // practicedDates and collapse an otherwise-unbroken streak back down to
+      // whatever that stale copy happened to cover. A practiced/frozen day is
+      // a permanent fact once recorded by either side, so union instead.
+      stringArrays: Object.freeze(['practicedDates', 'frozenDates'])
     })
   });
 
@@ -77,6 +87,16 @@
     return cap && out.length > cap ? out.slice(0, cap) : out;
   }
 
+  // Union two lists of plain day-key strings ('YYYY-MM-DD'), deduped and
+  // sorted ascending, keeping only the most recent `cap` entries.
+  function mergeStringArrays(a, b, cap) {
+    const seen = new Set();
+    (Array.isArray(a) ? a : []).forEach(function(d) { if (typeof d === 'string' && d) seen.add(d); });
+    (Array.isArray(b) ? b : []).forEach(function(d) { if (typeof d === 'string' && d) seen.add(d); });
+    const out = Array.from(seen).sort();
+    return cap && out.length > cap ? out.slice(-cap) : out;
+  }
+
   function isHistoryKey(key) {
     return Object.prototype.hasOwnProperty.call(HISTORY_MERGE, key);
   }
@@ -104,6 +124,9 @@
     candidates.forEach(function(candidate) {
       spec.arrays.forEach(function(field) {
         out[field] = mergeHistoryArrays(out[field], candidate[field], 100);
+      });
+      (spec.stringArrays || []).forEach(function(field) {
+        out[field] = mergeStringArrays(out[field], candidate[field], 365);
       });
       spec.maxNums.forEach(function(field) {
         if (out[field] != null || candidate[field] != null) {

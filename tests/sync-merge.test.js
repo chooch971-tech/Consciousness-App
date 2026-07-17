@@ -72,6 +72,44 @@ test('history merge uses input order only to resolve equal-score preferences', (
   assert.deepEqual(Object.keys(HISTORY_MERGE).sort(), ['presence_conc_v1', 'presence_v3']);
 });
 
+test('history merge unions practicedDates/frozenDates instead of losing them to a stale base', () => {
+  // Reproduces the reported bug: a stale cloud snapshot (equal or higher xp,
+  // so it wins as `base`) is missing several weeks of practicedDates that the
+  // local device recorded since the last successful push. Since state.streak
+  // is recomputed from practicedDates on every load, silently inheriting only
+  // `base`'s dates would collapse a long unbroken streak back down to
+  // whatever the stale snapshot happened to cover.
+  const localDates = [];
+  for (let d = 1; d <= 17; d++) localDates.push('2026-07-' + String(d).padStart(2, '0'));
+  for (let d = 1; d <= 30; d++) localDates.push('2026-06-' + String(d).padStart(2, '0'));
+
+  const cloud = {
+    xp: 500,
+    totalSessions: 40,
+    streak: 30,
+    practicedDates: localDates.slice(0, 30), // only June — hasn't synced July yet
+    frozenDates: [],
+    history: []
+  };
+  const local = {
+    xp: 500, // tied — base selection falls to candidate order, cloud first
+    totalSessions: 47,
+    streak: 47,
+    practicedDates: localDates, // full 47-day unbroken run through July 17
+    frozenDates: ['2026-06-15'],
+    history: []
+  };
+
+  const merged = mergeHistoryValues('presence_v3', [cloud, local]);
+
+  assert.equal(merged.practicedDates.length, 47, 'union must keep every practiced day from both sides');
+  assert.ok(merged.practicedDates.includes('2026-07-17'), 'must not lose the most recent local days');
+  assert.ok(merged.practicedDates.includes('2026-06-01'), 'must not lose older cloud-only days either');
+  assert.deepEqual(merged.practicedDates, [...merged.practicedDates].sort(), 'must stay sorted ascending');
+  assert.deepEqual(merged.frozenDates, ['2026-06-15']);
+  assert.equal(merged.streak, 47, 'the raw streak number itself is still max-merged as before');
+});
+
 test('Gift Path merge unions same-month progress and completed months', () => {
   const a = {
     cleared: ['2026-05'],
