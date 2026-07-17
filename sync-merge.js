@@ -160,8 +160,14 @@
     if (!out.startDate && month && options && options.inferStartDate) {
       out.startDate = month + '-01';
     }
-    const newestReset = resetAt(candidates[0]);
-    if (newestReset) out._resetAt = newestReset;
+    // Always assign these (not just when truthy) so a value of 0 round-trips
+    // identically instead of silently vanishing from the output — a merge of
+    // byte-identical inputs must produce byte-identical output, or every pull
+    // looks "changed" and forces a reload even when nothing actually happened.
+    out._resetAt = resetAt(candidates[0]);
+    out._testResetVersion = candidates.reduce(function(max, candidate) {
+      return Math.max(max, Number(candidate._testResetVersion) || 0);
+    }, 0);
     return out;
   }
 

@@ -8382,6 +8382,13 @@ function syncMeaningfulDelta(key, localStr, mergedStr) {
       var ac = a.cosmetics || {}, bc = b.cosmetics || {};
       return ac.entity !== bc.entity || ac.palette !== bc.palette || ac.companion !== bc.companion || ac.veil !== bc.veil;
     }
+    if (key === 'presence_giftpath_v1') {
+      if ((b.month || '') !== (a.month || '')) return true;
+      if (!!b.started !== !!a.started) return true;
+      if ((b.cleared || []).length !== (a.cleared || []).length) return true;
+      if ((b.claimed || []).filter(Boolean).length !== (a.claimed || []).filter(Boolean).length) return true;
+      return Object.keys(b.done || {}).length !== Object.keys(a.done || {}).length;
+    }
     return true;
   } catch (e) { return true; }
 }
@@ -8482,9 +8489,9 @@ function applyPulledData(data) {
     if (k === 'presence_giftpath_v1') {
       var mergedGp = mergeGiftPathPull(local, v);
       if (mergedGp !== null && mergedGp !== local) {
+        if (syncMeaningfulDelta(k, local, mergedGp)) changed = true;
         localStorage.setItem(k, mergedGp);
         if (typeof updateGiftPathButton === 'function') { try { updateGiftPathButton(); } catch(e) {} }
-        changed = true;
       }
       return;
     }
@@ -8644,7 +8651,14 @@ var currentMode;
 // ═══════════════════════════════════════
 
 document.addEventListener('visibilitychange', function() {
-  if (document.visibilityState === 'hidden' && sessionStartTime) saveSessionState();
+  if (document.visibilityState === 'hidden') {
+    if (sessionStartTime) saveSessionState();
+    // Flush any local-only edits (guide path tweaks, journal entries, etc.)
+    // before backgrounding. Without this, a quick swipe-out-and-back finds
+    // the cloud still holding the pre-edit snapshot, and the foreground pull
+    // below can overwrite the fresh local edit with that stale copy.
+    if (syncEnabled && authToken && typeof syncPushData === 'function') syncPushData();
+  }
   if (document.visibilityState === 'visible') {
     scheduleGuidePathLayoutRefresh(false);
     // Restore the active session screen when returning from background.
