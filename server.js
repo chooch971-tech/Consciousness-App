@@ -12,6 +12,11 @@ const { enforceOmniaReportPolicy } = require('./omnia-report-policy');
 const { SYNC_KEYS, selectSyncData } = require('./sync-contract');
 const { isHistoryKey, mergeHistoryValues, mergeGiftPathValues } = require('./sync-merge');
 const {
+  createStructuredLogger,
+  errorDetails,
+  observeRequests
+} = require('./observability');
+const {
   moderateUsername,
   moderatePublicText,
   moderatePrivateText,
@@ -20,9 +25,14 @@ const {
 } = require('./social-safety');
 
 const app = express();
+const logger = createStructuredLogger();
 // Render terminates TLS and forwards the client address through one trusted
 // proxy hop. This lets IP-based anonymous limits distinguish real clients.
 app.set('trust proxy', 1);
+
+// Give every response a safe correlation ID. Only rejected, failed, or slow
+// requests are logged so normal traffic does not bury useful diagnostics.
+app.use(observeRequests({ logger }));
 
 // ── Security headers ────────────────────────────────────
 app.use(helmet());
@@ -2596,6 +2606,27 @@ app.get('/ping', (req, res) => {
   });
 });
 
+app.get('/health', async (req, res) => {
+  let timeout;
+  try {
+    await Promise.race([
+      mongoClient.db('presence').command({ ping: 1 }),
+      new Promise((_, reject) => {
+        timeout = setTimeout(() => reject(new Error('MongoDB health check timed out')), 2000);
+      })
+    ]);
+    res.json({ status: 'ok', database: 'ok', uptimeSec: Math.round(process.uptime()) });
+  } catch (err) {
+    logger.warn('health_check_failed', {
+      requestId: req.requestId,
+      error: errorDetails(err)
+    });
+    res.status(503).json({ status: 'degraded', database: 'unavailable' });
+  } finally {
+    clearTimeout(timeout);
+  }
+});
+
 app.get('/debug', verifyAdmin, (req, res) => {
   const now = Date.now();
   const subs = subscriptions.map(s => ({
@@ -2949,15 +2980,57 @@ app.use((err, req, res, next) => {
   if (err && err.type === 'entity.parse.failed') {
     return res.status(400).json({ error: 'Invalid JSON body' });
   }
-  console.error('Unhandled request error:', err && err.message ? err.message : err);
+  logger.error('unhandled_request_error', {
+    requestId: req.requestId,
+    error: errorDetails(err, process.env.NODE_ENV !== 'production')
+  });
   res.status(500).json({ error: 'Unexpected server error' });
 });
 
 // ── START ────────────────────────────────────────────────
 const PORT = process.env.PORT || 3000;
+let httpServer;
+let shuttingDown = false;
+
+async function shutdown(signal) {
+  if (shuttingDown) return;
+  shuttingDown = true;
+  logger.info('server_shutdown_started', { signal });
+
+  const forcedExit = setTimeout(() => {
+    logger.error('server_shutdown_timed_out', { signal });
+    process.exit(1);
+  }, 10000);
+  forcedExit.unref();
+
+  try {
+    if (httpServer) {
+      await new Promise((resolve, reject) => httpServer.close(err => err ? reject(err) : resolve()));
+    }
+    if (mongoClient) await mongoClient.close();
+    clearTimeout(forcedExit);
+    logger.info('server_shutdown_complete', { signal });
+    process.exit(0);
+  } catch (err) {
+    clearTimeout(forcedExit);
+    logger.error('server_shutdown_failed', { signal, error: errorDetails(err) });
+    process.exit(1);
+  }
+}
+
+process.once('SIGTERM', () => shutdown('SIGTERM'));
+process.once('SIGINT', () => shutdown('SIGINT'));
+process.on('unhandledRejection', reason => {
+  logger.error('unhandled_rejection', { error: errorDetails(reason, process.env.NODE_ENV !== 'production') });
+});
+process.on('uncaughtException', err => {
+  logger.error('uncaught_exception', { error: errorDetails(err, process.env.NODE_ENV !== 'production') });
+  process.exit(1);
+});
+
 connectDB().then(() => {
-  app.listen(PORT, () => {
-    console.log(`Presence server running on port ${PORT}`);
+  httpServer = app.listen(PORT, () => {
+    logger.info('server_started', { port: Number(PORT) || PORT });
   });
 }).catch(() => {
   process.exit(1);
