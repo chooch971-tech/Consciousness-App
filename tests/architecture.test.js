@@ -158,6 +158,16 @@ test('Concentration progression state loads before startup restoration', () => {
   assert.doesNotThrow(() => new Function(concentrationStateClient));
 });
 
+test('startup cloud restoration keeps the splash in one document', () => {
+  const applyStart = presence.indexOf('function _applyStartupPull(result)');
+  const pullStart = presence.indexOf('function _startupPull(attempt)', applyStart);
+  assert.notEqual(applyStart, -1);
+  assert.notEqual(pullStart, -1);
+  const startupApply = presence.slice(applyStart, pullStart);
+  assert.match(startupApply, /rehydrateProgressAfterPull\(\)/);
+  assert.doesNotMatch(startupApply, /window\.location\.reload\(\)/);
+});
+
 test('Clock sessions and Concentration history load through their own client boundary', () => {
   const stateTag = presence.indexOf('<script src="concentration-state-client.js"></script>');
   const clockTag = presence.indexOf('<script src="concentration-clock-client.js"></script>');

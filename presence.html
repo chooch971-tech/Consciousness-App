@@ -4547,8 +4547,8 @@ body:not(.tut-live) #tutCorgi {
 @keyframes splashGlow {
   0%   { opacity:0; } 50% { opacity:1; } 100% { opacity:0.4; }
 }
-/* A signed-in startup pull that finds newer cloud data does a real
-   window.location.reload() to reinitialize cleanly (see _pullReloaded).
+/* A background sync pull can still do a real window.location.reload() when
+   the app returns to the foreground with newer cloud data (see _pullReloaded).
    That reload is a genuine navigation, so the splash's own "materialize
    from nothing" entrance would otherwise replay in full on the fresh page —
    reading as flash-black-flash instead of one continuous screen. When
@@ -5036,7 +5036,7 @@ body:not(.tut-live) #tutCorgi {
 <script>
 (function() {
   var s = document.getElementById('splash');
-  // Resuming right after the startup-pull's window.location.reload() — see
+  // Resuming right after a background pull's window.location.reload() — see
   // the note on .splash-resumed above. Skip the entrance animation so this
   // reads as a continuation of the same splash, not a fresh one flashing in.
   try { if (sessionStorage.getItem('_pullReloaded') === '1') s.classList.add('splash-resumed'); } catch(e) {}
@@ -8506,6 +8506,15 @@ function applyPulledData(data) {
   return changed;
 }
 
+function rehydrateProgressAfterPull() {
+  state = loadState();
+  concState = loadConcState();
+  omniaState = loadOmniaState();
+  prayerState = loadPrayerState();
+  guideState = loadGuideState();
+  guidePathMode = null;
+}
+
 // Enter the app after a fresh sign-in WITHOUT a full page reload. The old
 // login flow called window.location.reload() (sometimes twice), which re-fetched
 // and re-parsed the entire ~1.7MB single-file app over the network each time —
@@ -8524,14 +8533,7 @@ function enterAppAfterSignIn(onEntered) {
   var attempt = 0;
   function finish() {
     window._syncPullPending = false;
-    try {
-      state = loadState();
-      concState = loadConcState();
-      omniaState = loadOmniaState();
-      prayerState = loadPrayerState();
-      guideState = loadGuideState();
-      guidePathMode = null;
-    } catch(e) {}
+    try { rehydrateProgressAfterPull(); } catch(e) {}
     if (typeof renderHome === 'function') renderHome();
     if (typeof showScreen === 'function') showScreen('homeScreen');
     if (typeof onEntered === 'function') { try { onEntered(); } catch(e) {} }
@@ -8722,31 +8724,13 @@ if (!localStorage.getItem('presence_auth_token')) {
     if (!result || !result.data) { renderHome(); if (window.__dismissSplash) window.__dismissSplash(); return; }
     var changed = applyPulledData(result.data);
     if (changed) {
-      // Reload once with fresh data — sessionStorage flag prevents infinite loop
-      var surveyShowing2 = document.getElementById('surveyScreen') && document.getElementById('surveyScreen').classList.contains('active');
-      var savedSess2 = localStorage.getItem('presence_session');
-      var sessionActive2 = false;
-      if (savedSess2) { try { var ss = JSON.parse(savedSess2); sessionActive2 = (ss.durationSec - Math.floor((Date.now() - ss.startTime) / 1000)) > 0; } catch(e) {} }
-      if (!sessionActive2 && !sessionStorage.getItem('_pullReloaded') && !surveyShowing2 && !sessionStorage.getItem('_sessionJustEnded')) {
-        sessionStorage.setItem('_pullReloaded', '1');
-        console.log('[Sync] Fresh data on startup — reloading');
-        // Keep the splash up across the reload — it re-shows on the fresh load
-        // and dismisses once the re-init renders the restored progress.
-        window.location.reload();
-      } else {
-        // Already reloaded once — re-init ALL state from localStorage so every
-        // dimension (Omnia/Akasha, prayer, guide included) reflects the restore,
-        // not just awareness + concentration.
-        sessionStorage.removeItem('_pullReloaded');
-        state = loadState();
-        concState = loadConcState();
-        omniaState = loadOmniaState();
-        prayerState = loadPrayerState();
-        guideState = loadGuideState();
-        guidePathMode = null;
-        renderHome();
-        if (window.__dismissSplash) window.__dismissSplash();
-      }
+      // The pull has already updated localStorage. Rehydrate every in-memory
+      // state slice in place so the splash remains continuous; reloading here
+      // briefly hid the wordmark while the second document verified its font.
+      sessionStorage.removeItem('_pullReloaded');
+      rehydrateProgressAfterPull();
+      renderHome();
+      if (window.__dismissSplash) window.__dismissSplash();
     } else {
       sessionStorage.removeItem('_pullReloaded');
       renderHome();
