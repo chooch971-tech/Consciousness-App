@@ -17,6 +17,7 @@ const {
   observeRequests
 } = require('./observability');
 const { createRecurringJob } = require('./background-jobs');
+const { ensureIndexes } = require('./database-startup');
 const {
   moderateUsername,
   moderatePublicText,
@@ -168,32 +169,33 @@ async function connectDB() {
     postsCollection = db.collection('posts');
     likesCollection = db.collection('likes');
     commentsCollection = db.collection('comments');
-    try { await followsCollection.createIndex({ followerId: 1, followeeId: 1 }, { unique: true }); } catch(e) {}
-    try { await postsCollection.createIndex({ userId: 1, createdAt: -1 }); } catch(e) {}
-    try { await postsCollection.createIndex({ userId: 1, type: 1, createdAt: -1 }); } catch(e) {}
-    try { await postsCollection.createIndex({ createdAt: -1 }); } catch(e) {}
-    try { await likesCollection.createIndex({ postId: 1, userId: 1 }, { unique: true }); } catch(e) {}
-    try { await commentsCollection.createIndex({ postId: 1, createdAt: 1 }); } catch(e) {}
     blocksCollection = db.collection('blocks');
     reportsCollection = db.collection('reports');
     notificationsCollection = db.collection('notifications');
-    try { await blocksCollection.createIndex({ userId: 1, blockedId: 1 }, { unique: true }); } catch(e) {}
-    try { await notificationsCollection.createIndex({ userId: 1, createdAt: -1 }); } catch(e) {}
     conversationsCollection = db.collection('conversations');
     messagesCollection = db.collection('messages');
-    try { await conversationsCollection.createIndex({ participants: 1 }); } catch(e) {}
-    try { await messagesCollection.createIndex({ convId: 1, createdAt: 1 }); } catch(e) {}
-    try { await messagesCollection.createIndex({ convId: 1, senderId: 1, createdAt: 1 }); } catch(e) {}
     userPushSubsCollection = db.collection('user_push_subs');
-    try { await userPushSubsCollection.createIndex({ endpoint: 1 }, { unique: true }); } catch(e) {}
-    try { await userPushSubsCollection.createIndex({ userId: 1 }); } catch(e) {}
-    // TTL: let MongoDB sweep stale beacons automatically (reads also guard on expiresAt)
-    try { await beaconsCollection.createIndex({ expiresAt: 1 }, { expireAfterSeconds: 0 }); } catch(e) {}
-    // Compound index makes every pull O(1) instead of a full collection scan
-    try { await syncDataCollection.createIndex({ userId: 1, syncedAt: -1 }); } catch(e) {}
-    // Speed up push upserts and user lookups
-    try { await usersCollection.createIndex({ email: 1 }, { unique: true, sparse: true }); } catch(e) {}
-    try { await usersCollection.createIndex({ googleId: 1 }, { sparse: true }); } catch(e) {}
+
+    await ensureIndexes([
+      { label: 'follows.follower-followee', collection: followsCollection, keys: { followerId: 1, followeeId: 1 }, options: { unique: true } },
+      { label: 'posts.user-created', collection: postsCollection, keys: { userId: 1, createdAt: -1 } },
+      { label: 'posts.user-type-created', collection: postsCollection, keys: { userId: 1, type: 1, createdAt: -1 } },
+      { label: 'posts.created', collection: postsCollection, keys: { createdAt: -1 } },
+      { label: 'likes.post-user', collection: likesCollection, keys: { postId: 1, userId: 1 }, options: { unique: true } },
+      { label: 'comments.post-created', collection: commentsCollection, keys: { postId: 1, createdAt: 1 } },
+      { label: 'blocks.user-blocked', collection: blocksCollection, keys: { userId: 1, blockedId: 1 }, options: { unique: true } },
+      { label: 'notifications.user-created', collection: notificationsCollection, keys: { userId: 1, createdAt: -1 } },
+      { label: 'conversations.participants', collection: conversationsCollection, keys: { participants: 1 } },
+      { label: 'messages.conversation-created', collection: messagesCollection, keys: { convId: 1, createdAt: 1 } },
+      { label: 'messages.conversation-sender-created', collection: messagesCollection, keys: { convId: 1, senderId: 1, createdAt: 1 } },
+      { label: 'push-subscriptions.endpoint', collection: userPushSubsCollection, keys: { endpoint: 1 }, options: { unique: true } },
+      { label: 'push-subscriptions.user', collection: userPushSubsCollection, keys: { userId: 1 } },
+      // TTL sweeps stale beacons; reads independently guard expiresAt.
+      { label: 'beacons.expiry', collection: beaconsCollection, keys: { expiresAt: 1 }, options: { expireAfterSeconds: 0 } },
+      { label: 'sync.user-synced', collection: syncDataCollection, keys: { userId: 1, syncedAt: -1 } },
+      { label: 'users.email', collection: usersCollection, keys: { email: 1 }, options: { unique: true, sparse: true } },
+      { label: 'users.google-id', collection: usersCollection, keys: { googleId: 1 }, options: { sparse: true } }
+    ], logger);
 
     subscriptions = await subsCollection.find({}).toArray();
     const cutoff = Date.now() - 24 * 60 * 60 * 1000;
@@ -215,8 +217,8 @@ async function connectDB() {
     }
     prayerSchedules = await prayerCollection.find({}).toArray();
     practiceSchedules = await practiceCollection.find({}).toArray();
-    try { await migrateLegacyUsernames(); } catch (e) { console.error('Username migration skipped:', e.message); }
-    try { await migrateFriendsToFollows(); } catch (e) { console.error('Follows migration skipped:', e.message); }
+    try { await migrateLegacyUsernames(); } catch (e) { logger.warn('database_migration_skipped', { migration: 'legacy-usernames', error: errorDetails(e) }); }
+    try { await migrateFriendsToFollows(); } catch (e) { logger.warn('database_migration_skipped', { migration: 'friends-to-follows', error: errorDetails(e) }); }
     console.log(`Connected to MongoDB. ${subscriptions.length} subscribers, ${prayerSchedules.length} prayer schedules, ${practiceSchedules.length} practice schedules.`);
   } catch(err) {
     console.error('MongoDB connection failed:', err.message);
@@ -225,29 +227,22 @@ async function connectDB() {
 }
 
 async function saveSub(sub) {
-  try {
-    const { _id, ...data } = sub;
-    await subsCollection.updateOne({ endpoint: sub.endpoint }, { $set: data }, { upsert: true });
-  } catch(e) { console.error('Save sub error:', e.message); }
+  const { _id, ...data } = sub;
+  await subsCollection.updateOne({ endpoint: sub.endpoint }, { $set: data }, { upsert: true });
 }
 
 async function deleteSub(endpoint) {
-  try { await subsCollection.deleteOne({ endpoint }); }
-  catch(e) { console.error('Delete sub error:', e.message); }
+  await subsCollection.deleteOne({ endpoint });
 }
 
 async function savePrayerSchedule(schedule) {
-  try {
-    const { _id, ...data } = schedule;
-    await prayerCollection.updateOne({ endpoint: schedule.endpoint }, { $set: data }, { upsert: true });
-  } catch(e) { console.error('Save prayer schedule error:', e.message); }
+  const { _id, ...data } = schedule;
+  await prayerCollection.updateOne({ endpoint: schedule.endpoint }, { $set: data }, { upsert: true });
 }
 
 async function savePracticeSchedule(schedule) {
-  try {
-    const { _id, ...data } = schedule;
-    await practiceCollection.updateOne({ endpoint: schedule.endpoint }, { $set: data }, { upsert: true });
-  } catch(e) { console.error('Save practice schedule error:', e.message); }
+  const { _id, ...data } = schedule;
+  await practiceCollection.updateOne({ endpoint: schedule.endpoint }, { $set: data }, { upsert: true });
 }
 
 // ── Cloud Sync Middleware ────────────────────────────────
@@ -2832,41 +2827,45 @@ app.post('/subscribe', subscriptionRateLimit, async (req, res) => {
   const idx = subscriptions.findIndex(s => s.endpoint === subscription.endpoint);
   if (idx === -1) {
     const newSub = { ...subscription, sessionStart: null, lastFiredCycle: -1 };
-    subscriptions.push(newSub);
     await saveSub(newSub);
+    subscriptions.push(newSub);
   }
   res.json({ success: true });
 });
 
 app.post('/unsubscribe', verifyPushOwner, async (req, res) => {
   const { endpoint } = req.body;
-  subscriptions = subscriptions.filter(s => s.endpoint !== endpoint);
   await deleteSub(endpoint);
+  subscriptions = subscriptions.filter(s => s.endpoint !== endpoint);
   res.json({ success: true });
 });
 
 app.post('/session/start', verifyPushOwner, subscriptionRateLimit, async (req, res) => {
   const { endpoint, intervalSec, durationSec, pavlok } = req.body;
-  let sub = subscriptions.find(s => s.endpoint === endpoint);
+  const sub = subscriptions.find(s => s.endpoint === endpoint);
   if (!sub) return res.status(404).json({ error: 'Subscriber not found' });
-  sub.sessionStart = Date.now();
-  sub.intervalSec = Math.max(30, Math.min(3600, parseInt(intervalSec) || 120));
-  sub.durationSec = Math.max(60, Math.min(14400, parseInt(durationSec) || 1800));
-  sub.lastFiredCycle = -1;
+  const next = {
+    ...sub,
+    sessionStart: Date.now(),
+    intervalSec: Math.max(30, Math.min(3600, parseInt(intervalSec) || 120)),
+    durationSec: Math.max(60, Math.min(14400, parseInt(durationSec) || 1800)),
+    lastFiredCycle: -1
+  };
   // Optional Pavlok config so the server can fire the stimulus in lockstep
   // with the push, even while the phone is locked.
   if (pavlok && pavlok.token && pavlok.enabled) {
-    sub.pavlok = {
+    next.pavlok = {
       token: pavlok.token,
       type: PAVLOK_VALID_TYPES.has(pavlok.type) ? pavlok.type : 'vibe',
       intensity: Math.max(1, Math.min(100, parseInt(pavlok.intensity, 10) || 50)),
     };
   } else {
-    sub.pavlok = null;
+    next.pavlok = null;
   }
-  console.log(`[Pavlok] /session/start — enabled=${!!(pavlok && pavlok.enabled)} | stored sub.pavlok: ${sub.pavlok ? sub.pavlok.type + '@' + sub.pavlok.intensity : 'null'}`);
-  await saveSub(sub);
-  res.json({ success: true, pavlokManaged: !!sub.pavlok });
+  await saveSub(next);
+  Object.assign(sub, next);
+  console.log(`[Pavlok] /session/start — enabled=${!!(pavlok && pavlok.enabled)} | stored sub.pavlok: ${next.pavlok ? next.pavlok.type + '@' + next.pavlok.intensity : 'null'}`);
+  res.json({ success: true, pavlokManaged: !!next.pavlok });
 });
 
 // Update the Pavlok config mid-session (e.g. user moves the intensity slider
@@ -2875,27 +2874,28 @@ app.post('/session/pavlok', verifyPushOwner, subscriptionRateLimit, async (req, 
   const { endpoint, pavlok } = req.body;
   const sub = subscriptions.find(s => s.endpoint === endpoint);
   if (!sub) return res.status(404).json({ error: 'Subscriber not found' });
+  const next = { ...sub };
   if (pavlok && pavlok.token && pavlok.enabled) {
-    sub.pavlok = {
+    next.pavlok = {
       token: pavlok.token,
       type: PAVLOK_VALID_TYPES.has(pavlok.type) ? pavlok.type : 'vibe',
       intensity: Math.max(1, Math.min(100, parseInt(pavlok.intensity, 10) || 50)),
     };
   } else {
-    sub.pavlok = null;
+    next.pavlok = null;
   }
-  await saveSub(sub);
-  res.json({ success: true, pavlokManaged: !!sub.pavlok });
+  await saveSub(next);
+  Object.assign(sub, next);
+  res.json({ success: true, pavlokManaged: !!next.pavlok });
 });
 
 app.post('/session/end', verifyPushOwner, subscriptionRateLimit, async (req, res) => {
   const { endpoint } = req.body;
   const sub = subscriptions.find(s => s.endpoint === endpoint);
   if (!sub) return res.status(404).json({ error: 'Subscriber not found' });
-  sub.sessionStart = null;
-  sub.lastFiredCycle = -1;
-  sub.pavlok = null;
-  await saveSub(sub);
+  const next = { ...sub, sessionStart: null, lastFiredCycle: -1, pavlok: null };
+  await saveSub(next);
+  Object.assign(sub, next);
   res.json({ success: true });
 });
 
@@ -2904,14 +2904,16 @@ app.post('/prayer/schedule', verifyPushOwner, subscriptionRateLimit, async (req,
   if (!endpoint) return res.status(400).json({ error: 'endpoint required' });
   const existing = prayerSchedules.find(s => s.endpoint === endpoint);
   if (existing) {
-    if (times !== undefined) existing.times = times;
-    if (enabled !== undefined) existing.enabled = enabled;
-    if (tzOffset !== undefined) existing.tzOffset = tzOffset;
-    await savePrayerSchedule(existing);
+    const next = { ...existing };
+    if (times !== undefined) next.times = times;
+    if (enabled !== undefined) next.enabled = enabled;
+    if (tzOffset !== undefined) next.tzOffset = tzOffset;
+    await savePrayerSchedule(next);
+    Object.assign(existing, next);
   } else {
     const newSchedule = { endpoint, times: times || ['06:00','09:00','12:00','15:00','18:00'], enabled: enabled !== undefined ? enabled : true, tzOffset: tzOffset || 0, firedToday: { date: '', fired: {} } };
-    prayerSchedules.push(newSchedule);
     await savePrayerSchedule(newSchedule);
+    prayerSchedules.push(newSchedule);
   }
   res.json({ success: true });
 });
@@ -2921,14 +2923,16 @@ app.post('/practice/schedule', verifyPushOwner, subscriptionRateLimit, async (re
   if (!endpoint) return res.status(400).json({ error: 'endpoint required' });
   const existing = practiceSchedules.find(s => s.endpoint === endpoint);
   if (existing) {
-    if (times !== undefined) existing.times = times;
-    if (enabled !== undefined) existing.enabled = enabled;
-    if (tzOffset !== undefined) existing.tzOffset = tzOffset;
-    await savePracticeSchedule(existing);
+    const next = { ...existing };
+    if (times !== undefined) next.times = times;
+    if (enabled !== undefined) next.enabled = enabled;
+    if (tzOffset !== undefined) next.tzOffset = tzOffset;
+    await savePracticeSchedule(next);
+    Object.assign(existing, next);
   } else {
     const newSchedule = { endpoint, times: times || ['07:00','20:00'], enabled: enabled !== undefined ? enabled : true, tzOffset: tzOffset || 0, firedToday: { date: '', fired: {} } };
-    practiceSchedules.push(newSchedule);
     await savePracticeSchedule(newSchedule);
+    practiceSchedules.push(newSchedule);
   }
   res.json({ success: true });
 });
@@ -2938,11 +2942,15 @@ app.post('/prayer/done', verifyPushOwner, subscriptionRateLimit, async (req, res
   const schedule = prayerSchedules.find(s => s.endpoint === endpoint);
   if (!schedule) return res.status(404).json({ error: 'No prayer schedule found' });
   const todayStr = new Date().toDateString();
-  if (!schedule.firedToday || schedule.firedToday.date !== todayStr) {
-    schedule.firedToday = { date: todayStr, fired: {} };
-  }
-  schedule.firedToday.fired[index] = [0, 1, 2, 3];
-  await savePrayerSchedule(schedule);
+  const currentFired = schedule.firedToday && schedule.firedToday.date === todayStr
+    ? schedule.firedToday.fired || {}
+    : {};
+  const next = {
+    ...schedule,
+    firedToday: { date: todayStr, fired: { ...currentFired, [index]: [0, 1, 2, 3] } }
+  };
+  await savePrayerSchedule(next);
+  schedule.firedToday = next.firedToday;
   res.json({ success: true });
 });
 
@@ -2975,9 +2983,9 @@ app.post('/notify', subscriptionRateLimit, async (req, res) => {
 
 app.post('/reset-sessions', verifyAdmin, async (req, res) => {
   for (const sub of subscriptions) {
-    sub.sessionStart = null;
-    sub.lastFiredCycle = -1;
-    await saveSub(sub);
+    const next = { ...sub, sessionStart: null, lastFiredCycle: -1 };
+    await saveSub(next);
+    Object.assign(sub, next);
   }
   res.json({ success: true });
 });
