@@ -1,6 +1,6 @@
 # Presence — Roadmap
 
-Last updated: 2026-07-13
+Last updated: 2026-07-18
 
 ---
 
@@ -133,6 +133,7 @@ Last updated: 2026-07-13
 - [ ] Gitdoctor revision
 - [ ] All bug fixes / QoL improvements from V0.1.1
 - [ ] Security overhaul
+- [ ] Automated image-moderation check on profile picture uploads (NSFW/explicit detection) — currently `PUT /api/sync/profile-pic` only validates format/size, no content check. Options considered: self-hosted classifier (e.g. `nsfwjs`, free, in-process, matches how text moderation is already done in-house) vs. a paid vendor API (AWS Rekognition / Google SafeSearch / Sightengine — more accurate, adds cost + API key management). Leaning self-hosted unless a key is provided.
 - [ ] Pavlok support
 - [ ] Frequencies
 - [ ] Fix multi-sense exercise

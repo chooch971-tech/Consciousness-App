@@ -9137,6 +9137,16 @@ document.getElementById('omniaEngine').addEventListener('click', function(e) {
 // and live-updates visible countdowns once a second. Cheap no-op when idle.
 (function() {
   var _liveSig = '';
+  // Upgrade-completion toasts are a courtesy nudge, not something worth
+  // breaking concentration for — suppress them while an exercise session is
+  // actually on screen. The build still resolves normally underneath; the
+  // player just sees it next time they check the Omnia engine instead of a
+  // toast popping mid-session.
+  var EXERCISE_SESSION_SCREENS = { sessionScreen:1, concSessionScreen:1, visSessionScreen:1, audSessionScreen:1, tcSessionScreen:1, asanaSessionScreen:1, senseSessionScreen:1, prayerSessionScreen:1 };
+  function _inExerciseSession() {
+    var el = document.querySelector('.screen.active');
+    return !!(el && EXERCISE_SESSION_SCREENS[el.id]);
+  }
   setInterval(function() {
     if (typeof omniaState === 'undefined' || !omniaState) return;
     var engine = document.getElementById('omniaEngine');
@@ -9181,12 +9191,12 @@ document.getElementById('omniaEngine').addEventListener('click', function(e) {
       done.forEach(function(id) {
         var u = OMNIA_UPGRADES.find(function(x) { return x.id === id; });
         if (u) {
-          if (typeof showToast === 'function') showToast('Akasha Generator upgrade completed', 3200, 'green');
+          if (typeof showToast === 'function' && !_inExerciseSession()) showToast('Akasha Generator upgrade completed', 3200, 'green');
           return;
         }
         var dmIdx = (typeof dmPumpIdxForUpgrade === 'function') ? dmPumpIdxForUpgrade(id) : -1;
         var dmName = dmIdx >= 0 ? 'Dark Matter Pump ' + DM_GEN_META[dmIdx].roman : null;
-        if (dmName && typeof showToast === 'function') showToast('✦ ' + dmName + ' upgraded', 2600, 'gold');
+        if (dmName && typeof showToast === 'function' && !_inExerciseSession()) showToast('✦ ' + dmName + ' upgraded', 2600, 'gold');
       });
       if (done.length && typeof syncEnabled !== 'undefined' && syncEnabled && typeof authToken !== 'undefined' && authToken && typeof syncPushData === 'function') syncPushData();
       return;
