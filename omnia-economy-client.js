@@ -23,13 +23,44 @@ function omniaGeneratorTargetShare(stepNum) {
 
 function omniaGeneratorContributionCurve(level, idx) {
   var base = [1, 0.72, 0.55][idx] || 0.55;
-  return base * (1 + 0.55 * Math.log2(Math.max(1, level || 1)));
+  return base * (1 + 0.55 * Math.log2(Math.max(1, level || 1))) * omniaCurrentMasteryMult(level);
+}
+
+var OMNIA_MASTERY_SPAN = 20;
+var OMNIA_MASTERY_CAP = 3;
+var OMNIA_UPGRADE_FINAL_LEVEL = 80;
+
+// Upgrade levels never actually reset in storage. The four 20-level bands are
+// a presentation layer over a monotonic lifetime level, which keeps existing
+// max-merge cloud sync safe while still giving each track three explicit
+// mastery thresholds.
+function omniaUpgradeMasteryRank(upgId, rawLevel) {
+  var lvl = Math.max(1, Number(rawLevel == null ? ((omniaState.upgrades || {})[upgId] || 1) : rawLevel) || 1);
+  return Math.min(OMNIA_MASTERY_CAP, Math.floor((lvl - 1) / OMNIA_MASTERY_SPAN));
+}
+function omniaUpgradeDisplayLevel(upgId, rawLevel) {
+  var lvl = Math.max(1, Number(rawLevel == null ? ((omniaState.upgrades || {})[upgId] || 1) : rawLevel) || 1);
+  if (lvl >= OMNIA_UPGRADE_FINAL_LEVEL) return OMNIA_MASTERY_SPAN;
+  return ((lvl - 1) % OMNIA_MASTERY_SPAN) + 1;
+}
+function omniaUpgradeMasteryReady(upgId) {
+  var lvl = Math.max(1, Number((omniaState.upgrades || {})[upgId]) || 1);
+  return (lvl === 20 || lvl === 40 || lvl === 60) && lvl < omniaUpgradeStepMax(upgId);
+}
+function omniaMasteryRoman(rank) { return ['', 'I', 'II', 'III'][Math.max(0, Math.min(3, rank || 0))] || ''; }
+function omniaCurrentMasteryMult(level) { return 1 + 0.15 * omniaUpgradeMasteryRank('', level); }
+function omniaAttunementDiscountMult(level) {
+  var lvl = Math.max(1, Number(level) || 1);
+  var mastery = omniaUpgradeMasteryRank('', lvl);
+  // Preserve the original early curve and make each mastery break the old 50%
+  // floor by another five points, to a firm 65% maximum discount.
+  return Math.max(0.35, Math.max(0.5 - mastery * 0.05, 1 - (lvl - 1) * 0.05));
 }
 
 function omniaLegacyGenContribution(idx) {
   var gid = OMNIA_GEN_META[idx].id;
   var lvl = (omniaState.upgrades && omniaState.upgrades[gid]) || 1;
-  return (OMNIA_GEN_LEGACY_BASE[idx] || 24) + lvl * (OMNIA_GEN_LEGACY_PER[idx] || 10);
+  return ((OMNIA_GEN_LEGACY_BASE[idx] || 24) + lvl * (OMNIA_GEN_LEGACY_PER[idx] || 10)) * omniaCurrentMasteryMult(lvl);
 }
 
 function omniaRatePerHour() {
@@ -42,8 +73,8 @@ function omniaRatePerHour() {
     total += (b2b.astral || 1) + (b2b.mental || 1) + (b2b.wisdom || 1);
     var legacyPower = 0;
     for (var bi = 0; bi < 3; bi++) {
-      if (typeof omniaUpgradeBuilding === 'function' && omniaUpgradeBuilding(OMNIA_GEN_META[bi].id)) continue;
-      legacyPower += omniaLegacyGenContribution(bi);
+      var legacyBuildMult = (typeof omniaPumpProductionWhileBuilding === 'function') ? omniaPumpProductionWhileBuilding(bi) : 1;
+      legacyPower += omniaGenContribution(bi) * legacyBuildMult;
     }
     if (legacyPower <= 0) return 0;
     var legacyBodyBonus = Math.floor(Math.sqrt(Math.max(0, total)) * 9);
@@ -59,8 +90,8 @@ function omniaRatePerHour() {
     var meta = OMNIA_GEN_META[gi];
     var maxLevel = omniaUpgradeStepMax(meta.id);
     maxPower += omniaGeneratorContributionCurve(maxLevel, gi);
-    if (typeof omniaUpgradeBuilding === 'function' && omniaUpgradeBuilding(meta.id)) continue;
-    activePower += omniaGenContribution(gi);
+    var buildMult = (typeof omniaPumpProductionWhileBuilding === 'function') ? omniaPumpProductionWhileBuilding(gi) : 1;
+    activePower += omniaGenContribution(gi) * buildMult;
   }
   if (activePower <= 0 || maxPower <= 0) return 0;
 
@@ -95,28 +126,27 @@ function omniaReservoirCap() {
 
 function omniaUpgradeStepMax(upgId) {
   // Dark Matter pumps keep their own finite cap even in Book II.
-  if (typeof dmGenIdx === 'function' && dmGenIdx(upgId) >= 0) return DM_GEN_LEVEL_CAP;
-  // Book II (Magical Evocation) sits past Step X — caps are fully open there,
-  // since bardonStep is reset to 1 and no longer advances. Infinity → the UI
-  // renders it as uncapped rather than a placeholder number.
-  if (typeof darkMatterUnlocked === 'function' && darkMatterUnlocked()) return Infinity;
+  if (typeof dmUpgradeLevelCap === 'function' && dmUpgradeLevelCap(upgId)) return dmUpgradeLevelCap(upgId);
+  // Once Book II opens, all three mastery thresholds and the final 20-level
+  // band remain available even though bardonStep resets to 1.
+  if (typeof darkMatterUnlocked === 'function' && darkMatterUnlocked()) return OMNIA_UPGRADE_FINAL_LEVEL;
   var step = omniaState.bardonStep || 1;
   // One finite cap per Step I–X, continuing the early progression's widening
   // deltas (current/vessel +3,+4,+5,…; attunement +2,+3,+4,…) so each step
   // opens a few more levels rather than jumping to an "unlimited" placeholder.
   var caps = {
-    current:    [3, 6, 10, 15, 21, 28, 36, 45, 55, 66],
-    gen2:       [3, 6, 10, 15, 21, 28, 36, 45, 55, 66],
-    gen3:       [3, 6, 10, 15, 21, 28, 36, 45, 55, 66],
-    vessel:     [3, 6, 10, 15, 21, 28, 36, 45, 55, 66],
-    vessel2:    [3, 6, 10, 15, 21, 28, 36, 45, 55, 66],
-    vessel3:    [3, 6, 10, 15, 21, 28, 36, 45, 55, 66],
-    attunement: [2, 4, 7, 11, 16, 22, 29, 37, 46, 56],
-    attune2:    [2, 4, 7, 11, 16, 22, 29, 37, 46, 56],
-    attune3:    [2, 4, 7, 11, 16, 22, 29, 37, 46, 56],
-    quickening: [2, 4, 7, 11, 16, 22, 29, 37, 46, 56],
-    quick2:     [2, 4, 7, 11, 16, 22, 29, 37, 46, 56],
-    quick3:     [2, 4, 7, 11, 16, 22, 29, 37, 46, 56]
+    current:    [3, 6, 10, 15, 21, 28, 36, 45, 60, 80],
+    gen2:       [3, 6, 10, 15, 21, 28, 36, 45, 60, 80],
+    gen3:       [3, 6, 10, 15, 21, 28, 36, 45, 60, 80],
+    vessel:     [3, 6, 10, 15, 21, 28, 36, 45, 60, 80],
+    vessel2:    [3, 6, 10, 15, 21, 28, 36, 45, 60, 80],
+    vessel3:    [3, 6, 10, 15, 21, 28, 36, 45, 60, 80],
+    attunement: [2, 4, 7, 11, 16, 22, 29, 37, 56, 80],
+    attune2:    [2, 4, 7, 11, 16, 22, 29, 37, 56, 80],
+    attune3:    [2, 4, 7, 11, 16, 22, 29, 37, 56, 80],
+    quickening: [2, 4, 7, 11, 16, 22, 29, 37, 56, 80],
+    quick2:     [2, 4, 7, 11, 16, 22, 29, 37, 56, 80],
+    quick3:     [2, 4, 7, 11, 16, 22, 29, 37, 56, 80]
   };
   return (caps[upgId] || caps.current)[Math.min(step - 1, 9)];
 }
@@ -153,9 +183,10 @@ function omniaAccrue() {
     var dn = (typeof dmGenUnlockedCount === 'function') ? dmGenUnlockedCount() : 0;
     for (var di = 0; di < dn; di++) {
       var dgid = DM_GEN_META[di].id;
-      if (omniaUpgradeBuilding(dgid)) continue;
+      var dmBuildMult = (typeof dmStabilizationMult === 'function') ? dmStabilizationMult(di) : 1;
+      if (dmBuildMult <= 0) continue;
       var dcap = dmPumpReservoirCap(di);
-      omniaState.reservoirs[dgid] = Math.min(dcap, (omniaState.reservoirs[dgid] || 0) + elapsedHours * dmGenRatePerDay(di) / 24);
+      omniaState.reservoirs[dgid] = Math.min(dcap, (omniaState.reservoirs[dgid] || 0) + elapsedHours * dmGenRatePerDay(di) * dmBuildMult / 24);
     }
   }
   omniaState.lastTick = now;
@@ -203,7 +234,7 @@ function omniaBodyCost(body) {
 
 function omniaDiscountMult() {
   var att = (omniaState.upgrades && omniaState.upgrades.attunement) || 1;
-  return Math.max(0.5, 1 - (att - 1) * 0.05);
+  return omniaAttunementDiscountMult(att);
 }
 function omniaCosmeticCost(item) {
   // Dark Current items are ◆-priced and flat — like the pumps, the dark
@@ -221,7 +252,7 @@ function omniaUpgradeCost(upg) {
   // uses the global Attunement (Generator I's).
   var pump = _pumpOfUpgrade(upg.id);
   var att = pump ? (omniaState.upgrades[pump.attune] || 1) : (omniaState.upgrades.attunement || 1);
-  return Math.floor(raw * Math.max(0.5, 1 - (att - 1) * 0.05));
+  return Math.floor(raw * omniaAttunementDiscountMult(att));
 }
 
 // ── Prestige (Magical Evocation) ─────────────────────────────────

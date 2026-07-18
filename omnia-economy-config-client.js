@@ -4,7 +4,15 @@ var OMNIA_DEFAULT = {
   reservoir: 0,
   lastTick: Date.now(),
   bodies: { physical:1, astral:1, mental:1 },
-  upgrades: { current:1, gen2:1, gen3:1, vessel:1, attunement:1, quickening:1, vessel2:1, attune2:1, quick2:1, vessel3:1, attune3:1, quick3:1 },
+  upgrades: {
+    current:1, gen2:1, gen3:1,
+    vessel:1, attunement:1, quickening:1,
+    vessel2:1, attune2:1, quick2:1,
+    vessel3:1, attune3:1, quick3:1,
+    dm1:1, dmv1:1, dms1:1, dmr1:1,
+    dm2:1, dmv2:1, dms2:1, dmr2:1,
+    dm3:1, dmv3:1, dms3:1, dmr3:1
+  },
   bardonStep:1,
   prestige:0,
   darkMatter:0,

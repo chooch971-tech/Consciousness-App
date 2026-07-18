@@ -265,21 +265,26 @@ function renderOmniaEngine() {
       var stepMax = omniaUpgradeStepMax(upg.id);
       var capped = isFinite(stepMax);
       var atMax = capped && lvl >= stepMax;
+      var masteryReady = omniaUpgradeMasteryReady(upg.id);
+      var masteryRank = omniaUpgradeMasteryRank(upg.id, lvl);
+      var displayLvl = omniaUpgradeDisplayLevel(upg.id, lvl);
       var buildingUntil = omniaUpgradeBuilding(upg.id);
       var sub = upg.sub;
       var btnHtml;
       if (buildingUntil) {
         btnHtml = '<button class="omnia-mini-btn omnia-mini-btn--building" disabled>◷ <span data-build-countdown="' + upg.id + '">' + omniaBuildLabel(buildingUntil) + '</span></button>';
+      } else if (masteryReady) {
+        btnHtml = '<button class="omnia-mini-btn omnia-mini-btn--mastery" data-omnia-mastery="' + upg.id + '">Mastery ' + omniaMasteryRoman(masteryRank + 1) + '</button>';
       } else if (atMax) {
-        btnHtml = '<button class="omnia-mini-btn" disabled style="opacity:.45;cursor:default;">Step max</button>';
+        btnHtml = '<button class="omnia-mini-btn" disabled style="opacity:.45;cursor:default;">' + (lvl >= OMNIA_UPGRADE_FINAL_LEVEL ? 'Mastered' : 'Step max') + '</button>';
       } else {
         btnHtml = '<button class="omnia-mini-btn" data-omnia-upgrade="' + upg.id + '"' + ((omniaState.akasha || 0) < cost ? ' disabled' : '') + '>Upgrade ' + cost + '</button>';
       }
       var nameTail = buildingUntil
-        ? ' <span style="font-size:8px;color:#8eccc0;letter-spacing:.1em;">→ ' + (lvl + 1) + ' · building</span>'
-        : (atMax || !capped ? '' : ' <span style="font-size:8px;color:var(--muted);letter-spacing:.1em;">/ ' + stepMax + '</span>');
+        ? ' <span style="font-size:8px;color:#8eccc0;letter-spacing:.1em;">→ ' + Math.min(20, displayLvl + 1) + ' · building</span>'
+        : ' <span style="font-size:8px;color:var(--muted);letter-spacing:.1em;">/ 20</span>';
       return '<div class="omnia-upgrade-row">'
-        + '<div><div class="omnia-upgrade-name">' + upg.name + ' ' + lvl + nameTail + '</div><div class="omnia-upgrade-sub">' + sub + '</div></div>'
+        + '<div><div class="omnia-upgrade-name">' + upg.name + ' ' + (masteryRank ? '<span class="omnia-mastery-mark">✦' + omniaMasteryRoman(masteryRank) + '</span> ' : '') + displayLvl + nameTail + '</div><div class="omnia-upgrade-sub">' + sub + '</div></div>'
         + btnHtml
         + '</div>';
     }).join('');
@@ -544,14 +549,15 @@ function _pumpOfUpgrade(id) {
 function omniaPumpReservoirCap(idx) {
   var vLvl = (omniaState.upgrades && omniaState.upgrades[OMNIA_GEN_META[idx].vessel]) || 1;
   var bodyTotal = Math.max(0, omniaBodyTotal());
-  return Math.floor(180 + Math.pow(vLvl - 1, 2) * 30 + Math.pow(bodyTotal, 1.15) * 3);
+  var masteryMult = 1 + 0.25 * omniaUpgradeMasteryRank(OMNIA_GEN_META[idx].vessel, vLvl);
+  return Math.floor((180 + Math.pow(vLvl - 1, 2) * 30 + Math.pow(bodyTotal, 1.15) * 3) * masteryMult);
 }
 // Split the (multiplier-applied) total rate across active pumps by contribution.
 function omniaPumpShares() {
   var total = omniaRatePerHour();
   var n = omniaGenUnlockedCount(), contribs = [], sum = 0;
   for (var i = 0; i < n; i++) {
-    var c = omniaPumpBuildingId(OMNIA_GEN_META[i]) ? 0 : omniaGenContribution(i);
+    var c = omniaGenContribution(i) * omniaPumpProductionWhileBuilding(i);
     contribs.push(c); sum += c;
   }
   var out = {};
@@ -566,8 +572,19 @@ function omniaGenUnlockedCount() {
 function omniaGenContribution(idx) {
   var gid = OMNIA_GEN_META[idx].id;
   var lvl = (omniaState.upgrades && omniaState.upgrades[gid]) || 1;
-  if (typeof darkMatterUnlocked === 'function' && darkMatterUnlocked()) return omniaLegacyGenContribution(idx);
-  return omniaGeneratorContributionCurve(lvl, idx);
+  var base = (typeof darkMatterUnlocked === 'function' && darkMatterUnlocked())
+    ? omniaLegacyGenContribution(idx)
+    : omniaGeneratorContributionCurve(lvl, idx);
+  return base * ((typeof dmResonanceMult === 'function') ? dmResonanceMult(idx) : 1);
+}
+function omniaPumpProductionWhileBuilding(idx) {
+  var meta = OMNIA_GEN_META[idx];
+  if (!meta || !omniaPumpBuildingId(meta)) return 1;
+  var qLvl = (omniaState.upgrades && omniaState.upgrades[meta.quick]) || 1;
+  // Every Quickening mastery lets an upgrading pump retain another 10% of its
+  // output. Before the first mastery, construction keeps the original fully
+  // offline behavior.
+  return 0.10 * omniaUpgradeMasteryRank(meta.quick, qLvl);
 }
 
 // The Quickening upgrade shortens construction, up to 60% faster at its cap.
@@ -576,6 +593,48 @@ function omniaBuildSpeedMult(upgId) {
   var pump = _pumpOfUpgrade(upgId);
   var q = (pump ? omniaState.upgrades[pump.quick] : (omniaState.upgrades && omniaState.upgrades.quickening)) || 1;
   return Math.max(0.4, 1 - (q - 1) * 0.06);
+}
+
+function omniaUpgradeMasteryBenefit(id, nextRank) {
+  var pump = _pumpOfUpgrade(id);
+  if (!pump) return 'A permanent generator mastery.';
+  if (id === pump.id) return '+' + (nextRank * 15) + '% Akashic Current from this track in total.';
+  if (id === pump.vessel) return '+' + (nextRank * 25) + '% reservoir capacity from mastery.';
+  if (id === pump.attune) return 'Upgrade costs can now fall as low as ' + (50 + nextRank * 5) + '% off.';
+  return 'The pump now retains ' + (nextRank * 10) + '% production while it builds.';
+}
+function omniaUpgradeMasteryName(id) {
+  var pump = _pumpOfUpgrade(id);
+  if (!pump) return 'Generator';
+  if (id === pump.id) return 'Akashic Current';
+  if (id === pump.vessel) return 'Deep Vessel';
+  if (id === pump.attune) return 'Attunement';
+  return 'Quickening';
+}
+function confirmOmniaUpgradeMastery(id) {
+  var upg = OMNIA_UPGRADES.find(function(u) { return u.id === id; });
+  if (!upg || !omniaUpgradeMasteryReady(id) || omniaUpgradeBuilding(id)) return false;
+  var pump = _pumpOfUpgrade(id);
+  if (pump && omniaPumpBuildingId(pump)) return false;
+  var nextRank = omniaUpgradeMasteryRank(id) + 1;
+  var title = 'Attain ' + omniaUpgradeMasteryName(id) + ' Mastery ' + omniaMasteryRoman(nextRank) + '?';
+  var text = 'This track will return to Level 1 and gain the ' + omniaMasteryRoman(nextRank)
+    + ' mastery mark. Lifetime progress, costs, and cloud sync remain intact.\n\n'
+    + omniaUpgradeMasteryBenefit(id, nextRank);
+  showConfirm(title, text, function() { masterOmniaUpgrade(id); }, 'mastery');
+  return true;
+}
+function masterOmniaUpgrade(id) {
+  if (!omniaUpgradeMasteryReady(id) || omniaUpgradeBuilding(id)) return false;
+  var pump = _pumpOfUpgrade(id);
+  if (pump && omniaPumpBuildingId(pump)) return false;
+  omniaState.upgrades[id] = (omniaState.upgrades[id] || 1) + 1;
+  saveOmniaState();
+  renderOmniaEngine();
+  if (_genSheetId && _pumpOfUpgrade(_genSheetId) === pump) renderGenSheet(_genSheetId);
+  showToast('✦ Mastery ' + omniaMasteryRoman(omniaUpgradeMasteryRank(id)) + ' attained', 3200, 'gold');
+  playUpgradeHammer();
+  return true;
 }
 function omniaBuildDurationMs(targetLevel, upgId) {
   // Weighty idle construction on a cubic curve, so deep upgrades are genuine
@@ -631,23 +690,57 @@ function omniaBuildSpanLabel(ms) {
 
 // ── Dark Matter pumps (Book II) ────────────────────────────────────────────
 // Idle ◆ condensers that come online at Prestige 3 / 5 / 8. Deliberately
-// slower than practice: at cap all three together (~137 ◆/day) roughly match
-// two daily advanced drills, so sitting with the work stays the primary
-// current. Rates are per DAY, not per hour — ◆ is scarce. Each pump has one
-// upgrade track (Dark Current), paid in ◆, with the same build-to-finish +
-// offline-while-building model as the akasha pumps. Levels live in
-// omniaState.upgrades (dm1/dm2/dm3) and reservoirs in omniaState.reservoirs,
-// so sync-merge (monotonic Math.max / generational fold) is inherited free.
+// slower than practice: even with the expanded Dark Current, the curve tapers
+// after level 10 so sitting with the work remains primary. Rates are per DAY,
+// not per hour — ◆ is scarce. Four tracks share the same one-build-per-pump
+// construction slot. Levels live in omniaState.upgrades and reservoirs in
+// omniaState.reservoirs, so generic monotonic sync merging remains intact.
 var DM_GEN_META = [
-  { id:'dm1', roman:'I',   prestige:3 },
-  { id:'dm2', roman:'II',  prestige:5 },
-  { id:'dm3', roman:'III', prestige:8 }
+  { id:'dm1', roman:'I',   prestige:3, vessel:'dmv1', stable:'dms1', resonance:'dmr1', akasha:'current' },
+  { id:'dm2', roman:'II',  prestige:5, vessel:'dmv2', stable:'dms2', resonance:'dmr2', akasha:'gen2' },
+  { id:'dm3', roman:'III', prestige:8, vessel:'dmv3', stable:'dms3', resonance:'dmr3', akasha:'gen3' }
 ];
-var DM_GEN_LEVEL_CAP = 10;
+var DM_GEN_LEVEL_CAP = 20;
+var DM_VESSEL_LEVEL_CAP = 10;
+var DM_STABLE_LEVEL_CAP = 10;
+var DM_RESONANCE_LEVEL_CAP = 10;
 var DM_GEN_BASE_DAY = [12, 18, 26], DM_GEN_PER_DAY = [2, 3, 4];
 function dmGenIdx(id) {
   for (var i = 0; i < DM_GEN_META.length; i++) if (DM_GEN_META[i].id === id) return i;
   return -1;
+}
+function dmPumpIdxForUpgrade(id) {
+  for (var i = 0; i < DM_GEN_META.length; i++) {
+    var m = DM_GEN_META[i];
+    if (id === m.id || id === m.vessel || id === m.stable || id === m.resonance) return i;
+  }
+  return -1;
+}
+function dmPumpOfUpgrade(id) {
+  var idx = dmPumpIdxForUpgrade(id);
+  return idx >= 0 ? DM_GEN_META[idx] : null;
+}
+function dmUpgradeTrack(id) {
+  var m = dmPumpOfUpgrade(id);
+  if (!m) return null;
+  if (id === m.id) return 'current';
+  if (id === m.vessel) return 'vessel';
+  if (id === m.stable) return 'stable';
+  return 'resonance';
+}
+function dmUpgradeLevelCap(id) {
+  var track = dmUpgradeTrack(id);
+  if (track === 'current') return DM_GEN_LEVEL_CAP;
+  if (track === 'vessel') return DM_VESSEL_LEVEL_CAP;
+  if (track === 'stable') return DM_STABLE_LEVEL_CAP;
+  if (track === 'resonance') return DM_RESONANCE_LEVEL_CAP;
+  return 0;
+}
+function dmPumpBuildingId(meta) {
+  if (!meta) return 0;
+  var ids = [meta.id, meta.vessel, meta.stable, meta.resonance];
+  for (var i = 0; i < ids.length; i++) if (omniaUpgradeBuilding(ids[i])) return ids[i];
+  return 0;
 }
 function dmGenUnlockedCount() {
   if (typeof darkMatterUnlocked !== 'function' || !darkMatterUnlocked()) return 0;
@@ -657,14 +750,46 @@ function dmGenUnlockedCount() {
 }
 function dmGenRatePerDay(idx) {
   var lvl = (omniaState.upgrades && omniaState.upgrades[DM_GEN_META[idx].id]) || 1;
-  return DM_GEN_BASE_DAY[idx] + DM_GEN_PER_DAY[idx] * (lvl - 1);
+  var built = Math.max(0, lvl - 1);
+  // Preserve levels 1–10 exactly, then let the new second half deepen at half
+  // speed so idle Dark Matter remains secondary to advanced practice.
+  return Math.floor(DM_GEN_BASE_DAY[idx] + DM_GEN_PER_DAY[idx] * Math.min(9, built)
+    + DM_GEN_PER_DAY[idx] * 0.5 * Math.max(0, built - 9));
 }
-// Two days of production fit in the vat, so a daily check-in never overflows
-// but the pump can't bank a week unattended.
-function dmPumpReservoirCap(idx) { return Math.floor(dmGenRatePerDay(idx) * 2); }
-function dmUpgradeCost(id) {
+function dmPumpReservoirCap(idx) {
+  var meta = DM_GEN_META[idx];
+  var vessel = (omniaState.upgrades && omniaState.upgrades[meta.vessel]) || 1;
+  // Starts at the original two days and reaches 4.25 days at Void Vessel 10.
+  return Math.floor(dmGenRatePerDay(idx) * (2 + (vessel - 1) * 0.25));
+}
+function dmStabilizationMult(idx) {
+  var meta = DM_GEN_META[idx];
+  if (!meta || !dmPumpBuildingId(meta)) return 1;
+  var lvl = (omniaState.upgrades && omniaState.upgrades[meta.stable]) || 1;
+  return Math.max(0, Math.min(0.45, (lvl - 1) * 0.05));
+}
+function dmResonanceMult(idx) {
+  var meta = DM_GEN_META[idx];
+  if (!meta) return 1;
+  var lvl = (omniaState.upgrades && omniaState.upgrades[meta.resonance]) || 1;
+  return 1 + Math.min(0.36, (lvl - 1) * 0.04);
+}
+function dmUpgradePrice(id) {
   var lvl = (omniaState.upgrades && omniaState.upgrades[id]) || 1;
-  return Math.floor(30 * Math.pow(1.3, lvl - 1));
+  var track = dmUpgradeTrack(id), d = 0, a = 0;
+  if (track === 'current') {
+    d = lvl <= 10
+      ? Math.floor(30 * Math.pow(1.3, lvl - 1))
+      : Math.floor(318 * Math.pow(1.16, lvl - 10));
+  } else if (track === 'vessel') {
+    d = Math.floor(24 * Math.pow(1.28, lvl - 1));
+  } else if (track === 'stable') {
+    d = Math.floor(36 * Math.pow(1.3, lvl - 1));
+  } else if (track === 'resonance') {
+    d = Math.floor(45 * Math.pow(1.32, lvl - 1));
+    a = Math.floor(8000 * Math.pow(1.35, lvl - 1));
+  }
+  return { d:d, a:a };
 }
 // Slightly heavier than the akasha curve, and no Quickening applies — the
 // dark current cannot be hurried.
@@ -673,15 +798,20 @@ function dmBuildDurationMs(targetLevel) {
   return Math.max(60, Math.min(secs, 24 * 3600)) * 1000;
 }
 function buyDmUpgrade(id) {
-  var idx = dmGenIdx(id);
+  var idx = dmPumpIdxForUpgrade(id);
   if (idx < 0 || idx >= dmGenUnlockedCount()) return false;
   var lvl = (omniaState.upgrades && omniaState.upgrades[id]) || 1;
-  if (lvl >= DM_GEN_LEVEL_CAP) return false;
-  if (omniaUpgradeBuilding(id)) return false;
-  var cost = dmUpgradeCost(id);
-  if ((omniaState.darkMatter || 0) < cost) return false;
-  omniaState.darkMatter -= cost;
-  omniaState.totalDarkMatterSpent = (omniaState.totalDarkMatterSpent || 0) + cost;
+  if (lvl >= dmUpgradeLevelCap(id)) return false;
+  if (dmPumpBuildingId(DM_GEN_META[idx])) return false;
+  var price = dmUpgradePrice(id);
+  if ((omniaState.darkMatter || 0) < price.d || (omniaState.akasha || 0) < price.a) return false;
+  omniaState.darkMatter -= price.d;
+  omniaState.totalDarkMatterSpent = (omniaState.totalDarkMatterSpent || 0) + price.d;
+  if (price.a && !omniaSpendAkasha(price.a, 'dark-resonance-upgrade', { upgradeId:id, level:lvl })) {
+    omniaState.darkMatter += price.d;
+    omniaState.totalDarkMatterSpent = Math.max(0, (omniaState.totalDarkMatterSpent || 0) - price.d);
+    return false;
+  }
   if (!omniaState.upgradeBuilds || typeof omniaState.upgradeBuilds !== 'object') omniaState.upgradeBuilds = {};
   omniaState.upgradeBuilds[id] = Date.now() + dmBuildDurationMs(lvl + 1);
   saveOmniaState();
@@ -694,7 +824,7 @@ function collectDmPump(anchorEl, gid) {
   omniaAccrue();
   var res = omniaState.reservoirs || (omniaState.reservoirs = {});
   var amount = Math.floor(res[gid] || 0);
-  if (amount < 1 || omniaUpgradeBuilding(gid)) return;
+  if (amount < 1 || dmPumpBuildingId(dmPumpOfUpgrade(gid))) return;
   res[gid] = (res[gid] || 0) - amount;
   if (res[gid] < 0.5) res[gid] = 0;
   // mint returns the credited amount (after any Dark Current cosmetic boost),
@@ -807,7 +937,7 @@ function renderOmniaGenYard() {
       + _genPictureSvg(i, frac, lvl)
       + '<div class="oe-genpic-lvl">' + (building
           ? '<span class="oe-genpic-build">◷ <span data-build-countdown="' + buildingId + '">' + omniaBuildLabel(building) + '</span></span>'
-          : 'Lv ' + lvl) + '</div>'
+          : (omniaUpgradeMasteryRank(meta.id, lvl) ? '<span class="omnia-mastery-mark">✦' + omniaMasteryRoman(omniaUpgradeMasteryRank(meta.id, lvl)) + '</span> ' : '') + 'Lv ' + omniaUpgradeDisplayLevel(meta.id, lvl)) + '</div>'
       + '</button>';
   }
   html = '<div class="oe-genyard-row">' + html + '</div>';
@@ -823,7 +953,8 @@ function renderOmniaGenYard() {
         continue;
       }
       var dLvl = (omniaState.upgrades && omniaState.upgrades[dmeta.id]) || 1;
-      var dBuild = omniaUpgradeBuilding(dmeta.id);
+      var dBuildId = dmPumpBuildingId(dmeta);
+      var dBuild = dBuildId ? omniaUpgradeBuilding(dBuildId) : 0;
       var dRes = Math.floor(res[dmeta.id] || 0);
       var dCap = dmPumpReservoirCap(d);
       var dFrac = dCap > 0 ? (res[dmeta.id] || 0) / dCap : 0;
@@ -831,7 +962,7 @@ function renderOmniaGenYard() {
         + (!dBuild && dRes >= 1 ? '<div class="oe-gen-collectbadge oe-gen-collectbadge--dm">+' + dRes + ' ◆</div>' : '')
         + _dmPictureSvg(d, dFrac, dLvl)
         + '<div class="oe-genpic-lvl">' + (dBuild
-            ? '<span class="oe-genpic-build">◷ <span data-build-countdown="' + dmeta.id + '">' + omniaBuildLabel(dBuild) + '</span></span>'
+            ? '<span class="oe-genpic-build">◷ <span data-build-countdown="' + dBuildId + '">' + omniaBuildLabel(dBuild) + '</span></span>'
             : 'Lv ' + dLvl) + '</div>'
         + '</button>';
     }
@@ -849,17 +980,37 @@ function renderDmSheet(gid) {
   if (!body || idx < 0) return;
   var meta = DM_GEN_META[idx];
   var lvl = (omniaState.upgrades && omniaState.upgrades[gid]) || 1;
-  var building = omniaUpgradeBuilding(gid);
+  var pumpBusyId = dmPumpBuildingId(meta);
+  var building = pumpBusyId ? omniaUpgradeBuilding(pumpBusyId) : 0;
   var res = Math.floor((omniaState.reservoirs || {})[gid] || 0);
   var cap = dmPumpReservoirCap(idx);
   var canCollect = !building && res >= 1;
-  var atMax = lvl >= DM_GEN_LEVEL_CAP;
-  var cost = dmUpgradeCost(gid);
-  var btn;
-  if (building) btn = '<button class="omnia-mini-btn omnia-mini-btn--building" disabled>◷ <span data-build-countdown="' + gid + '">' + omniaBuildLabel(building) + '</span></button>';
-  else if (atMax) btn = '<button class="omnia-mini-btn" disabled style="opacity:.45;cursor:default;">Max</button>';
-  else btn = '<button class="omnia-mini-btn" data-dm-buy="' + gid + '"' + ((omniaState.darkMatter || 0) < cost ? ' disabled' : '') + '>Upgrade ' + cost + ' ◆</button>';
-  var timeLabel = (atMax || building) ? '' : omniaBuildSpanLabel(dmBuildDurationMs(lvl + 1));
+  function row(id, name, sub, accent, glyph) {
+    var trackLvl = (omniaState.upgrades && omniaState.upgrades[id]) || 1;
+    var levelCap = dmUpgradeLevelCap(id);
+    var atMax = trackLvl >= levelCap;
+    var trackBuild = omniaUpgradeBuilding(id);
+    var price = dmUpgradePrice(id);
+    var priceLabel = price.a
+      ? price.d.toLocaleString() + ' ◆ + ' + price.a.toLocaleString() + ' akasha'
+      : price.d.toLocaleString() + ' ◆';
+    var disabled = (omniaState.darkMatter || 0) < price.d || (omniaState.akasha || 0) < price.a;
+    var btn;
+    if (trackBuild) btn = '<button class="omnia-mini-btn omnia-mini-btn--building" disabled>◷ <span data-build-countdown="' + id + '">' + omniaBuildLabel(trackBuild) + '</span></button>';
+    else if (pumpBusyId) btn = '<button class="omnia-mini-btn" disabled style="opacity:.4;cursor:default;">Waiting</button>';
+    else if (atMax) btn = '<button class="omnia-mini-btn" disabled style="opacity:.45;cursor:default;">Mastered</button>';
+    else btn = '<button class="omnia-mini-btn" data-dm-buy="' + id + '"' + (disabled ? ' disabled' : '') + '>Upgrade ' + priceLabel + '</button>';
+    var timeLabel = (atMax || trackBuild || pumpBusyId) ? '' : omniaBuildSpanLabel(dmBuildDurationMs(trackLvl + 1));
+    return '<div class="omnia-upgrade-row" style="border-left:2px solid ' + accent + '55; padding-left:11px;">'
+      + '<div><div class="omnia-upgrade-name" style="color:' + accent + ';"><span style="opacity:.9;margin-right:6px;">' + glyph + '</span>' + name + ' ' + trackLvl
+      + ' <span style="font-size:8px;color:rgba(220,204,240,.58);letter-spacing:.1em;">/ ' + levelCap + '</span></div>'
+      + '<div class="omnia-upgrade-sub">' + sub + '</div></div>'
+      + '<div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px;flex-shrink:0;">' + btn
+      + (timeLabel ? '<span style="font-size:8px;letter-spacing:.08em;color:rgba(196,168,212,.9);">◷ ' + timeLabel + ' build</span>' : '')
+      + '</div></div>';
+  }
+  var stablePct = Math.max(0, (((omniaState.upgrades || {})[meta.stable] || 1) - 1) * 5);
+  var resonancePct = Math.round((dmResonanceMult(idx) - 1) * 100);
   body.innerHTML = '<button class="ach-info-close" id="genSheetClose" aria-label="Close">✕</button>'
     + '<div class="ach-info-medal" id="genSheetMedal" style="--gc:#c4a8d4; position:relative;' + (canCollect ? ' cursor:pointer;' : '') + '">'
     + (canCollect ? '<div class="oe-gen-collectbadge oe-gen-collectbadge--dm">+' + res.toLocaleString() + ' ◆</div>' : '')
@@ -867,15 +1018,14 @@ function renderDmSheet(gid) {
     + '<div class="ach-info-kicker" style="color:#c4a8d4;">Dark Matter Pump</div>'
     + '<div class="ach-info-name">Pump ' + meta.roman + '</div>'
     + '<div class="ach-info-desc">+' + dmGenRatePerDay(idx) + ' ◆ / day · vat ' + res.toLocaleString() + ' / ' + cap.toLocaleString()
-    + (building ? ' · <span style="color:#e8c87a;">offline while upgrading</span>'
+    + (building ? ' · <span style="color:#e8c87a;">' + (stablePct ? stablePct + '% production while upgrading' : 'offline while upgrading') + '</span>'
        : canCollect ? ' · <span style="color:#c4a8d4;">tap the pump to collect</span>' : '') + '</div>'
     + '<div style="text-align:left; margin-top:16px;">'
-    + '<div class="omnia-upgrade-row" style="border-left:2px solid #9a6ae855; padding-left:11px;">'
-    + '<div><div class="omnia-upgrade-name" style="color:#c4a8d4;"><span style="opacity:.9;margin-right:6px;">◆</span>Dark Current ' + lvl + (atMax ? '' : ' <span style="font-size:8px;color:rgba(200,230,245,.55);letter-spacing:.1em;">/ ' + DM_GEN_LEVEL_CAP + '</span>') + '</div>'
-    + '<div class="omnia-upgrade-sub">Condenses dark matter more quickly · next +' + DM_GEN_PER_DAY[idx] + ' ◆/day</div></div>'
-    + '<div style="display:flex; flex-direction:column; align-items:flex-end; gap:4px; flex-shrink:0;">' + btn
-    + (timeLabel ? '<span style="font-size:8px; letter-spacing:.08em; color:rgba(196,168,212,.9);">◷ ' + timeLabel + ' build</span>' : '') + '</div>'
-    + '</div></div>';
+    + row(meta.id, 'Dark Current', 'Condenses dark matter more quickly · deeper levels deliberately taper', '#c4a8d4', '◆')
+    + row(meta.vessel, 'Void Vessel', 'Extends this pump\'s offline vat from two days toward 4.25 days', '#9a8ee8', '▽')
+    + row(meta.stable, 'Stabilization', 'Retains another 5% production while any pump upgrade is building', '#b17bd8', '◌')
+    + row(meta.resonance, 'Umbral Resonance', 'Paired Akasha Generator ' + meta.roman + ' +' + resonancePct + '% · next +4%', '#d7a5f2', '↔')
+    + '</div>';
   var cl = document.getElementById('genSheetClose');
   if (cl) cl.onclick = closeGenSheet;
   body.onclick = function(e) {
@@ -885,7 +1035,7 @@ function renderDmSheet(gid) {
     if (medalEl && _genSheetId) {
       omniaAccrue();
       var avail = Math.floor((omniaState.reservoirs || {})[_genSheetId] || 0);
-      if (!omniaUpgradeBuilding(_genSheetId) && avail >= 1) { collectDmPump(medalEl, _genSheetId); renderGenSheet(_genSheetId); }
+      if (!dmPumpBuildingId(dmPumpOfUpgrade(_genSheetId)) && avail >= 1) { collectDmPump(medalEl, _genSheetId); renderGenSheet(_genSheetId); }
       else playCollectEmpty();
     }
   };
@@ -911,20 +1061,24 @@ function renderGenSheet(gid) {
     var stepMax = omniaUpgradeStepMax(id);
     var capped = isFinite(stepMax);
     var atMax = capped && lvl >= stepMax;
+    var masteryReady = omniaUpgradeMasteryReady(id);
+    var masteryRank = omniaUpgradeMasteryRank(id, lvl);
+    var displayLvl = omniaUpgradeDisplayLevel(id, lvl);
     var building = omniaUpgradeBuilding(id);
     var btn;
     if (building) btn = '<button class="omnia-mini-btn omnia-mini-btn--building" disabled>◷ <span data-build-countdown="' + id + '">' + omniaBuildLabel(building) + '</span></button>';
     else if (pumpBusyId) btn = '<button class="omnia-mini-btn" disabled style="opacity:.4;cursor:default;">Waiting</button>';
-    else if (atMax) btn = '<button class="omnia-mini-btn" disabled style="opacity:.45;cursor:default;">Step max</button>';
+    else if (masteryReady) btn = '<button class="omnia-mini-btn omnia-mini-btn--mastery" data-sheet-mastery="' + id + '">Mastery ' + omniaMasteryRoman(masteryRank + 1) + '</button>';
+    else if (atMax) btn = '<button class="omnia-mini-btn" disabled style="opacity:.45;cursor:default;">' + (lvl >= OMNIA_UPGRADE_FINAL_LEVEL ? 'Mastered' : 'Step max') + '</button>';
     else btn = '<button class="omnia-mini-btn" data-sheet-buy="' + id + '"' + ((omniaState.akasha || 0) < cost ? ' disabled' : '') + '>Upgrade ' + cost + '</button>';
     // Build time for the NEXT level, shown under the button so cost + duration
     // sit together. Hidden at max (no next level) and while building (the button
     // already counts the live remaining time down).
-    var timeLabel = (atMax || building) ? '' : omniaBuildSpanLabel(omniaBuildDurationMs(lvl + 1, id));
+    var timeLabel = (atMax || building || masteryReady || pumpBusyId) ? '' : omniaBuildSpanLabel(omniaBuildDurationMs(lvl + 1, id));
     var right = '<div style="display:flex; flex-direction:column; align-items:flex-end; gap:4px; flex-shrink:0;">' + btn
       + (timeLabel ? '<span style="font-size:8px; letter-spacing:.08em; color:rgba(196,168,212,.9);">◷ ' + timeLabel + ' build</span>' : '') + '</div>';
     return '<div class="omnia-upgrade-row" style="border-left:2px solid ' + accent + '55; padding-left:11px;">'
-      + '<div><div class="omnia-upgrade-name" style="color:' + accent + ';"><span style="opacity:.9;margin-right:6px;">' + glyph + '</span>' + name + ' ' + lvl + (capped && !atMax ? ' <span style="font-size:8px;color:rgba(200,230,245,.55);letter-spacing:.1em;">/ ' + stepMax + '</span>' : '') + '</div>'
+      + '<div><div class="omnia-upgrade-name" style="color:' + accent + ';"><span style="opacity:.9;margin-right:6px;">' + glyph + '</span>' + name + ' ' + (masteryRank ? '<span class="omnia-mastery-mark">✦' + omniaMasteryRoman(masteryRank) + '</span> ' : '') + displayLvl + ' <span style="font-size:8px;color:rgba(200,230,245,.55);letter-spacing:.1em;">/ 20</span></div>'
       + '<div class="omnia-upgrade-sub">' + sub + '</div></div>' + right + '</div>';
   }
 
@@ -954,6 +1108,8 @@ function renderGenSheet(gid) {
   // Bound at render time — this script runs before the #genSheet markup is
   // parsed, so a parse-time listener would attach to nothing.
   body.onclick = function(e) {
+    var m = e.target.closest('[data-sheet-mastery]');
+    if (m && !m.disabled) { confirmOmniaUpgradeMastery(m.getAttribute('data-sheet-mastery')); return; }
     var b = e.target.closest('[data-sheet-buy]');
     if (b && !b.disabled && buyOmniaUpgrade(b.getAttribute('data-sheet-buy')) && _genSheetId) { renderGenSheet(_genSheetId); return; }
     // Tap the pump picture to collect its akasha without leaving the menu. If
@@ -990,7 +1146,7 @@ function closeGenSheet() {
     if (dg) {
       var did = dg.getAttribute('data-dm-tap');
       omniaAccrue();
-      if (!omniaUpgradeBuilding(did) && Math.floor((omniaState.reservoirs || {})[did] || 0) >= 1) { collectDmPump(dg, did); return; }
+      if (!dmPumpBuildingId(dmPumpOfUpgrade(did)) && Math.floor((omniaState.reservoirs || {})[did] || 0) >= 1) { collectDmPump(dg, did); return; }
       openGenSheet(did);
       return;
     }

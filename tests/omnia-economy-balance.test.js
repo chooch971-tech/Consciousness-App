@@ -43,7 +43,7 @@ function createEconomyContext() {
 test('Book I engine remains a bounded supporting share of daily Akasha', () => {
   const economy = createEconomyContext();
   const bodyLevels = [12, 23, 38, 62, 96, 140, 195, 260, 335, 430];
-  const generatorCaps = [3, 6, 10, 15, 21, 28, 36, 45, 55, 66];
+  const generatorCaps = [3, 6, 10, 15, 21, 28, 36, 45, 60, 80];
 
   bodyLevels.forEach((level, index) => {
     const step = index + 1;
@@ -70,8 +70,8 @@ test('generator Current upgrades have diminishing marginal returns', () => {
   const economy = createEconomyContext();
   const earlyGain = economy.omniaGeneratorContributionCurve(2, 0)
     - economy.omniaGeneratorContributionCurve(1, 0);
-  const deepGain = economy.omniaGeneratorContributionCurve(66, 0)
-    - economy.omniaGeneratorContributionCurve(65, 0);
+  const deepGain = economy.omniaGeneratorContributionCurve(80, 0)
+    - economy.omniaGeneratorContributionCurve(79, 0);
 
   assert.ok(earlyGain > deepGain * 20);
   assert.ok(deepGain > 0);

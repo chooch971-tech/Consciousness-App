@@ -235,6 +235,11 @@ can never roll back progress.
   `omniaDevotionMult()` (Seven Gifts). Wallets are uncapped; each generator's
   reservoir is the idle-income limit. Book I generator shares target 20–42%
   of a three-session day from Steps I–X, with diminishing upgrade returns.
+- Each Akasha pump's Current, Vessel, Attunement, and Quickening tracks use
+  monotonic lifetime levels 1–80, presented as four 20-level bands with manual
+  Mastery I–III transitions. Dark Matter pumps have Dark Current, Void Vessel,
+  Stabilization, and dual-currency Umbral Resonance; pump N's resonance boosts
+  only Akasha Generator N. Keep these derived displays monotonic in storage.
 - Use `presenceDayKey`, `presenceMonthKey`, and `presenceAddDays` for gameplay
   calendars. Raw `toISOString().slice(...)` is reserved for genuinely global
   UTC concerns such as server-wide AI budgets and timestamped backup names.

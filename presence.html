@@ -1774,6 +1774,13 @@
     #genSheetBody .omnia-upgrade-sub { color:rgba(190,220,236,.66); }
     #genSheetBody .omnia-mini-btn { border-color:rgba(142,204,224,.4); background:rgba(90,184,224,.1); color:#bfeaff; }
     #genSheetBody .omnia-mini-btn:disabled { color:rgba(142,204,224,.5); background:transparent; }
+    .omnia-mastery-mark { color:#c899ff; text-shadow:0 0 8px rgba(169,102,238,.72); font-size:.86em; letter-spacing:.03em; white-space:nowrap; }
+    #genSheetBody .omnia-mini-btn--mastery, .omnia-mini-btn--mastery { border-color:rgba(181,112,242,.72); background:linear-gradient(180deg,rgba(151,76,220,.34),rgba(94,42,157,.2)); color:#e2c5ff; box-shadow:0 0 15px rgba(143,73,210,.22); }
+    #genSheetBody .omnia-mini-btn--mastery:hover, .omnia-mini-btn--mastery:hover { border-color:rgba(210,164,255,.9); background:linear-gradient(180deg,rgba(170,92,236,.44),rgba(104,48,170,.28)); }
+    #confirmModal.confirm-mastery { z-index:9900; }
+    #confirmModal.confirm-mastery .modal-sheet { border-color:rgba(181,112,242,.48); box-shadow:0 -12px 42px rgba(105,44,165,.24); }
+    #confirmModal.confirm-mastery #confirmModalTitle { color:#d9b5ff !important; font-family:'Cormorant Garamond',serif; font-size:22px !important; }
+    #confirmModal.confirm-mastery #confirmModalOk { background:rgba(151,76,220,.2) !important; border-color:rgba(181,112,242,.58) !important; color:#d9b5ff !important; }
     /* Generator upgrade drawer — slides in from the right */
     .gen-drawer { position:fixed; inset:0; z-index:9800; background:rgba(7,8,13,0); pointer-events:none; transition:background .3s ease; }
     .gen-drawer.on { background:rgba(7,8,13,.72); pointer-events:auto; }
@@ -8279,10 +8286,10 @@ document.getElementById('drawerProfile').addEventListener('click',function(){
 <script src="achievements-client.js"></script>
 <script>
 document.getElementById('confirmModalCancel').addEventListener('click', function() {
-  document.getElementById('confirmModal').classList.remove('show');
+  document.getElementById('confirmModal').classList.remove('show', 'confirm-mastery');
 });
 document.getElementById('confirmModalOk').addEventListener('click', function() {
-  document.getElementById('confirmModal').classList.remove('show');
+  document.getElementById('confirmModal').classList.remove('show', 'confirm-mastery');
   // Consume the current callback before invoking it. A callback may open a
   // second confirmation (Reset All does); clearing afterward would erase the
   // newly installed callback and make the second Confirm button a no-op.
@@ -8291,11 +8298,13 @@ document.getElementById('confirmModalOk').addEventListener('click', function() {
   if (callback) callback();
 });
 
-function showConfirm(title, text, onConfirm) {
+function showConfirm(title, text, onConfirm, tone) {
   document.getElementById('confirmModalTitle').textContent = title;
   document.getElementById('confirmModalText').textContent = text;
   window._confirmCallback = onConfirm;
-  document.getElementById('confirmModal').classList.add('show');
+  var modal = document.getElementById('confirmModal');
+  modal.classList.toggle('confirm-mastery', tone === 'mastery');
+  modal.classList.add('show');
 }
 
 // Styled replacement for window.prompt — same overlay pattern as showConfirm.
@@ -9063,6 +9072,8 @@ document.getElementById('omniaEngine').addEventListener('click', function(e) {
   }
   var bodyBtn = e.target.closest('[data-omnia-body]');
   if (bodyBtn) { buildOmniaBody(bodyBtn.dataset.omniaBody); return; }
+  var masteryBtn = e.target.closest('[data-omnia-mastery]');
+  if (masteryBtn) { confirmOmniaUpgradeMastery(masteryBtn.dataset.omniaMastery); return; }
   var upgBtn = e.target.closest('[data-omnia-upgrade]');
   if (upgBtn) {
     // A press-and-hold already applied its upgrades; ignore the click that
@@ -9133,7 +9144,7 @@ document.getElementById('omniaEngine').addEventListener('click', function(e) {
       }
       sig += '|' + Math.floor(omniaState.darkMatter || 0);
       for (var ds = 0; ds < DM_GEN_META.length; ds++) {
-        sig += '|' + Math.floor(_res[DM_GEN_META[ds].id] || 0) + (omniaUpgradeBuilding(DM_GEN_META[ds].id) ? 'b' : '');
+        sig += '|' + Math.floor(_res[DM_GEN_META[ds].id] || 0) + (dmPumpBuildingId(DM_GEN_META[ds]) ? 'b' : '');
       }
       if (sig !== _liveSig) {
         _liveSig = sig;
@@ -9161,7 +9172,8 @@ document.getElementById('omniaEngine').addEventListener('click', function(e) {
           if (typeof showToast === 'function') showToast('Akasha Generator upgrade completed', 3200, 'green');
           return;
         }
-        var dmName = (typeof dmGenIdx === 'function' && dmGenIdx(id) >= 0) ? 'Dark Matter Pump ' + DM_GEN_META[dmGenIdx(id)].roman : null;
+        var dmIdx = (typeof dmPumpIdxForUpgrade === 'function') ? dmPumpIdxForUpgrade(id) : -1;
+        var dmName = dmIdx >= 0 ? 'Dark Matter Pump ' + DM_GEN_META[dmIdx].roman : null;
         if (dmName && typeof showToast === 'function') showToast('✦ ' + dmName + ' upgraded', 2600, 'gold');
       });
       if (done.length && typeof syncEnabled !== 'undefined' && syncEnabled && typeof authToken !== 'undefined' && authToken && typeof syncPushData === 'function') syncPushData();

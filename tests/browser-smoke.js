@@ -121,6 +121,52 @@ async function testExerciseEntry(browser, baseUrl) {
   await context.close();
 }
 
+async function testGeneratorMastery(browser, baseUrl) {
+  const omnia = {
+    akasha: 1_000_000, darkMatter: 100_000, lastTick: Date.now(),
+    bardonStep: 1, prestige: 3,
+    bodies: { physical: 1, astral: 1, mental: 1 },
+    upgrades: {
+      current: 20, vessel: 20, attunement: 20, quickening: 20,
+      gen2: 1, vessel2: 1, attune2: 1, quick2: 1,
+      gen3: 1, vessel3: 1, attune3: 1, quick3: 1,
+      dm1: 10, dmv1: 1, dms1: 1, dmr1: 1
+    },
+    reservoirs: {}, totalAkashaEarned: 1_000_000, totalAkashaSpent: 0,
+    totalDarkMatterEarned: 100_000, totalDarkMatterSpent: 0
+  };
+  const context = await browser.newContext({ viewport: { width: 390, height: 844 }, serviceWorkers: 'block' });
+  const { page, errors } = await seedPage(context, baseUrl, {
+    presence_omnia_v1: JSON.stringify(omnia)
+  });
+
+  await page.evaluate(() => {
+    document.getElementById('guideOmniaPanel').classList.remove('guide-tab-hidden');
+    renderOmniaEngine();
+    openGenSheet('current');
+  });
+  const mastery = page.locator('[data-sheet-mastery="current"]');
+  await mastery.waitFor({ state: 'visible' });
+  assert.match((await mastery.textContent()).trim(), /Mastery I/);
+  await mastery.click();
+  await page.locator('#confirmModal.confirm-mastery.show').waitFor({ state: 'visible' });
+  assert.match(await page.locator('#confirmModalTitle').textContent(), /Mastery I/);
+  await page.locator('#confirmModalOk').click();
+  await page.waitForFunction(() => omniaState.upgrades.current === 21);
+  await page.evaluate(() => openGenSheet('current'));
+  assert.match(await page.locator('#genSheetBody').textContent(), /Akashic Current\s+✦I\s+1\s+\/ 20/);
+
+  await page.evaluate(() => openGenSheet('dm1'));
+  const dmText = await page.locator('#genSheetBody').textContent();
+  assert.match(dmText, /Dark Current/);
+  assert.match(dmText, /Void Vessel/);
+  assert.match(dmText, /Stabilization/);
+  assert.match(dmText, /Umbral Resonance/);
+  assert.match(dmText, /akasha/i);
+  assert.deepEqual(errors, [], 'generator mastery flow emitted browser errors');
+  await context.close();
+}
+
 async function testResetAll(browser, baseUrl) {
   const elevatedOmnia = {
     akasha: 98765, reservoir: 1200, lastTick: Date.now(), bardonStep: 10, prestige: 0,
@@ -245,6 +291,9 @@ async function testCloudRestoreAndSignOut(browser, baseUrl) {
     console.log('run - exercise entry');
     await testExerciseEntry(browser, baseUrl);
     console.log('ok - exercise cards open complete setup screens');
+    console.log('run - generator mastery');
+    await testGeneratorMastery(browser, baseUrl);
+    console.log('ok - generator mastery and Dark Matter tracks render');
     console.log('run - Reset All');
     await testResetAll(browser, baseUrl);
     console.log('ok - Reset All restores level-one clean state');

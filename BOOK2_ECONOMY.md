@@ -31,27 +31,34 @@ constraint at roughly 2–4 months for a dedicated practitioner.
 
 Three idle ◆ condensers in the generator yard, below the akasha pumps.
 
-| Pump | Unlocks | Rate (lvl 1 → 10) | Vat cap |
+| Pump | Unlocks | Rate (Dark Current 1 → 20) | Vat cap |
 |---|---|---|---|
-| I | Prestige 3 | 12 → 30 ◆/day | 2 days of production |
-| II | Prestige 5 | 18 → 45 ◆/day | 2 days |
-| III | Prestige 8 | 26 → 62 ◆/day | 2 days |
+| I | Prestige 3 | 12 → 40 ◆/day | 2 → 4.25 days of production |
+| II | Prestige 5 | 18 → 60 ◆/day | 2 → 4.25 days |
+| III | Prestige 8 | 26 → 82 ◆/day | 2 → 4.25 days |
 
-- **All three maxed ≈ 137 ◆/day** — deliberately ≈ two daily advanced drills,
-  so practice stays the primary current. No prestige/devotion/boost
-  multipliers apply to ◆ — it stays scarce.
-- One upgrade track per pump (**Dark Current**, cap lvl 10), paid in ◆:
-  cost 30 × 1.3^(lvl−1) (30 → ~318 at the top; ~960 ◆ to max one pump,
-  ~2.9k ◆ all three — a real secondary sink that self-limits pump income).
+- **All three Dark Currents maxed ≈ 182 ◆/day.** Levels 1–10 preserve the
+  shipped curve; levels 11–20 grow at half speed so advanced practice remains
+  the primary current. No prestige/devotion/temporary multipliers apply to ◆.
+- Four tracks now give every pump a distinct late-game build:
+  - **Dark Current** (lvl 20): ◆ production; levels 11–20 taper.
+  - **Void Vessel** (lvl 10): expands the vat from 2 to 4.25 production-days.
+  - **Stabilization** (lvl 10): retains 5% production per purchased level while
+    any track on that pump is under construction, up to 45%.
+  - **Umbral Resonance** (lvl 10): +4% Akasha output per purchased level, up to
+    +36%, only for the numerically paired Akasha pump. It costs both ◆ and
+    Akasha, keeping Dark Matter as the binding ingredient while linking the two
+    economies.
 - Builds use the heavy idle model: 900 + 12·lvl³ seconds (≈ 17m at lvl 2 →
-  ≈ 3.6h at lvl 10), **no Quickening** — the dark current cannot be hurried.
-  Pump is offline while upgrading, one build at a time, same as akasha pumps.
+  ≈ 3.6h at lvl 10 and capped at 24h), **no Quickening**. One track builds at a
+  time; Stabilization alone permits partial output during construction.
 - Future pumps render ghosted with their prestige requirement, so the goal is
   visible from Prestige 3.
 - Sync: levels live in `omniaState.upgrades` (dm1/dm2/dm3) → generic
   monotonic Math.max merge client+server, zero server changes.
 
-**Resulting income curve** (2 advanced drills/day practice):
+**Original resulting income curve** (retained here as the pre-expansion
+baseline for future playtest comparison; 2 advanced drills/day practice):
 - Prestige 3, pump I fresh: ~72 ◆/day → first turning ≈ 4–5 months.
 - Prestige 5, pumps I+II leveled: ~120–150 ◆/day → ≈ 2.5 months.
 - Prestige 8, all three: ~200+ ◆/day → later turnings (~1.7k ◆) ≈ 2 weeks,
