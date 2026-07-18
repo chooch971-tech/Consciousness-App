@@ -432,54 +432,82 @@ async function reportLodgeContent(kind, refId) {
 }
 
 // Friend profile: counts + follow/block/report controls.
+// Per-friend follower/following + follow-state cache, so a repeat visit to a
+// friend's profile paints instantly instead of showing a blank "…" while the
+// network round-trip is in flight (matches the getCachedFollowSummary pattern
+// used for the own-profile counts).
+var FRIEND_SOCIAL_CACHE_KEY = 'presence_friend_social_cache_v1';
+function cacheFriendSocial(userId, s) {
+  if (!userId || !s) return;
+  try {
+    var all = JSON.parse(localStorage.getItem(FRIEND_SOCIAL_CACHE_KEY)) || {};
+    all[userId] = { followers: s.followers || 0, following: s.following || 0, iFollow: s.iFollow || null, followsMe: !!s.followsMe, blocked: !!s.blocked };
+    localStorage.setItem(FRIEND_SOCIAL_CACHE_KEY, JSON.stringify(all));
+  } catch(e) {}
+}
+function getCachedFriendSocial(userId) {
+  try {
+    var all = JSON.parse(localStorage.getItem(FRIEND_SOCIAL_CACHE_KEY)) || {};
+    return all[userId] || null;
+  } catch(e) { return null; }
+}
+
+function _applyFriendSocial(f, s) {
+  var counts = document.getElementById('friendProfCounts');
+  var btn = document.getElementById('friendFollowBtn');
+  counts.textContent = (s.followers || 0) + ' followers · ' + (s.following || 0) + ' following';
+  btn.disabled = false;
+  btn.textContent = s.blocked ? 'Unblock' : s.iFollow === 'active' ? 'Following ✓' : s.iFollow === 'pending' ? 'Requested' : 'Follow';
+  btn.onclick = async function() {
+    btn.disabled = true;
+    var ep = s.blocked ? '/unblock' : s.iFollow ? '/unfollow' : '/follow';
+    if (ep === '/unfollow' && !window.confirm('Unfollow @' + (f.username || '') + '?')) { btn.disabled = false; return; }
+    try {
+      await fetch(SERVER_URL + '/api/social' + ep, {
+        method: 'POST', headers: { 'Authorization': 'Bearer ' + authToken, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId: f.userId })
+      });
+    } catch(e) {}
+    loadFriendSocial(f);
+  };
+  var bb = document.getElementById('friendBlockBtn');
+  bb.style.display = s.blocked ? 'none' : '';
+  bb.onclick = async function() {
+    if (!window.confirm('Block @' + (f.username || '') + '? They will be removed from your friends and follows, both ways.')) return;
+    try {
+      await fetch(SERVER_URL + '/api/social/block', {
+        method: 'POST', headers: { 'Authorization': 'Bearer ' + authToken, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId: f.userId })
+      });
+    } catch(e) {}
+    showToast('Blocked');
+    loadFriendSocial(f);
+  };
+  document.getElementById('friendReportBtn').onclick = function() { reportLodgeContent('user', f.userId); };
+  var mb = document.getElementById('friendMsgBtn');
+  if (mb) {
+    mb.style.display = (s.iFollow === 'active' && s.followsMe && !s.blocked) ? '' : 'none';
+    mb.onclick = function() { messageFriend(f.userId, f.username || ''); };
+  }
+}
+
 async function loadFriendSocial(f) {
   var box = document.getElementById('friendProfSocial');
   if (!box || !authToken || !f || !f.userId) return;
   box.style.display = 'flex';
   var counts = document.getElementById('friendProfCounts');
   var btn = document.getElementById('friendFollowBtn');
-  counts.textContent = ''; btn.textContent = '…'; btn.disabled = true;
+  var cached = getCachedFriendSocial(f.userId);
+  if (cached) { _applyFriendSocial(f, cached); } else { counts.textContent = ''; btn.textContent = '…'; btn.disabled = true; }
   try {
     var res = await fetch(SERVER_URL + '/api/social/users/' + encodeURIComponent(f.userId) + '/summary', {
       headers: { 'Authorization': 'Bearer ' + authToken }
     });
-    if (!res.ok) { box.style.display = 'none'; return; }
+    if (!res.ok) { if (!cached) box.style.display = 'none'; return; }
     var s = await res.json();
-    counts.textContent = (s.followers || 0) + ' followers · ' + (s.following || 0) + ' following';
-    btn.disabled = false;
-    btn.textContent = s.blocked ? 'Unblock' : s.iFollow === 'active' ? 'Following ✓' : s.iFollow === 'pending' ? 'Requested' : 'Follow';
-    btn.onclick = async function() {
-      btn.disabled = true;
-      var ep = s.blocked ? '/unblock' : s.iFollow ? '/unfollow' : '/follow';
-      if (ep === '/unfollow' && !window.confirm('Unfollow @' + (f.username || '') + '?')) { btn.disabled = false; return; }
-      try {
-        await fetch(SERVER_URL + '/api/social' + ep, {
-          method: 'POST', headers: { 'Authorization': 'Bearer ' + authToken, 'Content-Type': 'application/json' },
-          body: JSON.stringify({ userId: f.userId })
-        });
-      } catch(e) {}
-      loadFriendSocial(f);
-    };
-    var bb = document.getElementById('friendBlockBtn');
-    bb.style.display = s.blocked ? 'none' : '';
-    bb.onclick = async function() {
-      if (!window.confirm('Block @' + (f.username || '') + '? They will be removed from your friends and follows, both ways.')) return;
-      try {
-        await fetch(SERVER_URL + '/api/social/block', {
-          method: 'POST', headers: { 'Authorization': 'Bearer ' + authToken, 'Content-Type': 'application/json' },
-          body: JSON.stringify({ userId: f.userId })
-        });
-      } catch(e) {}
-      showToast('Blocked');
-      loadFriendSocial(f);
-    };
-    document.getElementById('friendReportBtn').onclick = function() { reportLodgeContent('user', f.userId); };
-    var mb = document.getElementById('friendMsgBtn');
-    if (mb) {
-      mb.style.display = (s.iFollow === 'active' && s.followsMe && !s.blocked) ? '' : 'none';
-      mb.onclick = function() { messageFriend(f.userId, f.username || ''); };
-    }
-  } catch(e) { box.style.display = 'none'; }
+    cacheFriendSocial(f.userId, s);
+    _applyFriendSocial(f, s);
+  } catch(e) { if (!cached) box.style.display = 'none'; }
 }
 
 // Notifications bell.
@@ -721,12 +749,16 @@ function renderFriendsList(friends) {
     var isOnline = f.lastActive && (now - new Date(f.lastActive).getTime() < 2 * 60 * 1000);
     var statusDot = isOnline ? '<span class="fp-online-dot"></span>' : '<span class="fp-offline-dot"></span>';
     var statusText = isOnline ? 'Online now' : (f.lastActive ? 'Active ' + timeAgo(new Date(f.lastActive)) : (f.lastSync ? 'Synced ' + timeAgo(new Date(f.lastSync)) : 'Never active'));
+    var friendedDate = f.friendedAt ? new Date(f.friendedAt) : null;
+    var friendedText = (friendedDate && !isNaN(friendedDate.getTime())) ? 'Friends since ' + friendedDate.toLocaleDateString('en-US', { month:'short', day:'numeric', year:'numeric' }) : '';
     var bodies = f.bodies || { physical:1, astral:1, mental:1 };
     var bodyTotal = (bodies.physical||1) + (bodies.astral||1) + (bodies.mental||1);
     return '<div class="fp-friend-card" data-friend-id="' + escHtml(f.userId) + '" style="cursor:pointer;">'
       + '<div style="display:flex;justify-content:space-between;align-items:flex-start;">'
       + '<div><div class="fp-friend-name" style="display:flex;align-items:center;gap:7px;">' + statusDot + '@' + escHtml(f.username) + '</div>'
-      + '<div class="fp-friend-active">' + statusText + '</div></div>'
+      + '<div class="fp-friend-active">' + statusText + '</div>'
+      + (friendedText ? '<div class="fp-friend-since">' + friendedText + '</div>' : '')
+      + '</div>'
       + '<button class="fp-remove-btn" onclick="removeFriend(\'' + f.userId + '\')">Remove</button>'
       + '</div>'
       + (statusIsFresh(f.status) ? '<div class="fp-friend-status">“' + escHtml(f.status.text) + '”</div>' : '')

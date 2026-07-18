@@ -1804,6 +1804,9 @@ app.get('/api/sync/friends/list', verifyToken, async (req, res) => {
         status: statusVisible ? (otherUser.status || null) : null,
         lastSync: latestSync ? latestSync.syncedAt : null,
         lastActive: otherUser.lastActive || null,
+        // When you both became friends — set on accept; older rows predating
+        // this field fall back to when the request was originally sent.
+        friendedAt: doc.acceptedAt || doc.createdAt || null,
         streak, concLevel, concXp, akasha, bardonStep, bodies,
         practicedDates, lastSessionDate,
         achEarned, achMonthlyEarned, achMonthlyKey
@@ -1869,7 +1872,7 @@ app.post('/api/sync/friends/accept', verifyToken, mutationRateLimit, async (req,
     if (!requesterId || typeof requesterId !== 'string') return res.status(400).json({ error: 'requesterId required' });
     const result = await friendsCollection.updateOne(
       { userId: requesterId, friendId: selfId, status: 'pending' },
-      { $set: { status: 'accepted' } }
+      { $set: { status: 'accepted', acceptedAt: new Date() } }
     );
     if (result.matchedCount === 0) return res.status(404).json({ error: 'Request not found' });
     // Unified graph: friendship = mutual follow. Keep edges in sync.
