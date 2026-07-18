@@ -1738,6 +1738,11 @@ app.get('/api/sync/friends/list', verifyToken, async (req, res) => {
       try { otherOid = new ObjectId(otherId); } catch(e) { continue; }
       const otherUser = await usersCollection.findOne({ _id: otherOid });
       if (!otherUser) continue;
+      // A private profile's status is only visible to a mutual follow (the
+      // same bar the Lodge already holds private posts to) — being an
+      // accepted "friend" here is a separate, older relationship and isn't
+      // enough on its own to see a private status.
+      const statusVisible = !otherUser.isPrivate || await isMutualFollow(selfId, otherId);
 
       const latestSync = await syncDataCollection.find({ userId: otherOid }).sort({ syncedAt: -1 }).limit(1).next();
 
@@ -1796,7 +1801,7 @@ app.get('/api/sync/friends/list', verifyToken, async (req, res) => {
         userId: otherId,
         username: otherUser.username || ('practitioner_' + String(otherId).slice(-5)),
         profilePic: otherUser.profilePic || null,
-        status: otherUser.status || null,
+        status: statusVisible ? (otherUser.status || null) : null,
         lastSync: latestSync ? latestSync.syncedAt : null,
         lastActive: otherUser.lastActive || null,
         streak, concLevel, concXp, akasha, bardonStep, bodies,
@@ -2116,13 +2121,25 @@ app.get('/api/social/feed', verifyToken, async (req, res) => {
   }
 });
 
-// A USER'S POST HISTORY — self, or someone you actively follow.
+// A USER'S POST HISTORY — self, or someone you actively follow. This is also
+// how status history is browsed (a status is just the latest 'note' post), so
+// a private account needs the same mutual-follow ("friends") bar as its
+// status field, not just a one-way approved follow — otherwise an approved
+// follower who isn't followed back could read a private user's full status
+// history here even though /friends/list already hides it from them.
 app.get('/api/social/users/:id/posts', verifyToken, async (req, res) => {
   try {
     const viewerId = req.user.userId, targetId = req.params.id;
     if (targetId !== viewerId) {
-      const edge = await followsCollection.findOne({ followerId: viewerId, followeeId: targetId, status: 'active' });
-      if (!edge) return res.status(403).json({ error: 'Not following this practitioner' });
+      let targetOid;
+      try { targetOid = new ObjectId(targetId); } catch(e) { return res.status(404).json({ error: 'Not found' }); }
+      const target = await usersCollection.findOne({ _id: targetOid }, { projection: { isPrivate: 1 } });
+      if (target && target.isPrivate) {
+        if (!(await isMutualFollow(viewerId, targetId))) return res.status(403).json({ error: 'Not following this practitioner' });
+      } else {
+        const edge = await followsCollection.findOne({ followerId: viewerId, followeeId: targetId, status: 'active' });
+        if (!edge) return res.status(403).json({ error: 'Not following this practitioner' });
+      }
     }
     const q = { userId: targetId };
     if (req.query.cursor) {
