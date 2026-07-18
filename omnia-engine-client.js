@@ -564,6 +564,20 @@ function omniaPumpShares() {
   for (var j = 0; j < n; j++) out[OMNIA_GEN_META[j].id] = sum > 0 ? total * (contribs[j] / sum) : 0;
   return out;
 }
+// How much a pump's own hourly share would change if its Akashic Current
+// were the next level up. Mutates upgrades[gid] for the single synchronous
+// recompute, then restores it — omniaPumpShares() folds in every other
+// pump's level and the shared total rate too, so this is the only way to get
+// a correct delta without re-deriving that whole formula by hand.
+function omniaPreviewGenRateGain(gid) {
+  var upgrades = omniaState.upgrades || (omniaState.upgrades = {});
+  var before = omniaPumpShares()[gid] || 0;
+  var origLvl = upgrades[gid] || 1;
+  upgrades[gid] = origLvl + 1;
+  var after = omniaPumpShares()[gid] || 0;
+  upgrades[gid] = origLvl;
+  return { before: before, after: after };
+}
 function omniaGenUnlockedCount() {
   if (typeof darkMatterUnlocked === 'function' && darkMatterUnlocked()) return 3;
   var s = omniaState.bardonStep || 1;
@@ -1075,11 +1089,25 @@ function renderGenSheet(gid) {
     // sit together. Hidden at max (no next level) and while building (the button
     // already counts the live remaining time down).
     var timeLabel = (atMax || building || masteryReady || pumpBusyId) ? '' : omniaBuildSpanLabel(omniaBuildDurationMs(lvl + 1, id));
+    // Only the Akashic Current track (id === gid) moves this pump's hourly
+    // rate directly — Vessel/Attunement/Quickening don't, so skip the preview
+    // there, and skip it here too whenever there's no plain next-level buy.
+    var ratePreview = '';
+    if (id === gid && !atMax && !building && !masteryReady && !pumpBusyId) {
+      var rp = omniaPreviewGenRateGain(gid);
+      if (rp.after > rp.before) {
+        // Round to a whole number once rates are large enough that a decimal
+        // is just noise; keep one decimal at low levels so an early, sub-1
+        // gain doesn't display as "the same number" on both sides.
+        var fmt = function(n) { return n >= 50 ? Math.round(n).toLocaleString() : (Math.round(n * 10) / 10).toLocaleString(); };
+        ratePreview = '<div class="omnia-upgrade-preview">+' + fmt(rp.before) + ' → +' + fmt(rp.after) + '/hr</div>';
+      }
+    }
     var right = '<div style="display:flex; flex-direction:column; align-items:flex-end; gap:4px; flex-shrink:0;">' + btn
       + (timeLabel ? '<span style="font-size:8px; letter-spacing:.08em; color:rgba(196,168,212,.9);">◷ ' + timeLabel + ' build</span>' : '') + '</div>';
     return '<div class="omnia-upgrade-row" style="border-left:2px solid ' + accent + '55; padding-left:11px;">'
       + '<div><div class="omnia-upgrade-name" style="color:' + accent + ';"><span style="opacity:.9;margin-right:6px;">' + glyph + '</span>' + name + ' ' + (masteryRank ? '<span class="omnia-mastery-mark">✦' + omniaMasteryRoman(masteryRank) + '</span> ' : '') + displayLvl + ' <span style="font-size:8px;color:rgba(200,230,245,.55);letter-spacing:.1em;">/ 20</span></div>'
-      + '<div class="omnia-upgrade-sub">' + sub + '</div></div>' + right + '</div>';
+      + '<div class="omnia-upgrade-sub">' + sub + '</div>' + ratePreview + '</div>' + right + '</div>';
   }
 
   var contrib = Math.floor((omniaPumpShares()[gid] || 0));
