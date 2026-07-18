@@ -2444,6 +2444,51 @@ app.get('/api/social/users/:id/summary', verifyToken, async (req, res) => {
   } catch (err) { res.status(500).json({ error: 'Summary failed' }); }
 });
 
+// Same visibility bar as a user's post history: self, a public account, or
+// (for a private account) a mutual follow — so these lists can't be used to
+// see a private account's network without being their "friend."
+async function _followListVisible(viewerId, targetId) {
+  if (viewerId === targetId) return true;
+  const target = await usersCollection.findOne({ _id: new ObjectId(targetId) }, { projection: { isPrivate: 1 } });
+  if (!target) return false;
+  if (!target.isPrivate) return true;
+  return isMutualFollow(viewerId, targetId);
+}
+
+async function _followListUsers(viewerId, edges, idField) {
+  const hidden = await blockedIdSet(viewerId);
+  const ids = edges.map(e => e[idField]).filter(id => !hidden.has(id));
+  if (!ids.length) return [];
+  const users = await usersCollection.find({ _id: { $in: ids.map(id => new ObjectId(id)) } })
+    .project({ username: 1, profilePic: 1 }).toArray();
+  const byId = new Map(users.map(u => [u._id.toString(), u]));
+  return ids.map(id => byId.get(id)).filter(Boolean).map(u => ({
+    userId: u._id.toString(), username: u.username || null, profilePic: u.profilePic || null
+  }));
+}
+
+// WHO FOLLOWS THIS USER — most recent first.
+app.get('/api/social/users/:id/followers', verifyToken, async (req, res) => {
+  try {
+    const viewerId = req.user.userId;
+    const targetId = req.params.id === 'me' ? viewerId : req.params.id;
+    if (!(await _followListVisible(viewerId, targetId))) return res.status(403).json({ error: 'Not available' });
+    const edges = await followsCollection.find({ followeeId: targetId, status: 'active' }).sort({ createdAt: -1 }).limit(500).toArray();
+    res.json({ users: await _followListUsers(viewerId, edges, 'followerId') });
+  } catch (err) { res.status(500).json({ error: 'Followers failed' }); }
+});
+
+// WHO THIS USER FOLLOWS — most recent first.
+app.get('/api/social/users/:id/following', verifyToken, async (req, res) => {
+  try {
+    const viewerId = req.user.userId;
+    const targetId = req.params.id === 'me' ? viewerId : req.params.id;
+    if (!(await _followListVisible(viewerId, targetId))) return res.status(403).json({ error: 'Not available' });
+    const edges = await followsCollection.find({ followerId: targetId, status: 'active' }).sort({ createdAt: -1 }).limit(500).toArray();
+    res.json({ users: await _followListUsers(viewerId, edges, 'followeeId') });
+  } catch (err) { res.status(500).json({ error: 'Following failed' }); }
+});
+
 // BLOCK — severs follows AND the legacy friendship both ways.
 app.post('/api/social/block', verifyToken, mutationRateLimit, async (req, res) => {
   try {

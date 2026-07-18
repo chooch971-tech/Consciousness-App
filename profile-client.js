@@ -390,6 +390,63 @@ function cacheFollowSummary(s) {
 function getCachedFollowSummary() {
   try { var s = JSON.parse(localStorage.getItem(FOLLOW_SUMMARY_CACHE_KEY)); return (s && typeof s.followers === 'number') ? s : null; } catch(e) { return null; }
 }
+
+// Followers / Following list overlay — opened by tapping the counts on your
+// own Profile.
+var _followListTab = 'followers';
+function openFollowList(tab) {
+  if (!authToken) return;
+  _followListTab = tab === 'following' ? 'following' : 'followers';
+  document.getElementById('followListOverlay').classList.add('on');
+  _renderFollowListTabs();
+  _loadFollowListTab(_followListTab);
+}
+function _renderFollowListTabs() {
+  document.getElementById('followListTabFollowers').classList.toggle('on', _followListTab === 'followers');
+  document.getElementById('followListTabFollowing').classList.toggle('on', _followListTab === 'following');
+}
+function _followListRowHtml(u) {
+  var nm = u.username || 'practitioner';
+  var ring = safeProfilePic(u.profilePic)
+    ? '<div class="followlist-row__ring" style="background-image:url(\'' + safeProfilePic(u.profilePic) + '\');background-size:cover;background-position:center top;"></div>'
+    : '<div class="followlist-row__ring">' + escHtml(nm[0] || '?').toUpperCase() + '</div>';
+  return '<div class="followlist-row" data-user-id="' + escHtml(u.userId) + '" data-username="' + escHtml(nm) + '">'
+    + ring + '<div class="followlist-row__name">@' + escHtml(nm) + '</div></div>';
+}
+async function _loadFollowListTab(tab) {
+  var rows = document.getElementById('followListRows');
+  rows.innerHTML = '<div class="followlist-empty">Loading…</div>';
+  try {
+    var res = await fetch(SERVER_URL + '/api/social/users/me/' + tab, { headers: { 'Authorization': 'Bearer ' + authToken } });
+    if (_followListTab !== tab) return; // a tab switch landed while this was in flight
+    if (!res.ok) { rows.innerHTML = '<div class="followlist-empty">Couldn’t load.</div>'; return; }
+    var d = await res.json();
+    var users = d.users || [];
+    rows.innerHTML = users.length ? users.map(_followListRowHtml).join('') : '<div class="followlist-empty">' + (tab === 'followers' ? 'No followers yet.' : 'Not following anyone yet.') + '</div>';
+  } catch(e) { if (_followListTab === tab) rows.innerHTML = '<div class="followlist-empty">Couldn’t load.</div>'; }
+}
+// The overlay markup lives near the end of <body>, well after this script
+// tag, so wire it on DOMContentLoaded rather than at parse time (same fix as
+// the achievement info popup's earlier freeze bug).
+function _wireFollowListOverlay() {
+  var ov = document.getElementById('followListOverlay');
+  if (!ov) return;
+  document.getElementById('profFollowCounts').addEventListener('click', function() { openFollowList('followers'); });
+  document.getElementById('followListTabFollowers').addEventListener('click', function() { openFollowList('followers'); });
+  document.getElementById('followListTabFollowing').addEventListener('click', function() { openFollowList('following'); });
+  document.getElementById('followListCloseBtn').addEventListener('click', function() { ov.classList.remove('on'); });
+  ov.addEventListener('click', function(e) { if (e.target === ov) ov.classList.remove('on'); });
+  document.getElementById('followListRows').addEventListener('click', function(e) {
+    var row = e.target.closest('[data-user-id]');
+    if (!row) return;
+    var userId = row.getAttribute('data-user-id'), username = row.getAttribute('data-username');
+    ov.classList.remove('on');
+    if (_friendProfileCache[userId]) openFriendProfile(userId);
+    else if (typeof openLodgeUser === 'function') openLodgeUser(userId, username);
+  });
+}
+if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', _wireFollowListOverlay);
+else _wireFollowListOverlay();
 // Warm the in-memory profile cache from persisted friends at startup so a tap
 // straight into a friend's profile has their data before any fetch resolves.
 (function(){ getCachedFriendsList().forEach(function(f){ if (f && f.userId) _friendProfileCache[f.userId] = f; }); })();

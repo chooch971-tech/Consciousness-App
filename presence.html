@@ -835,6 +835,12 @@
     .lodge-more { width:100%; min-height:44px; margin:8px 0 20px; border:1px solid rgba(255,255,255,.08); border-radius:8px; background:transparent; color:rgba(221,216,206,.55); font-family:'DM Mono',monospace; font-size:8px; letter-spacing:.16em; text-transform:uppercase; cursor:pointer; }
     .likers-row { font-family:'DM Mono',monospace; font-size:12px; color:var(--text); padding:9px 2px; border-bottom:1px solid var(--border); }
     .likers-row.private { color:var(--muted); font-style:italic; }
+    .followlist-tab { flex:1; padding:9px; border-radius:9px; font-family:'DM Mono',monospace; font-size:9px; letter-spacing:.14em; text-transform:uppercase; cursor:pointer; border:1px solid var(--border); background:transparent; color:var(--muted); }
+    .followlist-tab.on { background:rgba(126,184,164,.12); border-color:var(--accent); color:var(--accent); }
+    .followlist-row { display:flex; align-items:center; gap:10px; padding:9px 2px; border-bottom:1px solid var(--border); cursor:pointer; }
+    .followlist-row__ring { width:30px; height:30px; border-radius:50%; flex-shrink:0; display:flex; align-items:center; justify-content:center; background:rgba(255,255,255,.06); border:1px solid var(--border); font-family:'DM Mono',monospace; font-size:11px; color:var(--muted); }
+    .followlist-row__name { font-family:'DM Mono',monospace; font-size:12px; color:var(--text); }
+    .followlist-empty { color:var(--muted); font-style:italic; font-family:'DM Mono',monospace; font-size:12px; padding:9px 2px; }
     /* Lodge chat */
     .chat-row { display:flex; }
     .chat-row.chat-mine { justify-content:flex-end; }
@@ -5637,7 +5643,7 @@ body:not(.tut-live) #tutCorgi {
         </button>
         <div class="prof-hero__name" id="profDisplayName">Guest</div>
         <div class="prof-hero__handle" id="profHandle"></div>
-        <div class="prof-hero__handle" id="profFollowCounts" style="margin-top:4px;"></div>
+        <div class="prof-hero__handle" id="profFollowCounts" style="margin-top:4px; cursor:pointer;"></div>
         <button class="prof-cta" id="profCtaBtn">Complete Profile</button>
       </div>
       <input type="file" id="profPicInput" accept="image/*" style="display:none;"/>
@@ -9832,6 +9838,18 @@ function openSoulMirrorTutorial(){
     <div class="status-ov__title">Liked by</div>
     <div id="likersList" style="max-height:50vh; overflow-y:auto; margin-top:6px;"></div>
     <div class="status-ov__row"><button class="status-ov__btn" id="likersCloseBtn">Close</button></div>
+  </div>
+</div>
+
+<!-- Followers / Following list -->
+<div class="status-ov" id="followListOverlay">
+  <div class="status-ov__card">
+    <div style="display:flex; gap:8px; margin-bottom:4px;">
+      <button class="followlist-tab" id="followListTabFollowers" data-tab="followers">Followers</button>
+      <button class="followlist-tab" id="followListTabFollowing" data-tab="following">Following</button>
+    </div>
+    <div id="followListRows" style="max-height:50vh; overflow-y:auto; margin-top:10px;"></div>
+    <div class="status-ov__row"><button class="status-ov__btn" id="followListCloseBtn">Close</button></div>
   </div>
 </div>
 
