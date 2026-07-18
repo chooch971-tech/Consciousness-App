@@ -180,7 +180,6 @@ function renderProfile() {
   var signedIn = !!(syncEnabled && (authEmail || authUsername));
   var display = signedIn ? (authUsername || (authEmail ? authEmail.split('@')[0] : 'Account')) : 'Guest';
 
-  document.getElementById('profTopName').textContent = signedIn ? display : 'Profile';
   document.getElementById('profDisplayName').textContent = display;
   var handleEl = document.getElementById('profHandle');
   handleEl.textContent = signedIn ? (authUsername ? '@' + authUsername : (authEmail || '')) : 'Not signed in';
@@ -537,7 +536,10 @@ function handleProfilePicFile(file) {
 }
 
 document.getElementById('profileBack').addEventListener('click', function() { renderHome(); showScreen('homeScreen'); });
-document.getElementById('profSettingsBtn').addEventListener('click', function() { showScreen('settingsScreen'); });
+document.getElementById('profSettingsBtn').addEventListener('click', function() {
+  if (typeof openAccountSettings === 'function') openAccountSettings();
+  else showScreen('settingsScreen');
+});
 document.getElementById('profAvatar').addEventListener('click', function() { document.getElementById('profPicInput').click(); });
 document.getElementById('profCtaBtn').addEventListener('click', function() {
   var signedIn = !!(syncEnabled && (authEmail || authUsername));
