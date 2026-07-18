@@ -878,6 +878,8 @@
     .toast--gold { border-color:rgba(226,196,140,.5); color:#e8cd94; box-shadow:0 0 18px -6px rgba(226,196,140,.5); }
     .toast--violet { border-color:rgba(196,168,220,.5); color:#d8c4f4; }
     .toast--teal { border-color:rgba(126,184,164,.5); color:#9ed8c0; }
+    .toast--green { font-size:13px; letter-spacing:.08em; padding:16px 30px; background:rgba(16,32,22,.96);
+      border-color:rgba(126,200,140,.55); color:#a8e8b8; box-shadow:0 0 22px -6px rgba(126,200,140,.55); }
 
     /* ── Welcome back + Morning Offering ── */
 
@@ -9146,9 +9148,12 @@ document.getElementById('omniaEngine').addEventListener('click', function(e) {
       if (done.length && _genSheetId && typeof renderGenSheet === 'function') renderGenSheet(_genSheetId);
       done.forEach(function(id) {
         var u = OMNIA_UPGRADES.find(function(x) { return x.id === id; });
-        var nm = u ? u.name
-          : (typeof dmGenIdx === 'function' && dmGenIdx(id) >= 0 ? 'Dark Matter Pump ' + DM_GEN_META[dmGenIdx(id)].roman : null);
-        if (nm && typeof showToast === 'function') showToast('✦ ' + nm + ' upgraded', 2600, 'gold');
+        if (u) {
+          if (typeof showToast === 'function') showToast('Akasha Generator upgrade completed', 3200, 'green');
+          return;
+        }
+        var dmName = (typeof dmGenIdx === 'function' && dmGenIdx(id) >= 0) ? 'Dark Matter Pump ' + DM_GEN_META[dmGenIdx(id)].roman : null;
+        if (dmName && typeof showToast === 'function') showToast('✦ ' + dmName + ' upgraded', 2600, 'gold');
       });
       if (done.length && typeof syncEnabled !== 'undefined' && syncEnabled && typeof authToken !== 'undefined' && authToken && typeof syncPushData === 'function') syncPushData();
       return;
