@@ -591,6 +591,11 @@
     .history-back { width:38px; height:38px; display:flex; align-items:center; justify-content:center; border-radius:50%; border:1px solid rgba(255,255,255,.12); background:rgba(255,255,255,.05); color:rgba(221,216,206,.8); cursor:pointer; transition:background .15s, border-color .15s; flex-shrink:0; padding:0; }
     .history-back:active { background:rgba(255,255,255,.12); border-color:rgba(255,255,255,.2); }
     /* ── Apple-style grouped settings ── */
+    /* Account Settings leans on --muted for most of its body copy (section
+       headers, descriptions, Sign Out) — the global 0.38 opacity reads as
+       near-illegible against this screen's near-black card backgrounds, so
+       boost it locally rather than touching --muted everywhere. */
+    #accountSettingsScreen { --muted: rgba(221,216,206,.7); }
     .aset-group { margin-bottom:30px; }
     .aset-header { font-size:9px; letter-spacing:.22em; text-transform:uppercase; color:var(--muted); margin:0 4px 10px; }
     .aset-card { background:rgba(255,255,255,.03); border:1px solid var(--border); border-radius:13px; overflow:hidden; }
@@ -9372,7 +9377,9 @@ startPrayerScheduler();
   // ── Gesture lifecycle ──
 
   function begin(screenEl, backBtn, startX) {
-    var prevId = PREV_SCREEN[screenEl.id] || 'homeScreen';
+    var prevId = (screenEl.id === 'accountSettingsScreen' && typeof _acctSettingsReturnTo === 'string')
+      ? _acctSettingsReturnTo
+      : (PREV_SCREEN[screenEl.id] || 'homeScreen');
     var prevIsHome = (prevId === 'homeScreen');
     var prevEl = document.getElementById(prevId);
     if (!prevEl) return false;

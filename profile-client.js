@@ -552,7 +552,7 @@ function handleProfilePicFile(file) {
 
 document.getElementById('profileBack').addEventListener('click', function() { renderHome(); showScreen('homeScreen'); });
 document.getElementById('profSettingsBtn').addEventListener('click', function() {
-  if (typeof openAccountSettings === 'function') openAccountSettings();
+  if (typeof openAccountSettings === 'function') openAccountSettings('profileScreen');
   else showScreen('settingsScreen');
 });
 document.getElementById('profAvatar').addEventListener('click', function() { document.getElementById('profPicInput').click(); });
@@ -562,7 +562,7 @@ document.getElementById('profCtaBtn').addEventListener('click', function() {
     renderSettingsExerciseList();
     renderCustomVisImageList();
     renderCustomAudSoundList();
-    openAccountSettings();
+    openAccountSettings('profileScreen');
   } else {
     document.getElementById('profPicInput').click();
   }

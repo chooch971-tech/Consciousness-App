@@ -339,7 +339,9 @@ function openExerciseSettings(id) {
   showScreen('exerciseSettingsScreen');
 }
 
-function openAccountSettings() {
+var _acctSettingsReturnTo = 'settingsScreen';
+function openAccountSettings(returnTo) {
+  _acctSettingsReturnTo = returnTo || 'settingsScreen';
   _parkSettingsBlocks();
   var mount = document.getElementById('accountSyncMount');
   var blk = document.getElementById('acctSyncBlock');
@@ -382,7 +384,7 @@ document.getElementById('exerciseSettingsBack').addEventListener('click', functi
 });
 document.getElementById('accountSettingsBack').addEventListener('click', function() {
   _parkSettingsBlocks();
-  showScreen('settingsScreen');
+  showScreen(_acctSettingsReturnTo);
 });
 
 // Settings email toggle
