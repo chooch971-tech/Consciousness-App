@@ -112,7 +112,7 @@ function claimPathQuestReward(type) {
   if (progress < target) return;
   var amount = pathQuestReward(type);
   if (typeof omniaState !== 'undefined') {
-    omniaState.akasha = (omniaState.akasha || 0) + amount;
+    omniaCreditAkasha(amount, 'path-quest', { questType: type });
     var boostMult = type === 'weekend' ? 1.3 : 1.2;
     var boostDuration = type === 'weekend' ? 8 * 3600000 : 4 * 3600000;
     var now = Date.now();
@@ -547,9 +547,7 @@ function claimGift(idx) {
   saveGiftPath(s);
   var g = GIFT_PATH_DEFS[idx];
   if (typeof omniaState !== 'undefined' && omniaState) {
-    var pre = omniaState.akasha || 0;
-    omniaState.akasha = pre + g.akasha;
-    omniaState.totalAkashaEarned = (omniaState.totalAkashaEarned || 0) + Math.max(0, Math.round(omniaState.akasha - pre));
+    omniaCreditAkasha(g.akasha, 'gift-path', { day: idx + 1 });
     if (idx === 6) {
       var prevStacks = omniaState.devotionStacks || 0;
       var nextStacks = Math.min(24, s.cleared.length);

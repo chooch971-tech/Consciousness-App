@@ -375,7 +375,6 @@ function collectOmniaAkasha(anchorEl, gid) {
   var amount = 0;
   ids.forEach(function(k) { amount += Math.floor(res[k] || 0); });
   if (amount < 1) return;
-  var current = omniaState.akasha || 0;
   var collected = amount;
   var remaining = collected;
   ids.forEach(function(k) {
@@ -383,7 +382,7 @@ function collectOmniaAkasha(anchorEl, gid) {
     res[k] = (res[k] || 0) - take; remaining -= take;
     if (res[k] < 0.5) res[k] = 0;
   });
-  omniaState.akasha = current + collected;
+  omniaTransferAkasha(collected, 'generator-collection', { generatorId: gid || 'all' });
   saveOmniaState();
   renderOmniaEngine();
 
@@ -467,8 +466,7 @@ function buildOmniaBody(body) {
   if (omniaBodyAtCap(body)) return;
   var cost = omniaBodyCost(body);
   if ((omniaState.akasha || 0) < cost) return;
-  omniaState.akasha -= cost;
-  omniaState.totalAkashaSpent = (omniaState.totalAkashaSpent || 0) + cost;
+  omniaSpendAkasha(cost, 'body-upgrade', { body: body, level: omniaState.bodies[body] || 1 });
   omniaState.bodies[body] = (omniaState.bodies[body] || 0) + 1;
   saveOmniaState();
   fireOmniaBodyBurst(body);
@@ -1014,8 +1012,7 @@ function buyOmniaUpgrade(id) {
   if (_pump && omniaPumpBuildingId(_pump)) return false;  // one upgrade per pump at a time
   var cost = omniaUpgradeCost(upg);
   if ((omniaState.akasha || 0) < cost) return false;
-  omniaState.akasha -= cost;
-  omniaState.totalAkashaSpent = (omniaState.totalAkashaSpent || 0) + cost;
+  omniaSpendAkasha(cost, 'generator-upgrade', { upgradeId: id, level: omniaState.upgrades[id] || 1 });
   // Spend now, but the level lands only when construction finishes.
   var targetLevel = (omniaState.upgrades[id] || 1) + 1;
   if (!omniaState.upgradeBuilds || typeof omniaState.upgradeBuilds !== 'object') omniaState.upgradeBuilds = {};

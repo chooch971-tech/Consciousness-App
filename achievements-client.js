@@ -190,8 +190,7 @@ function achRemaster() {
     });
   });
   if (refund > 0 && typeof omniaState !== 'undefined' && omniaState) {
-    omniaState.akasha = Math.max(0, (omniaState.akasha || 0) - refund);
-    omniaState.totalAkashaEarned = Math.max(0, (omniaState.totalAkashaEarned || 0) - refund);
+    omniaReverseAkashaCredit(refund, 'achievement-revocation');
     if (typeof saveOmniaState === 'function') saveOmniaState();
   }
   achSave();
@@ -220,10 +219,7 @@ function achEvaluate(silent) {
   if (newly.length) {
     var total = 0;
     newly.forEach(function(b){ total += b.reward; });
-    var pre = omniaState.akasha || 0;
-    omniaState.akasha = pre + total;
-    var got = Math.max(0, Math.round(omniaState.akasha - pre));
-    omniaState.totalAkashaEarned = (omniaState.totalAkashaEarned || 0) + got;
+    var got = omniaCreditAkasha(total, 'achievement', { count: newly.length });
     if (typeof saveOmniaState === 'function') saveOmniaState();
     achSave();
     if (!silent && typeof showToast === 'function') {

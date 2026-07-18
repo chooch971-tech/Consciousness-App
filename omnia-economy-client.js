@@ -146,7 +146,7 @@ function omniaAccrue() {
       omniaState.reservoirs[gid] = Math.min(cap, before + gain);
       earned += Math.max(0, omniaState.reservoirs[gid] - before);
     }
-    if (earned > 0) omniaState.totalAkashaEarned = Math.floor((omniaState.totalAkashaEarned || 0) + earned);
+    if (earned > 0) omniaMintAkasha(earned, 'generator-accrual', { generators: n }, false);
     // Dark Matter pumps drip in the same pass. No prestige/devotion/boost
     // multipliers apply — ◆ stays scarce by design. A pump that is upgrading
     // is offline, like the akasha pumps.

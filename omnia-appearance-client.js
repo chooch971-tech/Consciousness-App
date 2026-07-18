@@ -965,8 +965,7 @@ function unlockOrSelectOmniaCosmetic(kind, id) {
       omniaState.totalDarkMatterSpent = (omniaState.totalDarkMatterSpent || 0) + liveCost;
     } else {
       if ((omniaState.akasha || 0) < liveCost) return;
-      omniaState.akasha -= liveCost;
-      omniaState.totalAkashaSpent = (omniaState.totalAkashaSpent || 0) + liveCost;
+      omniaSpendAkasha(liveCost, 'cosmetic', { kind: kind, itemId: id });
     }
     omniaUnlockList(kind).push(id);
   }

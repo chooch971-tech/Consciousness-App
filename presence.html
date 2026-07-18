@@ -7121,7 +7121,7 @@ body:not(.tut-live) #tutCorgi {
 
   <!-- TEMPORARY (testing): per-exercise Akasha breakdown, reachable by
        swiping right off the Akasha explainer above. Remove this screen (and
-       the swipe handler / akashaLog write in omnia-rewards-client.js) once
+       the swipe handler / local ledger entries in omnia-rewards-client.js) once
        the economy's been evaluated. -->
   <div class="screen" id="akashaStatsScreen" style="padding:0; flex-direction:column;">
     <div style="display:flex; align-items:center; gap:14px; padding:var(--safe-top) 20px 14px; border-bottom:1px solid var(--border); flex-shrink:0;">
@@ -8953,8 +8953,7 @@ function claimMorningOffering() {
   if (typeof omniaState !== 'undefined' && omniaState) omniaState.offeringDay = today;
   try { localStorage.setItem('presence_offering_day', today); } catch(e) {}
   var gift = morningOfferingAmount();
-  omniaState.akasha = (omniaState.akasha || 0) + gift;
-  omniaState.totalAkashaEarned = (omniaState.totalAkashaEarned || 0) + gift;
+  omniaCreditAkasha(gift, 'morning-offering', { streak: (typeof state !== 'undefined' && state.streak) || 0 });
   saveOmniaState();
   if (syncEnabled && authToken) syncPushData();
   showToast('+' + gift + ' akasha', 3200, 'gold');
@@ -8981,6 +8980,7 @@ function claimMorningOffering() {
 <script src="omnia-progression-config-client.js"></script>
 <script src="omnia-story-client.js"></script>
 <script src="omnia-state-client.js"></script>
+<script src="omnia-ledger-client.js"></script>
 <script src="omnia-appearance-client.js"></script>
 <script src="omnia-economy-client.js"></script>
 <script src="omnia-book2-client.js"></script>

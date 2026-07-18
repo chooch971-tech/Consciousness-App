@@ -609,7 +609,7 @@ function touchPracticeStreak() {
           state.xp += commitDef.xp;
           var _scLeveled = awardLevelUps(state, sumXpToLevel, xpForLevel);
           if (typeof omniaState !== 'undefined' && omniaState) {
-            omniaState.akasha += commitDef.akasha;
+            omniaCreditAkasha(commitDef.akasha, 'streak-commitment', { days: commitDays });
             if (typeof saveOmniaState === 'function') saveOmniaState();
           }
           // Queue the reward notification so it surfaces inside the session-complete

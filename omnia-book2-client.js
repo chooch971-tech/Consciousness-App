@@ -82,8 +82,7 @@ function omniaBuildToolPhase() {
     showToast('Requires ' + c.a + ' akasha + ' + c.d + ' ◆ dark matter', 3200);
     return;
   }
-  omniaState.akasha -= c.a;
-  omniaState.totalAkashaSpent = (omniaState.totalAkashaSpent || 0) + c.a;
+  omniaSpendAkasha(c.a, 'book2-tool', { toolId: tool.id, phase: st.p });
   omniaState.darkMatter -= c.d;
   omniaState.totalDarkMatterSpent = (omniaState.totalDarkMatterSpent || 0) + c.d;
   var phaseName = TOOL_PHASES[st.p];
@@ -122,8 +121,7 @@ function omniaBuildBookIIBody(b) {
     showToast('Requires ' + c.a + ' akasha + ' + c.d + ' ◆ dark matter', 3200);
     return;
   }
-  omniaState.akasha -= c.a;
-  omniaState.totalAkashaSpent = (omniaState.totalAkashaSpent || 0) + c.a;
+  omniaSpendAkasha(c.a, 'book2-body', { body: b, level: bookIIBodies()[b] || 1 });
   omniaState.darkMatter -= c.d;
   omniaState.totalDarkMatterSpent = (omniaState.totalDarkMatterSpent || 0) + c.d;
   var bodies = bookIIBodies();
@@ -274,8 +272,7 @@ function omniaTravelSphere() {
     showToast('Requires ' + c.a + ' akasha + ' + c.d + ' ◆ dark matter', 3200);
     return;
   }
-  omniaState.akasha -= c.a;
-  omniaState.totalAkashaSpent = (omniaState.totalAkashaSpent || 0) + c.a;
+  omniaSpendAkasha(c.a, 'book2-sphere', { sphere: i + 1 });
   omniaState.darkMatter -= c.d;
   omniaState.totalDarkMatterSpent = (omniaState.totalDarkMatterSpent || 0) + c.d;
   b2.sphere = i + 1;

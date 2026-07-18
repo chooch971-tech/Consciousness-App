@@ -28,6 +28,7 @@ const omniaCosmeticsConfigClient = fs.readFileSync(path.join(root, 'omnia-cosmet
 const omniaProgressionConfigClient = fs.readFileSync(path.join(root, 'omnia-progression-config-client.js'), 'utf8');
 const omniaStoryClient = fs.readFileSync(path.join(root, 'omnia-story-client.js'), 'utf8');
 const omniaStateClient = fs.readFileSync(path.join(root, 'omnia-state-client.js'), 'utf8');
+const omniaLedgerClient = fs.readFileSync(path.join(root, 'omnia-ledger-client.js'), 'utf8');
 const omniaAppearanceClient = fs.readFileSync(path.join(root, 'omnia-appearance-client.js'), 'utf8');
 const omniaEconomyClient = fs.readFileSync(path.join(root, 'omnia-economy-client.js'), 'utf8');
 const omniaBook2Client = fs.readFileSync(path.join(root, 'omnia-book2-client.js'), 'utf8');
@@ -515,6 +516,23 @@ test('Omnia persistence and cloud reconciliation live in a dedicated client boun
   assert.match(omniaStateClient, /function\s+saveOmniaState\s*\(/);
   assert.match(omniaStateClient, /var\s+omniaState\s*=\s*loadOmniaState\(\)/);
   assert.doesNotThrow(() => new Function(omniaStateClient));
+});
+
+test('Akasha accounting lives in a local ledger between state and feature behavior', () => {
+  const stateTag = presence.indexOf('<script src="omnia-state-client.js"></script>');
+  const ledgerTag = presence.indexOf('<script src="omnia-ledger-client.js"></script>');
+  const appearanceTag = presence.indexOf('<script src="omnia-appearance-client.js"></script>');
+  assert.notEqual(ledgerTag, -1);
+  assert.ok(stateTag < ledgerTag, 'Ledger loads after Omnia state initialization');
+  assert.ok(ledgerTag < appearanceTag, 'Ledger loads before Akasha-consuming features');
+  assert.equal(presence.split('<script src="omnia-ledger-client.js"></script>').length - 1, 1);
+  assert.match(serviceWorker, /['"]omnia-ledger-client\.js['"]/);
+  assert.match(omniaLedgerClient, /function\s+credit\s*\(/);
+  assert.match(omniaLedgerClient, /function\s+spend\s*\(/);
+  assert.match(omniaLedgerClient, /function\s+transfer\s*\(/);
+  assert.match(omniaLedgerClient, /function\s+mint\s*\(/);
+  assert.match(omniaLedgerClient, /function\s+migrateLegacyExerciseLog\s*\(/);
+  assert.doesNotThrow(() => new Function(omniaLedgerClient));
 });
 
 test('Omnia cosmetic rendering and selection live in a dedicated client boundary', () => {

@@ -428,21 +428,16 @@ function awardOmniaForExercise(exId, seconds, reachedRec) {
       omniaState.clockAkashaCount = (omniaState.clockAkashaCount || 0) + 1;
     }
   }
-  omniaState.akasha = (omniaState.akasha || 0) + gain;
-  omniaState.totalAkashaEarned = (omniaState.totalAkashaEarned || 0) + gain;
+  var activityName = meta && meta.name ? meta.name : 'Exercise';
+  gain = omniaCreditAkasha(gain, 'exercise', {
+    exId: exId,
+    name: activityName,
+    seconds: seconds || 0,
+    recommended: !!recommended
+  });
   // Up to three reached recommendations count each day, including consecutive
   // exercises in one practice block. Other exercises still pay Akasha and XP.
   omniaGrantRecommendedSessionCredit(recommended, reachedRec, todayStr);
-  // Names must be computed BEFORE the award below — this used to read
-  // activityName ahead of its declaration, leaving lastBodyAward.exercise
-  // permanently undefined.
-  var activityName = meta && meta.name ? meta.name : 'Exercise';
-  // TEMPORARY (testing): per-session Akasha log, feeding the debug breakdown
-  // screen reachable by swiping right off the Akasha explainer. Remove
-  // alongside that screen once the economy's been evaluated.
-  if (!omniaState.akashaLog) omniaState.akashaLog = [];
-  omniaState.akashaLog.push({ exId: exId, name: activityName, seconds: seconds || 0, gain: gain, recommended: !!recommended, date: nowClamp });
-  if (omniaState.akashaLog.length > 500) omniaState.akashaLog = omniaState.akashaLog.slice(-500);
   var awardedBody = false;
   if (recommended) {
     omniaState.recStreak = (omniaState.recStreak || 0) + 1;
@@ -474,21 +469,22 @@ function awardOmniaForExercise(exId, seconds, reachedRec) {
   if (awardedBody) setTimeout(maybeShowBodyLevelAward, 1200);
 }
 
-// TEMPORARY (testing): per-exercise Akasha breakdown, built from
-// omniaState.akashaLog (written above in awardOmniaForExercise). Remove
-// alongside akashaStatsScreen and the swipe handler in
-// visualization-client.js once the economy's been evaluated.
+// TEMPORARY (testing): per-exercise Akasha breakdown, built from the local
+// privacy-preserving economy ledger. Remove alongside akashaStatsScreen and
+// its swipe handler once the economy has been evaluated.
 function computeAkashaStatsByExercise() {
-  var log = (omniaState && omniaState.akashaLog) || [];
+  var log = typeof omniaReadAkashaLedger === 'function' ? omniaReadAkashaLedger() : [];
   var byEx = {};
   log.forEach(function(entry) {
-    var key = entry.exId || entry.name || 'unknown';
-    if (!byEx[key]) byEx[key] = { name: entry.name || key, totalGain: 0, sessions: 0, totalSeconds: 0, bestSeconds: 0 };
+    if (!entry || entry.kind !== 'credit' || entry.source !== 'exercise') return;
+    var meta = entry.meta || {};
+    var key = meta.exId || meta.name || 'unknown';
+    if (!byEx[key]) byEx[key] = { name: meta.name || key, totalGain: 0, sessions: 0, totalSeconds: 0, bestSeconds: 0 };
     var b = byEx[key];
-    b.totalGain += entry.gain || 0;
+    b.totalGain += entry.amount || 0;
     b.sessions += 1;
-    b.totalSeconds += entry.seconds || 0;
-    if ((entry.seconds || 0) > b.bestSeconds) b.bestSeconds = entry.seconds || 0;
+    b.totalSeconds += meta.seconds || 0;
+    if ((meta.seconds || 0) > b.bestSeconds) b.bestSeconds = meta.seconds || 0;
   });
   return Object.keys(byEx).map(function(k) { return byEx[k]; }).sort(function(a, b) { return b.totalGain - a.totalGain; });
 }

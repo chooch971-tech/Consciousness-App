@@ -758,7 +758,7 @@ function saveConcResult(repeatAfter) {
   });
   if (window._tutorialFirstClock) {
     window._tutorialFirstClock = false;
-    if (omniaState) { omniaState.akasha += 50; saveOmniaState(); }
+    if (omniaState) { omniaCreditAkasha(50, 'tutorial-clock'); saveOmniaState(); }
     showTutorialPostSession(seconds, _akashaDelta + 50);
     return;
   }

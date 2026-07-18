@@ -1645,7 +1645,7 @@ function closeExExplainer() {
 
 // TEMPORARY (testing): swipe right off the Akasha explainer to reach a
 // per-exercise Akasha breakdown screen. Remove alongside akashaStatsScreen
-// and the akashaLog write in omnia-rewards-client.js once the economy's
+// and the local ledger entries in omnia-rewards-client.js once the economy's
 // been evaluated.
 (function() {
   var overlay = document.getElementById('exExplainOverlay');

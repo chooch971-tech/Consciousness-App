@@ -19,7 +19,10 @@
     'presence_giftpath_v1'
   ]);
 
-  const LOCAL_PROGRESS_KEYS = Object.freeze(['presence_session'].concat(SYNC_KEYS));
+  const LOCAL_PROGRESS_KEYS = Object.freeze([
+    'presence_session',
+    'presence_akasha_ledger_v1'
+  ].concat(SYNC_KEYS));
   const SYNC_KEY_SET = new Set(SYNC_KEYS);
 
   function isSyncKey(key) {
