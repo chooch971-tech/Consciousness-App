@@ -16,6 +16,7 @@ const {
   errorDetails,
   observeRequests
 } = require('./observability');
+const { createRecurringJob } = require('./background-jobs');
 const {
   moderateUsername,
   moderatePublicText,
@@ -454,7 +455,7 @@ function subscriptionRateLimit(req, res, next) {
 }
 
 // Periodically clear stale rate-limit + prompt buckets so the Maps don't grow unbounded.
-setInterval(() => {
+function cleanExpiredRateLimitBuckets() {
   const now = Date.now();
   for (const [k, b] of aiRateBuckets) if (now > b.resetAt + AI_RATE_WINDOW_MS) aiRateBuckets.delete(k);
   for (const [k, b] of authRateBuckets) if (now > b.resetAt + AUTH_RATE_WINDOW_MS) authRateBuckets.delete(k);
@@ -462,7 +463,7 @@ setInterval(() => {
   for (const [k, b] of mutationRateBuckets) if (now > b.resetAt + MUTATION_RATE_WINDOW_MS) mutationRateBuckets.delete(k);
   for (const [k, b] of subscriptionRateBuckets) if (now > b.resetAt + SUBSCRIPTION_RATE_WINDOW_MS) subscriptionRateBuckets.delete(k);
   if (usedPrompts.size > 5000) usedPrompts.clear();
-}, 10 * 60 * 1000);
+}
 
 // Server-derived report cache key — never trust a client-supplied periodKey.
 // Mirrors the client's omniaReportPeriodKey() but computed here so the once-per-period
@@ -618,7 +619,7 @@ async function pushTo(sub, prompt, title) {
 }
 
 // ── Awareness session loop (every 5s) ────────────────────
-setInterval(async () => {
+async function processAwarenessSessions() {
   const now = Date.now();
   const dead = [];
   for (const sub of subscriptions) {
@@ -678,10 +679,10 @@ setInterval(async () => {
     subscriptions = subscriptions.filter(s => !dead.includes(s.endpoint));
     await Promise.all(dead.map(deleteSub));
   }
-}, 5000);
+}
 
 // ── Prayer schedule loop (every 60s) ────────────────────
-setInterval(async () => {
+async function processPrayerSchedules() {
   if (!prayerSchedules.length) return;
   const nowUtc = new Date();
   for (const schedule of prayerSchedules) {
@@ -724,7 +725,7 @@ setInterval(async () => {
     }
     await savePrayerSchedule(schedule);
   }
-}, 60000);
+}
 
 // Omnia's practice-reminder copy. One is picked per nudge so the reminders
 // don't read identically every day.
@@ -741,7 +742,7 @@ const PRACTICE_REMINDER_MESSAGES = [
 // Fires a real push at each scheduled local time so users are reminded to
 // practice even when the app is closed. Mirrors the prayer loop, but fires
 // once per time per day (a single 15-minute window, one notification).
-setInterval(async () => {
+async function processPracticeSchedules() {
   if (!practiceSchedules.length) return;
   const nowUtc = new Date();
   for (const schedule of practiceSchedules) {
@@ -770,7 +771,47 @@ setInterval(async () => {
     }
     await savePracticeSchedule(schedule);
   }
-}, 60000);
+}
+
+let backgroundJobs = [];
+
+function startBackgroundJobs() {
+  if (backgroundJobs.length) return;
+  backgroundJobs = [
+    createRecurringJob({
+      name: 'rate-limit-cleanup',
+      intervalMs: 10 * 60 * 1000,
+      task: cleanExpiredRateLimitBuckets,
+      logger
+    }),
+    createRecurringJob({
+      name: 'awareness-sessions',
+      intervalMs: 5000,
+      task: processAwarenessSessions,
+      logger
+    }),
+    createRecurringJob({
+      name: 'prayer-schedules',
+      intervalMs: 60000,
+      task: processPrayerSchedules,
+      logger
+    }),
+    createRecurringJob({
+      name: 'practice-schedules',
+      intervalMs: 60000,
+      task: processPracticeSchedules,
+      logger
+    })
+  ];
+  backgroundJobs.forEach(job => job.start());
+  logger.info('background_jobs_started', { jobs: backgroundJobs.map(job => job.name) });
+}
+
+async function stopBackgroundJobs() {
+  const jobs = backgroundJobs;
+  backgroundJobs = [];
+  await Promise.all(jobs.map(job => job.stop()));
+}
 
 // ── CLOUD SYNC ROUTES ────────────────────────────────────
 
@@ -3004,6 +3045,7 @@ async function shutdown(signal) {
   forcedExit.unref();
 
   try {
+    await stopBackgroundJobs();
     if (httpServer) {
       await new Promise((resolve, reject) => httpServer.close(err => err ? reject(err) : resolve()));
     }
@@ -3032,6 +3074,7 @@ connectDB().then(() => {
   httpServer = app.listen(PORT, () => {
     logger.info('server_started', { port: Number(PORT) || PORT });
   });
+  startBackgroundJobs();
 }).catch(() => {
   process.exit(1);
 });
