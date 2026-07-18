@@ -54,6 +54,13 @@ function moderateUsername(value) {
   return result(!containsHate(value, true), 'hateful_username');
 }
 
+// Display names are free-form (spaces, punctuation, unicode allowed) but are
+// just as identity-facing as a username, so they get the same embedded-match
+// strictness — a slur can't be smuggled in as part of a longer "name".
+function moderateDisplayName(value) {
+  return result(!containsHate(value, true), 'hateful_display_name');
+}
+
 function moderatePublicText(value) {
   return result(!containsHate(value, false), 'hateful_content');
 }
@@ -99,6 +106,7 @@ function rankLodgePosts(posts, requestedSort, nowMs) {
 
 module.exports = {
   moderateUsername,
+  moderateDisplayName,
   moderatePublicText,
   moderatePrivateText,
   normalizeForModeration,

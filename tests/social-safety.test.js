@@ -4,6 +4,7 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 const {
   moderateUsername,
+  moderateDisplayName,
   moderatePublicText,
   moderatePrivateText,
   normalizeSort,
@@ -16,6 +17,14 @@ test('username and public moderation catch direct and obfuscated slurs', () => {
   assert.equal(moderatePublicText('A bigger practice goal for tomorrow').ok, true);
   assert.equal(moderateUsername('quiet_practitioner').ok, true);
   assert.equal(moderateUsername('spice_keeper').ok, true);
+});
+
+test('display name moderation catches slurs (including spaced-out names) but permits ordinary names', () => {
+  assert.equal(moderateDisplayName('f4ggot').ok, false);
+  assert.equal(moderateDisplayName('Chi nk Master').ok, false);
+  assert.equal(moderateDisplayName('Jordan Rivera').ok, true);
+  assert.equal(moderateDisplayName("O'Brien-Chen").ok, true);
+  assert.equal(moderateDisplayName('Spice Keeper').ok, true);
 });
 
 test('private moderation blocks dangerous messages but permits ordinary support', () => {

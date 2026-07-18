@@ -190,6 +190,37 @@ document.getElementById('setUsernameBtn').addEventListener('click', async functi
     this.disabled = false;
   }
 });
+document.getElementById('setDisplayNameBtn').addEventListener('click', async function() {
+  var input = document.getElementById('setDisplayNameInput');
+  var errEl = document.getElementById('setDisplayNameError');
+  var val = (input.value || '').trim();
+  this.disabled = true;
+  errEl.style.display = 'none';
+  try {
+    var res = await fetch(SYNC_API_URL + '/auth/set-display-name', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + authToken },
+      body: JSON.stringify({ displayName: val })
+    });
+    var data = await res.json();
+    if (res.ok) {
+      authDisplayName = data.displayName || null;
+      if (authDisplayName) localStorage.setItem('presence_display_name', authDisplayName);
+      else localStorage.removeItem('presence_display_name');
+      input.value = authDisplayName || '';
+      if (typeof renderProfile === 'function') renderProfile();
+      showToast(authDisplayName ? 'Name saved' : 'Name cleared');
+    } else {
+      errEl.textContent = data.error || 'Failed to save name';
+      errEl.style.display = 'block';
+    }
+  } catch(e) {
+    errEl.textContent = 'Network error. Try again.';
+    errEl.style.display = 'block';
+  } finally {
+    this.disabled = false;
+  }
+});
 // syncLoginBtn removed — sign-in now handled by settingsSignInWrap
 document.getElementById('settingsBack').addEventListener('click', function() {
   renderHome(); showScreen('homeScreen');

@@ -20,6 +20,7 @@ const { createRecurringJob } = require('./background-jobs');
 const { ensureIndexes } = require('./database-startup');
 const {
   moderateUsername,
+  moderateDisplayName,
   moderatePublicText,
   moderatePrivateText,
   normalizeSort,
@@ -856,7 +857,7 @@ app.post('/api/sync/auth/login', authRateLimit, async (req, res) => {
     const validPassword = await bcrypt.compare(password, user.passwordHash);
     if (!validPassword) return res.status(401).json({ error: 'Invalid credentials' });
     const token = issueAuthToken(user);
-    res.json({ token, userId: user._id, email: user.email, username: user.username || null, isPrivate: !!user.isPrivate });
+    res.json({ token, userId: user._id, email: user.email, username: user.username || null, displayName: user.displayName || null, isPrivate: !!user.isPrivate });
   } catch (err) {
     console.error('Login error:', err);
     res.status(500).json({ error: 'Login failed' });
@@ -1051,6 +1052,31 @@ app.post('/api/sync/auth/set-username', verifyToken, mutationRateLimit, async (r
   }
 });
 
+// SET DISPLAY NAME — a free-form name shown instead of the @username on the
+// user's own profile. Unlike the username, this is editable any time and
+// isn't unique (not used for lookup/mentions), so it just needs length and
+// content moderation, not a uniqueness check.
+app.post('/api/sync/auth/set-display-name', verifyToken, mutationRateLimit, async (req, res) => {
+  try {
+    const { displayName } = req.body;
+    if (typeof displayName !== 'string') return res.status(400).json({ error: 'Display name required' });
+    // Collapse runs of whitespace/control characters to a single space, then trim.
+    const clean = displayName.replace(/[\s -]+/g, ' ').trim();
+    if (!clean) {
+      // Empty clears the custom name — the profile falls back to the username.
+      await usersCollection.updateOne({ _id: new ObjectId(req.user.userId) }, { $unset: { displayName: '' } });
+      return res.json({ displayName: null });
+    }
+    if (clean.length > 40) return res.status(400).json({ error: 'Name too long (max 40 characters)' });
+    if (!moderateDisplayName(clean).ok) return res.status(400).json({ error: 'Choose a different name' });
+    await usersCollection.updateOne({ _id: new ObjectId(req.user.userId) }, { $set: { displayName: clean } });
+    res.json({ displayName: clean });
+  } catch (err) {
+    console.error('Set display name error:', err);
+    res.status(500).json({ error: 'Failed to set display name' });
+  }
+});
+
 // HEARTBEAT — lightweight ping to mark user as online
 app.post('/api/sync/auth/heartbeat', verifyToken, async (req, res) => {
   try {
@@ -1121,7 +1147,7 @@ app.post('/api/sync/auth/google', authRateLimit, async (req, res) => {
     }
 
     const token = issueAuthToken(user);
-    res.json({ token, userId: user._id, email: user.email, username: user.username || null, isPrivate: !!user.isPrivate });
+    res.json({ token, userId: user._id, email: user.email, username: user.username || null, displayName: user.displayName || null, isPrivate: !!user.isPrivate });
   } catch (err) {
     console.error('[Google Auth] Error:', err.message);
     res.status(401).json({ error: 'Google sign-in failed' });
@@ -1590,11 +1616,12 @@ app.get('/api/sync/sync/pull', verifyToken, async (req, res) => {
     try {
       const user = await usersCollection.findOne(
         { _id: new ObjectId(req.user.userId) },
-        { projection: { profilePic: 1, username: 1, isPrivate: 1, status: 1 } }
+        { projection: { profilePic: 1, username: 1, displayName: 1, isPrivate: 1, status: 1 } }
       );
       if (user) account = {
         profilePic: user.profilePic || null,
         username: user.username || null,
+        displayName: user.displayName || null,
         isPrivate: !!user.isPrivate,
         status: user.status || null,
       };

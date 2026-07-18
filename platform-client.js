@@ -114,9 +114,11 @@ function initGoogleSignIn(containerId, onSuccess) {
         authToken = result.token;
         authEmail = result.email;
         authUsername = result.username || null;
+        authDisplayName = result.displayName || null;
         localStorage.setItem('presence_auth_token', authToken);
         localStorage.setItem('presence_auth_email', authEmail);
         if (authUsername) localStorage.setItem('presence_auth_username', authUsername);
+        if (authDisplayName) localStorage.setItem('presence_display_name', authDisplayName);
         try { localStorage.setItem(PRIVATE_PROFILE_KEY, result.isPrivate ? '1' : '0'); } catch(e) {}
         syncEnabled = true;
         onSuccess();
@@ -167,6 +169,7 @@ function initGoogleSignIn(containerId, onSuccess) {
 var authToken = localStorage.getItem('presence_auth_token');
 var authEmail = localStorage.getItem('presence_auth_email');
 var authUsername = localStorage.getItem('presence_auth_username');
+var authDisplayName = localStorage.getItem('presence_display_name');
 var syncEnabled = !!authToken;
 
 // ═══════════════════════════════════════════════════════════════
@@ -196,9 +199,11 @@ async function authRegisterOrLogin(email, password, isRegister, username) {
     authToken = result.token;
     authEmail = result.email;
     authUsername = result.username || null;
+    authDisplayName = result.displayName || null;
     localStorage.setItem('presence_auth_token', authToken);
     localStorage.setItem('presence_auth_email', authEmail);
     if (authUsername) localStorage.setItem('presence_auth_username', authUsername);
+    if (authDisplayName) localStorage.setItem('presence_display_name', authDisplayName);
     try { localStorage.setItem(PRIVATE_PROFILE_KEY, result.isPrivate ? '1' : '0'); } catch(e) {}
     syncEnabled = true;
 
@@ -424,6 +429,7 @@ function _refreshSettingsSyncCard() {
   var se   = document.getElementById('syncStatusEmail');
   var lb   = document.getElementById('syncLogoutBtn');
   var uc   = document.getElementById('setUsernameCard');
+  var nc   = document.getElementById('setDisplayNameCard');
   var dg   = document.getElementById('accountDeleteGroup');
   if (!wrap) return;
   var syncWarning = localStorage.getItem('presence_sync_warning');
@@ -432,6 +438,7 @@ function _refreshSettingsSyncCard() {
   if (se) se.textContent = '';
   if (lb) lb.style.display = 'none';
   if (uc) uc.style.display = 'none';
+  if (nc) nc.style.display = 'none';
   if (dg) dg.style.display = 'none';
   wrap.style.display = 'block';
   if (sgc) {
@@ -458,6 +465,8 @@ function _refreshSettingsSyncCardSignedIn() {
   var se   = document.getElementById('syncStatusEmail');
   var lb   = document.getElementById('syncLogoutBtn');
   var uc   = document.getElementById('setUsernameCard');
+  var nc   = document.getElementById('setDisplayNameCard');
+  var ni   = document.getElementById('setDisplayNameInput');
   var dg   = document.getElementById('accountDeleteGroup');
   localStorage.removeItem('presence_sync_warning');
   if (st) { st.textContent = syncStatusLabel(); st.style.color = ''; }
@@ -465,6 +474,10 @@ function _refreshSettingsSyncCardSignedIn() {
   if (lb) lb.style.display = 'block';
   if (wrap) wrap.style.display = 'none';
   if (uc) uc.style.display = authUsername ? 'none' : 'block';
+  // Unlike the username card (one-time claim), this stays visible and
+  // editable any time you're signed in, pre-filled with the current name.
+  if (nc) nc.style.display = 'block';
+  if (ni) ni.value = authDisplayName || '';
   if (dg) dg.style.display = '';
 }
 
@@ -472,6 +485,7 @@ async function clearDeletedAccountFromDevice() {
   authToken = null;
   authEmail = null;
   authUsername = null;
+  authDisplayName = null;
   syncEnabled = false;
   try {
     if ('serviceWorker' in navigator) {
@@ -527,9 +541,11 @@ async function authLogout(options) {
   authToken = null;
   authEmail = null;
   authUsername = null;
+  authDisplayName = null;
   localStorage.removeItem('presence_auth_token');
   localStorage.removeItem('presence_auth_email');
   localStorage.removeItem('presence_auth_username');
+  localStorage.removeItem('presence_display_name');
   localStorage.removeItem('presence_private_profile');
   try { localStorage.removeItem(STATUS_KEY); } catch(e) {}
   try { localStorage.removeItem(FRIENDS_CACHE_KEY); } catch(e) {}

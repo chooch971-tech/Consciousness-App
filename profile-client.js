@@ -29,6 +29,21 @@ function applyAccountFields(acct) {
     authUsername = acct.username;
     try { localStorage.setItem('presence_auth_username', authUsername); } catch(e) {}
   }
+  // Display name is edited any time (unlike the one-time username claim), so
+  // it's server-authoritative on every pull — same as the profile pic above —
+  // which also lets a clear on one device (acct.displayName === null) reach
+  // every other device instead of only ever growing.
+  if (typeof acct.displayName === 'string' || acct.displayName === null) {
+    var newDisplayName = acct.displayName || null;
+    if (newDisplayName !== authDisplayName) {
+      authDisplayName = newDisplayName;
+      try {
+        if (authDisplayName) localStorage.setItem('presence_display_name', authDisplayName);
+        else localStorage.removeItem('presence_display_name');
+      } catch(e) {}
+      if (typeof renderProfile === 'function') { try { renderProfile(); } catch(e) {} }
+    }
+  }
   // Daily status: adopt the server copy when it's at least as recent as the local
   // one (updatedAt is monotonic, and a cleared status carries a newer timestamp
   // with empty text, so clears propagate too).
@@ -178,7 +193,7 @@ function _profOvItem(icon, val, lbl) {
 
 function renderProfile() {
   var signedIn = !!(syncEnabled && (authEmail || authUsername));
-  var display = signedIn ? (authUsername || (authEmail ? authEmail.split('@')[0] : 'Account')) : 'Guest';
+  var display = signedIn ? (authDisplayName || authUsername || (authEmail ? authEmail.split('@')[0] : 'Account')) : 'Guest';
 
   document.getElementById('profDisplayName').textContent = display;
   var handleEl = document.getElementById('profHandle');

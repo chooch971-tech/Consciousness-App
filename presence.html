@@ -5497,6 +5497,15 @@ body:not(.tut-live) #tutCorgi {
               </div>
             </div>
           </div>
+          <div id="setDisplayNameCard" style="display:none; background:rgba(126,184,164,.05); border:1px solid rgba(126,184,164,.25); border-radius:10px; padding:16px 18px; margin-bottom:10px;">
+            <div style="font-size:12px; color:var(--text); margin-bottom:4px;">Your name</div>
+            <div style="font-size:10px; color:var(--muted); line-height:1.6; margin-bottom:12px;">Shown on your profile instead of your @username. Leave blank to just show your username.</div>
+            <div style="display:flex; gap:8px;">
+              <input id="setDisplayNameInput" type="text" placeholder="Your name" maxlength="40" autocomplete="off" style="flex:1; padding:10px 12px; border:1px solid var(--border); border-radius:7px; background:rgba(255,255,255,.04); color:var(--text); font-family:'DM Mono',monospace; font-size:11px; letter-spacing:.05em; outline:none;"/>
+              <button id="setDisplayNameBtn" style="padding:10px 16px; border:1px solid var(--accent); border-radius:7px; background:rgba(126,184,164,.1); color:var(--accent); font-family:'DM Mono',monospace; font-size:9px; letter-spacing:.15em; text-transform:uppercase; cursor:pointer; white-space:nowrap;">Save</button>
+            </div>
+            <div id="setDisplayNameError" style="font-size:10px; color:#c47a7a; margin-top:8px; display:none;"></div>
+          </div>
           <div id="setUsernameCard" style="display:none; background:rgba(126,184,164,.05); border:1px solid rgba(126,184,164,.25); border-radius:10px; padding:16px 18px;">
             <div style="font-size:12px; color:var(--text); margin-bottom:4px;">Set your username</div>
             <div style="font-size:10px; color:var(--muted); line-height:1.6; margin-bottom:12px;">Choose a username so friends can find and add you. Letters, numbers, and underscores only.</div>
