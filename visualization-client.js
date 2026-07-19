@@ -1362,14 +1362,16 @@ var EXERCISE_DEFS = {
   sense: {
     icon: '&#10042;',
     name: 'Sense Concentration',
-    desc: function() { return SENSE_MODE_DEFS[senseMode].desc; },
+    // No instruction block — Omnia's head in the setup opens the tutorial.
+    desc: '',
     setupHTML: function() { return buildSenseSetupHTML(); },
     begin: function() { startSenseSession(); }
   },
   thought: {
     icon: '&#9711;',
     name: 'Thought Control',
-    desc: function() { return TC_MODE_DEFS[tcMode].desc; },
+    // No instruction block — Omnia's head in the setup opens the tutorial.
+    desc: '',
     setupHTML: function() { return buildTCSetupHTML(); },
     begin: function() { startThoughtControl(); }
   },
@@ -1568,6 +1570,24 @@ var EX_EXPLAINERS = {
       'Repeat its phrase in the <strong>present tense</strong>, as if it is already true — <strong>tap once</strong> with each repetition.',
       'Reach the day\'s count to complete the session. Repetition, not force, is what <strong>influences the subconscious</strong>.',
       'Return <strong>daily</strong>. The mind accepts as real whatever it is told often enough.'
+    ]
+  },
+  sense: {
+    title: 'Senses',
+    steps: [
+      'Choose a sense to train — <strong>Feeling</strong>, <strong>Smell</strong>, or <strong>Taste</strong> — and set your minutes goal.',
+      'A sensation is revealed when the session begins. <strong>Summon it</strong> from imagination alone, with nothing before you.',
+      'Hold it <strong>vividly and unbroken</strong>. When it fades or another impression intrudes, gently rebuild it.',
+      'Sit with it until the bell. Session by session, the imagined sense grows as real as the outer one.'
+    ]
+  },
+  thought: {
+    title: 'Thought Control',
+    steps: [
+      '<strong>Observation</strong>: watch thoughts arise and pass without following them. Tap when you get lost in one.',
+      '<strong>Focus</strong>: hold one chosen thought exclusively. Tap the moment another intrudes.',
+      '<strong>Vacancy</strong>: hold the mind completely empty — the hardest of the three. Tap at the first flicker of content.',
+      'Set your minutes goal and sit until the bell. Each tap is honest bookkeeping — <strong>fewer taps each week</strong> is the progress.'
     ]
   },
   pore: {

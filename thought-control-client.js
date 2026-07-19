@@ -29,93 +29,61 @@ function getTCBestGap(mode) {
   }, 0);
 }
 
+// Same graded ladder as before (10:00 → 12:30 → 15:00, mastery banner at
+// fifteen), rendered through the shared .sn-* kit (snProgressBarHtml lives in
+// senses-client.js; the violet hue comes from the .sn-setup--tc wrapper).
 function buildTCProgressBars(mode) {
   var best = getTCBestGap(mode);
   if (best === 0) return '';
-  var html = '';
-
-  // Bar 1 — progress to 10:00
-  var p1 = Math.min(100, Math.round(best / 600 * 1000) / 10);
-  var p1d = Number.isInteger(p1) ? p1 : p1.toFixed(1);
-  html += '<div style="margin-top:14px;padding:12px 14px;background:rgba(164,126,184,.08);border:1px solid rgba(164,126,184,.2);border-radius:8px;">'
-    + '<div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:8px;">'
-    + '<span style="font-size:9px;letter-spacing:.18em;text-transform:uppercase;color:rgba(164,126,184,.6);">Progress to 10 min</span>'
-    + '<span style="font-family:Cormorant Garamond,serif;font-size:26px;font-weight:300;color:#c4a8d4;line-height:1;">' + p1d + '<span style="font-size:14px;">%</span></span>'
-    + '</div>'
-    + '<div style="height:4px;background:rgba(255,255,255,.07);border-radius:2px;overflow:hidden;">'
-    + '<div style="height:100%;width:' + p1d + '%;background:linear-gradient(90deg,#a47eb8,#c4a8d4);border-radius:2px;"></div>'
-    + '</div></div>';
-
-  // Bar 2 — progress to 12:30 (unlocks at 10 min)
-  if (best >= 600) {
-    var p2 = Math.min(100, Math.round(best / 750 * 1000) / 10);
-    var p2d = Number.isInteger(p2) ? p2 : p2.toFixed(1);
-    html += '<div style="margin-top:10px;padding:12px 14px;background:rgba(164,126,184,.08);border:1px solid rgba(164,126,184,.2);border-radius:8px;">'
-      + '<div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:8px;">'
-      + '<span style="font-size:9px;letter-spacing:.18em;text-transform:uppercase;color:rgba(164,126,184,.6);">Progress to 12:30</span>'
-      + '<span style="font-family:Cormorant Garamond,serif;font-size:26px;font-weight:300;color:#c4a8d4;line-height:1;">' + p2d + '<span style="font-size:14px;">%</span></span>'
-      + '</div>'
-      + '<div style="height:4px;background:rgba(255,255,255,.07);border-radius:2px;overflow:hidden;">'
-      + '<div style="height:100%;width:' + p2d + '%;background:linear-gradient(90deg,#a47eb8,#c4a8d4);border-radius:2px;"></div>'
-      + '</div></div>';
-  }
-
-  // Bar 3 — progress to 15:00 mastery, red (unlocks at 12:30)
-  if (best >= 750) {
-    var p3 = Math.min(100, Math.round(best / 900 * 1000) / 10);
-    var p3d = Number.isInteger(p3) ? p3 : p3.toFixed(1);
-    html += '<div style="margin-top:10px;padding:12px 14px;background:rgba(180,40,40,.07);border:1px solid rgba(180,40,40,.2);border-radius:8px;">'
-      + '<div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:8px;">'
-      + '<span style="font-size:9px;letter-spacing:.18em;text-transform:uppercase;color:rgba(180,60,60,.65);">Progress to 15 min</span>'
-      + '<span style="font-family:Cormorant Garamond,serif;font-size:26px;font-weight:300;color:#c0403a;line-height:1;">' + p3d + '<span style="font-size:14px;">%</span></span>'
-      + '</div>'
-      + '<div style="height:4px;background:rgba(255,255,255,.07);border-radius:2px;overflow:hidden;">'
-      + '<div style="height:100%;width:' + p3d + '%;background:linear-gradient(90deg,#b42828,#d94f4f);border-radius:2px;"></div>'
-      + '</div></div>';
-  }
-
-  // Mastery banner
-  if (best >= 900) {
-    html += '<div style="margin-top:18px;padding:20px 18px;background:rgba(180,40,40,.06);border:1px solid rgba(180,40,40,.25);border-radius:10px;text-align:center;">'
-      + '<div style="font-family:Cormorant Garamond,serif;font-size:22px;font-weight:400;color:#c0403a;line-height:1.4;">This mode has been mastered.</div>'
-      + '<div style="margin-top:8px;font-size:10px;letter-spacing:.18em;text-transform:uppercase;color:rgba(180,60,60,.5);">Fifteen minutes of unbroken silence</div>'
-      + '</div>';
-  }
-
+  var html = snProgressBarHtml('Progress to 10 min', best, 600, false);
+  if (best >= 600) html += snProgressBarHtml('Progress to 12:30', best, 750, false);
+  if (best >= 750) html += snProgressBarHtml('Progress to 15 min', best, 900, true);
+  if (best >= 900) html += snMasteryHtml('This mode has been mastered.', 'Fifteen minutes of unbroken silence');
   return html;
 }
 
+// Mode glyphs: observation = an open eye, focus = a held point,
+// vacancy = a dashed (empty) circle.
+var TC_MODE_GLYPHS = {
+  observation: '<svg viewBox="0 0 24 22" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'
+    + '<path d="M2.5 11 Q12 3.6 21.5 11 Q12 18.4 2.5 11 Z"/><circle cx="12" cy="11" r="2.9"/></svg>',
+  focus: '<svg viewBox="0 0 24 22" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" aria-hidden="true">'
+    + '<circle cx="12" cy="11" r="7.6"/><circle cx="12" cy="11" r="2.2" fill="currentColor" stroke="none"/></svg>',
+  vacancy: '<svg viewBox="0 0 24 22" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" aria-hidden="true">'
+    + '<circle cx="12" cy="11" r="7.6" stroke-dasharray="2.6 3.6"/></svg>'
+};
+
 function buildTCSetupHTML() {
   var tabs = ['observation','focus','vacancy'].map(function(m) {
-    var active = m === tcMode;
-    return '<button onclick="switchTCMode(\'' + m + '\')" style="'
-      + 'flex:1;padding:7px 4px;font-family:\'DM Mono\',monospace;font-size:8px;letter-spacing:.15em;text-transform:uppercase;'
-      + 'border-radius:6px;cursor:pointer;transition:all .2s;'
-      + (active
-        ? 'background:rgba(164,126,184,.18);border:1px solid rgba(164,126,184,.4);color:#c4a8d4;'
-        : 'background:transparent;border:1px solid rgba(164,126,184,.12);color:var(--muted);')
-      + '">' + TC_MODE_DEFS[m].label + '</button>';
+    return '<button class="sn-mode' + (m === tcMode ? ' on' : '') + '" onclick="switchTCMode(\'' + m + '\')">'
+      + TC_MODE_GLYPHS[m]
+      + '<span class="sn-mode__lbl">' + TC_MODE_DEFS[m].label + '</span></button>';
   }).join('');
 
-  return '<div style="display:flex;gap:6px;margin-bottom:20px;">' + tabs + '</div>'
-    + '<div style="height:1px;background:var(--border);margin-bottom:20px;opacity:.4;"></div>'
-    + '<div class="tc-duration-picker" style="margin-bottom:0;">'
-    + '<div style="font-size:9px;letter-spacing:.2em;text-transform:uppercase;color:var(--muted);margin-bottom:12px;">Session duration</div>'
-    + '<div class="tc-duration-row">'
-    + '<button class="tc-duration-btn" onclick="if(tcDuration>1){tcDuration--;document.getElementById(\'tcDurDisplay\').textContent=tcDuration;}">&#8722;</button>'
-    + '<div class="tc-duration-val" id="tcDurDisplay">' + tcDuration + '</div>'
-    + '<button class="tc-duration-btn" onclick="if(tcDuration<30){tcDuration++;document.getElementById(\'tcDurDisplay\').textContent=tcDuration;}">+</button>'
+  return '<div class="sn-setup sn-setup--tc">'
+    + '<div class="sn-head">'
+    + '<div class="sn-head__label">Choose a discipline</div>'
+    + '<button type="button" class="aud-omnia-peek" onclick="openExExplainer(\'thought\')" aria-label="How Thought Control works">'
+    + '<span class="clk-omnia-peek-head"><span class="clk-omnia-spin">' + omniaHeadOnlySVG(34, 32) + '</span></span>'
+    + '</button>'
     + '</div>'
-    + '<div style="font-size:9px;letter-spacing:.1em;color:var(--muted);margin-top:8px;">minutes &middot; 1&ndash;30</div>'
+    + '<div class="sn-modes">' + tabs + '</div>'
+    + '<div class="sn-goal">'
+    + '<div class="sn-goal__label">Minutes goal</div>'
+    + '<div class="sn-stepper">'
+    + '<button class="sn-step-btn" onclick="if(tcDuration>1){tcDuration--;document.getElementById(\'tcDurDisplay\').textContent=tcDuration;}">&#8722;</button>'
+    + '<div class="sn-step-val" id="tcDurDisplay">' + tcDuration + '</div>'
+    + '<button class="sn-step-btn" onclick="if(tcDuration<30){tcDuration++;document.getElementById(\'tcDurDisplay\').textContent=tcDuration;}">+</button>'
+    + '</div>'
+    + '<div class="sn-goal__sub">minutes &middot; 1&ndash;30 &middot; tap the screen each time a thought intrudes</div>'
     + '</div>'
     + buildTCProgressBars(tcMode)
-    + '<span onclick="concHistoryFrom=\'exSetupScreen\'; concHistoryFilter=\'thought\'; renderConcHistory(); showScreen(\'concHistoryScreen\');" style="display:block;margin-top:20px;font-size:9px;letter-spacing:.15em;text-transform:uppercase;color:var(--muted);cursor:pointer;text-decoration:underline;">View History</span>';
+    + '<button class="sn-history" onclick="concHistoryFrom=\'exSetupScreen\'; concHistoryFilter=\'thought\'; renderConcHistory(); showScreen(\'concHistoryScreen\');">&#9719;&nbsp; View history</button>'
+    + '</div>';
 }
 
 function switchTCMode(mode) {
   tcMode = mode;
-  var descEl = document.getElementById('exSetupDesc');
-  if (descEl) descEl.innerHTML = TC_MODE_DEFS[mode].desc;
   var contentEl = document.getElementById('exSetupContent');
   if (contentEl) contentEl.innerHTML = buildTCSetupHTML();
 }

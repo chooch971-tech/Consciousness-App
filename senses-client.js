@@ -78,6 +78,42 @@ var SENSE_MODE_GLYPHS = {
     + '<path d="M9.6 13.5a2.6 2.6 0 0 0 1.8 2.4"/></svg>'
 };
 
+// One .sn-prog progress card. Shared with Thought Control's setup, which
+// builds the same ladder in its violet hue (color comes from the .sn-setup
+// wrapper's CSS vars, not from here).
+function snProgressBarHtml(name, best, targetSec, red) {
+  var p = Math.min(100, Math.round(best / targetSec * 1000) / 10);
+  var pd = Number.isInteger(p) ? p : p.toFixed(1);
+  return '<div class="sn-prog' + (red ? ' sn-prog--red' : '') + '">'
+    + '<div class="sn-prog__head"><span class="sn-prog__name">' + name + '</span>'
+    + '<span class="sn-prog__pct">' + pd + '<span>%</span></span></div>'
+    + '<div class="sn-prog__bar"><div class="sn-prog__fill" style="width:' + pd + '%;"></div></div>'
+    + '</div>';
+}
+function snMasteryHtml(title, sub) {
+  return '<div class="sn-mastery"><div class="sn-mastery__title">' + title + '</div>'
+    + '<div class="sn-mastery__sub">' + sub + '</div></div>';
+}
+
+// Longest completed session for one sense (seconds).
+function getSenseBest(mode) {
+  return (concState.history || []).reduce(function(b, s) {
+    return (s.exercise === 'sense' && (s.mode || 'feeling') === mode && s.seconds > b) ? s.seconds : b;
+  }, 0);
+}
+
+// The same graded ladder Thought Control uses, tuned to the senses:
+// 5:00 → 10:00 → 15:00, mastered at fifteen unbroken minutes.
+function buildSenseProgressBars(mode) {
+  var best = getSenseBest(mode);
+  if (best === 0) return '';
+  var html = snProgressBarHtml('Progress to 5 min', best, 300, false);
+  if (best >= 300) html += snProgressBarHtml('Progress to 10 min', best, 600, false);
+  if (best >= 600) html += snProgressBarHtml('Progress to 15 min', best, 900, true);
+  if (best >= 900) html += snMasteryHtml('This sense has been mastered.', 'Fifteen minutes held unbroken');
+  return html;
+}
+
 function buildSenseSetupHTML() {
   var tabs = ['feeling','smell','taste'].map(function(m) {
     return '<button class="sn-mode' + (m === senseMode ? ' on' : '') + '" onclick="switchSenseMode(\'' + m + '\')">'
@@ -85,53 +121,34 @@ function buildSenseSetupHTML() {
       + '<span class="sn-mode__lbl">' + SENSE_MODE_DEFS[m].label + '</span></button>';
   }).join('');
 
-  var durs = [2,5,10].map(function(d) {
-    return '<button class="sn-dur' + (d === senseDuration ? ' on' : '') + '" onclick="setSenseDuration(' + d + ')">'
-      + '<b>' + d + '</b><span>min</span></button>';
-  }).join('');
-
-  return '<div class="sn-modes">' + tabs + '</div>'
-    + '<div class="sn-cuecard">'
-    + '<div class="sn-cuecard__label">Hold this</div>'
-    + '<div class="sn-cuecard__text" id="senseCueText">' + senseCurrentCue() + '</div>'
-    + '<button class="sn-shuffle" onclick="shuffleSenseCue()">&#8635;&nbsp; Another</button>'
-    + '<div class="sn-cuecard__quote" aria-hidden="true">&rdquo;</div>'
+  return '<div class="sn-setup">'
+    + '<div class="sn-head">'
+    + '<div class="sn-head__label">Train a sense</div>'
+    + '<button type="button" class="aud-omnia-peek" onclick="openExExplainer(\'sense\')" aria-label="How Senses works">'
+    + '<span class="clk-omnia-peek-head"><span class="clk-omnia-spin">' + omniaHeadOnlySVG(34, 32) + '</span></span>'
+    + '</button>'
     + '</div>'
-    + '<div class="sn-durlabel">Session duration</div>'
-    + '<div class="sn-durs">' + durs + '</div>'
-    + '<button class="sn-history" onclick="concHistoryFrom=\'exSetupScreen\'; concHistoryFilter=\'all\'; renderConcHistory(); showScreen(\'concHistoryScreen\');">&#9719;&nbsp; View history</button>';
+    + '<div class="sn-modes">' + tabs + '</div>'
+    + '<div class="sn-goal">'
+    + '<div class="sn-goal__label">Minutes goal</div>'
+    + '<div class="sn-stepper">'
+    + '<button class="sn-step-btn" onclick="if(senseDuration>1){senseDuration--;document.getElementById(\'snDurVal\').textContent=senseDuration;}">&#8722;</button>'
+    + '<div class="sn-step-val" id="snDurVal">' + senseDuration + '</div>'
+    + '<button class="sn-step-btn" onclick="if(senseDuration<30){senseDuration++;document.getElementById(\'snDurVal\').textContent=senseDuration;}">+</button>'
+    + '</div>'
+    + '<div class="sn-goal__sub">minutes &middot; 1&ndash;30 &middot; a sensation is revealed when you begin</div>'
+    + '</div>'
+    + buildSenseProgressBars(senseMode)
+    + '<button class="sn-history" onclick="concHistoryFrom=\'exSetupScreen\'; concHistoryFilter=\'all\'; renderConcHistory(); showScreen(\'concHistoryScreen\');">&#9719;&nbsp; View history</button>'
+    + '</div>';
 }
 
 function switchSenseMode(mode) {
   if (!SENSE_MODE_DEFS[mode]) return;
   senseMode = mode;
   senseCueIdx = 0;
-  var descEl = document.getElementById('exSetupDesc');
-  if (descEl) descEl.innerHTML = SENSE_MODE_DEFS[mode].desc;
   var contentEl = document.getElementById('exSetupContent');
   if (contentEl) contentEl.innerHTML = buildSenseSetupHTML();
-}
-
-function setSenseDuration(min) {
-  senseDuration = min;
-  var contentEl = document.getElementById('exSetupContent');
-  if (contentEl) contentEl.innerHTML = buildSenseSetupHTML();
-}
-
-function shuffleSenseCue() {
-  var cues = SENSE_MODE_DEFS[senseMode].cues;
-  if (cues.length < 2) return;
-  var next = senseCueIdx;
-  while (next === senseCueIdx) next = Math.floor(Math.random() * cues.length);
-  senseCueIdx = next;
-  var el = document.getElementById('senseCueText');
-  if (el) {
-    el.textContent = senseCurrentCue();
-    // Restart the swap-in animation so the new cue visibly arrives.
-    el.classList.remove('sn-cue-swap');
-    void el.offsetWidth;
-    el.classList.add('sn-cue-swap');
-  }
 }
 
 var senseTimerHandle = null;
@@ -147,6 +164,9 @@ function fmtSenseTime(sec) {
 }
 
 function startSenseSession() {
+  // The setup page no longer previews a cue — the sensation is dealt fresh
+  // each session, revealed on the session screen when practice begins.
+  senseCueIdx = Math.floor(Math.random() * SENSE_MODE_DEFS[senseMode].cues.length);
   senseActiveCue = senseCurrentCue();
   senseActiveMode = senseMode;
   senseTargetSeconds = senseDuration * 60;
