@@ -114,8 +114,8 @@ test('server returns JSON for parser, CORS, and unexpected request failures', ()
 
 test('social resource routes reject malformed identifiers before database access', () => {
   assert.match(server, /app\.param\('id', \(req, res, next, id\) => \{/);
-  assert.match(server, /id === 'me' && req\.path\.endsWith\('\/summary'\)/);
-  assert.match(server, /\^\[a-f\\d\]\{24\}\$\/i\.test\(id\)/);
+  assert.match(server, /isValidSocialResourceId\(id, req\.path\)/);
+  assert.match(server, /require\('\.\/social-route-ids'\)/);
   assert.match(server, /status\(400\)\.json\(\{ error: 'Invalid resource identifier' \}\)/);
 });
 

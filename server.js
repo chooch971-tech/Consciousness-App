@@ -18,6 +18,7 @@ const {
 } = require('./observability');
 const { createRecurringJob } = require('./background-jobs');
 const { ensureIndexes } = require('./database-startup');
+const { isValidSocialResourceId } = require('./social-route-ids');
 const {
   moderateUsername,
   moderateDisplayName,
@@ -2005,11 +2006,10 @@ const POST_MAX_LEN = 280;
 
 // Social resource routes use Mongo ObjectIds in their `:id` segment. Reject
 // malformed values once at the router boundary so they cannot turn into a
-// caught database exception and an unhelpful 500 response. The profile
-// summary route deliberately supports `me` as a convenience alias.
+// caught database exception and an unhelpful 500 response. The current-user
+// summary and follower-list routes deliberately support `me` as an alias.
 app.param('id', (req, res, next, id) => {
-  const isOwnSummary = id === 'me' && req.path.endsWith('/summary');
-  if (isOwnSummary || /^[a-f\d]{24}$/i.test(id)) return next();
+  if (isValidSocialResourceId(id, req.path)) return next();
   res.status(400).json({ error: 'Invalid resource identifier' });
 });
 
