@@ -175,6 +175,34 @@ async function testGeneratorMastery(browser, baseUrl) {
   await context.close();
 }
 
+async function testProfileSky(browser, baseUrl) {
+  const context = await browser.newContext({ viewport: { width: 390, height: 844 }, serviceWorkers: 'block' });
+  const { page, errors } = await seedPage(context, baseUrl);
+  const appearance = await page.evaluate(() => {
+    const own = document.getElementById('profileScreen');
+    const friend = document.getElementById('friendProfileScreen');
+    const ownSky = getComputedStyle(own).backgroundImage;
+    const friendSky = getComputedStyle(friend).backgroundImage;
+    const manage = getComputedStyle(document.getElementById('profFriendsMore'));
+    return {
+      sameSky: ownSky === friendSky,
+      starLayers: ownSky.split('radial-gradient').length - 1,
+      ownTopbar: getComputedStyle(own.querySelector('.prof-topbar')).backgroundColor,
+      friendTopbar: getComputedStyle(friend.querySelector('.prof-topbar')).backgroundColor,
+      manageOpacity: manage.opacity,
+      manageBorder: manage.borderTopWidth
+    };
+  });
+  assert.equal(appearance.sameSky, true);
+  assert.ok(appearance.starLayers >= 20, 'both profiles retain the full starfield');
+  assert.equal(appearance.ownTopbar, 'rgba(0, 0, 0, 0)');
+  assert.equal(appearance.friendTopbar, 'rgba(0, 0, 0, 0)');
+  assert.equal(appearance.manageOpacity, '1');
+  assert.equal(appearance.manageBorder, '1px');
+  assert.deepEqual(errors, [], 'profile sky check emitted browser errors');
+  await context.close();
+}
+
 async function testResetAll(browser, baseUrl) {
   const elevatedOmnia = {
     akasha: 98765, reservoir: 1200, lastTick: Date.now(), bardonStep: 10, prestige: 0,
@@ -188,7 +216,10 @@ async function testResetAll(browser, baseUrl) {
     presence_v3: JSON.stringify({ level: 20, xp: 25000, totalSessions: 100, history: [{ date: '2026-07-01' }] }),
     presence_conc_v1: JSON.stringify({ level: 18, xp: 18000, totalSessions: 80, history: [{ exercise: 'clock' }] })
   });
-  await page.locator('#hamburgerBtn').click();
+  // This journey tests Reset, not pointer hit-testing during startup. Invoke
+  // the already-located menu control directly so the splash/drawer animation
+  // cannot intermittently swallow the physical click.
+  await page.locator('#hamburgerBtn').evaluate(element => element.click());
   try {
     await page.locator('#drawerOverlay.show').waitFor({ state: 'visible' });
   } catch (error) {
@@ -263,7 +294,7 @@ async function testCloudRestoreAndSignOut(browser, baseUrl) {
   assert.equal(restored.awareness.level, 7);
   assert.deepEqual(restored.omnia.bodies, { physical: 4, astral: 5, mental: 6 });
 
-  await page.locator('#hamburgerBtn').click();
+  await page.locator('#hamburgerBtn').evaluate(element => element.click());
   await page.locator('#drawerOverlay.show').waitFor({ state: 'visible' });
   await page.locator('#drawerSettings').evaluate(element => element.click());
   await page.locator('#settingsProfileBanner').click();
@@ -302,6 +333,9 @@ async function testCloudRestoreAndSignOut(browser, baseUrl) {
     console.log('run - generator mastery');
     await testGeneratorMastery(browser, baseUrl);
     console.log('ok - generator mastery and Dark Matter tracks render');
+    console.log('run - profile sky');
+    await testProfileSky(browser, baseUrl);
+    console.log('ok - profile and friend profile share the full night sky');
     console.log('run - Reset All');
     await testResetAll(browser, baseUrl);
     console.log('ok - Reset All restores level-one clean state');

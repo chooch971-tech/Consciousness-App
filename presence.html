@@ -657,13 +657,14 @@
     .prof-scroll { flex:1; overflow-y:auto; -webkit-overflow-scrolling:touch; scrollbar-width:none; -ms-overflow-style:none; padding:14px 20px max(env(safe-area-inset-bottom),40px); }
     .prof-scroll::-webkit-scrollbar { display:none; }
 
-    /* Profile backdrop — a full-height night sky, not hero ornament. The
+    /* Profile backdrops — one shared full-height night sky, not hero ornament. The
        whole page sits on a deep teal→violet space gradient with layered
        nebula washes at different heights and a starfield spread top to
        bottom, so no section rests on flat black. The background lives on
        the screen element (viewport-fixed), so the sky holds still while
        the content scrolls over it. */
-    #profileScreen {
+    #profileScreen,
+    #friendProfileScreen {
       background:
         radial-gradient(2px 2px at 12% 6%, rgba(232,200,122,.6), transparent),
         radial-gradient(1.5px 1.5px at 82% 4%, rgba(221,216,206,.55), transparent),
@@ -693,7 +694,6 @@
     /* Carry the Friends page's quiet green night-sky treatment through the
        rest of the friendship journey instead of dropping back to flat black. */
     #friendsPanel,
-    #friendProfileScreen,
     #followListOverlay,
     #societyOverlay {
       background:
@@ -702,12 +702,13 @@
         radial-gradient(ellipse 70% 34% at 18% 100%, rgba(126,184,164,.08) 0%, transparent 72%),
         linear-gradient(180deg, #091310 0%, #070a0d 46%, #080d0c 100%);
     }
-    #friendsPanel .fp-header,
-    #friendProfileScreen .prof-topbar {
+    #friendsPanel .fp-header {
       background:rgba(7,12,12,.82);
       -webkit-backdrop-filter:blur(12px);
       backdrop-filter:blur(12px);
     }
+    #profileScreen .prof-topbar,
+    #friendProfileScreen .prof-topbar { background:transparent; }
     .prof-hero { display:flex; flex-direction:column; align-items:center; text-align:center; margin-bottom:24px; position:relative; }
     .prof-hero::before { content:''; position:absolute; top:-82px; left:calc(50% - 130px); width:260px; height:260px; border-radius:50%; background:radial-gradient(circle, rgba(126,184,164,.16) 0%, rgba(126,184,164,.06) 45%, transparent 70%); pointer-events:none; animation:profHeroGlow 6s ease-in-out infinite; }
     @keyframes profHeroGlow { 0%,100%{opacity:.6;} 50%{opacity:1;} }
@@ -725,6 +726,8 @@
     .prof-section__head { display:flex; align-items:center; justify-content:space-between; margin-bottom:14px; }
     .prof-section__head span { font-size:10px; letter-spacing:.22em; text-transform:uppercase; color:var(--muted-readable); font-family:'DM Mono',monospace; }
     .prof-section__more { background:none; border:none; color:var(--muted); font-size:20px; cursor:pointer; padding:0 4px; opacity:.6; }
+    #profFriendsMore { border:1px solid rgba(126,184,164,.38); border-radius:999px; background:rgba(126,184,164,.1); color:#9ed8c4; font-family:'DM Mono',monospace; font-size:10px; letter-spacing:.08em; line-height:1; padding:7px 11px; opacity:1; text-shadow:0 0 9px rgba(126,184,164,.28); }
+    #profFriendsMore:active { background:rgba(126,184,164,.18); border-color:rgba(158,216,196,.62); }
 
     .prof-overview { display:grid; grid-template-columns:1fr 1fr; gap:12px 18px; }
     .prof-ov-item { display:flex; align-items:center; gap:11px; }
@@ -9370,7 +9373,11 @@ startPrayerScheduler();
     el.style.inset      = '0';
     el.style.zIndex     = '19';
     el.style.display    = 'flex';
-    el.style.background = 'var(--bg)';
+    // Profile owns a layered starfield. An inline flat background here hid it
+    // during friend-profile swipe-back, then made it pop in after cleanup.
+    // Preserve that authored backdrop while retaining the opaque fallback for
+    // screens that do not define one of their own.
+    if (el.id !== 'profileScreen') el.style.background = 'var(--bg)';
     el.style.willChange = 'transform';
     el.style.transition = 'none';
     el.style.transform  = 'translateX(-28%)';
