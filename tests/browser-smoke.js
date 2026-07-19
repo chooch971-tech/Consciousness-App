@@ -245,6 +245,54 @@ async function testFriendMessageReturn(browser, baseUrl) {
   await context.close();
 }
 
+async function testSettingsAvatarSwipe(browser, baseUrl) {
+  const profilePic = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M/wHwAF/gL+X0Y5WQAAAABJRU5ErkJggg==';
+  const context = await browser.newContext({ viewport: { width: 390, height: 844 }, hasTouch: true, serviceWorkers: 'block' });
+  const { page, errors } = await seedPage(context, baseUrl, {
+    presence_auth_token: 'settings-browser-token',
+    presence_auth_email: 'settings-browser@example.com',
+    presence_auth_username: 'settings_browser',
+    presence_profile_pic: profilePic
+  });
+  await page.evaluate(() => {
+    renderSettingsExerciseList();
+    showScreen('settingsScreen');
+  });
+  const avatar = await page.locator('#settingsProfileAvatar').evaluate(element => ({
+    text: element.textContent,
+    hasPic: element.classList.contains('has-pic'),
+    background: getComputedStyle(element).backgroundImage
+  }));
+  assert.equal(avatar.text, '');
+  assert.equal(avatar.hasPic, true);
+  assert.match(avatar.background, /data:image\/png;base64/);
+
+  await page.locator('#settingsProfileBanner').click();
+  await page.locator('#accountSettingsScreen.active').waitFor({ state: 'visible' });
+  const transition = await page.evaluate(() => {
+    const current = document.getElementById('accountSettingsScreen');
+    const previous = document.getElementById('settingsScreen');
+    const touch = x => new Touch({ identifier: 1, target: current, clientX: x, clientY: 220, screenX: x, screenY: 220 });
+    document.dispatchEvent(new TouchEvent('touchstart', { touches: [touch(8)], changedTouches: [touch(8)], bubbles: true }));
+    document.dispatchEvent(new TouchEvent('touchmove', { touches: [touch(250)], changedTouches: [touch(250)], bubbles: true }));
+    return {
+      currentBackground: getComputedStyle(current).backgroundImage,
+      previousBackground: getComputedStyle(previous).backgroundImage,
+      previousVisible: getComputedStyle(previous).display
+    };
+  });
+  assert.equal(transition.currentBackground, transition.previousBackground);
+  assert.equal(transition.previousVisible, 'flex');
+  await page.evaluate(() => {
+    const current = document.getElementById('accountSettingsScreen');
+    const touch = x => new Touch({ identifier: 1, target: current, clientX: x, clientY: 220, screenX: x, screenY: 220 });
+    document.dispatchEvent(new TouchEvent('touchend', { touches: [], changedTouches: [touch(300)], bubbles: true }));
+  });
+  await page.locator('#settingsScreen.active').waitFor({ state: 'visible' });
+  assert.deepEqual(errors, [], 'Settings avatar/swipe check emitted browser errors');
+  await context.close();
+}
+
 async function testResetAll(browser, baseUrl) {
   const elevatedOmnia = {
     akasha: 98765, reservoir: 1200, lastTick: Date.now(), bardonStep: 10, prestige: 0,
@@ -381,6 +429,9 @@ async function testCloudRestoreAndSignOut(browser, baseUrl) {
     console.log('run - friend message return');
     await testFriendMessageReturn(browser, baseUrl);
     console.log('ok - friend message returns directly to the friend profile');
+    console.log('run - Settings avatar and swipe');
+    await testSettingsAvatarSwipe(browser, baseUrl);
+    console.log('ok - Settings uses the saved profile photo and keeps its background during swipe-back');
     console.log('run - Reset All');
     await testResetAll(browser, baseUrl);
     console.log('ok - Reset All restores level-one clean state');

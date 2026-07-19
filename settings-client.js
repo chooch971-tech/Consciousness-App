@@ -288,13 +288,17 @@ function renderSettingsProfileBanner() {
   var signedIn = !!(syncEnabled && (authEmail || authUsername));
   if (signedIn) {
     var display = authUsername || (authEmail ? authEmail.split('@')[0] : 'Account');
-    av.textContent = (display[0] || '◎');
-    av.className = 'aset-profile__avatar';
+    var pic = (typeof getProfilePic === 'function') ? getProfilePic() : '';
+    var safePic = (typeof safeProfilePic === 'function') ? safeProfilePic(pic) : '';
+    av.className = 'aset-profile__avatar' + (safePic ? ' has-pic' : '');
+    av.textContent = safePic ? '' : (display[0] || '◎');
+    av.style.backgroundImage = safePic ? 'url("' + safePic + '")' : '';
     nm.textContent = authUsername ? '@' + authUsername : display;
     sub.textContent = authEmail || 'Syncing across devices';
   } else {
     av.textContent = '◎';
     av.className = 'aset-profile__avatar aset-profile__avatar--out';
+    av.style.backgroundImage = '';
     nm.textContent = 'Sign in to Presence';
     sub.textContent = 'Sync your progress across devices';
   }

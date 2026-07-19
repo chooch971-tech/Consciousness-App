@@ -263,7 +263,7 @@ test('top-level drawer screens reveal the open drawer during swipe-back', () => 
   assert.match(presence, /if \(drawerPreview\) \{\s*removeDrawerPreview\(drawerPreview\);\s*openDrawer\(true, true\);/);
   assert.match(presence, /querySelector\('[^']*\.lodge-back[^']*'\)/);
   assert.match(presence, /visibilitychange[\s\S]*abortInterruptedSwipe/);
-  assert.match(presence, /el\.id !== 'profileScreen' && el\.id !== 'friendProfileScreen' && el\.id !== 'friendsPanel'/);
+  assert.match(presence, /var keepsAuthoredBackdrop = \['profileScreen', 'friendProfileScreen', 'friendsPanel', 'settingsScreen', 'accountSettingsScreen', 'exerciseSettingsScreen'\]/);
   assert.match(presence, /chatListScreen: 'lodgeScreen', chatThreadScreen: 'chatListScreen'/);
   assert.match(presence, /screenEl\.id === 'chatThreadScreen' && typeof chatThreadPreviousScreen === 'function/);
   assert.match(presence, /screenEl\.id === 'friendsPanel' && typeof friendsPanelPreviousScreen === 'function/);
@@ -886,6 +886,9 @@ test('Settings and utility screens load through their own client boundary', () =
   assert.doesNotMatch(presence, /function\s+addAudioUrlSound\s*\(|\bEXERCISE_SETTINGS_LIST\s*=\s*\[/);
   assert.match(settingsClient, /function\s+renderSettingsExerciseList\s*\(/);
   assert.match(settingsClient, /function\s+openAccountSettings\s*\(/);
+  assert.match(settingsClient, /safeProfilePic\(pic\)[\s\S]*?av\.className = 'aset-profile__avatar' \+ \(safePic \? ' has-pic' : ''\)/);
+  assert.match(settingsClient, /av\.style\.backgroundImage = safePic \? 'url\("' \+ safePic \+ '"\)' : ''/);
+  assert.match(presence, /#settingsScreen,\s*#accountSettingsScreen,\s*#exerciseSettingsScreen\s*\{[\s\S]*?linear-gradient\(180deg,#090d12/);
   assert.match(settingsClient, /function\s+addAudioUrlSound\s*\(/);
   assert.match(settingsClient, /document\.getElementById\('importFile'\)\.addEventListener/);
   assert.match(settingsClient, /document\.querySelectorAll\('#faqScreen \.faq-item-head'\)/);
