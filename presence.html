@@ -9348,7 +9348,7 @@ startPrayerScheduler();
 
   // Which screen sits behind each sub-screen during swipe
   // (unlisted screens reveal homeScreen)
-  var PREV_SCREEN = { journalEntryScreen: 'journalScreen', exerciseSettingsScreen: 'settingsScreen', accountSettingsScreen: 'settingsScreen', friendProfileScreen: 'profileScreen', concSessionScreen: 'exSetupScreen' };
+  var PREV_SCREEN = { journalEntryScreen: 'journalScreen', exerciseSettingsScreen: 'settingsScreen', accountSettingsScreen: 'settingsScreen', friendProfileScreen: 'profileScreen', chatListScreen: 'lodgeScreen', chatThreadScreen: 'chatListScreen', concSessionScreen: 'exSetupScreen' };
 
   var EASE = 'cubic-bezier(0.25,0.46,0.45,0.94)';
 
@@ -9494,7 +9494,9 @@ startPrayerScheduler();
   function begin(screenEl, backBtn, startX) {
     var prevId = (screenEl.id === 'accountSettingsScreen' && typeof _acctSettingsReturnTo === 'string')
       ? _acctSettingsReturnTo
-      : (PREV_SCREEN[screenEl.id] || 'homeScreen');
+      : (screenEl.id === 'chatThreadScreen' && typeof chatThreadPreviousScreen === 'function')
+        ? chatThreadPreviousScreen()
+        : (PREV_SCREEN[screenEl.id] || 'homeScreen');
     var prevIsHome = (prevId === 'homeScreen');
     var prevEl = document.getElementById(prevId);
     if (!prevEl) return false;

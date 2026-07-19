@@ -498,7 +498,12 @@ function _applyFriendSocial(f, s) {
   document.getElementById('friendReportBtn').onclick = function() { reportLodgeContent('user', f.userId); };
   var mb = document.getElementById('friendMsgBtn');
   if (mb) {
-    mb.style.display = (s.iFollow === 'active' && s.followsMe && !s.blocked) ? '' : 'none';
+    var canMessage = s.iFollow === 'active' && s.followsMe && !s.blocked;
+    mb.style.display = canMessage ? '' : 'none';
+    // Warm existing conversations while the friend profile is already open.
+    // This is deliberately background-only: opening a brand-new conversation
+    // still goes through the server's mutual-follow authorization.
+    if (canMessage) loadChatList(false);
     mb.onclick = function() { messageFriend(f.userId, f.username || ''); };
   }
 }
@@ -558,7 +563,7 @@ document.getElementById('lodgeBell').addEventListener('click', openLodgeNotifs);
 })();
 
 // ── Lodge Phase 3: private chat (polling, mutual follows only) ──
-var _chatConvId = null, _chatPoll = null, _chatPendingFriendId = null;
+var _chatConvId = null, _chatPoll = null, _chatPendingFriendId = null, _chatReturnFriendId = null;
 var _chatConversations = [], _chatListLoaded = false, _chatListPromise = null, _chatCacheToken = null;
 
 function stopChatPoll() { if (_chatPoll) { clearInterval(_chatPoll); _chatPoll = null; } }
@@ -625,6 +630,7 @@ async function loadChatList(paint) {
 
 function openChatList() {
   stopChatPoll();
+  _chatReturnFriendId = null;
   _chatEnsureCacheOwner();
   renderChatList(!_chatListLoaded);
   showScreen('chatListScreen');
@@ -641,6 +647,29 @@ async function openChatThread(convId, username) {
   showScreen('chatThreadScreen');
   await loadChatMsgs();
   startChatPoll();
+}
+
+// The swipe-back controller asks this at gesture start, while the button below
+// calls the matching return action at gesture completion. A thread opened from
+// a friend profile therefore behaves like a child of that profile, rather than
+// accidentally falling through to the global Messages/Lodge route.
+function chatThreadPreviousScreen() {
+  return _chatReturnFriendId ? 'friendProfileScreen' : 'chatListScreen';
+}
+function returnFromChatThread() {
+  var friendId = _chatReturnFriendId;
+  _chatReturnFriendId = null;
+  _chatPendingFriendId = null;
+  stopChatPoll();
+  var friend = friendId && typeof _friendProfileCache !== 'undefined' ? _friendProfileCache[friendId] : null;
+  if (!friend && typeof _currentFriendProfile !== 'undefined' && _currentFriendProfile && _currentFriendProfile.userId === friendId) friend = _currentFriendProfile;
+  if (friend && typeof renderFriendProfile === 'function') {
+    renderFriendProfile(friend);
+    showScreen('friendProfileScreen');
+    if (typeof closeFriendsPanel === 'function') closeFriendsPanel();
+    return;
+  }
+  openChatList();
 }
 
 function _chatMsgHtml(m) {
@@ -692,8 +721,17 @@ async function messageFriend(userId, username) {
   // returns the conversation ID. The pending marker prevents a late response
   // from reopening the thread after the user has backed out.
   _chatPendingFriendId = userId;
+  _chatReturnFriendId = userId;
   _chatConvId = null;
   document.getElementById('chatThreadName').textContent = '@' + username;
+  // A profile visit warms the conversation list below. Reuse a known thread
+  // immediately so returning to an existing friend conversation skips the
+  // extra open/create round-trip before messages can load.
+  var cachedConversation = _chatConversations.find(function(c) { return c.userId === userId; });
+  if (cachedConversation) {
+    openChatThread(cachedConversation.id, username);
+    return;
+  }
   document.getElementById('chatMsgs').innerHTML = '<div class="followlist-empty">Opening conversation…</div>';
   showScreen('chatThreadScreen');
   try {
@@ -719,10 +757,10 @@ async function messageFriend(userId, username) {
 
 document.getElementById('lodgeChats').addEventListener('click', function() { openChatList(); });
 document.getElementById('chatListBack').addEventListener('click', function() { stopChatPoll(); showScreen('lodgeScreen'); });
-document.getElementById('chatThreadBack').addEventListener('click', function() { _chatPendingFriendId = null; stopChatPoll(); openChatList(); });
+document.getElementById('chatThreadBack').addEventListener('click', returnFromChatThread);
 document.getElementById('chatList').addEventListener('click', function(e) {
   var row = e.target.closest('[data-conv-id]');
-  if (row) openChatThread(row.getAttribute('data-conv-id'), row.getAttribute('data-conv-name'));
+  if (row) { _chatReturnFriendId = null; openChatThread(row.getAttribute('data-conv-id'), row.getAttribute('data-conv-name')); }
 });
 document.getElementById('chatSend').addEventListener('click', sendChatMsg);
 document.getElementById('chatInput').addEventListener('keydown', function(e) { if (e.key === 'Enter') sendChatMsg(); });

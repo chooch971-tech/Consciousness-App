@@ -20,7 +20,16 @@ test('Message opens the thread immediately while the conversation request is pen
   const body = socialClient.slice(start, end);
 
   assert.match(body, /_chatPendingFriendId = userId/);
+  assert.match(body, /_chatReturnFriendId = userId/);
+  assert.match(body, /_chatConversations\.find\(function\(c\) \{ return c\.userId === userId; \}\)/);
   assert.ok(body.indexOf("showScreen('chatThreadScreen')") < body.indexOf("fetch(SERVER_URL + '/api/social/conversations/open'"));
   assert.match(body, /Opening conversation/);
   assert.match(body, /_chatPendingFriendId !== userId/);
+});
+
+test('friend-profile chat returns to that profile for Back and swipe-back', () => {
+  assert.match(socialClient, /function chatThreadPreviousScreen\(\) \{\s*return _chatReturnFriendId \? 'friendProfileScreen' : 'chatListScreen';/);
+  assert.match(socialClient, /function returnFromChatThread\(\)[\s\S]*?renderFriendProfile\(friend\);[\s\S]*?showScreen\('friendProfileScreen'\)/);
+  assert.match(socialClient, /chatThreadBack'\)\.addEventListener\('click', returnFromChatThread\)/);
+  assert.match(socialClient, /if \(canMessage\) loadChatList\(false\)/);
 });

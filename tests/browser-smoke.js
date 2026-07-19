@@ -203,6 +203,29 @@ async function testProfileSky(browser, baseUrl) {
   await context.close();
 }
 
+async function testFriendMessageReturn(browser, baseUrl) {
+  const context = await browser.newContext({ viewport: { width: 390, height: 844 }, serviceWorkers: 'block' });
+  const { page, errors } = await seedPage(context, baseUrl, { presence_auth_token: 'browser-test-token' });
+  await page.evaluate(() => {
+    const friend = {
+      userId: 'friend-browser-test', username: 'friendly', displayName: 'Friendly',
+      streak: 2, awarenessLevel: 1, awarenessXp: 0, concLevel: 1, concXp: 0,
+      achEarned: {}, achMonthlyEarned: {}, commonFriendIds: []
+    };
+    _friendProfileCache[friend.userId] = friend;
+    _chatConversations = [{ id: 'friend-browser-conv', userId: friend.userId, username: friend.username, unread: 0 }];
+    renderFriendProfile(friend);
+    showScreen('friendProfileScreen');
+    messageFriend(friend.userId, friend.username);
+  });
+  await page.locator('#chatThreadScreen.active').waitFor({ state: 'visible' });
+  assert.equal(await page.evaluate(() => chatThreadPreviousScreen()), 'friendProfileScreen');
+  await page.locator('#chatThreadBack').click();
+  await page.locator('#friendProfileScreen.active').waitFor({ state: 'visible' });
+  assert.deepEqual(errors, [], 'friend-message return emitted browser errors');
+  await context.close();
+}
+
 async function testResetAll(browser, baseUrl) {
   const elevatedOmnia = {
     akasha: 98765, reservoir: 1200, lastTick: Date.now(), bardonStep: 10, prestige: 0,
@@ -336,6 +359,9 @@ async function testCloudRestoreAndSignOut(browser, baseUrl) {
     console.log('run - profile sky');
     await testProfileSky(browser, baseUrl);
     console.log('ok - profile and friend profile share the full night sky');
+    console.log('run - friend message return');
+    await testFriendMessageReturn(browser, baseUrl);
+    console.log('ok - friend message returns directly to the friend profile');
     console.log('run - Reset All');
     await testResetAll(browser, baseUrl);
     console.log('ok - Reset All restores level-one clean state');

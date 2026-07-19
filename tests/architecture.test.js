@@ -264,6 +264,8 @@ test('top-level drawer screens reveal the open drawer during swipe-back', () => 
   assert.match(presence, /querySelector\('[^']*\.lodge-back[^']*'\)/);
   assert.match(presence, /visibilitychange[\s\S]*abortInterruptedSwipe/);
   assert.match(presence, /if \(el\.id !== 'profileScreen'\) el\.style\.background = 'var\(--bg\)'/);
+  assert.match(presence, /chatListScreen: 'lodgeScreen', chatThreadScreen: 'chatListScreen'/);
+  assert.match(presence, /screenEl\.id === 'chatThreadScreen' && typeof chatThreadPreviousScreen === 'function/);
 });
 
 test('Visualization and the shared exercise gateway load before Auditory', () => {
