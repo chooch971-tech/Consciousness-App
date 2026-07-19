@@ -765,9 +765,19 @@ document.getElementById('chatList').addEventListener('click', function(e) {
 document.getElementById('chatSend').addEventListener('click', sendChatMsg);
 document.getElementById('chatInput').addEventListener('keydown', function(e) { if (e.key === 'Enter') sendChatMsg(); });
 
-function openFriendsPanel() {
+var _friendsPanelReturnScreen = 'profileScreen';
+var _friendsPanelCloseTimer = null;
+
+function friendsPanelPreviousScreen() {
+  return _friendsPanelReturnScreen || 'profileScreen';
+}
+
+function openFriendsPanel(returnScreenId) {
   var el = document.getElementById('friendsPanel');
   if (!el) return;
+  var activeScreen = document.querySelector('.screen.active');
+  _friendsPanelReturnScreen = returnScreenId || (activeScreen && activeScreen.id) || 'profileScreen';
+  if (_friendsPanelCloseTimer) { clearTimeout(_friendsPanelCloseTimer); _friendsPanelCloseTimer = null; }
   el.classList.add('fp-show');
   requestAnimationFrame(function() { requestAnimationFrame(function() { el.classList.add('fp-vis'); }); });
   loadFriendsPanel();
@@ -776,8 +786,16 @@ function openFriendsPanel() {
 function closeFriendsPanel() {
   var el = document.getElementById('friendsPanel');
   if (!el) return;
+  if (_friendsPanelCloseTimer) { clearTimeout(_friendsPanelCloseTimer); _friendsPanelCloseTimer = null; }
   el.classList.remove('fp-vis');
-  setTimeout(function() { el.classList.remove('fp-show'); }, 320);
+  if (window._interactiveSwipeBackScreenId === 'friendsPanel') {
+    el.classList.remove('fp-show');
+    return;
+  }
+  _friendsPanelCloseTimer = setTimeout(function() {
+    el.classList.remove('fp-show');
+    _friendsPanelCloseTimer = null;
+  }, 320);
 }
 
 async function loadFriendsPanel() {

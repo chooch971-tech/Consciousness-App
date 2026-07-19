@@ -176,16 +176,19 @@ async function testGeneratorMastery(browser, baseUrl) {
 }
 
 async function testProfileSky(browser, baseUrl) {
-  const context = await browser.newContext({ viewport: { width: 390, height: 844 }, serviceWorkers: 'block' });
+  const context = await browser.newContext({ viewport: { width: 390, height: 844 }, hasTouch: true, serviceWorkers: 'block' });
   const { page, errors } = await seedPage(context, baseUrl);
   const appearance = await page.evaluate(() => {
     const own = document.getElementById('profileScreen');
     const friend = document.getElementById('friendProfileScreen');
+    const friends = document.getElementById('friendsPanel');
     const ownSky = getComputedStyle(own).backgroundImage;
     const friendSky = getComputedStyle(friend).backgroundImage;
+    const friendsSky = getComputedStyle(friends).backgroundImage;
     const manage = getComputedStyle(document.getElementById('profFriendsMore'));
     return {
       sameSky: ownSky === friendSky,
+      friendsSameSky: ownSky === friendsSky,
       starLayers: ownSky.split('radial-gradient').length - 1,
       ownTopbar: getComputedStyle(own.querySelector('.prof-topbar')).backgroundColor,
       friendTopbar: getComputedStyle(friend.querySelector('.prof-topbar')).backgroundColor,
@@ -194,11 +197,27 @@ async function testProfileSky(browser, baseUrl) {
     };
   });
   assert.equal(appearance.sameSky, true);
-  assert.ok(appearance.starLayers >= 20, 'both profiles retain the full starfield');
+  assert.equal(appearance.friendsSameSky, true);
+  assert.ok(appearance.starLayers >= 20, 'profiles and Friends manager retain the full starfield');
   assert.equal(appearance.ownTopbar, 'rgba(0, 0, 0, 0)');
   assert.equal(appearance.friendTopbar, 'rgba(0, 0, 0, 0)');
   assert.equal(appearance.manageOpacity, '1');
   assert.equal(appearance.manageBorder, '1px');
+  await page.evaluate(() => {
+    showScreen('profileScreen');
+    openFriendsPanel();
+  });
+  await page.locator('#friendsPanel.fp-show').waitFor({ state: 'visible' });
+  assert.equal(await page.evaluate(() => friendsPanelPreviousScreen()), 'profileScreen');
+  await page.evaluate(() => {
+    const panel = document.getElementById('friendsPanel');
+    const touch = x => new Touch({ identifier: 1, target: panel, clientX: x, clientY: 240, screenX: x, screenY: 240 });
+    document.dispatchEvent(new TouchEvent('touchstart', { touches: [touch(8)], changedTouches: [touch(8)], bubbles: true }));
+    document.dispatchEvent(new TouchEvent('touchmove', { touches: [touch(250)], changedTouches: [touch(250)], bubbles: true }));
+    document.dispatchEvent(new TouchEvent('touchend', { touches: [], changedTouches: [touch(300)], bubbles: true }));
+  });
+  await page.locator('#friendsPanel').waitFor({ state: 'hidden' });
+  await page.locator('#profileScreen.active').waitFor({ state: 'visible' });
   assert.deepEqual(errors, [], 'profile sky check emitted browser errors');
   await context.close();
 }
@@ -358,7 +377,7 @@ async function testCloudRestoreAndSignOut(browser, baseUrl) {
     console.log('ok - generator mastery and Dark Matter tracks render');
     console.log('run - profile sky');
     await testProfileSky(browser, baseUrl);
-    console.log('ok - profile and friend profile share the full night sky');
+    console.log('ok - profiles and Friends manager share the night sky and swipe-back path');
     console.log('run - friend message return');
     await testFriendMessageReturn(browser, baseUrl);
     console.log('ok - friend message returns directly to the friend profile');

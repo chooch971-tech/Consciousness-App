@@ -263,9 +263,12 @@ test('top-level drawer screens reveal the open drawer during swipe-back', () => 
   assert.match(presence, /if \(drawerPreview\) \{\s*removeDrawerPreview\(drawerPreview\);\s*openDrawer\(true, true\);/);
   assert.match(presence, /querySelector\('[^']*\.lodge-back[^']*'\)/);
   assert.match(presence, /visibilitychange[\s\S]*abortInterruptedSwipe/);
-  assert.match(presence, /if \(el\.id !== 'profileScreen'\) el\.style\.background = 'var\(--bg\)'/);
+  assert.match(presence, /el\.id !== 'profileScreen' && el\.id !== 'friendProfileScreen' && el\.id !== 'friendsPanel'/);
   assert.match(presence, /chatListScreen: 'lodgeScreen', chatThreadScreen: 'chatListScreen'/);
   assert.match(presence, /screenEl\.id === 'chatThreadScreen' && typeof chatThreadPreviousScreen === 'function/);
+  assert.match(presence, /screenEl\.id === 'friendsPanel' && typeof friendsPanelPreviousScreen === 'function/);
+  assert.match(presence, /friendsPanelOpen \? friendsPanel : document\.querySelector\('\.screen\.active'\)/);
+  assert.match(presence, /\.lodge-back, \.fp-back/);
 });
 
 test('Visualization and the shared exercise gateway load before Auditory', () => {
@@ -733,11 +736,17 @@ test('Guide shell navigation loads after planning and quest behavior', () => {
   assert.doesNotThrow(() => new Function(guideShellClient));
 });
 
-test('profile and friend profile share one starfield while friendship overlays keep the green backdrop', () => {
-  assert.match(presence, /#profileScreen,\s*#friendProfileScreen\s*\{[\s\S]*?radial-gradient\(2px 2px at 12% 6%/);
-  assert.match(presence, /#friendsPanel,\s*#followListOverlay,\s*#societyOverlay\s*\{[^}]*rgba\(126,184,164,\.18\)/);
+test('profile, friend profile, and Friends manager share one starfield', () => {
+  assert.match(presence, /#profileScreen,\s*#friendProfileScreen,\s*#friendsPanel\s*\{[\s\S]*?radial-gradient\(2px 2px at 12% 6%/);
+  assert.match(presence, /#followListOverlay,\s*#societyOverlay\s*\{[^}]*rgba\(126,184,164,\.18\)/);
   assert.match(presence, /#profileScreen \.prof-topbar,\s*#friendProfileScreen \.prof-topbar \{ background:transparent; \}/);
   assert.match(presence, /#profFriendsMore \{[^}]*color:#9ed8c4;[^}]*opacity:1/);
+});
+
+test('Friends manager remembers its opener and closes immediately after an interactive swipe', () => {
+  assert.match(socialClient, /function friendsPanelPreviousScreen\(\) \{\s*return _friendsPanelReturnScreen \|\| 'profileScreen';/);
+  assert.match(socialClient, /_friendsPanelReturnScreen = returnScreenId \|\| \(activeScreen && activeScreen\.id\) \|\| 'profileScreen'/);
+  assert.match(socialClient, /window\._interactiveSwipeBackScreenId === 'friendsPanel'[\s\S]*?classList\.remove\('fp-show'\)/);
 });
 
 test('changing daily cadence refreshes any visible path immediately', () => {

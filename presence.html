@@ -664,7 +664,8 @@
        the screen element (viewport-fixed), so the sky holds still while
        the content scrolls over it. */
     #profileScreen,
-    #friendProfileScreen {
+    #friendProfileScreen,
+    #friendsPanel {
       background:
         radial-gradient(2px 2px at 12% 6%, rgba(232,200,122,.6), transparent),
         radial-gradient(1.5px 1.5px at 82% 4%, rgba(221,216,206,.55), transparent),
@@ -693,7 +694,6 @@
     }
     /* Carry the Friends page's quiet green night-sky treatment through the
        rest of the friendship journey instead of dropping back to flat black. */
-    #friendsPanel,
     #followListOverlay,
     #societyOverlay {
       background:
@@ -703,7 +703,7 @@
         linear-gradient(180deg, #091310 0%, #070a0d 46%, #080d0c 100%);
     }
     #friendsPanel .fp-header {
-      background:rgba(7,12,12,.82);
+      background:rgba(7,12,12,.38);
       -webkit-backdrop-filter:blur(12px);
       backdrop-filter:blur(12px);
     }
@@ -9376,11 +9376,11 @@ startPrayerScheduler();
     el.style.inset      = '0';
     el.style.zIndex     = '19';
     el.style.display    = 'flex';
-    // Profile owns a layered starfield. An inline flat background here hid it
-    // during friend-profile swipe-back, then made it pop in after cleanup.
+    // Profile surfaces own a layered starfield. An inline flat background here
+    // hides it during swipe-back, then makes it pop in after cleanup.
     // Preserve that authored backdrop while retaining the opaque fallback for
     // screens that do not define one of their own.
-    if (el.id !== 'profileScreen') el.style.background = 'var(--bg)';
+    if (el.id !== 'profileScreen' && el.id !== 'friendProfileScreen' && el.id !== 'friendsPanel') el.style.background = 'var(--bg)';
     el.style.willChange = 'transform';
     el.style.transition = 'none';
     el.style.transform  = 'translateX(-28%)';
@@ -9494,6 +9494,8 @@ startPrayerScheduler();
   function begin(screenEl, backBtn, startX) {
     var prevId = (screenEl.id === 'accountSettingsScreen' && typeof _acctSettingsReturnTo === 'string')
       ? _acctSettingsReturnTo
+      : (screenEl.id === 'friendsPanel' && typeof friendsPanelPreviousScreen === 'function')
+        ? friendsPanelPreviousScreen()
       : (screenEl.id === 'chatThreadScreen' && typeof chatThreadPreviousScreen === 'function')
         ? chatThreadPreviousScreen()
         : (PREV_SCREEN[screenEl.id] || 'homeScreen');
@@ -9582,10 +9584,12 @@ startPrayerScheduler();
       // preserve the live Guide figure so its DOM/animation phase survives the
       // preview-to-real-drawer handoff.
       window._preserveDrawerGuideAnimation = !!drawerPreview;
+      window._interactiveSwipeBackScreenId = screenEl.id;
       try {
         backBtn.click();
       } finally {
         window._preserveDrawerGuideAnimation = false;
+        window._interactiveSwipeBackScreenId = '';
       }
 
       // Swap the visual preview for the real drawer in the same frame.
@@ -9663,11 +9667,15 @@ startPrayerScheduler();
     var t = e.touches[0];
     if (t.clientX > 44) return; // only edge swipes
 
-    // Never swipe-back when on the home screen
-    var homeEl = document.getElementById('homeScreen');
-    if (homeEl && homeEl.style.display === 'flex') return;
+    var friendsPanel = document.getElementById('friendsPanel');
+    var friendsPanelOpen = !!(friendsPanel && friendsPanel.classList.contains('fp-show'));
 
-    var screenEl = document.querySelector('.screen.active');
+    // Never swipe-back when on the home screen unless a swipeable overlay is
+    // sitting above it.
+    var homeEl = document.getElementById('homeScreen');
+    if (!friendsPanelOpen && homeEl && homeEl.style.display === 'flex') return;
+
+    var screenEl = friendsPanelOpen ? friendsPanel : document.querySelector('.screen.active');
     if (!screenEl || NOSW[screenEl.id]) return;
 
     // The Clock session screen only swipes back from its pre-session
@@ -9677,7 +9685,7 @@ startPrayerScheduler();
     // A filtered Lodge profile returns to the Lodge feed, not the drawer.
     if (screenEl.id === 'lodgeScreen' && typeof _lodgeUserFilter !== 'undefined' && _lodgeUserFilter) return;
 
-    var backBtn = screenEl.querySelector('.history-back, .jl-editor-back, .conc-sess-back, .lodge-back');
+    var backBtn = screenEl.querySelector('.history-back, .jl-editor-back, .conc-sess-back, .lodge-back, .fp-back');
     if (!backBtn) return;
 
     sw._pending = { screenEl: screenEl, backBtn: backBtn, x: t.clientX, y: t.clientY };
