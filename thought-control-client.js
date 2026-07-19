@@ -29,19 +29,6 @@ function getTCBestGap(mode) {
   }, 0);
 }
 
-// Only the rung currently being climbed is shown (10:00 → 12:30 → 15:00,
-// mastery banner at fifteen) — one bar, not the whole ladder. Rendered via
-// the shared .sn-* kit (snProgressBarHtml lives in senses-client.js; the
-// blue hue comes from the .sn-setup--tc wrapper).
-function buildTCProgressBars(mode) {
-  var best = getTCBestGap(mode);
-  if (best === 0) return '';
-  if (best >= 900) return snMasteryHtml('This mode has been mastered.', 'Fifteen minutes of unbroken silence');
-  if (best >= 750) return snProgressBarHtml('Progress to 15 min', best, 900, true);
-  if (best >= 600) return snProgressBarHtml('Progress to 12:30', best, 750, false);
-  return snProgressBarHtml('Progress to 10 min', best, 600, false);
-}
-
 // Mode glyphs: observation = an open eye, focus = a held point,
 // vacancy = a dashed (empty) circle.
 var TC_MODE_GLYPHS = {
@@ -67,20 +54,29 @@ function buildTCSetupHTML() {
       + '<span class="sn-mode__lbl">' + TC_MODE_DEFS[m].label + '</span></button>';
   }).join('');
 
+  var best = getTCBestGap(tcMode);
+  var progressHtml = best >= 900
+    ? snMasteryHtml('This mode has been mastered.', 'Fifteen minutes of unbroken silence')
+    : snTrackHtml(best, 900, [{ sec: 600, label: '10 min' }, { sec: 750 }], '15 min');
+
   return '<div class="sn-setup sn-setup--tc">'
-    + '<div class="sn-head"><div class="sn-head__label">Choose a discipline</div></div>'
+    + '<div class="sn-hero-card">'
+    + '<div class="sn-head"><div class="sn-head__label">Choose a discipline</div>'
+    + '<button type="button" class="aud-omnia-peek" onclick="openExExplainer(\'thought\')" aria-label="How Thought Control works">'
+    + '<span class="clk-omnia-peek-head"><span class="clk-omnia-spin">' + omniaHeadOnlySVG(34, 32) + '</span></span>'
+    + '</button></div>'
     + '<div class="sn-modes">' + tabs + '</div>'
-    + '<div class="sn-goal">'
     + '<div class="sn-goal__label">Minutes</div>'
     + '<div class="sn-stepper">'
     + '<button class="sn-step-btn" onclick="if(tcDuration>1){tcDuration--;document.getElementById(\'tcDurDisplay\').textContent=tcDuration;}">&#8722;</button>'
     + '<div class="sn-step-val" id="tcDurDisplay">' + tcDuration + '</div>'
     + '<button class="sn-step-btn" onclick="if(tcDuration<30){tcDuration++;document.getElementById(\'tcDurDisplay\').textContent=tcDuration;}">+</button>'
     + '</div>'
-    + '<div class="sn-goal__sub">minutes &middot; 1&ndash;30 &middot; tap the screen each time a thought intrudes</div>'
+    + '<div class="sn-goal__sub">1&ndash;30 &middot; tap the screen each time a thought intrudes</div>'
     + '</div>'
-    + buildTCProgressBars(tcMode)
-    + '<button class="sn-history" onclick="concHistoryFrom=\'exSetupScreen\'; concHistoryFilter=\'thought\'; renderConcHistory(); showScreen(\'concHistoryScreen\');">&#9719;&nbsp; View history</button>'
+    + snRecordHtml(best)
+    + progressHtml
+    + '<button type="button" class="clk-history-link" onclick="concHistoryFrom=\'exSetupScreen\'; concHistoryFilter=\'thought\'; renderConcHistory(); showScreen(\'concHistoryScreen\');">View History</button>'
     + '</div>';
 }
 

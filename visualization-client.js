@@ -1709,20 +1709,9 @@ function openExerciseSetup(ex) {
   var def = EXERCISE_DEFS[ex];
   if (!def) return;
   updateExSetupBanner(ex);
-  // Per-exercise ambience hook (CSS keys off data-ex) + the tutorial crystal
-  // in the top bar for exercises whose walkthrough lives in the explainer.
+  // Per-exercise ambience hook — CSS keys off data-ex for setup backdrops.
   var scr = document.getElementById('exSetupScreen');
   if (scr) scr.dataset.ex = ex;
-  var tut = document.getElementById('exSetupTutBtn');
-  if (tut) {
-    var hasTopTut = (ex === 'sense' || ex === 'thought');
-    tut.style.display = hasTopTut ? '' : 'none';
-    if (hasTopTut) {
-      var spin = tut.querySelector('.clk-omnia-spin');
-      if (spin && !spin.innerHTML) spin.innerHTML = omniaHeadOnlySVG(34, 32);
-      tut.onclick = function() { openExExplainer(ex); };
-    }
-  }
   document.getElementById('exSetupIcon').innerHTML = def.icon;
   document.getElementById('exSetupName').textContent = def.name;
   var _descEl = document.getElementById('exSetupDesc');

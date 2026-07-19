@@ -1062,29 +1062,36 @@
     /* Begin buttons pop in the exercise's own color. */
     #exSetupScreen[data-ex="sense"] #exSetupBeginBtn { background:linear-gradient(160deg,#f0bcd6,#c9769f) !important; border-color:transparent !important; color:#2a1220 !important; font-weight:700; box-shadow:0 0 26px -4px rgba(224,168,196,.8), 0 3px 0 rgba(120,60,90,.55); }
     #exSetupScreen[data-ex="thought"] #exSetupBeginBtn { background:linear-gradient(160deg,#aad0f2,#5e8fc0) !important; border-color:transparent !important; color:#0d1723 !important; font-weight:700; box-shadow:0 0 26px -4px rgba(152,196,232,.8), 0 3px 0 rgba(52,86,124,.6); }
-    .sn-goal { position:relative; overflow:hidden; border-radius:16px; border:1px solid rgba(var(--sn-rgb),.26); background:linear-gradient(150deg, rgba(var(--sn-rgb),.1) 0%, rgba(var(--sn-rgb),.03) 60%, rgba(var(--sn-rgb),.07) 100%); padding:16px 18px 14px; margin-bottom:14px; text-align:center; }
-    .sn-goal::before { content:''; position:absolute; top:-46px; right:-34px; width:150px; height:150px; border-radius:50%; background:radial-gradient(circle, rgba(var(--sn-rgb),.2) 0%, transparent 70%); animation:snGlow 5s ease-in-out infinite; pointer-events:none; }
+    /* Clock-page mirror pieces: hero card (mode picker + minutes), big record
+       readout, and a single 0→goal progress track with waypoint marks. */
+    .sn-setup { position:relative; display:flex; flex-direction:column; align-items:center; }
+    .sn-hero-card { position:relative; width:100%; box-sizing:border-box; overflow:hidden; background:rgba(var(--sn-rgb),.06); border:1px solid rgba(var(--sn-rgb),.16); border-radius:18px; padding:14px 14px 16px; margin-bottom:16px; }
+    .sn-hero-card::before { content:''; position:absolute; top:-46px; right:-34px; width:170px; height:170px; border-radius:50%; background:radial-gradient(circle, rgba(var(--sn-rgb),.18) 0%, transparent 70%); animation:snGlow 5s ease-in-out infinite; pointer-events:none; }
     @keyframes snGlow { 0%,100%{opacity:.45;} 50%{opacity:1;} }
-    .sn-goal__label { font-family:'DM Mono',monospace; font-size:8px; letter-spacing:.24em; text-transform:uppercase; color:rgba(var(--sn-rgb),.9); margin-bottom:6px; }
+    .sn-hero-card .sn-head { margin-bottom:10px; }
+    .sn-hero-card .sn-modes { margin-bottom:16px; }
+    .sn-goal__label { font-family:'DM Mono',monospace; font-size:8px; letter-spacing:.24em; text-transform:uppercase; color:rgba(var(--sn-rgb),.9); margin-bottom:6px; text-align:center; }
     .sn-stepper { position:relative; display:flex; align-items:center; justify-content:center; gap:20px; }
     .sn-step-btn { width:44px; height:44px; border-radius:50%; border:1px solid rgba(var(--sn-rgb),.35); background:rgba(var(--sn-rgb),.08); color:var(--sn-light); font-size:19px; line-height:1; cursor:pointer; display:flex; align-items:center; justify-content:center; }
-    .sn-step-val { font-family:'Cormorant Garamond',serif; font-size:46px; font-weight:300; color:var(--text); line-height:1; min-width:72px; }
-    .sn-goal__sub { font-family:'DM Mono',monospace; font-size:8px; letter-spacing:.14em; text-transform:uppercase; color:var(--muted); margin-top:7px; }
-    .sn-prog { margin-top:10px; padding:12px 14px; background:rgba(var(--sn-rgb),.07); border:1px solid rgba(var(--sn-rgb),.2); border-radius:12px; text-align:left; }
-    .sn-prog__head { display:flex; justify-content:space-between; align-items:baseline; margin-bottom:8px; }
-    .sn-prog__name { font-family:'DM Mono',monospace; font-size:9px; letter-spacing:.18em; text-transform:uppercase; color:rgba(var(--sn-rgb),.8); }
-    .sn-prog__pct { font-family:'Cormorant Garamond',serif; font-size:26px; font-weight:300; color:var(--sn-light); line-height:1; }
-    .sn-prog__pct span { font-size:14px; }
-    .sn-prog__bar { height:4px; background:rgba(255,255,255,.07); border-radius:2px; overflow:hidden; }
-    .sn-prog__fill { height:100%; background:linear-gradient(90deg, rgba(var(--sn-rgb),.9), var(--sn-light)); border-radius:2px; }
-    .sn-prog--red { background:rgba(180,40,40,.07); border-color:rgba(180,40,40,.2); }
-    .sn-prog--red .sn-prog__name { color:rgba(180,60,60,.65); }
-    .sn-prog--red .sn-prog__pct { color:#c0403a; }
-    .sn-prog--red .sn-prog__fill { background:linear-gradient(90deg,#b42828,#d94f4f); }
-    .sn-mastery { margin-top:14px; padding:20px 18px; background:rgba(180,40,40,.06); border:1px solid rgba(180,40,40,.25); border-radius:12px; text-align:center; }
-    .sn-mastery__title { font-family:'Cormorant Garamond',serif; font-size:22px; font-weight:400; color:#c0403a; line-height:1.4; }
-    .sn-mastery__sub { margin-top:8px; font-size:10px; letter-spacing:.18em; text-transform:uppercase; color:rgba(180,60,60,.5); font-family:'DM Mono',monospace; }
-    .sn-history { display:inline-flex; align-items:center; gap:7px; margin-top:20px; min-height:36px; padding:0 13px; border-radius:999px; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.03); color:var(--muted); font-family:'DM Mono',monospace; font-size:8px; letter-spacing:.16em; text-transform:uppercase; cursor:pointer; }
+    .sn-step-val { font-family:'Cormorant Garamond',serif; font-size:46px; font-weight:300; color:var(--text); line-height:1; min-width:72px; text-align:center; }
+    .sn-goal__sub { font-family:'DM Mono',monospace; font-size:8px; letter-spacing:.14em; text-transform:uppercase; color:var(--muted); margin-top:7px; text-align:center; }
+    .sn-record { text-align:center; margin-bottom:20px; margin-top:2px; }
+    .sn-record-label { font-family:'DM Mono',monospace; font-size:9px; letter-spacing:.28em; text-transform:uppercase; color:var(--sn-light); margin-bottom:8px; }
+    .sn-record-time { font-family:'Cormorant Garamond',serif; font-size:48px; font-weight:300; color:#fff; line-height:.95; }
+    .sn-record-time small { font-size:19px; color:rgba(var(--sn-rgb),.85); margin:0 1px; }
+    .sn-record-none { font-family:'Cormorant Garamond',serif; font-size:24px; font-style:italic; font-weight:300; color:var(--muted); }
+    .sn-track-wrap { width:100%; margin-bottom:4px; }
+    .sn-track-top { display:flex; justify-content:space-between; align-items:baseline; margin-bottom:11px; font-family:'DM Mono',monospace; font-size:9px; letter-spacing:.18em; text-transform:uppercase; }
+    .sn-track-top .l { color:rgba(var(--sn-rgb),.75); }
+    .sn-track-top .r { color:var(--sn-light); }
+    .sn-track { position:relative; height:6px; background:rgba(255,255,255,.06); border-radius:3px; }
+    .sn-track-fill { position:absolute; left:0; top:0; height:100%; border-radius:3px; background:linear-gradient(90deg, rgba(var(--sn-rgb),.85), var(--sn-light)); box-shadow:0 0 10px -2px rgba(var(--sn-rgb),.8); }
+    .sn-track-mark { position:absolute; top:-3px; width:2px; height:12px; background:rgba(255,255,255,.22); border-radius:1px; }
+    .sn-track-foot { position:relative; height:13px; margin-top:9px; }
+    .sn-track-foot span { position:absolute; top:0; transform:translateX(-50%); font-family:'DM Mono',monospace; font-size:8px; letter-spacing:.1em; color:var(--muted); }
+    .sn-mastery { width:100%; box-sizing:border-box; margin-bottom:4px; padding:16px 18px; background:rgba(180,40,40,.06); border:1px solid rgba(180,40,40,.25); border-radius:12px; text-align:center; }
+    .sn-mastery__title { font-family:'Cormorant Garamond',serif; font-size:20px; font-weight:400; color:#c0403a; line-height:1.4; }
+    .sn-mastery__sub { margin-top:6px; font-size:9px; letter-spacing:.18em; text-transform:uppercase; color:rgba(180,60,60,.5); font-family:'DM Mono',monospace; }
 
     /* Universal press feedback (no layout shift). */
     button:not(:disabled):active { filter:brightness(1.15); }
@@ -7280,12 +7287,7 @@ body:not(.tut-live) #tutCorgi {
 
   <!-- EXERCISE SETUP SCREEN -->
   <div class="screen" id="exSetupScreen" style="padding:0; overflow-y:auto; scrollbar-width:none; -ms-overflow-style:none; -webkit-overflow-scrolling:touch;">
-    <div class="ex-setup-topbar" style="position:sticky; top:0; z-index:30; padding:var(--safe-top) 20px 8px; display:flex; align-items:center; justify-content:space-between;">
-      <button class="history-back" id="exSetupBack">&#8592; back</button>
-      <!-- Omnia tutorial crystal — shown by openExerciseSetup for exercises
-           whose walkthrough lives in the explainer instead of a text block. -->
-      <button type="button" class="aud-omnia-peek" id="exSetupTutBtn" style="display:none;" aria-label="Open tutorial"><span class="clk-omnia-peek-head"><span class="clk-omnia-spin"></span></span></button>
-    </div>
+    <div class="ex-setup-topbar" style="position:sticky; top:0; z-index:30; padding:var(--safe-top) 20px 8px;"><button class="history-back" id="exSetupBack">&#8592; back</button></div>
     <!-- Banner — populated by openExerciseSetup() -->
     <div id="exSetupBanner" class="ex-banner" style="--exb-rgb:224,124,58; --exb-light:#e8a070; margin:4px 12px 6px;">
       <div class="exb-motes" aria-hidden="true">

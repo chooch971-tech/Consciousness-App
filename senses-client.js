@@ -78,21 +78,45 @@ var SENSE_MODE_GLYPHS = {
     + '<path d="M9.6 13.5a2.6 2.6 0 0 0 1.8 2.4"/></svg>'
 };
 
-// One .sn-prog progress card. Shared with Thought Control's setup, which
-// builds the same ladder in its violet hue (color comes from the .sn-setup
-// wrapper's CSS vars, not from here).
-function snProgressBarHtml(name, best, targetSec, red) {
-  var p = Math.min(100, Math.round(best / targetSec * 1000) / 10);
-  var pd = Number.isInteger(p) ? p : p.toFixed(1);
-  return '<div class="sn-prog' + (red ? ' sn-prog--red' : '') + '">'
-    + '<div class="sn-prog__head"><span class="sn-prog__name">' + name + '</span>'
-    + '<span class="sn-prog__pct">' + pd + '<span>%</span></span></div>'
-    + '<div class="sn-prog__bar"><div class="sn-prog__fill" style="width:' + pd + '%;"></div></div>'
-    + '</div>';
-}
+// Clock-page mirror pieces, shared with Thought Control's setup (hue comes
+// from the .sn-setup wrapper's CSS vars, not from here).
 function snMasteryHtml(title, sub) {
   return '<div class="sn-mastery"><div class="sn-mastery__title">' + title + '</div>'
     + '<div class="sn-mastery__sub">' + sub + '</div></div>';
+}
+// "Your Record" readout — big serif m/s, or an italic "Not set yet".
+function snRecordHtml(best) {
+  var html = '<div class="sn-record"><div class="sn-record-label">Your Record</div>';
+  if (best > 0) {
+    var t = best >= 60
+      ? Math.floor(best / 60) + '<small>m</small> ' + (best % 60) + '<small>s</small>'
+      : best + '<small>s</small>';
+    html += '<div class="sn-record-time">' + t + '</div>';
+  } else {
+    html += '<div class="sn-record-none">Not set yet</div>';
+  }
+  return html + '</div>';
+}
+// Single 0 → goal progress track with waypoint marks (Clock-style).
+// marks: [{sec, label?}] — a mark always draws a notch; label is optional.
+function snTrackHtml(best, goalSec, marks, goalLabel) {
+  var fill = Math.min(100, best / goalSec * 100);
+  var markHtml = '', labelHtml = '';
+  (marks || []).forEach(function(m) {
+    var left = (m.sec / goalSec * 100).toFixed(1);
+    markHtml += '<div class="sn-track-mark" style="left:' + left + '%;"></div>';
+    if (m.label) labelHtml += '<span style="left:' + left + '%;">' + m.label + '</span>';
+  });
+  return '<div class="sn-track-wrap">'
+    + '<div class="sn-track-top"><span class="l">Progress</span><span class="r">Goal &middot; ' + goalLabel + '</span></div>'
+    + '<div class="sn-track">'
+    +   '<div class="sn-track-fill" style="width:' + fill.toFixed(1) + '%;"></div>' + markHtml
+    + '</div>'
+    + '<div class="sn-track-foot">'
+    +   '<span style="left:0; transform:none;">0</span>' + labelHtml
+    +   '<span style="right:0; left:auto; transform:none;">' + goalLabel + '</span>'
+    + '</div>'
+    + '</div>';
 }
 
 // Longest completed session for one sense (seconds).
@@ -100,17 +124,6 @@ function getSenseBest(mode) {
   return (concState.history || []).reduce(function(b, s) {
     return (s.exercise === 'sense' && (s.mode || 'feeling') === mode && s.seconds > b) ? s.seconds : b;
   }, 0);
-}
-
-// Only the rung currently being climbed is shown (5:00 → 10:00 → 15:00,
-// mastered at fifteen unbroken minutes) — one bar, not the whole ladder.
-function buildSenseProgressBars(mode) {
-  var best = getSenseBest(mode);
-  if (best === 0) return '';
-  if (best >= 900) return snMasteryHtml('This sense has been mastered.', 'Fifteen minutes held unbroken');
-  if (best >= 600) return snProgressBarHtml('Progress to 15 min', best, 900, true);
-  if (best >= 300) return snProgressBarHtml('Progress to 10 min', best, 600, false);
-  return snProgressBarHtml('Progress to 5 min', best, 300, false);
 }
 
 // Per-card accents: rose touch, sage-green scent, honey-gold taste.
@@ -127,20 +140,29 @@ function buildSenseSetupHTML() {
       + '<span class="sn-mode__lbl">' + SENSE_MODE_DEFS[m].label + '</span></button>';
   }).join('');
 
+  var best = getSenseBest(senseMode);
+  var progressHtml = best >= 900
+    ? snMasteryHtml('This sense has been mastered.', 'Fifteen minutes held unbroken')
+    : snTrackHtml(best, 900, [{ sec: 300, label: '5 min' }, { sec: 600, label: '10 min' }], '15 min');
+
   return '<div class="sn-setup">'
-    + '<div class="sn-head"><div class="sn-head__label">Train a sense</div></div>'
+    + '<div class="sn-hero-card">'
+    + '<div class="sn-head"><div class="sn-head__label">Train a sense</div>'
+    + '<button type="button" class="aud-omnia-peek" onclick="openExExplainer(\'sense\')" aria-label="How Senses works">'
+    + '<span class="clk-omnia-peek-head"><span class="clk-omnia-spin">' + omniaHeadOnlySVG(34, 32) + '</span></span>'
+    + '</button></div>'
     + '<div class="sn-modes">' + tabs + '</div>'
-    + '<div class="sn-goal">'
     + '<div class="sn-goal__label">Minutes</div>'
     + '<div class="sn-stepper">'
     + '<button class="sn-step-btn" onclick="if(senseDuration>1){senseDuration--;document.getElementById(\'snDurVal\').textContent=senseDuration;}">&#8722;</button>'
     + '<div class="sn-step-val" id="snDurVal">' + senseDuration + '</div>'
     + '<button class="sn-step-btn" onclick="if(senseDuration<30){senseDuration++;document.getElementById(\'snDurVal\').textContent=senseDuration;}">+</button>'
     + '</div>'
-    + '<div class="sn-goal__sub">minutes &middot; 1&ndash;30 &middot; a sensation is revealed when you begin</div>'
+    + '<div class="sn-goal__sub">1&ndash;30 &middot; a sensation is revealed when you begin</div>'
     + '</div>'
-    + buildSenseProgressBars(senseMode)
-    + '<button class="sn-history" onclick="concHistoryFrom=\'exSetupScreen\'; concHistoryFilter=\'all\'; renderConcHistory(); showScreen(\'concHistoryScreen\');">&#9719;&nbsp; View history</button>'
+    + snRecordHtml(best)
+    + progressHtml
+    + '<button type="button" class="clk-history-link" onclick="concHistoryFrom=\'exSetupScreen\'; concHistoryFilter=\'all\'; renderConcHistory(); showScreen(\'concHistoryScreen\');">View History</button>'
     + '</div>';
 }
 
