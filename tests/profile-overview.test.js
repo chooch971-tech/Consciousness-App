@@ -7,6 +7,7 @@ const assert = require('node:assert/strict');
 
 const profileClient = fs.readFileSync(path.join(__dirname, '..', 'profile-client.js'), 'utf8');
 const server = fs.readFileSync(path.join(__dirname, '..', 'server.js'), 'utf8');
+const html = fs.readFileSync(path.join(__dirname, '..', 'presence.html'), 'utf8');
 
 test('account and friend profiles use one shared overview renderer', () => {
   assert.match(profileClient, /function renderProfileOverview\(el, stats\)/);
@@ -27,4 +28,29 @@ test('friend profile header shows the accepted friendship date when available', 
   assert.match(profileClient, /document\.getElementById\('friendProfSince'\)/);
   assert.match(profileClient, /f\.friendedAt \? new Date\(f\.friendedAt\) : null/);
   assert.match(profileClient, /'Friends since ' \+ friendedDate\.toLocaleDateString/);
+});
+
+test('friend profile keeps the username in the top bar and shows the display name by the avatar', () => {
+  assert.match(server, /displayName: otherUser\.displayName \|\| null/);
+  assert.match(profileClient, /friendProfTopName'\)\.textContent = '@' \+ uname/);
+  assert.match(profileClient, /friendProfName'\)\.textContent = displayName \|\| '@' \+ uname/);
+});
+
+test('profile trophy sections render earned items only and hide empty headers', () => {
+  assert.match(html, /id="profBadgesSection"/);
+  assert.match(html, /id="profAchievementsSection"/);
+  assert.match(profileClient, /earnedBadges = ACH_GROUPS\[0\]\.items\.filter/);
+  assert.match(profileClient, /section\.style\.display = earnedBadges\.length \? '' : 'none'/);
+  assert.match(profileClient, /if \(achState\.earned\[b\.id\]\) done\.push/);
+  assert.match(profileClient, /section\.style\.display = picks\.length \? '' : 'none'/);
+});
+
+test('friend profile hides empty earned and friends-in-common sections', () => {
+  assert.match(html, /id="friendProfSimilarSection"/);
+  assert.match(html, /<span>Friends in Common<\/span>/);
+  assert.match(server, /commonFriendIds: Array\.from\(commonByFriend\.get\(otherId\) \|\| \[\]\)/);
+  assert.match(profileClient, /commonIds\.indexOf\(o\.userId\) !== -1/);
+  assert.match(profileClient, /badgesSection\.style\.display = monthlyEarned\.length \? '' : 'none'/);
+  assert.match(profileClient, /achSection\.style\.display = earnedAch\.length \? '' : 'none'/);
+  assert.match(profileClient, /section\.style\.display = others\.length \? '' : 'none'/);
 });

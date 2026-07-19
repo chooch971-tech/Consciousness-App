@@ -321,48 +321,46 @@ async function loadProfileFriendStreaks() {
   } catch(e) {}
 }
 
-// Profile · Monthly Badges — this month's set, earned ones lit.
+// Profile · Monthly Badges — public profiles show earned badges only.
 function renderProfileBadges() {
   var el = document.getElementById('profBadges');
+  var section = document.getElementById('profBadgesSection');
   if (!el) return;
   if (typeof achEnsureMonth !== 'function') return;
   achSeed(); achEnsureMonth();
-  el.innerHTML = ACH_GROUPS[0].items.map(function(b) {
-    var earned = !!achState.monthly.earned[b.id];
+  var earnedBadges = ACH_GROUPS[0].items.filter(function(b) { return !!achState.monthly.earned[b.id]; });
+  if (section) section.style.display = earnedBadges.length ? '' : 'none';
+  el.innerHTML = earnedBadges.map(function(b) {
     var medal = b.target >= 1000 ? (b.target / 1000) + 'k' : b.target;
-    return '<div class="prof-badge' + (earned ? ' prof-badge--earned' : ' prof-badge--locked') + '" style="--gc:' + ACH_COLORS.monthly + ';cursor:pointer;" data-ach="' + b.id + '" title="' + b.name + '">'
+    return '<div class="prof-badge prof-badge--earned" style="--gc:' + ACH_COLORS.monthly + ';cursor:pointer;" data-ach="' + b.id + '" title="' + b.name + '">'
       + achIconSvg('monthly', b) + '<b>' + medal + '</b></div>';
   }).join('');
 }
 
-// Profile · Achievements — the four lifetime badges nearest completion
-// (earned ones fill in first if fewer than four are in progress).
+// Profile · Achievements — the four most recently earned lifetime badges.
 function renderProfileAchievements() {
   var el = document.getElementById('profAchievements');
+  var section = document.getElementById('profAchievementsSection');
   if (!el) return;
-  if (typeof achProviders !== 'function') return;
+  if (typeof achEnsureMonth !== 'function') return;
   achSeed(); achEnsureMonth();
-  var p = achProviders();
-  var pending = [], done = [];
+  var done = [];
   ACH_GROUPS.forEach(function(g) {
     if (g.monthly) return;
     g.items.forEach(function(b) {
-      var item = { b: b, g: g, pct: Math.min(100, Math.round((p[b.key] || 0) / b.target * 100)) };
-      if (achState.earned[b.id]) done.push(item); else pending.push(item);
+      if (achState.earned[b.id]) done.push({ b: b, g: g });
     });
   });
-  pending.sort(function(x, y) { return y.pct - x.pct; });
   done.sort(function(x, y) { return (achState.earned[y.b.id] || 0) - (achState.earned[x.b.id] || 0); });
-  var picks = pending.slice(0, 4);
-  while (picks.length < 4 && done.length) picks.push(done.shift());
+  var picks = done.slice(0, 4);
+  if (section) section.style.display = picks.length ? '' : 'none';
   el.innerHTML = picks.map(function(it) {
-    var earned = !!achState.earned[it.b.id];
     var medal = it.b.group === 'step' ? ['','','II','III','IV','V','VI','VII','VIII','IX','X'][it.b.target]
       : it.b.target >= 1000 ? (it.b.target / 1000) + 'k' : it.b.target;
-    return '<div class="prof-ach-item" data-ach="' + it.b.id + '" style="cursor:pointer;' + (earned || it.pct > 0 ? 'opacity:1;' : '') + '">'
-      + '<div class="prof-ach-item__disc" style="--gc:' + (ACH_COLORS[it.g.id] || '#e8c87a') + (earned ? ';border-color:rgba(232,200,122,.6);' : '') + '">'
+    return '<div class="prof-ach-item" data-ach="' + it.b.id + '" style="cursor:pointer;opacity:1;">'
+      + '<div class="prof-ach-item__disc" style="--gc:' + (ACH_COLORS[it.g.id] || '#e8c87a') + ';border-color:rgba(232,200,122,.6);">'
       + achIconSvg(it.g.id) + '<b>' + medal + '</b></div>'
-      + '<div class="prof-ach-item__lbl' + (earned ? ' prof-ach-item__lbl--earned' : it.pct > 0 ? ' prof-ach-item__lbl--active' : '') + '">' + (earned ? 'Earned' : it.pct + '%') + '</div></div>';
+      + '<div class="prof-ach-item__lbl prof-ach-item__lbl--earned">Earned</div></div>';
   }).join('');
 }
 // "›" buttons on both profile sections open the full Achievements screen.
@@ -489,8 +487,9 @@ function renderFriendProfile(f) {
   if (!f) return;
   _currentFriendProfile = f;
   var uname = f.username || 'friend';
+  var displayName = String(f.displayName || '').trim();
   document.getElementById('friendProfTopName').textContent = '@' + uname;
-  document.getElementById('friendProfName').textContent = '@' + uname;
+  document.getElementById('friendProfName').textContent = displayName || '@' + uname;
 
   var av = document.getElementById('friendProfAvatar');
   var initEl = document.getElementById('friendProfInitial');
@@ -503,7 +502,7 @@ function renderFriendProfile(f) {
     av.classList.remove('has-pic');
     av.style.backgroundImage = '';
     initEl.style.display = '';
-    initEl.textContent = (String(uname).trim()[0] || '?').toUpperCase();
+    initEl.textContent = (displayName[0] || String(uname).trim()[0] || '?').toUpperCase();
   }
 
   var now = Date.now();
@@ -544,7 +543,7 @@ function renderFriendProfile(f) {
     concXp: f.concXp
   });
 
-  renderFriendProfSimilar(f.userId);
+  renderFriendProfSimilar(f);
   renderFriendAchievements(f);
   if (typeof loadFriendSocial === 'function') loadFriendSocial(f);
 }
@@ -553,12 +552,15 @@ function renderFriendProfile(f) {
 function renderFriendAchievements(f) {
   var badgesEl = document.getElementById('friendProfBadges');
   var achEl = document.getElementById('friendProfAch');
+  var badgesSection = document.getElementById('friendProfBadgesSection');
+  var achSection = document.getElementById('friendProfAchSection');
 
   // Monthly badges — only if the friend's snapshot is from the current month.
   if (badgesEl) {
     var monthMatch = f.achMonthlyKey && (typeof achMonthKey === 'function') && (f.achMonthlyKey === achMonthKey());
     var fMonthly = monthMatch ? (f.achMonthlyEarned || {}) : {};
     var monthlyEarned = ACH_GROUPS[0].items.filter(function(b) { return fMonthly[b.id]; });
+    if (badgesSection) badgesSection.style.display = monthlyEarned.length ? '' : 'none';
     if (monthlyEarned.length) {
       badgesEl.innerHTML = monthlyEarned.map(function(b) {
         var medal = b.target >= 1000 ? (b.target / 1000) + 'k' : b.target;
@@ -566,7 +568,7 @@ function renderFriendAchievements(f) {
           + achIconSvg('monthly', b) + '<b>' + medal + '</b></div>';
       }).join('');
     } else {
-      badgesEl.innerHTML = '<div class="prof-empty-note">No monthly badges earned yet this month.</div>';
+      badgesEl.innerHTML = '';
     }
   }
 
@@ -578,6 +580,7 @@ function renderFriendAchievements(f) {
       if (g.monthly) return;
       g.items.forEach(function(b) { if (life[b.id]) earnedAch.push({ b: b, g: g }); });
     });
+    if (achSection) achSection.style.display = earnedAch.length ? '' : 'none';
     if (earnedAch.length) {
       earnedAch.sort(function(x, y) { return (life[y.b.id] || 0) - (life[x.b.id] || 0); });
       achEl.classList.add('friend-ach-strip');
@@ -592,17 +595,20 @@ function renderFriendAchievements(f) {
       }).join('');
     } else {
       achEl.classList.remove('friend-ach-strip');
-      achEl.innerHTML = '<div class="prof-empty-note">No achievements reached yet.</div>';
+      achEl.innerHTML = '';
     }
   }
 }
-function renderFriendProfSimilar(excludeId) {
+function renderFriendProfSimilar(friend) {
   var el = document.getElementById('friendProfSimilar');
+  var section = document.getElementById('friendProfSimilarSection');
   if (!el) return;
+  var commonIds = Array.isArray(friend.commonFriendIds) ? friend.commonFriendIds : [];
   var others = Object.keys(_friendProfileCache).map(function(k) { return _friendProfileCache[k]; })
-    .filter(function(o) { return o && o.userId && o.userId !== excludeId; })
+    .filter(function(o) { return o && o.userId && commonIds.indexOf(o.userId) !== -1; })
     .slice(0, 6);
-  if (!others.length) { el.innerHTML = '<div class="prof-empty-note">No other practitioners to compare yet.</div>'; return; }
+  if (section) section.style.display = others.length ? '' : 'none';
+  if (!others.length) { el.innerHTML = ''; return; }
   el.innerHTML = others.map(function(o) {
     var nm = o.username || '?';
     return '<div class="prof-friend" data-friend-id="' + escHtml(o.userId) + '">'

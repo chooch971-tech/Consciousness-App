@@ -1732,6 +1732,25 @@ app.get('/api/sync/friends/list', verifyToken, async (req, res) => {
       $or: [{ userId: selfId }, { friendId: selfId }]
     }).toArray();
 
+    // Resolve real friends-in-common once for the whole list. Friend records
+    // store string ids, so an accepted edge between two of the viewer's friends
+    // means each appears in the other's commonFriendIds list.
+    const selfFriendIds = docs.map(doc => doc.userId === selfId ? doc.friendId : doc.userId);
+    const selfFriendIdSet = new Set(selfFriendIds);
+    const commonByFriend = new Map(selfFriendIds.map(id => [id, new Set()]));
+    if (selfFriendIds.length) {
+      const networkDocs = await friendsCollection.find({
+        status: 'accepted',
+        userId: { $in: selfFriendIds },
+        friendId: { $in: selfFriendIds }
+      }).toArray();
+      networkDocs.forEach(doc => {
+        if (!selfFriendIdSet.has(doc.userId) || !selfFriendIdSet.has(doc.friendId)) return;
+        commonByFriend.get(doc.userId).add(doc.friendId);
+        commonByFriend.get(doc.friendId).add(doc.userId);
+      });
+    }
+
     const friends = [];
     for (const doc of docs) {
       const otherId = doc.userId === selfId ? doc.friendId : doc.userId;
@@ -1803,6 +1822,7 @@ app.get('/api/sync/friends/list', verifyToken, async (req, res) => {
       friends.push({
         userId: otherId,
         username: otherUser.username || ('practitioner_' + String(otherId).slice(-5)),
+        displayName: otherUser.displayName || null,
         profilePic: otherUser.profilePic || null,
         status: statusVisible ? (otherUser.status || null) : null,
         lastSync: latestSync ? latestSync.syncedAt : null,
@@ -1812,7 +1832,8 @@ app.get('/api/sync/friends/list', verifyToken, async (req, res) => {
         friendedAt: doc.acceptedAt || doc.createdAt || null,
         streak, awarenessLevel, awarenessXp, concLevel, concXp, akasha, bardonStep, bodies,
         practicedDates, lastSessionDate,
-        achEarned, achMonthlyEarned, achMonthlyKey
+        achEarned, achMonthlyEarned, achMonthlyKey,
+        commonFriendIds: Array.from(commonByFriend.get(otherId) || [])
       });
     }
     res.json({ friends });
