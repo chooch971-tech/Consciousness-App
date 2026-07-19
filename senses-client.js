@@ -62,39 +62,44 @@ function senseCurrentCue() {
   return cues[senseCueIdx];
 }
 
+// One distinct glyph per sense so the mode cards read at a glance:
+// touch = fingertip ripples, smell = rising scent curls, taste = a droplet.
+var SENSE_MODE_GLYPHS = {
+  feeling: '<svg viewBox="0 0 24 22" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" aria-hidden="true">'
+    + '<circle cx="12" cy="16.4" r="2.1" fill="currentColor" stroke="none"/>'
+    + '<path d="M7.6 11.6a6.2 6.2 0 0 1 8.8 0"/>'
+    + '<path d="M4.6 8.2a10.4 10.4 0 0 1 14.8 0"/></svg>',
+  smell: '<svg viewBox="0 0 24 22" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" aria-hidden="true">'
+    + '<path d="M7 19.2c1.6-2.4-1.6-4.2 0-6.8 1.4-2.3.2-3.7.6-5.8"/>'
+    + '<path d="M12 19.6c1.6-2.7-1.6-4.7 0-7.5 1.5-2.6.2-4 .6-6.3"/>'
+    + '<path d="M17 19.2c1.6-2.4-1.6-4.2 0-6.8 1.4-2.3.2-3.7.6-5.8"/></svg>',
+  taste: '<svg viewBox="0 0 24 22" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'
+    + '<path d="M12 2.6C12 2.6 6.6 9.4 6.6 13.2a5.4 5.4 0 0 0 10.8 0C17.4 9.4 12 2.6 12 2.6Z"/>'
+    + '<path d="M9.6 13.5a2.6 2.6 0 0 0 1.8 2.4"/></svg>'
+};
+
 function buildSenseSetupHTML() {
   var tabs = ['feeling','smell','taste'].map(function(m) {
-    var active = m === senseMode;
-    return '<button onclick="switchSenseMode(\'' + m + '\')" style="'
-      + 'flex:1;padding:7px 4px;font-family:\'DM Mono\',monospace;font-size:8px;letter-spacing:.15em;text-transform:uppercase;'
-      + 'border-radius:6px;cursor:pointer;transition:all .2s;'
-      + (active
-        ? 'background:rgba(207,143,176,.18);border:1px solid rgba(207,143,176,.42);color:#e0a8c4;'
-        : 'background:transparent;border:1px solid rgba(207,143,176,.12);color:var(--muted);')
-      + '">' + SENSE_MODE_DEFS[m].label + '</button>';
+    return '<button class="sn-mode' + (m === senseMode ? ' on' : '') + '" onclick="switchSenseMode(\'' + m + '\')">'
+      + SENSE_MODE_GLYPHS[m]
+      + '<span class="sn-mode__lbl">' + SENSE_MODE_DEFS[m].label + '</span></button>';
   }).join('');
 
   var durs = [2,5,10].map(function(d) {
-    var active = d === senseDuration;
-    return '<button onclick="setSenseDuration(' + d + ')" style="'
-      + 'flex:1;padding:9px 4px;font-family:\'DM Mono\',monospace;font-size:10px;letter-spacing:.08em;'
-      + 'border-radius:6px;cursor:pointer;transition:all .2s;'
-      + (active
-        ? 'background:rgba(207,143,176,.16);border:1px solid rgba(207,143,176,.4);color:#e0a8c4;'
-        : 'background:transparent;border:1px solid rgba(207,143,176,.12);color:var(--muted);')
-      + '">' + d + ' min</button>';
+    return '<button class="sn-dur' + (d === senseDuration ? ' on' : '') + '" onclick="setSenseDuration(' + d + ')">'
+      + '<b>' + d + '</b><span>min</span></button>';
   }).join('');
 
-  return '<div style="display:flex;gap:6px;margin-bottom:20px;">' + tabs + '</div>'
-    + '<div style="height:1px;background:var(--border);margin-bottom:20px;opacity:.4;"></div>'
-    + '<div style="font-size:9px;letter-spacing:.2em;text-transform:uppercase;color:var(--muted);margin-bottom:10px;">Hold this</div>'
-    + '<div style="display:flex;align-items:center;gap:12px;margin-bottom:24px;">'
-    + '<div id="senseCueText" style="flex:1;font-family:\'Cormorant Garamond\',serif;font-size:20px;font-weight:300;font-style:italic;color:var(--text);line-height:1.4;">' + senseCurrentCue() + '</div>'
-    + '<button onclick="shuffleSenseCue()" title="Another" style="flex-shrink:0;width:38px;height:38px;border-radius:50%;background:rgba(207,143,176,.1);border:1px solid rgba(207,143,176,.3);color:#e0a8c4;font-size:16px;cursor:pointer;">&#8635;</button>'
+  return '<div class="sn-modes">' + tabs + '</div>'
+    + '<div class="sn-cuecard">'
+    + '<div class="sn-cuecard__label">Hold this</div>'
+    + '<div class="sn-cuecard__text" id="senseCueText">' + senseCurrentCue() + '</div>'
+    + '<button class="sn-shuffle" onclick="shuffleSenseCue()">&#8635;&nbsp; Another</button>'
+    + '<div class="sn-cuecard__quote" aria-hidden="true">&rdquo;</div>'
     + '</div>'
-    + '<div style="font-size:9px;letter-spacing:.2em;text-transform:uppercase;color:var(--muted);margin-bottom:12px;">Session duration</div>'
-    + '<div style="display:flex;gap:6px;">' + durs + '</div>'
-    + '<span onclick="concHistoryFrom=\'exSetupScreen\'; concHistoryFilter=\'all\'; renderConcHistory(); showScreen(\'concHistoryScreen\');" style="display:block;margin-top:22px;font-size:9px;letter-spacing:.15em;text-transform:uppercase;color:var(--muted);cursor:pointer;text-decoration:underline;">View History</span>';
+    + '<div class="sn-durlabel">Session duration</div>'
+    + '<div class="sn-durs">' + durs + '</div>'
+    + '<button class="sn-history" onclick="concHistoryFrom=\'exSetupScreen\'; concHistoryFilter=\'all\'; renderConcHistory(); showScreen(\'concHistoryScreen\');">&#9719;&nbsp; View history</button>';
 }
 
 function switchSenseMode(mode) {
@@ -120,7 +125,13 @@ function shuffleSenseCue() {
   while (next === senseCueIdx) next = Math.floor(Math.random() * cues.length);
   senseCueIdx = next;
   var el = document.getElementById('senseCueText');
-  if (el) el.textContent = senseCurrentCue();
+  if (el) {
+    el.textContent = senseCurrentCue();
+    // Restart the swap-in animation so the new cue visibly arrives.
+    el.classList.remove('sn-cue-swap');
+    void el.offsetWidth;
+    el.classList.add('sn-cue-swap');
+  }
 }
 
 var senseTimerHandle = null;

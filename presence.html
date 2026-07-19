@@ -996,6 +996,30 @@
     #prayerSessionScreen{ background:radial-gradient(ellipse 90% 55% at 50% 0%, rgba(155,142,196,.12) 0%, transparent 65%), var(--bg); }
     #mantraScreen       { background:radial-gradient(ellipse 90% 55% at 50% 0%, rgba(201,171,110,.10) 0%, transparent 65%), var(--bg); }
 
+    /* ── Senses setup (.sn-*) — rose identity, built in senses-client.js ── */
+    .sn-modes { display:flex; gap:8px; margin-bottom:18px; }
+    .sn-mode { flex:1; display:flex; flex-direction:column; align-items:center; gap:7px; min-height:64px; padding:13px 4px 11px; border-radius:13px; border:1px solid rgba(207,143,176,.16); background:rgba(207,143,176,.04); color:rgba(221,216,206,.55); cursor:pointer; transition:background .22s,border-color .22s,color .22s,box-shadow .22s; }
+    .sn-mode svg { width:24px; height:22px; opacity:.75; }
+    .sn-mode__lbl { font-family:'DM Mono',monospace; font-size:8px; letter-spacing:.18em; text-transform:uppercase; }
+    .sn-mode.on { background:linear-gradient(160deg, rgba(207,143,176,.24), rgba(207,143,176,.08)); border-color:rgba(224,168,196,.55); color:#eec3d8; box-shadow:0 0 18px -6px rgba(207,143,176,.55); }
+    .sn-mode.on svg { opacity:1; filter:drop-shadow(0 0 5px rgba(224,168,196,.6)); }
+    .sn-cuecard { position:relative; overflow:hidden; border-radius:16px; border:1px solid rgba(207,143,176,.28); background:linear-gradient(150deg, rgba(207,143,176,.11) 0%, rgba(207,143,176,.03) 55%, rgba(155,110,140,.09) 100%); padding:18px 18px 15px; margin-bottom:22px; text-align:left; }
+    .sn-cuecard::before { content:''; position:absolute; top:-40px; right:-30px; width:150px; height:150px; border-radius:50%; background:radial-gradient(circle, rgba(224,168,196,.2) 0%, transparent 70%); animation:snGlow 5s ease-in-out infinite; pointer-events:none; }
+    @keyframes snGlow { 0%,100%{opacity:.45;} 50%{opacity:1;} }
+    .sn-cuecard__label { font-family:'DM Mono',monospace; font-size:8px; letter-spacing:.24em; text-transform:uppercase; color:rgba(224,168,196,.85); margin-bottom:9px; }
+    .sn-cuecard__quote { position:absolute; right:12px; bottom:-30px; font-family:'Cormorant Garamond',serif; font-size:100px; line-height:1; color:rgba(207,143,176,.12); pointer-events:none; }
+    .sn-cuecard__text { position:relative; font-family:'Cormorant Garamond',serif; font-size:23px; font-weight:300; font-style:italic; color:var(--text); line-height:1.35; min-height:62px; }
+    .sn-cue-swap { animation:snCueSwap .4s ease; }
+    @keyframes snCueSwap { from{opacity:0; transform:translateY(6px);} to{opacity:1; transform:none;} }
+    .sn-shuffle { position:relative; margin-top:10px; display:inline-flex; align-items:center; gap:7px; min-height:36px; padding:0 14px; border-radius:999px; border:1px solid rgba(207,143,176,.35); background:rgba(207,143,176,.08); color:#e0a8c4; font-family:'DM Mono',monospace; font-size:8px; letter-spacing:.16em; text-transform:uppercase; cursor:pointer; }
+    .sn-durlabel { font-family:'DM Mono',monospace; font-size:8px; letter-spacing:.22em; text-transform:uppercase; color:var(--muted); margin-bottom:10px; }
+    .sn-durs { display:flex; gap:8px; }
+    .sn-dur { flex:1; display:flex; flex-direction:column; align-items:center; gap:1px; min-height:52px; padding:9px 4px 7px; border-radius:12px; border:1px solid rgba(207,143,176,.16); background:rgba(207,143,176,.04); color:rgba(221,216,206,.6); cursor:pointer; transition:background .22s,border-color .22s,color .22s,box-shadow .22s; font-family:'DM Mono',monospace; }
+    .sn-dur b { font-size:19px; font-weight:400; font-family:'Cormorant Garamond',serif; line-height:1.1; }
+    .sn-dur span { font-size:7.5px; letter-spacing:.2em; text-transform:uppercase; opacity:.75; }
+    .sn-dur.on { background:linear-gradient(160deg,#e0a8c4,#b8759a); border-color:transparent; color:#241019; box-shadow:0 0 18px -6px rgba(224,168,196,.7); }
+    .sn-history { display:inline-flex; align-items:center; gap:7px; margin-top:22px; min-height:36px; padding:0 13px; border-radius:999px; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.03); color:var(--muted); font-family:'DM Mono',monospace; font-size:8px; letter-spacing:.16em; text-transform:uppercase; cursor:pointer; }
+
     /* Universal press feedback (no layout shift). */
     button:not(:disabled):active { filter:brightness(1.15); }
 
