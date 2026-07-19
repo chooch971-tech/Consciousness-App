@@ -513,6 +513,18 @@ function renderFriendProfile(f) {
     : (f.lastSync ? 'Synced ' + timeAgo(new Date(f.lastSync)) : 'Friend'));
   document.getElementById('friendProfHandle').textContent = statusText;
 
+  var sinceEl = document.getElementById('friendProfSince');
+  if (sinceEl) {
+    var friendedDate = f.friendedAt ? new Date(f.friendedAt) : null;
+    if (friendedDate && !isNaN(friendedDate.getTime())) {
+      sinceEl.textContent = 'Friends since ' + friendedDate.toLocaleDateString('en-US', { month:'short', day:'numeric', year:'numeric' });
+      sinceEl.style.display = '';
+    } else {
+      sinceEl.textContent = '';
+      sinceEl.style.display = 'none';
+    }
+  }
+
   var fst = document.getElementById('friendProfStatus');
   if (fst) {
     if (statusIsFresh(f.status)) {

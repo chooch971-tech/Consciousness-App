@@ -252,6 +252,7 @@ test('top-level drawer screens reveal the open drawer during swipe-back', () => 
   assert.match(presence, /function makeDrawerPreview\(host\)[\s\S]*cloneNode\(true\)[\s\S]*host\.appendChild\(preview\)/);
   assert.match(presence, /var drawerPreview = revealsDrawer \? makeDrawerPreview\(prevEl\) : null/);
   assert.match(presence, /guideClone\.classList\.add\('drawer-omnia-preview'\)/);
+  assert.match(presence, /\.drawer-omnia-preview \{[^}]*margin-bottom:14px/);
   assert.match(presence, /function uniquifyDrawerPreviewIds\(root\)[\s\S]*?value\.split\('#' \+ oldId\)\.join\('#' \+ idMap\[oldId\]\)/);
   assert.match(presence, /function startDrawerGuideMirror\(sourceGuide, guideClone, preview\)[\s\S]*?requestAnimationFrame\(mirrorFrame\)/);
   assert.match(presence, /pair\[1\]\.style\.setProperty\('transform', frame\.transform, 'important'\)/);

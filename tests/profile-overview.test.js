@@ -22,3 +22,9 @@ test('friends-list data includes the awareness progress needed by the shared ove
   assert.match(server, /awarenessXp = v3\.xp \|\| 0/);
   assert.match(server, /streak, awarenessLevel, awarenessXp, concLevel, concXp/);
 });
+
+test('friend profile header shows the accepted friendship date when available', () => {
+  assert.match(profileClient, /document\.getElementById\('friendProfSince'\)/);
+  assert.match(profileClient, /f\.friendedAt \? new Date\(f\.friendedAt\) : null/);
+  assert.match(profileClient, /'Friends since ' \+ friendedDate\.toLocaleDateString/);
+});
