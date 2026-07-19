@@ -463,6 +463,11 @@ function _applyFriendSocial(f, s) {
   var counts = document.getElementById('friendProfCounts');
   var btn = document.getElementById('friendFollowBtn');
   counts.textContent = (s.followers || 0) + ' followers · ' + (s.following || 0) + ' following';
+  counts.style.cursor = 'pointer';
+  counts.title = 'View followers and following';
+  counts.onclick = function() {
+    if (typeof openFollowList === 'function') openFollowList('followers', f.userId, f.username || 'practitioner');
+  };
   btn.disabled = false;
   btn.textContent = s.blocked ? 'Unblock' : s.iFollow === 'active' ? 'Following ✓' : s.iFollow === 'pending' ? 'Requested' : 'Follow';
   btn.onclick = async function() {
@@ -553,7 +558,7 @@ document.getElementById('lodgeBell').addEventListener('click', openLodgeNotifs);
 })();
 
 // ── Lodge Phase 3: private chat (polling, mutual follows only) ──
-var _chatConvId = null, _chatPoll = null;
+var _chatConvId = null, _chatPoll = null, _chatPendingFriendId = null;
 var _chatConversations = [], _chatListLoaded = false, _chatListPromise = null, _chatCacheToken = null;
 
 function stopChatPoll() { if (_chatPoll) { clearInterval(_chatPoll); _chatPoll = null; } }
@@ -627,6 +632,7 @@ function openChatList() {
 }
 
 async function openChatThread(convId, username) {
+  _chatPendingFriendId = null;
   _chatConvId = convId;
   var cachedConversation = _chatConversations.find(function(c) { return c.id === convId; });
   if (cachedConversation) cachedConversation.unread = 0;
@@ -682,20 +688,38 @@ async function sendChatMsg() {
 
 async function messageFriend(userId, username) {
   if (!authToken) return;
+  // Navigate instantly; Render can take a moment to wake before it creates or
+  // returns the conversation ID. The pending marker prevents a late response
+  // from reopening the thread after the user has backed out.
+  _chatPendingFriendId = userId;
+  _chatConvId = null;
+  document.getElementById('chatThreadName').textContent = '@' + username;
+  document.getElementById('chatMsgs').innerHTML = '<div class="followlist-empty">Opening conversation…</div>';
+  showScreen('chatThreadScreen');
   try {
     var res = await fetch(SERVER_URL + '/api/social/conversations/open', {
       method: 'POST', headers: { 'Authorization': 'Bearer ' + authToken, 'Content-Type': 'application/json' },
       body: JSON.stringify({ userId: userId })
     });
     var d = await res.json();
-    if (!res.ok) { showToast(d.error || 'Unable to message'); return; }
+    if (_chatPendingFriendId !== userId) return;
+    if (!res.ok) {
+      document.getElementById('chatMsgs').innerHTML = '<div class="followlist-empty">Couldn’t open this conversation.</div>';
+      showToast(d.error || 'Unable to message');
+      return;
+    }
     openChatThread(d.id, username);
-  } catch(e) {}
+  } catch(e) {
+    if (_chatPendingFriendId === userId) {
+      document.getElementById('chatMsgs').innerHTML = '<div class="followlist-empty">Couldn’t open this conversation.</div>';
+      showToast('Unable to message');
+    }
+  }
 }
 
 document.getElementById('lodgeChats').addEventListener('click', function() { openChatList(); });
 document.getElementById('chatListBack').addEventListener('click', function() { stopChatPoll(); showScreen('lodgeScreen'); });
-document.getElementById('chatThreadBack').addEventListener('click', function() { stopChatPoll(); openChatList(); });
+document.getElementById('chatThreadBack').addEventListener('click', function() { _chatPendingFriendId = null; stopChatPoll(); openChatList(); });
 document.getElementById('chatList').addEventListener('click', function(e) {
   var row = e.target.closest('[data-conv-id]');
   if (row) openChatThread(row.getAttribute('data-conv-id'), row.getAttribute('data-conv-name'));

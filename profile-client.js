@@ -412,12 +412,18 @@ function getCachedFollowSummary() {
   try { var s = JSON.parse(localStorage.getItem(FOLLOW_SUMMARY_CACHE_KEY)); return (s && typeof s.followers === 'number') ? s : null; } catch(e) { return null; }
 }
 
-// Followers / Following list overlay — opened by tapping the counts on your
-// own Profile.
+// Followers / Following list overlay — opened by tapping either profile's
+// counts. `me` is the current user's server-side convenience alias.
 var _followListTab = 'followers';
-function openFollowList(tab) {
+var _followListUserId = 'me';
+var _followListUserName = '';
+function openFollowList(tab, userId, username) {
   if (!authToken) return;
   _followListTab = tab === 'following' ? 'following' : 'followers';
+  _followListUserId = userId || 'me';
+  _followListUserName = username || '';
+  var title = document.getElementById('followListTitle');
+  if (title) title.textContent = _followListUserId === 'me' ? 'Your network' : '@' + _followListUserName + '\'s network';
   document.getElementById('followListOverlay').classList.add('on');
   _renderFollowListTabs();
   _loadFollowListTab(_followListTab);
@@ -436,15 +442,16 @@ function _followListRowHtml(u) {
 }
 async function _loadFollowListTab(tab) {
   var rows = document.getElementById('followListRows');
+  var userId = _followListUserId;
   rows.innerHTML = '<div class="followlist-empty">Loading…</div>';
   try {
-    var res = await fetch(SERVER_URL + '/api/social/users/me/' + tab, { headers: { 'Authorization': 'Bearer ' + authToken } });
-    if (_followListTab !== tab) return; // a tab switch landed while this was in flight
+    var res = await fetch(SERVER_URL + '/api/social/users/' + encodeURIComponent(userId) + '/' + tab, { headers: { 'Authorization': 'Bearer ' + authToken } });
+    if (_followListTab !== tab || _followListUserId !== userId) return; // a newer view landed while this was in flight
     if (!res.ok) { rows.innerHTML = '<div class="followlist-empty">Couldn’t load.</div>'; return; }
     var d = await res.json();
     var users = d.users || [];
     rows.innerHTML = users.length ? users.map(_followListRowHtml).join('') : '<div class="followlist-empty">' + (tab === 'followers' ? 'No followers yet.' : 'Not following anyone yet.') + '</div>';
-  } catch(e) { if (_followListTab === tab) rows.innerHTML = '<div class="followlist-empty">Couldn’t load.</div>'; }
+  } catch(e) { if (_followListTab === tab && _followListUserId === userId) rows.innerHTML = '<div class="followlist-empty">Couldn’t load.</div>'; }
 }
 // The overlay markup lives near the end of <body>, well after this script
 // tag, so wire it on DOMContentLoaded rather than at parse time (same fix as
@@ -453,8 +460,8 @@ function _wireFollowListOverlay() {
   var ov = document.getElementById('followListOverlay');
   if (!ov) return;
   document.getElementById('profFollowCounts').addEventListener('click', function() { openFollowList('followers'); });
-  document.getElementById('followListTabFollowers').addEventListener('click', function() { openFollowList('followers'); });
-  document.getElementById('followListTabFollowing').addEventListener('click', function() { openFollowList('following'); });
+  document.getElementById('followListTabFollowers').addEventListener('click', function() { openFollowList('followers', _followListUserId, _followListUserName); });
+  document.getElementById('followListTabFollowing').addEventListener('click', function() { openFollowList('following', _followListUserId, _followListUserName); });
   document.getElementById('followListCloseBtn').addEventListener('click', function() { ov.classList.remove('on'); });
   ov.addEventListener('click', function(e) { if (e.target === ov) ov.classList.remove('on'); });
   document.getElementById('followListRows').addEventListener('click', function(e) {
