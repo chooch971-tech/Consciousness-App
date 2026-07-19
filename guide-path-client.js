@@ -659,6 +659,15 @@ function guideExRounds(exId) {
   return guideTwoADayEnabled() ? 2 : 1;
 }
 
+// Pore Breathing has a breath-count target instead of a timed duration, but
+// its daily session count follows the same global cadence unless the player
+// explicitly changes that card's frequency afterward.
+function guidePoreRounds() {
+  var ov = guideState.poreRounds;
+  if (ov === 1 || ov === 2) return ov;
+  return guideTwoADayEnabled() ? 2 : 1;
+}
+
 // Post-process items: if an exercise has a per-exercise rounds override that
 // differs from the global setting, re-derive done and durationLabel from it.
 // Called last in buildGuideRegimentItems so it also fixes added items.
@@ -1810,14 +1819,14 @@ function guidePoreBreathTarget() {
   return Math.min(40, Math.max(7, guideState.poreBreaths || 7));
 }
 function guidePoreDoneToday() {
-  var rounds = guideState.poreRounds || 1;
+  var rounds = guidePoreRounds();
   return guidePoreSessionsDoneToday() >= rounds;
 }
 
 // A Pore Breathing path card with auto-progressing breath target (7 → 40).
 function guidePoreItem(added) {
   var target = guidePoreBreathTarget();
-  var rounds = guideState.poreRounds || 1;
+  var rounds = guidePoreRounds();
   var done = guidePoreDoneToday();
   var sessToday = guidePoreSessionsDoneToday();
   var durLabel = target + ' breaths' + (rounds > 1 ? ' ×' + rounds : '');

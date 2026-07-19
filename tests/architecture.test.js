@@ -728,6 +728,21 @@ test('Guide shell navigation loads after planning and quest behavior', () => {
   assert.doesNotThrow(() => new Function(guideShellClient));
 });
 
+test('friendship screens share the Friends green backdrop', () => {
+  assert.match(presence, /#friendsPanel,\s*#friendProfileScreen,\s*#followListOverlay,\s*#societyOverlay\s*\{[^}]*rgba\(126,184,164,\.18\)/);
+});
+
+test('changing daily cadence refreshes any visible path immediately', () => {
+  assert.match(guideShellClient, /guideState\._exRounds = \{\}/);
+  assert.match(guideShellClient, /delete guideState\.poreRounds/);
+  assert.match(guidePathClient, /function guidePoreRounds\(\)[\s\S]*guideTwoADayEnabled\(\) \? 2 : 1/);
+  assert.match(guideQuestsClient, /isPore \? guidePoreRounds\(\) === 1/);
+  assert.match(guideShellClient, /var planOutput = document\.getElementById\('guidePlanOutput'\)/);
+  assert.match(guideShellClient, /guidePathMode && planOutput && planOutput\.style\.display !== 'none'/);
+  assert.match(guideShellClient, /renderGuidePlan\(guidePathMode, true\)/);
+  assert.doesNotMatch(guideShellClient, /guideState\._pathLockedV2 && guidePathMode\) renderGuidePlan/);
+});
+
 test('Lodge, messages, and friends live behind the social client boundary', () => {
   const socialTag = presence.indexOf('<script src="social-client.js"></script>');
   const appUse = presence.indexOf('var PRESENCE_SYNC = window.PresenceSyncContract;');

@@ -1007,8 +1007,8 @@ function renderPathQuests() {
     // Per-exercise frequency controls. Pore uses its own poreRounds; only the
     // truly open-ended Soul Mirror reflection has no frequency concept.
     var showFreq = !OPEN_ENDED_EX[activeExId] || isPore;
-    var rounds1 = isPore ? (guideState.poreRounds || 1) === 1 : guideExRounds(activeExId) === 1;
-    var rounds2 = isPore ? (guideState.poreRounds || 1) === 2 : guideExRounds(activeExId) === 2;
+    var rounds1 = isPore ? guidePoreRounds() === 1 : guideExRounds(activeExId) === 1;
+    var rounds2 = isPore ? guidePoreRounds() === 2 : guideExRounds(activeExId) === 2;
     if (freqDiv)  freqDiv.style.display  = showFreq ? '' : 'none';
     if (freq1Btn) {
       freq1Btn.style.display = showFreq ? '' : 'none';

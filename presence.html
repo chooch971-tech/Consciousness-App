@@ -690,6 +690,24 @@
         radial-gradient(ellipse 80% 34% at 60% 100%, rgba(100,90,160,.16) 0%, transparent 70%),
         linear-gradient(180deg, #0a1119 0%, #07080d 45%, #0c0a15 100%);
     }
+    /* Carry the Friends page's quiet green night-sky treatment through the
+       rest of the friendship journey instead of dropping back to flat black. */
+    #friendsPanel,
+    #friendProfileScreen,
+    #followListOverlay,
+    #societyOverlay {
+      background:
+        radial-gradient(ellipse 92% 46% at 12% 0%, rgba(126,184,164,.18) 0%, transparent 68%),
+        radial-gradient(ellipse 76% 40% at 92% 58%, rgba(91,151,132,.11) 0%, transparent 72%),
+        radial-gradient(ellipse 70% 34% at 18% 100%, rgba(126,184,164,.08) 0%, transparent 72%),
+        linear-gradient(180deg, #091310 0%, #070a0d 46%, #080d0c 100%);
+    }
+    #friendsPanel .fp-header,
+    #friendProfileScreen .prof-topbar {
+      background:rgba(7,12,12,.82);
+      -webkit-backdrop-filter:blur(12px);
+      backdrop-filter:blur(12px);
+    }
     .prof-hero { display:flex; flex-direction:column; align-items:center; text-align:center; margin-bottom:24px; position:relative; }
     .prof-hero::before { content:''; position:absolute; top:-82px; left:calc(50% - 130px); width:260px; height:260px; border-radius:50%; background:radial-gradient(circle, rgba(126,184,164,.16) 0%, rgba(126,184,164,.06) 45%, transparent 70%); pointer-events:none; animation:profHeroGlow 6s ease-in-out infinite; }
     @keyframes profHeroGlow { 0%,100%{opacity:.6;} 50%{opacity:1;} }
@@ -4583,7 +4601,7 @@ body:not(.tut-live) #tutCorgi {
 }
 
 /* Friends panel */
-#friendsPanel { display:none; position:fixed; inset:0; z-index:9600; background:rgba(7,8,13,0.98); flex-direction:column; overflow-y:auto; -webkit-overflow-scrolling:touch; opacity:0; transition:opacity 0.35s; }
+#friendsPanel { display:none; position:fixed; inset:0; z-index:9600; flex-direction:column; overflow-y:auto; -webkit-overflow-scrolling:touch; opacity:0; transition:opacity 0.35s; }
 #friendsPanel.fp-show { display:flex; }
 #friendsPanel.fp-vis { opacity:1; }
 .fp-header { display:flex; align-items:center; gap:12px; padding:max(env(safe-area-inset-top),20px) 20px 16px; border-bottom:1px solid var(--border); position:sticky; top:0; background:rgba(7,8,13,0.97); z-index:2; }

@@ -33,9 +33,21 @@ document.getElementById('guideGenerateBtn').addEventListener('click', function()
 
 function toggleGuideTwoADay() {
   guideState._twoADayV1 = !guideTwoADayEnabled();
+  // The page-level cadence is an explicit "all exercises" choice. Clear old
+  // card-specific exceptions so a previous 2x Clock or Pore setting cannot
+  // keep a completed card active after the player switches the page to 1x.
+  guideState._exRounds = {};
+  delete guideState.poreRounds;
   saveGuideState(guideState);
   renderGuideCadenceControl();
-  if (guideState._pathLockedV2 && guidePathMode) renderGuidePlan(guidePathMode, true);
+  // A rendered plan can be visible before the persisted path-lock marker is
+  // present (notably for tutorial-created and older accounts). Recalculate the
+  // cards whenever the plan is actually on screen so lowering 2x/day to 1x/day
+  // immediately marks today's already-completed exercises as done.
+  var planOutput = document.getElementById('guidePlanOutput');
+  if (guidePathMode && planOutput && planOutput.style.display !== 'none') {
+    renderGuidePlan(guidePathMode, true);
+  }
   if (document.getElementById('pathQuestRoot')) renderPathQuests();
 }
 
