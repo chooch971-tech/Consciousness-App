@@ -552,23 +552,15 @@ function omniaPumpReservoirCap(idx) {
   var masteryMult = 1 + 0.25 * omniaUpgradeMasteryRank(OMNIA_GEN_META[idx].vessel, vLvl);
   return Math.floor((180 + Math.pow(vLvl - 1, 2) * 30 + Math.pow(bodyTotal, 1.15) * 3) * masteryMult);
 }
-// Split the (multiplier-applied) total rate across active pumps by contribution.
+// Pump rates are already independent and additive; retain this accessor name
+// for the accrual and rendering paths that consume the per-pump map.
 function omniaPumpShares() {
-  var total = omniaRatePerHour();
-  var n = omniaGenUnlockedCount(), contribs = [], sum = 0;
-  for (var i = 0; i < n; i++) {
-    var c = omniaGenContribution(i) * omniaPumpProductionWhileBuilding(i);
-    contribs.push(c); sum += c;
-  }
-  var out = {};
-  for (var j = 0; j < n; j++) out[OMNIA_GEN_META[j].id] = sum > 0 ? total * (contribs[j] / sum) : 0;
-  return out;
+  return omniaPumpRatesPerHour();
 }
 // How much a pump's own hourly share would change if its Akashic Current
 // were the next level up. Mutates upgrades[gid] for the single synchronous
-// recompute, then restores it — omniaPumpShares() folds in every other
-// pump's level and the shared total rate too, so this is the only way to get
-// a correct delta without re-deriving that whole formula by hand.
+// recompute, then restores it. The independent-rate calculation guarantees
+// this preview cannot change either neighboring pump.
 function omniaPreviewGenRateGain(gid) {
   var upgrades = omniaState.upgrades || (omniaState.upgrades = {});
   var before = omniaPumpShares()[gid] || 0;

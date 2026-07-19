@@ -20,7 +20,7 @@ function createEconomyContext() {
       prestige: 0,
       recStreak: 6,
       sessionsTodayCount: 3,
-      sessionsTodayDate: new Date().toISOString().slice(0, 10),
+      sessionsTodayDate: calendar.dayKey(),
       upgrades: { current: 1, gen2: 1, gen3: 1, attunement: 1 }
     },
     OMNIA_GEN_META: [{ id: 'current' }, { id: 'gen2' }, { id: 'gen3' }],
@@ -75,6 +75,50 @@ test('generator Current upgrades have diminishing marginal returns', () => {
 
   assert.ok(earlyGain > deepGain * 20);
   assert.ok(deepGain > 0);
+});
+
+test('Akasha pumps produce independently without redistributing neighboring rates', () => {
+  const economy = createEconomyContext();
+  economy.omniaState.bardonStep = 9;
+  economy.omniaState.bodies = { physical: 195, astral: 195, mental: 195 };
+  economy.omniaState.upgrades.current = 20;
+  economy.omniaState.upgrades.gen2 = 20;
+  economy.omniaState.upgrades.gen3 = 20;
+
+  const before = economy.omniaPumpRatesPerHour();
+  economy.omniaState.upgrades.current = 40;
+  const upgraded = economy.omniaPumpRatesPerHour();
+
+  assert.ok(upgraded.current > before.current);
+  assert.equal(upgraded.gen2, before.gen2);
+  assert.equal(upgraded.gen3, before.gen3);
+
+  economy.omniaPumpProductionWhileBuilding = (idx) => idx === 0 ? 0 : 1;
+  const constructing = economy.omniaPumpRatesPerHour();
+  assert.equal(constructing.current, 0);
+  assert.equal(constructing.gen2, upgraded.gen2);
+  assert.equal(constructing.gen3, upgraded.gen3);
+  assert.equal(
+    economy.omniaRatePerHour(),
+    Math.floor(constructing.gen2 + constructing.gen3)
+  );
+});
+
+test('Book II body bonus does not couple Akasha pump upgrades', () => {
+  const economy = createEconomyContext();
+  economy.darkMatterUnlocked = () => true;
+  economy.bookIIBodies = () => ({ astral: 40, mental: 40, wisdom: 40 });
+  economy.omniaState.upgrades.current = 20;
+  economy.omniaState.upgrades.gen2 = 20;
+  economy.omniaState.upgrades.gen3 = 20;
+
+  const before = economy.omniaPumpRatesPerHour();
+  economy.omniaState.upgrades.current = 60;
+  const after = economy.omniaPumpRatesPerHour();
+
+  assert.ok(after.current > before.current);
+  assert.equal(after.gen2, before.gen2);
+  assert.equal(after.gen3, before.gen3);
 });
 
 test('practice rewards scale with progression without Attunement reducing income', () => {

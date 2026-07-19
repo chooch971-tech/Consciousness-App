@@ -63,37 +63,51 @@ function omniaLegacyGenContribution(idx) {
   return ((OMNIA_GEN_LEGACY_BASE[idx] || 24) + lvl * (OMNIA_GEN_LEGACY_PER[idx] || 10)) * omniaCurrentMasteryMult(lvl);
 }
 
-function omniaRatePerHour() {
+// Each Akasha pump owns an additive hourly rate. Global practice/body/boost
+// factors still describe the player's overall current, but changing or
+// constructing one pump never redistributes production from another pump.
+// At equal investment this decomposition sums to the previous Book I balance
+// target, so independence does not inflate the established passive-income cap.
+function omniaPumpRatesPerHour() {
   var inBookII = typeof darkMatterUnlocked === 'function' && darkMatterUnlocked();
-  // Book II has its own Akasha + Dark Matter sink model. Preserve its existing
-  // current until that economy receives a dedicated balance pass.
+  var rates = {};
+  var pumpCount = inBookII ? 3 : 1 + ((omniaState.bardonStep || 1) >= 5 ? 1 : 0) + ((omniaState.bardonStep || 1) >= 9 ? 1 : 0);
   if (inBookII) {
     var total = omniaBodyTotal();
     var b2b = bookIIBodies();
     total += (b2b.astral || 1) + (b2b.mental || 1) + (b2b.wisdom || 1);
-    var legacyPower = 0;
-    for (var bi = 0; bi < 3; bi++) {
-      var legacyBuildMult = (typeof omniaPumpProductionWhileBuilding === 'function') ? omniaPumpProductionWhileBuilding(bi) : 1;
-      legacyPower += omniaGenContribution(bi) * legacyBuildMult;
-    }
-    if (legacyPower <= 0) return 0;
-    var legacyBodyBonus = Math.floor(Math.sqrt(Math.max(0, total)) * 9);
+    var legacyBodyBonus = Math.floor(Math.floor(Math.sqrt(Math.max(0, total)) * 9) * 0.5);
     var legacyPractice = Math.min(1, 0.55 + 0.15 * Math.min(3, omniaSessionsToday()));
     var legacyBoost = (typeof getActiveAkashaBoost === 'function') ? getActiveAkashaBoost() : 1;
-    return Math.max(10, Math.floor((legacyPower + Math.floor(legacyBodyBonus * 0.5)) * legacyPractice * legacyBoost));
+    var legacyWeightTotal = 0, legacyWeights = [];
+    for (var bi = 0; bi < pumpCount; bi++) {
+      // The body bonus is allocated by a fixed fully-developed weight. Using a
+      // fixed denominator is what prevents another pump's level from changing
+      // this pump's rate.
+      var legacyWeight = ((OMNIA_GEN_LEGACY_BASE[bi] || 24) + OMNIA_UPGRADE_FINAL_LEVEL * (OMNIA_GEN_LEGACY_PER[bi] || 10))
+        * omniaCurrentMasteryMult(OMNIA_UPGRADE_FINAL_LEVEL);
+      legacyWeights.push(legacyWeight);
+      legacyWeightTotal += legacyWeight;
+    }
+    for (var bj = 0; bj < pumpCount; bj++) {
+      var legacyBuildMult = (typeof omniaPumpProductionWhileBuilding === 'function') ? omniaPumpProductionWhileBuilding(bj) : 1;
+      var legacyBonusShare = legacyWeightTotal > 0 ? legacyBodyBonus * legacyWeights[bj] / legacyWeightTotal : 0;
+      rates[OMNIA_GEN_META[bj].id] = Math.max(0,
+        (omniaGenContribution(bj) + legacyBonusShare) * legacyPractice * legacyBoost * legacyBuildMult);
+    }
+    return rates;
   }
 
   var stepNum = omniaState.bardonStep || 1;
-  var genCount = 1 + (stepNum >= 5 ? 1 : 0) + (stepNum >= 9 ? 1 : 0);
-  var activePower = 0, maxPower = 0;
-  for (var gi = 0; gi < genCount; gi++) {
+  var maxPower = 0, maxContributions = [];
+  for (var gi = 0; gi < pumpCount; gi++) {
     var meta = OMNIA_GEN_META[gi];
     var maxLevel = omniaUpgradeStepMax(meta.id);
-    maxPower += omniaGeneratorContributionCurve(maxLevel, gi);
-    var buildMult = (typeof omniaPumpProductionWhileBuilding === 'function') ? omniaPumpProductionWhileBuilding(gi) : 1;
-    activePower += omniaGenContribution(gi) * buildMult;
+    var maxContribution = omniaGeneratorContributionCurve(maxLevel, gi);
+    maxContributions.push(maxContribution);
+    maxPower += maxContribution;
   }
-  if (activePower <= 0 || maxPower <= 0) return 0;
+  if (maxPower <= 0) return rates;
 
   var bodies = ['physical', 'astral', 'mental'];
   var referenceCost = bodies.reduce(function(sum, body) {
@@ -104,12 +118,27 @@ function omniaRatePerHour() {
   var practiceBaseline = Math.max(95, referenceCost * 0.42) * (1.45 * 1.75) * 3;
   var targetShare = omniaGeneratorTargetShare(stepNum);
   var targetDaily = practiceBaseline * targetShare / (1 - targetShare);
-  var investmentMult = 0.65 + 0.35 * Math.min(1, activePower / maxPower);
   // The generator hums when you practice: idle days trickle at 55%, and each
   // session today restores 15%, reaching full flow at 3 sessions.
   var practiceMult = Math.min(1, 0.55 + 0.15 * Math.min(3, omniaSessionsToday()));
   var boost = (typeof getActiveAkashaBoost === 'function' && typeof omniaState !== 'undefined' && omniaState) ? getActiveAkashaBoost() : 1;
-  return Math.max(1, Math.floor((targetDaily / 24) * investmentMult * practiceMult * boost));
+  for (var gj = 0; gj < pumpCount; gj++) {
+    var gid = OMNIA_GEN_META[gj].id;
+    var lvl = (omniaState.upgrades && omniaState.upgrades[gid]) || 1;
+    var ownCore = omniaGeneratorContributionCurve(lvl, gj);
+    var ownProgress = Math.min(1, ownCore / maxContributions[gj]);
+    var ownWeight = maxContributions[gj] / maxPower;
+    var resonance = (typeof dmResonanceMult === 'function') ? dmResonanceMult(gj) : 1;
+    var buildMult = (typeof omniaPumpProductionWhileBuilding === 'function') ? omniaPumpProductionWhileBuilding(gj) : 1;
+    rates[gid] = Math.max(0, (targetDaily / 24) * ownWeight * (0.65 + 0.35 * ownProgress)
+      * practiceMult * boost * resonance * buildMult);
+  }
+  return rates;
+}
+
+function omniaRatePerHour() {
+  var rates = omniaPumpRatesPerHour();
+  return Math.floor(Object.keys(rates).reduce(function(sum, gid) { return sum + (rates[gid] || 0); }, 0));
 }
 
 function omniaReservoirCap() {
