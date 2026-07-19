@@ -1033,7 +1033,7 @@ function renderDmSheet(gid) {
     + '<div class="ach-info-name">Pump ' + meta.roman + '</div>'
     + '<div class="ach-info-desc">+' + dmGenRatePerDay(idx) + ' ◆ / day · vat ' + res.toLocaleString() + ' / ' + cap.toLocaleString()
     + (building ? ' · <span style="color:#e8c87a;">' + (stablePct ? stablePct + '% production while upgrading' : 'offline while upgrading') + '</span>'
-       : canCollect ? ' · <span style="color:#c4a8d4;">tap the pump to collect</span>' : '') + '</div>'
+       : '') + '</div>'
     + '<div style="text-align:left; margin-top:16px;">'
     + row(meta.id, 'Dark Current', 'Condenses dark matter more quickly · deeper levels deliberately taper', '#c4a8d4', '◆')
     + row(meta.vessel, 'Void Vessel', 'Extends this pump\'s offline vat from two days toward 4.25 days', '#9a8ee8', '▽')
@@ -1124,7 +1124,7 @@ function renderGenSheet(gid) {
     + '<div class="ach-info-name">Generator ' + meta.roman + '</div>'
     + '<div class="ach-info-desc">+' + contrib + '/hr · reservoir ' + pumpRes.toLocaleString() + ' / ' + pumpCap.toLocaleString()
     + (building ? ' · <span style="color:#e8c87a;">offline while upgrading</span>'
-       : canCollectSheet ? ' · <span style="color:#8eccc0;">tap the pump to collect</span>' : '') + '</div>'
+       : '') + '</div>'
     + '<div style="text-align:left; margin-top:16px;">'
     + row(gid, 'Akashic Current', 'Generate akasha more quickly each hour · deeper levels give diminishing gains', '#8ecce0', '◈')
     + row(meta.vessel, 'Deep Vessel', 'This pump\'s reservoir capacity', '#9ed8c4', '▽')

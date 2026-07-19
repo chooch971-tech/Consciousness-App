@@ -132,7 +132,7 @@ async function testGeneratorMastery(browser, baseUrl) {
       gen3: 1, vessel3: 1, attune3: 1, quick3: 1,
       dm1: 10, dmv1: 1, dms1: 1, dmr1: 1
     },
-    reservoirs: {}, totalAkashaEarned: 1_000_000, totalAkashaSpent: 0,
+    reservoirs: { current: 1200 }, totalAkashaEarned: 1_000_000, totalAkashaSpent: 0,
     totalDarkMatterEarned: 100_000, totalDarkMatterSpent: 0
   };
   const context = await browser.newContext({ viewport: { width: 390, height: 844 }, serviceWorkers: 'block' });
@@ -145,6 +145,14 @@ async function testGeneratorMastery(browser, baseUrl) {
     renderOmniaEngine();
     openGenSheet('current');
   });
+  const collectBadge = page.locator('#genSheetMedal .oe-gen-collectbadge');
+  await collectBadge.waitFor({ state: 'visible' });
+  const sheetHeightBeforeCollect = await page.locator('#genSheetBody').evaluate(element => element.getBoundingClientRect().height);
+  await page.locator('#genSheetMedal').click();
+  await collectBadge.waitFor({ state: 'detached' });
+  const sheetHeightAfterCollect = await page.locator('#genSheetBody').evaluate(element => element.getBoundingClientRect().height);
+  assert.ok(Math.abs(sheetHeightBeforeCollect - sheetHeightAfterCollect) <= 1,
+    `collecting Akasha must not resize the generator drawer (${sheetHeightBeforeCollect}px → ${sheetHeightAfterCollect}px)`);
   const mastery = page.locator('[data-sheet-mastery="current"]');
   await mastery.waitFor({ state: 'visible' });
   assert.match((await mastery.textContent()).trim(), /Mastery I/);

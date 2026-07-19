@@ -648,6 +648,7 @@ test('generator collection effects stay anchored and clipped to the viewport', (
   assert.match(omniaEngineClient, /fxLayer\.className = 'oe-collection-fx'/);
   assert.match(omniaEngineClient, /fxLayer\.appendChild\(burst\)/);
   assert.match(presence, /\.oe-collection-fx \{[^}]*position:fixed;[^}]*inset:0;[^}]*overflow:hidden;[^}]*contain:strict/);
+  assert.doesNotMatch(omniaEngineClient, /canCollect(?:Sheet)? \? ' · <span[^']*tap the pump to collect/);
 });
 
 test('Omnia click-morph geometry and animation live in a dedicated client boundary', () => {
