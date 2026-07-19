@@ -645,11 +645,12 @@ test('Omnia engine rendering and generator controls live in a dedicated client b
   assert.doesNotThrow(() => new Function(omniaEngineClient));
 });
 
-test('generator collection effects stay anchored and clipped to the viewport', () => {
+test('generator collection effects stay anchored and clipped to the viewport without an Akasha amount badge', () => {
   assert.match(omniaEngineClient, /anchorEl\.isConnected/);
   assert.match(omniaEngineClient, /querySelector\('\[data-gen-tap="' \+ gid \+ '\"\]'\)/);
   assert.match(omniaEngineClient, /fxLayer\.className = 'oe-collection-fx'/);
-  assert.match(omniaEngineClient, /fxLayer\.appendChild\(burst\)/);
+  assert.match(omniaEngineClient, /fxLayer\.appendChild\(sp\)/);
+  assert.doesNotMatch(omniaEngineClient, /burst\.textContent = '\+' \+ collected \+ ' akasha'/);
   assert.match(presence, /\.oe-collection-fx \{[^}]*position:fixed;[^}]*inset:0;[^}]*overflow:hidden;[^}]*contain:strict/);
   assert.doesNotMatch(omniaEngineClient, /canCollect(?:Sheet)? \? ' · <span[^']*tap the pump to collect/);
 });

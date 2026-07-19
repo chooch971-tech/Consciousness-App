@@ -391,7 +391,8 @@ function collectOmniaAkasha(anchorEl, gid) {
   saveOmniaState();
   renderOmniaEngine();
 
-  // floating "+N" burst + spark shower from the well
+  // Keep the collection feedback tactile without repeating the collected
+  // amount as a floating badge over the pump.
   if (collected > 0) {
     playAkashaPop();
     // renderOmniaEngine() rebuilds the generator yard above, so a tapped pump
@@ -410,13 +411,6 @@ function collectOmniaAkasha(anchorEl, gid) {
       fxLayer.className = 'oe-collection-fx';
       fxLayer.setAttribute('aria-hidden', 'true');
       document.body.appendChild(fxLayer);
-      var burst = document.createElement('div');
-      burst.className = 'oe-collect-burst';
-      burst.textContent = '+' + collected + ' akasha';
-      burst.style.left = cx + 'px';
-      burst.style.top = (rect.top - 4) + 'px';
-      fxLayer.appendChild(burst);
-      setTimeout(function() { burst.remove(); }, 1050);
       for (var si = 0; si < 9; si++) {
         var sp = document.createElement('div');
         sp.className = 'oe-well-spark';
