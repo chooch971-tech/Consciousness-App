@@ -1869,6 +1869,9 @@
     #genSheetBody .ach-info-kicker { color:#8eccc0; }
     #genSheetBody .ach-info-name { color:#eaf6ff; }
     #genSheetBody .ach-info-desc { color:rgba(206,232,246,.82); }
+    /* Reserved-height hint line — see renderGenSheet: keeps the sheet's total
+       height constant across collect/upgrade renders so it never re-centers. */
+    #genSheetBody .gen-sheet-hint { min-height:18px; margin-top:3px; font-family:'DM Mono',monospace; font-size:11px; line-height:1.4; }
     #genSheetBody .omnia-upgrade-row { border-top-color:rgba(142,204,224,.16); }
     #genSheetBody .omnia-upgrade-sub { color:rgba(190,220,236,.66); }
     #genSheetBody .omnia-mini-btn { border-color:rgba(142,204,224,.4); background:rgba(90,184,224,.1); color:#bfeaff; }

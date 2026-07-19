@@ -1122,9 +1122,14 @@ function renderGenSheet(gid) {
     + _genPictureSvg(idx, pumpCap > 0 ? pumpRes / pumpCap : 0, glvl) + '</div>'
     + '<div class="ach-info-kicker">Akasha Generator</div>'
     + '<div class="ach-info-name">Generator ' + meta.roman + '</div>'
-    + '<div class="ach-info-desc">+' + contrib + '/hr · reservoir ' + pumpRes.toLocaleString() + ' / ' + pumpCap.toLocaleString()
-    + (building ? ' · <span style="color:#e8c87a;">offline while upgrading</span>'
-       : '') + '</div>'
+    + '<div class="ach-info-desc">+' + contrib + '/hr · reservoir ' + pumpRes.toLocaleString() + ' / ' + pumpCap.toLocaleString() + '</div>'
+    // The collect/upgrading hint lives on its own reserved-height line so the
+    // sheet stays exactly as tall whether or not there's akasha to collect.
+    // Otherwise collecting drops the hint, the desc unwraps a line, and the
+    // vertically-centered drawer re-centers — shifting the whole menu.
+    + '<div class="gen-sheet-hint">'
+    + (building ? '<span style="color:#e8c87a;">offline while upgrading</span>'
+       : canCollectSheet ? '<span style="color:#8eccc0;">tap the pump to collect</span>' : '') + '</div>'
     + '<div style="text-align:left; margin-top:16px;">'
     + row(gid, 'Akashic Current', 'Generate akasha more quickly each hour · deeper levels give diminishing gains', '#8ecce0', '◈')
     + row(meta.vessel, 'Deep Vessel', 'This pump\'s reservoir capacity', '#9ed8c4', '▽')
