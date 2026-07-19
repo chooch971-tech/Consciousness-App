@@ -2,28 +2,16 @@ function omniaBodyTotal() {
   return (omniaState.bodies.physical || 0) + (omniaState.bodies.astral || 0) + (omniaState.bodies.mental || 0);
 }
 
-// Sessions completed today — feeds the generator's practice multiplier.
-function omniaSessionsToday() {
-  var todayStr = presenceDayKey();
-  if (omniaState.sessionsTodayDate !== todayStr) return 0;
-  return omniaState.sessionsTodayCount || 0;
-}
-
-// The Engine is a supporting current, not the main practice reward. These are
-// the intended shares of a three-session day at full generator investment.
-// Deep upgrades approach the target logarithmically, so adding Generator II
-// and III remains meaningful without letting passive income eclipse practice.
-var OMNIA_ENGINE_SHARE_BY_STEP = [0.20, 0.23, 0.26, 0.29, 0.32, 0.34, 0.36, 0.38, 0.40, 0.42];
-var OMNIA_GEN_LEGACY_BASE = [10, 18, 24];
-var OMNIA_GEN_LEGACY_PER = [12, 10, 10];
-
-function omniaGeneratorTargetShare(stepNum) {
-  return OMNIA_ENGINE_SHARE_BY_STEP[Math.max(0, Math.min(9, (stepNum || 1) - 1))];
-}
+// Autonomous hourly output. Step only unlocks pumps and deeper upgrade bands;
+// it never changes an already-running pump's rate. Pump I starts lower but has
+// the strongest per-level Current so all three remain distinct and worthwhile.
+var OMNIA_GEN_BASE_HOUR = [22, 28, 34];
+var OMNIA_GEN_PER_LEVEL_HOUR = [12, 10, 10];
 
 function omniaGeneratorContributionCurve(level, idx) {
-  var base = [1, 0.72, 0.55][idx] || 0.55;
-  return base * (1 + 0.55 * Math.log2(Math.max(1, level || 1))) * omniaCurrentMasteryMult(level);
+  var lvl = Math.max(1, Number(level) || 1);
+  return ((OMNIA_GEN_BASE_HOUR[idx] || 34) + (lvl - 1) * (OMNIA_GEN_PER_LEVEL_HOUR[idx] || 10))
+    * omniaCurrentMasteryMult(lvl);
 }
 
 var OMNIA_MASTERY_SPAN = 20;
@@ -57,81 +45,20 @@ function omniaAttunementDiscountMult(level) {
   return Math.max(0.35, Math.max(0.5 - mastery * 0.05, 1 - (lvl - 1) * 0.05));
 }
 
-function omniaLegacyGenContribution(idx) {
-  var gid = OMNIA_GEN_META[idx].id;
-  var lvl = (omniaState.upgrades && omniaState.upgrades[gid]) || 1;
-  return ((OMNIA_GEN_LEGACY_BASE[idx] || 24) + lvl * (OMNIA_GEN_LEGACY_PER[idx] || 10)) * omniaCurrentMasteryMult(lvl);
-}
-
-// Each Akasha pump owns an additive hourly rate. Global practice/body/boost
-// factors still describe the player's overall current, but changing or
-// constructing one pump never redistributes production from another pump.
-// At equal investment this decomposition sums to the previous Book I balance
-// target, so independence does not inflate the established passive-income cap.
+// Each Akasha pump owns an additive hourly rate. Step, sessions, and body levels
+// do not participate: Current/mastery, paired Resonance, and that pump's
+// construction state are its entire production formula. Explicit Akasha boosts
+// remain rewards, while prestige/devotion apply later at accrual time.
 function omniaPumpRatesPerHour() {
-  var inBookII = typeof darkMatterUnlocked === 'function' && darkMatterUnlocked();
   var rates = {};
-  var pumpCount = inBookII ? 3 : 1 + ((omniaState.bardonStep || 1) >= 5 ? 1 : 0) + ((omniaState.bardonStep || 1) >= 9 ? 1 : 0);
-  if (inBookII) {
-    var total = omniaBodyTotal();
-    var b2b = bookIIBodies();
-    total += (b2b.astral || 1) + (b2b.mental || 1) + (b2b.wisdom || 1);
-    var legacyBodyBonus = Math.floor(Math.floor(Math.sqrt(Math.max(0, total)) * 9) * 0.5);
-    var legacyPractice = Math.min(1, 0.55 + 0.15 * Math.min(3, omniaSessionsToday()));
-    var legacyBoost = (typeof getActiveAkashaBoost === 'function') ? getActiveAkashaBoost() : 1;
-    var legacyWeightTotal = 0, legacyWeights = [];
-    for (var bi = 0; bi < pumpCount; bi++) {
-      // The body bonus is allocated by a fixed fully-developed weight. Using a
-      // fixed denominator is what prevents another pump's level from changing
-      // this pump's rate.
-      var legacyWeight = ((OMNIA_GEN_LEGACY_BASE[bi] || 24) + OMNIA_UPGRADE_FINAL_LEVEL * (OMNIA_GEN_LEGACY_PER[bi] || 10))
-        * omniaCurrentMasteryMult(OMNIA_UPGRADE_FINAL_LEVEL);
-      legacyWeights.push(legacyWeight);
-      legacyWeightTotal += legacyWeight;
-    }
-    for (var bj = 0; bj < pumpCount; bj++) {
-      var legacyBuildMult = (typeof omniaPumpProductionWhileBuilding === 'function') ? omniaPumpProductionWhileBuilding(bj) : 1;
-      var legacyBonusShare = legacyWeightTotal > 0 ? legacyBodyBonus * legacyWeights[bj] / legacyWeightTotal : 0;
-      rates[OMNIA_GEN_META[bj].id] = Math.max(0,
-        (omniaGenContribution(bj) + legacyBonusShare) * legacyPractice * legacyBoost * legacyBuildMult);
-    }
-    return rates;
-  }
-
-  var stepNum = omniaState.bardonStep || 1;
-  var maxPower = 0, maxContributions = [];
-  for (var gi = 0; gi < pumpCount; gi++) {
-    var meta = OMNIA_GEN_META[gi];
-    var maxLevel = omniaUpgradeStepMax(meta.id);
-    var maxContribution = omniaGeneratorContributionCurve(maxLevel, gi);
-    maxContributions.push(maxContribution);
-    maxPower += maxContribution;
-  }
-  if (maxPower <= 0) return rates;
-
-  var bodies = ['physical', 'astral', 'mental'];
-  var referenceCost = bodies.reduce(function(sum, body) {
-    return sum + omniaEconomyReferenceBodyCost(body);
-  }, 0) / bodies.length;
-  // Three mature ten-minute recommendations establish the active-practice
-  // baseline. The same 42% reference factor is used by the session award.
-  var practiceBaseline = Math.max(95, referenceCost * 0.42) * (1.45 * 1.75) * 3;
-  var targetShare = omniaGeneratorTargetShare(stepNum);
-  var targetDaily = practiceBaseline * targetShare / (1 - targetShare);
-  // The generator hums when you practice: idle days trickle at 55%, and each
-  // session today restores 15%, reaching full flow at 3 sessions.
-  var practiceMult = Math.min(1, 0.55 + 0.15 * Math.min(3, omniaSessionsToday()));
+  var pumpCount = (typeof darkMatterUnlocked === 'function' && darkMatterUnlocked())
+    ? 3
+    : 1 + ((omniaState.bardonStep || 1) >= 5 ? 1 : 0) + ((omniaState.bardonStep || 1) >= 9 ? 1 : 0);
   var boost = (typeof getActiveAkashaBoost === 'function' && typeof omniaState !== 'undefined' && omniaState) ? getActiveAkashaBoost() : 1;
-  for (var gj = 0; gj < pumpCount; gj++) {
-    var gid = OMNIA_GEN_META[gj].id;
-    var lvl = (omniaState.upgrades && omniaState.upgrades[gid]) || 1;
-    var ownCore = omniaGeneratorContributionCurve(lvl, gj);
-    var ownProgress = Math.min(1, ownCore / maxContributions[gj]);
-    var ownWeight = maxContributions[gj] / maxPower;
-    var resonance = (typeof dmResonanceMult === 'function') ? dmResonanceMult(gj) : 1;
-    var buildMult = (typeof omniaPumpProductionWhileBuilding === 'function') ? omniaPumpProductionWhileBuilding(gj) : 1;
-    rates[gid] = Math.max(0, (targetDaily / 24) * ownWeight * (0.65 + 0.35 * ownProgress)
-      * practiceMult * boost * resonance * buildMult);
+  for (var i = 0; i < pumpCount; i++) {
+    var gid = OMNIA_GEN_META[i].id;
+    var buildMult = (typeof omniaPumpProductionWhileBuilding === 'function') ? omniaPumpProductionWhileBuilding(i) : 1;
+    rates[gid] = Math.max(0, omniaGenContribution(i) * boost * buildMult);
   }
   return rates;
 }
@@ -142,15 +69,11 @@ function omniaRatePerHour() {
 }
 
 function omniaReservoirCap() {
-  // Idle buffer: akasha trickles in at the hourly rate and fills this well until
-  // you collect. Tuned to start small — so early passive banking is weak and you
-  // must actually show up to collect — then scale steeply with the Deep Vessel
-  // upgrade and body total so late-game collections become large and rewarding.
-  // This governs only the idle buffer. The wallet itself is intentionally
-  // uncapped: earned Akasha belongs to the player once it is collected.
+  // Reservoir capacity is autonomous too: only this pump's Deep Vessel and its
+  // mastery matter. The wallet itself remains intentionally uncapped.
   var vessel = omniaState.upgrades.vessel || 1;
-  var bodyTotal = Math.max(0, omniaBodyTotal());
-  return Math.floor(180 + Math.pow(vessel - 1, 2) * 30 + Math.pow(bodyTotal, 1.15) * 3);
+  var masteryMult = 1 + 0.25 * omniaUpgradeMasteryRank('vessel', vessel);
+  return Math.floor((180 + Math.pow(vessel - 1, 2) * 30) * masteryMult);
 }
 
 function omniaUpgradeStepMax(upgId) {

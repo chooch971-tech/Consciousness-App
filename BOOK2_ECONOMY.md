@@ -68,8 +68,10 @@ baseline for future playtest comparison; 2 advanced drills/day practice):
 
 **Should beginner exercises mint ◆ past a threshold? Recommendation: not
 directly.** Reasons:
-- Beginner exercises already power Book II: every sink costs akasha *and* ◆,
-  and ~420k akasha per turning is mostly earned through ordinary practice.
+- Beginner exercises and autonomous Akasha pumps already power Book II: every
+  sink costs akasha *and* ◆. Pump output depends only on that pump's Current,
+  mastery, paired Resonance, and construction state—not Step, sessions, or body
+  levels—while reservoirs keep unattended income finite.
 - A flat conversion (e.g. Clock → ◆) recreates the farming problem the akasha
   clamps closed, and devalues the advanced drills' identity as *the* ◆ source.
 

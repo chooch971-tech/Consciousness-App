@@ -40,38 +40,31 @@ function createEconomyContext() {
   return context;
 }
 
-test('Book I engine remains a bounded supporting share of daily Akasha', () => {
+test('Akasha pump rates ignore Step, sessions, and body progression', () => {
   const economy = createEconomyContext();
-  const bodyLevels = [12, 23, 38, 62, 96, 140, 195, 260, 335, 430];
-  const generatorCaps = [3, 6, 10, 15, 21, 28, 36, 45, 60, 80];
+  economy.omniaState.bardonStep = 1;
+  economy.omniaState.bodies = { physical: 1, astral: 1, mental: 1 };
+  economy.omniaState.sessionsTodayCount = 0;
+  economy.omniaState.sessionsTodayDate = '2000-01-01';
+  economy.omniaState.upgrades.current = 20;
+  const early = economy.omniaPumpRatesPerHour();
 
-  bodyLevels.forEach((level, index) => {
-    const step = index + 1;
-    const cap = generatorCaps[index];
-    economy.omniaState.bardonStep = step;
-    economy.omniaState.bodies = { physical: level, astral: level, mental: level };
-    economy.omniaState.upgrades.current = cap;
-    economy.omniaState.upgrades.gen2 = cap;
-    economy.omniaState.upgrades.gen3 = cap;
+  economy.omniaState.bardonStep = 10;
+  economy.omniaState.bodies = { physical: 430, astral: 430, mental: 430 };
+  economy.omniaState.sessionsTodayCount = 3;
+  economy.omniaState.sessionsTodayDate = calendar.dayKey();
+  const late = economy.omniaPumpRatesPerHour();
 
-    const practiceDaily = economy.omniaExerciseReward('clock', 600, true, 1) * 3;
-    const engineDaily = economy.omniaRatePerHour() * 24;
-    const actualShare = engineDaily / (practiceDaily + engineDaily);
-    const targetShare = economy.omniaGeneratorTargetShare(step);
-
-    assert.ok(
-      Math.abs(actualShare - targetShare) <= 0.015,
-      `Step ${step} engine share ${actualShare.toFixed(3)} missed ${targetShare.toFixed(3)}`
-    );
-  });
+  assert.equal(late.current, early.current);
+  assert.equal(early.current, economy.omniaGeneratorContributionCurve(20, 0));
 });
 
-test('generator Current upgrades have diminishing marginal returns', () => {
+test('autonomous Current progression has diminishing percentage returns', () => {
   const economy = createEconomyContext();
   const earlyGain = economy.omniaGeneratorContributionCurve(2, 0)
-    - economy.omniaGeneratorContributionCurve(1, 0);
+    / economy.omniaGeneratorContributionCurve(1, 0) - 1;
   const deepGain = economy.omniaGeneratorContributionCurve(80, 0)
-    - economy.omniaGeneratorContributionCurve(79, 0);
+    / economy.omniaGeneratorContributionCurve(79, 0) - 1;
 
   assert.ok(earlyGain > deepGain * 20);
   assert.ok(deepGain > 0);
@@ -104,21 +97,58 @@ test('Akasha pumps produce independently without redistributing neighboring rate
   );
 });
 
-test('Book II body bonus does not couple Akasha pump upgrades', () => {
+test('Book II keeps the same autonomous pump rates as Book I', () => {
   const economy = createEconomyContext();
-  economy.darkMatterUnlocked = () => true;
-  economy.bookIIBodies = () => ({ astral: 40, mental: 40, wisdom: 40 });
+  economy.omniaState.bardonStep = 10;
   economy.omniaState.upgrades.current = 20;
   economy.omniaState.upgrades.gen2 = 20;
   economy.omniaState.upgrades.gen3 = 20;
+  const bookI = economy.omniaPumpRatesPerHour();
 
-  const before = economy.omniaPumpRatesPerHour();
-  economy.omniaState.upgrades.current = 60;
-  const after = economy.omniaPumpRatesPerHour();
+  economy.darkMatterUnlocked = () => true;
+  economy.omniaState.bardonStep = 1;
+  economy.omniaState.bodies = { physical: 999, astral: 999, mental: 999 };
+  economy.omniaState.sessionsTodayCount = 0;
+  const bookII = economy.omniaPumpRatesPerHour();
 
-  assert.ok(after.current > before.current);
-  assert.equal(after.gen2, before.gen2);
-  assert.equal(after.gen3, before.gen3);
+  assert.deepEqual({ ...bookII }, { ...bookI });
+});
+
+test('autonomous production has useful early payback and bounded unboosted output', () => {
+  const economy = createEconomyContext();
+  economy._pumpOfUpgrade = () => ({ attune: 'attunement' });
+  const currentUpgrade = { id: 'current', base: 520, step: 260 };
+
+  const firstGain = economy.omniaGeneratorContributionCurve(2, 0)
+    - economy.omniaGeneratorContributionCurve(1, 0);
+  const firstPaybackHours = economy.omniaUpgradeCost(currentUpgrade) / firstGain;
+  assert.ok(firstPaybackHours >= 36 && firstPaybackHours <= 60);
+
+  economy.omniaState.upgrades.current = 20;
+  economy.omniaState.upgrades.attunement = 20;
+  const masteryGain = economy.omniaGeneratorContributionCurve(21, 0)
+    - economy.omniaGeneratorContributionCurve(20, 0);
+  const masteryPaybackHours = economy.omniaUpgradeCost(currentUpgrade) / masteryGain;
+  assert.ok(masteryPaybackHours < 24 * 30);
+
+  economy.omniaState.bardonStep = 10;
+  economy.omniaState.upgrades.current = 80;
+  economy.omniaState.upgrades.gen2 = 80;
+  economy.omniaState.upgrades.gen3 = 80;
+  const maxHourly = economy.omniaRatePerHour();
+  assert.ok(maxHourly > 3_500 && maxHourly < 4_000);
+});
+
+test('reservoir capacity depends only on Deep Vessel and its mastery', () => {
+  const economy = createEconomyContext();
+  economy.omniaState.upgrades.vessel = 1;
+  const base = economy.omniaReservoirCap();
+  economy.omniaState.bodies = { physical: 999, astral: 999, mental: 999 };
+  assert.equal(economy.omniaReservoirCap(), base);
+  assert.equal(base, 180);
+
+  economy.omniaState.upgrades.vessel = 21;
+  assert.ok(economy.omniaReservoirCap() > base * 80);
 });
 
 test('practice rewards scale with progression without Attunement reducing income', () => {

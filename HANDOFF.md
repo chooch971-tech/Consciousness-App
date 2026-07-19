@@ -234,9 +234,10 @@ can never roll back progress.
 - Akasha accrual applies multipliers: `omniaPrestigeMult()` (1+0.25·prestige) ×
   `omniaDevotionMult()` (Seven Gifts). Wallets are uncapped; each generator's
   reservoir is the idle-income limit. Akasha pumps produce independently and
-  additively: upgrading or constructing one never redistributes another's
-  output. Their combined Book I rate targets 20–42% of a three-session day from
-  Steps I–X when similarly developed, with diminishing upgrade returns.
+  additively from fixed per-pump curves: Step, sessions, and body levels never
+  alter output or capacity, and upgrading or constructing one never changes
+  another. Step only unlocks Pumps II/III and deeper upgrade bands. Explicit
+  Akasha boosts remain global rewards.
 - Each Akasha pump's Current, Vessel, Attunement, and Quickening tracks use
   monotonic lifetime levels 1–80, presented as four 20-level bands with manual
   Mastery I–III transitions. Dark Matter pumps have Dark Current, Void Vessel,

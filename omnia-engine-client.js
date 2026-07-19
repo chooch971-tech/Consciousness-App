@@ -548,9 +548,8 @@ function _pumpOfUpgrade(id) {
 }
 function omniaPumpReservoirCap(idx) {
   var vLvl = (omniaState.upgrades && omniaState.upgrades[OMNIA_GEN_META[idx].vessel]) || 1;
-  var bodyTotal = Math.max(0, omniaBodyTotal());
   var masteryMult = 1 + 0.25 * omniaUpgradeMasteryRank(OMNIA_GEN_META[idx].vessel, vLvl);
-  return Math.floor((180 + Math.pow(vLvl - 1, 2) * 30 + Math.pow(bodyTotal, 1.15) * 3) * masteryMult);
+  return Math.floor((180 + Math.pow(vLvl - 1, 2) * 30) * masteryMult);
 }
 // Pump rates are already independent and additive; retain this accessor name
 // for the accrual and rendering paths that consume the per-pump map.
@@ -578,9 +577,7 @@ function omniaGenUnlockedCount() {
 function omniaGenContribution(idx) {
   var gid = OMNIA_GEN_META[idx].id;
   var lvl = (omniaState.upgrades && omniaState.upgrades[gid]) || 1;
-  var base = (typeof darkMatterUnlocked === 'function' && darkMatterUnlocked())
-    ? omniaLegacyGenContribution(idx)
-    : omniaGeneratorContributionCurve(lvl, idx);
+  var base = omniaGeneratorContributionCurve(lvl, idx);
   return base * ((typeof dmResonanceMult === 'function') ? dmResonanceMult(idx) : 1);
 }
 function omniaPumpProductionWhileBuilding(idx) {
