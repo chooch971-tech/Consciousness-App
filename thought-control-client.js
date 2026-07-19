@@ -29,17 +29,17 @@ function getTCBestGap(mode) {
   }, 0);
 }
 
-// Same graded ladder as before (10:00 → 12:30 → 15:00, mastery banner at
-// fifteen), rendered through the shared .sn-* kit (snProgressBarHtml lives in
-// senses-client.js; the violet hue comes from the .sn-setup--tc wrapper).
+// Only the rung currently being climbed is shown (10:00 → 12:30 → 15:00,
+// mastery banner at fifteen) — one bar, not the whole ladder. Rendered via
+// the shared .sn-* kit (snProgressBarHtml lives in senses-client.js; the
+// blue hue comes from the .sn-setup--tc wrapper).
 function buildTCProgressBars(mode) {
   var best = getTCBestGap(mode);
   if (best === 0) return '';
-  var html = snProgressBarHtml('Progress to 10 min', best, 600, false);
-  if (best >= 600) html += snProgressBarHtml('Progress to 12:30', best, 750, false);
-  if (best >= 750) html += snProgressBarHtml('Progress to 15 min', best, 900, true);
-  if (best >= 900) html += snMasteryHtml('This mode has been mastered.', 'Fifteen minutes of unbroken silence');
-  return html;
+  if (best >= 900) return snMasteryHtml('This mode has been mastered.', 'Fifteen minutes of unbroken silence');
+  if (best >= 750) return snProgressBarHtml('Progress to 15 min', best, 900, true);
+  if (best >= 600) return snProgressBarHtml('Progress to 12:30', best, 750, false);
+  return snProgressBarHtml('Progress to 10 min', best, 600, false);
 }
 
 // Mode glyphs: observation = an open eye, focus = a held point,
@@ -53,23 +53,25 @@ var TC_MODE_GLYPHS = {
     + '<circle cx="12" cy="11" r="7.6" stroke-dasharray="2.6 3.6"/></svg>'
 };
 
+// Per-card accents: sky-blue watching, violet holding, teal emptiness.
+var TC_MODE_ACCENTS = {
+  observation: '--sn-card-rgb:126,168,208; --sn-card-light:#98c4e8;',
+  focus:       '--sn-card-rgb:164,126,184; --sn-card-light:#c4a8d4;',
+  vacancy:     '--sn-card-rgb:126,184,164; --sn-card-light:#8eccc0;'
+};
+
 function buildTCSetupHTML() {
   var tabs = ['observation','focus','vacancy'].map(function(m) {
-    return '<button class="sn-mode' + (m === tcMode ? ' on' : '') + '" onclick="switchTCMode(\'' + m + '\')">'
+    return '<button class="sn-mode' + (m === tcMode ? ' on' : '') + '" style="' + TC_MODE_ACCENTS[m] + '" onclick="switchTCMode(\'' + m + '\')">'
       + TC_MODE_GLYPHS[m]
       + '<span class="sn-mode__lbl">' + TC_MODE_DEFS[m].label + '</span></button>';
   }).join('');
 
   return '<div class="sn-setup sn-setup--tc">'
-    + '<div class="sn-head">'
-    + '<div class="sn-head__label">Choose a discipline</div>'
-    + '<button type="button" class="aud-omnia-peek" onclick="openExExplainer(\'thought\')" aria-label="How Thought Control works">'
-    + '<span class="clk-omnia-peek-head"><span class="clk-omnia-spin">' + omniaHeadOnlySVG(34, 32) + '</span></span>'
-    + '</button>'
-    + '</div>'
+    + '<div class="sn-head"><div class="sn-head__label">Choose a discipline</div></div>'
     + '<div class="sn-modes">' + tabs + '</div>'
     + '<div class="sn-goal">'
-    + '<div class="sn-goal__label">Minutes goal</div>'
+    + '<div class="sn-goal__label">Minutes</div>'
     + '<div class="sn-stepper">'
     + '<button class="sn-step-btn" onclick="if(tcDuration>1){tcDuration--;document.getElementById(\'tcDurDisplay\').textContent=tcDuration;}">&#8722;</button>'
     + '<div class="sn-step-val" id="tcDurDisplay">' + tcDuration + '</div>'

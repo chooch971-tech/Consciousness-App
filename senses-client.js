@@ -102,35 +102,36 @@ function getSenseBest(mode) {
   }, 0);
 }
 
-// The same graded ladder Thought Control uses, tuned to the senses:
-// 5:00 → 10:00 → 15:00, mastered at fifteen unbroken minutes.
+// Only the rung currently being climbed is shown (5:00 → 10:00 → 15:00,
+// mastered at fifteen unbroken minutes) — one bar, not the whole ladder.
 function buildSenseProgressBars(mode) {
   var best = getSenseBest(mode);
   if (best === 0) return '';
-  var html = snProgressBarHtml('Progress to 5 min', best, 300, false);
-  if (best >= 300) html += snProgressBarHtml('Progress to 10 min', best, 600, false);
-  if (best >= 600) html += snProgressBarHtml('Progress to 15 min', best, 900, true);
-  if (best >= 900) html += snMasteryHtml('This sense has been mastered.', 'Fifteen minutes held unbroken');
-  return html;
+  if (best >= 900) return snMasteryHtml('This sense has been mastered.', 'Fifteen minutes held unbroken');
+  if (best >= 600) return snProgressBarHtml('Progress to 15 min', best, 900, true);
+  if (best >= 300) return snProgressBarHtml('Progress to 10 min', best, 600, false);
+  return snProgressBarHtml('Progress to 5 min', best, 300, false);
 }
+
+// Per-card accents: rose touch, sage-green scent, honey-gold taste.
+var SENSE_MODE_ACCENTS = {
+  feeling: '--sn-card-rgb:207,143,176; --sn-card-light:#e0a8c4;',
+  smell:   '--sn-card-rgb:150,200,150; --sn-card-light:#a8d88e;',
+  taste:   '--sn-card-rgb:232,200,122; --sn-card-light:#e8c87a;'
+};
 
 function buildSenseSetupHTML() {
   var tabs = ['feeling','smell','taste'].map(function(m) {
-    return '<button class="sn-mode' + (m === senseMode ? ' on' : '') + '" onclick="switchSenseMode(\'' + m + '\')">'
+    return '<button class="sn-mode' + (m === senseMode ? ' on' : '') + '" style="' + SENSE_MODE_ACCENTS[m] + '" onclick="switchSenseMode(\'' + m + '\')">'
       + SENSE_MODE_GLYPHS[m]
       + '<span class="sn-mode__lbl">' + SENSE_MODE_DEFS[m].label + '</span></button>';
   }).join('');
 
   return '<div class="sn-setup">'
-    + '<div class="sn-head">'
-    + '<div class="sn-head__label">Train a sense</div>'
-    + '<button type="button" class="aud-omnia-peek" onclick="openExExplainer(\'sense\')" aria-label="How Senses works">'
-    + '<span class="clk-omnia-peek-head"><span class="clk-omnia-spin">' + omniaHeadOnlySVG(34, 32) + '</span></span>'
-    + '</button>'
-    + '</div>'
+    + '<div class="sn-head"><div class="sn-head__label">Train a sense</div></div>'
     + '<div class="sn-modes">' + tabs + '</div>'
     + '<div class="sn-goal">'
-    + '<div class="sn-goal__label">Minutes goal</div>'
+    + '<div class="sn-goal__label">Minutes</div>'
     + '<div class="sn-stepper">'
     + '<button class="sn-step-btn" onclick="if(senseDuration>1){senseDuration--;document.getElementById(\'snDurVal\').textContent=senseDuration;}">&#8722;</button>'
     + '<div class="sn-step-val" id="snDurVal">' + senseDuration + '</div>'
