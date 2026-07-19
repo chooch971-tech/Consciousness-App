@@ -642,6 +642,14 @@ test('Omnia engine rendering and generator controls live in a dedicated client b
   assert.doesNotThrow(() => new Function(omniaEngineClient));
 });
 
+test('generator collection effects stay anchored and clipped to the viewport', () => {
+  assert.match(omniaEngineClient, /anchorEl\.isConnected/);
+  assert.match(omniaEngineClient, /querySelector\('\[data-gen-tap="' \+ gid \+ '\"\]'\)/);
+  assert.match(omniaEngineClient, /fxLayer\.className = 'oe-collection-fx'/);
+  assert.match(omniaEngineClient, /fxLayer\.appendChild\(burst\)/);
+  assert.match(presence, /\.oe-collection-fx \{[^}]*position:fixed;[^}]*inset:0;[^}]*overflow:hidden;[^}]*contain:strict/);
+});
+
 test('Omnia click-morph geometry and animation live in a dedicated client boundary', () => {
   const engineTag = presence.indexOf('<script src="omnia-engine-client.js"></script>');
   const morphTag = presence.indexOf('<script src="omnia-morph-client.js"></script>');

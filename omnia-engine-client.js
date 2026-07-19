@@ -394,18 +394,28 @@ function collectOmniaAkasha(anchorEl, gid) {
   // floating "+N" burst + spark shower from the well
   if (collected > 0) {
     playAkashaPop();
-    var anchor = (anchorEl && anchorEl instanceof Element ? anchorEl : null)
-      || document.getElementById('omniaGenYard') || document.getElementById('omniaWell') || document.getElementById('omniaCollectBtn');
+    // renderOmniaEngine() rebuilds the generator yard above, so a tapped pump
+    // can already be detached by the time the collection effect is positioned.
+    // Resolve its freshly rendered counterpart instead of animating from 0,0.
+    var anchor = (anchorEl && anchorEl instanceof Element && anchorEl.isConnected ? anchorEl : null);
+    if (!anchor && gid) anchor = document.querySelector('[data-gen-tap="' + gid + '"]');
+    anchor = anchor || document.getElementById('omniaGenYard') || document.getElementById('omniaWell') || document.getElementById('omniaCollectBtn');
     if (anchor) {
       var rect = anchor.getBoundingClientRect();
       var cx = rect.left + rect.width / 2;
       var cy = rect.top + rect.height / 2;
+      // Keep the floating reward and sparks inside a viewport-sized clipping
+      // layer. Transformed particles must never enlarge a mobile scroll canvas.
+      var fxLayer = document.createElement('div');
+      fxLayer.className = 'oe-collection-fx';
+      fxLayer.setAttribute('aria-hidden', 'true');
+      document.body.appendChild(fxLayer);
       var burst = document.createElement('div');
       burst.className = 'oe-collect-burst';
       burst.textContent = '+' + collected + ' akasha';
       burst.style.left = cx + 'px';
       burst.style.top = (rect.top - 4) + 'px';
-      document.body.appendChild(burst);
+      fxLayer.appendChild(burst);
       setTimeout(function() { burst.remove(); }, 1050);
       for (var si = 0; si < 9; si++) {
         var sp = document.createElement('div');
@@ -415,9 +425,10 @@ function collectOmniaAkasha(anchorEl, gid) {
         sp.style.setProperty('--dx', ((Math.random() * 2 - 1) * 90).toFixed(0) + 'px');
         sp.style.setProperty('--dy', (-(40 + Math.random() * 100)).toFixed(0) + 'px');
         sp.style.animationDelay = (Math.random() * 0.12).toFixed(2) + 's';
-        document.body.appendChild(sp);
+        fxLayer.appendChild(sp);
         (function(n) { setTimeout(function() { n.remove(); }, 1100); })(sp);
       }
+      setTimeout(function() { fxLayer.remove(); }, 1150);
     }
     var card = document.querySelector('.oe-gen-card');
     if (card) {
