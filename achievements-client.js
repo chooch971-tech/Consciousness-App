@@ -107,6 +107,10 @@ var ACH_GROUPS = [
 var ACH_MONTHLY_IDS = ACH_GROUPS[0].items.map(function(b){ return b.id; });
 var ACH_ICONS = {
   monthly: '<path d="M14.5 3.5a8.5 8.5 0 1 0 6 14.7A9.5 9.5 0 0 1 14.5 3.5z"/>',
+  mlogin: '<rect x="4" y="5" width="16" height="15" rx="2"/><path d="M8 3v4M16 3v4M4 9h16m5 5 2 2 4-4"/>',
+  mfifteen: '<path d="M7 3h10M7 21h10M8 3c0 4 1.3 6.4 4 9-2.7 2.6-4 5-4 9M16 3c0 4-1.3 6.4-4 9 2.7 2.6 4 5 4 9"/>',
+  mspend: '<path d="M7 4h10l4 5-9 11L3 9l4-5zM3 9h18M7 4l5 16 5-16"/>',
+  mfriend: '<circle cx="8" cy="8" r="3"/><circle cx="17" cy="9" r="2.5"/><path d="M2.5 19c.5-3.7 2.3-5.5 5.5-5.5s5 1.8 5.5 5.5M13.5 14.5c.9-.7 2-1 3.5-1 2.8 0 4.3 1.8 4.5 5.5"/>',
   volume: '<path d="M5 20v-6M12 20V9M19 20V4"/>',
   mastery: '<path d="M12 4v16M5.1 8l13.8 8M18.9 8L5.1 16"/>',
   fullmastery: '<circle cx="12" cy="12" r="9"/><path d="M12 6.5v11M7.2 9.2l9.6 5.6M16.8 9.2l-9.6 5.6"/>',
@@ -117,8 +121,9 @@ var ACH_ICONS = {
   path: '<path d="M12 2.5l5 5.5-5 13.5L7 8l5-5.5zM7 8h10"/>'
 };
 var ACH_COLORS = { monthly:'#cdd6e8', volume:'#d4956e', mastery:'#e8c87a', fullmastery:'#f0d8ac', vigil:'#f0a860', devotion:'#c4a8d4', conc:'#e8b060', aware:'#7eb8a4', path:'#8ecce0' };
-function achIconSvg(gid) {
-  return '<svg viewBox="0 0 24 24" aria-hidden="true">' + (ACH_ICONS[gid] || ACH_ICONS.mastery) + '</svg>';
+function achIconSvg(gid, badge) {
+  var iconId = gid === 'monthly' && badge && ACH_ICONS[badge.group] ? badge.group : gid;
+  return '<svg viewBox="0 0 24 24" aria-hidden="true">' + (ACH_ICONS[iconId] || ACH_ICONS.mastery) + '</svg>';
 }
 
 // ── Seeding, month rollover, evaluation ──
@@ -374,7 +379,7 @@ function renderAchScreen() {
       var medal = b.group === 'step' ? ['','','II','III','IV','V','VI','VII','VIII','IX','X'][b.target]
         : b.target >= 1000 ? (b.target/1000) + 'k' : b.target;
       return '<button class="ach-badge' + (earned ? ' earned' : '') + (_achSelected === b.id ? ' sel' : '') + '" data-ach="' + b.id + '">'
-        + '<span class="ach-medal" style="--gc:' + (ACH_COLORS[g.id] || '#e8c87a') + '">' + achIconSvg(g.id) + '<b>' + medal + '</b></span>'
+        + '<span class="ach-medal" style="--gc:' + (ACH_COLORS[g.id] || '#e8c87a') + '">' + achIconSvg(g.id, b) + '<b>' + medal + '</b></span>'
         + '<span class="ach-badge-lbl">' + b.name + '</span></button>';
     }).join('') + '</div>';
     if (g.monthly) return '<div class="ach-month-panel">' + head + grid + '</div><div class="ach-alltime">All-Time</div>';

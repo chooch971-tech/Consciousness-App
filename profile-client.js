@@ -331,7 +331,7 @@ function renderProfileBadges() {
     var earned = !!achState.monthly.earned[b.id];
     var medal = b.target >= 1000 ? (b.target / 1000) + 'k' : b.target;
     return '<div class="prof-badge' + (earned ? ' prof-badge--earned' : ' prof-badge--locked') + '" style="--gc:' + ACH_COLORS.monthly + ';cursor:pointer;" data-ach="' + b.id + '" title="' + b.name + '">'
-      + achIconSvg('monthly') + '<b>' + medal + '</b></div>';
+      + achIconSvg('monthly', b) + '<b>' + medal + '</b></div>';
   }).join('');
 }
 
@@ -551,7 +551,7 @@ function renderFriendAchievements(f) {
       badgesEl.innerHTML = monthlyEarned.map(function(b) {
         var medal = b.target >= 1000 ? (b.target / 1000) + 'k' : b.target;
         return '<div class="prof-badge prof-badge--earned" style="--gc:' + ACH_COLORS.monthly + ';cursor:pointer;" data-ach="' + b.id + '" data-earned="' + escHtml(String(fMonthly[b.id])) + '" title="' + escHtml(b.name) + '">'
-          + achIconSvg('monthly') + '<b>' + medal + '</b></div>';
+          + achIconSvg('monthly', b) + '<b>' + medal + '</b></div>';
       }).join('');
     } else {
       badgesEl.innerHTML = '<div class="prof-empty-note">No monthly badges earned yet this month.</div>';
