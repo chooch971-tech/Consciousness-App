@@ -191,6 +191,27 @@ function _profOvItem(icon, val, lbl) {
     + '<div class="prof-ov-item__lbl">' + lbl + '</div></div></div>';
 }
 
+// The account and friend profiles intentionally use the same four overview
+// metrics. Keep the rendering here so their meanings and presentation cannot
+// drift apart as either profile evolves.
+function renderProfileOverview(el, stats) {
+  if (!el) return;
+  stats = stats || {};
+  var streak = Number(stats.streak) || 0;
+  var awarenessLevel = Number(stats.awarenessLevel) || 1;
+  var awarenessXp = Number(stats.awarenessXp) || 0;
+  var concLevel = Number(stats.concLevel) || 1;
+  var concXp = Number(stats.concXp) || 0;
+  var totalXP = awarenessXp + concXp;
+  var awarenessRank = (typeof getRankTitle === 'function') ? getRankTitle(awarenessLevel) : 'Awareness';
+  var concentrationRank = (typeof getConcRank === 'function') ? getConcRank(concLevel) : 'Concentration';
+  el.innerHTML =
+      _profOvItem('🔥', streak + (streak === 1 ? ' day' : ' days'), 'Streak')
+    + _profOvItem('⚡', totalXP.toLocaleString() + ' XP', 'Total Earned')
+    + _profOvItem('<span style="color:var(--accent);">◎</span>', 'Level ' + awarenessLevel, awarenessRank)
+    + _profOvItem('<span style="color:#d4956e;">◉</span>', 'Level ' + concLevel, concentrationRank);
+}
+
 function renderProfile() {
   var signedIn = !!(syncEnabled && (authEmail || authUsername));
   var display = signedIn ? (authDisplayName || authUsername || (authEmail ? authEmail.split('@')[0] : 'Account')) : 'Guest';
@@ -241,13 +262,13 @@ function renderProfile() {
   else { cta.style.display = 'none'; }
 
   // Overview
-  var totalXP = (state.xp || 0) + (concState.xp || 0);
-  var ov = document.getElementById('profOverview');
-  ov.innerHTML =
-      _profOvItem('🔥', (state.streak || 0) + (state.streak === 1 ? ' day' : ' days'), 'Streak')
-    + _profOvItem('⚡', totalXP.toLocaleString() + ' XP', 'Total Earned')
-    + _profOvItem('<span style="color:var(--accent);">◎</span>', 'Level ' + state.level, getRankTitle(state.level))
-    + _profOvItem('<span style="color:#d4956e;">◉</span>', 'Level ' + concState.level, getConcRank(concState.level));
+  renderProfileOverview(document.getElementById('profOverview'), {
+    streak: state.streak,
+    awarenessLevel: state.level,
+    awarenessXp: state.xp,
+    concLevel: concState.level,
+    concXp: concState.xp
+  });
 
   renderMyStatus(signedIn);
   renderProfileFriendStreaks(signedIn);
@@ -496,14 +517,13 @@ function renderFriendProfile(f) {
     }
   }
 
-  var bodies = f.bodies || { physical: 1, astral: 1, mental: 1 };
-  var bodyTotal = (bodies.physical || 1) + (bodies.astral || 1) + (bodies.mental || 1);
-  var concRank = (typeof getConcRank === 'function') ? getConcRank(f.concLevel || 1) : 'Concentration';
-  document.getElementById('friendProfOverview').innerHTML =
-      _profOvItem('🔥', (f.streak || 0) + ((f.streak || 0) === 1 ? ' day' : ' days'), 'Streak')
-    + _profOvItem('<span style="color:#d4956e;">◉</span>', 'Level ' + (f.concLevel || 1), concRank)
-    + _profOvItem('◈', bodyTotal, 'Body Points')
-    + _profOvItem('🌀', Math.floor(f.akasha || 0).toLocaleString(), 'Akasha');
+  renderProfileOverview(document.getElementById('friendProfOverview'), {
+    streak: f.streak,
+    awarenessLevel: f.awarenessLevel,
+    awarenessXp: f.awarenessXp,
+    concLevel: f.concLevel,
+    concXp: f.concXp
+  });
 
   renderFriendProfSimilar(f.userId);
   renderFriendAchievements(f);

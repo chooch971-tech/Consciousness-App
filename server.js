@@ -1747,7 +1747,7 @@ app.get('/api/sync/friends/list', verifyToken, async (req, res) => {
 
       const latestSync = await syncDataCollection.find({ userId: otherOid }).sort({ syncedAt: -1 }).limit(1).next();
 
-      let streak = 0, concLevel = 1, concXp = 0, akasha = 0, bardonStep = 1;
+      let streak = 0, awarenessLevel = 1, awarenessXp = 0, concLevel = 1, concXp = 0, akasha = 0, bardonStep = 1;
       let bodies = { physical: 1, astral: 1, mental: 1 };
       // Practice calendar + last session date feed the client-side Streak Society shared-streak computation.
       let practicedDates = [], lastSessionDate = null;
@@ -1759,6 +1759,8 @@ app.get('/api/sync/friends/list', verifyToken, async (req, res) => {
           const v3 = latestSync.presence_v3 ? JSON.parse(latestSync.presence_v3) : null;
           if (v3) {
             streak = v3.streak || 0;
+            awarenessLevel = v3.level || 1;
+            awarenessXp = v3.xp || 0;
             practicedDates = Array.isArray(v3.practicedDates) ? v3.practicedDates.slice(-90) : [];
             lastSessionDate = v3.lastSessionDate || null;
             // Decay a stale streak: a friend's stored streak reflects their last sync.
@@ -1808,7 +1810,7 @@ app.get('/api/sync/friends/list', verifyToken, async (req, res) => {
         // When you both became friends — set on accept; older rows predating
         // this field fall back to when the request was originally sent.
         friendedAt: doc.acceptedAt || doc.createdAt || null,
-        streak, concLevel, concXp, akasha, bardonStep, bodies,
+        streak, awarenessLevel, awarenessXp, concLevel, concXp, akasha, bardonStep, bodies,
         practicedDates, lastSessionDate,
         achEarned, achMonthlyEarned, achMonthlyKey
       });
