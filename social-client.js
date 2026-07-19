@@ -33,6 +33,8 @@ function _lodgeSetSortUi() {
     filter.classList.toggle('active', _lodgeSort !== 'newest');
     filter.setAttribute('aria-label', 'Sort posts: ' + (labels[_lodgeSort] || 'Newest'));
     filter.title = 'Sort posts: ' + (labels[_lodgeSort] || 'Newest');
+    var chipLabel = document.getElementById('lodgeSortLabel');
+    if (chipLabel) chipLabel.textContent = labels[_lodgeSort] || 'Newest';
   }
 }
 function _lodgeCloseSortMenu() {
@@ -132,16 +134,21 @@ function _lodgePostHtml(p) {
     bodyHtml = '<div class="lodge-post__text">' + escHtml(p.text || '') + '</div>';
   }
   var kind = p.type === 'blog' ? 'Essay' : 'Reflection';
+  // Card layout mirrors the reference: like control stacked in the top-right
+  // of the head, kind label as a brand mark bottom-left, comments/moderation
+  // on the footer's right edge.
   return '<article class="lodge-post' + (p.type === 'blog' ? ' is-blog' : '') + '" data-post-id="' + escHtml(p.id) + '" style="--lodge-hue:' + hue[0] + ';">'
-    + '<div class="lodge-post__head" data-lodge-user="' + escHtml(p.userId) + '" data-lodge-uname="' + escHtml(p.username || '?') + '" style="cursor:pointer;">'
+    + '<div class="lodge-post__head">'
+    + '<div style="display:flex;align-items:center;gap:11px;min-width:0;flex:1;cursor:pointer;" data-lodge-user="' + escHtml(p.userId) + '" data-lodge-uname="' + escHtml(p.username || '?') + '">'
     + _lodgeRingHtml(p.username, p.profilePic)
     + '<div class="lodge-post__identity"><div class="lodge-post__name">@' + escHtml(p.username || '?') + '</div>'
-    + '<div class="lodge-post__time">' + timeAgo(new Date(p.createdAt)) + '</div></div>'
-    + '<div class="lodge-post__kind">' + kind + '</div></div>'
+    + '<div class="lodge-post__time">' + timeAgo(new Date(p.createdAt)) + '</div></div></div>'
+    + '<button class="lodge-act lodge-post__vote' + (p.likedByMe ? ' liked' : '') + '" data-lodge-like>' + (p.likedByMe ? '♥' : '♡')
+    + ' <span data-like-count>' + (p.likeCount || 0) + '</span></button>'
+    + '</div>'
     + '<div class="lodge-post__body">' + bodyHtml + '</div>'
     + '<div class="lodge-post__bar">'
-    + '<button class="lodge-act' + (p.likedByMe ? ' liked' : '') + '" data-lodge-like>' + (p.likedByMe ? '♥' : '♡')
-    + ' <span data-like-count>' + (p.likeCount || 0) + '</span></button>'
+    + '<div class="lodge-post__kind">' + kind + '</div>'
     + '<button class="lodge-act" data-lodge-comments>◌ <span data-comment-count>' + (p.commentCount || 0) + '</span></button>'
     + (p.mine ? '<button class="lodge-act lodge-del" data-lodge-del aria-label="Delete post">✕</button>'
                : '<button class="lodge-act lodge-del" data-lodge-report aria-label="Report post">⚑</button>')

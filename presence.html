@@ -785,12 +785,33 @@
     .ach-info-reward { color:var(--accent); }
     /* The Lodge — a quiet shared practice record */
     #lodgeScreen { padding-left:0; padding-right:0; padding-bottom:0; }
-    .lodge-topbar { min-height:54px; display:grid; grid-template-columns:44px 1fr auto; align-items:center; gap:10px; padding:0 18px 12px; border-bottom:1px solid rgba(255,255,255,.06); flex-shrink:0; }
+    /* Lodge backdrop — full-height violet night sky (the same treatment the
+       Profile page got), so the feed reads as a lit community space rather
+       than cards on flat black. */
+    #lodgeScreen {
+      background:
+        radial-gradient(1.5px 1.5px at 14% 5%, rgba(221,216,206,.5), transparent),
+        radial-gradient(2px 2px at 80% 8%, rgba(199,169,255,.45), transparent),
+        radial-gradient(1.5px 1.5px at 55% 15%, rgba(221,216,206,.4), transparent),
+        radial-gradient(1px 1px at 30% 24%, rgba(199,169,255,.35), transparent),
+        radial-gradient(1.5px 1.5px at 90% 30%, rgba(221,216,206,.38), transparent),
+        radial-gradient(2px 2px at 8% 40%, rgba(232,200,122,.3), transparent),
+        radial-gradient(1.5px 1.5px at 68% 48%, rgba(221,216,206,.34), transparent),
+        radial-gradient(1px 1px at 22% 58%, rgba(199,169,255,.3), transparent),
+        radial-gradient(1.5px 1.5px at 85% 66%, rgba(221,216,206,.32), transparent),
+        radial-gradient(1px 1px at 42% 74%, rgba(199,169,255,.28), transparent),
+        radial-gradient(1.5px 1.5px at 12% 84%, rgba(221,216,206,.3), transparent),
+        radial-gradient(2px 2px at 72% 92%, rgba(232,200,122,.26), transparent),
+        radial-gradient(ellipse 110% 45% at 50% 0%, rgba(150,120,220,.14) 0%, transparent 65%),
+        radial-gradient(ellipse 90% 40% at 50% 100%, rgba(120,90,190,.13) 0%, transparent 70%),
+        linear-gradient(180deg, #131022 0%, #0a0912 50%, #0f0c1b 100%);
+    }
+    .lodge-topbar { min-height:54px; display:grid; grid-template-columns:44px 1fr auto; align-items:center; gap:10px; padding:0 18px 12px; border-bottom:1px solid rgba(170,150,230,.1); flex-shrink:0; }
     /* Matches .gp-back (7x2 Challenge) — the standard small round back button used app-wide. */
     .lodge-back { width:38px; height:38px; border-radius:50%; border:1px solid rgba(255,255,255,.12); background:rgba(255,255,255,.05); color:rgba(221,216,206,.8); display:flex; align-items:center; justify-content:center; cursor:pointer; }
     .lodge-back svg,.lodge-tool svg { width:18px; height:18px; }
     .lodge-heading { min-width:0; }
-    .lodge-heading__title { font-family:'Cormorant Garamond',serif; font-size:24px; line-height:1; font-weight:300; color:var(--text); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+    .lodge-heading__title { font-family:'Cormorant Garamond',serif; font-size:28px; line-height:1; font-weight:400; color:var(--text); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
     .lodge-heading__title:empty { display:none; }
     .lodge-tools { display:flex; align-items:center; gap:2px; }
     .lodge-tool { position:relative; width:44px; height:44px; border:0; border-radius:8px; background:transparent; color:rgba(221,216,206,.7); display:flex; align-items:center; justify-content:center; cursor:pointer; transition:background .18s,color .18s; }
@@ -801,26 +822,26 @@
     .lodge-scroll { flex:1; overflow-y:auto; -webkit-overflow-scrolling:touch; scrollbar-width:none; padding:8px 20px max(env(safe-area-inset-bottom),32px); }
     .lodge-scroll::-webkit-scrollbar { display:none; }
     .lodge-stream { width:100%; max-width:680px; margin:0 auto; }
-    .lodge-intro { position:relative; height:148px; box-sizing:border-box; display:flex; align-items:center; justify-content:space-between; padding:0 22px; margin:0 0 14px; overflow:hidden; border-radius:18px; background:linear-gradient(145deg,#0b1f1a 0%,#12352c 44%,#0d251f 100%); }
+    .lodge-intro { position:relative; height:84px; box-sizing:border-box; display:flex; align-items:center; justify-content:space-between; padding:0 20px; margin:0 0 14px; overflow:hidden; border-radius:16px; background:linear-gradient(145deg,#0b1f1a 0%,#12352c 44%,#0d251f 100%); }
     .lodge-intro::before { content:''; position:absolute; inset:0; pointer-events:none; background:radial-gradient(ellipse 60% 70% at 76% 54%,rgba(126,184,164,.2) 0%,transparent 70%); }
     .lodge-intro::after { content:''; position:absolute; inset:0; pointer-events:none; background:radial-gradient(ellipse 40% 50% at 72% 48%,rgba(232,200,122,.14) 0%,transparent 62%); }
-    .lodge-intro__copy { position:relative; z-index:2; min-width:0; padding-bottom:12px; }
+    .lodge-intro__copy { position:relative; z-index:2; min-width:0; padding-bottom:8px; }
     .lodge-intro__copy::after { content:''; position:absolute; left:1px; bottom:0; width:42px; height:1px; background:linear-gradient(90deg,#e8c87a,rgba(232,200,122,0)); box-shadow:0 0 8px rgba(232,200,122,.28); }
-    .lodge-intro__title { font-family:'Cormorant Garamond',serif; font-size:29px; line-height:1.1; color:#e7f2e9; font-weight:300; }
+    .lodge-intro__title { font-family:'Cormorant Garamond',serif; font-size:21px; line-height:1.1; color:#e7f2e9; font-weight:300; }
     .lodge-intro__rules { position:absolute; inset:0; pointer-events:none; opacity:.34; background:repeating-linear-gradient(180deg,transparent 0,transparent 25px,rgba(196,226,211,.075) 25px,rgba(196,226,211,.075) 26px); -webkit-mask-image:linear-gradient(90deg,rgba(0,0,0,.42),transparent 72%); mask-image:linear-gradient(90deg,rgba(0,0,0,.42),transparent 72%); }
-    .lodge-intro__glow { position:absolute; right:6px; top:50%; width:170px; height:170px; transform:translateY(-50%); background:radial-gradient(circle,rgba(232,200,122,.2) 0%,rgba(126,184,164,.12) 40%,transparent 70%); pointer-events:none; }
-    .lodge-intro__art { position:relative; z-index:2; width:98px; height:116px; display:flex; align-items:center; justify-content:center; flex-shrink:0; color:#e8c87a; filter:drop-shadow(0 0 16px rgba(232,200,122,.32)); animation:omniaFloat 4.5s ease-in-out infinite; }
-    .lodge-intro__art svg { width:94px; height:104px; overflow:visible; }
-    .lodge-feed-nav { position:relative; display:grid; grid-template-columns:minmax(0,1fr) 44px; align-items:end; gap:8px; margin-bottom:14px; }
+    .lodge-intro__glow { position:absolute; right:4px; top:50%; width:110px; height:110px; transform:translateY(-50%); background:radial-gradient(circle,rgba(232,200,122,.2) 0%,rgba(126,184,164,.12) 40%,transparent 70%); pointer-events:none; }
+    .lodge-intro__art { position:relative; z-index:2; width:58px; height:68px; display:flex; align-items:center; justify-content:center; flex-shrink:0; color:#e8c87a; filter:drop-shadow(0 0 12px rgba(232,200,122,.32)); animation:omniaFloat 4.5s ease-in-out infinite; }
+    .lodge-intro__art svg { width:54px; height:60px; overflow:visible; }
+    .lodge-feed-nav { position:relative; display:grid; grid-template-columns:minmax(0,1fr) auto; align-items:end; gap:8px; margin-bottom:14px; }
     #lodgeTabs { margin:0; border-bottom-color:rgba(255,255,255,.07); }
     #lodgeTabs .mode-tab { min-height:44px; font-size:9px; color:rgba(221,216,206,.5); }
     #lodgeTabs .mode-tab.on { color:#8eccc0; border-bottom-color:#8eccc0; }
     #lodgeTabs .mode-tab.on[data-lodge-tab="blog"] { color:#e8c87a; border-bottom-color:#e8c87a; }
-    .lodge-filter { position:relative; width:44px; height:44px; display:flex; align-items:center; justify-content:center; border:1px solid rgba(255,255,255,.09); border-radius:10px; background:rgba(255,255,255,.04); color:rgba(221,216,206,.55); cursor:pointer; transition:background .16s,color .16s,border-color .16s; }
-    .lodge-filter:active,.lodge-filter[aria-expanded="true"] { background:rgba(142,204,192,.08); color:#8eccc0; border-color:rgba(142,204,192,.24); }
-    .lodge-filter svg { width:18px; height:16px; }
-    .lodge-filter::after { content:''; position:absolute; top:6px; right:6px; width:5px; height:5px; border-radius:50%; background:#d4956e; opacity:0; box-shadow:0 0 7px rgba(212,149,110,.7); }
-    .lodge-filter.active::after { opacity:1; }
+    /* Labeled sort chip ("Newest ⌄") in place of the old icon-only filter. */
+    .lodge-filter { position:relative; height:40px; margin-bottom:2px; display:flex; align-items:center; gap:6px; padding:0 14px; border:1px solid rgba(170,150,230,.18); border-radius:999px; background:rgba(170,150,230,.07); color:rgba(221,216,206,.72); cursor:pointer; font-family:'DM Mono',monospace; font-size:9px; letter-spacing:.12em; text-transform:uppercase; white-space:nowrap; transition:background .16s,color .16s,border-color .16s; }
+    .lodge-filter:active,.lodge-filter[aria-expanded="true"] { background:rgba(170,150,230,.14); color:#c7b4f0; border-color:rgba(170,150,230,.34); }
+    .lodge-filter__caret { font-size:11px; line-height:1; opacity:.7; }
+    .lodge-filter.active { color:#c7b4f0; border-color:rgba(170,150,230,.4); }
     .lodge-sort { position:absolute; top:calc(100% + 7px); right:0; z-index:70; min-width:218px; padding:6px; border:1px solid rgba(255,255,255,.1); border-radius:14px; background:#1c1d2e; box-shadow:0 12px 32px rgba(0,0,0,.62); }
     .lodge-sort__btn { width:100%; min-height:48px; display:grid; grid-template-columns:minmax(0,1fr) 18px; align-items:center; gap:10px; padding:8px 12px; border:0; border-radius:10px; background:transparent; text-align:left; cursor:pointer; transition:background .15s; }
     .lodge-sort__btn:active { background:rgba(255,255,255,.07); }
@@ -829,16 +850,21 @@
     .lodge-sort__sub { display:block; margin-top:3px; font-family:'DM Mono',monospace; font-size:8px; letter-spacing:.1em; text-transform:uppercase; color:var(--muted); }
     .lodge-sort__check { color:#8eccc0; font-size:13px; opacity:0; text-align:center; }
     .lodge-sort__btn.on .lodge-sort__check { opacity:1; }
-    .lodge-compose { width:100%; min-height:64px; display:grid; grid-template-columns:38px 1fr auto; align-items:center; gap:12px; padding:11px 12px; margin:0 0 18px; text-align:left; border:1px solid rgba(142,204,192,.18); border-radius:8px; background:rgba(142,204,192,.035); color:var(--text); cursor:pointer; transition:border-color .2s,background .2s; }
+    .lodge-compose { width:100%; min-height:64px; display:grid; grid-template-columns:38px 1fr auto; align-items:center; gap:12px; padding:11px 12px; margin:0 0 18px; text-align:left; border:1px solid rgba(142,204,192,.18); border-radius:14px; background:rgba(142,204,192,.035); color:var(--text); cursor:pointer; transition:border-color .2s,background .2s; }
     .lodge-compose:hover { border-color:rgba(142,204,192,.34); background:rgba(142,204,192,.06); }
     .lodge-compose__mark { width:38px; height:38px; border-radius:50%; display:flex; align-items:center; justify-content:center; color:#8eccc0; background:rgba(142,204,192,.1); border:1px solid rgba(142,204,192,.18); }
     .lodge-compose__mark svg { width:17px; height:17px; }
     .lodge-compose__hint { font-family:'Cormorant Garamond',serif; font-size:16px; line-height:1.25; color:rgba(237,232,222,.66); }
     .lodge-compose__cta { min-height:36px; padding:0 12px; display:flex; align-items:center; border-left:1px solid rgba(255,255,255,.07); color:#8eccc0; font-family:'DM Mono',monospace; font-size:8px; letter-spacing:.18em; text-transform:uppercase; }
-    .lodge-post { --lodge-hue:#8eccc0; position:relative; background:rgba(255,255,255,.022); border:1px solid rgba(255,255,255,.075); border-radius:8px; padding:16px 17px 10px; margin-bottom:12px; overflow:hidden; }
-    .lodge-post::before { content:''; position:absolute; left:0; top:0; bottom:0; width:2px; background:var(--lodge-hue); opacity:.55; }
-    .lodge-post.is-blog { background:rgba(232,200,122,.025); }
+    .lodge-post { --lodge-hue:#8eccc0; position:relative; background:rgba(160,140,220,.055); border:1px solid rgba(170,150,230,.13); border-radius:16px; padding:16px 17px 10px; margin-bottom:12px; overflow:hidden; }
+    .lodge-post.is-blog { background:rgba(232,200,122,.035); border-color:rgba(232,200,122,.14); }
     .lodge-post__head { display:flex; align-items:center; gap:11px; margin-bottom:13px; }
+    /* Stacked like control in the card's top-right corner (reference-style
+       upvote): glyph above count. Inner structure (text node + count span)
+       is unchanged so toggleLodgeLike keeps working. */
+    .lodge-post__vote { margin-left:auto; flex-direction:column; gap:1px; min-width:44px; min-height:44px; padding:2px 8px; font-size:15px; align-self:flex-start; }
+    .lodge-post__vote [data-like-count] { font-size:9px; }
+    .lodge-post__vote.liked { color:#c7a9f0; }
     .lodge-post__ring { width:38px; height:38px; border-radius:50%; flex-shrink:0; display:flex; align-items:center; justify-content:center; color:#0e0f17; font-family:'Cormorant Garamond',serif; font-size:16px; background-size:cover!important; background-position:center!important; box-shadow:0 0 0 1px rgba(255,255,255,.09); }
     .lodge-post__identity { min-width:0; flex:1; }
     .lodge-post__name { font-family:'Space Grotesk',sans-serif; font-size:12px; font-weight:600; color:var(--lodge-hue); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
@@ -847,7 +873,11 @@
     .lodge-post__body { padding:0 1px 3px; }
     .lodge-post__text { font-family:'Cormorant Garamond',serif; font-size:17px; color:rgba(241,237,229,.9); line-height:1.62; white-space:pre-wrap; word-break:break-word; }
     .lodge-blog-title { font-family:'Cormorant Garamond',serif; font-size:23px; font-weight:500; color:var(--text); margin-bottom:7px; line-height:1.18; }
-    .lodge-post__bar { display:flex; align-items:center; gap:2px; margin-top:10px; min-height:44px; border-top:1px solid rgba(255,255,255,.055); }
+    .lodge-post__bar { display:flex; align-items:center; gap:2px; margin-top:10px; min-height:44px; border-top:1px solid rgba(170,150,230,.1); }
+    /* Footer layout: kind label sits bottom-left like a brand mark; comment
+       count and delete/report ride the right edge. */
+    .lodge-post__bar .lodge-post__kind { margin-right:auto; padding-left:2px; }
+    .lodge-post__bar .lodge-del { margin-left:0; }
     .lodge-act { min-width:44px; min-height:44px; padding:0 10px; border:0; background:none; cursor:pointer; font-family:'DM Mono',monospace; font-size:10px; color:rgba(221,216,206,.48); display:flex; align-items:center; justify-content:center; gap:6px; border-radius:7px; transition:background .16s,color .16s; }
     .lodge-act:hover { background:rgba(255,255,255,.035); color:rgba(221,216,206,.76); }
     .lodge-act.liked { color:#d4956e; }
@@ -865,9 +895,9 @@
     .lodge-empty__mark { width:48px; height:48px; margin:0 auto 13px; border-radius:50%; border:1px solid rgba(232,200,122,.18); display:flex; align-items:center; justify-content:center; color:rgba(232,200,122,.7); font-family:'Cormorant Garamond',serif; font-size:22px; }
     .lodge-empty__title { font-family:'Cormorant Garamond',serif; font-size:19px; color:rgba(237,232,222,.82); margin-bottom:5px; }
     .lodge-empty__sub { max-width:290px; margin:0 auto; font-family:'DM Mono',monospace; font-size:9px; line-height:1.7; letter-spacing:.04em; }
-    .lodge-skeleton { height:118px; border:1px solid rgba(255,255,255,.055); border-radius:8px; margin-bottom:12px; background:linear-gradient(100deg,rgba(255,255,255,.018) 25%,rgba(255,255,255,.055) 42%,rgba(255,255,255,.018) 58%); background-size:250% 100%; animation:lodgeShimmer 1.4s linear infinite; }
+    .lodge-skeleton { height:118px; border:1px solid rgba(170,150,230,.1); border-radius:16px; margin-bottom:12px; background:linear-gradient(100deg,rgba(255,255,255,.018) 25%,rgba(255,255,255,.055) 42%,rgba(255,255,255,.018) 58%); background-size:250% 100%; animation:lodgeShimmer 1.4s linear infinite; }
     @keyframes lodgeShimmer { to { background-position-x:-250%; } }
-    .lodge-more { width:100%; min-height:44px; margin:8px 0 20px; border:1px solid rgba(255,255,255,.08); border-radius:8px; background:transparent; color:rgba(221,216,206,.55); font-family:'DM Mono',monospace; font-size:8px; letter-spacing:.16em; text-transform:uppercase; cursor:pointer; }
+    .lodge-more { width:100%; min-height:44px; margin:8px 0 20px; border:1px solid rgba(170,150,230,.16); border-radius:12px; background:transparent; color:rgba(221,216,206,.55); font-family:'DM Mono',monospace; font-size:8px; letter-spacing:.16em; text-transform:uppercase; cursor:pointer; }
     .likers-row { font-family:'DM Mono',monospace; font-size:12px; color:var(--text); padding:9px 2px; border-bottom:1px solid var(--border); }
     .likers-row.private { color:var(--muted); font-style:italic; }
     .followlist-tab { flex:1; padding:9px; border-radius:9px; font-family:'DM Mono',monospace; font-size:9px; letter-spacing:.14em; text-transform:uppercase; cursor:pointer; border:1px solid var(--border); background:transparent; color:var(--muted); }
@@ -889,8 +919,7 @@
     .chat-unread { width:8px; height:8px; border-radius:50%; background:#d4956e; margin-left:auto; flex-shrink:0; }
     .chat-conv-skeleton { height:63px; margin-bottom:1px; border-bottom:1px solid var(--border); background:linear-gradient(100deg,transparent 20%,rgba(255,255,255,.04) 42%,transparent 62%); background-size:240% 100%; animation:lodgeShimmer 1.35s linear infinite; }
     @media (max-width:420px) {
-      .lodge-intro { padding:0 18px; }
-      .lodge-intro__art { width:90px; }
+      .lodge-intro { padding:0 16px; }
     }
 
     /* Friend earned-achievement strip: fixed-width discs that scroll horizontally */
@@ -5822,7 +5851,7 @@ body:not(.tut-live) #tutCorgi {
             <button class="mode-tab" data-lodge-tab="blog">Essays</button>
           </div>
           <button class="lodge-filter" id="lodgeSortBtn" aria-label="Sort posts" aria-expanded="false" aria-controls="lodgeSort" title="Sort posts">
-            <svg viewBox="0 0 18 15" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" aria-hidden="true"><line x1="1" y1="2.5" x2="17" y2="2.5"/><circle cx="5.5" cy="2.5" r="2" fill="var(--bg)"/><line x1="1" y1="7.5" x2="17" y2="7.5"/><circle cx="12.5" cy="7.5" r="2" fill="var(--bg)"/><line x1="1" y1="12.5" x2="17" y2="12.5"/><circle cx="7.5" cy="12.5" r="2" fill="var(--bg)"/></svg>
+            <span id="lodgeSortLabel">Newest</span><span class="lodge-filter__caret" aria-hidden="true">⌄</span>
           </button>
           <div class="lodge-sort" id="lodgeSort" role="menu" aria-label="Sort Lodge posts" style="display:none;">
             <button class="lodge-sort__btn on" role="menuitemradio" aria-checked="true" data-lodge-sort="newest"><span><span class="lodge-sort__label">Newest</span><span class="lodge-sort__sub">Latest first</span></span><span class="lodge-sort__check">✓</span></button>
