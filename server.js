@@ -2338,9 +2338,29 @@ async function notify(userId, kind, actorId, refId) {
   } catch(e) {}
 }
 
+// Persist the legacy Friends-screen record when a mutual follow is established.
+// The accepted timestamp is the canonical "Friends since" date; never replace
+// it on repeat follow checks, so it remains the date the relationship began.
+async function recordMutualFriendship(a, b) {
+  const existing = await friendsCollection.findOne({
+    $or: [{ userId: a, friendId: b }, { userId: b, friendId: a }]
+  });
+  if (existing && existing.status === 'accepted') return;
+
+  const now = new Date();
+  await friendsCollection.updateOne(
+    existing ? { _id: existing._id } : { userId: a, friendId: b },
+    {
+      $set: { status: 'accepted', acceptedAt: now },
+      $setOnInsert: { userId: a, friendId: b, createdAt: now }
+    },
+    { upsert: !existing }
+  );
+}
+
 // When BOTH directions of a follow are active the two users are "friends" (a
 // mutual follow). Call this right after an edge becomes active: if it completes
-// the pair, notify each of them that they're now friends and return true.
+// the pair, persist their relationship, notify each user, and return true.
 async function notifyMutualFollow(a, b) {
   try {
     const [ab, ba] = await Promise.all([
@@ -2348,6 +2368,7 @@ async function notifyMutualFollow(a, b) {
       followsCollection.findOne({ followerId: b, followeeId: a, status: 'active' })
     ]);
     if (!ab || !ba) return false;
+    await recordMutualFriendship(a, b);
     await Promise.all([notify(a, 'friend', b, null), notify(b, 'friend', a, null)]);
     return true;
   } catch(e) { return false; }
