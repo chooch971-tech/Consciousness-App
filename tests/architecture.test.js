@@ -264,6 +264,7 @@ test('top-level drawer screens reveal the open drawer during swipe-back', () => 
   assert.match(presence, /var keepsAuthoredBackdrop = \['profileScreen', 'friendProfileScreen', 'friendsPanel', 'settingsScreen', 'accountSettingsScreen', 'exerciseSettingsScreen'\]/);
   assert.match(presence, /chatListScreen: 'lodgeScreen', chatThreadScreen: 'chatListScreen'/);
   assert.match(presence, /screenEl\.id === 'chatThreadScreen' && typeof chatThreadPreviousScreen === 'function/);
+  assert.match(presence, /screenEl\.id === 'friendProfileScreen' && typeof friendProfilePreviousScreen === 'function/);
   assert.match(presence, /screenEl\.id === 'friendsPanel' && typeof friendsPanelPreviousScreen === 'function/);
   assert.match(presence, /friendsPanelOpen \? friendsPanel : document\.querySelector\('\.screen\.active'\)/);
   assert.match(presence, /\.lodge-back, \.fp-back/);
@@ -271,7 +272,12 @@ test('top-level drawer screens reveal the open drawer during swipe-back', () => 
   const completeEnd = presence.indexOf('function cancel()', completeStart);
   const completeBody = presence.slice(completeStart, completeEnd);
   assert.ok(completeBody.indexOf('backBtn.click()') < completeBody.indexOf('requestAnimationFrame(function()') && completeBody.indexOf('requestAnimationFrame(function()') < completeBody.indexOf('cleanPrev(prevEl, prevIsHome)'), 'swipe-back keeps the revealed screen painted through the first frame after its Back action activates it');
-  assert.match(completeBody, /var preservesProfileBackdrop = \['profileScreen', 'friendProfileScreen'\]\.indexOf\(prevEl\.id\) >= 0;[\s\S]*?if \(!preservesProfileBackdrop\) cleanPrev\(prevEl, prevIsHome\);/);
+  assert.match(completeBody, /requestAnimationFrame\(function\(\) \{[\s\S]*?cleanPrev\(prevEl, prevIsHome\);/);
+  assert.match(presence, /\.screen\.active\.swipe-back-arrival \{ animation:none; transform:translateZ\(0\); \}/);
+  assert.match(awarenessClient, /if \(window\._interactiveSwipeBackScreenId\) el\.classList\.add\('swipe-back-arrival'\)/);
+  assert.match(awarenessClient, /drawer\.classList\.remove\('show', 'swipe-back-live'\)/);
+  assert.match(profileClient, /function friendProfilePreviousScreen\(\)/);
+  assert.match(profileClient, /window\._interactiveSwipeBackScreenId !== 'friendProfileScreen'/);
 });
 
 test('Visualization and the shared exercise gateway load before Auditory', () => {

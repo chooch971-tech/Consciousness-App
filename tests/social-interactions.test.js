@@ -76,4 +76,7 @@ test('friend-profile chat returns to that profile for Back and swipe-back', () =
   assert.match(socialClient, /function returnFromChatThread\(\)[\s\S]*?renderFriendProfile\(friend\);[\s\S]*?showScreen\('friendProfileScreen'\)/);
   assert.match(socialClient, /chatThreadBack'\)\.addEventListener\('click', returnFromChatThread\)/);
   assert.match(socialClient, /if \(canMessage\) loadChatList\(false\)/);
+  assert.match(profileClient, /var _friendProfileReturnScreen = 'profileScreen'/);
+  assert.match(profileClient, /function friendProfilePreviousScreen\(\)/);
+  assert.match(profileClient, /active\.id !== 'friendProfileScreen' && active\.id !== 'chatThreadScreen'/);
 });

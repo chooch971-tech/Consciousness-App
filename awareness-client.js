@@ -1037,13 +1037,28 @@ function showScreen(id) {
     var _reopen = window._returnToDrawer && DRAWER_REOPEN_ON_BACK && typeof openDrawer === 'function';
     window._returnToDrawer = false;
     if (_reopen) openDrawer(true);
-    document.querySelectorAll('.screen').forEach(function(s) { s.classList.remove('active'); });
+    document.querySelectorAll('.screen').forEach(function(s) {
+      s.classList.remove('active');
+      s.classList.remove('swipe-back-arrival');
+    });
     document.getElementById('homeScreen').style.display = 'flex';
   } else {
     var el = document.getElementById(id);
     if (!el) { console.error('[showScreen] No element:', id); return; }
-    document.querySelectorAll('.screen').forEach(function(s) { s.classList.remove('active'); });
+    // A drawer is only a destination when returning all the way to Home. If a
+    // nested route (Message → Friend → Profile) is becoming active, guarantee
+    // that no stale drawer handoff can remain above it and trap navigation.
+    var drawer = document.getElementById('drawerOverlay');
+    if (drawer) drawer.classList.remove('show', 'swipe-back-live');
+    document.querySelectorAll('.screen').forEach(function(s) {
+      s.classList.remove('active');
+      s.classList.remove('swipe-back-arrival');
+    });
     document.getElementById('homeScreen').style.display = 'none';
+    // The interactive controller has already revealed this screen beneath the
+    // departing one. Suppress the normal entry fade so it does not blink out
+    // and back in at the end of the gesture.
+    if (window._interactiveSwipeBackScreenId) el.classList.add('swipe-back-arrival');
     el.classList.add('active');
     // A screen shown right after the drawer closed was opened FROM the drawer.
     if (Date.now() - (window._drawerClosedAt || 0) < 500) window._returnToDrawer = true;

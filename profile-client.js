@@ -395,6 +395,10 @@ function _friendRingHtml(initial, pic) {
 
 // ── Friend profile view (mirrors the user's own Profile layout) ──
 var _friendProfileCache = {};
+var _friendProfileReturnScreen = 'profileScreen';
+function friendProfilePreviousScreen() {
+  return document.getElementById(_friendProfileReturnScreen) ? _friendProfileReturnScreen : 'profileScreen';
+}
 // Persist the friends list (avatars included) so every friend surface can paint
 // instantly from cache on open, instead of leaving blank rings until the
 // /friends/list round-trip returns and the avatars "pop in".
@@ -526,6 +530,12 @@ else _wireFollowListOverlay();
 function openFriendProfile(userId) {
   var f = _friendProfileCache[userId];
   if (!f) return;
+  // Retain the screen that owns this Friend Profile. A round trip through a
+  // Message thread must not replace it with the global drawer destination.
+  var active = document.querySelector('.screen.active');
+  if (active && active.id !== 'friendProfileScreen' && active.id !== 'chatThreadScreen') {
+    _friendProfileReturnScreen = active.id;
+  }
   renderFriendProfile(f);
   showScreen('friendProfileScreen');
   if (typeof closeFriendsPanel === 'function') closeFriendsPanel();
@@ -666,8 +676,12 @@ function renderFriendProfSimilar(friend) {
   }).join('');
 }
 document.getElementById('friendProfBack').addEventListener('click', function() {
-  if (typeof renderProfile === 'function') renderProfile();
-  showScreen('profileScreen');
+  var previousScreen = friendProfilePreviousScreen();
+  // During an interactive swipe the previous Profile is already fully painted
+  // underneath. Re-rendering it at handoff invalidates that surface and causes
+  // a visible black/starfield blink.
+  if (previousScreen === 'profileScreen' && window._interactiveSwipeBackScreenId !== 'friendProfileScreen' && typeof renderProfile === 'function') renderProfile();
+  showScreen(previousScreen);
 });
 document.getElementById('friendProfSimilar').addEventListener('click', function(e) {
   var card = e.target.closest('[data-friend-id]');

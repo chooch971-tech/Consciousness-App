@@ -277,11 +277,13 @@ async function testProfileSky(browser, baseUrl) {
   const friendProfileHandoff = await page.locator('#profileScreen').evaluate(element => ({
     background: getComputedStyle(element).backgroundImage,
     position: element.style.position,
-    transform: element.style.transform
+    transform: element.style.transform,
+    suppressesEntryFade: element.classList.contains('swipe-back-arrival') && getComputedStyle(element).animationName === 'none'
   }));
   assert.match(friendProfileHandoff.background, /radial-gradient/);
-  assert.equal(friendProfileHandoff.position, 'fixed');
-  assert.equal(friendProfileHandoff.transform, 'translateX(0px)');
+  assert.equal(friendProfileHandoff.position, '');
+  assert.equal(friendProfileHandoff.transform, '');
+  assert.equal(friendProfileHandoff.suppressesEntryFade, true);
   assert.equal(await page.evaluate(() => window._returnToDrawer), true);
   await page.evaluate(() => {
     const current = document.getElementById('profileScreen');
@@ -303,7 +305,7 @@ async function testProfileSky(browser, baseUrl) {
 }
 
 async function testFriendMessageReturn(browser, baseUrl) {
-  const context = await browser.newContext({ viewport: { width: 390, height: 844 }, serviceWorkers: 'block' });
+  const context = await browser.newContext({ viewport: { width: 390, height: 844 }, hasTouch: true, serviceWorkers: 'block' });
   const { page, errors } = await seedPage(context, baseUrl, { presence_auth_token: 'browser-test-token' });
   await page.evaluate(() => {
     const friend = {
@@ -313,14 +315,64 @@ async function testFriendMessageReturn(browser, baseUrl) {
     };
     _friendProfileCache[friend.userId] = friend;
     _chatConversations = [{ id: 'friend-browser-conv', userId: friend.userId, username: friend.username, unread: 0 }];
-    renderFriendProfile(friend);
-    showScreen('friendProfileScreen');
+    renderProfile();
+    showScreen('profileScreen');
+    window._returnToDrawer = true;
+    openFriendProfile(friend.userId);
     messageFriend(friend.userId, friend.username);
   });
   await page.locator('#chatThreadScreen.active').waitFor({ state: 'visible' });
   assert.equal(await page.evaluate(() => chatThreadPreviousScreen()), 'friendProfileScreen');
-  await page.locator('#chatThreadBack').click();
+  await page.evaluate(() => {
+    const current = document.getElementById('chatThreadScreen');
+    const touch = x => new Touch({ identifier: 20, target: current, clientX: x, clientY: 240, screenX: x, screenY: 240 });
+    document.dispatchEvent(new TouchEvent('touchstart', { touches: [touch(8)], changedTouches: [touch(8)], bubbles: true }));
+    document.dispatchEvent(new TouchEvent('touchmove', { touches: [touch(250)], changedTouches: [touch(250)], bubbles: true }));
+    document.dispatchEvent(new TouchEvent('touchend', { touches: [], changedTouches: [touch(300)], bubbles: true }));
+  });
   await page.locator('#friendProfileScreen.active').waitFor({ state: 'visible' });
+  assert.equal(await page.evaluate(() => friendProfilePreviousScreen()), 'profileScreen');
+  assert.equal(await page.evaluate(() => window._returnToDrawer), true);
+
+  const friendSwipe = await page.evaluate(() => {
+    const current = document.getElementById('friendProfileScreen');
+    const previous = document.getElementById('profileScreen');
+    const touch = x => new Touch({ identifier: 21, target: current, clientX: x, clientY: 240, screenX: x, screenY: 240 });
+    document.dispatchEvent(new TouchEvent('touchstart', { touches: [touch(8)], changedTouches: [touch(8)], bubbles: true }));
+    document.dispatchEvent(new TouchEvent('touchmove', { touches: [touch(250)], changedTouches: [touch(250)], bubbles: true }));
+    return {
+      previousVisible: getComputedStyle(previous).display,
+      sameBackground: getComputedStyle(previous).backgroundImage === getComputedStyle(current).backgroundImage,
+      drawerVisible: document.getElementById('drawerOverlay').classList.contains('show')
+    };
+  });
+  assert.equal(friendSwipe.previousVisible, 'flex');
+  assert.equal(friendSwipe.sameBackground, true);
+  assert.equal(friendSwipe.drawerVisible, false);
+  await page.evaluate(() => {
+    const current = document.getElementById('friendProfileScreen');
+    const touch = x => new Touch({ identifier: 21, target: current, clientX: x, clientY: 240, screenX: x, screenY: 240 });
+    document.dispatchEvent(new TouchEvent('touchend', { touches: [], changedTouches: [touch(300)], bubbles: true }));
+  });
+  await page.locator('#profileScreen.active').waitFor({ state: 'visible' });
+  const profileHandoff = await page.evaluate(() => ({
+    activeScreen: document.querySelector('.screen.active').id,
+    drawerVisible: document.getElementById('drawerOverlay').classList.contains('show'),
+    suppressesEntryFade: document.getElementById('profileScreen').classList.contains('swipe-back-arrival')
+      && getComputedStyle(document.getElementById('profileScreen')).animationName === 'none'
+  }));
+  assert.equal(profileHandoff.activeScreen, 'profileScreen');
+  assert.equal(profileHandoff.drawerVisible, false);
+  assert.equal(profileHandoff.suppressesEntryFade, true);
+
+  await page.evaluate(() => {
+    const current = document.getElementById('profileScreen');
+    const touch = x => new Touch({ identifier: 22, target: current, clientX: x, clientY: 240, screenX: x, screenY: 240 });
+    document.dispatchEvent(new TouchEvent('touchstart', { touches: [touch(8)], changedTouches: [touch(8)], bubbles: true }));
+    document.dispatchEvent(new TouchEvent('touchmove', { touches: [touch(250)], changedTouches: [touch(250)], bubbles: true }));
+    document.dispatchEvent(new TouchEvent('touchend', { touches: [], changedTouches: [touch(300)], bubbles: true }));
+  });
+  await page.locator('#drawerOverlay.show').waitFor({ state: 'visible' });
   assert.deepEqual(errors, [], 'friend-message return emitted browser errors');
   await context.close();
 }
@@ -425,11 +477,13 @@ async function testSettingsAvatarSwipe(browser, baseUrl) {
   const profileHandoff = await page.locator('#profileScreen').evaluate(element => ({
     background: getComputedStyle(element).backgroundImage,
     position: element.style.position,
-    zIndex: element.style.zIndex
+    zIndex: element.style.zIndex,
+    suppressesEntryFade: element.classList.contains('swipe-back-arrival') && getComputedStyle(element).animationName === 'none'
   }));
   assert.match(profileHandoff.background, /radial-gradient/);
-  assert.equal(profileHandoff.position, 'fixed');
-  assert.equal(profileHandoff.zIndex, '19');
+  assert.equal(profileHandoff.position, '');
+  assert.equal(profileHandoff.zIndex, '');
+  assert.equal(profileHandoff.suppressesEntryFade, true);
   assert.deepEqual(errors, [], 'Settings avatar/swipe check emitted browser errors');
   await context.close();
 }

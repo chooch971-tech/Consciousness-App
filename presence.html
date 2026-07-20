@@ -1014,6 +1014,10 @@
     /* Gentle fade on every screen entry (opacity only — transforms would break
        position:fixed children like the session timers). */
     .screen.active { animation:screenIn .16s ease; }
+    /* Swipe-back has already painted its destination throughout the gesture.
+       Do not fade that same surface in again at handoff; keep it composited
+       until it next leaves the navigation stack to prevent a starfield blink. */
+    .screen.active.swipe-back-arrival { animation:none; transform:translateZ(0); }
     @keyframes screenIn { from { opacity:0; } }
 
     /* In-session ambient vignettes — static radial bloom in each exercise's
@@ -8348,8 +8352,8 @@ function openDrawer(instant, preserveGuideAnimation) {
       drawerLevelEl.textContent = 'Level ' + state.level + ' · ' + getRankTitle(state.level);
     }
   }
-  // The swipe preview is already mirroring this exact figure. Rebuilding its
-  // SVG during the handoff would restart every CSS animation and cause a jump.
+  // The live drawer is already visible beneath an interactive swipe. Rebuilding
+  // its Guide SVG during the handoff would restart every animation and jump.
   if (!preserveGuideAnimation) {
     // Keep the header guide icon in sync with the chosen entity/palette/step,
     // even on a fresh load or before the user has opened Upgrade.
@@ -9463,7 +9467,7 @@ startPrayerScheduler();
 
   // Which screen sits behind each sub-screen during swipe
   // (unlisted screens reveal homeScreen)
-  var PREV_SCREEN = { journalEntryScreen: 'journalScreen', exerciseSettingsScreen: 'settingsScreen', accountSettingsScreen: 'settingsScreen', friendProfileScreen: 'profileScreen', chatListScreen: 'lodgeScreen', chatThreadScreen: 'chatListScreen', concSessionScreen: 'exSetupScreen' };
+  var PREV_SCREEN = { journalEntryScreen: 'journalScreen', exerciseSettingsScreen: 'settingsScreen', accountSettingsScreen: 'settingsScreen', chatListScreen: 'lodgeScreen', chatThreadScreen: 'chatListScreen', concSessionScreen: 'exSetupScreen' };
 
   var EASE = 'cubic-bezier(0.25,0.46,0.45,0.94)';
 
@@ -9538,6 +9542,8 @@ startPrayerScheduler();
         ? friendsPanelPreviousScreen()
       : (screenEl.id === 'chatThreadScreen' && typeof chatThreadPreviousScreen === 'function')
         ? chatThreadPreviousScreen()
+      : (screenEl.id === 'friendProfileScreen' && typeof friendProfilePreviousScreen === 'function')
+        ? friendProfilePreviousScreen()
         : (PREV_SCREEN[screenEl.id] || 'homeScreen');
     var prevIsHome = (prevId === 'homeScreen');
     var prevEl = document.getElementById(prevId);
@@ -9632,12 +9638,7 @@ startPrayerScheduler();
       // briefly discard the Profile's composited night-sky surface, producing
       // a black blink when leaving Account Settings from Profile.
       requestAnimationFrame(function() {
-        // The profile-to-profile handoff uses the same layered starfield on
-        // both sides. Keep the revealed Profile layer promoted after the
-        // handoff instead of de-compositing it while it is visible; it is
-        // reset safely the next time that screen itself is swiped away.
-        var preservesProfileBackdrop = ['profileScreen', 'friendProfileScreen'].indexOf(prevEl.id) >= 0;
-        if (!preservesProfileBackdrop) cleanPrev(prevEl, prevIsHome);
+        cleanPrev(prevEl, prevIsHome);
         // Keep homeScreen visible so showScreen('homeScreen') is a no-op display-wise
         if (prevIsHome) prevEl.style.display = 'flex';
 
