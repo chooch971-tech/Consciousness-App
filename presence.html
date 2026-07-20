@@ -9683,10 +9683,11 @@ startPrayerScheduler();
       // Prevent a flash: disable transition on current screen before .active is removed
       screenEl.style.transition = 'none';
 
-      // A swipe-out goes cleanly to the already-revealed home — it must NOT also
-      // pop the drawer back open (that reopen is only for the explicit Back
-      // button, whose own click path keeps the flag set).
-      window._returnToDrawer = false;
+      // A swipe which actually lands on Home owns the drawer handoff below.
+      // Nested returns (Friend Profile → Profile, Account → Profile) must
+      // retain their original drawer context so a second swipe can still
+      // return from Profile to the hamburger menu.
+      if (prevIsHome) window._returnToDrawer = false;
 
       // Fire the back action — handles state cleanup and calls showScreen,
       // which removes .active from screenEl (making it display:none via CSS).

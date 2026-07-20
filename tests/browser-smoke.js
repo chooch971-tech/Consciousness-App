@@ -246,6 +246,9 @@ async function testProfileSky(browser, baseUrl) {
       streak: 2, awarenessLevel: 1, awarenessXp: 0, concLevel: 1, concXp: 0,
       achEarned: {}, achMonthlyEarned: {}, commonFriendIds: []
     };
+    // This Profile was opened from the hamburger menu. Returning from a
+    // nested friend profile must preserve that final swipe-back destination.
+    window._returnToDrawer = true;
     _friendProfileCache[friend.userId] = friend;
     openFriendProfile(friend.userId);
   });
@@ -279,6 +282,15 @@ async function testProfileSky(browser, baseUrl) {
   assert.match(friendProfileHandoff.background, /radial-gradient/);
   assert.equal(friendProfileHandoff.position, 'fixed');
   assert.equal(friendProfileHandoff.transform, 'translateX(0px)');
+  assert.equal(await page.evaluate(() => window._returnToDrawer), true);
+  await page.evaluate(() => {
+    const current = document.getElementById('profileScreen');
+    const touch = x => new Touch({ identifier: 3, target: current, clientX: x, clientY: 240, screenX: x, screenY: 240 });
+    document.dispatchEvent(new TouchEvent('touchstart', { touches: [touch(8)], changedTouches: [touch(8)], bubbles: true }));
+    document.dispatchEvent(new TouchEvent('touchmove', { touches: [touch(250)], changedTouches: [touch(250)], bubbles: true }));
+    document.dispatchEvent(new TouchEvent('touchend', { touches: [], changedTouches: [touch(300)], bubbles: true }));
+  });
+  await page.locator('#drawerOverlay.show').waitFor({ state: 'visible' });
   assert.deepEqual(errors, [], 'profile sky check emitted browser errors');
   await context.close();
 }

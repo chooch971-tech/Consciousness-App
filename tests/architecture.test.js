@@ -249,6 +249,7 @@ test('shared app preferences load through their own late runtime boundary', () =
 
 test('top-level drawer screens reveal the open drawer during swipe-back', () => {
   assert.match(presence, /var revealsDrawer = prevIsHome && !!window\._returnToDrawer/);
+  assert.match(presence, /if \(prevIsHome\) window\._returnToDrawer = false;/);
   assert.match(presence, /function makeDrawerPreview\(host\)[\s\S]*cloneNode\(true\)[\s\S]*host\.appendChild\(preview\)/);
   assert.match(presence, /var drawerPreview = revealsDrawer \? makeDrawerPreview\(prevEl\) : null/);
   assert.match(presence, /guideClone\.classList\.add\('drawer-omnia-preview'\)/);
