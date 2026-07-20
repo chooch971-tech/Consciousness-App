@@ -792,6 +792,7 @@
     .status-ov__btn { flex:1; padding:11px; border-radius:10px; font-family:'DM Mono',monospace; font-size:9px; letter-spacing:.16em; text-transform:uppercase; cursor:pointer; border:1px solid var(--border); background:transparent; color:var(--muted); }
     .status-ov__btn--save { background:var(--accent); color:#07080d; border-color:var(--accent); font-weight:600; }
     .status-ov__btn--clear { color:#c47a7a; border-color:rgba(196,122,122,.3); }
+    .status-ov__btn--cancel { color:rgba(237,232,222,.9); border-color:rgba(221,216,206,.3); background:rgba(255,255,255,.055); font-weight:600; }
 
     /* Achievement info popover (tap an achievement on any profile) — anchored
        to the bottom of the screen, same as the Achievements page's own
@@ -10124,13 +10125,12 @@ function openSoulMirrorTutorial(){
 <!-- Daily status editor -->
 <div class="status-ov" id="statusOverlay">
   <div class="status-ov__card">
-    <div class="status-ov__title">New Reflection</div>
-    <div class="status-ov__sub">Share one clear note from your practice</div>
-    <textarea class="status-ov__ta" id="statusInput" maxlength="280" placeholder="What is present for you today?"></textarea>
+    <div class="status-ov__title">New Status</div>
+    <div class="status-ov__sub">Share a new thought or some insight</div>
+    <textarea class="status-ov__ta" id="statusInput" maxlength="280"></textarea>
     <div class="status-ov__count"><span id="statusCount">0</span>/280</div>
     <div class="status-ov__row">
-      <button class="status-ov__btn status-ov__btn--clear" id="statusClearBtn">Clear</button>
-      <button class="status-ov__btn" id="statusCancelBtn">Cancel</button>
+      <button class="status-ov__btn status-ov__btn--cancel" id="statusCancelBtn">Cancel</button>
       <button class="status-ov__btn status-ov__btn--save" id="statusSaveBtn">Publish</button>
     </div>
   </div>

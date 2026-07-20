@@ -114,8 +114,10 @@ function openStatusEditor() {
   var ta = document.getElementById('statusInput');
   var cnt = document.getElementById('statusCount');
   if (!ov || !ta) return;
-  var cur = getMyStatus();
-  ta.value = (cur && cur.text) ? cur.text : '';
+  // Opening this composer always starts a new status. Existing words remain
+  // visible on Profile until Publish replaces them, but never prefill a new
+  // thought and accidentally get re-published unchanged.
+  ta.value = '';
   if (cnt) cnt.textContent = ta.value.length;
   ov.classList.add('on');
   setTimeout(function() { try { ta.focus(); } catch(e) {} }, 50);
@@ -148,17 +150,6 @@ function _wireStatusEditor() {
       if (lodgeOpen && typeof loadLodgeFeed === 'function') loadLodgeFeed();
     } catch(e) { showToast(e.message || 'Status could not be shared'); }
     finally { save.disabled = false; }
-  });
-  var clr = document.getElementById('statusClearBtn');
-  if (clr) clr.addEventListener('click', async function() {
-    try {
-      await setMyStatus('');
-      if (ta) ta.value = '';
-      if (cnt) cnt.textContent = '0';
-      closeStatusEditor();
-      renderMyStatus(signedInNow());
-      showToast('Status cleared', 1600);
-    } catch(e) { showToast(e.message || 'Status could not be cleared'); }
   });
   var cancel = document.getElementById('statusCancelBtn');
   if (cancel) cancel.addEventListener('click', closeStatusEditor);

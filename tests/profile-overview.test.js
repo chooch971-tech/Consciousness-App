@@ -36,6 +36,16 @@ test('friend profile keeps the username in the top bar and shows the display nam
   assert.match(profileClient, /friendProfName'\)\.textContent = displayName \|\| '@' \+ uname/);
 });
 
+test('new status composer starts blank and exposes only clear Cancel and Publish actions', () => {
+  assert.match(profileClient, /ta\.value = '';/);
+  assert.doesNotMatch(profileClient, /statusClearBtn/);
+  assert.match(html, /<div class="status-ov__title">New Status<\/div>/);
+  assert.match(html, /Share a new thought or some insight/);
+  assert.match(html, /<textarea class="status-ov__ta" id="statusInput" maxlength="280"><\/textarea>/);
+  assert.doesNotMatch(html, /id="statusClearBtn"/);
+  assert.match(html, /status-ov__btn--cancel" id="statusCancelBtn"/);
+});
+
 test('profile trophy sections render earned items only and hide empty headers', () => {
   assert.match(html, /id="profBadgesSection"/);
   assert.match(html, /id="profAchievementsSection"/);
