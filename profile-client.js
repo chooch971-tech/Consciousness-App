@@ -321,14 +321,26 @@ async function loadProfileFriendStreaks() {
   } catch(e) {}
 }
 
-// Profile · Monthly Badges — public profiles show earned badges only.
+// Profile · Monthly Badges — show one earned badge per category: the highest
+// tier reached this month. The full achievement history remains intact in the
+// achievement screen and state; Profile is a concise current-month showcase.
+function profileMonthlyBestBadges(earnedMap) {
+  var bestByGroup = {};
+  ACH_GROUPS[0].items.forEach(function(b) {
+    if (!earnedMap || !earnedMap[b.id]) return;
+    if (!bestByGroup[b.group] || b.target > bestByGroup[b.group].target) bestByGroup[b.group] = b;
+  });
+  return ACH_GROUPS[0].items.filter(function(b) { return bestByGroup[b.group] === b; });
+}
+
+// Public profiles show earned monthly badges only.
 function renderProfileBadges() {
   var el = document.getElementById('profBadges');
   var section = document.getElementById('profBadgesSection');
   if (!el) return;
   if (typeof achEnsureMonth !== 'function') return;
   achSeed(); achEnsureMonth();
-  var earnedBadges = ACH_GROUPS[0].items.filter(function(b) { return !!achState.monthly.earned[b.id]; });
+  var earnedBadges = profileMonthlyBestBadges(achState.monthly.earned);
   if (section) section.style.display = earnedBadges.length ? '' : 'none';
   el.innerHTML = earnedBadges.map(function(b) {
     var medal = b.target >= 1000 ? (b.target / 1000) + 'k' : b.target;
@@ -559,7 +571,7 @@ function renderFriendAchievements(f) {
   if (badgesEl) {
     var monthMatch = f.achMonthlyKey && (typeof achMonthKey === 'function') && (f.achMonthlyKey === achMonthKey());
     var fMonthly = monthMatch ? (f.achMonthlyEarned || {}) : {};
-    var monthlyEarned = ACH_GROUPS[0].items.filter(function(b) { return fMonthly[b.id]; });
+    var monthlyEarned = profileMonthlyBestBadges(fMonthly);
     if (badgesSection) badgesSection.style.display = monthlyEarned.length ? '' : 'none';
     if (monthlyEarned.length) {
       badgesEl.innerHTML = monthlyEarned.map(function(b) {

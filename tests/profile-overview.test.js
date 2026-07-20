@@ -39,7 +39,8 @@ test('friend profile keeps the username in the top bar and shows the display nam
 test('profile trophy sections render earned items only and hide empty headers', () => {
   assert.match(html, /id="profBadgesSection"/);
   assert.match(html, /id="profAchievementsSection"/);
-  assert.match(profileClient, /earnedBadges = ACH_GROUPS\[0\]\.items\.filter/);
+  assert.match(profileClient, /function profileMonthlyBestBadges\(earnedMap\)/);
+  assert.match(profileClient, /earnedBadges = profileMonthlyBestBadges\(achState\.monthly\.earned\)/);
   assert.match(profileClient, /section\.style\.display = earnedBadges\.length \? '' : 'none'/);
   assert.match(profileClient, /if \(achState\.earned\[b\.id\]\) done\.push/);
   assert.match(profileClient, /section\.style\.display = picks\.length \? '' : 'none'/);
@@ -50,6 +51,7 @@ test('friend profile hides empty earned and friends-in-common sections', () => {
   assert.match(html, /<span>Friends in Common<\/span>/);
   assert.match(server, /commonFriendIds: Array\.from\(commonByFriend\.get\(otherId\) \|\| \[\]\)/);
   assert.match(profileClient, /commonIds\.indexOf\(o\.userId\) !== -1/);
+  assert.match(profileClient, /monthlyEarned = profileMonthlyBestBadges\(fMonthly\)/);
   assert.match(profileClient, /badgesSection\.style\.display = monthlyEarned\.length \? '' : 'none'/);
   assert.match(profileClient, /achSection\.style\.display = earnedAch\.length \? '' : 'none'/);
   assert.match(profileClient, /section\.style\.display = others\.length \? '' : 'none'/);

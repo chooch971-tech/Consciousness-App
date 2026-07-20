@@ -203,6 +203,28 @@ async function testProfileSky(browser, baseUrl) {
   assert.equal(appearance.friendTopbar, 'rgba(0, 0, 0, 0)');
   assert.equal(appearance.manageOpacity, '1');
   assert.equal(appearance.manageBorder, '1px');
+  const monthlyBadges = await page.evaluate(() => {
+    achEnsureMonth();
+    achState.monthly.earned = {
+      mlogin_7: Date.now(), mlogin_14: Date.now(),
+      mspend_3000: Date.now(), mspend_5000: Date.now(),
+      mfifteen_1: Date.now()
+    };
+    renderProfile();
+    const own = Array.from(document.querySelectorAll('#profBadges [data-ach]')).map(el => el.getAttribute('data-ach'));
+    const friend = {
+      userId: 'friend-badge-test', username: 'badge_friend', displayName: 'Badge Friend',
+      streak: 1, awarenessLevel: 1, awarenessXp: 0, concLevel: 1, concXp: 0,
+      achEarned: {}, achMonthlyKey: achMonthKey(),
+      achMonthlyEarned: { mlogin_7: 1, mlogin_14: 1, mspend_3000: 1, mspend_5000: 1, mfifteen_1: 1 },
+      commonFriendIds: []
+    };
+    renderFriendProfile(friend);
+    const friendBadges = Array.from(document.querySelectorAll('#friendProfBadges [data-ach]')).map(el => el.getAttribute('data-ach'));
+    return { own, friendBadges };
+  });
+  assert.deepEqual(monthlyBadges.own, ['mlogin_14', 'mfifteen_1', 'mspend_5000']);
+  assert.deepEqual(monthlyBadges.friendBadges, ['mlogin_14', 'mfifteen_1', 'mspend_5000']);
   await page.evaluate(() => {
     showScreen('profileScreen');
     openFriendsPanel();
