@@ -1,5 +1,5 @@
 // ── THE LODGE — social feed (Phase 1: posts, likes, comments) ──
-var LODGE_CACHE_KEY = 'presence_lodge_feed_v1';
+var LODGE_CACHE_KEY = 'presence_lodge_feed_v2';
 var _lodgePosts = [];
 var _lodgeCursor = null;
 var _lodgeLoading = false;
@@ -7,7 +7,41 @@ var _lodgeSort = 'newest';
 
 function _lodgeCachedList() {
   if (_lodgeSort !== 'newest') return [];
-  try { var a = JSON.parse(localStorage.getItem(LODGE_CACHE_KEY)); return Array.isArray(a) ? a : []; } catch(e) { return []; }
+  try {
+    var all = JSON.parse(localStorage.getItem(LODGE_CACHE_KEY));
+    // Preserve the last version's Reflection cache during the one-time
+    // migration, then keep separate instant-paint entries for both tabs.
+    if (Array.isArray(all)) return _lodgeTab === 'note' ? all : [];
+    var entry = all && all[_lodgeTab + ':' + _lodgeSort];
+    return entry && Array.isArray(entry.posts) ? entry.posts : [];
+  } catch(e) { return []; }
+}
+function _cacheLodgeFeed(tab, sort, posts) {
+  if (sort !== 'newest') return;
+  try {
+    var all = JSON.parse(localStorage.getItem(LODGE_CACHE_KEY));
+    if (!all || Array.isArray(all)) all = {};
+    all[tab + ':' + sort] = { posts: (posts || []).slice(0, 20), updatedAt: Date.now() };
+    localStorage.setItem(LODGE_CACHE_KEY, JSON.stringify(all));
+  } catch(e) {}
+}
+function _warmLodgeFeed(tab) {
+  if (!authToken || _lodgeCachedListFor(tab).length) return;
+  fetch(SERVER_URL + '/api/social/feed?type=' + tab + '&sort=newest', { headers: { 'Authorization': 'Bearer ' + authToken } })
+    .then(function(res) { return res.ok ? res.json() : null; })
+    .then(function(data) { if (data && data.posts) _cacheLodgeFeed(tab, 'newest', data.posts); })
+    .catch(function() {});
+}
+function _lodgeCachedListFor(tab) {
+  var activeTab = _lodgeTab;
+  _lodgeTab = tab;
+  var posts = _lodgeCachedList();
+  _lodgeTab = activeTab;
+  return posts;
+}
+function warmLodgeFeeds() {
+  _warmLodgeFeed('note');
+  _warmLodgeFeed('blog');
 }
 
 var _lodgeUserFilter = null; // {userId, username} → viewing one practitioner's posts
@@ -58,6 +92,7 @@ function openLodge() {
   _lodgeLoading = !_lodgePosts.length;
   renderLodgeFeed();
   loadLodgeFeed();
+  warmLodgeFeeds();
   loadLodgeNotifs();
   loadChatList(false);
 }
@@ -97,7 +132,7 @@ async function loadLodgeFeed(cursor) {
     _lodgeCursor = Object.prototype.hasOwnProperty.call(data, 'nextCursor')
       ? data.nextCursor
       : (posts.length === 20 ? posts[posts.length - 1].createdAt : null);
-    if (!cursor && !_lodgeUserFilter && _lodgeTab === 'note' && _lodgeSort === 'newest') try { localStorage.setItem(LODGE_CACHE_KEY, JSON.stringify(_lodgePosts.slice(0, 20))); } catch(e) {}
+    if (!cursor && !_lodgeUserFilter) _cacheLodgeFeed(_lodgeTab, _lodgeSort, _lodgePosts);
   } catch(e) { console.warn('Lodge feed failed', e); }
   finally { _lodgeLoading = false; renderLodgeFeed(); }
 }
@@ -313,7 +348,7 @@ document.getElementById('lodgeTabs').addEventListener('click', function(e) {
   if (!t || t.getAttribute('data-lodge-tab') === _lodgeTab) return;
   _lodgeTab = t.getAttribute('data-lodge-tab');
   _lodgeSetTabUi();
-  _lodgePosts = []; _lodgeCursor = null; _lodgeLoading = true;
+  _lodgePosts = _lodgeCachedList(); _lodgeCursor = null; _lodgeLoading = !_lodgePosts.length;
   renderLodgeFeed();
   loadLodgeFeed();
 });
@@ -386,6 +421,9 @@ document.getElementById('drawerLodge').addEventListener('click', function() {
   if (!authToken) { showToast('Sign in to enter the Lodge'); return; }
   openLodge();
 });
+// Prime the two Lodge tabs after state restoration, long before the user
+// opens the drawer. This makes the first visit feel like a native screen.
+window.addEventListener('load', function() { setTimeout(warmLodgeFeeds, 700); });
 (function() {
   var ov = document.getElementById('likersOverlay');
   document.getElementById('likersCloseBtn').addEventListener('click', function() { ov.classList.remove('on'); });
@@ -580,6 +618,8 @@ function _chatEnsureCacheOwner() {
   if (_chatCacheToken === authToken) return;
   _chatCacheToken = authToken;
   _chatConversations = [];
+  _chatMessageCache = {};
+  _chatMessageRequests = {};
   _chatListLoaded = false;
   _chatListPromise = null;
 }
@@ -620,6 +660,7 @@ async function loadChatList(paint) {
       if (authToken !== requestToken) return;
       _chatConversations = d.conversations || [];
       _chatListLoaded = true;
+      warmChatMessages(_chatConversations.slice(0, 6));
     } catch(e) {}
   })();
   _chatListPromise = request;
@@ -643,7 +684,10 @@ async function openChatThread(convId, username) {
   var cachedConversation = _chatConversations.find(function(c) { return c.id === convId; });
   if (cachedConversation) cachedConversation.unread = 0;
   document.getElementById('chatThreadName').textContent = '@' + username;
-  document.getElementById('chatMsgs').innerHTML = '';
+  var cachedMessages = _chatMessageCache[convId];
+  document.getElementById('chatMsgs').innerHTML = cachedMessages
+    ? cachedMessages.map(_chatMsgHtml).join('')
+    : '<div class="chat-conv-skeleton"></div><div class="chat-conv-skeleton"></div>';
   showScreen('chatThreadScreen');
   await loadChatMsgs();
   startChatPoll();
@@ -679,14 +723,37 @@ function _chatMsgHtml(m) {
 
 async function loadChatMsgs() {
   if (!_chatConvId || !authToken) return;
+  var convId = _chatConvId;
   try {
-    var res = await fetch(SERVER_URL + '/api/social/conversations/' + _chatConvId + '/messages', { headers: { 'Authorization': 'Bearer ' + authToken } });
-    if (!res.ok) return;
-    var d = await res.json();
+    var messages = await _fetchChatMsgs(convId);
+    if (_chatConvId !== convId) return;
     var box = document.getElementById('chatMsgs');
-    box.innerHTML = (d.messages || []).map(_chatMsgHtml).join('');
+    box.innerHTML = messages.map(_chatMsgHtml).join('');
     box.scrollTop = box.scrollHeight;
   } catch(e) {}
+}
+
+var _chatMessageCache = {};
+var _chatMessageRequests = {};
+function _fetchChatMsgs(convId) {
+  if (_chatMessageRequests[convId]) return _chatMessageRequests[convId];
+  _chatMessageRequests[convId] = fetch(SERVER_URL + '/api/social/conversations/' + convId + '/messages', { headers: { 'Authorization': 'Bearer ' + authToken } })
+    .then(function(res) {
+      if (!res.ok) throw new Error('Message request failed');
+      return res.json();
+    })
+    .then(function(data) {
+      var messages = data.messages || [];
+      _chatMessageCache[convId] = messages;
+      return messages;
+    })
+    .finally(function() { delete _chatMessageRequests[convId]; });
+  return _chatMessageRequests[convId];
+}
+function warmChatMessages(conversations) {
+  (conversations || []).forEach(function(conversation) {
+    if (conversation && conversation.id && !_chatMessageCache[conversation.id]) _fetchChatMsgs(conversation.id).catch(function() {});
+  });
 }
 
 async function sendChatMsg() {
@@ -711,6 +778,7 @@ async function sendChatMsg() {
     }
     var box = document.getElementById('chatMsgs');
     box.insertAdjacentHTML('beforeend', _chatMsgHtml(d.message));
+    if (_chatMessageCache[_chatConvId]) _chatMessageCache[_chatConvId].push(d.message);
     box.scrollTop = box.scrollHeight;
   } catch(e) { showToast('Send failed'); }
 }

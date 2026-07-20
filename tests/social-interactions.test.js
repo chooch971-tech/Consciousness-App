@@ -36,6 +36,17 @@ test('Message opens the thread immediately while the conversation request is pen
   assert.match(body, /_chatPendingFriendId !== userId/);
 });
 
+test('Lodge preloads both feed tabs and recent message threads while preserving client boundaries', () => {
+  assert.match(socialClient, /function warmLodgeFeeds\(\)/);
+  assert.match(socialClient, /_warmLodgeFeed\('note'\)/);
+  assert.match(socialClient, /_warmLodgeFeed\('blog'\)/);
+  assert.match(socialClient, /_lodgePosts = _lodgeCachedList\(\); _lodgeCursor = null; _lodgeLoading = !_lodgePosts\.length;/);
+  assert.match(socialClient, /function warmChatMessages\(conversations\)/);
+  assert.match(socialClient, /warmChatMessages\(_chatConversations\.slice\(0, 6\)\)/);
+  assert.match(socialClient, /var cachedMessages = _chatMessageCache\[convId\];/);
+  assert.match(socialClient, /function _fetchChatMsgs\(convId\)/);
+});
+
 test('friend-profile chat returns to that profile for Back and swipe-back', () => {
   assert.match(socialClient, /function chatThreadPreviousScreen\(\) \{\s*return _chatReturnFriendId \? 'friendProfileScreen' : 'chatListScreen';/);
   assert.match(socialClient, /function returnFromChatThread\(\)[\s\S]*?renderFriendProfile\(friend\);[\s\S]*?showScreen\('friendProfileScreen'\)/);
