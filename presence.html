@@ -9698,7 +9698,12 @@ startPrayerScheduler();
       // briefly discard the Profile's composited night-sky surface, producing
       // a black blink when leaving Account Settings from Profile.
       requestAnimationFrame(function() {
-        cleanPrev(prevEl, prevIsHome);
+        // The profile-to-profile handoff uses the same layered starfield on
+        // both sides. Keep the revealed Profile layer promoted after the
+        // handoff instead of de-compositing it while it is visible; it is
+        // reset safely the next time that screen itself is swiped away.
+        var preservesProfileBackdrop = ['profileScreen', 'friendProfileScreen'].indexOf(prevEl.id) >= 0;
+        if (!preservesProfileBackdrop) cleanPrev(prevEl, prevIsHome);
         // Keep homeScreen visible so showScreen('homeScreen') is a no-op display-wise
         if (prevIsHome) prevEl.style.display = 'flex';
 

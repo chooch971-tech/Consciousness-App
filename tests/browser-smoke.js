@@ -270,6 +270,15 @@ async function testProfileSky(browser, baseUrl) {
     document.dispatchEvent(new TouchEvent('touchend', { touches: [], changedTouches: [touch(300)], bubbles: true }));
   });
   await page.locator('#profileScreen.active').waitFor({ state: 'visible' });
+  await page.evaluate(() => new Promise(resolve => requestAnimationFrame(resolve)));
+  const friendProfileHandoff = await page.locator('#profileScreen').evaluate(element => ({
+    background: getComputedStyle(element).backgroundImage,
+    position: element.style.position,
+    transform: element.style.transform
+  }));
+  assert.match(friendProfileHandoff.background, /radial-gradient/);
+  assert.equal(friendProfileHandoff.position, 'fixed');
+  assert.equal(friendProfileHandoff.transform, 'translateX(0px)');
   assert.deepEqual(errors, [], 'profile sky check emitted browser errors');
   await context.close();
 }
@@ -373,8 +382,8 @@ async function testSettingsAvatarSwipe(browser, baseUrl) {
     zIndex: element.style.zIndex
   }));
   assert.match(profileHandoff.background, /radial-gradient/);
-  assert.equal(profileHandoff.position, '');
-  assert.equal(profileHandoff.zIndex, '');
+  assert.equal(profileHandoff.position, 'fixed');
+  assert.equal(profileHandoff.zIndex, '19');
   assert.deepEqual(errors, [], 'Settings avatar/swipe check emitted browser errors');
   await context.close();
 }

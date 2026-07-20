@@ -273,6 +273,7 @@ test('top-level drawer screens reveal the open drawer during swipe-back', () => 
   const completeEnd = presence.indexOf('function cancel()', completeStart);
   const completeBody = presence.slice(completeStart, completeEnd);
   assert.ok(completeBody.indexOf('backBtn.click()') < completeBody.indexOf('requestAnimationFrame(function()') && completeBody.indexOf('requestAnimationFrame(function()') < completeBody.indexOf('cleanPrev(prevEl, prevIsHome)'), 'swipe-back keeps the revealed screen painted through the first frame after its Back action activates it');
+  assert.match(completeBody, /var preservesProfileBackdrop = \['profileScreen', 'friendProfileScreen'\]\.indexOf\(prevEl\.id\) >= 0;[\s\S]*?if \(!preservesProfileBackdrop\) cleanPrev\(prevEl, prevIsHome\);/);
 });
 
 test('Visualization and the shared exercise gateway load before Auditory', () => {
