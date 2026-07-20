@@ -236,6 +236,9 @@ function renderProfile() {
           }
         })
         .catch(function() {});
+      // Followers and following are commonly opened from this screen. Warm
+      // both lists while Profile is visible so their tabs are ready on tap.
+      warmFollowLists('me');
     } else {
       fcEl.textContent = '';
     }
@@ -427,13 +430,56 @@ function getCachedFollowSummary() {
 var _followListTab = 'followers';
 var _followListUserId = 'me';
 var _followListUserName = '';
+var FOLLOW_LIST_CACHE_KEY = 'presence_follow_list_cache_v1';
+var _followListRequests = {};
+function _followListCacheId(userId, tab) { return (userId || 'me') + ':' + tab; }
+function cacheFollowList(userId, tab, users) {
+  try {
+    var all = JSON.parse(localStorage.getItem(FOLLOW_LIST_CACHE_KEY)) || {};
+    all[_followListCacheId(userId, tab)] = { users: Array.isArray(users) ? users.slice(0, 100) : [], updatedAt: Date.now() };
+    localStorage.setItem(FOLLOW_LIST_CACHE_KEY, JSON.stringify(all));
+  } catch(e) {}
+}
+function getCachedFollowList(userId, tab) {
+  try {
+    var all = JSON.parse(localStorage.getItem(FOLLOW_LIST_CACHE_KEY)) || {};
+    var entry = all[_followListCacheId(userId, tab)];
+    return entry && Array.isArray(entry.users) ? entry.users : null;
+  } catch(e) { return null; }
+}
+function _followListLoadingHtml() {
+  return '<div class="followlist-loading" aria-label="Loading network"><i></i><i></i><i></i></div>';
+}
+function _followListContentHtml(tab, users) {
+  return users.length ? users.map(_followListRowHtml).join('') : '<div class="followlist-empty">' + (tab === 'followers' ? 'No followers yet.' : 'Not following anyone yet.') + '</div>';
+}
+function _fetchFollowList(userId, tab) {
+  var key = _followListCacheId(userId, tab);
+  if (_followListRequests[key]) return _followListRequests[key];
+  _followListRequests[key] = fetch(SERVER_URL + '/api/social/users/' + encodeURIComponent(userId) + '/' + tab, { headers: { 'Authorization': 'Bearer ' + authToken } })
+    .then(function(res) {
+      if (!res.ok) throw new Error('Follow list request failed');
+      return res.json();
+    })
+    .then(function(d) {
+      var users = d.users || [];
+      cacheFollowList(userId, tab, users);
+      return users;
+    })
+    .finally(function() { delete _followListRequests[key]; });
+  return _followListRequests[key];
+}
+function warmFollowLists(userId) {
+  if (!authToken) return;
+  ['followers', 'following'].forEach(function(tab) {
+    _fetchFollowList(userId || 'me', tab).catch(function() {});
+  });
+}
 function openFollowList(tab, userId, username) {
   if (!authToken) return;
   _followListTab = tab === 'following' ? 'following' : 'followers';
   _followListUserId = userId || 'me';
   _followListUserName = username || '';
-  var title = document.getElementById('followListTitle');
-  if (title) title.textContent = _followListUserId === 'me' ? 'Your network' : '@' + _followListUserName + '\'s network';
   document.getElementById('followListOverlay').classList.add('on');
   _renderFollowListTabs();
   _loadFollowListTab(_followListTab);
@@ -453,14 +499,12 @@ function _followListRowHtml(u) {
 async function _loadFollowListTab(tab) {
   var rows = document.getElementById('followListRows');
   var userId = _followListUserId;
-  rows.innerHTML = '<div class="followlist-empty">Loading…</div>';
+  var cached = getCachedFollowList(userId, tab);
+  rows.innerHTML = cached ? _followListContentHtml(tab, cached) : _followListLoadingHtml();
   try {
-    var res = await fetch(SERVER_URL + '/api/social/users/' + encodeURIComponent(userId) + '/' + tab, { headers: { 'Authorization': 'Bearer ' + authToken } });
+    var users = await _fetchFollowList(userId, tab);
     if (_followListTab !== tab || _followListUserId !== userId) return; // a newer view landed while this was in flight
-    if (!res.ok) { rows.innerHTML = '<div class="followlist-empty">Couldn’t load.</div>'; return; }
-    var d = await res.json();
-    var users = d.users || [];
-    rows.innerHTML = users.length ? users.map(_followListRowHtml).join('') : '<div class="followlist-empty">' + (tab === 'followers' ? 'No followers yet.' : 'Not following anyone yet.') + '</div>';
+    rows.innerHTML = _followListContentHtml(tab, users);
   } catch(e) { if (_followListTab === tab && _followListUserId === userId) rows.innerHTML = '<div class="followlist-empty">Couldn’t load.</div>'; }
 }
 // The overlay markup lives near the end of <body>, well after this script

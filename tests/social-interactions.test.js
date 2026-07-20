@@ -14,6 +14,15 @@ test('friend-profile counts open that friend’s follower and following lists', 
   assert.match(socialClient, /openFollowList\('followers', f\.userId, f\.username/);
 });
 
+test('network tabs warm, cache, and refresh follower lists without a blank loading state', () => {
+  assert.match(profileClient, /warmFollowLists\('me'\)/);
+  assert.match(profileClient, /var FOLLOW_LIST_CACHE_KEY = 'presence_follow_list_cache_v1'/);
+  assert.match(profileClient, /function getCachedFollowList\(userId, tab\)/);
+  assert.match(profileClient, /rows\.innerHTML = cached \? _followListContentHtml\(tab, cached\) : _followListLoadingHtml\(\)/);
+  assert.match(profileClient, /function _followListLoadingHtml\(\)/);
+  assert.doesNotMatch(profileClient, /followListTitle|Your network/);
+});
+
 test('Message opens the thread immediately while the conversation request is pending', () => {
   const start = socialClient.indexOf('async function messageFriend');
   const end = socialClient.indexOf("document.getElementById('lodgeChats')", start);
