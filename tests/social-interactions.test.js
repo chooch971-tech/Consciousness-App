@@ -47,6 +47,14 @@ test('Lodge preloads both feed tabs and recent message threads while preserving 
   assert.match(socialClient, /function _fetchChatMsgs\(convId\)/);
 });
 
+test('Lodge user profiles paint known posts immediately while their full feed refreshes', () => {
+  assert.match(socialClient, /var _lodgeUserPostsCache = \{\}/);
+  assert.match(socialClient, /var visiblePosts = _lodgePosts\.filter\(function\(post\) \{ return post\.userId === userId; \}\);/);
+  assert.match(socialClient, /var cachedPosts = _lodgeUserPostsCache\[userId\] \|\| visiblePosts;/);
+  assert.match(socialClient, /_lodgePosts = cachedPosts\.slice\(\); _lodgeCursor = null; _lodgeLoading = !_lodgePosts\.length;/);
+  assert.match(socialClient, /_lodgeUserPostsCache\[_lodgeUserFilter\.userId\] = _lodgePosts\.slice\(0, 20\)/);
+});
+
 test('Lodge posts expose a prominent comment action and multiline composer', () => {
   assert.match(socialClient, /class="lodge-comment-trigger" data-lodge-comments/);
   assert.match(socialClient, /<span>Comment<\/span>/);

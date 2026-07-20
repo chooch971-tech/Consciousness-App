@@ -4,6 +4,7 @@ var _lodgePosts = [];
 var _lodgeCursor = null;
 var _lodgeLoading = false;
 var _lodgeSort = 'newest';
+var _lodgeUserPostsCache = {};
 
 function _lodgeCachedList() {
   if (_lodgeSort !== 'newest') return [];
@@ -99,6 +100,12 @@ function openLodge() {
 
 // One practitioner's full post history on its own page.
 function openLodgeUser(userId, username) {
+  // A post tap already gives us at least one of this person's entries. Paint
+  // it straight away instead of replacing the feed with skeletons, then let
+  // the complete profile feed arrive in the background. Repeat visits reuse
+  // the complete in-memory result for an instant profile view.
+  var visiblePosts = _lodgePosts.filter(function(post) { return post.userId === userId; });
+  var cachedPosts = _lodgeUserPostsCache[userId] || visiblePosts;
   _lodgeUserFilter = { userId: userId, username: username };
   document.getElementById('lodgeTitle').textContent = '@' + username;
   document.getElementById('lodgeComposer').style.display = 'none';
@@ -106,7 +113,7 @@ function openLodgeUser(userId, username) {
   document.getElementById('lodgeFeedNav').style.display = 'none';
   _lodgeCloseSortMenu();
   showScreen('lodgeScreen');
-  _lodgePosts = []; _lodgeCursor = null; _lodgeLoading = true;
+  _lodgePosts = cachedPosts.slice(); _lodgeCursor = null; _lodgeLoading = !_lodgePosts.length;
   renderLodgeFeed();
   loadLodgeFeed();
 }
@@ -132,7 +139,8 @@ async function loadLodgeFeed(cursor) {
     _lodgeCursor = Object.prototype.hasOwnProperty.call(data, 'nextCursor')
       ? data.nextCursor
       : (posts.length === 20 ? posts[posts.length - 1].createdAt : null);
-    if (!cursor && !_lodgeUserFilter) _cacheLodgeFeed(_lodgeTab, _lodgeSort, _lodgePosts);
+    if (!cursor && _lodgeUserFilter) _lodgeUserPostsCache[_lodgeUserFilter.userId] = _lodgePosts.slice(0, 20);
+    else if (!cursor) _cacheLodgeFeed(_lodgeTab, _lodgeSort, _lodgePosts);
   } catch(e) { console.warn('Lodge feed failed', e); }
   finally { _lodgeLoading = false; renderLodgeFeed(); }
 }
