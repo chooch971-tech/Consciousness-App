@@ -218,6 +218,36 @@ async function testProfileSky(browser, baseUrl) {
   });
   await page.locator('#friendsPanel').waitFor({ state: 'hidden' });
   await page.locator('#profileScreen.active').waitFor({ state: 'visible' });
+  await page.evaluate(() => {
+    const friend = {
+      userId: 'friend-swipe-test', username: 'swipe_friend', displayName: 'Swipe Friend',
+      streak: 2, awarenessLevel: 1, awarenessXp: 0, concLevel: 1, concXp: 0,
+      achEarned: {}, achMonthlyEarned: {}, commonFriendIds: []
+    };
+    _friendProfileCache[friend.userId] = friend;
+    openFriendProfile(friend.userId);
+  });
+  await page.locator('#friendProfileScreen.active').waitFor({ state: 'visible' });
+  const friendTransition = await page.evaluate(() => {
+    const current = document.getElementById('friendProfileScreen');
+    const previous = document.getElementById('profileScreen');
+    const touch = x => new Touch({ identifier: 2, target: current, clientX: x, clientY: 240, screenX: x, screenY: 240 });
+    document.dispatchEvent(new TouchEvent('touchstart', { touches: [touch(8)], changedTouches: [touch(8)], bubbles: true }));
+    document.dispatchEvent(new TouchEvent('touchmove', { touches: [touch(250)], changedTouches: [touch(250)], bubbles: true }));
+    return {
+      currentBackground: getComputedStyle(current).backgroundImage,
+      previousBackground: getComputedStyle(previous).backgroundImage,
+      previousVisible: getComputedStyle(previous).display
+    };
+  });
+  assert.equal(friendTransition.currentBackground, friendTransition.previousBackground);
+  assert.equal(friendTransition.previousVisible, 'flex');
+  await page.evaluate(() => {
+    const current = document.getElementById('friendProfileScreen');
+    const touch = x => new Touch({ identifier: 2, target: current, clientX: x, clientY: 240, screenX: x, screenY: 240 });
+    document.dispatchEvent(new TouchEvent('touchend', { touches: [], changedTouches: [touch(300)], bubbles: true }));
+  });
+  await page.locator('#profileScreen.active').waitFor({ state: 'visible' });
   assert.deepEqual(errors, [], 'profile sky check emitted browser errors');
   await context.close();
 }
