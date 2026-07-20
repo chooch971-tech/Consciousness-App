@@ -2085,10 +2085,13 @@ const BLOG_MAX_LEN = 5000;
 
 app.post('/api/social/posts', verifyToken, mutationRateLimit, async (req, res) => {
   try {
+    // Reflections and essays are merged into one post type: every post may be
+    // up to BLOG_MAX_LEN with an optional title. Legacy 'blog' rows keep their
+    // type; new posts are 'note' so they still set the author's status.
     const type = req.body.type === 'blog' ? 'blog' : 'note';
-    const text = sanitizeSocialText(req.body.text, type === 'blog' ? BLOG_MAX_LEN : POST_MAX_LEN);
+    const text = sanitizeSocialText(req.body.text, BLOG_MAX_LEN);
     if (!text) return res.status(400).json({ error: 'text required' });
-    const title = (type === 'blog' && req.body.title) ? sanitizeSocialText(req.body.title, 80) : null;
+    const title = req.body.title ? sanitizeSocialText(req.body.title, 80) : null;
     if (!moderatePublicText(text).ok || (title && !moderatePublicText(title).ok)) {
       return res.status(400).json({ error: 'This writing cannot be published' });
     }
@@ -2098,11 +2101,12 @@ app.post('/api/social/posts', verifyToken, mutationRateLimit, async (req, res) =
     if (todayCount >= 30) return res.status(429).json({ error: 'Daily post limit reached' });
     const post = { userId, text, type, title, createdAt: new Date(), likeCount: 0, commentCount: 0 };
     const r = await postsCollection.insertOne(post);
-    // Only short notes double as the current status — an essay isn't a status.
+    // Your latest note doubles as your profile status. It can now be long, so
+    // store only a short preview — the status line is a glance, not the essay.
     if (type === 'note') {
       await usersCollection.updateOne(
         { _id: new ObjectId(userId) },
-        { $set: { status: { text, updatedAt: post.createdAt } } }
+        { $set: { status: { text: text.slice(0, POST_MAX_LEN), updatedAt: post.createdAt } } }
       );
     }
     res.json({ ok: true, post: { id: r.insertedId.toString(), text, type, title, createdAt: post.createdAt } });
@@ -2120,8 +2124,9 @@ app.get('/api/social/feed', verifyToken, async (req, res) => {
     const sort = normalizeSort(req.query.sort);
     const ids = await lodgeFollowingIds(userId);
     ids.push(userId);
+    // One merged feed — reflections and essays are no longer separate, so no
+    // type filter. Legacy 'blog' posts flow in alongside notes.
     const q = { userId: { $in: ids } };
-    q.type = req.query.type === 'blog' ? 'blog' : { $ne: 'blog' };
     if (sort === 'newest' && req.query.cursor) {
       const before = new Date(req.query.cursor);
       if (!isNaN(before.getTime())) q.createdAt = { $lt: before };

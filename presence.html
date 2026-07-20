@@ -852,6 +852,9 @@
     .lodge-heading { min-width:0; }
     .lodge-heading__title { font-family:'Cormorant Garamond',serif; font-size:28px; line-height:1; font-weight:400; color:var(--text); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
     .lodge-heading__title:empty { display:none; }
+    /* On a practitioner's post-history page, the @name opens their profile when
+       they're a friend — signal it's tappable. */
+    .lodge-title--link { cursor:pointer; text-decoration:underline; text-decoration-color:rgba(126,184,164,.4); text-underline-offset:4px; }
     .lodge-tools { display:flex; align-items:center; gap:2px; }
     .lodge-tool { position:relative; width:44px; height:44px; border:0; border-radius:8px; background:transparent; color:rgba(221,216,206,.7); display:flex; align-items:center; justify-content:center; cursor:pointer; transition:background .18s,color .18s; }
     .lodge-tool:hover { background:rgba(255,255,255,.045); color:var(--text); }
@@ -872,11 +875,9 @@
     .lodge-intro__glow { position:absolute; right:4px; top:50%; width:110px; height:110px; transform:translateY(-50%); background:radial-gradient(circle,rgba(232,200,122,.2) 0%,rgba(126,184,164,.12) 40%,transparent 70%); pointer-events:none; }
     .lodge-intro__art { position:relative; z-index:2; width:58px; height:68px; display:flex; align-items:center; justify-content:center; flex-shrink:0; color:#e8c87a; filter:drop-shadow(0 0 12px rgba(232,200,122,.32)); animation:omniaFloat 4.5s ease-in-out infinite; }
     .lodge-intro__art svg { width:54px; height:60px; overflow:visible; }
-    .lodge-feed-nav { position:relative; display:grid; grid-template-columns:minmax(0,1fr) auto; align-items:end; gap:8px; margin-bottom:14px; }
-    #lodgeTabs { margin:0; border-bottom-color:rgba(255,255,255,.07); }
-    #lodgeTabs .mode-tab { min-height:44px; font-size:9px; color:rgba(221,216,206,.5); }
-    #lodgeTabs .mode-tab.on { color:#8eccc0; border-bottom-color:#8eccc0; }
-    #lodgeTabs .mode-tab.on[data-lodge-tab="blog"] { color:#e8c87a; border-bottom-color:#e8c87a; }
+    /* Reflections/Essays are merged into one feed, so the nav is just the sort
+       chip, right-aligned. */
+    .lodge-feed-nav { position:relative; display:flex; justify-content:flex-end; align-items:end; gap:8px; margin-bottom:14px; }
     /* Labeled sort chip ("Newest ⌄") in place of the old icon-only filter. */
     .lodge-filter { position:relative; height:40px; margin-bottom:2px; display:flex; align-items:center; gap:6px; padding:0 14px; border:1px solid rgba(170,150,230,.18); border-radius:999px; background:rgba(170,150,230,.07); color:rgba(221,216,206,.72); cursor:pointer; font-family:'DM Mono',monospace; font-size:9px; letter-spacing:.12em; text-transform:uppercase; white-space:nowrap; transition:background .16s,color .16s,border-color .16s; }
     .lodge-filter:active,.lodge-filter[aria-expanded="true"] { background:rgba(170,150,230,.14); color:#c7b4f0; border-color:rgba(170,150,230,.34); }
@@ -897,7 +898,6 @@
     .lodge-compose__hint { font-family:'Cormorant Garamond',serif; font-size:16px; line-height:1.25; color:rgba(237,232,222,.66); }
     .lodge-compose__cta { min-height:36px; padding:0 12px; display:flex; align-items:center; border-left:1px solid rgba(255,255,255,.07); color:#8eccc0; font-family:'DM Mono',monospace; font-size:8px; letter-spacing:.18em; text-transform:uppercase; }
     .lodge-post { --lodge-hue:#8eccc0; position:relative; background:rgba(160,140,220,.055); border:1px solid rgba(170,150,230,.13); border-radius:16px; padding:16px 17px 10px; margin-bottom:12px; overflow:hidden; }
-    .lodge-post.is-blog { background:rgba(232,200,122,.035); border-color:rgba(232,200,122,.14); }
     .lodge-post__head { display:flex; align-items:center; gap:11px; margin-bottom:13px; }
     /* Stacked like control in the card's top-right corner (reference-style
        upvote): glyph above count. Inner structure (text node + count span)
@@ -909,15 +909,12 @@
     .lodge-post__identity { min-width:0; flex:1; }
     .lodge-post__name { font-family:'Space Grotesk',sans-serif; font-size:12px; font-weight:600; color:var(--lodge-hue); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
     .lodge-post__time { font-family:'DM Mono',monospace; font-size:8px; letter-spacing:.07em; color:rgba(221,216,206,.45); margin-top:2px; }
-    .lodge-post__kind { flex-shrink:0; font-family:'DM Mono',monospace; font-size:7.5px; letter-spacing:.18em; text-transform:uppercase; color:rgba(221,216,206,.42); }
     .lodge-post__body { padding:0 1px 3px; }
     .lodge-post__text { font-family:'Cormorant Garamond',serif; font-size:17px; color:rgba(241,237,229,.9); line-height:1.62; white-space:pre-wrap; word-break:break-word; }
     .lodge-blog-title { font-family:'Cormorant Garamond',serif; font-size:23px; font-weight:500; color:var(--text); margin-bottom:7px; line-height:1.18; }
-    .lodge-post__bar { display:flex; align-items:center; gap:2px; margin-top:10px; min-height:44px; border-top:1px solid rgba(170,150,230,.1); }
-    /* Footer layout: kind label sits bottom-left like a brand mark; comment
-       count and delete/report ride the right edge. */
-    .lodge-post__bar .lodge-post__kind { margin-right:auto; padding-left:2px; }
-    .lodge-post__bar .lodge-del { margin-left:0; }
+    /* Footer holds only the delete/report control now (reflections and essays
+       merged, so there's no kind label) — keep it on the right edge. */
+    .lodge-post__bar { display:flex; align-items:center; justify-content:flex-end; gap:2px; margin-top:10px; min-height:44px; border-top:1px solid rgba(170,150,230,.1); }
     .lodge-act { min-width:44px; min-height:44px; padding:0 10px; border:0; background:none; cursor:pointer; font-family:'DM Mono',monospace; font-size:10px; color:rgba(221,216,206,.48); display:flex; align-items:center; justify-content:center; gap:6px; border-radius:7px; transition:background .16s,color .16s; }
     .lodge-act:hover { background:rgba(255,255,255,.035); color:rgba(221,216,206,.76); }
     .lodge-act.liked { color:#d4956e; }
@@ -6006,10 +6003,6 @@ body:not(.tut-live) #tutCorgi {
           </div>
         </div>
         <div class="lodge-feed-nav" id="lodgeFeedNav">
-          <div class="mode-tabs" id="lodgeTabs">
-            <button class="mode-tab on" data-lodge-tab="note">Reflections</button>
-            <button class="mode-tab" data-lodge-tab="blog">Essays</button>
-          </div>
           <button class="lodge-filter" id="lodgeSortBtn" aria-label="Sort posts" aria-expanded="false" aria-controls="lodgeSort" title="Sort posts">
             <span id="lodgeSortLabel">Newest</span><span class="lodge-filter__caret" aria-hidden="true">⌄</span>
           </button>
@@ -6026,7 +6019,7 @@ body:not(.tut-live) #tutCorgi {
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L8 18l-4 1 1-4z"/></svg>
           </span>
           <span class="lodge-compose__hint" id="lodgeComposerHint">Share what is present for you today...</span>
-          <span class="lodge-compose__cta" id="lodgeComposerCta">Write</span>
+          <span class="lodge-compose__cta" id="lodgeComposerCta">Post</span>
         </button>
         <div id="lodgeFeed"></div>
         <div id="lodgeEmpty" class="lodge-empty" style="display:none;"></div>
@@ -10046,14 +10039,14 @@ function openSoulMirrorTutorial(){
 <!-- Blog (essay) editor -->
 <div class="status-ov" id="blogOverlay">
   <div class="status-ov__card">
-    <div class="status-ov__title">New Essay</div>
-    <div class="status-ov__sub">Longer-form writing for the shared record</div>
-    <input id="blogTitleInput" class="lodge-cinput" maxlength="80" placeholder="Title (optional)" autocomplete="off" style="width:100%; box-sizing:border-box; font-size:13px; padding:10px 12px; margin-bottom:8px; color:var(--text);"/>
-    <textarea class="status-ov__ta" id="blogInput" maxlength="5000" style="min-height:180px;" placeholder="Write…"></textarea>
+    <div class="status-ov__title">New Post</div>
+    <div class="status-ov__sub">Share a reflection — short or long — with the Lodge</div>
+    <input id="blogTitleInput" class="lodge-cinput" maxlength="80" placeholder="Title (optional)" autocomplete="off" style="width:100%; box-sizing:border-box; font-size:16px; padding:10px 12px; margin-bottom:8px; color:var(--text);"/>
+    <textarea class="status-ov__ta" id="blogInput" maxlength="5000" style="min-height:180px;" placeholder="What is present for you today…"></textarea>
     <div class="status-ov__count"><span id="blogCount">0</span>/5000</div>
     <div class="status-ov__row">
       <button class="status-ov__btn" id="blogCancelBtn">Cancel</button>
-      <button class="status-ov__btn status-ov__btn--save" id="blogSaveBtn">Publish</button>
+      <button class="status-ov__btn status-ov__btn--save" id="blogSaveBtn">Post</button>
     </div>
   </div>
 </div>

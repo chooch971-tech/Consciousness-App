@@ -377,30 +377,42 @@ async function testFriendMessageReturn(browser, baseUrl) {
   await context.close();
 }
 
-async function testLodgeTabSwipe(browser, baseUrl) {
+async function testLodgeReadMore(browser, baseUrl) {
+  // Reflections and essays are one merged post type: long posts truncate on
+  // the feed with a Read more toggle that reveals the full text inline.
   const context = await browser.newContext({ viewport: { width: 390, height: 844 }, hasTouch: true, serviceWorkers: 'block' });
-  const { page, errors } = await seedPage(context, baseUrl, { presence_auth_token: 'lodge-swipe-token' });
-  await page.evaluate(() => {
+  const { page, errors } = await seedPage(context, baseUrl, { presence_auth_token: 'lodge-readmore-token' });
+  const result = await page.evaluate(() => {
+    const long = 'This is a long reflection. '.repeat(20); // ~540 chars, over the preview cap
     _lodgeUserFilter = null;
-    _lodgeTab = 'note';
-    _lodgePosts = [{ id: 'lodge-swipe-post', userId: 'other', username: 'other', text: 'A reflection', createdAt: new Date().toISOString(), type: 'note' }];
+    _lodgePosts = [
+      { id: 'p-long', userId: 'other', username: 'other', title: 'A title', text: long, createdAt: new Date().toISOString(), type: 'note' },
+      { id: 'p-short', userId: 'other2', username: 'other2', text: 'Short.', createdAt: new Date().toISOString(), type: 'note' }
+    ];
     _lodgeLoading = false;
     showScreen('lodgeScreen');
     renderLodgeFeed();
-    const body = document.getElementById('lodgeBody');
-    const touch = x => new Touch({ identifier: 1, target: body, clientX: x, clientY: 420, screenX: x, screenY: 420 });
-    body.dispatchEvent(new TouchEvent('touchstart', { touches: [touch(120)], changedTouches: [touch(120)], bubbles: true }));
-    body.dispatchEvent(new TouchEvent('touchend', { touches: [], changedTouches: [touch(245)], bubbles: true }));
+    const longMore = document.querySelector('[data-post-id="p-long"] [data-blog-more]');
+    const before = document.querySelector('[data-post-id="p-long"] [data-blog-full]');
+    const beforeHidden = before ? getComputedStyle(before).display === 'none' : null;
+    if (longMore) longMore.click();
+    const after = document.querySelector('[data-post-id="p-long"] [data-blog-full]');
+    return {
+      longHasMore: !!longMore,
+      shortHasMore: !!document.querySelector('[data-post-id="p-short"] [data-blog-more]'),
+      title: (document.querySelector('[data-post-id="p-long"] .lodge-blog-title') || {}).textContent || null,
+      beforeHidden,
+      afterVisible: after ? getComputedStyle(after).display !== 'none' : null,
+      tabsGone: !document.getElementById('lodgeTabs')
+    };
   });
-  assert.equal(await page.evaluate(() => _lodgeTab), 'blog');
-  await page.evaluate(() => {
-    const body = document.getElementById('lodgeBody');
-    const touch = x => new Touch({ identifier: 2, target: body, clientX: x, clientY: 420, screenX: x, screenY: 420 });
-    body.dispatchEvent(new TouchEvent('touchstart', { touches: [touch(245)], changedTouches: [touch(245)], bubbles: true }));
-    body.dispatchEvent(new TouchEvent('touchend', { touches: [], changedTouches: [touch(120)], bubbles: true }));
-  });
-  assert.equal(await page.evaluate(() => _lodgeTab), 'note');
-  assert.deepEqual(errors, [], 'Lodge tab swipe emitted browser errors');
+  assert.equal(result.longHasMore, true, 'long post should show a Read more toggle');
+  assert.equal(result.shortHasMore, false, 'short post should not show a Read more toggle');
+  assert.equal(result.title, 'A title', 'an optional post title should render');
+  assert.equal(result.beforeHidden, true, 'full text starts hidden');
+  assert.equal(result.afterVisible, true, 'Read more reveals the full text');
+  assert.equal(result.tabsGone, true, 'Reflections/Essays tabs should be gone');
+  assert.deepEqual(errors, [], 'Lodge read-more emitted browser errors');
   await context.close();
 }
 
@@ -624,9 +636,9 @@ async function testCloudRestoreAndSignOut(browser, baseUrl) {
     console.log('run - friend message return');
     await testFriendMessageReturn(browser, baseUrl);
     console.log('ok - friend message returns directly to the friend profile');
-    console.log('run - Lodge tab swipe');
-    await testLodgeTabSwipe(browser, baseUrl);
-    console.log('ok - Lodge feed tabs switch with directional swipes');
+    console.log('run - Lodge read more');
+    await testLodgeReadMore(browser, baseUrl);
+    console.log('ok - Lodge feed truncates long posts with a working Read more toggle');
     console.log('run - Settings avatar and swipe');
     await testSettingsAvatarSwipe(browser, baseUrl);
     console.log('ok - Settings uses the saved profile photo and keeps its background during swipe-back');

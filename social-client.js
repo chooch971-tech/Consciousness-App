@@ -1,5 +1,7 @@
 // ── THE LODGE — social feed (Phase 1: posts, likes, comments) ──
-var LODGE_CACHE_KEY = 'presence_lodge_feed_v2';
+// v3: Reflections and Essays merged into a single feed, so the cache is one
+// list keyed only by nothing (newest sort only), not per-tab.
+var LODGE_CACHE_KEY = 'presence_lodge_feed_v3';
 var _lodgePosts = [];
 var _lodgeCursor = null;
 var _lodgeLoading = false;
@@ -8,54 +10,20 @@ var _lodgeUserPostsCache = {};
 
 function _lodgeCachedList() {
   if (_lodgeSort !== 'newest') return [];
-  try {
-    var all = JSON.parse(localStorage.getItem(LODGE_CACHE_KEY));
-    // Preserve the last version's Reflection cache during the one-time
-    // migration, then keep separate instant-paint entries for both tabs.
-    if (Array.isArray(all)) return _lodgeTab === 'note' ? all : [];
-    var entry = all && all[_lodgeTab + ':' + _lodgeSort];
-    return entry && Array.isArray(entry.posts) ? entry.posts : [];
-  } catch(e) { return []; }
+  try { var a = JSON.parse(localStorage.getItem(LODGE_CACHE_KEY)); return Array.isArray(a) ? a : []; } catch(e) { return []; }
 }
-function _cacheLodgeFeed(tab, sort, posts) {
-  if (sort !== 'newest') return;
-  try {
-    var all = JSON.parse(localStorage.getItem(LODGE_CACHE_KEY));
-    if (!all || Array.isArray(all)) all = {};
-    all[tab + ':' + sort] = { posts: (posts || []).slice(0, 20), updatedAt: Date.now() };
-    localStorage.setItem(LODGE_CACHE_KEY, JSON.stringify(all));
-  } catch(e) {}
-}
-function _warmLodgeFeed(tab) {
-  if (!authToken || _lodgeCachedListFor(tab).length) return;
-  fetch(SERVER_URL + '/api/social/feed?type=' + tab + '&sort=newest', { headers: { 'Authorization': 'Bearer ' + authToken } })
-    .then(function(res) { return res.ok ? res.json() : null; })
-    .then(function(data) { if (data && data.posts) _cacheLodgeFeed(tab, 'newest', data.posts); })
-    .catch(function() {});
-}
-function _lodgeCachedListFor(tab) {
-  var activeTab = _lodgeTab;
-  _lodgeTab = tab;
-  var posts = _lodgeCachedList();
-  _lodgeTab = activeTab;
-  return posts;
+function _cacheLodgeFeed(posts) {
+  try { localStorage.setItem(LODGE_CACHE_KEY, JSON.stringify((posts || []).slice(0, 20))); } catch(e) {}
 }
 function warmLodgeFeeds() {
-  _warmLodgeFeed('note');
-  _warmLodgeFeed('blog');
+  if (!authToken || _lodgeCachedList().length) return;
+  fetch(SERVER_URL + '/api/social/feed?sort=newest', { headers: { 'Authorization': 'Bearer ' + authToken } })
+    .then(function(res) { return res.ok ? res.json() : null; })
+    .then(function(data) { if (data && data.posts) _cacheLodgeFeed(data.posts); })
+    .catch(function() {});
 }
 
 var _lodgeUserFilter = null; // {userId, username} → viewing one practitioner's posts
-var _lodgeTab = 'note';      // 'note' (280-char posts) | 'blog' (long-form)
-function _lodgeSetTabUi() {
-  document.querySelectorAll('#lodgeTabs [data-lodge-tab]').forEach(function(t) {
-    t.classList.toggle('on', t.getAttribute('data-lodge-tab') === _lodgeTab);
-  });
-  var hint = document.getElementById('lodgeComposerHint');
-  var cta = document.getElementById('lodgeComposerCta');
-  if (hint) hint.textContent = _lodgeTab === 'blog' ? 'Begin a longer piece...' : 'Share what is present for you today...';
-  if (cta) cta.textContent = _lodgeTab === 'blog' ? 'New essay' : 'New reflection';
-}
 function _lodgeSetSortUi() {
   document.querySelectorAll('#lodgeSort [data-lodge-sort]').forEach(function(btn) {
     var on = btn.getAttribute('data-lodge-sort') === _lodgeSort;
@@ -80,12 +48,15 @@ function _lodgeCloseSortMenu() {
 }
 function openLodge() {
   _lodgeUserFilter = null;
-  document.getElementById('lodgeTitle').textContent = '';
+  var titleEl = document.getElementById('lodgeTitle');
+  titleEl.textContent = '';
+  titleEl.classList.remove('lodge-title--link');
+  titleEl.removeAttribute('role');
+  titleEl.onclick = null;
   document.getElementById('lodgeComposer').style.display = '';
   document.getElementById('lodgeBanner').style.display = '';
   document.getElementById('lodgeFeedNav').style.display = '';
   _lodgeCloseSortMenu();
-  _lodgeSetTabUi();
   _lodgeSetSortUi();
   showScreen('lodgeScreen');
   // Instant paint from cache, then network refresh (established pattern).
@@ -107,7 +78,19 @@ function openLodgeUser(userId, username) {
   var visiblePosts = _lodgePosts.filter(function(post) { return post.userId === userId; });
   var cachedPosts = _lodgeUserPostsCache[userId] || visiblePosts;
   _lodgeUserFilter = { userId: userId, username: username };
-  document.getElementById('lodgeTitle').textContent = '@' + username;
+  // The @name header opens the practitioner's full profile when they're a
+  // friend (the only view richer than this post history exists for friends).
+  var titleEl = document.getElementById('lodgeTitle');
+  titleEl.textContent = '@' + username;
+  if (_friendProfileCache[userId]) {
+    titleEl.classList.add('lodge-title--link');
+    titleEl.setAttribute('role', 'button');
+    titleEl.onclick = function() { openFriendProfile(userId); };
+  } else {
+    titleEl.classList.remove('lodge-title--link');
+    titleEl.removeAttribute('role');
+    titleEl.onclick = null;
+  }
   document.getElementById('lodgeComposer').style.display = 'none';
   document.getElementById('lodgeBanner').style.display = 'none';
   document.getElementById('lodgeFeedNav').style.display = 'none';
@@ -123,8 +106,6 @@ async function loadLodgeFeed(cursor) {
   if (!cursor && !_lodgePosts.length) { _lodgeLoading = true; renderLodgeFeed(); }
   try {
     var params = [];
-    if (!_lodgeUserFilter && _lodgeTab === 'blog') params.push('type=blog');
-    else if (!_lodgeUserFilter) params.push('type=note');
     if (!_lodgeUserFilter) params.push('sort=' + encodeURIComponent(_lodgeSort));
     if (cursor) params.push('cursor=' + encodeURIComponent(cursor));
     var base = _lodgeUserFilter
@@ -140,7 +121,7 @@ async function loadLodgeFeed(cursor) {
       ? data.nextCursor
       : (posts.length === 20 ? posts[posts.length - 1].createdAt : null);
     if (!cursor && _lodgeUserFilter) _lodgeUserPostsCache[_lodgeUserFilter.userId] = _lodgePosts.slice(0, 20);
-    else if (!cursor) _cacheLodgeFeed(_lodgeTab, _lodgeSort, _lodgePosts);
+    else if (!cursor && _lodgeSort === 'newest') _cacheLodgeFeed(_lodgePosts);
   } catch(e) { console.warn('Lodge feed failed', e); }
   finally { _lodgeLoading = false; renderLodgeFeed(); }
 }
@@ -159,28 +140,26 @@ function _lodgeRingHtml(username, profilePic) {
   var hue = _lodgeHue(username);
   return '<div class="lodge-post__ring" style="background:linear-gradient(135deg,' + hue[0] + ',' + hue[1] + ');">' + escHtml(String(username || '?')[0].toUpperCase()) + '</div>';
 }
+// Reflections and essays are one post type now: any post may carry an optional
+// title and any length. On the feed, posts over LODGE_PREVIEW_LEN chars show a
+// preview with a "Read more →" toggle (full text revealed inline on tap).
+var LODGE_PREVIEW_LEN = 280;
 function _lodgePostHtml(p) {
   var hue = _lodgeHue(p.username);
+  var titleHtml = p.title ? '<div class="lodge-blog-title">' + escHtml(p.title) + '</div>' : '';
+  var raw = p.text || '';
   var bodyHtml;
-  if (p.type === 'blog') {
-    var titleHtml = p.title ? '<div class="lodge-blog-title">' + escHtml(p.title) + '</div>' : '';
-    var raw = p.text || '';
-    if (raw.length > 280) {
-      bodyHtml = titleHtml
-        + '<div class="lodge-post__text" data-blog-preview>' + escHtml(raw.slice(0, 280)) + '…</div>'
-        + '<div class="lodge-post__text" data-blog-full style="display:none;">' + escHtml(raw) + '</div>'
-        + '<button class="lodge-act lodge-read-more" data-blog-more>Continue reading</button>';
-    } else {
-      bodyHtml = titleHtml + '<div class="lodge-post__text">' + escHtml(raw) + '</div>';
-    }
+  if (raw.length > LODGE_PREVIEW_LEN) {
+    bodyHtml = titleHtml
+      + '<div class="lodge-post__text" data-blog-preview>' + escHtml(raw.slice(0, LODGE_PREVIEW_LEN)) + '…</div>'
+      + '<div class="lodge-post__text" data-blog-full style="display:none;">' + escHtml(raw) + '</div>'
+      + '<button class="lodge-act lodge-read-more" data-blog-more>Read more →</button>';
   } else {
-    bodyHtml = '<div class="lodge-post__text">' + escHtml(p.text || '') + '</div>';
+    bodyHtml = titleHtml + '<div class="lodge-post__text">' + escHtml(raw) + '</div>';
   }
-  var kind = p.type === 'blog' ? 'Essay' : 'Reflection';
   // Card layout mirrors the reference: like control stacked in the top-right
-  // of the head, kind label as a brand mark bottom-left, comments/moderation
-  // on the footer's right edge.
-  return '<article class="lodge-post' + (p.type === 'blog' ? ' is-blog' : '') + '" data-post-id="' + escHtml(p.id) + '" style="--lodge-hue:' + hue[0] + ';">'
+  // of the head, comments/moderation on the footer.
+  return '<article class="lodge-post" data-post-id="' + escHtml(p.id) + '" style="--lodge-hue:' + hue[0] + ';">'
     + '<div class="lodge-post__head">'
     + '<div style="display:flex;align-items:center;gap:11px;min-width:0;flex:1;cursor:pointer;" data-lodge-user="' + escHtml(p.userId) + '" data-lodge-uname="' + escHtml(p.username || '?') + '">'
     + _lodgeRingHtml(p.username, p.profilePic)
@@ -191,7 +170,6 @@ function _lodgePostHtml(p) {
     + '</div>'
     + '<div class="lodge-post__body">' + bodyHtml + '</div>'
     + '<div class="lodge-post__bar">'
-    + '<div class="lodge-post__kind">' + kind + '</div>'
     + (p.mine ? '<button class="lodge-act lodge-del" data-lodge-del aria-label="Delete post">✕</button>'
     : '<button class="lodge-act lodge-del" data-lodge-report aria-label="Report post">⚑</button>')
     + '</div>'
@@ -210,10 +188,8 @@ function renderLodgeFeed() {
   feed.innerHTML = _lodgeLoading && !_lodgePosts.length
     ? '<div class="lodge-skeleton"></div><div class="lodge-skeleton"></div><div class="lodge-skeleton"></div>'
     : _lodgePosts.map(_lodgePostHtml).join('');
-  var emptyTitle = _lodgeUserFilter ? 'No shared writing yet'
-    : _lodgeTab === 'blog' ? 'The essay room is quiet' : 'The record is waiting';
+  var emptyTitle = _lodgeUserFilter ? 'No shared writing yet' : 'The record is waiting';
   var emptySub = _lodgeUserFilter ? 'This practitioner has not published anything here.'
-    : _lodgeTab === 'blog' ? 'Begin the first longer piece, or return when another practitioner has written.'
     : 'Share a reflection above, or follow practitioners to bring their writing into your Lodge.';
   empty.innerHTML = '<div class="lodge-empty__mark">✒</div><div class="lodge-empty__title">' + emptyTitle + '</div><div class="lodge-empty__sub">' + emptySub + '</div>';
   empty.style.display = (!_lodgeLoading && !_lodgePosts.length) ? '' : 'none';
@@ -345,7 +321,7 @@ document.getElementById('lodgeFeed').addEventListener('click', function(e) {
     var expanded = fl.style.display !== 'none';
     fl.style.display = expanded ? 'none' : '';
     pv.style.display = expanded ? '' : 'none';
-    more.textContent = expanded ? 'Continue reading' : 'Show less';
+    more.textContent = expanded ? 'Read more →' : 'Show less';
     return;
   }
   var cdel = e.target.closest('[data-comment-del]');
@@ -358,42 +334,8 @@ document.getElementById('lodgeFeed').addEventListener('click', function(e) {
   if (e.target.closest('.lodge-csend')) { sendLodgeComment(pid, card); return; }
 });
 document.getElementById('lodgeComposer').addEventListener('click', function() {
-  if (_lodgeTab === 'blog') openBlogEditor(); else openStatusEditor();
+  openLodgePostEditor();
 });
-function switchLodgeTab(tab) {
-  if (_lodgeUserFilter || (tab !== 'note' && tab !== 'blog') || tab === _lodgeTab) return;
-  _lodgeTab = tab;
-  _lodgeSetTabUi();
-  _lodgePosts = _lodgeCachedList(); _lodgeCursor = null; _lodgeLoading = !_lodgePosts.length;
-  renderLodgeFeed();
-  loadLodgeFeed();
-}
-document.getElementById('lodgeTabs').addEventListener('click', function(e) {
-  var t = e.target.closest('[data-lodge-tab]');
-  if (t) switchLodgeTab(t.getAttribute('data-lodge-tab'));
-});
-// Swipe right over Reflections for Essays, or left over Essays for
-// Reflections. The first 44px stay reserved for the global edge back swipe.
-(function() {
-  var body = document.getElementById('lodgeBody');
-  var start = null;
-  if (!body) return;
-  body.addEventListener('touchstart', function(e) {
-    var touch = e.touches[0];
-    if (!touch || _lodgeUserFilter || touch.clientX <= 44 || e.target.closest('button, input, textarea, a, select')) { start = null; return; }
-    start = { x: touch.clientX, y: touch.clientY };
-  }, {passive:true});
-  body.addEventListener('touchend', function(e) {
-    if (!start) return;
-    var touch = e.changedTouches[0];
-    var dx = touch.clientX - start.x;
-    var dy = touch.clientY - start.y;
-    start = null;
-    if (Math.abs(dx) < 72 || Math.abs(dx) < Math.abs(dy) * 1.5) return;
-    if (_lodgeTab === 'note' && dx > 0) switchLodgeTab('blog');
-    else if (_lodgeTab === 'blog' && dx < 0) switchLodgeTab('note');
-  }, {passive:true});
-})();
 document.getElementById('lodgeSort').addEventListener('click', function(e) {
   var btn = e.target.closest('[data-lodge-sort]');
   if (!btn) return;
@@ -420,15 +362,16 @@ document.addEventListener('keydown', function(e) {
   if (e.key === 'Escape') _lodgeCloseSortMenu();
 });
 
-// Blog (essay) editor
-function openBlogEditor() {
+// The one Lodge post editor (formerly the essay editor): an optional title
+// and a body of any length. Posts as a 'note', so it also sets your status.
+function openLodgePostEditor() {
   if (!authToken) { showToast('Sign in to write'); return; }
   var ov = document.getElementById('blogOverlay');
   document.getElementById('blogTitleInput').value = '';
   document.getElementById('blogInput').value = '';
   document.getElementById('blogCount').textContent = '0';
   ov.classList.add('on');
-  setTimeout(function() { try { document.getElementById('blogTitleInput').focus(); } catch(e) {} }, 50);
+  setTimeout(function() { try { document.getElementById('blogInput').focus(); } catch(e) {} }, 50);
 }
 (function() {
   var ov = document.getElementById('blogOverlay');
@@ -443,14 +386,22 @@ function openBlogEditor() {
       var res = await fetch(SERVER_URL + '/api/social/posts', {
         method: 'POST',
         headers: { 'Authorization': 'Bearer ' + authToken, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ type: 'blog', title: document.getElementById('blogTitleInput').value, text: text })
+        body: JSON.stringify({ type: 'note', title: document.getElementById('blogTitleInput').value, text: text })
       });
       var dd = await res.json();
-      if (!res.ok) { showToast(dd.error || 'Publish failed'); return; }
+      if (!res.ok) { showToast(dd.error || 'Post failed'); return; }
       ov.classList.remove('on');
-      showToast('Published to the Lodge', 1800, 'gold');
+      showToast('Shared to the Lodge', 1800, 'gold');
+      // Server set this note as our status (a short preview). Mirror that in the
+      // local status cache so the profile card updates now, not just next pull.
+      try {
+        var _sk = (typeof STATUS_KEY === 'string') ? STATUS_KEY : 'presence_status_v1';
+        var _sm = (typeof STATUS_MAX === 'number') ? STATUS_MAX : 280;
+        localStorage.setItem(_sk, JSON.stringify({ text: text.slice(0, _sm), updatedAt: new Date().toISOString() }));
+      } catch(e) {}
+      if (typeof renderMyStatus === 'function') { try { renderMyStatus(true); } catch(e) {} }
       loadLodgeFeed();
-    } catch(e) { showToast('Publish failed'); }
+    } catch(e) { showToast('Post failed'); }
   });
 })();
 document.getElementById('lodgeBack').addEventListener('click', function() {

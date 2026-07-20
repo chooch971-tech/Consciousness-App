@@ -36,11 +36,12 @@ test('Message opens the thread immediately while the conversation request is pen
   assert.match(body, /_chatPendingFriendId !== userId/);
 });
 
-test('Lodge preloads both feed tabs and recent message threads while preserving client boundaries', () => {
+test('Lodge preloads its single merged feed and recent message threads while preserving client boundaries', () => {
   assert.match(socialClient, /function warmLodgeFeeds\(\)/);
-  assert.match(socialClient, /_warmLodgeFeed\('note'\)/);
-  assert.match(socialClient, /_warmLodgeFeed\('blog'\)/);
-  assert.match(socialClient, /_lodgePosts = _lodgeCachedList\(\); _lodgeCursor = null; _lodgeLoading = !_lodgePosts\.length;/);
+  // One merged feed now (no type param, no per-tab warm).
+  assert.match(socialClient, /api\/social\/feed\?sort=newest/);
+  assert.match(socialClient, /_cacheLodgeFeed\(data\.posts\)/);
+  assert.doesNotMatch(socialClient, /_warmLodgeFeed/);
   assert.match(socialClient, /function warmChatMessages\(conversations\)/);
   assert.match(socialClient, /warmChatMessages\(_chatConversations\.slice\(0, 6\)\)/);
   assert.match(socialClient, /var cachedMessages = _chatMessageCache\[convId\];/);
@@ -55,12 +56,16 @@ test('Lodge user profiles paint known posts immediately while their full feed re
   assert.match(socialClient, /_lodgeUserPostsCache\[_lodgeUserFilter\.userId\] = _lodgePosts\.slice\(0, 20\)/);
 });
 
-test('Lodge feed supports directional tab swipes without colliding with edge back navigation', () => {
-  assert.match(socialClient, /function switchLodgeTab\(tab\)/);
-  assert.match(socialClient, /touch\.clientX <= 44/);
-  assert.match(socialClient, /Math\.abs\(dx\) < 72 \|\| Math\.abs\(dx\) < Math\.abs\(dy\) \* 1\.5/);
-  assert.match(socialClient, /_lodgeTab === 'note' && dx > 0\) switchLodgeTab\('blog'\)/);
-  assert.match(socialClient, /_lodgeTab === 'blog' && dx < 0\) switchLodgeTab\('note'\)/);
+test('Lodge merges reflections and essays into one post type with Read more truncation', () => {
+  // No tab machinery left anywhere in the client.
+  assert.doesNotMatch(socialClient, /switchLodgeTab|_lodgeTab|data-lodge-tab/);
+  // Any post can carry a title and be truncated on the feed.
+  assert.match(socialClient, /var LODGE_PREVIEW_LEN = 280/);
+  assert.match(socialClient, /raw\.length > LODGE_PREVIEW_LEN/);
+  assert.match(socialClient, /Read more →/);
+  // The single composer posts a note (so it still sets the status) with a title.
+  assert.match(socialClient, /function openLodgePostEditor\(\)/);
+  assert.match(socialClient, /type: 'note', title: document\.getElementById\('blogTitleInput'\)\.value/);
 });
 
 test('Lodge posts expose a prominent comment action and multiline composer', () => {
