@@ -2640,20 +2640,11 @@
     .drawer-overlay.drawer-instant, .drawer-overlay.drawer-instant .drawer { transition:none; }
     .drawer { position:fixed; top:0; left:0; bottom:0; width:72%; max-width:280px; background:var(--surface); border-right:1px solid var(--border); z-index:301; transform:translateX(-100%); transition:transform .3s cubic-bezier(.4,0,.2,1); padding:var(--safe-top-lg) 0 max(env(safe-area-inset-bottom),32px); display:flex; flex-direction:column; }
     .drawer-overlay.show .drawer { transform:translateX(0); }
-    .drawer-overlay.swipe-back-preview,
-    .drawer-overlay.swipe-back-preview .drawer { transition:none; }
-    /* The swipe preview lives inside homeScreen, under the active page. This
-       keeps the already-rendered Home page visible beneath its menu scrim. */
-    .drawer-overlay.swipe-back-preview { position:absolute; z-index:2; pointer-events:none; }
-    .drawer-omnia-preview { background:none; border:none; cursor:default; padding:4px; opacity:.65; line-height:0; margin-bottom:14px; position:relative; }
-    .drawer-omnia-preview .omnia-triad-orbit { --orbit-radius:30px; }
-    .drawer-omnia-preview .omnia-triad-orbit .triad-shard { width:9px; height:11px; margin:-5.5px 0 0 -4.5px; }
-    .drawer-omnia-preview .omnia-crown { top:-5px; width:32px; height:32px; }
-    .drawer-omnia-preview .omnia-polar-pillar { width:2px; height:22px; }
-    .drawer-omnia-preview .omnia-elements, .drawer-omnia-preview .omnia-mantle,
-    .drawer-omnia-preview .omnia-geo, .drawer-omnia-preview .omnia-halo10,
-    .drawer-omnia-preview .omnia-axis, .drawer-omnia-preview .omnia-diadem,
-    .drawer-omnia-preview .omnia-cap { display:none !important; }
+    /* During an edge swipe, reuse the already-rendered drawer underneath the
+       active screen. Avoiding a deep cloned preview keeps the gesture on the
+       compositor and removes a large main-thread pause on mobile. */
+    .drawer-overlay.swipe-back-live { z-index:19; pointer-events:none; transition:none; }
+    .drawer-overlay.swipe-back-live .drawer { transition:none; }
     .drawer-header { padding:0 24px 24px; border-bottom:1px solid var(--border); margin-bottom:8px; }
     .drawer-wordmark { font-family:Cormorant Garamond,serif; font-size:11px; font-weight:300; letter-spacing:.35em; text-transform:uppercase; color:var(--accent); }
     .drawer-level { font-size:9px; letter-spacing:.15em; color:var(--muted); margin-top:4px; }
@@ -9524,94 +9515,18 @@ startPrayerScheduler();
     if (!isHome) el.style.display = '';
   }
 
-  var drawerPreviewIdSeed = 0;
-  function uniquifyDrawerPreviewIds(root) {
-    var prefix = 'drawer-swipe-' + (++drawerPreviewIdSeed) + '-';
-    var idMap = {};
-    root.querySelectorAll('[id]').forEach(function(el) {
-      var oldId = el.id;
-      // Each drawer item's icon/accent color comes from a #id CSS rule
-      // (e.g. #drawerPlayground { --drawer-accent:... }). Renaming the id
-      // below breaks that match, so every item would fall back to the
-      // shared default accent — a flash of uniform color (green, the
-      // default) until the handoff to the real drawer. Freeze the resolved
-      // color as an inline custom property first so the clone keeps its
-      // own hue regardless of the id it ends up with.
-      var origEl = document.getElementById(oldId);
-      if (origEl) {
-        var cs = getComputedStyle(origEl);
-        var accent = cs.getPropertyValue('--drawer-accent');
-        var tint = cs.getPropertyValue('--drawer-tint');
-        if (accent) el.style.setProperty('--drawer-accent', accent.trim());
-        if (tint) el.style.setProperty('--drawer-tint', tint.trim());
-      }
-      idMap[oldId] = prefix + oldId;
-      el.id = idMap[oldId];
-    });
-    root.querySelectorAll('*').forEach(function(el) {
-      Array.from(el.attributes || []).forEach(function(attr) {
-        var value = attr.value;
-        Object.keys(idMap).forEach(function(oldId) {
-          value = value.split('#' + oldId).join('#' + idMap[oldId]);
-        });
-        if (value !== attr.value) el.setAttribute(attr.name, value);
-      });
-    });
+  function showLiveDrawerPreview() {
+    var drawer = document.getElementById('drawerOverlay');
+    if (!drawer) return null;
+    drawer.classList.add('drawer-instant', 'swipe-back-live', 'show');
+    return drawer;
   }
 
-  function makeDrawerPreview(host) {
-    var source = document.getElementById('drawerOverlay');
-    if (!source) return null;
-    var sourceGuide = source.querySelector('#drawerOmniaBtn');
-    var preview = source.cloneNode(true);
-    var guideClone = preview.querySelector('#drawerOmniaBtn');
-    if (guideClone) guideClone.classList.add('drawer-omnia-preview');
-    preview.removeAttribute('id');
-    uniquifyDrawerPreviewIds(preview);
-    preview.className = 'drawer-overlay show drawer-instant swipe-back-preview';
-    host.appendChild(preview);
-    // cloneNode drops scrollTop, so a drawer scrolled partway down would render
-    // at the top in the preview and then visibly jump to the real drawer's
-    // scrolled position at handoff ("skips up and then down"). Copy each
-    // scrolled node's position across — node order matches since preview is a
-    // deep clone of source. Must run after append so the clone can accept it.
-    var srcScrollNodes = source.querySelectorAll('*');
-    var cloneScrollNodes = preview.querySelectorAll('*');
-    for (var s = 0; s < srcScrollNodes.length; s++) {
-      if (srcScrollNodes[s].scrollTop) cloneScrollNodes[s].scrollTop = srcScrollNodes[s].scrollTop;
-    }
-    startDrawerGuideMirror(sourceGuide, guideClone, preview);
-    return preview;
-  }
-
-  function startDrawerGuideMirror(sourceGuide, guideClone, preview) {
-    if (!sourceGuide || !guideClone) return;
-    var sourceNodes = [sourceGuide].concat(Array.from(sourceGuide.querySelectorAll('*')));
-    var cloneNodes = [guideClone].concat(Array.from(guideClone.querySelectorAll('*')));
-    var pairs = [];
-    for (var i = 0; i < Math.min(sourceNodes.length, cloneNodes.length); i++) {
-      if (getComputedStyle(sourceNodes[i]).animationName !== 'none') {
-        cloneNodes[i].style.setProperty('animation', 'none', 'important');
-        pairs.push([sourceNodes[i], cloneNodes[i]]);
-      }
-    }
-    function mirrorFrame() {
-      if (!preview.isConnected) return;
-      pairs.forEach(function(pair) {
-        var frame = getComputedStyle(pair[0]);
-        pair[1].style.setProperty('transform', frame.transform, 'important');
-        pair[1].style.setProperty('opacity', frame.opacity, 'important');
-        pair[1].style.setProperty('filter', frame.filter, 'important');
-      });
-      preview._guideMirrorFrame = requestAnimationFrame(mirrorFrame);
-    }
-    mirrorFrame();
-  }
-
-  function removeDrawerPreview(preview) {
-    if (!preview) return;
-    if (preview._guideMirrorFrame) cancelAnimationFrame(preview._guideMirrorFrame);
-    preview.remove();
+  function releaseLiveDrawerPreview(drawer, keepOpen) {
+    if (!drawer) return;
+    if (!keepOpen) drawer.classList.remove('show');
+    drawer.classList.remove('swipe-back-live');
+    requestAnimationFrame(function() { drawer.classList.remove('drawer-instant'); });
   }
 
   // ── Gesture lifecycle ──
@@ -9633,7 +9548,7 @@ startPrayerScheduler();
 
     showBehind(prevEl);
     var overlay = addOverlay(prevEl);
-    var drawerPreview = revealsDrawer ? makeDrawerPreview(prevEl) : null;
+    var drawerPreview = revealsDrawer ? showLiveDrawerPreview() : null;
 
     screenEl.style.transition = 'none';
     screenEl.style.willChange = 'transform';
@@ -9701,9 +9616,8 @@ startPrayerScheduler();
 
       // Fire the back action — handles state cleanup and calls showScreen,
       // which removes .active from screenEl (making it display:none via CSS).
-      // Most drawer pages also call renderHome(); while that refresh runs,
-      // preserve the live Guide figure so its DOM/animation phase survives the
-      // preview-to-real-drawer handoff.
+      // The real drawer is already underneath the page, so its Guide animation
+      // and scroll position survive the handoff without a cloned preview.
       window._preserveDrawerGuideAnimation = !!drawerPreview;
       window._interactiveSwipeBackScreenId = screenEl.id;
       try {
@@ -9727,10 +9641,10 @@ startPrayerScheduler();
         // Keep homeScreen visible so showScreen('homeScreen') is a no-op display-wise
         if (prevIsHome) prevEl.style.display = 'flex';
 
-        // Swap the visual preview for the real drawer in the same paint turn.
+        // Promote the already-visible drawer to its normal layer in the same
+        // paint turn; no DOM cloning or animation restart is needed.
         if (drawerPreview) {
-          removeDrawerPreview(drawerPreview);
-          openDrawer(true, true);
+          releaseLiveDrawerPreview(drawerPreview, true);
         }
 
         // .active is now removed → screenEl is display:none → safe to reset transform
@@ -9766,7 +9680,7 @@ startPrayerScheduler();
       // Re-hide both: homeScreen goes back to display:none (sub-screen still active)
       if (prevIsHome) prevEl.style.display = 'none';
 
-      removeDrawerPreview(drawerPreview);
+      releaseLiveDrawerPreview(drawerPreview, false);
 
       screenEl.style.transition = '';
       screenEl.style.transform  = '';
@@ -9788,7 +9702,7 @@ startPrayerScheduler();
       cleanPrev(sw.prevEl, sw.prevIsHome);
       if (sw.prevIsHome) sw.prevEl.style.display = 'none';
     }
-    removeDrawerPreview(sw.drawerPreview);
+    releaseLiveDrawerPreview(sw.drawerPreview, false);
     if (sw.screenEl) {
       sw.screenEl.style.transition = '';
       sw.screenEl.style.transform = '';

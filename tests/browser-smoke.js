@@ -291,6 +291,13 @@ async function testProfileSky(browser, baseUrl) {
     document.dispatchEvent(new TouchEvent('touchend', { touches: [], changedTouches: [touch(300)], bubbles: true }));
   });
   await page.locator('#drawerOverlay.show').waitFor({ state: 'visible' });
+  await page.waitForFunction(() => !document.getElementById('drawerOverlay').classList.contains('swipe-back-live'));
+  const drawerHandoff = await page.evaluate(() => ({
+    overlayCount: document.querySelectorAll('.drawer-overlay').length,
+    stillInSwipeLayer: document.getElementById('drawerOverlay').classList.contains('swipe-back-live')
+  }));
+  assert.equal(drawerHandoff.overlayCount, 1, 'swipe-back should reuse the real drawer instead of cloning it');
+  assert.equal(drawerHandoff.stillInSwipeLayer, false, 'completed swipe should restore the drawer to its normal layer');
   assert.deepEqual(errors, [], 'profile sky check emitted browser errors');
   await context.close();
 }

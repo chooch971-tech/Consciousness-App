@@ -250,18 +250,15 @@ test('shared app preferences load through their own late runtime boundary', () =
 test('top-level drawer screens reveal the open drawer during swipe-back', () => {
   assert.match(presence, /var revealsDrawer = prevIsHome && !!window\._returnToDrawer/);
   assert.match(presence, /if \(prevIsHome\) window\._returnToDrawer = false;/);
-  assert.match(presence, /function makeDrawerPreview\(host\)[\s\S]*cloneNode\(true\)[\s\S]*host\.appendChild\(preview\)/);
-  assert.match(presence, /var drawerPreview = revealsDrawer \? makeDrawerPreview\(prevEl\) : null/);
-  assert.match(presence, /guideClone\.classList\.add\('drawer-omnia-preview'\)/);
-  assert.match(presence, /\.drawer-omnia-preview \{[^}]*margin-bottom:14px/);
-  assert.match(presence, /function uniquifyDrawerPreviewIds\(root\)[\s\S]*?value\.split\('#' \+ oldId\)\.join\('#' \+ idMap\[oldId\]\)/);
-  assert.match(presence, /function startDrawerGuideMirror\(sourceGuide, guideClone, preview\)[\s\S]*?requestAnimationFrame\(mirrorFrame\)/);
-  assert.match(presence, /pair\[1\]\.style\.setProperty\('transform', frame\.transform, 'important'\)/);
+  assert.match(presence, /function showLiveDrawerPreview\(\)[\s\S]*?classList\.add\('drawer-instant', 'swipe-back-live', 'show'\)/);
+  assert.match(presence, /var drawerPreview = revealsDrawer \? showLiveDrawerPreview\(\) : null/);
+  assert.match(presence, /function releaseLiveDrawerPreview\(drawer, keepOpen\)/);
+  assert.doesNotMatch(presence.slice(presence.indexOf('// ── iOS-style interactive swipe-back'), presence.indexOf('// ══════════════════════════════════════════════════════\n// PORE BREATHING')), /cloneNode|getComputedStyle\(pair\[0\]\)|mirrorFrame/);
   assert.match(presence, /function openDrawer\(instant, preserveGuideAnimation\)/);
   assert.match(presence, /if \(!preserveGuideAnimation\) \{[\s\S]*?updateDrawerEntityBtn/);
   assert.match(presence, /window\._preserveDrawerGuideAnimation = !!drawerPreview;[\s\S]*?backBtn\.click\(\);[\s\S]*?window\._preserveDrawerGuideAnimation = false;/);
   assert.match(omniaAppearanceClient, /function updateDrawerEntityBtn\(\) \{\s*[\s\S]*?if \(window\._preserveDrawerGuideAnimation\) return;/);
-  assert.match(presence, /if \(drawerPreview\) \{\s*removeDrawerPreview\(drawerPreview\);\s*openDrawer\(true, true\);/);
+  assert.match(presence, /if \(drawerPreview\) \{\s*releaseLiveDrawerPreview\(drawerPreview, true\);/);
   assert.match(presence, /querySelector\('[^']*\.lodge-back[^']*'\)/);
   assert.match(presence, /visibilitychange[\s\S]*abortInterruptedSwipe/);
   assert.match(presence, /var keepsAuthoredBackdrop = \['profileScreen', 'friendProfileScreen', 'friendsPanel', 'settingsScreen', 'accountSettingsScreen', 'exerciseSettingsScreen'\]/);
