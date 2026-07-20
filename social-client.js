@@ -222,9 +222,18 @@ function renderLodgeFeed() {
 
 function _lodgeCommentHtml(c) {
   return '<div class="lodge-comment" data-comment-id="' + escHtml(c.id) + '">'
-    + '<div class="lodge-comment__name"><span style="color:' + _lodgeHue(c.username)[0] + ';opacity:.8;">@' + escHtml(c.username || '?') + '</span> · ' + timeAgo(new Date(c.createdAt))
+    + '<div class="lodge-comment__name"><span style="color:' + _lodgeHue(c.username)[0] + ';opacity:.8;cursor:pointer;" data-lodge-user="' + escHtml(c.userId) + '" data-lodge-uname="' + escHtml(c.username || '?') + '">@' + escHtml(c.username || '?') + '</span> · ' + timeAgo(new Date(c.createdAt))
     + (c.mine ? ' <button class="lodge-act lodge-del" data-comment-del="' + escHtml(c.id) + '" style="display:inline-flex;padding:0 4px;" aria-label="Delete comment">✕</button>' : '')
     + '</div><div class="lodge-comment__text">' + escHtml(c.text || '') + '</div></div>';
+}
+
+// A practitioner's name, tapped from a post or a comment: their real Profile
+// if they're a mutual friend (richer view — streak, level, achievements,
+// follow/message), otherwise their Lodge post history — the same fallback
+// already used for the Followers/Following list on Profile.
+function _openLodgeProfile(userId, username) {
+  if (_friendProfileCache[userId]) openFriendProfile(userId);
+  else openLodgeUser(userId, username);
 }
 
 async function toggleLodgeLike(pid, card) {
@@ -329,7 +338,7 @@ document.getElementById('lodgeFeed').addEventListener('click', function(e) {
   if (!card) return;
   var pid = card.getAttribute('data-post-id');
   var uhead = e.target.closest('[data-lodge-user]');
-  if (uhead) { openLodgeUser(uhead.getAttribute('data-lodge-user'), uhead.getAttribute('data-lodge-uname')); return; }
+  if (uhead) { _openLodgeProfile(uhead.getAttribute('data-lodge-user'), uhead.getAttribute('data-lodge-uname')); return; }
   var more = e.target.closest('[data-blog-more]');
   if (more) {
     var pv = card.querySelector('[data-blog-preview]'), fl = card.querySelector('[data-blog-full]');
