@@ -351,15 +351,40 @@ document.getElementById('lodgeFeed').addEventListener('click', function(e) {
 document.getElementById('lodgeComposer').addEventListener('click', function() {
   if (_lodgeTab === 'blog') openBlogEditor(); else openStatusEditor();
 });
-document.getElementById('lodgeTabs').addEventListener('click', function(e) {
-  var t = e.target.closest('[data-lodge-tab]');
-  if (!t || t.getAttribute('data-lodge-tab') === _lodgeTab) return;
-  _lodgeTab = t.getAttribute('data-lodge-tab');
+function switchLodgeTab(tab) {
+  if (_lodgeUserFilter || (tab !== 'note' && tab !== 'blog') || tab === _lodgeTab) return;
+  _lodgeTab = tab;
   _lodgeSetTabUi();
   _lodgePosts = _lodgeCachedList(); _lodgeCursor = null; _lodgeLoading = !_lodgePosts.length;
   renderLodgeFeed();
   loadLodgeFeed();
+}
+document.getElementById('lodgeTabs').addEventListener('click', function(e) {
+  var t = e.target.closest('[data-lodge-tab]');
+  if (t) switchLodgeTab(t.getAttribute('data-lodge-tab'));
 });
+// Swipe right over Reflections for Essays, or left over Essays for
+// Reflections. The first 44px stay reserved for the global edge back swipe.
+(function() {
+  var body = document.getElementById('lodgeBody');
+  var start = null;
+  if (!body) return;
+  body.addEventListener('touchstart', function(e) {
+    var touch = e.touches[0];
+    if (!touch || _lodgeUserFilter || touch.clientX <= 44 || e.target.closest('button, input, textarea, a, select')) { start = null; return; }
+    start = { x: touch.clientX, y: touch.clientY };
+  }, {passive:true});
+  body.addEventListener('touchend', function(e) {
+    if (!start) return;
+    var touch = e.changedTouches[0];
+    var dx = touch.clientX - start.x;
+    var dy = touch.clientY - start.y;
+    start = null;
+    if (Math.abs(dx) < 72 || Math.abs(dx) < Math.abs(dy) * 1.5) return;
+    if (_lodgeTab === 'note' && dx > 0) switchLodgeTab('blog');
+    else if (_lodgeTab === 'blog' && dx < 0) switchLodgeTab('note');
+  }, {passive:true});
+})();
 document.getElementById('lodgeSort').addEventListener('click', function(e) {
   var btn = e.target.closest('[data-lodge-sort]');
   if (!btn) return;

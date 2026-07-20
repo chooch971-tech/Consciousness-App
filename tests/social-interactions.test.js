@@ -55,6 +55,14 @@ test('Lodge user profiles paint known posts immediately while their full feed re
   assert.match(socialClient, /_lodgeUserPostsCache\[_lodgeUserFilter\.userId\] = _lodgePosts\.slice\(0, 20\)/);
 });
 
+test('Lodge feed supports directional tab swipes without colliding with edge back navigation', () => {
+  assert.match(socialClient, /function switchLodgeTab\(tab\)/);
+  assert.match(socialClient, /touch\.clientX <= 44/);
+  assert.match(socialClient, /Math\.abs\(dx\) < 72 \|\| Math\.abs\(dx\) < Math\.abs\(dy\) \* 1\.5/);
+  assert.match(socialClient, /_lodgeTab === 'note' && dx > 0\) switchLodgeTab\('blog'\)/);
+  assert.match(socialClient, /_lodgeTab === 'blog' && dx < 0\) switchLodgeTab\('note'\)/);
+});
+
 test('Lodge posts expose a prominent comment action and multiline composer', () => {
   assert.match(socialClient, /class="lodge-comment-trigger" data-lodge-comments/);
   assert.match(socialClient, /<span>Comment<\/span>/);

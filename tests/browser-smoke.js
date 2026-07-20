@@ -318,6 +318,33 @@ async function testFriendMessageReturn(browser, baseUrl) {
   await context.close();
 }
 
+async function testLodgeTabSwipe(browser, baseUrl) {
+  const context = await browser.newContext({ viewport: { width: 390, height: 844 }, hasTouch: true, serviceWorkers: 'block' });
+  const { page, errors } = await seedPage(context, baseUrl, { presence_auth_token: 'lodge-swipe-token' });
+  await page.evaluate(() => {
+    _lodgeUserFilter = null;
+    _lodgeTab = 'note';
+    _lodgePosts = [{ id: 'lodge-swipe-post', userId: 'other', username: 'other', text: 'A reflection', createdAt: new Date().toISOString(), type: 'note' }];
+    _lodgeLoading = false;
+    showScreen('lodgeScreen');
+    renderLodgeFeed();
+    const body = document.getElementById('lodgeBody');
+    const touch = x => new Touch({ identifier: 1, target: body, clientX: x, clientY: 420, screenX: x, screenY: 420 });
+    body.dispatchEvent(new TouchEvent('touchstart', { touches: [touch(120)], changedTouches: [touch(120)], bubbles: true }));
+    body.dispatchEvent(new TouchEvent('touchend', { touches: [], changedTouches: [touch(245)], bubbles: true }));
+  });
+  assert.equal(await page.evaluate(() => _lodgeTab), 'blog');
+  await page.evaluate(() => {
+    const body = document.getElementById('lodgeBody');
+    const touch = x => new Touch({ identifier: 2, target: body, clientX: x, clientY: 420, screenX: x, screenY: 420 });
+    body.dispatchEvent(new TouchEvent('touchstart', { touches: [touch(245)], changedTouches: [touch(245)], bubbles: true }));
+    body.dispatchEvent(new TouchEvent('touchend', { touches: [], changedTouches: [touch(120)], bubbles: true }));
+  });
+  assert.equal(await page.evaluate(() => _lodgeTab), 'note');
+  assert.deepEqual(errors, [], 'Lodge tab swipe emitted browser errors');
+  await context.close();
+}
+
 async function testSettingsAvatarSwipe(browser, baseUrl) {
   const profilePic = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M/wHwAF/gL+X0Y5WQAAAABJRU5ErkJggg==';
   const context = await browser.newContext({ viewport: { width: 390, height: 844 }, hasTouch: true, serviceWorkers: 'block' });
@@ -536,6 +563,9 @@ async function testCloudRestoreAndSignOut(browser, baseUrl) {
     console.log('run - friend message return');
     await testFriendMessageReturn(browser, baseUrl);
     console.log('ok - friend message returns directly to the friend profile');
+    console.log('run - Lodge tab swipe');
+    await testLodgeTabSwipe(browser, baseUrl);
+    console.log('ok - Lodge feed tabs switch with directional swipes');
     console.log('run - Settings avatar and swipe');
     await testSettingsAvatarSwipe(browser, baseUrl);
     console.log('ok - Settings uses the saved profile photo and keeps its background during swipe-back');
