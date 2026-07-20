@@ -150,6 +150,10 @@ system, achievements, streaks, and social/friends features.
 - Read `git status` before editing and preserve unrelated user changes.
 - Verify locally before committing.
 - Push the reviewed commit to `main`; do not deploy to Netlify unless explicitly requested.
+- **Live web version**: `chooch971-tech.github.io/consciousness-app/presence.html` — GitHub Pages
+  serving straight from `main` (no workflow file; configured in repo Settings → Pages), so it goes
+  live automatically on every push. This is separate from the Netlify target above, which requires
+  an explicit deploy.
 
 ## Verification harness (use this before every commit)
 1. **Parse check** — every `<script>` block must compile:
