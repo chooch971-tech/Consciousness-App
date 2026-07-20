@@ -47,6 +47,14 @@ test('Lodge preloads both feed tabs and recent message threads while preserving 
   assert.match(socialClient, /function _fetchChatMsgs\(convId\)/);
 });
 
+test('Lodge posts expose a prominent comment action and multiline composer', () => {
+  assert.match(socialClient, /class="lodge-comment-trigger" data-lodge-comments/);
+  assert.match(socialClient, /<span>Comment<\/span>/);
+  assert.match(socialClient, /<textarea class="lodge-cinput lodge-cinput--comment" maxlength="280" rows="4"/);
+  assert.match(socialClient, /card\.querySelector\('\.lodge-cinput'\)/);
+  assert.match(profileClient, /function openFollowList/);
+});
+
 test('friend-profile chat returns to that profile for Back and swipe-back', () => {
   assert.match(socialClient, /function chatThreadPreviousScreen\(\) \{\s*return _chatReturnFriendId \? 'friendProfileScreen' : 'chatListScreen';/);
   assert.match(socialClient, /function returnFromChatThread\(\)[\s\S]*?renderFriendProfile\(friend\);[\s\S]*?showScreen\('friendProfileScreen'\)/);

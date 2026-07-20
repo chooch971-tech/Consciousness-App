@@ -184,12 +184,12 @@ function _lodgePostHtml(p) {
     + '<div class="lodge-post__body">' + bodyHtml + '</div>'
     + '<div class="lodge-post__bar">'
     + '<div class="lodge-post__kind">' + kind + '</div>'
-    + '<button class="lodge-act" data-lodge-comments>◌ <span data-comment-count>' + (p.commentCount || 0) + '</span></button>'
     + (p.mine ? '<button class="lodge-act lodge-del" data-lodge-del aria-label="Delete post">✕</button>'
-               : '<button class="lodge-act lodge-del" data-lodge-report aria-label="Report post">⚑</button>')
+    : '<button class="lodge-act lodge-del" data-lodge-report aria-label="Report post">⚑</button>')
     + '</div>'
+    + '<button class="lodge-comment-trigger" data-lodge-comments><span class="lodge-comment-trigger__mark">◌</span><span>Comment</span><span class="lodge-comment-trigger__count" data-comment-count>' + (p.commentCount || 0) + '</span></button>'
     + '<div class="lodge-comments"><div data-comment-list></div>'
-    + '<div class="lodge-crow"><input class="lodge-cinput" maxlength="280" placeholder="Add a comment…"/>'
+    + '<div class="lodge-crow lodge-crow--comment"><textarea class="lodge-cinput lodge-cinput--comment" maxlength="280" rows="4" placeholder="Add a comment…"></textarea>'
     + '<button class="lodge-csend">Send</button></div>'
     + '</div></article>';
 }
