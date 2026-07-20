@@ -341,6 +341,40 @@ async function testSettingsAvatarSwipe(browser, baseUrl) {
     document.dispatchEvent(new TouchEvent('touchend', { touches: [], changedTouches: [touch(300)], bubbles: true }));
   });
   await page.locator('#settingsScreen.active').waitFor({ state: 'visible' });
+
+  // Account Settings is also opened directly from Profile. Its swipe-back
+  // must keep Profile's full night-sky surface painted through the handoff.
+  await page.evaluate(() => {
+    renderProfile();
+    showScreen('profileScreen');
+  });
+  await page.locator('#profSettingsBtn').click();
+  await page.locator('#accountSettingsScreen.active').waitFor({ state: 'visible' });
+  const profileTransition = await page.evaluate(() => {
+    const current = document.getElementById('accountSettingsScreen');
+    const previous = document.getElementById('profileScreen');
+    const touch = x => new Touch({ identifier: 2, target: current, clientX: x, clientY: 220, screenX: x, screenY: 220 });
+    document.dispatchEvent(new TouchEvent('touchstart', { touches: [touch(8)], changedTouches: [touch(8)], bubbles: true }));
+    document.dispatchEvent(new TouchEvent('touchmove', { touches: [touch(250)], changedTouches: [touch(250)], bubbles: true }));
+    return { previousBackground: getComputedStyle(previous).backgroundImage, previousVisible: getComputedStyle(previous).display };
+  });
+  assert.match(profileTransition.previousBackground, /radial-gradient/);
+  assert.equal(profileTransition.previousVisible, 'flex');
+  await page.evaluate(() => {
+    const current = document.getElementById('accountSettingsScreen');
+    const touch = x => new Touch({ identifier: 2, target: current, clientX: x, clientY: 220, screenX: x, screenY: 220 });
+    document.dispatchEvent(new TouchEvent('touchend', { touches: [], changedTouches: [touch(300)], bubbles: true }));
+  });
+  await page.locator('#profileScreen.active').waitFor({ state: 'visible' });
+  await page.evaluate(() => new Promise(resolve => requestAnimationFrame(resolve)));
+  const profileHandoff = await page.locator('#profileScreen').evaluate(element => ({
+    background: getComputedStyle(element).backgroundImage,
+    position: element.style.position,
+    zIndex: element.style.zIndex
+  }));
+  assert.match(profileHandoff.background, /radial-gradient/);
+  assert.equal(profileHandoff.position, '');
+  assert.equal(profileHandoff.zIndex, '');
   assert.deepEqual(errors, [], 'Settings avatar/swipe check emitted browser errors');
   await context.close();
 }

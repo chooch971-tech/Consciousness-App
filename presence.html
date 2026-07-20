@@ -9693,24 +9693,26 @@ startPrayerScheduler();
         window._interactiveSwipeBackScreenId = '';
       }
 
-      // Keep the revealed screen painted until its Back action has made it
-      // active. Cleaning it first briefly restores `.screen { display:none }`,
-      // which is visible as a black blink when Friend Profile re-renders
-      // Profile during a swipe-back.
-      cleanPrev(prevEl, prevIsHome);
-      // Keep homeScreen visible so showScreen('homeScreen') is a no-op display-wise
-      if (prevIsHome) prevEl.style.display = 'flex';
+      // Let the Back action's newly active screen paint once before removing
+      // its swipe-only inline layer. On iOS, doing both in one frame can
+      // briefly discard the Profile's composited night-sky surface, producing
+      // a black blink when leaving Account Settings from Profile.
+      requestAnimationFrame(function() {
+        cleanPrev(prevEl, prevIsHome);
+        // Keep homeScreen visible so showScreen('homeScreen') is a no-op display-wise
+        if (prevIsHome) prevEl.style.display = 'flex';
 
-      // Swap the visual preview for the real drawer in the same frame.
-      if (drawerPreview) {
-        removeDrawerPreview(drawerPreview);
-        openDrawer(true, true);
-      }
+        // Swap the visual preview for the real drawer in the same paint turn.
+        if (drawerPreview) {
+          removeDrawerPreview(drawerPreview);
+          openDrawer(true, true);
+        }
 
-      // .active is now removed → screenEl is display:none → safe to reset transform
-      screenEl.style.transform  = '';
-      screenEl.style.transition = '';
-      screenEl.style.willChange = '';
+        // .active is now removed → screenEl is display:none → safe to reset transform
+        screenEl.style.transform  = '';
+        screenEl.style.transition = '';
+        screenEl.style.willChange = '';
+      });
     }, 260);
   }
 
