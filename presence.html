@@ -2846,8 +2846,14 @@
 .wlc-btn--primary { background:linear-gradient(135deg,#ddb8ee 0%,#b886cc 52%,#e6a6c2 100%); border-color:rgba(255,255,255,.30); color:#2a1340; text-shadow:0 1px 0 rgba(255,255,255,.22); animation:wlcGlow 3.6s ease-in-out infinite; }
 @keyframes wlcGlow { 0%,100%{box-shadow:0 10px 26px rgba(184,134,204,.30),inset 0 1px 0 rgba(255,255,255,.4);} 50%{box-shadow:0 14px 34px rgba(232,166,194,.52),inset 0 1px 0 rgba(255,255,255,.5);} }
 .wlc-btn--primary:hover { filter:brightness(1.06) saturate(1.06); }
-.wlc-btn--ghost { background:linear-gradient(180deg,rgba(212,184,228,.13),rgba(212,184,228,.05)); border-color:rgba(212,184,228,.32); color:#ecd6f4; box-shadow:inset 0 1px 0 rgba(255,255,255,.06); }
-.wlc-btn--ghost:hover { background:linear-gradient(180deg,rgba(212,184,228,.2),rgba(212,184,228,.09)); border-color:rgba(212,184,228,.55); }
+.wlc-btn--ghost { background:linear-gradient(180deg,rgba(212,184,228,.16),rgba(212,184,228,.06)); border-color:rgba(212,184,228,.42); color:#f2e2f8; box-shadow:inset 0 1px 0 rgba(255,255,255,.08); }
+.wlc-btn--ghost:hover { background:linear-gradient(180deg,rgba(212,184,228,.24),rgba(212,184,228,.1)); border-color:rgba(212,184,228,.6); }
+/* Returning-user hint: the app lives at more than one web address, and each
+   keeps its own login + "onboarded" state, so a practitioner opening a new
+   address looks brand new until they sign in. This tells them so, right where
+   the choice is made, so they restore progress instead of redoing the intro. */
+.wlc-hint { margin-top:4px; text-align:center; font-family:'DM Mono',monospace; font-size:9.5px; line-height:1.7; letter-spacing:.04em; color:rgba(236,214,244,.6); }
+.wlc-hint-link { background:none; border:none; padding:0; cursor:pointer; font:inherit; letter-spacing:inherit; color:#e6a6c2; text-decoration:underline; text-underline-offset:3px; }
 /* Login screen */
 #loginScreen {
   position:fixed; inset:0; z-index:9998; display:none;
@@ -5488,6 +5494,7 @@ body:not(.tut-live) #tutCorgi {
   <div class="wlc-actions">
     <button class="wlc-btn wlc-btn--primary" id="welcomeBeginBtn">Begin the Practice</button>
     <button class="wlc-btn wlc-btn--ghost" id="welcomeAccountBtn">I already have an account</button>
+    <div class="wlc-hint">Practiced before, or on another device? <button type="button" class="wlc-hint-link" id="welcomeSignInLink">Sign in</button> to restore your progress and skip the intro.</div>
   </div>
 </div>
 
@@ -5564,6 +5571,7 @@ body:not(.tut-live) #tutCorgi {
   });
 
   document.getElementById('welcomeAccountBtn').addEventListener('click', showLogin);
+  document.getElementById('welcomeSignInLink').addEventListener('click', showLogin);
   document.getElementById('lgnBackBtn').addEventListener('click', showWelcome);
 
   document.getElementById('lgnPwToggle').addEventListener('click', function() {
