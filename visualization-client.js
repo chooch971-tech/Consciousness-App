@@ -1480,22 +1480,24 @@ function updateExSetupBanner(ex) {
   var cfg = EX_BANNER_CONFIG[ex] || EX_BANNER_CONFIG.clock;
   var banner = document.getElementById('exSetupBanner');
   if (!banner) return;
+  var visualMinimal = ex === 'visual';
   banner.style.setProperty('--exb-rgb', cfg.rgb);
   banner.style.setProperty('--exb-light', cfg.light);
   banner.classList.toggle('ex-banner--no-ripple', ex === 'clock');
+  banner.classList.toggle('ex-banner--visual-minimal', visualMinimal);
   var label = document.getElementById('exBannerLabel');
   var title = document.getElementById('exBannerTitle');
   var tag   = document.getElementById('exBannerTagline');
   var sym   = document.getElementById('exBannerSym');
   var wm    = document.getElementById('exBannerWatermark');
-  if (label) label.textContent = cfg.label || 'Concentration';
+  if (label) label.textContent = visualMinimal ? 'Concentration' : (cfg.label || 'Concentration');
   if (title) {
-    title.textContent = cfg.title || (EXERCISE_DEFS[ex] && EXERCISE_DEFS[ex].name) || '';
+    title.textContent = visualMinimal ? '' : (cfg.title || (EXERCISE_DEFS[ex] && EXERCISE_DEFS[ex].name) || '');
     title.classList.toggle('clk-title-glow', ex === 'clock');
   }
   if (tag)   tag.textContent = cfg.tagline || '';
-  if (sym)   sym.innerHTML = '<svg width="96" height="96" viewBox="0 0 100 100" fill="none">' + cfg.symInner + '</svg>';
-  if (wm)    wm.innerHTML = '<svg width="220" height="220" viewBox="0 0 100 100" fill="none">' + cfg.symInner + '</svg>';
+  if (sym)   sym.innerHTML = visualMinimal ? '' : '<svg width="96" height="96" viewBox="0 0 100 100" fill="none">' + cfg.symInner + '</svg>';
+  if (wm)    wm.innerHTML = visualMinimal ? '' : '<svg width="220" height="220" viewBox="0 0 100 100" fill="none">' + cfg.symInner + '</svg>';
 }
 
 // Omnia's crystal — used as the clickable "explain this exercise" head.

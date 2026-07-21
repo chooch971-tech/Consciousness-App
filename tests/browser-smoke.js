@@ -105,7 +105,14 @@ async function testExerciseEntry(browser, baseUrl) {
   for (const [exercise, name] of Object.entries(expectedNames)) {
     await page.locator(`#concBeginnerGrid .exercise-card[data-exercise="${exercise}"]`).click();
     await page.locator('#exSetupScreen.active').waitFor({ state: 'visible' });
-    assert.equal((await page.locator('#exBannerTitle').textContent()).trim(), name);
+    const bannerTitle = (await page.locator('#exBannerTitle').textContent()).trim();
+    const bannerSymbol = (await page.locator('#exBannerSym').innerHTML()).trim();
+    if (exercise === 'visual') {
+      assert.equal(bannerTitle, '', 'Visualization setup should not repeat its title in the banner');
+      assert.equal(bannerSymbol, '', 'Visualization setup should not repeat its eye icon in the banner');
+    } else {
+      assert.equal(bannerTitle, name);
+    }
     const surface = await page.locator('#exSetupScreen').evaluate(element => ({
       width: element.getBoundingClientRect().width,
       height: element.getBoundingClientRect().height,
@@ -172,6 +179,31 @@ async function testGeneratorMastery(browser, baseUrl) {
   assert.match(dmText, /Umbral Resonance/);
   assert.match(dmText, /akasha/i);
   assert.deepEqual(errors, [], 'generator mastery flow emitted browser errors');
+  await context.close();
+}
+
+async function testClockSettingsSwipeBack(browser, baseUrl) {
+  const context = await browser.newContext({ viewport: { width: 390, height: 844 }, hasTouch: true, serviceWorkers: 'block' });
+  const { page, errors } = await seedPage(context, baseUrl);
+  const result = await page.evaluate(async () => {
+    openExerciseSetup('clock');
+    openClockSettings('exSetupScreen');
+    const screen = document.getElementById('clockSettingsScreen');
+    const touch = x => new Touch({ identifier: 41, target: screen, clientX: x, clientY: 260, screenX: x, screenY: 260 });
+    document.dispatchEvent(new TouchEvent('touchstart', { touches: [touch(8)], changedTouches: [touch(8)], bubbles: true }));
+    document.dispatchEvent(new TouchEvent('touchmove', { touches: [touch(170)], changedTouches: [touch(170)], bubbles: true }));
+    document.dispatchEvent(new TouchEvent('touchend', { touches: [], changedTouches: [touch(210)], bubbles: true }));
+    await new Promise(resolve => setTimeout(resolve, 430));
+    return {
+      iconOnly: document.getElementById('clkCfgBack').textContent.trim() === '',
+      returnedToClock: document.getElementById('exSetupScreen').classList.contains('active'),
+      cleanTransform: screen.style.transform === ''
+    };
+  });
+  assert.equal(result.iconOnly, true, 'Clock customization back control should have no Back text');
+  assert.equal(result.returnedToClock, true, 'Clock customization edge swipe should return to the Clock exercise');
+  assert.equal(result.cleanTransform, true, 'Clock swipe should clean its temporary transform');
+  assert.deepEqual(errors, [], 'Clock settings swipe-back emitted browser errors');
   await context.close();
 }
 
@@ -702,6 +734,9 @@ async function testCloudRestoreAndSignOut(browser, baseUrl) {
     console.log('run - generator mastery');
     await testGeneratorMastery(browser, baseUrl);
     console.log('ok - generator mastery and Dark Matter tracks render');
+    console.log('run - Clock settings swipe-back');
+    await testClockSettingsSwipeBack(browser, baseUrl);
+    console.log('ok - Clock customization uses an icon-only back control and returns by swipe');
     console.log('run - profile sky');
     await testProfileSky(browser, baseUrl);
     console.log('ok - profiles and Friends manager share the night sky and swipe-back path');

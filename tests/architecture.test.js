@@ -758,6 +758,19 @@ test('all Settings screens share the dedicated midnight-blue starfield', () => {
   assert.match(presence, /'clockSettingsScreen'\].indexOf\(el\.id\) >= 0/);
 });
 
+test('Clock setup has an icon-only back affordance and returns to its true opener by swipe', () => {
+  assert.match(presence, /class="history-back clk-cfg-back" id="clkCfgBack" aria-label="Back">&#8592;<\/button>/);
+  assert.match(presence, /screenEl\.id === 'clockSettingsScreen' && typeof _clkSettingsFrom === 'string'\)\s*\? _clkSettingsFrom/);
+  assert.match(presence, /\.history-back, \.clk-cfg-back, \.jl-editor-back/);
+});
+
+test('Visualization setup does not repeat its name or icon in the banner', () => {
+  assert.match(visualizationClient, /var visualMinimal = ex === 'visual';/);
+  assert.match(visualizationClient, /label\.textContent = visualMinimal \? 'Concentration'/);
+  assert.match(visualizationClient, /title\.textContent = visualMinimal \? ''/);
+  assert.match(presence, /\.ex-banner--visual-minimal \.exb-title,[\s\S]*?\.exb-right,[\s\S]*?\.exb-watermark \{ display:none; \}/);
+});
+
 test('Friends manager remembers its opener and closes immediately after an interactive swipe', () => {
   assert.match(socialClient, /function friendsPanelPreviousScreen\(\) \{\s*return _friendsPanelReturnScreen \|\| 'profileScreen';/);
   assert.match(socialClient, /_friendsPanelReturnScreen = returnScreenId \|\| \(activeScreen && activeScreen\.id\) \|\| 'profileScreen'/);

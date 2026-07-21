@@ -5162,6 +5162,14 @@ body:not(.tut-live) #tutCorgi {
    they read as a redundant ring around the clock face. Scoped to the Clock. */
 .ex-banner--no-ripple .exb-ripple { display:none; }
 
+/* Visualization already introduces itself on the Concentration card. Keep its
+   setup banner to a quiet instruction rather than repeating its title and
+   eye motif at the top of the page. */
+.ex-banner--visual-minimal .exb-title,
+.ex-banner--visual-minimal .exb-right,
+.ex-banner--visual-minimal .exb-watermark { display:none; }
+.ex-banner--visual-minimal .exb-text { max-width:100%; }
+
 /* The Clock title gets the same glowing copper treatment as its Begin button. */
 .exb-title.clk-title-glow {
   text-shadow:0 0 14px rgba(224,124,58,.55), 0 0 28px rgba(224,124,58,.28);
@@ -7415,7 +7423,7 @@ body:not(.tut-live) #tutCorgi {
 
   <!-- CLOCK SETTINGS SCREEN -->
   <div class="screen" id="clockSettingsScreen">
-    <button class="clk-cfg-back" id="clkCfgBack">&#8592; back</button>
+    <button class="history-back clk-cfg-back" id="clkCfgBack" aria-label="Back">&#8592;</button>
     <div style="flex:1; overflow-y:auto; -webkit-overflow-scrolling:touch; scrollbar-width:none; -ms-overflow-style:none; display:flex; flex-direction:column;">
       <div class="clk-cfg-body">
         <div class="clk-cfg-preview" id="clkCfgPreview"></div>
@@ -9577,7 +9585,9 @@ startPrayerScheduler();
   // ── Gesture lifecycle ──
 
   function begin(screenEl, backBtn, startX) {
-    var prevId = (screenEl.id === 'accountSettingsScreen' && typeof _acctSettingsReturnTo === 'string')
+    var prevId = (screenEl.id === 'clockSettingsScreen' && typeof _clkSettingsFrom === 'string')
+      ? _clkSettingsFrom
+      : (screenEl.id === 'accountSettingsScreen' && typeof _acctSettingsReturnTo === 'string')
       ? _acctSettingsReturnTo
       : (screenEl.id === 'friendsPanel' && typeof friendsPanelPreviousScreen === 'function')
         ? friendsPanelPreviousScreen()
@@ -9777,7 +9787,7 @@ startPrayerScheduler();
     // A filtered Lodge profile returns to the Lodge feed, not the drawer.
     if (screenEl.id === 'lodgeScreen' && typeof _lodgeUserFilter !== 'undefined' && _lodgeUserFilter) return;
 
-    var backBtn = screenEl.querySelector('.history-back, .jl-editor-back, .conc-sess-back, .lodge-back, .fp-back');
+    var backBtn = screenEl.querySelector('.history-back, .clk-cfg-back, .jl-editor-back, .conc-sess-back, .lodge-back, .fp-back');
     if (!backBtn) return;
 
     sw._pending = { screenEl: screenEl, backBtn: backBtn, x: t.clientX, y: t.clientY };
