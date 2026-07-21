@@ -188,6 +188,11 @@ async function testClockSettingsSwipeBack(browser, baseUrl) {
   const result = await page.evaluate(async () => {
     openExerciseSetup('clock');
     openClockSettings('exSetupScreen');
+    for (var i = 0; i < 8; i++) document.getElementById('clkCfgBufferUp').click();
+    var cappedAtTen = getClockStartBuffer() === 10 && document.getElementById('clkCfgBufferVal').textContent === '10s';
+    for (var j = 0; j < 11; j++) document.getElementById('clkCfgBufferDown').click();
+    var loweredToZero = getClockStartBuffer() === 0 && concState.clockTheme.startBuffer === 0
+      && document.getElementById('clkCfgBufferVal').textContent === '0s';
     const screen = document.getElementById('clockSettingsScreen');
     const touch = x => new Touch({ identifier: 41, target: screen, clientX: x, clientY: 260, screenX: x, screenY: 260 });
     document.dispatchEvent(new TouchEvent('touchstart', { touches: [touch(8)], changedTouches: [touch(8)], bubbles: true }));
@@ -196,11 +201,15 @@ async function testClockSettingsSwipeBack(browser, baseUrl) {
     await new Promise(resolve => setTimeout(resolve, 430));
     return {
       iconOnly: document.getElementById('clkCfgBack').textContent.trim() === '',
+      cappedAtTen,
+      loweredToZero,
       returnedToClock: document.getElementById('exSetupScreen').classList.contains('active'),
       cleanTransform: screen.style.transform === ''
     };
   });
   assert.equal(result.iconOnly, true, 'Clock customization back control should have no Back text');
+  assert.equal(result.cappedAtTen, true, 'Clock start buffer should cap at ten seconds');
+  assert.equal(result.loweredToZero, true, 'Clock start buffer should persist the immediate-start option');
   assert.equal(result.returnedToClock, true, 'Clock customization edge swipe should return to the Clock exercise');
   assert.equal(result.cleanTransform, true, 'Clock swipe should clean its temporary transform');
   assert.deepEqual(errors, [], 'Clock settings swipe-back emitted browser errors');

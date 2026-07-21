@@ -764,6 +764,15 @@ test('Clock setup has an icon-only back affordance and returns to its true opene
   assert.match(presence, /\.history-back, \.clk-cfg-back, \.jl-editor-back/);
 });
 
+test('Clock start buffer is a persisted 0–10 second setting with an immediate-start option', () => {
+  assert.match(concentrationClockClient, /var CLOCK_START_BUFFER_DEFAULT = 3;/);
+  assert.match(concentrationClockClient, /var CLOCK_START_BUFFER_MIN = 0;[\s\S]*?var CLOCK_START_BUFFER_MAX = 10;/);
+  assert.match(concentrationClockClient, /function getClockStartBuffer\(\)[\s\S]*?concState\.clockTheme\.startBuffer/);
+  assert.match(concentrationClockClient, /function adjustClockStartBuffer\(delta\)[\s\S]*?saveConcState\(\)/);
+  assert.match(concentrationClockClient, /if \(count === 0\) \{\s*startClock\(\);\s*return;/);
+  assert.match(presence, /id="clkCfgBufferDown"[\s\S]*?id="clkCfgBufferVal"[\s\S]*?id="clkCfgBufferUp"/);
+});
+
 test('Visualization setup does not repeat its name or icon in the banner', () => {
   assert.match(visualizationClient, /var visualMinimal = ex === 'visual';/);
   assert.match(visualizationClient, /label\.textContent = visualMinimal \? 'Concentration'/);

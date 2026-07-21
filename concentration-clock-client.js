@@ -33,6 +33,9 @@ function buildClockSVG() {
 var CLOCK_PALETTE = ['#d4956e','#d4b86a','#7eb8a4','#8eccc0','#8ab8e0','#98b4cc','#9b8ec4','#c4a8d4','#d49898','#c46a6a','#e8e6e0','#8a8a9a'];
 var CLOCK_THEME_DEFAULT = { hand:'#d4956e', ticks:'#ddd8ce', face:'none', bg:'none', scale:1 };
 var CLOCK_SCALE_MIN = 0.7;
+var CLOCK_START_BUFFER_DEFAULT = 3;
+var CLOCK_START_BUFFER_MIN = 0;
+var CLOCK_START_BUFFER_MAX = 10;
 // Max scale adapts to the viewport so desktop can go big while mobile stays
 // within bounds. Base clock is 320px; leave room for chrome and controls.
 function clockScaleMax() {
@@ -51,6 +54,12 @@ function getClockTheme() {
     bg: t.bg || CLOCK_THEME_DEFAULT.bg,
     scale: Math.max(CLOCK_SCALE_MIN, Math.min(clockScaleMax(), sc))
   };
+}
+
+function getClockStartBuffer() {
+  var raw = Number(typeof concState !== 'undefined' && concState.clockTheme && concState.clockTheme.startBuffer);
+  if (!Number.isFinite(raw)) return CLOCK_START_BUFFER_DEFAULT;
+  return Math.max(CLOCK_START_BUFFER_MIN, Math.min(CLOCK_START_BUFFER_MAX, Math.round(raw)));
 }
 
 // Re-colour the setup-screen hero clock preview in place from the saved theme.
@@ -145,6 +154,8 @@ function renderClockSettings() {
   _renderClkCfgSwatches('bg', 'clkCfg_bg', true);
   var sv = document.getElementById('clkCfgScaleVal');
   if (sv) sv.textContent = Math.round(theme.scale * 100) + '%';
+  var bv = document.getElementById('clkCfgBufferVal');
+  if (bv) bv.textContent = getClockStartBuffer() + 's';
 }
 
 function _bgIsLight(colorStr) {
@@ -244,6 +255,8 @@ function setClockColor(part, color) {
     if (sw) { setClockColor(sw.getAttribute('data-clk-part'), sw.getAttribute('data-clk-color')); return; }
     if (e.target.closest('#clkCfgScaleDown')) { adjustClockScale(-0.1); return; }
     if (e.target.closest('#clkCfgScaleUp')) { adjustClockScale(0.1); return; }
+    if (e.target.closest('#clkCfgBufferDown')) { adjustClockStartBuffer(-1); return; }
+    if (e.target.closest('#clkCfgBufferUp')) { adjustClockStartBuffer(1); return; }
   });
 })();
 
@@ -272,6 +285,15 @@ function adjustClockScale(delta) {
   saveConcState();
   if (typeof syncEnabled !== 'undefined' && syncEnabled && authToken) syncPushData();
   applyClockScale();
+  renderClockSettings();
+}
+
+function adjustClockStartBuffer(delta) {
+  var next = Math.max(CLOCK_START_BUFFER_MIN, Math.min(CLOCK_START_BUFFER_MAX, getClockStartBuffer() + delta));
+  if (!concState.clockTheme) concState.clockTheme = {};
+  concState.clockTheme.startBuffer = next;
+  saveConcState();
+  if (typeof syncEnabled !== 'undefined' && syncEnabled && authToken) syncPushData();
   renderClockSettings();
 }
 
@@ -484,9 +506,35 @@ function beginCountdown() {
   var sessBackBtn = document.getElementById('concSessBack');
   if (sessBackBtn) sessBackBtn.style.display = 'none';
 
-  // 5-second countdown before hand starts moving.
+  // The optional settling buffer starts the clock after the selected delay.
   var countdown = document.getElementById('clockCountdown');
-  var count = 5;
+  var count = getClockStartBuffer();
+
+  function startClock() {
+    if (countdown) { countdown.classList.remove('show'); countdown.textContent = ''; }
+    if (sessionLabel) {
+      sessionLabel.classList.remove('conc-label-flash');
+      sessionLabel.style.opacity = '0';
+    }
+    if (bottomBtn) { bottomBtn.disabled = false; bottomBtn.style.opacity = ''; }
+    // Top stop stays hidden during tutorial; otherwise re-enable.
+    if (topStopBtn && !isTutorialFirst) { topStopBtn.disabled = false; topStopBtn.style.opacity = ''; }
+    concStartTime = Date.now();
+    concTimerHandle = requestAnimationFrame(tickConcentration);
+    // Tutorial first session: auto-stop at 60s only for the beginner path.
+    if (isTutorialFirst && guidePathMode !== 'experienced') {
+      concAutoStopTimer = setTimeout(function() {
+        concAutoStopTimer = null;
+        window._tutAutoStopped = true;
+        stopConcentration();
+      }, 60 * 1000);
+    }
+  }
+
+  if (count === 0) {
+    startClock();
+    return;
+  }
   if (countdown) { countdown.textContent = count; countdown.classList.add('show'); }
 
   if (concCountInterval) clearInterval(concCountInterval);
@@ -497,24 +545,7 @@ function beginCountdown() {
     } else {
       clearInterval(concCountInterval);
       concCountInterval = null;
-      if (countdown) { countdown.classList.remove('show'); countdown.textContent = ''; }
-      if (sessionLabel) {
-        sessionLabel.classList.remove('conc-label-flash');
-        sessionLabel.style.opacity = '0';
-      }
-      if (bottomBtn) { bottomBtn.disabled = false; bottomBtn.style.opacity = ''; }
-      // Top stop stays hidden during tutorial; otherwise re-enable.
-      if (topStopBtn && !isTutorialFirst) { topStopBtn.disabled = false; topStopBtn.style.opacity = ''; }
-      concStartTime = Date.now();
-      concTimerHandle = requestAnimationFrame(tickConcentration);
-      // Tutorial first session: auto-stop at 60s only for the beginner path.
-      if (isTutorialFirst && guidePathMode !== 'experienced') {
-        concAutoStopTimer = setTimeout(function() {
-          concAutoStopTimer = null;
-          window._tutAutoStopped = true;
-          stopConcentration();
-        }, 60 * 1000);
-      }
+      startClock();
     }
   }, 1000);
 }
