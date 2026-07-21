@@ -10,6 +10,7 @@ test('social resource IDs accept ObjectIds and the documented self aliases only'
   assert.equal(isValidSocialResourceId('me', '/api/social/users/me/summary'), true);
   assert.equal(isValidSocialResourceId('me', '/api/social/users/me/followers'), true);
   assert.equal(isValidSocialResourceId('me', '/api/social/users/me/following'), true);
-  assert.equal(isValidSocialResourceId('me', '/api/social/users/me/posts'), false);
+  assert.equal(isValidSocialResourceId('me', '/api/social/users/me/posts'), true);
+  assert.equal(isValidSocialResourceId('me', '/api/social/users/me/comments'), true);
   assert.equal(isValidSocialResourceId('not-an-id', '/api/social/users/not-an-id/followers'), false);
 });

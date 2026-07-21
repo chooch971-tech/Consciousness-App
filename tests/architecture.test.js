@@ -261,9 +261,11 @@ test('top-level drawer screens reveal the open drawer during swipe-back', () => 
   assert.match(presence, /if \(drawerPreview\) \{\s*releaseLiveDrawerPreview\(drawerPreview, true\);/);
   assert.match(presence, /querySelector\('[^']*\.lodge-back[^']*'\)/);
   assert.match(presence, /visibilitychange[\s\S]*abortInterruptedSwipe/);
-  assert.match(presence, /var keepsAuthoredBackdrop = \['profileScreen', 'friendProfileScreen', 'friendsPanel', 'chatListScreen', 'chatThreadScreen', 'settingsScreen', 'accountSettingsScreen', 'exerciseSettingsScreen', 'clockSettingsScreen'\]/);
+  assert.match(presence, /var keepsAuthoredBackdrop = \['profileScreen', 'friendProfileScreen', 'profileActivityScreen', 'friendsPanel', 'chatListScreen', 'chatThreadScreen', 'settingsScreen', 'accountSettingsScreen', 'exerciseSettingsScreen', 'clockSettingsScreen'\]/);
   assert.match(presence, /chatListScreen: 'lodgeScreen', chatThreadScreen: 'chatListScreen'/);
   assert.match(presence, /screenEl\.id === 'chatThreadScreen' && typeof chatThreadPreviousScreen === 'function/);
+  assert.match(presence, /screenEl\.id === 'profileScreen' && typeof profilePreviousScreen === 'function/);
+  assert.match(presence, /screenEl\.id === 'profileActivityScreen' && typeof profileActivityPreviousScreen === 'function/);
   assert.match(presence, /screenEl\.id === 'friendProfileScreen' && typeof friendProfilePreviousScreen === 'function/);
   assert.match(presence, /screenEl\.id === 'friendsPanel' && typeof friendsPanelPreviousScreen === 'function/);
   assert.match(presence, /friendsPanelOpen \? friendsPanel : document\.querySelector\('\.screen\.active'\)/);
@@ -746,9 +748,9 @@ test('Guide shell navigation loads after planning and quest behavior', () => {
 });
 
 test('profile, friendship, and message screens share one starfield', () => {
-  assert.match(presence, /#profileScreen,\s*#friendProfileScreen,\s*#friendsPanel,\s*#chatListScreen,\s*#chatThreadScreen\s*\{[\s\S]*?radial-gradient\(2px 2px at 12% 6%/);
+  assert.match(presence, /#profileScreen,\s*#friendProfileScreen,\s*#profileActivityScreen,\s*#friendsPanel,\s*#chatListScreen,\s*#chatThreadScreen\s*\{[\s\S]*?radial-gradient\(2px 2px at 12% 6%/);
   assert.match(presence, /#followListOverlay,\s*#societyOverlay\s*\{[^}]*rgba\(126,184,164,\.18\)/);
-  assert.match(presence, /#profileScreen \.prof-topbar,\s*#friendProfileScreen \.prof-topbar \{ background:transparent; \}/);
+  assert.match(presence, /#profileScreen \.prof-topbar,\s*#friendProfileScreen \.prof-topbar,\s*#profileActivityScreen \.prof-topbar \{ background:transparent; \}/);
   assert.match(presence, /#profFriendsMore \{[^}]*color:#9ed8c4;[^}]*opacity:1/);
 });
 

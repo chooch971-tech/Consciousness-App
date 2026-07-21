@@ -208,6 +208,8 @@ function renderProfile() {
   var display = signedIn ? (authDisplayName || authUsername || (authEmail ? authEmail.split('@')[0] : 'Account')) : 'Guest';
 
   document.getElementById('profDisplayName').textContent = display;
+  var activitySection = document.getElementById('profActivitySection');
+  if (activitySection) activitySection.style.display = signedIn && authToken ? '' : 'none';
   var handleEl = document.getElementById('profHandle');
   handleEl.textContent = signedIn ? (authUsername ? '@' + authUsername : (authEmail || '')) : 'Not signed in';
   var fcEl = document.getElementById('profFollowCounts');
@@ -394,6 +396,17 @@ function _friendRingHtml(initial, pic) {
 }
 
 // ── Friend profile view (mirrors the user's own Profile layout) ──
+var _profileReturnScreen = 'homeScreen';
+function profilePreviousScreen() {
+  return document.getElementById(_profileReturnScreen) ? _profileReturnScreen : 'homeScreen';
+}
+function openOwnProfile(returnScreenId) {
+  _profileReturnScreen = returnScreenId || ((document.querySelector('.screen.active') || {}).id) || 'homeScreen';
+  if (_profileReturnScreen === 'profileScreen') _profileReturnScreen = 'homeScreen';
+  renderProfile();
+  showScreen('profileScreen');
+}
+
 var _friendProfileCache = {};
 var _friendProfileReturnScreen = 'profileScreen';
 function friendProfilePreviousScreen() {
@@ -527,13 +540,15 @@ else _wireFollowListOverlay();
 // Warm the in-memory profile cache from persisted friends at startup so a tap
 // straight into a friend's profile has their data before any fetch resolves.
 (function(){ getCachedFriendsList().forEach(function(f){ if (f && f.userId) _friendProfileCache[f.userId] = f; }); })();
-function openFriendProfile(userId) {
+function openFriendProfile(userId, returnScreenId) {
   var f = _friendProfileCache[userId];
   if (!f) return;
   // Retain the screen that owns this Friend Profile. A round trip through a
   // Message thread must not replace it with the global drawer destination.
   var active = document.querySelector('.screen.active');
-  if (active && active.id !== 'friendProfileScreen' && active.id !== 'chatThreadScreen') {
+  if (returnScreenId && document.getElementById(returnScreenId)) {
+    _friendProfileReturnScreen = returnScreenId;
+  } else if (active && active.id !== 'friendProfileScreen' && active.id !== 'chatThreadScreen') {
     _friendProfileReturnScreen = active.id;
   }
   renderFriendProfile(f);
@@ -713,7 +728,11 @@ function handleProfilePicFile(file) {
   reader.readAsDataURL(file);
 }
 
-document.getElementById('profileBack').addEventListener('click', function() { renderHome(); showScreen('homeScreen'); });
+document.getElementById('profileBack').addEventListener('click', function() {
+  var previous = profilePreviousScreen();
+  if (previous === 'homeScreen' && typeof renderHome === 'function') renderHome();
+  showScreen(previous);
+});
 document.getElementById('profSettingsBtn').addEventListener('click', function() {
   if (typeof openAccountSettings === 'function') openAccountSettings('profileScreen');
   else showScreen('settingsScreen');
@@ -749,3 +768,15 @@ document.getElementById('profFriendsMore').addEventListener('click', function() 
 });
 document.getElementById('profBadgesMore').addEventListener('click', function() { showToast('Monthly badges coming soon'); });
 document.getElementById('profAchMore').addEventListener('click', function() { showToast('Achievements coming soon'); });
+document.getElementById('profPostsBtn').addEventListener('click', function() {
+  if (typeof openProfileActivity === 'function') openProfileActivity('me', authUsername || 'you', 'posts', 'profileScreen');
+});
+document.getElementById('profCommentsBtn').addEventListener('click', function() {
+  if (typeof openProfileActivity === 'function') openProfileActivity('me', authUsername || 'you', 'comments', 'profileScreen');
+});
+document.getElementById('friendProfPostsBtn').addEventListener('click', function() {
+  if (_currentFriendProfile && typeof openProfileActivity === 'function') openProfileActivity(_currentFriendProfile.userId, _currentFriendProfile.username, 'posts', 'friendProfileScreen');
+});
+document.getElementById('friendProfCommentsBtn').addEventListener('click', function() {
+  if (_currentFriendProfile && typeof openProfileActivity === 'function') openProfileActivity(_currentFriendProfile.userId, _currentFriendProfile.username, 'comments', 'friendProfileScreen');
+});

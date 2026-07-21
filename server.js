@@ -2030,7 +2030,8 @@ const POST_MAX_LEN = 280;
 // Social resource routes use Mongo ObjectIds in their `:id` segment. Reject
 // malformed values once at the router boundary so they cannot turn into a
 // caught database exception and an unhelpful 500 response. The current-user
-// summary and follower-list routes deliberately support `me` as an alias.
+// summary, follower-list, and Lodge activity routes deliberately support `me`
+// as an alias.
 app.param('id', (req, res, next, id) => {
   if (isValidSocialResourceId(id, req.path)) return next();
   res.status(400).json({ error: 'Invalid resource identifier' });
@@ -2176,6 +2177,18 @@ app.get('/api/social/search', verifyToken, async (req, res) => {
   }
 });
 
+async function resolveSocialHistoryTarget(viewerId, requestedId) {
+  const targetId = requestedId === 'me' ? viewerId : requestedId;
+  if (targetId === viewerId) return targetId;
+  let targetOid;
+  try { targetOid = new ObjectId(targetId); } catch(e) { return null; }
+  const target = await usersCollection.findOne({ _id: targetOid }, { projection: { isPrivate: 1 } });
+  if (!target) return null;
+  if (target.isPrivate) return (await isMutualFollow(viewerId, targetId)) ? targetId : null;
+  const edge = await followsCollection.findOne({ followerId: viewerId, followeeId: targetId, status: 'active' });
+  return edge ? targetId : null;
+}
+
 // A USER'S POST HISTORY — self, or someone you actively follow. This is also
 // how status history is browsed (a status is just the latest 'note' post), so
 // a private account needs the same mutual-follow ("friends") bar as its
@@ -2184,18 +2197,9 @@ app.get('/api/social/search', verifyToken, async (req, res) => {
 // history here even though /friends/list already hides it from them.
 app.get('/api/social/users/:id/posts', verifyToken, async (req, res) => {
   try {
-    const viewerId = req.user.userId, targetId = req.params.id;
-    if (targetId !== viewerId) {
-      let targetOid;
-      try { targetOid = new ObjectId(targetId); } catch(e) { return res.status(404).json({ error: 'Not found' }); }
-      const target = await usersCollection.findOne({ _id: targetOid }, { projection: { isPrivate: 1 } });
-      if (target && target.isPrivate) {
-        if (!(await isMutualFollow(viewerId, targetId))) return res.status(403).json({ error: 'Not following this practitioner' });
-      } else {
-        const edge = await followsCollection.findOne({ followerId: viewerId, followeeId: targetId, status: 'active' });
-        if (!edge) return res.status(403).json({ error: 'Not following this practitioner' });
-      }
-    }
+    const viewerId = req.user.userId;
+    const targetId = await resolveSocialHistoryTarget(viewerId, req.params.id);
+    if (!targetId) return res.status(403).json({ error: 'Not following this practitioner' });
     const q = { userId: targetId };
     if (req.query.cursor) {
       const before = new Date(req.query.cursor);
@@ -2205,6 +2209,37 @@ app.get('/api/social/users/:id/posts', verifyToken, async (req, res) => {
     res.json({ posts: await decoratePosts(posts, viewerId) });
   } catch (err) {
     res.status(500).json({ error: 'Posts failed' });
+  }
+});
+
+// A USER'S COMMENT HISTORY — only comments on posts already visible in the
+// viewer's Lodge. Each row carries its parent post so the client can open the
+// full discussion without another round trip.
+app.get('/api/social/users/:id/comments', verifyToken, async (req, res) => {
+  try {
+    const viewerId = req.user.userId;
+    const targetId = await resolveSocialHistoryTarget(viewerId, req.params.id);
+    if (!targetId) return res.status(403).json({ error: 'Not following this practitioner' });
+    let comments = await commentsCollection.find({ userId: targetId }).sort({ createdAt: -1 }).limit(50).toArray();
+    comments = comments.filter(c => moderatePublicText(c.text || '').ok);
+    const allowedOwnerIds = await lodgeFollowingIds(viewerId);
+    allowedOwnerIds.push(viewerId);
+    const hidden = await blockedIdSet(viewerId);
+    const postIds = [...new Set(comments.map(c => c.postId))];
+    const oids = postIds.filter(id => ObjectId.isValid(id)).map(id => new ObjectId(id));
+    const posts = oids.length ? await postsCollection.find({
+      _id: { $in: oids }, userId: { $in: allowedOwnerIds, $nin: [...hidden] }
+    }).toArray() : [];
+    const decorated = await decoratePosts(posts, viewerId);
+    const byPostId = new Map(decorated.map(post => [post.id, post]));
+    const author = await usersCollection.findOne({ _id: new ObjectId(targetId) }, { projection: { username: 1 } });
+    res.json({ comments: comments.filter(c => byPostId.has(c.postId)).map(c => ({
+      id: c._id.toString(), userId: targetId,
+      username: (author && author.username) || ('practitioner_' + targetId.slice(-5)),
+      text: c.text, createdAt: c.createdAt, post: byPostId.get(c.postId)
+    })) });
+  } catch (err) {
+    res.status(500).json({ error: 'Comments failed' });
   }
 });
 

@@ -427,7 +427,7 @@ async function testFriendMessageReturn(browser, baseUrl) {
 
 async function testLodgeReadMore(browser, baseUrl) {
   // Reflections and essays are one merged post type: long posts truncate on
-  // the feed with a Read more toggle that reveals the full text inline.
+  // the feed with a Read more affordance that opens the full discussion.
   const context = await browser.newContext({ viewport: { width: 390, height: 844 }, hasTouch: true, serviceWorkers: 'block' });
   const { page, errors } = await seedPage(context, baseUrl, { presence_auth_token: 'lodge-readmore-token' });
   const result = await page.evaluate(() => {
@@ -440,17 +440,19 @@ async function testLodgeReadMore(browser, baseUrl) {
     _lodgeLoading = false;
     showScreen('lodgeScreen');
     renderLodgeFeed();
-    const longMore = document.querySelector('[data-post-id="p-long"] [data-blog-more]');
+    const longMore = document.querySelector('[data-post-id="p-long"] .lodge-read-more');
+    const shortHasMore = !!document.querySelector('[data-post-id="p-short"] .lodge-read-more');
     const before = document.querySelector('[data-post-id="p-long"] [data-blog-full]');
     const beforeHidden = before ? getComputedStyle(before).display === 'none' : null;
     if (longMore) longMore.click();
-    const after = document.querySelector('[data-post-id="p-long"] [data-blog-full]');
+    const detail = document.querySelector('[data-post-id="p-long"].lodge-post--detail');
     return {
       longHasMore: !!longMore,
-      shortHasMore: !!document.querySelector('[data-post-id="p-short"] [data-blog-more]'),
+      shortHasMore,
       title: (document.querySelector('[data-post-id="p-long"] .lodge-blog-title') || {}).textContent || null,
       beforeHidden,
-      afterVisible: after ? getComputedStyle(after).display !== 'none' : null,
+      detailOpen: !!detail,
+      fullTextVisible: !!detail && detail.textContent.includes(long),
       tabsGone: !document.getElementById('lodgeTabs')
     };
   });
@@ -458,7 +460,8 @@ async function testLodgeReadMore(browser, baseUrl) {
   assert.equal(result.shortHasMore, false, 'short post should not show a Read more toggle');
   assert.equal(result.title, 'A title', 'an optional post title should render');
   assert.equal(result.beforeHidden, true, 'full text starts hidden');
-  assert.equal(result.afterVisible, true, 'Read more reveals the full text');
+  assert.equal(result.detailOpen, true, 'Read more should open the discussion view');
+  assert.equal(result.fullTextVisible, true, 'the discussion view should show the full text');
   assert.equal(result.tabsGone, true, 'Reflections/Essays tabs should be gone');
   assert.deepEqual(errors, [], 'Lodge read-more emitted browser errors');
   await context.close();
@@ -469,37 +472,52 @@ async function testLodgeAuthorFlow(browser, baseUrl) {
   const { page, errors } = await seedPage(context, baseUrl, { presence_auth_token: 'lodge-author-token', presence_auth_username: 'lodge_self' });
   const result = await page.evaluate(async () => {
     authUsername = 'lodge_self';
-    const post = { id: 'own-lodge-post', userId: 'own-lodge-user', username: 'lodge_self', text: 'My reflection', createdAt: new Date().toISOString(), mine: true };
+    const post = { id: 'friend-lodge-post', userId: 'friend-lodge-user', username: 'lodge_friend', text: 'A friend’s reflection', createdAt: new Date().toISOString(), mine: false, likeCount: 2, commentCount: 1 };
     _lodgeUserFilter = null;
     _lodgePosts = [post];
     _lodgeLoading = false;
     showScreen('lodgeScreen');
     renderLodgeFeed();
+    document.querySelector('.lodge-post__body').click();
+    const detailOpen = !!_lodgeDetailPost && !!document.querySelector('.lodge-post--detail');
+    const compactActions = !!document.querySelector('[data-lodge-like]')
+      && !!document.querySelector('[data-lodge-comments]')
+      && !!document.querySelector('[data-lodge-share]');
+    document.querySelector('[data-lodge-discussion]').click();
+    const composerOpen = getComputedStyle(document.querySelector('.lodge-comments')).display === 'block';
     document.querySelector('[data-lodge-user]').click();
-    const postsFirst = !!_lodgeUserFilter && document.getElementById('lodgeProfileLink').style.display === 'flex';
-    document.getElementById('lodgeProfileLink').click();
-    const ownProfile = document.getElementById('profileScreen').classList.contains('active');
+    const friendProfile = document.getElementById('friendProfileScreen').classList.contains('active');
 
-    showScreen('lodgeScreen');
-    _lodgePosts = [post];
-    _lodgeLoading = false;
-    openLodgeUser(post.userId, post.username);
+    const friendScreen = document.getElementById('friendProfileScreen');
+    const profileTouch = x => new Touch({ identifier: 30, target: friendScreen, clientX: x, clientY: 260, screenX: x, screenY: 260 });
+    document.dispatchEvent(new TouchEvent('touchstart', { touches: [profileTouch(8)], changedTouches: [profileTouch(8)], bubbles: true }));
+    document.dispatchEvent(new TouchEvent('touchmove', { touches: [profileTouch(190)], changedTouches: [profileTouch(190)], bubbles: true }));
+    document.dispatchEvent(new TouchEvent('touchend', { touches: [], changedTouches: [profileTouch(230)], bubbles: true }));
+    await new Promise(resolve => setTimeout(resolve, 430));
     const screen = document.getElementById('lodgeScreen');
-    const touch = x => new Touch({ identifier: 30, target: screen, clientX: x, clientY: 260, screenX: x, screenY: 260 });
-    document.dispatchEvent(new TouchEvent('touchstart', { touches: [touch(8)], changedTouches: [touch(8)], bubbles: true }));
-    document.dispatchEvent(new TouchEvent('touchmove', { touches: [touch(170)], changedTouches: [touch(170)], bubbles: true }));
-    document.dispatchEvent(new TouchEvent('touchend', { touches: [], changedTouches: [touch(210)], bubbles: true }));
+    const returnedToDetail = screen.classList.contains('active') && !!_lodgeDetailPost;
+
+    const lodgeTouch = x => new Touch({ identifier: 31, target: screen, clientX: x, clientY: 260, screenX: x, screenY: 260 });
+    document.dispatchEvent(new TouchEvent('touchstart', { touches: [lodgeTouch(8)], changedTouches: [lodgeTouch(8)], bubbles: true }));
+    document.dispatchEvent(new TouchEvent('touchmove', { touches: [lodgeTouch(170)], changedTouches: [lodgeTouch(170)], bubbles: true }));
+    document.dispatchEvent(new TouchEvent('touchend', { touches: [], changedTouches: [lodgeTouch(210)], bubbles: true }));
     await new Promise(resolve => setTimeout(resolve, 430));
     return {
-      postsFirst,
-      ownProfile,
-      swipedToFeed: !_lodgeUserFilter && screen.classList.contains('active'),
+      detailOpen,
+      compactActions,
+      composerOpen,
+      friendProfile,
+      returnedToDetail,
+      swipedToFeed: !_lodgeDetailPost && screen.classList.contains('active'),
       cleanTransform: screen.style.transform === ''
     };
   });
-  assert.equal(result.postsFirst, true, 'author tap should open their writing before Profile');
-  assert.equal(result.ownProfile, true, 'the Profile header should return the current user to their Profile');
-  assert.equal(result.swipedToFeed, true, 'edge swipe should return the filtered writing view to the Lodge feed');
+  assert.equal(result.detailOpen, true, 'post taps should open an enlarged discussion');
+  assert.equal(result.compactActions, true, 'discussion should expose like, comment, and share actions');
+  assert.equal(result.composerOpen, true, 'the discussion line should reveal the comment composer');
+  assert.equal(result.friendProfile, true, 'author taps should open the author Profile');
+  assert.equal(result.returnedToDetail, true, 'swiping out of a Profile should return to its originating discussion');
+  assert.equal(result.swipedToFeed, true, 'a second edge swipe should return from discussion to the Lodge feed');
   assert.equal(result.cleanTransform, true, 'Lodge swipe should clean its temporary transform');
   assert.deepEqual(errors, [], 'Lodge author flow emitted browser errors');
   await context.close();
@@ -754,10 +772,10 @@ async function testCloudRestoreAndSignOut(browser, baseUrl) {
     console.log('ok - friend message returns directly to the friend profile');
     console.log('run - Lodge read more');
     await testLodgeReadMore(browser, baseUrl);
-    console.log('ok - Lodge feed truncates long posts with a working Read more toggle');
+    console.log('ok - Lodge feed truncates long posts into a full discussion view');
     console.log('run - Lodge author flow');
     await testLodgeAuthorFlow(browser, baseUrl);
-    console.log('ok - Lodge author posts, own Profile, and filtered-feed swipe-back work');
+    console.log('ok - Lodge discussion actions and Profile return navigation work');
     console.log('run - notification clear');
     await testNotificationClear(browser, baseUrl);
     console.log('ok - notifications clear immediately and persist through the social endpoint');

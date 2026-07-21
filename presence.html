@@ -670,6 +670,7 @@
        the content scrolls over it. */
     #profileScreen,
     #friendProfileScreen,
+    #profileActivityScreen,
     #friendsPanel,
     #chatListScreen,
     #chatThreadScreen {
@@ -715,7 +716,8 @@
       backdrop-filter:blur(12px);
     }
     #profileScreen .prof-topbar,
-    #friendProfileScreen .prof-topbar { background:transparent; }
+    #friendProfileScreen .prof-topbar,
+    #profileActivityScreen .prof-topbar { background:transparent; }
     /* Settings has its own midnight-blue sky: distinct from Profile's teal
        and the Lodge's violet, but shared by every settings drill-in so the
        app never falls back to flat black during navigation. */
@@ -923,11 +925,9 @@
     .lodge-compose__cta { min-height:36px; padding:0 12px; display:flex; align-items:center; border-left:1px solid rgba(255,255,255,.07); color:#8eccc0; font-family:'DM Mono',monospace; font-size:8px; letter-spacing:.18em; text-transform:uppercase; }
     .lodge-post { --lodge-hue:#8eccc0; position:relative; background:rgba(160,140,220,.055); border:1px solid rgba(170,150,230,.13); border-radius:16px; padding:16px 17px 10px; margin-bottom:12px; overflow:hidden; }
     .lodge-post__head { display:flex; align-items:center; gap:11px; margin-bottom:13px; }
-    /* Stacked like control in the card's top-right corner (reference-style
-       upvote): glyph above count. Inner structure (text node + count span)
-       is unchanged so toggleLodgeLike keeps working. */
-    button.lodge-post__vote { margin-left:auto; flex-direction:column; gap:2px; min-width:44px; min-height:44px; padding:2px 8px; font-size:23px; align-self:flex-start; }
-    .lodge-post__vote [data-like-count] { font-size:10px; }
+    .lodge-post--detail { padding:20px 19px 14px; border-color:rgba(170,150,230,.28); background:rgba(160,140,220,.085); box-shadow:0 18px 44px rgba(0,0,0,.22); }
+    .lodge-post--detail .lodge-post__text { font-size:19px; line-height:1.7; }
+    button.lodge-post__vote { font-size:15px; }
     .lodge-post__vote.liked { color:#c7a9f0; }
     .lodge-post__ring { width:38px; height:38px; border-radius:50%; flex-shrink:0; display:flex; align-items:center; justify-content:center; color:#0e0f17; font-family:'Cormorant Garamond',serif; font-size:16px; background-size:cover!important; background-position:center!important; box-shadow:0 0 0 1px rgba(255,255,255,.09); }
     .lodge-post__identity { min-width:0; flex:1; }
@@ -936,19 +936,16 @@
     .lodge-post__body { padding:0 1px 3px; }
     .lodge-post__text { font-family:'Cormorant Garamond',serif; font-size:17px; color:rgba(241,237,229,.9); line-height:1.62; white-space:pre-wrap; word-break:break-word; }
     .lodge-blog-title { font-family:'Cormorant Garamond',serif; font-size:23px; font-weight:500; color:var(--text); margin-bottom:7px; line-height:1.18; }
-    /* Footer holds only the delete/report control now (reflections and essays
-       merged, so there's no kind label) — keep it on the right edge. */
-    .lodge-post__bar { display:flex; align-items:center; justify-content:flex-end; gap:2px; margin-top:10px; min-height:44px; border-top:1px solid rgba(170,150,230,.1); }
-    .lodge-act { min-width:44px; min-height:44px; padding:0 10px; border:0; background:none; cursor:pointer; font-family:'DM Mono',monospace; font-size:10px; color:rgba(221,216,206,.48); display:flex; align-items:center; justify-content:center; gap:6px; border-radius:7px; transition:background .16s,color .16s; }
+    .lodge-post__bar { display:flex; align-items:center; gap:2px; margin-top:10px; min-height:38px; border-top:1px solid rgba(170,150,230,.1); }
+    .lodge-act { min-width:40px; min-height:38px; padding:0 9px; border:0; background:none; cursor:pointer; font-family:'DM Mono',monospace; font-size:9px; color:rgba(221,216,206,.55); display:flex; align-items:center; justify-content:center; gap:5px; border-radius:7px; transition:background .16s,color .16s; }
     .lodge-act:hover { background:rgba(255,255,255,.035); color:rgba(221,216,206,.76); }
     .lodge-act.liked { color:#d4956e; }
     .lodge-read-more { justify-content:flex-start; width:auto; min-height:36px; padding:0; color:#8eccc0; }
+    .lodge-comment-trigger { color:#9ed8c4; }
+    .lodge-share { color:#b8a6df; }
     .lodge-del { margin-left:auto; opacity:.72; }
-    .lodge-comment-trigger { width:100%; min-height:50px; display:flex; align-items:center; justify-content:center; gap:9px; margin:10px 0 0; padding:0 16px; border:1px solid rgba(142,204,192,.34); border-radius:11px; background:linear-gradient(135deg,rgba(142,204,192,.15),rgba(142,204,192,.055)); color:#aee7d5; font-family:'DM Mono',monospace; font-size:10px; font-weight:600; letter-spacing:.15em; text-transform:uppercase; cursor:pointer; box-shadow:inset 0 1px 0 rgba(255,255,255,.06),0 5px 16px rgba(0,0,0,.12); transition:background .16s,border-color .16s,transform .16s; }
-    .lodge-comment-trigger:hover { background:linear-gradient(135deg,rgba(142,204,192,.23),rgba(142,204,192,.09)); border-color:rgba(158,216,196,.58); }
-    .lodge-comment-trigger:active { transform:scale(.985); }
-    .lodge-comment-trigger__mark { width:21px; height:21px; display:inline-flex; align-items:center; justify-content:center; border-radius:50%; background:rgba(158,216,196,.16); font-size:15px; line-height:1; }
-    .lodge-comment-trigger__count { min-width:20px; padding:3px 6px; border-radius:999px; background:rgba(7,15,16,.34); color:#d8fff0; font-size:9px; letter-spacing:0; }
+    .lodge-discussion-line { width:100%; min-height:44px; margin-top:8px; padding:0 4px; display:flex; justify-content:space-between; align-items:center; border:0; border-top:1px solid rgba(142,204,192,.2); border-bottom:1px solid rgba(142,204,192,.12); background:transparent; color:#9ed8c4; font-family:'DM Mono',monospace; font-size:9px; letter-spacing:.14em; text-transform:uppercase; cursor:pointer; }
+    .lodge-post.comments-open .lodge-discussion-line span { transform:rotate(180deg); }
     .lodge-comments { border-top:1px solid rgba(255,255,255,.06); margin-top:0; padding:13px 0 5px; display:none; }
     .lodge-comment { margin-bottom:12px; padding-left:10px; border-left:1px solid rgba(142,204,192,.18); font-family:'DM Mono',monospace; }
     .lodge-comment__name { font-size:8px; letter-spacing:.05em; color:rgba(221,216,206,.48); margin-bottom:4px; }
@@ -960,6 +957,19 @@
     .lodge-crow--comment { align-items:stretch; margin-top:12px; }
     .lodge-cinput--comment { min-height:104px; max-width:100%; resize:vertical; overflow-y:auto; line-height:1.55; white-space:pre-wrap; overflow-wrap:anywhere; -webkit-appearance:none; }
     .lodge-crow--comment .lodge-csend { min-width:74px; min-height:104px; padding:0 13px; align-self:stretch; background:rgba(126,184,164,.12); border-color:rgba(142,204,192,.4); font-weight:600; }
+    .prof-activity-actions { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+    .prof-activity-btn { min-height:70px; padding:13px 14px; display:flex; flex-direction:column; justify-content:center; align-items:flex-start; gap:6px; border:1px solid rgba(142,204,192,.18); border-radius:12px; background:rgba(142,204,192,.055); color:var(--text); text-align:left; cursor:pointer; }
+    .prof-activity-btn span { font-family:'Cormorant Garamond',serif; font-size:20px; }
+    .prof-activity-btn b { font-family:'DM Mono',monospace; font-size:8px; font-weight:400; letter-spacing:.1em; text-transform:uppercase; color:#8eccc0; }
+    .profile-activity-tabs { display:flex; gap:8px; margin:4px 20px 14px; padding:5px; border:1px solid rgba(142,204,192,.14); border-radius:14px; background:rgba(0,0,0,.18); }
+    .profile-activity-tab { flex:1; min-height:42px; border:0; border-radius:10px; background:transparent; color:var(--muted-readable); font-family:'DM Mono',monospace; font-size:9px; letter-spacing:.14em; text-transform:uppercase; cursor:pointer; }
+    .profile-activity-tab.on { background:rgba(142,204,192,.14); color:#b9ead8; }
+    .profile-activity-scroll { flex:1; overflow-y:auto; padding:0 20px max(env(safe-area-inset-bottom),32px); -webkit-overflow-scrolling:touch; }
+    .profile-activity-card { width:100%; box-sizing:border-box; margin-bottom:10px; padding:15px 16px; border:1px solid rgba(170,150,230,.14); border-radius:13px; background:rgba(160,140,220,.055); color:var(--text); text-align:left; cursor:pointer; }
+    .profile-activity-card__meta { margin-bottom:7px; font-family:'DM Mono',monospace; font-size:8px; color:var(--muted); }
+    .profile-activity-card__title { margin-bottom:5px; font-family:'Cormorant Garamond',serif; font-size:19px; }
+    .profile-activity-card__text { font-family:'Cormorant Garamond',serif; font-size:16px; line-height:1.5; color:rgba(241,237,229,.86); display:-webkit-box; -webkit-line-clamp:3; -webkit-box-orient:vertical; overflow:hidden; }
+    .profile-activity-card__context { margin-top:9px; padding-top:8px; border-top:1px solid rgba(255,255,255,.06); font-family:'DM Mono',monospace; font-size:8px; color:#8eccc0; }
     .lodge-empty { text-align:center; padding:46px 22px 52px; color:rgba(221,216,206,.5); }
     .lodge-empty__mark { width:48px; height:48px; margin:0 auto 13px; border-radius:50%; border:1px solid rgba(232,200,122,.18); display:flex; align-items:center; justify-content:center; color:rgba(232,200,122,.7); font-family:'Cormorant Garamond',serif; font-size:22px; }
     .lodge-empty__title { font-family:'Cormorant Garamond',serif; font-size:19px; color:rgba(237,232,222,.82); margin-bottom:5px; }
@@ -5911,6 +5921,14 @@ body:not(.tut-live) #tutCorgi {
         <div class="prof-overview" id="profOverview"></div>
       </div>
 
+      <div class="prof-section" id="profActivitySection">
+        <div class="prof-section__head"><span>Lodge Activity</span></div>
+        <div class="prof-activity-actions">
+          <button class="prof-activity-btn" id="profPostsBtn"><span>Posts</span><b>View writing ›</b></button>
+          <button class="prof-activity-btn" id="profCommentsBtn"><span>Comments</span><b>View replies ›</b></button>
+        </div>
+      </div>
+
       <div class="prof-section">
         <div class="prof-section__head"><span>Friend Streaks</span><button class="prof-section__more" id="profFriendsMore">Manage &#8250;</button></div>
         <div class="prof-friends" id="profFriendStreaks"></div>
@@ -5961,6 +5979,14 @@ body:not(.tut-live) #tutCorgi {
         <div class="prof-overview" id="friendProfOverview"></div>
       </div>
 
+      <div class="prof-section">
+        <div class="prof-section__head"><span>Lodge Activity</span></div>
+        <div class="prof-activity-actions">
+          <button class="prof-activity-btn" id="friendProfPostsBtn"><span>Posts</span><b>View writing ›</b></button>
+          <button class="prof-activity-btn" id="friendProfCommentsBtn"><span>Comments</span><b>View replies ›</b></button>
+        </div>
+      </div>
+
       <div class="prof-section" id="friendProfSimilarSection">
         <div class="prof-section__head"><span>Friends in Common</span></div>
         <div class="prof-friends" id="friendProfSimilar"></div>
@@ -5976,6 +6002,19 @@ body:not(.tut-live) #tutCorgi {
         <div class="prof-ach" id="friendProfAch"></div>
       </div>
     </div>
+  </div>
+
+  <div class="screen" id="profileActivityScreen" style="padding:0; flex-direction:column;">
+    <div class="prof-topbar">
+      <button class="history-back" id="profileActivityBack" aria-label="Back">&#8592;</button>
+      <div class="prof-topbar__name" id="profileActivityTitle">Lodge Activity</div>
+      <span style="width:34px;flex-shrink:0;"></span>
+    </div>
+    <div class="profile-activity-tabs" role="tablist" aria-label="Lodge activity">
+      <button class="profile-activity-tab on" id="profileActivityPostsTab" data-profile-activity-tab="posts">Posts</button>
+      <button class="profile-activity-tab" id="profileActivityCommentsTab" data-profile-activity-tab="comments">Comments</button>
+    </div>
+    <div class="profile-activity-scroll" id="profileActivityBody"></div>
   </div>
 
   <!-- THE LODGE (social feed) -->
@@ -8561,8 +8600,8 @@ document.getElementById('drawerReports').addEventListener('click',function(){
 });
 document.getElementById('drawerProfile').addEventListener('click',function(){
   closeDrawer();
-  renderProfile();
-  showScreen('profileScreen');
+  if (typeof openOwnProfile === 'function') openOwnProfile('homeScreen');
+  else { renderProfile(); showScreen('profileScreen'); }
 });
 
 </script>
@@ -9559,7 +9598,7 @@ startPrayerScheduler();
     // hides it during swipe-back, then makes it pop in after cleanup.
     // Preserve that authored backdrop while retaining the opaque fallback for
     // screens that do not define one of their own.
-    var keepsAuthoredBackdrop = ['profileScreen', 'friendProfileScreen', 'friendsPanel', 'chatListScreen', 'chatThreadScreen', 'settingsScreen', 'accountSettingsScreen', 'exerciseSettingsScreen', 'clockSettingsScreen'].indexOf(el.id) >= 0;
+    var keepsAuthoredBackdrop = ['profileScreen', 'friendProfileScreen', 'profileActivityScreen', 'friendsPanel', 'chatListScreen', 'chatThreadScreen', 'settingsScreen', 'accountSettingsScreen', 'exerciseSettingsScreen', 'clockSettingsScreen'].indexOf(el.id) >= 0;
     if (!keepsAuthoredBackdrop) el.style.background = 'var(--bg)';
     el.style.willChange = 'transform';
     el.style.transition = 'none';
@@ -9596,7 +9635,11 @@ startPrayerScheduler();
   // ── Gesture lifecycle ──
 
   function begin(screenEl, backBtn, startX) {
-    var prevId = (screenEl.id === 'clockSettingsScreen' && typeof _clkSettingsFrom === 'string')
+    var prevId = (screenEl.id === 'profileScreen' && typeof profilePreviousScreen === 'function')
+      ? profilePreviousScreen()
+      : (screenEl.id === 'profileActivityScreen' && typeof profileActivityPreviousScreen === 'function')
+        ? profileActivityPreviousScreen()
+      : (screenEl.id === 'clockSettingsScreen' && typeof _clkSettingsFrom === 'string')
       ? _clkSettingsFrom
       : (screenEl.id === 'accountSettingsScreen' && typeof _acctSettingsReturnTo === 'string')
       ? _acctSettingsReturnTo
@@ -9795,8 +9838,10 @@ startPrayerScheduler();
     // "Tap to Begin" state — once the focus session itself is running,
     // an accidental edge swipe shouldn't exit it.
     if (screenEl.id === 'concSessionScreen' && !concPendingBegin) return;
-    // A filtered Lodge profile returns to the Lodge feed, not the drawer.
-    if (screenEl.id === 'lodgeScreen' && typeof _lodgeUserFilter !== 'undefined' && _lodgeUserFilter) return;
+    // Lodge detail/history views return inside the Lodge, not to Home.
+    if (screenEl.id === 'lodgeScreen'
+      && ((typeof _lodgeDetailPost !== 'undefined' && _lodgeDetailPost)
+        || (typeof _lodgeUserFilter !== 'undefined' && _lodgeUserFilter))) return;
 
     var backBtn = screenEl.querySelector('.history-back, .clk-cfg-back, .jl-editor-back, .conc-sess-back, .lodge-back, .fp-back');
     if (!backBtn) return;

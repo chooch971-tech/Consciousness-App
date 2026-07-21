@@ -7,6 +7,9 @@ var _lodgeCursor = null;
 var _lodgeLoading = false;
 var _lodgeSort = 'newest';
 var _lodgeUserPostsCache = {};
+var _lodgeDetailPost = null;
+var _lodgeDetailSnapshot = null;
+var _lodgeDetailReturnScreen = 'lodgeScreen';
 
 function _lodgeCachedList() {
   if (_lodgeSort !== 'newest') return [];
@@ -50,6 +53,9 @@ function _lodgeCloseSortMenu() {
   if (btn) btn.setAttribute('aria-expanded', 'false');
 }
 function openLodge() {
+  _lodgeDetailPost = null;
+  _lodgeDetailSnapshot = null;
+  _lodgeDetailReturnScreen = 'lodgeScreen';
   _lodgeUserFilter = null;
   var titleEl = document.getElementById('lodgeTitle');
   titleEl.textContent = '';
@@ -187,38 +193,38 @@ function _lodgeRingHtml(username, profilePic) {
 }
 // Reflections and essays are one post type now: any post may carry an optional
 // title and any length. On the feed, posts over LODGE_PREVIEW_LEN chars show a
-// preview with a "Read more →" toggle (full text revealed inline on tap).
+// preview with a "Read more →" affordance that opens the discussion view.
 var LODGE_PREVIEW_LEN = 280;
-function _lodgePostHtml(p) {
+function _lodgePostHtml(p, detail) {
   var hue = _lodgeHue(p.username);
   var titleHtml = p.title ? '<div class="lodge-blog-title">' + escHtml(p.title) + '</div>' : '';
   var raw = p.text || '';
   var bodyHtml;
-  if (raw.length > LODGE_PREVIEW_LEN) {
+  if (!detail && raw.length > LODGE_PREVIEW_LEN) {
     bodyHtml = titleHtml
       + '<div class="lodge-post__text" data-blog-preview>' + escHtml(raw.slice(0, LODGE_PREVIEW_LEN)) + '…</div>'
       + '<div class="lodge-post__text" data-blog-full style="display:none;">' + escHtml(raw) + '</div>'
-      + '<button class="lodge-act lodge-read-more" data-blog-more>Read more →</button>';
+      + '<button class="lodge-act lodge-read-more" data-lodge-open-post>Read more →</button>';
   } else {
     bodyHtml = titleHtml + '<div class="lodge-post__text">' + escHtml(raw) + '</div>';
   }
-  // Card layout mirrors the reference: like control stacked in the top-right
-  // of the head, comments/moderation on the footer.
-  return '<article class="lodge-post" data-post-id="' + escHtml(p.id) + '" style="--lodge-hue:' + hue[0] + ';">'
+  return '<article class="lodge-post' + (detail ? ' lodge-post--detail' : '') + '" data-post-id="' + escHtml(p.id) + '" style="--lodge-hue:' + hue[0] + ';">'
     + '<div class="lodge-post__head">'
     + '<div style="display:flex;align-items:center;gap:11px;min-width:0;flex:1;cursor:pointer;" data-lodge-user="' + escHtml(p.userId) + '" data-lodge-uname="' + escHtml(p.username || '?') + '">'
     + _lodgeRingHtml(p.username, p.profilePic)
     + '<div class="lodge-post__identity"><div class="lodge-post__name">@' + escHtml(p.username || '?') + '</div>'
     + '<div class="lodge-post__time">' + timeAgo(new Date(p.createdAt)) + '</div></div></div>'
-    + '<button class="lodge-act lodge-post__vote' + (p.likedByMe ? ' liked' : '') + '" data-lodge-like>' + (p.likedByMe ? '♥' : '♡')
-    + ' <span data-like-count>' + (p.likeCount || 0) + '</span></button>'
     + '</div>'
-    + '<div class="lodge-post__body">' + bodyHtml + '</div>'
+    + '<div class="lodge-post__body" data-lodge-open-post>' + bodyHtml + '</div>'
     + '<div class="lodge-post__bar">'
+    + '<button class="lodge-act lodge-post__vote' + (p.likedByMe ? ' liked' : '') + '" data-lodge-like aria-label="Like post">' + (p.likedByMe ? '♥' : '♡')
+    + ' <span data-like-count>' + (p.likeCount || 0) + '</span></button>'
+    + '<button class="lodge-act lodge-comment-trigger" data-lodge-comments aria-label="Open comments">◌ <span data-comment-count>' + (p.commentCount || 0) + '</span></button>'
+    + '<button class="lodge-act lodge-share" data-lodge-share aria-label="Share post">↗ <span>Share</span></button>'
     + (p.mine ? '<button class="lodge-act lodge-del" data-lodge-del aria-label="Delete post">✕</button>'
     : '<button class="lodge-act lodge-del" data-lodge-report aria-label="Report post">⚑</button>')
     + '</div>'
-    + '<button class="lodge-comment-trigger" data-lodge-comments><span class="lodge-comment-trigger__mark">◌</span><span>Comment</span><span class="lodge-comment-trigger__count" data-comment-count>' + (p.commentCount || 0) + '</span></button>'
+    + (detail ? '<button class="lodge-discussion-line" data-lodge-discussion>Join the discussion <span>⌄</span></button>' : '')
     + '<div class="lodge-comments"><div data-comment-list></div>'
     + '<div class="lodge-crow lodge-crow--comment"><textarea class="lodge-cinput lodge-cinput--comment" maxlength="280" rows="4" placeholder="Add a comment…"></textarea>'
     + '<button class="lodge-csend">Send</button></div>'
@@ -230,17 +236,17 @@ function renderLodgeFeed() {
   var empty = document.getElementById('lodgeEmpty');
   var more = document.getElementById('lodgeMore');
   if (!feed) return;
-  feed.innerHTML = _lodgeLoading && !_lodgePosts.length
+  feed.innerHTML = _lodgeDetailPost ? _lodgePostHtml(_lodgeDetailPost, true) : _lodgeLoading && !_lodgePosts.length
     ? '<div class="lodge-skeleton"></div><div class="lodge-skeleton"></div><div class="lodge-skeleton"></div>'
-    : _lodgePosts.map(_lodgePostHtml).join('');
+    : _lodgePosts.map(function(post) { return _lodgePostHtml(post, false); }).join('');
   var emptyTitle = _lodgeSearchActive ? (_lodgeSearchQuery ? 'No matches' : 'Search the Lodge')
     : _lodgeUserFilter ? 'No shared writing yet' : 'The record is waiting';
   var emptySub = _lodgeSearchActive ? (_lodgeSearchQuery ? 'Nothing found for “' + escHtml(_lodgeSearchQuery) + '.”' : 'Search your own writing and everyone you follow.')
     : _lodgeUserFilter ? 'This practitioner has not published anything here.'
     : 'Share a reflection above, or follow practitioners to bring their writing into your Lodge.';
   empty.innerHTML = '<div class="lodge-empty__mark">✒</div><div class="lodge-empty__title">' + emptyTitle + '</div><div class="lodge-empty__sub">' + emptySub + '</div>';
-  empty.style.display = (!_lodgeLoading && !_lodgePosts.length) ? '' : 'none';
-  more.style.display = (!_lodgeLoading && _lodgeCursor) ? '' : 'none';
+  empty.style.display = (!_lodgeDetailPost && !_lodgeLoading && !_lodgePosts.length) ? '' : 'none';
+  more.style.display = (!_lodgeDetailPost && !_lodgeLoading && _lodgeCursor) ? '' : 'none';
 }
 
 function _lodgeCommentHtml(c) {
@@ -250,23 +256,105 @@ function _lodgeCommentHtml(c) {
     + '</div><div class="lodge-comment__text">' + escHtml(c.text || '') + '</div></div>';
 }
 
-// A practitioner's name, tapped from a post or comment, always opens their
-// writing first. The post-history header is the deliberate second tap into a
-// richer Profile, avoiding an unexpected screen jump from the Lodge feed.
-function _openLodgeProfile(userId, username) {
-  openLodgeUser(userId, username);
+function _lodgeFindPost(pid) {
+  if (_lodgeDetailPost && _lodgeDetailPost.id === pid) return _lodgeDetailPost;
+  return _lodgePosts.find(function(post) { return post.id === pid; }) || null;
+}
+
+function _lodgeSnapshotView() {
+  return {
+    posts: _lodgePosts.slice(), cursor: _lodgeCursor, loading: _lodgeLoading,
+    userFilter: _lodgeUserFilter, searchActive: _lodgeSearchActive, searchQuery: _lodgeSearchQuery,
+    title: document.getElementById('lodgeTitle').textContent,
+    profileDisplay: document.getElementById('lodgeProfileLink').style.display,
+    profileRing: document.getElementById('lodgeProfileRing').innerHTML,
+    profileName: document.getElementById('lodgeProfileName').textContent,
+    composerDisplay: document.getElementById('lodgeComposer').style.display,
+    bannerDisplay: document.getElementById('lodgeBanner').style.display,
+    navDisplay: document.getElementById('lodgeFeedNav').style.display,
+    searchDisplay: document.getElementById('lodgeSearchBar').style.display,
+    scrollTop: document.getElementById('lodgeBody').scrollTop
+  };
+}
+
+function openLodgePostDetail(post, returnScreen, openComments) {
+  if (!post) return;
+  var from = returnScreen || (document.querySelector('.screen.active') || {}).id || 'lodgeScreen';
+  if (from === 'lodgeScreen' && !_lodgeDetailPost) _lodgeDetailSnapshot = _lodgeSnapshotView();
+  _lodgeDetailReturnScreen = from;
+  _lodgeDetailPost = post;
+  document.getElementById('lodgeTitle').textContent = 'Discussion';
+  document.getElementById('lodgeProfileLink').style.display = 'none';
+  document.getElementById('lodgeComposer').style.display = 'none';
+  document.getElementById('lodgeBanner').style.display = 'none';
+  document.getElementById('lodgeFeedNav').style.display = 'none';
+  document.getElementById('lodgeSearchBar').style.display = 'none';
+  _lodgeCloseSortMenu();
+  renderLodgeFeed();
+  showScreen('lodgeScreen');
+  document.getElementById('lodgeBody').scrollTop = 0;
+  if (openComments) {
+    var card = document.querySelector('#lodgeFeed .lodge-post');
+    if (card) toggleLodgeComments(post.id, card, true);
+  }
+}
+
+function closeLodgePostDetail() {
+  if (!_lodgeDetailPost) return false;
+  var returnScreen = _lodgeDetailReturnScreen;
+  _lodgeDetailPost = null;
+  if (returnScreen !== 'lodgeScreen') {
+    _lodgeDetailSnapshot = null;
+    _lodgeDetailReturnScreen = 'lodgeScreen';
+    showScreen(returnScreen);
+    return true;
+  }
+  var snap = _lodgeDetailSnapshot;
+  _lodgeDetailSnapshot = null;
+  _lodgeDetailReturnScreen = 'lodgeScreen';
+  if (!snap) { openLodge(); return true; }
+  _lodgePosts = snap.posts; _lodgeCursor = snap.cursor; _lodgeLoading = snap.loading;
+  _lodgeUserFilter = snap.userFilter; _lodgeSearchActive = snap.searchActive; _lodgeSearchQuery = snap.searchQuery;
+  document.getElementById('lodgeTitle').textContent = snap.title;
+  document.getElementById('lodgeProfileLink').style.display = snap.profileDisplay;
+  document.getElementById('lodgeProfileRing').innerHTML = snap.profileRing;
+  document.getElementById('lodgeProfileName').textContent = snap.profileName;
+  document.getElementById('lodgeComposer').style.display = snap.composerDisplay;
+  document.getElementById('lodgeBanner').style.display = snap.bannerDisplay;
+  document.getElementById('lodgeFeedNav').style.display = snap.navDisplay;
+  document.getElementById('lodgeSearchBar').style.display = snap.searchDisplay;
+  renderLodgeFeed();
+  document.getElementById('lodgeBody').scrollTop = snap.scrollTop;
+  return true;
+}
+
+// Avatar/name taps are explicit Profile navigation. Cache the identity already
+// present on the post so even a first visit paints immediately.
+function _openLodgeProfile(userId, username, post) {
+  var isMine = !!(post && post.mine) || (!!authUsername && String(username || '').toLowerCase() === String(authUsername).toLowerCase());
+  if (isMine) {
+    if (typeof openOwnProfile === 'function') openOwnProfile('lodgeScreen');
+    else { if (typeof renderProfile === 'function') renderProfile(); showScreen('profileScreen'); }
+    return;
+  }
+  var known = (typeof _friendProfileCache !== 'undefined' && _friendProfileCache[userId]) || {};
+  known.userId = userId;
+  known.username = username || known.username || 'practitioner';
+  if (post && post.profilePic) known.profilePic = post.profilePic;
+  if (typeof _friendProfileCache !== 'undefined') _friendProfileCache[userId] = known;
+  if (typeof openFriendProfile === 'function') openFriendProfile(userId, 'lodgeScreen');
 }
 
 function openLodgeUserProfile() {
   var user = _lodgeUserFilter;
   if (!user) return;
   if (user.isMine) {
-    if (typeof renderProfile === 'function') renderProfile();
-    showScreen('profileScreen');
+    if (typeof openOwnProfile === 'function') openOwnProfile('lodgeScreen');
+    else { if (typeof renderProfile === 'function') renderProfile(); showScreen('profileScreen'); }
     return;
   }
   if (_friendProfileCache[user.userId]) {
-    openFriendProfile(user.userId);
+    openFriendProfile(user.userId, 'lodgeScreen');
     return;
   }
   showToast('Follow this practitioner to view their full Profile');
@@ -285,6 +373,10 @@ async function toggleLodgeLike(pid, card) {
     card.querySelector('[data-like-count]').textContent = d.likeCount;
     var p = _lodgePosts.find(function(x) { return x.id === pid; });
     if (p) { p.likedByMe = !!d.liked; p.likeCount = d.likeCount; }
+    if (_lodgeDetailPost && _lodgeDetailPost.id === pid) {
+      _lodgeDetailPost.likedByMe = !!d.liked;
+      _lodgeDetailPost.likeCount = d.likeCount;
+    }
   } catch(e) {}
 }
 
@@ -307,10 +399,11 @@ async function openLikers(pid) {
   } catch(e) { list.innerHTML = '<div class="likers-row private">Couldn’t load.</div>'; }
 }
 
-async function toggleLodgeComments(pid, card) {
+async function toggleLodgeComments(pid, card, forceOpen) {
   var box = card.querySelector('.lodge-comments');
   var open = box.style.display === 'block';
-  box.style.display = open ? 'none' : 'block';
+  box.style.display = (open && !forceOpen) ? 'none' : 'block';
+  card.classList.toggle('comments-open', !(open && !forceOpen));
   if (open) return;
   var list = card.querySelector('[data-comment-list]');
   list.innerHTML = '<div class="lodge-comment__name">Loading…</div>';
@@ -321,6 +414,20 @@ async function toggleLodgeComments(pid, card) {
     var d = await res.json();
     list.innerHTML = (d.comments || []).map(_lodgeCommentHtml).join('');
   } catch(e) { list.innerHTML = ''; }
+}
+
+async function shareLodgePost(post) {
+  if (!post) return;
+  var text = (post.title ? post.title + '\n\n' : '') + (post.text || '');
+  var shareData = { title: post.title || 'A post from the Lodge', text: '@' + (post.username || 'practitioner') + ': ' + text, url: window.location.origin + window.location.pathname };
+  try {
+    if (navigator.share) { await navigator.share(shareData); return; }
+    await navigator.clipboard.writeText(shareData.text + '\n\n' + shareData.url);
+    showToast('Post copied to clipboard');
+  } catch(e) {
+    if (e && e.name === 'AbortError') return;
+    showToast('Couldn’t share this post');
+  }
 }
 
 async function sendLodgeComment(pid, card) {
@@ -338,7 +445,11 @@ async function sendLodgeComment(pid, card) {
     input.value = '';
     card.querySelector('[data-comment-list]').insertAdjacentHTML('beforeend', _lodgeCommentHtml(d.comment));
     var cnt = card.querySelector('[data-comment-count]');
-    cnt.textContent = (parseInt(cnt.textContent, 10) || 0) + 1;
+    var nextCount = (parseInt(cnt.textContent, 10) || 0) + 1;
+    cnt.textContent = nextCount;
+    var p = _lodgePosts.find(function(x) { return x.id === pid; });
+    if (p) p.commentCount = nextCount;
+    if (_lodgeDetailPost && _lodgeDetailPost.id === pid) _lodgeDetailPost.commentCount = nextCount;
   } catch(e) { showToast('Comment failed'); }
 }
 
@@ -349,9 +460,14 @@ async function deleteLodgePost(pid, card) {
       method: 'DELETE', headers: { 'Authorization': 'Bearer ' + authToken }
     });
     if (!res.ok) return;
-    card.remove();
     _lodgePosts = _lodgePosts.filter(function(p) { return p.id !== pid; });
     if (_lodgeSort === 'newest') try { localStorage.setItem(LODGE_CACHE_KEY, JSON.stringify(_lodgePosts.slice(0, 20))); } catch(e) {}
+    if (_lodgeDetailPost && _lodgeDetailPost.id === pid) {
+      closeLodgePostDetail();
+      showToast('Post deleted');
+      return;
+    }
+    card.remove();
     if (!_lodgePosts.length) renderLodgeFeed();
   } catch(e) {}
 }
@@ -365,7 +481,11 @@ async function deleteLodgeComment(cid, pid, card) {
     var row = card.querySelector('[data-comment-id="' + cid + '"]');
     if (row) row.remove();
     var cnt = card.querySelector('[data-comment-count]');
-    cnt.textContent = Math.max(0, (parseInt(cnt.textContent, 10) || 1) - 1);
+    var nextCount = Math.max(0, (parseInt(cnt.textContent, 10) || 1) - 1);
+    cnt.textContent = nextCount;
+    var p = _lodgePosts.find(function(x) { return x.id === pid; });
+    if (p) p.commentCount = nextCount;
+    if (_lodgeDetailPost && _lodgeDetailPost.id === pid) _lodgeDetailPost.commentCount = nextCount;
   } catch(e) {}
 }
 
@@ -373,25 +493,24 @@ document.getElementById('lodgeFeed').addEventListener('click', function(e) {
   var card = e.target.closest('.lodge-post');
   if (!card) return;
   var pid = card.getAttribute('data-post-id');
+  var post = _lodgeFindPost(pid);
   var uhead = e.target.closest('[data-lodge-user]');
-  if (uhead) { _openLodgeProfile(uhead.getAttribute('data-lodge-user'), uhead.getAttribute('data-lodge-uname')); return; }
-  var more = e.target.closest('[data-blog-more]');
-  if (more) {
-    var pv = card.querySelector('[data-blog-preview]'), fl = card.querySelector('[data-blog-full]');
-    var expanded = fl.style.display !== 'none';
-    fl.style.display = expanded ? 'none' : '';
-    pv.style.display = expanded ? '' : 'none';
-    more.textContent = expanded ? 'Read more →' : 'Show less';
-    return;
-  }
+  if (uhead) { _openLodgeProfile(uhead.getAttribute('data-lodge-user'), uhead.getAttribute('data-lodge-uname'), post); return; }
   var cdel = e.target.closest('[data-comment-del]');
   if (cdel) { deleteLodgeComment(cdel.getAttribute('data-comment-del'), pid, card); return; }
   if (e.target.closest('[data-like-count]')) { openLikers(pid); return; }
   if (e.target.closest('[data-lodge-like]')) { toggleLodgeLike(pid, card); return; }
-  if (e.target.closest('[data-lodge-comments]')) { toggleLodgeComments(pid, card); return; }
+  if (e.target.closest('[data-lodge-share]')) { shareLodgePost(post); return; }
+  if (e.target.closest('[data-lodge-comments]')) {
+    if (_lodgeDetailPost) toggleLodgeComments(pid, card, true);
+    else openLodgePostDetail(post, 'lodgeScreen', true);
+    return;
+  }
+  if (e.target.closest('[data-lodge-discussion]')) { toggleLodgeComments(pid, card, true); return; }
   if (e.target.closest('[data-lodge-del]')) { deleteLodgePost(pid, card); return; }
   if (e.target.closest('[data-lodge-report]')) { reportLodgeContent('post', pid); return; }
   if (e.target.closest('.lodge-csend')) { sendLodgeComment(pid, card); return; }
+  if (e.target.closest('[data-lodge-open-post]') || !e.target.closest('button,textarea,input,a')) openLodgePostDetail(post, 'lodgeScreen', false);
 });
 document.getElementById('lodgeComposer').addEventListener('click', function() {
   openLodgePostEditor();
@@ -465,19 +584,20 @@ function openLodgePostEditor() {
   });
 })();
 document.getElementById('lodgeBack').addEventListener('click', function() {
+  if (closeLodgePostDetail()) return;
   if (_lodgeSearchActive) { closeLodgeSearch(); return; }
   if (_lodgeUserFilter) { openLodge(); return; }
   showScreen('homeScreen');
 });
 document.getElementById('lodgeProfileLink').addEventListener('click', openLodgeUserProfile);
 
-// A filtered post history is a view within the Lodge, not a separate screen.
-// Give it its own edge-swipe return so it lands back on the full feed instead
-// of falling through to Home (or being blocked altogether by the global stack).
+// Detail and filtered-history views live inside the Lodge screen, so they own
+// an internal edge swipe instead of falling through to Home.
 (function() {
   var start = null;
   document.addEventListener('touchstart', function(e) {
-    if (!_lodgeUserFilter || _lodgeSearchActive || !e.touches[0] || e.touches[0].clientX > 44) return;
+    var lodgeScreen = document.getElementById('lodgeScreen');
+    if (!lodgeScreen.classList.contains('active') || (!_lodgeDetailPost && !_lodgeUserFilter) || _lodgeSearchActive || !e.touches[0] || e.touches[0].clientX > 44) return;
     start = { x: e.touches[0].clientX, y: e.touches[0].clientY };
   }, {passive:true});
   document.addEventListener('touchmove', function(e) {
@@ -501,7 +621,7 @@ document.getElementById('lodgeProfileLink').addEventListener('click', openLodgeU
     screen.style.transition = 'transform .16s ease';
     screen.style.transform = 'translateX(56px)';
     setTimeout(function() {
-      openLodge();
+      if (!closeLodgePostDetail()) openLodge();
       screen.style.transition = 'none';
       screen.style.transform = 'translateX(-20px)';
       requestAnimationFrame(function() {
@@ -536,7 +656,98 @@ document.getElementById('drawerLodge').addEventListener('click', function() {
   if (!authToken) { showToast('Sign in to enter the Lodge'); return; }
   openLodge();
 });
-// Prime the two Lodge tabs after state restoration, long before the user
+
+// ── Profile Lodge activity ──────────────────────────────────────────
+var _profileActivityUserId = 'me';
+var _profileActivityUsername = 'you';
+var _profileActivityTab = 'posts';
+var _profileActivityReturnScreen = 'profileScreen';
+var _profileActivityRows = [];
+var _profileActivityLoading = false;
+
+function profileActivityPreviousScreen() {
+  return document.getElementById(_profileActivityReturnScreen) ? _profileActivityReturnScreen : 'profileScreen';
+}
+
+function _profileActivityPostCard(post) {
+  return '<button class="profile-activity-card" data-profile-activity-post="' + escHtml(post.id) + '">'
+    + '<div class="profile-activity-card__meta">' + timeAgo(new Date(post.createdAt)) + ' · ' + (post.likeCount || 0) + ' likes · ' + (post.commentCount || 0) + ' comments</div>'
+    + (post.title ? '<div class="profile-activity-card__title">' + escHtml(post.title) + '</div>' : '')
+    + '<div class="profile-activity-card__text">' + escHtml(post.text || '') + '</div></button>';
+}
+
+function _profileActivityCommentCard(comment) {
+  var post = comment.post || {};
+  return '<button class="profile-activity-card" data-profile-activity-post="' + escHtml(post.id || '') + '">'
+    + '<div class="profile-activity-card__meta">' + timeAgo(new Date(comment.createdAt)) + '</div>'
+    + '<div class="profile-activity-card__text">' + escHtml(comment.text || '') + '</div>'
+    + '<div class="profile-activity-card__context">On @' + escHtml(post.username || 'practitioner') + '’s post ›</div></button>';
+}
+
+function renderProfileActivity() {
+  document.querySelectorAll('[data-profile-activity-tab]').forEach(function(btn) {
+    btn.classList.toggle('on', btn.getAttribute('data-profile-activity-tab') === _profileActivityTab);
+  });
+  var body = document.getElementById('profileActivityBody');
+  if (_profileActivityLoading) {
+    body.innerHTML = '<div class="lodge-skeleton"></div><div class="lodge-skeleton"></div>';
+    return;
+  }
+  body.innerHTML = _profileActivityRows.length
+    ? _profileActivityRows.map(_profileActivityTab === 'posts' ? _profileActivityPostCard : _profileActivityCommentCard).join('')
+    : '<div class="prof-empty-note" style="text-align:center;padding:44px 20px;">No ' + _profileActivityTab + ' yet.</div>';
+}
+
+async function loadProfileActivity() {
+  _profileActivityLoading = true;
+  renderProfileActivity();
+  try {
+    var res = await fetch(SERVER_URL + '/api/social/users/' + encodeURIComponent(_profileActivityUserId) + '/' + _profileActivityTab, {
+      headers: { 'Authorization': 'Bearer ' + authToken }
+    });
+    var data = res.ok ? await res.json() : null;
+    _profileActivityRows = data ? (data[_profileActivityTab] || []) : [];
+  } catch(e) { _profileActivityRows = []; }
+  _profileActivityLoading = false;
+  renderProfileActivity();
+}
+
+function openProfileActivity(userId, username, tab, returnScreen) {
+  if (!authToken) { showToast('Sign in to view Lodge activity'); return; }
+  _profileActivityUserId = userId || 'me';
+  _profileActivityUsername = username || 'practitioner';
+  _profileActivityTab = tab === 'comments' ? 'comments' : 'posts';
+  _profileActivityReturnScreen = returnScreen || ((document.querySelector('.screen.active') || {}).id) || 'profileScreen';
+  _profileActivityRows = [];
+  document.getElementById('profileActivityTitle').textContent = '@' + _profileActivityUsername;
+  showScreen('profileActivityScreen');
+  loadProfileActivity();
+}
+
+document.getElementById('profileActivityBack').addEventListener('click', function() {
+  showScreen(profileActivityPreviousScreen());
+});
+document.querySelector('.profile-activity-tabs').addEventListener('click', function(e) {
+  var btn = e.target.closest('[data-profile-activity-tab]');
+  if (!btn) return;
+  var tab = btn.getAttribute('data-profile-activity-tab');
+  if (tab === _profileActivityTab) return;
+  _profileActivityTab = tab;
+  _profileActivityRows = [];
+  loadProfileActivity();
+});
+document.getElementById('profileActivityBody').addEventListener('click', function(e) {
+  var card = e.target.closest('[data-profile-activity-post]');
+  if (!card) return;
+  var pid = card.getAttribute('data-profile-activity-post');
+  var row = _profileActivityRows.find(function(item) {
+    return _profileActivityTab === 'posts' ? item.id === pid : item.post && item.post.id === pid;
+  });
+  var post = _profileActivityTab === 'posts' ? row : row && row.post;
+  if (post) openLodgePostDetail(post, 'profileActivityScreen', _profileActivityTab === 'comments');
+});
+
+// Prime the Lodge feed after state restoration, long before the user
 // opens the drawer. This makes the first visit feel like a native screen.
 window.addEventListener('load', function() { setTimeout(warmLodgeFeeds, 700); });
 (function() {

@@ -7,6 +7,8 @@ const assert = require('node:assert/strict');
 
 const profileClient = fs.readFileSync(path.join(__dirname, '..', 'profile-client.js'), 'utf8');
 const socialClient = fs.readFileSync(path.join(__dirname, '..', 'social-client.js'), 'utf8');
+const presence = fs.readFileSync(path.join(__dirname, '..', 'presence.html'), 'utf8');
+const server = fs.readFileSync(path.join(__dirname, '..', 'server.js'), 'utf8');
 
 test('friend-profile counts open that friend’s follower and following lists', () => {
   assert.match(profileClient, /var _followListUserId = 'me'/);
@@ -48,17 +50,15 @@ test('Lodge preloads its single merged feed and recent message threads while pre
   assert.match(socialClient, /function _fetchChatMsgs\(convId\)/);
 });
 
-test('Lodge user profiles paint known posts immediately while their full feed refreshes', () => {
-  assert.match(socialClient, /var _lodgeUserPostsCache = \{\}/);
-  assert.match(socialClient, /var visiblePosts = _lodgePosts\.filter\(function\(post\) \{ return post\.userId === userId; \}\);/);
-  assert.match(socialClient, /var cachedPosts = _lodgeUserPostsCache\[userId\] \|\| visiblePosts;/);
-  assert.match(socialClient, /_lodgePosts = cachedPosts\.slice\(\); _lodgeCursor = null; _lodgeLoading = !_lodgePosts\.length;/);
-  assert.match(socialClient, /_lodgeUserPostsCache\[_lodgeUserFilter\.userId\] = _lodgePosts\.slice\(0, 20\)/);
-  assert.match(socialClient, /function _openLodgeProfile\(userId, username\) \{\s*openLodgeUser\(userId, username\);/);
-  assert.match(socialClient, /function openLodgeUserProfile\(\)/);
-  assert.match(socialClient, /if \(user\.isMine\)[\s\S]*?showScreen\('profileScreen'\)/);
-  assert.match(socialClient, /document\.getElementById\('lodgeProfileLink'\)\.addEventListener\('click', openLodgeUserProfile\)/);
-  assert.match(socialClient, /A filtered post history is a view within the Lodge[\s\S]*?document\.addEventListener\('touchend'/);
+test('Lodge post taps open discussion while author taps open Profile', () => {
+  assert.match(socialClient, /var _lodgeDetailPost = null/);
+  assert.match(socialClient, /function openLodgePostDetail\(post, returnScreen, openComments\)/);
+  assert.match(socialClient, /_lodgeDetailSnapshot = _lodgeSnapshotView\(\)/);
+  assert.match(socialClient, /if \(uhead\) \{ _openLodgeProfile/);
+  assert.match(socialClient, /openFriendProfile\(userId, 'lodgeScreen'\)/);
+  assert.match(socialClient, /openOwnProfile\('lodgeScreen'\)/);
+  assert.match(socialClient, /if \(closeLodgePostDetail\(\)\) return/);
+  assert.match(socialClient, /if \(!lodgeScreen\.classList\.contains\('active'\)/);
 });
 
 test('Lodge merges reflections and essays into one post type with Read more truncation', () => {
@@ -73,12 +73,27 @@ test('Lodge merges reflections and essays into one post type with Read more trun
   assert.match(socialClient, /type: 'note', title: document\.getElementById\('blogTitleInput'\)\.value/);
 });
 
-test('Lodge posts expose a prominent comment action and multiline composer', () => {
-  assert.match(socialClient, /class="lodge-comment-trigger" data-lodge-comments/);
-  assert.match(socialClient, /<span>Comment<\/span>/);
+test('Lodge posts expose compact Reddit-like actions and an expandable multiline discussion', () => {
+  assert.match(socialClient, /data-lodge-like/);
+  assert.match(socialClient, /class="lodge-act lodge-comment-trigger" data-lodge-comments/);
+  assert.match(socialClient, /class="lodge-act lodge-share" data-lodge-share/);
+  assert.match(socialClient, /class="lodge-discussion-line" data-lodge-discussion/);
   assert.match(socialClient, /<textarea class="lodge-cinput lodge-cinput--comment" maxlength="280" rows="4"/);
   assert.match(socialClient, /card\.querySelector\('\.lodge-cinput'\)/);
   assert.match(profileClient, /function openFollowList/);
+});
+
+test('Profiles expose posts and comments with scoped Lodge history routes', () => {
+  assert.match(presence, /id="profPostsBtn"[\s\S]*?id="profCommentsBtn"/);
+  assert.match(presence, /id="friendProfPostsBtn"[\s\S]*?id="friendProfCommentsBtn"/);
+  assert.match(presence, /id="profileActivityScreen"/);
+  assert.match(profileClient, /openProfileActivity\('me', authUsername \|\| 'you', 'posts', 'profileScreen'\)/);
+  assert.match(profileClient, /openProfileActivity\(_currentFriendProfile\.userId, _currentFriendProfile\.username, 'comments', 'friendProfileScreen'\)/);
+  assert.match(socialClient, /function openProfileActivity\(userId, username, tab, returnScreen\)/);
+  assert.match(socialClient, /api\/social\/users\/.*encodeURIComponent\(_profileActivityUserId\).*_profileActivityTab/s);
+  assert.match(server, /function resolveSocialHistoryTarget\(viewerId, requestedId\)/);
+  assert.match(server, /app\.get\('\/api\/social\/users\/:id\/comments', verifyToken/);
+  assert.match(server, /userId: \{ \$in: allowedOwnerIds, \$nin: \[\.\.\.hidden\] \}/);
 });
 
 test('friend-profile chat returns to that profile for Back and swipe-back', () => {
@@ -89,4 +104,11 @@ test('friend-profile chat returns to that profile for Back and swipe-back', () =
   assert.match(profileClient, /var _friendProfileReturnScreen = 'profileScreen'/);
   assert.match(profileClient, /function friendProfilePreviousScreen\(\)/);
   assert.match(profileClient, /active\.id !== 'friendProfileScreen' && active\.id !== 'chatThreadScreen'/);
+});
+
+test('Profile navigation remembers the screen that opened it', () => {
+  assert.match(profileClient, /var _profileReturnScreen = 'homeScreen'/);
+  assert.match(profileClient, /function profilePreviousScreen\(\)/);
+  assert.match(profileClient, /function openOwnProfile\(returnScreenId\)/);
+  assert.match(profileClient, /function openFriendProfile\(userId, returnScreenId\)/);
 });
