@@ -852,9 +852,11 @@
     .lodge-heading { min-width:0; }
     .lodge-heading__title { font-family:'Cormorant Garamond',serif; font-size:28px; line-height:1; font-weight:400; color:var(--text); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
     .lodge-heading__title:empty { display:none; }
-    /* On a practitioner's post-history page, the @name opens their profile when
-       they're a friend — signal it's tappable. */
-    .lodge-title--link { cursor:pointer; text-decoration:underline; text-decoration-color:rgba(126,184,164,.4); text-underline-offset:4px; }
+    .lodge-profile-link { width:100%; min-width:0; display:flex; align-items:center; gap:8px; padding:2px 0; border:0; background:none; color:var(--text); text-align:left; cursor:pointer; }
+    .lodge-profile-link__ring .lodge-post__ring { width:31px; height:31px; font-size:13px; }
+    .lodge-profile-link__copy { min-width:0; display:flex; flex-direction:column; gap:1px; }
+    .lodge-profile-link__name { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-family:'Cormorant Garamond',serif; font-size:25px; line-height:1; }
+    .lodge-profile-link__hint { font-family:'DM Mono',monospace; font-size:7px; letter-spacing:.14em; text-transform:uppercase; color:#8eccc0; }
     .lodge-tools { display:flex; align-items:center; gap:2px; }
     .lodge-tool { position:relative; width:44px; height:44px; border:0; border-radius:8px; background:transparent; color:rgba(221,216,206,.7); display:flex; align-items:center; justify-content:center; cursor:pointer; transition:background .18s,color .18s; }
     .lodge-tool:hover { background:rgba(255,255,255,.045); color:var(--text); }
@@ -5961,6 +5963,10 @@ body:not(.tut-live) #tutCorgi {
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg>
       </button>
       <div class="lodge-heading">
+        <button class="lodge-profile-link" id="lodgeProfileLink" type="button" style="display:none;" aria-label="Open profile">
+          <span class="lodge-profile-link__ring" id="lodgeProfileRing"></span>
+          <span class="lodge-profile-link__copy"><span class="lodge-profile-link__name" id="lodgeProfileName"></span><span class="lodge-profile-link__hint">View profile</span></span>
+        </button>
         <div class="lodge-heading__title" id="lodgeTitle"></div>
       </div>
       <div class="lodge-tools">

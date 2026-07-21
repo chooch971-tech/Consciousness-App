@@ -54,6 +54,11 @@ test('Lodge user profiles paint known posts immediately while their full feed re
   assert.match(socialClient, /var cachedPosts = _lodgeUserPostsCache\[userId\] \|\| visiblePosts;/);
   assert.match(socialClient, /_lodgePosts = cachedPosts\.slice\(\); _lodgeCursor = null; _lodgeLoading = !_lodgePosts\.length;/);
   assert.match(socialClient, /_lodgeUserPostsCache\[_lodgeUserFilter\.userId\] = _lodgePosts\.slice\(0, 20\)/);
+  assert.match(socialClient, /function _openLodgeProfile\(userId, username\) \{\s*openLodgeUser\(userId, username\);/);
+  assert.match(socialClient, /function openLodgeUserProfile\(\)/);
+  assert.match(socialClient, /if \(user\.isMine\)[\s\S]*?showScreen\('profileScreen'\)/);
+  assert.match(socialClient, /document\.getElementById\('lodgeProfileLink'\)\.addEventListener\('click', openLodgeUserProfile\)/);
+  assert.match(socialClient, /A filtered post history is a view within the Lodge[\s\S]*?document\.addEventListener\('touchend'/);
 });
 
 test('Lodge merges reflections and essays into one post type with Read more truncation', () => {

@@ -416,6 +416,47 @@ async function testLodgeReadMore(browser, baseUrl) {
   await context.close();
 }
 
+async function testLodgeAuthorFlow(browser, baseUrl) {
+  const context = await browser.newContext({ viewport: { width: 390, height: 844 }, hasTouch: true, serviceWorkers: 'block' });
+  const { page, errors } = await seedPage(context, baseUrl, { presence_auth_token: 'lodge-author-token', presence_auth_username: 'lodge_self' });
+  const result = await page.evaluate(async () => {
+    authUsername = 'lodge_self';
+    const post = { id: 'own-lodge-post', userId: 'own-lodge-user', username: 'lodge_self', text: 'My reflection', createdAt: new Date().toISOString(), mine: true };
+    _lodgeUserFilter = null;
+    _lodgePosts = [post];
+    _lodgeLoading = false;
+    showScreen('lodgeScreen');
+    renderLodgeFeed();
+    document.querySelector('[data-lodge-user]').click();
+    const postsFirst = !!_lodgeUserFilter && document.getElementById('lodgeProfileLink').style.display === 'flex';
+    document.getElementById('lodgeProfileLink').click();
+    const ownProfile = document.getElementById('profileScreen').classList.contains('active');
+
+    showScreen('lodgeScreen');
+    _lodgePosts = [post];
+    _lodgeLoading = false;
+    openLodgeUser(post.userId, post.username);
+    const screen = document.getElementById('lodgeScreen');
+    const touch = x => new Touch({ identifier: 30, target: screen, clientX: x, clientY: 260, screenX: x, screenY: 260 });
+    document.dispatchEvent(new TouchEvent('touchstart', { touches: [touch(8)], changedTouches: [touch(8)], bubbles: true }));
+    document.dispatchEvent(new TouchEvent('touchmove', { touches: [touch(170)], changedTouches: [touch(170)], bubbles: true }));
+    document.dispatchEvent(new TouchEvent('touchend', { touches: [], changedTouches: [touch(210)], bubbles: true }));
+    await new Promise(resolve => setTimeout(resolve, 430));
+    return {
+      postsFirst,
+      ownProfile,
+      swipedToFeed: !_lodgeUserFilter && screen.classList.contains('active'),
+      cleanTransform: screen.style.transform === ''
+    };
+  });
+  assert.equal(result.postsFirst, true, 'author tap should open their writing before Profile');
+  assert.equal(result.ownProfile, true, 'the Profile header should return the current user to their Profile');
+  assert.equal(result.swipedToFeed, true, 'edge swipe should return the filtered writing view to the Lodge feed');
+  assert.equal(result.cleanTransform, true, 'Lodge swipe should clean its temporary transform');
+  assert.deepEqual(errors, [], 'Lodge author flow emitted browser errors');
+  await context.close();
+}
+
 async function testSettingsAvatarSwipe(browser, baseUrl) {
   const profilePic = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M/wHwAF/gL+X0Y5WQAAAABJRU5ErkJggg==';
   const context = await browser.newContext({ viewport: { width: 390, height: 844 }, hasTouch: true, serviceWorkers: 'block' });
@@ -639,6 +680,9 @@ async function testCloudRestoreAndSignOut(browser, baseUrl) {
     console.log('run - Lodge read more');
     await testLodgeReadMore(browser, baseUrl);
     console.log('ok - Lodge feed truncates long posts with a working Read more toggle');
+    console.log('run - Lodge author flow');
+    await testLodgeAuthorFlow(browser, baseUrl);
+    console.log('ok - Lodge author posts, own Profile, and filtered-feed swipe-back work');
     console.log('run - Settings avatar and swipe');
     await testSettingsAvatarSwipe(browser, baseUrl);
     console.log('ok - Settings uses the saved profile photo and keeps its background during swipe-back');

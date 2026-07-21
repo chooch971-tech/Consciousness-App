@@ -53,15 +53,13 @@ function openLodge() {
   _lodgeUserFilter = null;
   var titleEl = document.getElementById('lodgeTitle');
   titleEl.textContent = '';
-  titleEl.classList.remove('lodge-title--link');
-  titleEl.removeAttribute('role');
-  titleEl.onclick = null;
+  document.getElementById('lodgeProfileLink').style.display = 'none';
   document.getElementById('lodgeComposer').style.display = '';
   document.getElementById('lodgeBanner').style.display = '';
   document.getElementById('lodgeFeedNav').style.display = '';
   _lodgeCloseSortMenu();
   _lodgeSetSortUi();
-  showScreen('lodgeScreen');
+  if (!document.getElementById('lodgeScreen').classList.contains('active')) showScreen('lodgeScreen');
   // Instant paint from cache, then network refresh (established pattern).
   _lodgePosts = _lodgeCachedList();
   _lodgeLoading = !_lodgePosts.length;
@@ -80,25 +78,25 @@ function openLodgeUser(userId, username) {
   // the complete in-memory result for an instant profile view.
   var visiblePosts = _lodgePosts.filter(function(post) { return post.userId === userId; });
   var cachedPosts = _lodgeUserPostsCache[userId] || visiblePosts;
-  _lodgeUserFilter = { userId: userId, username: username };
-  // The @name header opens the practitioner's full profile when they're a
-  // friend (the only view richer than this post history exists for friends).
-  var titleEl = document.getElementById('lodgeTitle');
-  titleEl.textContent = '@' + username;
-  if (_friendProfileCache[userId]) {
-    titleEl.classList.add('lodge-title--link');
-    titleEl.setAttribute('role', 'button');
-    titleEl.onclick = function() { openFriendProfile(userId); };
-  } else {
-    titleEl.classList.remove('lodge-title--link');
-    titleEl.removeAttribute('role');
-    titleEl.onclick = null;
-  }
+  var knownPost = cachedPosts[0] || visiblePosts[0] || {};
+  _lodgeUserFilter = {
+    userId: userId,
+    username: username,
+    profilePic: knownPost.profilePic || (_friendProfileCache[userId] && _friendProfileCache[userId].profilePic) || '',
+    isMine: !!knownPost.mine || (!!authUsername && String(username || '').toLowerCase() === String(authUsername).toLowerCase())
+  };
+  // The first tap always opens this person's writing. The second, explicit
+  // avatar/header tap is the intentional route into a richer Profile.
+  document.getElementById('lodgeTitle').textContent = '';
+  var profileLink = document.getElementById('lodgeProfileLink');
+  document.getElementById('lodgeProfileRing').innerHTML = _lodgeRingHtml(username, _lodgeUserFilter.profilePic);
+  document.getElementById('lodgeProfileName').textContent = '@' + username;
+  profileLink.style.display = 'flex';
   document.getElementById('lodgeComposer').style.display = 'none';
   document.getElementById('lodgeBanner').style.display = 'none';
   document.getElementById('lodgeFeedNav').style.display = 'none';
   _lodgeCloseSortMenu();
-  showScreen('lodgeScreen');
+  if (!document.getElementById('lodgeScreen').classList.contains('active')) showScreen('lodgeScreen');
   _lodgePosts = cachedPosts.slice(); _lodgeCursor = null; _lodgeLoading = !_lodgePosts.length;
   renderLodgeFeed();
   loadLodgeFeed();
@@ -252,13 +250,26 @@ function _lodgeCommentHtml(c) {
     + '</div><div class="lodge-comment__text">' + escHtml(c.text || '') + '</div></div>';
 }
 
-// A practitioner's name, tapped from a post or a comment: their real Profile
-// if they're a mutual friend (richer view — streak, level, achievements,
-// follow/message), otherwise their Lodge post history — the same fallback
-// already used for the Followers/Following list on Profile.
+// A practitioner's name, tapped from a post or comment, always opens their
+// writing first. The post-history header is the deliberate second tap into a
+// richer Profile, avoiding an unexpected screen jump from the Lodge feed.
 function _openLodgeProfile(userId, username) {
-  if (_friendProfileCache[userId]) openFriendProfile(userId);
-  else openLodgeUser(userId, username);
+  openLodgeUser(userId, username);
+}
+
+function openLodgeUserProfile() {
+  var user = _lodgeUserFilter;
+  if (!user) return;
+  if (user.isMine) {
+    if (typeof renderProfile === 'function') renderProfile();
+    showScreen('profileScreen');
+    return;
+  }
+  if (_friendProfileCache[user.userId]) {
+    openFriendProfile(user.userId);
+    return;
+  }
+  showToast('Follow this practitioner to view their full Profile');
 }
 
 async function toggleLodgeLike(pid, card) {
@@ -458,6 +469,55 @@ document.getElementById('lodgeBack').addEventListener('click', function() {
   if (_lodgeUserFilter) { openLodge(); return; }
   showScreen('homeScreen');
 });
+document.getElementById('lodgeProfileLink').addEventListener('click', openLodgeUserProfile);
+
+// A filtered post history is a view within the Lodge, not a separate screen.
+// Give it its own edge-swipe return so it lands back on the full feed instead
+// of falling through to Home (or being blocked altogether by the global stack).
+(function() {
+  var start = null;
+  document.addEventListener('touchstart', function(e) {
+    if (!_lodgeUserFilter || _lodgeSearchActive || !e.touches[0] || e.touches[0].clientX > 44) return;
+    start = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+  }, {passive:true});
+  document.addEventListener('touchmove', function(e) {
+    if (!start || !e.touches[0]) return;
+    var dx = e.touches[0].clientX - start.x;
+    var dy = Math.abs(e.touches[0].clientY - start.y);
+    if (dy > Math.abs(dx) + 8 || dx <= 0) { start = null; return; }
+    document.getElementById('lodgeScreen').style.transform = 'translateX(' + Math.min(dx, 56) + 'px)';
+  }, {passive:true});
+  document.addEventListener('touchend', function(e) {
+    if (!start || !e.changedTouches[0]) { start = null; return; }
+    var dx = e.changedTouches[0].clientX - start.x;
+    start = null;
+    var screen = document.getElementById('lodgeScreen');
+    if (dx < 72) {
+      screen.style.transition = 'transform .18s ease';
+      screen.style.transform = '';
+      setTimeout(function() { screen.style.transition = ''; }, 180);
+      return;
+    }
+    screen.style.transition = 'transform .16s ease';
+    screen.style.transform = 'translateX(56px)';
+    setTimeout(function() {
+      openLodge();
+      screen.style.transition = 'none';
+      screen.style.transform = 'translateX(-20px)';
+      requestAnimationFrame(function() {
+        screen.style.transition = 'transform .2s ease';
+        screen.style.transform = '';
+        setTimeout(function() { screen.style.transition = ''; }, 200);
+      });
+    }, 160);
+  }, {passive:true});
+  document.addEventListener('touchcancel', function() {
+    start = null;
+    var screen = document.getElementById('lodgeScreen');
+    screen.style.transition = '';
+    screen.style.transform = '';
+  }, {passive:true});
+})();
 document.getElementById('lodgeSearchBtn').addEventListener('click', function() {
   if (_lodgeSearchActive) closeLodgeSearch(); else openLodgeSearch();
 });
