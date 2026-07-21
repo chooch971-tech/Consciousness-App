@@ -695,22 +695,49 @@ async function loadLodgeNotifs() {
     else b.style.display = 'none';
   } catch(e) {}
 }
-function openLodgeNotifs() {
-  var ov = document.getElementById('notifOverlay');
+function renderLodgeNotifs() {
   var list = document.getElementById('notifList');
+  var clear = document.getElementById('notifClearBtn');
   list.innerHTML = _lodgeNotifs.length ? _lodgeNotifs.map(function(n) {
     var isFriend = n.kind === 'friend';
     return '<div class="likers-row"' + (isFriend ? ' style="color:#7eb8a4;"' : '') + '>'
       + (isFriend ? '✦ ' : '') + '@' + escHtml(n.username || '?')
       + ' <span style="color:var(--muted);">' + (NOTIF_COPY[n.kind] || n.kind) + ' · ' + timeAgo(new Date(n.createdAt)) + '</span></div>';
   }).join('') : '<div class="likers-row private">Nothing yet.</div>';
+  clear.disabled = !_lodgeNotifs.length;
+  clear.style.opacity = _lodgeNotifs.length ? '1' : '.45';
+}
+function openLodgeNotifs() {
+  var ov = document.getElementById('notifOverlay');
+  renderLodgeNotifs();
   ov.classList.add('on');
   fetch(SERVER_URL + '/api/social/notifications/seen', { method: 'POST', headers: { 'Authorization': 'Bearer ' + authToken } }).catch(function() {});
   document.getElementById('lodgeBellBadge').style.display = 'none';
 }
+async function clearLodgeNotifs() {
+  if (!_lodgeNotifs.length) return;
+  var previous = _lodgeNotifs;
+  _lodgeNotifs = [];
+  renderLodgeNotifs();
+  document.getElementById('lodgeBellBadge').style.display = 'none';
+  try {
+    var res = await fetch(SERVER_URL + '/api/social/notifications', {
+      method: 'DELETE',
+      headers: { 'Authorization': 'Bearer ' + authToken }
+    });
+    if (!res.ok) throw new Error('Clear failed');
+    showToast('Notifications cleared');
+  } catch(e) {
+    _lodgeNotifs = previous;
+    renderLodgeNotifs();
+    loadLodgeNotifs();
+    showToast('Couldn’t clear notifications');
+  }
+}
 document.getElementById('lodgeBell').addEventListener('click', openLodgeNotifs);
 (function() {
   var ov = document.getElementById('notifOverlay');
+  document.getElementById('notifClearBtn').addEventListener('click', clearLodgeNotifs);
   document.getElementById('notifCloseBtn').addEventListener('click', function() { ov.classList.remove('on'); });
   ov.addEventListener('click', function(e) { if (e.target === ov) ov.classList.remove('on'); });
 })();

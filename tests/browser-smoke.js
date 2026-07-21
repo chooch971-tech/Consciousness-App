@@ -464,6 +464,30 @@ async function testLodgeAuthorFlow(browser, baseUrl) {
   await context.close();
 }
 
+async function testNotificationClear(browser, baseUrl) {
+  const context = await browser.newContext({ viewport: { width: 390, height: 844 }, serviceWorkers: 'block' });
+  const { page, errors } = await seedPage(context, baseUrl, { presence_auth_token: 'notification-clear-token' });
+  const result = await page.evaluate(async () => {
+    _lodgeNotifs = [{ kind: 'like', username: 'fellow_traveler', createdAt: new Date().toISOString() }];
+    document.getElementById('lodgeBellBadge').style.display = '';
+    openLodgeNotifs();
+    document.getElementById('notifClearBtn').click();
+    await new Promise(resolve => setTimeout(resolve, 0));
+    return {
+      empty: _lodgeNotifs.length === 0,
+      emptyCopy: document.getElementById('notifList').textContent.trim(),
+      clearDisabled: document.getElementById('notifClearBtn').disabled,
+      badgeHidden: document.getElementById('lodgeBellBadge').style.display === 'none'
+    };
+  });
+  assert.equal(result.empty, true, 'clearing should remove notifications from the active list');
+  assert.equal(result.emptyCopy, 'Nothing yet.', 'clearing should show the empty notification state');
+  assert.equal(result.clearDisabled, true, 'Clear all should disable after the list is empty');
+  assert.equal(result.badgeHidden, true, 'clearing should remove the bell badge');
+  assert.deepEqual(errors, [], 'notification clear emitted browser errors');
+  await context.close();
+}
+
 async function testSettingsAvatarSwipe(browser, baseUrl) {
   const profilePic = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M/wHwAF/gL+X0Y5WQAAAABJRU5ErkJggg==';
   const context = await browser.newContext({ viewport: { width: 390, height: 844 }, hasTouch: true, serviceWorkers: 'block' });
@@ -690,6 +714,9 @@ async function testCloudRestoreAndSignOut(browser, baseUrl) {
     console.log('run - Lodge author flow');
     await testLodgeAuthorFlow(browser, baseUrl);
     console.log('ok - Lodge author posts, own Profile, and filtered-feed swipe-back work');
+    console.log('run - notification clear');
+    await testNotificationClear(browser, baseUrl);
+    console.log('ok - notifications clear immediately and persist through the social endpoint');
     console.log('run - Settings avatar and swipe');
     await testSettingsAvatarSwipe(browser, baseUrl);
     console.log('ok - Settings uses the saved profile photo and keeps its background during swipe-back');

@@ -2634,6 +2634,13 @@ app.post('/api/social/notifications/seen', verifyToken, mutationRateLimit, async
   } catch (err) { res.status(500).json({ error: 'Failed' }); }
 });
 
+app.delete('/api/social/notifications', verifyToken, mutationRateLimit, async (req, res) => {
+  try {
+    const result = await notificationsCollection.deleteMany({ userId: req.user.userId });
+    res.json({ ok: true, cleared: result.deletedCount });
+  } catch (err) { res.status(500).json({ error: 'Failed to clear notifications' }); }
+});
+
 // ── THE LODGE Phase 3: private chat (mutual follows only, polling) ──
 // No E2E encryption — messages are plaintext in the DB; the client says so.
 const DM_MAX_LEN = 1000;

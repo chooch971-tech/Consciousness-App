@@ -779,7 +779,13 @@ test('Lodge, messages, and friends live behind the social client boundary', () =
   assert.match(socialClient, /function\s+openLodge\s*\(/);
   assert.match(socialClient, /function\s+openChatList\s*\(/);
   assert.match(socialClient, /function\s+openFriendsPanel\s*\(/);
+  assert.match(socialClient, /function\s+clearLodgeNotifs\s*\([\s\S]*?method:\s*'DELETE'/);
+  assert.match(socialClient, /document\.getElementById\('notifClearBtn'\)\.addEventListener\('click', clearLodgeNotifs\)/);
   assert.doesNotThrow(() => new Function(socialClient));
+});
+
+test('notifications can only be cleared by their owner', () => {
+  assert.match(server, /app\.delete\('\/api\/social\/notifications', verifyToken, mutationRateLimit, async \(req, res\) => \{[\s\S]*?notificationsCollection\.deleteMany\(\{ userId: req\.user\.userId \}\)/);
 });
 
 test('Journal behavior loads through its own client boundary', () => {
