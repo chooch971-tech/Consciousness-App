@@ -261,7 +261,7 @@ test('top-level drawer screens reveal the open drawer during swipe-back', () => 
   assert.match(presence, /if \(drawerPreview\) \{\s*releaseLiveDrawerPreview\(drawerPreview, true\);/);
   assert.match(presence, /querySelector\('[^']*\.lodge-back[^']*'\)/);
   assert.match(presence, /visibilitychange[\s\S]*abortInterruptedSwipe/);
-  assert.match(presence, /var keepsAuthoredBackdrop = \['profileScreen', 'friendProfileScreen', 'friendsPanel', 'settingsScreen', 'accountSettingsScreen', 'exerciseSettingsScreen'\]/);
+  assert.match(presence, /var keepsAuthoredBackdrop = \['profileScreen', 'friendProfileScreen', 'friendsPanel', 'chatListScreen', 'chatThreadScreen', 'settingsScreen', 'accountSettingsScreen', 'exerciseSettingsScreen'\]/);
   assert.match(presence, /chatListScreen: 'lodgeScreen', chatThreadScreen: 'chatListScreen'/);
   assert.match(presence, /screenEl\.id === 'chatThreadScreen' && typeof chatThreadPreviousScreen === 'function/);
   assert.match(presence, /screenEl\.id === 'friendProfileScreen' && typeof friendProfilePreviousScreen === 'function/);
@@ -745,8 +745,8 @@ test('Guide shell navigation loads after planning and quest behavior', () => {
   assert.doesNotThrow(() => new Function(guideShellClient));
 });
 
-test('profile, friend profile, and Friends manager share one starfield', () => {
-  assert.match(presence, /#profileScreen,\s*#friendProfileScreen,\s*#friendsPanel\s*\{[\s\S]*?radial-gradient\(2px 2px at 12% 6%/);
+test('profile, friendship, and message screens share one starfield', () => {
+  assert.match(presence, /#profileScreen,\s*#friendProfileScreen,\s*#friendsPanel,\s*#chatListScreen,\s*#chatThreadScreen\s*\{[\s\S]*?radial-gradient\(2px 2px at 12% 6%/);
   assert.match(presence, /#followListOverlay,\s*#societyOverlay\s*\{[^}]*rgba\(126,184,164,\.18\)/);
   assert.match(presence, /#profileScreen \.prof-topbar,\s*#friendProfileScreen \.prof-topbar \{ background:transparent; \}/);
   assert.match(presence, /#profFriendsMore \{[^}]*color:#9ed8c4;[^}]*opacity:1/);

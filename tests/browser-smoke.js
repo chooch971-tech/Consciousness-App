@@ -323,6 +323,13 @@ async function testFriendMessageReturn(browser, baseUrl) {
   });
   await page.locator('#chatThreadScreen.active').waitFor({ state: 'visible' });
   assert.equal(await page.evaluate(() => chatThreadPreviousScreen()), 'friendProfileScreen');
+  const messageSky = await page.evaluate(() => ({
+    profile: getComputedStyle(document.getElementById('profileScreen')).backgroundImage,
+    list: getComputedStyle(document.getElementById('chatListScreen')).backgroundImage,
+    thread: getComputedStyle(document.getElementById('chatThreadScreen')).backgroundImage
+  }));
+  assert.equal(messageSky.list, messageSky.profile, 'Messages should share the Profile night sky');
+  assert.equal(messageSky.thread, messageSky.profile, 'a conversation should share the Profile night sky');
   await page.evaluate(() => {
     const current = document.getElementById('chatThreadScreen');
     const touch = x => new Touch({ identifier: 20, target: current, clientX: x, clientY: 240, screenX: x, screenY: 240 });

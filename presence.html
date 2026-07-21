@@ -670,7 +670,9 @@
        the content scrolls over it. */
     #profileScreen,
     #friendProfileScreen,
-    #friendsPanel {
+    #friendsPanel,
+    #chatListScreen,
+    #chatThreadScreen {
       background:
         radial-gradient(2px 2px at 12% 6%, rgba(232,200,122,.6), transparent),
         radial-gradient(1.5px 1.5px at 82% 4%, rgba(221,216,206,.55), transparent),
@@ -9526,7 +9528,7 @@ startPrayerScheduler();
     // hides it during swipe-back, then makes it pop in after cleanup.
     // Preserve that authored backdrop while retaining the opaque fallback for
     // screens that do not define one of their own.
-    var keepsAuthoredBackdrop = ['profileScreen', 'friendProfileScreen', 'friendsPanel', 'settingsScreen', 'accountSettingsScreen', 'exerciseSettingsScreen'].indexOf(el.id) >= 0;
+    var keepsAuthoredBackdrop = ['profileScreen', 'friendProfileScreen', 'friendsPanel', 'chatListScreen', 'chatThreadScreen', 'settingsScreen', 'accountSettingsScreen', 'exerciseSettingsScreen'].indexOf(el.id) >= 0;
     if (!keepsAuthoredBackdrop) el.style.background = 'var(--bg)';
     el.style.willChange = 'transform';
     el.style.transition = 'none';
