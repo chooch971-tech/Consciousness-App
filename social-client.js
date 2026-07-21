@@ -24,6 +24,9 @@ function warmLodgeFeeds() {
 }
 
 var _lodgeUserFilter = null; // {userId, username} → viewing one practitioner's posts
+var _lodgeSearchActive = false;
+var _lodgeSearchQuery = '';
+var _lodgeSearchDebounce = null;
 function _lodgeSetSortUi() {
   document.querySelectorAll('#lodgeSort [data-lodge-sort]').forEach(function(btn) {
     var on = btn.getAttribute('data-lodge-sort') === _lodgeSort;
@@ -126,6 +129,50 @@ async function loadLodgeFeed(cursor) {
   finally { _lodgeLoading = false; renderLodgeFeed(); }
 }
 
+// ── Search: filters the same feed (you + accounts you follow) by text/title.
+// Reuses the normal feed container and its delegated click handler, so like/
+// comment/report/tap-author all work on results with no extra wiring.
+function openLodgeSearch() {
+  if (_lodgeUserFilter) openLodge();
+  _lodgeSearchActive = true;
+  _lodgeSearchQuery = '';
+  document.getElementById('lodgeSearchBtn').classList.add('active');
+  document.getElementById('lodgeSearchBar').style.display = '';
+  document.getElementById('lodgeComposer').style.display = 'none';
+  document.getElementById('lodgeBanner').style.display = 'none';
+  document.getElementById('lodgeFeedNav').style.display = 'none';
+  var input = document.getElementById('lodgeSearchInput');
+  input.value = '';
+  _lodgePosts = []; _lodgeCursor = null; _lodgeLoading = false;
+  renderLodgeFeed();
+  setTimeout(function() { try { input.focus(); } catch(e) {} }, 50);
+}
+function closeLodgeSearch() {
+  _lodgeSearchActive = false;
+  _lodgeSearchQuery = '';
+  clearTimeout(_lodgeSearchDebounce);
+  document.getElementById('lodgeSearchBtn').classList.remove('active');
+  document.getElementById('lodgeSearchBar').style.display = 'none';
+  openLodge();
+}
+async function runLodgeSearch(query) {
+  _lodgeSearchQuery = query;
+  if (!query) { _lodgePosts = []; _lodgeCursor = null; _lodgeLoading = false; renderLodgeFeed(); return; }
+  _lodgeLoading = true; renderLodgeFeed();
+  try {
+    var res = await fetch(SERVER_URL + '/api/social/search?q=' + encodeURIComponent(query), {
+      headers: { 'Authorization': 'Bearer ' + authToken }
+    });
+    var data = res.ok ? await res.json() : null;
+    // A newer query may have landed while this was in flight — don't let a
+    // stale response clobber it.
+    if (query !== _lodgeSearchQuery) return;
+    _lodgePosts = (data && data.posts) || [];
+    _lodgeCursor = null;
+  } catch(e) { if (query === _lodgeSearchQuery) _lodgePosts = []; }
+  finally { if (query === _lodgeSearchQuery) { _lodgeLoading = false; renderLodgeFeed(); } }
+}
+
 // Deterministic per-user accent: hash the username into a small palette so
 // every practitioner gets a stable ring gradient + name tint across surfaces.
 var LODGE_HUES = [['#9ed8c4','#7eb8a4'],['#e8c87a','#d4956e'],['#b58ed8','#8e6ec4'],['#7ec4d8','#5e9ec0'],['#e89e9e','#c47a7a'],['#a8d88e','#7eb87e']];
@@ -188,8 +235,10 @@ function renderLodgeFeed() {
   feed.innerHTML = _lodgeLoading && !_lodgePosts.length
     ? '<div class="lodge-skeleton"></div><div class="lodge-skeleton"></div><div class="lodge-skeleton"></div>'
     : _lodgePosts.map(_lodgePostHtml).join('');
-  var emptyTitle = _lodgeUserFilter ? 'No shared writing yet' : 'The record is waiting';
-  var emptySub = _lodgeUserFilter ? 'This practitioner has not published anything here.'
+  var emptyTitle = _lodgeSearchActive ? (_lodgeSearchQuery ? 'No matches' : 'Search the Lodge')
+    : _lodgeUserFilter ? 'No shared writing yet' : 'The record is waiting';
+  var emptySub = _lodgeSearchActive ? (_lodgeSearchQuery ? 'Nothing found for “' + escHtml(_lodgeSearchQuery) + '.”' : 'Search your own writing and everyone you follow.')
+    : _lodgeUserFilter ? 'This practitioner has not published anything here.'
     : 'Share a reflection above, or follow practitioners to bring their writing into your Lodge.';
   empty.innerHTML = '<div class="lodge-empty__mark">✒</div><div class="lodge-empty__title">' + emptyTitle + '</div><div class="lodge-empty__sub">' + emptySub + '</div>';
   empty.style.display = (!_lodgeLoading && !_lodgePosts.length) ? '' : 'none';
@@ -405,8 +454,21 @@ function openLodgePostEditor() {
   });
 })();
 document.getElementById('lodgeBack').addEventListener('click', function() {
+  if (_lodgeSearchActive) { closeLodgeSearch(); return; }
   if (_lodgeUserFilter) { openLodge(); return; }
   showScreen('homeScreen');
+});
+document.getElementById('lodgeSearchBtn').addEventListener('click', function() {
+  if (_lodgeSearchActive) closeLodgeSearch(); else openLodgeSearch();
+});
+document.getElementById('lodgeSearchClose').addEventListener('click', closeLodgeSearch);
+document.getElementById('lodgeSearchInput').addEventListener('input', function() {
+  var q = this.value.trim();
+  clearTimeout(_lodgeSearchDebounce);
+  _lodgeSearchDebounce = setTimeout(function() { runLodgeSearch(q); }, 350);
+});
+document.getElementById('lodgeSearchInput').addEventListener('keydown', function(e) {
+  if (e.key === 'Enter') { clearTimeout(_lodgeSearchDebounce); runLodgeSearch(this.value.trim()); }
 });
 document.getElementById('lodgeMore').addEventListener('click', function() { if (_lodgeCursor) loadLodgeFeed(_lodgeCursor); });
 document.getElementById('drawerLodge').addEventListener('click', function() {

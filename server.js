@@ -2152,6 +2152,30 @@ app.get('/api/social/feed', verifyToken, async (req, res) => {
   }
 });
 
+// SEARCH — text match over the same posts the feed would show (you + accounts
+// you follow). A literal, escaped substring match against text/title, not a
+// full-text index — plenty for this feed's size and avoids ReDoS from an
+// unescaped user pattern.
+app.get('/api/social/search', verifyToken, async (req, res) => {
+  try {
+    const userId = req.user.userId;
+    const qRaw = String(req.query.q || '').trim();
+    if (!qRaw) return res.json({ posts: [] });
+    if (qRaw.length > 200) return res.status(400).json({ error: 'Query too long' });
+    const ids = await lodgeFollowingIds(userId);
+    ids.push(userId);
+    const re = new RegExp(qRaw.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i');
+    const posts = await postsCollection.find({
+      userId: { $in: ids },
+      $or: [{ text: re }, { title: re }]
+    }).sort({ createdAt: -1 }).limit(40).toArray();
+    res.json({ posts: await decoratePosts(posts, userId) });
+  } catch (err) {
+    console.error('Lodge search error:', err);
+    res.status(500).json({ error: 'Search failed' });
+  }
+});
+
 // A USER'S POST HISTORY — self, or someone you actively follow. This is also
 // how status history is browsed (a status is just the latest 'note' post), so
 // a private account needs the same mutual-follow ("friends") bar as its
