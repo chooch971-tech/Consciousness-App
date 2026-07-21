@@ -469,53 +469,113 @@ function awardOmniaForExercise(exId, seconds, reachedRec) {
   if (awardedBody) setTimeout(maybeShowBodyLevelAward, 1200);
 }
 
-// TEMPORARY (testing): per-exercise Akasha breakdown, built from the local
-// privacy-preserving economy ledger. Remove alongside akashaStatsScreen and
-// its swipe handler once the economy has been evaluated.
-function computeAkashaStatsByExercise() {
-  var log = typeof omniaReadAkashaLedger === 'function' ? omniaReadAkashaLedger() : [];
-  var byEx = {};
-  log.forEach(function(entry) {
-    if (!entry || entry.kind !== 'credit' || entry.source !== 'exercise') return;
-    var meta = entry.meta || {};
-    var key = meta.exId || meta.name || 'unknown';
-    if (!byEx[key]) byEx[key] = { name: meta.name || key, totalGain: 0, sessions: 0, totalSeconds: 0, bestSeconds: 0 };
-    var b = byEx[key];
-    b.totalGain += entry.amount || 0;
-    b.sessions += 1;
-    b.totalSeconds += meta.seconds || 0;
-    if ((meta.seconds || 0) > b.bestSeconds) b.bestSeconds = meta.seconds || 0;
-  });
-  return Object.keys(byEx).map(function(k) { return byEx[k]; }).sort(function(a, b) { return b.totalGain - a.totalGain; });
-}
+// TEMPORARY (testing): chronological Akasha ledger grouped by date, built
+// from the local privacy-preserving economy ledger. Remove alongside
+// akashaStatsScreen and its swipe handler once the economy has been evaluated.
 function _akashaStatsFmtTime(sec) {
   sec = Math.max(0, Math.round(sec || 0));
   var m = Math.floor(sec / 60), s = sec % 60;
   return m + ':' + String(s).padStart(2, '0');
 }
+var AKASHA_SOURCE_LABELS = {
+  'exercise': function(m) { return m.name || 'Exercise'; },
+  'achievement': function() { return 'Achievement Unlocked'; },
+  'morning-offering': function() { return 'Morning Offering'; },
+  'generator-collection': function() { return 'Generator Collection'; },
+  'path-quest': function() { return 'Guide Path Quest'; },
+  'gift-path': function() { return 'Gift Path'; },
+  'tutorial-clock': function() { return 'Clock Tutorial'; },
+  'streak-commitment': function() { return 'Streak Commitment'; },
+  'cosmetic': function() { return 'Cosmetic Purchase'; },
+  'book2-tool': function() { return 'Book II Tool'; },
+  'book2-body': function() { return 'Book II Body'; },
+  'book2-sphere': function() { return 'Book II Sphere'; },
+  'body-upgrade': function() { return 'Body Upgrade'; },
+  'dark-resonance-upgrade': function() { return 'Dark Resonance Upgrade'; },
+  'generator-upgrade': function() { return 'Generator Upgrade'; },
+  'generator-accrual': function() { return 'Generator Accrual'; }
+};
+function _akashaEntryLabel(entry) {
+  var fn = AKASHA_SOURCE_LABELS[entry.source];
+  if (fn) return fn(entry.meta || {});
+  return String(entry.source || 'Unknown').replace(/-/g, ' ').replace(/\b\w/g, function(c) { return c.toUpperCase(); });
+}
+function _akashaEntryDetail(entry) {
+  var m = entry.meta || {};
+  switch (entry.source) {
+    case 'exercise': return _akashaStatsFmtTime(m.seconds) + (m.recommended ? ' · recommended' : '');
+    case 'achievement': return m.count + (m.count === 1 ? ' achievement' : ' achievements');
+    case 'morning-offering': return m.streak ? m.streak + '-day streak gift' : 'Daily gift';
+    case 'generator-collection': return (m.generatorId && m.generatorId !== 'all') ? m.generatorId : 'All generators';
+    case 'gift-path': return m.day ? 'Day ' + m.day : '';
+    case 'streak-commitment': return m.days ? m.days + '-day vow' : '';
+    case 'body-upgrade': return m.body ? m.body + (m.level ? ' → level ' + m.level : '') : '';
+    case 'generator-upgrade': return m.upgradeId ? m.upgradeId + (m.level ? ' → level ' + m.level : '') : '';
+    case 'cosmetic': return m.itemId || m.kind || '';
+    default: return '';
+  }
+}
+function _akashaStatsDayLabel(ms) {
+  var d = new Date(ms), now = new Date();
+  var startOfDay = function(x) { return new Date(x.getFullYear(), x.getMonth(), x.getDate()).getTime(); };
+  var diffDays = Math.round((startOfDay(now) - startOfDay(d)) / 86400000);
+  if (diffDays === 0) return 'Today';
+  if (diffDays === 1) return 'Yesterday';
+  var opts = d.getFullYear() === now.getFullYear()
+    ? { weekday: 'long', month: 'long', day: 'numeric' }
+    : { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' };
+  return d.toLocaleDateString('en-US', opts);
+}
+function _akashaStatsFmtClock(ms) {
+  return new Date(ms).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+}
 function renderAkashaStats() {
   var body = document.getElementById('akashaStatsBody');
   if (!body) return;
-  var rows = computeAkashaStatsByExercise();
-  if (!rows.length) {
-    body.innerHTML = '<div style="font-family:\'DM Mono\',monospace; font-size:11px; color:var(--muted); text-align:center; padding:40px 20px; line-height:1.7;">No sessions logged yet.<br>Complete an exercise to start seeing its Akasha breakdown here.</div>';
+  var balance = Math.round((typeof omniaState !== 'undefined' && omniaState && omniaState.akasha) || 0);
+  var balanceHtml = '<div style="display:flex; justify-content:space-between; align-items:baseline; border:1px solid var(--border); border-radius:12px; padding:14px 16px; margin-bottom:20px; background:rgba(232,200,122,.06);">'
+    + '<div style="font-family:\'DM Mono\',monospace; font-size:9px; letter-spacing:.14em; text-transform:uppercase; color:var(--muted-readable);">Current Balance</div>'
+    + '<div style="font-family:\'Cormorant Garamond\',serif; font-size:24px; font-weight:500; color:#e8c87a;">' + balance.toLocaleString() + '</div>'
+    + '</div>';
+  var log = typeof omniaReadAkashaLedger === 'function' ? omniaReadAkashaLedger() : [];
+  if (!log.length) {
+    body.innerHTML = balanceHtml + '<div style="font-family:\'DM Mono\',monospace; font-size:11px; color:var(--muted); text-align:center; padding:40px 20px; line-height:1.7;">No activity logged yet.<br>Complete an exercise to start seeing your Akasha history here.</div>';
     return;
   }
-  var totalAll = rows.reduce(function(sum, r) { return sum + r.totalGain; }, 0);
-  body.innerHTML = '<div style="font-family:\'DM Mono\',monospace; font-size:9px; letter-spacing:.14em; text-transform:uppercase; color:var(--muted-readable); margin-bottom:16px;">' + rows.length + ' exercise' + (rows.length === 1 ? '' : 's') + ' logged · +' + Math.round(totalAll).toLocaleString() + ' akasha total</div>'
-    + rows.map(function(r) {
-      var perMin = r.totalSeconds > 0 ? (r.totalGain / (r.totalSeconds / 60)) : 0;
-      return '<div style="border:1px solid var(--border); border-radius:12px; padding:14px 16px; margin-bottom:12px; background:rgba(255,255,255,.02);">'
-        + '<div style="display:flex; justify-content:space-between; align-items:baseline; gap:10px; margin-bottom:8px;">'
-        + '<div style="font-family:\'Cormorant Garamond\',serif; font-size:18px; font-weight:300; color:var(--text);">' + escHtml(r.name) + '</div>'
-        + '<div style="font-family:\'DM Mono\',monospace; font-size:15px; color:#e8c87a; flex-shrink:0;">+' + Math.round(r.totalGain).toLocaleString() + '</div>'
-        + '</div>'
-        + '<div style="display:flex; justify-content:space-between; gap:10px; font-family:\'DM Mono\',monospace; font-size:9px; letter-spacing:.05em; color:var(--muted-readable); text-transform:uppercase;">'
-        + '<span>' + r.sessions + ' session' + (r.sessions === 1 ? '' : 's') + ' · ' + _akashaStatsFmtTime(r.totalSeconds) + ' total</span>'
-        + '<span>best ' + _akashaStatsFmtTime(r.bestSeconds) + ' · ' + perMin.toFixed(1) + '/min</span>'
-        + '</div>'
-        + '</div>';
-    }).join('');
+  var entries = log.slice().reverse(); // newest first
+  var groups = [];
+  var lastLabel = null;
+  entries.forEach(function(entry) {
+    var label = _akashaStatsDayLabel(entry.at);
+    if (label !== lastLabel) { groups.push({ label: label, items: [] }); lastLabel = label; }
+    groups[groups.length - 1].items.push(entry);
+  });
+  body.innerHTML = balanceHtml + groups.map(function(g) {
+    var dayTotal = g.items.reduce(function(sum, e) { return sum + (e.kind === 'spend' || e.kind === 'reversal' ? -e.amount : e.amount); }, 0);
+    var dayTotalStr = (dayTotal >= 0 ? '+' : '−') + Math.abs(Math.round(dayTotal)).toLocaleString();
+    return '<div style="display:flex; justify-content:space-between; align-items:baseline; margin:22px 0 8px; padding-bottom:6px; border-bottom:1px solid var(--border);">'
+      + '<div style="font-family:\'DM Mono\',monospace; font-size:9px; letter-spacing:.16em; text-transform:uppercase; color:var(--muted-readable);">' + g.label + '</div>'
+      + '<div style="font-family:\'DM Mono\',monospace; font-size:9px; color:var(--muted-readable);">' + dayTotalStr + '</div>'
+      + '</div>'
+      + g.items.map(function(entry) {
+        var isAchievement = entry.source === 'achievement';
+        var negative = entry.kind === 'spend' || entry.kind === 'reversal';
+        var sign = negative ? '−' : '+';
+        var label = _akashaEntryLabel(entry);
+        var detail = _akashaEntryDetail(entry);
+        return '<div style="display:flex; justify-content:space-between; align-items:center; gap:10px; padding:10px 12px; margin-bottom:6px; border-radius:10px;'
+          + (isAchievement ? ' background:rgba(232,200,122,.1); border:1px solid rgba(232,200,122,.28);' : ' background:rgba(255,255,255,.02);') + '">'
+          + '<div style="min-width:0;">'
+          + '<div style="font-family:\'Cormorant Garamond\',serif; font-size:16px; font-weight:' + (isAchievement ? '500' : '300') + '; color:' + (isAchievement ? '#e8c87a' : 'var(--text)') + ';">' + (isAchievement ? '✦ ' : '') + escHtml(label) + '</div>'
+          + (detail ? '<div style="font-family:\'DM Mono\',monospace; font-size:9px; letter-spacing:.03em; color:var(--muted-readable); margin-top:2px;">' + escHtml(String(detail)) + '</div>' : '')
+          + '</div>'
+          + '<div style="text-align:right; flex-shrink:0;">'
+          + '<div style="font-family:\'DM Mono\',monospace; font-size:14px; color:' + (negative ? 'var(--muted-readable)' : '#e8c87a') + ';">' + sign + Math.round(entry.amount).toLocaleString() + '</div>'
+          + '<div style="font-family:\'DM Mono\',monospace; font-size:8px; color:var(--muted-readable); margin-top:2px;">' + _akashaStatsFmtClock(entry.at) + ' · bal ' + Math.round(entry.balance).toLocaleString() + '</div>'
+          + '</div>'
+          + '</div>';
+      }).join('');
+  }).join('');
 }
 
 // Show the pending body-level award as soon as no session-complete legend is
