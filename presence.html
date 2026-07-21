@@ -1479,6 +1479,10 @@
     .path-banner-sub { font-size:9px; letter-spacing:.1em; color:rgba(200,230,245,.42); }
     .path-banner-glow { position:absolute; right:6px; top:50%; width:170px; height:170px; transform:translateY(-50%); background:radial-gradient(circle, rgba(184,234,255,0.25) 0%, rgba(126,184,164,0.10) 38%, transparent 70%); pointer-events:none; }
     .path-banner-figure { position:relative; z-index:2; width:78px; height:118px; top:10px; display:flex; align-items:center; justify-content:center; animation:omniaFloat 4.5s ease-in-out infinite; filter:drop-shadow(0 0 16px rgba(140,200,230,.45)); cursor:pointer; }
+    /* Step VI introduces a 130%-tall mandorla (and later steps grow one final
+       halo around it). Give the complete geometry a smaller, centered stage in
+       this compact banner so neither pole is clipped by overflow:hidden. */
+    body.omnia-tier-echo .path-banner-figure { width:64px; height:86px; top:0; }
     /* When a companion floats beside the figure, shift it left of the banner's
        right edge so the companion stays on the banner instead of being clipped
        by overflow:hidden. With no companion the figure keeps its flush placement. */
@@ -8497,6 +8501,10 @@ document.getElementById('hamburgerBtn').addEventListener('click', openDrawer);
   document.addEventListener('touchstart', function(e) {
     var t = e.touches[0];
     if (t.clientX > 30) return;
+    // A full-screen modal owns its own edge swipe. Letting Home track the same
+    // touch would dismiss 7x2 and open the hamburger drawer in one gesture.
+    var giftPath = document.getElementById('giftPathOverlay');
+    if (giftPath && giftPath.classList.contains('gp-show')) return;
     var hs = document.getElementById('homeScreen');
     if (!hs || hs.style.display === 'none') return;
     var overlay = document.getElementById('drawerOverlay');

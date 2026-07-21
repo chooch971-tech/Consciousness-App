@@ -799,6 +799,15 @@ test('changing daily cadence refreshes any visible path immediately', () => {
   assert.doesNotMatch(guideShellClient, /guideState\._pathLockedV2 && guidePathMode\) renderGuidePlan/);
 });
 
+test('Guide overlays and daily body awards cannot fall through or reroll', () => {
+  assert.match(presence, /giftPath && giftPath\.classList\.contains\('gp-show'\)\) return/);
+  assert.match(presence, /body\.omnia-tier-echo \.path-banner-figure \{ width:64px; height:86px; top:0; \}/);
+  assert.match(omniaRewardsClient, /function omniaBuildDailyBodyAwardQueue\(items, todayStr\)/);
+  assert.match(omniaRewardsClient, /bodyAwardSelectionDate !== todayStr/);
+  assert.match(omniaRewardsClient, /bodyAwardClaimedIds/);
+  assert.doesNotMatch(omniaRewardsClient, /if \(items\[i\]\.done\) continue/);
+});
+
 test('Lodge, messages, and friends live behind the social client boundary', () => {
   const socialTag = presence.indexOf('<script src="social-client.js"></script>');
   const appUse = presence.indexOf('var PRESENCE_SYNC = window.PresenceSyncContract;');

@@ -22,6 +22,9 @@ var OMNIA_DEFAULT = {
   completedRecommended: 0,
   totalAkashaEarned: 0,
   totalAkashaSpent: 0, // monotonic — every akasha sink adds to this; used so spending never lowers the sync progress score
+  bodyAwardSelectionDate: '',
+  bodyAwardSelectionIds: [],
+  bodyAwardClaimedIds: [],
   storySeen: [],   // ids of OMNIA_STORY beats already revealed
   storyRead: 0,    // how many revealed beats the user has viewed in the chat
   cosmetics: {

@@ -124,13 +124,15 @@ function omniaBodyAwardsRemaining() {
   if (omniaState.bodyAwardsDate !== todayStr) return omniaBodyAwardsPerDay();
   return Math.max(0, omniaBodyAwardsPerDay() - (omniaState.bodyAwardsToday || 0));
 }
-function omniaConsumeBodyAward() {
+function omniaConsumeBodyAward(cardId) {
   var todayStr = presenceDayKey();
   if (omniaState.bodyAwardsDate !== todayStr) {
     omniaState.bodyAwardsDate = todayStr;
     omniaState.bodyAwardsToday = 0;
   }
   omniaState.bodyAwardsToday = (omniaState.bodyAwardsToday || 0) + 1;
+  omniaState.bodyAwardClaimedIds = Array.isArray(omniaState.bodyAwardClaimedIds) ? omniaState.bodyAwardClaimedIds : [];
+  if (cardId && omniaState.bodyAwardClaimedIds.indexOf(cardId) === -1) omniaState.bodyAwardClaimedIds.push(cardId);
 }
 
 // Consecutive legitimate exercises should all move the Path. A once-per-hour
@@ -167,6 +169,51 @@ function omniaHighlightCap() {
   var byStep = step <= 3 ? 2 : step <= 5 ? 3 : step <= 7 ? 4 : step <= 9 ? 5 : 6;
   return Math.min(byStep, omniaBodyAwardsPerDay());
 }
+
+// A lightweight deterministic shuffle: selections feel random from day to day
+// but are stable across re-renders, devices, and cadence changes. Persisting the
+// resulting queue makes add/remove and 2x→1x changes unable to reroll rewards.
+function omniaBodyAwardHash(text) {
+  var h = 2166136261;
+  text = String(text || '');
+  for (var i = 0; i < text.length; i++) {
+    h ^= text.charCodeAt(i);
+    h = Math.imul(h, 16777619);
+  }
+  return h >>> 0;
+}
+function omniaBuildDailyBodyAwardQueue(items, todayStr) {
+  var identity = (typeof authUsername === 'string' && authUsername)
+    || (typeof authEmail === 'string' && authEmail) || 'local';
+  var seed = String(todayStr || presenceDayKey()) + '|' + identity;
+  var byMeta = {};
+  (items || []).forEach(function(item) {
+    var metaId = item && omniaMetaIdForExercise(item.id);
+    if (!metaId) return;
+    if (!byMeta[metaId]) byMeta[metaId] = [];
+    if (!byMeta[metaId].some(function(row) { return row.id === item.id; })) byMeta[metaId].push({ id:item.id, metaId:metaId });
+  });
+  var candidates = Object.keys(byMeta).map(function(metaId) {
+    byMeta[metaId].sort(function(a, b) {
+      return omniaBodyAwardHash(seed + '|card|' + a.id) - omniaBodyAwardHash(seed + '|card|' + b.id) || a.id.localeCompare(b.id);
+    });
+    return byMeta[metaId][0];
+  });
+  candidates.sort(function(a, b) {
+    return omniaBodyAwardHash(seed + '|meta|' + a.metaId) - omniaBodyAwardHash(seed + '|meta|' + b.metaId) || a.id.localeCompare(b.id);
+  });
+  return candidates.map(function(row) { return row.id; });
+}
+function omniaDailyBodyAwardQueue(items) {
+  var todayStr = presenceDayKey();
+  if (omniaState.bodyAwardSelectionDate !== todayStr || !Array.isArray(omniaState.bodyAwardSelectionIds)) {
+    omniaState.bodyAwardSelectionDate = todayStr;
+    omniaState.bodyAwardSelectionIds = omniaBuildDailyBodyAwardQueue(items, todayStr);
+    omniaState.bodyAwardClaimedIds = [];
+    if (typeof saveOmniaState === 'function') saveOmniaState();
+  }
+  return omniaState.bodyAwardSelectionIds.slice();
+}
 // The set of OMNIA_EXERCISE_META ids that currently grant a body level if
 // completed right now, mapped to the specific path-card id that earns it —
 // the ✦ glow on guided-path cards and the actual award in
@@ -185,13 +232,17 @@ function omniaHighlightedExerciseIds() {
     var items = buildGuideRegimentItems().filter(function(item) {
       return item && omniaMetaIdForExercise(item.id);
     });
-    for (var i = 0; i < items.length && cap > 0; i++) {
-      if (items[i].done) continue;
-      var metaId = omniaMetaIdForExercise(items[i].id);
-      if (!metaId || result[metaId]) continue;
-      result[metaId] = items[i].id;
-      cap--;
-    }
+    var queue = omniaDailyBodyAwardQueue(items);
+    var claimed = Array.isArray(omniaState.bodyAwardClaimedIds) ? omniaState.bodyAwardClaimedIds : [];
+    // Only the first `cap` unclaimed queue positions are live slots. A removed
+    // or newly-completed card keeps its position instead of promoting another
+    // exercise, so settings changes cannot manufacture a new body award.
+    var slots = queue.filter(function(id) { return claimed.indexOf(id) === -1; }).slice(0, cap);
+    slots.forEach(function(cardId) {
+      var item = items.find(function(row) { return row.id === cardId; });
+      var metaId = item && omniaMetaIdForExercise(item.id);
+      if (metaId && !result[metaId]) result[metaId] = item.id;
+    });
     return result;
   }
   // No locked path — the single rotating recommendation is the only candidate.
@@ -450,11 +501,12 @@ function awardOmniaForExercise(exId, seconds, reachedRec) {
     // The session must also have reached Omnia's recommended duration: ending
     // early forfeits the body level (reachedRec === false). Callers that don't
     // pass the flag (tutorial clock, pore breathing) are unaffected.
-    if (!clockAkashaCapped && reachedRec !== false && omniaHighlightedExerciseIds()[exId]) {
+    var highlightedCardId = omniaHighlightedExerciseIds()[exId];
+    if (!clockAkashaCapped && reachedRec !== false && highlightedCardId) {
       var targetBody = omniaPickAwardBody(meta.body);
       if (targetBody) {
         omniaState.bodies[targetBody] = (omniaState.bodies[targetBody] || 0) + 1;
-        omniaConsumeBodyAward();
+        omniaConsumeBodyAward(highlightedCardId);
         omniaState.lastBodyAward = { body: targetBody, exercise: activityName, level: omniaState.bodies[targetBody] };
         awardedBody = true;
       }

@@ -523,6 +523,50 @@ async function testLodgeAuthorFlow(browser, baseUrl) {
   await context.close();
 }
 
+async function testGuideGestureAndBanner(browser, baseUrl) {
+  const context = await browser.newContext({ viewport: { width: 390, height: 844 }, hasTouch: true, serviceWorkers: 'block' });
+  const { page, errors } = await seedPage(context, baseUrl, { presence_auth_token: 'guide-guard-token', presence_auth_username: 'guide_guard' });
+  const result = await page.evaluate(async () => {
+    showScreen('homeScreen');
+    openGiftPath();
+    await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+    const overlay = document.getElementById('giftPathOverlay');
+    const touch = x => new Touch({ identifier: 41, target: overlay, clientX: x, clientY: 280, screenX: x, screenY: 280 });
+    document.dispatchEvent(new TouchEvent('touchstart', { touches: [touch(5)], changedTouches: [touch(5)], bubbles: true }));
+    document.dispatchEvent(new TouchEvent('touchmove', { touches: [touch(300)], changedTouches: [touch(300)], bubbles: true }));
+    document.dispatchEvent(new TouchEvent('touchend', { touches: [], changedTouches: [touch(385)], bubbles: true }));
+    await new Promise(resolve => setTimeout(resolve, 460));
+    const drawerStayedClosed = !document.getElementById('drawerOverlay').classList.contains('show');
+    const challengeClosed = !overlay.classList.contains('gp-show');
+
+    omniaState.bardonStep = 6;
+    applyOmniaStepVisuals();
+    switchMode('prayer');
+    openGuide();
+    const banner = document.getElementById('pathBanner');
+    const figure = document.getElementById('pathBannerOmniaFigure');
+    figure.style.animation = 'none';
+    const br = banner.getBoundingClientRect();
+    const visibleParts = [
+      figure.querySelector('.path-banner-crystal'),
+      figure.querySelector('.omnia-crown'),
+      figure.querySelector('.omnia-mandorla:not(.omnia-mandorla--inner)'),
+      figure.querySelector('.omnia-axis')
+    ].filter(Boolean).map(element => {
+      const rect = element.getBoundingClientRect();
+      return { top: rect.top, bottom: rect.bottom };
+    });
+    const figureContained = visibleParts.length === 4 && visibleParts.every(rect => rect.top >= br.top - 1 && rect.bottom <= br.bottom + 1);
+    return { drawerStayedClosed, challengeClosed, figureContained, visiblePartCount: visibleParts.length };
+  });
+  assert.equal(result.challengeClosed, true, 'the 7x2 edge swipe should close the challenge');
+  assert.equal(result.drawerStayedClosed, true, 'the same swipe must not fall through to the hamburger drawer');
+  assert.equal(result.visiblePartCount, 4, 'Step VI should render its complete banner geometry');
+  assert.equal(result.figureContained, true, 'Step VI geometry should fit within the Practice Now banner');
+  assert.deepEqual(errors, [], 'Guide gesture/banner checks emitted browser errors');
+  await context.close();
+}
+
 async function testNotificationClear(browser, baseUrl) {
   const context = await browser.newContext({ viewport: { width: 390, height: 844 }, serviceWorkers: 'block' });
   const { page, errors } = await seedPage(context, baseUrl, { presence_auth_token: 'notification-clear-token' });
@@ -776,6 +820,9 @@ async function testCloudRestoreAndSignOut(browser, baseUrl) {
     console.log('run - Lodge author flow');
     await testLodgeAuthorFlow(browser, baseUrl);
     console.log('ok - Lodge discussion actions and Profile return navigation work');
+    console.log('run - Guide gesture and Step VI banner');
+    await testGuideGestureAndBanner(browser, baseUrl);
+    console.log('ok - 7x2 swipe stays isolated and the Step VI figure fits its banner');
     console.log('run - notification clear');
     await testNotificationClear(browser, baseUrl);
     console.log('ok - notifications clear immediately and persist through the social endpoint');
