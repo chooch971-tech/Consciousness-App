@@ -261,7 +261,7 @@ test('top-level drawer screens reveal the open drawer during swipe-back', () => 
   assert.match(presence, /if \(drawerPreview\) \{\s*releaseLiveDrawerPreview\(drawerPreview, true\);/);
   assert.match(presence, /querySelector\('[^']*\.lodge-back[^']*'\)/);
   assert.match(presence, /visibilitychange[\s\S]*abortInterruptedSwipe/);
-  assert.match(presence, /var keepsAuthoredBackdrop = \['profileScreen', 'friendProfileScreen', 'friendsPanel', 'chatListScreen', 'chatThreadScreen', 'settingsScreen', 'accountSettingsScreen', 'exerciseSettingsScreen'\]/);
+  assert.match(presence, /var keepsAuthoredBackdrop = \['profileScreen', 'friendProfileScreen', 'friendsPanel', 'chatListScreen', 'chatThreadScreen', 'settingsScreen', 'accountSettingsScreen', 'exerciseSettingsScreen', 'clockSettingsScreen'\]/);
   assert.match(presence, /chatListScreen: 'lodgeScreen', chatThreadScreen: 'chatListScreen'/);
   assert.match(presence, /screenEl\.id === 'chatThreadScreen' && typeof chatThreadPreviousScreen === 'function/);
   assert.match(presence, /screenEl\.id === 'friendProfileScreen' && typeof friendProfilePreviousScreen === 'function/);
@@ -752,6 +752,12 @@ test('profile, friendship, and message screens share one starfield', () => {
   assert.match(presence, /#profFriendsMore \{[^}]*color:#9ed8c4;[^}]*opacity:1/);
 });
 
+test('all Settings screens share the dedicated midnight-blue starfield', () => {
+  assert.match(presence, /#settingsScreen,\s*#accountSettingsScreen,\s*#exerciseSettingsScreen,\s*#clockSettingsScreen\s*\{[\s\S]*?rgba\(67,112,190,\.18\)[\s\S]*?#0b1223/);
+  assert.match(presence, /clockSettingsScreen: 'settingsScreen'/);
+  assert.match(presence, /'clockSettingsScreen'\].indexOf\(el\.id\) >= 0/);
+});
+
 test('Friends manager remembers its opener and closes immediately after an interactive swipe', () => {
   assert.match(socialClient, /function friendsPanelPreviousScreen\(\) \{\s*return _friendsPanelReturnScreen \|\| 'profileScreen';/);
   assert.match(socialClient, /_friendsPanelReturnScreen = returnScreenId \|\| \(activeScreen && activeScreen\.id\) \|\| 'profileScreen'/);
@@ -903,7 +909,7 @@ test('Settings and utility screens load through their own client boundary', () =
   assert.match(settingsClient, /function\s+openAccountSettings\s*\(/);
   assert.match(settingsClient, /safeProfilePic\(pic\)[\s\S]*?av\.className = 'aset-profile__avatar' \+ \(safePic \? ' has-pic' : ''\)/);
   assert.match(settingsClient, /av\.style\.backgroundImage = safePic \? 'url\("' \+ safePic \+ '"\)' : ''/);
-  assert.match(presence, /#settingsScreen,\s*#accountSettingsScreen,\s*#exerciseSettingsScreen\s*\{[\s\S]*?linear-gradient\(180deg,#090d12/);
+  assert.match(presence, /#settingsScreen,\s*#accountSettingsScreen,\s*#exerciseSettingsScreen,\s*#clockSettingsScreen\s*\{[\s\S]*?linear-gradient\(180deg,#0b1223/);
   assert.match(settingsClient, /function\s+addAudioUrlSound\s*\(/);
   assert.match(settingsClient, /document\.getElementById\('importFile'\)\.addEventListener/);
   assert.match(settingsClient, /document\.querySelectorAll\('#faqScreen \.faq-item-head'\)/);
