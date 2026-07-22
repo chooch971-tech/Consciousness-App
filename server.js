@@ -179,6 +179,9 @@ async function connectDB() {
     userPushSubsCollection = db.collection('user_push_subs');
 
     await ensureIndexes([
+      { label: 'subscriptions.endpoint', collection: subsCollection, keys: { endpoint: 1 } },
+      { label: 'prayer.endpoint', collection: prayerCollection, keys: { endpoint: 1 } },
+      { label: 'practice.endpoint', collection: practiceCollection, keys: { endpoint: 1 } },
       { label: 'follows.follower-followee', collection: followsCollection, keys: { followerId: 1, followeeId: 1 }, options: { unique: true } },
       { label: 'follows.follower-status-created', collection: followsCollection, keys: { followerId: 1, status: 1, createdAt: -1 } },
       { label: 'follows.followee-status-created', collection: followsCollection, keys: { followeeId: 1, status: 1, createdAt: -1 } },
@@ -188,20 +191,28 @@ async function connectDB() {
       { label: 'likes.post-user', collection: likesCollection, keys: { postId: 1, userId: 1 }, options: { unique: true } },
       { label: 'comments.post-created', collection: commentsCollection, keys: { postId: 1, createdAt: 1 } },
       { label: 'comments.user-created', collection: commentsCollection, keys: { userId: 1, createdAt: -1 } },
+      { label: 'friends.user-status', collection: friendsCollection, keys: { userId: 1, status: 1 } },
+      { label: 'friends.friend-status', collection: friendsCollection, keys: { friendId: 1, status: 1 } },
       { label: 'blocks.user-blocked', collection: blocksCollection, keys: { userId: 1, blockedId: 1 }, options: { unique: true } },
       { label: 'blocks.blocked-user', collection: blocksCollection, keys: { blockedId: 1, userId: 1 } },
       { label: 'notifications.user-created', collection: notificationsCollection, keys: { userId: 1, createdAt: -1 } },
+      { label: 'notifications.lookup', collection: notificationsCollection, keys: { userId: 1, kind: 1, actorId: 1, refId: 1 } },
       { label: 'conversations.participants', collection: conversationsCollection, keys: { participants: 1, lastMsgAt: -1 } },
       { label: 'messages.conversation-created', collection: messagesCollection, keys: { convId: 1, createdAt: 1 } },
       { label: 'messages.conversation-sender-created', collection: messagesCollection, keys: { convId: 1, senderId: 1, createdAt: 1 } },
+      { label: 'messages.sender-created', collection: messagesCollection, keys: { senderId: 1, createdAt: -1 } },
+      { label: 'reports.reporter-created', collection: reportsCollection, keys: { reporterId: 1, createdAt: -1 } },
       { label: 'push-subscriptions.endpoint', collection: userPushSubsCollection, keys: { endpoint: 1 }, options: { unique: true } },
       { label: 'push-subscriptions.user', collection: userPushSubsCollection, keys: { userId: 1 } },
       // TTL sweeps stale beacons; reads independently guard expiresAt.
       { label: 'beacons.expiry', collection: beaconsCollection, keys: { expiresAt: 1 }, options: { expireAfterSeconds: 0 } },
+      { label: 'beacons.user-device', collection: beaconsCollection, keys: { userId: 1, deviceId: 1 } },
+      { label: 'beacons.user-expiry-updated', collection: beaconsCollection, keys: { userId: 1, expiresAt: 1, updatedAt: -1 } },
       { label: 'sync.user-synced', collection: syncDataCollection, keys: { userId: 1, syncedAt: -1 } },
       { label: 'sync.user-device', collection: syncDataCollection, keys: { userId: 1, deviceId: 1 }, options: { unique: true, partialFilterExpression: { deviceId: { $type: 'string' } } } },
       { label: 'users.email', collection: usersCollection, keys: { email: 1 }, options: { unique: true, sparse: true } },
-      { label: 'users.google-id', collection: usersCollection, keys: { googleId: 1 }, options: { sparse: true } }
+      { label: 'users.google-id', collection: usersCollection, keys: { googleId: 1 }, options: { sparse: true } },
+      { label: 'users.username', collection: usersCollection, keys: { username: 1 } }
     ], logger);
 
     subscriptions = await subsCollection.find({}).toArray();
@@ -1766,45 +1777,63 @@ app.get('/api/sync/presence/active', verifyToken, async (req, res) => {
 app.get('/api/sync/friends/list', verifyToken, async (req, res) => {
   try {
     const selfId = req.user.userId;
-    const selfOid = new ObjectId(selfId);
     const docs = await friendsCollection.find({
       status: 'accepted',
       $or: [{ userId: selfId }, { friendId: selfId }]
-    }).toArray();
+    }).limit(500).toArray();
 
     // Resolve real friends-in-common once for the whole list. Friend records
     // store string ids, so an accepted edge between two of the viewer's friends
     // means each appears in the other's commonFriendIds list.
-    const selfFriendIds = docs.map(doc => doc.userId === selfId ? doc.friendId : doc.userId);
+    const selfFriendIds = [...new Set(docs.map(doc => doc.userId === selfId ? doc.friendId : doc.userId))];
     const selfFriendIdSet = new Set(selfFriendIds);
     const commonByFriend = new Map(selfFriendIds.map(id => [id, new Set()]));
-    if (selfFriendIds.length) {
-      const networkDocs = await friendsCollection.find({
+    const friendObjectIds = selfFriendIds.filter(id => ObjectId.isValid(id)).map(id => new ObjectId(id));
+    const networkPromise = selfFriendIds.length ? friendsCollection.find({
         status: 'accepted',
         userId: { $in: selfFriendIds },
         friendId: { $in: selfFriendIds }
-      }).toArray();
-      networkDocs.forEach(doc => {
-        if (!selfFriendIdSet.has(doc.userId) || !selfFriendIdSet.has(doc.friendId)) return;
-        commonByFriend.get(doc.userId).add(doc.friendId);
-        commonByFriend.get(doc.friendId).add(doc.userId);
-      });
-    }
+      }).toArray() : Promise.resolve([]);
+    const usersPromise = friendObjectIds.length ? usersCollection.find({ _id: { $in: friendObjectIds } })
+      .project({ username: 1, displayName: 1, profilePic: 1, status: 1, isPrivate: 1, lastActive: 1 })
+      .toArray() : Promise.resolve([]);
+    const syncPromise = friendObjectIds.length ? syncDataCollection.aggregate([
+      { $match: { userId: { $in: friendObjectIds } } },
+      { $sort: { userId: 1, syncedAt: -1 } },
+      { $group: { _id: '$userId', snapshot: { $first: '$$ROOT' } } }
+    ]).toArray() : Promise.resolve([]);
+    const followsPromise = selfFriendIds.length ? followsCollection.find({
+      status: 'active',
+      $or: [
+        { followerId: selfId, followeeId: { $in: selfFriendIds } },
+        { followeeId: selfId, followerId: { $in: selfFriendIds } }
+      ]
+    }).project({ followerId: 1, followeeId: 1 }).toArray() : Promise.resolve([]);
+    const [networkDocs, friendUsers, latestSyncRows, activeFollowEdges] = await Promise.all([
+      networkPromise, usersPromise, syncPromise, followsPromise
+    ]);
+    networkDocs.forEach(doc => {
+      if (!selfFriendIdSet.has(doc.userId) || !selfFriendIdSet.has(doc.friendId)) return;
+      commonByFriend.get(doc.userId).add(doc.friendId);
+      commonByFriend.get(doc.friendId).add(doc.userId);
+    });
+    const userById = new Map(friendUsers.map(user => [user._id.toString(), user]));
+    const latestSyncById = new Map(latestSyncRows.map(row => [row._id.toString(), row.snapshot]));
+    const activeFollowPairs = new Set(activeFollowEdges.map(edge => `${edge.followerId}:${edge.followeeId}`));
 
     const friends = [];
     for (const doc of docs) {
       const otherId = doc.userId === selfId ? doc.friendId : doc.userId;
-      let otherOid;
-      try { otherOid = new ObjectId(otherId); } catch(e) { continue; }
-      const otherUser = await usersCollection.findOne({ _id: otherOid });
+      const otherUser = userById.get(otherId);
       if (!otherUser) continue;
       // A private profile's status is only visible to a mutual follow (the
       // same bar the Lodge already holds private posts to) — being an
       // accepted "friend" here is a separate, older relationship and isn't
       // enough on its own to see a private status.
-      const statusVisible = !otherUser.isPrivate || await isMutualFollow(selfId, otherId);
+      const statusVisible = !otherUser.isPrivate
+        || (activeFollowPairs.has(`${selfId}:${otherId}`) && activeFollowPairs.has(`${otherId}:${selfId}`));
 
-      const latestSync = await syncDataCollection.find({ userId: otherOid }).sort({ syncedAt: -1 }).limit(1).next();
+      const latestSync = latestSyncById.get(otherId) || null;
 
       let streak = 0, awarenessLevel = 1, awarenessXp = 0, concLevel = 1, concXp = 0, akasha = 0, bardonStep = 1;
       let bodies = { physical: 1, astral: 1, mental: 1 };
@@ -1886,11 +1915,11 @@ app.get('/api/sync/friends/list', verifyToken, async (req, res) => {
 // SEARCH USERS BY USERNAME PREFIX
 app.get('/api/sync/friends/search', verifyToken, async (req, res) => {
   try {
-    const q = (req.query.q || '').trim();
+    const q = (req.query.q || '').trim().toLowerCase();
     if (!q) return res.json({ users: [] });
     const selfId = req.user.userId;
     const users = await usersCollection.find({
-      username: { $regex: '^' + q.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), $options: 'i' },
+      username: { $regex: '^' + q.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') },
       _id: { $ne: new ObjectId(selfId) },
       // Private accounts opt out of discovery — they can still be added by anyone
       // who knows their exact username via /friends/request.
@@ -1988,15 +2017,15 @@ app.post('/api/sync/friends/decline', verifyToken, mutationRateLimit, async (req
 app.get('/api/sync/friends/requests', verifyToken, async (req, res) => {
   try {
     const selfId = req.user.userId;
-    const docs = await friendsCollection.find({ friendId: selfId, status: 'pending' }).toArray();
-    const requests = [];
-    for (const doc of docs) {
-      let userOid;
-      try { userOid = new ObjectId(doc.userId); } catch(e) { continue; }
-      const user = await usersCollection.findOne({ _id: userOid });
-      if (!user) continue;
-      requests.push({ userId: doc.userId, username: user.username || ('practitioner_' + String(doc.userId).slice(-5)) });
-    }
+    const docs = await friendsCollection.find({ friendId: selfId, status: 'pending' }).limit(100).toArray();
+    const ids = [...new Set(docs.map(doc => doc.userId).filter(id => ObjectId.isValid(id)))];
+    const users = ids.length ? await usersCollection.find({ _id: { $in: ids.map(id => new ObjectId(id)) } })
+      .project({ username: 1 }).toArray() : [];
+    const byId = new Map(users.map(user => [user._id.toString(), user]));
+    const requests = docs.map(doc => {
+      const user = byId.get(doc.userId);
+      return user ? { userId: doc.userId, username: user.username || ('practitioner_' + String(doc.userId).slice(-5)) } : null;
+    }).filter(Boolean);
     res.json({ requests });
   } catch (err) {
     console.error('Friend requests error:', err);

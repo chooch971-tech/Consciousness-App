@@ -1,6 +1,6 @@
 # Presence launch load testing
 
-Run this against a production-sized staging service and staging MongoDB—not the public service first. The scenario reproduces the signed-in launch path: cloud pull followed by concurrent Lodge feed, conversations, notifications, and heartbeat requests.
+Run this against a production-sized staging service and staging MongoDB—not the public service first. The default `launch` scenario reproduces the signed-in launch path: cloud pull followed by concurrent Lodge feed, conversations, notifications, and heartbeat requests. The `network` scenario concurrently opens the Friends list, profile summary, followers, and following views; it is designed to expose social-graph query amplification.
 
 Prepare a JSON file containing staging JWTs as strings or `{ "token": "..." }` objects. More distinct accounts produce a more realistic database test; a single token can be repeated for a quick infrastructure check.
 
@@ -13,7 +13,7 @@ PRESENCE_LOAD_RAMP_SEC=10 \
 npm run test:load
 ```
 
-Repeat at 100, 250, 500, and 1,000 users. The command fails unless total errors stay at or below 1% and overall p95 latency stays at or below 2 seconds. For launch approval, also confirm in the Render and MongoDB dashboards:
+Repeat at 100, 250, 500, and 1,000 users, first with `PRESENCE_LOAD_SCENARIO=launch` and then with `PRESENCE_LOAD_SCENARIO=network`. The command fails unless total errors stay at or below 1% and overall p95 latency stays at or below 2 seconds. For launch approval, also confirm in the Render and MongoDB dashboards:
 
 - no service restart or out-of-memory event;
 - CPU below 70% sustained and memory below 75%;

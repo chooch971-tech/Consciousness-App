@@ -2,12 +2,24 @@
 
 const test = require('node:test');
 const assert = require('node:assert/strict');
-const { DEFAULT_PATHS, percentile, readConfig, summarize, run } = require('../scripts/load-smoke');
+const { DEFAULT_PATHS, NETWORK_PATHS, percentile, readConfig, summarize, run } = require('../scripts/load-smoke');
 
 test('launch load scenario covers the signed-in startup endpoints', () => {
   assert.deepEqual(DEFAULT_PATHS.map(endpoint => endpoint.name), [
     'sync-pull', 'feed', 'conversations', 'notifications', 'heartbeat'
   ]);
+});
+
+test('network scenario covers the batched profile graph endpoints', () => {
+  assert.deepEqual(NETWORK_PATHS.map(endpoint => endpoint.name), [
+    'friends', 'profile-summary', 'followers', 'following'
+  ]);
+  const config = readConfig({
+    PRESENCE_LOAD_BASE_URL: 'http://127.0.0.1:3000',
+    PRESENCE_LOAD_TOKEN: 'token',
+    PRESENCE_LOAD_SCENARIO: 'network'
+  });
+  assert.equal(config.scenario, 'network');
 });
 
 test('load configuration requires explicit confirmation for remote targets', () => {
@@ -45,6 +57,7 @@ test('load runner models five launch requests for every virtual user', async () 
     const summary = await run({
       baseUrl: 'http://127.0.0.1:3000',
       tokens: ['a', 'b'],
+      scenario: 'launch',
       users: 3,
       rampMs: 0,
       timeoutMs: 1000

@@ -9,6 +9,13 @@ const DEFAULT_PATHS = Object.freeze([
   { name: 'notifications', method: 'GET', path: '/api/social/notifications' },
   { name: 'heartbeat', method: 'POST', path: '/api/sync/auth/heartbeat' }
 ]);
+const NETWORK_PATHS = Object.freeze([
+  { name: 'friends', method: 'GET', path: '/api/sync/friends/list' },
+  { name: 'profile-summary', method: 'GET', path: '/api/social/users/me/summary' },
+  { name: 'followers', method: 'GET', path: '/api/social/users/me/followers' },
+  { name: 'following', method: 'GET', path: '/api/social/users/me/following' }
+]);
+const SCENARIOS = Object.freeze({ launch: DEFAULT_PATHS, network: NETWORK_PATHS });
 
 function percentile(values, pct) {
   if (!values.length) return 0;
@@ -46,9 +53,12 @@ function readConfig(env) {
   }
   const tokens = loadTokens(env);
   if (!tokens.length) throw new Error('Provide PRESENCE_LOAD_TOKEN(S) or PRESENCE_LOAD_TOKENS_FILE');
+  const scenario = String(env.PRESENCE_LOAD_SCENARIO || 'launch').trim().toLowerCase();
+  if (!SCENARIOS[scenario]) throw new Error('PRESENCE_LOAD_SCENARIO must be launch or network');
   return {
     baseUrl: baseUrl.origin,
     tokens,
+    scenario,
     users: Math.floor(positiveNumber(env.PRESENCE_LOAD_USERS, Math.min(100, tokens.length))),
     rampMs: nonnegativeNumber(env.PRESENCE_LOAD_RAMP_SEC, 10) * 1000,
     timeoutMs: positiveNumber(env.PRESENCE_LOAD_TIMEOUT_MS, 10000),
@@ -80,16 +90,20 @@ async function hit(config, token, endpoint, results) {
   results.push({ name: endpoint.name, durationMs: Date.now() - started, status, error });
 }
 
-async function launchJourney(config, token, results) {
-  await hit(config, token, DEFAULT_PATHS[0], results);
-  await Promise.all(DEFAULT_PATHS.slice(1).map(endpoint => hit(config, token, endpoint, results)));
+async function runJourney(config, token, results, endpoints) {
+  if (config.scenario === 'launch') {
+    await hit(config, token, endpoints[0], results);
+    await Promise.all(endpoints.slice(1).map(endpoint => hit(config, token, endpoint, results)));
+    return;
+  }
+  await Promise.all(endpoints.map(endpoint => hit(config, token, endpoint, results)));
 }
 
-function summarize(results, elapsedMs) {
+function summarize(results, elapsedMs, endpointsToReport) {
   const failures = results.filter(result => result.error);
   const durations = results.map(result => result.durationMs);
   const endpoints = {};
-  for (const endpoint of DEFAULT_PATHS) {
+  for (const endpoint of endpointsToReport || DEFAULT_PATHS) {
     const rows = results.filter(result => result.name === endpoint.name);
     const failed = rows.filter(result => result.error);
     endpoints[endpoint.name] = {
@@ -117,18 +131,19 @@ async function run(config) {
   const results = [];
   const started = Date.now();
   const workers = [];
+  const endpoints = SCENARIOS[config.scenario || 'launch'];
   for (let index = 0; index < config.users; index++) {
     const delay = config.users === 1 ? 0 : Math.floor((index / (config.users - 1)) * config.rampMs);
     const token = config.tokens[index % config.tokens.length];
-    workers.push(new Promise(resolve => setTimeout(resolve, delay)).then(() => launchJourney(config, token, results)));
+    workers.push(new Promise(resolve => setTimeout(resolve, delay)).then(() => runJourney(config, token, results, endpoints)));
   }
   await Promise.all(workers);
-  return summarize(results, Date.now() - started);
+  return summarize(results, Date.now() - started, endpoints);
 }
 
 async function main() {
   const config = readConfig(process.env);
-  console.log('Presence launch load test:', config.users, 'users over', config.rampMs / 1000, 'seconds against', config.baseUrl);
+  console.log('Presence', config.scenario, 'load test:', config.users, 'users over', config.rampMs / 1000, 'seconds against', config.baseUrl);
   const summary = await run(config);
   console.log(JSON.stringify(summary, null, 2));
   const passed = summary.errorRate <= config.maxErrorRate && summary.p95Ms <= config.maxP95Ms;
@@ -142,4 +157,4 @@ async function main() {
 
 if (require.main === module) main().catch(error => { console.error(error.message); process.exitCode = 1; });
 
-module.exports = { DEFAULT_PATHS, percentile, readConfig, summarize, run };
+module.exports = { DEFAULT_PATHS, NETWORK_PATHS, SCENARIOS, percentile, readConfig, summarize, run };
