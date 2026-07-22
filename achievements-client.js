@@ -374,38 +374,86 @@ function renderAchScreen(mode) {
   var monthly = _achScreenMode === 'monthly';
   var banner = document.querySelector('#achScreen .ach-banner-title');
   if (banner) banner.textContent = monthly ? 'Monthly Badges' : 'Achievements';
+  body.innerHTML = monthly ? _achMonthlyHtml() : _achRecordsHtml(p) + _achAwardsHtml();
+  renderAchDetail(p);
+}
+
+// ── Monthly mode: this month's badge set, then a year calendar of perfect
+// months (reference layout: big discs in three columns, labels beneath,
+// future months locked). ──
+function _achMonthlyHtml() {
+  var g = ACH_GROUPS[0];
+  var earnedMap = achState.monthly.earned;
+  var earnedN = g.items.filter(function(b){ return earnedMap[b.id]; }).length;
   var monthName = new Date().toLocaleString('en', { month:'long' });
   var daysLeft = (function(){ var n = new Date(); return new Date(n.getFullYear(), n.getMonth()+1, 1) - n; })();
   daysLeft = Math.max(1, Math.ceil(daysLeft / 86400000));
-  body.innerHTML = ACH_GROUPS.filter(function(g) { return monthly ? g.monthly : !g.monthly; }).map(function(g) {
-    var earnedMap = g.monthly ? achState.monthly.earned : achState.earned;
-    var earnedN = g.items.filter(function(b){ return earnedMap[b.id]; }).length;
-    var head = '<div class="ach-group-label"><span>' + (g.monthly ? 'Monthly · ' + monthName : g.label) + '</span><small>' + earnedN + ' / ' + g.items.length + '</small></div>'
-      + (g.monthly ? '<div class="ach-month-note">Resets in ' + daysLeft + ' day' + (daysLeft === 1 ? '' : 's') + '. A perfect month feeds the Monthly Devotion badges.</div>' : '');
-    var grid = '<div class="ach-grid">' + g.items.map(function(b) {
-      var earned = !!earnedMap[b.id];
-      var medal = b.group === 'step' ? ['','','II','III','IV','V','VI','VII','VIII','IX','X'][b.target]
-        : b.target >= 1000 ? (b.target/1000) + 'k' : b.target;
-      return '<button class="ach-badge' + (earned ? ' earned' : '') + (_achSelected === b.id ? ' sel' : '') + '" data-ach="' + b.id + '">'
-        + '<span class="ach-medal" style="--gc:' + (ACH_COLORS[g.id] || '#e8c87a') + '">' + achIconSvg(g.id, b) + '<b>' + medal + '</b></span>'
-        + '<span class="ach-badge-lbl">' + b.name + '</span></button>';
-    }).join('') + '</div>';
-    if (g.monthly) return '<div class="ach-month-panel">' + head + grid + '</div>' + _achPerfectMonthsHtml();
-    return head + grid;
-  }).join('');
-  renderAchDetail(p);
+  var head = '<div class="ach-group-label"><span>Monthly · ' + monthName + '</span><small>' + earnedN + ' / ' + g.items.length + '</small></div>'
+    + '<div class="ach-month-note">Resets in ' + daysLeft + ' day' + (daysLeft === 1 ? '' : 's') + '. A perfect month feeds the Monthly Devotion badges.</div>';
+  var grid = '<div class="ach-grid ach-grid--duo">' + g.items.map(function(b) {
+    var earned = !!earnedMap[b.id];
+    return '<button class="ach-badge' + (earned ? ' earned' : '') + (_achSelected === b.id ? ' sel' : '') + '" data-ach="' + b.id + '">'
+      + '<span class="ach-medal" style="--gc:' + ACH_COLORS.monthly + '">' + achIconSvg('monthly', b) + '<b>' + _achMedalText(b) + '</b></span>'
+      + '<span class="ach-badge-lbl">' + b.name + '</span></button>';
+  }).join('') + '</div>';
+  return '<div class="ach-month-panel">' + head + grid + '</div>' + _achYearsHtml();
 }
-// Past perfect months (every monthly badge earned), newest first — the
-// monthly screen's own bit of history, like a badge-case shelf.
-function _achPerfectMonthsHtml() {
-  var keys = (achState.clearedKeys || []).slice().sort().reverse();
-  if (!keys.length) return '';
-  return '<div class="ach-group-label" style="margin-top:22px;"><span>Perfect Months</span><small>' + keys.length + '</small></div>'
-    + '<div class="ach-perfect-months">' + keys.map(function(k) {
-      var parts = k.split('-');
-      var d = new Date(+parts[0], (+parts[1] || 1) - 1, 1);
-      return '<span class="ach-perfect-month">✦ ' + d.toLocaleString('en', { month:'long', year:'numeric' }) + '</span>';
+var ACH_LOCK_SVG = '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5.5" y="10.5" width="13" height="9" rx="2"/><path d="M8.5 10.5V8a3.5 3.5 0 0 1 7 0v2.5"/></svg>';
+function _achYearsHtml() {
+  var cleared = {};
+  (achState.clearedKeys || []).forEach(function(k){ cleared[k] = true; });
+  var now = new Date();
+  var years = [now.getFullYear()];
+  Object.keys(cleared).forEach(function(k){ var y = +k.split('-')[0]; if (y && years.indexOf(y) === -1) years.push(y); });
+  years.sort(function(a, b){ return b - a; });
+  return years.map(function(y) {
+    var months = '';
+    for (var m = 1; m <= 12; m++) {
+      var key = y + '-' + String(m).padStart(2, '0');
+      var name = new Date(y, m - 1, 1).toLocaleString('en', { month:'long' });
+      var future = y > now.getFullYear() || (y === now.getFullYear() && m - 1 > now.getMonth());
+      var isNow = y === now.getFullYear() && m - 1 === now.getMonth();
+      var cls = cleared[key] ? ' ach-ym--perfect' : isNow ? ' ach-ym--now' : '';
+      var inner = cleared[key] ? '✦' : future ? ACH_LOCK_SVG : isNow ? '✦' : '';
+      months += '<div class="ach-ym' + cls + '"><span class="ach-ym__disc">' + inner + '</span><span class="ach-ym__lbl">' + name + '</span></div>';
+    }
+    return '<div class="ach-sec-title">' + y + ' Perfect Months</div><div class="ach-year-grid">' + months + '</div>';
+  }).join('');
+}
+
+// ── All-time mode: Personal Records cards up top, then one award per badge
+// family with tier progress ("2 of 9") — reference layout, Presence dress. ──
+function _achRecordsHtml(p) {
+  var clock = (achState.hwm && achState.hwm.clock) || 0;
+  var roman = ['','I','II','III','IV','V','VI','VII','VIII','IX','X'];
+  var fmt = function(sec){ var m = Math.floor(sec / 60), s = Math.round(sec % 60); return m + ':' + String(s).padStart(2, '0'); };
+  var recs = [
+    { icon:'vigil', c:'#f0a860', show: p.streak > 0, val: String(p.streak), lbl:'Longest Streak' },
+    { icon:'mfifteen', c:'#cdd6e8', show: clock > 0, val: fmt(clock), lbl:'Best Clock Hold' },
+    { icon:'volume', c:'#d4956e', show: p.ex > 0, val: Number(p.ex).toLocaleString(), lbl:'Exercises' },
+    { icon:'conc', c:'#e8b060', show: true, val: String(p.conc), lbl:'Concentration' },
+    { icon:'aware', c:'#7eb8a4', show: true, val: String(p.aware), lbl:'Awareness' },
+    { icon:'path', c:'#8ecce0', show: true, val: roman[p.step] || 'I', lbl:'Bardon Step' }
+  ].filter(function(r){ return r.show; });
+  return '<div class="ach-sec-title" style="margin-top:4px;">Personal Records</div>'
+    + '<div class="ach-rec-row">' + recs.map(function(r) {
+      return '<div class="ach-rec-card" style="--rc:' + r.c + ';">'
+        + '<svg viewBox="0 0 24 24" aria-hidden="true">' + ACH_ICONS[r.icon] + '</svg>'
+        + '<span class="ach-rec-val">' + r.val + '</span>'
+        + '<span class="ach-rec-lbl">' + r.lbl + '</span></div>';
     }).join('') + '</div>';
+}
+function _achAwardsHtml() {
+  var cards = ACH_GROUPS.filter(function(g){ return !g.monthly; }).map(function(g) {
+    var earnedN = g.items.filter(function(b){ return achState.earned[b.id]; }).length;
+    var next = g.items.filter(function(b){ return !achState.earned[b.id]; })[0] || g.items[g.items.length - 1];
+    var shown = earnedN ? g.items[earnedN - 1] : next; // medal shows the tier you hold
+    return '<button class="ach-badge ach-award' + (earnedN ? ' earned' : '') + (_achSelected === next.id ? ' sel' : '') + '" data-ach="' + next.id + '">'
+      + '<span class="ach-medal" style="--gc:' + (ACH_COLORS[g.id] || '#e8c87a') + '">' + achIconSvg(g.id) + '<b>' + _achMedalText(shown) + '</b></span>'
+      + '<span class="ach-badge-lbl">' + g.label + '</span>'
+      + '<span class="ach-award-prog">' + earnedN + ' of ' + g.items.length + '</span></button>';
+  }).join('');
+  return '<div class="ach-sec-title">Awards</div><div class="ach-awards">' + cards + '</div>';
 }
 function renderAchDetail(p) {
   var box = document.getElementById('achDetail');

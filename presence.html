@@ -1223,8 +1223,36 @@
     .ach-month-note { font-size:10.5px; font-style:italic; color:rgba(221,216,206,.6); margin:-2px 0 12px; }
     .ach-month-panel { border:1px solid rgba(205,214,232,.22); background:rgba(205,214,232,.035); border-radius:14px; padding:2px 13px 14px; margin-bottom:4px; }
     .ach-month-panel .ach-group-label { color:#cdd6e8; margin-top:14px; }
-    .ach-perfect-months { display:flex; flex-wrap:wrap; gap:8px; }
-    .ach-perfect-month { font-family:'DM Mono',monospace; font-size:9px; letter-spacing:.1em; text-transform:uppercase; color:#f0d8ac; border:1px solid rgba(232,200,122,.3); background:rgba(232,200,122,.07); border-radius:999px; padding:7px 12px; }
+    /* Duolingo-style layouts in Presence dress: serif section titles, three-up
+       badge grids with labels beneath, records rail, and a year calendar of
+       perfect months with future months locked. */
+    .ach-sec-title { font-family:'Cormorant Garamond',serif; font-size:22px; font-weight:300; color:var(--text); margin:26px 0 14px; }
+    .ach-grid--duo { grid-template-columns:repeat(3,1fr); gap:16px 10px; }
+    .ach-grid--duo .ach-medal { width:66px; height:66px; gap:2px; }
+    .ach-grid--duo .ach-medal svg { width:20px; height:20px; }
+    .ach-grid--duo .ach-medal b { font-size:16px; }
+    .ach-grid--duo .ach-badge-lbl { font-size:8px; }
+    .ach-rec-row { display:flex; gap:10px; overflow-x:auto; padding-bottom:6px; scrollbar-width:none; -ms-overflow-style:none; }
+    .ach-rec-row::-webkit-scrollbar { display:none; }
+    .ach-rec-card { flex:0 0 auto; width:118px; border:1px solid var(--border); border-radius:14px; background:rgba(255,255,255,.02); padding:16px 10px 13px; display:flex; flex-direction:column; align-items:center; gap:8px; text-align:center; }
+    .ach-rec-card svg { width:21px; height:21px; fill:none; stroke:var(--rc,#e8c87a); stroke-width:1.5; stroke-linecap:round; stroke-linejoin:round; filter:drop-shadow(0 0 5px var(--rc,#e8c87a)); }
+    .ach-rec-val { font-family:'Cormorant Garamond',serif; font-size:25px; font-weight:300; color:var(--text); line-height:1; }
+    .ach-rec-lbl { font-family:'DM Mono',monospace; font-size:7.5px; letter-spacing:.12em; text-transform:uppercase; color:rgba(221,216,206,.55); line-height:1.4; }
+    .ach-awards { display:grid; grid-template-columns:repeat(3,1fr); gap:18px 10px; }
+    .ach-award .ach-medal { width:70px; height:70px; gap:2px; }
+    .ach-award .ach-medal svg { width:22px; height:22px; }
+    .ach-award .ach-medal b { font-size:17px; }
+    .ach-award .ach-badge-lbl { font-size:8px; }
+    .ach-award-prog { font-family:'DM Mono',monospace; font-size:8px; letter-spacing:.1em; color:rgba(221,216,206,.42); }
+    .ach-award.earned .ach-award-prog { color:rgba(240,216,172,.75); }
+    .ach-year-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:18px 10px; }
+    .ach-ym { display:flex; flex-direction:column; align-items:center; gap:7px; }
+    .ach-ym__disc { width:66px; height:66px; border-radius:50%; display:flex; align-items:center; justify-content:center; border:1px solid rgba(221,216,206,.14); background:rgba(255,255,255,.02); color:rgba(221,216,206,.28); font-size:22px; }
+    .ach-ym__disc svg { width:20px; height:20px; fill:none; stroke:currentColor; stroke-width:1.5; stroke-linecap:round; stroke-linejoin:round; }
+    .ach-ym--perfect .ach-ym__disc { border-color:rgba(232,200,122,.75); color:#f0d8ac; background:radial-gradient(circle at 42% 34%, rgba(232,200,122,.16), rgba(232,200,122,.04) 70%); box-shadow:0 0 12px -2px rgba(232,200,122,.5); text-shadow:0 0 10px rgba(232,200,122,.8); }
+    .ach-ym--now .ach-ym__disc { border-color:rgba(205,214,232,.45); color:rgba(205,214,232,.55); }
+    .ach-ym__lbl { font-family:'DM Mono',monospace; font-size:8px; letter-spacing:.1em; text-transform:uppercase; color:rgba(221,216,206,.5); }
+    .ach-ym--perfect .ach-ym__lbl { color:#f0d8ac; }
     .prof-badge--earned { border-color:rgba(232,200,122,.6); box-shadow:0 0 10px -3px rgba(232,200,122,.6); opacity:1; color:#f0d8ac; }
     .prof-badge svg, .prof-ach-item__disc svg { width:16px; height:16px; fill:none; stroke:var(--gc,#e8c87a); stroke-width:1.5; stroke-linecap:round; stroke-linejoin:round; }
     .prof-badge b, .prof-ach-item__disc b { font-family:'Cormorant Garamond',serif; font-weight:300; font-size:13px; margin-top:1px; }
