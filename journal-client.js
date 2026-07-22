@@ -4,34 +4,6 @@
 
 var journalEditKey = null; // date key currently open in the editor
 
-var OMNIA_JOURNAL_PROMPTS = [
-  'What pulled your attention most today — and were you the one who chose to let it?',
-  'Where did you feel most present today? What made that possible?',
-  'What thought kept returning during practice? What does its persistence tell you?',
-  'Describe the quality of your stillness today in one sentence.',
-  'What resisted you most during practice today? What did you learn from the resistance?',
-  'Where do you notice the gap between who you are and who you are becoming?',
-  'What would today\'s practice look like if no one were watching — not even yourself?',
-  'What emotion did you carry into practice today? Did it change?',
-  'What did your body tell you during practice that your mind was not ready to hear?',
-  'Where did effort end and surrender begin today?',
-  'What habit of mind showed up uninvited during practice?',
-  'If today\'s session were a weather report, what would it read?',
-  'What are you protecting yourself from by not going deeper?',
-  'Describe the moment you almost stopped. What kept you?',
-  'What does your practice ask of you that ordinary life does not?',
-  'Which part of yourself showed up to practice today — the seeker or the avoider?',
-  'What did silence feel like today?',
-  'What would you tell a student who had exactly your practice today?',
-  'Where does your attention go when you stop directing it?',
-  'What is the difference between today\'s sit and yesterday\'s?'
-];
-
-function omniaJournalPrompt() {
-  var epoch = Math.floor(Date.now() / 86400000);
-  return OMNIA_JOURNAL_PROMPTS[epoch % OMNIA_JOURNAL_PROMPTS.length];
-}
-
 function loadJournal(){
   try{var s=localStorage.getItem('presence_journal_v1');return s?JSON.parse(s):{};}
   catch(e){return{};}
@@ -322,11 +294,6 @@ function openJournalEntry(dateKey){
   document.getElementById('journalEntryDate').textContent=journalDayLabel(dateKey);
   document.getElementById('journalTitleInput').value=entry.title||'';
   document.getElementById('journalBodyInput').value=entry.note||'';
-  var hintEl=document.getElementById('journalOmniaHint');
-  var isCurrentDay=dateKey===getJournalKey(new Date());
-  if(isCurrentDay&&!(entry.note&&entry.note.trim())){
-    hintEl.innerHTML='<div class="jl-omnia-hint">'+escHtml(omniaJournalPrompt())+'</div>';
-  } else { hintEl.innerHTML=''; }
   var hasWritten=!!(entry.title&&entry.title.trim())||!!(entry.note&&entry.note.trim());
   document.getElementById('journalEntryDelete').style.display=hasWritten?'flex':'none';
   document.getElementById('journalEntryLog').innerHTML=hasWritten?journalProgressHTML(dateKey)+journalLogHTML(dateKey):'';
