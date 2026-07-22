@@ -9809,6 +9809,12 @@ startPrayerScheduler();
     if (!drawer) return null;
     // The root-level stacking order keeps the live drawer between Home and the
     // departing page without reparenting its large, animated DOM subtree.
+    // Clip it to the edge initially, then reveal only the width uncovered by
+    // the departing page. This also protects against transparent/composited
+    // regions in richer screens exposing the whole menu on the first move.
+    drawer.style.clipPath = 'inset(0 ' + W + 'px 0 0)';
+    drawer.style.willChange = 'clip-path';
+    drawer.style.transition = 'none';
     drawer.classList.add('drawer-instant', 'swipe-back-live', 'show');
     return drawer;
   }
@@ -9817,6 +9823,9 @@ startPrayerScheduler();
     if (!drawer) return;
     if (!keepOpen) drawer.classList.remove('show');
     drawer.classList.remove('swipe-back-live');
+    drawer.style.clipPath = '';
+    drawer.style.willChange = '';
+    drawer.style.transition = '';
     requestAnimationFrame(function() { drawer.classList.remove('drawer-instant'); });
   }
 
@@ -9895,6 +9904,9 @@ startPrayerScheduler();
     sw.screenEl.style.transform = 'translateX(' + dx + 'px)';
     sw.prevEl.style.transform = 'translateX(' + (-28 + progress * 28) + '%)';
     sw.overlay.style.opacity = String((1 - progress) * 0.22);
+    if (sw.drawerPreview) {
+      sw.drawerPreview.style.clipPath = 'inset(0 ' + Math.max(0, W - dx) + 'px 0 0)';
+    }
   }
 
   function queueUpdate(x) {
@@ -9932,6 +9944,10 @@ startPrayerScheduler();
     // Fade out the dim overlay
     overlay.style.transition = 'opacity .26s ease';
     overlay.style.opacity    = '0';
+    if (drawerPreview) {
+      drawerPreview.style.transition = 'clip-path .26s ' + EASE;
+      drawerPreview.style.clipPath = 'inset(0 0px 0 0)';
+    }
 
     afterSwipePaint(260, function() {
       sw._animating = false;
@@ -10000,6 +10016,10 @@ startPrayerScheduler();
     // Restore overlay opacity
     overlay.style.transition = 'opacity .22s ease';
     overlay.style.opacity    = '0.22';
+    if (drawerPreview) {
+      drawerPreview.style.transition = 'clip-path .22s ' + EASE;
+      drawerPreview.style.clipPath = 'inset(0 ' + W + 'px 0 0)';
+    }
 
     afterSwipePaint(220, function() {
       sw._animating = false;

@@ -260,6 +260,8 @@ test('top-level drawer screens reveal the open drawer during swipe-back', () => 
   assert.match(presence, /var revealsDrawer = prevIsHome && !!window\._returnToDrawer/);
   assert.match(presence, /if \(prevIsHome\) window\._returnToDrawer = false;/);
   assert.match(presence, /function showLiveDrawerPreview\(\)[\s\S]*?classList\.add\('drawer-instant', 'swipe-back-live', 'show'\)/);
+  assert.match(presence, /drawer\.style\.clipPath = 'inset\(0 ' \+ W \+ 'px 0 0\)'/);
+  assert.match(presence, /sw\.drawerPreview\.style\.clipPath = 'inset\(0 ' \+ Math\.max\(0, W - dx\) \+ 'px 0 0\)'/);
   assert.match(presence, /\.drawer-overlay\.swipe-back-live \{ position:fixed; z-index:20; pointer-events:none; transition:none; \}/);
   assert.match(presence, /\.drawer-overlay\.swipe-back-live \.drawer \{ position:absolute; z-index:1; transition:none; \}/);
   assert.match(presence, /var drawerPreview = revealsDrawer \? showLiveDrawerPreview\(\) : null/);
@@ -291,6 +293,8 @@ test('top-level drawer screens reveal the open drawer during swipe-back', () => 
   const completeEnd = presence.indexOf('function cancel()', completeStart);
   const completeBody = presence.slice(completeStart, completeEnd);
   assert.match(completeBody, /afterSwipePaint\(260, function\(\)/);
+  assert.match(completeBody, /drawerPreview\.style\.transition = 'clip-path \.26s ' \+ EASE/);
+  assert.match(completeBody, /drawerPreview\.style\.clipPath = 'inset\(0 0px 0 0\)'/);
   assert.ok(completeBody.indexOf('backBtn.click()') < completeBody.indexOf('requestAnimationFrame(function()') && completeBody.indexOf('requestAnimationFrame(function()') < completeBody.indexOf('cleanPrev(prevEl, prevIsHome)'), 'swipe-back keeps the revealed screen painted through the first frame after its Back action activates it');
   assert.match(completeBody, /requestAnimationFrame\(function\(\) \{[\s\S]*?cleanPrev\(prevEl, prevIsHome\);/);
   assert.match(presence, /\.screen\.active\.swipe-back-arrival \{ animation:none; transform:translateZ\(0\); \}/);
