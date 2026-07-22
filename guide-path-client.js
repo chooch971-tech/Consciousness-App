@@ -2,6 +2,11 @@ function loadGuideState() {
   try { var s = localStorage.getItem('presence_guide_v1'); return s ? JSON.parse(s) : {}; } catch(e) { return {}; }
 }
 function saveGuideState(st) {
+  // Stamp a write time so the sync pull can prefer the freshest guide snapshot.
+  // Guide state carries no progress score, so without this the pull comparator
+  // treated every difference as a cloud win and silently reverted local
+  // settings (e.g. an exercise's 1x/day frequency) on the next day's sync.
+  try { if (st && typeof st === 'object') st._updatedAt = Date.now(); } catch(e) {}
   try { localStorage.setItem('presence_guide_v1', JSON.stringify(st)); } catch(e) {}
 }
 

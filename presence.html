@@ -8917,6 +8917,28 @@ function mergePracticeReviewPull(localStr, cloudStr) {
   return merged ? JSON.stringify(merged) : null;
 }
 
+// Guide state (path mode, 2x/day cadence, per-exercise frequency, advanced
+// floors) carries no progress score, so the generic shouldTakeCloudValue tie
+// always resolved cloud-wins and reverted local setting changes on the next
+// pull. Reconcile it by last-writer-wins on _updatedAt instead: a deliberate
+// Reset All Progress (higher _resetAt) still wins, then the freshest guide
+// snapshot wins; on a tie or missing timestamps, keep local so a stale cloud
+// copy can't clobber a setting the user just changed. Returns the string to
+// store, or null to leave local untouched.
+function mergeGuidePull(localStr, cloudStr) {
+  if (!cloudStr) return null;
+  if (!localStr) return cloudStr;
+  if (localStr === cloudStr) return null;
+  var localObj, cloudObj;
+  try { localObj = JSON.parse(localStr); cloudObj = JSON.parse(cloudStr); } catch(e) { return null; }
+  var lReset = (localObj && localObj._resetAt) || 0;
+  var cReset = (cloudObj && cloudObj._resetAt) || 0;
+  if (lReset !== cReset) return cReset > lReset ? cloudStr : null;
+  var lU = Number(localObj && localObj._updatedAt) || 0;
+  var cU = Number(cloudObj && cloudObj._updatedAt) || 0;
+  return cU > lU ? cloudStr : null;
+}
+
 // Did a merge produce materially new progress (vs just re-serialised bytes)?
 // Used so the pull paths only trigger a reload when something actually advanced,
 // not when a merge merely reordered JSON keys.
@@ -9076,6 +9098,14 @@ function applyPulledData(data) {
       if (mergedReview !== null) {
         if (syncMeaningfulDelta(k, local, mergedReview)) changed = true;
         localStorage.setItem(k, mergedReview);
+      }
+      return;
+    }
+    if (k === 'presence_guide_v1') {
+      var mergedGuide = mergeGuidePull(local, v);
+      if (mergedGuide !== null && mergedGuide !== local) {
+        localStorage.setItem(k, mergedGuide);
+        changed = true;
       }
       return;
     }

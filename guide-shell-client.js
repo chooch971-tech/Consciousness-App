@@ -39,6 +39,7 @@ function toggleGuideTwoADay() {
   guideState._exRounds = {};
   delete guideState.poreRounds;
   saveGuideState(guideState);
+  if (typeof syncEnabled !== 'undefined' && syncEnabled && typeof authToken !== 'undefined' && authToken && typeof syncPushData === 'function') syncPushData();
   renderGuideCadenceControl();
   // A rendered plan can be visible before the persisted path-lock marker is
   // present (notably for tutorial-created and older accounts). Recalculate the

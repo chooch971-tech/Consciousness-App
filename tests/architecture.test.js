@@ -1160,6 +1160,20 @@ test('Tutorial post-session journey loads through its own client boundary', () =
   assert.doesNotThrow(() => new Function(tutorialPostSessionClient));
 });
 
+test('guide settings survive a cloud pull via last-writer-wins, not the score-0 tie', () => {
+  // Guide state carries no progress score, so the generic shouldTakeCloudValue
+  // tie resolves cloud-wins and would revert local setting changes (e.g. an
+  // exercise's 1x/day frequency). It must have a dedicated freshness-aware
+  // merge instead, wired into the pull path, and saveGuideState must stamp the
+  // write time the merge relies on.
+  assert.match(guidePathClient, /st\._updatedAt = Date\.now\(\)/);
+  assert.match(presence, /function mergeGuidePull\(localStr, cloudStr\)/);
+  assert.match(presence, /k === 'presence_guide_v1'[\s\S]*?mergeGuidePull\(local, v\)/);
+  // Reset markers still win, then last-writer-wins on _updatedAt.
+  assert.match(presence, /return cReset > lReset \? cloudStr : null/);
+  assert.match(presence, /return cU > lU \? cloudStr : null/);
+});
+
 test('first-time tutorial loads through its own end-of-body client boundary', () => {
   const tutorialTag = presence.indexOf('<script src="tutorial-client.js"></script>');
   const soulMirrorTag = presence.indexOf('<script src="soul-mirror-client.js"></script>');

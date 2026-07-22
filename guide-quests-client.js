@@ -1105,6 +1105,7 @@ function renderPathQuests() {
     if (activeExId === 'pore') { guideState.poreRounds = 1; }
     else { if (!guideState._exRounds) guideState._exRounds = {}; guideState._exRounds[activeExId] = 1; }
     saveGuideState(guideState);
+    if (typeof syncEnabled !== 'undefined' && syncEnabled && typeof authToken !== 'undefined' && authToken && typeof syncPushData === 'function') syncPushData();
     closeSkipMenu();
     renderPathQuests();
     if (typeof renderGuidePlan === 'function' && guideState._pathLockedV2) renderGuidePlan(guidePathMode);
@@ -1114,6 +1115,7 @@ function renderPathQuests() {
     if (activeExId === 'pore') { guideState.poreRounds = 2; }
     else { if (!guideState._exRounds) guideState._exRounds = {}; guideState._exRounds[activeExId] = 2; }
     saveGuideState(guideState);
+    if (typeof syncEnabled !== 'undefined' && syncEnabled && typeof authToken !== 'undefined' && authToken && typeof syncPushData === 'function') syncPushData();
     closeSkipMenu();
     renderPathQuests();
     if (typeof renderGuidePlan === 'function' && guideState._pathLockedV2) renderGuidePlan(guidePathMode);
