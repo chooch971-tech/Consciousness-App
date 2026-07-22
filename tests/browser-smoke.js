@@ -249,6 +249,7 @@ async function testEveryDrawerScreenSwipeBack(browser, baseUrl) {
         transform: screen.style.transform,
         currentLayer: Number(getComputedStyle(screen).zIndex),
         drawerLayer: Number(getComputedStyle(drawer).zIndex),
+        drawerHostedByHome: document.getElementById('homeScreen').contains(drawer),
         pageIsTopLayer: screen.contains(document.elementFromPoint(180, 240)),
         drawerVisible: drawer.classList.contains('show'),
         livePreview: drawer.classList.contains('swipe-back-live')
@@ -258,6 +259,7 @@ async function testEveryDrawerScreenSwipeBack(browser, baseUrl) {
     assert.equal(state.remembersDrawer, true, `${drawerId} retains its drawer origin`);
     assert.match(state.transform, /translateX\(/, `${drawerId} follows the finger`);
     assert.ok(state.currentLayer > state.drawerLayer, `${drawerId} stays above the live drawer`);
+    assert.equal(state.drawerHostedByHome, true, `${drawerId} structurally hosts the drawer beneath the page`);
     assert.equal(state.pageIsTopLayer, true, `${drawerId} reveals the drawer underneath the departing page`);
     assert.equal(state.drawerVisible, true, `${drawerId} reveals the drawer while swiping`);
     assert.equal(state.livePreview, true, `${drawerId} uses the live drawer preview`);
@@ -271,11 +273,13 @@ async function testEveryDrawerScreenSwipeBack(browser, baseUrl) {
       const drawer = document.getElementById('drawerOverlay');
       return {
         visible: drawer.classList.contains('show'),
-        livePreview: drawer.classList.contains('swipe-back-live')
+        livePreview: drawer.classList.contains('swipe-back-live'),
+        restoredOutsideHome: !document.getElementById('homeScreen').contains(drawer)
       };
     });
     assert.equal(completed.visible, true, `${drawerId} completes into the drawer`);
     assert.equal(completed.livePreview, false, `${drawerId} promotes the live drawer without a cut`);
+    assert.equal(completed.restoredOutsideHome, true, `${drawerId} restores the drawer host after completion`);
   }
   assert.deepEqual(errors, [], 'drawer screen swipe checks emitted browser errors');
   await context.close();

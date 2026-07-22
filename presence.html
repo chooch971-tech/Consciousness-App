@@ -2687,8 +2687,8 @@
     /* During an edge swipe, reuse the already-rendered drawer underneath the
        active screen. Avoiding a deep cloned preview keeps the gesture on the
        compositor and removes a large main-thread pause on mobile. */
-    .drawer-overlay.swipe-back-live { z-index:19; pointer-events:none; transition:none; }
-    .drawer-overlay.swipe-back-live .drawer { z-index:19; transition:none; }
+    .drawer-overlay.swipe-back-live { position:absolute; z-index:2; pointer-events:none; transition:none; }
+    .drawer-overlay.swipe-back-live .drawer { z-index:2; transition:none; }
     .drawer-header { padding:0 24px 24px; border-bottom:1px solid var(--border); margin-bottom:8px; }
     .drawer-wordmark { font-family:Cormorant Garamond,serif; font-size:11px; font-weight:300; letter-spacing:.35em; text-transform:uppercase; color:var(--accent); }
     .drawer-level { font-size:9px; letter-spacing:.15em; color:var(--muted); margin-top:4px; }
@@ -9624,9 +9624,15 @@ startPrayerScheduler();
     if (!isHome) el.style.display = '';
   }
 
-  function showLiveDrawerPreview() {
+  function showLiveDrawerPreview(host) {
     var drawer = document.getElementById('drawerOverlay');
-    if (!drawer) return null;
+    if (!drawer || !host) return null;
+    // Host the real drawer inside Home while swiping. A transformed Home is a
+    // containing block for fixed descendants, preventing iOS WebKit from
+    // promoting `.drawer` above the departing screen despite its parent z-index.
+    drawer._swipeHostParent = drawer.parentNode;
+    drawer._swipeHostNext = drawer.nextSibling;
+    host.appendChild(drawer);
     drawer.classList.add('drawer-instant', 'swipe-back-live', 'show');
     return drawer;
   }
@@ -9635,6 +9641,14 @@ startPrayerScheduler();
     if (!drawer) return;
     if (!keepOpen) drawer.classList.remove('show');
     drawer.classList.remove('swipe-back-live');
+    var parent = drawer._swipeHostParent;
+    var next = drawer._swipeHostNext;
+    if (parent) {
+      if (next && next.parentNode === parent) parent.insertBefore(drawer, next);
+      else parent.appendChild(drawer);
+    }
+    drawer._swipeHostParent = null;
+    drawer._swipeHostNext = null;
     requestAnimationFrame(function() { drawer.classList.remove('drawer-instant'); });
   }
 
@@ -9676,7 +9690,7 @@ startPrayerScheduler();
 
     showBehind(prevEl);
     var overlay = addOverlay(prevEl);
-    var drawerPreview = revealsDrawer ? showLiveDrawerPreview() : null;
+    var drawerPreview = revealsDrawer ? showLiveDrawerPreview(prevEl) : null;
 
     screenEl.style.transition = 'none';
     screenEl.style.willChange = 'transform';
