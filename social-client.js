@@ -306,7 +306,7 @@ function openLodgePostDetail(post, returnScreen, openComments) {
   if (from === 'lodgeScreen' && !_lodgeDetailPost) _lodgeDetailSnapshot = _lodgeSnapshotView();
   _lodgeDetailReturnScreen = from;
   _lodgeDetailPost = post;
-  document.getElementById('lodgeTitle').textContent = 'Discussion';
+  document.getElementById('lodgeTitle').textContent = '';
   document.getElementById('lodgeProfileLink').style.display = 'none';
   document.getElementById('lodgeComposer').style.display = 'none';
   document.getElementById('lodgeBanner').style.display = 'none';
