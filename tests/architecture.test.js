@@ -39,6 +39,7 @@ const guidePathClient = fs.readFileSync(path.join(root, 'guide-path-client.js'),
 const guideQuestsClient = fs.readFileSync(path.join(root, 'guide-quests-client.js'), 'utf8');
 const guideShellClient = fs.readFileSync(path.join(root, 'guide-shell-client.js'), 'utf8');
 const reportsClient = fs.readFileSync(path.join(root, 'reports-client.js'), 'utf8');
+const practiceReviewState = fs.readFileSync(path.join(root, 'practice-review-state.js'), 'utf8');
 const platformClient = fs.readFileSync(path.join(root, 'platform-client.js'), 'utf8');
 const profileClient = fs.readFileSync(path.join(root, 'profile-client.js'), 'utf8');
 const settingsClient = fs.readFileSync(path.join(root, 'settings-client.js'), 'utf8');
@@ -848,7 +849,7 @@ test('Journal behavior loads through its own client boundary', () => {
   assert.doesNotThrow(() => new Function(journalClient));
 });
 
-test('Progress Reports load through their own client boundary', () => {
+test('Practice Review loads through its own client boundary', () => {
   const reportsTag = presence.indexOf('<script src="reports-client.js"></script>');
   const journalTag = presence.indexOf('<script src="journal-client.js"></script>');
   const appUse = presence.indexOf('var PRESENCE_SYNC = window.PresenceSyncContract;');
@@ -861,7 +862,24 @@ test('Progress Reports load through their own client boundary', () => {
   assert.match(reportsClient, /function\s+renderReport\s*\(/);
   assert.match(reportsClient, /function\s+getDateRange\s*\(/);
   assert.match(reportsClient, /document\.getElementById\('reportFilterBtn'\)/);
+  assert.match(reportsClient, /var currentReportPeriod = 'weekly'/);
+  assert.match(reportsClient, /PresencePracticeReview\.summarize/);
+  assert.match(reportsClient, /PresencePracticeReview\.backfill/);
+  assert.doesNotMatch(presence, /data-period="daily"/);
+  assert.doesNotMatch(presence, /id="reportShareBtn"/);
+  assert.doesNotThrow(() => new Function(practiceReviewState));
   assert.doesNotThrow(() => new Function(reportsClient));
+});
+
+test('Practice Review records durable summaries at shared completion boundaries', () => {
+  const reviewTag = presence.indexOf('<script src="practice-review-state.js"></script>');
+  const awarenessTag = presence.indexOf('<script src="awareness-client.js"></script>');
+  assert.ok(reviewTag > 0 && reviewTag < awarenessTag);
+  assert.match(serviceWorker,/['"]practice-review-state\.js['"]/);
+  assert.match(awarenessClient,/recordPracticeReviewEntry\('awareness', awarenessHistoryEntry\)/);
+  assert.match(awarenessClient,/recordPracticeReviewEntry\('concentration', opts\.entry\)/);
+  assert.match(prayerClient,/recordPracticeReviewEntry\('prayer', entry\)/);
+  assert.match(soulMirrorClient,/recordPracticeReviewEntry\('concentration',autosuggestionHistoryEntry\)/);
 });
 
 test('browser platform services load through their own client boundary', () => {

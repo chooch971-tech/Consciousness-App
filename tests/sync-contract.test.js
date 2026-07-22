@@ -14,6 +14,7 @@ test('defines every supported cloud key once without the retired Bardon game', (
   assert.equal(new Set(SYNC_KEYS).size, SYNC_KEYS.length);
   assert.equal(SYNC_KEYS.includes('presence_omnia_v1'), true);
   assert.equal(SYNC_KEYS.includes('presence_giftpath_v1'), true);
+  assert.equal(SYNC_KEYS.includes('presence_practice_review_v1'), true);
   assert.equal(SYNC_KEYS.includes('bardon_rpg_v2'), false);
   assert.equal(LOCAL_PROGRESS_KEYS.includes('presence_session'), true);
 });

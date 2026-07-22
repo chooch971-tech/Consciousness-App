@@ -539,6 +539,7 @@ function concludePrayer() {
   };
   prayerState.history = prayerState.history || [];
   pushHistory(prayerState.history, entry, 100);
+  recordPracticeReviewEntry('prayer', entry);
   savePrayerState();
   _pendingPrayer = entry; // reference into the array so updates are live
 
@@ -830,7 +831,7 @@ function completeMantra(beads) {
   awardLevelUps(state, sumXpToLevel, xpForLevel);
   saveState();
   prayerState.history = prayerState.history || [];
-  pushHistory(prayerState.history, {
+  var mantraHistoryEntry = {
     date: new Date().toISOString(),
     type: 'mantra',
     beads: beads,
@@ -841,7 +842,9 @@ function completeMantra(beads) {
     voluntary: false,
     xpEarned: xpEarned,
     reflection: ''
-  }, 100);
+  };
+  pushHistory(prayerState.history, mantraHistoryEntry, 100);
+  recordPracticeReviewEntry('prayer', mantraHistoryEntry);
   savePrayerState();
   if (typeof playSessionCompleteSound === 'function') { try { playSessionCompleteSound(); } catch(e) {} }
   showToast('+' + xpEarned + ' XP · Mantra round ' + (beads >= target ? 'complete' : 'recorded') + ' · ' + beads + ' beads');

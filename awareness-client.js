@@ -465,6 +465,19 @@ function pushHistory(arr, entry, cap) {
   if (arr.length > max) arr.length = max;
 }
 
+function capturePracticeReviewPlan() {
+  if (!window.PresencePracticeReview || typeof buildGuideRegimentItems !== 'function') return;
+  try { PresencePracticeReview.capturePlan(localStorage, new Date(), buildGuideRegimentItems()); } catch(e) {}
+}
+
+function recordPracticeReviewEntry(kind, entry) {
+  if (!window.PresencePracticeReview || !entry) return;
+  try {
+    PresencePracticeReview.record(localStorage, kind, entry);
+    capturePracticeReviewPlan();
+  } catch(e) {}
+}
+
 // ── Shared exercise-completion pipeline ─────────────────────────────────────
 // Every exercise ends the same way: record the session in concState.history,
 // persist, sync, count the practice (streak + daily quests), then award Omnia
@@ -481,6 +494,7 @@ function pushHistory(arr, entry, cap) {
 // Returns the akasha gained by the award (0 when skipped), for the legend.
 function recordExerciseCompletion(opts) {
   pushHistory(concState.history, opts.entry, 100);
+  recordPracticeReviewEntry('concentration', opts.entry);
   saveConcState();
   if (syncEnabled && authToken) syncPushData();
   touchPracticeStreak();
@@ -1568,13 +1582,15 @@ function submitSurvey() {
   var notes = document.getElementById('surveyNotes').value.trim();
 
   // History
-  state.history.unshift({
+  var awarenessHistoryEntry = {
     date: new Date().toISOString(), durationMin: surveyDurationMin,
     targetMin: params.durationMin, score: finalScore.toFixed(1),
     answers: { drift: surveyAnswers.drift, 'return': surveyAnswers['return'], redundant: surveyAnswers.redundant },
     intervalSec: params.intervalSec, endedEarly: sessionEndedEarly,
     xpEarned: xpEarned, notes: notes || '',
-  });
+  };
+  state.history.unshift(awarenessHistoryEntry);
+  recordPracticeReviewEntry('awareness', awarenessHistoryEntry);
   if (state.history.length > 100) state.history.length = 100;
   saveState();
   if (typeof achOnAwarenessSession === 'function') achOnAwarenessSession(surveyDurationMin);

@@ -6,6 +6,21 @@ var SERVER_URL = 'https://presence-server-acik.onrender.com';
 var SYNC_API_URL = SERVER_URL + '/api/sync';
 var GOOGLE_CLIENT_ID = '311497048186-gast7j1trlbddlpvabsnqn1p25h5u5jc.apps.googleusercontent.com';
 
+// Stable per-install identity for live-session presence. This belongs to the
+// platform boundary; Practice Review must not be required for presence beacons.
+function getOmniaDeviceId() {
+  var key = 'presence_device_id';
+  var id = localStorage.getItem(key);
+  if (!id) {
+    id = 'xxxxxxxxxxxx4xxxyxxxxxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+      var r = Math.random() * 16 | 0;
+      return (c === 'x' ? r : (r & 0x3 | 0x8)).toString(16);
+    });
+    localStorage.setItem(key, id);
+  }
+  return id;
+}
+
 function requestPresenceAI(kind, context) {
   if (!authToken) return Promise.reject(new Error('Sign in required'));
   var path = '/api/ai/progress-comment';

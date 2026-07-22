@@ -589,13 +589,15 @@ function autosugFinish(){
   if(isConcNewSession())concState.totalSessions++;
   var didLevelUp=awardLevelUps(concState, concSumXpToLevel, concXpForLevel);
   var secs=autosugStartTime?Math.floor((Date.now()-autosugStartTime)/1000):0;
-  concState.history.unshift({
+  var autosuggestionHistoryEntry={
     date:new Date().toISOString(),
     exercise:'autosuggestion',
     taps:AUTOSUG_TAPS,
     seconds:secs,
     xpEarned:xpEarned
-  });
+  };
+  concState.history.unshift(autosuggestionHistoryEntry);
+  recordPracticeReviewEntry('concentration',autosuggestionHistoryEntry);
   if(concState.history.length>100)concState.history.length=100;
   saveConcState();
   // Tally this session against the active trait so the Soul Mirror star can

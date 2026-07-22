@@ -10,7 +10,7 @@ const PresenceCalendar = require('./calendar');
 const { OAuth2Client } = require('google-auth-library');
 const { enforceOmniaReportPolicy } = require('./omnia-report-policy');
 const { SYNC_KEYS, selectSyncData } = require('./sync-contract');
-const { isHistoryKey, mergeHistoryValues, mergeGiftPathValues } = require('./sync-merge');
+const { isHistoryKey, mergeHistoryValues, mergeGiftPathValues, mergePracticeReviewValues } = require('./sync-merge');
 const {
   createStructuredLogger,
   errorDetails,
@@ -73,7 +73,7 @@ const JWT_SECRET    = process.env.JWT_SECRET;
 const ADMIN_SECRET  = process.env.ADMIN_SECRET;
 const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
 const OPENAI_MODEL = process.env.OPENAI_MODEL || 'gpt-4o-mini';
-const OMNIA_REPORT_VERSION = 2;
+const OMNIA_REPORT_VERSION = 3;
 
 if (!VAPID_PRIVATE_KEY || !MONGO_URI || !JWT_SECRET) {
   console.error('Missing required environment variables: VAPID_PRIVATE_KEY, MONGO_URI, JWT_SECRET');
@@ -473,6 +473,11 @@ function serverPeriodKey(period, offset, utcOffsetMinutes) {
   if (!Number.isFinite(utcOffset)) utcOffset = 0;
   utcOffset = Math.max(-840, Math.min(840, utcOffset));
   const now = new Date();
+  if (period === 'review7' || period === 'review30') {
+    const days = period === 'review30' ? 30 : 7;
+    const anchor = new Date(now.getTime() + offset * days * 86400000);
+    return period + '-' + PresenceCalendar.dayKeyAtOffset(anchor, utcOffset);
+  }
   if (period === 'daily') {
     return PresenceCalendar.dayKeyAtOffset(new Date(now.getTime() + offset * 86400000), utcOffset);
   }
@@ -545,6 +550,9 @@ async function generateAiMessage(feature, context) {
     let candor = parseInt(context && context.omnia_candor, 10);
     if (!Number.isFinite(candor) || candor < 1 || candor > 5) candor = 1;
     systemContent += ' ' + CANDOR_TONE[candor];
+    if (Number(context && context.report_policy_version) >= 3) {
+      systemContent += ' PRACTICE REVIEW OVERRIDE: This is a rolling 7- or 30-day review, never a daily report. Return exactly one evidence-based insight in 22-38 words. Identify the clearest supported pattern or earned change, comparing only with comparison_baseline. Each discipline has its own measure; never compare seconds, breaths, or taps as interchangeable quantities. Give no recommendation, instruction, regimen change, or next step—the Guide owns action. Do not mention missing disciplines. End with an encouraging observation, not a prescription.';
+    }
   }
 
   const payload = {
@@ -1589,12 +1597,18 @@ function mergeGiftPathKey(snaps) {
   return merged ? JSON.stringify(merged) : null;
 }
 
+function mergePracticeReviewKey(snaps) {
+  const merged = mergePracticeReviewValues(snaps.map((snapshot) => snapshot.presence_practice_review_v1));
+  return merged ? JSON.stringify(merged) : null;
+}
+
 function mergeSnapshots(snaps) {
   const out = {};
   SYNC_KEYS.forEach((k) => {
     if (k === 'presence_omnia_v1') out[k] = mergeOmniaKey(snaps);
     else if (k === 'presence_ach_v1') out[k] = mergeAchKey(snaps);
     else if (k === 'presence_giftpath_v1') out[k] = mergeGiftPathKey(snaps);
+    else if (k === 'presence_practice_review_v1') out[k] = mergePracticeReviewKey(snaps);
     else if (isHistoryKey(k)) out[k] = mergeHistoryKey(k, snaps);
     else out[k] = pickBestValue(k, snaps);
   });
@@ -2898,7 +2912,7 @@ app.post('/api/ai/progress-comment', verifyToken, aiRateLimit, aiGlobalBudget, a
 
 app.post('/api/sync/omnia/report', verifyToken, aiRateLimit, aiGlobalBudget, async (req, res) => {
   const { period, context } = req.body || {};
-  if (!['daily','weekly','monthly'].includes(period)) {
+  if (!['daily','weekly','monthly','review7','review30'].includes(period)) {
     return res.status(400).json({ error: 'Invalid period' });
   }
   const userId = req.user.userId;
@@ -2926,7 +2940,7 @@ app.post('/api/sync/omnia/report', verifyToken, aiRateLimit, aiGlobalBudget, asy
     const isPast = Number.isFinite(parseInt(offset, 10)) && parseInt(offset, 10) < 0;
     const doc = { userId, period, periodKey, version: OMNIA_REPORT_VERSION, commentary, generatedAt: new Date() };
     if (!isPast) {
-      const ttlMs = period === 'daily' ? 86400000 : period === 'weekly' ? 7 * 86400000 : 31 * 86400000;
+      const ttlMs = (period === 'daily' || period === 'review7' || period === 'review30') ? 86400000 : period === 'weekly' ? 7 * 86400000 : 31 * 86400000;
       doc.expiresAt = new Date(Date.now() + ttlMs);
     }
     await col.updateOne(

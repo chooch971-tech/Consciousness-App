@@ -58,6 +58,7 @@
       presence_conc_v1: JSON.stringify(concentration),
       presence_prayer_v1: JSON.stringify(prayer),
       presence_journal_v1: JSON.stringify({ _resetAt: resetAt }),
+      presence_practice_review_v1: JSON.stringify({ version: 1, days: {}, _updatedAt: resetAt, _resetAt: resetAt }),
       presence_soul_mirror_v1: JSON.stringify({ positive: [], negative: [], notes: '', _resetAt: resetAt }),
       presence_guide_v1: JSON.stringify({ _resetAt: resetAt }),
       presence_omnia_v1: JSON.stringify(omnia),

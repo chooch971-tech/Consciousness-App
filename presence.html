@@ -33,6 +33,7 @@
   <script src="sync-contract.js"></script>
   <script src="progress-state.js"></script>
   <script src="sync-merge.js"></script>
+  <script src="practice-review-state.js"></script>
   <script src="platform-client.js"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com"/>
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
@@ -2649,13 +2650,82 @@
     .rpt-acc-body { max-height:0; overflow:hidden; transition:max-height .4s ease; }
     .rpt-acc-row.open .rpt-acc-body { max-height:680px; }
     .rpt-acc-inner { padding:2px 14px 14px; }
+
+    /* Practice Review: synthesis rather than a second daily log. */
+    .review-insight { display:flex; align-items:center; gap:13px; padding:14px 15px; margin:3px 0 14px; border:1px solid rgba(168,210,235,.2); border-radius:14px; background:linear-gradient(145deg,rgba(116,156,194,.10),rgba(155,142,196,.055)); }
+    .review-insight-glyph { width:38px; height:38px; flex:0 0 38px; display:flex; align-items:center; justify-content:center; border-radius:50%; color:#b8eaff; font-size:22px; background:radial-gradient(circle,rgba(184,234,255,.18),rgba(155,142,196,.05) 65%,transparent); filter:drop-shadow(0 0 8px rgba(184,234,255,.28)); }
+    .review-insight-glyph svg { width:26px; height:40px; }
+    .review-insight-label,.review-next-label { margin-bottom:5px; font:8px 'DM Mono',monospace; letter-spacing:.2em; text-transform:uppercase; color:#a9cde6; }
+    .review-insight-text { font:italic 15px/1.55 'Cormorant Garamond',serif; color:#eae4f4; }
+    .review-hero { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); border:1px solid var(--border); border-radius:14px; background:rgba(255,255,255,.018); overflow:hidden; margin-bottom:18px; }
+    .review-hero-cell { min-width:0; padding:16px 6px 13px; text-align:center; }
+    .review-hero-cell + .review-hero-cell { border-left:1px solid var(--border); }
+    .review-hero-value { font:400 clamp(21px,6vw,29px)/1 'Cormorant Garamond',serif; color:var(--text); white-space:nowrap; }
+    .review-hero-cell--green .review-hero-value { color:#9ed8c0; }
+    .review-hero-cell--blue .review-hero-value { color:#bcd8f2; }
+    .review-hero-cell--gold .review-hero-value { color:#e8cd8e; }
+    .review-hero-label { margin-top:7px; font:7.5px 'DM Mono',monospace; letter-spacing:.14em; text-transform:uppercase; color:var(--muted); }
+    .review-hero-sub { min-height:10px; margin-top:4px; padding:0 2px; font:7px/1.35 'DM Mono',monospace; color:rgba(221,216,206,.35); }
+    .review-trend { display:block; margin-top:4px; font:8px 'DM Mono',monospace; }
+    .review-trend--up { color:#7eb8a4; }
+    .review-trend--down { color:#c79884; }
+    .review-trend--flat { color:var(--muted); }
+    .review-section { margin:0 0 20px; }
+    .review-section-head { display:flex; align-items:flex-end; justify-content:space-between; margin:0 1px 9px; }
+    .review-section-head span { display:block; font:9px 'DM Mono',monospace; letter-spacing:.19em; text-transform:uppercase; color:rgba(221,216,206,.78); }
+    .review-section-head small { display:block; margin-top:4px; font:8px 'DM Mono',monospace; letter-spacing:.03em; color:var(--muted); }
+    .review-section--chart { padding:14px 14px 10px; border:1px solid var(--border); border-radius:14px; background:var(--surface); }
+    .review-bars { height:76px; display:flex; align-items:stretch; gap:6px; }
+    .review-bar-col { flex:1; min-width:0; display:flex; flex-direction:column; align-items:center; gap:6px; }
+    .review-bar-wrap { width:100%; flex:1; display:flex; align-items:flex-end; justify-content:center; border-bottom:1px solid rgba(255,255,255,.07); }
+    .review-bar-wrap i { display:block; width:min(13px,68%); min-height:2px; border-radius:4px 4px 1px 1px; background:linear-gradient(to top,rgba(126,184,164,.22),rgba(126,184,164,.82)); box-shadow:0 0 7px rgba(126,184,164,.12); }
+    .review-bar-col.today .review-bar-wrap i { background:linear-gradient(to top,rgba(216,184,106,.28),#e8cd8e); box-shadow:0 0 9px rgba(216,184,106,.25); }
+    .review-bar-col > span { font:7px 'DM Mono',monospace; color:var(--muted); white-space:nowrap; }
+    .review-quality-card,.review-practice-card,.review-record-card { border:1px solid var(--border); border-radius:14px; background:var(--surface); overflow:hidden; }
+    .review-quality-row { position:relative; display:grid; grid-template-columns:1fr auto; gap:7px 12px; padding:13px 14px 14px; }
+    .review-quality-row + .review-quality-row,.review-practice-row + .review-practice-row,.review-record-row + .review-record-row { border-top:1px solid var(--border); }
+    .review-quality-name { font:15px 'Cormorant Garamond',serif; color:var(--text); }
+    .review-quality-sub { margin-top:2px; font:8px/1.4 'DM Mono',monospace; color:var(--muted); }
+    .review-quality-score { display:flex; align-items:baseline; gap:2px; font:22px 'Cormorant Garamond',serif; color:#9ed8c0; }
+    .review-quality-score small { font-size:11px; color:var(--muted); }
+    .review-quality-score .review-trend { margin-left:5px; }
+    .review-quality-track { grid-column:1/-1; height:3px; border-radius:2px; overflow:hidden; background:rgba(255,255,255,.055); }
+    .review-quality-track i { display:block; height:100%; border-radius:2px; background:linear-gradient(90deg,rgba(126,184,164,.4),#9ed8c0); }
+    .review-practice-row { display:flex; gap:11px; align-items:flex-start; padding:13px 14px; }
+    .review-practice-icon { width:30px; height:30px; flex:0 0 30px; display:flex; align-items:center; justify-content:center; border-radius:9px; border:1px solid; font-size:13px; }
+    .review-practice-icon--green { color:#9ed8c0; background:rgba(126,184,164,.10); border-color:rgba(126,184,164,.28); }
+    .review-practice-icon--amber { color:#e8b88a; background:rgba(212,149,110,.10); border-color:rgba(212,149,110,.28); }
+    .review-practice-icon--purple { color:#cdbcf0; background:rgba(155,142,196,.10); border-color:rgba(155,142,196,.28); }
+    .review-practice-icon--blue { color:#bcd8f2; background:rgba(168,200,232,.10); border-color:rgba(168,200,232,.28); }
+    .review-practice-main { flex:1; min-width:0; }
+    .review-practice-title { display:flex; align-items:baseline; justify-content:space-between; gap:8px; font:15px 'Cormorant Garamond',serif; color:var(--text); }
+    .review-practice-title small { flex-shrink:0; font:7.5px 'DM Mono',monospace; color:var(--muted); }
+    .review-practice-meta { display:flex; align-items:center; gap:8px; min-height:16px; margin-top:2px; font:8px 'DM Mono',monospace; color:var(--muted); }
+    .review-practice-meta .review-trend { display:inline; margin:0; }
+    .review-practice-track { height:2px; margin-top:8px; overflow:hidden; border-radius:2px; background:rgba(255,255,255,.05); }
+    .review-practice-track i { display:block; height:100%; border-radius:2px; background:linear-gradient(90deg,rgba(168,200,232,.3),rgba(126,184,164,.72)); }
+    .review-next { padding:16px; margin:2px 0 12px; border:1px solid rgba(216,184,106,.22); border-radius:14px; background:linear-gradient(145deg,rgba(216,184,106,.08),rgba(126,184,164,.035)); }
+    .review-next-label { color:#e8cd8e; }
+    .review-next-text { font:17px/1.45 'Cormorant Garamond',serif; color:var(--text); }
+    .review-next-btn { width:100%; display:flex; align-items:center; justify-content:space-between; margin-top:13px; padding:11px 12px; border:1px solid rgba(216,184,106,.2); border-radius:9px; background:rgba(216,184,106,.055); color:#e8cd8e; font:8px 'DM Mono',monospace; letter-spacing:.15em; text-transform:uppercase; cursor:pointer; }
+    .review-journal-link { width:100%; display:flex; align-items:center; gap:11px; padding:13px 14px; border:1px solid var(--border); border-radius:12px; background:var(--surface); color:var(--text); text-align:left; cursor:pointer; }
+    .review-journal-icon { width:30px; height:30px; display:flex; align-items:center; justify-content:center; border-radius:9px; color:#cdbcf0; background:rgba(155,142,196,.10); border:1px solid rgba(155,142,196,.25); font-size:14px; }
+    .review-journal-link > span:nth-child(2) { flex:1; }
+    .review-journal-link b { display:block; font:15px 'Cormorant Garamond',serif; }
+    .review-journal-link small { display:block; margin-top:2px; font:8px 'DM Mono',monospace; color:var(--muted); }
+    .review-journal-link i { color:var(--muted); font-style:normal; }
+    .review-lifetime-note { padding:2px 2px 14px; font:italic 15px/1.55 'Cormorant Garamond',serif; color:rgba(234,228,244,.7); text-align:center; }
+    .review-record-row { display:flex; align-items:center; gap:11px; padding:12px 14px; }
+    .review-record-row > span:nth-child(2) { flex:1; }
+    .review-record-row b { display:block; font:14px 'Cormorant Garamond',serif; color:var(--text); }
+    .review-record-row small { display:block; margin-top:2px; font:7px 'DM Mono',monospace; letter-spacing:.1em; text-transform:uppercase; color:var(--muted); }
+    .review-record-row strong { font:18px 'Cormorant Garamond',serif; color:#e8cd8e; font-weight:400; }
     /* Desktop: the report is designed as a phone-width column. Without a max-width
        it stretches edge-to-edge into wide, sparse, dark slabs. Center it. */
     @media (min-width: 720px) {
       #reportsScreen .rpt-banner,
       #reportsScreen .rpt-navrow,
-      #reportsScreen #reportContent,
-      #reportsScreen #reportShareBtn { max-width:660px; margin-left:auto; margin-right:auto; }
+      #reportsScreen #reportContent { max-width:660px; margin-left:auto; margin-right:auto; }
       #reportsScreen .rpt-banner { width:100%; box-sizing:border-box; }
     }
 
@@ -8046,7 +8116,7 @@ body:not(.tut-live) #tutCorgi {
       <button class="history-back banner-inset-back" id="reportsBack" aria-label="Back">←</button>
       <div class="rpt-banner-text">
         <div class="rpt-banner-label">Your Practice</div>
-        <div class="rpt-banner-title">Progress Reports</div>
+        <div class="rpt-banner-title">Practice Review</div>
         <div class="rpt-banner-sub" id="reportsBannerSub"></div>
       </div>
       <div class="rpt-banner-glow"></div>
@@ -8074,7 +8144,7 @@ body:not(.tut-live) #tutCorgi {
     </div>
     <div class="rpt-navrow" style="display:flex;align-items:center;gap:8px;padding:8px 20px 10px;flex-shrink:0;border-bottom:1px solid var(--border);position:relative;">
       <button id="reportNavPrev" style="width:32px;height:32px;display:flex;align-items:center;justify-content:center;background:none;border:none;color:var(--text);font-size:20px;cursor:pointer;opacity:.7;flex-shrink:0;">‹</button>
-      <span id="reportNavLabel" style="flex:1;text-align:center;font-family:'DM Mono',monospace;font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:var(--muted);">Today</span>
+      <span id="reportNavLabel" style="flex:1;text-align:center;font-family:'DM Mono',monospace;font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:var(--muted);">Last 7 days</span>
       <button id="reportNavNext" style="width:32px;height:32px;display:flex;align-items:center;justify-content:center;background:none;border:none;color:var(--text);font-size:20px;cursor:pointer;opacity:.25;pointer-events:none;flex-shrink:0;">›</button>
       <button id="reportFilterBtn" class="rpt-filter-btn" aria-label="Select period">
         <svg viewBox="0 0 18 15" width="16" height="14" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round">
@@ -8084,27 +8154,22 @@ body:not(.tut-live) #tutCorgi {
         </svg>
       </button>
       <div id="reportPeriodMenu" class="rpt-period-menu" style="display:none;">
-        <button class="rpt-period-menu__item active" data-period="daily">
-          <span class="rpt-period-menu__label">Daily</span>
-          <span class="rpt-period-menu__check">✓</span>
-        </button>
-        <button class="rpt-period-menu__item" data-period="weekly">
-          <span class="rpt-period-menu__label">Weekly</span>
+        <button class="rpt-period-menu__item active" data-period="weekly">
+          <span class="rpt-period-menu__label">7 Days</span>
           <span class="rpt-period-menu__check">✓</span>
         </button>
         <button class="rpt-period-menu__item" data-period="monthly">
-          <span class="rpt-period-menu__label">Monthly</span>
+          <span class="rpt-period-menu__label">30 Days</span>
           <span class="rpt-period-menu__check">✓</span>
         </button>
         <button class="rpt-period-menu__item" data-period="yearly">
-          <span class="rpt-period-menu__label">All Time</span>
+          <span class="rpt-period-menu__label">Lifetime</span>
           <span class="rpt-period-menu__check">✓</span>
         </button>
       </div>
     </div>
     <div style="flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:0 24px 40px;">
       <div id="reportContent"></div>
-      <button class="report-share-btn" id="reportShareBtn">↑ Share Report</button>
     </div>
   </div>
 
@@ -8197,7 +8262,7 @@ body:not(.tut-live) #tutCorgi {
     <div class="drawer-items">
       <div class="drawer-section-label">Practice</div>
       <button class="drawer-item" id="drawerReports">
-        <span class="drawer-item-icon">◈</span>Progress Reports
+        <span class="drawer-item-icon">◈</span>Practice Review
       </button>
       <button class="drawer-item" id="drawerJournal">
         <span class="drawer-item-icon"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 4h11a2 2 0 0 1 2 2v14H7a2 2 0 0 1-2-2V4z"/><path d="M5 4v14"/><path d="M9 8h6M9 12h6"/></svg></span>Journal
@@ -8807,6 +8872,13 @@ function mergeHistoryPull(key, localStr, cloudStr) {
   return merged ? JSON.stringify(merged) : null;
 }
 
+function mergePracticeReviewPull(localStr, cloudStr) {
+  if (!cloudStr) return null;
+  if (!localStr) return cloudStr;
+  var merged = PRESENCE_MERGE.mergePracticeReviewValues([cloudStr, localStr]);
+  return merged ? JSON.stringify(merged) : null;
+}
+
 // Did a merge produce materially new progress (vs just re-serialised bytes)?
 // Used so the pull paths only trigger a reload when something actually advanced,
 // not when a merge merely reordered JSON keys.
@@ -8831,6 +8903,13 @@ function syncMeaningfulDelta(key, localStr, mergedStr) {
       if ((b.cleared || []).length !== (a.cleared || []).length) return true;
       if ((b.claimed || []).filter(Boolean).length !== (a.claimed || []).filter(Boolean).length) return true;
       return Object.keys(b.done || {}).length !== Object.keys(a.done || {}).length;
+    }
+    if (key === 'presence_practice_review_v1') {
+      var aDays = a.days || {}, bDays = b.days || {};
+      if (Object.keys(aDays).length !== Object.keys(bDays).length) return true;
+      return Object.keys(bDays).some(function(day) {
+        return Object.keys((bDays[day] && bDays[day].events) || {}).length !== Object.keys((aDays[day] && aDays[day].events) || {}).length;
+      });
     }
     return true;
   } catch (e) { return true; }
@@ -8951,6 +9030,14 @@ function applyPulledData(data) {
       if (mergedHist !== null) {
         if (syncMeaningfulDelta(k, local, mergedHist)) changed = true;
         localStorage.setItem(k, mergedHist);
+      }
+      return;
+    }
+    if (k === 'presence_practice_review_v1') {
+      var mergedReview = mergePracticeReviewPull(local, v);
+      if (mergedReview !== null) {
+        if (syncMeaningfulDelta(k, local, mergedReview)) changed = true;
+        localStorage.setItem(k, mergedReview);
       }
       return;
     }

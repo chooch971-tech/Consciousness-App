@@ -6,7 +6,8 @@ const {
   HISTORY_MERGE,
   isHistoryKey,
   mergeHistoryValues,
-  mergeGiftPathValues
+  mergeGiftPathValues,
+  mergePracticeReviewValues
 } = require('../sync-merge');
 
 test('history merge unions sessions and keeps monotonic concentration fields', () => {
@@ -135,6 +136,44 @@ test('Gift Path merge unions same-month progress and completed months', () => {
   assert.equal(merged.startDate, '2026-07-01');
   assert.deepEqual(merged.claimed, [true, true, false, false, false, false, false]);
   assert.deepEqual(merged.done, { clock: true, visualization: true });
+});
+
+test('Practice Review merge unions same-day events and plan completion across devices', () => {
+  const cloud = {
+    version:1,
+    days:{'2026-07-21':{events:{a:{p:'awareness',s:600,v:0}},plan:{assigned:['clock','visual'],completed:['clock']}}}
+  };
+  const local = {
+    version:1,
+    days:{'2026-07-21':{events:{b:{p:'clock',s:180,v:60}},plan:{assigned:['clock','visual'],completed:['visual']}}}
+  };
+  const merged = mergePracticeReviewValues([cloud,local]);
+  assert.deepEqual(Object.keys(merged.days['2026-07-21'].events).sort(),['a','b']);
+  assert.deepEqual(merged.days['2026-07-21'].plan.assigned,['clock','visual']);
+  assert.deepEqual(merged.days['2026-07-21'].plan.completed,['clock','visual']);
+});
+
+test('Practice Review merge respects Reset All boundaries', () => {
+  const stale={days:{'2026-07-20':{events:{a:{p:'clock',s:60,v:60}}}}};
+  const reset={_resetAt:1784650000000,days:{}};
+  const merged=mergePracticeReviewValues([stale,reset]);
+  assert.deepEqual(merged.days,{});
+  assert.equal(merged._resetAt,reset._resetAt);
+});
+
+test('Practice Review merge keeps the furthest lifetime archive without recounting its days', () => {
+  const older = {
+    archive:{through:'2023-01-01',sessions:12,totalSeconds:720},
+    days:{'2023-01-02':{events:{a:{p:'clock',s:60,v:30}}}}
+  };
+  const newer = {
+    archive:{through:'2023-01-02',sessions:13,totalSeconds:780},
+    days:{'2023-01-03':{events:{b:{p:'thought',s:60,v:20}}}}
+  };
+  const merged=mergePracticeReviewValues([older,newer]);
+  assert.equal(merged.archive.through,'2023-01-02');
+  assert.equal(merged.archive.sessions,13);
+  assert.deepEqual(Object.keys(merged.days),['2023-01-03']);
 });
 
 test('Gift Path merge keeps only the newest month run', () => {

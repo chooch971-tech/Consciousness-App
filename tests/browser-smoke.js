@@ -147,6 +147,9 @@ async function testGeneratorMastery(browser, baseUrl) {
     presence_omnia_v1: JSON.stringify(omnia)
   });
 
+  await page.evaluate(async () => {
+    if (document.fonts && document.fonts.ready) await document.fonts.ready;
+  });
   await page.evaluate(() => {
     document.getElementById('guideOmniaPanel').classList.remove('guide-tab-hidden');
     renderOmniaEngine();
@@ -282,6 +285,82 @@ async function testEveryDrawerScreenSwipeBack(browser, baseUrl) {
     assert.equal(completed.restoredOutsideHome, true, `${drawerId} restores the drawer host after completion`);
   }
   assert.deepEqual(errors, [], 'drawer screen swipe checks emitted browser errors');
+  await context.close();
+}
+
+async function testPracticeReview(browser, baseUrl) {
+  const keyFor = offset => {
+    const date = new Date();
+    date.setHours(12, 0, 0, 0);
+    date.setDate(date.getDate() + offset);
+    return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+  };
+  const days = {};
+  [-6, -5, -3, -1, 0].forEach((offset, index) => {
+    const key = keyFor(offset);
+    days[key] = {
+      events: {
+        [`awareness:${index}`]: { p: 'awareness', s: 600 + index * 60, d: 2, r: 2, n: 1, q: 4 },
+        [`clock:${index}`]: { p: 'clock', s: 300, v: 45 + index * 5 },
+        [`thought:${index}`]: { p: 'thought', s: 240, v: 35 + index * 4 }
+      },
+      plan: { assigned: ['awareness', 'clock', 'thought'], completed: index < 4 ? ['awareness', 'clock', 'thought'] : ['awareness', 'clock'] }
+    };
+  });
+  [-13, -11, -8].forEach((offset, index) => {
+    const key = keyFor(offset);
+    days[key] = {
+      events: {
+        [`awareness:prior:${index}`]: { p: 'awareness', s: 480, d: 3, r: 3, n: 2, q: 3 },
+        [`clock:prior:${index}`]: { p: 'clock', s: 240, v: 35 + index * 3 }
+      }
+    };
+  });
+  const journal = {};
+  journal[keyFor(-1)] = { title: 'Practice reflection', note: 'Private journal prose stays outside Review.' };
+  const context = await browser.newContext({ viewport: { width: 390, height: 844 }, serviceWorkers: 'block' });
+  const { page, errors } = await seedPage(context, baseUrl, {
+    presence_practice_review_v1: JSON.stringify({ version: 1, days, _updatedAt: Date.now() }),
+    presence_journal_v1: JSON.stringify(journal)
+  });
+
+  await page.evaluate(() => showReports());
+  await page.locator('#reportsScreen.active').waitFor({ state: 'visible' });
+  const weekly = await page.evaluate(() => {
+    const screen = document.getElementById('reportsScreen');
+    const text = document.getElementById('reportContent').textContent;
+    return {
+      title: document.querySelector('#reportsScreen .rpt-banner-title').textContent.trim(),
+      range: document.getElementById('reportNavLabel').textContent.trim(),
+      text,
+      noDaily: !document.querySelector('[data-period="daily"]'),
+      noShare: !document.getElementById('reportShareBtn'),
+      noHorizontalOverflow: screen.scrollWidth <= screen.clientWidth + 1,
+      carryForward: !!document.querySelector('[data-review-guide]'),
+      journalLink: !!document.querySelector('[data-review-journal]')
+    };
+  });
+  assert.equal(weekly.title, 'Practice Review');
+  assert.equal(weekly.range, 'Last 7 days');
+  assert.match(weekly.text, /Presence quality/);
+  assert.match(weekly.text, /Stability/);
+  assert.match(weekly.text, /Clock/);
+  assert.match(weekly.text, /Thought Control/);
+  assert.doesNotMatch(weekly.text, /\bRank\b|\bXP\b/);
+  assert.equal(weekly.noDaily, true, 'Practice Review should not duplicate Journal with a daily report');
+  assert.equal(weekly.noShare, true, 'Practice Review should not expose the retired share control');
+  assert.equal(weekly.noHorizontalOverflow, true, 'Practice Review should fit a phone viewport');
+  assert.equal(weekly.carryForward, true, 'Practice Review should end with one next step');
+  assert.equal(weekly.journalLink, true, 'Practice Review should connect back to Journal');
+
+  await page.locator('#reportFilterBtn').click();
+  await page.locator('[data-period="monthly"]').click();
+  assert.equal((await page.locator('#reportNavLabel').textContent()).trim(), 'Last 30 days');
+  await page.locator('#reportFilterBtn').click();
+  await page.locator('[data-period="yearly"]').click();
+  assert.equal((await page.locator('#reportNavLabel').textContent()).trim(), 'Since you began');
+  assert.match(await page.locator('#reportContent').textContent(), /Practice records/);
+  assert.deepEqual(errors, [], 'Practice Review emitted browser errors');
   await context.close();
 }
 
@@ -812,6 +891,9 @@ async function testResetAll(browser, baseUrl) {
     presence_v3: JSON.stringify({ level: 20, xp: 25000, totalSessions: 100, history: [{ date: '2026-07-01' }] }),
     presence_conc_v1: JSON.stringify({ level: 18, xp: 18000, totalSessions: 80, history: [{ exercise: 'clock' }] })
   });
+  // Startup performs one stale-lock cleanup at 1s and deliberately closes any
+  // open drawer. Begin this journey after that maintenance pass.
+  await page.waitForTimeout(1100);
   // This journey tests Reset, not pointer hit-testing during startup. Invoke
   // the already-located menu control directly so the splash/drawer animation
   // cannot intermittently swallow the physical click.
@@ -929,6 +1011,9 @@ async function testCloudRestoreAndSignOut(browser, baseUrl) {
     console.log('run - every drawer screen swipe-back');
     await testEveryDrawerScreenSwipeBack(browser, baseUrl);
     console.log('ok - every drawer screen follows the finger and reveals the live drawer');
+    console.log('run - Practice Review');
+    await testPracticeReview(browser, baseUrl);
+    console.log('ok - Practice Review presents rolling evidence and discipline-specific development');
     console.log('run - generator mastery');
     await testGeneratorMastery(browser, baseUrl);
     console.log('ok - generator mastery and Dark Matter tracks render');

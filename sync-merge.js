@@ -194,10 +194,55 @@
     return out;
   }
 
+  // Practice Review keeps compact, immutable session facts grouped by local
+  // day. Merge by event id so two devices can both contribute sessions on the
+  // same day without double-counting or letting a stale snapshot erase either.
+  function mergePracticeReviewValues(values) {
+    const candidates = candidatesAtNewestReset(values);
+    if (!candidates.length) return null;
+    const out = { version: 1, days: {}, _updatedAt: 0 };
+    const archived = candidates.map(function(candidate) { return candidate.archive; }).filter(Boolean).sort(function(a, b) {
+      const through = String(b.through || '').localeCompare(String(a.through || ''));
+      if (through) return through;
+      return (Number(b.sessions) || 0) - (Number(a.sessions) || 0);
+    });
+    if (archived.length) out.archive = cloneValue(archived[0]);
+    candidates.forEach(function(candidate) {
+      Object.keys(candidate.days || {}).forEach(function(dayKey) {
+        const sourceDay = candidate.days[dayKey] || {};
+        const targetDay = out.days[dayKey] || (out.days[dayKey] = { events: {} });
+        Object.keys(sourceDay.events || {}).forEach(function(eventId) {
+          const incoming = sourceDay.events[eventId];
+          const current = targetDay.events[eventId];
+          if (!current || JSON.stringify(incoming).length > JSON.stringify(current).length) {
+            targetDay.events[eventId] = cloneValue(incoming);
+          }
+        });
+        if (sourceDay.plan) {
+          const assigned = new Set([].concat((targetDay.plan && targetDay.plan.assigned) || [], sourceDay.plan.assigned || []));
+          const completed = new Set([].concat((targetDay.plan && targetDay.plan.completed) || [], sourceDay.plan.completed || []));
+          targetDay.plan = { assigned: Array.from(assigned).sort(), completed: Array.from(completed).sort() };
+        }
+      });
+      out._updatedAt = Math.max(out._updatedAt, Number(candidate._updatedAt) || 0);
+    });
+    if (out.archive && out.archive.through) {
+      Object.keys(out.days).forEach(function(key) {
+        if (key <= out.archive.through) delete out.days[key];
+      });
+    }
+    const keys = Object.keys(out.days).sort();
+    if (keys.length > 1095) keys.slice(0, keys.length - 1095).forEach(function(key) { delete out.days[key]; });
+    const newestReset = resetAt(candidates[0]);
+    if (newestReset) out._resetAt = newestReset;
+    return out;
+  }
+
   return Object.freeze({
     HISTORY_MERGE,
     isHistoryKey,
     mergeHistoryValues,
-    mergeGiftPathValues
+    mergeGiftPathValues,
+    mergePracticeReviewValues
   });
 });
