@@ -361,15 +361,23 @@ function _wireAchInfoOverlay() {
 }
 if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', _wireAchInfoOverlay);
 else _wireAchInfoOverlay();
-function renderAchScreen() {
+// Duolingo-style split: the profile's Monthly Badges › and Achievements ›
+// open this same screen in two different modes — monthly badges alone, or
+// the all-time groups alone — instead of one long mixed page.
+var _achScreenMode = 'alltime';
+function renderAchScreen(mode) {
+  if (mode === 'monthly' || mode === 'alltime') _achScreenMode = mode;
   var body = document.getElementById('achBody');
   if (!body) return;
   achSeed(); achEnsureMonth();
   var p = achProviders();
+  var monthly = _achScreenMode === 'monthly';
+  var banner = document.querySelector('#achScreen .ach-banner-title');
+  if (banner) banner.textContent = monthly ? 'Monthly Badges' : 'Achievements';
   var monthName = new Date().toLocaleString('en', { month:'long' });
   var daysLeft = (function(){ var n = new Date(); return new Date(n.getFullYear(), n.getMonth()+1, 1) - n; })();
   daysLeft = Math.max(1, Math.ceil(daysLeft / 86400000));
-  body.innerHTML = ACH_GROUPS.map(function(g) {
+  body.innerHTML = ACH_GROUPS.filter(function(g) { return monthly ? g.monthly : !g.monthly; }).map(function(g) {
     var earnedMap = g.monthly ? achState.monthly.earned : achState.earned;
     var earnedN = g.items.filter(function(b){ return earnedMap[b.id]; }).length;
     var head = '<div class="ach-group-label"><span>' + (g.monthly ? 'Monthly · ' + monthName : g.label) + '</span><small>' + earnedN + ' / ' + g.items.length + '</small></div>'
@@ -382,10 +390,22 @@ function renderAchScreen() {
         + '<span class="ach-medal" style="--gc:' + (ACH_COLORS[g.id] || '#e8c87a') + '">' + achIconSvg(g.id, b) + '<b>' + medal + '</b></span>'
         + '<span class="ach-badge-lbl">' + b.name + '</span></button>';
     }).join('') + '</div>';
-    if (g.monthly) return '<div class="ach-month-panel">' + head + grid + '</div><div class="ach-alltime">All-Time</div>';
+    if (g.monthly) return '<div class="ach-month-panel">' + head + grid + '</div>' + _achPerfectMonthsHtml();
     return head + grid;
   }).join('');
   renderAchDetail(p);
+}
+// Past perfect months (every monthly badge earned), newest first — the
+// monthly screen's own bit of history, like a badge-case shelf.
+function _achPerfectMonthsHtml() {
+  var keys = (achState.clearedKeys || []).slice().sort().reverse();
+  if (!keys.length) return '';
+  return '<div class="ach-group-label" style="margin-top:22px;"><span>Perfect Months</span><small>' + keys.length + '</small></div>'
+    + '<div class="ach-perfect-months">' + keys.map(function(k) {
+      var parts = k.split('-');
+      var d = new Date(+parts[0], (+parts[1] || 1) - 1, 1);
+      return '<span class="ach-perfect-month">✦ ' + d.toLocaleString('en', { month:'long', year:'numeric' }) + '</span>';
+    }).join('') + '</div>';
 }
 function renderAchDetail(p) {
   var box = document.getElementById('achDetail');

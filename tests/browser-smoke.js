@@ -331,9 +331,14 @@ async function testProfileSky(browser, baseUrl) {
     };
     renderFriendProfile(friend);
     const friendBadges = Array.from(document.querySelectorAll('#friendProfBadges [data-ach]')).map(el => el.getAttribute('data-ach'));
-    return { own, friendBadges };
+    const ownLocked = Array.from(document.querySelectorAll('#profBadges .prof-badge--locked')).map(el => el.getAttribute('data-ach'));
+    return { own, friendBadges, ownLocked };
   });
-  assert.deepEqual(monthlyBadges.own, ['mlogin_14', 'mfifteen_1', 'mspend_5000']);
+  // Own profile: best earned per group lit, plus the unearned group's next
+  // goal dimmed — the section doubles as the Monthly Badges screen's doorway.
+  assert.deepEqual(monthlyBadges.own, ['mlogin_14', 'mfifteen_1', 'mspend_5000', 'mfriend_1']);
+  assert.deepEqual(monthlyBadges.ownLocked, ['mfriend_1']);
+  // Friend profiles keep showing earned badges only.
   assert.deepEqual(monthlyBadges.friendBadges, ['mlogin_14', 'mfifteen_1', 'mspend_5000']);
   await page.evaluate(() => {
     showScreen('profileScreen');

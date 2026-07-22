@@ -52,12 +52,15 @@ test('profile trophy sections stay reachable: achievements always render as the 
   assert.match(html, /id="profAchievementsSection"/);
   assert.match(profileClient, /function profileMonthlyBestBadges\(earnedMap\)/);
   assert.match(profileClient, /earnedBadges = profileMonthlyBestBadges\(achState\.monthly\.earned\)/);
-  assert.match(profileClient, /section\.style\.display = earnedBadges\.length \? '' : 'none'/);
   assert.match(profileClient, /if \(achState\.earned\[b\.id\]\) done\.push/);
   // The Achievements drawer entry is gone (Duolingo-style profile access), so
-  // the profile section always shows — earned first, nearest goals filling in.
+  // both own-profile sections always show as doorways — earned items lit,
+  // remaining goals dimmed — and each › opens its own screen mode.
   assert.match(profileClient, /section\.style\.display = ''/);
+  assert.match(profileClient, /prof-badge--locked/);
   assert.match(profileClient, /next\.sort\(function\(x, y\) \{ return y\.pct - x\.pct; \}\)/);
+  assert.match(profileClient, /\[\['profBadgesMore', 'monthly'\], \['profAchMore', 'alltime'\]\]/);
+  assert.match(achievementsClient, /function renderAchScreen\(mode\)/);
   assert.doesNotMatch(html, /id="drawerAch"/);
   assert.doesNotMatch(achievementsClient, /drawerAch/);
 });

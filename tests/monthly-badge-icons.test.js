@@ -17,5 +17,6 @@ test('monthly achievement families have distinct semantic icons', () => {
 
 test('monthly badges select icons from their individual achievement data on every profile', () => {
   assert.match(achievements, /achIconSvg\(g\.id, b\)/);
-  assert.equal((profile.match(/achIconSvg\('monthly', b\)/g) || []).length, 2);
+  // Own profile earned + own profile pending (dimmed doorway) + friend profile.
+  assert.equal((profile.match(/achIconSvg\('monthly', b\)/g) || []).length, 3);
 });

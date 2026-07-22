@@ -329,7 +329,9 @@ function profileMonthlyBestBadges(earnedMap) {
   return ACH_GROUPS[0].items.filter(function(b) { return bestByGroup[b.group] === b; });
 }
 
-// Public profiles show earned monthly badges only.
+// Own profile: always visible — earned badges lit, the month's remaining
+// goals dimmed — since this section is now the doorway to the Monthly
+// Badges screen. (Friend profiles still show earned only.)
 function renderProfileBadges() {
   var el = document.getElementById('profBadges');
   var section = document.getElementById('profBadgesSection');
@@ -337,10 +339,23 @@ function renderProfileBadges() {
   if (typeof achEnsureMonth !== 'function') return;
   achSeed(); achEnsureMonth();
   var earnedBadges = profileMonthlyBestBadges(achState.monthly.earned);
-  if (section) section.style.display = earnedBadges.length ? '' : 'none';
+  var earnedGroups = {};
+  earnedBadges.forEach(function(b) { earnedGroups[b.group] = true; });
+  var pending = [];
+  var seenGroup = {};
+  ACH_GROUPS[0].items.forEach(function(b) {
+    if (earnedGroups[b.group] || seenGroup[b.group]) return;
+    seenGroup[b.group] = true; // tiers ascend, so the first is this month's next goal
+    pending.push(b);
+  });
+  if (section) section.style.display = '';
   el.innerHTML = earnedBadges.map(function(b) {
     var medal = b.target >= 1000 ? (b.target / 1000) + 'k' : b.target;
     return '<div class="prof-badge prof-badge--earned" style="--gc:' + ACH_COLORS.monthly + ';cursor:pointer;" data-ach="' + b.id + '" title="' + b.name + '">'
+      + achIconSvg('monthly', b) + '<b>' + medal + '</b></div>';
+  }).join('') + pending.map(function(b) {
+    var medal = b.target >= 1000 ? (b.target / 1000) + 'k' : b.target;
+    return '<div class="prof-badge prof-badge--locked" style="--gc:' + ACH_COLORS.monthly + ';cursor:pointer;" data-ach="' + b.id + '" title="' + b.name + '">'
       + achIconSvg('monthly', b) + '<b>' + medal + '</b></div>';
   }).join('');
 }
@@ -385,12 +400,13 @@ function renderProfileAchievements() {
       + '<div class="prof-ach-item__lbl">' + Math.round(it.pct * 100) + '%</div></div>';
   }).join('');
 }
-// "›" buttons on both profile sections open the full Achievements screen.
-['profBadgesMore', 'profAchMore'].forEach(function(id) {
-  var btn = document.getElementById(id);
+// Each profile section's "›" expands into its own screen (Duolingo-style):
+// Monthly Badges opens the monthly view, Achievements opens the all-time view.
+[['profBadgesMore', 'monthly'], ['profAchMore', 'alltime']].forEach(function(pair) {
+  var btn = document.getElementById(pair[0]);
   if (btn) btn.addEventListener('click', function() {
     if (typeof achEvaluate === 'function') achEvaluate(true);
-    renderAchScreen(); showScreen('achScreen');
+    renderAchScreen(pair[1]); showScreen('achScreen');
   });
 });
 
