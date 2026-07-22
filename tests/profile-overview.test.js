@@ -6,6 +6,7 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 
 const profileClient = fs.readFileSync(path.join(__dirname, '..', 'profile-client.js'), 'utf8');
+const achievementsClient = fs.readFileSync(path.join(__dirname, '..', 'achievements-client.js'), 'utf8');
 const server = fs.readFileSync(path.join(__dirname, '..', 'server.js'), 'utf8');
 const html = fs.readFileSync(path.join(__dirname, '..', 'presence.html'), 'utf8');
 
@@ -46,14 +47,19 @@ test('new status composer starts blank and exposes only clear Cancel and Publish
   assert.match(html, /status-ov__btn--cancel" id="statusCancelBtn"/);
 });
 
-test('profile trophy sections render earned items only and hide empty headers', () => {
+test('profile trophy sections stay reachable: achievements always render as the doorway', () => {
   assert.match(html, /id="profBadgesSection"/);
   assert.match(html, /id="profAchievementsSection"/);
   assert.match(profileClient, /function profileMonthlyBestBadges\(earnedMap\)/);
   assert.match(profileClient, /earnedBadges = profileMonthlyBestBadges\(achState\.monthly\.earned\)/);
   assert.match(profileClient, /section\.style\.display = earnedBadges\.length \? '' : 'none'/);
   assert.match(profileClient, /if \(achState\.earned\[b\.id\]\) done\.push/);
-  assert.match(profileClient, /section\.style\.display = picks\.length \? '' : 'none'/);
+  // The Achievements drawer entry is gone (Duolingo-style profile access), so
+  // the profile section always shows — earned first, nearest goals filling in.
+  assert.match(profileClient, /section\.style\.display = ''/);
+  assert.match(profileClient, /next\.sort\(function\(x, y\) \{ return y\.pct - x\.pct; \}\)/);
+  assert.doesNotMatch(html, /id="drawerAch"/);
+  assert.doesNotMatch(achievementsClient, /drawerAch/);
 });
 
 test('friend profile hides empty earned and friends-in-common sections', () => {

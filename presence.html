@@ -2716,7 +2716,6 @@
     #drawerReports { --drawer-accent:#8ecce0; --drawer-tint:rgba(142,204,224,.055); }
     #drawerJournal { --drawer-accent:#d49898; --drawer-tint:rgba(212,152,152,.055); }
     #drawerPlayground { --drawer-accent:#c4a8d4; --drawer-tint:rgba(196,168,212,.055); }
-    #drawerAch { --drawer-accent:#e8c87a; --drawer-tint:rgba(232,200,122,.055); }
     #drawerProfile { --drawer-accent:#8eccc0; --drawer-tint:rgba(142,204,192,.055); }
     #drawerLodge { --drawer-accent:#e8c87a; --drawer-tint:rgba(232,200,122,.065); }
     #drawerFaq { --drawer-accent:#98b4cc; --drawer-tint:rgba(152,180,204,.05); }
@@ -8187,9 +8186,6 @@ body:not(.tut-live) #tutCorgi {
       <button class="drawer-item" id="drawerPlayground">
         <span class="drawer-item-icon"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M10 3h4M11 3v6l-4.5 8A2 2 0 0 0 8.3 20h7.4a2 2 0 0 0 1.8-3L13 9V3"/><path d="M8.5 15h7"/></svg></span>Playground
       </button>
-      <button class="drawer-item" id="drawerAch">
-        <span class="drawer-item-icon">✦</span>Achievements
-      </button>
       <button class="drawer-item" id="drawerGuide" style="display:none;">
         <span class="drawer-item-icon">✦</span>Prayer
       </button>
@@ -9576,7 +9572,7 @@ startPrayerScheduler();
 
   // Which screen sits behind each sub-screen during swipe
   // (unlisted screens reveal homeScreen)
-    var PREV_SCREEN = { journalEntryScreen: 'journalScreen', exerciseSettingsScreen: 'settingsScreen', accountSettingsScreen: 'settingsScreen', clockSettingsScreen: 'settingsScreen', chatListScreen: 'lodgeScreen', chatThreadScreen: 'chatListScreen', concSessionScreen: 'exSetupScreen' };
+    var PREV_SCREEN = { journalEntryScreen: 'journalScreen', exerciseSettingsScreen: 'settingsScreen', accountSettingsScreen: 'settingsScreen', clockSettingsScreen: 'settingsScreen', chatListScreen: 'lodgeScreen', chatThreadScreen: 'chatListScreen', concSessionScreen: 'exSetupScreen', achScreen: 'profileScreen' };
 
   var EASE = 'cubic-bezier(0.25,0.46,0.45,0.94)';
 

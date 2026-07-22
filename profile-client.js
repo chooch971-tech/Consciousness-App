@@ -345,30 +345,44 @@ function renderProfileBadges() {
   }).join('');
 }
 
-// Profile · Achievements — the four most recently earned lifetime badges.
+// Profile · Achievements — Duolingo-style preview: most recently earned
+// badges first, then the nearest in-progress goals (dimmed, with a percent),
+// always filling four slots so the section is a permanent doorway to the
+// full Achievements screen now that its drawer entry is gone.
 function renderProfileAchievements() {
   var el = document.getElementById('profAchievements');
   var section = document.getElementById('profAchievementsSection');
   if (!el) return;
   if (typeof achEnsureMonth !== 'function') return;
   achSeed(); achEnsureMonth();
-  var done = [];
+  var done = [], next = [];
+  var p = achProviders();
   ACH_GROUPS.forEach(function(g) {
     if (g.monthly) return;
+    var pending = null;
     g.items.forEach(function(b) {
-      if (achState.earned[b.id]) done.push({ b: b, g: g });
+      if (achState.earned[b.id]) done.push({ b: b, g: g, earned: true });
+      else if (!pending) pending = b; // tiers ascend, so first unearned = next goal
     });
+    if (pending) next.push({ b: pending, g: g, pct: Math.min(1, (p[pending.key] || 0) / pending.target) });
   });
   done.sort(function(x, y) { return (achState.earned[y.b.id] || 0) - (achState.earned[x.b.id] || 0); });
-  var picks = done.slice(0, 4);
-  if (section) section.style.display = picks.length ? '' : 'none';
+  next.sort(function(x, y) { return y.pct - x.pct; });
+  var picks = done.slice(0, 4).concat(next.slice(0, Math.max(0, 4 - Math.min(done.length, 4))));
+  if (section) section.style.display = '';
   el.innerHTML = picks.map(function(it) {
     var medal = it.b.group === 'step' ? ['','','II','III','IV','V','VI','VII','VIII','IX','X'][it.b.target]
       : it.b.target >= 1000 ? (it.b.target / 1000) + 'k' : it.b.target;
-    return '<div class="prof-ach-item" data-ach="' + it.b.id + '" style="cursor:pointer;opacity:1;">'
-      + '<div class="prof-ach-item__disc" style="--gc:' + (ACH_COLORS[it.g.id] || '#e8c87a') + ';border-color:rgba(232,200,122,.6);">'
+    if (it.earned) {
+      return '<div class="prof-ach-item" data-ach="' + it.b.id + '" style="cursor:pointer;opacity:1;">'
+        + '<div class="prof-ach-item__disc" style="--gc:' + (ACH_COLORS[it.g.id] || '#e8c87a') + ';border-color:rgba(232,200,122,.6);">'
+        + achIconSvg(it.g.id) + '<b>' + medal + '</b></div>'
+        + '<div class="prof-ach-item__lbl prof-ach-item__lbl--earned">Earned</div></div>';
+    }
+    return '<div class="prof-ach-item" data-ach="' + it.b.id + '" style="cursor:pointer;">'
+      + '<div class="prof-ach-item__disc" style="--gc:' + (ACH_COLORS[it.g.id] || '#e8c87a') + ';">'
       + achIconSvg(it.g.id) + '<b>' + medal + '</b></div>'
-      + '<div class="prof-ach-item__lbl prof-ach-item__lbl--earned">Earned</div></div>';
+      + '<div class="prof-ach-item__lbl">' + Math.round(it.pct * 100) + '%</div></div>';
   }).join('');
 }
 // "›" buttons on both profile sections open the full Achievements screen.
@@ -766,8 +780,6 @@ document.getElementById('profFriendsMore').addEventListener('click', function() 
   if (!authToken) { showToast('Sign in to use Friends'); return; }
   openFriendsPanel();
 });
-document.getElementById('profBadgesMore').addEventListener('click', function() { showToast('Monthly badges coming soon'); });
-document.getElementById('profAchMore').addEventListener('click', function() { showToast('Achievements coming soon'); });
 document.getElementById('profPostsBtn').addEventListener('click', function() {
   if (typeof openProfileActivity === 'function') openProfileActivity('me', authUsername || 'you', 'posts', 'profileScreen');
 });

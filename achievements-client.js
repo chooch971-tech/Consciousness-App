@@ -433,12 +433,6 @@ document.getElementById('achDetail').addEventListener('click', function(e) {
   document.querySelectorAll('#achBody .ach-badge.sel').forEach(function(b){ b.classList.remove('sel'); });
   document.getElementById('achDetail').style.display = 'none';
 });
-document.getElementById('drawerAch').addEventListener('click', function() {
-  closeDrawer();
-  achEvaluate(true);
-  renderAchScreen();
-  showScreen('achScreen');
-});
 document.getElementById('achBannerStar').addEventListener('click', function() {
   var host = this;
   for (var i = 0; i < 3; i++) {
@@ -452,7 +446,11 @@ document.getElementById('achBannerStar').addEventListener('click', function() {
 document.getElementById('achBackBtn').addEventListener('click', function() {
   _achSelected = null;
   var d = document.getElementById('achDetail'); if (d) d.style.display = 'none';
-  renderHome(); showScreen('homeScreen');
+  // Achievements is reached from the Profile (Duolingo-style) now that its
+  // drawer entry is gone, so back returns there — without touching the
+  // profile's own remembered return screen.
+  if (typeof renderProfile === 'function') { renderProfile(); showScreen('profileScreen'); }
+  else { renderHome(); showScreen('homeScreen'); }
 });
 // Boot: count today's login and settle anything already earned — but only once
 // any startup cloud pull has finished merging, so a fresh device never awards

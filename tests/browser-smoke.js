@@ -226,7 +226,6 @@ async function testEveryDrawerScreenSwipeBack(browser, baseUrl) {
     ['drawerReports', 'reportsScreen'],
     ['drawerJournal', 'journalScreen'],
     ['drawerPlayground', 'playgroundScreen'],
-    ['drawerAch', 'achScreen'],
     ['drawerProfile', 'profileScreen'],
     ['drawerLodge', 'lodgeScreen'],
     ['drawerFaq', 'faqScreen'],
