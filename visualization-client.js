@@ -1758,6 +1758,17 @@ function openExerciseSetup(ex) {
   }
   if (ex === 'auditory') { buildSoundGrid(); }
   if (ex === 'clock') { activeClockEditPart = null; applyHeroClockTheme(); }
+  // Thought Control: seed the Minutes stepper from the auto-advancing
+  // recommendation (per selected discipline) so it climbs with practice —
+  // matching how Asana's setup seeds from its target. Rebuild the content so
+  // the freshly-seeded value shows. Manual +/- still lets you deviate for the
+  // session; the next open re-seeds to the current recommendation.
+  if (ex === 'thought' && typeof guideThoughtTargetMinutes === 'function' && typeof guideThoughtStats === 'function') {
+    try {
+      tcDuration = guideThoughtTargetMinutes(tcMode, guideThoughtStats()) || tcDuration;
+      contentEl.innerHTML = typeof def.setupHTML === 'function' ? def.setupHTML() : def.setupHTML;
+    } catch (e) {}
+  }
   // Give the Clock's Begin button a glowing copper treatment to match the
   // rest of its themed setup page; other exercises keep the plain style.
   var _beginBtn = document.getElementById('exSetupBeginBtn');

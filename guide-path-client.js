@@ -972,13 +972,15 @@ function guideCurrentThoughtMode(thoughtStats) {
 }
 
 function guideThoughtTargetMinutes(mode, thoughtStats) {
-  var st = thoughtStats[mode] || { count:0, todayCount:0 };
-  // Use count before today so completing a session mid-day doesn't raise the
-  // target above what was required when you started — keeps "done" stable.
-  var countForTarget = Math.max(0, (st.count || 0) - (st.todayCount || 0));
-  var natural = guideAllThoughtModesMastered(thoughtStats)
-    ? guideClamp(10 + Math.floor(countForTarget / 6), 10, 15)
-    : guideClamp(5 + Math.floor(countForTarget / 2), 5, 10);
+  var st = thoughtStats[mode] || { count:0 };
+  // Climb purely on completed session count for this discipline — including
+  // today's, so steady practice moves the suggestion up right away — with no
+  // all-modes-mastery gate: 5→10 at one minute per 2 sessions, then 10→15 at
+  // one minute per 6 sessions.
+  var c = Math.max(0, st.count || 0);
+  var natural = c < 10
+    ? guideClamp(5 + Math.floor(c / 2), 5, 10)
+    : guideClamp(10 + Math.floor((c - 10) / 6), 10, 15);
   // Per-mode floor: Vacancy's override doesn't move Observation or Focus.
   return guideAdvancedTarget(mode, natural);
 }

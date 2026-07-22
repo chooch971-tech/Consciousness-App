@@ -110,6 +110,11 @@ function buildTCSetupHTML() {
 
 function switchTCMode(mode) {
   tcMode = mode;
+  // Each discipline climbs on its own session count, so re-seed the Minutes
+  // stepper to the newly-selected mode's recommendation.
+  if (typeof guideThoughtTargetMinutes === 'function' && typeof guideThoughtStats === 'function') {
+    try { tcDuration = guideThoughtTargetMinutes(mode, guideThoughtStats()) || tcDuration; } catch (e) {}
+  }
   var contentEl = document.getElementById('exSetupContent');
   if (contentEl) contentEl.innerHTML = buildTCSetupHTML();
 }
