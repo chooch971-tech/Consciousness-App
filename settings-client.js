@@ -227,27 +227,37 @@ document.getElementById('settingsBack').addEventListener('click', function() {
 });
 
 // ── Apple-style per-exercise settings ──
+// Soul Mirror sits in the Concentration group, between Asana and Multi-Sense
+// Visualization — Pore Breathing and Autosuggestion are tabs inside its own
+// screen (soulBreathingPanel / soulAutosugPanel), so their settings live under
+// Soul Mirror below rather than as their own top-level rows.
 var EXERCISE_SETTINGS_LIST = [
   { id:'clock',      name:'Clock Exercise',           icon:'⏱',  tint:'rgba(212,149,110,.16)', group:'conc' },
   { id:'visual',     name:'Visualization',            icon:'👁', tint:'rgba(110,159,212,.16)', group:'conc' },
   { id:'auditory',   name:'Auditory',                 icon:'🎧', tint:'rgba(110,184,164,.16)', group:'conc' },
   { id:'thought',    name:'Thought Control',          icon:'◌',  tint:'rgba(152,180,204,.16)', group:'conc' },
   { id:'asana',      name:'Asana',                    icon:'🧘', tint:'rgba(196,120,120,.16)', group:'conc' },
+  { id:'soulmirror', name:'Soul Mirror',              icon:'◆',  tint:'rgba(164,126,184,.16)', group:'conc' },
   { id:'multisense', name:'Multi-Sense Visualization',icon:'🎴', tint:'rgba(110,159,212,.16)', group:'conc' },
   { id:'awareness',  name:'Awareness',                icon:'◉',  tint:'rgba(126,184,164,.16)', group:'practice' },
-  { id:'prayer',     name:'Prayer',                   icon:'✦',  tint:'rgba(196,168,212,.16)', group:'practice' },
-  { id:'soulmirror', name:'Soul Mirror',              icon:'◆',  tint:'rgba(164,126,184,.16)', group:'practice' },
-  { id:'pore',       name:'Pore Breathing',           icon:'≋',  tint:'rgba(142,204,224,.16)', group:'practice' }
+  { id:'prayer',     name:'Prayer',                   icon:'✦',  tint:'rgba(196,168,212,.16)', group:'practice' }
 ];
 
 // Which parked functional blocks mount into each exercise sub-page.
 var EXSET_BLOCKS = {
-  visual:    [{ block:'visImagesBlock', header:'Custom Images' }],
-  auditory:  [{ block:'audSoundsBlock', header:'Custom Sounds' }],
-  thought:   [{ block:'tcBufferBlock', header:'Session Start' }],
-  asana:     [{ block:'asanaBufferBlock', header:'Session Start' }],
-  awareness: [{ block:'settingsResetAwareness', header:'Reset', card:true, danger:true }],
-  prayer:    [{ block:'settingsResetPrayer', header:'Reset', card:true, danger:true }]
+  visual:     [{ block:'visImagesBlock', header:'Custom Images' }],
+  auditory:   [{ block:'audSoundsBlock', header:'Custom Sounds' }],
+  thought:    [{ block:'tcBufferBlock', header:'Session Start' }],
+  asana:      [{ block:'asanaBufferBlock', header:'Session Start' }],
+  soulmirror: [
+    { block:'poreBufferBlock', header:'Pore Breathing' },
+    { block:'autosugTapsBlock', header:'Autosuggestion' }
+  ],
+  awareness:  [
+    { block:'pavlokSettingsCard', header:'Pavlok' },
+    { block:'settingsResetAwareness', header:'Reset', card:true, danger:true }
+  ],
+  prayer:     [{ block:'settingsResetPrayer', header:'Reset', card:true, danger:true }]
 };
 
 function _asetRowHTML(ex) {
@@ -262,7 +272,7 @@ function _asetRowHTML(ex) {
 function _parkSettingsBlocks() {
   var park = document.getElementById('settingsParking');
   if (!park) return;
-  ['acctSyncBlock','visImagesBlock','audSoundsBlock','tcBufferBlock','asanaBufferBlock','settingsResetAwareness','settingsResetConc','settingsResetPrayer'].forEach(function(bid) {
+  ['acctSyncBlock','visImagesBlock','audSoundsBlock','tcBufferBlock','asanaBufferBlock','poreBufferBlock','autosugTapsBlock','pavlokSettingsCard','settingsResetAwareness','settingsResetConc','settingsResetPrayer'].forEach(function(bid) {
     var el = document.getElementById(bid);
     if (el && el.parentNode !== park) park.appendChild(el);
   });
@@ -340,11 +350,16 @@ function openExerciseSettings(id) {
       if (mount && blk) mount.appendChild(blk);
     });
   }
-  // The buffer selects are only re-created once (at DOMContentLoaded); refresh
-  // their displayed value here in case concState changed since (e.g. a cloud
-  // sync pull) while this screen wasn't open to catch the update itself.
+  // The buffer/stepper controls are only wired once (at DOMContentLoaded);
+  // refresh their displayed value here in case concState changed since (e.g. a
+  // cloud sync pull) while this screen wasn't open to catch the update itself.
   if (id === 'thought' && typeof syncTCBufferSelect === 'function') syncTCBufferSelect();
   if (id === 'asana' && typeof syncAsanaBufferSelect === 'function') syncAsanaBufferSelect();
+  if (id === 'soulmirror') {
+    if (typeof syncPoreBufferSelect === 'function') syncPoreBufferSelect();
+    if (typeof syncAutosugTapsUI === 'function') syncAutosugTapsUI();
+  }
+  if (id === 'awareness' && typeof renderPavlokSettings === 'function') renderPavlokSettings();
   body.scrollTop = 0;
   showScreen('exerciseSettingsScreen');
 }

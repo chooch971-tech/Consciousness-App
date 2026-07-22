@@ -148,6 +148,7 @@ Last updated: 2026-07-22
 - [ ] Create subscription tiers on Buy Me a Coffee
 - [ ] Decide whether to keep web app
 - [ ] Multi-notification feature (editable in Settings)
+- [ ] Explore multi-notifications on iOS and Android (platform-specific support/limits for showing several simultaneous push notifications)
 
 ---
 

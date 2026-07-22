@@ -441,7 +441,37 @@ document.getElementById('soulMirrorBack').addEventListener('click',function(){
 // silent repetition of the formula — forty in a sitting.
 // ══════════════════════════════════════════════════════
 
-var AUTOSUG_TAPS=40;
+// Tap count is a Settings → Soul Mirror → Autosuggestion option, range 7-40.
+var AUTOSUG_TAPS_DEFAULT=40;
+var AUTOSUG_TAPS_MIN=7;
+var AUTOSUG_TAPS_MAX=40;
+function getAutosugTapsSetting(){
+  var raw=Number(typeof concState!=='undefined'&&concState&&concState.autosugTaps);
+  if(!Number.isFinite(raw))return AUTOSUG_TAPS_DEFAULT;
+  return Math.max(AUTOSUG_TAPS_MIN,Math.min(AUTOSUG_TAPS_MAX,Math.round(raw)));
+}
+var AUTOSUG_TAPS=getAutosugTapsSetting();
+function setAutosugTaps(n){
+  AUTOSUG_TAPS=Math.max(AUTOSUG_TAPS_MIN,Math.min(AUTOSUG_TAPS_MAX,Math.round(Number(n)||AUTOSUG_TAPS_DEFAULT)));
+  concState.autosugTaps=AUTOSUG_TAPS;
+  saveConcState();
+  syncAutosugTapsUI();
+}
+function adjustAutosugTaps(delta){
+  setAutosugTaps(AUTOSUG_TAPS+delta);
+}
+function syncAutosugTapsUI(){
+  var val=document.getElementById('autosugTapsVal');
+  if(val)val.textContent=AUTOSUG_TAPS;
+}
+function _wireAutosugTapsStepper(){
+  var minus=document.getElementById('autosugTapsMinus');
+  var plus=document.getElementById('autosugTapsPlus');
+  if(minus)minus.addEventListener('click',function(){adjustAutosugTaps(-1);});
+  if(plus)plus.addEventListener('click',function(){adjustAutosugTaps(1);});
+  syncAutosugTapsUI();
+}
+_wireAutosugTapsStepper();
 var AUTOSUG_XP=30;
 var autosugCount=0;
 var autosugStartTime=null;

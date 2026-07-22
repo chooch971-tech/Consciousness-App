@@ -12,6 +12,35 @@ var PHASES_PORE = ['inhale', 'hold_in', 'exhale', 'hold_out'];
 var PHASE_DUR_PORE = 4000;
 var poreBreathStartTime = null;
 
+// ── Start buffer (Settings → Soul Mirror → Pore Breathing) — mirrors the
+// Thought Control / Asana buffer pattern, stored on the shared concState. ──
+var PORE_START_BUFFER_DEFAULT = 3;
+var PORE_START_BUFFER_OPTIONS = [0,1,2,3,5,7,10];
+var _poreCountInterval = null;  // the pre-session countdown tick, so discard can cancel it
+var _poreCountBeginTimer = null;  // the 900ms pause after "1" before the session actually begins
+function getPoreStartBuffer() {
+  var raw = Number(typeof concState !== 'undefined' && concState && concState.poreStartBuffer);
+  if (!Number.isFinite(raw) || PORE_START_BUFFER_OPTIONS.indexOf(raw) === -1) return PORE_START_BUFFER_DEFAULT;
+  return raw;
+}
+function setPoreStartBuffer(val) {
+  var next = Number(val);
+  if (PORE_START_BUFFER_OPTIONS.indexOf(next) === -1) next = PORE_START_BUFFER_DEFAULT;
+  concState.poreStartBuffer = next;
+  saveConcState();
+}
+function syncPoreBufferSelect() {
+  var sel = document.getElementById('poreBufferSelect');
+  if (sel) sel.value = String(getPoreStartBuffer());
+}
+function _wirePoreBufferSelect() {
+  var sel = document.getElementById('poreBufferSelect');
+  if (!sel) return;
+  syncPoreBufferSelect();
+  sel.addEventListener('change', function() { setPoreStartBuffer(this.value); });
+}
+_wirePoreBufferSelect();
+
 document.getElementById('poreBreathSlider').addEventListener('input', function() {
   poreBreathTotal = parseInt(this.value, 10);
   document.getElementById('poreBreathCountDisplay').textContent = poreBreathTotal;
@@ -79,12 +108,45 @@ function setPoreOrbPhase(phase) {
 function startPoreBreath() {
   poreBreathTotal = parseInt(document.getElementById('poreBreathSlider').value, 10);
   poreBreathCurrent = 1;
-  poreBreathStartTime = Date.now();
   document.getElementById('poreBreathSetup').style.display = 'none';
   document.getElementById('poreBreathOverlay').style.display = 'flex';
   document.getElementById('poreBreathCycleLabel').textContent = 'breath 1 of ' + poreBreathTotal;
   requestExerciseWakeLock();
-  runPorePhase('inhale');
+
+  // Configurable countdown before the cycle starts (Settings → Soul Mirror →
+  // Pore Breathing → Start Buffer).
+  var overlay = document.getElementById('poreBreathCountdownOverlay');
+  var numEl = document.getElementById('poreBreathCountdownNum');
+  var count = getPoreStartBuffer();
+
+  function beginPoreSession() {
+    if (overlay) overlay.style.display = 'none';
+    if (numEl) numEl.style.animation = 'none';
+    poreBreathStartTime = Date.now();
+    runPorePhase('inhale');
+  }
+
+  if (count <= 0 || !overlay || !numEl) { beginPoreSession(); return; }
+  overlay.style.display = 'flex';
+
+  function showCountNum(n) {
+    numEl.textContent = n;
+    numEl.style.animation = 'none';
+    void numEl.offsetWidth; // force reflow so animation restarts cleanly
+    numEl.style.animation = 'tcCountPop 1s ease forwards';
+  }
+
+  showCountNum(count);
+  _poreCountInterval = setInterval(function() {
+    count--;
+    if (count <= 0) {
+      clearInterval(_poreCountInterval);
+      _poreCountInterval = null;
+      _poreCountBeginTimer = setTimeout(beginPoreSession, 900);
+    } else {
+      showCountNum(count);
+    }
+  }, 1000);
 }
 
 function runPorePhase(phase) {
@@ -107,6 +169,14 @@ function runPorePhase(phase) {
 function stopPoreBreath(completed) {
   releaseExerciseWakeLock();
   clearTimeout(poreBreathPhaseTimer); poreBreathPhaseTimer = null; poreBreathPhase = null;
+  // A discard mid pre-session-countdown (Stop button, or the Soul Mirror
+  // screen's own back button which also routes through here) must cancel
+  // the pending interval/timer too, or the session silently begins in the
+  // background after the user has already left the screen.
+  clearInterval(_poreCountInterval); _poreCountInterval = null;
+  clearTimeout(_poreCountBeginTimer); _poreCountBeginTimer = null;
+  var pcd = document.getElementById('poreBreathCountdownOverlay');
+  if (pcd) pcd.style.display = 'none';
   var orb = document.getElementById('poreBreathOrb');
   if (orb) { orb.style.transform = 'scale(1)'; orb.style.boxShadow = '0 0 20px rgba(164,126,184,.1)'; orb.style.background = 'radial-gradient(circle at 40% 35%, rgba(196,168,212,.35), rgba(164,126,184,.08))'; }
   var ringMid = document.getElementById('poreBreathRingMid');
