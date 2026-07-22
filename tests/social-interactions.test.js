@@ -25,6 +25,19 @@ test('network tabs warm, cache, and refresh follower lists without a blank loadi
   assert.doesNotMatch(profileClient, /followListTitle|Your network/);
 });
 
+test('nested friend profiles warm their controls and reachable profile tabs before a tap', () => {
+  assert.match(profileClient, /function warmFriendProfileExperience\(friend\)/);
+  assert.match(profileClient, /warmFriendSocial\(friend\.userId\)/);
+  assert.match(profileClient, /warmFollowLists\(friend\.userId\)/);
+  assert.match(profileClient, /warmProfileActivity\(friend\.userId\)/);
+  assert.match(profileClient, /loadChatList\(false\)/);
+  assert.match(profileClient, /others\.forEach\(function\(other, index\)[\s\S]*?warmFriendProfileExperience\(other\)/);
+  assert.match(socialClient, /function _fetchFriendSocial\(userId\)/);
+  assert.match(socialClient, /var _friendSocialRequests = \{\}/);
+  assert.match(socialClient, /_friendSocialRequests\[userId\]/);
+  assert.match(socialClient, /_currentFriendProfile\.userId !== f\.userId/);
+});
+
 test('Message opens the thread immediately while the conversation request is pending', () => {
   const start = socialClient.indexOf('async function messageFriend');
   const end = socialClient.indexOf("document.getElementById('lodgeChats')", start);

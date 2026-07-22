@@ -900,6 +900,7 @@ async function reportLodgeContent(kind, refId) {
 // network round-trip is in flight (matches the getCachedFollowSummary pattern
 // used for the own-profile counts).
 var FRIEND_SOCIAL_CACHE_KEY = 'presence_friend_social_cache_v1';
+var _friendSocialRequests = {};
 function cacheFriendSocial(userId, s) {
   if (!userId || !s) return;
   try {
@@ -913,6 +914,32 @@ function getCachedFriendSocial(userId) {
     var all = JSON.parse(localStorage.getItem(FRIEND_SOCIAL_CACHE_KEY)) || {};
     return all[userId] || null;
   } catch(e) { return null; }
+}
+
+// A friend profile needs this same summary for its follow button, Message
+// availability, and follower counts. Keep one in-flight request per person so
+// opening a profile after it was warmed simply joins the already-running work.
+function _fetchFriendSocial(userId) {
+  if (!authToken || !userId) return Promise.reject(new Error('No signed-in friend profile'));
+  if (_friendSocialRequests[userId]) return _friendSocialRequests[userId];
+  var requestToken = authToken;
+  _friendSocialRequests[userId] = fetch(SERVER_URL + '/api/social/users/' + encodeURIComponent(userId) + '/summary', {
+    headers: { 'Authorization': 'Bearer ' + requestToken }
+  })
+    .then(function(res) {
+      if (!res.ok) throw new Error('Friend summary request failed');
+      return res.json();
+    })
+    .then(function(summary) {
+      if (authToken === requestToken) cacheFriendSocial(userId, summary);
+      return summary;
+    })
+    .finally(function() { delete _friendSocialRequests[userId]; });
+  return _friendSocialRequests[userId];
+}
+
+function warmFriendSocial(userId) {
+  if (authToken && userId) _fetchFriendSocial(userId).catch(function() {});
 }
 
 function _applyFriendSocial(f, s) {
@@ -973,14 +1000,15 @@ async function loadFriendSocial(f) {
   var cached = getCachedFriendSocial(f.userId);
   if (cached) { _applyFriendSocial(f, cached); } else { counts.textContent = ''; btn.textContent = '…'; btn.disabled = true; }
   try {
-    var res = await fetch(SERVER_URL + '/api/social/users/' + encodeURIComponent(f.userId) + '/summary', {
-      headers: { 'Authorization': 'Bearer ' + authToken }
-    });
-    if (!res.ok) { if (!cached) box.style.display = 'none'; return; }
-    var s = await res.json();
-    cacheFriendSocial(f.userId, s);
+    var s = await _fetchFriendSocial(f.userId);
+    // Another friend may have been opened while this request was in flight.
+    // Never let that older response overwrite the visible profile's controls.
+    if (!_currentFriendProfile || _currentFriendProfile.userId !== f.userId) return;
     _applyFriendSocial(f, s);
-  } catch(e) { if (!cached) box.style.display = 'none'; }
+  } catch(e) {
+    if (!_currentFriendProfile || _currentFriendProfile.userId !== f.userId) return;
+    if (!cached) box.style.display = 'none';
+  }
 }
 
 // Notifications bell.

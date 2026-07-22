@@ -566,10 +566,24 @@ function openFriendProfile(userId, returnScreenId) {
   } else if (active && active.id !== 'friendProfileScreen' && active.id !== 'chatThreadScreen') {
     _friendProfileReturnScreen = active.id;
   }
-  renderFriendProfile(f);
+  // Start every network-backed part of the profile before its entry animation.
+  // This also warms the shared conversation list, so Message can open an
+  // existing thread without an additional wait.
+  warmFriendProfileExperience(f);
+  // Keep the profile-activity warm-up explicit at this navigation boundary;
+  // its request layer de-duplicates the call made by the wider experience warm.
   if (typeof warmProfileActivity === 'function') warmProfileActivity(f.userId);
+  renderFriendProfile(f);
   showScreen('friendProfileScreen');
   if (typeof closeFriendsPanel === 'function') closeFriendsPanel();
+}
+
+function warmFriendProfileExperience(friend) {
+  if (!friend || !friend.userId || !authToken) return;
+  if (typeof warmFriendSocial === 'function') warmFriendSocial(friend.userId);
+  if (typeof warmFollowLists === 'function') warmFollowLists(friend.userId);
+  if (typeof warmProfileActivity === 'function') warmProfileActivity(friend.userId);
+  if (typeof loadChatList === 'function') loadChatList(false);
 }
 function renderFriendProfile(f) {
   if (!f) return;
@@ -705,6 +719,13 @@ function renderFriendProfSimilar(friend) {
       + '<div class="prof-friend__streak">🔥 ' + (o.streak || 0) + '</div>'
       + '</div>';
   }).join('');
+  // These are the only profiles reachable from this screen. Warm their
+  // controls and tabs while the current profile is being read, so a tap on a
+  // friend-of-a-friend has its counts, Message state, network lists, posts,
+  // and comments ready rather than beginning five cold requests at once.
+  others.forEach(function(other, index) {
+    setTimeout(function() { warmFriendProfileExperience(other); }, index * 45);
+  });
 }
 document.getElementById('friendProfBack').addEventListener('click', function() {
   var previousScreen = friendProfilePreviousScreen();
