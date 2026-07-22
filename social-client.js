@@ -277,9 +277,32 @@ function _lodgeSnapshotView() {
   };
 }
 
+// Reddit-style continuous motion: instead of the discussion view cutting in,
+// the tapped card glides from its spot in the feed up to its detail position
+// (and glides back down on close). Classic FLIP — measure the card before the
+// re-render, re-render, then transition away the positional difference.
+function _lodgeFlipCard(firstRect, targetCard) {
+  if (!firstRect || !targetCard) return;
+  try { if (window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches) return; } catch(e) {}
+  var dy = firstRect.top - targetCard.getBoundingClientRect().top;
+  if (Math.abs(dy) < 3) return;
+  targetCard.style.transition = 'none';
+  targetCard.style.transform = 'translateY(' + dy + 'px)';
+  requestAnimationFrame(function() {
+    requestAnimationFrame(function() {
+      targetCard.style.transition = 'transform .3s cubic-bezier(.22,.9,.32,1)';
+      targetCard.style.transform = '';
+      setTimeout(function() { targetCard.style.transition = ''; }, 380);
+    });
+  });
+}
+
 function openLodgePostDetail(post, returnScreen, openComments) {
   if (!post) return;
   var from = returnScreen || (document.querySelector('.screen.active') || {}).id || 'lodgeScreen';
+  var fromCard = from === 'lodgeScreen'
+    ? document.querySelector('#lodgeFeed .lodge-post[data-post-id="' + post.id + '"]') : null;
+  var firstRect = fromCard ? fromCard.getBoundingClientRect() : null;
   if (from === 'lodgeScreen' && !_lodgeDetailPost) _lodgeDetailSnapshot = _lodgeSnapshotView();
   _lodgeDetailReturnScreen = from;
   _lodgeDetailPost = post;
@@ -293,15 +316,17 @@ function openLodgePostDetail(post, returnScreen, openComments) {
   renderLodgeFeed();
   showScreen('lodgeScreen');
   document.getElementById('lodgeBody').scrollTop = 0;
-  if (openComments) {
-    var card = document.querySelector('#lodgeFeed .lodge-post');
-    if (card) toggleLodgeComments(post.id, card, true);
-  }
+  var card = document.querySelector('#lodgeFeed .lodge-post');
+  _lodgeFlipCard(firstRect, card);
+  if (openComments && card) toggleLodgeComments(post.id, card, true);
 }
 
 function closeLodgePostDetail() {
   if (!_lodgeDetailPost) return false;
   var returnScreen = _lodgeDetailReturnScreen;
+  var closingPid = _lodgeDetailPost.id;
+  var detailCard = document.querySelector('#lodgeFeed .lodge-post');
+  var detailRect = detailCard ? detailCard.getBoundingClientRect() : null;
   _lodgeDetailPost = null;
   if (returnScreen !== 'lodgeScreen') {
     _lodgeDetailSnapshot = null;
@@ -325,6 +350,8 @@ function closeLodgePostDetail() {
   document.getElementById('lodgeSearchBar').style.display = snap.searchDisplay;
   renderLodgeFeed();
   document.getElementById('lodgeBody').scrollTop = snap.scrollTop;
+  // Glide the card back down to its place in the restored feed.
+  _lodgeFlipCard(detailRect, document.querySelector('#lodgeFeed .lodge-post[data-post-id="' + closingPid + '"]'));
   return true;
 }
 
