@@ -9107,6 +9107,10 @@ function enterAppAfterSignIn(onEntered) {
   // the visited flag up front, before any home render, independent of whether
   // the cloud pull restores it. Only the login screen calls this path.
   try { localStorage.setItem('presence_visited', '1'); } catch(e) {}
+  window.__tutBoot = null;
+  if (typeof window.__tutFinishAccountRestore === 'function') {
+    try { window.__tutFinishAccountRestore(); } catch(e) {}
+  }
   if (window.__showSplash) window.__showSplash('Restoring your progress…');
   window._syncPullPending = true;
   var attempt = 0;

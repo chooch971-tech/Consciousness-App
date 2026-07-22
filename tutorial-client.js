@@ -238,7 +238,16 @@ document.addEventListener('DOMContentLoaded',function(){(function(){
 
   function tutorialCanBootOnHome(){
     var homeEl=document.getElementById('homeScreen');
-    return !!homeEl && homeEl.style.display==='flex' && !document.querySelector('.screen.active');
+    var welcomeEl=document.getElementById('welcomeScreen');
+    var loginEl=document.getElementById('loginScreen');
+    var accountGateVisible=!!((welcomeEl&&welcomeEl.classList.contains('wlc-vis'))||(loginEl&&loginEl.classList.contains('lgn-vis')));
+    var accountAuthenticated=!!localStorage.getItem('presence_auth_token');
+    return !!homeEl && homeEl.style.display==='flex'
+      && !document.querySelector('.screen.active')
+      && !accountGateVisible
+      && !accountAuthenticated
+      && !window._syncPullPending
+      && !window.__tutInProgress;
   }
 
   /* ── Particles ── */
@@ -1388,6 +1397,24 @@ document.addEventListener('DOMContentLoaded',function(){(function(){
     });
   }
 
+  // A returning user can finish authentication after the old auto-boot timer
+  // has already started the tutorial behind the welcome/login overlay. Marking
+  // VISITED prevents the next boot, but cannot stop that active instance. Give
+  // account restoration one idempotent, synchronous escape hatch that clears
+  // both the current tutorial and its post-Clock continuation.
+  window.__tutFinishAccountRestore=function(){
+    localStorage.setItem(VISITED,'1');
+    localStorage.removeItem('presence_tutorialPending');
+    window.__tutBoot=null;
+    if(window.__tutInProgress) end();
+    window.__tutInProgress=false;
+    document.body.classList.remove('tut-live');
+    ov.style.transition='none';
+    ov.style.opacity='0';
+    ov.style.pointerEvents='none';
+    ov.style.display='none';
+  };
+
   // The Skip button is shown throughout the tutorial but was never wired up —
   // tapping it did nothing, trapping the user. End the tutorial on tap (and
   // stop the tap from also advancing a step via the overlay handler).
@@ -1572,7 +1599,11 @@ document.addEventListener('DOMContentLoaded',function(){(function(){
     var homeEl=document.getElementById('homeScreen');
     if(homeEl){
       var _poller=setInterval(function(){
-        if(homeEl.style.display==='flex'&&!localStorage.getItem(VISITED)){
+        if(localStorage.getItem(VISITED)||window.__tutInProgress){
+          clearInterval(_poller);
+          return;
+        }
+        if(tutorialCanBootOnHome()){
           clearInterval(_poller);
           if(window.__tutBoot) window.__tutBoot();
         }

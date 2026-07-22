@@ -132,6 +132,7 @@ function initGoogleSignIn(containerId, onSuccess) {
         authDisplayName = result.displayName || null;
         localStorage.setItem('presence_auth_token', authToken);
         localStorage.setItem('presence_auth_email', authEmail);
+        localStorage.setItem('presence_visited', '1');
         if (authUsername) localStorage.setItem('presence_auth_username', authUsername);
         if (authDisplayName) localStorage.setItem('presence_display_name', authDisplayName);
         try { localStorage.setItem(PRIVATE_PROFILE_KEY, result.isPrivate ? '1' : '0'); } catch(e) {}
@@ -217,6 +218,7 @@ async function authRegisterOrLogin(email, password, isRegister, username) {
     authDisplayName = result.displayName || null;
     localStorage.setItem('presence_auth_token', authToken);
     localStorage.setItem('presence_auth_email', authEmail);
+    localStorage.setItem('presence_visited', '1');
     if (authUsername) localStorage.setItem('presence_auth_username', authUsername);
     if (authDisplayName) localStorage.setItem('presence_display_name', authDisplayName);
     try { localStorage.setItem(PRIVATE_PROFILE_KEY, result.isPrivate ? '1' : '0'); } catch(e) {}

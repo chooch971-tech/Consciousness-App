@@ -199,6 +199,14 @@ test('startup cloud restoration keeps the splash in one document', () => {
   assert.doesNotMatch(startupApply, /window\.location\.reload\(\)/);
 });
 
+test('returning-account restoration cannot race the first-run tutorial', () => {
+  assert.match(tutorialClient, /function tutorialCanBootOnHome\(\)[\s\S]*?accountGateVisible[\s\S]*?accountAuthenticated[\s\S]*?!accountAuthenticated[\s\S]*?!window\._syncPullPending[\s\S]*?!window\.__tutInProgress/);
+  assert.match(tutorialClient, /window\.__tutFinishAccountRestore=function\(\)[\s\S]*?localStorage\.setItem\(VISITED,'1'\)[\s\S]*?localStorage\.removeItem\('presence_tutorialPending'\)[\s\S]*?if\(window\.__tutInProgress\) end\(\)/);
+  assert.match(tutorialClient, /if\(localStorage\.getItem\(VISITED\)\|\|window\.__tutInProgress\)\{\s*clearInterval\(_poller\)/);
+  assert.match(presence, /function enterAppAfterSignIn\(onEntered\)[\s\S]*?window\.__tutBoot = null;[\s\S]*?window\.__tutFinishAccountRestore\(\)/);
+  assert.equal((platformClient.match(/localStorage\.setItem\('presence_visited', '1'\)/g) || []).length, 2, 'both Google and email authentication mark the account as returning');
+});
+
 test('Clock sessions and Concentration history load through their own client boundary', () => {
   const stateTag = presence.indexOf('<script src="concentration-state-client.js"></script>');
   const clockTag = presence.indexOf('<script src="concentration-clock-client.js"></script>');

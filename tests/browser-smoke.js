@@ -128,6 +128,95 @@ async function testExerciseEntry(browser, baseUrl) {
   await context.close();
 }
 
+async function testReturningAccountSkipsTutorial(browser, baseUrl) {
+  const context = await browser.newContext({ viewport: { width: 390, height: 844 }, serviceWorkers: 'block' });
+  await context.addInitScript(() => {
+    if (sessionStorage.getItem('__returning_account_seeded')) return;
+    localStorage.clear();
+    sessionStorage.clear();
+    sessionStorage.setItem('__returning_account_seeded', '1');
+    try {
+      const registration = { pushManager: { getSubscription: async () => null } };
+      Object.defineProperty(navigator, 'serviceWorker', {
+        value: { controller: null, ready: Promise.resolve(registration), register: async () => registration, addEventListener: () => {} },
+        configurable: true
+      });
+    } catch (e) {}
+  });
+  await context.route('https://presence-server-acik.onrender.com/**', async route => {
+    if (route.request().url().includes('/sync/pull')) {
+      await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({
+        data: { presence_v3: JSON.stringify({ level: 4, xp: 1800, totalSessions: 9, history: [] }) },
+        account: { email: 'returning@example.com', username: 'returning_user', isPrivate: false }
+      }) });
+      return;
+    }
+    await route.fulfill({ status: 200, contentType: 'application/json', body: '{"ok":true}' });
+  });
+  await context.route('https://accounts.google.com/**', route => route.abort());
+  const page = await context.newPage();
+  page.setDefaultTimeout(10000);
+  const errors = [];
+  page.on('pageerror', error => errors.push(error.message));
+  await page.goto(baseUrl + '/presence.html?returning-account=' + Date.now(), { waitUntil: 'domcontentloaded' });
+  await page.waitForFunction(() => document.getElementById('welcomeScreen').classList.contains('wlc-vis') && typeof window.__tutFinishAccountRestore === 'function');
+
+  // A real sign-in takes much longer than the old 900ms auto-boot delay. The
+  // tutorial must remain dormant while either account gate is covering Home.
+  await page.waitForTimeout(1300);
+  const gated = await page.evaluate(() => ({
+    tutorialRunning: !!window.__tutInProgress,
+    tutorialLive: document.body.classList.contains('tut-live'),
+    welcomeVisible: document.getElementById('welcomeScreen').classList.contains('wlc-vis')
+  }));
+  assert.equal(gated.welcomeVisible, true);
+  assert.equal(gated.tutorialRunning, false, 'tutorial stays dormant behind the account gate');
+  assert.equal(gated.tutorialLive, false, 'tutorial does not mount beneath sign-in');
+
+  await page.evaluate(() => {
+    authToken = 'browser-test-token';
+    authEmail = 'returning@example.com';
+    syncEnabled = true;
+    localStorage.setItem('presence_auth_token', authToken);
+    localStorage.setItem('presence_auth_email', authEmail);
+    enterAppAfterSignIn(function() {
+      document.getElementById('welcomeScreen').classList.remove('wlc-vis');
+      document.getElementById('loginScreen').classList.remove('lgn-vis');
+    });
+  });
+  await page.waitForFunction(() => !window._syncPullPending && localStorage.getItem('presence_visited') === '1');
+  await page.waitForTimeout(1100);
+  const restored = await page.evaluate(() => ({
+    tutorialRunning: !!window.__tutInProgress,
+    tutorialLive: document.body.classList.contains('tut-live'),
+    tutorialDisplay: getComputedStyle(document.getElementById('tutOverlay')).display,
+    tutorialPointerEvents: getComputedStyle(document.getElementById('tutOverlay')).pointerEvents,
+    restoredLevel: JSON.parse(localStorage.getItem('presence_v3') || '{}').level
+  }));
+  assert.equal(restored.restoredLevel, 4, 'existing cloud progress restores');
+  assert.equal(restored.tutorialRunning, false, 'returning account does not restart the tutorial');
+  assert.equal(restored.tutorialLive, false, 'returning account clears tutorial presentation state');
+  assert.ok(restored.tutorialDisplay === 'none' || restored.tutorialPointerEvents === 'none', 'tutorial overlay cannot intercept the restored app');
+
+  // Legacy accounts may predate cloud sync of `presence_visited`. A valid
+  // authenticated session is itself enough evidence that auto-onboarding must
+  // not start, even if that old flag is absent after a storage migration.
+  await page.evaluate(() => localStorage.removeItem('presence_visited'));
+  await page.reload({ waitUntil: 'domcontentloaded' });
+  await page.waitForFunction(() => !window._syncPullPending && typeof window.__tutFinishAccountRestore === 'function');
+  await page.waitForTimeout(1100);
+  const legacyAccount = await page.evaluate(() => ({
+    authenticated: !!localStorage.getItem('presence_auth_token'),
+    tutorialRunning: !!window.__tutInProgress,
+    tutorialLive: document.body.classList.contains('tut-live')
+  }));
+  assert.equal(legacyAccount.authenticated, true);
+  assert.equal(legacyAccount.tutorialRunning, false, 'legacy authenticated accounts skip auto-onboarding without the old flag');
+  assert.equal(legacyAccount.tutorialLive, false, 'legacy account reload keeps the tutorial unmounted');
+  assert.deepEqual(errors, [], 'returning-account tutorial guard emitted browser errors');
+  await context.close();
+}
+
 async function testGeneratorMastery(browser, baseUrl) {
   const omnia = {
     akasha: 1_000_000, darkMatter: 100_000, lastTick: Date.now(),
@@ -1040,6 +1129,9 @@ async function testCloudRestoreAndSignOut(browser, baseUrl) {
     ? await chromium.connectOverCDP(process.env.PRESENCE_CDP_URL)
     : await chromium.launch(launchOptions());
   try {
+    console.log('run - returning account tutorial guard');
+    await testReturningAccountSkipsTutorial(browser, baseUrl);
+    console.log('ok - existing accounts restore without replaying the tutorial');
     console.log('run - exercise entry');
     await testExerciseEntry(browser, baseUrl);
     console.log('ok - exercise cards open complete setup screens');
