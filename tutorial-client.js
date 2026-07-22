@@ -83,9 +83,6 @@ document.addEventListener('DOMContentLoaded',function(){(function(){
   var qc=document.getElementById('tutQuestionChoices');
   var cb=document.getElementById('tutContinueBtn');
   var bk=document.getElementById('tutBackBtn');
-  /* Steps 0-2 are intro + first question — going back into the eye-morph sequence
-     leaves Omnia in an inconsistent state, so back is only enabled from step 3. */
-  var BACK_MIN_STEP=3;
 
   function showQuestion(s){
     /* If Omnia / bubble / done-button are on screen from the previous step,
@@ -854,11 +851,10 @@ document.addEventListener('DOMContentLoaded',function(){(function(){
     var needsExit=!!(bl.classList.contains('tut-vis')&&bl.style.opacity!=='0'&&!willFlip&&!willFlipToClock&&!keepObjCallout&&!willScrollSlide&&!s.greetPulse&&(s.mode==='full'||s.mode==='spot'));
     if(keepLowAnchor) captureTutorialEyeAnchor();
     cur=i; rdy=false;
-    /* Back button visibility — only show once we're past the intro + first question */
-    if(bk){
-      if(i>=BACK_MIN_STEP&&!s.launchClock) bk.style.display='block';
-      else bk.style.display='none';
-    }
+    /* Every tutorial screen has an escape or previous-step affordance. On the
+       opening screen this returns to Welcome, which is especially important
+       when an existing practitioner taps Begin the Practice by mistake. */
+    if(bk) bk.style.display='block';
     /* Progress bar */
     var _pf=document.getElementById('tutProgressFill');
     if(_pf) _pf.style.width=Math.round((i+1)/TUT_TOTAL*100)+'%';
@@ -1369,9 +1365,9 @@ document.addEventListener('DOMContentLoaded',function(){(function(){
   }
 
   /* ── End ── */
-  function end(){
+  function end(markVisited){
     window.__tutInProgress = false;
-    localStorage.setItem(VISITED,'1');
+    if(markVisited!==false) localStorage.setItem(VISITED,'1');
     document.body.classList.remove('tut-live');
     document.querySelectorAll('.tut-elem-glow').forEach(function(e){e.classList.remove('tut-elem-glow');});
     if(qp) qp.classList.remove('tut-vis');
@@ -1395,6 +1391,19 @@ document.addEventListener('DOMContentLoaded',function(){(function(){
     document.querySelectorAll('#exerciseGrid .exercise-card').forEach(function(c){
       c.style.opacity=''; c.style.transform=''; c.style.transition='';
     });
+  }
+
+  function returnToWelcome(){
+    /* Leaving from the first tutorial screen is navigation, not completion.
+       Keep a pre-existing VISITED flag intact, but do not create one for a new
+       practitioner and re-arm Welcome for refreshes. */
+    localStorage.removeItem('presence_welcome_seen');
+    window.__tutBoot=null;
+    end(false);
+    var loginEl=document.getElementById('loginScreen');
+    var welcomeEl=document.getElementById('welcomeScreen');
+    if(loginEl) loginEl.classList.remove('lgn-vis');
+    if(welcomeEl) welcomeEl.classList.add('wlc-vis');
   }
 
   // A returning user can finish authentication after the old auto-boot timer
@@ -1509,20 +1518,24 @@ document.addEventListener('DOMContentLoaded',function(){(function(){
       end();
     }
   });
-  /* ── Back button: walk back one step at a time, clearing the answer of the
-     step we're returning to so the user can re-pick. Disabled while not rdy to
-     avoid mid-animation re-entry. ── */
+  /* ── Back button: the opening step returns to Welcome; later steps walk back
+     one at a time and clear the answer being revisited. Disabled mid-animation
+     except for the opening escape, which must always be immediately usable. ── */
   if(bk){
     bk.addEventListener('click',function(e){
       e.stopPropagation();
       /* During post-session stages, back navigates between those stages */
       if(window.__tutPostBackFn){ window.__tutPostBackFn(); return; }
+      if(cur===0){ returnToWelcome(); return; }
       if(!rdy) return;
-      /* Block clicks below the floor; cur===BACK_MIN_STEP (=3) is still allowed
-         and walks back to step 2, the first question. */
-      if(cur<BACK_MIN_STEP) return;
       var target=cur-1;
       var targetStep=STEPS[target];
+      /* Step 0 expects the intact crystal so its tap can perform the eye morph
+         again. Reverse the visual state before rendering it. */
+      if(target===0){
+        resetTutorialEye();
+        tutorialEyeAnchorY=null;
+      }
       if(targetStep&&targetStep.answerKey){
         delete tutAnswers[targetStep.answerKey];
         delete tutAnswers[targetStep.answerKey+'Bars'];

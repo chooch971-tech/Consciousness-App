@@ -1192,5 +1192,10 @@ test('first-time tutorial loads through its own end-of-body client boundary', ()
   assert.match(tutorialClient, /var\s+STEPS\s*=\s*\[/);
   assert.match(tutorialClient, /window\.__tutReplay\s*=/);
   assert.match(tutorialClient, /function\s+go\s*\(/);
+  assert.match(tutorialClient, /if\(bk\) bk\.style\.display='block'/);
+  assert.match(tutorialClient, /if\(cur===0\)\{ returnToWelcome\(\); return; \}/);
+  assert.match(tutorialClient, /function returnToWelcome\(\)[\s\S]*?localStorage\.removeItem\('presence_welcome_seen'\)[\s\S]*?end\(false\)[\s\S]*?welcomeEl\.classList\.add\('wlc-vis'\)/);
+  assert.match(tutorialClient, /if\(target===0\)\{[\s\S]*?resetTutorialEye\(\)/);
+  assert.match(presence, /body:not\(\.tut-live\):not\(\.tut-post\) \.tut-back-btn \{ display:none !important; \}/);
   assert.doesNotThrow(() => new Function(tutorialClient));
 });

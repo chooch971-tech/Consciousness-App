@@ -217,6 +217,39 @@ async function testReturningAccountSkipsTutorial(browser, baseUrl) {
   await context.close();
 }
 
+async function testTutorialBackToWelcome(browser, baseUrl) {
+  const context = await browser.newContext({ viewport: { width: 390, height: 844 }, hasTouch: true, serviceWorkers: 'block' });
+  const page = await context.newPage();
+  page.setDefaultTimeout(10000);
+  const errors = [];
+  page.on('pageerror', error => errors.push(error.message));
+  await page.goto(baseUrl + '/presence.html?tutorial-back=' + Date.now(), { waitUntil: 'domcontentloaded' });
+  await page.waitForFunction(() => document.getElementById('welcomeScreen').classList.contains('wlc-vis') && typeof window.__tutReplay === 'function');
+  // Startup performs its final stale-overlay cleanup at 1s. The real splash
+  // still covers Welcome then; wait it out before simulating a human tap.
+  await page.waitForTimeout(1100);
+
+  await page.locator('#welcomeBeginBtn').click();
+  await page.waitForFunction(() => document.body.classList.contains('tut-live')
+    && getComputedStyle(document.getElementById('tutBackBtn')).display !== 'none');
+  await page.locator('#tutBackBtn').click();
+  await page.waitForFunction(() => document.getElementById('welcomeScreen').classList.contains('wlc-vis')
+    && !document.body.classList.contains('tut-live'));
+
+  const returned = await page.evaluate(() => ({
+    tutorialVisited: localStorage.getItem('presence_visited'),
+    welcomeSeen: localStorage.getItem('presence_welcome_seen'),
+    tutorialRunning: !!window.__tutInProgress,
+    welcomeVisible: document.getElementById('welcomeScreen').classList.contains('wlc-vis')
+  }));
+  assert.equal(returned.tutorialVisited, null, 'back from the opening tutorial screen must not count as completion');
+  assert.equal(returned.welcomeSeen, null, 'back re-arms Welcome if the page is refreshed');
+  assert.equal(returned.tutorialRunning, false, 'back stops the tutorial runtime');
+  assert.equal(returned.welcomeVisible, true, 'back restores the account/sign-in choice');
+  assert.deepEqual(errors, [], 'tutorial opening back navigation emitted browser errors');
+  await context.close();
+}
+
 async function testGeneratorMastery(browser, baseUrl) {
   const omnia = {
     akasha: 1_000_000, darkMatter: 100_000, lastTick: Date.now(),
@@ -1139,6 +1172,9 @@ async function testCloudRestoreAndSignOut(browser, baseUrl) {
     console.log('run - returning account tutorial guard');
     await testReturningAccountSkipsTutorial(browser, baseUrl);
     console.log('ok - existing accounts restore without replaying the tutorial');
+    console.log('run - tutorial opening back navigation');
+    await testTutorialBackToWelcome(browser, baseUrl);
+    console.log('ok - tutorial back returns accidental Begin taps to Welcome');
     console.log('run - exercise entry');
     await testExerciseEntry(browser, baseUrl);
     console.log('ok - exercise cards open complete setup screens');
