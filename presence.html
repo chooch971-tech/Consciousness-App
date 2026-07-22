@@ -639,6 +639,8 @@
     .aset-row__chevron { color:var(--muted); opacity:.55; font-size:16px; flex-shrink:0; margin-left:-2px; }
     .aset-row--danger { color:#c47a7a; }
     .aset-row--danger .aset-row__icon { background:rgba(196,122,122,.13); }
+    .aset-select { width:100%; box-sizing:border-box; background:rgba(0,0,0,.25); border:1px solid var(--border); border-radius:6px; color:var(--text); font-family:'DM Mono',monospace; font-size:11px; padding:10px 34px 10px 12px; outline:none; -webkit-appearance:none; appearance:none; cursor:pointer; background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23a29c8c' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E"); background-repeat:no-repeat; background-position:right 12px center; background-size:14px; }
+    .aset-select:focus { border-color:rgba(126,184,164,.4); }
     .aset-toggle { position:relative; width:42px; height:24px; border-radius:12px; background:rgba(255,255,255,.12); flex-shrink:0; transition:background .2s; }
     .aset-toggle::after { content:''; position:absolute; top:3px; left:3px; width:18px; height:18px; border-radius:50%; background:#e8e0d0; transition:transform .2s; }
     .aset-toggle.on { background:rgba(126,184,164,.55); }
@@ -5920,6 +5922,34 @@ body:not(.tut-live) #tutCorgi {
           <div id="customAudSoundList"></div>
         </div>
 
+        <div id="tcBufferBlock" style="background:rgba(255,255,255,.03); border:1px solid var(--border); border-radius:10px; padding:16px 18px;">
+          <div style="font-size:12px; color:var(--text); margin-bottom:4px;">Start buffer</div>
+          <div style="font-size:10px; color:var(--muted); line-height:1.6; margin-bottom:14px;">A pause to settle in before the timer starts. Applies to all three disciplines — Observation, Focus, and Vacancy.</div>
+          <select class="aset-select" id="tcBufferSelect">
+            <option value="0">Off</option>
+            <option value="1">1 second</option>
+            <option value="2">2 seconds</option>
+            <option value="3">3 seconds</option>
+            <option value="5">5 seconds</option>
+            <option value="7">7 seconds</option>
+            <option value="10">10 seconds</option>
+          </select>
+        </div>
+
+        <div id="asanaBufferBlock" style="background:rgba(255,255,255,.03); border:1px solid var(--border); border-radius:10px; padding:16px 18px;">
+          <div style="font-size:12px; color:var(--text); margin-bottom:4px;">Start buffer</div>
+          <div style="font-size:10px; color:var(--muted); line-height:1.6; margin-bottom:14px;">A pause to settle into position before the timer starts.</div>
+          <select class="aset-select" id="asanaBufferSelect">
+            <option value="0">Off</option>
+            <option value="1">1 second</option>
+            <option value="2">2 seconds</option>
+            <option value="3">3 seconds</option>
+            <option value="5">5 seconds</option>
+            <option value="7">7 seconds</option>
+            <option value="10">10 seconds</option>
+          </select>
+        </div>
+
         <button id="settingsResetAwareness" class="aset-row aset-row--danger">
           <span class="aset-row__icon">↺</span><span class="aset-row__label">Reset Awareness Progress</span>
         </button>
@@ -8003,6 +8033,11 @@ body:not(.tut-live) #tutCorgi {
     </div>
     <div style="padding:0 24px max(env(safe-area-inset-bottom),28px); text-align:center;">
       <div style="font-size:9px; letter-spacing:.15em; color:var(--muted); opacity:.35;">sit motionless · breathe naturally</div>
+    </div>
+    <!-- Countdown overlay -->
+    <div id="asanaCountdownOverlay" style="display:none; position:absolute; inset:0; z-index:50; background:var(--bg); flex-direction:column; align-items:center; justify-content:center; text-align:center;">
+      <div style="font-size:9px; letter-spacing:.3em; text-transform:uppercase; color:var(--muted); margin-bottom:24px;">settle into position</div>
+      <div id="asanaCountdownNum" style="font-family:Cormorant Garamond,serif; font-size:120px; font-weight:300; color:#7eb8a4; line-height:1;"></div>
     </div>
   </div>
 

@@ -6,6 +6,34 @@
 var tcMode = 'observation'; // 'observation' | 'focus' | 'vacancy'
 var tcDuration = 5; // minutes
 
+// ── Start buffer (Settings → Thought Control) — one setting shared by all
+// three disciplines, since they all start through startThoughtControl(). ──
+var TC_START_BUFFER_DEFAULT = 3;
+var TC_START_BUFFER_OPTIONS = [0,1,2,3,5,7,10];
+function getTCStartBuffer() {
+  var raw = Number(typeof concState !== 'undefined' && concState && concState.tcStartBuffer);
+  if (!Number.isFinite(raw) || TC_START_BUFFER_OPTIONS.indexOf(raw) === -1) return TC_START_BUFFER_DEFAULT;
+  return raw;
+}
+function setTCStartBuffer(val) {
+  var next = Number(val);
+  if (TC_START_BUFFER_OPTIONS.indexOf(next) === -1) next = TC_START_BUFFER_DEFAULT;
+  concState.tcStartBuffer = next;
+  saveConcState();
+}
+function syncTCBufferSelect() {
+  var sel = document.getElementById('tcBufferSelect');
+  if (sel) sel.value = String(getTCStartBuffer());
+}
+function _wireTCBufferSelect() {
+  var sel = document.getElementById('tcBufferSelect');
+  if (!sel) return;
+  syncTCBufferSelect();
+  sel.addEventListener('change', function() { setTCStartBuffer(this.value); });
+}
+if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', _wireTCBufferSelect);
+else _wireTCBufferSelect();
+
 var TC_MODE_DEFS = {
   observation: {
     label: 'Observation',
@@ -92,6 +120,8 @@ var tcDurationSec = 600;
 var tcIntrusions = [];  // timestamps of each thought tap
 var tcLastTapTime = null;
 var _tcAlarmInterval = null;  // loops the alarm until dismissed
+var _tcCountInterval = null;  // the pre-session countdown tick, so discard can cancel it
+var _tcCountBeginTimer = null;  // the 900ms pause after "1" before the session actually begins
 var _tcCompletedElapsed = 0;  // elapsed seconds saved for dismissal
 var tcResultElapsedSec = 0;
 var tcResultSaved = false;
@@ -180,11 +210,23 @@ function startThoughtControl() {
   showScreen('tcSessionScreen');
   requestExerciseWakeLock();
 
-  // 3-second countdown before session starts
+  // Configurable countdown before the session starts (Settings → Thought
+  // Control → Start Buffer). One setting for all three disciplines, since
+  // they all pass through this same start path.
   var overlay = document.getElementById('tcCountdownOverlay');
   var numEl = document.getElementById('tcCountdownNum');
+  var count = getTCStartBuffer();
+
+  function beginTCSession() {
+    overlay.style.display = 'none';
+    numEl.style.animation = 'none';
+    tcStartTime = Date.now();
+    tcLastTapTime = tcStartTime;
+    tickTCTimer();
+  }
+
+  if (count <= 0) { beginTCSession(); return; }
   overlay.style.display = 'flex';
-  var count = 3;
 
   function showCountNum(n) {
     numEl.textContent = n;
@@ -194,17 +236,12 @@ function startThoughtControl() {
   }
 
   showCountNum(count);
-  var cdInterval = setInterval(function() {
+  _tcCountInterval = setInterval(function() {
     count--;
     if (count <= 0) {
-      clearInterval(cdInterval);
-      setTimeout(function() {
-        overlay.style.display = 'none';
-        numEl.style.animation = 'none';
-        tcStartTime = Date.now();
-        tcLastTapTime = tcStartTime;
-        tickTCTimer();
-      }, 900);
+      clearInterval(_tcCountInterval);
+      _tcCountInterval = null;
+      _tcCountBeginTimer = setTimeout(beginTCSession, 900);
     } else {
       showCountNum(count);
     }

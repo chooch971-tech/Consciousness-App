@@ -1879,6 +1879,13 @@ function discardSession(type, _c) {
       cancelAnimationFrame(tcTimerHandle);
       clearInterval(_tcAlarmInterval);
       _tcAlarmInterval = null;
+      // A discard mid pre-session-countdown must cancel the pending
+      // interval/timer too, or the session silently begins in the
+      // background after the user has already left the screen.
+      clearInterval(_tcCountInterval);
+      _tcCountInterval = null;
+      clearTimeout(_tcCountBeginTimer);
+      _tcCountBeginTimer = null;
       tcStartTime = null;
       var tco = document.getElementById('tcTimesUpOverlay');
       if (tco) tco.style.display = 'none';
@@ -1891,6 +1898,15 @@ function discardSession(type, _c) {
       clearTimeout(asanaTimerHandle);
       asanaTimerHandle = null;
       asanaStartTime = null;
+      // A discard mid pre-session-countdown must cancel the pending
+      // interval/timer too, or the session silently begins in the
+      // background after the user has already left the screen.
+      clearInterval(_asanaCountInterval);
+      _asanaCountInterval = null;
+      clearTimeout(_asanaCountBeginTimer);
+      _asanaCountBeginTimer = null;
+      var asc = document.getElementById('asanaCountdownOverlay');
+      if (asc) asc.style.display = 'none';
       releaseExerciseWakeLock();
       showScreen('homeScreen');
       switchMode('concentration');

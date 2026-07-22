@@ -17,6 +17,35 @@ var asanaTimerHandle = null;
 var asanaSeconds = 0;
 var asanaTargetSeconds = 300;
 var currentAsanaPosture = 'seated';
+var _asanaCountInterval = null;    // the pre-session countdown tick, so discard can cancel it
+var _asanaCountBeginTimer = null;  // the 900ms pause after "1" before the session actually begins
+
+// ── Start buffer (Settings → Asana) ──
+var ASANA_START_BUFFER_DEFAULT = 3;
+var ASANA_START_BUFFER_OPTIONS = [0,1,2,3,5,7,10];
+function getAsanaStartBuffer() {
+  var raw = Number(typeof concState !== 'undefined' && concState && concState.asanaStartBuffer);
+  if (!Number.isFinite(raw) || ASANA_START_BUFFER_OPTIONS.indexOf(raw) === -1) return ASANA_START_BUFFER_DEFAULT;
+  return raw;
+}
+function setAsanaStartBuffer(val) {
+  var next = Number(val);
+  if (ASANA_START_BUFFER_OPTIONS.indexOf(next) === -1) next = ASANA_START_BUFFER_DEFAULT;
+  concState.asanaStartBuffer = next;
+  saveConcState();
+}
+function syncAsanaBufferSelect() {
+  var sel = document.getElementById('asanaBufferSelect');
+  if (sel) sel.value = String(getAsanaStartBuffer());
+}
+function _wireAsanaBufferSelect() {
+  var sel = document.getElementById('asanaBufferSelect');
+  if (!sel) return;
+  syncAsanaBufferSelect();
+  sel.addEventListener('change', function() { setAsanaStartBuffer(this.value); });
+}
+if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', _wireAsanaBufferSelect);
+else _wireAsanaBufferSelect();
 
 function fmtAsanaTime(sec) {
   var m = Math.floor(sec / 60), s = sec % 60;
@@ -57,14 +86,47 @@ function startAsana() {
   var durMin = guideAsanaStats().qualTarget || 5;
   asanaTargetSeconds = durMin * 60;
   asanaSeconds = 0;
-  asanaStartTime = Date.now();
   var el = document.getElementById('asanaTimerDisplay');
   if (el) el.textContent = fmtAsanaTime(asanaTargetSeconds);
   var stateEl = document.getElementById('asanaStateLabel');
   if (stateEl) stateEl.textContent = 'be still';
   showScreen('asanaSessionScreen');
   requestExerciseWakeLock();
-  tickAsana();
+
+  // Configurable countdown before the timer starts (Settings → Asana →
+  // Start Buffer) — a moment to settle into position first.
+  var overlay = document.getElementById('asanaCountdownOverlay');
+  var numEl = document.getElementById('asanaCountdownNum');
+  var count = getAsanaStartBuffer();
+
+  function beginAsanaSession() {
+    if (overlay) overlay.style.display = 'none';
+    if (numEl) numEl.style.animation = 'none';
+    asanaStartTime = Date.now();
+    tickAsana();
+  }
+
+  if (count <= 0 || !overlay || !numEl) { beginAsanaSession(); return; }
+  overlay.style.display = 'flex';
+
+  function showCountNum(n) {
+    numEl.textContent = n;
+    numEl.style.animation = 'none';
+    void numEl.offsetWidth; // force reflow so animation restarts cleanly
+    numEl.style.animation = 'tcCountPop 1s ease forwards';
+  }
+
+  showCountNum(count);
+  _asanaCountInterval = setInterval(function() {
+    count--;
+    if (count <= 0) {
+      clearInterval(_asanaCountInterval);
+      _asanaCountInterval = null;
+      _asanaCountBeginTimer = setTimeout(beginAsanaSession, 900);
+    } else {
+      showCountNum(count);
+    }
+  }, 1000);
 }
 
 function tickAsana() {

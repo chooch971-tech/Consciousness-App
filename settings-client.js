@@ -234,7 +234,6 @@ var EXERCISE_SETTINGS_LIST = [
   { id:'thought',    name:'Thought Control',          icon:'◌',  tint:'rgba(152,180,204,.16)', group:'conc' },
   { id:'asana',      name:'Asana',                    icon:'🧘', tint:'rgba(196,120,120,.16)', group:'conc' },
   { id:'multisense', name:'Multi-Sense Visualization',icon:'🎴', tint:'rgba(110,159,212,.16)', group:'conc' },
-  { id:'allangles',  name:'All-Angles Visualization', icon:'🔄', tint:'rgba(110,159,212,.16)', group:'conc' },
   { id:'awareness',  name:'Awareness',                icon:'◉',  tint:'rgba(126,184,164,.16)', group:'practice' },
   { id:'prayer',     name:'Prayer',                   icon:'✦',  tint:'rgba(196,168,212,.16)', group:'practice' },
   { id:'soulmirror', name:'Soul Mirror',              icon:'◆',  tint:'rgba(164,126,184,.16)', group:'practice' },
@@ -245,6 +244,8 @@ var EXERCISE_SETTINGS_LIST = [
 var EXSET_BLOCKS = {
   visual:    [{ block:'visImagesBlock', header:'Custom Images' }],
   auditory:  [{ block:'audSoundsBlock', header:'Custom Sounds' }],
+  thought:   [{ block:'tcBufferBlock', header:'Session Start' }],
+  asana:     [{ block:'asanaBufferBlock', header:'Session Start' }],
   awareness: [{ block:'settingsResetAwareness', header:'Reset', card:true, danger:true }],
   prayer:    [{ block:'settingsResetPrayer', header:'Reset', card:true, danger:true }]
 };
@@ -261,7 +262,7 @@ function _asetRowHTML(ex) {
 function _parkSettingsBlocks() {
   var park = document.getElementById('settingsParking');
   if (!park) return;
-  ['acctSyncBlock','visImagesBlock','audSoundsBlock','settingsResetAwareness','settingsResetConc','settingsResetPrayer'].forEach(function(bid) {
+  ['acctSyncBlock','visImagesBlock','audSoundsBlock','tcBufferBlock','asanaBufferBlock','settingsResetAwareness','settingsResetConc','settingsResetPrayer'].forEach(function(bid) {
     var el = document.getElementById(bid);
     if (el && el.parentNode !== park) park.appendChild(el);
   });
@@ -339,6 +340,11 @@ function openExerciseSettings(id) {
       if (mount && blk) mount.appendChild(blk);
     });
   }
+  // The buffer selects are only re-created once (at DOMContentLoaded); refresh
+  // their displayed value here in case concState changed since (e.g. a cloud
+  // sync pull) while this screen wasn't open to catch the update itself.
+  if (id === 'thought' && typeof syncTCBufferSelect === 'function') syncTCBufferSelect();
+  if (id === 'asana' && typeof syncAsanaBufferSelect === 'function') syncAsanaBufferSelect();
   body.scrollTop = 0;
   showScreen('exerciseSettingsScreen');
 }
