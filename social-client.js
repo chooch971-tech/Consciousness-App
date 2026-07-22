@@ -645,18 +645,14 @@ document.getElementById('lodgeProfileLink').addEventListener('click', openLodgeU
       setTimeout(function() { screen.style.transition = ''; }, 180);
       return;
     }
-    screen.style.transition = 'transform .16s ease';
-    screen.style.transform = 'translateX(56px)';
-    setTimeout(function() {
-      if (!closeLodgePostDetail()) openLodge();
-      screen.style.transition = 'none';
-      screen.style.transform = 'translateX(-20px)';
-      requestAnimationFrame(function() {
-        screen.style.transition = 'transform .2s ease';
-        screen.style.transform = '';
-        setTimeout(function() { screen.style.transition = ''; }, 200);
-      });
-    }, 160);
+    // The card's own FLIP glide (in closeLodgePostDetail) now carries the
+    // motion, so the screen just eases back to rest from wherever the drag
+    // left it — no more slide-out/snap/slide-in relay, which fought the
+    // FLIP and read as a stutter instead of one continuous release.
+    screen.style.transition = 'transform .22s cubic-bezier(.22,.9,.32,1)';
+    screen.style.transform = '';
+    if (!closeLodgePostDetail()) openLodge();
+    setTimeout(function() { screen.style.transition = ''; }, 220);
   }, {passive:true});
   document.addEventListener('touchcancel', function() {
     start = null;
