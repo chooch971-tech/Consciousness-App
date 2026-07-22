@@ -152,16 +152,28 @@
     if (!key) return false;
     const state = load(storage);
     const day = state.days[key] || (state.days[key] = { events: {} });
-    const assigned = [];
-    const completed = [];
+    const previous = day.plan && typeof day.plan === 'object' ? day.plan : null;
+    // A Guide plan is a commitment for that day, not a moving target. Earlier
+    // Review snapshots were replaced whenever the adaptive Guide changed an
+    // exercise, which could erase a completion from the follow-through score.
+    // Rebuild legacy snapshots once, then preserve the first captured list.
+    const frozen = !!(previous && previous.frozen);
+    const assigned = frozen && Array.isArray(previous.assigned) ? previous.assigned.slice() : [];
+    const completed = frozen && Array.isArray(previous.completed)
+      ? previous.completed.filter(id => assigned.includes(id)) : [];
     items.forEach(item => {
       const id = String(item.id || item.mode || item.tcMode || '').slice(0, 40);
-      if (!id || assigned.includes(id)) return;
-      assigned.push(id);
-      if (item.done || item.sessionDone) completed.push(id);
+      if (!id) return;
+      if (!frozen && !assigned.includes(id)) assigned.push(id);
+      if (!assigned.includes(id)) return;
+      // The Guide displays a timed practice as done once its required daily
+      // session count is met, even when the session ended before the full
+      // recommended duration. Practice Review must use the same definition;
+      // otherwise real Guide completions are recorded as follow-through misses.
+      if ((item.done || item.sessionDone) && !completed.includes(id)) completed.push(id);
     });
-    const before = JSON.stringify(day.plan || null);
-    day.plan = { assigned, completed };
+    const before = JSON.stringify(previous || null);
+    day.plan = { assigned, completed, frozen: true };
     if (JSON.stringify(day.plan) === before) return false;
     save(storage, state);
     return true;

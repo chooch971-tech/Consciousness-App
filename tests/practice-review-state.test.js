@@ -45,12 +45,34 @@ test('backfill is idempotent and current Guide completion is snapshotted by day'
   Review.backfill(storage,{awareness});
   Review.capturePlan(storage,new Date(2026,6,21),[
     {id:'clock',done:true},
-    {id:'visual',done:false}
+    {id:'visual',done:false},
+    {id:'thought',done:false,sessionDone:true}
   ]);
 
   const summary = Review.summarize(storage,new Date(2026,6,21),new Date(2026,6,22));
   assert.equal(summary.sessions,1);
+  assert.deepEqual(summary.plan,{assigned:3,completed:2,days:1});
+});
+
+test('daily follow-through freezes its initial Guide assignments while later captures add completions', () => {
+  const storage = memoryStorage();
+  const day = new Date(2026, 6, 22);
+  Review.capturePlan(storage, day, [
+    {id:'clock',done:false},
+    {id:'thought',done:false}
+  ]);
+  // The adaptive Guide may recommend something new after Clock is completed.
+  // It must not replace today's commitment or discard its completion.
+  Review.capturePlan(storage, day, [
+    {id:'clock',done:false,sessionDone:true},
+    {id:'visual',done:false}
+  ]);
+
+  const summary = Review.summarize(storage, day, new Date(2026, 6, 23));
   assert.deepEqual(summary.plan,{assigned:2,completed:1,days:1});
+  assert.deepEqual(Review.load(storage).days['2026-07-22'].plan, {
+    assigned:['clock','thought'], completed:['clock'], frozen:true
+  });
 });
 
 test('older detail rolls into lifetime totals without growing the sync payload forever', () => {

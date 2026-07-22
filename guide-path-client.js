@@ -2029,6 +2029,12 @@ function renderGuidePlan(mode, skipScroll) {
   var dayIdx = new Date().getDay(); // 0–6
 
   var items = buildGuideRegimentItems(regiment.selectedMode);
+  // Capture the day's initial Guide commitment before rendering. Practice
+  // Review then tracks completion against this stable list even if adaptive
+  // recommendations evolve after a session.
+  if (window.PresencePracticeReview) {
+    try { PresencePracticeReview.capturePlan(localStorage, new Date(), items); } catch(e) {}
+  }
   // An exercise whose day's sessions were completed (even if ended early) shows
   // as done on the Path — display only; body-award logic uses the untouched flag.
   items.forEach(function(it) { if (it.sessionDone) it.done = true; });
