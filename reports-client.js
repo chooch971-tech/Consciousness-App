@@ -10,19 +10,23 @@ var currentReportPeriod = 'weekly';
 var reportOffset = 0;
 var _reviewRequestSerial = 0;
 
+// Icons and colors mirror the Guide Path exercise cards (guide-quests-client.js
+// exIcon/exColor) so a discipline reads the same wherever it appears. Entries
+// with no Guide Path card of their own (awareness, prayer, autosuggestion,
+// all-angles, multi-sense) borrow the nearest established app color instead.
 var REVIEW_PRACTICES = {
-  awareness:      { label:'Awareness', icon:'◎', color:'green', metric:null },
-  clock:          { label:'Clock', icon:'⊙', color:'amber', metric:'hold' },
-  thought:        { label:'Thought Control', icon:'◌', color:'amber', metric:'hold' },
-  visualization:  { label:'Visualization', icon:'◉', color:'blue', metric:'hold' },
-  auditory:       { label:'Auditory', icon:'◈', color:'blue', metric:'hold' },
-  asana:          { label:'Asana', icon:'✦', color:'amber', metric:'duration' },
-  pore_breathing: { label:'Pore Breathing', icon:'❂', color:'green', metric:'breaths' },
-  prayer:         { label:'Prayer', icon:'☽', color:'purple', metric:null },
-  autosuggestion: { label:'Autosuggestion', icon:'✱', color:'purple', metric:'taps' },
-  senses:         { label:'Senses', icon:'◇', color:'blue', metric:'duration' },
-  'all-angles':   { label:'All Angles', icon:'◇', color:'blue', metric:'duration' },
-  'multi-sense':  { label:'Multi-Sense', icon:'◇', color:'blue', metric:'duration' }
+  awareness:      { label:'Awareness', icon:'◎', color:'#7eb8a4', metric:null },
+  clock:          { label:'Clock', icon:'⊙', color:'#d4b08e', metric:'hold' },
+  thought:        { label:'Thought Control', icon:'◌', color:'#98b4cc', metric:'hold' },
+  visualization:  { label:'Visualization', icon:'◉', color:'#8ab8e0', metric:'hold' },
+  auditory:       { label:'Auditory', icon:'◈', color:'#8eccc0', metric:'hold' },
+  asana:          { label:'Asana', icon:'✦', color:'#d49898', metric:'duration' },
+  pore_breathing: { label:'Pore Breathing', icon:'≋', color:'#8ecce0', metric:'breaths' },
+  prayer:         { label:'Prayer', icon:'☽', color:'#c4a8d4', metric:null },
+  autosuggestion: { label:'Autosuggestion', icon:'✱', color:'#c4a8d4', metric:'taps' },
+  sense:          { label:'Senses', icon:'✺', color:'#e0a8c4', metric:'duration' },
+  'all-angles':   { label:'All Angles', icon:'◇', color:'#8ab8e0', metric:'duration' },
+  'multi-sense':  { label:'Multi-Sense', icon:'◇', color:'#8ab8e0', metric:'duration' }
 };
 
 function reviewDayStart(value) {
@@ -197,7 +201,7 @@ function reviewPracticeRows(summary, previous) {
   var rows = practices.map(function(key) {
     var current = summary.byPractice[key];
     var prior = previous && previous.byPractice ? previous.byPractice[key] : null;
-    var meta = REVIEW_PRACTICES[key] || { label:key.replace(/_/g,' '), icon:'·', color:'blue', metric:'duration' };
+    var meta = REVIEW_PRACTICES[key] || { label:key.replace(/_/g,' '), icon:'·', color:'#8ab8e0', metric:'duration' };
     var metric = meta.metric && current.best > 0
       ? '<span>Best ' + reviewMetricText(key,current.best) + (current.typical > 0 && current.typical !== current.best ? ' · typical ' + reviewMetricText(key,current.typical) : '') + '</span>'
       : '<span>' + reviewSeconds(current.seconds) + ' practiced</span>';
@@ -206,7 +210,7 @@ function reviewPracticeRows(summary, previous) {
       change = reviewSigned(current.best - prior.best, function(value){ return reviewMetricText(key,value); });
     }
     return '<div class="review-practice-row">'
-      + '<div class="review-practice-icon review-practice-icon--' + meta.color + '">' + meta.icon + '</div>'
+      + '<div class="review-practice-icon" style="background:' + meta.color + '1e;border-color:' + meta.color + '38;color:' + meta.color + ';">' + meta.icon + '</div>'
       + '<div class="review-practice-main"><div class="review-practice-title">' + escHtml(meta.label) + '<small>' + current.sessions + ' session' + (current.sessions === 1 ? '' : 's') + '</small></div>'
       + '<div class="review-practice-meta">' + metric + change + '</div>'
       + '<div class="review-practice-track"><i style="width:' + Math.max(4,current.seconds/maxSeconds*100).toFixed(0) + '%"></i></div></div>'
@@ -435,8 +439,8 @@ function reviewJournalHtml(count) {
 function reviewLifetimeHtml(summary, reflections) {
   var lifetimeSessions = Math.max(summary.sessions,(state.totalSessions||0)+(concState.totalSessions||0));
   var rows = Object.keys(summary.byPractice||{}).filter(function(key){return summary.byPractice[key].best>0;}).map(function(key){
-    var meta=REVIEW_PRACTICES[key]||{label:key,icon:'·',color:'blue'};
-    return '<div class="review-record-row"><span class="review-practice-icon review-practice-icon--'+meta.color+'">'+meta.icon+'</span><span><b>'+escHtml(meta.label)+'</b><small>Personal best</small></span><strong>'+reviewMetricText(key,summary.byPractice[key].best)+'</strong></div>';
+    var meta=REVIEW_PRACTICES[key]||{label:key,icon:'·',color:'#8ab8e0'};
+    return '<div class="review-record-row"><span class="review-practice-icon" style="background:'+meta.color+'1e;border-color:'+meta.color+'38;color:'+meta.color+';">'+meta.icon+'</span><span><b>'+escHtml(meta.label)+'</b><small>Personal best</small></span><strong>'+reviewMetricText(key,summary.byPractice[key].best)+'</strong></div>';
   }).join('');
   return '<div class="review-lifetime-note">A quiet record of the practice preserved on this account.</div>'
     + '<div class="review-hero review-hero--lifetime">'

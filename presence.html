@@ -2694,11 +2694,9 @@
     .review-quality-track { grid-column:1/-1; height:3px; border-radius:2px; overflow:hidden; background:rgba(255,255,255,.055); }
     .review-quality-track i { display:block; height:100%; border-radius:2px; background:linear-gradient(90deg,rgba(126,184,164,.4),#9ed8c0); }
     .review-practice-row { display:flex; gap:11px; align-items:flex-start; padding:13px 14px; }
+    /* Icon color/background/border are set inline per-practice (reports-client.js
+       REVIEW_PRACTICES), mirroring the Guide Path exercise card colors. */
     .review-practice-icon { width:30px; height:30px; flex:0 0 30px; display:flex; align-items:center; justify-content:center; border-radius:9px; border:1px solid; font-size:13px; }
-    .review-practice-icon--green { color:#9ed8c0; background:rgba(126,184,164,.10); border-color:rgba(126,184,164,.28); }
-    .review-practice-icon--amber { color:#e8b88a; background:rgba(212,149,110,.10); border-color:rgba(212,149,110,.28); }
-    .review-practice-icon--purple { color:#cdbcf0; background:rgba(155,142,196,.10); border-color:rgba(155,142,196,.28); }
-    .review-practice-icon--blue { color:#bcd8f2; background:rgba(168,200,232,.10); border-color:rgba(168,200,232,.28); }
     .review-practice-main { flex:1; min-width:0; }
     .review-practice-title { display:flex; align-items:baseline; justify-content:space-between; gap:8px; font:15px 'Cormorant Garamond',serif; color:var(--text); }
     .review-practice-title small { flex-shrink:0; font:7.5px 'DM Mono',monospace; color:var(--muted); }
