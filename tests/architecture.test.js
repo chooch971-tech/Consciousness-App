@@ -251,13 +251,16 @@ test('shared app preferences load through their own late runtime boundary', () =
 test('top-level drawer screens reveal the open drawer during swipe-back', () => {
   assert.match(presence, /var revealsDrawer = prevIsHome && !!window\._returnToDrawer/);
   assert.match(presence, /if \(prevIsHome\) window\._returnToDrawer = false;/);
-  assert.match(presence, /function showLiveDrawerPreview\(host\)[\s\S]*?host\.appendChild\(drawer\)[\s\S]*?classList\.add\('drawer-instant', 'swipe-back-live', 'show'\)/);
-  assert.match(presence, /\.drawer-overlay\.swipe-back-live \{ position:absolute; z-index:2; pointer-events:none; transition:none; \}/);
-  assert.match(presence, /\.drawer-overlay\.swipe-back-live \.drawer \{ z-index:2; transition:none; \}/);
-  assert.match(presence, /var drawerPreview = revealsDrawer \? showLiveDrawerPreview\(prevEl\) : null/);
+  assert.match(presence, /function showLiveDrawerPreview\(\)[\s\S]*?classList\.add\('drawer-instant', 'swipe-back-live', 'show'\)/);
+  assert.match(presence, /\.drawer-overlay\.swipe-back-live \{ position:fixed; z-index:20; pointer-events:none; transition:none; \}/);
+  assert.match(presence, /\.drawer-overlay\.swipe-back-live \.drawer \{ position:absolute; z-index:1; transition:none; \}/);
+  assert.match(presence, /var drawerPreview = revealsDrawer \? showLiveDrawerPreview\(\) : null/);
   assert.match(presence, /screenEl\.style\.zIndex = '21'/);
   assert.match(presence, /function releaseLiveDrawerPreview\(drawer, keepOpen\)/);
-  assert.match(presence, /drawer\._swipeHostParent[\s\S]*?parent\.insertBefore\(drawer, next\)/);
+  assert.doesNotMatch(presence, /_swipeHostParent|_swipeHostNext|appendChild\(drawer\)|insertBefore\(drawer/);
+  assert.match(presence, /function queueUpdate\(x\)[\s\S]*?sw\.frame = requestAnimationFrame\(function\(\) \{ paintUpdate\(sw\.nextX\); \}\)/);
+  assert.match(presence, /if \(sw\.dragging\) \{ queueUpdate\(e\.touches\[0\]\.clientX\); return; \}/);
+  assert.match(presence, /function flushUpdate\(x\)[\s\S]*?cancelAnimationFrame\(sw\.frame\)/);
   assert.match(presence, /function afterSwipePaint\(duration, callback\)[\s\S]*?setTimeout\(function\(\) \{[\s\S]*?requestAnimationFrame\(function\(\) \{[\s\S]*?requestAnimationFrame\(callback\)/);
   assert.doesNotMatch(presence.slice(presence.indexOf('// ── iOS-style interactive swipe-back'), presence.indexOf('// ══════════════════════════════════════════════════════\n// PORE BREATHING')), /cloneNode|getComputedStyle\(pair\[0\]\)|mirrorFrame/);
   assert.match(presence, /function openDrawer\(instant, preserveGuideAnimation\)/);
@@ -287,6 +290,10 @@ test('top-level drawer screens reveal the open drawer during swipe-back', () => 
   assert.match(awarenessClient, /drawer\.classList\.remove\('show', 'swipe-back-live'\)/);
   assert.match(profileClient, /function friendProfilePreviousScreen\(\)/);
   assert.match(profileClient, /window\._interactiveSwipeBackScreenId !== 'friendProfileScreen'/);
+  assert.match(awarenessClient, /function renderHomeForNavigation\(\)[\s\S]*?requestIdleCallback\(refresh, \{ timeout: 500 \}\)/);
+  assert.match(journalClient, /journalBack[\s\S]*?renderHomeForNavigation\(\)/);
+  assert.match(reportsClient, /reportsBack[\s\S]*?renderHomeForNavigation\(\)/);
+  assert.match(settingsClient, /settingsBack[\s\S]*?renderHomeForNavigation\(\)/);
 });
 
 test('Visualization and the shared exercise gateway load before Auditory', () => {

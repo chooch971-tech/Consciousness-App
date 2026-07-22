@@ -1166,6 +1166,27 @@ function renderHome() {
   }
 }
 
+// Top-level menu screens normally refresh Home before returning to it. During
+// an interactive edge swipe, doing that synchronous work in the animation's
+// handoff frame can visibly stall the drawer. The already-painted Home remains
+// correct beneath the gesture; refresh its dynamic values just after the
+// compositor has finished the transition instead.
+function renderHomeForNavigation() {
+  if (!window._interactiveSwipeBackScreenId) {
+    renderHome();
+    return;
+  }
+  var refresh = function() {
+    var home = document.getElementById('homeScreen');
+    if (home && home.style.display === 'flex') renderHome();
+  };
+  if (typeof requestIdleCallback === 'function') {
+    requestIdleCallback(refresh, { timeout: 500 });
+  } else {
+    setTimeout(refresh, 80);
+  }
+}
+
 // ═══════════════════════════════════════
 // SESSION
 // ═══════════════════════════════════════

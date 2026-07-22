@@ -503,7 +503,7 @@ function openJournalFromReview() {
   document.addEventListener('click',function(event){if(!event.target.closest('#reportPeriodMenu')&&!event.target.closest('#reportFilterBtn'))menu.style.display='none';});
   document.getElementById('reportNavPrev').addEventListener('click',function(){if(currentReportPeriod==='yearly')return;reportOffset--;renderReport(currentReportPeriod);});
   document.getElementById('reportNavNext').addEventListener('click',function(){if(currentReportPeriod==='yearly'||reportOffset>=0)return;reportOffset++;renderReport(currentReportPeriod);});
-  document.getElementById('reportsBack').addEventListener('click',function(){if(typeof renderHome==='function')renderHome();showScreen('homeScreen');});
+  document.getElementById('reportsBack').addEventListener('click',function(){if(typeof renderHomeForNavigation==='function')renderHomeForNavigation();showScreen('homeScreen');});
   document.getElementById('reportContent').addEventListener('click',function(event){
     if(event.target.closest('[data-review-guide]'))openGuideFromReview();
     if(event.target.closest('[data-review-journal]'))openJournalFromReview();

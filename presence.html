@@ -2775,10 +2775,13 @@
     .drawer { position:fixed; top:0; left:0; bottom:0; width:72%; max-width:280px; background:var(--surface); border-right:1px solid var(--border); z-index:301; transform:translateX(-100%); transition:transform .3s cubic-bezier(.4,0,.2,1); padding:var(--safe-top-lg) 0 max(env(safe-area-inset-bottom),32px); display:flex; flex-direction:column; }
     .drawer-overlay.show .drawer { transform:translateX(0); }
     /* During an edge swipe, reuse the already-rendered drawer underneath the
-       active screen. Avoiding a deep cloned preview keeps the gesture on the
-       compositor and removes a large main-thread pause on mobile. */
-    .drawer-overlay.swipe-back-live { position:absolute; z-index:2; pointer-events:none; transition:none; }
-    .drawer-overlay.swipe-back-live .drawer { z-index:2; transition:none; }
+       active screen. Keep it at the document root: moving this large subtree
+       into and out of Home forced an expensive style/layout pass at both ends
+       of every gesture on mobile. Home is layer 19, this preview is 20, and
+       the departing screen is 21. Making the child absolute also keeps WebKit
+       from independently promoting its normal fixed layer above the page. */
+    .drawer-overlay.swipe-back-live { position:fixed; z-index:20; pointer-events:none; transition:none; }
+    .drawer-overlay.swipe-back-live .drawer { position:absolute; z-index:1; transition:none; }
     .drawer-header { padding:0 24px 24px; border-bottom:1px solid var(--border); margin-bottom:8px; }
     .drawer-wordmark { font-family:Cormorant Garamond,serif; font-size:11px; font-weight:300; letter-spacing:.35em; text-transform:uppercase; color:var(--accent); }
     .drawer-level { font-size:9px; letter-spacing:.15em; color:var(--muted); margin-top:4px; }
@@ -9688,7 +9691,8 @@ startPrayerScheduler();
     screenEl: null, backBtn: null,
     prevEl: null, prevIsHome: false, overlay: null,
     drawerPreview: null,
-    startX: 0, lastX: 0, lastT: 0, velocity: 0
+    startX: 0, lastX: 0, lastT: 0, velocity: 0,
+    frame: 0, nextX: 0
   };
 
   // ── Helpers ──
@@ -9730,15 +9734,11 @@ startPrayerScheduler();
     if (!isHome) el.style.display = '';
   }
 
-  function showLiveDrawerPreview(host) {
+  function showLiveDrawerPreview() {
     var drawer = document.getElementById('drawerOverlay');
-    if (!drawer || !host) return null;
-    // Host the real drawer inside Home while swiping. A transformed Home is a
-    // containing block for fixed descendants, preventing iOS WebKit from
-    // promoting `.drawer` above the departing screen despite its parent z-index.
-    drawer._swipeHostParent = drawer.parentNode;
-    drawer._swipeHostNext = drawer.nextSibling;
-    host.appendChild(drawer);
+    if (!drawer) return null;
+    // The root-level stacking order keeps the live drawer between Home and the
+    // departing page without reparenting its large, animated DOM subtree.
     drawer.classList.add('drawer-instant', 'swipe-back-live', 'show');
     return drawer;
   }
@@ -9747,14 +9747,6 @@ startPrayerScheduler();
     if (!drawer) return;
     if (!keepOpen) drawer.classList.remove('show');
     drawer.classList.remove('swipe-back-live');
-    var parent = drawer._swipeHostParent;
-    var next = drawer._swipeHostNext;
-    if (parent) {
-      if (next && next.parentNode === parent) parent.insertBefore(drawer, next);
-      else parent.appendChild(drawer);
-    }
-    drawer._swipeHostParent = null;
-    drawer._swipeHostNext = null;
     requestAnimationFrame(function() { drawer.classList.remove('drawer-instant'); });
   }
 
@@ -9796,7 +9788,7 @@ startPrayerScheduler();
 
     showBehind(prevEl);
     var overlay = addOverlay(prevEl);
-    var drawerPreview = revealsDrawer ? showLiveDrawerPreview(prevEl) : null;
+    var drawerPreview = revealsDrawer ? showLiveDrawerPreview() : null;
 
     screenEl.style.transition = 'none';
     screenEl.style.willChange = 'transform';
@@ -9817,30 +9809,47 @@ startPrayerScheduler();
     sw.lastX      = startX;
     sw.lastT      = Date.now();
     sw.velocity   = 0;
+    sw.frame      = 0;
+    sw.nextX      = startX;
     return true;
   }
 
-  function update(x) {
+  function paintUpdate(x) {
+    if (!sw.dragging || !sw.screenEl || !sw.prevEl || !sw.overlay) return;
+    sw.frame = 0;
+    sw.nextX = x;
+    var dx       = Math.max(0, x - sw.startX);
+    var progress = Math.min(1, dx / W);
+    // Keep all gesture writes in one animation frame so bursty touchmove
+    // delivery cannot queue more layout work than the display can paint.
+    sw.screenEl.style.transform = 'translateX(' + dx + 'px)';
+    sw.prevEl.style.transform = 'translateX(' + (-28 + progress * 28) + '%)';
+    sw.overlay.style.opacity = String((1 - progress) * 0.22);
+  }
+
+  function queueUpdate(x) {
     var now = Date.now();
     var dt  = Math.max(1, now - sw.lastT);
     sw.velocity = (x - sw.lastX) / dt * 1000; // px/s
     sw.lastX = x;
     sw.lastT = now;
+    sw.nextX = x;
+    if (!sw.frame) {
+      sw.frame = requestAnimationFrame(function() { paintUpdate(sw.nextX); });
+    }
+  }
 
-    var dx       = Math.max(0, x - sw.startX);
-    var progress = Math.min(1, dx / W);
-    // Current screen slides right
-    sw.screenEl.style.transform = 'translateX(' + dx + 'px)';
-    // Previous screen slides in from -28% toward 0
-    sw.prevEl.style.transform = 'translateX(' + (-28 + progress * 28) + '%)';
-    // Overlay fades as previous screen is revealed
-    sw.overlay.style.opacity = String((1 - progress) * 0.22);
+  function flushUpdate(x) {
+    if (sw.frame) cancelAnimationFrame(sw.frame);
+    sw.frame = 0;
+    paintUpdate(x == null ? sw.nextX : x);
   }
 
   function complete() {
     var screenEl = sw.screenEl, prevEl = sw.prevEl;
     var backBtn = sw.backBtn, overlay = sw.overlay, prevIsHome = sw.prevIsHome;
     var drawerPreview = sw.drawerPreview;
+    flushUpdate();
     sw.dragging    = false;
     sw._animating  = true;
 
@@ -9908,6 +9917,7 @@ startPrayerScheduler();
     var screenEl = sw.screenEl, prevEl = sw.prevEl;
     var overlay = sw.overlay, prevIsHome = sw.prevIsHome;
     var drawerPreview = sw.drawerPreview;
+    flushUpdate();
     sw.dragging   = false;
     sw._animating = true;
 
@@ -9946,6 +9956,8 @@ startPrayerScheduler();
     sw.dragging = false;
     sw._animating = false;
     sw._pending = null;
+    if (sw.frame) cancelAnimationFrame(sw.frame);
+    sw.frame = 0;
 
     if (sw.overlay && sw.overlay.isConnected) sw.overlay.remove();
     if (sw.prevEl) {
@@ -9995,7 +10007,7 @@ startPrayerScheduler();
   }, {passive: true});
 
   document.addEventListener('touchmove', function(e) {
-    if (sw.dragging) { update(e.touches[0].clientX); return; }
+    if (sw.dragging) { queueUpdate(e.touches[0].clientX); return; }
     if (!sw._pending) return;
 
     var t  = e.touches[0];
@@ -10011,7 +10023,7 @@ startPrayerScheduler();
 
     // Rightward and horizontal — commit to swipe-back
     if (begin(sw._pending.screenEl, sw._pending.backBtn, sw._pending.x)) {
-      update(t.clientX);
+      queueUpdate(t.clientX);
     }
     sw._pending = null;
   }, {passive: true});
@@ -10020,6 +10032,7 @@ startPrayerScheduler();
     sw._pending = null;
     if (!sw.dragging) return;
     var t        = e.changedTouches[0];
+    flushUpdate(t.clientX);
     var progress = (t.clientX - sw.startX) / W;
     // Complete if dragged far enough OR flicked fast enough
     (progress > 0.38 || sw.velocity > 280) ? complete() : cancel();

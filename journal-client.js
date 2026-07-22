@@ -359,7 +359,7 @@ function journalDeleteEntry(dateKey){
 }
 
 document.getElementById('journalBack').addEventListener('click',function(){
-  renderHome();showScreen('homeScreen');
+  renderHomeForNavigation();showScreen('homeScreen');
 });
 document.getElementById('journalFab').addEventListener('click',function(){
   openJournalEntry(getJournalKey(new Date()));

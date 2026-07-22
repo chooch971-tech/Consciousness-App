@@ -223,7 +223,7 @@ document.getElementById('setDisplayNameBtn').addEventListener('click', async fun
 });
 // syncLoginBtn removed — sign-in now handled by settingsSignInWrap
 document.getElementById('settingsBack').addEventListener('click', function() {
-  renderHome(); showScreen('homeScreen');
+  renderHomeForNavigation(); showScreen('homeScreen');
 });
 
 // ── Apple-style per-exercise settings ──
@@ -539,7 +539,7 @@ document.getElementById('drawerFaq').addEventListener('click', function() {
   showScreen('faqScreen');
 });
 document.getElementById('faqBackBtn').addEventListener('click', function() {
-  renderHome(); showScreen('homeScreen');
+  renderHomeForNavigation(); showScreen('homeScreen');
 });
 // FAQ accordion — one section open at a time
 document.querySelectorAll('#faqScreen .faq-item-head').forEach(function(head) {

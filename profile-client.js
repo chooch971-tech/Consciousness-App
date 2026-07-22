@@ -783,7 +783,7 @@ function handleProfilePicFile(file) {
 
 document.getElementById('profileBack').addEventListener('click', function() {
   var previous = profilePreviousScreen();
-  if (previous === 'homeScreen' && typeof renderHome === 'function') renderHome();
+  if (previous === 'homeScreen' && typeof renderHomeForNavigation === 'function') renderHomeForNavigation();
   showScreen(previous);
 });
 document.getElementById('profSettingsBtn').addEventListener('click', function() {

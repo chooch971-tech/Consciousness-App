@@ -240,19 +240,53 @@ async function testEveryDrawerScreenSwipeBack(browser, baseUrl) {
       document.getElementById(drawerId).click();
     }, drawerId);
     await page.waitForFunction(screenId => document.getElementById(screenId).classList.contains('active'), screenId);
-    const state = await page.evaluate(screenId => {
+    await page.evaluate(async screenId => {
       const screen = document.getElementById(screenId);
-      const touch = x => new Touch({ identifier: 8, target: screen, clientX: x, clientY: 240, screenX: x, screenY: 240 });
+      const touch = x => new Touch({ identifier: 7, target: screen, clientX: x, clientY: 240, screenX: x, screenY: 240 });
       document.dispatchEvent(new TouchEvent('touchstart', { touches: [touch(8)], changedTouches: [touch(8)], bubbles: true }));
-      document.dispatchEvent(new TouchEvent('touchmove', { touches: [touch(160)], changedTouches: [touch(160)], bubbles: true }));
+      document.dispatchEvent(new TouchEvent('touchmove', { touches: [touch(20)], changedTouches: [touch(20)], bubbles: true }));
+      await new Promise(resolve => setTimeout(resolve, 45));
+      document.dispatchEvent(new TouchEvent('touchmove', { touches: [touch(21)], changedTouches: [touch(21)], bubbles: true }));
+      document.dispatchEvent(new TouchEvent('touchend', { touches: [], changedTouches: [touch(21)], bubbles: true }));
+    }, screenId);
+    await page.waitForFunction(screenId => {
+      const screen = document.getElementById(screenId);
+      return screen.classList.contains('active')
+        && screen.style.transform === ''
+        && !document.getElementById('drawerOverlay').classList.contains('swipe-back-live');
+    }, screenId);
+    const cancelled = await page.evaluate(screenId => {
+      const screen = document.getElementById(screenId);
       const drawer = document.getElementById('drawerOverlay');
       return {
         active: screen.classList.contains('active'),
+        drawerHidden: !drawer.classList.contains('show'),
+        drawerRemainsAtRoot: !document.getElementById('homeScreen').contains(drawer),
+        cleanLayer: screen.style.zIndex === '' && screen.style.willChange === ''
+      };
+    }, screenId);
+    assert.equal(cancelled.active, true, `${drawerId} stays open after a cancelled swipe`);
+    assert.equal(cancelled.drawerHidden, true, `${drawerId} hides the drawer preview after cancellation`);
+    assert.equal(cancelled.drawerRemainsAtRoot, true, `${drawerId} never reparents the drawer during cancellation`);
+    assert.equal(cancelled.cleanLayer, true, `${drawerId} releases temporary compositor hints after cancellation`);
+    const state = await page.evaluate(async screenId => {
+      const screen = document.getElementById(screenId);
+      const touch = x => new Touch({ identifier: 8, target: screen, clientX: x, clientY: 240, screenX: x, screenY: 240 });
+      document.dispatchEvent(new TouchEvent('touchstart', { touches: [touch(8)], changedTouches: [touch(8)], bubbles: true }));
+      [28, 55, 82, 110, 136, 160].forEach(x => {
+        document.dispatchEvent(new TouchEvent('touchmove', { touches: [touch(x)], changedTouches: [touch(x)], bubbles: true }));
+      });
+      const drawer = document.getElementById('drawerOverlay');
+      const immediateTransform = screen.style.transform;
+      await new Promise(resolve => requestAnimationFrame(resolve));
+      return {
+        active: screen.classList.contains('active'),
         remembersDrawer: window._returnToDrawer,
+        touchMovesWereFrameCoalesced: immediateTransform === '',
         transform: screen.style.transform,
         currentLayer: Number(getComputedStyle(screen).zIndex),
         drawerLayer: Number(getComputedStyle(drawer).zIndex),
-        drawerHostedByHome: document.getElementById('homeScreen').contains(drawer),
+        drawerRemainsAtRoot: !document.getElementById('homeScreen').contains(drawer),
         pageIsTopLayer: screen.contains(document.elementFromPoint(180, 240)),
         drawerVisible: drawer.classList.contains('show'),
         livePreview: drawer.classList.contains('swipe-back-live')
@@ -260,9 +294,10 @@ async function testEveryDrawerScreenSwipeBack(browser, baseUrl) {
     }, screenId);
     assert.equal(state.active, true, `${drawerId} opens its screen`);
     assert.equal(state.remembersDrawer, true, `${drawerId} retains its drawer origin`);
+    assert.equal(state.touchMovesWereFrameCoalesced, true, `${drawerId} coalesces bursty touchmoves into one paint frame`);
     assert.match(state.transform, /translateX\(/, `${drawerId} follows the finger`);
     assert.ok(state.currentLayer > state.drawerLayer, `${drawerId} stays above the live drawer`);
-    assert.equal(state.drawerHostedByHome, true, `${drawerId} structurally hosts the drawer beneath the page`);
+    assert.equal(state.drawerRemainsAtRoot, true, `${drawerId} keeps the drawer subtree at the document root`);
     assert.equal(state.pageIsTopLayer, true, `${drawerId} reveals the drawer underneath the departing page`);
     assert.equal(state.drawerVisible, true, `${drawerId} reveals the drawer while swiping`);
     assert.equal(state.livePreview, true, `${drawerId} uses the live drawer preview`);
