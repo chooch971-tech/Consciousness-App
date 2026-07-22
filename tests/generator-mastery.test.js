@@ -189,3 +189,57 @@ test('new generator track levels remain monotonic during cloud reconciliation', 
   assert.equal(merged.upgrades.current, 41);
   assert.equal(merged.upgrades.dmr1, 7);
 });
+
+test('a fresh/empty snapshot with a newer clock cannot zero a real Akasha balance', () => {
+  const stateClient = read('omnia-state-client.js');
+  const game = createContext();
+  vm.runInContext(stateClient, game);
+  game.shouldTakeCloudValue = () => true; // cloud "wins" the score-based base
+
+  // Real device: rich wallet + lifetime earnings, older clock.
+  const local = JSON.stringify({
+    prestige: 0, lastTick: 1000,
+    akasha: 11927, totalAkashaEarned: 50000, totalAkashaSpent: 20000,
+    bodies: { physical: 1, astral: 1, mental: 1 }, upgrades: { current: 40 }
+  });
+  // Fresh/empty device (e.g. a second origin that just loaded): zero wallet,
+  // near-zero lifetime earnings, but a NEWER clock because it just ticked.
+  const cloud = JSON.stringify({
+    prestige: 0, lastTick: 2000,
+    akasha: 0, totalAkashaEarned: 0, totalAkashaSpent: 0,
+    bodies: { physical: 1, astral: 1, mental: 1 }, upgrades: {}
+  });
+
+  const merged = JSON.parse(game.mergeOmniaPull(local, cloud));
+  assert.equal(merged.akasha, 11927, 'the real balance must survive the fresh clobber');
+  // Monotonic progress still folds to the richer values.
+  assert.equal(merged.totalAkashaEarned, 50000);
+  assert.equal(merged.upgrades.current, 40);
+});
+
+test('a genuine post-collect snapshot (newer clock, equal earnings) still wins the wallet', () => {
+  const stateClient = read('omnia-state-client.js');
+  const game = createContext();
+  vm.runInContext(stateClient, game);
+  game.shouldTakeCloudValue = () => false;
+
+  // Stale local: pre-collect, full reservoir, lower wallet, older clock.
+  const local = JSON.stringify({
+    prestige: 0, lastTick: 1000,
+    akasha: 100, totalAkashaEarned: 5000, totalAkashaSpent: 0,
+    reservoirs: { current: 900 },
+    bodies: { physical: 1, astral: 1, mental: 1 }, upgrades: {}
+  });
+  // Fresh cloud: just collected → higher wallet, emptied reservoir, newer clock,
+  // same lifetime earnings (the mint was counted before the collect).
+  const cloud = JSON.stringify({
+    prestige: 0, lastTick: 2000,
+    akasha: 1000, totalAkashaEarned: 5000, totalAkashaSpent: 0,
+    reservoirs: { current: 0 },
+    bodies: { physical: 1, astral: 1, mental: 1 }, upgrades: {}
+  });
+
+  const merged = JSON.parse(game.mergeOmniaPull(local, cloud));
+  assert.equal(merged.akasha, 1000, 'the collected balance wins, no double-collect');
+  assert.deepEqual(merged.reservoirs, { current: 0 }, 'the emptied reservoir is not restored');
+});

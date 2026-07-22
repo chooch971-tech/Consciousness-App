@@ -54,9 +54,30 @@ function mergeOmniaPull(localStr, cloudStr) {
   (function() {
     var localTick = Number(localObj.lastTick) || 0;
     var cloudTick = Number(cloudObj.lastTick) || 0;
+    // lastTick advances on every accrue/collect, so normally the higher-tick
+    // snapshot is the one that most recently touched the wallet and should win
+    // (that's what stops an already-collected reservoir from being collected
+    // twice). BUT a fresh/empty or partially-loaded save also ticks its clock to
+    // "now" while carrying akasha:0 — and letting that win silently zeroed real
+    // balances (all other progress survived via the max-merges below, so it
+    // looked like only the wallet mysteriously reset). Lifetime earnings is
+    // monotonic and can only be as high on a genuine continuation, so require
+    // the fresher-tick snapshot to be at least as advanced on totalAkashaEarned
+    // before trusting its (possibly-zero) wallet; otherwise keep the richer
+    // side's wallet.
     var fresher = localTick >= cloudTick ? localObj : cloudObj;
-    base.akasha = Number(fresher.akasha) || 0;
-    base.reservoirs = fresher.reservoirs || {};
+    var staler  = fresher === localObj ? cloudObj : localObj;
+    var walletSrc = (Number(fresher.totalAkashaEarned) || 0) >= (Number(staler.totalAkashaEarned) || 0)
+      ? fresher : staler;
+    var walletAkasha = Number(walletSrc.akasha);
+    if (!Number.isFinite(walletAkasha)) {
+      // Chosen wallet is missing/corrupt — don't fall to 0 and wipe a real
+      // balance; take the other snapshot's value if it's usable.
+      var alt = Number((walletSrc === localObj ? cloudObj : localObj).akasha);
+      walletAkasha = Number.isFinite(alt) ? alt : 0;
+    }
+    base.akasha = walletAkasha;
+    base.reservoirs = walletSrc.reservoirs || {};
     base.lastTick = Math.max(localTick, cloudTick);
   })();
   // Daily-gift claim marker: keep the later date so a device that already
@@ -66,6 +87,9 @@ function mergeOmniaPull(localStr, cloudStr) {
   // fold it ungated: keep the higher stack count and OR the legacy flag.
   base.devotionStacks = Math.min(24, Math.max(Number(base.devotionStacks) || 0, Number(other.devotionStacks) || 0));
   base.devotionEarned = !!(base.devotionEarned || other.devotionEarned);
+  // The one-time wallet-recovery flag is monotonic: once any device has run the
+  // recovery, OR it across snapshots so no other device repeats it.
+  base._walletRecoveredV1 = !!(base._walletRecoveredV1 || other._walletRecoveredV1);
   // Only fold monotonic progress across snapshots when neither side was deliberately
   // reset relative to the other — otherwise honor the reset and keep base as-is.
   var sameReset = ((localObj && localObj._resetAt) || 0) === ((cloudObj && cloudObj._resetAt) || 0);

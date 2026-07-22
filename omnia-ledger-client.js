@@ -30,6 +30,48 @@
     var migrated = ledger.migrateLegacyExerciseLog(root.omniaState);
     if (migrated >= 0 && typeof root.saveOmniaState === 'function') root.saveOmniaState();
   }
+
+  // One-time wallet recovery: if a past sync-merge silently zeroed a real
+  // Akasha balance (the fresh-snapshot-clobber bug, now fixed in
+  // mergeOmniaPull), the local ledger still records the true balance. Restore
+  // the unaccounted loss via a transfer — which moves already-earned akasha
+  // back into the wallet WITHOUT bumping lifetime totalAkashaEarned (that
+  // monotonic total survived the bug, so re-crediting it would double-count).
+  // Runs once, after any startup cloud pull settles so it acts on merged state
+  // and sees the synced _walletRecoveredV1 flag; the flag is OR-folded in
+  // mergeOmniaPull so once any device recovers, no other device repeats it.
+  root.omniaRecoverSilentWalletLoss = function() {
+    var st = root.omniaState;
+    if (!st || st._walletRecoveredV1) return 0;
+    var loss = 0;
+    try {
+      var det = api.detectSilentWalletLoss(ledger.read());
+      loss = Math.min(det.loss, det.maxBalance); // never restore above the highest balance ever recorded
+    } catch (e) { loss = 0; }
+    st._walletRecoveredV1 = 1; // mark done even at 0 so we never re-scan
+    if (loss > 0) root.omniaTransferAkasha(loss, 'balance-recovery', { reason: 'sync-wallet-loss' });
+    if (typeof root.saveOmniaState === 'function') root.saveOmniaState();
+    if (loss > 0 && root.syncEnabled && root.authToken && typeof root.syncPushData === 'function') {
+      try { root.syncPushData(); } catch (e) {}
+    }
+    if (loss > 0 && typeof root.showToast === 'function') {
+      root.showToast('Restored ' + loss.toLocaleString() + ' Akasha lost to a sync error', 4200, 'gold');
+      if (typeof root.renderOmniaEngine === 'function' && root.document.getElementById('omniaEngine')) {
+        try { root.renderOmniaEngine(); } catch (e) {}
+      }
+    }
+    return loss;
+  };
+  (function _omniaWalletRecoverySettle(waited) {
+    if (!root.omniaState || typeof root.omniaTransferAkasha !== 'function') {
+      if (waited < 20000) return void setTimeout(function() { _omniaWalletRecoverySettle(waited + 400); }, 400);
+      return;
+    }
+    if (root._syncPullPending && waited < 30000) {
+      return void setTimeout(function() { _omniaWalletRecoverySettle(waited + 400); }, 400);
+    }
+    try { root.omniaRecoverSilentWalletLoss(); } catch (e) {}
+  })(0);
 })(typeof globalThis !== 'undefined' ? globalThis : this, function() {
   'use strict';
 
@@ -183,10 +225,42 @@
     };
   }
 
+  // Reconstruct how much akasha the wallet lost *without* a matching ledger
+  // entry. Every real wallet move (credit/spend/transfer/reversal) is logged
+  // with the running balance after it, so between two consecutive entries the
+  // balance should change by exactly the signed amount of the later entry. A
+  // larger-than-expected drop means the wallet was zeroed/lowered by something
+  // that bypassed the ledger — historically the sync-merge bug that let a
+  // fresh/empty snapshot overwrite a real balance. (Reset All Progress also
+  // bypasses the ledger, but it clears the ledger too, so no stale pre-drop
+  // entries survive to be mistaken for a silent loss — this can't fire on a
+  // reset.) Returns { loss, maxBalance }: loss is the total unaccounted drop,
+  // maxBalance the highest balance ever recorded (a safety ceiling for the
+  // amount restored). Pure — takes the ledger array, mutates nothing.
+  function detectSilentWalletLoss(entries) {
+    if (!Array.isArray(entries) || entries.length < 2) return { loss: 0, maxBalance: 0 };
+    var sorted = entries.slice().sort(function(a, b) { return (finiteNumber(a && a.at)) - (finiteNumber(b && b.at)); });
+    var loss = 0, maxBalance = 0;
+    var running = finiteNumber(sorted[0] && sorted[0].balance);
+    maxBalance = running;
+    for (var i = 1; i < sorted.length; i++) {
+      var e = sorted[i] || {};
+      var amount = finiteNumber(e.amount);
+      var signed = (e.kind === 'spend' || e.kind === 'reversal') ? -amount : amount;
+      var expected = running + signed;
+      var actual = finiteNumber(e.balance);
+      if (actual < expected - 0.5) loss += (expected - actual);
+      running = actual;
+      if (actual > maxBalance) maxBalance = actual;
+    }
+    return { loss: Math.round(Math.max(0, loss)), maxBalance: Math.round(Math.max(0, maxBalance)) };
+  }
+
   return {
     DEFAULT_KEY: DEFAULT_KEY,
     DEFAULT_LIMIT: DEFAULT_LIMIT,
     sanitizeMeta: sanitizeMeta,
-    createLedger: createLedger
+    createLedger: createLedger,
+    detectSilentWalletLoss: detectSilentWalletLoss
   };
 });
