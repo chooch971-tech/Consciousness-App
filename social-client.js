@@ -10,6 +10,7 @@ var _lodgeUserPostsCache = {};
 var _lodgeDetailPost = null;
 var _lodgeDetailSnapshot = null;
 var _lodgeDetailReturnScreen = 'lodgeScreen';
+var _lodgeWarmPromise = null;
 
 function _lodgeCachedList() {
   if (_lodgeSort !== 'newest') return [];
@@ -19,11 +20,27 @@ function _cacheLodgeFeed(posts) {
   try { localStorage.setItem(LODGE_CACHE_KEY, JSON.stringify((posts || []).slice(0, 20))); } catch(e) {}
 }
 function warmLodgeFeeds() {
-  if (!authToken || _lodgeCachedList().length) return;
-  fetch(SERVER_URL + '/api/social/feed?sort=newest', { headers: { 'Authorization': 'Bearer ' + authToken } })
+  if (!authToken) return Promise.resolve([]);
+  var cached = _lodgeCachedList();
+  if (cached.length) return Promise.resolve(cached);
+  if (_lodgeWarmPromise) return _lodgeWarmPromise;
+  _lodgeWarmPromise = fetch(SERVER_URL + '/api/social/feed?sort=newest', { headers: { 'Authorization': 'Bearer ' + authToken } })
     .then(function(res) { return res.ok ? res.json() : null; })
-    .then(function(data) { if (data && data.posts) _cacheLodgeFeed(data.posts); })
-    .catch(function() {});
+    .then(function(data) {
+      var posts = data && Array.isArray(data.posts) ? data.posts : [];
+      if (posts.length) _cacheLodgeFeed(posts);
+      // If the Lodge was opened while its warm request was in flight, paint
+      // the result now rather than leaving a skeleton for a second request.
+      if (!_lodgeUserFilter && _lodgeSort === 'newest' && !_lodgePosts.length && posts.length) {
+        _lodgePosts = posts.slice();
+        _lodgeLoading = false;
+        if (document.getElementById('lodgeScreen').classList.contains('active')) renderLodgeFeed();
+      }
+      return posts;
+    })
+    .catch(function() { return []; })
+    .finally(function() { _lodgeWarmPromise = null; });
+  return _lodgeWarmPromise;
 }
 
 var _lodgeUserFilter = null; // {userId, username} → viewing one practitioner's posts
@@ -65,11 +82,12 @@ function openLodge() {
   document.getElementById('lodgeFeedNav').style.display = '';
   _lodgeCloseSortMenu();
   _lodgeSetSortUi();
-  if (!document.getElementById('lodgeScreen').classList.contains('active')) showScreen('lodgeScreen');
-  // Instant paint from cache, then network refresh (established pattern).
+  // Paint the current cache before the Lodge becomes visible, so its entry
+  // animation never exposes an empty feed while the refresh is in flight.
   _lodgePosts = _lodgeCachedList();
   _lodgeLoading = !_lodgePosts.length;
   renderLodgeFeed();
+  if (!document.getElementById('lodgeScreen').classList.contains('active')) showScreen('lodgeScreen');
   loadLodgeFeed();
   warmLodgeFeeds();
   loadLodgeNotifs();
@@ -813,7 +831,17 @@ document.getElementById('profileActivityBody').addEventListener('click', functio
 
 // Prime the Lodge feed after state restoration, long before the user
 // opens the drawer. This makes the first visit feel like a native screen.
-window.addEventListener('load', function() { setTimeout(warmLodgeFeeds, 700); });
+function warmLodgeExperience() {
+  warmLodgeFeeds();
+  loadChatList(false);
+  loadLodgeNotifs();
+}
+window.addEventListener('load', function() {
+  // Start before the first drawer visit, then retry once cloud/auth
+  // restoration has had time to settle on slower devices.
+  setTimeout(warmLodgeExperience, 80);
+  setTimeout(warmLodgeExperience, 700);
+});
 (function() {
   var ov = document.getElementById('likersOverlay');
   document.getElementById('likersCloseBtn').addEventListener('click', function() { ov.classList.remove('on'); });
