@@ -1,6 +1,6 @@
 # Presence — Roadmap
 
-Last updated: 2026-07-18
+Last updated: 2026-07-22
 
 ---
 
@@ -176,6 +176,7 @@ Last updated: 2026-07-18
 
 ## V1.0 — Public Launch (target: August 30, 2026)
 
+- [ ] **Pre-launch scalability validation (after V1.0 feature freeze):** create an isolated, production-sized staging Render service and MongoDB database; seed realistic staging social data and 20–100 test accounts; run the guarded `launch` and `network` load scenarios at 100, 250, 500, and 1,000 virtual users; verify ≤1% errors, ≤2s overall p95, no Render restart/OOM, CPU <70%, memory <75%, MongoDB connections <70% of plan limit, and database p95 <500ms. Tune infrastructure or hot paths based on results, then rerun the affected stages. See `LOAD_TESTING.md`.
 - [ ] Launch marketing campaign
 - [ ] 🚀
 
