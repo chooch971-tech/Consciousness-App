@@ -253,7 +253,7 @@ test('top-level drawer screens reveal the open drawer during swipe-back', () => 
   assert.match(presence, /function showLiveDrawerPreview\(\)[\s\S]*?classList\.add\('drawer-instant', 'swipe-back-live', 'show'\)/);
   assert.match(presence, /var drawerPreview = revealsDrawer \? showLiveDrawerPreview\(\) : null/);
   assert.match(presence, /function releaseLiveDrawerPreview\(drawer, keepOpen\)/);
-  assert.match(presence, /function afterSwipeTransform\(el, duration, callback\)[\s\S]*?addEventListener\('transitionend', finish\)[\s\S]*?fallback = setTimeout\(finish, duration \+ 120\)/);
+  assert.match(presence, /function afterSwipePaint\(duration, callback\)[\s\S]*?setTimeout\(function\(\) \{[\s\S]*?requestAnimationFrame\(function\(\) \{[\s\S]*?requestAnimationFrame\(callback\)/);
   assert.doesNotMatch(presence.slice(presence.indexOf('// ── iOS-style interactive swipe-back'), presence.indexOf('// ══════════════════════════════════════════════════════\n// PORE BREATHING')), /cloneNode|getComputedStyle\(pair\[0\]\)|mirrorFrame/);
   assert.match(presence, /function openDrawer\(instant, preserveGuideAnimation\)/);
   assert.match(presence, /if \(!preserveGuideAnimation\) \{[\s\S]*?updateDrawerEntityBtn/);
@@ -274,7 +274,7 @@ test('top-level drawer screens reveal the open drawer during swipe-back', () => 
   const completeStart = presence.indexOf('function complete()');
   const completeEnd = presence.indexOf('function cancel()', completeStart);
   const completeBody = presence.slice(completeStart, completeEnd);
-  assert.match(completeBody, /afterSwipeTransform\(screenEl, 260, function\(\)/);
+  assert.match(completeBody, /afterSwipePaint\(260, function\(\)/);
   assert.ok(completeBody.indexOf('backBtn.click()') < completeBody.indexOf('requestAnimationFrame(function()') && completeBody.indexOf('requestAnimationFrame(function()') < completeBody.indexOf('cleanPrev(prevEl, prevIsHome)'), 'swipe-back keeps the revealed screen painted through the first frame after its Back action activates it');
   assert.match(completeBody, /requestAnimationFrame\(function\(\) \{[\s\S]*?cleanPrev\(prevEl, prevIsHome\);/);
   assert.match(presence, /\.screen\.active\.swipe-back-arrival \{ animation:none; transform:translateZ\(0\); \}/);
