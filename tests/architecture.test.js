@@ -298,7 +298,8 @@ test('top-level drawer screens reveal the open drawer during swipe-back', () => 
   assert.match(awarenessClient, /drawer\.classList\.remove\('show', 'swipe-back-live'\)/);
   assert.match(profileClient, /function friendProfilePreviousScreen\(\)/);
   assert.match(profileClient, /window\._interactiveSwipeBackScreenId !== 'friendProfileScreen'/);
-  assert.match(awarenessClient, /function renderHomeForNavigation\(\)[\s\S]*?requestIdleCallback\(refresh, \{ timeout: 500 \}\)/);
+  assert.match(awarenessClient, /function renderHomeForNavigation\(\)[\s\S]*?var preserveDrawerGuide = !!window\._preserveDrawerGuideAnimation;[\s\S]*?if \(preserveDrawerGuide\) window\._preserveDrawerGuideAnimation = true;[\s\S]*?finally \{ if \(preserveDrawerGuide\) window\._preserveDrawerGuideAnimation = false; \}[\s\S]*?requestIdleCallback\(refresh, \{ timeout: 500 \}\)/);
+  assert.match(awarenessClient, /if \(_reopen\) openDrawer\(true, !!window\._preserveDrawerGuideAnimation\);/);
   assert.match(journalClient, /journalBack[\s\S]*?renderHomeForNavigation\(\)/);
   assert.match(reportsClient, /reportsBack[\s\S]*?renderHomeForNavigation\(\)/);
   assert.match(settingsClient, /settingsBack[\s\S]*?renderHomeForNavigation\(\)/);

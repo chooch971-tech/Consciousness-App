@@ -1033,7 +1033,7 @@ function showScreen(id) {
     // before the drawer appears.
     var _reopen = window._returnToDrawer && DRAWER_REOPEN_ON_BACK && typeof openDrawer === 'function';
     window._returnToDrawer = false;
-    if (_reopen) openDrawer(true);
+    if (_reopen) openDrawer(true, !!window._preserveDrawerGuideAnimation);
     document.querySelectorAll('.screen').forEach(function(s) {
       s.classList.remove('active');
       s.classList.remove('swipe-back-arrival');
@@ -1229,9 +1229,18 @@ function renderHomeForNavigation() {
     renderHome();
     return;
   }
+  // Journal and Practice Review intentionally defer their Home refresh until
+  // the interactive swipe has handed the live drawer back to its normal layer.
+  // Keep that drawer's Guide artwork protected through this deferred work: if
+  // renderHome() rebuilds it after the handoff, CSS/SVG animations visibly
+  // restart even though the drawer never left the screen.
+  var preserveDrawerGuide = !!window._preserveDrawerGuideAnimation;
   var refresh = function() {
     var home = document.getElementById('homeScreen');
-    if (home && home.style.display === 'flex') renderHome();
+    if (!home || home.style.display !== 'flex') return;
+    if (preserveDrawerGuide) window._preserveDrawerGuideAnimation = true;
+    try { renderHome(); }
+    finally { if (preserveDrawerGuide) window._preserveDrawerGuideAnimation = false; }
   };
   if (typeof requestIdleCallback === 'function') {
     requestIdleCallback(refresh, { timeout: 500 });
