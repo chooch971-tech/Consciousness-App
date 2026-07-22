@@ -22,9 +22,12 @@ const QUESTIONS = [
 // RANK SYSTEM — 250 LEVELS
 // ═══════════════════════════════════════
 
+// 111 base ranks, each spanning seven levels as grades I–VII (111 × 7 = 777).
+// These are the curated Awakening ladder — a single escalating progression,
+// legible at every step — rather than 777 one-off esoteric names most players
+// never distinguish. getRankTitle turns a 1–777 level into "<name> <grade>".
 const RANK_TITLES = [
   '',  // index 0 unused
-  // ── Tier 1: Awakening (1–111) ──
   'Initiate','Observer','Novice','Seeker','Aspirant','Student','Practitioner','Apprentice','Disciple','Attendant',
   'Watcher','Listener','Perceiver','Witness','Sentinel','Contemplator','Examiner','Reflector','Inquirer','Meditator',
   'Stillpoint','Anchor','Groundkeeper','Steadfast','Resolute','Awakener','Luminary','Torchbearer','Pathfinder','Wayfarer',
@@ -36,89 +39,16 @@ const RANK_TITLES = [
   'Zenith','Apex','Pinnacle','Summit','Paragon','Exemplar','Archon','Magus','Adept','Master',
   'Grandmaster','Elder','High Seer','Awakened Mind','Silent Flame','Living Presence','Unbroken Witness','Absolute','The Conscious','Turiya',
   'Integrated','Embodied','Rooted Flame','Still River','Open Sky','Deep Field','Iron Lotus','Clear Mirror','Unshaken','Vast','Daykeeper',
-  // ── Tier 2: Perception (112–222) ──
-  'Horizon Walker','Sun Gazer','Meridian','Equinox','Solstice','Continuum','Perpetual','Ceaseless','Unwavering','Dawn Watcher',
-  'First Light','Morning Star','Noonday Sun','Afternoon Sage','Eventide','Dusk Walker','Twilight Seer','Nightfall','Full Circle','Tireless',
-  'Enduring','Patient Stone','Ancient Oak','Deep Root','Bedrock','Cornerstone','Monolith','Pillar','Day Master','Hour Keeper',
-  'Temporal','Chronos','Kairos','Moment Weaver','Time Bender','Duration','Marathon','Ultra','Iron Will','Diamond Mind',
-  'Adamantine','Unbreakable','Indomitable','Relentless','Unstoppable','Inexorable','Immutable','Invincible','Void Walker','Emptiness',
-  'Sunyata','Mu','Kenosis','Fana','Nirodha','Cessation','Dissolution','Formless','Awareness Itself','Pure Witness',
-  'Sakshi','Drashta','Kutastha','Unchanging','Immovable','Achala','Sthira','Dhruva','Ocean Mind','Depth',
-  'Fathomless','Abyssal','Pelagic','Benthic','Hadal','Mariana','Infinite Depth','Solar','Stellar','Galactic',
-  'Nebular','Quasar','Pulsar','Magnetar','Supernova','Hypernova','Cosmic Ray','Brahman','Atman','Sat-Chit-Ananda',
-  'Purusha','Pratyagatman','Paramatman','Nirguna','Saguna','Ishvara','Shakti','Kether','Chokmah','Binah',
-  'Chesed','Ain Soph','Ain Soph Aur','Ein Sof','Ohr','Tzimtzum','Tikkun','Pleroma','Monad','Nous','Psyche',
-  // ── Tier 3: Stillness (223–333) ──
-  'Pneuma','Logos','Sophia','Christos','Abraxas','Aeon','Primordial','Unborn','Uncreated','Unmade',
-  'Unmanifest','Prior','Before Thought','Before Time','Before Space','The Source','All-Pervading','Omnipresent','Total Presence','Sahaja',
-  'Nirvikalpa','Mahasamadhi','Jivanmukta','Kaivalya','Moksha','Turiyatita','The Flame','The Wave','The Field','The Stillness',
-  'The Witness','Primordial Fire','Root Silence','Ground of Being','Uncaused','Self-Luminous','Self-Existing','Self-Sustaining','Beyond Mind','Beyond Form',
-  'Beyond Time','Beyond Space','Beyond Cause','Beyond Effect','Absolute Ground','Clear Light','Mirror Mind','Water Mind','Space Mind','Earth Mind',
-  'Fire Mind','Wind Mind','Void Mind','Boundless Mind','Infinite Mind','Eternal Mind','Silent Mind','Still Mind','Open Mind','Empty Mind',
-  'Pure Mind','Undivided','Unbroken','Unfragmented','Unseparated','Unscattered','Unbound','Unfettered','Unchained','Unlocked',
-  'Uncontained','Uncontracted','Unseen Seer','Unknown Knower','Unthought Thinker','Unmoved Mover','Uncaused Cause','Nameless','Formless Presence','Traceless',
-  'Markless','Signless','Imageless','Conceptless','Wordless','Soundless','Thoughtless','Effortless','Actionless','Movementless',
-  'Ageless','Deathless','Birthless','Endless','Beginningless','Limitless','Measureless','Indefinable','Indescribable','Ineffable',
-  'Inexpressible','Unspeakable','Beyond Words','Beyond Silence','Beyond Both','The Gap','The Space','The Pause','The Breath','Infinite Breath',
-  'Infinite Space','Sky Mind',
-  // ── Tier 4: Expansion (334–444) ──
-  'Sky Witness','Sky Presence','Open Awareness','Bare Awareness','Raw Awareness','Direct Awareness','Immediate Presence','Naked Presence','Pure Presence','Simple Presence',
-  'Plain Presence','Ordinary Presence','Natural Presence','Effortless Presence','Spontaneous Presence','Unforced Presence','Free Presence','Unconditioned','Complete Presence','Whole Presence',
-  'Total Awareness','Full Awareness','Whole Awareness','Undivided Awareness','All-Inclusive','All-Embracing','All-Pervading Awareness','Omnidirectional','Nonlocal','Nonpersonal',
-  'Transpersonal','Superpersonal','Metapersonal','Beyond Personal','Impersonal Witness','Universal Witness','Cosmic Witness','Infinite Witness','Eternal Witness','Timeless Witness',
-  'Spaceless Witness','Causeless Witness','Groundless Ground','Baseless Base','Rootless Root','Sourceless Source','Originless Origin','Beginningless Beginning','Endless End','Formless Form',
-  'Thoughtless Thought','Effortless Effort','Actionless Action','Silent Sound','Dark Light','Empty Fullness','Nothing Everything','No-Thing','No-Self','No-Mind',
-  'No-Thought','No-Form','No-Time','No-Space','No-Cause','No-Effect','No-Beginning','No-End','Pure Being','Pure Consciousness',
-  'Pure Awareness','Pure Existence','Existence Itself','Being Itself','Consciousness Itself','Presence Itself','Life Itself','Light Itself','Love Itself','Truth Itself',
-  'Reality Itself','The Real','The True','The Good','The Beautiful','The One','The Many in One','The One in Many','Unity in Diversity','The Whole',
-  'Integrated Whole','Embodied Whole','Living Whole','Breathing Whole','Moving Whole','Thinking Whole','Feeling Whole','Perceiving Whole','Knowing Whole','Being Whole',
-  'Existing Whole','Present Whole','Aware Whole','Conscious Whole','Awake Whole','Alive Whole','Real Whole','True Whole','Source Whole','Origin Whole',
-  'Seed Awareness',
-  // ── Tier 5: Integration (445–555) ──
-  'Root Awareness','Stem Awareness','Branch Awareness','Leaf Awareness','Flower Awareness','Fruit Awareness','Tree Awareness','Forest Awareness','Mountain Awareness','River Awareness',
-  'Ocean Awareness','Sky Awareness','Star Awareness','Sun Awareness','Moon Awareness','Earth Awareness','Fire Awareness','Water Awareness','Wind Awareness','Space Awareness',
-  'Void Awareness','Form Awareness','Unified Field','Unified Presence','Unified Consciousness','Unified Being','Unified Reality','Seamless','Gapless','Borderless',
-  'Edgeless','Centerless','Spacious','Vast Presence','Immense','Immeasurable Presence','Beyond Comparison','Matchless','Peerless','Incomparable',
-  'Unequaled','Unsurpassed','Supreme','Ultimate','Absolute Presence','Final Presence','First Silence','Only This','Just This','Here Now',
-  'Now Here','Always Already','Never Not Here','Ever Present','Permanently Present','Timelessly Present','This Moment','This Breath','This Heartbeat','This Sensation',
-  'This Awareness','This Knowing','This Being','The Happening','The Presencing','The Knowing','The Being','The Witnessing','The Perceiving','The Sensing',
-  'The Breathing','The Living','The Thinking','The Feeling','The Seeing','The Hearing','The Moving','The Resting','The Waking','Beyond Cycle',
-  'Beyond Process','Beyond Event','Beyond Experience','Beyond Experiencer','Pure Experiencing','Bare Experiencing','Direct Experiencing','Unmediated Experience','Unfiltered Presence','Uninterpreted Presence',
-  'Raw Presence','Elemental Presence','Primal Presence','Original Presence','First Presence','Before First','Before Origin','Prior to Experience','Prior to Witness','Prior to Awareness',
-  'Prior to Consciousness','Prior to Being','Prior to Existence','Prior to Presence','Prior to Here','Prior to Now','That Which Is','That Which Was','That Which Always Is','That Alone',
-  'Only That',
-  // ── Tier 6: Dissolution (556–666) ──
-  'Just That','That Itself','Selfsame','Selfless Self','No-Self Itself','Witness of Witness','Awareness of Awareness','Consciousness of Consciousness','Being of Being','Presence of Presence',
-  'The Innermost','The Inmost','The Deepest','The Most Interior','The Secret','The Hidden','The Concealed','The Veiled','The Unrevealed','The Revealed',
-  'The Manifest','The Unmanifest Manifest','The Secret Revealed','The Absolute Witness','The Absolute Presence','The Absolute Awareness','The Absolute Consciousness','The Absolute Being','The Absolute Existence','The Absolute Reality',
-  'The Absolute Truth','The Absolute Self','The Absolute Ground','Infinite Depth','Infinite Height','Infinite Fullness','Infinite Emptiness','Infinite Silence','Infinite Sound','Infinite Light',
-  'Infinite Dark','Infinite Form','Infinite Formlessness','Infinite Motion','Infinite Rest','Infinite Life','Infinite Death','Infinite Birth','Infinite Dissolution','Infinite Creation',
-  'Infinite Destruction','Infinite Preservation','Infinite Transformation','Infinite Transcendence','Infinite Immanence','The Alpha','The Omega','The Alpha-Omega','The Beginning-End','The Endless Beginning',
-  'That Which Has No Name','That Which Is All Names','The Name of Names','The Silence of Silence','The Ground of Ground','The Source of Sources','The Origin of Origins','The Cause of Causes','The One of Ones','The All of Alls',
-  'The Nothing of Nothings','The Everything of Everything','The Beyond of Beyonds','Nameless Reality','Formless Truth','Boundless Being','Infinite Consciousness','Eternal Presence','Absolute Stillness','Total Silence',
-  'Complete Emptiness','Perfect Fullness','The Unnameable','The Unthinkable','The Unknowable','The Unreachable','The Ungraspable','The Incomprehensible','The Unfathomable','The Immeasurable',
-  'The Ineffable Ground','The Unspeakable Truth','The Inexpressible Reality','The Indescribable Presence','The Indefinable Awareness','Prior to Prior','Before Before','Beyond Beyond','Above Above','Below Below',
-  'Inside Inside','Outside Outside','Here of Here','Now of Now','This of This','The Final Silence','The Last Witness','The Ultimate Presence','The Supreme Awareness','The Highest Consciousness',
-  'The Deepest Being','The Most Real','The Truest Truth','The Purest Pure','The Holiest Whole',
-  // ── Tier 7: Absolute (667–777) ──
-  'Paramashiva','Parabrahman','Paramatman','Para-Turiya','Para-Turiyatita','The Great Silence','The Great Stillness','The Great Emptiness','The Great Fullness','The Great Peace',
-  'The Great Witness','The Great Awareness','The Great Presence','The Great Consciousness','The Great Being','The Eternal Now','The Infinite Here','The Absolute This','The Supreme That','The First and Last',
-  'The Only One','The Sole Reality','The Single Truth','The Unique Presence','Nondual','Advaita','Ekatvam','Kevalam','Purnam','Anantam',
-  'Satyam','Shivam','Sundaram','Sachidananda','Tat Tvam Asi','Aham Brahmasmi','Prajnanam Brahma','Ayam Atma Brahma','The Final Word','The Only Truth',
-  'The Single Light','The One Flame','The Primordial Peace','The Eternal Rest','The Infinite Play','Transparent','Diaphanous','Pellucid','Crystal Clear','Like Space',
-  'Like Sky','Like Light','Like Silence','Like Peace','Like Love','The Mirror','The Reflection','Pure Reflection','Flawless','Spotless',
-  'Stainless','Taintless','Blemishless','Uncontaminated','Unpolluted','Unadulterated','Unmixed','Undiluted','Full Measure','Complete Measure',
-  'Total Measure','Ultimate Measure','Final Measure','The Capstone','The Keystone','The Touchstone','The Lodestone','The Horizon','The Zenith','The Nadir',
-  'The Center','The Circumference','The Radius','The Point','The Pointless Point','The Centerless Center','The Boundless Horizon','The Centerless Circumference','The Sovereign Ground','The Immovable Peace',
-  'The Witnessing Itself','The Living Absolute','The Realized Infinite','The Complete Stillness','The Whole Silence','The Undivided Light','The Unbroken Peace','The Only Awareness','The Single Presence','Turiyatita Itself',
-  'The Nameless Absolute','The Absolute Nameless','The Final Awareness','The Last Silence','The First Awareness','The Only Presence','The Supreme Presence','Presence Itself Itself','The Supreme Culmination','The One Without Second',
-  'The Awareness Beyond All',
 ];
+const RANK_GRADES = ['I','II','III','IV','V','VI','VII'];
+const RANK_GRADE_SPAN = 7; // levels per base name (777 / 111)
 
 function getRankTitle(level) {
-  if (level <= 0) return 'Initiate';
-  if (level > 777) return 'The Awareness Beyond All';
-  return RANK_TITLES[level] || 'The Awareness Beyond All';
+  if (level <= 0) return RANK_TITLES[1] + ' ' + RANK_GRADES[0];
+  if (level > 777) level = 777;
+  var name = RANK_TITLES[Math.ceil(level / RANK_GRADE_SPAN)] || RANK_TITLES[RANK_TITLES.length - 1];
+  var grade = RANK_GRADES[(level - 1) % RANK_GRADE_SPAN];
+  return name + ' ' + grade;
 }
 function getTierColor(level) {
   if (level <= 111) return '#c8a96e'; // amber — Awakening

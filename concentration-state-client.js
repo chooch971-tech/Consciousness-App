@@ -3,13 +3,12 @@
 // CONCENTRATION SYSTEM
 // ═══════════════════════════════════════
 
-// ── Concentration uses the same 777 RANK_TITLES as Awareness ──
+// ── Concentration shares the same rank ladder as Awareness ──
 // XP = seconds of focused practice. Level 2 = 900s (15 min), total = 10,000 hours.
 // 1 hour of practice ≈ level 4. Growth rate r = 1.007357
 
 function getConcRank(level) {
-  if (level <= 0 || level > 777) return RANK_TITLES[Math.min(777, Math.max(1, level))] || 'The Awareness Beyond All';
-  return RANK_TITLES[level] || 'The Awareness Beyond All';
+  return getRankTitle(level);
 }
 
 function concXpForLevel(level) {
