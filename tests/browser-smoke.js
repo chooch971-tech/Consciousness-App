@@ -216,6 +216,67 @@ async function testClockSettingsSwipeBack(browser, baseUrl) {
   await context.close();
 }
 
+async function testEveryDrawerScreenSwipeBack(browser, baseUrl) {
+  const context = await browser.newContext({ viewport: { width: 390, height: 844 }, hasTouch: true, serviceWorkers: 'block' });
+  const { page, errors } = await seedPage(context, baseUrl, { presence_auth_token: 'browser-test-token' });
+  // Startup's final stale-lock cleanup runs at 1s and deliberately closes the
+  // drawer; begin navigation checks after that one-time maintenance pass.
+  await page.waitForTimeout(1100);
+  const routes = [
+    ['drawerReports', 'reportsScreen'],
+    ['drawerJournal', 'journalScreen'],
+    ['drawerPlayground', 'playgroundScreen'],
+    ['drawerAch', 'achScreen'],
+    ['drawerProfile', 'profileScreen'],
+    ['drawerLodge', 'lodgeScreen'],
+    ['drawerFaq', 'faqScreen'],
+    ['drawerSettings', 'settingsScreen']
+  ];
+  await page.evaluate(() => document.getElementById('hamburgerBtn').click());
+  for (const [drawerId, screenId] of routes) {
+    await page.evaluate(drawerId => {
+      document.getElementById(drawerId).click();
+    }, drawerId);
+    await page.waitForFunction(screenId => document.getElementById(screenId).classList.contains('active'), screenId);
+    const state = await page.evaluate(screenId => {
+      const screen = document.getElementById(screenId);
+      const touch = x => new Touch({ identifier: 8, target: screen, clientX: x, clientY: 240, screenX: x, screenY: 240 });
+      document.dispatchEvent(new TouchEvent('touchstart', { touches: [touch(8)], changedTouches: [touch(8)], bubbles: true }));
+      document.dispatchEvent(new TouchEvent('touchmove', { touches: [touch(160)], changedTouches: [touch(160)], bubbles: true }));
+      const drawer = document.getElementById('drawerOverlay');
+      return {
+        active: screen.classList.contains('active'),
+        remembersDrawer: window._returnToDrawer,
+        transform: screen.style.transform,
+        drawerVisible: drawer.classList.contains('show'),
+        livePreview: drawer.classList.contains('swipe-back-live')
+      };
+    }, screenId);
+    assert.equal(state.active, true, `${drawerId} opens its screen`);
+    assert.equal(state.remembersDrawer, true, `${drawerId} retains its drawer origin`);
+    assert.match(state.transform, /translateX\(/, `${drawerId} follows the finger`);
+    assert.equal(state.drawerVisible, true, `${drawerId} reveals the drawer while swiping`);
+    assert.equal(state.livePreview, true, `${drawerId} uses the live drawer preview`);
+    await page.evaluate(screenId => {
+      const screen = document.getElementById(screenId);
+      const touch = x => new Touch({ identifier: 8, target: screen, clientX: x, clientY: 240, screenX: x, screenY: 240 });
+      document.dispatchEvent(new TouchEvent('touchend', { touches: [], changedTouches: [touch(360)], bubbles: true }));
+    }, screenId);
+    await page.waitForFunction(() => !document.getElementById('drawerOverlay').classList.contains('swipe-back-live'));
+    const completed = await page.evaluate(() => {
+      const drawer = document.getElementById('drawerOverlay');
+      return {
+        visible: drawer.classList.contains('show'),
+        livePreview: drawer.classList.contains('swipe-back-live')
+      };
+    });
+    assert.equal(completed.visible, true, `${drawerId} completes into the drawer`);
+    assert.equal(completed.livePreview, false, `${drawerId} promotes the live drawer without a cut`);
+  }
+  assert.deepEqual(errors, [], 'drawer screen swipe checks emitted browser errors');
+  await context.close();
+}
+
 async function testProfileSky(browser, baseUrl) {
   const context = await browser.newContext({ viewport: { width: 390, height: 844 }, hasTouch: true, serviceWorkers: 'block' });
   const { page, errors } = await seedPage(context, baseUrl);
@@ -802,6 +863,9 @@ async function testCloudRestoreAndSignOut(browser, baseUrl) {
     console.log('run - exercise entry');
     await testExerciseEntry(browser, baseUrl);
     console.log('ok - exercise cards open complete setup screens');
+    console.log('run - every drawer screen swipe-back');
+    await testEveryDrawerScreenSwipeBack(browser, baseUrl);
+    console.log('ok - every drawer screen follows the finger and reveals the live drawer');
     console.log('run - generator mastery');
     await testGeneratorMastery(browser, baseUrl);
     console.log('ok - generator mastery and Dark Matter tracks render');

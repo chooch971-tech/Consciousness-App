@@ -9640,6 +9640,26 @@ startPrayerScheduler();
     requestAnimationFrame(function() { drawer.classList.remove('drawer-instant'); });
   }
 
+  // Let the compositor decide when the page has actually reached its resting
+  // edge. A fixed timer can run before WebKit paints the final frame on richer
+  // screens (Achievements, Profile, Lodge, Settings), making the page appear
+  // to be cut away while Reports and Journal happen to finish smoothly.
+  function afterSwipeTransform(el, duration, callback) {
+    var settled = false;
+    var fallback;
+    function finish(e) {
+      if (e && (e.target !== el || e.propertyName !== 'transform')) return;
+      if (settled) return;
+      settled = true;
+      el.removeEventListener('transitionend', finish);
+      clearTimeout(fallback);
+      callback();
+    }
+    el.addEventListener('transitionend', finish);
+    // iOS can omit transitionend if the page is backgrounded mid-gesture.
+    fallback = setTimeout(finish, duration + 120);
+  }
+
   // ── Gesture lifecycle ──
 
   function begin(screenEl, backBtn, startX) {
@@ -9720,7 +9740,7 @@ startPrayerScheduler();
     overlay.style.transition = 'opacity .26s ease';
     overlay.style.opacity    = '0';
 
-    setTimeout(function() {
+    afterSwipeTransform(screenEl, 260, function() {
       sw._animating = false;
       overlay.remove();
 
@@ -9766,7 +9786,7 @@ startPrayerScheduler();
         screenEl.style.transition = '';
         screenEl.style.willChange = '';
       });
-    }, 260);
+    });
   }
 
   function cancel() {
@@ -9786,7 +9806,7 @@ startPrayerScheduler();
     overlay.style.transition = 'opacity .22s ease';
     overlay.style.opacity    = '0.22';
 
-    setTimeout(function() {
+    afterSwipeTransform(screenEl, 220, function() {
       sw._animating = false;
       overlay.remove();
 
@@ -9799,7 +9819,7 @@ startPrayerScheduler();
       screenEl.style.transition = '';
       screenEl.style.transform  = '';
       screenEl.style.willChange = '';
-    }, 220);
+    });
   }
 
   // iOS may suspend the page without delivering touchcancel. Roll back the
