@@ -146,6 +146,16 @@
     return state;
   }
 
+  // The Guide swaps a card's id mid-day for one committed slot: the daily
+  // Soul Mirror reflection becomes a Pore Breathing card (id 'pore') once the
+  // Mirror step is finished (see guideMirrorToPore in guide-path-client.js).
+  // Without this alias, a plan frozen before that swap keeps 'soulmirror' in
+  // its assigned list, and a completion recorded afterward under 'pore' can
+  // never match it — a real Mirror-then-breathing day would score as 0%
+  // follow-through even though the one assigned slot was completed.
+  const PLAN_ID_ALIASES = { pore: 'soulmirror', pore_breathing: 'soulmirror' };
+  function canonicalPlanId(id) { return PLAN_ID_ALIASES[id] || id; }
+
   function capturePlan(storage, value, items) {
     if (!Array.isArray(items) || !items.length) return false;
     const key = dayKey(value);
@@ -162,7 +172,7 @@
     const completed = frozen && Array.isArray(previous.completed)
       ? previous.completed.filter(id => assigned.includes(id)) : [];
     items.forEach(item => {
-      const id = String(item.id || item.mode || item.tcMode || '').slice(0, 40);
+      const id = canonicalPlanId(String(item.id || item.mode || item.tcMode || '').slice(0, 40));
       if (!id) return;
       if (!frozen && !assigned.includes(id)) assigned.push(id);
       if (!assigned.includes(id)) return;

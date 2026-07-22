@@ -75,6 +75,29 @@ test('daily follow-through freezes its initial Guide assignments while later cap
   });
 });
 
+test('finishing Soul Mirror then Pore Breathing the same day still counts as one followed-through slot', () => {
+  const storage = memoryStorage();
+  const day = new Date(2026, 6, 22);
+  // Morning: the Guide's daily card is still the Soul Mirror reflection.
+  Review.capturePlan(storage, day, [
+    {id:'clock',done:true},
+    {id:'soulmirror',done:false}
+  ]);
+  // Later: finishing the Mirror swaps the card to Pore Breathing (id 'pore'),
+  // and the player completes it. Without aliasing, this 'pore' completion
+  // could never match the frozen 'soulmirror' assignment.
+  Review.capturePlan(storage, day, [
+    {id:'clock',done:true},
+    {id:'pore',done:true}
+  ]);
+
+  const summary = Review.summarize(storage, day, new Date(2026, 6, 23));
+  assert.deepEqual(summary.plan,{assigned:2,completed:2,days:1});
+  assert.deepEqual(Review.load(storage).days['2026-07-22'].plan, {
+    assigned:['clock','soulmirror'], completed:['clock','soulmirror'], frozen:true
+  });
+});
+
 test('older detail rolls into lifetime totals without growing the sync payload forever', () => {
   const storage = memoryStorage();
   const state = { version: 1, days: {} };
