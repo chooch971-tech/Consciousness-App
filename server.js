@@ -615,11 +615,17 @@ async function generateAiMessage(feature, context) {
 }
 
 // ── Push helpers ─────────────────────────────────────────
-async function pushTo(sub, prompt, title) {
+// tag lets the service worker tell push types apart before deciding whether
+// to show them — specifically so Practice Reminders (optional "time to
+// train" nudges) can be suppressed while the player is mid-exercise, without
+// touching Awareness's own check-in pushes, prayer, or anything else that
+// doesn't set one.
+async function pushTo(sub, prompt, title, tag) {
   const payload = JSON.stringify({
     title: title || 'Presence',
     body: prompt,
     url: 'https://chooch971-tech.github.io/Consciousness-App/presence.html',
+    ...(tag ? { tag } : {}),
     // NOTE: Pavlok is fired server-side via firePavlokServer() — exactly once
     // per bell. Do NOT add pavlok creds to the payload; the service worker
     // would then ALSO fire, double-stimulating and tripping Pavlok's rate
@@ -790,7 +796,7 @@ async function processPracticeSchedules() {
         const sub = subscriptions.find(s => s.endpoint === schedule.endpoint);
         if (sub) {
           const msg = PRACTICE_REMINDER_MESSAGES[Math.floor(Math.random() * PRACTICE_REMINDER_MESSAGES.length)];
-          const result = await pushTo(sub, msg, 'Omnia');
+          const result = await pushTo(sub, msg, 'Omnia', 'presence-practice-reminder');
           if (result === true) { fired[i] = true; dirty = true; }
         }
       }

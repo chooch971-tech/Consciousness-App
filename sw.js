@@ -1,7 +1,7 @@
 // Service Worker for Presence app
 // Handles background push notifications + shell caching
 // Cache version — bump this string when you need to force-evict all clients
-const CACHE = 'presence-shell-v351';
+const CACHE = 'presence-shell-v352';
 
 const APP_URL = self.registration
   ? self.registration.scope + 'presence.html'
@@ -115,6 +115,38 @@ self.addEventListener('fetch', event => {
 });
 
 // ── Push notifications ────────────────────────────────────────────────────────
+// Practice Reminder pushes (tag 'presence-practice-reminder') are suppressed
+// while the player is mid-exercise in a Concentration session — see the flag
+// setup in awareness-client.js. The flag lives in IndexedDB because this
+// service worker context can't read the page's localStorage. Reads default
+// to "not suppressed" on any failure (missing DB, no flag yet, etc.) so a
+// broken check can never silently swallow a real reminder.
+const PRESENCE_SESSION_FLAG_DB = 'presence_session_flags';
+const PRESENCE_SESSION_FLAG_STORE = 'flags';
+const PRESENCE_SESSION_FLAG_KEY = 'inConcentrationSession';
+function presenceIsInConcentrationSession() {
+  return new Promise(resolve => {
+    if (!self.indexedDB) { resolve(false); return; }
+    const req = self.indexedDB.open(PRESENCE_SESSION_FLAG_DB, 1);
+    req.onupgradeneeded = () => {
+      const db = req.result;
+      if (!db.objectStoreNames.contains(PRESENCE_SESSION_FLAG_STORE)) db.createObjectStore(PRESENCE_SESSION_FLAG_STORE);
+    };
+    req.onsuccess = () => {
+      try {
+        const tx = req.result.transaction(PRESENCE_SESSION_FLAG_STORE, 'readonly');
+        const getReq = tx.objectStore(PRESENCE_SESSION_FLAG_STORE).get(PRESENCE_SESSION_FLAG_KEY);
+        getReq.onsuccess = () => {
+          const rec = getReq.result;
+          resolve(!!(rec && rec.active && rec.expiresAt > Date.now()));
+        };
+        getReq.onerror = () => resolve(false);
+      } catch (e) { resolve(false); }
+    };
+    req.onerror = () => resolve(false);
+  });
+}
+
 self.addEventListener('push', event => {
   let data = {};
   try {
@@ -134,11 +166,15 @@ self.addEventListener('push', event => {
     data: { url: data.url || APP_URL }
   };
 
+  const isPracticeReminder = data.tag === 'presence-practice-reminder';
   // Pavlok is fired server-side (firePavlokServer) — exactly once per bell.
   // The SW must NOT also fire it, or the duplicate trips Pavlok's rate limit
   // and zaps go silent after a couple of hits. Just show the notification.
   event.waitUntil(
-    self.registration.showNotification(data.title || 'Presence', options)
+    (isPracticeReminder ? presenceIsInConcentrationSession() : Promise.resolve(false)).then(suppress => {
+      if (suppress) return; // mid-exercise — the session already has the player's full attention
+      return self.registration.showNotification(data.title || 'Presence', options);
+    })
   );
 });
 

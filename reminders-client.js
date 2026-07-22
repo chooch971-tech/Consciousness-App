@@ -14,6 +14,10 @@ function _armReminderTimeouts(times) {
     if (target <= now) return;
     var ms = target - now;
     setTimeout(function() {
+      // Don't interrupt a live Concentration exercise with a training nudge —
+      // the whole point of the session is uninterrupted focus. The matching
+      // push notification is suppressed the same way (see awareness-client.js).
+      if (window._inConcSession) return;
       playReminderBell();
       showToast('Time to train.');
     }, ms);

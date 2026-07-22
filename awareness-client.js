@@ -972,7 +972,60 @@ function suppressTutorialForExerciseEntry() {
 // reported "lag"/"not loading" was actually a leftover drawerAbout handler
 // throwing and unbinding later drawer handlers — not this feature.)
 var DRAWER_REOPEN_ON_BACK = true;
+// ── Concentration "quiet hours" ────────────────────────────────────────────
+// Suppress Practice Reminder notifications (the optional "time to train"
+// nudge, in-app toast and push alike) from popping while the player is
+// genuinely mid-exercise in a Concentration session — Clock, Visualization,
+// Auditory, Thought Control, Asana, Senses. These are deep-focus sessions;
+// a notification banner breaks concentration. Awareness's own periodic
+// check-in pushes are untouched — that feature depends on firing during a
+// live Awareness session, which is a different screen (sessionScreen) and
+// deliberately excluded here, as is Prayer (prayerSessionScreen).
+//
+// The flag is written to IndexedDB, not localStorage: the service worker
+// decides whether to show an incoming push, and it runs in a separate
+// context that cannot read localStorage — only IndexedDB is shared between
+// a page and its service worker.
+var CONC_ONLY_SESSION_SCREENS = { concSessionScreen:1, visSessionScreen:1, audSessionScreen:1, tcSessionScreen:1, asanaSessionScreen:1, senseSessionScreen:1 };
+var PRESENCE_SESSION_FLAG_DB = 'presence_session_flags';
+var PRESENCE_SESSION_FLAG_STORE = 'flags';
+var PRESENCE_SESSION_FLAG_KEY = 'inConcentrationSession';
+// Safety ceiling: a crash or force-quit mid-session must not wedge Practice
+// Reminders silent forever. No Concentration exercise runs anywhere near
+// this long, so anything still "active" past it is a stale flag, not a
+// real session.
+var PRESENCE_SESSION_FLAG_TTL_MS = 60 * 60 * 1000;
+function _presenceSessionFlagDb() {
+  return new Promise(function(resolve, reject) {
+    if (!window.indexedDB) { reject(new Error('IndexedDB unavailable')); return; }
+    var req = indexedDB.open(PRESENCE_SESSION_FLAG_DB, 1);
+    req.onupgradeneeded = function() {
+      var db = req.result;
+      if (!db.objectStoreNames.contains(PRESENCE_SESSION_FLAG_STORE)) db.createObjectStore(PRESENCE_SESSION_FLAG_STORE);
+    };
+    req.onsuccess = function() { resolve(req.result); };
+    req.onerror = function() { reject(req.error); };
+  });
+}
+function setConcentrationSessionFlag(active) {
+  _presenceSessionFlagDb().then(function(db) {
+    var tx = db.transaction(PRESENCE_SESSION_FLAG_STORE, 'readwrite');
+    var store = tx.objectStore(PRESENCE_SESSION_FLAG_STORE);
+    if (active) store.put({ active: true, expiresAt: Date.now() + PRESENCE_SESSION_FLAG_TTL_MS }, PRESENCE_SESSION_FLAG_KEY);
+    else store.delete(PRESENCE_SESSION_FLAG_KEY);
+  }).catch(function() {}); // best-effort — never block navigation on this
+}
+
 function showScreen(id) {
+  // Track entry/exit of a Concentration-only session screen on every
+  // navigation — this is the single chokepoint every exercise's start,
+  // completion, discard, and back-out path already funnels through.
+  var wasInConcSession = !!window._inConcSession;
+  var isInConcSession = !!CONC_ONLY_SESSION_SCREENS[id];
+  if (isInConcSession !== wasInConcSession) {
+    window._inConcSession = isInConcSession;
+    setConcentrationSessionFlag(isInConcSession);
+  }
   if (id === 'homeScreen') {
     // Backing out of a menu opened from the hamburger: raise the drawer FIRST,
     // while the menu screen is still up, so the drawer overlay masks the swap
