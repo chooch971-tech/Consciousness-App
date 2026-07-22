@@ -9120,6 +9120,7 @@ function enterAppAfterSignIn(onEntered) {
     if (typeof renderHome === 'function') renderHome();
     if (typeof showScreen === 'function') showScreen('homeScreen');
     if (typeof onEntered === 'function') { try { onEntered(); } catch(e) {} }
+    try { window.dispatchEvent(new Event('presence:auth-ready')); } catch(e) {}
     if (window.__dismissSplash) window.__dismissSplash();
   }
   function pull() {
@@ -9169,7 +9170,7 @@ async function pushResetSnapshotToCloud() {
         'Content-Type': 'application/json',
         'Authorization': 'Bearer ' + authToken
       },
-      body: JSON.stringify({ data: data, deviceInfo: detectDevice() })
+      body: JSON.stringify({ data: data, deviceInfo: detectDevice(), deviceId: getSyncDeviceId() })
     });
     if (!res.ok && res.status === 401) authLogout({ message: 'Session expired — sign in via Settings' });
   } catch(e) {

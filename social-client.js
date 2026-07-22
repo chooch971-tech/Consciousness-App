@@ -832,16 +832,27 @@ document.getElementById('profileActivityBody').addEventListener('click', functio
 // Prime the Lodge feed after state restoration, long before the user
 // opens the drawer. This makes the first visit feel like a native screen.
 function warmLodgeExperience() {
+  if (!authToken) return;
   warmLodgeFeeds();
   loadChatList(false);
   loadLodgeNotifs();
 }
+var _lodgeWarmTimer = null;
+function scheduleLodgeWarmExperience() {
+  if (_lodgeWarmTimer) return;
+  // Spread signed-in startup reads across a short window. A launch wave should
+  // not turn into every device hitting feed/messages/notifications in the same
+  // 80ms slice, while the warm-up still finishes well before normal navigation.
+  var delay = 650 + Math.floor(Math.random() * 1350);
+  _lodgeWarmTimer = setTimeout(function() {
+    _lodgeWarmTimer = null;
+    warmLodgeExperience();
+  }, delay);
+}
 window.addEventListener('load', function() {
-  // Start before the first drawer visit, then retry once cloud/auth
-  // restoration has had time to settle on slower devices.
-  setTimeout(warmLodgeExperience, 80);
-  setTimeout(warmLodgeExperience, 700);
+  scheduleLodgeWarmExperience();
 });
+window.addEventListener('presence:auth-ready', scheduleLodgeWarmExperience);
 (function() {
   var ov = document.getElementById('likersOverlay');
   document.getElementById('likersCloseBtn').addEventListener('click', function() { ov.classList.remove('on'); });
@@ -1013,18 +1024,41 @@ async function loadFriendSocial(f) {
 
 // Notifications bell.
 var _lodgeNotifs = [];
+var _lodgeNotifsPromise = null;
+var _lodgeNotifsLoadedAt = 0;
+var _lodgeNotifsToken = null;
+var _lodgeNotifsEpoch = 0;
 var NOTIF_COPY = { like: 'liked your post', comment: 'commented on your post', follow: 'now follows you', follow_req: 'requested to follow you', approved: 'approved your follow request', dm: 'sent you a message', friend: 'is now your friend — you follow each other' };
-async function loadLodgeNotifs() {
+async function loadLodgeNotifs(force) {
   if (!authToken) return;
-  try {
-    var res = await fetch(SERVER_URL + '/api/social/notifications', { headers: { 'Authorization': 'Bearer ' + authToken } });
-    if (!res.ok) return;
-    var d = await res.json();
-    _lodgeNotifs = d.notifications || [];
-    var b = document.getElementById('lodgeBellBadge');
-    if (d.unseen > 0) { b.style.display = ''; b.textContent = d.unseen > 9 ? '9+' : d.unseen; }
-    else b.style.display = 'none';
-  } catch(e) {}
+  if (_lodgeNotifsToken === null) {
+    _lodgeNotifsToken = authToken;
+  } else if (_lodgeNotifsToken !== authToken) {
+    _lodgeNotifs = [];
+    _lodgeNotifsLoadedAt = 0;
+    _lodgeNotifsToken = authToken;
+    _lodgeNotifsEpoch++;
+  }
+  if (!force && _lodgeNotifsLoadedAt && Date.now() - _lodgeNotifsLoadedAt < 30000) return _lodgeNotifs;
+  if (_lodgeNotifsPromise) return _lodgeNotifsPromise;
+  var requestToken = authToken;
+  var requestEpoch = _lodgeNotifsEpoch;
+  _lodgeNotifsPromise = (async function() {
+    try {
+      var res = await fetch(SERVER_URL + '/api/social/notifications', { headers: { 'Authorization': 'Bearer ' + authToken } });
+      if (!res.ok) return _lodgeNotifs;
+      var d = await res.json();
+      if (authToken !== requestToken || _lodgeNotifsEpoch !== requestEpoch) return _lodgeNotifs;
+      _lodgeNotifs = d.notifications || [];
+      _lodgeNotifsLoadedAt = Date.now();
+      var b = document.getElementById('lodgeBellBadge');
+      if (d.unseen > 0) { b.style.display = ''; b.textContent = d.unseen > 9 ? '9+' : d.unseen; }
+      else b.style.display = 'none';
+      return _lodgeNotifs;
+    } catch(e) { return _lodgeNotifs; }
+    finally { _lodgeNotifsPromise = null; }
+  })();
+  return _lodgeNotifsPromise;
 }
 function renderLodgeNotifs() {
   var list = document.getElementById('notifList');
@@ -1042,12 +1076,19 @@ function openLodgeNotifs() {
   var ov = document.getElementById('notifOverlay');
   renderLodgeNotifs();
   ov.classList.add('on');
+  loadLodgeNotifs(true).then(function() {
+    if (ov.classList.contains('on')) renderLodgeNotifs();
+    // The refresh and mark-seen request intentionally overlap. Keep the local
+    // badge dismissed even if the refresh observed the pre-update unseen count.
+    document.getElementById('lodgeBellBadge').style.display = 'none';
+  });
   fetch(SERVER_URL + '/api/social/notifications/seen', { method: 'POST', headers: { 'Authorization': 'Bearer ' + authToken } }).catch(function() {});
   document.getElementById('lodgeBellBadge').style.display = 'none';
 }
 async function clearLodgeNotifs() {
   if (!_lodgeNotifs.length) return;
   var previous = _lodgeNotifs;
+  _lodgeNotifsEpoch++;
   _lodgeNotifs = [];
   renderLodgeNotifs();
   document.getElementById('lodgeBellBadge').style.display = 'none';
@@ -1061,7 +1102,7 @@ async function clearLodgeNotifs() {
   } catch(e) {
     _lodgeNotifs = previous;
     renderLodgeNotifs();
-    loadLodgeNotifs();
+    loadLodgeNotifs(true);
     showToast('Couldn’t clear notifications');
   }
 }
@@ -1133,7 +1174,6 @@ async function loadChatList(paint) {
       if (authToken !== requestToken) return;
       _chatConversations = d.conversations || [];
       _chatListLoaded = true;
-      warmChatMessages(_chatConversations.slice(0, 6));
     } catch(e) {}
   })();
   _chatListPromise = request;
@@ -1222,11 +1262,6 @@ function _fetchChatMsgs(convId) {
     })
     .finally(function() { delete _chatMessageRequests[convId]; });
   return _chatMessageRequests[convId];
-}
-function warmChatMessages(conversations) {
-  (conversations || []).forEach(function(conversation) {
-    if (conversation && conversation.id && !_chatMessageCache[conversation.id]) _fetchChatMsgs(conversation.id).catch(function() {});
-  });
 }
 
 async function sendChatMsg() {

@@ -180,14 +180,18 @@ async function connectDB() {
 
     await ensureIndexes([
       { label: 'follows.follower-followee', collection: followsCollection, keys: { followerId: 1, followeeId: 1 }, options: { unique: true } },
+      { label: 'follows.follower-status-created', collection: followsCollection, keys: { followerId: 1, status: 1, createdAt: -1 } },
+      { label: 'follows.followee-status-created', collection: followsCollection, keys: { followeeId: 1, status: 1, createdAt: -1 } },
       { label: 'posts.user-created', collection: postsCollection, keys: { userId: 1, createdAt: -1 } },
       { label: 'posts.user-type-created', collection: postsCollection, keys: { userId: 1, type: 1, createdAt: -1 } },
       { label: 'posts.created', collection: postsCollection, keys: { createdAt: -1 } },
       { label: 'likes.post-user', collection: likesCollection, keys: { postId: 1, userId: 1 }, options: { unique: true } },
       { label: 'comments.post-created', collection: commentsCollection, keys: { postId: 1, createdAt: 1 } },
+      { label: 'comments.user-created', collection: commentsCollection, keys: { userId: 1, createdAt: -1 } },
       { label: 'blocks.user-blocked', collection: blocksCollection, keys: { userId: 1, blockedId: 1 }, options: { unique: true } },
+      { label: 'blocks.blocked-user', collection: blocksCollection, keys: { blockedId: 1, userId: 1 } },
       { label: 'notifications.user-created', collection: notificationsCollection, keys: { userId: 1, createdAt: -1 } },
-      { label: 'conversations.participants', collection: conversationsCollection, keys: { participants: 1 } },
+      { label: 'conversations.participants', collection: conversationsCollection, keys: { participants: 1, lastMsgAt: -1 } },
       { label: 'messages.conversation-created', collection: messagesCollection, keys: { convId: 1, createdAt: 1 } },
       { label: 'messages.conversation-sender-created', collection: messagesCollection, keys: { convId: 1, senderId: 1, createdAt: 1 } },
       { label: 'push-subscriptions.endpoint', collection: userPushSubsCollection, keys: { endpoint: 1 }, options: { unique: true } },
@@ -195,6 +199,7 @@ async function connectDB() {
       // TTL sweeps stale beacons; reads independently guard expiresAt.
       { label: 'beacons.expiry', collection: beaconsCollection, keys: { expiresAt: 1 }, options: { expireAfterSeconds: 0 } },
       { label: 'sync.user-synced', collection: syncDataCollection, keys: { userId: 1, syncedAt: -1 } },
+      { label: 'sync.user-device', collection: syncDataCollection, keys: { userId: 1, deviceId: 1 }, options: { unique: true, partialFilterExpression: { deviceId: { $type: 'string' } } } },
       { label: 'users.email', collection: usersCollection, keys: { email: 1 }, options: { unique: true, sparse: true } },
       { label: 'users.google-id', collection: usersCollection, keys: { googleId: 1 }, options: { sparse: true } }
     ], logger);
@@ -693,6 +698,7 @@ async function processPrayerSchedules() {
   for (const schedule of prayerSchedules) {
     if (!schedule.enabled) continue;
     if (!schedule.times || !schedule.times.length) continue;
+    let dirty = false;
     const tzOffset = schedule.tzOffset || 0;
     const localMs = nowUtc.getTime() + tzOffset * 60000;
     const localNow = new Date(localMs);
@@ -702,6 +708,7 @@ async function processPrayerSchedules() {
     const nowTotalMin = nowH * 60 + nowM;
     if (!schedule.firedToday || schedule.firedToday.date !== todayStr) {
       schedule.firedToday = { date: todayStr, fired: {} };
+      dirty = true;
     }
     const fired = schedule.firedToday.fired || {};
     for (let i = 0; i < schedule.times.length; i++) {
@@ -720,6 +727,7 @@ async function processPrayerSchedules() {
             const result = await pushTo(sub, `Prayer time: ${schedule.times[i]}`, 'Prayer');
             if (result === true) {
               fired[i].push(slotIndex);
+              dirty = true;
               if (fired[i].length >= 4) {
                 fired[i] = [0, 1, 2, 3];
               }
@@ -728,7 +736,7 @@ async function processPrayerSchedules() {
         }
       }
     }
-    await savePrayerSchedule(schedule);
+    if (dirty) await savePrayerSchedule(schedule);
   }
 }
 
@@ -753,12 +761,14 @@ async function processPracticeSchedules() {
   for (const schedule of practiceSchedules) {
     if (!schedule.enabled) continue;
     if (!schedule.times || !schedule.times.length) continue;
+    let dirty = false;
     const tzOffset = schedule.tzOffset || 0;
     const localNow = new Date(nowUtc.getTime() + tzOffset * 60000);
     const todayStr = localNow.toDateString();
     const nowTotalMin = localNow.getUTCHours() * 60 + localNow.getUTCMinutes();
     if (!schedule.firedToday || schedule.firedToday.date !== todayStr) {
       schedule.firedToday = { date: todayStr, fired: {} };
+      dirty = true;
     }
     const fired = schedule.firedToday.fired || {};
     for (let i = 0; i < schedule.times.length; i++) {
@@ -770,11 +780,11 @@ async function processPracticeSchedules() {
         if (sub) {
           const msg = PRACTICE_REMINDER_MESSAGES[Math.floor(Math.random() * PRACTICE_REMINDER_MESSAGES.length)];
           const result = await pushTo(sub, msg, 'Omnia');
-          if (result === true) fired[i] = true;
+          if (result === true) { fired[i] = true; dirty = true; }
         }
       }
     }
-    await savePracticeSchedule(schedule);
+    if (dirty) await savePracticeSchedule(schedule);
   }
 }
 
@@ -1347,7 +1357,7 @@ function clampAchSnapshot(incomingStr, prevSnap) {
 // PUSH DATA
 app.post('/api/sync/sync/push', verifyToken, mutationRateLimit, async (req, res) => {
   try {
-    const { data, deviceInfo } = req.body;
+    const { data, deviceInfo, deviceId } = req.body;
     if (!data) return res.status(400).json({ error: 'No data to sync' });
     let anyClamped = false;
     // Fetch once, reuse for Omnia + Awareness + Concentration — they all diff
@@ -1378,15 +1388,31 @@ app.post('/api/sync/sync/push', verifyToken, mutationRateLimit, async (req, res)
     }
     const omniaClamped = anyClamped;
     if (anyClamped) console.warn(`[Sync] Clamped implausible progression for user ${req.user.userId}`);
+    const userObjectId = new ObjectId(req.user.userId);
+    const cleanDeviceId = typeof deviceId === 'string' && /^[A-Za-z0-9_-]{12,80}$/.test(deviceId) ? deviceId : null;
     const syncData = {
-      userId: new ObjectId(req.user.userId),
+      userId: userObjectId,
       ...selectSyncData(data),
       deviceInfo: typeof deviceInfo === 'string' ? deviceInfo.slice(0, 120) : 'Unknown device',
       syncedAt: new Date(),
     };
-    const result = await syncDataCollection.insertOne(syncData);
-    await usersCollection.updateOne({ _id: new ObjectId(req.user.userId) }, { $set: { lastSync: new Date() } });
-    res.json({ message: 'Data synced', syncId: result.insertedId, omniaClamped });
+    let syncId = null;
+    if (cleanDeviceId) {
+      syncData.deviceId = cleanDeviceId;
+      const result = await syncDataCollection.updateOne(
+        { userId: userObjectId, deviceId: cleanDeviceId },
+        { $set: syncData },
+        { upsert: true }
+      );
+      syncId = result.upsertedId || null;
+    } else {
+      // Compatibility for older clients during rollout; new clients always
+      // send deviceId and remain bounded to one snapshot row per installation.
+      const result = await syncDataCollection.insertOne(syncData);
+      syncId = result.insertedId;
+    }
+    await usersCollection.updateOne({ _id: userObjectId }, { $set: { lastSync: new Date() } });
+    res.json({ message: 'Data synced', syncId, omniaClamped });
   } catch (err) {
     console.error('Push sync error:', err);
     res.status(500).json({ error: 'Sync push failed' });

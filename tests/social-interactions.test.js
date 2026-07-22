@@ -51,16 +51,18 @@ test('Message opens the thread immediately while the conversation request is pen
   assert.match(body, /_chatPendingFriendId !== userId/);
 });
 
-test('Lodge preloads its single merged feed and recent message threads while preserving client boundaries', () => {
+test('Lodge warms launch summaries without preloading message histories', () => {
   assert.match(socialClient, /function warmLodgeFeeds\(\)/);
   assert.match(socialClient, /function warmLodgeExperience\(\)[\s\S]*?warmLodgeFeeds\(\);[\s\S]*?loadChatList\(false\);[\s\S]*?loadLodgeNotifs\(\)/);
+  assert.match(socialClient, /function scheduleLodgeWarmExperience\(\)[\s\S]*?650 \+ Math\.floor\(Math\.random\(\) \* 1350\)/);
+  assert.match(socialClient, /window\.addEventListener\('presence:auth-ready', scheduleLodgeWarmExperience\)/);
+  assert.match(socialClient, /var _lodgeNotifsPromise = null;[\s\S]*?Date\.now\(\) - _lodgeNotifsLoadedAt < 30000[\s\S]*?if \(_lodgeNotifsPromise\) return _lodgeNotifsPromise/);
   assert.match(socialClient, /renderLodgeFeed\(\);\s*if \(!document\.getElementById\('lodgeScreen'\)\.classList\.contains\('active'\)\) showScreen\('lodgeScreen'\)/);
   // One merged feed now (no type param, no per-tab warm).
   assert.match(socialClient, /api\/social\/feed\?sort=newest/);
   assert.match(socialClient, /_cacheLodgeFeed\(posts\)/);
   assert.doesNotMatch(socialClient, /_warmLodgeFeed/);
-  assert.match(socialClient, /function warmChatMessages\(conversations\)/);
-  assert.match(socialClient, /warmChatMessages\(_chatConversations\.slice\(0, 6\)\)/);
+  assert.doesNotMatch(socialClient, /function warmChatMessages\(conversations\)|warmChatMessages\(_chatConversations/);
   assert.match(socialClient, /var cachedMessages = _chatMessageCache\[convId\];/);
   assert.match(socialClient, /function _fetchChatMsgs\(convId\)/);
 });

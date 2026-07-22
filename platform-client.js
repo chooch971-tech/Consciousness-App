@@ -269,7 +269,7 @@ async function syncPushData() {
         'Content-Type': 'application/json',
         'Authorization': 'Bearer ' + authToken
       },
-      body: JSON.stringify({ data, deviceInfo: detectDevice() })
+      body: JSON.stringify({ data, deviceInfo: detectDevice(), deviceId: getSyncDeviceId() })
     });
 
     if (!res.ok) {
@@ -600,6 +600,21 @@ function detectDevice() {
   if (/Windows/.test(ua)) return 'Windows';
   if (/Linux/.test(ua)) return 'Linux';
   return 'Unknown';
+}
+
+// Stable per-install identity for cloud snapshot compaction. It is deliberately
+// local-only (not part of the synced payload), so each device owns one server
+// snapshot row instead of appending an unbounded row on every save.
+function getSyncDeviceId() {
+  var key = 'presence_sync_device_id';
+  var existing = localStorage.getItem(key);
+  if (existing && /^[A-Za-z0-9_-]{12,80}$/.test(existing)) return existing;
+  var generated = '';
+  try { generated = crypto.randomUUID().replace(/-/g, ''); } catch(e) {}
+  if (!generated) generated = Date.now().toString(36) + Math.random().toString(36).slice(2) + Math.random().toString(36).slice(2);
+  generated = generated.replace(/[^A-Za-z0-9_-]/g, '').slice(0, 80);
+  localStorage.setItem(key, generated);
+  return generated;
 }
 
 // Silently refresh the JWT before it can expire. Legacy tokens without an
