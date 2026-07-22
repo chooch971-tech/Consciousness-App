@@ -248,6 +248,9 @@ async function testEveryDrawerScreenSwipeBack(browser, baseUrl) {
         active: screen.classList.contains('active'),
         remembersDrawer: window._returnToDrawer,
         transform: screen.style.transform,
+        currentLayer: Number(getComputedStyle(screen).zIndex),
+        drawerLayer: Number(getComputedStyle(drawer).zIndex),
+        pageIsTopLayer: screen.contains(document.elementFromPoint(180, 240)),
         drawerVisible: drawer.classList.contains('show'),
         livePreview: drawer.classList.contains('swipe-back-live')
       };
@@ -255,6 +258,8 @@ async function testEveryDrawerScreenSwipeBack(browser, baseUrl) {
     assert.equal(state.active, true, `${drawerId} opens its screen`);
     assert.equal(state.remembersDrawer, true, `${drawerId} retains its drawer origin`);
     assert.match(state.transform, /translateX\(/, `${drawerId} follows the finger`);
+    assert.ok(state.currentLayer > state.drawerLayer, `${drawerId} stays above the live drawer`);
+    assert.equal(state.pageIsTopLayer, true, `${drawerId} reveals the drawer underneath the departing page`);
     assert.equal(state.drawerVisible, true, `${drawerId} reveals the drawer while swiping`);
     assert.equal(state.livePreview, true, `${drawerId} uses the live drawer preview`);
     await page.evaluate(screenId => {

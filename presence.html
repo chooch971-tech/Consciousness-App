@@ -2688,7 +2688,7 @@
        active screen. Avoiding a deep cloned preview keeps the gesture on the
        compositor and removes a large main-thread pause on mobile. */
     .drawer-overlay.swipe-back-live { z-index:19; pointer-events:none; transition:none; }
-    .drawer-overlay.swipe-back-live .drawer { transition:none; }
+    .drawer-overlay.swipe-back-live .drawer { z-index:19; transition:none; }
     .drawer-header { padding:0 24px 24px; border-bottom:1px solid var(--border); margin-bottom:8px; }
     .drawer-wordmark { font-family:Cormorant Garamond,serif; font-size:11px; font-weight:300; letter-spacing:.35em; text-transform:uppercase; color:var(--accent); }
     .drawer-level { font-size:9px; letter-spacing:.15em; color:var(--muted); margin-top:4px; }
@@ -9684,6 +9684,11 @@ startPrayerScheduler();
 
     screenEl.style.transition = 'none';
     screenEl.style.willChange = 'transform';
+    // iOS can promote the drawer's fixed child independently and let its
+    // authored z-index escape the overlay stacking context. Pin the departing
+    // page above both live drawer layers so the menu is revealed underneath
+    // the page instead of painting over it as soon as the gesture begins.
+    screenEl.style.zIndex = '21';
 
     sw.dragging   = true;
     sw.screenEl   = screenEl;
@@ -9778,6 +9783,7 @@ startPrayerScheduler();
         screenEl.style.transform  = '';
         screenEl.style.transition = '';
         screenEl.style.willChange = '';
+        screenEl.style.zIndex     = '';
       });
     });
   }
@@ -9812,6 +9818,7 @@ startPrayerScheduler();
       screenEl.style.transition = '';
       screenEl.style.transform  = '';
       screenEl.style.willChange = '';
+      screenEl.style.zIndex     = '';
     });
   }
 
@@ -9834,6 +9841,7 @@ startPrayerScheduler();
       sw.screenEl.style.transition = '';
       sw.screenEl.style.transform = '';
       sw.screenEl.style.willChange = '';
+      sw.screenEl.style.zIndex = '';
     }
   }
 

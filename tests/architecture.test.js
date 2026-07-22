@@ -251,7 +251,9 @@ test('top-level drawer screens reveal the open drawer during swipe-back', () => 
   assert.match(presence, /var revealsDrawer = prevIsHome && !!window\._returnToDrawer/);
   assert.match(presence, /if \(prevIsHome\) window\._returnToDrawer = false;/);
   assert.match(presence, /function showLiveDrawerPreview\(\)[\s\S]*?classList\.add\('drawer-instant', 'swipe-back-live', 'show'\)/);
+  assert.match(presence, /\.drawer-overlay\.swipe-back-live \.drawer \{ z-index:19; transition:none; \}/);
   assert.match(presence, /var drawerPreview = revealsDrawer \? showLiveDrawerPreview\(\) : null/);
+  assert.match(presence, /screenEl\.style\.zIndex = '21'/);
   assert.match(presence, /function releaseLiveDrawerPreview\(drawer, keepOpen\)/);
   assert.match(presence, /function afterSwipePaint\(duration, callback\)[\s\S]*?setTimeout\(function\(\) \{[\s\S]*?requestAnimationFrame\(function\(\) \{[\s\S]*?requestAnimationFrame\(callback\)/);
   assert.doesNotMatch(presence.slice(presence.indexOf('// ── iOS-style interactive swipe-back'), presence.indexOf('// ══════════════════════════════════════════════════════\n// PORE BREATHING')), /cloneNode|getComputedStyle\(pair\[0\]\)|mirrorFrame/);
