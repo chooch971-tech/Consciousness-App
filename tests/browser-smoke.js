@@ -494,6 +494,56 @@ async function testFriendMessageReturn(browser, baseUrl) {
   await context.close();
 }
 
+async function testProfileActivityWarm(browser, baseUrl) {
+  const context = await browser.newContext({ viewport: { width: 390, height: 844 }, hasTouch: true, serviceWorkers: 'block' });
+  const { page, errors } = await seedPage(context, baseUrl, { presence_auth_token: 'browser-test-token' });
+  await page.evaluate(() => {
+    const originalFetch = window.fetch;
+    window._profileActivityCalls = [];
+    window.fetch = function(url, options) {
+      const target = String(url);
+      if (target.includes('/api/social/users/activity-browser/')) {
+        window._profileActivityCalls.push(target);
+        const isComments = target.endsWith('/comments');
+        return Promise.resolve({
+          ok: true,
+          json: () => Promise.resolve(isComments
+            ? { comments: [{ id: 'warm-comment', text: 'Warmed comment', createdAt: new Date().toISOString(), post: { id: 'warm-post', username: 'other' } }] }
+            : { posts: [{ id: 'warm-post', text: 'Warmed post', createdAt: new Date().toISOString(), likeCount: 0, commentCount: 0 }] })
+        });
+      }
+      return originalFetch(url, options);
+    };
+    const friend = {
+      userId: 'activity-browser', username: 'activity_friend', displayName: 'Activity Friend',
+      streak: 2, awarenessLevel: 1, awarenessXp: 0, concLevel: 1, concXp: 0,
+      achEarned: {}, achMonthlyEarned: {}, commonFriendIds: []
+    };
+    _friendProfileCache[friend.userId] = friend;
+    openFriendProfile(friend.userId, 'homeScreen');
+  });
+  await page.waitForFunction(() => _profileActivityCache['activity-browser:posts'] && _profileActivityCache['activity-browser:comments']);
+  const posts = await page.evaluate(() => {
+    document.getElementById('friendProfPostsBtn').click();
+    const body = document.getElementById('profileActivityBody');
+    return { active: document.getElementById('profileActivityScreen').classList.contains('active'), text: body.textContent, loading: !!body.querySelector('.lodge-skeleton') };
+  });
+  assert.equal(posts.active, true);
+  assert.match(posts.text, /Warmed post/);
+  assert.equal(posts.loading, false, 'cached posts should paint without a loading skeleton');
+  const comments = await page.evaluate(() => {
+    document.getElementById('profileActivityCommentsTab').click();
+    const body = document.getElementById('profileActivityBody');
+    return { text: body.textContent, loading: !!body.querySelector('.lodge-skeleton'), calls: window._profileActivityCalls.slice() };
+  });
+  assert.match(comments.text, /Warmed comment/);
+  assert.equal(comments.loading, false, 'cached comments should paint without a loading skeleton');
+  assert.equal(comments.calls.filter(url => url.endsWith('/posts')).length >= 1, true);
+  assert.equal(comments.calls.filter(url => url.endsWith('/comments')).length >= 1, true);
+  assert.deepEqual(errors, [], 'profile activity warm-up emitted browser errors');
+  await context.close();
+}
+
 async function testLodgeReadMore(browser, baseUrl) {
   // Reflections and essays are one merged post type: long posts truncate on
   // the feed with a Read more affordance that opens the full discussion.
@@ -886,6 +936,9 @@ async function testCloudRestoreAndSignOut(browser, baseUrl) {
     console.log('run - friend message return');
     await testFriendMessageReturn(browser, baseUrl);
     console.log('ok - friend message returns directly to the friend profile');
+    console.log('run - profile activity warm-up');
+    await testProfileActivityWarm(browser, baseUrl);
+    console.log('ok - profile posts and comments are warm before either tab opens');
     console.log('run - Lodge read more');
     await testLodgeReadMore(browser, baseUrl);
     console.log('ok - Lodge feed truncates long posts into a full discussion view');

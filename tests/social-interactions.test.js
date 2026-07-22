@@ -90,7 +90,11 @@ test('Profiles expose posts and comments with scoped Lodge history routes', () =
   assert.match(profileClient, /openProfileActivity\('me', authUsername \|\| 'you', 'posts', 'profileScreen'\)/);
   assert.match(profileClient, /openProfileActivity\(_currentFriendProfile\.userId, _currentFriendProfile\.username, 'comments', 'friendProfileScreen'\)/);
   assert.match(socialClient, /function openProfileActivity\(userId, username, tab, returnScreen\)/);
-  assert.match(socialClient, /api\/social\/users\/.*encodeURIComponent\(_profileActivityUserId\).*_profileActivityTab/s);
+  assert.match(socialClient, /function warmProfileActivity\(userId\)/);
+  assert.match(socialClient, /_profileActivityCache\[key\] = rows/);
+  assert.match(socialClient, /_profileActivityRows = cached \? cached\.slice\(\) : \[\]/);
+  assert.match(profileClient, /warmProfileActivity\('me'\)/);
+  assert.match(profileClient, /warmProfileActivity\(f\.userId\)/);
   assert.match(server, /function resolveSocialHistoryTarget\(viewerId, requestedId\)/);
   assert.match(server, /app\.get\('\/api\/social\/users\/:id\/comments', verifyToken/);
   assert.match(server, /userId: \{ \$in: allowedOwnerIds, \$nin: \[\.\.\.hidden\] \}/);

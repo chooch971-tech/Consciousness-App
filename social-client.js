@@ -687,6 +687,41 @@ var _profileActivityTab = 'posts';
 var _profileActivityReturnScreen = 'profileScreen';
 var _profileActivityRows = [];
 var _profileActivityLoading = false;
+var _profileActivityCache = {};
+var _profileActivityRequests = {};
+
+function _profileActivityCacheKey(userId, tab) {
+  return (userId || 'me') + ':' + (tab === 'comments' ? 'comments' : 'posts');
+}
+
+function _fetchProfileActivity(userId, tab) {
+  var normalizedTab = tab === 'comments' ? 'comments' : 'posts';
+  var key = _profileActivityCacheKey(userId, normalizedTab);
+  if (_profileActivityRequests[key]) return _profileActivityRequests[key];
+  _profileActivityRequests[key] = fetch(SERVER_URL + '/api/social/users/' + encodeURIComponent(userId || 'me') + '/' + normalizedTab, {
+    headers: { 'Authorization': 'Bearer ' + authToken }
+  })
+    .then(function(res) {
+      if (!res.ok) throw new Error('Profile activity request failed');
+      return res.json();
+    })
+    .then(function(data) {
+      var rows = data && Array.isArray(data[normalizedTab]) ? data[normalizedTab] : [];
+      _profileActivityCache[key] = rows;
+      return rows;
+    })
+    .finally(function() { delete _profileActivityRequests[key]; });
+  return _profileActivityRequests[key];
+}
+
+// Begin both requests as soon as a profile is visible. The activity screen can
+// then paint its rows from memory immediately instead of waiting after a tab tap.
+function warmProfileActivity(userId) {
+  if (!authToken) return;
+  ['posts', 'comments'].forEach(function(tab) {
+    _fetchProfileActivity(userId || 'me', tab).catch(function() {});
+  });
+}
 
 function profileActivityPreviousScreen() {
   return document.getElementById(_profileActivityReturnScreen) ? _profileActivityReturnScreen : 'profileScreen';
@@ -722,15 +757,23 @@ function renderProfileActivity() {
 }
 
 async function loadProfileActivity() {
-  _profileActivityLoading = true;
+  var userId = _profileActivityUserId;
+  var tab = _profileActivityTab;
+  var key = _profileActivityCacheKey(userId, tab);
+  var cached = _profileActivityCache[key];
+  _profileActivityRows = cached ? cached.slice() : [];
+  _profileActivityLoading = !cached;
   renderProfileActivity();
   try {
-    var res = await fetch(SERVER_URL + '/api/social/users/' + encodeURIComponent(_profileActivityUserId) + '/' + _profileActivityTab, {
-      headers: { 'Authorization': 'Bearer ' + authToken }
-    });
-    var data = res.ok ? await res.json() : null;
-    _profileActivityRows = data ? (data[_profileActivityTab] || []) : [];
-  } catch(e) { _profileActivityRows = []; }
+    var rows = await _fetchProfileActivity(userId, tab);
+    // Do not let a slower tab/profile request replace the view the user chose.
+    if (_profileActivityUserId !== userId || _profileActivityTab !== tab) return;
+    _profileActivityRows = rows.slice();
+  } catch(e) {
+    if (_profileActivityUserId !== userId || _profileActivityTab !== tab) return;
+    if (!cached) _profileActivityRows = [];
+  }
+  if (_profileActivityUserId !== userId || _profileActivityTab !== tab) return;
   _profileActivityLoading = false;
   renderProfileActivity();
 }
@@ -741,7 +784,6 @@ function openProfileActivity(userId, username, tab, returnScreen) {
   _profileActivityUsername = username || 'practitioner';
   _profileActivityTab = tab === 'comments' ? 'comments' : 'posts';
   _profileActivityReturnScreen = returnScreen || ((document.querySelector('.screen.active') || {}).id) || 'profileScreen';
-  _profileActivityRows = [];
   document.getElementById('profileActivityTitle').textContent = '@' + _profileActivityUsername;
   showScreen('profileActivityScreen');
   loadProfileActivity();
@@ -756,7 +798,6 @@ document.querySelector('.profile-activity-tabs').addEventListener('click', funct
   var tab = btn.getAttribute('data-profile-activity-tab');
   if (tab === _profileActivityTab) return;
   _profileActivityTab = tab;
-  _profileActivityRows = [];
   loadProfileActivity();
 });
 document.getElementById('profileActivityBody').addEventListener('click', function(e) {

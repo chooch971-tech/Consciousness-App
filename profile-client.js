@@ -418,6 +418,7 @@ function openOwnProfile(returnScreenId) {
   _profileReturnScreen = returnScreenId || ((document.querySelector('.screen.active') || {}).id) || 'homeScreen';
   if (_profileReturnScreen === 'profileScreen') _profileReturnScreen = 'homeScreen';
   renderProfile();
+  if (typeof warmProfileActivity === 'function') warmProfileActivity('me');
   showScreen('profileScreen');
 }
 
@@ -566,6 +567,7 @@ function openFriendProfile(userId, returnScreenId) {
     _friendProfileReturnScreen = active.id;
   }
   renderFriendProfile(f);
+  if (typeof warmProfileActivity === 'function') warmProfileActivity(f.userId);
   showScreen('friendProfileScreen');
   if (typeof closeFriendsPanel === 'function') closeFriendsPanel();
 }
