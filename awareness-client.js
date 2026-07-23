@@ -498,13 +498,36 @@ function recordExerciseCompletion(opts) {
   saveConcState();
   if (syncEnabled && authToken) syncPushData();
   touchPracticeStreak();
-  var pre = (typeof omniaState !== 'undefined' && omniaState) ? omniaState.akasha : 0;
+  // Reset per-completion bonus so a bonus from an earlier session (e.g. a
+  // multi-sense drill that ends with a toast, not the full result screen)
+  // can never leak into a later session's banner.
+  window._pendingCompletionBonus = null;
+  var hasOmnia = (typeof omniaState !== 'undefined' && omniaState);
+  var pre = hasOmnia ? omniaState.akasha : 0;
   if (opts.exId && !opts.skipOmnia) {
     awardOmniaForExercise(opts.exId, opts.omniaSeconds, opts.reachedRec);
   }
+  // The session's OWN reward stops here. Anything credited past this point is a
+  // one-time bonus — newly-earned Achievements, a Gift Path milestone — which
+  // must be surfaced separately, so a milestone session doesn't read as if the
+  // exercise itself paid thousands of Akasha (which confused players).
+  var afterExercise = hasOmnia ? omniaState.akasha : 0;
+  var exerciseGain = Math.round(afterExercise - pre);
+  window._lastAchievementBatch = null;
   if (typeof achOnCompletion === 'function') achOnCompletion(opts);
+  var achBatch = window._lastAchievementBatch || null;
+  var afterAch = hasOmnia ? omniaState.akasha : 0;
+  var achGain = Math.round(afterAch - afterExercise);
   if (typeof evaluateGiftPath === 'function') { evaluateGiftPath(); updateGiftPathButton(); }
-  return (typeof omniaState !== 'undefined' && omniaState) ? Math.round(omniaState.akasha - pre) : 0;
+  var giftGain = hasOmnia ? Math.round(omniaState.akasha - afterAch) : 0;
+  if (achGain > 0 || giftGain > 0) {
+    window._pendingCompletionBonus = {
+      ach: achGain, gift: giftGain,
+      achName: achBatch && achBatch.name, achCount: achBatch && achBatch.count
+    };
+  }
+  // Return the session's own reward only — the bonus rides in _pendingCompletionBonus.
+  return exerciseGain;
 }
 
 function touchPracticeStreak() {

@@ -225,6 +225,9 @@ function achEvaluate(silent) {
     var total = 0;
     newly.forEach(function(b){ total += b.reward; });
     var got = omniaCreditAkasha(total, 'achievement', { count: newly.length });
+    // Expose the just-earned batch so a session-complete screen can show it in
+    // its own banner (the achievement toast fires behind that opaque overlay).
+    window._lastAchievementBatch = { name: newly[0].name, count: newly.length, akasha: got };
     if (typeof saveOmniaState === 'function') saveOmniaState();
     achSave();
     if (!silent && typeof showToast === 'function') {
