@@ -2669,6 +2669,8 @@
     .review-insight-glyph svg { width:26px; height:40px; }
     .review-insight-label,.review-next-label { margin-bottom:5px; font:8px 'DM Mono',monospace; letter-spacing:.2em; text-transform:uppercase; color:#a9cde6; }
     .review-insight-text { font:italic 15px/1.55 'Cormorant Garamond',serif; color:#eae4f4; }
+    .review-insight-text.is-loading { color:var(--muted); animation:reviewInsightPulse 1.5s ease-in-out infinite; }
+    @keyframes reviewInsightPulse { 0%,100% { opacity:.5; } 50% { opacity:.85; } }
     .review-hero { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); border:1px solid var(--border); border-radius:14px; background:rgba(255,255,255,.018); overflow:hidden; margin-bottom:18px; }
     .review-hero-cell { min-width:0; padding:16px 6px 13px; text-align:center; }
     .review-hero-cell + .review-hero-cell { border-left:1px solid var(--border); }

@@ -457,15 +457,21 @@ function loadReviewOmnia(period, offset, summary, previous, fallback) {
   }
   var serial = ++_reviewRequestSerial;
   var requestPeriod = period === 'monthly' ? 'review30' : 'review7';
+  function _applyInsight(textVal) {
+    var el = document.getElementById('reviewInsightText');
+    if (el) { el.textContent = textVal; el.classList.remove('is-loading'); }
+  }
   fetchOmniaReport(requestPeriod,reviewOmniaContext(period,offset,summary,previous))
     .then(function(data){
-      if(serial!==_reviewRequestSerial||!data.commentary)return;
+      if(serial!==_reviewRequestSerial)return;
+      // Empty/failed generation falls back to the local insight, replacing the
+      // loading line so it can never be left spinning.
+      if(!data.commentary){ _applyInsight(fallback); return; }
       localStorage.setItem(key,JSON.stringify({ts:Date.now(),commentary:data.commentary}));
-      var text=document.getElementById('reviewInsightText');
-      if(text)text.textContent=data.commentary;
+      _applyInsight(data.commentary);
     }).catch(function(){
-      var text=document.getElementById('reviewInsightText');
-      if(text&&!text.textContent)text.textContent=fallback;
+      if(serial!==_reviewRequestSerial)return;
+      _applyInsight(fallback);
     });
 }
 
@@ -496,11 +502,12 @@ function prewarmReviewOmnia() {
   } catch (e) {}
 }
 
-function reviewInsightHtml(guidance, period) {
+function reviewInsightHtml(guidance, period, loading) {
   if (period === 'yearly') return '';
+  var body = loading ? 'Reading your ' + (period === 'monthly' ? 'month' : 'week') + '…' : escHtml(guidance.insight);
   return '<section class="review-insight">'
     + '<div class="review-insight-glyph">' + (typeof OMNIA_CRYSTAL_SVG_RPT !== 'undefined' ? OMNIA_CRYSTAL_SVG_RPT : '◇') + '</div>'
-    + '<div><div class="review-insight-label">Practice insight</div><div class="review-insight-text" id="reviewInsightText">' + escHtml(guidance.insight) + '</div></div>'
+    + '<div><div class="review-insight-label">Practice insight</div><div class="review-insight-text' + (loading ? ' is-loading' : '') + '" id="reviewInsightText">' + body + '</div></div>'
     + '</section>';
 }
 
@@ -570,11 +577,16 @@ function renderReport(period) {
   }
 
   var guidance = buildReviewGuidance(summary,previous,currentReportPeriod);
-  // If this window's insight was already generated, paint it in the initial
-  // HTML so the local fallback never flashes before Omnia's text on the way in.
+  // If this period's insight was already generated, paint it directly. If it
+  // still needs to be fetched (cache miss + signed in + has sessions), show a
+  // quiet loading line instead of the local fallback — otherwise Omnia's real
+  // insight visibly replaces a different-looking "smaller" fallback on the way
+  // in. The local fallback is reserved for the offline/error case.
   var cachedInsight = reviewCachedInsight(currentReportPeriod,reportOffset);
+  var _reviewToken = (typeof authToken !== 'undefined' && authToken) || localStorage.getItem('presence_auth_token');
+  var insightLoading = !cachedInsight && !!_reviewToken && summary.sessions > 0;
   var insightGuidance = cachedInsight ? { insight:cachedInsight, action:guidance.action } : guidance;
-  var html = reviewInsightHtml(insightGuidance,currentReportPeriod)
+  var html = reviewInsightHtml(insightGuidance,currentReportPeriod,insightLoading)
     + reviewHeroHtml(summary,previous,currentReportPeriod,reflections)
     + reviewTimelineHtml(summary,range,currentReportPeriod)
     + reviewQualityHtml(summary,previous)
