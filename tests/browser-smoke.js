@@ -505,7 +505,7 @@ async function testPracticeReview(browser, baseUrl) {
     };
   });
   assert.equal(weekly.title, 'Practice Review');
-  assert.equal(weekly.range, 'Last 7 days');
+  assert.equal(weekly.range, 'This week');
   assert.match(weekly.text, /Presence quality/);
   assert.match(weekly.text, /Stability/);
   assert.match(weekly.text, /Clock/);
@@ -519,7 +519,7 @@ async function testPracticeReview(browser, baseUrl) {
 
   await page.locator('#reportFilterBtn').click();
   await page.locator('[data-period="monthly"]').click();
-  assert.equal((await page.locator('#reportNavLabel').textContent()).trim(), 'Last 30 days');
+  assert.equal((await page.locator('#reportNavLabel').textContent()).trim(), 'This month');
   await page.locator('#reportFilterBtn').click();
   await page.locator('[data-period="yearly"]').click();
   assert.equal((await page.locator('#reportNavLabel').textContent()).trim(), 'Since you began');

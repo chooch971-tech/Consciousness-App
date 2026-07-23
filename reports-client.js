@@ -40,8 +40,35 @@ function reviewAddDays(value, amount) {
   return date;
 }
 
-function reviewDaysFor(period) {
-  return period === 'monthly' ? 30 : period === 'yearly' ? null : 7;
+// ── Fixed calendar periods ──
+// Practice Review is bucketed into fixed Sunday–Saturday weeks and calendar
+// months (rather than rolling "last 7/30 days"), so a period is a stable,
+// intuitive unit: a past week/month is immutable and its insight is frozen
+// once generated, while the current one fills in. Sunday start matches the
+// app's existing week logic (calendar.js weekKey).
+function reviewWeekStart(value) {
+  var date = reviewDayStart(value);
+  date.setDate(date.getDate() - date.getDay()); // back up to Sunday
+  return date;
+}
+function reviewMonthStart(value) {
+  var date = value ? new Date(value) : new Date();
+  return new Date(date.getFullYear(), date.getMonth(), 1);
+}
+function reviewAddMonths(value, amount) {
+  var date = reviewMonthStart(value);
+  date.setMonth(date.getMonth() + amount);
+  return date;
+}
+
+// Number of days in the displayed period: 7 for a week, the actual length of
+// the calendar month otherwise. Defaults to the current view's offset.
+function reviewDaysFor(period, offset) {
+  if (period === 'yearly') return null;
+  if (period === 'weekly') return 7;
+  if (offset == null) offset = (typeof reportOffset !== 'undefined') ? reportOffset : 0;
+  var range = getDateRange('monthly', offset);
+  return Math.round((range.now.getTime() - range.start.getTime()) / 86400000);
 }
 
 function getDateRange(period, offset) {
@@ -49,19 +76,26 @@ function getDateRange(period, offset) {
   if (period === 'yearly') {
     return { start:null, now:reviewAddDays(new Date(), 1), prevStart:null, prevEnd:null };
   }
-  var days = reviewDaysFor(period);
-  var end = reviewAddDays(new Date(), 1 + offset * days);
-  var start = reviewAddDays(end, -days);
-  var prevEnd = new Date(start);
-  var prevStart = reviewAddDays(prevEnd, -days);
-  return { start:start, now:end, prevStart:prevStart, prevEnd:prevEnd };
+  if (period === 'monthly') {
+    var mStart = reviewAddMonths(new Date(), offset);
+    return { start:mStart, now:reviewAddMonths(mStart, 1), prevStart:reviewAddMonths(mStart, -1), prevEnd:mStart };
+  }
+  // weekly — fixed Sunday–Saturday calendar week
+  var wStart = reviewWeekStart(new Date());
+  wStart.setDate(wStart.getDate() + offset * 7);
+  return { start:wStart, now:reviewAddDays(wStart, 7), prevStart:reviewAddDays(wStart, -7), prevEnd:wStart };
 }
 
 function reviewRangeLabel(period, offset) {
   if (period === 'yearly') return 'Since you began';
   var range = getDateRange(period, offset);
-  var end = reviewAddDays(range.now, -1);
-  if (offset === 0) return period === 'monthly' ? 'Last 30 days' : 'Last 7 days';
+  var nowYear = new Date().getFullYear();
+  if (period === 'monthly') {
+    if (offset === 0) return 'This month';
+    return range.start.toLocaleDateString('en-US', { month:'long', year: range.start.getFullYear() !== nowYear ? 'numeric' : undefined });
+  }
+  if (offset === 0) return 'This week';
+  var end = reviewAddDays(range.now, -1); // Saturday
   return range.start.toLocaleDateString('en-US',{month:'short',day:'numeric'}) + ' – '
     + end.toLocaleDateString('en-US',{month:'short',day:'numeric',year:range.start.getFullYear() !== end.getFullYear() ? 'numeric' : undefined});
 }
@@ -223,7 +257,7 @@ function reviewTimelineHtml(summary, range, period) {
   if (period === 'yearly' || !range.start) return '';
   var dayMap = {};
   (summary.daily || []).forEach(function(day){ dayMap[day.key] = day; });
-  var days = reviewDaysFor(period);
+  var days = Math.round((range.now.getTime() - range.start.getTime()) / 86400000);
   var slots = [];
   for (var i=0; i<days; i++) {
     var date = reviewAddDays(range.start,i);
@@ -296,13 +330,14 @@ function buildReviewGuidance(summary, previous, period) {
 
 function reviewOmniaCacheKey(period, offset) {
   var range = getDateRange(period,offset);
-  // A generated insight is meant to persist for its window forever (see
-  // loadReviewOmnia). Do NOT bump this suffix to push a format/grounding
-  // change — doing so orphans every cached insight and forces a fresh API
-  // call per window on next view, which is exactly what we now avoid. The
-  // v3 suffix is frozen; only change it if a deliberate mass-regeneration is
-  // truly intended.
-  return 'presence_omnia_practice_review_v3_' + period + '_' + PresencePracticeReview.dayKey(reviewAddDays(range.now,-1));
+  // Key by the fixed period's start day — Sunday for a week, the 1st for a
+  // month — so the whole period maps to one stable, immutable insight.
+  // A generated insight persists for its period forever (see loadReviewOmnia);
+  // do NOT bump this suffix to push a format/grounding change, since that
+  // orphans every cached insight and forces a fresh API call per period. The
+  // v4 suffix (calendar periods; v3 was rolling windows) is frozen; only
+  // change it if a deliberate mass-regeneration is truly intended.
+  return 'presence_omnia_practice_review_v4_' + period + '_' + PresencePracticeReview.dayKey(range.start);
 }
 
 function reviewOmniaContext(period, offset, summary, previous) {
@@ -331,7 +366,7 @@ function reviewOmniaContext(period, offset, summary, previous) {
     period:period === 'monthly' ? 'monthly' : 'weekly',
     offset:offset || 0,
     utcOffsetMinutes:-new Date().getTimezoneOffset(),
-    window_days:reviewDaysFor(period),
+    window_days:reviewDaysFor(period, offset),
     active_days:summary.activeDays,
     total_sessions:summary.sessions,
     total_practice_sec:summary.totalSeconds,

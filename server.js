@@ -78,7 +78,7 @@ const OPENAI_MODEL = process.env.OPENAI_MODEL || 'gpt-4o-mini';
 // next view — including immutable past periods. Practice Review insights are
 // meant to persist once generated, so do NOT bump this for a prompt tweak;
 // only bump if a deliberate mass-regeneration is genuinely intended.
-const OMNIA_REPORT_VERSION = 5;
+const OMNIA_REPORT_VERSION = 6;
 
 if (!VAPID_PRIVATE_KEY || !MONGO_URI || !JWT_SECRET) {
   console.error('Missing required environment variables: VAPID_PRIVATE_KEY, MONGO_URI, JWT_SECRET');
@@ -494,10 +494,17 @@ function serverPeriodKey(period, offset, utcOffsetMinutes) {
   if (!Number.isFinite(utcOffset)) utcOffset = 0;
   utcOffset = Math.max(-840, Math.min(840, utcOffset));
   const now = new Date();
-  if (period === 'review7' || period === 'review30') {
-    const days = period === 'review30' ? 30 : 7;
-    const anchor = new Date(now.getTime() + offset * days * 86400000);
-    return period + '-' + PresenceCalendar.dayKeyAtOffset(anchor, utcOffset);
+  if (period === 'review7') {
+    // Fixed Sunday–Saturday calendar week (matches the client's Practice
+    // Review buckets), so one immutable insight is cached per week.
+    return 'review7-' + PresenceCalendar.weekKeyAtOffset(new Date(now.getTime() + offset * 7 * 86400000), utcOffset);
+  }
+  if (period === 'review30') {
+    // Fixed calendar month (offset counts whole months back), matching the
+    // client's monthly Practice Review buckets.
+    const shifted = new Date(now.getTime() + utcOffset * 60000);
+    const mo = new Date(Date.UTC(shifted.getUTCFullYear(), shifted.getUTCMonth() + offset, 1));
+    return 'review30-m-' + mo.getUTCFullYear() + '-' + String(mo.getUTCMonth() + 1).padStart(2, '0');
   }
   if (period === 'daily') {
     return PresenceCalendar.dayKeyAtOffset(new Date(now.getTime() + offset * 86400000), utcOffset);
