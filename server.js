@@ -73,7 +73,7 @@ const JWT_SECRET    = process.env.JWT_SECRET;
 const ADMIN_SECRET  = process.env.ADMIN_SECRET;
 const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
 const OPENAI_MODEL = process.env.OPENAI_MODEL || 'gpt-4o-mini';
-const OMNIA_REPORT_VERSION = 4;
+const OMNIA_REPORT_VERSION = 5;
 
 if (!VAPID_PRIVATE_KEY || !MONGO_URI || !JWT_SECRET) {
   console.error('Missing required environment variables: VAPID_PRIVATE_KEY, MONGO_URI, JWT_SECRET');
@@ -567,7 +567,7 @@ async function generateAiMessage(feature, context) {
     if (!Number.isFinite(candor) || candor < 1 || candor > 5) candor = 1;
     systemContent += ' ' + CANDOR_TONE[candor];
     if (Number(context && context.report_policy_version) >= 3) {
-      systemContent += ' PRACTICE REVIEW OVERRIDE: This is a rolling 7- or 30-day review, never a daily report. Return exactly one evidence-based insight in 22-38 words. Identify the clearest supported pattern or earned change, comparing only with comparison_baseline. Each discipline has its own measure; never compare seconds, breaths, or taps as interchangeable quantities. State every duration in minutes, reusing the provided human-readable labels (total_practice, best_label, typical_label, total_label) verbatim; never write a duration as a bare seconds figure. Give no recommendation, instruction, regimen change, or next step—the Guide owns action. Do not mention missing disciplines. End with an encouraging observation, not a prescription.';
+      systemContent += ' PRACTICE REVIEW OVERRIDE: This is a rolling 7- or 30-day review, never a daily report. Return exactly one evidence-based insight in 22-38 words. Identify the clearest supported pattern or earned change, comparing only with comparison_baseline. Each discipline has its own measure; never compare seconds, breaths, or taps as interchangeable quantities. State every duration in minutes, reusing the provided human-readable labels (total_practice, best_label, typical_label, total_label) verbatim; never write a duration as a bare seconds figure. A change in one discipline\'s session count is NOT an overall decline: never tell the user their "sessions" or "practice" went down when total_sessions holds roughly steady, active_days stays high, or practice_streak_days shows a sustained streak — treat a shift in emphasis between disciplines neutrally, not as a loss. Give no recommendation, instruction, regimen change, or next step—the Guide owns action. Do not mention missing disciplines. End with an encouraging observation, not a prescription.';
     }
   }
 

@@ -296,9 +296,10 @@ function buildReviewGuidance(summary, previous, period) {
 
 function reviewOmniaCacheKey(period, offset) {
   var range = getDateRange(period,offset);
-  // _v2 forces a one-time regeneration so already-cached seconds-format
-  // insights are replaced with the minutes format.
-  return 'presence_omnia_practice_review_v2_' + period + '_' + PresencePracticeReview.dayKey(reviewAddDays(range.now,-1));
+  // Bump this suffix to force a one-time regeneration when the insight's
+  // format or grounding changes (v2: seconds→minutes; v3: streak/decline
+  // grounding) so already-cached insights are replaced rather than lingering.
+  return 'presence_omnia_practice_review_v3_' + period + '_' + PresencePracticeReview.dayKey(reviewAddDays(range.now,-1));
 }
 
 function reviewOmniaContext(period, offset, summary, previous) {
@@ -329,6 +330,7 @@ function reviewOmniaContext(period, offset, summary, previous) {
     utcOffsetMinutes:-new Date().getTimezoneOffset(),
     window_days:reviewDaysFor(period),
     active_days:summary.activeDays,
+    total_sessions:summary.sessions,
     total_practice_sec:summary.totalSeconds,
     total_practice:reviewSeconds(summary.totalSeconds),
     awareness_sessions:(summary.byPractice.awareness || {}).sessions || 0,
@@ -361,13 +363,17 @@ function reviewOmniaContext(period, offset, summary, previous) {
     comparison_baseline:previous ? {
       window:'preceding_equal_window',
       active_days:previous.activeDays,
+      total_sessions:previous.sessions,
       total_practice_sec:previous.totalSeconds,
       total_practice:reviewSeconds(previous.totalSeconds),
       awareness_sessions:(previous.byPractice.awareness||{}).sessions||0,
       concentration_sessions:previous.sessions-((previous.byPractice.awareness||{}).sessions||0)-((previous.byPractice.prayer||{}).sessions||0)
     } : {},
     practice_streak_days:state.streak || 0,
-    streak_worth_mentioning:false,
+    // A real, current streak is the strongest signal that practice is sustained
+    // — hiding it (this was hardcoded false) let Omnia frame a dip in one
+    // discipline's session count as an overall decline for a consistent user.
+    streak_worth_mentioning:(Number(state.streak) || 0) >= 3,
     omnia_candor:typeof getOmniaCandor === 'function' ? getOmniaCandor() : 1
   };
 }
