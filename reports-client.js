@@ -537,8 +537,13 @@ function reviewInsightHtml(guidance, period, loading) {
 function reviewHeroHtml(summary, previous, period, reflections) {
   var days = reviewDaysFor(period);
   var dayValue = period === 'yearly' ? summary.activeDays : summary.activeDays + '/' + days;
-  var timeDelta = previous ? reviewSigned(summary.totalSeconds-previous.totalSeconds,reviewSeconds) : '';
-  var dayDelta = previous ? reviewSigned(summary.activeDays-previous.activeDays,function(value){return Math.round(value)+'d';}) : '';
+  // The current period (offset 0) is still in progress, so a delta against the
+  // previous, finished period compares a partial span to a full one — a phantom
+  // "loss". Only show period-over-period deltas once this period is complete.
+  var periodInProgress = (Number(typeof reportOffset !== 'undefined' ? reportOffset : 0) || 0) === 0;
+  var showDelta = !!previous && !periodInProgress;
+  var timeDelta = showDelta ? reviewSigned(summary.totalSeconds-previous.totalSeconds,reviewSeconds) : '';
+  var dayDelta = showDelta ? reviewSigned(summary.activeDays-previous.activeDays,function(value){return Math.round(value)+'d';}) : '';
   var thirdValue, thirdLabel, thirdSub;
   if (summary.plan.assigned > 0) {
     thirdValue = Math.round(summary.plan.completed/summary.plan.assigned*100)+'%';
