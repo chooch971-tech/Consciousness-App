@@ -385,6 +385,24 @@ function aiGlobalBudget(req, res, next) {
   next();
 }
 
+// Per-user daily ceiling on REAL generations, so no single account can drain
+// the shared global budget (a DoS on everyone else's insights). Cached reads
+// never reach here. The cap sits well above the most distinct reports a user
+// can ever generate (~122 = review7 + review30 across the -60..0 offset clamp,
+// each cached forever once past), so honest deep browsing is never blocked
+// while the uncached / repeatable paths stay bounded. Charged only at the
+// point of a real generation; returns false when the day's cap is spent.
+const AI_USER_DAILY_CAP = 150;
+let aiUserDay = { key: '', counts: new Map() };
+function aiChargeUser(userId) {
+  const k = aiCurrentDayKey();
+  if (aiUserDay.key !== k) aiUserDay = { key: k, counts: new Map() };
+  const n = aiUserDay.counts.get(userId) || 0;
+  if (n >= AI_USER_DAILY_CAP) return false;
+  aiUserDay.counts.set(userId, n + 1);
+  return true;
+}
+
 function aiRateLimit(req, res, next) {
   const now = Date.now();
   const key = req.user?.userId || req.ip || req.headers['x-forwarded-for'] || 'unknown';
@@ -2975,6 +2993,11 @@ app.get('/vapid-public-key', (req, res) => res.json({ publicKey: VAPID_PUBLIC_KE
 
 app.post('/api/ai/progress-comment', verifyToken, aiRateLimit, aiGlobalBudget, async (req, res) => {
   try {
+    // This endpoint has no per-request cache, so every call is a real
+    // generation — the per-user daily budget is what bounds it.
+    if (!aiChargeUser(req.user.userId)) {
+      return res.status(429).json({ error: 'Daily AI limit reached. Try again tomorrow.' });
+    }
     const message = await generateAiMessage('progress_report', req.body?.context || {});
     res.json({ message, model: OPENAI_MODEL });
   } catch (err) {
@@ -3004,6 +3027,10 @@ app.post('/api/sync/omnia/report', verifyToken, aiRateLimit, aiGlobalBudget, asy
       return res.json({ commentary: cached.commentary });
     }
 
+    // Cache miss → this will really call OpenAI. Charge the per-user daily budget.
+    if (!aiChargeUser(userId)) {
+      return res.status(429).json({ error: 'Daily AI limit reached. Try again tomorrow.' });
+    }
     const commentary = await generateAiMessage('omnia_report', context || {});
 
     // A past period (offset < 0) is immutable — its data will never change, so
