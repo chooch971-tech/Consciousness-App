@@ -293,7 +293,11 @@ test('top-level drawer screens reveal the open drawer during swipe-back', () => 
   const completeEnd = presence.indexOf('function cancel()', completeStart);
   const completeBody = presence.slice(completeStart, completeEnd);
   assert.match(completeBody, /afterSwipePaint\(260, function\(\)/);
-  assert.match(completeBody, /drawerPreview\.style\.transition = 'clip-path \.26s ' \+ EASE/);
+  // The menu is revealed by the opaque departing page sliding off it (its own
+  // transform), not by animating the overlay's clip-path — iOS flashes when
+  // animating clip-path on a composited fixed layer. So the clip snaps fully
+  // open with no transition rather than animating over .26s.
+  assert.match(completeBody, /drawerPreview\.style\.transition = 'none';/);
   assert.match(completeBody, /drawerPreview\.style\.clipPath = 'inset\(0 0px 0 0\)'/);
   assert.ok(completeBody.indexOf('backBtn.click()') < completeBody.indexOf('requestAnimationFrame(function()') && completeBody.indexOf('requestAnimationFrame(function()') < completeBody.indexOf('cleanPrev(prevEl, prevIsHome)'), 'swipe-back keeps the revealed screen painted through the first frame after its Back action activates it');
   assert.match(completeBody, /requestAnimationFrame\(function\(\) \{[\s\S]*?cleanPrev\(prevEl, prevIsHome\);/);
