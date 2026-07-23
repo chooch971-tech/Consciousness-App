@@ -397,6 +397,33 @@ function loadReviewOmnia(period, offset, summary, previous, fallback) {
     });
 }
 
+// Warm the current 7-day Practice Review insight in the background so the
+// screen shows Omnia's commentary instantly on open. Mirrors loadReviewOmnia's
+// period/offset/context/cache-key exactly — the screen always opens on weekly,
+// offset 0 (see showReports) — but never touches the DOM or _reviewRequestSerial,
+// since the screen isn't open yet and must not cancel a future live request.
+// No-ops when the cache is already fresh, when there's nothing to reflect on,
+// or when signed out (fetchOmniaReport rejects), so it can't spend a wasted call.
+function prewarmReviewOmnia() {
+  if (typeof PresencePracticeReview === 'undefined' || !PresencePracticeReview) return;
+  try {
+    reviewBackfill();
+    var summary = reviewSummary('weekly', 0);
+    if (!summary || !summary.sessions) return;
+    var key = reviewOmniaCacheKey('weekly', 0);
+    var cached = null;
+    try { cached = JSON.parse(localStorage.getItem(key) || 'null'); } catch (e) {}
+    if (cached && cached.commentary && cached.ts && Date.now() - cached.ts < 86400000) return;
+    var previous = reviewPreviousSummary('weekly', 0);
+    fetchOmniaReport('review7', reviewOmniaContext('weekly', 0, summary, previous))
+      .then(function (data) {
+        if (!data || !data.commentary) return;
+        localStorage.setItem(key, JSON.stringify({ ts: Date.now(), commentary: data.commentary }));
+      })
+      .catch(function () { /* signed out / unavailable — the screen lazy-loads on open */ });
+  } catch (e) {}
+}
+
 function reviewInsightHtml(guidance, period) {
   if (period === 'yearly') return '';
   return '<section class="review-insight">'

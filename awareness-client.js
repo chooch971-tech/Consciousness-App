@@ -1091,14 +1091,14 @@ document.addEventListener('DOMContentLoaded', function() {
 
 function prefetchOmniaReport() {
   try {
-    if (typeof fetchOmniaReport !== 'function') return;
-    // Only bother if there's any practice history to reflect on, and only if
-    // "yesterday" actually falls on or after the user's first-ever session.
+    if (typeof prewarmReviewOmnia !== 'function') return;
+    // Only bother if there's any practice history to reflect on. The prewarm
+    // targets the current 7-day Practice Review window (weekly, offset 0) —
+    // exactly what the screen reads on open — and no-ops if already cached.
     var hasData = (state.history && state.history.length) ||
                   (concState.history && concState.history.length);
     if (!hasData) return;
-    if (getDateRange('daily', -1).now.getTime() <= getFirstUseDate()) return;
-    fetchOmniaReport('daily', -1, function(){ /* cache warmed; ignore result */ });
+    prewarmReviewOmnia();
   } catch (e) {}
 }
 
