@@ -296,7 +296,9 @@ function buildReviewGuidance(summary, previous, period) {
 
 function reviewOmniaCacheKey(period, offset) {
   var range = getDateRange(period,offset);
-  return 'presence_omnia_practice_review_v1_' + period + '_' + PresencePracticeReview.dayKey(reviewAddDays(range.now,-1));
+  // _v2 forces a one-time regeneration so already-cached seconds-format
+  // insights are replaced with the minutes format.
+  return 'presence_omnia_practice_review_v2_' + period + '_' + PresencePracticeReview.dayKey(reviewAddDays(range.now,-1));
 }
 
 function reviewOmniaContext(period, offset, summary, previous) {
@@ -307,7 +309,15 @@ function reviewOmniaContext(period, offset, summary, previous) {
     var meta = REVIEW_PRACTICES[key] || {label:key,metric:'duration'};
     var measure = meta.metric === 'breaths' ? 'breaths' : meta.metric === 'taps' ? 'taps' : 'seconds';
     concentration[meta.label] = { sessions:row.sessions, total_sec:row.seconds, measure:measure, best:row.best, typical:row.typical };
-    if (measure === 'seconds') concentration[meta.label].best_sec = row.best;
+    if (measure === 'seconds') {
+      // Hand Omnia the same human-readable durations shown on screen (minutes,
+      // e.g. "8m 11s") so its insight never states a raw seconds count and its
+      // numbers match the visible stats exactly. Raw *_sec stay for grounding.
+      concentration[meta.label].best_sec = row.best;
+      concentration[meta.label].best_label = reviewSeconds(row.best);
+      concentration[meta.label].typical_label = reviewSeconds(row.typical);
+      concentration[meta.label].total_label = reviewSeconds(row.seconds);
+    }
   });
   var bestImprovement = reviewBestImprovement(summary,previous);
   var currentItems = [];
@@ -320,6 +330,7 @@ function reviewOmniaContext(period, offset, summary, previous) {
     window_days:reviewDaysFor(period),
     active_days:summary.activeDays,
     total_practice_sec:summary.totalSeconds,
+    total_practice:reviewSeconds(summary.totalSeconds),
     awareness_sessions:(summary.byPractice.awareness || {}).sessions || 0,
     awareness_minutes:Math.round(((summary.byPractice.awareness || {}).seconds || 0)/60),
     awareness_quality:summary.awareness,
@@ -351,6 +362,7 @@ function reviewOmniaContext(period, offset, summary, previous) {
       window:'preceding_equal_window',
       active_days:previous.activeDays,
       total_practice_sec:previous.totalSeconds,
+      total_practice:reviewSeconds(previous.totalSeconds),
       awareness_sessions:(previous.byPractice.awareness||{}).sessions||0,
       concentration_sessions:previous.sessions-((previous.byPractice.awareness||{}).sessions||0)-((previous.byPractice.prayer||{}).sessions||0)
     } : {},
