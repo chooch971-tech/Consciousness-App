@@ -429,13 +429,24 @@ function fetchOmniaReport(period, context) {
   });
 }
 
-// Returns the already-generated insight for a window, if any. Used to paint the
-// real insight synchronously so the local fallback never flashes on the way in.
+// A past period is immutable, so its insight is kept forever. The current
+// period (offset 0) still fills in as the week/month builds, so its insight is
+// allowed to regenerate once per calendar day — fresh without an API call on
+// every open. This mirrors the server's own 24h TTL for the in-progress period.
+function reviewInsightFresh(offset, cached) {
+  if (!cached || !cached.commentary) return false;
+  if ((Number(offset) || 0) < 0) return true; // past period — frozen forever
+  return !!cached.ts && PresencePracticeReview.dayKey(cached.ts) === PresencePracticeReview.dayKey(new Date());
+}
+
+// Returns the already-generated insight for a period when it's still fresh (see
+// reviewInsightFresh), so it can be painted synchronously without the local
+// fallback flashing on the way in.
 function reviewCachedInsight(period, offset) {
   if (period === 'yearly') return null;
   try {
     var cached = JSON.parse(localStorage.getItem(reviewOmniaCacheKey(period, offset)) || 'null');
-    if (cached && cached.commentary) return cached.commentary;
+    if (reviewInsightFresh(offset, cached)) return cached.commentary;
   } catch (e) {}
   return null;
 }
@@ -445,12 +456,11 @@ function loadReviewOmnia(period, offset, summary, previous, fallback) {
   var key = reviewOmniaCacheKey(period,offset);
   var cached = null;
   try { cached = JSON.parse(localStorage.getItem(key)||'null'); } catch(e) {}
-  // Once an insight has been generated for a window, keep it permanently — no
-  // expiry, and never spend another API call on that window, even across
-  // backend redeploys. Each window's date-key is immutable, so its insight
-  // should be too. (A window that ends today gets a fresh key tomorrow, which
-  // is a genuinely different window and generates once more.)
-  if (cached && cached.commentary) {
+  // Past periods are frozen forever (immutable data, no more API calls, even
+  // across backend redeploys). The current period refreshes at most once a day
+  // as it fills in — see reviewInsightFresh. A stale current-period insight
+  // falls through to a re-fetch below, overwriting this same key.
+  if (reviewInsightFresh(offset, cached)) {
     var cachedEl = document.getElementById('reviewInsightText');
     if (cachedEl) cachedEl.textContent = cached.commentary;
     return;
@@ -491,7 +501,7 @@ function prewarmReviewOmnia() {
     var key = reviewOmniaCacheKey('weekly', 0);
     var cached = null;
     try { cached = JSON.parse(localStorage.getItem(key) || 'null'); } catch (e) {}
-    if (cached && cached.commentary) return; // already generated — keep it, don't re-warm
+    if (reviewInsightFresh(0, cached)) return; // already fresh today — don't re-warm
     var previous = reviewPreviousSummary('weekly', 0);
     fetchOmniaReport('review7', reviewOmniaContext('weekly', 0, summary, previous))
       .then(function (data) {
