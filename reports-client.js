@@ -361,12 +361,25 @@ function reviewOmniaContext(period, offset, summary, previous) {
   var bestImprovement = reviewBestImprovement(summary,previous);
   var currentItems = [];
   try { currentItems = typeof buildGuideRegimentItems === 'function' ? buildGuideRegimentItems() : []; } catch(e) {}
+  // How far through the period we are. A past period is fully elapsed; the
+  // current period is only partway, so its running totals are naturally lower
+  // than a finished period — Omnia must not read that as a decline.
+  var _totalDays = reviewDaysFor(period, offset);
+  var _elapsedDays = _totalDays;
+  if ((Number(offset) || 0) === 0) {
+    var _pStart = getDateRange(period, offset).start.getTime();
+    var _tomorrow = reviewAddDays(new Date(), 1).getTime();
+    _elapsedDays = Math.max(1, Math.min(_totalDays, Math.round((_tomorrow - _pStart) / 86400000)));
+  }
   return {
     report_policy_version:3,
     period:period === 'monthly' ? 'monthly' : 'weekly',
     offset:offset || 0,
     utcOffsetMinutes:-new Date().getTimezoneOffset(),
-    window_days:reviewDaysFor(period, offset),
+    window_days:_totalDays,
+    period_complete:(Number(offset) || 0) < 0,
+    period_elapsed_days:_elapsedDays,
+    period_total_days:_totalDays,
     active_days:summary.activeDays,
     total_sessions:summary.sessions,
     total_practice_sec:summary.totalSeconds,
