@@ -296,9 +296,12 @@ function buildReviewGuidance(summary, previous, period) {
 
 function reviewOmniaCacheKey(period, offset) {
   var range = getDateRange(period,offset);
-  // Bump this suffix to force a one-time regeneration when the insight's
-  // format or grounding changes (v2: seconds→minutes; v3: streak/decline
-  // grounding) so already-cached insights are replaced rather than lingering.
+  // A generated insight is meant to persist for its window forever (see
+  // loadReviewOmnia). Do NOT bump this suffix to push a format/grounding
+  // change — doing so orphans every cached insight and forces a fresh API
+  // call per window on next view, which is exactly what we now avoid. The
+  // v3 suffix is frozen; only change it if a deliberate mass-regeneration is
+  // truly intended.
   return 'presence_omnia_practice_review_v3_' + period + '_' + PresencePracticeReview.dayKey(reviewAddDays(range.now,-1));
 }
 
@@ -391,12 +394,28 @@ function fetchOmniaReport(period, context) {
   });
 }
 
+// Returns the already-generated insight for a window, if any. Used to paint the
+// real insight synchronously so the local fallback never flashes on the way in.
+function reviewCachedInsight(period, offset) {
+  if (period === 'yearly') return null;
+  try {
+    var cached = JSON.parse(localStorage.getItem(reviewOmniaCacheKey(period, offset)) || 'null');
+    if (cached && cached.commentary) return cached.commentary;
+  } catch (e) {}
+  return null;
+}
+
 function loadReviewOmnia(period, offset, summary, previous, fallback) {
   if (period === 'yearly' || !summary.sessions) return;
   var key = reviewOmniaCacheKey(period,offset);
   var cached = null;
   try { cached = JSON.parse(localStorage.getItem(key)||'null'); } catch(e) {}
-  if (cached && cached.commentary && cached.ts && Date.now()-cached.ts < 86400000) {
+  // Once an insight has been generated for a window, keep it permanently — no
+  // expiry, and never spend another API call on that window, even across
+  // backend redeploys. Each window's date-key is immutable, so its insight
+  // should be too. (A window that ends today gets a fresh key tomorrow, which
+  // is a genuinely different window and generates once more.)
+  if (cached && cached.commentary) {
     var cachedEl = document.getElementById('reviewInsightText');
     if (cachedEl) cachedEl.textContent = cached.commentary;
     return;
@@ -431,7 +450,7 @@ function prewarmReviewOmnia() {
     var key = reviewOmniaCacheKey('weekly', 0);
     var cached = null;
     try { cached = JSON.parse(localStorage.getItem(key) || 'null'); } catch (e) {}
-    if (cached && cached.commentary && cached.ts && Date.now() - cached.ts < 86400000) return;
+    if (cached && cached.commentary) return; // already generated — keep it, don't re-warm
     var previous = reviewPreviousSummary('weekly', 0);
     fetchOmniaReport('review7', reviewOmniaContext('weekly', 0, summary, previous))
       .then(function (data) {
@@ -516,7 +535,11 @@ function renderReport(period) {
   }
 
   var guidance = buildReviewGuidance(summary,previous,currentReportPeriod);
-  var html = reviewInsightHtml(guidance,currentReportPeriod)
+  // If this window's insight was already generated, paint it in the initial
+  // HTML so the local fallback never flashes before Omnia's text on the way in.
+  var cachedInsight = reviewCachedInsight(currentReportPeriod,reportOffset);
+  var insightGuidance = cachedInsight ? { insight:cachedInsight, action:guidance.action } : guidance;
+  var html = reviewInsightHtml(insightGuidance,currentReportPeriod)
     + reviewHeroHtml(summary,previous,currentReportPeriod,reflections)
     + reviewTimelineHtml(summary,range,currentReportPeriod)
     + reviewQualityHtml(summary,previous)

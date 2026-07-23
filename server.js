@@ -73,6 +73,11 @@ const JWT_SECRET    = process.env.JWT_SECRET;
 const ADMIN_SECRET  = process.env.ADMIN_SECRET;
 const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
 const OPENAI_MODEL = process.env.OPENAI_MODEL || 'gpt-4o-mini';
+// Cache generation for stored Omnia reports. Bumping this invalidates EVERY
+// cached report and forces a fresh (paid) OpenAI generation per user/period on
+// next view — including immutable past periods. Practice Review insights are
+// meant to persist once generated, so do NOT bump this for a prompt tweak;
+// only bump if a deliberate mass-regeneration is genuinely intended.
 const OMNIA_REPORT_VERSION = 5;
 
 if (!VAPID_PRIVATE_KEY || !MONGO_URI || !JWT_SECRET) {
