@@ -9978,7 +9978,13 @@ startPrayerScheduler();
     overlay.style.transition = 'opacity .26s ease';
     overlay.style.opacity    = '0';
     if (drawerPreview) {
-      drawerPreview.style.transition = 'clip-path .26s ' + EASE;
+      // Reveal the menu by letting the opaque departing page slide off it,
+      // rather than animating the overlay's clip-path. iOS janks/flashes when
+      // animating clip-path on a composited fixed layer — that showed as the
+      // menu briefly "lighting up" on the way in. Snap the clip fully open with
+      // no transition; the page's own transform animation does the reveal, and
+      // it sits above the menu (z-index 21 > 20) so nothing is exposed early.
+      drawerPreview.style.transition = 'none';
       drawerPreview.style.clipPath = 'inset(0 0px 0 0)';
     }
 
