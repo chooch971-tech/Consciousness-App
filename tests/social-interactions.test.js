@@ -80,6 +80,17 @@ test('Messages warms recent threads only when the conversation list opens', () =
   assert.match(socialClient, /var cachedMessages = _chatMessageCache\[convId\]/);
 });
 
+test('Messages uses left-side navigation and meaningful delivered/read receipts', () => {
+  assert.match(presence, /id="chatListBack"[^>]*>←<\/button>[\s\S]*?chat-header__title">Messages/);
+  assert.match(presence, /id="chatThreadBack"[^>]*>←<\/button>[\s\S]*?id="chatThreadName"/);
+  assert.match(presence, /\.chat-receipt/);
+  assert.match(server, /peerReadAt >= new Date\(m\.createdAt\)\.getTime\(\) \? 'read' : 'delivered'/);
+  assert.match(server, /mine: true, status:'delivered'/);
+  assert.match(socialClient, /function _chatMessagesHtml\(messages\)/);
+  assert.match(socialClient, /index === latestMine/);
+  assert.match(socialClient, /m\.status === 'read' \? 'Read' : 'Delivered'/);
+});
+
 test('Lodge post taps open discussion while author taps open Profile', () => {
   assert.match(socialClient, /var _lodgeDetailPost = null/);
   assert.match(socialClient, /function openLodgePostDetail\(post, returnScreen, openComments\)/);

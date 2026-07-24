@@ -763,7 +763,7 @@ async function testChatThreadWarm(browser, baseUrl) {
         window._chatWarmBatchCalls++;
         return Promise.resolve({ ok:true, json:() => Promise.resolve({
           messagesByConversation:{ 'warm-conversation':[
-            { id:'warm-message', text:'Already loaded', createdAt:new Date().toISOString(), mine:false }
+            { id:'warm-message', text:'Already loaded', createdAt:new Date().toISOString(), mine:true, status:'read' }
           ] }
         }) });
       }
@@ -771,7 +771,7 @@ async function testChatThreadWarm(browser, baseUrl) {
         window._chatWarmDirectCalls++;
         return new Promise(resolve => setTimeout(() => resolve({
           ok:true, json:() => Promise.resolve({ messages:[
-            { id:'warm-message', text:'Already loaded', createdAt:new Date().toISOString(), mine:false }
+            { id:'warm-message', text:'Already loaded', createdAt:new Date().toISOString(), mine:true, status:'read' }
           ] })
         }), 150));
       }
@@ -791,12 +791,17 @@ async function testChatThreadWarm(browser, baseUrl) {
     active:document.getElementById('chatThreadScreen').classList.contains('active'),
     text:document.getElementById('chatMsgs').textContent,
     skeleton:!!document.querySelector('#chatMsgs .chat-conv-skeleton'),
+    receipt:(document.querySelector('#chatMsgs [data-chat-receipt]') || {}).textContent || '',
+    backOnLeft:document.getElementById('chatThreadBack').getBoundingClientRect().left
+      < document.getElementById('chatThreadName').getBoundingClientRect().left,
     batchCalls:window._chatWarmBatchCalls,
     directCalls:window._chatWarmDirectCalls
   }));
   assert.equal(immediate.active, true);
   assert.match(immediate.text, /Already loaded/);
   assert.equal(immediate.skeleton, false, 'a warmed thread should paint without a loading skeleton');
+  assert.equal(immediate.receipt.trim(), 'Read');
+  assert.equal(immediate.backOnLeft, true, 'the conversation back control should be left of the username');
   assert.equal(immediate.batchCalls, 1, 'recent threads should warm in one batch');
   assert.equal(immediate.directCalls, 1, 'opening the selected thread should refresh it and mark it read');
   await page.waitForFunction(() => !_chatMessageRequests['warm-conversation']);

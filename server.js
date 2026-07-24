@@ -3129,7 +3129,8 @@ app.get('/api/social/conversations', verifyToken, async (req, res) => {
   } catch (err) { res.status(500).json({ error: 'Conversations failed' }); }
 });
 
-async function chatMessagesByConversation(conversationIds, selfId) {
+async function chatMessagesByConversation(conversationIds, selfId, peerReadByConversation) {
+  peerReadByConversation = peerReadByConversation || {};
   const messagesByConversation = {};
   conversationIds.forEach(id => { messagesByConversation[id] = []; });
   if (!conversationIds.length) return messagesByConversation;
@@ -3147,7 +3148,10 @@ async function chatMessagesByConversation(conversationIds, selfId) {
         id:message._id.toString(),
         text:message.text,
         createdAt:message.createdAt,
-        mine:message.senderId === selfId
+        mine:message.senderId === selfId,
+        status:message.senderId === selfId
+          ? ((peerReadByConversation[group._id] || 0) >= new Date(message.createdAt).getTime() ? 'read' : 'delivered')
+          : null
       }));
   });
   return messagesByConversation;
@@ -3163,10 +3167,16 @@ app.get('/api/social/conversations/messages/batch', verifyToken, async (req, res
     const conversations = await conversationsCollection.find({
       _id:{ $in:conversationIds.map(id => new ObjectId(id)) },
       participants:req.user.userId
-    }).project({ _id:1 }).toArray();
+    }).project({ _id:1, participants:1, lastRead:1 }).toArray();
     const allowedIds = conversations.map(conversation => conversation._id.toString());
+    const peerReadByConversation = {};
+    conversations.forEach(conversation => {
+      const other = (conversation.participants || []).find(id => id !== req.user.userId);
+      const readAt = other && conversation.lastRead && conversation.lastRead[other];
+      peerReadByConversation[conversation._id.toString()] = readAt ? new Date(readAt).getTime() : 0;
+    });
     res.json({
-      messagesByConversation:await chatMessagesByConversation(allowedIds, req.user.userId)
+      messagesByConversation:await chatMessagesByConversation(allowedIds, req.user.userId, peerReadByConversation)
     });
   } catch (err) {
     res.status(500).json({ error: 'Messages failed' });
@@ -3178,12 +3188,16 @@ app.get('/api/social/conversations/:id/messages', verifyToken, async (req, res) 
     const selfId = req.user.userId;
     const convo = await conversationsCollection.findOne({ _id: new ObjectId(req.params.id) });
     if (!convo || (convo.participants || []).indexOf(selfId) === -1) return res.status(404).json({ error: 'Not found' });
+    const other = (convo.participants || []).find(id => id !== selfId);
+    const peerReadAt = other && convo.lastRead && convo.lastRead[other]
+      ? new Date(convo.lastRead[other]).getTime() : 0;
     let msgs = await messagesCollection.find({ convId: convo._id.toString() }).sort({ createdAt: -1 }).limit(50).toArray();
     msgs.reverse();
     msgs = msgs.filter(m => moderatePrivateText(m.text || '').ok);
     await conversationsCollection.updateOne({ _id: convo._id }, { $set: { ['lastRead.' + selfId]: new Date() } });
     res.json({ messages: msgs.map(m => ({
-      id: m._id.toString(), text: m.text, createdAt: m.createdAt, mine: m.senderId === selfId
+      id: m._id.toString(), text: m.text, createdAt: m.createdAt, mine: m.senderId === selfId,
+      status:m.senderId === selfId ? (peerReadAt >= new Date(m.createdAt).getTime() ? 'read' : 'delivered') : null
     })) });
   } catch (err) { res.status(500).json({ error: 'Messages failed' }); }
 });
@@ -3212,7 +3226,7 @@ app.post('/api/social/conversations/:id/messages', verifyToken, mutationRateLimi
     // means they're actively polling this thread and don't need a banner.
     const otherRead = (convo.lastRead && convo.lastRead[other]) ? new Date(convo.lastRead[other]).getTime() : 0;
     if (Date.now() - otherRead > 25000) sendDmPush(other, selfId, text);
-    res.json({ ok: true, message: { id: r.insertedId.toString(), text, createdAt: m.createdAt, mine: true } });
+    res.json({ ok: true, message: { id: r.insertedId.toString(), text, createdAt: m.createdAt, mine: true, status:'delivered' } });
   } catch (err) { res.status(500).json({ error: 'Send failed' }); }
 });
 

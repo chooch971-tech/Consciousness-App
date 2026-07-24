@@ -1462,7 +1462,7 @@ async function openChatThread(convId, username) {
   document.getElementById('chatThreadName').textContent = '@' + username;
   var cachedMessages = _chatMessageCache[convId];
   document.getElementById('chatMsgs').innerHTML = cachedMessages
-    ? cachedMessages.map(_chatMsgHtml).join('')
+    ? _chatMessagesHtml(cachedMessages)
     : '<div class="chat-conv-skeleton"></div><div class="chat-conv-skeleton"></div>';
   showScreen('chatThreadScreen');
   await loadChatMsgs();
@@ -1492,9 +1492,24 @@ function returnFromChatThread() {
   openChatList();
 }
 
-function _chatMsgHtml(m) {
+function _chatMsgHtml(m, showReceipt) {
+  var receipt = showReceipt && m.mine
+    ? '<div class="chat-receipt" data-chat-receipt aria-label="Message status: '
+      + (m.status === 'read' ? 'Read' : 'Delivered') + '">'
+      + (m.status === 'read' ? 'Read' : 'Delivered') + '</div>'
+    : '';
   return '<div class="chat-row ' + (m.mine ? 'chat-mine' : 'chat-theirs') + '"><div class="chat-bubble">'
-    + escHtml(m.text) + '<div class="chat-time">' + timeAgo(new Date(m.createdAt)) + '</div></div></div>';
+    + escHtml(m.text) + '<div class="chat-time">' + timeAgo(new Date(m.createdAt)) + '</div>'
+    + receipt + '</div></div>';
+}
+function _chatMessagesHtml(messages) {
+  var latestMine = -1;
+  (messages || []).forEach(function(message, index) {
+    if (message && message.mine) latestMine = index;
+  });
+  return (messages || []).map(function(message, index) {
+    return _chatMsgHtml(message, index === latestMine);
+  }).join('');
 }
 
 async function loadChatMsgs() {
@@ -1504,7 +1519,7 @@ async function loadChatMsgs() {
     var messages = await _fetchChatMsgs(convId);
     if (_chatConvId !== convId) return;
     var box = document.getElementById('chatMsgs');
-    box.innerHTML = messages.map(_chatMsgHtml).join('');
+    box.innerHTML = _chatMessagesHtml(messages);
     box.scrollTop = box.scrollHeight;
   } catch(e) {}
 }
@@ -1590,7 +1605,9 @@ async function sendChatMsg() {
       _chatConversations.unshift(cached);
     }
     var box = document.getElementById('chatMsgs');
-    box.insertAdjacentHTML('beforeend', _chatMsgHtml(d.message));
+    box.querySelectorAll('[data-chat-receipt]').forEach(function(receipt) { receipt.remove(); });
+    if (!d.message.status) d.message.status = 'delivered';
+    box.insertAdjacentHTML('beforeend', _chatMsgHtml(d.message, true));
     if (_chatMessageCache[_chatConvId]) _chatMessageCache[_chatConvId].push(d.message);
     box.scrollTop = box.scrollHeight;
   } catch(e) { showToast('Send failed'); }
