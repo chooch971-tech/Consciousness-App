@@ -52,6 +52,9 @@ test('Message opens the thread immediately while the conversation request is pen
 });
 
 test('Lodge warms launch summaries without preloading message histories', () => {
+  const warmStart = socialClient.indexOf('function warmLodgeExperience()');
+  const warmEnd = socialClient.indexOf('var _lodgeWarmTimer', warmStart);
+  const warmBody = socialClient.slice(warmStart, warmEnd);
   assert.match(socialClient, /function warmLodgeFeeds\(\)/);
   assert.match(socialClient, /function warmLodgeExperience\(\)[\s\S]*?warmLodgeFeeds\(\);[\s\S]*?loadChatList\(false\);[\s\S]*?loadLodgeNotifs\(\)/);
   assert.match(socialClient, /function scheduleLodgeWarmExperience\(\)[\s\S]*?650 \+ Math\.floor\(Math\.random\(\) \* 1350\)/);
@@ -62,9 +65,19 @@ test('Lodge warms launch summaries without preloading message histories', () => 
   assert.match(socialClient, /api\/social\/feed\?sort=newest/);
   assert.match(socialClient, /_cacheLodgeFeed\(posts\)/);
   assert.doesNotMatch(socialClient, /_warmLodgeFeed/);
-  assert.doesNotMatch(socialClient, /function warmChatMessages\(conversations\)|warmChatMessages\(_chatConversations/);
+  assert.doesNotMatch(warmBody, /warmChatMessageThreads/);
   assert.match(socialClient, /var cachedMessages = _chatMessageCache\[convId\];/);
   assert.match(socialClient, /function _fetchChatMsgs\(convId\)/);
+});
+
+test('Messages warms recent threads only when the conversation list opens', () => {
+  assert.match(server, /app\.get\('\/api\/social\/conversations\/messages\/batch', verifyToken/);
+  assert.match(server, /participants:req\.user\.userId/);
+  assert.match(server, /slice\(0, 8\)/);
+  assert.match(socialClient, /function warmChatMessageThreads\(conversations\)/);
+  assert.match(socialClient, /api\/social\/conversations\/messages\/batch\?conversationIds=/);
+  assert.match(socialClient, /function openChatList\(\)[\s\S]*?warmChatMessageThreads\(_chatConversations\);[\s\S]*?loadChatList\(true\)\.then/);
+  assert.match(socialClient, /var cachedMessages = _chatMessageCache\[convId\]/);
 });
 
 test('Lodge post taps open discussion while author taps open Profile', () => {

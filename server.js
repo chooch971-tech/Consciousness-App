@@ -3129,6 +3129,50 @@ app.get('/api/social/conversations', verifyToken, async (req, res) => {
   } catch (err) { res.status(500).json({ error: 'Conversations failed' }); }
 });
 
+async function chatMessagesByConversation(conversationIds, selfId) {
+  const messagesByConversation = {};
+  conversationIds.forEach(id => { messagesByConversation[id] = []; });
+  if (!conversationIds.length) return messagesByConversation;
+  const groups = await messagesCollection.aggregate([
+    { $match: { convId: { $in:conversationIds } } },
+    { $sort: { createdAt:-1 } },
+    { $group: { _id:'$convId', messages:{ $push:'$$ROOT' } } },
+    { $project: { messages:{ $slice:['$messages', 50] } } }
+  ]).toArray();
+  groups.forEach(group => {
+    if (!messagesByConversation[group._id]) return;
+    messagesByConversation[group._id] = (group.messages || []).reverse()
+      .filter(message => moderatePrivateText(message.text || '').ok)
+      .map(message => ({
+        id:message._id.toString(),
+        text:message.text,
+        createdAt:message.createdAt,
+        mine:message.senderId === selfId
+      }));
+  });
+  return messagesByConversation;
+}
+
+// Warm recent threads without marking them read. Opening one thread still uses
+// the single-conversation route below, which records lastRead for that viewer.
+app.get('/api/social/conversations/messages/batch', verifyToken, async (req, res) => {
+  try {
+    const conversationIds = [...new Set(String(req.query.conversationIds || '').split(',')
+      .map(id => id.trim()).filter(id => ObjectId.isValid(id)))].slice(0, 8);
+    if (!conversationIds.length) return res.json({ messagesByConversation:{} });
+    const conversations = await conversationsCollection.find({
+      _id:{ $in:conversationIds.map(id => new ObjectId(id)) },
+      participants:req.user.userId
+    }).project({ _id:1 }).toArray();
+    const allowedIds = conversations.map(conversation => conversation._id.toString());
+    res.json({
+      messagesByConversation:await chatMessagesByConversation(allowedIds, req.user.userId)
+    });
+  } catch (err) {
+    res.status(500).json({ error: 'Messages failed' });
+  }
+});
+
 app.get('/api/social/conversations/:id/messages', verifyToken, async (req, res) => {
   try {
     const selfId = req.user.userId;

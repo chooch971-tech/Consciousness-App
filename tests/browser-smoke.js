@@ -746,6 +746,64 @@ async function testFriendMessageReturn(browser, baseUrl) {
   await context.close();
 }
 
+async function testChatThreadWarm(browser, baseUrl) {
+  const context = await browser.newContext({ viewport: { width: 390, height: 844 }, hasTouch: true, serviceWorkers: 'block' });
+  const { page, errors } = await seedPage(context, baseUrl, { presence_auth_token: 'chat-warm-token' });
+  await page.evaluate(() => {
+    const originalFetch = window.fetch;
+    const conversation = {
+      id:'warm-conversation', userId:'warm-friend', username:'warm_friend',
+      lastPreview:'Already here', lastMsgAt:new Date().toISOString(), unread:1
+    };
+    window._chatWarmBatchCalls = 0;
+    window._chatWarmDirectCalls = 0;
+    window.fetch = function(url, options) {
+      const target = String(url);
+      if (target.includes('/api/social/conversations/messages/batch?conversationIds=')) {
+        window._chatWarmBatchCalls++;
+        return Promise.resolve({ ok:true, json:() => Promise.resolve({
+          messagesByConversation:{ 'warm-conversation':[
+            { id:'warm-message', text:'Already loaded', createdAt:new Date().toISOString(), mine:false }
+          ] }
+        }) });
+      }
+      if (target.endsWith('/api/social/conversations/warm-conversation/messages')) {
+        window._chatWarmDirectCalls++;
+        return new Promise(resolve => setTimeout(() => resolve({
+          ok:true, json:() => Promise.resolve({ messages:[
+            { id:'warm-message', text:'Already loaded', createdAt:new Date().toISOString(), mine:false }
+          ] })
+        }), 150));
+      }
+      if (target.endsWith('/api/social/conversations')) {
+        return Promise.resolve({ ok:true, json:() => Promise.resolve({ conversations:[conversation] }) });
+      }
+      return originalFetch(url, options);
+    };
+    _chatEnsureCacheOwner();
+    _chatConversations = [conversation];
+    _chatListLoaded = true;
+    openChatList();
+  });
+  await page.waitForFunction(() => Array.isArray(_chatMessageCache['warm-conversation']));
+  await page.locator('[data-conv-id="warm-conversation"]').click();
+  const immediate = await page.evaluate(() => ({
+    active:document.getElementById('chatThreadScreen').classList.contains('active'),
+    text:document.getElementById('chatMsgs').textContent,
+    skeleton:!!document.querySelector('#chatMsgs .chat-conv-skeleton'),
+    batchCalls:window._chatWarmBatchCalls,
+    directCalls:window._chatWarmDirectCalls
+  }));
+  assert.equal(immediate.active, true);
+  assert.match(immediate.text, /Already loaded/);
+  assert.equal(immediate.skeleton, false, 'a warmed thread should paint without a loading skeleton');
+  assert.equal(immediate.batchCalls, 1, 'recent threads should warm in one batch');
+  assert.equal(immediate.directCalls, 1, 'opening the selected thread should refresh it and mark it read');
+  await page.waitForFunction(() => !_chatMessageRequests['warm-conversation']);
+  assert.deepEqual(errors, [], 'chat warm-up emitted browser errors');
+  await context.close();
+}
+
 async function testProfileActivityWarm(browser, baseUrl) {
   const context = await browser.newContext({ viewport: { width: 390, height: 844 }, hasTouch: true, serviceWorkers: 'block' });
   const { page, errors } = await seedPage(context, baseUrl, { presence_auth_token: 'browser-test-token' });
@@ -1326,6 +1384,9 @@ async function testCloudRestoreAndSignOut(browser, baseUrl) {
     console.log('run - friend message return');
     await testFriendMessageReturn(browser, baseUrl);
     console.log('ok - friend message returns directly to the friend profile');
+    console.log('run - message thread warm-up');
+    await testChatThreadWarm(browser, baseUrl);
+    console.log('ok - recent message threads paint immediately and refresh quietly');
     console.log('run - profile activity warm-up');
     await testProfileActivityWarm(browser, baseUrl);
     console.log('ok - profile posts and comments are warm before either tab opens');

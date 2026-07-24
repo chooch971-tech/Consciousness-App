@@ -1395,6 +1395,7 @@ function _chatEnsureCacheOwner() {
   _chatConversations = [];
   _chatMessageCache = {};
   _chatMessageRequests = {};
+  _chatMessageWarmRequests = {};
   _chatListLoaded = false;
   _chatListPromise = null;
 }
@@ -1449,7 +1450,8 @@ function openChatList() {
   _chatEnsureCacheOwner();
   renderChatList(!_chatListLoaded);
   showScreen('chatListScreen');
-  loadChatList(true);
+  warmChatMessageThreads(_chatConversations);
+  loadChatList(true).then(function() { warmChatMessageThreads(_chatConversations); });
 }
 
 async function openChatThread(convId, username) {
@@ -1509,20 +1511,62 @@ async function loadChatMsgs() {
 
 var _chatMessageCache = {};
 var _chatMessageRequests = {};
+var _chatMessageWarmRequests = {};
+function warmChatMessageThreads(conversations) {
+  _chatEnsureCacheOwner();
+  if (!authToken) return Promise.resolve({});
+  var ids = [];
+  (conversations || []).forEach(function(conversation) {
+    if (!conversation || !conversation.id || ids.length >= 8
+      || _chatMessageCache[conversation.id] || _chatMessageWarmRequests[conversation.id]) return;
+    if (!conversation.lastMsgAt && !conversation.lastPreview) {
+      _chatMessageCache[conversation.id] = [];
+      return;
+    }
+    ids.push(conversation.id);
+  });
+  if (!ids.length) return Promise.resolve({});
+  var requestToken = authToken;
+  var batch = fetch(SERVER_URL + '/api/social/conversations/messages/batch?conversationIds=' + encodeURIComponent(ids.join(',')), {
+    headers:{ 'Authorization':'Bearer ' + requestToken }
+  }).then(function(res) {
+    return res.ok ? res.json() : null;
+  }).then(function(data) {
+    if (authToken !== requestToken) return {};
+    var byConversation = data && data.messagesByConversation;
+    if (!byConversation) return {};
+    ids.forEach(function(id) {
+      _chatMessageCache[id] = Array.isArray(byConversation[id]) ? byConversation[id] : [];
+    });
+    return byConversation;
+  }).catch(function() { return {}; });
+  ids.forEach(function(id) {
+    _chatMessageWarmRequests[id] = batch;
+    batch.finally(function() {
+      if (_chatMessageWarmRequests[id] === batch) delete _chatMessageWarmRequests[id];
+    });
+  });
+  return batch;
+}
 function _fetchChatMsgs(convId) {
   if (_chatMessageRequests[convId]) return _chatMessageRequests[convId];
-  _chatMessageRequests[convId] = fetch(SERVER_URL + '/api/social/conversations/' + convId + '/messages', { headers: { 'Authorization': 'Bearer ' + authToken } })
+  var requestToken = authToken;
+  var request = fetch(SERVER_URL + '/api/social/conversations/' + convId + '/messages', { headers: { 'Authorization': 'Bearer ' + requestToken } })
     .then(function(res) {
       if (!res.ok) throw new Error('Message request failed');
       return res.json();
     })
     .then(function(data) {
       var messages = data.messages || [];
+      if (authToken !== requestToken) return [];
       _chatMessageCache[convId] = messages;
       return messages;
     })
-    .finally(function() { delete _chatMessageRequests[convId]; });
-  return _chatMessageRequests[convId];
+    .finally(function() {
+      if (_chatMessageRequests[convId] === request) delete _chatMessageRequests[convId];
+    });
+  _chatMessageRequests[convId] = request;
+  return request;
 }
 
 async function sendChatMsg() {
