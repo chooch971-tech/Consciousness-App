@@ -8252,9 +8252,9 @@ body:not(.tut-live) #tutCorgi {
       <div id="senseRepCount" style="font-size:9px; letter-spacing:.2em; text-transform:uppercase; color:var(--muted); margin-top:18px;"></div>
     </div>
     <div style="padding:0 24px max(env(safe-area-inset-bottom),28px); display:flex; flex-direction:column; gap:10px; align-items:center;">
-      <button class="btn primary conc-btn" id="senseFadedBtn" style="max-width:300px; width:100%; background:rgba(207,143,176,.14); border-color:rgba(207,143,176,.4); color:#e0a8c4;">Sensation Faded</button>
-      <button class="btn ghost conc-btn" id="senseSwitchBtn" style="max-width:300px; width:100%; font-size:9px; display:none;">Switch Sensation</button>
-      <button class="btn primary conc-btn" id="senseBeginRepBtn" style="max-width:300px; width:100%; display:none; background:rgba(207,143,176,.14); border-color:rgba(207,143,176,.4); color:#e0a8c4;">Begin Rep 2</button>
+      <button class="btn primary conc-btn" id="senseFadedBtn" style="max-width:300px; width:100%; display:none; background:rgba(207,143,176,.14); border-color:rgba(207,143,176,.4); color:#e0a8c4;">Sensation Faded</button>
+      <button class="btn ghost conc-btn" id="senseSwitchBtn" style="max-width:300px; width:100%; font-size:9px;">Switch Sensation</button>
+      <button class="btn primary conc-btn" id="senseBeginRepBtn" style="max-width:300px; width:100%; background:rgba(207,143,176,.14); border-color:rgba(207,143,176,.4); color:#e0a8c4;">Begin Rep 1</button>
     </div>
     <div style="position:fixed; bottom:max(env(safe-area-inset-bottom),28px); left:24px; font-size:10px; letter-spacing:.1em; color:var(--muted); opacity:.5; font-family:'DM Mono',monospace;">session <span id="senseSessionTimer">0:00</span></div>
     <div style="position:fixed; bottom:max(env(safe-area-inset-bottom),28px); right:24px; font-size:10px; letter-spacing:.1em; color:#cf8fb0; opacity:.75; font-family:'DM Mono',monospace;">rep <span id="senseRepTimer">0:00</span></div>
@@ -9721,7 +9721,7 @@ function claimMorningOffering() {
 <script src="auditory-client.js"></script>
 <script src="thought-control-client.js"></script>
 <script src="asana-client.js"></script>
-<script src="senses-client.js"></script>
+<script src="senses-client.js?v=2"></script>
 <script src="app-shell-client.js"></script>
 <script src="omnia-ambient-client.js"></script>
 <script src="concentration-controls-client.js"></script>

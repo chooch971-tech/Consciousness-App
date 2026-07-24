@@ -252,17 +252,46 @@ function startSenseSession() {
   }
   senseActiveMode = senseMode;
   senseActiveCue = senseSelectedCue;
-  senseSessionStartTime = Date.now();
+  senseSessionStartTime = null;
+  senseRepStartTime = null;
   senseReps = [];
   senseHalts = 0;
   senseRepActive = false;
+  var titleEl = document.getElementById('senseSessionTitle');
+  var cueEl = document.getElementById('senseSessionCue');
+  var stateEl = document.getElementById('senseStateLabel');
+  var flashEl = document.getElementById('senseRepFlash');
+  var fadedBtn = document.getElementById('senseFadedBtn');
+  var switchBtn = document.getElementById('senseSwitchBtn');
+  var beginBtn = document.getElementById('senseBeginRepBtn');
+  var countEl = document.getElementById('senseRepCount');
+  var haltCountEl = document.getElementById('senseHaltCount');
+  var sessionTimerEl = document.getElementById('senseSessionTimer');
+  var repTimerEl = document.getElementById('senseRepTimer');
+  if (titleEl) titleEl.textContent = SENSE_MODE_DEFS[senseActiveMode].label.toLowerCase();
+  if (cueEl) cueEl.textContent = senseActiveCue;
+  if (stateEl) stateEl.textContent = 'ready when you are';
+  if (flashEl) flashEl.style.display = 'none';
+  if (fadedBtn) fadedBtn.style.display = 'none';
+  if (switchBtn) switchBtn.style.display = '';
+  if (beginBtn) {
+    beginBtn.textContent = 'Begin Rep 1';
+    beginBtn.style.display = '';
+  }
+  if (countEl) countEl.textContent = 'rep 1 · ready';
+  if (haltCountEl) haltCountEl.textContent = '';
+  if (sessionTimerEl) sessionTimerEl.textContent = '0:00';
+  if (repTimerEl) repTimerEl.textContent = '0:00';
   showScreen('senseSessionScreen');
-  requestExerciseWakeLock();
-  startSenseRep();
-  tickSenseTimers();
 }
 
 function startSenseRep() {
+  if (senseRepActive) return;
+  if (!senseSessionStartTime) {
+    senseSessionStartTime = Date.now();
+    requestExerciseWakeLock();
+    tickSenseTimers();
+  }
   senseHalts = 0;
   senseRepActive = true;
   senseRepStartTime = Date.now();
@@ -354,7 +383,9 @@ function switchSenseCueBetweenReps() {
   senseActiveCue = choices[nextIndex].label;
   senseSelectedCue = senseActiveCue;
   var cueEl = document.getElementById('senseSessionCue');
+  var stateEl = document.getElementById('senseStateLabel');
   if (cueEl) cueEl.textContent = senseActiveCue;
+  if (stateEl) stateEl.textContent = 'ready when you are';
 }
 
 function endSenseSession() {

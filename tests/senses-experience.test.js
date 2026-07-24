@@ -58,3 +58,21 @@ test('Senses session source retains rep timers, halt tracking, and per-rep persi
   assert.match(source, /senseReps\.push\(\{/);
   assert.match(source, /senseReps:\s*senseReps\.map/);
 });
+
+test('the first Senses rep waits for an explicit Begin action before either timer starts', () => {
+  const startSession = source.slice(
+    source.indexOf('function startSenseSession()'),
+    source.indexOf('function startSenseRep()')
+  );
+  assert.match(startSession, /senseSessionStartTime = null/);
+  assert.match(startSession, /beginBtn\.textContent = 'Begin Rep 1'/);
+  assert.doesNotMatch(startSession, /startSenseRep\(\)/);
+  assert.doesNotMatch(startSession, /tickSenseTimers\(\)/);
+
+  const startRep = source.slice(
+    source.indexOf('function startSenseRep()'),
+    source.indexOf('function tickSenseTimers()')
+  );
+  assert.match(startRep, /senseSessionStartTime = Date\.now\(\)/);
+  assert.match(startRep, /tickSenseTimers\(\)/);
+});
