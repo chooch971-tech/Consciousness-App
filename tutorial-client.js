@@ -1577,7 +1577,7 @@ document.addEventListener('DOMContentLoaded',function(){(function(){
     setTimeout(function(){ov.style.opacity='1';go(0);},120);
   }
 
-  window.__tutReplay=function(){
+  window.__tutReplay=function(revealBehind){
     cur=0; eyeOn=false; rdy=false;
     window.__tutInProgress = true;
     document.body.classList.add('tut-live');
@@ -1594,9 +1594,21 @@ document.addEventListener('DOMContentLoaded',function(){(function(){
     df.classList.remove('tut-float-on'); fb.classList.remove('tut-vis');
     hidePathChoice(); cp.classList.remove('tut-cap-on');
     clearPulse(); closeDrawer();
-    ov.style.display='block'; ov.style.opacity='0'; ov.style.pointerEvents='auto';
-    ov.style.transition='opacity 0.7s ease';
-    setTimeout(function(){ov.style.opacity='1';go(0);},120);
+    if(revealBehind){
+      // Paint the overlay fully dark instantly, still hidden behind whatever
+      // is calling this (a higher z-index screen), then let that caller
+      // reveal it. Skips the opacity fade entirely — there's nothing behind
+      // it to flash while it ramps up.
+      ov.style.transition='none';
+      ov.style.display='block'; ov.style.opacity='1'; ov.style.pointerEvents='auto';
+      void ov.offsetWidth;
+      revealBehind();
+      requestAnimationFrame(function(){ ov.style.transition='opacity 0.7s ease'; go(0); });
+    } else {
+      ov.style.display='block'; ov.style.opacity='0'; ov.style.pointerEvents='auto';
+      ov.style.transition='opacity 0.7s ease';
+      setTimeout(function(){ov.style.opacity='1';go(0);},120);
+    }
   };
 
   if(!localStorage.getItem(VISITED)){

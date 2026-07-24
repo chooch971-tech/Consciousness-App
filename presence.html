@@ -5977,9 +5977,16 @@ body:not(.tut-live) #tutCorgi {
 
   document.getElementById('welcomeBeginBtn').addEventListener('click', function() {
     localStorage.setItem('presence_welcome_seen', '1');
-    wlcEl.classList.remove('wlc-vis');
     if (typeof window.__tutReplay === 'function') {
-      window.__tutReplay();
+      // Pre-paint the tutorial's dark overlay (it sits at z-index 9000, below
+      // the welcome screen's 9998) while still hidden underneath the welcome
+      // screen, then reveal both together. Without this, removing wlc-vis
+      // instantly exposed the bare home screen for the ~120ms + 0.7s the
+      // overlay used to take fading itself in — a visible flash before
+      // Omnia's tutorial visuals took over.
+      window.__tutReplay(function() { wlcEl.classList.remove('wlc-vis'); });
+    } else {
+      wlcEl.classList.remove('wlc-vis');
     }
   });
 
