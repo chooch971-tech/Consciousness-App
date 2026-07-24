@@ -1265,7 +1265,24 @@ function _applyFriendSocial(f, s) {
     // Warm existing conversations while the friend profile is already open.
     // This is deliberately background-only: opening a brand-new conversation
     // still goes through the server's mutual-follow authorization.
-    if (canMessage) loadChatList(false);
+    // loadChatList only fetches conversation metadata (ids, previews) — it
+    // does not fetch message content, so without also warming the message
+    // cache here, tapping Message always hit a cold _chatMessageCache and had
+    // to wait on a full network round-trip in openChatThread before any
+    // message showed. warmChatMessageThreads is what openChatList already
+    // uses for exactly this; run it first against whatever's cached from an
+    // earlier visit this session, then again once the fresh list lands.
+    if (canMessage) {
+      warmChatMessageThreads(_chatConversations);
+      loadChatList(false).then(function() {
+        warmChatMessageThreads(_chatConversations);
+        // warmChatMessageThreads only warms the 8 most recent conversations.
+        // We already know exactly which one this profile is about to open —
+        // guarantee it's warmed even if it fell outside that cap.
+        var thisFriendsConv = _chatConversations.find(function(c) { return c.userId === f.userId; });
+        if (thisFriendsConv) warmChatMessageThreads([thisFriendsConv]);
+      });
+    }
     mb.onclick = function() { messageFriend(f.userId, f.username || ''); };
   }
 }
