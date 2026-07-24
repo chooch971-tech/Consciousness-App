@@ -854,7 +854,11 @@ async function testLodgeAuthorFlow(browser, baseUrl) {
     const compactActions = !!document.querySelector('[data-lodge-like]')
       && !!document.querySelector('[data-lodge-comments]')
       && !!document.querySelector('[data-lodge-share]');
-    document.querySelector('[data-lodge-discussion]').click();
+    const discussion = document.querySelector('[data-lodge-discussion]');
+    const initiallyOpen = getComputedStyle(document.querySelector('.lodge-comments')).display === 'block';
+    discussion.click();
+    const collapsed = getComputedStyle(document.querySelector('.lodge-comments')).display === 'none';
+    discussion.click();
     const composerOpen = getComputedStyle(document.querySelector('.lodge-comments')).display === 'block';
     document.querySelector('[data-lodge-user]').click();
     const friendProfile = document.getElementById('friendProfileScreen').classList.contains('active');
@@ -876,6 +880,8 @@ async function testLodgeAuthorFlow(browser, baseUrl) {
     return {
       detailOpen,
       compactActions,
+      initiallyOpen,
+      collapsed,
       composerOpen,
       friendProfile,
       returnedToDetail,
@@ -885,6 +891,8 @@ async function testLodgeAuthorFlow(browser, baseUrl) {
   });
   assert.equal(result.detailOpen, true, 'post taps should open an enlarged discussion');
   assert.equal(result.compactActions, true, 'discussion should expose like, comment, and share actions');
+  assert.equal(result.initiallyOpen, true, 'comments should open with post detail');
+  assert.equal(result.collapsed, true, 'the Comment control should collapse an open discussion');
   assert.equal(result.composerOpen, true, 'the discussion line should reveal the comment composer');
   assert.equal(result.friendProfile, true, 'author taps should open the author Profile');
   assert.equal(result.returnedToDetail, true, 'swiping out of a Profile should return to its originating discussion');

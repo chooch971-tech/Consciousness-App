@@ -95,6 +95,8 @@ test('Lodge posts expose compact Reddit-like actions and an expandable multiline
   assert.match(socialClient, /class="lodge-act lodge-comment-trigger" data-lodge-comments/);
   assert.match(socialClient, /class="lodge-act lodge-share" data-lodge-share/);
   assert.match(socialClient, /class="lodge-discussion-line" data-lodge-discussion/);
+  assert.match(socialClient, /data-lodge-discussion>Comment/);
+  assert.match(socialClient, /toggleLodgeComments\(pid, card\); return;/);
   assert.match(socialClient, /<textarea class="lodge-cinput lodge-cinput--comment" maxlength="280" rows="4"/);
   assert.match(socialClient, /card\.querySelector\('\.lodge-crow--comment \.lodge-cinput'\)/);
   assert.match(profileClient, /function openFollowList/);

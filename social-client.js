@@ -242,7 +242,7 @@ function _lodgePostHtml(p, detail) {
     + (p.mine ? '<button class="lodge-act lodge-del" data-lodge-del aria-label="Delete post">✕</button>'
     : '<button class="lodge-act lodge-del" data-lodge-report aria-label="Report post">⚑</button>')
     + '</div>'
-    + (detail ? '<button class="lodge-discussion-line" data-lodge-discussion>Join the discussion <span>⌄</span></button>' : '')
+    + (detail ? '<button class="lodge-discussion-line" data-lodge-discussion>Comment <span>⌄</span></button>' : '')
     + '<div class="lodge-comments"><div data-comment-list></div>'
     + '<div class="lodge-crow lodge-crow--comment"><textarea class="lodge-cinput lodge-cinput--comment" maxlength="280" rows="4" placeholder="Add a comment…"></textarea>'
     + '<button class="lodge-csend">Send</button></div>'
@@ -679,7 +679,7 @@ document.getElementById('lodgeFeed').addEventListener('click', function(e) {
     else openLodgePostDetail(post, 'lodgeScreen', true);
     return;
   }
-  if (e.target.closest('[data-lodge-discussion]')) { toggleLodgeComments(pid, card, true); return; }
+  if (e.target.closest('[data-lodge-discussion]')) { toggleLodgeComments(pid, card); return; }
   if (e.target.closest('[data-lodge-del]')) { deleteLodgePost(pid, card); return; }
   if (e.target.closest('[data-lodge-report]')) { reportLodgeContent('post', pid); return; }
   if (e.target.closest('.lodge-csend')) { sendLodgeComment(pid, card); return; }
