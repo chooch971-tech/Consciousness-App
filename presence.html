@@ -1260,7 +1260,7 @@
        Hug the top instead; margin-top:auto keeps the Begin bar pinned to the
        bottom exactly as before on non-scrolling pages. */
     #exSetupScreen { justify-content:flex-start; }
-    .ex-setup-beginbar { margin-top:auto; }
+    .ex-setup-beginbar { margin-top:auto; z-index:30; }
     #exSetupScreen[data-ex="sense"] #exSetupScrollArea, #exSetupScreen[data-ex="thought"] #exSetupScrollArea { padding-top:6px !important; }
     #exSetupScreen[data-ex="sense"], #exSetupScreen[data-ex="thought"], #exSetupScreen[data-ex="multisense"] { --exsc-bg:var(--bg); }
     /* Multi-Sense: a warm gold dusk, dimmer than the Senses sky so the scene

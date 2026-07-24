@@ -7,6 +7,7 @@ const path = require('node:path');
 const vm = require('node:vm');
 
 const source = fs.readFileSync(path.join(__dirname, '..', 'senses-client.js'), 'utf8');
+const presenceSource = fs.readFileSync(path.join(__dirname, '..', 'presence.html'), 'utf8');
 const journalSource = fs.readFileSync(path.join(__dirname, '..', 'journal-client.js'), 'utf8');
 const historySource = fs.readFileSync(path.join(__dirname, '..', 'concentration-clock-client.js'), 'utf8');
 const reportsSource = fs.readFileSync(path.join(__dirname, '..', 'reports-client.js'), 'utf8');
@@ -101,6 +102,11 @@ test('Closed eyes is the default and Open Eyes is the advanced mode', () => {
   assert.doesNotMatch(source, /'Clean ' \+ senseEyesLabel/);
   assert.match(source, /eyesMode:\s*senseActiveEyesMode/);
   assert.match(source, /eyesMode:\s*rep\.eyesMode/);
+});
+
+test('the sticky setup Begin bar stays above Senses mastery targets while scrolling', () => {
+  assert.match(presenceSource, /\.ex-setup-beginbar\s*\{\s*margin-top:auto;\s*z-index:30;\s*\}/);
+  assert.match(presenceSource, /\.sense-mastery-node\s*\{[^}]*z-index:1;/);
 });
 
 test('Senses mastery uses clean 5, 7.5, and 10 minute reps per eyes mode', () => {
