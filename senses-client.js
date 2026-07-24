@@ -263,7 +263,6 @@ function senseChoiceGridHTML() {
   return choices.map(function(choice, index) {
     return '<button type="button" class="sense-choice' + (choice.label === senseSelectedCue ? ' on' : '') + '" onclick="chooseSenseCue(' + index + ')">'
       + '<span>' + escapeSenseText(choice.label) + '</span>'
-      + (choice.custom ? '<small>custom</small>' : '')
       + '</button>';
   }).join('');
 }
@@ -672,7 +671,7 @@ function renderCustomSenseList() {
     }).join('');
     rows += custom.map(function(item) {
       return '<div class="sense-custom-row">'
-        + '<div><span>' + escapeSenseText(item.label) + '</span><small>Custom</small></div>'
+        + '<div><span>' + escapeSenseText(item.label) + '</span></div>'
         + '<button type="button" onclick="deleteCustomSense(\'' + item.id + '\')" aria-label="Delete ' + escapeSenseText(item.label) + '">×</button>'
         + '</div>';
     }).join('');

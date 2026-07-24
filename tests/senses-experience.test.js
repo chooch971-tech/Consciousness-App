@@ -56,6 +56,11 @@ test('custom senses are sanitized, categorized, deduplicated, and included in ch
   assert.equal(smellChoices.filter(choice => choice.label.toLowerCase() === 'cedar smoke').length, 1);
 });
 
+test('custom senses do not carry a visible Custom label', () => {
+  assert.doesNotMatch(source, /choice\.custom\s*\?\s*'<small>custom<\/small>'/);
+  assert.doesNotMatch(source, /<small>Custom<\/small>/);
+});
+
 test('Senses session source retains rep timers, halt tracking, and per-rep persistence', () => {
   assert.match(source, /senseSessionStartTime/);
   assert.match(source, /senseRepStartTime/);
