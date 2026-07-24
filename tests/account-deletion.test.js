@@ -38,6 +38,7 @@ test('account deletion removes cloud, social, report, message, and notification 
     'blocksCollection.deleteMany',
     'notificationsCollection.deleteMany',
     'reportsCollection.deleteMany',
+    'bugReportsCollection.deleteMany',
     'likesCollection.deleteMany',
     'commentLikesCollection.deleteMany',
     'commentsCollection.deleteMany',

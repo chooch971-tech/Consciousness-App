@@ -546,6 +546,85 @@ document.getElementById('drawerDonate').addEventListener('click', function() {
   closeDrawer(true); // instant — window.open backgrounds the app; an animated close would freeze
   window.open('https://buymeacoffee.com/presence_app', '_blank');
 });
+
+(function wireBugReporting() {
+  var drawerBtn = document.getElementById('drawerBugReport');
+  var backBtn = document.getElementById('bugReportBack');
+  var form = document.getElementById('bugReportForm');
+  var category = document.getElementById('bugReportCategory');
+  var description = document.getElementById('bugReportDescription');
+  var steps = document.getElementById('bugReportSteps');
+  var count = document.getElementById('bugReportCount');
+  var status = document.getElementById('bugReportStatus');
+  var submit = document.getElementById('bugReportSubmit');
+  if (!drawerBtn || !backBtn || !form || !description || !submit) return;
+
+  function setStatus(kind, message) {
+    status.className = 'bug-report-status ' + kind;
+    status.textContent = message;
+  }
+
+  drawerBtn.addEventListener('click', function() {
+    closeDrawer();
+    status.className = 'bug-report-status';
+    status.textContent = '';
+    showScreen('bugReportScreen');
+  });
+  backBtn.addEventListener('click', function() {
+    renderHomeForNavigation();
+    showScreen('homeScreen');
+  });
+  description.addEventListener('input', function() {
+    count.textContent = description.value.length + ' / 4000';
+  });
+
+  form.addEventListener('submit', async function(event) {
+    event.preventDefault();
+    var text = description.value.trim();
+    if (text.length < 10) {
+      setStatus('error', 'Please describe the problem in at least 10 characters.');
+      description.focus();
+      return;
+    }
+    submit.disabled = true;
+    submit.textContent = 'Sending…';
+    status.className = 'bug-report-status';
+    status.textContent = '';
+    var activeScreen = document.querySelector('.screen.active');
+    var headers = { 'Content-Type': 'application/json' };
+    if (authToken) headers.Authorization = 'Bearer ' + authToken;
+    try {
+      var response = await fetch(SERVER_URL + '/api/bug-reports', {
+        method: 'POST',
+        headers: headers,
+        body: JSON.stringify({
+          category: category.value,
+          description: text,
+          steps: steps.value.trim(),
+          context: {
+            appVersion: (document.querySelector('.drawer-version') || {}).textContent || 'Presence',
+            screen: activeScreen ? activeScreen.id : 'unknown',
+            mode: document.body.className || 'unknown',
+            viewport: window.innerWidth + '×' + window.innerHeight,
+            platform: navigator.userAgent
+          }
+        })
+      });
+      var data = await response.json().catch(function() { return {}; });
+      if (!response.ok) throw new Error(data.error || 'Bug report could not be sent.');
+      description.value = '';
+      steps.value = '';
+      count.textContent = '0 / 4000';
+      setStatus('success', 'Thank you. Your bug report has been received.');
+    } catch (error) {
+      setStatus('error', error.message || 'Bug report could not be sent. Check your connection and try again.');
+    } finally {
+      submit.disabled = false;
+      submit.textContent = 'Send Bug Report';
+    }
+  });
+})();
+
 document.getElementById('drawerPlayground').addEventListener('click', function() {
   closeDrawer(); showScreen('playgroundScreen');
 });

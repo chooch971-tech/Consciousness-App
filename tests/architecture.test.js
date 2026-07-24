@@ -281,7 +281,7 @@ test('top-level drawer screens reveal the open drawer during swipe-back', () => 
   assert.match(presence, /if \(drawerPreview\) \{\s*releaseLiveDrawerPreview\(drawerPreview, !navigatedAway\);/);
   assert.match(presence, /querySelector\('[^']*\.lodge-back[^']*'\)/);
   assert.match(presence, /visibilitychange[\s\S]*abortInterruptedSwipe/);
-  assert.match(presence, /var keepsAuthoredBackdrop = \['profileScreen', 'friendProfileScreen', 'profileActivityScreen', 'friendsPanel', 'chatListScreen', 'chatThreadScreen', 'settingsScreen', 'accountSettingsScreen', 'exerciseSettingsScreen', 'clockSettingsScreen', 'lodgeScreen', 'homeScreen'\]/);
+  assert.match(presence, /var keepsAuthoredBackdrop = \['profileScreen', 'friendProfileScreen', 'profileActivityScreen', 'friendsPanel', 'chatListScreen', 'chatThreadScreen', 'settingsScreen', 'accountSettingsScreen', 'exerciseSettingsScreen', 'clockSettingsScreen', 'bugReportScreen', 'lodgeScreen', 'homeScreen'\]/);
   assert.match(presence, /chatListScreen: 'lodgeScreen', chatThreadScreen: 'chatListScreen'/);
   assert.match(presence, /screenEl\.id === 'chatThreadScreen' && typeof chatThreadPreviousScreen === 'function/);
   assert.match(presence, /screenEl\.id === 'profileScreen' && typeof profilePreviousScreen === 'function/);
@@ -789,8 +789,9 @@ test('profile, friendship, and message screens share one starfield', () => {
 });
 
 test('all Settings screens share the dedicated midnight-blue starfield', () => {
-  assert.match(presence, /#settingsScreen,\s*#accountSettingsScreen,\s*#exerciseSettingsScreen,\s*#clockSettingsScreen\s*\{[\s\S]*?rgba\(67,112,190,\.1\)[\s\S]*?#0b1223/);
+  assert.match(presence, /#settingsScreen,\s*#accountSettingsScreen,\s*#exerciseSettingsScreen,\s*#clockSettingsScreen,\s*#bugReportScreen\s*\{[\s\S]*?rgba\(67,112,190,\.1\)[\s\S]*?#0b1223/);
   assert.match(presence, /clockSettingsScreen: 'settingsScreen'/);
+  assert.match(presence, /bugReportScreen: 'homeScreen'/);
   assert.match(presence, /'homeScreen'\].indexOf\(el\.id\) >= 0/);
 });
 
@@ -1010,7 +1011,7 @@ test('Settings and utility screens load through their own client boundary', () =
   assert.match(settingsClient, /function\s+openAccountSettings\s*\(/);
   assert.match(settingsClient, /safeProfilePic\(pic\)[\s\S]*?av\.className = 'aset-profile__avatar' \+ \(safePic \? ' has-pic' : ''\)/);
   assert.match(settingsClient, /av\.style\.backgroundImage = safePic \? 'url\("' \+ safePic \+ '"\)' : ''/);
-  assert.match(presence, /#settingsScreen,\s*#accountSettingsScreen,\s*#exerciseSettingsScreen,\s*#clockSettingsScreen\s*\{[\s\S]*?linear-gradient\(180deg,#0b1223/);
+  assert.match(presence, /#settingsScreen,\s*#accountSettingsScreen,\s*#exerciseSettingsScreen,\s*#clockSettingsScreen,\s*#bugReportScreen\s*\{[\s\S]*?linear-gradient\(180deg,#0b1223/);
   assert.match(settingsClient, /function\s+addAudioUrlSound\s*\(/);
   assert.match(settingsClient, /document\.getElementById\('importFile'\)\.addEventListener/);
   assert.match(settingsClient, /document\.querySelectorAll\('#faqScreen \.faq-item-head'\)/);

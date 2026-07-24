@@ -107,6 +107,7 @@ let commentsCollection;
 let commentLikesCollection;
 let blocksCollection;
 let reportsCollection;
+let bugReportsCollection;
 let omniaReportsCollection;
 let notificationsCollection;
 let conversationsCollection;
@@ -207,6 +208,7 @@ async function connectDB() {
     commentLikesCollection = db.collection('comment_likes');
     blocksCollection = db.collection('blocks');
     reportsCollection = db.collection('reports');
+    bugReportsCollection = db.collection('bug_reports');
     omniaReportsCollection = db.collection('omnia_reports');
     notificationsCollection = db.collection('notifications');
     conversationsCollection = db.collection('conversations');
@@ -246,6 +248,8 @@ async function connectDB() {
       { label: 'messages.conversation-sender-created', collection: messagesCollection, keys: { convId: 1, senderId: 1, createdAt: 1 } },
       { label: 'messages.sender-created', collection: messagesCollection, keys: { senderId: 1, createdAt: -1 } },
       { label: 'reports.reporter-created', collection: reportsCollection, keys: { reporterId: 1, createdAt: -1 } },
+      { label: 'bug-reports.status-created', collection: bugReportsCollection, keys: { status: 1, createdAt: -1 } },
+      { label: 'bug-reports.reporter-created', collection: bugReportsCollection, keys: { reporterId: 1, createdAt: -1 } },
       { label: 'omnia-reports.cache', collection: omniaReportsCollection, keys: { userId: 1, period: 1, periodKey: 1, version: 1 }, options: { unique: true } },
       { label: 'omnia-reports.expiry', collection: omniaReportsCollection, keys: { expiresAt: 1 }, options: { expireAfterSeconds: 0 } },
       { label: 'push-subscriptions.endpoint', collection: userPushSubsCollection, keys: { endpoint: 1 }, options: { unique: true } },
@@ -361,6 +365,16 @@ function verifyAdmin(req, res, next) {
     return res.status(403).json({ error: 'Forbidden' });
   }
   next();
+}
+
+// Bug reports remain available to signed-out practitioners. If a valid bearer
+// token is present, attach the account so an administrator can follow up;
+// malformed or expired credentials still fail rather than being silently
+// downgraded to anonymous.
+function optionalVerifyToken(req, res, next) {
+  const auth = req.headers.authorization;
+  if (!auth) return next();
+  verifyToken(req, res, next);
 }
 
 // ── Push-ownership middleware ────────────────────────────
@@ -515,6 +529,25 @@ function mutationRateLimit(req, res, next) {
   bucket.count++;
   mutationRateBuckets.set(key, bucket);
   if (bucket.count > MUTATION_RATE_LIMIT) return res.status(429).json({ error: 'Too many changes. Try again shortly.' });
+  next();
+}
+
+const bugReportRateBuckets = new Map();
+const BUG_REPORT_RATE_LIMIT = 5;
+const BUG_REPORT_RATE_WINDOW_MS = 10 * 60 * 1000;
+function bugReportRateLimit(req, res, next) {
+  const now = Date.now();
+  const key = req.user && req.user.userId ? 'user:' + req.user.userId : 'ip:' + (req.ip || 'unknown');
+  const bucket = bugReportRateBuckets.get(key) || { count: 0, resetAt: now + BUG_REPORT_RATE_WINDOW_MS };
+  if (now > bucket.resetAt) {
+    bucket.count = 0;
+    bucket.resetAt = now + BUG_REPORT_RATE_WINDOW_MS;
+  }
+  bucket.count++;
+  bugReportRateBuckets.set(key, bucket);
+  if (bucket.count > BUG_REPORT_RATE_LIMIT) {
+    return res.status(429).json({ error: 'Too many bug reports. Please try again later.' });
+  }
   next();
 }
 
@@ -1109,6 +1142,7 @@ async function deletePresenceAccount(userId) {
       await reportsCollection.deleteMany({
         $or: [{ reporterId: userId }, { refId: { $in: deletedReferenceIds } }]
       }, { session });
+      await bugReportsCollection.deleteMany({ reporterId: userId }, { session });
 
       await likesCollection.deleteMany({
         $or: [{ userId }, { postId: { $in: postIds } }]
@@ -2265,6 +2299,72 @@ function sanitizeSocialText(text, maxLen) {
   const clean = text.replace(/[\u0000-\u001f\u007f]/g, ' ').trim().slice(0, maxLen);
   return clean.length ? clean : null;
 }
+
+const BUG_REPORT_CATEGORIES = new Set(['functionality', 'display', 'data', 'account', 'other']);
+
+app.post('/api/bug-reports', optionalVerifyToken, bugReportRateLimit, async (req, res) => {
+  try {
+    const category = typeof req.body.category === 'string' ? req.body.category : '';
+    const description = sanitizeSocialText(req.body.description, 4000);
+    const steps = sanitizeSocialText(req.body.steps || '', 2000) || '';
+    if (!BUG_REPORT_CATEGORIES.has(category)) {
+      return res.status(400).json({ error: 'Choose a valid bug category.' });
+    }
+    if (!description || description.length < 10) {
+      return res.status(400).json({ error: 'Describe the bug in at least 10 characters.' });
+    }
+    const rawContext = req.body.context && typeof req.body.context === 'object' && !Array.isArray(req.body.context)
+      ? req.body.context
+      : {};
+    const context = {};
+    ['appVersion', 'screen', 'mode', 'viewport', 'platform'].forEach(key => {
+      const value = sanitizeSocialText(rawContext[key], 300);
+      if (value) context[key] = value;
+    });
+    const report = {
+      reporterId: req.user ? req.user.userId : null,
+      category,
+      description,
+      steps,
+      context,
+      status: 'open',
+      createdAt: new Date()
+    };
+    const result = await bugReportsCollection.insertOne(report);
+    res.status(201).json({ ok: true, reportId: result.insertedId.toString() });
+  } catch (err) {
+    logger.error('bug_report_create_failed', { requestId: req.requestId, error: errorDetails(err) });
+    res.status(500).json({ error: 'Bug report could not be sent.' });
+  }
+});
+
+// Review queue for the project owner. Supply ADMIN_SECRET as x-admin-secret.
+app.get('/api/admin/bug-reports', verifyAdmin, async (req, res) => {
+  try {
+    const includeResolved = req.query.status === 'all';
+    const query = includeResolved ? {} : { status: 'open' };
+    const reports = await bugReportsCollection.find(query).sort({ createdAt: -1 }).limit(200).toArray();
+    const reporterIds = [...new Set(reports.map(report => report.reporterId).filter(id => ObjectId.isValid(id)))];
+    const users = reporterIds.length
+      ? await usersCollection.find({ _id: { $in: reporterIds.map(id => new ObjectId(id)) } })
+        .project({ email: 1, username: 1, displayName: 1 }).toArray()
+      : [];
+    const usersById = new Map(users.map(user => [user._id.toString(), {
+      email: user.email || null,
+      username: user.username || null,
+      displayName: user.displayName || null
+    }]));
+    res.json({
+      reports: reports.map(report => ({
+        ...report,
+        reporter: report.reporterId ? usersById.get(report.reporterId) || null : null
+      }))
+    });
+  } catch (err) {
+    logger.error('bug_report_list_failed', { requestId: req.requestId, error: errorDetails(err) });
+    res.status(500).json({ error: 'Bug reports could not be loaded.' });
+  }
+});
 
 async function lodgeFollowingIds(userId) {
   const rows = await followsCollection.find({ followerId: userId, status: 'active' })
