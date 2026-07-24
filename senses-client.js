@@ -34,11 +34,7 @@ var SENSE_MODE_DEFS = {
       'Fresh rain on warm earth',
       'A rose in full bloom',
       'Coffee brewing',
-      'Pine forest after snow',
-      'Fresh-cut citrus peel',
-      'Bread baking in an oven',
-      'Salt air by the sea',
-      'A field of lavender'
+      'Pine forest after snow'
     ]
   },
   taste: {
@@ -48,11 +44,7 @@ var SENSE_MODE_DEFS = {
       'Honey',
       'Ripe lemon',
       'Dark chocolate',
-      'Fresh mint',
-      'Sea salt',
-      'Summer strawberry',
-      'Strong black tea',
-      'Fresh ginger'
+      'Fresh mint'
     ]
   }
 };
@@ -70,17 +62,31 @@ function normalizeCustomSense(value) {
 function sanitizeCustomSenses(value) {
   if (!Array.isArray(value)) return [];
   var seen = {};
+  var customCount = 0;
   return value.reduce(function(out, item) {
     if (!item || !SENSE_MODE_DEFS[item.mode]) return out;
     var label = normalizeCustomSense(item.label);
+    var hiddenDefault = item.hiddenDefault === true;
+    if (hiddenDefault) {
+      var defaultIndex = SENSE_MODE_DEFS[item.mode].cues.findIndex(function(cue) {
+        return cue.toLowerCase() === label.toLowerCase();
+      });
+      if (defaultIndex < 0) return out;
+      label = SENSE_MODE_DEFS[item.mode].cues[defaultIndex];
+    }
     var duplicateKey = item.mode + ':' + label.toLowerCase();
-    if (!label || seen[duplicateKey] || out.length >= SENSE_CUSTOM_LIMIT) return out;
+    if (!label || seen[duplicateKey] || (!hiddenDefault && customCount >= SENSE_CUSTOM_LIMIT)) return out;
     seen[duplicateKey] = true;
-    out.push({
-      id: String(item.id || ('sense_' + out.length)).replace(/[^a-zA-Z0-9_.-]/g, '').slice(0, 80) || ('sense_' + out.length),
+    var cleanItem = {
+      id: hiddenDefault
+        ? 'default_' + item.mode + '_' + defaultIndex
+        : (String(item.id || ('sense_' + out.length)).replace(/[^a-zA-Z0-9_.-]/g, '').slice(0, 80) || ('sense_' + out.length)),
       mode: item.mode,
       label: label
-    });
+    };
+    if (hiddenDefault) cleanItem.hiddenDefault = true;
+    else customCount++;
+    out.push(cleanItem);
     return out;
   }, []);
 }
@@ -100,11 +106,18 @@ function saveCustomSenses(senses) {
 }
 
 function senseChoicesForMode(mode) {
-  var builtIns = (SENSE_MODE_DEFS[mode] || SENSE_MODE_DEFS.feeling).cues.map(function(label) {
+  var stored = loadCustomSenses();
+  var hidden = {};
+  stored.forEach(function(item) {
+    if (item.hiddenDefault) hidden[item.mode + ':' + item.label.toLowerCase()] = true;
+  });
+  var builtIns = (SENSE_MODE_DEFS[mode] || SENSE_MODE_DEFS.feeling).cues.filter(function(label) {
+    return !hidden[mode + ':' + label.toLowerCase()];
+  }).map(function(label) {
     return { label: label, custom: false };
   });
-  var custom = loadCustomSenses().filter(function(item) {
-    return item.mode === mode;
+  var custom = stored.filter(function(item) {
+    return item.mode === mode && !item.hiddenDefault;
   }).map(function(item) {
     return { label: item.label, custom: true, id: item.id };
   });
@@ -242,7 +255,12 @@ function senseCueForMode(mode) {
 }
 
 function senseChoiceGridHTML() {
-  return senseChoicesForMode(senseMode).map(function(choice, index) {
+  var choices = senseChoicesForMode(senseMode);
+  if (!choices.length) {
+    return '<div class="sense-choice-empty">No ' + escapeSenseText(SENSE_MODE_DEFS[senseMode].label.toLowerCase())
+      + ' senses selected. Add or restore one in Settings.</div>';
+  }
+  return choices.map(function(choice, index) {
     return '<button type="button" class="sense-choice' + (choice.label === senseSelectedCue ? ' on' : '') + '" onclick="chooseSenseCue(' + index + ')">'
       + '<span>' + escapeSenseText(choice.label) + '</span>'
       + (choice.custom ? '<small>custom</small>' : '')
@@ -390,7 +408,10 @@ function updateSenseSessionPresentation(active) {
 
 function startSenseSession() {
   var choices = senseChoicesForMode(senseMode);
-  if (!choices.length) return;
+  if (!choices.length) {
+    showToast('Add or restore a ' + SENSE_MODE_DEFS[senseMode].label.toLowerCase() + ' sense in Settings.');
+    return;
+  }
   if (!choices.some(function(choice) { return choice.label === senseSelectedCue; })) {
     senseSelectedCue = choices[0].label;
   }
@@ -636,17 +657,52 @@ function saveSenseSessionResult() {
 function renderCustomSenseList() {
   var wrap = document.getElementById('customSenseList');
   if (!wrap) return;
-  var senses = loadCustomSenses();
-  if (!senses.length) {
-    wrap.innerHTML = '<div class="sense-custom-empty">No custom senses yet.</div>';
-    return;
-  }
-  wrap.innerHTML = senses.map(function(item) {
-    return '<div class="sense-custom-row">'
-      + '<div><span>' + escapeSenseText(item.label) + '</span><small>' + escapeSenseText(SENSE_MODE_DEFS[item.mode].label) + '</small></div>'
-      + '<button type="button" onclick="deleteCustomSense(\'' + item.id + '\')" aria-label="Delete ' + escapeSenseText(item.label) + '">×</button>'
-      + '</div>';
+  var stored = loadCustomSenses();
+  wrap.innerHTML = ['feeling', 'smell', 'taste'].map(function(mode) {
+    var def = SENSE_MODE_DEFS[mode];
+    var custom = stored.filter(function(item) { return item.mode === mode && !item.hiddenDefault; });
+    var rows = def.cues.map(function(label, index) {
+      var removed = stored.some(function(item) {
+        return item.hiddenDefault && item.mode === mode && item.label === label;
+      });
+      return '<div class="sense-custom-row sense-default-row' + (removed ? ' removed' : '') + '">'
+        + '<div><span>' + escapeSenseText(label) + '</span><small>Default' + (removed ? ' · removed' : '') + '</small></div>'
+        + '<button type="button" onclick="toggleDefaultSense(\'' + mode + '\',' + index + ')" aria-label="'
+        + (removed ? 'Restore ' : 'Remove ') + escapeSenseText(label) + '">' + (removed ? '↺' : '×') + '</button></div>';
+    }).join('');
+    rows += custom.map(function(item) {
+      return '<div class="sense-custom-row">'
+        + '<div><span>' + escapeSenseText(item.label) + '</span><small>Custom</small></div>'
+        + '<button type="button" onclick="deleteCustomSense(\'' + item.id + '\')" aria-label="Delete ' + escapeSenseText(item.label) + '">×</button>'
+        + '</div>';
+    }).join('');
+    return '<section class="sense-library-group"><div class="sense-library-head"><span>' + escapeSenseText(def.label)
+      + '</span><small>' + def.cues.length + ' defaults</small></div>' + rows + '</section>';
   }).join('');
+}
+
+function refreshSenseSelectionsAfterLibraryChange() {
+  ['feeling', 'smell', 'taste'].forEach(function(mode) {
+    senseSelectedByMode[mode] = senseCueForMode(mode);
+  });
+  senseSelectedCue = senseSelectedByMode[senseMode];
+}
+
+function toggleDefaultSense(mode, index) {
+  var def = SENSE_MODE_DEFS[mode];
+  var label = def && def.cues[index];
+  if (!label) return;
+  var senses = loadCustomSenses();
+  var hiddenIndex = senses.findIndex(function(item) {
+    return item.hiddenDefault && item.mode === mode && item.label === label;
+  });
+  var restored = hiddenIndex >= 0;
+  if (restored) senses.splice(hiddenIndex, 1);
+  else senses.push({ id: 'default_' + mode + '_' + index, mode: mode, label: label, hiddenDefault: true });
+  saveCustomSenses(senses);
+  refreshSenseSelectionsAfterLibraryChange();
+  renderCustomSenseList();
+  showToast(restored ? label + ' restored' : label + ' removed');
 }
 
 function addCustomSense() {
@@ -666,7 +722,7 @@ function addCustomSense() {
     showToast('That sense is already in ' + SENSE_MODE_DEFS[mode].label + '.');
     return;
   }
-  if (senses.length >= SENSE_CUSTOM_LIMIT) {
+  if (senses.filter(function(item) { return !item.hiddenDefault; }).length >= SENSE_CUSTOM_LIMIT) {
     showToast('Custom senses are limited to ' + SENSE_CUSTOM_LIMIT + '.');
     return;
   }
@@ -677,6 +733,7 @@ function addCustomSense() {
   });
   saveCustomSenses(senses);
   input.value = '';
+  refreshSenseSelectionsAfterLibraryChange();
   renderCustomSenseList();
   showToast('Custom sense added');
 }
@@ -685,12 +742,8 @@ function deleteCustomSense(id) {
   var senses = loadCustomSenses();
   saveCustomSenses(senses.filter(function(item) { return item.id !== id; }));
   renderCustomSenseList();
-  // A deleted custom sense may have been the remembered pick for any mode, not
-  // just the one on screen — re-resolve each so none points at a gone cue.
-  ['feeling', 'smell', 'taste'].forEach(function(mode) {
-    senseSelectedByMode[mode] = senseCueForMode(mode);
-  });
-  senseSelectedCue = senseSelectedByMode[senseMode];
+  // A deleted custom sense may have been the remembered pick for any mode.
+  refreshSenseSelectionsAfterLibraryChange();
 }
 
 (function wireSenseExperience() {

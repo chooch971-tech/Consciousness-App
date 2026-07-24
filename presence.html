@@ -1159,6 +1159,7 @@
     .sense-choice { min-height:42px; display:flex; align-items:center; justify-content:space-between; gap:7px; padding:9px 11px; border:1px solid rgba(var(--sn-rgb),.18); border-radius:9px; background:rgba(var(--sn-rgb),.045); color:rgba(221,216,206,.66); font-family:'DM Mono',monospace; font-size:9px; line-height:1.35; text-align:left; cursor:pointer; }
     .sense-choice small { color:var(--sn-light); font-size:6px; letter-spacing:.12em; text-transform:uppercase; opacity:.68; }
     .sense-choice.on { border-color:rgba(var(--sn-rgb),.65); background:rgba(var(--sn-rgb),.2); color:#fff; box-shadow:0 0 15px -8px rgba(var(--sn-rgb),.8); }
+    .sense-choice-empty { grid-column:1 / -1; padding:14px 12px; border:1px dashed rgba(var(--sn-rgb),.22); border-radius:9px; color:var(--muted); font-size:10px; line-height:1.55; text-align:center; }
     .sense-eyes-picker { margin-bottom:16px; }
     .sense-eyes-options { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
     .sense-eyes-option { min-height:58px; display:flex; align-items:center; gap:10px; padding:10px 11px; border:1px solid rgba(var(--sn-rgb),.18); border-radius:11px; background:rgba(var(--sn-rgb),.045); color:rgba(221,216,206,.62); text-align:left; cursor:pointer; }
@@ -1195,6 +1196,13 @@
     .sense-custom-row small { font-size:7px; letter-spacing:.16em; text-transform:uppercase; color:var(--muted); }
     .sense-custom-row button { width:28px; height:28px; border:1px solid rgba(196,120,120,.25); border-radius:50%; background:none; color:#c98282; font-size:17px; cursor:pointer; }
     .sense-custom-empty { padding:4px 0; color:var(--muted); font-size:10px; font-style:italic; }
+    .sense-library-group + .sense-library-group { margin-top:18px; }
+    .sense-library-head { display:flex; align-items:baseline; justify-content:space-between; gap:12px; padding-bottom:7px; border-bottom:1px solid rgba(207,143,176,.16); }
+    .sense-library-head span { font-family:'Cormorant Garamond',serif; font-size:19px; color:var(--text); }
+    .sense-library-head small { font-family:'DM Mono',monospace; font-size:7px; letter-spacing:.13em; text-transform:uppercase; color:var(--muted); }
+    .sense-default-row.removed { opacity:.48; }
+    .sense-default-row.removed span { text-decoration:line-through; text-decoration-color:rgba(221,216,206,.45); }
+    .sense-default-row.removed button { border-color:rgba(150,200,150,.3); color:#96c896; }
     .sense-session-header { position:relative; z-index:5; padding:var(--safe-top) 24px 0; display:flex; justify-content:space-between; align-items:center; }
     .sense-session-stage { position:relative; flex:1; min-height:0; display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; user-select:none; padding:12px 26px 6px; cursor:pointer; }
     .sense-session-stage:focus-visible { outline:1px solid rgba(var(--sense-rgb),.6); outline-offset:-8px; border-radius:18px; }
@@ -6175,8 +6183,8 @@ body:not(.tut-live) #tutCorgi {
         </div>
 
         <div id="senseCustomBlock" style="background:rgba(255,255,255,.03); border:1px solid var(--border); border-radius:10px; padding:16px 18px;">
-          <div style="font-size:12px; color:var(--text); margin-bottom:4px;">Custom senses</div>
-          <div style="font-size:10px; color:var(--muted); line-height:1.6; margin-bottom:14px;">Add feelings, smells, or tastes you want to practice. They will appear beside the built-in choices in Senses and sync with your progress.</div>
+          <div style="font-size:12px; color:var(--text); margin-bottom:4px;">Sense library</div>
+          <div style="font-size:10px; color:var(--muted); line-height:1.6; margin-bottom:14px;">Choose which default feelings, smells, and tastes appear in Senses, or add your own. Removed defaults can be restored here anytime.</div>
           <div class="sense-custom-add">
             <select id="customSenseMode" aria-label="Sense category">
               <option value="feeling">Feeling</option>
@@ -9830,7 +9838,7 @@ function claimMorningOffering() {
 <script src="auditory-client.js"></script>
 <script src="thought-control-client.js"></script>
 <script src="asana-client.js"></script>
-  <script src="senses-client.js?v=5"></script>
+  <script src="senses-client.js?v=6"></script>
 <script src="app-shell-client.js"></script>
 <script src="omnia-ambient-client.js"></script>
 <script src="concentration-controls-client.js"></script>

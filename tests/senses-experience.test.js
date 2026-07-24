@@ -17,6 +17,7 @@ function loadSensesContext(seed) {
   const context = {
     console,
     document: { getElementById: () => null },
+    showToast: () => {},
     concState: { history: [] },
     localStorage: {
       getItem: key => values.has(key) ? values.get(key) : null,
@@ -89,6 +90,32 @@ test('Feeling offers only the four intentional body-state senses', () => {
     Array.from(context.SENSE_MODE_DEFS.feeling.cues),
     ['Warmth', 'Coldness', 'Tiredness', 'Hunger']
   );
+});
+
+test('Feeling, Smell, and Taste each begin with exactly four defaults', () => {
+  const context = loadSensesContext();
+  assert.deepEqual(Array.from(context.SENSE_MODE_DEFS.feeling.cues), ['Warmth', 'Coldness', 'Tiredness', 'Hunger']);
+  assert.deepEqual(Array.from(context.SENSE_MODE_DEFS.smell.cues), [
+    'Fresh rain on warm earth', 'A rose in full bloom', 'Coffee brewing', 'Pine forest after snow'
+  ]);
+  assert.deepEqual(Array.from(context.SENSE_MODE_DEFS.taste.cues), [
+    'Honey', 'Ripe lemon', 'Dark chocolate', 'Fresh mint'
+  ]);
+});
+
+test('default senses can be removed and restored through synced library preferences', () => {
+  const context = loadSensesContext();
+  context.toggleDefaultSense('smell', 0);
+  assert.equal(context.senseChoicesForMode('smell').some(choice => choice.label === 'Fresh rain on warm earth'), false);
+  const stored = JSON.parse(context.values.get(context.SENSE_CUSTOM_KEY));
+  assert.deepEqual(stored[0], {
+    id: 'default_smell_0',
+    mode: 'smell',
+    label: 'Fresh rain on warm earth',
+    hiddenDefault: true
+  });
+  context.toggleDefaultSense('smell', 0);
+  assert.equal(context.senseChoicesForMode('smell').some(choice => choice.label === 'Fresh rain on warm earth'), true);
 });
 
 test('Closed eyes is the default and Open Eyes is the advanced mode', () => {

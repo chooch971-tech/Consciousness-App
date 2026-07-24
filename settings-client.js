@@ -248,7 +248,7 @@ var EXERCISE_SETTINGS_LIST = [
 var EXSET_BLOCKS = {
   visual:     [{ block:'visImagesBlock', header:'Custom Images' }],
   auditory:   [{ block:'audSoundsBlock', header:'Custom Sounds' }],
-  sense:      [{ block:'senseCustomBlock', header:'Custom Senses' }],
+  sense:      [{ block:'senseCustomBlock', header:'Sense Library' }],
   thought:    [{ block:'tcBufferBlock', header:'Session Start' }],
   asana:      [{ block:'asanaBufferBlock', header:'Session Start' }],
   soulmirror: [
