@@ -19,11 +19,7 @@ var SENSE_MODE_DEFS = {
       'Warmth',
       'Coldness',
       'Tiredness',
-      'Hunger',
-      'A gentle breeze',
-      'A warm blanket',
-      'Soft sand',
-      'Smooth stone'
+      'Hunger'
     ]
   },
   smell: {
@@ -203,7 +199,6 @@ function buildSenseSetupHTML() {
     + '<div class="sn-modes">' + tabs + '</div>'
     + '<div class="sense-choice-label">Choose a sensation</div>'
     + '<div class="sense-choice-grid">' + choiceHtml + '</div>'
-    + '<div class="sense-choice-desc">' + SENSE_MODE_DEFS[senseMode].desc + '</div>'
     + '</div>'
     + snRecordHtml(best)
     + progressHtml
@@ -291,6 +286,7 @@ function startSenseRep() {
     senseSessionStartTime = Date.now();
     requestExerciseWakeLock();
     tickSenseTimers();
+    senseTimerHandle = setInterval(tickSenseTimers, 250);
   }
   senseHalts = 0;
   senseRepActive = true;
@@ -322,7 +318,6 @@ function tickSenseTimers() {
   var repEl = document.getElementById('senseRepTimer');
   if (sessionEl) sessionEl.textContent = fmtSenseTime(sessionSeconds);
   if (repEl) repEl.textContent = senseRepActive ? fmtSenseTime(repSeconds) : '—';
-  senseTimerHandle = requestAnimationFrame(tickSenseTimers);
 }
 
 function updateSenseRepCount() {
@@ -389,7 +384,7 @@ function switchSenseCueBetweenReps() {
 }
 
 function endSenseSession() {
-  cancelAnimationFrame(senseTimerHandle);
+  clearInterval(senseTimerHandle);
   senseTimerHandle = null;
   if (senseRepActive && senseRepStartTime) {
     var seconds = Math.floor((Date.now() - senseRepStartTime) / 1000);

@@ -75,4 +75,13 @@ test('the first Senses rep waits for an explicit Begin action before either time
   );
   assert.match(startRep, /senseSessionStartTime = Date\.now\(\)/);
   assert.match(startRep, /tickSenseTimers\(\)/);
+  assert.match(startRep, /setInterval\(tickSenseTimers,\s*250\)/);
+});
+
+test('Feeling offers only the four intentional body-state senses', () => {
+  const context = loadSensesContext();
+  assert.deepEqual(
+    Array.from(context.SENSE_MODE_DEFS.feeling.cues),
+    ['Warmth', 'Coldness', 'Tiredness', 'Hunger']
+  );
 });

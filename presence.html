@@ -1145,7 +1145,6 @@
     .sense-choice { min-height:42px; display:flex; align-items:center; justify-content:space-between; gap:7px; padding:9px 11px; border:1px solid rgba(var(--sn-rgb),.18); border-radius:9px; background:rgba(var(--sn-rgb),.045); color:rgba(221,216,206,.66); font-family:'DM Mono',monospace; font-size:9px; line-height:1.35; text-align:left; cursor:pointer; }
     .sense-choice small { color:var(--sn-light); font-size:6px; letter-spacing:.12em; text-transform:uppercase; opacity:.68; }
     .sense-choice.on { border-color:rgba(var(--sn-rgb),.65); background:rgba(var(--sn-rgb),.2); color:#fff; box-shadow:0 0 15px -8px rgba(var(--sn-rgb),.8); }
-    .sense-choice-desc { margin:12px 2px 0; color:var(--muted); font-family:'Cormorant Garamond',serif; font-size:14px; font-style:italic; line-height:1.45; }
     .sense-result-rep { display:flex; justify-content:space-between; align-items:center; gap:12px; padding:11px 14px; background:var(--surface); border:1px solid var(--border); border-radius:7px; }
     .sense-result-rep__title { font-size:10px; letter-spacing:.08em; color:var(--muted); line-height:1.45; }
     .sense-result-rep__halts { margin-top:3px; font-size:9px; color:#cf8fb0; opacity:.75; }
@@ -1212,7 +1211,8 @@
     #exSetupScreen[data-ex="sense"] .ex-setup-beginbar { background:rgba(21,13,19,.9); backdrop-filter:blur(6px); -webkit-backdrop-filter:blur(6px); border-top-color:rgba(224,168,196,.18); }
     #exSetupScreen[data-ex="thought"] .ex-setup-beginbar { background:rgba(13,17,28,.9); backdrop-filter:blur(6px); -webkit-backdrop-filter:blur(6px); border-top-color:rgba(152,196,232,.18); }
     /* Begin buttons pop in the exercise's own color. */
-    #exSetupScreen[data-ex="sense"] #exSetupBeginBtn { background:linear-gradient(160deg,#f0bcd6,#c9769f) !important; border-color:transparent !important; color:#2a1220 !important; font-weight:700; box-shadow:0 0 26px -4px rgba(224,168,196,.8), 0 3px 0 rgba(120,60,90,.55); }
+    #exSetupScreen[data-ex="sense"] #exSetupBeginBtn { background:linear-gradient(160deg,#cbd5ff,#8292df) !important; border-color:rgba(207,216,255,.7) !important; color:#11182f !important; font-weight:700; box-shadow:0 0 26px -4px rgba(142,158,224,.8), 0 3px 0 rgba(55,68,128,.6); }
+    #senseBeginRepBtn.conc-btn.primary { background:linear-gradient(160deg,#cbd5ff,#8292df) !important; border-color:rgba(207,216,255,.7) !important; color:#11182f !important; font-weight:700; box-shadow:0 0 22px -5px rgba(142,158,224,.75); }
     #exSetupScreen[data-ex="thought"] #exSetupBeginBtn { background:linear-gradient(160deg,#aad0f2,#5e8fc0) !important; border-color:transparent !important; color:#0d1723 !important; font-weight:700; box-shadow:0 0 26px -4px rgba(152,196,232,.8), 0 3px 0 rgba(52,86,124,.6); }
     /* Clock-page mirror pieces: hero card (mode picker + minutes), big record
        readout, and a single 0→goal progress track with waypoint marks. */
@@ -8254,7 +8254,7 @@ body:not(.tut-live) #tutCorgi {
     <div style="padding:0 24px max(env(safe-area-inset-bottom),28px); display:flex; flex-direction:column; gap:10px; align-items:center;">
       <button class="btn primary conc-btn" id="senseFadedBtn" style="max-width:300px; width:100%; display:none; background:rgba(207,143,176,.14); border-color:rgba(207,143,176,.4); color:#e0a8c4;">Sensation Faded</button>
       <button class="btn ghost conc-btn" id="senseSwitchBtn" style="max-width:300px; width:100%; font-size:9px;">Switch Sensation</button>
-      <button class="btn primary conc-btn" id="senseBeginRepBtn" style="max-width:300px; width:100%; background:rgba(207,143,176,.14); border-color:rgba(207,143,176,.4); color:#e0a8c4;">Begin Rep 1</button>
+      <button class="btn primary conc-btn" id="senseBeginRepBtn" style="max-width:300px; width:100%; background:linear-gradient(160deg,#cbd5ff,#8292df); border-color:rgba(207,216,255,.7); color:#11182f; font-weight:700; box-shadow:0 0 22px -5px rgba(142,158,224,.75);">Begin Rep 1</button>
     </div>
     <div style="position:fixed; bottom:max(env(safe-area-inset-bottom),28px); left:24px; font-size:10px; letter-spacing:.1em; color:var(--muted); opacity:.5; font-family:'DM Mono',monospace;">session <span id="senseSessionTimer">0:00</span></div>
     <div style="position:fixed; bottom:max(env(safe-area-inset-bottom),28px); right:24px; font-size:10px; letter-spacing:.1em; color:#cf8fb0; opacity:.75; font-family:'DM Mono',monospace;">rep <span id="senseRepTimer">0:00</span></div>
@@ -9721,7 +9721,7 @@ function claimMorningOffering() {
 <script src="auditory-client.js"></script>
 <script src="thought-control-client.js"></script>
 <script src="asana-client.js"></script>
-<script src="senses-client.js?v=2"></script>
+<script src="senses-client.js?v=3"></script>
 <script src="app-shell-client.js"></script>
 <script src="omnia-ambient-client.js"></script>
 <script src="concentration-controls-client.js"></script>

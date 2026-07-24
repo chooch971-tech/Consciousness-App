@@ -1923,7 +1923,7 @@ function discardSession(type, _c) {
       switchMode('concentration');
       break;
     case 'sense':
-      cancelAnimationFrame(senseTimerHandle);
+      clearInterval(senseTimerHandle);
       senseTimerHandle = null;
       senseSessionStartTime = null;
       senseRepStartTime = null;
