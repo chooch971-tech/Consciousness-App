@@ -70,23 +70,33 @@ test('Senses session source retains rep timers, halt tracking, and per-rep persi
   assert.match(source, /senseReps:\s*senseReps\.map/);
 });
 
-test('the first Senses rep waits for an explicit Begin action before either timer starts', () => {
+test('the Senses session timer starts at setup Begin while the first rep remains explicit', () => {
   const startSession = source.slice(
     source.indexOf('function startSenseSession()'),
     source.indexOf('function startSenseRep()')
   );
-  assert.match(startSession, /senseSessionStartTime = null/);
+  assert.match(startSession, /senseSessionStartTime = Date\.now\(\)/);
   assert.match(startSession, /beginBtn\.textContent = senseBeginLabel\(1\)/);
   assert.doesNotMatch(startSession, /startSenseRep\(\)/);
-  assert.doesNotMatch(startSession, /tickSenseTimers\(\)/);
+  assert.match(startSession, /requestExerciseWakeLock\(\)/);
+  assert.match(startSession, /tickSenseTimers\(\)/);
+  assert.match(startSession, /setInterval\(tickSenseTimers,\s*250\)/);
+  assert.doesNotMatch(startSession, /senseRepActive = true/);
 
   const startRep = source.slice(
     source.indexOf('function startSenseRep()'),
     source.indexOf('function tickSenseTimers()')
   );
-  assert.match(startRep, /senseSessionStartTime = Date\.now\(\)/);
-  assert.match(startRep, /tickSenseTimers\(\)/);
-  assert.match(startRep, /setInterval\(tickSenseTimers,\s*250\)/);
+  assert.match(startRep, /senseRepStartTime = Date\.now\(\)/);
+  assert.doesNotMatch(startRep, /senseSessionStartTime = Date\.now\(\)/);
+});
+
+test('the active Senses exercise is static and uses a concise pink Begin button', () => {
+  assert.match(source, /function senseBeginLabel\(repNumber\) \{\s*return 'Begin Rep ' \+ repNumber;/);
+  assert.doesNotMatch(source, /Close Eyes · Begin Rep/);
+  assert.match(presenceSource, /#senseSessionScreen \*,\s*#senseSessionScreen \*::before,\s*#senseSessionScreen \*::after \{ animation:none !important; transition:none !important; \}/);
+  assert.doesNotMatch(presenceSource, /@keyframes senseBreathe/);
+  assert.match(presenceSource, /#senseBeginRepBtn \{ background:linear-gradient\(160deg,#f0bcd6,#c9769f\) !important;/);
 });
 
 test('Feeling offers only the four intentional body-state senses', () => {

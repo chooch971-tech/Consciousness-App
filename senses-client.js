@@ -378,9 +378,7 @@ function fmtSenseTime(sec) {
 }
 
 function senseBeginLabel(repNumber) {
-  return senseActiveEyesMode === 'open'
-    ? 'Begin Open-Eyes Rep ' + repNumber
-    : 'Close Eyes · Begin Rep ' + repNumber;
+  return 'Begin Rep ' + repNumber;
 }
 
 function updateSenseSessionPresentation(active) {
@@ -417,11 +415,15 @@ function startSenseSession() {
   senseActiveMode = senseMode;
   senseActiveCue = senseSelectedCue;
   senseActiveEyesMode = normalizeSenseEyesMode(senseEyesMode);
-  senseSessionStartTime = null;
+  senseSessionStartTime = Date.now();
   senseRepStartTime = null;
   senseReps = [];
   senseHalts = 0;
   senseRepActive = false;
+  clearInterval(senseTimerHandle);
+  requestExerciseWakeLock();
+  tickSenseTimers();
+  senseTimerHandle = setInterval(tickSenseTimers, 250);
   var titleEl = document.getElementById('senseSessionTitle');
   var cueEl = document.getElementById('senseSessionCue');
   var stateEl = document.getElementById('senseStateLabel');
@@ -446,18 +448,12 @@ function startSenseSession() {
   if (countEl) countEl.textContent = 'rep 1 · ready';
   if (haltCountEl) haltCountEl.textContent = '';
   if (sessionTimerEl) sessionTimerEl.textContent = '0:00';
-  if (repTimerEl) repTimerEl.textContent = '0:00';
+  if (repTimerEl) repTimerEl.textContent = '—';
   showScreen('senseSessionScreen');
 }
 
 function startSenseRep() {
   if (senseRepActive) return;
-  if (!senseSessionStartTime) {
-    senseSessionStartTime = Date.now();
-    requestExerciseWakeLock();
-    tickSenseTimers();
-    senseTimerHandle = setInterval(tickSenseTimers, 250);
-  }
   senseHalts = 0;
   senseRepActive = true;
   senseRepStartTime = Date.now();
