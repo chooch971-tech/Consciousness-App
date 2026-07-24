@@ -13,6 +13,7 @@ var _lodgeDetailReturnScreen = 'lodgeScreen';
 var _lodgeWarmPromise = null;
 var _lodgeCommentCache = {};
 var _lodgeCommentRequests = {};
+var _lodgeCommentHeartRequests = {};
 var _lodgeCommentCacheOwner = null;
 
 function _lodgeEnsureCommentCacheOwner() {
@@ -21,6 +22,16 @@ function _lodgeEnsureCommentCacheOwner() {
   _lodgeCommentCacheOwner = owner;
   _lodgeCommentCache = {};
   _lodgeCommentRequests = {};
+  _lodgeCommentHeartRequests = {};
+}
+function _lodgeApplyPendingCommentHearts(comments) {
+  (comments || []).forEach(function(comment) {
+    var pending = comment && _lodgeCommentHeartRequests[comment.id];
+    if (!pending) return;
+    comment.likedByMe = pending.liked;
+    comment.likeCount = pending.likeCount;
+  });
+  return comments;
 }
 function _lodgeStoreComments(postId, comments) {
   _lodgeEnsureCommentCacheOwner();
@@ -38,7 +49,7 @@ function _lodgeFetchCommentThread(postId) {
     return res.ok ? res.json() : null;
   }).then(function(data) {
     if (!data) return null;
-    _lodgeStoreComments(postId, data.comments || []);
+    _lodgeStoreComments(postId, _lodgeApplyPendingCommentHearts(data.comments || []));
     return _lodgeCommentCache[postId].comments;
   }).catch(function() { return null; }).finally(function() {
     delete _lodgeCommentRequests[postId];
@@ -347,7 +358,7 @@ function _lodgeCommentNodeHtml(c, children, seen) {
     ? '<span class="lodge-comment__deleted-author">deleted</span>'
     : '<span style="color:' + _lodgeHue(c.username)[0] + ';opacity:.8;cursor:pointer;" data-lodge-user="' + escHtml(c.userId) + '" data-lodge-uname="' + escHtml(c.username || '?') + '">@' + escHtml(c.username || '?') + '</span>';
   var actions = deleted ? '' : '<div class="lodge-comment__actions">'
-    + '<button class="lodge-comment__action lodge-comment__heart' + (c.likedByMe ? ' liked' : '') + '" data-comment-like="' + escHtml(c.id) + '" aria-label="Heart comment">'
+    + '<button class="lodge-comment__action lodge-comment__heart' + (c.likedByMe ? ' liked' : '') + '" data-comment-like="' + escHtml(c.id) + '" aria-label="Heart comment" aria-pressed="' + (c.likedByMe ? 'true' : 'false') + '">'
     + (c.likedByMe ? '♥' : '♡') + ' <span>' + (Number(c.likeCount) || 0) + '</span></button>'
     + '<button class="lodge-comment__action" data-comment-reply="' + escHtml(c.id) + '" data-comment-uname="' + escHtml(c.username || '?') + '">Reply</button>'
     + (c.mine ? '<button class="lodge-comment__action lodge-comment__action--delete" data-comment-del="' + escHtml(c.id) + '">Delete</button>' : '')
@@ -652,22 +663,55 @@ async function sendLodgeComment(pid, card, parentId, input) {
 }
 
 async function toggleLodgeCommentHeart(cid, card) {
+  if (_lodgeCommentHeartRequests[cid]) return;
+  var requestToken = authToken;
+  var comments = Array.isArray(card._lodgeComments) ? card._lodgeComments.slice() : [];
+  var target = comments.find(function(comment) { return comment.id === cid; });
+  if (!target) return;
+  var prior = {
+    liked:!!target.likedByMe,
+    likeCount:Math.max(0, Number(target.likeCount) || 0)
+  };
+  var pending = {
+    liked:!prior.liked,
+    likeCount:Math.max(0, prior.likeCount + (prior.liked ? -1 : 1))
+  };
+  _lodgeCommentHeartRequests[cid] = pending;
+  target.likedByMe = pending.liked;
+  target.likeCount = pending.likeCount;
+  var postId = card.getAttribute('data-post-id');
+  _lodgeStoreComments(postId, comments);
+  _lodgeRenderComments(card, comments);
   try {
     var res = await fetch(SERVER_URL + '/api/social/comments/' + cid + '/like', {
       method:'POST',
       headers:{ 'Authorization':'Bearer ' + authToken }
     });
-    if (!res.ok) return;
+    if (!res.ok) throw new Error('Heart failed');
     var data = await res.json();
-    var comments = Array.isArray(card._lodgeComments) ? card._lodgeComments.slice() : [];
+    if (authToken !== requestToken || _lodgeCommentHeartRequests[cid] !== pending) return;
+    comments = Array.isArray(card._lodgeComments) ? card._lodgeComments.slice() : comments;
     comments.forEach(function(comment) {
       if (comment.id !== cid) return;
       comment.likedByMe = !!data.liked;
       comment.likeCount = Math.max(0, Number(data.likeCount) || 0);
     });
-    _lodgeStoreComments(card.getAttribute('data-post-id'), comments);
+    delete _lodgeCommentHeartRequests[cid];
+    _lodgeStoreComments(postId, comments);
     _lodgeRenderComments(card, comments);
-  } catch(e) {}
+  } catch(e) {
+    if (authToken !== requestToken || _lodgeCommentHeartRequests[cid] !== pending) return;
+    delete _lodgeCommentHeartRequests[cid];
+    comments = Array.isArray(card._lodgeComments) ? card._lodgeComments.slice() : comments;
+    comments.forEach(function(comment) {
+      if (comment.id !== cid) return;
+      comment.likedByMe = prior.liked;
+      comment.likeCount = prior.likeCount;
+    });
+    _lodgeStoreComments(postId, comments);
+    _lodgeRenderComments(card, comments);
+    showToast('Couldn’t save heart');
+  }
 }
 
 async function deleteLodgePost(pid, card, confirmed) {

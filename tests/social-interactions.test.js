@@ -141,6 +141,13 @@ test('Lodge comments are heartable, ranked within their thread, and eagerly load
   assert.match(server, /notify\(comment\.userId, 'comment_like'/);
   assert.match(socialClient, /data-comment-like=/);
   assert.match(socialClient, /function toggleLodgeCommentHeart\(cid, card\)/);
+  assert.match(socialClient, /_lodgeCommentHeartRequests\[cid\] = pending/);
+  assert.ok(
+    socialClient.indexOf('_lodgeRenderComments(card, comments);', socialClient.indexOf('async function toggleLodgeCommentHeart'))
+      < socialClient.indexOf("fetch(SERVER_URL + '/api/social/comments/' + cid + '/like'", socialClient.indexOf('async function toggleLodgeCommentHeart')),
+    'comment hearts should paint optimistically before waiting for the network'
+  );
+  assert.match(socialClient, /showToast\('Couldn’t save heart'\)/);
   assert.match(socialClient, /Number\(b\.likeCount\)[\s\S]*?Number\(a\.likeCount\)/);
   assert.match(socialClient, /if \(card\) toggleLodgeComments\(post\.id, card, true\)/);
   assert.match(presence, /\.lodge-comment__heart\.liked/);

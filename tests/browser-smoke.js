@@ -943,7 +943,9 @@ async function testLodgeThreadedComments(browser, baseUrl) {
       }
       if (target.endsWith('/api/social/comments/thread-root/like') && method === 'POST') {
         window._threadHeartCalls++;
-        return Promise.resolve({ ok:true, json:() => Promise.resolve({ liked:true, likeCount:8 }) });
+        return new Promise(resolve => setTimeout(() => resolve({
+          ok:true, json:() => Promise.resolve({ liked:true, likeCount:8 })
+        }), 150));
       }
       return originalFetch(url, options);
     };
@@ -982,6 +984,14 @@ async function testLodgeThreadedComments(browser, baseUrl) {
   assert.equal((await page.locator('[data-comment-countdown]').textContent()).trim(), '275 left');
 
   await page.locator('[data-comment-like="thread-root"]').click();
+  const optimisticHeart = await page.locator('[data-comment-like="thread-root"]').evaluate(button => ({
+    text:button.textContent,
+    liked:button.classList.contains('liked'),
+    pressed:button.getAttribute('aria-pressed')
+  }));
+  assert.match(optimisticHeart.text, /♥\s*2/, 'the heart count should update before the server responds');
+  assert.equal(optimisticHeart.liked, true, 'the heart should fill immediately');
+  assert.equal(optimisticHeart.pressed, 'true');
   await page.waitForFunction(() => window._threadHeartCalls === 1
     && document.querySelector('[data-comment-list] > .lodge-comment-thread').getAttribute('data-comment-thread') === 'thread-root');
   assert.match(await page.locator('[data-comment-like="thread-root"]').textContent(), /♥\s*8/);
