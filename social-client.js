@@ -11,6 +11,73 @@ var _lodgeDetailPost = null;
 var _lodgeDetailSnapshot = null;
 var _lodgeDetailReturnScreen = 'lodgeScreen';
 var _lodgeWarmPromise = null;
+var _lodgeCommentCache = {};
+var _lodgeCommentRequests = {};
+var _lodgeCommentCacheOwner = null;
+
+function _lodgeEnsureCommentCacheOwner() {
+  var owner = authToken || null;
+  if (_lodgeCommentCacheOwner === owner) return;
+  _lodgeCommentCacheOwner = owner;
+  _lodgeCommentCache = {};
+  _lodgeCommentRequests = {};
+}
+function _lodgeStoreComments(postId, comments) {
+  _lodgeEnsureCommentCacheOwner();
+  _lodgeCommentCache[postId] = {
+    comments:Array.isArray(comments) ? comments : [],
+    fetchedAt:Date.now()
+  };
+}
+function _lodgeFetchCommentThread(postId) {
+  _lodgeEnsureCommentCacheOwner();
+  if (_lodgeCommentRequests[postId]) return _lodgeCommentRequests[postId];
+  var request = fetch(SERVER_URL + '/api/social/posts/' + postId + '/comments', {
+    headers: { 'Authorization': 'Bearer ' + authToken }
+  }).then(function(res) {
+    return res.ok ? res.json() : null;
+  }).then(function(data) {
+    if (!data) return null;
+    _lodgeStoreComments(postId, data.comments || []);
+    return _lodgeCommentCache[postId].comments;
+  }).catch(function() { return null; }).finally(function() {
+    delete _lodgeCommentRequests[postId];
+  });
+  _lodgeCommentRequests[postId] = request;
+  return request;
+}
+function warmLodgeCommentThreads(posts) {
+  if (!authToken) return Promise.resolve({});
+  _lodgeEnsureCommentCacheOwner();
+  var ids = [];
+  (posts || []).forEach(function(post) {
+    if (!post || !post.id || ids.length >= 8 || _lodgeCommentCache[post.id] || _lodgeCommentRequests[post.id]) return;
+    if (!(Number(post.commentCount) || 0)) {
+      _lodgeStoreComments(post.id, []);
+      return;
+    }
+    ids.push(post.id);
+  });
+  if (!ids.length) return Promise.resolve({});
+  var batch = fetch(SERVER_URL + '/api/social/comments/batch?postIds=' + encodeURIComponent(ids.join(',')), {
+    headers: { 'Authorization': 'Bearer ' + authToken }
+  }).then(function(res) {
+    return res.ok ? res.json() : null;
+  }).then(function(data) {
+    var byPost = data && data.commentsByPost;
+    if (!byPost) return {};
+    ids.forEach(function(id) { _lodgeStoreComments(id, byPost[id] || []); });
+    return byPost;
+  }).catch(function() { return {}; });
+  ids.forEach(function(id) {
+    var threadRequest = batch.then(function(byPost) { return (byPost && byPost[id]) || null; });
+    _lodgeCommentRequests[id] = threadRequest;
+    threadRequest.finally(function() {
+      if (_lodgeCommentRequests[id] === threadRequest) delete _lodgeCommentRequests[id];
+    });
+  });
+  return batch;
+}
 
 function _lodgeCachedList() {
   if (_lodgeSort !== 'newest') return [];
@@ -88,6 +155,7 @@ function openLodge() {
   _lodgeLoading = !_lodgePosts.length;
   renderLodgeFeed();
   if (!document.getElementById('lodgeScreen').classList.contains('active')) showScreen('lodgeScreen');
+  warmLodgeCommentThreads(_lodgePosts);
   loadLodgeFeed();
   warmLodgeFeeds();
   loadLodgeNotifs();
@@ -147,6 +215,7 @@ async function loadLodgeFeed(cursor) {
       : (posts.length === 20 ? posts[posts.length - 1].createdAt : null);
     if (!cursor && _lodgeUserFilter) _lodgeUserPostsCache[_lodgeUserFilter.userId] = _lodgePosts.slice(0, 20);
     else if (!cursor && _lodgeSort === 'newest') _cacheLodgeFeed(_lodgePosts);
+    warmLodgeCommentThreads(posts);
   } catch(e) { console.warn('Lodge feed failed', e); }
   finally { _lodgeLoading = false; renderLodgeFeed(); }
 }
@@ -326,16 +395,22 @@ function _lodgeRenderComments(card, comments) {
 
 async function _lodgeLoadComments(pid, card) {
   var list = card.querySelector('[data-comment-list]');
-  list.innerHTML = '<div class="lodge-comment__name">Loading…</div>';
-  try {
-    var res = await fetch(SERVER_URL + '/api/social/posts/' + pid + '/comments', {
-      headers: { 'Authorization': 'Bearer ' + authToken }
+  _lodgeEnsureCommentCacheOwner();
+  var cached = _lodgeCommentCache[pid];
+  if (cached) {
+    _lodgeRenderComments(card, cached.comments);
+    // Keep a warm thread current without making the already-painted discussion
+    // wait. This quietly incorporates comments made on another device.
+    _lodgeFetchCommentThread(pid).then(function(comments) {
+      if (comments && card.isConnected && card.getAttribute('data-post-id') === pid) {
+        _lodgeRenderComments(card, comments);
+      }
     });
-    var data = res.ok ? await res.json() : { comments:[] };
-    _lodgeRenderComments(card, data.comments || []);
-  } catch(e) {
-    _lodgeRenderComments(card, []);
+    return;
   }
+  list.innerHTML = '<div class="lodge-comment__name">Preparing discussion…</div>';
+  var comments = await _lodgeFetchCommentThread(pid);
+  _lodgeRenderComments(card, comments || []);
 }
 
 function openLodgeReplyComposer(card, commentId, username) {
@@ -565,6 +640,7 @@ async function sendLodgeComment(pid, card, parentId, input) {
     if (!parentId && countdown) countdown.textContent = '280 left';
     var comments = Array.isArray(card._lodgeComments) ? card._lodgeComments.slice() : [];
     comments.push(d.comment);
+    _lodgeStoreComments(pid, comments);
     _lodgeRenderComments(card, comments);
     var cnt = card.querySelector('[data-comment-count]');
     var nextCount = (parseInt(cnt.textContent, 10) || 0) + 1;
@@ -589,6 +665,7 @@ async function toggleLodgeCommentHeart(cid, card) {
       comment.likedByMe = !!data.liked;
       comment.likeCount = Math.max(0, Number(data.likeCount) || 0);
     });
+    _lodgeStoreComments(card.getAttribute('data-post-id'), comments);
     _lodgeRenderComments(card, comments);
   } catch(e) {}
 }
@@ -646,6 +723,7 @@ async function deleteLodgeComment(cid, pid, card, confirmed) {
     } else {
       comments = comments.filter(function(c) { return c.id !== cid; });
     }
+    _lodgeStoreComments(pid, comments);
     _lodgeRenderComments(card, comments);
     var cnt = card.querySelector('[data-comment-count]');
     var nextCount = Math.max(0, (parseInt(cnt.textContent, 10) || 1) - 1);

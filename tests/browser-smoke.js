@@ -905,20 +905,30 @@ async function testLodgeAuthorFlow(browser, baseUrl) {
 async function testLodgeThreadedComments(browser, baseUrl) {
   const context = await browser.newContext({ viewport: { width: 390, height: 844 }, hasTouch: true, serviceWorkers: 'block' });
   const { page, errors } = await seedPage(context, baseUrl, { presence_auth_token: 'lodge-thread-token', presence_auth_username: 'thread_owner' });
-  await page.evaluate(() => {
+  await page.evaluate(async () => {
     const originalFetch = window.fetch;
     window._threadReplyBody = null;
     window._threadDeleteCalls = 0;
     window._threadHeartCalls = 0;
+    window._threadDirectGetCalls = 0;
+    window._threadBatchCalls = 0;
+    const threadComments = [
+      { id:'thread-root', userId:'other-user', username:'other', text:'A root comment', createdAt:new Date(Date.now() - 2000).toISOString(), parentId:null, depth:0, likeCount:1, likedByMe:false, mine:false },
+      { id:'thread-popular', userId:'popular-user', username:'popular', text:'A popular comment', createdAt:new Date(Date.now() - 1000).toISOString(), parentId:null, depth:0, likeCount:7, likedByMe:false, mine:false },
+      { id:'thread-child', userId:'self-user', username:'thread_owner', text:'An existing reply', createdAt:new Date().toISOString(), parentId:'thread-root', depth:1, likeCount:0, likedByMe:false, mine:true }
+    ];
     window.fetch = function(url, options) {
       const target = String(url);
       const method = (options && options.method) || 'GET';
+      if (target.includes('/api/social/comments/batch?postIds=') && method === 'GET') {
+        window._threadBatchCalls++;
+        return Promise.resolve({ ok:true, json:() => Promise.resolve({ commentsByPost:{ 'thread-post':threadComments } }) });
+      }
       if (target.endsWith('/api/social/posts/thread-post/comments') && method === 'GET') {
-        return Promise.resolve({ ok:true, json:() => Promise.resolve({ comments:[
-          { id:'thread-root', userId:'other-user', username:'other', text:'A root comment', createdAt:new Date(Date.now() - 2000).toISOString(), parentId:null, depth:0, likeCount:1, likedByMe:false, mine:false },
-          { id:'thread-popular', userId:'popular-user', username:'popular', text:'A popular comment', createdAt:new Date(Date.now() - 1000).toISOString(), parentId:null, depth:0, likeCount:7, likedByMe:false, mine:false },
-          { id:'thread-child', userId:'self-user', username:'thread_owner', text:'An existing reply', createdAt:new Date().toISOString(), parentId:'thread-root', depth:1, likeCount:0, likedByMe:false, mine:true }
-        ] }) });
+        window._threadDirectGetCalls++;
+        return new Promise(resolve => setTimeout(() => resolve({
+          ok:true, json:() => Promise.resolve({ comments:threadComments })
+        }), 150));
       }
       if (target.endsWith('/api/social/posts/thread-post/comments') && method === 'POST') {
         window._threadReplyBody = JSON.parse(options.body);
@@ -944,7 +954,9 @@ async function testLodgeThreadedComments(browser, baseUrl) {
     _lodgeLoading = false;
     showScreen('lodgeScreen');
     renderLodgeFeed();
+    await warmLodgeCommentThreads(_lodgePosts);
     document.querySelector('.lodge-post__body').click();
+    window._threadCommentsPaintedAtClick = !!document.querySelector('[data-comment-id="thread-child"]');
   });
   await page.locator('[data-comment-id="thread-child"]').waitFor({ state:'visible' });
   const initial = await page.evaluate(() => {
@@ -954,12 +966,16 @@ async function testLodgeThreadedComments(browser, baseUrl) {
     return {
       nested:!!child && getComputedStyle(guide).borderLeftStyle !== 'none',
       commentsOpen:getComputedStyle(document.querySelector('.lodge-comments')).display === 'block',
-      firstId:first && first.getAttribute('data-comment-thread')
+      firstId:first && first.getAttribute('data-comment-thread'),
+      immediate:window._threadCommentsPaintedAtClick,
+      batchCalls:window._threadBatchCalls
     };
   });
   assert.equal(initial.nested, true, 'a reply should render beneath its parent with a left-side thread guide');
   assert.equal(initial.commentsOpen, true, 'comments should load automatically with post detail');
   assert.equal(initial.firstId, 'thread-popular', 'the most-hearted root comment should rank first');
+  assert.equal(initial.immediate, true, 'a warmed discussion should paint in the same click task');
+  assert.equal(initial.batchCalls, 1, 'visible discussions should warm in one batch request');
   assert.equal((await page.locator('.lodge-comment-composer__head').textContent()).includes('Write a comment'), true);
   assert.equal((await page.locator('.lodge-crow--comment .lodge-csend').textContent()).includes('Post comment'), true);
   await page.locator('.lodge-cinput--comment').fill('Hello');

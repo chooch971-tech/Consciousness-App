@@ -146,6 +146,21 @@ test('Lodge comments are heartable, ranked within their thread, and eagerly load
   assert.match(presence, /\.lodge-comment__heart\.liked/);
 });
 
+test('visible Lodge discussions warm in one bounded request and paint from memory', () => {
+  assert.match(server, /app\.get\('\/api\/social\/comments\/batch', verifyToken/);
+  assert.match(server, /slice\(0, 8\)/);
+  assert.match(server, /decorateLodgeCommentsByPost\(allowedIds, req\.user\.userId\)/);
+  assert.match(socialClient, /function warmLodgeCommentThreads\(posts\)/);
+  assert.match(socialClient, /api\/social\/comments\/batch\?postIds=/);
+  assert.match(socialClient, /var cached = _lodgeCommentCache\[pid\]/);
+  assert.match(socialClient, /_lodgeRenderComments\(card, cached\.comments\)/);
+  assert.ok(
+    socialClient.indexOf('_lodgeRenderComments(card, cached.comments)')
+      < socialClient.indexOf('_lodgeFetchCommentThread(pid).then', socialClient.indexOf('async function _lodgeLoadComments')),
+    'cached comments should paint before the quiet refresh begins'
+  );
+});
+
 test('Profiles expose posts and comments with scoped Lodge history routes', () => {
   assert.match(presence, /id="profPostsBtn"[\s\S]*?id="profCommentsBtn"/);
   assert.match(presence, /id="friendProfPostsBtn"[\s\S]*?id="friendProfCommentsBtn"/);

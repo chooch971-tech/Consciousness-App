@@ -2555,25 +2555,32 @@ async function pruneDeletedCommentAncestors(parentId, postId) {
   }
 }
 
-app.get('/api/social/posts/:id/comments', verifyToken, async (req, res) => {
-  try {
-    const cp = await postsCollection.findOne({ _id: new ObjectId(req.params.id) });
-    if (!cp) return res.status(404).json({ error: 'Post not found' });
-    if (!(await canEngagePost(req.user.userId, cp))) return res.status(403).json({ error: 'Not available' });
-    let comments = await commentsCollection.find({ postId: req.params.id }).sort({ createdAt: 1 }).limit(200).toArray();
-    const hidden = await blockedIdSet(req.user.userId);
-    comments = comments.filter(c => !hidden.has(c.userId) && (c.deleted || moderatePublicText(c.text || '').ok));
-    const ids = [...new Set(comments.filter(c => !c.deleted && ObjectId.isValid(c.userId)).map(c => c.userId))];
-    const users = ids.length ? await usersCollection.find({ _id: { $in: ids.map(id => new ObjectId(id)) } })
-      .project({ username: 1 }).toArray() : [];
-    const byId = {}; users.forEach(u => { byId[u._id.toString()] = u; });
-    const visibleCommentIds = comments.filter(c => !c.deleted).map(c => c._id.toString());
-    const myCommentLikes = visibleCommentIds.length ? await commentLikesCollection.find({
-      commentId: { $in:visibleCommentIds },
-      userId:req.user.userId
-    }).project({ commentId:1 }).toArray() : [];
-    const myCommentLikeIds = new Set(myCommentLikes.map(row => row.commentId));
-    res.json({ comments: comments.map(c => ({
+async function decorateLodgeCommentsByPost(postIds, viewerId) {
+  const commentsByPost = {};
+  postIds.forEach(postId => { commentsByPost[postId] = []; });
+  if (!postIds.length) return commentsByPost;
+  const groups = await commentsCollection.aggregate([
+    { $match: { postId: { $in: postIds } } },
+    { $sort: { createdAt: 1 } },
+    { $group: { _id: '$postId', comments: { $push: '$$ROOT' } } },
+    { $project: { comments: { $slice: ['$comments', 200] } } }
+  ]).toArray();
+  let comments = groups.flatMap(group => group.comments || []);
+  const hidden = await blockedIdSet(viewerId);
+  comments = comments.filter(c => !hidden.has(c.userId) && (c.deleted || moderatePublicText(c.text || '').ok));
+  const ids = [...new Set(comments.filter(c => !c.deleted && ObjectId.isValid(c.userId)).map(c => c.userId))];
+  const users = ids.length ? await usersCollection.find({ _id: { $in: ids.map(id => new ObjectId(id)) } })
+    .project({ username: 1 }).toArray() : [];
+  const byId = {}; users.forEach(u => { byId[u._id.toString()] = u; });
+  const visibleCommentIds = comments.filter(c => !c.deleted).map(c => c._id.toString());
+  const myCommentLikes = visibleCommentIds.length ? await commentLikesCollection.find({
+    commentId: { $in:visibleCommentIds },
+    userId:viewerId
+  }).project({ commentId:1 }).toArray() : [];
+  const myCommentLikeIds = new Set(myCommentLikes.map(row => row.commentId));
+  comments.forEach(c => {
+    if (!commentsByPost[c.postId]) return;
+    commentsByPost[c.postId].push({
       id: c._id.toString(),
       userId: c.userId,
       username: c.deleted ? 'deleted' : ((byId[c.userId] && byId[c.userId].username) || ('practitioner_' + String(c.userId).slice(-5))),
@@ -2584,8 +2591,50 @@ app.get('/api/social/posts/:id/comments', verifyToken, async (req, res) => {
       deleted: !!c.deleted,
       likeCount: c.deleted ? 0 : Math.max(0, Number(c.likeCount) || 0),
       likedByMe: !c.deleted && myCommentLikeIds.has(c._id.toString()),
-      mine: !c.deleted && c.userId === req.user.userId
-    })) });
+      mine: !c.deleted && c.userId === viewerId
+    });
+  });
+  return commentsByPost;
+}
+
+// Warm the visible feed's discussions in one bounded request. The feed remains
+// fast to paint, while opening Comment does not fan out into a request per post.
+app.get('/api/social/comments/batch', verifyToken, async (req, res) => {
+  try {
+    const postIds = [...new Set(String(req.query.postIds || '').split(',')
+      .map(id => id.trim()).filter(id => ObjectId.isValid(id)))].slice(0, 8);
+    if (!postIds.length) return res.json({ commentsByPost:{} });
+    const posts = await postsCollection.find({
+      _id: { $in:postIds.map(id => new ObjectId(id)) }
+    }).project({ userId:1 }).toArray();
+    const hidden = await blockedIdSet(req.user.userId);
+    const authorIds = [...new Set(posts.map(post => post.userId).filter(id => ObjectId.isValid(id)))];
+    const owners = authorIds.length ? await usersCollection.find({
+      _id: { $in:authorIds.map(id => new ObjectId(id)) }
+    }).project({ isPrivate:1 }).toArray() : [];
+    const privateAuthors = new Set(owners.filter(owner => owner.isPrivate).map(owner => owner._id.toString()));
+    const followedRows = privateAuthors.size ? await followsCollection.find({
+      followerId:req.user.userId,
+      followeeId:{ $in:[...privateAuthors] },
+      status:'active'
+    }).project({ followeeId:1 }).toArray() : [];
+    const followed = new Set(followedRows.map(row => row.followeeId));
+    const allowedIds = posts.filter(post => post.userId === req.user.userId
+      || (!hidden.has(post.userId) && (!privateAuthors.has(post.userId) || followed.has(post.userId))))
+      .map(post => post._id.toString());
+    res.json({ commentsByPost:await decorateLodgeCommentsByPost(allowedIds, req.user.userId) });
+  } catch (err) {
+    res.status(500).json({ error: 'Comments failed' });
+  }
+});
+
+app.get('/api/social/posts/:id/comments', verifyToken, async (req, res) => {
+  try {
+    const cp = await postsCollection.findOne({ _id: new ObjectId(req.params.id) });
+    if (!cp) return res.status(404).json({ error: 'Post not found' });
+    if (!(await canEngagePost(req.user.userId, cp))) return res.status(403).json({ error: 'Not available' });
+    const commentsByPost = await decorateLodgeCommentsByPost([req.params.id], req.user.userId);
+    res.json({ comments:commentsByPost[req.params.id] || [] });
   } catch (err) {
     res.status(500).json({ error: 'Comments failed' });
   }
