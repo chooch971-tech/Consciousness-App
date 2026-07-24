@@ -121,7 +121,8 @@ test('Lodge posts expose compact Reddit-like actions and an expandable multiline
   assert.match(socialClient, /class="lodge-discussion-line" data-lodge-discussion/);
   assert.match(socialClient, /data-lodge-discussion>Comment/);
   assert.match(socialClient, /toggleLodgeComments\(pid, card\); return;/);
-  assert.match(socialClient, /<textarea class="lodge-cinput lodge-cinput--comment" maxlength="280" rows="4"/);
+  assert.match(socialClient, /<textarea class="lodge-cinput lodge-cinput--comment" maxlength="' \+ COMMENT_MAX \+ '" rows="4"/);
+  assert.match(socialClient, /var COMMENT_MAX = 10000/);
   assert.match(socialClient, /card\.querySelector\('\.lodge-crow--comment \.lodge-cinput'\)/);
   assert.match(profileClient, /function openFollowList/);
 });
@@ -132,7 +133,7 @@ test('Lodge comment composer has intentional copy, hierarchy, and live character
   assert.match(socialClient, /Add something thoughtful to the conversation/);
   assert.match(socialClient, /Post comment/);
   assert.match(socialClient, /data-comment-countdown/);
-  assert.match(socialClient, /280 - e\.target\.value\.length/);
+  assert.match(socialClient, /COMMENT_MAX - e\.target\.value\.length/);
   assert.match(presence, /\.lodge-crow--comment:focus-within/);
   assert.match(presence, /\.lodge-comment-composer__foot/);
   assert.match(presence, /\.lodge-crow--comment \.lodge-csend/);

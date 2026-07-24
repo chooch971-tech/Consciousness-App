@@ -293,6 +293,10 @@ function _lodgeRingHtml(username, profilePic) {
 // title and any length. On the feed, posts over LODGE_PREVIEW_LEN chars show a
 // preview with a "Read more →" affordance that opens the discussion view.
 var LODGE_PREVIEW_LEN = 280;
+// Comments are room for real discussion — the countdown only surfaces as you
+// near the ceiling, so a normal reply never carries a distracting "9,900 left".
+var COMMENT_MAX = 10000;
+var COMMENT_COUNTDOWN_AT = 500;
 function _lodgePostHtml(p, detail) {
   var hue = _lodgeHue(p.username);
   var titleHtml = p.title ? '<div class="lodge-blog-title">' + escHtml(p.title) + '</div>' : '';
@@ -325,8 +329,8 @@ function _lodgePostHtml(p, detail) {
     + (detail ? '<button class="lodge-discussion-line" data-lodge-discussion>Comment <span>⌄</span></button>' : '')
     + '<div class="lodge-comments"><div data-comment-list></div>'
     + '<div class="lodge-comment-composer lodge-crow--comment">'
-    + '<div class="lodge-comment-composer__head"><span><i>✦</i> Write a comment</span><span data-comment-countdown>280 left</span></div>'
-    + '<textarea class="lodge-cinput lodge-cinput--comment" maxlength="280" rows="4" aria-label="Write a comment" placeholder="Add something thoughtful to the conversation…"></textarea>'
+    + '<div class="lodge-comment-composer__head"><span><i>✦</i> Write a comment</span><span data-comment-countdown></span></div>'
+    + '<textarea class="lodge-cinput lodge-cinput--comment" maxlength="' + COMMENT_MAX + '" rows="4" aria-label="Write a comment" placeholder="Add something thoughtful to the conversation…"></textarea>'
     + '<div class="lodge-comment-composer__foot"><span>Your response will appear in this discussion.</span>'
     + '<button class="lodge-csend" type="button"><span>Post comment</span><b aria-hidden="true">→</b></button></div></div>'
     + '</div></article>';
@@ -432,7 +436,7 @@ function openLodgeReplyComposer(card, commentId, username) {
   comment.insertAdjacentHTML('beforeend',
     '<div class="lodge-reply-composer" data-reply-parent="' + escHtml(commentId) + '">'
     + '<div class="lodge-reply-composer__label">Replying to @' + escHtml(username || 'practitioner') + '</div>'
-    + '<textarea class="lodge-cinput lodge-reply-input" maxlength="280" rows="3" placeholder="Write a reply…"></textarea>'
+    + '<textarea class="lodge-cinput lodge-reply-input" maxlength="' + COMMENT_MAX + '" rows="3" placeholder="Write a reply…"></textarea>'
     + '<div class="lodge-reply-composer__actions"><button class="lodge-comment__action" data-reply-cancel>Cancel</button>'
     + '<button class="lodge-csend lodge-reply-send" data-reply-send>Reply</button></div></div>');
   var input = comment.querySelector('.lodge-reply-input');
@@ -648,7 +652,7 @@ async function sendLodgeComment(pid, card, parentId, input) {
     if (!res.ok) { showToast(d.error || 'Comment failed'); return; }
     input.value = '';
     var countdown = card.querySelector('[data-comment-countdown]');
-    if (!parentId && countdown) countdown.textContent = '280 left';
+    if (!parentId && countdown) countdown.textContent = '';
     var comments = Array.isArray(card._lodgeComments) ? card._lodgeComments.slice() : [];
     comments.push(d.comment);
     _lodgeStoreComments(pid, comments);
@@ -816,7 +820,10 @@ document.getElementById('lodgeFeed').addEventListener('input', function(e) {
   if (!e.target.classList.contains('lodge-cinput--comment')) return;
   var composer = e.target.closest('.lodge-comment-composer');
   var countdown = composer && composer.querySelector('[data-comment-countdown]');
-  if (countdown) countdown.textContent = Math.max(0, 280 - e.target.value.length) + ' left';
+  if (countdown) {
+    var left = COMMENT_MAX - e.target.value.length;
+    countdown.textContent = left <= COMMENT_COUNTDOWN_AT ? Math.max(0, left) + ' left' : '';
+  }
 });
 document.getElementById('lodgeComposer').addEventListener('click', function() {
   openLodgePostEditor();

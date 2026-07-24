@@ -2246,6 +2246,9 @@ app.put('/api/sync/privacy', verifyToken, mutationRateLimit, async (req, res) =>
 // Posts + likes + comments over the unified follows graph. Submission routes
 // enforce moderation here on the server; client checks are only explanatory.
 const POST_MAX_LEN = 280;
+// Comments are full discussion replies, not one-liners — they get room to
+// breathe. (Posts/status/report-reasons stay at POST_MAX_LEN.)
+const COMMENT_MAX_LEN = 10000;
 
 // Social resource routes use Mongo ObjectIds in their `:id` segment. Reject
 // malformed values once at the router boundary so they cannot turn into a
@@ -2642,7 +2645,7 @@ app.get('/api/social/posts/:id/comments', verifyToken, async (req, res) => {
 
 app.post('/api/social/posts/:id/comments', verifyToken, mutationRateLimit, async (req, res) => {
   try {
-    const text = sanitizeSocialText(req.body.text, POST_MAX_LEN);
+    const text = sanitizeSocialText(req.body.text, COMMENT_MAX_LEN);
     if (!text) return res.status(400).json({ error: 'text required' });
     if (!moderatePublicText(text).ok) return res.status(400).json({ error: 'This comment cannot be published' });
     const post = await postsCollection.findOne({ _id: new ObjectId(req.params.id) });
