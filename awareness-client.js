@@ -1072,6 +1072,21 @@ function showScreen(id) {
       s.classList.remove('swipe-back-arrival');
     });
     document.getElementById('homeScreen').style.display = 'flex';
+    // Restore the Guide's scroll the instant Home reappears, not on the deferred
+    // renderHome (which can lag ~500ms and made the panel visibly sit at the top
+    // before snapping back). Force a reflow first so the just-shown panel has its
+    // scrollHeight. The interactive-swipe path leaves the saved value for the
+    // deferred renderHome to re-apply after its rebuild reset; the direct-back
+    // path already ran renderHome while Home was hidden, so nothing else will
+    // consume it — clear it here.
+    if (typeof currentMode !== 'undefined' && currentMode === 'guide' && window._guideScrollRestore > 0) {
+      var _homeGp = document.getElementById('guidePanel');
+      if (_homeGp) {
+        void _homeGp.offsetHeight;
+        _homeGp.scrollTop = window._guideScrollRestore;
+        if (!window._interactiveSwipeBackScreenId) window._guideScrollRestore = 0;
+      }
+    }
   } else {
     var el = document.getElementById(id);
     if (!el) { console.error('[showScreen] No element:', id); return; }
@@ -1261,9 +1276,9 @@ function renderHome() {
         var _restoreTo = window._guideScrollRestore;
         window._guideScrollRestore = 0;
         _restoreGp.scrollTop = _restoreTo;
-        requestAnimationFrame(function() {
-          requestAnimationFrame(function() { _restoreGp.scrollTop = _restoreTo; });
-        });
+        // The layout-refresh reset scrollTop in a rAF queued before this one, so
+        // a single rAF re-applies in the same frame right after it — no flash.
+        requestAnimationFrame(function() { _restoreGp.scrollTop = _restoreTo; });
       }
     }
   }
