@@ -11,6 +11,12 @@ function saveGuideState(st) {
 }
 
 var guideState = loadGuideState(); // {[exerciseId]: selectedOption string}
+// All Angles has been retired as an exercise. A user who added it to their
+// path back when it was briefly addable would otherwise keep seeing a stale
+// card for it forever — strip it once here so it self-heals on next save.
+if (Array.isArray(guideState._pathAdded)) {
+  guideState._pathAdded = guideState._pathAdded.filter(function(id) { return id !== 'allangles'; });
+}
 var guidePathMode = guideState._pathModeV2 || null;
 var guideActiveTab = 'path';
 var guidePendingPathMode = null;
@@ -1901,12 +1907,10 @@ function guideBuildAddedItem(exId, rounds) {
     var senseSt = stats.sense || { count:0, todaySec:0 };
     return { id:'sense', name:'Senses', duration:senseDur, durationLabel:senseDur + ' min' + (rounds > 1 ? ' x2' : ''), done:senseSt.todaySec >= senseTarget, progress:'added · ' + (senseSt.count || 0) + ' recorded', tip:'Added by you. Imagine a feeling, smell, or taste as vividly as you can — accuracy matters more than intensity.', open:'sense', added:true };
   }
-  if (exId === 'multisense' || exId === 'allangles') {
-    var advNames = { multisense:'Multi-Sense', allangles:'All Angles' };
-    var advTips  = { multisense:'Added by you. Hold a full scene — sight, sound, texture, smell — completely in mind.', allangles:'Added by you. Rotate an object through every angle; build a complete three-dimensional image.' };
+  if (exId === 'multisense') {
     var advSt = stats.visual || { count:0, todaySec:0 };
     var advDur = 10;
-    return { id:exId, name:advNames[exId], duration:advDur, durationLabel:advDur + ' min' + (rounds > 1 ? ' x2' : ''), done:advSt.todaySec >= advDur * 60 * rounds, progress:'advanced · ' + (advSt.count || 0) + ' visual sessions', tip:advTips[exId], open:exId, added:true };
+    return { id:exId, name:'Multi-Sense', duration:advDur, durationLabel:advDur + ' min' + (rounds > 1 ? ' x2' : ''), done:advSt.todaySec >= advDur * 60 * rounds, progress:'advanced · ' + (advSt.count || 0) + ' visual sessions', tip:'Added by you. Hold a full scene — sight, sound, texture, smell — completely in mind.', open:exId, added:true };
   }
   if (exId === 'soulmirror') {
     return { id:'soulmirror', name:'Soul Mirror', duration:null, durationLabel:'Reflection', done:(function(){ var sm = loadSoulMirror(); return !!(sm._lastEditDate && sm._lastEditDate === guideLocalDayKey()); })(), progress:'', tip:'Added by you. Open the mirror and make one honest edit — add a trait, revise one, or write a note.', open:'soulmirror', added:true };
@@ -1987,7 +1991,6 @@ function guidePathAddableExercises() {
   // Pore Breathing — addable any time it isn't already on the path.
   if (!present['pore']) addable.push({ id: 'pore' });
   // Advanced concentration exercises — offered last so they appear at the bottom.
-  // All Angles is currently shown as "coming soon", so only Multi-Sense is addable.
   ['multisense'].forEach(function(id) {
     if (!present[id]) addable.push({ id: id });
   });
@@ -2177,13 +2180,6 @@ function beginGuidePlanItem(btn) {
       var disp = document.getElementById('poreBreathCountDisplay');
       if (sl) { sl.value = t; poreBreathTotal = t; if (disp) disp.textContent = t; }
     }, 0);
-    return;
-  }
-  // All Angles has no setup content, so it still opens straight into its
-  // session. Multi-Sense now has a landing and routes like the rest.
-  if (ex === 'allangles') {
-    var def = typeof EXERCISE_DEFS !== 'undefined' && EXERCISE_DEFS[ex];
-    if (def && def.begin) def.begin();
     return;
   }
   openExerciseSetup(ex);

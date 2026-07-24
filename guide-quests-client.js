@@ -1171,7 +1171,7 @@ function renderPathQuests() {
 (function() {
   var menu = document.getElementById('pqAddMenu');
   if (!menu) return;
-  var ADD_NAMES = { clock:'Clock', visual:'Visualization', auditory:'Auditory', sense:'Senses', feeling:'Feeling', smell:'Smell', taste:'Taste', thought:'Thought Control', asana:'Asana', soulmirror:'Soul Mirror', pore:'Pore Breathing', observation:'Thought Observation', focus:'Thought Focus', vacancy:'Vacancy of Mind', multisense:'Multi-Sense', allangles:'All Angles' };
+  var ADD_NAMES = { clock:'Clock', visual:'Visualization', auditory:'Auditory', sense:'Senses', feeling:'Feeling', smell:'Smell', taste:'Taste', thought:'Thought Control', asana:'Asana', soulmirror:'Soul Mirror', pore:'Pore Breathing', observation:'Thought Observation', focus:'Thought Focus', vacancy:'Vacancy of Mind', multisense:'Multi-Sense' };
   var ADD_ICONS = {
     clock:       { icon:'&#9200;',   color:'#d4b08e' },
     visual:      { icon:'&#128065;', color:'#8ab8e0' },
@@ -1187,8 +1187,7 @@ function renderPathQuests() {
     asana:       { icon:'&#129485;', color:'#d49898' },
     soulmirror:  { icon:'&#128290;', color:'#c4a8d4' },
     pore:        { icon:'&#8779;',   color:'#8ecce0' },
-    multisense:  { icon:'&#127925;', color:'#d4c88e' },
-    allangles:   { icon:'&#128260;', color:'#a8c89e' }
+    multisense:  { icon:'&#127925;', color:'#d4c88e' }
   };
 
   // Thought Control and Senses each train through several distinct forms
@@ -1286,7 +1285,7 @@ function renderPathQuests() {
       );
       return;
     }
-    if (exId === 'multisense' || exId === 'allangles') {
+    if (exId === 'multisense') {
       showConfirm(
         'Advanced exercise',
         'WARNING: These exercises can only be properly performed with months of preparation with the Beginner exercises. Proceed anyway?',

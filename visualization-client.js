@@ -803,22 +803,6 @@ function renderVisIntermediateSession(type) {
     if (fadedBtn) fadedBtn.textContent = 'Scene Collapsed';
     var switchBtn = document.getElementById('visIntermediateSwitchBtn');
     if (switchBtn) switchBtn.textContent = 'Different Scene';
-  } else if (type === 'allangles') {
-    var obj = currentVisObject ? currentVisObject.label : 'your chosen object';
-    var angles = [['Front','Hold the front face. Study every edge, every detail.'],['Right','Rotate 90deg clockwise. See the right profile completely.'],['Back','Rotate again. See what was hidden.'],['Left','Complete the horizontal rotation. Left profile.'],['Above','Rise above it. Look straight down.'],['Below','Move beneath it. Look straight up.']];
-    var stepsHTML = '<div style="font-size:9px; letter-spacing:.2em; text-transform:uppercase; color:#d4956e; margin-bottom:12px;">Six Perspectives</div>';
-    angles.forEach(function(a){stepsHTML+='<div style="display:flex;gap:12px;margin-bottom:10px;align-items:baseline;"><div style="font-size:9px;letter-spacing:.15em;text-transform:uppercase;color:var(--text);min-width:44px;">'+a[0]+'</div><div style="font-size:11px;color:var(--muted);line-height:1.6;">'+a[1]+'</div></div>';});
-    screen.innerHTML =
-      '<div style="text-align:center; margin-bottom:20px;">'
-      + renderVisObject(currentVisObject, 160)
-      + '<div style="font-size:10px; letter-spacing:.2em; text-transform:uppercase; color:var(--muted); margin-top:12px;">' + obj + '</div>'
-      + '</div>'
-      + '<div style="background:var(--surface); border:1px solid var(--border); border-radius:10px; padding:18px; margin-bottom:16px;">' + stepsHTML + '</div>'
-      + '<div style="font-size:11px; color:var(--text); line-height:1.75; font-style:italic; padding:0 4px; margin-bottom:24px;">Mouni Sadhu: the object must become as real as a physical thing. Rotate it slowly. Hold each angle before moving to the next. Tap when the image finally collapses.</div>';
-    var fadedBtn = document.getElementById('visIntermediateFadedBtn');
-    if (fadedBtn) fadedBtn.textContent = 'Image Collapsed';
-    var switchBtn = document.getElementById('visIntermediateSwitchBtn');
-    if (switchBtn) switchBtn.textContent = 'Switch Object';
   }
 }
 
@@ -1396,19 +1380,6 @@ var EXERCISE_DEFS = {
       renderVisIntermediateSession('multisense');
     }
   },
-  allangles: {
-    icon: '🔄',
-    name: 'All Angles Visualization',
-    desc: 'Visualize an object from every angle — front, back, sides, above, below. Rotate it slowly in your mind. Based on Mouni Sadhu&#39;s method.',
-    setupHTML: function() { return ''; },
-    begin: function() {
-      window.visCurrentDifficulty = 'intermediate';
-      window.visIntermediateExercise = 'allangles';
-      currentVisObject = pickVisObject();
-      showScreen('visIntermediateScreen');
-      renderVisIntermediateSession('allangles');
-    }
-  },
   auditory: {
     icon: '&#127911;',
     name: 'Auditory',
@@ -1912,14 +1883,6 @@ document.getElementById('exerciseGrid').addEventListener('click', function(e) {
     soulMirrorShowPanel('mirror');
     renderSoulMirrorTraits();
     showScreen('soulMirrorScreen');
-  } else if (card.dataset.exercise === 'allangles') {
-    // All Angles still has no setup content of its own, so it goes straight in.
-    // Multi-Sense now routes through openExerciseSetup like every other card.
-    var def = EXERCISE_DEFS[card.dataset.exercise];
-    if (def) {
-      suppressTutorialForExerciseEntry();
-      def.begin();
-    }
   } else {
     openExerciseSetup(card.dataset.exercise);
   }
@@ -2220,7 +2183,7 @@ document.getElementById('visIntermediateFadedBtn').addEventListener('click', fun
   recordExerciseCompletion({
     entry: {
       date: new Date().toISOString(),
-      type: window.visIntermediateExercise === 'allangles' ? 'all-angles' : 'multi-sense',
+      type: 'multi-sense',
       object: currentVisObject ? currentVisObject.label : '',
       xpEarned: xpEarned
     },

@@ -297,7 +297,6 @@ function achSeed() {
       if (h.type === 'visualization' && h.seconds) achState.hwm.visual = Math.max(achState.hwm.visual || 0, h.seconds);
       if (h.type === 'auditory' && h.seconds) achState.hwm.auditory = Math.max(achState.hwm.auditory || 0, h.seconds);
       if (h.type === 'multi-sense') achState.flags.multisense = true;
-      if (h.type === 'all-angles') achState.flags.allangles = true;
       if (h.exercise === 'sense' && h.mode) achState.hwm['sense_' + h.mode] = Math.max(achState.hwm['sense_' + h.mode] || 0, h.seconds || 0);
       if (h.exercise === 'asana') {
         if ((h.seconds || 0) >= 1800) achState.counters.asana30 = (achState.counters.asana30 || 0) + 1;
@@ -414,7 +413,6 @@ function achOnCompletion(opts) {
     var sec = Math.max(e.seconds || 0, e.sessionDurationSec || 0, (e.durationMin || 0) * 60);
     var ex = ACH_EX_MAP[opts.exId] || opts.exId;
     if (e.type === 'multi-sense') achState.flags.multisense = true;
-    if (e.type === 'all-angles') achState.flags.allangles = true;
     if (ex && sec) achState.hwm[ex] = Math.max(achState.hwm[ex] || 0, e.seconds || sec);
     if (e.mode && opts.exId === 'thought') achState.hwm['tc_' + e.mode] = Math.max(achState.hwm['tc_' + e.mode] || 0, e.seconds || 0);
     if (ex === 'sense' && e.mode) achState.hwm['sense_' + e.mode] = Math.max(achState.hwm['sense_' + e.mode] || 0, e.seconds || 0);
