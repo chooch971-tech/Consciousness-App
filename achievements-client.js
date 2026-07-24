@@ -126,6 +126,159 @@ function achIconSvg(gid, badge) {
   return '<svg viewBox="0 0 24 24" aria-hidden="true">' + (ACH_ICONS[iconId] || ACH_ICONS.mastery) + '</svg>';
 }
 
+// ── Achievement reveal ceremony (#achRevealOverlay) ──────────────────────────
+// Newly-earned badges play a queued unlock ceremony. It defers, then waits
+// behind any session-complete / body-award / streak / level-up screen so it
+// never stacks — then plays the whole batch as one ceremony with medal swaps.
+// Honors the app sound setting and prefers-reduced-motion.
+var _achRevealQueue = [];
+var _achRevealActive = false;
+var _achRevealWaits = 0;
+
+function _achRevealBlocked() {
+  var sc = document.getElementById('sessionComplete');
+  if (sc && sc.classList.contains('sc-show')) return true;
+  if (document.getElementById('bodyLevelAwardOverlay')) return true;
+  var streak = document.getElementById('streakCelebOverlay');
+  if (streak && streak.classList.contains('sco-show')) return true;
+  var lu = document.getElementById('levelupOverlay');
+  if (lu && lu.classList.contains('show')) return true;
+  return false;
+}
+
+function queueAchievementReveal(badges) {
+  if (!badges || !badges.length) return;
+  if (!document.getElementById('achRevealOverlay')) {
+    // No ceremony markup present — degrade to the old toast so the unlock is
+    // never silently lost.
+    if (typeof showToast === 'function') {
+      var _sum = badges.reduce(function(s, b){ return s + (b.reward || 0); }, 0);
+      showToast('✦ Achievement — ' + badges[0].name + ' · +' + _sum.toLocaleString() + ' akasha', 4200, 'gold');
+    }
+    return;
+  }
+  badges.forEach(function(b) { _achRevealQueue.push(b); });
+  // Defer the first pump: achEvaluate often runs mid-completion, before the
+  // session-complete screen has been shown — a beat lets it appear so we wait
+  // behind it instead of playing underneath.
+  setTimeout(_achRevealPump, 550);
+}
+
+function _achRevealPump() {
+  if (_achRevealActive || !_achRevealQueue.length) return;
+  if (_achRevealBlocked() && _achRevealWaits < 40) {
+    _achRevealWaits++;
+    setTimeout(_achRevealPump, 600);
+    return;
+  }
+  _achRevealWaits = 0;
+  var batch = _achRevealQueue.slice();
+  _achRevealQueue = [];
+  _achRevealActive = true;
+  _playAchievementReveal(batch);
+}
+
+function _playAchievementReveal(batch) {
+  var el = document.getElementById('achRevealOverlay');
+  if (!el) { _achRevealActive = false; return; }
+  var reduced = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  var total = batch.length, idx = -1, lastAdv = 0;
+
+  function burstHtml(n) {
+    var colors = ['#fff0c8','#b8eaff','#d4956e','#e8d8b0','#a8d8ec','#ffe2a0'];
+    var h = '<div class="acr-burst"><div class="acr-flash"></div><div class="acr-ring"></div><div class="acr-ring two"></div>';
+    for (var i = 0; i < n; i++) {
+      var a = (i / n) * 360 + (Math.random() * 14 - 7);
+      var d = 120 + Math.random() * 90, s = 4 + Math.random() * 5, c = colors[i % colors.length];
+      h += '<span class="acr-pt" style="--a:' + a + 'deg;--d:' + d + 'px;--dl:' + (Math.random() * 0.15) + 's;'
+        + 'width:' + s + 'px;height:' + s + 'px;background:' + c + ';box-shadow:0 0 8px ' + c + '"></span>';
+    }
+    return h + '</div>';
+  }
+  function beadsHtml() {
+    return [[18,0],[76,0.7],[30,1.3],[64,1.9],[46,2.4]].map(function(p) {
+      var s = 3 + Math.random() * 3;
+      return '<span class="acr-bead" style="left:' + p[0] + '%;bottom:8px;width:' + s + 'px;height:' + s + 'px;--dl:' + (1.4 + p[1]) + 's"></span>';
+    }).join('');
+  }
+  function pipsHtml(i) {
+    if (total < 2) return '';
+    var h = '<div class="acr-pips">';
+    for (var k = 0; k < total; k++) h += '<i class="' + (k <= i ? 'lit' : '') + '"></i>';
+    return h + '</div>';
+  }
+  function tickAkasha(node, target) {
+    if (reduced || !node) { if (node) node.textContent = '+' + target.toLocaleString(); return; }
+    var t0 = null;
+    (function stepAk(ts) {
+      if (!t0) t0 = ts;
+      var k = Math.min(1, (ts - t0) / 700); k = 1 - Math.pow(1 - k, 3);
+      node.textContent = '+' + Math.round(target * k).toLocaleString();
+      if (k < 1) requestAnimationFrame(stepAk);
+    })(performance.now());
+  }
+  function render(b, i, first) {
+    var late = first ? 0 : -0.35;
+    var color = ACH_COLORS[b.group] || '#e8c87a';
+    el.innerHTML = '<div class="acr-card">' + pipsHtml(i) + burstHtml(first ? 18 : 8)
+      + '<div class="acr-zone"><div class="acr-halo"></div>'
+      + '<div class="acr-medal" style="--gc:' + color + '">' + achIconSvg(b.group, b)
+      + '<b>' + _achMedalText(b) + '</b><span class="acr-star">✦</span></div>' + beadsHtml() + '</div>'
+      + '<div class="acr-eyebrow acr-fade" style="--dl:' + (0.85 + late) + 's">✦ &nbsp;Achievement&nbsp; ✦</div>'
+      + '<div class="acr-name acr-fade" style="--dl:' + (0.95 + late) + 's" aria-live="polite">' + escHtml(b.name) + '</div>'
+      + '<div class="acr-desc acr-fade" style="--dl:' + (1.08 + late) + 's">' + escHtml(b.desc) + '</div>'
+      + '<div class="acr-akasha acr-fade" style="--dl:' + (1.2 + late) + 's"><span id="acrAk">+0</span><small>Akasha</small></div>'
+      + '<button class="acr-btn acr-fade" style="--dl:' + (1.7 + late) + 's">' + (i < total - 1 ? 'Next ✦' : 'Continue →') + '</button></div>';
+    el.querySelectorAll('.acr-medal svg *').forEach(function(p) { p.setAttribute('pathLength', 100); });
+    var ak = Math.max(0, b.reward || 0);
+    setTimeout(function() { tickAkasha(document.getElementById('acrAk'), ak); }, reduced ? 0 : (1.2 + late) * 1000);
+  }
+  function step(first) {
+    idx++;
+    if (idx >= total) { dismiss(); return; }
+    render(batch[idx], idx, first);
+    el.classList.add('acr-on');
+    if (!first) { el.classList.remove('acr-swap'); void el.offsetWidth; el.classList.add('acr-swap'); }
+    _achRevealSound(first);
+    if (navigator.vibrate) navigator.vibrate(first ? [40, 60, 140] : [60]);
+  }
+  function advance() { var now = Date.now(); if (now - lastAdv < 340) return; lastAdv = now; step(false); }
+  function dismiss() {
+    el.onclick = null;
+    el.classList.remove('acr-on', 'acr-swap');
+    setTimeout(function() {
+      el.classList.remove('acr-show'); el.innerHTML = '';
+      _achRevealActive = false; _achRevealPump();
+    }, 460);
+  }
+  el.classList.add('acr-show');
+  el.onclick = advance;
+  requestAnimationFrame(function() { requestAnimationFrame(function() { step(true); }); });
+}
+
+function _achRevealSound(first) {
+  if (typeof appSoundEnabled === 'function' && !appSoundEnabled()) return;
+  try {
+    var ctx = new (window.AudioContext || window.webkitAudioContext)();
+    var t = ctx.currentTime;
+    if (first) {
+      var sub = ctx.createOscillator(), sg = ctx.createGain();
+      sub.type = 'sine'; sub.frequency.setValueAtTime(110, t); sub.frequency.exponentialRampToValueAtTime(45, t + 0.4);
+      sg.gain.setValueAtTime(0.22, t); sg.gain.exponentialRampToValueAtTime(0.001, t + 0.5);
+      sub.connect(sg); sg.connect(ctx.destination); sub.start(t); sub.stop(t + 0.55);
+    }
+    [523.25, 659.25, 783.99, 1046.5].forEach(function(f, i) {
+      var d = 0.3 + i * 0.07, o = ctx.createOscillator(), o2 = ctx.createOscillator(), g = ctx.createGain();
+      o.type = 'sine'; o2.type = 'triangle';
+      o.frequency.setValueAtTime(f, t + d); o2.frequency.setValueAtTime(f * 2.005, t + d);
+      g.gain.setValueAtTime(0, t + d); g.gain.linearRampToValueAtTime(i === 3 ? 0.12 : 0.08, t + d + 0.04);
+      g.gain.exponentialRampToValueAtTime(0.001, t + d + 2.2);
+      o.connect(g); o2.connect(g); g.connect(ctx.destination);
+      o.start(t + d); o.stop(t + d + 2.4); o2.start(t + d); o2.stop(t + d + 2.4);
+    });
+  } catch (e) {}
+}
+
 // ── Seeding, month rollover, evaluation ──
 function achSeed() {
   if (achState.seeded) return;
@@ -230,10 +383,10 @@ function achEvaluate(silent) {
     window._lastAchievementBatch = { name: newly[0].name, count: newly.length, akasha: got };
     if (typeof saveOmniaState === 'function') saveOmniaState();
     achSave();
-    if (!silent && typeof showToast === 'function') {
-      showToast(newly.length === 1
-        ? '✦ Achievement — ' + newly[0].name + ' · +' + got.toLocaleString() + ' akasha'
-        : '✦ ' + newly.length + ' achievements earned · +' + got.toLocaleString() + ' akasha', 4200, 'gold');
+    if (!silent) {
+      // The unlock ceremony is the achievement's moment now — it queues behind
+      // any session-complete screen and plays a batch as one sequence.
+      queueAchievementReveal(newly);
     }
   } else {
     achSave(); // persists login-day / month-rollover bookkeeping
@@ -542,5 +695,7 @@ document.getElementById('achBackBtn').addEventListener('click', function() {
 // akasha for achievements it's about to receive as already-earned from the cloud.
 (function _achBootSettle(waited){
   if (window._syncPullPending && waited < 30000) { setTimeout(function(){ _achBootSettle(waited + 400); }, 400); return; }
-  try { achEvaluate(); } catch(e) {}
+  // Silent: settle already-earned badges without playing the unlock ceremony on
+  // launch (a first run back-credits many badges from past practice).
+  try { achEvaluate(true); } catch(e) {}
 })(0);

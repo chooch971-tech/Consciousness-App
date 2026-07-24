@@ -72,22 +72,16 @@ function showSessionComplete(opts) {
       + '</div>'
     : '';
 
-  // One-time bonuses (a newly-earned Achievement or a Gift Path milestone) are
-  // credited during the completion but shown here as their own gold banner,
-  // never folded into the Akasha stat card — otherwise a milestone session
-  // looks like the exercise itself paid thousands. (The achievement toast fires
-  // behind this opaque overlay, so this banner is also its only visible home.)
+  // One-time bonuses credited during the completion are shown as their own gold
+  // banner, never folded into the Akasha stat card — otherwise a milestone
+  // session looks like the exercise itself paid thousands. Achievements are NOT
+  // shown here anymore: they get the full unlock ceremony after this screen is
+  // dismissed (see queueAchievementReveal). Only Gift Path milestones remain.
   var _pcb = window._pendingCompletionBonus || null;
   window._pendingCompletionBonus = null;
   var bonusBannerHtml = '';
   if (_pcb) {
     var _bonusRows = [];
-    if (_pcb.ach > 0) {
-      var _achTitle = (_pcb.achCount > 1)
-        ? _pcb.achCount + ' Achievements'
-        : 'Achievement' + (_pcb.achName ? ' — ' + (typeof escHtml === 'function' ? escHtml(_pcb.achName) : _pcb.achName) : '');
-      _bonusRows.push(['✦ ' + _achTitle, _pcb.ach]);
-    }
     if (_pcb.gift > 0) _bonusRows.push(['✦ Gift Path', _pcb.gift]);
     bonusBannerHtml = _bonusRows.map(function(row) {
       return '<div style="margin:12px 0 4px;padding:12px 16px;background:rgba(216,184,106,.12);border:1px solid rgba(216,184,106,.35);border-radius:10px;text-align:center;">'
