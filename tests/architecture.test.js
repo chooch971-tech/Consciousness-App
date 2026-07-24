@@ -40,6 +40,7 @@ const guideQuestsClient = fs.readFileSync(path.join(root, 'guide-quests-client.j
 const guideShellClient = fs.readFileSync(path.join(root, 'guide-shell-client.js'), 'utf8');
 const reportsClient = fs.readFileSync(path.join(root, 'reports-client.js'), 'utf8');
 const practiceReviewState = fs.readFileSync(path.join(root, 'practice-review-state.js'), 'utf8');
+const practiceReviewAiPolicy = fs.readFileSync(path.join(root, 'practice-review-ai-policy.js'), 'utf8');
 const platformClient = fs.readFileSync(path.join(root, 'platform-client.js'), 'utf8');
 const profileClient = fs.readFileSync(path.join(root, 'profile-client.js'), 'utf8');
 const settingsClient = fs.readFileSync(path.join(root, 'settings-client.js'), 'utf8');
@@ -874,10 +875,12 @@ test('Journal behavior loads through its own client boundary', () => {
 });
 
 test('Practice Review loads through its own client boundary', () => {
+  const policyTag = presence.indexOf('<script src="practice-review-ai-policy.js"></script>');
   const reportsTag = presence.indexOf('<script src="reports-client.js"></script>');
   const journalTag = presence.indexOf('<script src="journal-client.js"></script>');
   const appUse = presence.indexOf('var PRESENCE_SYNC = window.PresenceSyncContract;');
   assert.notEqual(reportsTag, -1);
+  assert.ok(policyTag > 0 && policyTag < reportsTag, 'AI policy loads before the reports client');
   assert.ok(appUse < reportsTag, 'reports client must load after shared app state');
   assert.ok(reportsTag < journalTag, 'reports must initialize before Journal');
   assert.equal(presence.split('<script src="reports-client.js"></script>').length - 1, 1);
@@ -889,10 +892,25 @@ test('Practice Review loads through its own client boundary', () => {
   assert.match(reportsClient, /var currentReportPeriod = 'weekly'/);
   assert.match(reportsClient, /PresencePracticeReview\.summarize/);
   assert.match(reportsClient, /PresencePracticeReview\.backfill/);
+  assert.match(reportsClient, /PresenceReviewAiPolicy\.eligibility/);
+  assert.match(serviceWorker,/['"]practice-review-ai-policy\.js['"]/);
   assert.doesNotMatch(presence, /data-period="daily"/);
   assert.doesNotMatch(presence, /id="reportShareBtn"/);
   assert.doesNotThrow(() => new Function(practiceReviewState));
+  assert.doesNotThrow(() => new Function(practiceReviewAiPolicy));
   assert.doesNotThrow(() => new Function(reportsClient));
+});
+
+test('Practice Review AI generation is checkpointed, deduplicated, and bounded', () => {
+  assert.match(server, /require\('\.\/practice-review-ai-policy'\)/);
+  assert.match(server, /label: 'omnia-reports\.cache'[\s\S]*?unique: true/);
+  assert.match(server, /const omniaReportFlights = new Map\(\)/);
+  assert.match(server, /Current monthly review is local-only/);
+  assert.match(server, /PresenceReviewAiPolicy\.qualifies\(reviewMetrics\)/);
+  assert.match(server, /PresenceReviewAiPolicy\.meaningfulChange\(reviewMetrics, cached\.metrics\)/);
+  assert.match(server, /setTimeout\(\(\) => controller\.abort\(\), 15000\)/);
+  const route = server.slice(server.indexOf("app.post('/api/sync/omnia/report'"), server.indexOf('// ── Pavlok integration'));
+  assert.doesNotMatch(route, /\.createIndex\(/);
 });
 
 test('Practice Review records durable summaries at shared completion boundaries', () => {
@@ -1040,13 +1058,14 @@ test('high-risk credentials and paid AI routes require revocable authentication'
   assert.match(server, /async function verifyToken\s*\([\s\S]*?usersCollection\.findOne\([\s\S]*?authVersionFor\(user\)/);
   assert.match(server, /app\.post\('\/api\/sync\/auth\/logout', verifyToken, async[\s\S]*?authVersionFor\(req\.authUser\) \+ 1/);
   assert.match(server, /app\.post\('\/api\/ai\/progress-comment', verifyToken, aiRateLimit, aiGlobalBudget/);
-  assert.match(server, /app\.post\('\/api\/sync\/omnia\/report', verifyToken, aiRateLimit, aiGlobalBudget/);
+  assert.match(server, /app\.post\('\/api\/sync\/omnia\/report', verifyToken, aiRateLimit/);
 
   const reportStart = server.indexOf("app.post('/api/sync/omnia/report'");
   const reportEnd = server.indexOf('// ── Pavlok integration', reportStart);
   const reportRoute = server.slice(reportStart, reportEnd);
   assert.doesNotMatch(reportRoute, /deviceId/);
   assert.match(reportRoute, /const userId = req\.user\.userId/);
+  assert.match(reportRoute, /if \(!aiHasGlobalCapacity\(\)\)/);
 
   assert.match(platformClient, /function\s+requestPresenceAI\s*\([\s\S]*?['"]Authorization['"]:\s*'Bearer ' \+ authToken/);
   assert.match(platformClient, /function\s+authLogout\s*\([\s\S]*?\/auth\/logout/);

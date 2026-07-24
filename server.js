@@ -7,6 +7,7 @@ const bcrypt  = require('bcryptjs');
 const jwt     = require('jsonwebtoken');
 const crypto  = require('crypto');
 const PresenceCalendar = require('./calendar');
+const PresenceReviewAiPolicy = require('./practice-review-ai-policy');
 const { OAuth2Client } = require('google-auth-library');
 const { enforceOmniaReportPolicy } = require('./omnia-report-policy');
 const { SYNC_KEYS, selectSyncData } = require('./sync-contract');
@@ -105,6 +106,7 @@ let likesCollection;
 let commentsCollection;
 let blocksCollection;
 let reportsCollection;
+let omniaReportsCollection;
 let notificationsCollection;
 let conversationsCollection;
 let messagesCollection;
@@ -112,6 +114,7 @@ let userPushSubsCollection;
 let subscriptions = [];
 let prayerSchedules = [];
 let practiceSchedules = [];
+const omniaReportFlights = new Map();
 
 let mongoClient;
 // Sanitize legacy usernames that violate either the charset or community rule.
@@ -160,6 +163,30 @@ async function migrateFriendsToFollows() {
   if (res.upsertedCount) console.log(`[Migration] Created ${res.upsertedCount} follow edge(s) from friendships.`);
 }
 
+// Earlier versions relied on an upsert without a unique index, so two requests
+// racing on different server instances could leave duplicate cache rows.
+// Preserve the newest result and discard only redundant generated commentary
+// before installing the uniqueness guard.
+async function dedupeOmniaReportCache() {
+  const groups = await omniaReportsCollection.aggregate([
+    { $sort: { generatedAt: -1, _id: -1 } },
+    { $group: {
+      _id: { userId:'$userId', period:'$period', periodKey:'$periodKey', version:'$version' },
+      ids: { $push:'$_id' },
+      count: { $sum:1 }
+    } },
+    { $match: { count: { $gt:1 } } }
+  ]).toArray();
+  let removed = 0;
+  for (const group of groups) {
+    const redundant = group.ids.slice(1);
+    if (!redundant.length) continue;
+    const result = await omniaReportsCollection.deleteMany({ _id: { $in:redundant } });
+    removed += result.deletedCount || 0;
+  }
+  if (removed) console.log(`[Migration] Removed ${removed} duplicate Omnia report cache row(s).`);
+}
+
 async function connectDB() {
   try {
     mongoClient = new MongoClient(MONGO_URI, { tls: true, tlsAllowInvalidCertificates: false });
@@ -178,11 +205,17 @@ async function connectDB() {
     commentsCollection = db.collection('comments');
     blocksCollection = db.collection('blocks');
     reportsCollection = db.collection('reports');
+    omniaReportsCollection = db.collection('omnia_reports');
     notificationsCollection = db.collection('notifications');
     conversationsCollection = db.collection('conversations');
     messagesCollection = db.collection('messages');
     userPushSubsCollection = db.collection('user_push_subs');
 
+    try {
+      await dedupeOmniaReportCache();
+    } catch (error) {
+      logger.warn('omnia_report_cache_dedupe_unavailable', { error:errorDetails(error) });
+    }
     await ensureIndexes([
       { label: 'subscriptions.endpoint', collection: subsCollection, keys: { endpoint: 1 } },
       { label: 'prayer.endpoint', collection: prayerCollection, keys: { endpoint: 1 } },
@@ -207,6 +240,8 @@ async function connectDB() {
       { label: 'messages.conversation-sender-created', collection: messagesCollection, keys: { convId: 1, senderId: 1, createdAt: 1 } },
       { label: 'messages.sender-created', collection: messagesCollection, keys: { senderId: 1, createdAt: -1 } },
       { label: 'reports.reporter-created', collection: reportsCollection, keys: { reporterId: 1, createdAt: -1 } },
+      { label: 'omnia-reports.cache', collection: omniaReportsCollection, keys: { userId: 1, period: 1, periodKey: 1, version: 1 }, options: { unique: true } },
+      { label: 'omnia-reports.expiry', collection: omniaReportsCollection, keys: { expiresAt: 1 }, options: { expireAfterSeconds: 0 } },
       { label: 'push-subscriptions.endpoint', collection: userPushSubsCollection, keys: { endpoint: 1 }, options: { unique: true } },
       { label: 'push-subscriptions.user', collection: userPushSubsCollection, keys: { userId: 1 } },
       // TTL sweeps stale beacons; reads independently guard expiresAt.
@@ -376,10 +411,13 @@ const AI_RATE_WINDOW_MS = 60 * 1000;
 const AI_GLOBAL_DAILY_CAP = 3000;
 let aiGlobalDay = { key: '', count: 0 };
 function aiCurrentDayKey() { return new Date().toISOString().slice(0, 10); }
+function aiHasGlobalCapacity() {
+  const key = aiCurrentDayKey();
+  if (aiGlobalDay.key !== key) aiGlobalDay = { key, count:0 };
+  return aiGlobalDay.count < AI_GLOBAL_DAILY_CAP;
+}
 function aiGlobalBudget(req, res, next) {
-  const k = aiCurrentDayKey();
-  if (aiGlobalDay.key !== k) aiGlobalDay = { key: k, count: 0 };
-  if (aiGlobalDay.count >= AI_GLOBAL_DAILY_CAP) {
+  if (!aiHasGlobalCapacity()) {
     return res.status(429).json({ error: 'AI temporarily at capacity. Try again later.' });
   }
   next();
@@ -504,10 +542,14 @@ function cleanExpiredRateLimitBuckets() {
 // Server-derived report cache key — never trust a client-supplied periodKey.
 // Mirrors the client's omniaReportPeriodKey() but computed here so the once-per-period
 // cache can't be bypassed by sending arbitrary keys. offset is clamped to a sane range.
-function serverPeriodKey(period, offset, utcOffsetMinutes) {
-  offset = parseInt(offset, 10);
+function reportOffset(value) {
+  let offset = parseInt(value, 10);
   if (!Number.isFinite(offset)) offset = 0;
-  offset = Math.max(-60, Math.min(0, offset)); // only current + recent past periods
+  return Math.max(-PresenceReviewAiPolicy.HISTORY_LIMIT, Math.min(0, offset));
+}
+
+function serverPeriodKey(period, offset, utcOffsetMinutes) {
+  offset = reportOffset(offset);
   let utcOffset = Number(utcOffsetMinutes);
   if (!Number.isFinite(utcOffset)) utcOffset = 0;
   utcOffset = Math.max(-840, Math.min(840, utcOffset));
@@ -515,14 +557,16 @@ function serverPeriodKey(period, offset, utcOffsetMinutes) {
   if (period === 'review7') {
     // Fixed Sunday–Saturday calendar week (matches the client's Practice
     // Review buckets), so one immutable insight is cached per week.
-    return 'review7-' + PresenceCalendar.weekKeyAtOffset(new Date(now.getTime() + offset * 7 * 86400000), utcOffset);
+    return 'review7-' + PresenceCalendar.weekKeyAtOffset(new Date(now.getTime() + offset * 7 * 86400000), utcOffset)
+      + (offset < 0 ? '-final' : '-checkpoint');
   }
   if (period === 'review30') {
     // Fixed calendar month (offset counts whole months back), matching the
     // client's monthly Practice Review buckets.
     const shifted = new Date(now.getTime() + utcOffset * 60000);
     const mo = new Date(Date.UTC(shifted.getUTCFullYear(), shifted.getUTCMonth() + offset, 1));
-    return 'review30-m-' + mo.getUTCFullYear() + '-' + String(mo.getUTCMonth() + 1).padStart(2, '0');
+    return 'review30-m-' + mo.getUTCFullYear() + '-' + String(mo.getUTCMonth() + 1).padStart(2, '0')
+      + (offset < 0 ? '-final' : '-local');
   }
   if (period === 'daily') {
     return PresenceCalendar.dayKeyAtOffset(new Date(now.getTime() + offset * 86400000), utcOffset);
@@ -534,6 +578,27 @@ function serverPeriodKey(period, offset, utcOffsetMinutes) {
   const shifted = new Date(now.getTime() + utcOffset * 60000);
   const mo = new Date(Date.UTC(shifted.getUTCFullYear(), shifted.getUTCMonth() + offset, 1));
   return 'm-' + mo.getUTCFullYear() + '-' + String(mo.getUTCMonth() + 1).padStart(2, '0');
+}
+
+function reviewMetricsFromContext(context) {
+  const supplied = context && context.review_metrics;
+  if (supplied && typeof supplied === 'object') {
+    return PresenceReviewAiPolicy.metrics(supplied);
+  }
+  const bests = {};
+  const exercises = context && context.concentration_by_exercise;
+  if (exercises && typeof exercises === 'object') {
+    Object.keys(exercises).forEach(key => {
+      const best = Math.max(0, Number(exercises[key] && exercises[key].best) || 0);
+      if (best > 0) bests[key] = best;
+    });
+  }
+  return PresenceReviewAiPolicy.metrics({
+    activeDays: context && context.active_days,
+    sessions: context && context.total_sessions,
+    totalSeconds: context && context.total_practice_sec,
+    bests
+  });
 }
 
 function clampText(value, max) {
@@ -615,14 +680,29 @@ async function generateAiMessage(feature, context) {
   if (aiGlobalDay.key !== _dk) aiGlobalDay = { key: _dk, count: 0 };
   aiGlobalDay.count++;
 
-  const response = await fetch('https://api.openai.com/v1/chat/completions', {
-    method: 'POST',
-    headers: {
-      'Authorization': `Bearer ${OPENAI_API_KEY}`,
-      'Content-Type': 'application/json'
-    },
-    body: JSON.stringify(payload)
-  });
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 15000);
+  let response;
+  try {
+    response = await fetch('https://api.openai.com/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${OPENAI_API_KEY}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(payload),
+      signal: controller.signal
+    });
+  } catch (err) {
+    if (err && err.name === 'AbortError') {
+      const timeoutError = new Error('OpenAI request timed out');
+      timeoutError.status = 504;
+      throw timeoutError;
+    }
+    throw err;
+  } finally {
+    clearTimeout(timeout);
+  }
 
   const data = await response.json().catch(() => ({}));
   if (!response.ok) {
@@ -3006,7 +3086,7 @@ app.post('/api/ai/progress-comment', verifyToken, aiRateLimit, aiGlobalBudget, a
   }
 });
 
-app.post('/api/sync/omnia/report', verifyToken, aiRateLimit, aiGlobalBudget, async (req, res) => {
+app.post('/api/sync/omnia/report', verifyToken, aiRateLimit, async (req, res) => {
   const { period, context } = req.body || {};
   if (!['daily','weekly','monthly','review7','review30'].includes(period)) {
     return res.status(400).json({ error: 'Invalid period' });
@@ -3014,44 +3094,90 @@ app.post('/api/sync/omnia/report', verifyToken, aiRateLimit, aiGlobalBudget, asy
   const userId = req.user.userId;
 
   try {
-    const col = mongoClient.db('presence').collection('omnia_reports');
-
     // Cache key is derived server-side from period + offset (never the client's raw
     // periodKey string) so the once-per-period cache cannot be bypassed by abuse.
-    const offset = context && context.offset;
+    const offset = reportOffset(context && context.offset);
+    const isPast = offset < 0;
+    const isPracticeReview = period === 'review7' || period === 'review30';
+    if (period === 'review30' && !isPast) {
+      return res.status(400).json({ error: 'Current monthly review is local-only' });
+    }
+    const reviewMetrics = isPracticeReview ? reviewMetricsFromContext(context || {}) : null;
+    if (isPracticeReview && !PresenceReviewAiPolicy.qualifies(reviewMetrics)) {
+      return res.status(422).json({ error: 'More practice data is needed for an AI review' });
+    }
     const periodKey = serverPeriodKey(period, offset, context && context.utcOffsetMinutes);
+    const checkpointKey = period === 'review7' && !isPast
+      ? PresenceReviewAiPolicy.checkpointKeyAtOffset(Date.now(), context && context.utcOffsetMinutes)
+      : null;
+    const filter = { userId, period, periodKey, version: OMNIA_REPORT_VERSION };
+
+    function usableCachedReport(cached) {
+      if (!cached || !cached.commentary) return false;
+      if (!isPracticeReview) {
+        return isPast || !cached.expiresAt || new Date(cached.expiresAt).getTime() > Date.now();
+      }
+      if (isPast) return true;
+      if (cached.checkpointKey === checkpointKey) return true;
+      return !PresenceReviewAiPolicy.meaningfulChange(reviewMetrics, cached.metrics);
+    }
 
     // Return cached if fresh — this is the once-per-period guard
-    const cached = await col.findOne({ userId, period, periodKey, version: OMNIA_REPORT_VERSION });
-    if (cached && cached.commentary) {
+    const cached = await omniaReportsCollection.findOne(filter);
+    if (usableCachedReport(cached)) {
       return res.json({ commentary: cached.commentary });
     }
 
-    // Cache miss → this will really call OpenAI. Charge the per-user daily budget.
-    if (!aiChargeUser(userId)) {
-      return res.status(429).json({ error: 'Daily AI limit reached. Try again tomorrow.' });
+    // Collapse simultaneous opens into one paid generation. Re-check inside
+    // the flight because another request may have filled the cache between the
+    // first read and this request joining.
+    const flightKey = [userId, period, periodKey, OMNIA_REPORT_VERSION].join(':');
+    let flight = omniaReportFlights.get(flightKey);
+    if (!flight) {
+      flight = (async () => {
+        const raced = await omniaReportsCollection.findOne(filter);
+        if (usableCachedReport(raced)) return raced.commentary;
+        if (!aiHasGlobalCapacity()) {
+          const err = new Error('AI temporarily at capacity. Try again later.');
+          err.status = 429;
+          throw err;
+        }
+        if (!aiChargeUser(userId)) {
+          const err = new Error('Daily AI limit reached. Try again tomorrow.');
+          err.status = 429;
+          throw err;
+        }
+        const commentary = await generateAiMessage('omnia_report', context || {});
+        const doc = {
+          userId,
+          period,
+          periodKey,
+          version: OMNIA_REPORT_VERSION,
+          commentary,
+          generatedAt: new Date()
+        };
+        if (isPracticeReview) {
+          doc.stage = isPast ? 'final' : 'checkpoint';
+          doc.metrics = reviewMetrics;
+          if (checkpointKey) doc.checkpointKey = checkpointKey;
+        } else if (!isPast) {
+          const ttlMs = period === 'daily' ? 86400000 : period === 'weekly' ? 7 * 86400000 : 31 * 86400000;
+          doc.expiresAt = new Date(Date.now() + ttlMs);
+        }
+        const unset = isPast || isPracticeReview ? { expiresAt: '' } : {};
+        await omniaReportsCollection.updateOne(
+          filter,
+          { $set: doc, $unset: unset },
+          { upsert: true }
+        );
+        return commentary;
+      })();
+      omniaReportFlights.set(flightKey, flight);
+      flight.finally(() => {
+        if (omniaReportFlights.get(flightKey) === flight) omniaReportFlights.delete(flightKey);
+      }).catch(() => {});
     }
-    const commentary = await generateAiMessage('omnia_report', context || {});
-
-    // A past period (offset < 0) is immutable — its data will never change, so
-    // cache it forever (no expiresAt) and never spend another API call on it.
-    // Only the current period (offset 0) gets a TTL so it can refresh as the
-    // period is still in progress.
-    const isPast = Number.isFinite(parseInt(offset, 10)) && parseInt(offset, 10) < 0;
-    const doc = { userId, period, periodKey, version: OMNIA_REPORT_VERSION, commentary, generatedAt: new Date() };
-    if (!isPast) {
-      const ttlMs = (period === 'daily' || period === 'review7' || period === 'review30') ? 86400000 : period === 'weekly' ? 7 * 86400000 : 31 * 86400000;
-      doc.expiresAt = new Date(Date.now() + ttlMs);
-    }
-    await col.updateOne(
-      { userId, period, periodKey, version: OMNIA_REPORT_VERSION },
-      { $set: doc, $unset: isPast ? { expiresAt: '' } : {} },
-      { upsert: true }
-    );
-    // TTL index only affects docs that have an expiresAt field; permanent
-    // (past) docs omit it and are never auto-deleted.
-    await col.createIndex({ expiresAt: 1 }, { expireAfterSeconds: 0 });
-
+    const commentary = await flight;
     res.json({ commentary });
   } catch (err) {
     console.error('[Omnia] report error:', err.stack || err.message);

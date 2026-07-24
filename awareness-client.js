@@ -1106,9 +1106,9 @@ document.addEventListener('DOMContentLoaded', function() {
   setTimeout(function() {
     if (typeof maybeShowBodyLevelAward === 'function') { try { maybeShowBodyLevelAward(); } catch(e) {} }
   }, 2800);
-  // Warm the Omnia report cache in the background so it's instant when the
-  // user opens Progress Reports. Targets yesterday's daily report — the first
-  // eligible daily view. fetchOmniaReport no-ops if already cached/fresh.
+  // Warm eligible Practice Review checkpoints/finals in the background so the
+  // screen opens with commentary ready. The policy no-ops below its evidence
+  // threshold and for the current, deliberately local-only month.
   setTimeout(prefetchOmniaReport, 3500);
 });
 
@@ -1116,8 +1116,8 @@ function prefetchOmniaReport() {
   try {
     if (typeof prewarmReviewOmnia !== 'function') return;
     // Only bother if there's any practice history to reflect on. The prewarm
-    // targets the current 7-day Practice Review window (weekly, offset 0) —
-    // exactly what the screen reads on open — and no-ops if already cached.
+    // targets the current week and any missing just-closed week/month finals,
+    // and no-ops for cached or ineligible periods.
     var hasData = (state.history && state.history.length) ||
                   (concState.history && concState.history.length);
     if (!hasData) return;

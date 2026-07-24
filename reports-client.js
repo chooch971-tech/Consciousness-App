@@ -9,6 +9,8 @@
 var currentReportPeriod = 'weekly';
 var reportOffset = 0;
 var _reviewRequestSerial = 0;
+var _reviewFetchFlights = {};
+var REVIEW_HISTORY_LIMIT = PresenceReviewAiPolicy.HISTORY_LIMIT;
 
 // Icons and colors mirror the Guide Path exercise cards (guide-quests-client.js
 // exIcon/exColor) so a discipline reads the same wherever it appears. Entries
@@ -153,6 +155,20 @@ function reviewSummary(period, offset) {
   return PresencePracticeReview.summarize(localStorage, range.start, range.now);
 }
 
+// The current weekly AI checkpoint only sees practice completed by 10 PM.
+// Before 10 PM, use data through yesterday so opening the app the next morning
+// can generate last night's checkpoint without including a new, unfinished day.
+function reviewAiSummary(period, offset, value) {
+  var range = getDateRange(period, offset);
+  if (period !== 'weekly' || (Number(offset) || 0) < 0) {
+    return PresencePracticeReview.summarize(localStorage, range.start, range.now);
+  }
+  var end = PresenceReviewAiPolicy.checkpointEnd(value || new Date());
+  if (end.getTime() > range.now.getTime()) end = range.now;
+  if (end.getTime() < range.start.getTime()) end = range.start;
+  return PresencePracticeReview.summarize(localStorage, range.start, end);
+}
+
 function reviewPreviousSummary(period, offset) {
   if (period === 'yearly') return null;
   var range = getDateRange(period, offset);
@@ -171,9 +187,10 @@ function updateReportNav() {
   var next = document.getElementById('reportNavNext');
   if (label) label.textContent = reviewRangeLabel(currentReportPeriod, reportOffset);
   var lifetime = currentReportPeriod === 'yearly';
+  var atHistoryLimit = reportOffset <= -REVIEW_HISTORY_LIMIT;
   if (prev) {
-    prev.style.opacity = lifetime ? '.15' : '.7';
-    prev.style.pointerEvents = lifetime ? 'none' : '';
+    prev.style.opacity = lifetime || atHistoryLimit ? '.15' : '.7';
+    prev.style.pointerEvents = lifetime || atHistoryLimit ? 'none' : '';
   }
   if (next) {
     var disabled = lifetime || reportOffset >= 0;
@@ -330,17 +347,21 @@ function buildReviewGuidance(summary, previous, period) {
 
 function reviewOmniaCacheKey(period, offset) {
   var range = getDateRange(period,offset);
+  var stage = PresenceReviewAiPolicy.stage(period, offset);
   // Key by the fixed period's start day — Sunday for a week, the 1st for a
   // month — so the whole period maps to one stable, immutable insight.
   // A generated insight persists for its period forever (see loadReviewOmnia);
   // do NOT bump this suffix to push a format/grounding change, since that
   // orphans every cached insight and forces a fresh API call per period. The
-  // v4 suffix (calendar periods; v3 was rolling windows) is frozen; only
+  // v5 separates an in-progress weekly checkpoint from the completed period's
+  // final synthesis. This prevents a Thursday draft from becoming the frozen
+  // final insight when that same calendar week closes.
+  // The v5 suffix is frozen; only
   // change it if a deliberate mass-regeneration is truly intended.
-  return 'presence_omnia_practice_review_v4_' + period + '_' + PresencePracticeReview.dayKey(range.start);
+  return 'presence_omnia_practice_review_v5_' + period + '_' + PresencePracticeReview.dayKey(range.start) + '_' + stage;
 }
 
-function reviewOmniaContext(period, offset, summary, previous) {
+function reviewOmniaContext(period, offset, summary, previous, decision) {
   var concentration = {};
   Object.keys(summary.byPractice || {}).forEach(function(key) {
     if (key === 'awareness' || key === 'prayer') return;
@@ -368,8 +389,8 @@ function reviewOmniaContext(period, offset, summary, previous) {
   var _elapsedDays = _totalDays;
   if ((Number(offset) || 0) === 0) {
     var _pStart = getDateRange(period, offset).start.getTime();
-    var _tomorrow = reviewAddDays(new Date(), 1).getTime();
-    _elapsedDays = Math.max(1, Math.min(_totalDays, Math.round((_tomorrow - _pStart) / 86400000)));
+    var _checkpointEnd = PresenceReviewAiPolicy.checkpointEnd(new Date()).getTime();
+    _elapsedDays = Math.max(1, Math.min(_totalDays, Math.round((_checkpointEnd - _pStart) / 86400000)));
   }
   return {
     report_policy_version:3,
@@ -378,6 +399,9 @@ function reviewOmniaContext(period, offset, summary, previous) {
     utcOffsetMinutes:-new Date().getTimezoneOffset(),
     window_days:_totalDays,
     period_complete:(Number(offset) || 0) < 0,
+    review_stage:(decision && decision.stage) || PresenceReviewAiPolicy.stage(period, offset),
+    review_checkpoint_key:(decision && decision.checkpointKey) || null,
+    review_metrics:PresenceReviewAiPolicy.metrics(summary),
     period_elapsed_days:_elapsedDays,
     period_total_days:_totalDays,
     active_days:summary.activeDays,
@@ -429,68 +453,65 @@ function reviewOmniaContext(period, offset, summary, previous) {
   };
 }
 
-function fetchOmniaReport(period, context) {
+function fetchOmniaReport(period, context, flightKey) {
   var token = authToken || localStorage.getItem('presence_auth_token');
   if (!token) return Promise.reject(new Error('sign-in required'));
-  return fetch(SYNC_API_URL + '/omnia/report', {
+  flightKey = flightKey || (period + ':' + JSON.stringify(context && context.offset));
+  if (_reviewFetchFlights[flightKey]) return _reviewFetchFlights[flightKey];
+  var controller = typeof AbortController === 'function' ? new AbortController() : null;
+  var timeout = setTimeout(function(){ if(controller) controller.abort(); }, 12000);
+  var request = fetch(SYNC_API_URL + '/omnia/report', {
     method:'POST',
     headers:{'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token},
-    body:JSON.stringify({period:period,context:context})
+    body:JSON.stringify({period:period,context:context}),
+    signal:controller ? controller.signal : undefined
   }).then(function(response){
     if(!response.ok) throw new Error('review unavailable');
     return response.json();
+  }).finally(function(){
+    clearTimeout(timeout);
+    delete _reviewFetchFlights[flightKey];
   });
+  _reviewFetchFlights[flightKey] = request;
+  return request;
 }
 
-// A past period is immutable, so its insight is kept forever. The current
-// period (offset 0) still fills in as the week/month builds, so its insight is
-// allowed to regenerate once per calendar day — fresh without an API call on
-// every open. This mirrors the server's own 24h TTL for the in-progress period.
-function reviewInsightFresh(offset, cached) {
-  if (!cached || !cached.commentary) return false;
-  if ((Number(offset) || 0) < 0) return true; // past period — frozen forever
-  return !!cached.ts && PresencePracticeReview.dayKey(cached.ts) === PresencePracticeReview.dayKey(new Date());
-}
-
-// Returns the already-generated insight for a period when it's still fresh (see
-// reviewInsightFresh), so it can be painted synchronously without the local
-// fallback flashing on the way in.
-function reviewCachedInsight(period, offset) {
+function reviewCachedRecord(period, offset) {
   if (period === 'yearly') return null;
   try {
     var cached = JSON.parse(localStorage.getItem(reviewOmniaCacheKey(period, offset)) || 'null');
-    if (reviewInsightFresh(offset, cached)) return cached.commentary;
+    if (cached && cached.commentary) return cached;
   } catch (e) {}
   return null;
 }
 
-function loadReviewOmnia(period, offset, summary, previous, fallback) {
-  if (period === 'yearly' || !summary.sessions) return;
+function reviewCachedInsight(period, offset) {
+  var cached = reviewCachedRecord(period, offset);
+  return cached && cached.commentary;
+}
+
+function loadReviewOmnia(period, offset, summary, previous, fallback, decision) {
+  if (period === 'yearly' || !decision || !decision.eligible) return;
   var key = reviewOmniaCacheKey(period,offset);
-  var cached = null;
-  try { cached = JSON.parse(localStorage.getItem(key)||'null'); } catch(e) {}
-  // Past periods are frozen forever (immutable data, no more API calls, even
-  // across backend redeploys). The current period refreshes at most once a day
-  // as it fills in — see reviewInsightFresh. A stale current-period insight
-  // falls through to a re-fetch below, overwriting this same key.
-  if (reviewInsightFresh(offset, cached)) {
-    var cachedEl = document.getElementById('reviewInsightText');
-    if (cachedEl) cachedEl.textContent = cached.commentary;
-    return;
-  }
   var serial = ++_reviewRequestSerial;
   var requestPeriod = period === 'monthly' ? 'review30' : 'review7';
   function _applyInsight(textVal) {
     var el = document.getElementById('reviewInsightText');
     if (el) { el.textContent = textVal; el.classList.remove('is-loading'); }
   }
-  fetchOmniaReport(requestPeriod,reviewOmniaContext(period,offset,summary,previous))
+  fetchOmniaReport(requestPeriod,reviewOmniaContext(period,offset,summary,previous,decision),key)
     .then(function(data){
       if(serial!==_reviewRequestSerial)return;
       // Empty/failed generation falls back to the local insight, replacing the
       // loading line so it can never be left spinning.
       if(!data.commentary){ _applyInsight(fallback); return; }
-      localStorage.setItem(key,JSON.stringify({ts:Date.now(),commentary:data.commentary}));
+      localStorage.setItem(key,JSON.stringify({
+        ts:Date.now(),
+        commentary:data.commentary,
+        stage:decision.stage,
+        checkpointKey:decision.checkpointKey || null,
+        metrics:PresenceReviewAiPolicy.metrics(summary)
+      }));
       _applyInsight(data.commentary);
     }).catch(function(){
       if(serial!==_reviewRequestSerial)return;
@@ -498,30 +519,37 @@ function loadReviewOmnia(period, offset, summary, previous, fallback) {
     });
 }
 
-// Warm the current 7-day Practice Review insight in the background so the
-// screen shows Omnia's commentary instantly on open. Mirrors loadReviewOmnia's
-// period/offset/context/cache-key exactly — the screen always opens on weekly,
-// offset 0 (see showReports) — but never touches the DOM or _reviewRequestSerial,
-// since the screen isn't open yet and must not cancel a future live request.
-// No-ops when the cache is already fresh, when there's nothing to reflect on,
-// or when signed out (fetchOmniaReport rejects), so it can't spend a wasted call.
+// Warm the current weekly checkpoint plus any missing final review for the
+// just-closed week/month. This runs on the next app open rather than requiring
+// the user to be online at exactly 10 PM, and never touches the DOM or the live
+// screen's request serial.
 function prewarmReviewOmnia() {
   if (typeof PresencePracticeReview === 'undefined' || !PresencePracticeReview) return;
   try {
     reviewBackfill();
-    var summary = reviewSummary('weekly', 0);
-    if (!summary || !summary.sessions) return;
-    var key = reviewOmniaCacheKey('weekly', 0);
-    var cached = null;
-    try { cached = JSON.parse(localStorage.getItem(key) || 'null'); } catch (e) {}
-    if (reviewInsightFresh(0, cached)) return; // already fresh today — don't re-warm
-    var previous = reviewPreviousSummary('weekly', 0);
-    fetchOmniaReport('review7', reviewOmniaContext('weekly', 0, summary, previous))
-      .then(function (data) {
-        if (!data || !data.commentary) return;
-        localStorage.setItem(key, JSON.stringify({ ts: Date.now(), commentary: data.commentary }));
-      })
-      .catch(function () { /* signed out / unavailable — the screen lazy-loads on open */ });
+    [['weekly',0],['weekly',-1],['monthly',-1]].forEach(function (target) {
+      var period = target[0];
+      var offset = target[1];
+      var summary = reviewAiSummary(period, offset, new Date());
+      var key = reviewOmniaCacheKey(period, offset);
+      var cached = reviewCachedRecord(period, offset);
+      var decision = PresenceReviewAiPolicy.eligibility(period, offset, summary, cached, new Date());
+      if (!decision.eligible) return;
+      var previous = reviewPreviousSummary(period, offset);
+      var requestPeriod = period === 'monthly' ? 'review30' : 'review7';
+      fetchOmniaReport(requestPeriod, reviewOmniaContext(period, offset, summary, previous, decision), key)
+        .then(function (data) {
+          if (!data || !data.commentary) return;
+          localStorage.setItem(key, JSON.stringify({
+            ts:Date.now(),
+            commentary:data.commentary,
+            stage:decision.stage,
+            checkpointKey:decision.checkpointKey || null,
+            metrics:PresenceReviewAiPolicy.metrics(summary)
+          }));
+        })
+        .catch(function () { /* signed out / unavailable — retry on a later open */ });
+    });
   } catch (e) {}
 }
 
@@ -605,14 +633,15 @@ function renderReport(period) {
   }
 
   var guidance = buildReviewGuidance(summary,previous,currentReportPeriod);
-  // If this period's insight was already generated, paint it directly. If it
-  // still needs to be fetched (cache miss + signed in + has sessions), show a
-  // quiet loading line instead of the local fallback — otherwise Omnia's real
-  // insight visibly replaces a different-looking "smaller" fallback on the way
-  // in. The local fallback is reserved for the offline/error case.
+  var aiSummary = reviewAiSummary(currentReportPeriod,reportOffset,new Date());
+  var cachedRecord = reviewCachedRecord(currentReportPeriod,reportOffset);
+  var decision = PresenceReviewAiPolicy.eligibility(currentReportPeriod,reportOffset,aiSummary,cachedRecord,new Date());
+  // Below the evidence threshold (and throughout the in-progress month), the
+  // deterministic local insight appears immediately. Loading is reserved for
+  // an actually eligible generation.
   var cachedInsight = reviewCachedInsight(currentReportPeriod,reportOffset);
   var _reviewToken = (typeof authToken !== 'undefined' && authToken) || localStorage.getItem('presence_auth_token');
-  var insightLoading = !cachedInsight && !!_reviewToken && summary.sessions > 0;
+  var insightLoading = !cachedInsight && !!_reviewToken && decision.eligible;
   var insightGuidance = cachedInsight ? { insight:cachedInsight, action:guidance.action } : guidance;
   var html = reviewInsightHtml(insightGuidance,currentReportPeriod,insightLoading)
     + reviewHeroHtml(summary,previous,currentReportPeriod,reflections)
@@ -622,7 +651,7 @@ function renderReport(period) {
     + reviewNextHtml(guidance)
     + reviewJournalHtml(reflections);
   document.getElementById('reportContent').innerHTML = html;
-  loadReviewOmnia(currentReportPeriod,reportOffset,summary,previous,guidance.insight);
+  loadReviewOmnia(currentReportPeriod,reportOffset,aiSummary,previous,guidance.insight,decision);
 }
 
 function openGuideFromReview() {
@@ -648,7 +677,11 @@ function openJournalFromReview() {
     renderReport(currentReportPeriod);
   });
   document.addEventListener('click',function(event){if(!event.target.closest('#reportPeriodMenu')&&!event.target.closest('#reportFilterBtn'))menu.style.display='none';});
-  document.getElementById('reportNavPrev').addEventListener('click',function(){if(currentReportPeriod==='yearly')return;reportOffset--;renderReport(currentReportPeriod);});
+  document.getElementById('reportNavPrev').addEventListener('click',function(){
+    if(currentReportPeriod==='yearly'||reportOffset<=-REVIEW_HISTORY_LIMIT)return;
+    reportOffset--;
+    renderReport(currentReportPeriod);
+  });
   document.getElementById('reportNavNext').addEventListener('click',function(){if(currentReportPeriod==='yearly'||reportOffset>=0)return;reportOffset++;renderReport(currentReportPeriod);});
   document.getElementById('reportsBack').addEventListener('click',function(){if(typeof renderHomeForNavigation==='function')renderHomeForNavigation();showScreen('homeScreen');});
   document.getElementById('reportContent').addEventListener('click',function(event){

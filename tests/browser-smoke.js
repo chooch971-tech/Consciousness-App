@@ -501,7 +501,8 @@ async function testPracticeReview(browser, baseUrl) {
       noShare: !document.getElementById('reportShareBtn'),
       noHorizontalOverflow: screen.scrollWidth <= screen.clientWidth + 1,
       carryForward: !!document.querySelector('[data-review-guide]'),
-      journalLink: !!document.querySelector('[data-review-journal]')
+      journalLink: !!document.querySelector('[data-review-journal]'),
+      insightReady: !document.getElementById('reviewInsightText').classList.contains('is-loading')
     };
   });
   assert.equal(weekly.title, 'Practice Review');
@@ -516,10 +517,13 @@ async function testPracticeReview(browser, baseUrl) {
   assert.equal(weekly.noHorizontalOverflow, true, 'Practice Review should fit a phone viewport');
   assert.equal(weekly.carryForward, true, 'Practice Review should end with one next step');
   assert.equal(weekly.journalLink, true, 'Practice Review should connect back to Journal');
+  assert.equal(weekly.insightReady, true, 'local insight should appear immediately without an eligible signed-in request');
 
   await page.locator('#reportFilterBtn').click();
   await page.locator('[data-period="monthly"]').click();
   assert.equal((await page.locator('#reportNavLabel').textContent()).trim(), 'This month');
+  assert.equal(await page.locator('#reviewInsightText').evaluate(el => el.classList.contains('is-loading')), false,
+    'the in-progress month should remain local and never show AI loading');
   await page.locator('#reportFilterBtn').click();
   await page.locator('[data-period="yearly"]').click();
   assert.equal((await page.locator('#reportNavLabel').textContent()).trim(), 'Since you began');
