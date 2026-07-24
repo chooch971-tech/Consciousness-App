@@ -1858,11 +1858,14 @@ document.getElementById('concBeginnerGrid').addEventListener('click', function(e
 document.getElementById('concExpertGrid').addEventListener('click', function(e) {
   var card = e.target.closest('.exercise-card[data-exercise]');
   if (!card) return;
-  var def = EXERCISE_DEFS[card.dataset.exercise];
-  if (def && def.begin) {
-    suppressTutorialForExerciseEntry();
-    def.begin();
-  }
+  // Written back when advanced exercises (Multi-Sense, the retired All
+  // Angles) had no setup screen of their own, so going straight to
+  // def.begin() was the only option. Multi-Sense has a real landing now —
+  // route through it like every card in the Beginner grid, so exSetupScreen's
+  // data-ex/content are always freshly set instead of carrying over whatever
+  // was last opened through the proper setup path (this is what made the
+  // session's back button land on a stale, unrelated exercise).
+  openExerciseSetup(card.dataset.exercise);
 });
 
 document.getElementById('exerciseGrid').addEventListener('click', function(e) {
