@@ -114,6 +114,27 @@
 
     /* HOME */
     #homeScreen { justify-content:flex-start; }
+    /* Guide backdrop — a quiet violet night sky, the same family as the Lodge
+       and Profile, so the three hub surfaces read as one. Deliberately dimmer
+       than the Lodge (fewer, fainter stars; nebulae pushed to the top/bottom
+       edges) so it supports the Omnia figure and its auras rather than
+       competing with them. Scoped to Guide mode and painted on the fixed
+       #homeScreen — never the scrolling #guidePanel — so it costs one paint and
+       nothing on scroll. */
+    body.mode-guide #homeScreen {
+      background:
+        radial-gradient(1.5px 1.5px at 18% 8%, rgba(199,184,235,.32), transparent),
+        radial-gradient(1.5px 1.5px at 82% 12%, rgba(221,216,206,.26), transparent),
+        radial-gradient(1px 1px at 62% 22%, rgba(199,169,255,.2), transparent),
+        radial-gradient(1.5px 1.5px at 30% 40%, rgba(199,184,235,.2), transparent),
+        radial-gradient(1px 1px at 88% 52%, rgba(221,216,206,.18), transparent),
+        radial-gradient(1.5px 1.5px at 14% 66%, rgba(199,169,255,.18), transparent),
+        radial-gradient(1px 1px at 72% 79%, rgba(199,184,235,.16), transparent),
+        radial-gradient(1.5px 1.5px at 40% 92%, rgba(221,216,206,.16), transparent),
+        radial-gradient(ellipse 120% 50% at 50% -8%, rgba(120,96,190,.12) 0%, transparent 60%),
+        radial-gradient(ellipse 90% 45% at 50% 108%, rgba(96,76,170,.1) 0%, transparent 68%),
+        linear-gradient(180deg, #0f0c1a 0%, #0a0812 55%, #0c0a16 100%);
+    }
     .top-bar { position:relative; display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; opacity:0; animation:fadeUp .7s ease forwards .1s; }
     .top-bar > *:first-child { flex:1; }
     .top-bar > *:last-child { flex:1; text-align:right; }
@@ -5547,7 +5568,7 @@ body:not(.tut-live) #tutCorgi {
   })();
 </script>
 </head>
-<body>
+<body class="mode-guide">
 
 <!-- ── Splash screen ───────────────────────────────────── -->
 <div id="splash">
@@ -9918,7 +9939,7 @@ startPrayerScheduler();
     // flat background here hides it during swipe-back, then makes it pop in
     // after cleanup. Preserve that authored backdrop while retaining the opaque
     // fallback for screens that do not define one of their own.
-    var keepsAuthoredBackdrop = ['profileScreen', 'friendProfileScreen', 'profileActivityScreen', 'friendsPanel', 'chatListScreen', 'chatThreadScreen', 'settingsScreen', 'accountSettingsScreen', 'exerciseSettingsScreen', 'clockSettingsScreen', 'lodgeScreen'].indexOf(el.id) >= 0;
+    var keepsAuthoredBackdrop = ['profileScreen', 'friendProfileScreen', 'profileActivityScreen', 'friendsPanel', 'chatListScreen', 'chatThreadScreen', 'settingsScreen', 'accountSettingsScreen', 'exerciseSettingsScreen', 'clockSettingsScreen', 'lodgeScreen', 'homeScreen'].indexOf(el.id) >= 0;
     if (!keepsAuthoredBackdrop) el.style.background = 'var(--bg)';
     el.style.willChange = 'transform';
     el.style.transition = 'none';
