@@ -12,6 +12,9 @@ var SENSE_MASTERY_THRESHOLDS = [300, 450, 600];
 var senseMode = 'feeling'; // 'feeling' | 'smell' | 'taste'
 var senseSelectedCue = 'Warmth';
 var senseEyesMode = 'closed'; // Closed eyes is the default; open eyes is the advanced successor.
+// Each sense remembers its own chosen sensation, so stepping over to another
+// mode and back doesn't silently reset the pick to the first cue in the list.
+var senseSelectedByMode = { feeling: 'Warmth', smell: '', taste: '' };
 
 var SENSE_MODE_DEFS = {
   feeling: {
@@ -227,69 +230,117 @@ var SENSE_MODE_ACCENTS = {
   taste:   '--sn-card-rgb:232,200,122; --sn-card-light:#e8c87a;'
 };
 
+// The cue this mode should open on: its remembered pick when that is still a
+// real choice, otherwise the first one.
+function senseCueForMode(mode) {
+  var choices = senseChoicesForMode(mode);
+  if (!choices.length) return '';
+  var remembered = senseSelectedByMode[mode];
+  return choices.some(function(choice) { return choice.label === remembered; })
+    ? remembered
+    : choices[0].label;
+}
+
+function senseChoiceGridHTML() {
+  return senseChoicesForMode(senseMode).map(function(choice, index) {
+    return '<button type="button" class="sense-choice' + (choice.label === senseSelectedCue ? ' on' : '') + '" onclick="chooseSenseCue(' + index + ')">'
+      + '<span>' + escapeSenseText(choice.label) + '</span>'
+      + (choice.custom ? '<small>custom</small>' : '')
+      + '</button>';
+  }).join('');
+}
+
+function senseProgressHTML() {
+  var best = getSenseBest(senseMode, senseEyesMode);
+  return snRecordHtml(best, 'Clean ' + senseEyesLabel(senseEyesMode) + ' Record')
+    + senseMasteryProgressHtml(best, senseEyesMode);
+}
+
+function senseEyesOptionsHTML() {
+  return '<button type="button" class="sense-eyes-option' + (senseEyesMode === 'closed' ? ' on' : '') + '" onclick="setSenseEyesMode(\'closed\')">'
+    + '<span class="sense-eye-icon">◉</span><span><strong>Closed Eyes</strong><small>Foundation · default</small></span></button>'
+    + '<button type="button" class="sense-eyes-option sense-eyes-option--advanced' + (senseEyesMode === 'open' ? ' on' : '') + '" onclick="setSenseEyesMode(\'open\')">'
+    + '<span class="sense-eye-icon">◎</span><span><strong>Open Eyes</strong><small>Advanced successor</small></span></button>';
+}
+
 function buildSenseSetupHTML() {
   var tabs = ['feeling', 'smell', 'taste'].map(function(mode) {
     return '<button type="button" class="sn-mode' + (mode === senseMode ? ' on' : '') + '" style="' + SENSE_MODE_ACCENTS[mode] + '" onclick="switchSenseMode(\'' + mode + '\')">'
       + SENSE_MODE_GLYPHS[mode]
       + '<span class="sn-mode__lbl">' + SENSE_MODE_DEFS[mode].label + '</span></button>';
   }).join('');
-  var choices = senseChoicesForMode(senseMode);
-  if (!choices.some(function(choice) { return choice.label === senseSelectedCue; })) {
-    senseSelectedCue = choices.length ? choices[0].label : '';
-  }
-  var choiceHtml = choices.map(function(choice, index) {
-    return '<button type="button" class="sense-choice' + (choice.label === senseSelectedCue ? ' on' : '') + '" onclick="chooseSenseCue(' + index + ')">'
-      + '<span>' + escapeSenseText(choice.label) + '</span>'
-      + (choice.custom ? '<small>custom</small>' : '')
-      + '</button>';
-  }).join('');
-  var best = getSenseBest(senseMode, senseEyesMode);
+  senseSelectedCue = senseCueForMode(senseMode);
+  senseSelectedByMode[senseMode] = senseSelectedCue;
   var eyesHtml = '<div class="sense-eyes-picker">'
     + '<div class="sense-choice-label">Practice mode</div>'
-    + '<div class="sense-eyes-options">'
-    + '<button type="button" class="sense-eyes-option' + (senseEyesMode === 'closed' ? ' on' : '') + '" onclick="setSenseEyesMode(\'closed\')">'
-    + '<span class="sense-eye-icon">◉</span><span><strong>Closed Eyes</strong><small>Foundation · default</small></span></button>'
-    + '<button type="button" class="sense-eyes-option sense-eyes-option--advanced' + (senseEyesMode === 'open' ? ' on' : '') + '" onclick="setSenseEyesMode(\'open\')">'
-    + '<span class="sense-eye-icon">◎</span><span><strong>Open Eyes</strong><small>Advanced successor</small></span></button>'
+    + '<div class="sense-eyes-options" id="senseEyesRow">' + senseEyesOptionsHTML()
     + '</div></div>';
 
+  // The hero head carries a looping spin/shine animation. Only the regions that
+  // actually change on a tap get their own ids below, so switching mode or cue
+  // can repaint those alone instead of re-running this whole string through
+  // innerHTML — which rebuilt the SVG and visibly restarted its animation.
   return '<div class="sn-setup">'
     + '<div class="sn-hero-card">'
     + '<div class="sn-head"><div class="sn-head__label">Train a sense</div>'
     + '<button type="button" class="aud-omnia-peek" onclick="openExExplainer(\'sense\')" aria-label="How Senses works">'
     + '<span class="clk-omnia-peek-head"><span class="clk-omnia-spin">' + omniaHeadOnlySVG(34, 32) + '</span></span></button></div>'
-    + '<div class="sn-modes">' + tabs + '</div>'
+    + '<div class="sn-modes" id="senseModeRow">' + tabs + '</div>'
     + eyesHtml
     + '<div class="sense-choice-label">Choose a sensation</div>'
-    + '<div class="sense-choice-grid">' + choiceHtml + '</div>'
+    + '<div class="sense-choice-grid" id="senseChoiceGrid">' + senseChoiceGridHTML() + '</div>'
     + '</div>'
-    + snRecordHtml(best, 'Clean ' + senseEyesLabel(senseEyesMode) + ' Record')
-    + senseMasteryProgressHtml(best, senseEyesMode)
+    + '<div id="senseProgressWrap">' + senseProgressHTML() + '</div>'
     + '<button type="button" class="clk-history-link" onclick="concHistoryFrom=\'exSetupScreen\'; concHistoryFilter=\'all\'; renderConcHistory(); showScreen(\'concHistoryScreen\');">View History</button>'
     + '</div>';
 }
 
-function setSenseEyesMode(mode) {
-  senseEyesMode = normalizeSenseEyesMode(mode);
+// Fall back to a full rebuild whenever the targeted containers aren't mounted
+// (first paint, or a caller rendering the setup from scratch).
+function rebuildSenseSetup() {
   var contentEl = document.getElementById('exSetupContent');
   if (contentEl) contentEl.innerHTML = buildSenseSetupHTML();
+}
+
+// Closed and open eyes keep separate records, so only the record/mastery block
+// and the toggle itself change here.
+function setSenseEyesMode(mode) {
+  senseEyesMode = normalizeSenseEyesMode(mode);
+  var eyesRow = document.getElementById('senseEyesRow');
+  var progress = document.getElementById('senseProgressWrap');
+  if (!eyesRow || !progress) { rebuildSenseSetup(); return; }
+  eyesRow.innerHTML = senseEyesOptionsHTML();
+  progress.innerHTML = senseProgressHTML();
 }
 
 function switchSenseMode(mode) {
   if (!SENSE_MODE_DEFS[mode]) return;
   senseMode = mode;
-  var choices = senseChoicesForMode(mode);
-  senseSelectedCue = choices.length ? choices[0].label : '';
-  var contentEl = document.getElementById('exSetupContent');
-  if (contentEl) contentEl.innerHTML = buildSenseSetupHTML();
+  senseSelectedCue = senseCueForMode(mode);
+  senseSelectedByMode[mode] = senseSelectedCue;
+  var modeRow = document.getElementById('senseModeRow');
+  var grid = document.getElementById('senseChoiceGrid');
+  var progress = document.getElementById('senseProgressWrap');
+  if (!modeRow || !grid || !progress) { rebuildSenseSetup(); return; }
+  ['feeling', 'smell', 'taste'].forEach(function(id, index) {
+    var btn = modeRow.children[index];
+    if (btn) btn.classList.toggle('on', id === mode);
+  });
+  grid.innerHTML = senseChoiceGridHTML();
+  progress.innerHTML = senseProgressHTML();
 }
 
 function chooseSenseCue(index) {
   var choices = senseChoicesForMode(senseMode);
   if (!choices[index]) return;
   senseSelectedCue = choices[index].label;
-  var contentEl = document.getElementById('exSetupContent');
-  if (contentEl) contentEl.innerHTML = buildSenseSetupHTML();
+  senseSelectedByMode[senseMode] = senseSelectedCue;
+  var grid = document.getElementById('senseChoiceGrid');
+  if (!grid) { rebuildSenseSetup(); return; }
+  // A pick only moves the highlight — no markup needs regenerating.
+  for (var i = 0; i < grid.children.length; i++) {
+    grid.children[i].classList.toggle('on', i === index);
+  }
 }
 
 var senseSessionStartTime = null;
@@ -477,6 +528,7 @@ function switchSenseCueBetweenReps() {
   var nextIndex = currentIndex < 0 ? 0 : (currentIndex + 1) % choices.length;
   senseActiveCue = choices[nextIndex].label;
   senseSelectedCue = senseActiveCue;
+  senseSelectedByMode[senseActiveMode] = senseActiveCue;
   var cueEl = document.getElementById('senseSessionCue');
   var stateEl = document.getElementById('senseStateLabel');
   if (cueEl) cueEl.textContent = senseActiveCue;
@@ -633,9 +685,12 @@ function deleteCustomSense(id) {
   var senses = loadCustomSenses();
   saveCustomSenses(senses.filter(function(item) { return item.id !== id; }));
   renderCustomSenseList();
-  if (senseSelectedCue && !senseChoicesForMode(senseMode).some(function(choice) { return choice.label === senseSelectedCue; })) {
-    senseSelectedCue = SENSE_MODE_DEFS[senseMode].cues[0];
-  }
+  // A deleted custom sense may have been the remembered pick for any mode, not
+  // just the one on screen — re-resolve each so none points at a gone cue.
+  ['feeling', 'smell', 'taste'].forEach(function(mode) {
+    senseSelectedByMode[mode] = senseCueForMode(mode);
+  });
+  senseSelectedCue = senseSelectedByMode[senseMode];
 }
 
 (function wireSenseExperience() {
