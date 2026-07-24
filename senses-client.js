@@ -394,12 +394,12 @@ function updateSenseSessionPresentation(active) {
   if (instructionEl) {
     instructionEl.textContent = senseActiveEyesMode === 'open'
       ? 'Keep a soft gaze. Hold the imagined sensation against the visible world.'
-      : 'Close your eyes. Build the sensation from memory and keep it vivid.';
+      : '';
   }
   if (stateEl) {
     stateEl.textContent = active
       ? (senseActiveEyesMode === 'open' ? 'eyes open · summon it · hold it' : 'eyes closed · summon it · hold it')
-      : (senseActiveEyesMode === 'open' ? 'soft gaze · ready when you are' : 'close your eyes when ready');
+      : (senseActiveEyesMode === 'open' ? 'soft gaze · ready when you are' : '');
   }
 }
 

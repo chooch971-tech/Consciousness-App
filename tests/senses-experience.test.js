@@ -99,6 +99,24 @@ test('the active Senses exercise is static and uses a concise pink Begin button'
   assert.match(presenceSource, /#senseBeginRepBtn \{ background:linear-gradient\(160deg,#f0bcd6,#c9769f\) !important;/);
 });
 
+test('the active Closed Eyes exercise omits distracting helper copy', () => {
+  const sessionMarkup = presenceSource.slice(
+    presenceSource.indexOf('<!-- SENSE CONCENTRATION SESSION -->'),
+    presenceSource.indexOf('<!-- SENSE CONCENTRATION RESULT -->')
+  );
+  [
+    'close your eyes when ready',
+    'Close your eyes. Build the sensation from memory and keep it vivid.',
+    'Tap the field whenever concentration breaks',
+    'clean reps build mastery'
+  ].forEach(text => {
+    assert.doesNotMatch(source, new RegExp(text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i'));
+    assert.doesNotMatch(sessionMarkup, new RegExp(text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i'));
+  });
+  assert.doesNotMatch(sessionMarkup, /senseSessionModeMeta/);
+  assert.doesNotMatch(sessionMarkup, /sense-session-tap-hint/);
+});
+
 test('Feeling offers only the four intentional body-state senses', () => {
   const context = loadSensesContext();
   assert.deepEqual(
