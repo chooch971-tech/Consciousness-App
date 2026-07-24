@@ -9977,8 +9977,7 @@ startPrayerScheduler();
 
   // ── Gesture lifecycle ──
 
-  // Which screen a swipe-back on `screenEl` returns to. Shared by begin() and
-  // the touchstart pre-warm so both agree on the destination.
+  // Which screen a swipe-back on `screenEl` returns to.
   function resolvePrevId(screenEl) {
     return (screenEl.id === 'profileScreen' && typeof profilePreviousScreen === 'function')
       ? profilePreviousScreen()
@@ -9995,32 +9994,6 @@ startPrayerScheduler();
       : (screenEl.id === 'friendProfileScreen' && typeof friendProfilePreviousScreen === 'function')
         ? friendProfilePreviousScreen()
         : (PREV_SCREEN[screenEl.id] || 'homeScreen');
-  }
-
-  // Nearly every tab returns to the (currently display:none) home screen, whose
-  // rich content is expensive to lay out. Doing that relayout inside begin() —
-  // fired on the first qualifying touchmove — stalls the first few tracking
-  // frames, which reads as lag at the very start of the swipe. Force the
-  // relayout now, during the stationary touch, with home pinned behind the
-  // active screen (z-index:0, covered by the opaque .screen.active at z-20) so
-  // nothing shows. If the gesture never commits, unwarmHome() reverts it.
-  function prewarmHome(screenEl) {
-    if (resolvePrevId(screenEl) !== 'homeScreen') return null;
-    var homeEl = document.getElementById('homeScreen');
-    if (!homeEl || homeEl.style.display === 'flex') return null;
-    homeEl.style.position = 'fixed';
-    homeEl.style.inset    = '0';
-    homeEl.style.zIndex   = '0';
-    homeEl.style.display  = 'flex';
-    return homeEl;
-  }
-
-  function unwarmHome(homeEl) {
-    if (!homeEl) return;
-    homeEl.style.position = '';
-    homeEl.style.inset    = '';
-    homeEl.style.zIndex   = '';
-    homeEl.style.display  = 'none';
   }
 
   function begin(screenEl, backBtn, startX) {
@@ -10257,16 +10230,6 @@ startPrayerScheduler();
     }
   }
 
-  // Drop a pending (not-yet-committed) gesture, reverting any home pre-warm.
-  // Once begin() has taken ownership (sw.dragging), the gesture's own
-  // cancel/complete/abort paths clean up home instead.
-  function clearPending() {
-    if (sw._pending && sw._pending.warmedHome && !sw.dragging) {
-      unwarmHome(sw._pending.warmedHome);
-    }
-    sw._pending = null;
-  }
-
   // ── Touch event listeners (document-level for reliability) ──
 
   document.addEventListener('touchstart', function(e) {
@@ -10297,7 +10260,7 @@ startPrayerScheduler();
     var backBtn = screenEl.querySelector('.history-back, .clk-cfg-back, .jl-editor-back, .conc-sess-back, .lodge-back, .fp-back');
     if (!backBtn) return;
 
-    sw._pending = { screenEl: screenEl, backBtn: backBtn, x: t.clientX, y: t.clientY, warmedHome: prewarmHome(screenEl) };
+    sw._pending = { screenEl: screenEl, backBtn: backBtn, x: t.clientX, y: t.clientY };
   }, {passive: true});
 
   document.addEventListener('touchmove', function(e) {
@@ -10309,21 +10272,21 @@ startPrayerScheduler();
     var dy = Math.abs(t.clientY - sw._pending.y);
 
     // Cancel if gesture is primarily vertical (user is scrolling)
-    if (dy > Math.abs(dx) && dy > 8) { clearPending(); return; }
+    if (dy > Math.abs(dx) && dy > 8) { sw._pending = null; return; }
     // Not enough horizontal movement yet — wait
     if (Math.abs(dx) < 6) return;
     // Leftward swipe — not a back gesture
-    if (dx <= 0) { clearPending(); return; }
+    if (dx <= 0) { sw._pending = null; return; }
 
     // Rightward and horizontal — commit to swipe-back
     if (begin(sw._pending.screenEl, sw._pending.backBtn, sw._pending.x)) {
       queueUpdate(t.clientX);
     }
-    clearPending();
+    sw._pending = null;
   }, {passive: true});
 
   document.addEventListener('touchend', function(e) {
-    clearPending();
+    sw._pending = null;
     if (!sw.dragging) return;
     var t        = e.changedTouches[0];
     flushUpdate(t.clientX);
@@ -10333,7 +10296,7 @@ startPrayerScheduler();
   }, {passive: true});
 
   document.addEventListener('touchcancel', function() {
-    clearPending();
+    sw._pending = null;
     if (sw.dragging) cancel();
   }, {passive: true});
 
