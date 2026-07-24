@@ -789,7 +789,7 @@ test('profile, friendship, and message screens share one starfield', () => {
 });
 
 test('all Settings screens share the dedicated midnight-blue starfield', () => {
-  assert.match(presence, /#settingsScreen,\s*#accountSettingsScreen,\s*#exerciseSettingsScreen,\s*#clockSettingsScreen\s*\{[\s\S]*?rgba\(67,112,190,\.18\)[\s\S]*?#0b1223/);
+  assert.match(presence, /#settingsScreen,\s*#accountSettingsScreen,\s*#exerciseSettingsScreen,\s*#clockSettingsScreen\s*\{[\s\S]*?rgba\(67,112,190,\.1\)[\s\S]*?#0b1223/);
   assert.match(presence, /clockSettingsScreen: 'settingsScreen'/);
   assert.match(presence, /'homeScreen'\].indexOf\(el\.id\) >= 0/);
 });
