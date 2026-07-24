@@ -18,6 +18,9 @@ function closeAwarenessSubMenu() {
 
 function switchMode(mode) {
   currentMode = mode;
+  // An explicit mode switch is a fresh entry — discard any Guide scroll position
+  // banked for a return trip so it can't restore stale on a later renderHome.
+  window._guideScrollRestore = 0;
   // The Guide's night-sky backdrop lives on #homeScreen and must show only in
   // Guide mode, not the Awareness/Concentration/Prayer panels it shares home
   // with. (Body default is mode-guide since the app boots into the Guide.)

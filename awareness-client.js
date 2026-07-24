@@ -1049,6 +1049,16 @@ function showScreen(id) {
     window._inConcSession = isInConcSession;
     setConcentrationSessionFlag(isInConcSession);
   }
+  // Preserve the Guide's scroll position when leaving Home for a sub-screen, so
+  // the return trip (e.g. hamburger → tab → swipe back) can restore it. The
+  // renderHome/openGuide rebuild on return otherwise snaps the panel to the top.
+  if (id !== 'homeScreen' && typeof currentMode !== 'undefined' && currentMode === 'guide') {
+    var _leavingHome = document.getElementById('homeScreen');
+    var _leavingGp = document.getElementById('guidePanel');
+    if (_leavingHome && _leavingGp && _leavingHome.style.display !== 'none') {
+      window._guideScrollRestore = _leavingGp.scrollTop;
+    }
+  }
   if (id === 'homeScreen') {
     // Backing out of a menu opened from the hamburger: raise the drawer FIRST,
     // while the menu screen is still up, so the drawer overlay masks the swap
@@ -1239,6 +1249,23 @@ function renderHome() {
   if (currentMode === 'guide' && typeof openGuide === 'function') {
     openGuide();
     refreshGuidePanelLayout(true);
+    // Restore a scroll position saved when we left Home (see showScreen), so
+    // returning to the Guide doesn't snap to the top. openGuide and the layout
+    // refresh above reset scrollTop both synchronously and in a following rAF,
+    // so re-apply at both points. Only consume it when Home is actually visible,
+    // so an off-screen renderHome doesn't swallow the saved value.
+    if (window._guideScrollRestore > 0) {
+      var _homeVisNow = document.getElementById('homeScreen');
+      var _restoreGp = document.getElementById('guidePanel');
+      if (_homeVisNow && _restoreGp && _homeVisNow.style.display !== 'none') {
+        var _restoreTo = window._guideScrollRestore;
+        window._guideScrollRestore = 0;
+        _restoreGp.scrollTop = _restoreTo;
+        requestAnimationFrame(function() {
+          requestAnimationFrame(function() { _restoreGp.scrollTop = _restoreTo; });
+        });
+      }
+    }
   }
 }
 
