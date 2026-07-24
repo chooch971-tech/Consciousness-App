@@ -96,8 +96,27 @@ test('Lodge posts expose compact Reddit-like actions and an expandable multiline
   assert.match(socialClient, /class="lodge-act lodge-share" data-lodge-share/);
   assert.match(socialClient, /class="lodge-discussion-line" data-lodge-discussion/);
   assert.match(socialClient, /<textarea class="lodge-cinput lodge-cinput--comment" maxlength="280" rows="4"/);
-  assert.match(socialClient, /card\.querySelector\('\.lodge-cinput'\)/);
+  assert.match(socialClient, /card\.querySelector\('\.lodge-crow--comment \.lodge-cinput'\)/);
   assert.match(profileClient, /function openFollowList/);
+});
+
+test('Lodge comments support validated threaded replies and specific deletion confirmation', () => {
+  assert.match(server, /const COMMENT_MAX_DEPTH = 6/);
+  assert.match(server, /Parent comment not found/);
+  assert.match(server, /This comment can no longer receive replies/);
+  assert.match(server, /blockedId:parent\.userId/);
+  assert.match(server, /parentId: parent \? parent\._id\.toString\(\) : null/);
+  assert.match(server, /notify\(parent\.userId, 'reply'/);
+  assert.match(server, /tombstoned:!!hasReplies/);
+  assert.match(socialClient, /function _lodgeCommentNodeHtml\(c, children, seen\)/);
+  assert.match(socialClient, /class="lodge-comment-children"/);
+  assert.match(socialClient, /data-comment-reply=/);
+  assert.match(socialClient, /parentId:parentId \|\| null/);
+  assert.match(socialClient, /'Delete your comment\?'/);
+  assert.match(socialClient, /'Delete comment'/);
+  assert.doesNotMatch(socialClient, /window\.confirm\('Delete this post\?'\)/);
+  assert.match(presence, /\.lodge-comment-children \{[^}]*border-left/);
+  assert.match(presence, /function showConfirm\(title, text, onConfirm, tone, actionLabel\)/);
 });
 
 test('Profiles expose posts and comments with scoped Lodge history routes', () => {

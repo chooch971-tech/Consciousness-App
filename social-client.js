@@ -267,11 +267,78 @@ function renderLodgeFeed() {
   more.style.display = (!_lodgeDetailPost && !_lodgeLoading && _lodgeCursor) ? '' : 'none';
 }
 
-function _lodgeCommentHtml(c) {
-  return '<div class="lodge-comment" data-comment-id="' + escHtml(c.id) + '">'
-    + '<div class="lodge-comment__name"><span style="color:' + _lodgeHue(c.username)[0] + ';opacity:.8;cursor:pointer;" data-lodge-user="' + escHtml(c.userId) + '" data-lodge-uname="' + escHtml(c.username || '?') + '">@' + escHtml(c.username || '?') + '</span> · ' + timeAgo(new Date(c.createdAt))
-    + (c.mine ? ' <button class="lodge-act lodge-del" data-comment-del="' + escHtml(c.id) + '" style="display:inline-flex;padding:0 4px;" aria-label="Delete comment">✕</button>' : '')
-    + '</div><div class="lodge-comment__text">' + escHtml(c.text || '') + '</div></div>';
+function _lodgeCommentNodeHtml(c, children, seen) {
+  if (!c || seen[c.id]) return '';
+  seen[c.id] = true;
+  var deleted = !!c.deleted;
+  var author = deleted
+    ? '<span class="lodge-comment__deleted-author">deleted</span>'
+    : '<span style="color:' + _lodgeHue(c.username)[0] + ';opacity:.8;cursor:pointer;" data-lodge-user="' + escHtml(c.userId) + '" data-lodge-uname="' + escHtml(c.username || '?') + '">@' + escHtml(c.username || '?') + '</span>';
+  var actions = deleted ? '' : '<div class="lodge-comment__actions">'
+    + '<button class="lodge-comment__action" data-comment-reply="' + escHtml(c.id) + '" data-comment-uname="' + escHtml(c.username || '?') + '">Reply</button>'
+    + (c.mine ? '<button class="lodge-comment__action lodge-comment__action--delete" data-comment-del="' + escHtml(c.id) + '">Delete</button>' : '')
+    + '</div>';
+  var replies = (children[c.id] || []).map(function(reply) {
+    return _lodgeCommentNodeHtml(reply, children, seen);
+  }).join('');
+  return '<div class="lodge-comment-thread" data-comment-thread="' + escHtml(c.id) + '">'
+    + '<div class="lodge-comment' + (deleted ? ' lodge-comment--deleted' : '') + '" data-comment-id="' + escHtml(c.id) + '">'
+    + '<div class="lodge-comment__name">' + author + ' · ' + timeAgo(new Date(c.createdAt)) + '</div>'
+    + '<div class="lodge-comment__text">' + (deleted ? 'Comment deleted' : escHtml(c.text || '')) + '</div>'
+    + actions + '</div>'
+    + (replies ? '<div class="lodge-comment-children">' + replies + '</div>' : '')
+    + '</div>';
+}
+
+function _lodgeRenderComments(card, comments) {
+  comments = Array.isArray(comments) ? comments : [];
+  card._lodgeComments = comments;
+  var byId = {};
+  var children = {};
+  comments.forEach(function(c) { if (c && c.id) byId[c.id] = c; });
+  comments.forEach(function(c) {
+    var parent = c && c.parentId && byId[c.parentId] ? c.parentId : '';
+    (children[parent] || (children[parent] = [])).push(c);
+  });
+  var seen = {};
+  var html = (children[''] || []).map(function(c) {
+    return _lodgeCommentNodeHtml(c, children, seen);
+  }).join('');
+  // Legacy/corrupt orphan rows still remain readable instead of disappearing.
+  comments.forEach(function(c) {
+    if (c && !seen[c.id]) html += _lodgeCommentNodeHtml(c, children, seen);
+  });
+  card.querySelector('[data-comment-list]').innerHTML = html
+    || '<div class="lodge-comment-empty">No comments yet. Start the discussion.</div>';
+}
+
+async function _lodgeLoadComments(pid, card) {
+  var list = card.querySelector('[data-comment-list]');
+  list.innerHTML = '<div class="lodge-comment__name">Loading…</div>';
+  try {
+    var res = await fetch(SERVER_URL + '/api/social/posts/' + pid + '/comments', {
+      headers: { 'Authorization': 'Bearer ' + authToken }
+    });
+    var data = res.ok ? await res.json() : { comments:[] };
+    _lodgeRenderComments(card, data.comments || []);
+  } catch(e) {
+    _lodgeRenderComments(card, []);
+  }
+}
+
+function openLodgeReplyComposer(card, commentId, username) {
+  var prior = card.querySelector('.lodge-reply-composer');
+  if (prior) prior.remove();
+  var comment = card.querySelector('[data-comment-id="' + commentId + '"]');
+  if (!comment) return;
+  comment.insertAdjacentHTML('beforeend',
+    '<div class="lodge-reply-composer" data-reply-parent="' + escHtml(commentId) + '">'
+    + '<div class="lodge-reply-composer__label">Replying to @' + escHtml(username || 'practitioner') + '</div>'
+    + '<textarea class="lodge-cinput lodge-reply-input" maxlength="280" rows="3" placeholder="Write a reply…"></textarea>'
+    + '<div class="lodge-reply-composer__actions"><button class="lodge-comment__action" data-reply-cancel>Cancel</button>'
+    + '<button class="lodge-csend lodge-reply-send" data-reply-send>Reply</button></div></div>');
+  var input = comment.querySelector('.lodge-reply-input');
+  if (input) input.focus();
 }
 
 function _lodgeFindPost(pid) {
@@ -450,15 +517,7 @@ async function toggleLodgeComments(pid, card, forceOpen) {
   box.style.display = (open && !forceOpen) ? 'none' : 'block';
   card.classList.toggle('comments-open', !(open && !forceOpen));
   if (open) return;
-  var list = card.querySelector('[data-comment-list]');
-  list.innerHTML = '<div class="lodge-comment__name">Loading…</div>';
-  try {
-    var res = await fetch(SERVER_URL + '/api/social/posts/' + pid + '/comments', {
-      headers: { 'Authorization': 'Bearer ' + authToken }
-    });
-    var d = await res.json();
-    list.innerHTML = (d.comments || []).map(_lodgeCommentHtml).join('');
-  } catch(e) { list.innerHTML = ''; }
+  await _lodgeLoadComments(pid, card);
 }
 
 async function shareLodgePost(post) {
@@ -475,20 +534,22 @@ async function shareLodgePost(post) {
   }
 }
 
-async function sendLodgeComment(pid, card) {
-  var input = card.querySelector('.lodge-cinput');
+async function sendLodgeComment(pid, card, parentId, input) {
+  input = input || card.querySelector('.lodge-crow--comment .lodge-cinput');
   var text = (input.value || '').trim();
   if (!text) return;
   try {
     var res = await fetch(SERVER_URL + '/api/social/posts/' + pid + '/comments', {
       method: 'POST',
       headers: { 'Authorization': 'Bearer ' + authToken, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ text: text })
+      body: JSON.stringify({ text: text, parentId:parentId || null })
     });
     var d = await res.json();
     if (!res.ok) { showToast(d.error || 'Comment failed'); return; }
     input.value = '';
-    card.querySelector('[data-comment-list]').insertAdjacentHTML('beforeend', _lodgeCommentHtml(d.comment));
+    var comments = Array.isArray(card._lodgeComments) ? card._lodgeComments.slice() : [];
+    comments.push(d.comment);
+    _lodgeRenderComments(card, comments);
     var cnt = card.querySelector('[data-comment-count]');
     var nextCount = (parseInt(cnt.textContent, 10) || 0) + 1;
     cnt.textContent = nextCount;
@@ -498,8 +559,17 @@ async function sendLodgeComment(pid, card) {
   } catch(e) { showToast('Comment failed'); }
 }
 
-async function deleteLodgePost(pid, card) {
-  if (!window.confirm('Delete this post?')) return;
+async function deleteLodgePost(pid, card, confirmed) {
+  if (!confirmed) {
+    showConfirm(
+      'Delete this Lodge post?',
+      'This permanently removes the post, its likes, and every comment in its discussion. This cannot be undone.',
+      function() { deleteLodgePost(pid, card, true); },
+      null,
+      'Delete post'
+    );
+    return;
+  }
   try {
     var res = await fetch(SERVER_URL + '/api/social/posts/' + pid, {
       method: 'DELETE', headers: { 'Authorization': 'Bearer ' + authToken }
@@ -517,14 +587,32 @@ async function deleteLodgePost(pid, card) {
   } catch(e) {}
 }
 
-async function deleteLodgeComment(cid, pid, card) {
+async function deleteLodgeComment(cid, pid, card, confirmed) {
+  if (!confirmed) {
+    showConfirm(
+      'Delete your comment?',
+      'Your words will be permanently removed. If people replied, their replies will remain beneath a “Comment deleted” marker.',
+      function() { deleteLodgeComment(cid, pid, card, true); },
+      null,
+      'Delete comment'
+    );
+    return;
+  }
   try {
     var res = await fetch(SERVER_URL + '/api/social/comments/' + cid, {
       method: 'DELETE', headers: { 'Authorization': 'Bearer ' + authToken }
     });
     if (!res.ok) return;
-    var row = card.querySelector('[data-comment-id="' + cid + '"]');
-    if (row) row.remove();
+    var data = await res.json();
+    var comments = Array.isArray(card._lodgeComments) ? card._lodgeComments.slice() : [];
+    if (data.tombstoned) {
+      comments.forEach(function(c) {
+        if (c.id === cid) { c.deleted = true; c.text = ''; c.mine = false; c.username = 'deleted'; }
+      });
+    } else {
+      comments = comments.filter(function(c) { return c.id !== cid; });
+    }
+    _lodgeRenderComments(card, comments);
     var cnt = card.querySelector('[data-comment-count]');
     var nextCount = Math.max(0, (parseInt(cnt.textContent, 10) || 1) - 1);
     cnt.textContent = nextCount;
@@ -543,6 +631,15 @@ document.getElementById('lodgeFeed').addEventListener('click', function(e) {
   if (uhead) { _openLodgeProfile(uhead.getAttribute('data-lodge-user'), uhead.getAttribute('data-lodge-uname'), post); return; }
   var cdel = e.target.closest('[data-comment-del]');
   if (cdel) { deleteLodgeComment(cdel.getAttribute('data-comment-del'), pid, card); return; }
+  var reply = e.target.closest('[data-comment-reply]');
+  if (reply) { openLodgeReplyComposer(card, reply.getAttribute('data-comment-reply'), reply.getAttribute('data-comment-uname')); return; }
+  if (e.target.closest('[data-reply-cancel]')) { e.target.closest('.lodge-reply-composer').remove(); return; }
+  var replySend = e.target.closest('[data-reply-send]');
+  if (replySend) {
+    var composer = replySend.closest('.lodge-reply-composer');
+    sendLodgeComment(pid, card, composer.getAttribute('data-reply-parent'), composer.querySelector('.lodge-reply-input'));
+    return;
+  }
   if (e.target.closest('[data-like-count]')) { openLikers(pid); return; }
   if (e.target.closest('[data-lodge-like]')) { toggleLodgeLike(pid, card); return; }
   if (e.target.closest('[data-lodge-share]')) { shareLodgePost(post); return; }
@@ -1028,7 +1125,7 @@ var _lodgeNotifsPromise = null;
 var _lodgeNotifsLoadedAt = 0;
 var _lodgeNotifsToken = null;
 var _lodgeNotifsEpoch = 0;
-var NOTIF_COPY = { like: 'liked your post', comment: 'commented on your post', follow: 'now follows you', follow_req: 'requested to follow you', approved: 'approved your follow request', dm: 'sent you a message', friend: 'is now your friend — you follow each other' };
+var NOTIF_COPY = { like: 'liked your post', comment: 'commented on your post', reply: 'replied to your comment', follow: 'now follows you', follow_req: 'requested to follow you', approved: 'approved your follow request', dm: 'sent you a message', friend: 'is now your friend — you follow each other' };
 async function loadLodgeNotifs(force) {
   if (!authToken) return;
   if (_lodgeNotifsToken === null) {

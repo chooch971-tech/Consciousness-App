@@ -952,9 +952,23 @@
     .lodge-discussion-line { width:100%; min-height:44px; margin-top:8px; padding:0 4px; display:flex; justify-content:space-between; align-items:center; border:0; border-top:1px solid rgba(142,204,192,.2); border-bottom:1px solid rgba(142,204,192,.12); background:transparent; color:#9ed8c4; font-family:'DM Mono',monospace; font-size:9px; letter-spacing:.14em; text-transform:uppercase; cursor:pointer; }
     .lodge-post.comments-open .lodge-discussion-line span { transform:rotate(180deg); }
     .lodge-comments { border-top:1px solid rgba(255,255,255,.06); margin-top:0; padding:13px 0 5px; display:none; }
-    .lodge-comment { margin-bottom:12px; padding-left:10px; border-left:1px solid rgba(142,204,192,.18); font-family:'DM Mono',monospace; }
+    .lodge-comment-thread { position:relative; }
+    .lodge-comment { margin-bottom:10px; padding:3px 0 2px; font-family:'DM Mono',monospace; }
+    .lodge-comment-children { margin:2px 0 10px 8px; padding-left:11px; border-left:1px solid rgba(142,204,192,.25); }
+    .lodge-comment-children .lodge-comment-children { border-left-color:rgba(181,142,216,.24); }
     .lodge-comment__name { font-size:8px; letter-spacing:.05em; color:rgba(221,216,206,.48); margin-bottom:4px; }
     .lodge-comment__text { font-size:11px; color:rgba(237,232,222,.82); line-height:1.65; white-space:pre-wrap; word-break:break-word; }
+    .lodge-comment__actions { display:flex; gap:5px; margin-top:5px; }
+    .lodge-comment__action { min-height:30px; padding:0 7px; border:0; border-radius:6px; background:transparent; color:rgba(158,216,196,.72); font-family:'DM Mono',monospace; font-size:8px; letter-spacing:.08em; text-transform:uppercase; cursor:pointer; }
+    .lodge-comment__action:hover,.lodge-comment__action:active { background:rgba(142,204,192,.08); color:#b9ead8; }
+    .lodge-comment__action--delete { color:rgba(220,143,143,.74); }
+    .lodge-comment--deleted .lodge-comment__text,.lodge-comment__deleted-author { color:rgba(221,216,206,.38); font-style:italic; }
+    .lodge-comment-empty { padding:10px 2px 15px; color:rgba(221,216,206,.42); font-family:'DM Mono',monospace; font-size:9px; line-height:1.5; }
+    .lodge-reply-composer { margin:8px 0 7px; padding:10px; border:1px solid rgba(142,204,192,.18); border-radius:9px; background:rgba(0,0,0,.18); }
+    .lodge-reply-composer__label { margin-bottom:7px; color:rgba(158,216,196,.7); font-family:'DM Mono',monospace; font-size:8px; letter-spacing:.06em; }
+    .lodge-reply-input { width:100%; min-height:78px; resize:vertical; }
+    .lodge-reply-composer__actions { display:flex; justify-content:flex-end; align-items:center; gap:6px; margin-top:7px; }
+    .lodge-reply-composer__actions .lodge-csend { min-height:34px; }
     .lodge-crow { display:flex; gap:8px; margin-top:8px; }
     .lodge-cinput { flex:1; min-width:0; min-height:44px; box-sizing:border-box; background:rgba(0,0,0,.22); border:1px solid rgba(255,255,255,.09); border-radius:8px; color:var(--text); font-family:'DM Mono',monospace; font-size:11px; padding:10px 12px; outline:none; }
     .lodge-cinput:focus { border-color:rgba(142,204,192,.38); }
@@ -8841,6 +8855,7 @@ document.getElementById('drawerProfile').addEventListener('click',function(){
 <script>
 document.getElementById('confirmModalCancel').addEventListener('click', function() {
   document.getElementById('confirmModal').classList.remove('show', 'confirm-mastery');
+  window._confirmCallback = null;
 });
 document.getElementById('confirmModalOk').addEventListener('click', function() {
   document.getElementById('confirmModal').classList.remove('show', 'confirm-mastery');
@@ -8852,9 +8867,10 @@ document.getElementById('confirmModalOk').addEventListener('click', function() {
   if (callback) callback();
 });
 
-function showConfirm(title, text, onConfirm, tone) {
+function showConfirm(title, text, onConfirm, tone, actionLabel) {
   document.getElementById('confirmModalTitle').textContent = title;
   document.getElementById('confirmModalText').textContent = text;
+  document.getElementById('confirmModalOk').textContent = actionLabel || 'Confirm';
   window._confirmCallback = onConfirm;
   var modal = document.getElementById('confirmModal');
   modal.classList.toggle('confirm-mastery', tone === 'mastery');

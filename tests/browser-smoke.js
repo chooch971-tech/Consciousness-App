@@ -894,6 +894,77 @@ async function testLodgeAuthorFlow(browser, baseUrl) {
   await context.close();
 }
 
+async function testLodgeThreadedComments(browser, baseUrl) {
+  const context = await browser.newContext({ viewport: { width: 390, height: 844 }, hasTouch: true, serviceWorkers: 'block' });
+  const { page, errors } = await seedPage(context, baseUrl, { presence_auth_token: 'lodge-thread-token', presence_auth_username: 'thread_owner' });
+  await page.evaluate(() => {
+    const originalFetch = window.fetch;
+    window._threadReplyBody = null;
+    window._threadDeleteCalls = 0;
+    window.fetch = function(url, options) {
+      const target = String(url);
+      const method = (options && options.method) || 'GET';
+      if (target.endsWith('/api/social/posts/thread-post/comments') && method === 'GET') {
+        return Promise.resolve({ ok:true, json:() => Promise.resolve({ comments:[
+          { id:'thread-root', userId:'other-user', username:'other', text:'A root comment', createdAt:new Date().toISOString(), parentId:null, depth:0, mine:false },
+          { id:'thread-child', userId:'self-user', username:'thread_owner', text:'An existing reply', createdAt:new Date().toISOString(), parentId:'thread-root', depth:1, mine:true }
+        ] }) });
+      }
+      if (target.endsWith('/api/social/posts/thread-post/comments') && method === 'POST') {
+        window._threadReplyBody = JSON.parse(options.body);
+        return Promise.resolve({ ok:true, json:() => Promise.resolve({ comment:{
+          id:'thread-new', userId:'self-user', username:'thread_owner', text:window._threadReplyBody.text,
+          createdAt:new Date().toISOString(), parentId:window._threadReplyBody.parentId, depth:1, mine:true
+        } }) });
+      }
+      if (target.endsWith('/api/social/comments/thread-child') && method === 'DELETE') {
+        window._threadDeleteCalls++;
+        return Promise.resolve({ ok:true, json:() => Promise.resolve({ ok:true, tombstoned:false }) });
+      }
+      return originalFetch(url, options);
+    };
+    _lodgePosts = [{
+      id:'thread-post', userId:'self-user', username:'thread_owner', text:'Discuss this',
+      createdAt:new Date().toISOString(), mine:true, likeCount:0, commentCount:2
+    }];
+    _lodgeLoading = false;
+    showScreen('lodgeScreen');
+    renderLodgeFeed();
+    document.querySelector('.lodge-post__body').click();
+    document.querySelector('[data-lodge-discussion]').click();
+  });
+  await page.locator('[data-comment-id="thread-child"]').waitFor({ state:'visible' });
+  const nested = await page.evaluate(() => {
+    const child = document.querySelector('.lodge-comment-children [data-comment-id="thread-child"]');
+    const guide = document.querySelector('.lodge-comment-children');
+    return !!child && getComputedStyle(guide).borderLeftStyle !== 'none';
+  });
+  assert.equal(nested, true, 'a reply should render beneath its parent with a left-side thread guide');
+
+  await page.locator('[data-comment-reply="thread-root"]').click();
+  await page.locator('.lodge-reply-input').fill('A nested response');
+  await page.locator('[data-reply-send]').click();
+  await page.waitForFunction(() => window._threadReplyBody && document.querySelector('[data-comment-id="thread-new"]'));
+  assert.deepEqual(await page.evaluate(() => window._threadReplyBody), { text:'A nested response', parentId:'thread-root' });
+
+  await page.locator('[data-comment-del="thread-child"]').click();
+  await page.locator('#confirmModal.show').waitFor({ state:'visible' });
+  assert.equal((await page.locator('#confirmModalTitle').textContent()).trim(), 'Delete your comment?');
+  assert.equal((await page.locator('#confirmModalOk').textContent()).trim(), 'Delete comment');
+  assert.equal(await page.evaluate(() => window._threadDeleteCalls), 0, 'comment deletion must wait for confirmation');
+  await page.locator('#confirmModalOk').click();
+  await page.waitForFunction(() => window._threadDeleteCalls === 1);
+  assert.equal(await page.locator('[data-comment-id="thread-child"]').count(), 0);
+
+  await page.locator('[data-lodge-del]').click();
+  await page.locator('#confirmModal.show').waitFor({ state:'visible' });
+  assert.equal((await page.locator('#confirmModalTitle').textContent()).trim(), 'Delete this Lodge post?');
+  assert.equal((await page.locator('#confirmModalOk').textContent()).trim(), 'Delete post');
+  await page.locator('#confirmModalCancel').click();
+  assert.deepEqual(errors, [], 'threaded Lodge comments emitted browser errors');
+  await context.close();
+}
+
 async function testGuideGestureAndBanner(browser, baseUrl) {
   const context = await browser.newContext({ viewport: { width: 390, height: 844 }, hasTouch: true, serviceWorkers: 'block' });
   const { page, errors } = await seedPage(context, baseUrl, { presence_auth_token: 'guide-guard-token', presence_auth_username: 'guide_guard' });
@@ -1209,6 +1280,9 @@ async function testCloudRestoreAndSignOut(browser, baseUrl) {
     console.log('run - Lodge author flow');
     await testLodgeAuthorFlow(browser, baseUrl);
     console.log('ok - Lodge discussion actions and Profile return navigation work');
+    console.log('run - Lodge threaded comments');
+    await testLodgeThreadedComments(browser, baseUrl);
+    console.log('ok - Lodge replies nest with thread guides and use specific deletion confirmations');
     console.log('run - Guide gesture and Step VI banner');
     await testGuideGestureAndBanner(browser, baseUrl);
     console.log('ok - 7x2 swipe stays isolated and the Step VI figure fits its banner');

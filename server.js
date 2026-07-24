@@ -228,6 +228,7 @@ async function connectDB() {
       { label: 'posts.created', collection: postsCollection, keys: { createdAt: -1 } },
       { label: 'likes.post-user', collection: likesCollection, keys: { postId: 1, userId: 1 }, options: { unique: true } },
       { label: 'comments.post-created', collection: commentsCollection, keys: { postId: 1, createdAt: 1 } },
+      { label: 'comments.post-parent-created', collection: commentsCollection, keys: { postId: 1, parentId: 1, createdAt: 1 } },
       { label: 'comments.user-created', collection: commentsCollection, keys: { userId: 1, createdAt: -1 } },
       { label: 'friends.user-status', collection: friendsCollection, keys: { userId: 1, status: 1 } },
       { label: 'friends.friend-status', collection: friendsCollection, keys: { friendId: 1, status: 1 } },
@@ -2504,7 +2505,21 @@ app.get('/api/social/posts/:id/likers', verifyToken, async (req, res) => {
   }
 });
 
-// COMMENTS — list / add / delete own.
+// COMMENTS — Reddit-style threaded list / add / delete own.
+const COMMENT_MAX_DEPTH = 6;
+async function pruneDeletedCommentAncestors(parentId, postId) {
+  let currentId = parentId;
+  for (let depth = 0; currentId && depth <= COMMENT_MAX_DEPTH; depth++) {
+    if (!ObjectId.isValid(currentId)) return;
+    const parent = await commentsCollection.findOne({ _id:new ObjectId(currentId), postId });
+    if (!parent || !parent.deleted) return;
+    const child = await commentsCollection.findOne({ postId, parentId:currentId });
+    if (child) return;
+    await commentsCollection.deleteOne({ _id:parent._id, deleted:true });
+    currentId = parent.parentId;
+  }
+}
+
 app.get('/api/social/posts/:id/comments', verifyToken, async (req, res) => {
   try {
     const cp = await postsCollection.findOne({ _id: new ObjectId(req.params.id) });
@@ -2512,18 +2527,21 @@ app.get('/api/social/posts/:id/comments', verifyToken, async (req, res) => {
     if (!(await canEngagePost(req.user.userId, cp))) return res.status(403).json({ error: 'Not available' });
     let comments = await commentsCollection.find({ postId: req.params.id }).sort({ createdAt: 1 }).limit(200).toArray();
     const hidden = await blockedIdSet(req.user.userId);
-    comments = comments.filter(c => !hidden.has(c.userId) && moderatePublicText(c.text || '').ok);
-    const ids = [...new Set(comments.map(c => c.userId))];
+    comments = comments.filter(c => !hidden.has(c.userId) && (c.deleted || moderatePublicText(c.text || '').ok));
+    const ids = [...new Set(comments.filter(c => !c.deleted && ObjectId.isValid(c.userId)).map(c => c.userId))];
     const users = ids.length ? await usersCollection.find({ _id: { $in: ids.map(id => new ObjectId(id)) } })
       .project({ username: 1 }).toArray() : [];
     const byId = {}; users.forEach(u => { byId[u._id.toString()] = u; });
     res.json({ comments: comments.map(c => ({
       id: c._id.toString(),
       userId: c.userId,
-      username: (byId[c.userId] && byId[c.userId].username) || ('practitioner_' + String(c.userId).slice(-5)),
-      text: c.text,
+      username: c.deleted ? 'deleted' : ((byId[c.userId] && byId[c.userId].username) || ('practitioner_' + String(c.userId).slice(-5))),
+      text: c.deleted ? '' : c.text,
       createdAt: c.createdAt,
-      mine: c.userId === req.user.userId
+      parentId: c.parentId || null,
+      depth: Math.max(0, Math.min(COMMENT_MAX_DEPTH, Number(c.depth) || 0)),
+      deleted: !!c.deleted,
+      mine: !c.deleted && c.userId === req.user.userId
     })) });
   } catch (err) {
     res.status(500).json({ error: 'Comments failed' });
@@ -2538,19 +2556,48 @@ app.post('/api/social/posts/:id/comments', verifyToken, mutationRateLimit, async
     const post = await postsCollection.findOne({ _id: new ObjectId(req.params.id) });
     if (!post) return res.status(404).json({ error: 'Post not found' });
     if (!(await canEngagePost(req.user.userId, post))) return res.status(403).json({ error: 'Not available' });
+    let parent = null;
+    const requestedParentId = req.body.parentId;
+    if (requestedParentId !== undefined && requestedParentId !== null && requestedParentId !== '') {
+      if (typeof requestedParentId !== 'string' || !ObjectId.isValid(requestedParentId)) {
+        return res.status(400).json({ error: 'Invalid parent comment' });
+      }
+      parent = await commentsCollection.findOne({
+        _id: new ObjectId(requestedParentId),
+        postId: post._id.toString()
+      });
+      if (!parent) return res.status(404).json({ error: 'Parent comment not found' });
+      if (parent.deleted) return res.status(400).json({ error: 'This comment can no longer receive replies' });
+      const blockedParent = parent.userId === req.user.userId ? null : await blocksCollection.findOne({ $or: [
+        { userId:req.user.userId, blockedId:parent.userId },
+        { userId:parent.userId, blockedId:req.user.userId }
+      ] });
+      if (blockedParent) return res.status(403).json({ error: 'Reply unavailable' });
+      if ((Number(parent.depth) || 0) >= COMMENT_MAX_DEPTH) {
+        return res.status(400).json({ error: 'This thread has reached its reply limit' });
+      }
+    }
     const userId = req.user.userId;
     const dayStart = new Date(); dayStart.setHours(0, 0, 0, 0);
     const todayCount = await commentsCollection.countDocuments({ userId, createdAt: { $gte: dayStart } });
     if (todayCount >= 120) return res.status(429).json({ error: 'Daily comment limit reached' });
-    const c = { postId: post._id.toString(), userId, text, createdAt: new Date() };
+    const c = {
+      postId: post._id.toString(),
+      userId,
+      text,
+      createdAt: new Date(),
+      parentId: parent ? parent._id.toString() : null,
+      depth: parent ? (Number(parent.depth) || 0) + 1 : 0
+    };
     const r = await commentsCollection.insertOne(c);
     await postsCollection.updateOne({ _id: post._id }, { $inc: { commentCount: 1 } });
-    notify(post.userId, 'comment', userId, post._id.toString());
+    if (parent) notify(parent.userId, 'reply', userId, post._id.toString());
+    if (!parent || parent.userId !== post.userId) notify(post.userId, 'comment', userId, post._id.toString());
     const me = await usersCollection.findOne({ _id: new ObjectId(userId) }, { projection: { username: 1 } });
     res.json({ ok: true, comment: {
       id: r.insertedId.toString(), userId,
       username: (me && me.username) || ('practitioner_' + userId.slice(-5)),
-      text, createdAt: c.createdAt, mine: true
+      text, createdAt: c.createdAt, parentId:c.parentId, depth:c.depth, deleted:false, mine: true
     } });
   } catch (err) {
     res.status(500).json({ error: 'Comment failed' });
@@ -2562,9 +2609,27 @@ app.delete('/api/social/comments/:id', verifyToken, mutationRateLimit, async (re
     const c = await commentsCollection.findOne({ _id: new ObjectId(req.params.id) });
     if (!c) return res.status(404).json({ error: 'Not found' });
     if (c.userId !== req.user.userId) return res.status(403).json({ error: 'Not yours' });
-    const delc = await commentsCollection.deleteOne({ _id: c._id });
-    if (delc.deletedCount === 1) await postsCollection.updateOne({ _id: new ObjectId(c.postId) }, { $inc: { commentCount: -1 } });
-    res.json({ ok: true });
+    if (c.deleted) return res.json({ ok:true, tombstoned:true });
+    const hasReplies = await commentsCollection.findOne({ postId:c.postId, parentId:c._id.toString() });
+    let removed = false;
+    if (hasReplies) {
+      const result = await commentsCollection.updateOne(
+        { _id:c._id, deleted: { $ne:true } },
+        { $set: { deleted:true, deletedAt:new Date() }, $unset: { text:'' } }
+      );
+      removed = result.modifiedCount === 1;
+    } else {
+      const result = await commentsCollection.deleteOne({ _id:c._id });
+      removed = result.deletedCount === 1;
+      if (removed && c.parentId) await pruneDeletedCommentAncestors(c.parentId, c.postId);
+    }
+    if (removed) {
+      await postsCollection.updateOne(
+        { _id:new ObjectId(c.postId), commentCount: { $gt:0 } },
+        { $inc: { commentCount:-1 } }
+      );
+    }
+    res.json({ ok:true, tombstoned:!!hasReplies });
   } catch (err) {
     res.status(500).json({ error: 'Delete failed' });
   }
