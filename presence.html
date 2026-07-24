@@ -113,7 +113,10 @@
     #aboutScreen::-webkit-scrollbar { display:none; }
 
     /* HOME */
-    #homeScreen { justify-content:flex-start; }
+    /* Default (non-Guide) home background. Kept in CSS rather than inline so the
+       Guide's mode-scoped backdrop below can override it — an inline background
+       would always win and mask it. */
+    #homeScreen { justify-content:flex-start; background:var(--bg); }
     /* Guide backdrop — a quiet violet night sky, the same family as the Lodge
        and Profile, so the three hub surfaces read as one. Deliberately dimmer
        than the Lodge (fewer, fainter stars; nebulae pushed to the top/bottom
@@ -123,17 +126,17 @@
        nothing on scroll. */
     body.mode-guide #homeScreen {
       background:
-        radial-gradient(1.5px 1.5px at 18% 8%, rgba(199,184,235,.32), transparent),
-        radial-gradient(1.5px 1.5px at 82% 12%, rgba(221,216,206,.26), transparent),
-        radial-gradient(1px 1px at 62% 22%, rgba(199,169,255,.2), transparent),
-        radial-gradient(1.5px 1.5px at 30% 40%, rgba(199,184,235,.2), transparent),
-        radial-gradient(1px 1px at 88% 52%, rgba(221,216,206,.18), transparent),
-        radial-gradient(1.5px 1.5px at 14% 66%, rgba(199,169,255,.18), transparent),
-        radial-gradient(1px 1px at 72% 79%, rgba(199,184,235,.16), transparent),
-        radial-gradient(1.5px 1.5px at 40% 92%, rgba(221,216,206,.16), transparent),
-        radial-gradient(ellipse 120% 50% at 50% -8%, rgba(120,96,190,.12) 0%, transparent 60%),
-        radial-gradient(ellipse 90% 45% at 50% 108%, rgba(96,76,170,.1) 0%, transparent 68%),
-        linear-gradient(180deg, #0f0c1a 0%, #0a0812 55%, #0c0a16 100%);
+        radial-gradient(1.5px 1.5px at 18% 8%, rgba(210,196,242,.42), transparent),
+        radial-gradient(1.5px 1.5px at 82% 12%, rgba(221,216,206,.36), transparent),
+        radial-gradient(1px 1px at 62% 22%, rgba(199,169,255,.3), transparent),
+        radial-gradient(1.5px 1.5px at 30% 40%, rgba(210,196,242,.28), transparent),
+        radial-gradient(1px 1px at 88% 52%, rgba(221,216,206,.26), transparent),
+        radial-gradient(1.5px 1.5px at 14% 66%, rgba(199,169,255,.26), transparent),
+        radial-gradient(1px 1px at 72% 79%, rgba(210,196,242,.24), transparent),
+        radial-gradient(1.5px 1.5px at 40% 92%, rgba(221,216,206,.24), transparent),
+        radial-gradient(ellipse 120% 50% at 50% -8%, rgba(132,104,205,.18) 0%, transparent 62%),
+        radial-gradient(ellipse 90% 45% at 50% 108%, rgba(104,82,184,.15) 0%, transparent 70%),
+        linear-gradient(180deg, #131022 0%, #0b0916 55%, #0f0c1c 100%);
     }
     .top-bar { position:relative; display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; opacity:0; animation:fadeUp .7s ease forwards .1s; }
     .top-bar > *:first-child { flex:1; }
@@ -6674,7 +6677,7 @@ body:not(.tut-live) #tutCorgi {
   </div>
 
   <!-- AWARENESS HOME -->
-  <div id="homeScreen" style="display:flex; flex-direction:column; height:100%; padding:var(--safe-top) 24px 0; background:var(--bg);">
+  <div id="homeScreen" style="display:flex; flex-direction:column; height:100%; padding:var(--safe-top) 24px 0;">
     <div class="top-bar">
       <button class="hamburger" id="hamburgerBtn" aria-label="Menu">
         <span></span><span></span><span></span>
