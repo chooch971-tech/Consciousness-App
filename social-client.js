@@ -244,8 +244,11 @@ function _lodgePostHtml(p, detail) {
     + '</div>'
     + (detail ? '<button class="lodge-discussion-line" data-lodge-discussion>Comment <span>⌄</span></button>' : '')
     + '<div class="lodge-comments"><div data-comment-list></div>'
-    + '<div class="lodge-crow lodge-crow--comment"><textarea class="lodge-cinput lodge-cinput--comment" maxlength="280" rows="4" placeholder="Add a comment…"></textarea>'
-    + '<button class="lodge-csend">Send</button></div>'
+    + '<div class="lodge-comment-composer lodge-crow--comment">'
+    + '<div class="lodge-comment-composer__head"><span><i>✦</i> Write a comment</span><span data-comment-countdown>280 left</span></div>'
+    + '<textarea class="lodge-cinput lodge-cinput--comment" maxlength="280" rows="4" aria-label="Write a comment" placeholder="Add something thoughtful to the conversation…"></textarea>'
+    + '<div class="lodge-comment-composer__foot"><span>Your response will appear in this discussion.</span>'
+    + '<button class="lodge-csend" type="button"><span>Post comment</span><b aria-hidden="true">→</b></button></div></div>'
     + '</div></article>';
 }
 
@@ -558,6 +561,8 @@ async function sendLodgeComment(pid, card, parentId, input) {
     var d = await res.json();
     if (!res.ok) { showToast(d.error || 'Comment failed'); return; }
     input.value = '';
+    var countdown = card.querySelector('[data-comment-countdown]');
+    if (!parentId && countdown) countdown.textContent = '280 left';
     var comments = Array.isArray(card._lodgeComments) ? card._lodgeComments.slice() : [];
     comments.push(d.comment);
     _lodgeRenderComments(card, comments);
@@ -684,6 +689,12 @@ document.getElementById('lodgeFeed').addEventListener('click', function(e) {
   if (e.target.closest('[data-lodge-report]')) { reportLodgeContent('post', pid); return; }
   if (e.target.closest('.lodge-csend')) { sendLodgeComment(pid, card); return; }
   if (e.target.closest('[data-lodge-open-post]') || !e.target.closest('button,textarea,input,a')) openLodgePostDetail(post, 'lodgeScreen', false);
+});
+document.getElementById('lodgeFeed').addEventListener('input', function(e) {
+  if (!e.target.classList.contains('lodge-cinput--comment')) return;
+  var composer = e.target.closest('.lodge-comment-composer');
+  var countdown = composer && composer.querySelector('[data-comment-countdown]');
+  if (countdown) countdown.textContent = Math.max(0, 280 - e.target.value.length) + ' left';
 });
 document.getElementById('lodgeComposer').addEventListener('click', function() {
   openLodgePostEditor();

@@ -960,6 +960,10 @@ async function testLodgeThreadedComments(browser, baseUrl) {
   assert.equal(initial.nested, true, 'a reply should render beneath its parent with a left-side thread guide');
   assert.equal(initial.commentsOpen, true, 'comments should load automatically with post detail');
   assert.equal(initial.firstId, 'thread-popular', 'the most-hearted root comment should rank first');
+  assert.equal((await page.locator('.lodge-comment-composer__head').textContent()).includes('Write a comment'), true);
+  assert.equal((await page.locator('.lodge-crow--comment .lodge-csend').textContent()).includes('Post comment'), true);
+  await page.locator('.lodge-cinput--comment').fill('Hello');
+  assert.equal((await page.locator('[data-comment-countdown]').textContent()).trim(), '275 left');
 
   await page.locator('[data-comment-like="thread-root"]').click();
   await page.waitForFunction(() => window._threadHeartCalls === 1

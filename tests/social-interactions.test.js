@@ -102,6 +102,18 @@ test('Lodge posts expose compact Reddit-like actions and an expandable multiline
   assert.match(profileClient, /function openFollowList/);
 });
 
+test('Lodge comment composer has intentional copy, hierarchy, and live character feedback', () => {
+  assert.match(socialClient, /lodge-comment-composer__head/);
+  assert.match(socialClient, /Write a comment/);
+  assert.match(socialClient, /Add something thoughtful to the conversation/);
+  assert.match(socialClient, /Post comment/);
+  assert.match(socialClient, /data-comment-countdown/);
+  assert.match(socialClient, /280 - e\.target\.value\.length/);
+  assert.match(presence, /\.lodge-crow--comment:focus-within/);
+  assert.match(presence, /\.lodge-comment-composer__foot/);
+  assert.match(presence, /\.lodge-crow--comment \.lodge-csend/);
+});
+
 test('Lodge comments support validated threaded replies and specific deletion confirmation', () => {
   assert.match(server, /const COMMENT_MAX_DEPTH = 6/);
   assert.match(server, /Parent comment not found/);
