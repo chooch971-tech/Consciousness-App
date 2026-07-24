@@ -2179,7 +2179,9 @@ function beginGuidePlanItem(btn) {
     }, 0);
     return;
   }
-  if (ex === 'multisense' || ex === 'allangles') {
+  // All Angles has no setup content, so it still opens straight into its
+  // session. Multi-Sense now has a landing and routes like the rest.
+  if (ex === 'allangles') {
     var def = typeof EXERCISE_DEFS !== 'undefined' && EXERCISE_DEFS[ex];
     if (def && def.begin) def.begin();
     return;

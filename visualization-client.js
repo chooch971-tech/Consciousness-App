@@ -688,6 +688,71 @@ function escapeMediaText(value) {
   });
 }
 
+// Multi-Sense sessions are logged flat (type 'multi-sense', no duration), so
+// the landing counts scenes held rather than showing a time record.
+function multiSenseScenesHeld() {
+  return (concState.history || []).filter(function(entry) {
+    return entry && entry.type === 'multi-sense';
+  }).length;
+}
+
+// Opening line only — the full sense descriptions belong in the session, not
+// on the landing, which is meant to be scannable.
+function multiSenseLead(text) {
+  var clean = String(text || '').trim();
+  var firstStop = clean.indexOf('. ');
+  return firstStop > 0 ? clean.slice(0, firstStop + 1) : clean;
+}
+
+var MULTI_SENSE_CHANNEL_GLYPHS = {
+  Sight: '<svg viewBox="0 0 22 16" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="M1 8s3.6-6 10-6 10 6 10 6-3.6 6-10 6S1 8 1 8Z"/><circle cx="11" cy="8" r="2.6"/></svg>',
+  Sound: '<svg viewBox="0 0 22 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" aria-hidden="true"><path d="M2 8h3l4-4v8l-4-4"/><path d="M13 5.2a4 4 0 0 1 0 5.6"/><path d="M16 3a7.4 7.4 0 0 1 0 10"/></svg>',
+  Touch: '<svg viewBox="0 0 22 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="12" r="1.8" fill="currentColor" stroke="none"/><path d="M7.2 8.4a5.4 5.4 0 0 1 7.6 0"/><path d="M4.6 5.2a9 9 0 0 1 12.8 0"/></svg>',
+  Smell: '<svg viewBox="0 0 22 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" aria-hidden="true"><path d="M6 14c1.3-2-1.3-3.4 0-5.5C7.1 6.6 6.1 5.5 6.4 3.8"/><path d="M11 14.3c1.3-2.2-1.3-3.8 0-6C12.2 6.2 11.1 5 11.4 3.2"/><path d="M16 14c1.3-2-1.3-3.4 0-5.5C17.1 6.6 16.1 5.5 16.4 3.8"/></svg>'
+};
+
+function buildMultiSenseSetupHTML() {
+  var scene = currentMultiSenseScene || pickMultiSenseScene();
+  var channels = [
+    { label: 'Sight', text: scene.sight },
+    { label: 'Sound', text: scene.sound_desc },
+    { label: 'Touch', text: scene.touch },
+    { label: 'Smell', text: scene.smell }
+  ].map(function(channel) {
+    return '<div class="ms-channel"><div class="ms-channel__head">'
+      + '<span class="ms-channel__glyph">' + MULTI_SENSE_CHANNEL_GLYPHS[channel.label] + '</span>'
+      + '<span class="ms-channel__label">' + channel.label + '</span></div>'
+      + '<div class="ms-channel__lead">' + escapeMediaText(multiSenseLead(channel.text)) + '</div></div>';
+  }).join('');
+
+  var held = multiSenseScenesHeld();
+  var heldLabel = held ? held + ' scene' + (held === 1 ? '' : 's') + ' held' : 'No scenes held yet';
+  // Most scene photos are remote (Wikimedia). If one fails to load, drop the
+  // element so the card falls back to its gold tint instead of showing a
+  // broken-image glyph over the scene name.
+  var art = scene.image
+    ? '<img class="ms-scene__img" src="' + escapeMediaText(scene.image) + '" alt="" loading="lazy" onerror="this.remove()"/>'
+    : '';
+
+  return '<div class="ms-setup">'
+    + '<div class="ms-scene">' + art
+    + '<div class="ms-scene__veil"></div>'
+    + '<div class="ms-scene__copy"><span class="ms-scene__icon">' + escapeMediaText(scene.icon || '') + '</span>'
+    + '<span class="ms-scene__name">' + escapeMediaText(scene.name) + '</span>'
+    + '<span class="ms-scene__meta">' + heldLabel + '</span></div></div>'
+    + '<div class="ms-channels">' + channels + '</div>'
+    + '<div class="ms-instruction">' + escapeMediaText(scene.instruction) + '</div>'
+    + '<button type="button" class="ms-swap" onclick="swapMultiSenseSetupScene()">Different scene</button>'
+    + '</div>';
+}
+
+// Re-roll the scene from the landing, before committing to a session.
+function swapMultiSenseSetupScene() {
+  pickMultiSenseScene();
+  var contentEl = document.getElementById('exSetupContent');
+  if (contentEl) contentEl.innerHTML = buildMultiSenseSetupHTML();
+}
+
 function renderMultiSenseMedia(scene) {
   var html = '<div class="multi-sense-media">';
   if (scene.image) {
@@ -1319,8 +1384,10 @@ var EXERCISE_DEFS = {
   multisense: {
     icon: '🎵',
     name: 'Multi-Sense Visualization',
-    desc: 'Inhabit a full scene — sight, sound, touch, smell — and hold it completely in your mind.',
-    setupHTML: function() { return ''; },
+    // The landing carries the framing now, so the description block would just
+    // repeat it above the scene card.
+    desc: '',
+    setupHTML: function() { return buildMultiSenseSetupHTML(); },
     begin: function() {
       window.visCurrentDifficulty = 'intermediate';
       window.visIntermediateExercise = 'multisense';
@@ -1418,6 +1485,18 @@ var EXERCISE_DEFS = {
 // CSS var; `light` is the title colour; `symInner` is rendered at two sizes
 // (foreground symbol + faint background watermark) for depth.
 var EX_BANNER_CONFIG = {
+  // Gold, matching the Multi-Sense card's --conc-card-accent on the Concentration
+  // home. Without an entry here the banner silently fell back to the Clock's.
+  multisense: {
+    rgb: '212,184,110', light: '#e8cf8a', label: 'Concentration · Advanced',
+    title: 'Multi-Sense',
+    tagline: 'Hold a whole scene at once.',
+    symInner:
+      '<circle cx="50" cy="50" r="34" stroke="#e8cf8a" stroke-width="2" opacity="0.5"/>'
+      + '<circle cx="50" cy="50" r="7" fill="#e8cf8a" opacity="0.9"/>'
+      + '<path d="M50 16v14M50 70v14M16 50h14M70 50h14" stroke="#e8cf8a" stroke-width="2.4" stroke-linecap="round" opacity="0.85"/>'
+      + '<path d="M26 26l10 10M74 26L64 36M26 74l10-10M74 74L64 64" stroke="#e8cf8a" stroke-width="2" stroke-linecap="round" opacity="0.55"/>',
+  },
   clock: {
     rgb: '224,124,58', light: '#e8a070', label: 'Concentration', title: 'Clock',
     tagline: 'Watch the seconds hand.',
@@ -1833,7 +1912,9 @@ document.getElementById('exerciseGrid').addEventListener('click', function(e) {
     soulMirrorShowPanel('mirror');
     renderSoulMirrorTraits();
     showScreen('soulMirrorScreen');
-  } else if (card.dataset.exercise === 'multisense' || card.dataset.exercise === 'allangles') {
+  } else if (card.dataset.exercise === 'allangles') {
+    // All Angles still has no setup content of its own, so it goes straight in.
+    // Multi-Sense now routes through openExerciseSetup like every other card.
     var def = EXERCISE_DEFS[card.dataset.exercise];
     if (def) {
       suppressTutorialForExerciseEntry();
