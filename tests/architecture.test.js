@@ -259,7 +259,7 @@ test('shared app preferences load through their own late runtime boundary', () =
 
 test('top-level drawer screens reveal the open drawer during swipe-back', () => {
   assert.match(presence, /var revealsDrawer = prevIsHome && !!window\._returnToDrawer/);
-  assert.match(presence, /if \(prevIsHome\) window\._returnToDrawer = false;/);
+  assert.match(presence, /if \(!navigatedAway && prevIsHome\) window\._returnToDrawer = false;/);
   assert.match(presence, /function showLiveDrawerPreview\(\)[\s\S]*?classList\.add\('drawer-instant', 'swipe-back-live', 'show'\)/);
   assert.match(presence, /drawer\.style\.clipPath = 'inset\(0 ' \+ W \+ 'px 0 0\)'/);
   assert.match(presence, /sw\.drawerPreview\.style\.clipPath = 'inset\(0 ' \+ Math\.max\(0, W - dx\) \+ 'px 0 0\)'/);
@@ -278,7 +278,7 @@ test('top-level drawer screens reveal the open drawer during swipe-back', () => 
   assert.match(presence, /if \(!preserveGuideAnimation\) \{[\s\S]*?updateDrawerEntityBtn/);
   assert.match(presence, /window\._preserveDrawerGuideAnimation = !!drawerPreview;[\s\S]*?backBtn\.click\(\);[\s\S]*?window\._preserveDrawerGuideAnimation = false;/);
   assert.match(omniaAppearanceClient, /function updateDrawerEntityBtn\(\) \{\s*[\s\S]*?if \(window\._preserveDrawerGuideAnimation\) return;/);
-  assert.match(presence, /if \(drawerPreview\) \{\s*releaseLiveDrawerPreview\(drawerPreview, true\);/);
+  assert.match(presence, /if \(drawerPreview\) \{\s*releaseLiveDrawerPreview\(drawerPreview, !navigatedAway\);/);
   assert.match(presence, /querySelector\('[^']*\.lodge-back[^']*'\)/);
   assert.match(presence, /visibilitychange[\s\S]*abortInterruptedSwipe/);
   assert.match(presence, /var keepsAuthoredBackdrop = \['profileScreen', 'friendProfileScreen', 'profileActivityScreen', 'friendsPanel', 'chatListScreen', 'chatThreadScreen', 'settingsScreen', 'accountSettingsScreen', 'exerciseSettingsScreen', 'clockSettingsScreen', 'lodgeScreen'\]/);

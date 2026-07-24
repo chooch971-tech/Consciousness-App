@@ -9960,6 +9960,7 @@ startPrayerScheduler();
     drawer.style.clipPath = '';
     drawer.style.willChange = '';
     drawer.style.transition = '';
+    drawer.style.pointerEvents = '';
     requestAnimationFrame(function() { drawer.classList.remove('drawer-instant'); });
   }
 
@@ -10119,6 +10120,13 @@ startPrayerScheduler();
       // it sits above the menu (z-index 21 > 20) so nothing is exposed early.
       drawerPreview.style.transition = 'none';
       drawerPreview.style.clipPath = 'inset(0 0px 0 0)';
+      // The live drawer is pointer-events:none during the drag so it can't
+      // intercept the swipe. The finger is up now, so let the revealed menu
+      // take taps immediately — otherwise a quick tap on a menu item during
+      // this ~260ms slide is silently swallowed until releaseLiveDrawerPreview
+      // runs. The departing page (z-index 21) still covers the unrevealed
+      // area, so only menu items the page has slid past become tappable.
+      drawerPreview.style.pointerEvents = 'auto';
     }
 
     afterSwipePaint(260, function() {
@@ -10128,23 +10136,33 @@ startPrayerScheduler();
       // Prevent a flash: disable transition on current screen before .active is removed
       screenEl.style.transition = 'none';
 
+      // The revealed menu is interactive during the slide, so the user may have
+      // already tapped a menu item and navigated to a new screen. That tap ran
+      // showScreen(), which removed .active from the departing screen. Firing
+      // the back action now would call showScreen('homeScreen') and clobber that
+      // navigation back to Home. Detect it and only tidy this gesture's
+      // artifacts instead.
+      var navigatedAway = !screenEl.classList.contains('active');
+
       // A swipe which actually lands on Home owns the drawer handoff below.
       // Nested returns (Friend Profile → Profile, Account → Profile) must
       // retain their original drawer context so a second swipe can still
       // return from Profile to the hamburger menu.
-      if (prevIsHome) window._returnToDrawer = false;
+      if (!navigatedAway && prevIsHome) window._returnToDrawer = false;
 
       // Fire the back action — handles state cleanup and calls showScreen,
       // which removes .active from screenEl (making it display:none via CSS).
       // The real drawer is already underneath the page, so its Guide animation
       // and scroll position survive the handoff without a cloned preview.
-      window._preserveDrawerGuideAnimation = !!drawerPreview;
-      window._interactiveSwipeBackScreenId = screenEl.id;
-      try {
-        backBtn.click();
-      } finally {
-        window._preserveDrawerGuideAnimation = false;
-        window._interactiveSwipeBackScreenId = '';
+      if (!navigatedAway) {
+        window._preserveDrawerGuideAnimation = !!drawerPreview;
+        window._interactiveSwipeBackScreenId = screenEl.id;
+        try {
+          backBtn.click();
+        } finally {
+          window._preserveDrawerGuideAnimation = false;
+          window._interactiveSwipeBackScreenId = '';
+        }
       }
 
       // Let the Back action's newly active screen paint once before removing
@@ -10153,13 +10171,17 @@ startPrayerScheduler();
       // a black blink when leaving Account Settings from Profile.
       requestAnimationFrame(function() {
         cleanPrev(prevEl, prevIsHome);
-        // Keep homeScreen visible so showScreen('homeScreen') is a no-op display-wise
-        if (prevIsHome) prevEl.style.display = 'flex';
+        // Keep homeScreen visible so showScreen('homeScreen') is a no-op
+        // display-wise — but not when the user navigated to another screen
+        // mid-slide, where home was already hidden and must stay hidden.
+        if (!navigatedAway && prevIsHome) prevEl.style.display = 'flex';
 
         // Promote the already-visible drawer to its normal layer in the same
-        // paint turn; no DOM cloning or animation restart is needed.
+        // paint turn; no DOM cloning or animation restart is needed. If the
+        // user navigated away, the drawer was already torn down — just clear
+        // its lingering swipe-preview inline styles.
         if (drawerPreview) {
-          releaseLiveDrawerPreview(drawerPreview, true);
+          releaseLiveDrawerPreview(drawerPreview, !navigatedAway);
         }
 
         // .active is now removed → screenEl is display:none → safe to reset transform
