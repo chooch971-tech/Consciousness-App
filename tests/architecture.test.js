@@ -281,7 +281,7 @@ test('top-level drawer screens reveal the open drawer during swipe-back', () => 
   assert.match(presence, /if \(drawerPreview\) \{\s*releaseLiveDrawerPreview\(drawerPreview, true\);/);
   assert.match(presence, /querySelector\('[^']*\.lodge-back[^']*'\)/);
   assert.match(presence, /visibilitychange[\s\S]*abortInterruptedSwipe/);
-  assert.match(presence, /var keepsAuthoredBackdrop = \['profileScreen', 'friendProfileScreen', 'profileActivityScreen', 'friendsPanel', 'chatListScreen', 'chatThreadScreen', 'settingsScreen', 'accountSettingsScreen', 'exerciseSettingsScreen', 'clockSettingsScreen'\]/);
+  assert.match(presence, /var keepsAuthoredBackdrop = \['profileScreen', 'friendProfileScreen', 'profileActivityScreen', 'friendsPanel', 'chatListScreen', 'chatThreadScreen', 'settingsScreen', 'accountSettingsScreen', 'exerciseSettingsScreen', 'clockSettingsScreen', 'lodgeScreen'\]/);
   assert.match(presence, /chatListScreen: 'lodgeScreen', chatThreadScreen: 'chatListScreen'/);
   assert.match(presence, /screenEl\.id === 'chatThreadScreen' && typeof chatThreadPreviousScreen === 'function/);
   assert.match(presence, /screenEl\.id === 'profileScreen' && typeof profilePreviousScreen === 'function/);
@@ -789,7 +789,7 @@ test('profile, friendship, and message screens share one starfield', () => {
 test('all Settings screens share the dedicated midnight-blue starfield', () => {
   assert.match(presence, /#settingsScreen,\s*#accountSettingsScreen,\s*#exerciseSettingsScreen,\s*#clockSettingsScreen\s*\{[\s\S]*?rgba\(67,112,190,\.18\)[\s\S]*?#0b1223/);
   assert.match(presence, /clockSettingsScreen: 'settingsScreen'/);
-  assert.match(presence, /'clockSettingsScreen'\].indexOf\(el\.id\) >= 0/);
+  assert.match(presence, /'lodgeScreen'\].indexOf\(el\.id\) >= 0/);
 });
 
 test('Clock setup has an icon-only back affordance and returns to its true opener by swipe', () => {

@@ -9914,11 +9914,11 @@ startPrayerScheduler();
     el.style.inset      = '0';
     el.style.zIndex     = '19';
     el.style.display    = 'flex';
-    // Profile surfaces own a layered starfield. An inline flat background here
-    // hides it during swipe-back, then makes it pop in after cleanup.
-    // Preserve that authored backdrop while retaining the opaque fallback for
-    // screens that do not define one of their own.
-    var keepsAuthoredBackdrop = ['profileScreen', 'friendProfileScreen', 'profileActivityScreen', 'friendsPanel', 'chatListScreen', 'chatThreadScreen', 'settingsScreen', 'accountSettingsScreen', 'exerciseSettingsScreen', 'clockSettingsScreen'].indexOf(el.id) >= 0;
+    // Profile and Lodge surfaces own a layered night-sky/starfield. An inline
+    // flat background here hides it during swipe-back, then makes it pop in
+    // after cleanup. Preserve that authored backdrop while retaining the opaque
+    // fallback for screens that do not define one of their own.
+    var keepsAuthoredBackdrop = ['profileScreen', 'friendProfileScreen', 'profileActivityScreen', 'friendsPanel', 'chatListScreen', 'chatThreadScreen', 'settingsScreen', 'accountSettingsScreen', 'exerciseSettingsScreen', 'clockSettingsScreen', 'lodgeScreen'].indexOf(el.id) >= 0;
     if (!keepsAuthoredBackdrop) el.style.background = 'var(--bg)';
     el.style.willChange = 'transform';
     el.style.transition = 'none';
