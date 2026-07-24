@@ -1140,6 +1140,29 @@
     .sn-mode__lbl { font-family:'DM Mono',monospace; font-size:8px; letter-spacing:.18em; text-transform:uppercase; }
     .sn-mode.on { background:linear-gradient(160deg, rgba(var(--sn-card-rgb,var(--sn-rgb)),.26), rgba(var(--sn-card-rgb,var(--sn-rgb)),.08)); border-color:rgba(var(--sn-card-rgb,var(--sn-rgb)),.62); color:var(--sn-card-light,var(--sn-light)); box-shadow:0 0 18px -6px rgba(var(--sn-card-rgb,var(--sn-rgb)),.6); }
     .sn-mode.on svg { opacity:1; filter:drop-shadow(0 0 5px rgba(var(--sn-card-rgb,var(--sn-rgb)),.6)); }
+    .sense-choice-label { font-family:'DM Mono',monospace; font-size:8px; letter-spacing:.22em; text-transform:uppercase; color:rgba(var(--sn-rgb),.9); margin:2px 2px 9px; }
+    .sense-choice-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:7px; }
+    .sense-choice { min-height:42px; display:flex; align-items:center; justify-content:space-between; gap:7px; padding:9px 11px; border:1px solid rgba(var(--sn-rgb),.18); border-radius:9px; background:rgba(var(--sn-rgb),.045); color:rgba(221,216,206,.66); font-family:'DM Mono',monospace; font-size:9px; line-height:1.35; text-align:left; cursor:pointer; }
+    .sense-choice small { color:var(--sn-light); font-size:6px; letter-spacing:.12em; text-transform:uppercase; opacity:.68; }
+    .sense-choice.on { border-color:rgba(var(--sn-rgb),.65); background:rgba(var(--sn-rgb),.2); color:#fff; box-shadow:0 0 15px -8px rgba(var(--sn-rgb),.8); }
+    .sense-choice-desc { margin:12px 2px 0; color:var(--muted); font-family:'Cormorant Garamond',serif; font-size:14px; font-style:italic; line-height:1.45; }
+    .sense-result-rep { display:flex; justify-content:space-between; align-items:center; gap:12px; padding:11px 14px; background:var(--surface); border:1px solid var(--border); border-radius:7px; }
+    .sense-result-rep__title { font-size:10px; letter-spacing:.08em; color:var(--muted); line-height:1.45; }
+    .sense-result-rep__halts { margin-top:3px; font-size:9px; color:#cf8fb0; opacity:.75; }
+    .sense-result-rep__time { display:flex; align-items:center; gap:7px; flex-shrink:0; font-family:Cormorant Garamond,serif; font-size:20px; color:#e0a8c4; }
+    .sense-result-rep__time small { font-family:'DM Mono',monospace; font-size:7px; letter-spacing:.12em; text-transform:uppercase; color:#cf8fb0; }
+    .sense-custom-add { display:grid; grid-template-columns:110px minmax(0,1fr) auto; gap:7px; margin-bottom:14px; }
+    .sense-custom-add select, .sense-custom-add input { min-width:0; box-sizing:border-box; border:1px solid var(--border); border-radius:7px; background:rgba(0,0,0,.22); color:var(--text); font-family:'DM Mono',monospace; font-size:10px; padding:10px; outline:none; }
+    .sense-custom-add button { border:1px solid rgba(207,143,176,.4); border-radius:7px; background:rgba(207,143,176,.1); color:#e0a8c4; font-family:'DM Mono',monospace; font-size:9px; letter-spacing:.12em; text-transform:uppercase; padding:0 13px; cursor:pointer; }
+    .sense-custom-row { display:flex; align-items:center; justify-content:space-between; gap:12px; padding:10px 0; border-top:1px solid var(--border); }
+    .sense-custom-row > div { display:flex; flex-direction:column; gap:3px; font-size:11px; color:var(--text); }
+    .sense-custom-row small { font-size:7px; letter-spacing:.16em; text-transform:uppercase; color:var(--muted); }
+    .sense-custom-row button { width:28px; height:28px; border:1px solid rgba(196,120,120,.25); border-radius:50%; background:none; color:#c98282; font-size:17px; cursor:pointer; }
+    .sense-custom-empty { padding:4px 0; color:var(--muted); font-size:10px; font-style:italic; }
+    @media (max-width:390px) {
+      .sense-custom-add { grid-template-columns:96px minmax(0,1fr); }
+      .sense-custom-add button { grid-column:1 / -1; min-height:40px; }
+    }
     /* ── Per-exercise ambience on the shared setup screen (data-ex is set by
        openExerciseSetup). Senses: warm rose dusk with gold/sage motes.
        Thought Control: cool night water — blue ripple rings + drifting stars.
@@ -6047,6 +6070,21 @@ body:not(.tut-live) #tutCorgi {
           <div id="customAudSoundList"></div>
         </div>
 
+        <div id="senseCustomBlock" style="background:rgba(255,255,255,.03); border:1px solid var(--border); border-radius:10px; padding:16px 18px;">
+          <div style="font-size:12px; color:var(--text); margin-bottom:4px;">Custom senses</div>
+          <div style="font-size:10px; color:var(--muted); line-height:1.6; margin-bottom:14px;">Add feelings, smells, or tastes you want to practice. They will appear beside the built-in choices in Senses and sync with your progress.</div>
+          <div class="sense-custom-add">
+            <select id="customSenseMode" aria-label="Sense category">
+              <option value="feeling">Feeling</option>
+              <option value="smell">Smell</option>
+              <option value="taste">Taste</option>
+            </select>
+            <input id="customSenseInput" type="text" maxlength="48" autocomplete="off" placeholder="e.g. Ocean mist"/>
+            <button id="customSenseAddBtn" type="button">Add</button>
+          </div>
+          <div id="customSenseList"></div>
+        </div>
+
         <div id="tcBufferBlock" style="background:rgba(255,255,255,.03); border:1px solid var(--border); border-radius:10px; padding:16px 18px;">
           <div style="font-size:12px; color:var(--text); margin-bottom:4px;">Start buffer</div>
           <div style="font-size:10px; color:var(--muted); line-height:1.6; margin-bottom:14px;">A pause to settle in before the timer starts. Applies to all three disciplines — Observation, Focus, and Vacancy.</div>
@@ -8204,13 +8242,42 @@ body:not(.tut-live) #tutCorgi {
       <span class="session-title" id="senseSessionTitle" style="color:#cf8fb0;">senses</span>
       <button class="session-end-btn" id="senseEndBtn">End Session</button>
     </div>
-    <div style="flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; user-select:none; padding:0 32px;">
-      <div id="senseSessionCue" style="font-family:Cormorant Garamond,serif; font-size:24px; font-weight:300; font-style:italic; color:var(--text); line-height:1.5; margin-bottom:38px; max-width:320px;"></div>
-      <div style="font-family:Cormorant Garamond,serif; font-size:64px; font-weight:300; color:#cf8fb0; line-height:1; letter-spacing:-.02em;" id="senseTimerDisplay">0:00</div>
-      <div style="font-size:9px; letter-spacing:.25em; text-transform:uppercase; color:var(--muted); margin-top:14px;" id="senseStateLabel">summon it</div>
+    <div id="senseMainArea" style="flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; user-select:none; padding:0 32px; cursor:pointer;">
+      <div id="senseSessionCue" style="font-family:Cormorant Garamond,serif; font-size:30px; font-weight:300; font-style:italic; color:var(--text); line-height:1.35; margin-bottom:18px; max-width:320px;"></div>
+      <div id="senseStateLabel" style="font-size:9px; letter-spacing:.25em; text-transform:uppercase; color:var(--muted);">summon it · hold it</div>
+      <div id="senseRepFlash" style="display:none; text-align:center; margin-top:18px;">
+        <div id="senseRepTime" style="font-family:Cormorant Garamond,serif; font-size:42px; font-weight:300; color:#cf8fb0;"></div>
+        <div style="font-size:9px; letter-spacing:.2em; text-transform:uppercase; color:var(--muted);">seconds held</div>
+      </div>
+      <div id="senseRepCount" style="font-size:9px; letter-spacing:.2em; text-transform:uppercase; color:var(--muted); margin-top:18px;"></div>
     </div>
-    <div style="padding:0 24px max(env(safe-area-inset-bottom),28px); text-align:center;">
-      <div style="font-size:9px; letter-spacing:.15em; color:var(--muted); opacity:.35;">hold the sensation · let nothing else in</div>
+    <div style="padding:0 24px max(env(safe-area-inset-bottom),28px); display:flex; flex-direction:column; gap:10px; align-items:center;">
+      <button class="btn primary conc-btn" id="senseFadedBtn" style="max-width:300px; width:100%; background:rgba(207,143,176,.14); border-color:rgba(207,143,176,.4); color:#e0a8c4;">Sensation Faded</button>
+      <button class="btn ghost conc-btn" id="senseSwitchBtn" style="max-width:300px; width:100%; font-size:9px; display:none;">Switch Sensation</button>
+      <button class="btn primary conc-btn" id="senseBeginRepBtn" style="max-width:300px; width:100%; display:none; background:rgba(207,143,176,.14); border-color:rgba(207,143,176,.4); color:#e0a8c4;">Begin Rep 2</button>
+    </div>
+    <div style="position:fixed; bottom:max(env(safe-area-inset-bottom),28px); left:24px; font-size:10px; letter-spacing:.1em; color:var(--muted); opacity:.5; font-family:'DM Mono',monospace;">session <span id="senseSessionTimer">0:00</span></div>
+    <div style="position:fixed; bottom:max(env(safe-area-inset-bottom),28px); right:24px; font-size:10px; letter-spacing:.1em; color:#cf8fb0; opacity:.75; font-family:'DM Mono',monospace;">rep <span id="senseRepTimer">0:00</span></div>
+    <div class="vis-halt-flash" id="senseHaltFlash">Halt.</div>
+    <div class="vis-halt-count" id="senseHaltCount"></div>
+  </div>
+
+  <!-- SENSE CONCENTRATION RESULT -->
+  <div class="screen" id="senseResultScreen">
+    <div style="padding:var(--safe-top) 24px 0; margin-bottom:16px;">
+      <div class="survey-title" style="color:#cf8fb0;">Session Complete.</div>
+      <div class="survey-sub" id="senseResultSub"></div>
+    </div>
+    <div style="padding:0 24px; flex:1; overflow-y:auto; padding-bottom:120px;">
+      <div id="senseRepsWrap" style="display:flex; flex-direction:column; gap:8px; margin-bottom:20px;"></div>
+      <div class="notes-section">
+        <div class="notes-label">Session Notes (optional)</div>
+        <textarea class="notes-input" id="senseNotes" placeholder="How vivid were the sensations? What broke concentration?"></textarea>
+      </div>
+    </div>
+    <div style="position:fixed; bottom:0; left:0; right:0; padding:12px 24px max(env(safe-area-inset-bottom),20px); background:var(--bg); border-top:1px solid var(--border); display:flex; flex-direction:column; gap:8px;">
+      <button class="btn primary conc-btn" id="senseSaveBtn" style="background:rgba(207,143,176,.14); border-color:rgba(207,143,176,.4); color:#e0a8c4;">Save &amp; Continue</button>
+      <button class="btn ghost conc-btn" id="senseViewHistoryBtn">View History</button>
     </div>
   </div>
 

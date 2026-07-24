@@ -11,6 +11,7 @@
     'presence_prayer_v1',
     'presence_journal_v1',
     'presence_practice_review_v1',
+    'presence_custom_senses_v1',
     'presence_soul_mirror_v1',
     'presence_ai_report_comments_v1',
     'presence_guide_v1',

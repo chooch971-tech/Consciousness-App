@@ -2148,8 +2148,11 @@ function beginGuidePlanItem(btn) {
     if (duration) tcDuration = duration;
   }
   if (ex === 'sense') {
-    if (mode && typeof SENSE_MODE_DEFS !== 'undefined' && SENSE_MODE_DEFS[mode]) senseMode = mode;
-    if (duration) senseDuration = duration;
+    if (mode && typeof SENSE_MODE_DEFS !== 'undefined' && SENSE_MODE_DEFS[mode]) {
+      senseMode = mode;
+      var guideSenseChoices = senseChoicesForMode(mode);
+      senseSelectedCue = guideSenseChoices.length ? guideSenseChoices[0].label : '';
+    }
   }
   if (ex === 'soulmirror') {
     if (typeof _smOriginMode !== 'undefined') _smOriginMode = 'guide';

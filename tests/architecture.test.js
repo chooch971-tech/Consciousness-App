@@ -402,13 +402,15 @@ test('Senses setup and sessions load before app mode switching', () => {
   assert.ok(sensesTag < appShellTag, 'Senses retains its original position before app mode switching');
   assert.equal(presence.split('<script src="senses-client.js"></script>').length - 1, 1);
   assert.doesNotMatch(presence, /function\s+buildSenseSetupHTML\s*\(|function\s+startSenseSession\s*\(/);
-  assert.doesNotMatch(presence, /function\s+endSenseSession\s*\(|function\s+showSenseResult\s*\(/);
+  assert.doesNotMatch(presence, /function\s+endSenseSession\s*\(|function\s+showSenseSessionResult\s*\(/);
   assert.match(sensesClient, /var\s+SENSE_MODE_DEFS\s*=\s*\{/);
   assert.match(sensesClient, /function\s+buildSenseSetupHTML\s*\(/);
   assert.match(sensesClient, /function\s+startSenseSession\s*\(/);
   assert.match(sensesClient, /function\s+endSenseSession\s*\(/);
-  assert.match(sensesClient, /function\s+showSenseResult\s*\(/);
-  assert.match(sensesClient, /document\.getElementById\('senseEndBtn'\)\.addEventListener/);
+  assert.match(sensesClient, /function\s+showSenseSessionResult\s*\(/);
+  assert.match(sensesClient, /function\s+recordSenseHalt\s*\(/);
+  assert.match(sensesClient, /function\s+sensationFaded\s*\(/);
+  assert.match(sensesClient, /endBtn\.addEventListener\('click'/);
   assert.doesNotThrow(() => new Function(sensesClient));
 });
 

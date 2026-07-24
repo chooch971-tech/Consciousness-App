@@ -235,6 +235,7 @@ var EXERCISE_SETTINGS_LIST = [
   { id:'clock',      name:'Clock Exercise',           icon:'⏱',  tint:'rgba(212,149,110,.16)', group:'conc' },
   { id:'visual',     name:'Visualization',            icon:'👁', tint:'rgba(110,159,212,.16)', group:'conc' },
   { id:'auditory',   name:'Auditory',                 icon:'🎧', tint:'rgba(110,184,164,.16)', group:'conc' },
+  { id:'sense',      name:'Senses',                   icon:'✺',  tint:'rgba(207,143,176,.16)', group:'conc' },
   { id:'thought',    name:'Thought Control',          icon:'◌',  tint:'rgba(152,180,204,.16)', group:'conc' },
   { id:'asana',      name:'Asana',                    icon:'🧘', tint:'rgba(196,120,120,.16)', group:'conc' },
   { id:'soulmirror', name:'Soul Mirror',              icon:'◆',  tint:'rgba(164,126,184,.16)', group:'conc' },
@@ -247,6 +248,7 @@ var EXERCISE_SETTINGS_LIST = [
 var EXSET_BLOCKS = {
   visual:     [{ block:'visImagesBlock', header:'Custom Images' }],
   auditory:   [{ block:'audSoundsBlock', header:'Custom Sounds' }],
+  sense:      [{ block:'senseCustomBlock', header:'Custom Senses' }],
   thought:    [{ block:'tcBufferBlock', header:'Session Start' }],
   asana:      [{ block:'asanaBufferBlock', header:'Session Start' }],
   soulmirror: [
@@ -272,7 +274,7 @@ function _asetRowHTML(ex) {
 function _parkSettingsBlocks() {
   var park = document.getElementById('settingsParking');
   if (!park) return;
-  ['acctSyncBlock','visImagesBlock','audSoundsBlock','tcBufferBlock','asanaBufferBlock','poreBufferBlock','autosugTapsBlock','pavlokSettingsCard','settingsResetAwareness','settingsResetConc','settingsResetPrayer'].forEach(function(bid) {
+  ['acctSyncBlock','visImagesBlock','audSoundsBlock','senseCustomBlock','tcBufferBlock','asanaBufferBlock','poreBufferBlock','autosugTapsBlock','pavlokSettingsCard','settingsResetAwareness','settingsResetConc','settingsResetPrayer'].forEach(function(bid) {
     var el = document.getElementById(bid);
     if (el && el.parentNode !== park) park.appendChild(el);
   });
@@ -355,6 +357,7 @@ function openExerciseSettings(id) {
   // cloud sync pull) while this screen wasn't open to catch the update itself.
   if (id === 'thought' && typeof syncTCBufferSelect === 'function') syncTCBufferSelect();
   if (id === 'asana' && typeof syncAsanaBufferSelect === 'function') syncAsanaBufferSelect();
+  if (id === 'sense' && typeof renderCustomSenseList === 'function') renderCustomSenseList();
   if (id === 'soulmirror') {
     if (typeof syncPoreBufferSelect === 'function') syncPoreBufferSelect();
     if (typeof syncAutosugTapsUI === 'function') syncAutosugTapsUI();

@@ -1577,10 +1577,10 @@ var EX_EXPLAINERS = {
   sense: {
     title: 'Senses',
     steps: [
-      'Choose a sense to train — <strong>Feeling</strong>, <strong>Smell</strong>, or <strong>Taste</strong> — and set your minutes goal.',
-      'A sensation is revealed when the session begins. <strong>Summon it</strong> from imagination alone, with nothing before you.',
-      'Hold it <strong>vividly and unbroken</strong>. When it fades or another impression intrudes, gently rebuild it.',
-      'Sit with it until the bell. Session by session, the imagined sense grows as real as the outer one.'
+      'Choose a <strong>Feeling</strong>, <strong>Smell</strong>, or <strong>Taste</strong> to train, then summon it from imagination alone.',
+      'Hold it <strong>vividly and unbroken</strong>. Tap the screen whenever concentration breaks; each tap records one honest halt.',
+      'When the sensation disappears, tap <strong>Sensation Faded</strong> to finish the rep. Begin again with the same sense or switch to another.',
+      'The session and rep timers run together. Rep by rep, the imagined sense grows as real as the outer one.'
     ]
   },
   thought: {
@@ -1923,9 +1923,11 @@ function discardSession(type, _c) {
       switchMode('concentration');
       break;
     case 'sense':
-      clearTimeout(senseTimerHandle);
+      cancelAnimationFrame(senseTimerHandle);
       senseTimerHandle = null;
-      senseStartTime = null;
+      senseSessionStartTime = null;
+      senseRepStartTime = null;
+      senseRepActive = false;
       releaseExerciseWakeLock();
       showScreen('homeScreen');
       switchMode('concentration');
