@@ -38,6 +38,28 @@ test('practice review preserves discipline-specific facts without journal prose'
   assert.doesNotMatch(storage.getItem(Review.STORAGE_KEY), /private words/);
 });
 
+test('practice review preserves Closed and Open Eyes Senses progress separately', () => {
+  const storage = memoryStorage();
+  Review.record(storage, 'concentration', {
+    date:'2026-07-20T15:00:00.000Z', exercise:'sense', mode:'feeling',
+    eyesMode:'closed', seconds:360, cleanSeconds:300, halts:1
+  });
+  Review.record(storage, 'concentration', {
+    date:'2026-07-21T15:00:00.000Z', exercise:'sense', mode:'feeling',
+    eyesMode:'open', seconds:460, cleanSeconds:450, halts:1
+  });
+
+  const summary = Review.summarize(storage, new Date(2026,6,20), new Date(2026,6,22));
+  assert.equal(summary.byPractice.sense.closedEyesSessions, 1);
+  assert.equal(summary.byPractice.sense.openEyesSessions, 1);
+  assert.equal(summary.byPractice.sense.closedEyesBest, 300);
+  assert.equal(summary.byPractice.sense.openEyesBest, 450);
+  assert.equal(summary.byPractice.sense.best, 450);
+  assert.equal(Review.normalize('concentration', {
+    date:'2026-07-21T15:00:00.000Z', exercise:'sense', eyesMode:'open', cleanSeconds:450
+  }).event.o, 1);
+});
+
 test('backfill is idempotent and current Guide completion is snapshotted by day', () => {
   const storage = memoryStorage();
   const awareness = [{date:'2026-07-21T10:00:00.000Z',durationMin:10,answers:{drift:3,return:3,redundant:3}}];

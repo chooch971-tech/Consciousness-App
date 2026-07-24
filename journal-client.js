@@ -16,7 +16,7 @@ function getJournalKey(date){
 
 var JOURNAL_EMPTY_ICON='<svg width="58" height="94" viewBox="0 0 80 130" xmlns="http://www.w3.org/2000/svg"><polygon points="40,3 54,14 40,25 26,14" fill="#9fd0ec" opacity=".55"/><polygon points="40,25 60,36 64,58 40,70 16,58 20,36" fill="#7fb8d8" opacity=".5"/><polygon points="40,70 64,58 56,88 40,100 24,88 16,58" fill="#6aa6c8" opacity=".42"/><polygon points="40,100 56,88 40,114" fill="#5e9ac0" opacity=".4"/><polygon points="40,100 24,88 40,114" fill="#5290b8" opacity=".32"/></svg>';
 
-var JOURNAL_CONC_ICONS={clock:'⊙',visualization:'◉',auditory:'◈',thought:'◌',asana:'✦',pore_breathing:'❂',soulmirror:'◆',autosuggestion:'✱'};
+var JOURNAL_CONC_ICONS={clock:'⊙',visualization:'◉',auditory:'◈',thought:'◌',asana:'✦',pore_breathing:'❂',soulmirror:'◆',autosuggestion:'✱',sense:'✺'};
 
 function dateFromKey(k){var p=k.split('-');return new Date(+p[0],+p[1]-1,+p[2]);}
 
@@ -62,10 +62,12 @@ function journalSessionInfo(s){
     return {type:'aw',icon:'◎',name:name,val:fmtDuration(h.durationMin||0),sub:(h.score?parseFloat(h.score).toFixed(1)+'/5':''),pb:false};
   }
   var key=h.exercise==='asana'?'asana':h.exercise==='pore_breathing'?'pore_breathing':h.exercise==='autosuggestion'?'autosuggestion':(h.type||'clock');
-  var name2=key==='asana'?'Asana':key==='pore_breathing'?'Pore Breathing':key==='autosuggestion'?'Autosuggestion':key==='visualization'?'Visualization':key==='auditory'?'Auditory':key==='thought'?'Thought Control':'Clock';
+  var senseModeName=key==='sense'&&typeof SENSE_MODE_DEFS!=='undefined'&&SENSE_MODE_DEFS[h.mode]?SENSE_MODE_DEFS[h.mode].label:'Feeling';
+  var name2=key==='asana'?'Asana':key==='pore_breathing'?'Pore Breathing':key==='autosuggestion'?'Autosuggestion':key==='visualization'?'Visualization':key==='auditory'?'Auditory':key==='thought'?'Thought Control':key==='sense'?('Senses · '+senseModeName):'Clock';
   var val2=key==='autosuggestion'?((h.taps||40)+' taps'):(key==='asana'||key==='pore_breathing')?fmtAsanaTime(h.seconds||0):fmtTimer(h.seconds||0);
   var isBest=h.seconds&&concState.bestSeconds&&h.seconds>=concState.bestSeconds;
-  return {type:'conc',icon:(JOURNAL_CONC_ICONS[key]||'⊙'),name:name2,val:val2,sub:'',pb:isBest};
+  var sub2=key==='sense'?((h.eyesMode==='open'?'Open eyes':'Closed eyes')+(h.cue?' · '+h.cue:'')):'';
+  return {type:'conc',icon:(JOURNAL_CONC_ICONS[key]||'⊙'),name:name2,val:val2,sub:sub2,pb:isBest};
 }
 
 function journalSessionSummary(sessions){

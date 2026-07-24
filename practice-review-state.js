@@ -80,12 +80,16 @@
   function skillValue(practice, entry) {
     if (practice === 'pore_breathing') return Math.max(0, Number(entry.breaths) || 0);
     if (practice === 'autosuggestion') return Math.max(0, Number(entry.taps) || 0);
+    if (practice === 'sense') {
+      if (Number(entry.cleanSeconds) >= 0) return Math.max(0, Number(entry.cleanSeconds) || 0);
+      return Math.max(0, Number(entry.halts) || 0) === 0 ? Math.max(0, Number(entry.seconds) || 0) : 0;
+    }
     if (practice === 'prayer' || practice === 'awareness') return 0;
     return Math.max(0, Number(entry.seconds) || 0);
   }
 
   function eventId(kind, practice, entry) {
-    const source = [kind, entry.date || '', practice, entry.tcMode || '', entry.exercise || '', entry.type || ''].join(':');
+    const source = [kind, entry.date || '', practice, entry.tcMode || '', entry.eyesMode || '', entry.exercise || '', entry.type || ''].join(':');
     let hash = 2166136261;
     for (let index = 0; index < source.length; index += 1) {
       hash ^= source.charCodeAt(index);
@@ -111,6 +115,7 @@
       if (entry.endedEarly) event.e = 1;
     }
     if (entry.tcMode) event.m = String(entry.tcMode).slice(0, 24);
+    if (practice === 'sense' && entry.eyesMode === 'open') event.o = 1;
     if (Number(entry.xpEarned) > 0) event.x = Math.round(Number(entry.xpEarned));
     return {
       id: eventId(kind, practice, entry),
@@ -239,6 +244,13 @@
       bucket.sessions += 1;
       bucket.seconds += seconds;
       bucket.best = Math.max(bucket.best || 0, value);
+      if (practice === 'sense') {
+        const openEyes = Number(event.o) === 1;
+        const sessionKey = openEyes ? 'openEyesSessions' : 'closedEyesSessions';
+        const bestKey = openEyes ? 'openEyesBest' : 'closedEyesBest';
+        bucket[sessionKey] = Math.max(0, Number(bucket[sessionKey]) || 0) + 1;
+        bucket[bestKey] = Math.max(Math.max(0, Number(bucket[bestKey]) || 0), value);
+      }
       archive.sessions += 1;
       archive.totalSeconds += seconds;
       if (practice === 'awareness') {
@@ -271,6 +283,12 @@
         best: Math.max(0, Number(row.best) || 0),
         values: []
       };
+      if (practice === 'sense') {
+        summary.byPractice[practice].openEyesSessions = Math.max(0, Number(row.openEyesSessions) || 0);
+        summary.byPractice[practice].closedEyesSessions = Math.max(0, Number(row.closedEyesSessions) || 0);
+        summary.byPractice[practice].openEyesBest = Math.max(0, Number(row.openEyesBest) || 0);
+        summary.byPractice[practice].closedEyesBest = Math.max(0, Number(row.closedEyesBest) || 0);
+      }
     });
     const awareness = archive.awareness || {};
     summary.awareness.count = Math.max(0, Number(awareness.count) || 0);
@@ -319,6 +337,13 @@
         if (value > 0) {
           bucket.values.push(value);
           if (value > bucket.best) bucket.best = value;
+        }
+        if (practice === 'sense') {
+          const openEyes = Number(event.o) === 1;
+          const sessionKey = openEyes ? 'openEyesSessions' : 'closedEyesSessions';
+          const bestKey = openEyes ? 'openEyesBest' : 'closedEyesBest';
+          bucket[sessionKey] = Math.max(0, Number(bucket[sessionKey]) || 0) + 1;
+          bucket[bestKey] = Math.max(Math.max(0, Number(bucket[bestKey]) || 0), value);
         }
         summary.sessions += 1;
         summary.totalSeconds += seconds;

@@ -8,8 +8,10 @@
 
 var SENSE_CUSTOM_KEY = 'presence_custom_senses_v1';
 var SENSE_CUSTOM_LIMIT = 40;
+var SENSE_MASTERY_THRESHOLDS = [300, 450, 600];
 var senseMode = 'feeling'; // 'feeling' | 'smell' | 'taste'
 var senseSelectedCue = 'Warmth';
+var senseEyesMode = 'closed'; // Closed eyes is the default; open eyes is the advanced successor.
 
 var SENSE_MODE_DEFS = {
   feeling: {
@@ -127,8 +129,8 @@ function snMasteryHtml(title, sub) {
     + '<div class="sn-mastery__sub">' + sub + '</div></div>';
 }
 
-function snRecordHtml(best) {
-  var html = '<div class="sn-record"><div class="sn-record-label">Your Record</div>';
+function snRecordHtml(best, label) {
+  var html = '<div class="sn-record"><div class="sn-record-label">' + (label || 'Your Record') + '</div>';
   if (best > 0) {
     var t = best >= 60
       ? Math.floor(best / 60) + '<small>m</small> ' + (best % 60) + '<small>s</small>'
@@ -155,13 +157,68 @@ function snTrackHtml(best, goalSec, marks, goalLabel) {
     + '<span style="right:0; left:auto; transform:none;">' + goalLabel + '</span></div></div>';
 }
 
-// Longest completed rep for one sense category (seconds).
-function getSenseBest(mode) {
+function normalizeSenseEyesMode(mode) {
+  return mode === 'open' ? 'open' : 'closed';
+}
+
+function senseEyesLabel(mode) {
+  return normalizeSenseEyesMode(mode) === 'open' ? 'Open Eyes' : 'Closed Eyes';
+}
+
+function senseMasteryTier(seconds) {
+  var cleanSeconds = Math.max(0, Number(seconds) || 0);
+  if (cleanSeconds >= SENSE_MASTERY_THRESHOLDS[2]) return 3;
+  if (cleanSeconds >= SENSE_MASTERY_THRESHOLDS[1]) return 2;
+  if (cleanSeconds >= SENSE_MASTERY_THRESHOLDS[0]) return 1;
+  return 0;
+}
+
+function senseRepHistory(session) {
+  if (Array.isArray(session.senseReps) && session.senseReps.length) return session.senseReps;
+  return [{
+    seconds: session.cleanSeconds != null ? session.cleanSeconds : session.seconds,
+    mode: session.mode,
+    eyesMode: session.eyesMode,
+    halts: session.halts
+  }];
+}
+
+// Mastery is based only on full, halt-free reps. Closed and open eyes keep
+// separate records so the advanced successor never overwrites its foundation.
+function getSenseBest(mode, eyesMode) {
+  var targetEyes = normalizeSenseEyesMode(eyesMode);
   return (concState.history || []).reduce(function(best, session) {
-    return session.exercise === 'sense' && (session.mode || 'feeling') === mode && session.seconds > best
-      ? session.seconds
-      : best;
+    if (!session || session.exercise !== 'sense') return best;
+    return senseRepHistory(session).reduce(function(repBest, rep) {
+      var repMode = rep.mode || session.mode || 'feeling';
+      var repEyes = normalizeSenseEyesMode(rep.eyesMode || session.eyesMode);
+      var halts = Math.max(0, Number(rep.halts) || 0);
+      var seconds = Math.max(0, Number(rep.seconds) || 0);
+      return repMode === mode && repEyes === targetEyes && halts === 0 && seconds > repBest ? seconds : repBest;
+    }, best);
   }, 0);
+}
+
+function senseMasteryProgressHtml(best, eyesMode) {
+  var tier = senseMasteryTier(best);
+  var modeLabel = senseEyesLabel(eyesMode);
+  var nodes = [
+    { tier: 1, label: 'Mastery I', time: '5:00' },
+    { tier: 2, label: 'Mastery II', time: '7:30' },
+    { tier: 3, label: 'Final', time: '10:00' }
+  ].map(function(item) {
+    return '<div class="sense-mastery-node' + (tier >= item.tier ? ' reached' : '') + '">'
+      + '<span class="sense-mastery-dot">' + (tier >= item.tier ? '✦' : item.tier) + '</span>'
+      + '<strong>' + item.label + '</strong><small>' + item.time + '</small></div>';
+  }).join('');
+  var title = tier === 3 ? modeLabel + ' fully mastered' : modeLabel + ' mastery';
+  var sub = tier === 3
+    ? 'A clean ten-minute rep with no halts'
+    : 'Only uninterrupted reps with no halts advance mastery';
+  return '<div class="sense-mastery-card"><div class="sense-mastery-head"><span>' + title + '</span>'
+    + '<small>' + (tier ? tier + ' / 3' : 'not yet earned') + '</small></div>'
+    + '<div class="sense-mastery-line">' + nodes + '</div>'
+    + '<div class="sense-mastery-note">' + sub + '</div></div>';
 }
 
 var SENSE_MODE_ACCENTS = {
@@ -186,10 +243,15 @@ function buildSenseSetupHTML() {
       + (choice.custom ? '<small>custom</small>' : '')
       + '</button>';
   }).join('');
-  var best = getSenseBest(senseMode);
-  var progressHtml = best >= 900
-    ? snMasteryHtml('This sense has been mastered.', 'Fifteen minutes held unbroken')
-    : snTrackHtml(best, 900, [{ sec: 300, label: '5 min' }, { sec: 600, label: '10 min' }], '15 min');
+  var best = getSenseBest(senseMode, senseEyesMode);
+  var eyesHtml = '<div class="sense-eyes-picker">'
+    + '<div class="sense-choice-label">Practice mode</div>'
+    + '<div class="sense-eyes-options">'
+    + '<button type="button" class="sense-eyes-option' + (senseEyesMode === 'closed' ? ' on' : '') + '" onclick="setSenseEyesMode(\'closed\')">'
+    + '<span class="sense-eye-icon">◉</span><span><strong>Closed Eyes</strong><small>Foundation · default</small></span></button>'
+    + '<button type="button" class="sense-eyes-option sense-eyes-option--advanced' + (senseEyesMode === 'open' ? ' on' : '') + '" onclick="setSenseEyesMode(\'open\')">'
+    + '<span class="sense-eye-icon">◎</span><span><strong>Open Eyes</strong><small>Advanced successor</small></span></button>'
+    + '</div></div>';
 
   return '<div class="sn-setup">'
     + '<div class="sn-hero-card">'
@@ -197,13 +259,20 @@ function buildSenseSetupHTML() {
     + '<button type="button" class="aud-omnia-peek" onclick="openExExplainer(\'sense\')" aria-label="How Senses works">'
     + '<span class="clk-omnia-peek-head"><span class="clk-omnia-spin">' + omniaHeadOnlySVG(34, 32) + '</span></span></button></div>'
     + '<div class="sn-modes">' + tabs + '</div>'
+    + eyesHtml
     + '<div class="sense-choice-label">Choose a sensation</div>'
     + '<div class="sense-choice-grid">' + choiceHtml + '</div>'
     + '</div>'
-    + snRecordHtml(best)
-    + progressHtml
+    + snRecordHtml(best, 'Clean ' + senseEyesLabel(senseEyesMode) + ' Record')
+    + senseMasteryProgressHtml(best, senseEyesMode)
     + '<button type="button" class="clk-history-link" onclick="concHistoryFrom=\'exSetupScreen\'; concHistoryFilter=\'all\'; renderConcHistory(); showScreen(\'concHistoryScreen\');">View History</button>'
     + '</div>';
+}
+
+function setSenseEyesMode(mode) {
+  senseEyesMode = normalizeSenseEyesMode(mode);
+  var contentEl = document.getElementById('exSetupContent');
+  if (contentEl) contentEl.innerHTML = buildSenseSetupHTML();
 }
 
 function switchSenseMode(mode) {
@@ -231,12 +300,41 @@ var senseHalts = 0;
 var senseRepActive = false;
 var senseActiveCue = '';
 var senseActiveMode = 'feeling';
+var senseActiveEyesMode = 'closed';
 
 function fmtSenseTime(sec) {
   var value = Math.max(0, Number(sec) || 0);
   var minutes = Math.floor(value / 60);
   var seconds = value % 60;
   return minutes + ':' + (seconds < 10 ? '0' : '') + seconds;
+}
+
+function senseBeginLabel(repNumber) {
+  return senseActiveEyesMode === 'open'
+    ? 'Begin Open-Eyes Rep ' + repNumber
+    : 'Close Eyes · Begin Rep ' + repNumber;
+}
+
+function updateSenseSessionPresentation(active) {
+  var screen = document.getElementById('senseSessionScreen');
+  var eyesEl = document.getElementById('senseEyesBadge');
+  var instructionEl = document.getElementById('senseInstruction');
+  var stateEl = document.getElementById('senseStateLabel');
+  if (screen) {
+    screen.dataset.senseMode = senseActiveMode;
+    screen.dataset.eyesMode = senseActiveEyesMode;
+  }
+  if (eyesEl) eyesEl.textContent = senseEyesLabel(senseActiveEyesMode);
+  if (instructionEl) {
+    instructionEl.textContent = senseActiveEyesMode === 'open'
+      ? 'Keep a soft gaze. Hold the imagined sensation against the visible world.'
+      : 'Close your eyes. Build the sensation from memory and keep it vivid.';
+  }
+  if (stateEl) {
+    stateEl.textContent = active
+      ? (senseActiveEyesMode === 'open' ? 'eyes open · summon it · hold it' : 'eyes closed · summon it · hold it')
+      : (senseActiveEyesMode === 'open' ? 'soft gaze · ready when you are' : 'close your eyes when ready');
+  }
 }
 
 function startSenseSession() {
@@ -247,6 +345,7 @@ function startSenseSession() {
   }
   senseActiveMode = senseMode;
   senseActiveCue = senseSelectedCue;
+  senseActiveEyesMode = normalizeSenseEyesMode(senseEyesMode);
   senseSessionStartTime = null;
   senseRepStartTime = null;
   senseReps = [];
@@ -265,12 +364,12 @@ function startSenseSession() {
   var repTimerEl = document.getElementById('senseRepTimer');
   if (titleEl) titleEl.textContent = SENSE_MODE_DEFS[senseActiveMode].label.toLowerCase();
   if (cueEl) cueEl.textContent = senseActiveCue;
-  if (stateEl) stateEl.textContent = 'ready when you are';
+  updateSenseSessionPresentation(false);
   if (flashEl) flashEl.style.display = 'none';
   if (fadedBtn) fadedBtn.style.display = 'none';
   if (switchBtn) switchBtn.style.display = '';
   if (beginBtn) {
-    beginBtn.textContent = 'Begin Rep 1';
+    beginBtn.textContent = senseBeginLabel(1);
     beginBtn.style.display = '';
   }
   if (countEl) countEl.textContent = 'rep 1 · ready';
@@ -301,7 +400,7 @@ function startSenseRep() {
   var countEl = document.getElementById('senseHaltCount');
   if (titleEl) titleEl.textContent = SENSE_MODE_DEFS[senseActiveMode].label.toLowerCase();
   if (cueEl) cueEl.textContent = senseActiveCue;
-  if (stateEl) stateEl.textContent = 'summon it · hold it';
+  updateSenseSessionPresentation(true);
   if (flashEl) flashEl.style.display = 'none';
   if (fadedBtn) fadedBtn.style.display = '';
   if (switchBtn) switchBtn.style.display = 'none';
@@ -349,6 +448,7 @@ function sensationFaded() {
     seconds: seconds,
     cue: senseActiveCue,
     mode: senseActiveMode,
+    eyesMode: senseActiveEyesMode,
     halts: senseHalts
   });
   var flashEl = document.getElementById('senseRepFlash');
@@ -363,7 +463,7 @@ function sensationFaded() {
   if (fadedBtn) fadedBtn.style.display = 'none';
   if (switchBtn) switchBtn.style.display = '';
   if (beginBtn) {
-    beginBtn.textContent = 'Begin Rep ' + (senseReps.length + 1);
+    beginBtn.textContent = senseBeginLabel(senseReps.length + 1);
     beginBtn.style.display = '';
   }
   updateSenseRepCount();
@@ -380,7 +480,7 @@ function switchSenseCueBetweenReps() {
   var cueEl = document.getElementById('senseSessionCue');
   var stateEl = document.getElementById('senseStateLabel');
   if (cueEl) cueEl.textContent = senseActiveCue;
-  if (stateEl) stateEl.textContent = 'ready when you are';
+  updateSenseSessionPresentation(false);
 }
 
 function endSenseSession() {
@@ -393,6 +493,7 @@ function endSenseSession() {
         seconds: seconds,
         cue: senseActiveCue,
         mode: senseActiveMode,
+        eyesMode: senseActiveEyesMode,
         halts: senseHalts
       });
     }
@@ -410,14 +511,14 @@ function showSenseSessionResult() {
   var sub = document.getElementById('senseResultSub');
   var notes = document.getElementById('senseNotes');
   var wrap = document.getElementById('senseRepsWrap');
-  if (sub) sub.textContent = senseReps.length + ' rep' + (senseReps.length === 1 ? '' : 's') + ' · session ' + fmtSenseTime(totalSec);
+  if (sub) sub.textContent = senseEyesLabel(senseActiveEyesMode) + ' · ' + senseReps.length + ' rep' + (senseReps.length === 1 ? '' : 's') + ' · session ' + fmtSenseTime(totalSec);
   if (notes) notes.value = '';
   if (wrap) {
     wrap.innerHTML = senseReps.map(function(rep, index) {
       var isBest = rep === bestRep;
       var halts = rep.halts ? rep.halts + ' halt' + (rep.halts === 1 ? '' : 's') : 'unbroken';
       return '<div class="sense-result-rep">'
-        + '<div><div class="sense-result-rep__title">Rep ' + (index + 1) + ' · ' + escapeSenseText(rep.cue) + '</div>'
+        + '<div><div class="sense-result-rep__title">Rep ' + (index + 1) + ' · ' + escapeSenseText(rep.cue) + ' · ' + senseEyesLabel(rep.eyesMode) + '</div>'
         + '<div class="sense-result-rep__halts">' + halts + '</div></div>'
         + '<div class="sense-result-rep__time">' + (isBest ? '<small>best</small>' : '') + fmtSenseTime(rep.seconds) + '</div>'
         + '</div>';
@@ -431,6 +532,7 @@ function saveSenseSessionResult() {
   var notes = notesEl ? notesEl.value.trim() : '';
   var totalXP = senseReps.reduce(function(total, rep) { return total + rep.seconds; }, 0);
   var bestSec = senseReps.reduce(function(best, rep) { return Math.max(best, rep.seconds); }, 0);
+  var bestCleanSec = senseReps.reduce(function(best, rep) { return rep.halts === 0 ? Math.max(best, rep.seconds) : best; }, 0);
   var totalHalts = senseReps.reduce(function(total, rep) { return total + rep.halts; }, 0);
   var wallSec = senseSessionStartTime ? Math.floor((Date.now() - senseSessionStartTime) / 1000) : 0;
   concState.xp += totalXP;
@@ -442,13 +544,16 @@ function saveSenseSessionResult() {
       exercise: 'sense',
       type: 'sense',
       mode: senseActiveMode,
+      eyesMode: senseActiveEyesMode,
       cue: senseReps.length ? senseReps[0].cue : senseActiveCue,
       seconds: bestSec,
+      cleanSeconds: bestCleanSec,
+      masteryTier: senseMasteryTier(bestCleanSec),
       xpEarned: totalXP,
       reps: senseReps.length,
       halts: totalHalts,
       senseReps: senseReps.map(function(rep) {
-        return { seconds: rep.seconds, cue: rep.cue, mode: rep.mode, halts: rep.halts };
+        return { seconds: rep.seconds, cue: rep.cue, mode: rep.mode, eyesMode: rep.eyesMode, halts: rep.halts };
       }),
       notes: notes
     },
@@ -459,7 +564,7 @@ function saveSenseSessionResult() {
   var originMode = currentMode;
   showSessionComplete({
     title: 'Senses held.',
-    sub: senseReps.length + ' rep' + (senseReps.length === 1 ? '' : 's'),
+    sub: senseEyesLabel(senseActiveEyesMode) + ' · ' + senseReps.length + ' rep' + (senseReps.length === 1 ? '' : 's'),
     xp: totalXP,
     akashaDelta: akashaDelta,
     stat3: { label: 'Session', color: 'blue', value: fmtSenseTime(wallSec) },
@@ -547,7 +652,15 @@ function deleteCustomSense(id) {
     var elapsed = senseSessionStartTime ? Math.floor((Date.now() - senseSessionStartTime) / 1000) : 0;
     omniaConfirmEarlyEnd('sense', elapsed, endSenseSession);
   });
-  if (main) main.addEventListener('click', recordSenseHalt);
+  if (main) {
+    main.addEventListener('click', recordSenseHalt);
+    main.addEventListener('keydown', function(event) {
+      if (event.key === 'Enter' || event.key === ' ') {
+        event.preventDefault();
+        recordSenseHalt();
+      }
+    });
+  }
   if (fadedBtn) fadedBtn.addEventListener('click', sensationFaded);
   if (switchBtn) switchBtn.addEventListener('click', switchSenseCueBetweenReps);
   if (beginBtn) beginBtn.addEventListener('click', startSenseRep);

@@ -906,7 +906,9 @@ function renderConcHistory() {
       var timeStr = d.toLocaleTimeString('en-US', { hour:'numeric', minute:'2-digit' });
       var notesHtml = h.notes ? '<div class="history-notes">' + escHtml(h.notes) + '</div>' : '';
       var typeStr = h.exercise === 'asana' ? ('Asana' + (h.posture ? ' · ' + escHtml(h.posture) : ''))
-        : h.exercise === 'sense' ? ((SENSE_MODE_DEFS[h.mode] ? SENSE_MODE_DEFS[h.mode].label : 'Senses') + (h.cue ? ' · ' + escHtml(h.cue) : ''))
+        : h.exercise === 'sense' ? ((SENSE_MODE_DEFS[h.mode] ? SENSE_MODE_DEFS[h.mode].label : 'Senses')
+          + (h.cue ? ' · ' + escHtml(h.cue) : '')
+          + ' · ' + (h.eyesMode === 'open' ? 'Open Eyes' : 'Closed Eyes'))
         : h.exercise === 'pore_breathing' ? 'Pore Breathing'
         : h.exercise === 'autosuggestion' ? 'Autosuggestion'
         : h.type === 'visualization' ? (h.object ? escHtml(h.object) : 'Visualization')

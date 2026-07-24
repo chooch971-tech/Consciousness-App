@@ -7,12 +7,16 @@ const path = require('node:path');
 const vm = require('node:vm');
 
 const source = fs.readFileSync(path.join(__dirname, '..', 'senses-client.js'), 'utf8');
+const journalSource = fs.readFileSync(path.join(__dirname, '..', 'journal-client.js'), 'utf8');
+const historySource = fs.readFileSync(path.join(__dirname, '..', 'concentration-clock-client.js'), 'utf8');
+const reportsSource = fs.readFileSync(path.join(__dirname, '..', 'reports-client.js'), 'utf8');
 
 function loadSensesContext(seed) {
   const values = new Map(Object.entries(seed || {}));
   const context = {
     console,
     document: { getElementById: () => null },
+    concState: { history: [] },
     localStorage: {
       getItem: key => values.has(key) ? values.get(key) : null,
       setItem: (key, value) => values.set(key, String(value))
@@ -65,7 +69,7 @@ test('the first Senses rep waits for an explicit Begin action before either time
     source.indexOf('function startSenseRep()')
   );
   assert.match(startSession, /senseSessionStartTime = null/);
-  assert.match(startSession, /beginBtn\.textContent = 'Begin Rep 1'/);
+  assert.match(startSession, /beginBtn\.textContent = senseBeginLabel\(1\)/);
   assert.doesNotMatch(startSession, /startSenseRep\(\)/);
   assert.doesNotMatch(startSession, /tickSenseTimers\(\)/);
 
@@ -84,4 +88,45 @@ test('Feeling offers only the four intentional body-state senses', () => {
     Array.from(context.SENSE_MODE_DEFS.feeling.cues),
     ['Warmth', 'Coldness', 'Tiredness', 'Hunger']
   );
+});
+
+test('Closed eyes is the default and Open Eyes is the advanced successor', () => {
+  const context = loadSensesContext();
+  assert.equal(context.senseEyesMode, 'closed');
+  assert.equal(context.normalizeSenseEyesMode('anything-else'), 'closed');
+  assert.equal(context.normalizeSenseEyesMode('open'), 'open');
+  assert.match(source, /Advanced successor/);
+  assert.match(source, /eyesMode:\s*senseActiveEyesMode/);
+  assert.match(source, /eyesMode:\s*rep\.eyesMode/);
+});
+
+test('Senses mastery uses clean 5, 7.5, and 10 minute reps per eyes mode', () => {
+  const context = loadSensesContext();
+  context.concState.history = [
+    {
+      exercise: 'sense', mode: 'feeling', eyesMode: 'closed', seconds: 610,
+      senseReps: [
+        { mode: 'feeling', eyesMode: 'closed', seconds: 610, halts: 2 },
+        { mode: 'feeling', eyesMode: 'closed', seconds: 460, halts: 0 }
+      ]
+    },
+    {
+      exercise: 'sense', mode: 'feeling', eyesMode: 'open', seconds: 305,
+      senseReps: [{ mode: 'feeling', eyesMode: 'open', seconds: 305, halts: 0 }]
+    }
+  ];
+  assert.deepEqual(Array.from(context.SENSE_MASTERY_THRESHOLDS), [300, 450, 600]);
+  assert.equal(context.getSenseBest('feeling', 'closed'), 460, 'halted time must not advance mastery');
+  assert.equal(context.getSenseBest('feeling', 'open'), 305, 'open eyes keeps its own advanced record');
+  assert.equal(context.senseMasteryTier(299), 0);
+  assert.equal(context.senseMasteryTier(300), 1);
+  assert.equal(context.senseMasteryTier(450), 2);
+  assert.equal(context.senseMasteryTier(600), 3);
+});
+
+test('Journal, history, and Practice Review expose the saved Senses eyes mode', () => {
+  assert.match(journalSource, /h\.eyesMode==='open'\?'Open eyes':'Closed eyes'/);
+  assert.match(historySource, /h\.eyesMode === 'open' \? 'Open Eyes' : 'Closed Eyes'/);
+  assert.match(reportsSource, /openEyesSessions/);
+  assert.match(reportsSource, /advanced_successor:true/);
 });

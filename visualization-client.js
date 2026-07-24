@@ -1577,10 +1577,11 @@ var EX_EXPLAINERS = {
   sense: {
     title: 'Senses',
     steps: [
-      'Choose a <strong>Feeling</strong>, <strong>Smell</strong>, or <strong>Taste</strong> to train, then summon it from imagination alone.',
+      'Choose a <strong>Feeling</strong>, <strong>Smell</strong>, or <strong>Taste</strong>, then begin with <strong>Closed Eyes</strong> and summon it from imagination alone.',
+      '<strong>Open Eyes</strong> is the advanced successor: keep a soft gaze while holding the imagined sensation against the visible world.',
       'Hold it <strong>vividly and unbroken</strong>. Tap the screen whenever concentration breaks; each tap records one honest halt.',
       'When the sensation disappears, tap <strong>Sensation Faded</strong> to finish the rep. Begin again with the same sense or switch to another.',
-      'The session and rep timers run together. Rep by rep, the imagined sense grows as real as the outer one.'
+      'Only a full rep with <strong>no halts</strong> advances mastery: <strong>5:00</strong>, then <strong>7:30</strong>, then <strong>10:00</strong>.'
     ]
   },
   thought: {

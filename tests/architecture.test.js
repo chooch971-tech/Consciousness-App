@@ -377,7 +377,7 @@ test('Thought Control modes and sessions load before Asana', () => {
 test('Asana and the shared wake lock load before Senses', () => {
   const thoughtTag = presence.indexOf('<script src="thought-control-client.js"></script>');
   const asanaTag = presence.indexOf('<script src="asana-client.js"></script>');
-  const sensesTag = presence.indexOf('<script src="senses-client.js?v=3"></script>');
+  const sensesTag = presence.indexOf('<script src="senses-client.js?v=4"></script>');
   assert.notEqual(asanaTag, -1);
   assert.ok(thoughtTag < asanaTag, 'Asana loads after Thought Control');
   assert.ok(asanaTag < sensesTag, 'Asana must initialize before Senses');
@@ -395,12 +395,12 @@ test('Asana and the shared wake lock load before Senses', () => {
 
 test('Senses setup and sessions load before app mode switching', () => {
   const asanaTag = presence.indexOf('<script src="asana-client.js"></script>');
-  const sensesTag = presence.indexOf('<script src="senses-client.js?v=3"></script>');
+  const sensesTag = presence.indexOf('<script src="senses-client.js?v=4"></script>');
   const appShellTag = presence.indexOf('<script src="app-shell-client.js"></script>');
   assert.notEqual(sensesTag, -1);
   assert.ok(asanaTag < sensesTag, 'Senses requires the shared Asana alarm and wake lock');
   assert.ok(sensesTag < appShellTag, 'Senses retains its original position before app mode switching');
-  assert.equal(presence.split('<script src="senses-client.js?v=3"></script>').length - 1, 1);
+  assert.equal(presence.split('<script src="senses-client.js?v=4"></script>').length - 1, 1);
   assert.doesNotMatch(presence, /function\s+buildSenseSetupHTML\s*\(|function\s+startSenseSession\s*\(/);
   assert.doesNotMatch(presence, /function\s+endSenseSession\s*\(|function\s+showSenseSessionResult\s*\(/);
   assert.match(sensesClient, /var\s+SENSE_MODE_DEFS\s*=\s*\{/);
@@ -415,7 +415,7 @@ test('Senses setup and sessions load before app mode switching', () => {
 });
 
 test('app shell owns mode switching and primary navigation wiring', () => {
-  const sensesTag = presence.indexOf('<script src="senses-client.js?v=3"></script>');
+  const sensesTag = presence.indexOf('<script src="senses-client.js?v=4"></script>');
   const appShellTag = presence.indexOf('<script src="app-shell-client.js"></script>');
   const omniaAmbientTag = presence.indexOf('<script src="omnia-ambient-client.js"></script>');
   assert.notEqual(appShellTag, -1);

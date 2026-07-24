@@ -260,10 +260,17 @@ function reviewPracticeRows(summary, previous) {
     if (meta.metric && prior && prior.best > 0 && current.best !== prior.best) {
       change = reviewSigned(current.best - prior.best, function(value){ return reviewMetricText(key,value); });
     }
+    var modeDetail = '';
+    if (key === 'sense') {
+      var modeBits = [];
+      if (current.closedEyesSessions) modeBits.push('Closed eyes ' + current.closedEyesSessions + ' · clean best ' + reviewSeconds(current.closedEyesBest || 0));
+      if (current.openEyesSessions) modeBits.push('Open eyes ' + current.openEyesSessions + ' · clean best ' + reviewSeconds(current.openEyesBest || 0));
+      if (modeBits.length) modeDetail = '<div class="review-practice-modes">' + modeBits.join('<br>') + '</div>';
+    }
     return '<div class="review-practice-row">'
       + '<div class="review-practice-icon" style="background:' + meta.color + '1e;border-color:' + meta.color + '38;color:' + meta.color + ';">' + meta.icon + '</div>'
       + '<div class="review-practice-main"><div class="review-practice-title">' + escHtml(meta.label) + '<small>' + current.sessions + ' session' + (current.sessions === 1 ? '' : 's') + '</small></div>'
-      + '<div class="review-practice-meta">' + metric + change + '</div>'
+      + '<div class="review-practice-meta">' + metric + change + modeDetail + '</div>'
       + '<div class="review-practice-track"><i style="width:' + Math.max(4,current.seconds/maxSeconds*100).toFixed(0) + '%"></i></div></div>'
       + '</div>';
   }).join('');
@@ -369,6 +376,12 @@ function reviewOmniaContext(period, offset, summary, previous, decision) {
     var meta = REVIEW_PRACTICES[key] || {label:key,metric:'duration'};
     var measure = meta.metric === 'breaths' ? 'breaths' : meta.metric === 'taps' ? 'taps' : 'seconds';
     concentration[meta.label] = { sessions:row.sessions, total_sec:row.seconds, measure:measure, best:row.best, typical:row.typical };
+    if (key === 'sense') {
+      concentration[meta.label].eyes_modes = {
+        closed: { sessions:row.closedEyesSessions || 0, clean_best_sec:row.closedEyesBest || 0 },
+        open: { sessions:row.openEyesSessions || 0, clean_best_sec:row.openEyesBest || 0, advanced_successor:true }
+      };
+    }
     if (measure === 'seconds') {
       // Hand Omnia the same human-readable durations shown on screen (minutes,
       // e.g. "8m 11s") so its insight never states a raw seconds count and its
