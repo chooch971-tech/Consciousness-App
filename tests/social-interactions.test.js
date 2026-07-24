@@ -119,6 +119,19 @@ test('Lodge comments support validated threaded replies and specific deletion co
   assert.match(presence, /function showConfirm\(title, text, onConfirm, tone, actionLabel\)/);
 });
 
+test('Lodge comments are heartable, ranked within their thread, and eagerly loaded', () => {
+  assert.match(server, /commentLikesCollection = db\.collection\('comment_likes'\)/);
+  assert.match(server, /label: 'comment-likes\.comment-user'[\s\S]*?unique:true/);
+  assert.match(server, /app\.post\('\/api\/social\/comments\/:id\/like', verifyToken, mutationRateLimit/);
+  assert.match(server, /likedByMe: !c\.deleted && myCommentLikeIds\.has/);
+  assert.match(server, /notify\(comment\.userId, 'comment_like'/);
+  assert.match(socialClient, /data-comment-like=/);
+  assert.match(socialClient, /function toggleLodgeCommentHeart\(cid, card\)/);
+  assert.match(socialClient, /Number\(b\.likeCount\)[\s\S]*?Number\(a\.likeCount\)/);
+  assert.match(socialClient, /if \(card\) toggleLodgeComments\(post\.id, card, true\)/);
+  assert.match(presence, /\.lodge-comment__heart\.liked/);
+});
+
 test('Profiles expose posts and comments with scoped Lodge history routes', () => {
   assert.match(presence, /id="profPostsBtn"[\s\S]*?id="profCommentsBtn"/);
   assert.match(presence, /id="friendProfPostsBtn"[\s\S]*?id="friendProfCommentsBtn"/);

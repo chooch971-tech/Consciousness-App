@@ -39,6 +39,7 @@ test('account deletion removes cloud, social, report, message, and notification 
     'notificationsCollection.deleteMany',
     'reportsCollection.deleteMany',
     'likesCollection.deleteMany',
+    'commentLikesCollection.deleteMany',
     'commentsCollection.deleteMany',
     'postsCollection.deleteMany',
     'messagesCollection.deleteMany',
@@ -50,6 +51,7 @@ test('account deletion removes cloud, social, report, message, and notification 
   assert.match(body, /prayerCollection\.deleteMany/);
   assert.match(body, /practiceCollection\.deleteMany/);
   assert.match(body, /likeCount:[\s\S]*?commentCount:/);
+  assert.match(body, /commentLikeCounts[\s\S]*?likeCount:commentLikeCounts/);
   assert.ok(
     body.indexOf('usersCollection.deleteOne') > body.indexOf("collection('omnia_reports').deleteMany"),
     'the user record must be deleted last'

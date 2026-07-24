@@ -901,13 +901,15 @@ async function testLodgeThreadedComments(browser, baseUrl) {
     const originalFetch = window.fetch;
     window._threadReplyBody = null;
     window._threadDeleteCalls = 0;
+    window._threadHeartCalls = 0;
     window.fetch = function(url, options) {
       const target = String(url);
       const method = (options && options.method) || 'GET';
       if (target.endsWith('/api/social/posts/thread-post/comments') && method === 'GET') {
         return Promise.resolve({ ok:true, json:() => Promise.resolve({ comments:[
-          { id:'thread-root', userId:'other-user', username:'other', text:'A root comment', createdAt:new Date().toISOString(), parentId:null, depth:0, mine:false },
-          { id:'thread-child', userId:'self-user', username:'thread_owner', text:'An existing reply', createdAt:new Date().toISOString(), parentId:'thread-root', depth:1, mine:true }
+          { id:'thread-root', userId:'other-user', username:'other', text:'A root comment', createdAt:new Date(Date.now() - 2000).toISOString(), parentId:null, depth:0, likeCount:1, likedByMe:false, mine:false },
+          { id:'thread-popular', userId:'popular-user', username:'popular', text:'A popular comment', createdAt:new Date(Date.now() - 1000).toISOString(), parentId:null, depth:0, likeCount:7, likedByMe:false, mine:false },
+          { id:'thread-child', userId:'self-user', username:'thread_owner', text:'An existing reply', createdAt:new Date().toISOString(), parentId:'thread-root', depth:1, likeCount:0, likedByMe:false, mine:true }
         ] }) });
       }
       if (target.endsWith('/api/social/posts/thread-post/comments') && method === 'POST') {
@@ -921,6 +923,10 @@ async function testLodgeThreadedComments(browser, baseUrl) {
         window._threadDeleteCalls++;
         return Promise.resolve({ ok:true, json:() => Promise.resolve({ ok:true, tombstoned:false }) });
       }
+      if (target.endsWith('/api/social/comments/thread-root/like') && method === 'POST') {
+        window._threadHeartCalls++;
+        return Promise.resolve({ ok:true, json:() => Promise.resolve({ liked:true, likeCount:8 }) });
+      }
       return originalFetch(url, options);
     };
     _lodgePosts = [{
@@ -931,15 +937,26 @@ async function testLodgeThreadedComments(browser, baseUrl) {
     showScreen('lodgeScreen');
     renderLodgeFeed();
     document.querySelector('.lodge-post__body').click();
-    document.querySelector('[data-lodge-discussion]').click();
   });
   await page.locator('[data-comment-id="thread-child"]').waitFor({ state:'visible' });
-  const nested = await page.evaluate(() => {
+  const initial = await page.evaluate(() => {
     const child = document.querySelector('.lodge-comment-children [data-comment-id="thread-child"]');
     const guide = document.querySelector('.lodge-comment-children');
-    return !!child && getComputedStyle(guide).borderLeftStyle !== 'none';
+    const first = document.querySelector('[data-comment-list] > .lodge-comment-thread');
+    return {
+      nested:!!child && getComputedStyle(guide).borderLeftStyle !== 'none',
+      commentsOpen:getComputedStyle(document.querySelector('.lodge-comments')).display === 'block',
+      firstId:first && first.getAttribute('data-comment-thread')
+    };
   });
-  assert.equal(nested, true, 'a reply should render beneath its parent with a left-side thread guide');
+  assert.equal(initial.nested, true, 'a reply should render beneath its parent with a left-side thread guide');
+  assert.equal(initial.commentsOpen, true, 'comments should load automatically with post detail');
+  assert.equal(initial.firstId, 'thread-popular', 'the most-hearted root comment should rank first');
+
+  await page.locator('[data-comment-like="thread-root"]').click();
+  await page.waitForFunction(() => window._threadHeartCalls === 1
+    && document.querySelector('[data-comment-list] > .lodge-comment-thread').getAttribute('data-comment-thread') === 'thread-root');
+  assert.match(await page.locator('[data-comment-like="thread-root"]').textContent(), /♥\s*8/);
 
   await page.locator('[data-comment-reply="thread-root"]').click();
   await page.locator('.lodge-reply-input').fill('A nested response');

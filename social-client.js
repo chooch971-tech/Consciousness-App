@@ -275,6 +275,8 @@ function _lodgeCommentNodeHtml(c, children, seen) {
     ? '<span class="lodge-comment__deleted-author">deleted</span>'
     : '<span style="color:' + _lodgeHue(c.username)[0] + ';opacity:.8;cursor:pointer;" data-lodge-user="' + escHtml(c.userId) + '" data-lodge-uname="' + escHtml(c.username || '?') + '">@' + escHtml(c.username || '?') + '</span>';
   var actions = deleted ? '' : '<div class="lodge-comment__actions">'
+    + '<button class="lodge-comment__action lodge-comment__heart' + (c.likedByMe ? ' liked' : '') + '" data-comment-like="' + escHtml(c.id) + '" aria-label="Heart comment">'
+    + (c.likedByMe ? '♥' : '♡') + ' <span>' + (Number(c.likeCount) || 0) + '</span></button>'
     + '<button class="lodge-comment__action" data-comment-reply="' + escHtml(c.id) + '" data-comment-uname="' + escHtml(c.username || '?') + '">Reply</button>'
     + (c.mine ? '<button class="lodge-comment__action lodge-comment__action--delete" data-comment-del="' + escHtml(c.id) + '">Delete</button>' : '')
     + '</div>';
@@ -299,6 +301,13 @@ function _lodgeRenderComments(card, comments) {
   comments.forEach(function(c) {
     var parent = c && c.parentId && byId[c.parentId] ? c.parentId : '';
     (children[parent] || (children[parent] = [])).push(c);
+  });
+  Object.keys(children).forEach(function(parentId) {
+    children[parentId].sort(function(a, b) {
+      var hearts = (Number(b.likeCount) || 0) - (Number(a.likeCount) || 0);
+      if (hearts) return hearts;
+      return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
+    });
   });
   var seen = {};
   var html = (children[''] || []).map(function(c) {
@@ -403,7 +412,9 @@ function openLodgePostDetail(post, returnScreen, openComments) {
   document.getElementById('lodgeBody').scrollTop = 0;
   var card = document.querySelector('#lodgeFeed .lodge-post');
   _lodgeFlipCard(firstRect, card);
-  if (openComments && card) toggleLodgeComments(post.id, card, true);
+  // A post detail is the discussion: load its comments immediately rather
+  // than requiring a second tap on the discussion line.
+  if (card) toggleLodgeComments(post.id, card, true);
 }
 
 function closeLodgePostDetail() {
@@ -559,6 +570,24 @@ async function sendLodgeComment(pid, card, parentId, input) {
   } catch(e) { showToast('Comment failed'); }
 }
 
+async function toggleLodgeCommentHeart(cid, card) {
+  try {
+    var res = await fetch(SERVER_URL + '/api/social/comments/' + cid + '/like', {
+      method:'POST',
+      headers:{ 'Authorization':'Bearer ' + authToken }
+    });
+    if (!res.ok) return;
+    var data = await res.json();
+    var comments = Array.isArray(card._lodgeComments) ? card._lodgeComments.slice() : [];
+    comments.forEach(function(comment) {
+      if (comment.id !== cid) return;
+      comment.likedByMe = !!data.liked;
+      comment.likeCount = Math.max(0, Number(data.likeCount) || 0);
+    });
+    _lodgeRenderComments(card, comments);
+  } catch(e) {}
+}
+
 async function deleteLodgePost(pid, card, confirmed) {
   if (!confirmed) {
     showConfirm(
@@ -631,6 +660,8 @@ document.getElementById('lodgeFeed').addEventListener('click', function(e) {
   if (uhead) { _openLodgeProfile(uhead.getAttribute('data-lodge-user'), uhead.getAttribute('data-lodge-uname'), post); return; }
   var cdel = e.target.closest('[data-comment-del]');
   if (cdel) { deleteLodgeComment(cdel.getAttribute('data-comment-del'), pid, card); return; }
+  var commentHeart = e.target.closest('[data-comment-like]');
+  if (commentHeart) { toggleLodgeCommentHeart(commentHeart.getAttribute('data-comment-like'), card); return; }
   var reply = e.target.closest('[data-comment-reply]');
   if (reply) { openLodgeReplyComposer(card, reply.getAttribute('data-comment-reply'), reply.getAttribute('data-comment-uname')); return; }
   if (e.target.closest('[data-reply-cancel]')) { e.target.closest('.lodge-reply-composer').remove(); return; }
@@ -1125,7 +1156,7 @@ var _lodgeNotifsPromise = null;
 var _lodgeNotifsLoadedAt = 0;
 var _lodgeNotifsToken = null;
 var _lodgeNotifsEpoch = 0;
-var NOTIF_COPY = { like: 'liked your post', comment: 'commented on your post', reply: 'replied to your comment', follow: 'now follows you', follow_req: 'requested to follow you', approved: 'approved your follow request', dm: 'sent you a message', friend: 'is now your friend — you follow each other' };
+var NOTIF_COPY = { like: 'liked your post', comment_like: 'hearted your comment', comment: 'commented on your post', reply: 'replied to your comment', follow: 'now follows you', follow_req: 'requested to follow you', approved: 'approved your follow request', dm: 'sent you a message', friend: 'is now your friend — you follow each other' };
 async function loadLodgeNotifs(force) {
   if (!authToken) return;
   if (_lodgeNotifsToken === null) {

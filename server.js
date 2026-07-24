@@ -104,6 +104,7 @@ let followsCollection;
 let postsCollection;
 let likesCollection;
 let commentsCollection;
+let commentLikesCollection;
 let blocksCollection;
 let reportsCollection;
 let omniaReportsCollection;
@@ -203,6 +204,7 @@ async function connectDB() {
     postsCollection = db.collection('posts');
     likesCollection = db.collection('likes');
     commentsCollection = db.collection('comments');
+    commentLikesCollection = db.collection('comment_likes');
     blocksCollection = db.collection('blocks');
     reportsCollection = db.collection('reports');
     omniaReportsCollection = db.collection('omnia_reports');
@@ -230,6 +232,9 @@ async function connectDB() {
       { label: 'comments.post-created', collection: commentsCollection, keys: { postId: 1, createdAt: 1 } },
       { label: 'comments.post-parent-created', collection: commentsCollection, keys: { postId: 1, parentId: 1, createdAt: 1 } },
       { label: 'comments.user-created', collection: commentsCollection, keys: { userId: 1, createdAt: -1 } },
+      { label: 'comment-likes.comment-user', collection: commentLikesCollection, keys: { commentId: 1, userId: 1 }, options: { unique:true } },
+      { label: 'comment-likes.user-created', collection: commentLikesCollection, keys: { userId: 1, createdAt: -1 } },
+      { label: 'comment-likes.post', collection: commentLikesCollection, keys: { postId: 1 } },
       { label: 'friends.user-status', collection: friendsCollection, keys: { userId: 1, status: 1 } },
       { label: 'friends.friend-status', collection: friendsCollection, keys: { friendId: 1, status: 1 } },
       { label: 'blocks.user-blocked', collection: blocksCollection, keys: { userId: 1, blockedId: 1 }, options: { unique: true } },
@@ -1057,6 +1062,9 @@ async function deletePresenceAccount(userId) {
       const ownedLikes = await likesCollection.find(
         { userId }, { session, projection: { postId: 1 } }
       ).toArray();
+      const ownedCommentLikes = await commentLikesCollection.find(
+        { userId }, { session, projection: { commentId:1, postId:1 } }
+      ).toArray();
       const ownedConversations = await conversationsCollection.find(
         { participants: userId }, { session, projection: { _id: 1 } }
       ).toArray();
@@ -1065,14 +1073,23 @@ async function deletePresenceAccount(userId) {
       ).toArray();
       const postIds = ownedPosts.map(row => row._id.toString());
       const postIdSet = new Set(postIds);
+      const postComments = postIds.length ? await commentsCollection.find(
+        { postId: { $in:postIds } }, { session, projection: { _id:1 } }
+      ).toArray() : [];
       const conversationIds = ownedConversations.map(row => row._id.toString());
       const commentIds = ownedComments.map(row => row._id.toString());
+      const removedCommentIds = [...new Set(commentIds.concat(postComments.map(row => row._id.toString())))];
       deletedEndpoints = pushRows.map(row => row.endpoint).filter(Boolean);
       const affectedPostIds = [...new Set(
         ownedLikes.map(row => row.postId).concat(ownedComments.map(row => row.postId))
           .filter(id => id && !postIdSet.has(id))
       )];
-      const deletedReferenceIds = [userId].concat(postIds, commentIds, conversationIds);
+      const commentIdSet = new Set(removedCommentIds);
+      const affectedCommentIds = [...new Set(
+        ownedCommentLikes.map(row => row.commentId)
+          .filter(id => id && ObjectId.isValid(id) && !commentIdSet.has(id))
+      )];
+      const deletedReferenceIds = [userId].concat(postIds, removedCommentIds, conversationIds);
 
       // Invalidate every existing session before touching dependent records.
       await usersCollection.updateOne(
@@ -1096,6 +1113,9 @@ async function deletePresenceAccount(userId) {
       await likesCollection.deleteMany({
         $or: [{ userId }, { postId: { $in: postIds } }]
       }, { session });
+      await commentLikesCollection.deleteMany({
+        $or: [{ userId }, { commentId: { $in:removedCommentIds } }, { postId: { $in:postIds } }]
+      }, { session });
       await commentsCollection.deleteMany({
         $or: [{ userId }, { postId: { $in: postIds } }]
       }, { session });
@@ -1107,7 +1127,7 @@ async function deletePresenceAccount(userId) {
           { $group: { _id: '$postId', count: { $sum: 1 } } }
         ], { session }).toArray();
         const commentRows = await commentsCollection.aggregate([
-          { $match: { postId: { $in: affectedPostIds } } },
+          { $match: { postId: { $in: affectedPostIds }, deleted: { $ne:true } } },
           { $group: { _id: '$postId', count: { $sum: 1 } } }
         ], { session }).toArray();
         const likeCounts = new Map(likeRows.map(row => [row._id, row.count]));
@@ -1118,6 +1138,20 @@ async function deletePresenceAccount(userId) {
             update: { $set: { likeCount: likeCounts.get(id) || 0, commentCount: commentCounts.get(id) || 0 } }
           }
         })), { session, ordered: false });
+      }
+
+      if (affectedCommentIds.length) {
+        const commentLikeRows = await commentLikesCollection.aggregate([
+          { $match: { commentId: { $in:affectedCommentIds } } },
+          { $group: { _id:'$commentId', count: { $sum:1 } } }
+        ], { session }).toArray();
+        const commentLikeCounts = new Map(commentLikeRows.map(row => [row._id, row.count]));
+        await commentsCollection.bulkWrite(affectedCommentIds.map(id => ({
+          updateOne: {
+            filter: { _id:new ObjectId(id), deleted: { $ne:true } },
+            update: { $set: { likeCount:commentLikeCounts.get(id) || 0 } }
+          }
+        })), { session, ordered:false });
       }
 
       if (conversationIds.length) {
@@ -2438,6 +2472,7 @@ app.delete('/api/social/posts/:id', verifyToken, mutationRateLimit, async (req, 
     await postsCollection.deleteOne({ _id: post._id });
     const pid = post._id.toString();
     await likesCollection.deleteMany({ postId: pid });
+    await commentLikesCollection.deleteMany({ postId: pid });
     await commentsCollection.deleteMany({ postId: pid });
     res.json({ ok: true });
   } catch (err) {
@@ -2532,6 +2567,12 @@ app.get('/api/social/posts/:id/comments', verifyToken, async (req, res) => {
     const users = ids.length ? await usersCollection.find({ _id: { $in: ids.map(id => new ObjectId(id)) } })
       .project({ username: 1 }).toArray() : [];
     const byId = {}; users.forEach(u => { byId[u._id.toString()] = u; });
+    const visibleCommentIds = comments.filter(c => !c.deleted).map(c => c._id.toString());
+    const myCommentLikes = visibleCommentIds.length ? await commentLikesCollection.find({
+      commentId: { $in:visibleCommentIds },
+      userId:req.user.userId
+    }).project({ commentId:1 }).toArray() : [];
+    const myCommentLikeIds = new Set(myCommentLikes.map(row => row.commentId));
     res.json({ comments: comments.map(c => ({
       id: c._id.toString(),
       userId: c.userId,
@@ -2541,6 +2582,8 @@ app.get('/api/social/posts/:id/comments', verifyToken, async (req, res) => {
       parentId: c.parentId || null,
       depth: Math.max(0, Math.min(COMMENT_MAX_DEPTH, Number(c.depth) || 0)),
       deleted: !!c.deleted,
+      likeCount: c.deleted ? 0 : Math.max(0, Number(c.likeCount) || 0),
+      likedByMe: !c.deleted && myCommentLikeIds.has(c._id.toString()),
       mine: !c.deleted && c.userId === req.user.userId
     })) });
   } catch (err) {
@@ -2587,7 +2630,8 @@ app.post('/api/social/posts/:id/comments', verifyToken, mutationRateLimit, async
       text,
       createdAt: new Date(),
       parentId: parent ? parent._id.toString() : null,
-      depth: parent ? (Number(parent.depth) || 0) + 1 : 0
+      depth: parent ? (Number(parent.depth) || 0) + 1 : 0,
+      likeCount:0
     };
     const r = await commentsCollection.insertOne(c);
     await postsCollection.updateOne({ _id: post._id }, { $inc: { commentCount: 1 } });
@@ -2597,10 +2641,55 @@ app.post('/api/social/posts/:id/comments', verifyToken, mutationRateLimit, async
     res.json({ ok: true, comment: {
       id: r.insertedId.toString(), userId,
       username: (me && me.username) || ('practitioner_' + userId.slice(-5)),
-      text, createdAt: c.createdAt, parentId:c.parentId, depth:c.depth, deleted:false, mine: true
+      text, createdAt: c.createdAt, parentId:c.parentId, depth:c.depth,
+      likeCount:0, likedByMe:false, deleted:false, mine:true
     } });
   } catch (err) {
     res.status(500).json({ error: 'Comment failed' });
+  }
+});
+
+app.post('/api/social/comments/:id/like', verifyToken, mutationRateLimit, async (req, res) => {
+  try {
+    const comment = await commentsCollection.findOne({ _id:new ObjectId(req.params.id) });
+    if (!comment || comment.deleted) return res.status(404).json({ error:'Comment not found' });
+    const post = await postsCollection.findOne({ _id:new ObjectId(comment.postId) });
+    if (!post || !(await canEngagePost(req.user.userId, post))) {
+      return res.status(403).json({ error:'Not available' });
+    }
+    const commentId = comment._id.toString();
+    const userId = req.user.userId;
+    const existing = await commentLikesCollection.findOne({ commentId, userId });
+    let liked = false;
+    if (existing) {
+      const removed = await commentLikesCollection.deleteOne({ _id:existing._id });
+      if (removed.deletedCount === 1) {
+        await commentsCollection.updateOne(
+          { _id:comment._id, likeCount: { $gt:0 } },
+          { $inc: { likeCount:-1 } }
+        );
+      }
+    } else {
+      try {
+        await commentLikesCollection.insertOne({
+          commentId,
+          postId:comment.postId,
+          userId,
+          createdAt:new Date()
+        });
+        await commentsCollection.updateOne({ _id:comment._id }, { $inc: { likeCount:1 } });
+        liked = true;
+        notify(comment.userId, 'comment_like', userId, commentId);
+      } catch (error) {
+        // The unique index resolves simultaneous double-taps into one heart.
+        if (!error || error.code !== 11000) throw error;
+        liked = true;
+      }
+    }
+    const fresh = await commentsCollection.findOne({ _id:comment._id });
+    res.json({ liked, likeCount:Math.max(0, Number(fresh && fresh.likeCount) || 0) });
+  } catch (err) {
+    res.status(500).json({ error:'Comment heart failed' });
   }
 });
 
@@ -2610,6 +2699,7 @@ app.delete('/api/social/comments/:id', verifyToken, mutationRateLimit, async (re
     if (!c) return res.status(404).json({ error: 'Not found' });
     if (c.userId !== req.user.userId) return res.status(403).json({ error: 'Not yours' });
     if (c.deleted) return res.json({ ok:true, tombstoned:true });
+    await commentLikesCollection.deleteMany({ commentId:c._id.toString() });
     const hasReplies = await commentsCollection.findOne({ postId:c.postId, parentId:c._id.toString() });
     let removed = false;
     if (hasReplies) {
