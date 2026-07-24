@@ -1315,8 +1315,7 @@
     #exSetupScreen[data-ex="sense"] .ex-setup-beginbar { background:rgba(21,13,19,.9); backdrop-filter:blur(6px); -webkit-backdrop-filter:blur(6px); border-top-color:rgba(224,168,196,.18); }
     #exSetupScreen[data-ex="thought"] .ex-setup-beginbar { background:rgba(13,17,28,.9); backdrop-filter:blur(6px); -webkit-backdrop-filter:blur(6px); border-top-color:rgba(152,196,232,.18); }
     /* Begin buttons pop in the exercise's own color. */
-    #exSetupScreen[data-ex="sense"] #exSetupBeginBtn { background:linear-gradient(160deg,#cbd5ff,#8292df) !important; border-color:rgba(207,216,255,.7) !important; color:#11182f !important; font-weight:700; box-shadow:0 0 26px -4px rgba(142,158,224,.8), 0 3px 0 rgba(55,68,128,.6); }
-    #senseBeginRepBtn.conc-btn.primary { background:linear-gradient(160deg,#cbd5ff,#8292df) !important; border-color:rgba(207,216,255,.7) !important; color:#11182f !important; font-weight:700; box-shadow:0 0 22px -5px rgba(142,158,224,.75); }
+    #exSetupScreen[data-ex="sense"] #exSetupBeginBtn { background:linear-gradient(160deg,#f0bcd6,#c9769f) !important; border-color:transparent !important; color:#2a1220 !important; font-weight:700; box-shadow:0 0 26px -4px rgba(224,168,196,.8), 0 3px 0 rgba(120,60,90,.55); }
     #exSetupScreen[data-ex="thought"] #exSetupBeginBtn { background:linear-gradient(160deg,#aad0f2,#5e8fc0) !important; border-color:transparent !important; color:#0d1723 !important; font-weight:700; box-shadow:0 0 26px -4px rgba(152,196,232,.8), 0 3px 0 rgba(52,86,124,.6); }
     /* Clock-page mirror pieces: hero card (mode picker + minutes), big record
        readout, and a single 0→goal progress track with waypoint marks. */
@@ -8366,7 +8365,7 @@ body:not(.tut-live) #tutCorgi {
       <div class="sense-session-meter"><span>session <strong id="senseSessionTimer">0:00</strong></span><span id="senseSessionModeMeta">clean reps build mastery</span></div>
       <button class="btn primary conc-btn" id="senseFadedBtn" style="max-width:300px; width:100%; display:none; background:rgba(207,143,176,.14); border-color:rgba(207,143,176,.4); color:#e0a8c4;">Sensation Faded</button>
       <button class="btn ghost conc-btn" id="senseSwitchBtn" style="max-width:300px; width:100%; font-size:9px;">Switch Sensation</button>
-      <button class="btn primary conc-btn" id="senseBeginRepBtn" style="max-width:300px; width:100%; background:linear-gradient(160deg,#cbd5ff,#8292df); border-color:rgba(207,216,255,.7); color:#11182f; font-weight:700; box-shadow:0 0 22px -5px rgba(142,158,224,.75);">Begin Rep 1</button>
+      <button class="btn primary conc-btn" id="senseBeginRepBtn" style="max-width:300px; width:100%; background:rgba(207,143,176,.14); border-color:rgba(207,143,176,.4); color:#e0a8c4;">Begin Rep 1</button>
     </div>
     <div class="vis-halt-flash" id="senseHaltFlash">Halt.</div>
     <div class="vis-halt-count" id="senseHaltCount"></div>
@@ -9831,7 +9830,7 @@ function claimMorningOffering() {
 <script src="auditory-client.js"></script>
 <script src="thought-control-client.js"></script>
 <script src="asana-client.js"></script>
-  <script src="senses-client.js?v=4"></script>
+  <script src="senses-client.js?v=5"></script>
 <script src="app-shell-client.js"></script>
 <script src="omnia-ambient-client.js"></script>
 <script src="concentration-controls-client.js"></script>

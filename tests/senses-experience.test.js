@@ -90,12 +90,15 @@ test('Feeling offers only the four intentional body-state senses', () => {
   );
 });
 
-test('Closed eyes is the default and Open Eyes is the advanced successor', () => {
+test('Closed eyes is the default and Open Eyes is the advanced mode', () => {
   const context = loadSensesContext();
   assert.equal(context.senseEyesMode, 'closed');
   assert.equal(context.normalizeSenseEyesMode('anything-else'), 'closed');
   assert.equal(context.normalizeSenseEyesMode('open'), 'open');
-  assert.match(source, /Advanced successor/);
+  assert.match(source, /<small>Advanced<\/small>/);
+  assert.doesNotMatch(source, /Advanced successor/);
+  assert.match(source, /senseEyesLabel\(senseEyesMode\) \+ ' Record'/);
+  assert.doesNotMatch(source, /'Clean ' \+ senseEyesLabel/);
   assert.match(source, /eyesMode:\s*senseActiveEyesMode/);
   assert.match(source, /eyesMode:\s*rep\.eyesMode/);
 });

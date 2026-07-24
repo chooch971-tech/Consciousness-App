@@ -252,7 +252,7 @@ function senseChoiceGridHTML() {
 
 function senseProgressHTML() {
   var best = getSenseBest(senseMode, senseEyesMode);
-  return snRecordHtml(best, 'Clean ' + senseEyesLabel(senseEyesMode) + ' Record')
+  return snRecordHtml(best, senseEyesLabel(senseEyesMode) + ' Record')
     + senseMasteryProgressHtml(best, senseEyesMode);
 }
 
@@ -260,7 +260,7 @@ function senseEyesOptionsHTML() {
   return '<button type="button" class="sense-eyes-option' + (senseEyesMode === 'closed' ? ' on' : '') + '" onclick="setSenseEyesMode(\'closed\')">'
     + '<span class="sense-eye-icon">◉</span><span><strong>Closed Eyes</strong><small>Foundation · default</small></span></button>'
     + '<button type="button" class="sense-eyes-option sense-eyes-option--advanced' + (senseEyesMode === 'open' ? ' on' : '') + '" onclick="setSenseEyesMode(\'open\')">'
-    + '<span class="sense-eye-icon">◎</span><span><strong>Open Eyes</strong><small>Advanced successor</small></span></button>';
+    + '<span class="sense-eye-icon">◎</span><span><strong>Open Eyes</strong><small>Advanced</small></span></button>';
 }
 
 function buildSenseSetupHTML() {
