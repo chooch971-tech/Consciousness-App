@@ -21,10 +21,12 @@ function switchMode(mode) {
   // An explicit mode switch is a fresh entry — discard any Guide scroll position
   // banked for a return trip so it can't restore stale on a later renderHome.
   window._guideScrollRestore = 0;
-  // The Guide's night-sky backdrop lives on #homeScreen and must show only in
-  // Guide mode, not the Awareness/Concentration/Prayer panels it shares home
-  // with. (Body default is mode-guide since the app boots into the Guide.)
-  document.body.classList.toggle('mode-guide', mode === 'guide');
+  // Each mode paints its own backdrop on the shared #homeScreen, so exactly one
+  // mode-* class may be set at a time or two backdrops would stack.
+  // (Body default is mode-guide since the app boots into the Guide.)
+  ['guide', 'concentration', 'awareness', 'prayer'].forEach(function(m) {
+    document.body.classList.toggle('mode-' + m, mode === m);
+  });
   if (typeof closeStarMapSheet === 'function') closeStarMapSheet();
   if(window._omniaQuickDismiss && mode==='guide') window._omniaQuickDismiss();
   if (mode !== 'guide') document.body.classList.remove('upgrade-stage');

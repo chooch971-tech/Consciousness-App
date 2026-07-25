@@ -138,6 +138,54 @@
         radial-gradient(ellipse 90% 45% at 50% 108%, rgba(104,82,184,.15) 0%, transparent 70%),
         linear-gradient(180deg, #131022 0%, #0b0916 55%, #0f0c1c 100%);
     }
+    /* The remaining home modes get their own backdrop in their own banner hue,
+       deliberately in a different TEXTURE from the Guide's starfield rather
+       than a recolour of it — the star motif is already carrying the Lodge,
+       Profile and Settings, and repeating it a fifth time would stop it
+       meaning anything. Same mechanics as above: static gradients on the fixed
+       #homeScreen, never on a scrolling panel, so each costs one paint and
+       nothing per scroll frame. */
+    /* Concentration — embers over a low hearth glow. The motes are larger and
+       softer than stars and the glow sits at the bottom edge, so it reads as
+       firelight rising rather than a sky. */
+    body.mode-concentration #homeScreen {
+      background:
+        radial-gradient(2.5px 2.5px at 22% 16%, rgba(232,160,90,.20), transparent),
+        radial-gradient(2px 2px at 78% 24%, rgba(212,149,110,.18), transparent),
+        radial-gradient(3px 3px at 40% 45%, rgba(232,180,120,.13), transparent),
+        radial-gradient(2px 2px at 86% 58%, rgba(212,149,110,.14), transparent),
+        radial-gradient(2.5px 2.5px at 16% 70%, rgba(232,160,90,.15), transparent),
+        radial-gradient(2px 2px at 62% 84%, rgba(232,180,120,.12), transparent),
+        radial-gradient(ellipse 110% 46% at 50% 104%, rgba(196,110,44,.17) 0%, transparent 66%),
+        radial-gradient(ellipse 120% 40% at 50% -6%, rgba(150,88,38,.12) 0%, transparent 62%),
+        linear-gradient(180deg, #17110a 0%, #0b0806 55%, #130e08 100%);
+    }
+    /* Awareness — a dawn mist wash with almost no points at all. Open, quiet
+       attention shouldn't have anything in it to fixate on. */
+    body.mode-awareness #homeScreen {
+      background:
+        radial-gradient(ellipse 130% 55% at 50% -10%, rgba(90,190,140,.15) 0%, transparent 64%),
+        radial-gradient(ellipse 100% 48% at 50% 106%, rgba(60,150,110,.11) 0%, transparent 70%),
+        radial-gradient(ellipse 74% 32% at 22% 44%, rgba(120,210,170,.055) 0%, transparent 72%),
+        radial-gradient(ellipse 60% 26% at 82% 66%, rgba(120,210,170,.04) 0%, transparent 72%),
+        linear-gradient(180deg, #0a1610 0%, #070c09 55%, #091410 100%);
+    }
+    /* Prayer — a deep indigo vigil lit by warm candle-gold points. Prayer
+       shares the Guide's violet accent, so a violet sky here would read as
+       having navigated back into the Guide; the cool base plus warm points
+       keeps the two clearly apart. */
+    body.mode-prayer #homeScreen {
+      background:
+        radial-gradient(1.5px 1.5px at 24% 14%, rgba(240,214,150,.34), transparent),
+        radial-gradient(1px 1px at 74% 22%, rgba(240,214,150,.26), transparent),
+        radial-gradient(1.5px 1.5px at 46% 40%, rgba(232,200,140,.22), transparent),
+        radial-gradient(1px 1px at 84% 60%, rgba(240,214,150,.2), transparent),
+        radial-gradient(1.5px 1.5px at 18% 74%, rgba(232,200,140,.2), transparent),
+        radial-gradient(1px 1px at 66% 88%, rgba(240,214,150,.18), transparent),
+        radial-gradient(ellipse 116% 46% at 50% 102%, rgba(196,150,70,.13) 0%, transparent 66%),
+        radial-gradient(ellipse 124% 44% at 50% -8%, rgba(70,66,150,.17) 0%, transparent 64%),
+        linear-gradient(180deg, #0c0d1e 0%, #070811 55%, #0a0b18 100%);
+    }
     .top-bar { position:relative; display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; opacity:0; animation:fadeUp .7s ease forwards .1s; }
     .top-bar > *:first-child { flex:1; }
     .top-bar > *:last-child { flex:1; text-align:right; }
@@ -9016,7 +9064,12 @@ function closeDrawer(instant) {
   window._drawerClosedAt = Date.now();
 }
 
-document.getElementById('hamburgerBtn').addEventListener('click', openDrawer);
+// Call through a wrapper rather than passing openDrawer directly: as a bare
+// listener it receives the click MouseEvent as its `instant` argument, which
+// is truthy, so every tap took the snap-open path meant only for restoring the
+// drawer after backing out of a menu — the drawer appeared with no slide or
+// fade at all, unlike the edge swipe.
+document.getElementById('hamburgerBtn').addEventListener('click', function() { openDrawer(); });
 
 // Swipe right from left edge on homeScreen → open drawer
 (function() {
