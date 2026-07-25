@@ -7,12 +7,12 @@ var OMNIA_PALETTES = [
   { id:'violet', name:'Violet Mind', cost:11800, _price:11800, color:'#c4a8d4', filter:'hue-rotate(74deg) saturate(1.22) brightness(1.04)', sub:'A quiet mental flame' },
   { id:'verdant', name:'Verdant Vessel', cost:14500, _price:14500, color:'#98d8bd', filter:'hue-rotate(246deg) saturate(1.12) brightness(1.02)', sub:'A healing green current' },
   { id:'crimson', name:'Crimson Flame', cost:13500, _price:13500, color:'#e8554f', filter:'hue-rotate(162deg) saturate(1.3) brightness(1.05)', sub:"Archangel Michael's own warrior-fire" },
-  { id:'aurora', name:'Aurora Veil', cost:0, _price:0, color:'#a8e8c8', filter:'none', sub:'A living prism — the full spectrum cycling endlessly' }
+  { id:'aurora', name:'Aurora Veil', cost:18000, _price:18000, color:'#a8e8c8', filter:'none', sub:'A living prism — the full spectrum cycling endlessly' }
 ];
 
 // Veils layer on top of the selected palette instead of replacing it.
 var OMNIA_VEILS = [
-  { id:'spectral', name:'Spectral Veil', cost:14500, _price:14500, color:'rgba(216,236,255,0.42)', sub:'A near-invisible ghost — only the glowing edges pulse into view, over any color' }
+  { id:'spectral', name:'Spectral Veil', cost:25000, _price:25000, color:'rgba(216,236,255,0.42)', sub:'A near-invisible ghost — only the glowing edges pulse into view, over any color' }
 ];
 
 // `dm:true` items are the Dark Current line: priced in Dark Matter ◆ (not
@@ -23,10 +23,10 @@ var OMNIA_VEILS = [
 var DARK_CURRENT_PREVIEW = false;
 var OMNIA_ENTITIES = [
   { id:'omnia', name:'Omnia', cost:0, _price:0, color:'#b8eaff', sub:'The first guide-form' },
-  { id:'noema', name:'Noema', cost:12000, _price:12000, color:'#98b4cc', sub:'A sharper mental entity design' },
-  { id:'aurel', name:'Aurel', cost:18000, _price:18000, color:'#f0d39a', sub:'A solar entity design for disciplined work' },
-  { id:'elys', name:'Archangel Michael', cost:26000, _price:26000, color:'#c4a8d4', sub:'The standing archangel — halo, spear, and orb' },
-  { id:'seraph', name:'Seraph', cost:34000, _price:34000, dmBonus:1, color:'#f3d486', sub:'A biblically accurate angel — wheels within wheels, eyes of flame' },
+  { id:'noema', name:'Noema', cost:15000, _price:15000, color:'#98b4cc', sub:'A sharper mental entity design' },
+  { id:'aurel', name:'Aurel', cost:35000, _price:35000, color:'#f0d39a', sub:'A solar entity design for disciplined work' },
+  { id:'elys', name:'Archangel Michael', cost:55000, _price:55000, color:'#c4a8d4', sub:'The standing archangel — halo, spear, and orb' },
+  { id:'seraph', name:'Seraph', cost:100000, _price:100000, dmBonus:1, color:'#f3d486', sub:'A biblically accurate angel — wheels within wheels, eyes of flame' },
   { id:'darkomnia', name:'Dark Omnia', cost:2400, _price:2400, dm:true, dmBonus:12, color:'#c4a8d4', sub:'Omnia\'s form turned to the dark current — where she casts light, this casts dark' }
 ];
 
@@ -41,9 +41,9 @@ var OMNIA_ENTITY_NATIVE_PALETTE = { omnia:'aether', noema:'aether', aurel:'solar
 var OMNIA_ENTITY_AUTO_PALETTE = { noema:'violet', aurel:'solar', elys:'violet', seraph:'solar', darkomnia:'violet' };
 
 var OMNIA_COMPANIONS = [
-  { id:'wisp', name:'Akashic Wisp', cost:5400, _price:5400, color:'#b8eaff', sub:'A small orbiting practice companion' },
-  { id:'ember', name:'Solar Ember', cost:7600, _price:7600, color:'#f0d39a', sub:'A warm companion for steady effort' },
-  { id:'mote', name:'Violet Mote', cost:9800, _price:9800, color:'#c4a8d4', sub:'A tiny watcher for mental work' },
-  { id:'corgi', name:'Astral Corgi', cost:14500, _price:14500, color:'#d9a069', sub:'A loyal little companion for returning to practice' },
+  { id:'wisp', name:'Akashic Wisp', cost:5000, _price:5000, color:'#b8eaff', sub:'A small orbiting practice companion' },
+  { id:'ember', name:'Solar Ember', cost:15000, _price:15000, color:'#f0d39a', sub:'A warm companion for steady effort' },
+  { id:'mote', name:'Violet Mote', cost:30000, _price:30000, color:'#c4a8d4', sub:'A tiny watcher for mental work' },
+  { id:'corgi', name:'Astral Corgi', cost:57575, _price:57575, color:'#d9a069', sub:'A loyal little companion for returning to practice' },
   { id:'gnome', name:'Vein Gnome', cost:800, _price:800, dm:true, dmBonus:8, color:'#d8c4f4', sub:'An earth elemental — keeper of the dark veins. His lantern holds a live shard' }
 ];
