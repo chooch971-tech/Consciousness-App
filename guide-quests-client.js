@@ -90,6 +90,12 @@ function pathQuestRecordAwarenessMinutes(minutes) {
 function pathQuestHasUnclaimed() {
   var q = pathQuestState();
   return ['daily', 'weekend', 'awareness'].some(function(type) {
+    // The awareness quest only has a card on its own day (isAwarenessQuestDay),
+    // but its minutes are recorded on every day. Counting it here regardless
+    // meant 15+ minutes of awareness on an off day lit this dot with no card
+    // anywhere to claim from — the badge then stayed lit until midnight no
+    // matter what the player collected.
+    if (type === 'awareness' && !isAwarenessQuestDay()) return false;
     var data = q[type];
     if (!data || data.claimed) return false;
     var target = type === 'daily' ? 2 : type === 'awareness' ? 15 : pathQuestWeekendTarget();
