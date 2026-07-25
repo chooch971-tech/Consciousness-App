@@ -3063,7 +3063,6 @@
     .drawer-overlay.swipe-back-live .drawer { position:absolute; z-index:1; transition:none; }
     .drawer-header { padding:0 24px 24px; border-bottom:1px solid var(--border); margin-bottom:8px; }
     .drawer-wordmark { font-family:Cormorant Garamond,serif; font-size:11px; font-weight:300; letter-spacing:.35em; text-transform:uppercase; color:var(--accent); }
-    .drawer-level { font-size:9px; letter-spacing:.15em; color:var(--muted); margin-top:4px; }
     .drawer-items { flex:1; display:flex; flex-direction:column; padding:7px 0; overflow-y:auto; scrollbar-width:none; }
     .drawer-items::-webkit-scrollbar { display:none; }
     .drawer-section-label { padding:11px 24px 5px; font-family:'DM Mono',monospace; font-size:8px; letter-spacing:.24em; text-transform:uppercase; color:rgba(221,216,206,.5); }
@@ -5219,7 +5218,7 @@ body:not(.tut-live) #tutCorgi {
 #drawerOmniaBtn {
   background:none; border:none; cursor:default; padding:4px;
   opacity:0.65; transition:opacity 0.2s ease, filter 0.2s ease;
-  line-height:0; margin-bottom:14px; position:relative;
+  line-height:0; margin-bottom:24px; position:relative;
 }
 
 /* Friends panel */
@@ -8765,7 +8764,6 @@ body:not(.tut-live) #tutCorgi {
         </svg>
       </div>
       <div class="drawer-wordmark">Presence</div>
-      <div class="drawer-level" id="drawerLevel">Level 1 · Initiate</div>
     </div>
     <div class="drawer-items">
       <div class="drawer-section-label">Practice</div>
@@ -9040,14 +9038,6 @@ document.getElementById('historyBack').addEventListener('click', function() {
 // ── Hamburger / Drawer ──
 function openDrawer(instant, preserveGuideAnimation) {
   if (typeof closeStarMapSheet === 'function') closeStarMapSheet();
-  var drawerLevelEl = document.getElementById('drawerLevel');
-  if (drawerLevelEl) {
-    if (currentMode === 'concentration') {
-      drawerLevelEl.textContent = 'Level ' + concState.level + ' · ' + getConcRank(concState.level);
-    } else {
-      drawerLevelEl.textContent = 'Level ' + state.level + ' · ' + getRankTitle(state.level);
-    }
-  }
   // The live drawer is already visible beneath an interactive swipe. Rebuilding
   // its Guide SVG during the handoff would restart every animation and jump.
   if (!preserveGuideAnimation) {

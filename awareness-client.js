@@ -1198,14 +1198,6 @@ function renderHome() {
       awXPHint.textContent = awToNext.toLocaleString() + ' xp to level ' + (state.level + 1);
     }
   }
-  var drawerLevelEl = document.getElementById('drawerLevel');
-  if (drawerLevelEl) {
-    if (currentMode === 'concentration') {
-      drawerLevelEl.textContent = 'Level ' + concState.level + ' · ' + getConcRank(concState.level);
-    } else {
-      drawerLevelEl.textContent = 'Level ' + state.level + ' · ' + getRankTitle(state.level);
-    }
-  }
   // Update home symbol if exists
   var homeSym = document.getElementById('homeSymbol');
   var homeSymFill = document.getElementById('homeSymbolFill');

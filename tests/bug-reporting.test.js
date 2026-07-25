@@ -19,6 +19,12 @@ test('the drawer exposes Report a Bug directly below Donate', () => {
   assert.ok(report < reset);
 });
 
+test('the drawer header keeps Presence uncluttered and below the guide figure', () => {
+  assert.match(presence, /#drawerOmniaBtn\s*\{[^}]*margin-bottom:24px/);
+  assert.match(presence, /<div class="drawer-wordmark">Presence<\/div>/);
+  assert.doesNotMatch(presence, /drawerLevel|drawer-level/);
+});
+
 test('the bug form validates, submits technical context, and gives success feedback', () => {
   assert.match(presence, /id="bugReportScreen"/);
   assert.match(presence, /id="bugReportDescription"[^>]*maxlength="4000"[^>]*minlength="10"/);
