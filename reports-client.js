@@ -263,8 +263,8 @@ function reviewPracticeRows(summary, previous) {
     var modeDetail = '';
     if (key === 'sense') {
       var modeBits = [];
-      if (current.closedEyesSessions) modeBits.push('Closed eyes ' + current.closedEyesSessions + ' · clean best ' + reviewSeconds(current.closedEyesBest || 0));
-      if (current.openEyesSessions) modeBits.push('Open eyes ' + current.openEyesSessions + ' · clean best ' + reviewSeconds(current.openEyesBest || 0));
+      if (current.closedEyesSessions) modeBits.push('Closed eyes ' + current.closedEyesSessions + ' · best ' + reviewSeconds(current.closedEyesBest || 0));
+      if (current.openEyesSessions) modeBits.push('Open eyes ' + current.openEyesSessions + ' · best ' + reviewSeconds(current.openEyesBest || 0));
       if (modeBits.length) modeDetail = '<div class="review-practice-modes">' + modeBits.join('<br>') + '</div>';
     }
     return '<div class="review-practice-row">'
