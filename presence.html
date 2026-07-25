@@ -3085,7 +3085,6 @@
     .bug-report-input { width:100%; border:1px solid var(--border2); border-radius:9px; background:rgba(7,8,13,.72); color:var(--text); font-family:'DM Mono',monospace; font-size:11px; line-height:1.6; outline:none; padding:12px 13px; resize:vertical; }
     .bug-report-input:focus { border-color:rgba(212,152,152,.55); box-shadow:0 0 0 2px rgba(212,152,152,.07); }
     select.bug-report-input { min-height:44px; appearance:none; background-image:linear-gradient(45deg,transparent 50%,#d49898 50%),linear-gradient(135deg,#d49898 50%,transparent 50%); background-position:calc(100% - 17px) 19px,calc(100% - 12px) 19px; background-size:5px 5px,5px 5px; background-repeat:no-repeat; }
-    .bug-report-note { margin-top:14px; font-size:9px; line-height:1.65; color:var(--muted); }
     .bug-report-status { display:none; margin-top:14px; padding:11px 12px; border-radius:9px; font-size:10px; line-height:1.55; }
     .bug-report-status.success { display:block; border:1px solid rgba(126,184,164,.25); background:rgba(126,184,164,.08); color:#9ed8c4; }
     .bug-report-status.error { display:block; border:1px solid rgba(212,149,110,.25); background:rgba(212,149,110,.08); color:#e0ad87; }
@@ -6421,7 +6420,6 @@ body:not(.tut-live) #tutCorgi {
           <label class="bug-report-label" for="bugReportSteps"><span>How can we reproduce it?</span><span>Optional</span></label>
           <textarea class="bug-report-input" id="bugReportSteps" rows="4" maxlength="2000" placeholder="List the taps or steps that led to the problem."></textarea>
         </div>
-        <div class="bug-report-note" id="bugReportPrivacy">Basic app, screen, and device-display details will be attached. No journal entries or practice content are included.</div>
         <div class="bug-report-status" id="bugReportStatus" role="status" aria-live="polite"></div>
         <button class="bug-report-submit" id="bugReportSubmit" type="submit">Send Bug Report</button>
       </form>

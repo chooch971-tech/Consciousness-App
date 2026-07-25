@@ -22,7 +22,7 @@ test('the drawer exposes Report a Bug directly below Donate', () => {
 test('the bug form validates, submits technical context, and gives success feedback', () => {
   assert.match(presence, /id="bugReportScreen"/);
   assert.match(presence, /id="bugReportDescription"[^>]*maxlength="4000"[^>]*minlength="10"/);
-  assert.match(presence, /No journal entries or practice content are included/);
+  assert.doesNotMatch(presence, /Basic app, screen, and device-display details/);
   assert.match(settings, /fetch\(SERVER_URL \+ '\/api\/bug-reports'/);
   assert.match(settings, /if \(authToken\) headers\.Authorization = 'Bearer ' \+ authToken/);
   assert.match(settings, /viewport: window\.innerWidth \+ '×' \+ window\.innerHeight/);
