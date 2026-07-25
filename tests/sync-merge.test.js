@@ -7,7 +7,8 @@ const {
   isHistoryKey,
   mergeHistoryValues,
   mergeGiftPathValues,
-  mergePracticeReviewValues
+  mergePracticeReviewValues,
+  mergeGuideValues
 } = require('../sync-merge');
 
 test('history merge unions sessions and keeps monotonic concentration fields', () => {
@@ -225,4 +226,52 @@ test('Gift Path merge honors reset markers and is order-independent for progress
   assert.equal(forward._resetAt, reset._resetAt);
   assert.deepEqual(forward.cleared, ['2026-06']);
   assert.deepEqual(forward.claimed, [true, true, false, false, false, false, false]);
+});
+
+test('guide merge keeps routine activity newest without reviving stale cadence', () => {
+  const staleCadenceWithNewActivity = {
+    _updatedAt: 300,
+    _cadenceUpdatedAt: 100,
+    _exRounds: { asana: 2 },
+    _dailyPick: { day: '2026-07-24', ids: ['asana'] }
+  };
+  const explicitOnePerDay = {
+    _updatedAt: 200,
+    _cadenceUpdatedAt: 200,
+    _exRounds: { asana: 1 },
+    _dailyPick: { day: '2026-07-23', ids: ['clock'] }
+  };
+
+  const merged = mergeGuideValues([staleCadenceWithNewActivity, explicitOnePerDay]);
+  assert.deepEqual(merged._dailyPick, staleCadenceWithNewActivity._dailyPick);
+  assert.equal(merged._exRounds.asana, 1);
+  assert.equal(merged._cadenceUpdatedAt, 200);
+});
+
+test('guide merge preserves an explicit global cadence reset', () => {
+  const priorOverride = {
+    _updatedAt: 300,
+    _cadenceUpdatedAt: 200,
+    _twoADayV1: true,
+    _exRounds: { asana: 1 }
+  };
+  const globalOnePerDay = {
+    _updatedAt: 250,
+    _cadenceUpdatedAt: 250,
+    _twoADayV1: false,
+    _exRounds: {}
+  };
+
+  const merged = mergeGuideValues([priorOverride, globalOnePerDay]);
+  assert.equal(merged._twoADayV1, false);
+  assert.deepEqual(merged._exRounds, {});
+});
+
+test('guide merge honors legacy explicit cadence via its guide timestamp', () => {
+  const newerDefaultActivity = { _updatedAt: 300, _dailyPick: { day: '2026-07-24' } };
+  const legacyExplicit = { _updatedAt: 200, _exRounds: { asana: 1 } };
+
+  const merged = mergeGuideValues([newerDefaultActivity, legacyExplicit]);
+  assert.equal(merged._exRounds.asana, 1);
+  assert.equal(merged._cadenceUpdatedAt, 200);
 });

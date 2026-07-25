@@ -9,6 +9,9 @@ function saveGuideState(st) {
   try { if (st && typeof st === 'object') st._updatedAt = Date.now(); } catch(e) {}
   try { localStorage.setItem('presence_guide_v1', JSON.stringify(st)); } catch(e) {}
 }
+function markGuideCadenceChanged() {
+  guideState._cadenceUpdatedAt = Date.now();
+}
 
 var guideState = loadGuideState(); // {[exerciseId]: selectedOption string}
 // All Angles has been retired as an exercise. A user who added it to their

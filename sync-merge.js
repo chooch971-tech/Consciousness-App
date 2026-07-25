@@ -238,11 +238,72 @@
     return out;
   }
 
+  function guideUpdatedAt(value) {
+    return Math.max(0, Number(value && value._updatedAt) || 0);
+  }
+
+  function guideHasCadence(value) {
+    if (!value || typeof value !== 'object') return false;
+    return Object.prototype.hasOwnProperty.call(value, '_twoADayV1')
+      || Object.prototype.hasOwnProperty.call(value, '_exRounds')
+      || Object.prototype.hasOwnProperty.call(value, 'poreRounds');
+  }
+
+  function guideCadenceUpdatedAt(value) {
+    const stamped = Math.max(0, Number(value && value._cadenceUpdatedAt) || 0);
+    if (stamped) return stamped;
+    // Compatibility for cadence choices saved before the dedicated stamp
+    // existed. A snapshot with no cadence fields is only the default and
+    // should not outrank an older explicit per-exercise choice.
+    return guideHasCadence(value) ? guideUpdatedAt(value) : 0;
+  }
+
+  function applyGuideCadence(target, source) {
+    ['_twoADayV1', '_exRounds', 'poreRounds'].forEach(function(field) {
+      if (Object.prototype.hasOwnProperty.call(source, field)) target[field] = cloneValue(source[field]);
+      else delete target[field];
+    });
+    const cadenceUpdatedAt = guideCadenceUpdatedAt(source);
+    if (cadenceUpdatedAt) target._cadenceUpdatedAt = cadenceUpdatedAt;
+    else delete target._cadenceUpdatedAt;
+  }
+
+  // Guide combines routine mutable state (daily picks, quest counters, notes)
+  // with user cadence preferences. Select those independently so activity on a
+  // stale second device cannot make its old 2x/day choice look newer than an
+  // explicit 1x/day choice made elsewhere.
+  function mergeGuideValues(values) {
+    const candidates = candidatesAtNewestReset(values);
+    if (!candidates.length) return null;
+
+    let base = candidates[0];
+    let baseUpdatedAt = guideUpdatedAt(base);
+    let cadence = candidates[0];
+    let cadenceUpdatedAt = guideCadenceUpdatedAt(cadence);
+    candidates.slice(1).forEach(function(candidate) {
+      const updatedAt = guideUpdatedAt(candidate);
+      if (updatedAt > baseUpdatedAt) {
+        base = candidate;
+        baseUpdatedAt = updatedAt;
+      }
+      const candidateCadenceUpdatedAt = guideCadenceUpdatedAt(candidate);
+      if (candidateCadenceUpdatedAt > cadenceUpdatedAt) {
+        cadence = candidate;
+        cadenceUpdatedAt = candidateCadenceUpdatedAt;
+      }
+    });
+
+    const out = cloneValue(base);
+    applyGuideCadence(out, cadence);
+    return out;
+  }
+
   return Object.freeze({
     HISTORY_MERGE,
     isHistoryKey,
     mergeHistoryValues,
     mergeGiftPathValues,
-    mergePracticeReviewValues
+    mergePracticeReviewValues,
+    mergeGuideValues
   });
 });

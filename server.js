@@ -11,7 +11,7 @@ const PresenceReviewAiPolicy = require('./practice-review-ai-policy');
 const { OAuth2Client } = require('google-auth-library');
 const { enforceOmniaReportPolicy } = require('./omnia-report-policy');
 const { SYNC_KEYS, selectSyncData } = require('./sync-contract');
-const { isHistoryKey, mergeHistoryValues, mergeGiftPathValues, mergePracticeReviewValues } = require('./sync-merge');
+const { isHistoryKey, mergeHistoryValues, mergeGiftPathValues, mergePracticeReviewValues, mergeGuideValues } = require('./sync-merge');
 const {
   createStructuredLogger,
   errorDetails,
@@ -1824,6 +1824,11 @@ function mergePracticeReviewKey(snaps) {
   return merged ? JSON.stringify(merged) : null;
 }
 
+function mergeGuideKey(snaps) {
+  const merged = mergeGuideValues(snaps.map((snapshot) => snapshot.presence_guide_v1));
+  return merged ? JSON.stringify(merged) : null;
+}
+
 function mergeSnapshots(snaps) {
   const out = {};
   SYNC_KEYS.forEach((k) => {
@@ -1831,6 +1836,7 @@ function mergeSnapshots(snaps) {
     else if (k === 'presence_ach_v1') out[k] = mergeAchKey(snaps);
     else if (k === 'presence_giftpath_v1') out[k] = mergeGiftPathKey(snaps);
     else if (k === 'presence_practice_review_v1') out[k] = mergePracticeReviewKey(snaps);
+    else if (k === 'presence_guide_v1') out[k] = mergeGuideKey(snaps);
     else if (isHistoryKey(k)) out[k] = mergeHistoryKey(k, snaps);
     else out[k] = pickBestValue(k, snaps);
   });

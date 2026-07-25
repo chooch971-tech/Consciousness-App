@@ -38,6 +38,7 @@ function toggleGuideTwoADay() {
   // keep a completed card active after the player switches the page to 1x.
   guideState._exRounds = {};
   delete guideState.poreRounds;
+  markGuideCadenceChanged();
   saveGuideState(guideState);
   if (typeof syncEnabled !== 'undefined' && syncEnabled && typeof authToken !== 'undefined' && authToken && typeof syncPushData === 'function') syncPushData();
   renderGuideCadenceControl();

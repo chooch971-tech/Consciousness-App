@@ -1191,18 +1191,17 @@ test('Tutorial post-session journey loads through its own client boundary', () =
   assert.doesNotThrow(() => new Function(tutorialPostSessionClient));
 });
 
-test('guide settings survive a cloud pull via last-writer-wins, not the score-0 tie', () => {
-  // Guide state carries no progress score, so the generic shouldTakeCloudValue
-  // tie resolves cloud-wins and would revert local setting changes (e.g. an
-  // exercise's 1x/day frequency). It must have a dedicated freshness-aware
-  // merge instead, wired into the pull path, and saveGuideState must stamp the
-  // write time the merge relies on.
+test('guide cadence survives routine writes and cloud pulls independently', () => {
+  // Guide activity and cadence need distinct freshness signals so a quest
+  // update on a stale device cannot revive an old per-exercise frequency.
   assert.match(guidePathClient, /st\._updatedAt = Date\.now\(\)/);
-  assert.match(presence, /function mergeGuidePull\(localStr, cloudStr\)/);
+  assert.match(guidePathClient, /function markGuideCadenceChanged\(\)/);
+  assert.match(guideQuestsClient, /guideState\._exRounds\[activeExId\] = 1; \}\s*markGuideCadenceChanged\(\)/);
+  assert.match(guideShellClient, /guideState\._exRounds = \{\};[\s\S]*?markGuideCadenceChanged\(\)/);
+  assert.match(presence, /function mergeGuidePull\(localStr, cloudStr\)[\s\S]*?PRESENCE_MERGE\.mergeGuideValues/);
   assert.match(presence, /k === 'presence_guide_v1'[\s\S]*?mergeGuidePull\(local, v\)/);
-  // Reset markers still win, then last-writer-wins on _updatedAt.
-  assert.match(presence, /return cReset > lReset \? cloudStr : null/);
-  assert.match(presence, /return cU > lU \? cloudStr : null/);
+  assert.match(server, /function mergeGuideKey\(snaps\)[\s\S]*?mergeGuideValues/);
+  assert.match(server, /k === 'presence_guide_v1'\) out\[k\] = mergeGuideKey\(snaps\)/);
 });
 
 test('first-time tutorial loads through its own end-of-body client boundary', () => {
