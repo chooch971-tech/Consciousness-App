@@ -1146,9 +1146,9 @@ test('Streak screen and ended-state UI load through their own client boundary', 
   assert.match(streakClient, /function\s+showStreakScreen\s*\(/);
   assert.match(streakClient, /function\s+openStreakSociety\s*\(/);
   assert.match(streakClient, /function\s+showStreakEndedPrompt\s*\(/);
-  assert.match(streakClient, /Recommendation Streak/);
-  assert.match(streakClient, /recommendationStreak\s*\*\s*0\.08/);
-  assert.match(streakClient, /45% maximum/);
+  // The Recommendation Streak card was removed from the Streak screen; the
+  // underlying omniaState.recStreak bonus keeps applying invisibly.
+  assert.doesNotMatch(streakClient, /Recommendation Streak/);
   assert.doesNotMatch(omniaEngineClient, /Resonance ['"]\s*\+\s*\(omniaState\.recStreak/);
   assert.match(serviceWorker, /['"]streak-client\.js['"]/);
   assert.doesNotThrow(() => new Function(streakClient));
