@@ -980,7 +980,7 @@ function renderOmniaGenYard() {
   }
   yard.innerHTML = html;
   var slim = document.getElementById('omniaGenSlim');
-  if (slim) slim.textContent = 'Resonance ' + (omniaState.recStreak || 0) + ' · tap a full pump to collect, or a pump to upgrade';
+  if (slim) slim.textContent = 'Tap a full pump to collect, or any pump to upgrade';
 }
 
 function renderDmSheet(gid) {

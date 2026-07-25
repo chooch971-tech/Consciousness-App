@@ -217,6 +217,18 @@
     .so-hero-rule { width:48px; height:1px; margin:18px auto 0; background:linear-gradient(90deg, transparent, rgba(212,149,110,.7), transparent); }
     /* Body */
     .so-body { width:100%; max-width:420px; padding:18px 20px max(env(safe-area-inset-bottom),36px); display:flex; flex-direction:column; gap:14px; }
+    /* Recommendation streak — practice reward momentum belongs with streaks,
+       not under the autonomous Akasha collectors. */
+    .so-rec-card { background:linear-gradient(135deg,rgba(232,200,122,.07),rgba(212,149,110,.035)); border:1px solid rgba(232,200,122,.24); border-radius:12px; padding:14px 15px; display:flex; align-items:center; gap:12px; }
+    .so-rec-icon { width:34px; height:34px; border-radius:9px; flex:0 0 auto; display:flex; align-items:center; justify-content:center; background:rgba(232,200,122,.11); color:#e8c87a; font-size:15px; box-shadow:inset 0 0 14px rgba(232,200,122,.04); }
+    .so-rec-text { flex:1; min-width:0; }
+    .so-rec-title { font-family:'DM Mono',monospace; font-size:9px; letter-spacing:.18em; text-transform:uppercase; color:#e8c87a; margin-bottom:4px; }
+    .so-rec-sub { font-size:10px; color:rgba(221,216,206,.64); line-height:1.5; }
+    .so-rec-bonus { margin-top:7px; font-family:'DM Mono',monospace; font-size:8px; letter-spacing:.06em; color:#d4a46f; }
+    .so-rec-bonus span { color:rgba(221,216,206,.42); }
+    .so-rec-count { flex:0 0 auto; min-width:48px; text-align:center; padding-left:10px; border-left:1px solid rgba(232,200,122,.15); }
+    .so-rec-count strong { display:block; font-family:Cormorant Garamond,serif; font-size:31px; font-weight:300; line-height:.9; color:#f0d8ac; }
+    .so-rec-count span { display:block; margin-top:6px; font-family:'DM Mono',monospace; font-size:7px; letter-spacing:.14em; text-transform:uppercase; color:rgba(221,216,206,.45); }
     /* Freeze card — frost holds the flame through a missed day */
     .so-freeze-card { background:rgba(255,255,255,.02); border:1px solid var(--border); border-radius:12px; padding:14px 16px; display:flex; align-items:flex-start; gap:13px; }
     .so-freeze-icon { width:34px; height:34px; border-radius:9px; flex:0 0 auto; display:flex; align-items:center; justify-content:center; background:rgba(142,204,224,.12); color:#8ecce0; margin-top:1px; }

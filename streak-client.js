@@ -54,6 +54,10 @@ function showStreakScreen() {
   var streak = state.streak || 0;
   var commit = state.streakCommit || 7;
   var freezes = state.streakFreezes || 0;
+  var recommendationStreak = (typeof omniaState !== 'undefined' && omniaState)
+    ? Math.max(0, omniaState.recStreak || 0)
+    : 0;
+  var recommendationBonus = Math.round(Math.min(0.45, recommendationStreak * 0.08) * 100);
   var subText = streak === 0 ? 'The wick is dry. Light it today.'
     : streak === 1 ? 'First light — shelter it.'
     : streak < 7  ? 'A young flame. Feed it daily.'
@@ -159,6 +163,15 @@ function showStreakScreen() {
     + '<div class="so-hero-rule"></div>'
     + '</div>'
     + '<div class="so-body">'
+    + '<div class="so-rec-card" id="soRecommendationStreak">'
+    + '<div class="so-rec-icon" aria-hidden="true">✦</div>'
+    + '<div class="so-rec-text">'
+    + '<div class="so-rec-title">Recommendation Streak</div>'
+    + '<div class="so-rec-sub">Omnia-recommended exercises build it. Other exercises lower it by one.</div>'
+    + '<div class="so-rec-bonus">+' + recommendationBonus + '% practice Akasha <span>· 45% maximum</span></div>'
+    + '</div>'
+    + '<div class="so-rec-count"><strong>' + recommendationStreak + '</strong><span>streak</span></div>'
+    + '</div>'
     + '<div class="so-freeze-card">'
     + '<div class="so-freeze-icon"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" aria-hidden="true"><path d="M12 3v18M12 6l-2.6-2M12 6l2.6-2M12 18l-2.6 2M12 18l2.6 2M4.2 7.5l15.6 9M6.5 6.2l.4 3.2M4.5 10.8l3-1.1M17.1 14.6l3 -1.1M17.5 18.6l.4-3.2M19.8 7.5l-15.6 9M17.5 5.4l-.4 3.2M19.5 10.8l-3-1.1M6.9 14.6l-3-1.1M6.5 17.8l.4-3.2"/></svg></div>'
     + '<div class="so-freeze-text">'
