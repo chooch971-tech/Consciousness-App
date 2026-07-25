@@ -18,11 +18,9 @@ var OMNIA_VEILS = [
 // `dm:true` items are the Dark Current line: priced in Dark Matter ◆ (not
 // akasha), visible only once Dark Matter awakens (Prestige 3 / Book II), and
 // granting a Dark Matter earn bonus (`dmBonus` %) instead of the akasha bonus.
-// TEMP preview: while on, the Dark Current cosmetics show in the shop before
-// Prestige 3 and are free, so they can be viewed equipped in-game. It does NOT
-// grant the ◆ earn boost (that stays gated on real Book II). Set false to
-// restore the real ◆-priced, Prestige-3-gated behavior before launch.
-var DARK_CURRENT_PREVIEW = true;
+// The temp preview (Dark Current cosmetics shown free before Prestige 3) is
+// off now — real ◆ pricing and the Prestige-3 gate are both back in effect.
+var DARK_CURRENT_PREVIEW = false;
 var OMNIA_ENTITIES = [
   { id:'omnia', name:'Omnia', cost:0, _price:0, color:'#b8eaff', sub:'The first guide-form' },
   { id:'noema', name:'Noema', cost:12000, _price:12000, color:'#98b4cc', sub:'A sharper mental entity design' },
