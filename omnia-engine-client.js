@@ -188,7 +188,8 @@ function renderOmniaEngine() {
   var sessNeeded = omniaStepReqVal(step, 'recommended');
   var sessCompleted = Math.min(omniaState.completedRecommended || 0, sessNeeded);
   if (sessionProgress) {
-    sessionProgress.innerHTML = 'Meditation sessions: <strong>' + sessCompleted + ' / ' + sessNeeded + '</strong> for Step ' + step.roman;
+    sessionProgress.innerHTML = '<span>Meditation sessions: <strong>' + sessCompleted + ' / ' + sessNeeded + '</strong> for Step ' + step.roman + '</span>'
+      + '<button type="button" class="oe-session-info" onclick="openExExplainer(\'meditation\')" aria-label="What counts as a meditation session?">i</button>';
   }
   if (advanceBtn) {
     var next = OMNIA_BARDON_STEPS.find(function(s) { return s.step === (omniaState.bardonStep || 1) + 1; });

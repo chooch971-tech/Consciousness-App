@@ -1688,6 +1688,16 @@ var EX_EXPLAINERS = {
       'Collect Omnia\'s <strong>daily gift</strong> and claim gifts from the <strong>7x2 Challenge</strong> for a steady bonus on top.',
       'Spend it on <strong>generators, upgrades, and forms</strong>. Your wallet has no limit; each generator\'s reservoir fills until you return to collect it.'
     ]
+  },
+  meditation: {
+    title: 'Meditation Sessions',
+    kind: 'Step Progress',
+    steps: [
+      'A session counts here when you complete an exercise <strong>recommended by Omnia</strong> — normally one assigned on today\'s Guide Path.',
+      'For a timed exercise, you must reach <strong>Omnia\'s recommended duration</strong>. Ending early can still save the practice, but it will not advance this Step counter.',
+      'Up to <strong>three qualifying sessions per day</strong> count toward Step progress. They may be completed consecutively in the same practice block.',
+      'Free-play or unassigned exercises, discarded sessions, and sessions beyond the daily limit <strong>do not advance this counter</strong>.'
+    ]
   }
 };
 

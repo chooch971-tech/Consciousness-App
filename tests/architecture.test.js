@@ -696,6 +696,10 @@ test('Omnia engine rendering and generator controls live in a dedicated client b
   assert.match(omniaEngineClient, /function\s+renderOmniaGenYard\s*\(/);
   assert.match(omniaEngineClient, /function\s+buyOmniaUpgrade\s*\(/);
   assert.match(omniaEngineClient, /function\s+beginOmniaRecommendation\s*\(/);
+  assert.match(omniaEngineClient, /class="oe-session-info"/);
+  assert.match(omniaEngineClient, /openExExplainer\(\\'meditation\\'\)/);
+  assert.match(visualizationClient, /meditation:\s*\{\s*title:\s*'Meditation Sessions'/);
+  assert.match(visualizationClient, /three qualifying sessions per day/);
   assert.doesNotThrow(() => new Function(omniaEngineClient));
 });
 
