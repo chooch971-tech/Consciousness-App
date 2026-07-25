@@ -9064,7 +9064,12 @@ function closeDrawer(instant) {
   window._drawerClosedAt = Date.now();
 }
 
-document.getElementById('hamburgerBtn').addEventListener('click', openDrawer);
+// Call through a wrapper rather than passing openDrawer directly: as a bare
+// listener it receives the click MouseEvent as its `instant` argument, which
+// is truthy, so every tap took the snap-open path meant only for restoring the
+// drawer after backing out of a menu — the drawer appeared with no slide or
+// fade at all, unlike the edge swipe.
+document.getElementById('hamburgerBtn').addEventListener('click', function() { openDrawer(); });
 
 // Swipe right from left edge on homeScreen → open drawer
 (function() {
