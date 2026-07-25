@@ -3,6 +3,24 @@ function initOmniaAnims(){
   var peek=document.getElementById('omniaTabPeek');
   if(!peek) return;
 
+  var TAB_PEEK_HISTORY_KEY='presenceOmniaTabPeekLastShown';
+  var TAB_PEEK_COOLDOWN_MS=7*24*60*60*1000;
+  var peekHistory={};
+  try {
+    peekHistory=JSON.parse(localStorage.getItem(TAB_PEEK_HISTORY_KEY)||'{}')||{};
+  } catch(e) {
+    peekHistory={};
+  }
+  function tabPeekIsReady(tab){
+    return Date.now()-Number(peekHistory[tab]||0)>=TAB_PEEK_COOLDOWN_MS;
+  }
+  function rememberTabPeek(tab){
+    peekHistory[tab]=Date.now();
+    try {
+      localStorage.setItem(TAB_PEEK_HISTORY_KEY,JSON.stringify(peekHistory));
+    } catch(e) {}
+  }
+
   // ─── Scheduler ───
   var registry=[];
   var current=null;
@@ -16,6 +34,7 @@ function initOmniaAnims(){
     var pool=registry.filter(function(a){
       if(current===a) return false;
       if(a.tabs && a.tabs.indexOf(currentMode)<0) return false;
+      if(a.canShow && !a.canShow()) return false;
       var cd=(a.lastClicked>a.lastShown) ? a.cooldownClicked : a.cooldownShown;
       var since=now - Math.max(a.lastShown, a.lastClicked);
       return since > cd;
@@ -155,19 +174,18 @@ function initOmniaAnims(){
       if(d) d(true);
     },440);
   });
-  var peekShownTabs={awareness:false,concentration:false};
   register({
     id:'peek',
     tabs:['awareness','concentration'],
-    cooldownShown:0,
-    cooldownClicked:0,
+    cooldownShown:TAB_PEEK_COOLDOWN_MS,
+    cooldownClicked:TAB_PEEK_COOLDOWN_MS,
+    canShow:function(){
+      return tabPeekIsReady(currentMode);
+    },
     show:function(done){
-      // Each tab gets its own one-time show; once both are seen, suppress forever
-      peekShownTabs[currentMode]=true;
-      if(peekShownTabs.awareness&&peekShownTabs.concentration){
-        current.cooldownShown=Infinity;
-        current.cooldownClicked=Infinity;
-      }
+      // Keep this bit of character occasional across app restarts, independently
+      // for Awareness and Concentration.
+      rememberTabPeek(currentMode);
       var side=(currentMode==='concentration')?'right':'left';
       setPeekSide(side);
       peek.classList.add('peek-in');
@@ -196,7 +214,7 @@ function initOmniaAnims(){
     });
   });
   scheduleAmbient();
-  // Peek fires once shortly after app open, then never again
+  // Give an eligible tab one quiet chance shortly after app open.
   setTimeout(trigger, 8000);
 }
 if(document.readyState==='loading'){

@@ -446,6 +446,12 @@ test('Omnia ambient animation scheduling owns its client boundary', () => {
   assert.match(omniaAmbientClient, /window\._omniaQuickDismiss\s*=\s*function/);
   assert.match(omniaAmbientClient, /function\s+scheduleAmbient\s*\(/);
   assert.match(omniaAmbientClient, /peek\.addEventListener\('click'/);
+  assert.match(omniaAmbientClient, /TAB_PEEK_COOLDOWN_MS\s*=\s*7\s*\*\s*24\s*\*\s*60\s*\*\s*60\s*\*\s*1000/);
+  assert.match(omniaAmbientClient, /presenceOmniaTabPeekLastShown/);
+  assert.match(omniaAmbientClient, /cooldownShown:TAB_PEEK_COOLDOWN_MS/);
+  assert.match(omniaAmbientClient, /cooldownClicked:TAB_PEEK_COOLDOWN_MS/);
+  assert.match(omniaAmbientClient, /canShow:function\s*\(\)\s*\{\s*return tabPeekIsReady\(currentMode\)/);
+  assert.match(omniaAmbientClient, /rememberTabPeek\(currentMode\)/);
   assert.match(omniaAmbientClient, /setTimeout\(trigger,\s*8000\)/);
   assert.doesNotThrow(() => new Function(omniaAmbientClient));
 });
