@@ -1351,10 +1351,10 @@
         radial-gradient(1.5px 1.5px at 88% 70%, rgba(232,200,122,.36), transparent),
         radial-gradient(1.5px 1.5px at 46% 82%, rgba(221,216,206,.34), transparent),
         radial-gradient(1px 1px at 62% 92%, rgba(168,216,142,.3), transparent),
-        radial-gradient(ellipse 110% 42% at 50% 0%, rgba(207,143,176,.16) 0%, transparent 65%),
+        radial-gradient(ellipse 110% 42% at 50% 0%, rgba(207,143,176,.09) 0%, transparent 65%),
         radial-gradient(ellipse 70% 34% at 92% 46%, rgba(232,200,122,.08) 0%, transparent 70%),
         radial-gradient(ellipse 76% 34% at 6% 78%, rgba(150,190,150,.07) 0%, transparent 70%),
-        linear-gradient(180deg, #1a1018 0%, #0a0810 55%, #150d13 100%);
+        linear-gradient(180deg, #15111a 0%, #09080e 55%, #110d15 100%);
     }
     #exSetupScreen[data-ex="thought"] {
       background:
@@ -1376,7 +1376,17 @@
     #exSetupScreen[data-ex="sense"] .ex-setup-beginbar { background:rgba(21,13,19,.9); backdrop-filter:blur(6px); -webkit-backdrop-filter:blur(6px); border-top-color:rgba(224,168,196,.18); }
     #exSetupScreen[data-ex="thought"] .ex-setup-beginbar { background:rgba(13,17,28,.9); backdrop-filter:blur(6px); -webkit-backdrop-filter:blur(6px); border-top-color:rgba(152,196,232,.18); }
     /* Begin buttons pop in the exercise's own color. */
-    #exSetupScreen[data-ex="sense"] #exSetupBeginBtn { background:linear-gradient(160deg,#f0bcd6,#c9769f) !important; border-color:transparent !important; color:#2a1220 !important; font-weight:700; box-shadow:0 0 26px -4px rgba(224,168,196,.8), 0 3px 0 rgba(120,60,90,.55); }
+    #exSetupScreen[data-ex="sense"] #exSetupBeginBtn { background:linear-gradient(160deg,#dcaec4,#ab6a89) !important; border-color:transparent !important; color:#2a1220 !important; font-weight:700; box-shadow:0 0 18px -6px rgba(224,168,196,.45), 0 3px 0 rgba(120,60,90,.55); }
+    /* Senses was reading monochrome rose: the backdrop, the Begin bar, and
+       every section label sat on the same hue as the three things that
+       actually mean something in colour here — the chosen sense, the chosen
+       practice mode, and the chosen sensation. Drop the chrome to neutral so
+       those selections are what the eye lands on. Scoped to this screen so
+       Thought Control keeps its own treatment of the shared setup kit. */
+    #exSetupScreen[data-ex="sense"] .sense-choice-label,
+    #exSetupScreen[data-ex="sense"] .sn-record-label,
+    #exSetupScreen[data-ex="sense"] .sn-track-top .l,
+    #exSetupScreen[data-ex="sense"] .sn-track-top .r { color:rgba(221,216,206,.5); }
     #exSetupScreen[data-ex="thought"] #exSetupBeginBtn { background:linear-gradient(160deg,#aad0f2,#5e8fc0) !important; border-color:transparent !important; color:#0d1723 !important; font-weight:700; box-shadow:0 0 26px -4px rgba(152,196,232,.8), 0 3px 0 rgba(52,86,124,.6); }
     /* Clock-page mirror pieces: hero card (mode picker + minutes), big record
        readout, and a single 0→goal progress track with waypoint marks. */
