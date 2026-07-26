@@ -763,18 +763,16 @@ function renderPathQuests() {
     + '</svg>'
     + '</div></div>';
 
-  // ── Exercises / Progress toggle with cadence controls ──
+  // ── One compact control cycles 1× / day → 2× / day → Progress ──
   var _twoOn = guideTwoADayEnabled();
   var _canAdd = (typeof guidePathAddableExercises === 'function') && guidePathAddableExercises().length > 0;
+  var _pathCycleLabel = pathView === 'progress' ? 'Progress' : (_twoOn ? '2× / day' : '1× / day');
+  var _pathCycleNext = pathView === 'progress' ? '1× / day' : (_twoOn ? 'Progress' : '2× / day');
   html += '<div>';
-  html += '<div style="display:flex;align-items:center;justify-content:space-between;margin:0 2px 6px;">'
-    + '<div class="pq-path-view-toggle" style="display:flex;align-items:center;padding:2px;border-radius:7px;background:rgba(255,255,255,.035);border:1px solid rgba(255,255,255,.06);">'
-    + '<button data-pq-view="exercises" aria-pressed="' + (pathView === 'exercises') + '" style="border:0;border-radius:5px;padding:5px 9px;background:' + (pathView === 'exercises' ? 'rgba(142,204,224,.11)' : 'transparent') + ';color:' + (pathView === 'exercises' ? '#8ecce0' : 'var(--muted)') + ';font-family:\'DM Mono\',monospace;font-size:7px;letter-spacing:.16em;text-transform:uppercase;cursor:pointer;">Exercises</button>'
-    + '<button data-pq-view="progress" aria-pressed="' + (pathView === 'progress') + '" style="border:0;border-radius:5px;padding:5px 9px;background:' + (pathView === 'progress' ? 'rgba(142,204,224,.11)' : 'transparent') + ';color:' + (pathView === 'progress' ? '#8ecce0' : 'var(--muted)') + ';font-family:\'DM Mono\',monospace;font-size:7px;letter-spacing:.16em;text-transform:uppercase;cursor:pointer;">Progress</button>'
-    + '</div>'
+  html += '<div style="display:flex;align-items:center;justify-content:flex-end;margin:0 2px 6px;">'
     + '<div style="display:flex;align-items:center;gap:9px;">'
     + (pathView === 'exercises' && _canAdd ? '<button id="pqAddExBtn" class="pq-add-ex-btn" title="Add an exercise to your path">+</button>' : '')
-    + (pathView === 'exercises' ? '<button id="pqTwoADayBtn" class="guide-cadence-toggle' + (_twoOn ? '' : ' off') + '">' + (_twoOn ? '2× / day' : '1× / day') + '</button>' : '')
+    + '<button id="pqPathCycleBtn" class="guide-cadence-toggle' + (pathView === 'exercises' && !_twoOn ? ' off' : '') + '" aria-label="' + _pathCycleLabel + '. Click for ' + _pathCycleNext + '.">' + _pathCycleLabel + '</button>'
     + '</div>'
     + '</div>';
   if (pathView === 'exercises') html += '<div style="display:flex;flex-direction:column;gap:8px;">';
@@ -967,26 +965,32 @@ function renderPathQuests() {
   root.innerHTML = html;
   updateGuideQuestBadge();
 
-  var pqTwoADayBtn = root.querySelector('#pqTwoADayBtn');
-  if (pqTwoADayBtn) {
-    pqTwoADayBtn.onclick = function(e) { e.stopPropagation(); toggleGuideTwoADay(); };
+  var pqPathCycleBtn = root.querySelector('#pqPathCycleBtn');
+  if (pqPathCycleBtn) {
+    pqPathCycleBtn.onclick = function(e) {
+      e.stopPropagation();
+      if (pathView === 'progress') {
+        guideState._pathView = 'exercises';
+        if (guideTwoADayEnabled()) {
+          toggleGuideTwoADay();
+        } else {
+          saveGuideState(guideState);
+          renderPathQuests();
+        }
+      } else if (!guideTwoADayEnabled()) {
+        toggleGuideTwoADay();
+      } else {
+        guideState._pathView = 'progress';
+        saveGuideState(guideState);
+        renderPathQuests();
+      }
+    };
   }
 
   var pqAddExBtn = root.querySelector('#pqAddExBtn');
   if (pqAddExBtn) {
     pqAddExBtn.onclick = function(e) { e.stopPropagation(); if (typeof pqOpenAddMenu === 'function') pqOpenAddMenu(pqAddExBtn); };
   }
-
-  root.querySelectorAll('[data-pq-view]').forEach(function(btn) {
-    btn.onclick = function(e) {
-      e.stopPropagation();
-      var nextView = btn.dataset.pqView === 'progress' ? 'progress' : 'exercises';
-      if (guideState._pathView === nextView) return;
-      guideState._pathView = nextView;
-      saveGuideState(guideState);
-      renderPathQuests();
-    };
-  });
 
   root.querySelectorAll('.pq-claim').forEach(function(btn) {
     btn.onclick = function(e) { e.stopPropagation(); claimPathQuestReward(btn.dataset.quest); };

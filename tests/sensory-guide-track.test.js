@@ -112,8 +112,9 @@ test('exercise records and Path cards expose the evidence and curriculum indicat
   assert.match(guideSource, /id:'auditory', name:'Auditory'/);
   assert.match(guideSource, /id:'sense', name:'Senses'/);
   assert.match(questSource, /class="pq-progress-view"/);
-  assert.match(questSource, /data-pq-view="exercises"/);
-  assert.match(questSource, /data-pq-view="progress"/);
+  assert.match(questSource, /pqPathCycleBtn/);
+  assert.match(questSource, /1× \/ day → 2× \/ day → Progress/);
+  assert.doesNotMatch(questSource, /data-pq-view=/);
   assert.match(questSource, /role="progressbar"/);
   assert.doesNotMatch(questSource, /sensory-goal-bar/);
   assert.doesNotMatch(questSource, /item\.trackNext/);
