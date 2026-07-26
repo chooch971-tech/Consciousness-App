@@ -375,6 +375,8 @@ const DEFAULT_STATE = {
   streakGoalBaseDays: 0,     // streak-day count when the current goal was committed; a new goal counts from here, not day 1
   endedStreakInfo: null,     // {days, date} stashed when streak ends, cleared after modal shown
   streakEndedPromptShown: false,
+  frozenStreakInfo: null,    // {missed, freezes} stashed when a freeze saves the streak, cleared after modal shown
+  frozenPromptShown: false,
 };
 
 function normalizeLevel(value) {
@@ -798,10 +800,12 @@ function checkStreakStatus() {
       state.streakFreezes = available - missed;
       state.freezesUsed = (state.freezesUsed || 0) + missed;
       state.endedStreakInfo = null;
-      var _left = state.streakFreezes;
-      setTimeout(function() {
-        showToast('Streak freeze used · ' + _left + ' freeze' + (_left === 1 ? '' : 's') + ' remaining', 3200);
-      }, 800);
+      // Stash the save so the overlay can name the real streak number, which is
+      // only recomputed from the calendar further down. Mirrors endedStreakInfo:
+      // the "shown" flag is set inside the overlay itself, so a reload before it
+      // renders gets another chance rather than losing the moment silently.
+      state.frozenStreakInfo = { missed: missed, freezes: state.streakFreezes };
+      state.frozenPromptShown = false;
     } else {
       // Not enough freezes to save the streak — break it, but DON'T waste the
       // freezes you did have (they carry into the next streak). Stash the miss/
@@ -822,6 +826,11 @@ function checkStreakStatus() {
   // showStreakEndedPrompt, so a missed render gets another chance.
   if (state.endedStreakInfo && !state.streakEndedPromptShown) {
     setTimeout(showStreakEndedPrompt, 1600);
+  }
+  // Same deferred surface for a streak a freeze just rescued.
+  if (state.frozenStreakInfo && !state.frozenPromptShown
+    && typeof showStreakFrozenPrompt === 'function') {
+    setTimeout(showStreakFrozenPrompt, 1400);
   }
 }
 

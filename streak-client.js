@@ -426,6 +426,123 @@ function showStreakEndedPrompt() {
   });
 }
 
+// A freeze being spent is the streak system's relief moment: the player came
+// back expecting to have lost the run. It deliberately does NOT celebrate —
+// missing a day shouldn't feel rewarded — so this is the extinguish animation's
+// sober cousin: the flame gutters and nearly dies, frost closes over it, and it
+// steadies. No burst, no fanfare, one quiet chime.
+function showStreakFrozenPrompt() {
+  if (document.getElementById('streakFrozenOverlay')) return;
+  if (!state.frozenStreakInfo) return;
+  // Marked only now that it's actually rendering, so an app reload before this
+  // point gets another chance instead of swallowing the moment.
+  state.frozenPromptShown = true;
+  saveState();
+  var info = state.frozenStreakInfo;
+  var missed = info.missed || 1;
+  var left = info.freezes || 0;
+  var streak = state.streak || 0;
+
+  var overlay = document.createElement('div');
+  overlay.className = 'so-frozen-overlay';
+  overlay.id = 'streakFrozenOverlay';
+
+  // Frost spurs closing in over the flame from the rim of the stage.
+  var spursHTML = [0, 45, 90, 135, 180, 225, 270, 315].map(function(deg, i) {
+    return '<span class="so-frozen-spur" style="--sa:' + deg + 'deg;--sd:' + (i * 0.055) + 's;"></span>';
+  }).join('');
+  // Slow-settling frost motes, drifting down rather than rising like embers.
+  var motesHTML = [[30, .1, -6], [44, .5, 5], [58, .9, 9], [50, 1.3, -4], [37, 1.7, 7]].map(function(m) {
+    return '<span class="so-frozen-mote" style="left:' + m[0] + '%;--md:' + m[1] + 's;--mx:' + m[2] + 'px;"></span>';
+  }).join('');
+
+  overlay.innerHTML = '<div class="so-frozen-card">'
+    + '<div class="so-frozen-stage">'
+    + '<div class="so-frozen-glow"></div>'
+    // The same flame the streak screen and the ended overlay use — continuity
+    // matters here: this is that flame surviving rather than a new symbol.
+    + '<svg class="so-frozen-flame-svg" viewBox="0 0 52 64" fill="none" aria-hidden="true">'
+    + '<path d="M26 6C26 6 40 22 40 34C40 42 35 47 30 47C35 33 26 24 26 24C26 24 18 36 22 46C17 45 12 40 12 34C12 22 26 6 26 6Z" fill="rgba(255,200,80,0.9)"/>'
+    + '<path d="M26 28C26 28 32 36 30 43C28 49 23 48 21 46C26 40 26 28 26 28Z" fill="rgba(255,250,180,0.8)"/>'
+    + '<ellipse cx="26" cy="54" rx="13" ry="4" fill="rgba(180,80,20,0.30)"/>'
+    + '</svg>'
+    + '<div class="so-frozen-sheath"></div>'
+    + spursHTML + motesHTML
+    + '</div>'
+    // Sits below the stage rather than over it: unlike the extinguish overlay,
+    // the flame is still burning here, so an overlaid number collides with it.
+    + '<div class="so-frozen-daysbig">' + streak + ' <span class="u">day' + (streak === 1 ? '' : 's') + '</span></div>'
+    + '<div class="so-frozen-reveal">'
+    + '<div class="so-frozen-title">Streak Held</div>'
+    + '<div class="so-frozen-sub">You missed <span class="sfo-days">' + missed + ' day'
+    + (missed === 1 ? '' : 's') + '</span>. Frost held the flame — your streak is intact.</div>'
+    + '<div class="so-frozen-note">❄ ' + (left > 0
+      ? left + ' freeze' + (left === 1 ? '' : 's') + ' remaining · +1 every 7 streak days'
+      : 'No freezes left — the next missed day ends the streak.') + '</div>'
+    + '<button class="so-frozen-continue" id="sfoContinueBtn">Continue →</button>'
+    + '</div>'
+    + '</div>';
+  document.body.appendChild(overlay);
+
+  // alive → gutter (nearly out) → frost (sheath closes) → hold (steadies) →
+  // reveal. Reduced-motion users skip straight to the revealed card.
+  if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    overlay.dataset.sfphase = 'reveal';
+  } else {
+    overlay.dataset.sfphase = 'alive';
+    [['gutter', 900], ['frost', 2000], ['hold', 2950], ['reveal', 3600]].forEach(function(p) {
+      setTimeout(function() { if (overlay.isConnected) overlay.dataset.sfphase = p[0]; }, p[1]);
+    });
+    setTimeout(function() { if (overlay.isConnected) playStreakFrostSound(); }, 2000);
+  }
+
+  function dismiss() {
+    state.frozenStreakInfo = null;
+    saveState();
+    overlay.classList.remove('sfo-vis');
+    setTimeout(function() { if (overlay.parentNode) overlay.parentNode.removeChild(overlay); }, 360);
+  }
+  document.getElementById('sfoContinueBtn').onclick = dismiss;
+  requestAnimationFrame(function() {
+    overlay.classList.add('sfo-show');
+    requestAnimationFrame(function() { overlay.classList.add('sfo-vis'); });
+  });
+}
+
+// Cold and quiet — a glassy settle, deliberately nothing like the streak
+// celebration's rising major chord.
+function playStreakFrostSound() {
+  if (typeof appSoundEnabled === 'function' && !appSoundEnabled()) return;
+  try {
+    var ctx = new (window.AudioContext || window.webkitAudioContext)();
+    var t0 = ctx.currentTime;
+    // Frost settling — a short filtered noise wash, falling instead of rising.
+    var noise = ctx.createBufferSource();
+    var buf = ctx.createBuffer(1, Math.floor(ctx.sampleRate * 0.9), ctx.sampleRate);
+    var data = buf.getChannelData(0);
+    for (var n = 0; n < data.length; n++) data[n] = (Math.random() * 2 - 1) * (1 - n / data.length);
+    noise.buffer = buf;
+    var bp = ctx.createBiquadFilter(); bp.type = 'bandpass'; bp.Q.value = 2.4;
+    bp.frequency.setValueAtTime(3200, t0); bp.frequency.exponentialRampToValueAtTime(900, t0 + 0.8);
+    var noiseG = ctx.createGain();
+    noiseG.gain.setValueAtTime(0, t0);
+    noiseG.gain.linearRampToValueAtTime(0.07, t0 + 0.08);
+    noiseG.gain.exponentialRampToValueAtTime(0.001, t0 + 0.9);
+    noise.connect(bp); bp.connect(noiseG); noiseG.connect(ctx.destination); noise.start(t0);
+    // Two glass tones a fifth apart — held, unresolved, not triumphant.
+    [1174.66, 1760.00].forEach(function(freq, i) {
+      var delay = 0.18 + i * 0.10;
+      var osc = ctx.createOscillator(), g = ctx.createGain();
+      osc.type = 'sine'; osc.frequency.setValueAtTime(freq, t0 + delay);
+      g.gain.setValueAtTime(0, t0 + delay);
+      g.gain.linearRampToValueAtTime(0.05, t0 + delay + 0.03);
+      g.gain.exponentialRampToValueAtTime(0.001, t0 + delay + 1.5);
+      osc.connect(g); g.connect(ctx.destination);
+      osc.start(t0 + delay); osc.stop(t0 + delay + 1.6);
+    });
+  } catch (e) {}
+}
+
 (function() {
   var badge = document.querySelector('.streak-badge');
   if (badge) badge.addEventListener('click', showStreakScreen);
