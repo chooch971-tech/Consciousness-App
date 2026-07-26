@@ -107,8 +107,15 @@ test('exercise records and Path cards expose the evidence and curriculum indicat
   assert.match(guideSource, /changing the session time does not change that mastery goal/);
   assert.match(guideSource, /data-guide-eyes/);
   assert.match(guideSource, /Sensory concentration · Stage/);
-  assert.match(questSource, /class="sensory-goal-bar"/);
+  assert.match(guideSource, /function guideProgressOverview/);
+  assert.match(guideSource, /id:'visual', name:'Visualization'/);
+  assert.match(guideSource, /id:'auditory', name:'Auditory'/);
+  assert.match(guideSource, /id:'sense', name:'Senses'/);
+  assert.match(questSource, /class="pq-progress-view"/);
+  assert.match(questSource, /data-pq-view="exercises"/);
+  assert.match(questSource, /data-pq-view="progress"/);
   assert.match(questSource, /role="progressbar"/);
+  assert.doesNotMatch(questSource, /sensory-goal-bar/);
   assert.doesNotMatch(questSource, /item\.trackNext/);
   assert.match(questSource, /data-sensory-track/);
   assert.match(reportsSource, /sensory_concentration_track/);

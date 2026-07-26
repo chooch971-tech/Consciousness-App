@@ -1498,6 +1498,167 @@ function guideDurationForScore(score) {
   return 20;
 }
 
+function guideProgressPct(value, total) {
+  if (!total) return 0;
+  return Math.max(0, Math.min(100, Math.round(value / total * 100)));
+}
+
+// Read-only curriculum view used by the Path's Progress toggle. Daily cards
+// stay focused on what Omnia recommends today; this view explains the ladders
+// behind those choices without placing a large instruction box on each card.
+function guideProgressOverview() {
+  var cards = [];
+  var clock = guideClockStats();
+  var clockTarget = guideClockFinalTarget(clock);
+  var clockFloor = guideFloorMin('clock');
+  var clockDetail, clockPct = 100;
+  if (clockFloor && !guideAutoAdvanceOn('clock')) {
+    clockDetail = 'Manual target · automatic increases are off.';
+  } else if (clock.qualTarget < 10) {
+    var clockRemaining = Math.max(0, 2 - (clock.qualAtTier || 0));
+    clockDetail = clockRemaining + ' more ' + clock.qualTarget + '-minute session'
+      + (clockRemaining === 1 ? '' : 's') + ' → ' + (clock.qualTarget + 1) + ' min';
+    clockPct = guideProgressPct(clock.qualAtTier || 0, 2);
+  } else if (guideState.clockUserTarget == null && (clock.qualTenCount || 0) < 14) {
+    var tenRemaining = 14 - (clock.qualTenCount || 0);
+    clockDetail = tenRemaining + ' more 10-minute session' + (tenRemaining === 1 ? '' : 's')
+      + ' → optional 15-minute intervals';
+    clockPct = guideProgressPct(clock.qualTenCount || 0, 14);
+  } else {
+    clockDetail = guideState.clockUserTarget != null
+      ? 'Your 10–15 minute interval target is manually adjustable.'
+      : 'The foundational timing ladder is complete.';
+  }
+  cards.push({
+    id:'clock', name:'Clock', icon:'⊙', color:'#d4b08e',
+    summary:clockTarget + ' min recommended',
+    rows:[{ label:'Session length', status:clockTarget + ' min', detail:clockDetail, pct:clockPct }]
+  });
+
+  var thought = guideThoughtStats();
+  var thoughtRows = GUIDE_FOUNDATION_THOUGHT_ORDER.map(function(mode) {
+    var st = thought[mode] || { count:0, bestSec:0 };
+    var target = guideThoughtTargetMinutes(mode, thought);
+    var floor = guideFloorMin(mode);
+    var detail, pct = 100;
+    if (floor) {
+      detail = 'Manual ' + floor + '-minute starting point · automatic increases '
+        + (guideAutoAdvanceOn(mode) ? 'on.' : 'off.');
+    } else if (target >= 15) {
+      detail = 'The 15-minute recommendation ceiling is reached.';
+    } else {
+      var blockSize = st.count < 10 ? 2 : 6;
+      var used = st.count < 10 ? st.count % 2 : (st.count - 10) % 6;
+      var remaining = blockSize - used;
+      detail = remaining + ' more completed session' + (remaining === 1 ? '' : 's')
+        + ' → ' + (target + 1) + ' min';
+      pct = guideProgressPct(used, blockSize);
+    }
+    return {
+      label:GUIDE_FOUNDATION_THOUGHT_LABELS[mode] || mode,
+      status:target + ' min',
+      detail:detail,
+      pct:pct
+    };
+  });
+  cards.push({
+    id:'thought', name:'Thought Control', icon:'◌', color:'#98b4cc',
+    summary:'Each form advances separately',
+    rows:thoughtRows
+  });
+
+  var asana = guideAsanaStats();
+  var asanaDetail, asanaPct = 100;
+  if (asana.locked) {
+    asanaDetail = 'Manual target · automatic increases are off.';
+  } else if (asana.atCap) {
+    asanaDetail = 'The current ladder ceiling is reached; adjust the target manually.';
+  } else {
+    var asanaRemaining = Math.max(0, asana.tierRequired - asana.qualAtTier);
+    asanaDetail = asanaRemaining + ' more full ' + asana.qualTarget + '-minute session'
+      + (asanaRemaining === 1 ? '' : 's') + ' → ' + (asana.qualTarget + 1) + ' min';
+    asanaPct = guideProgressPct(asana.qualAtTier, asana.tierRequired);
+  }
+  cards.push({
+    id:'asana', name:'Asana', icon:'✦', color:'#d49898',
+    summary:asana.qualTarget + ' min recommended',
+    rows:[{ label:'Motionless sitting', status:asana.qualTarget + ' min', detail:asanaDetail, pct:asanaPct }]
+  });
+
+  var sensory = guideSensoryTrackProgress();
+  var sensoryPin = guideState._sensoryDailyStageV1;
+  var sensoryPinnedStage = sensoryPin && sensoryPin.day === guideLocalDayKey()
+    ? sensory.stages.find(function(stage) { return stage.id === sensoryPin.id; })
+    : null;
+  var sensoryActiveStage = sensoryPinnedStage
+    ? (sensoryPinnedStage.mastered ? null : sensoryPinnedStage)
+    : sensory.current;
+  function sensoryRow(stage) {
+    var active = !!(sensoryActiveStage && sensoryActiveStage.id === stage.id);
+    var prior = stage.index > 0 ? sensory.stages[stage.index - 1] : null;
+    var status, detail;
+    if (stage.mastered) {
+      status = 'Mastered';
+      detail = 'Clean hold ' + guideFmtTime(stage.bestCleanSec) + ' / 5m';
+    } else if (!active) {
+      status = prior && prior.mastered ? 'Next' : 'Waiting';
+      detail = prior && prior.mastered
+        ? 'Omnia will recommend this on your next practice day.'
+        : 'Omnia recommends this after '
+          + (prior ? prior.name + ' · ' + prior.label : 'the prior foundation')
+          + ' reaches a clean 5:00 hold.';
+    } else {
+      var practiceMin = guideSensoryPracticeMinutes(stage);
+      status = practiceMin + ' min recommended';
+      var increase;
+      if (practiceMin < 15) {
+        var toThree = Math.max(1, 3 - stage.attempts);
+        increase = '15 min after one 10-minute session or ' + toThree + ' more attempt'
+          + (toThree === 1 ? '' : 's') + '.';
+      } else if (practiceMin < 20) {
+        var toTen = Math.max(1, 10 - stage.attempts);
+        increase = '20 min after one 15-minute session or ' + toTen + ' more attempt'
+          + (toTen === 1 ? '' : 's') + '.';
+      } else if (practiceMin === 20) {
+        increase = 'At the 20-minute practice range.';
+      } else {
+        increase = 'Using your manual ' + practiceMin + '-minute target.';
+      }
+      detail = 'Best clean ' + guideFmtTime(stage.bestCleanSec) + ' / 5m · ' + increase;
+    }
+    return {
+      label:stage.label,
+      status:status,
+      detail:detail,
+      pct:guideProgressPct(stage.bestCleanSec, GUIDE_SENSORY_CLEAN_GOAL_SEC),
+      active:active,
+      mastered:stage.mastered
+    };
+  }
+  var visualStages = sensory.stages.filter(function(stage) { return stage.exercise === 'visual'; });
+  var auditoryStages = sensory.stages.filter(function(stage) { return stage.exercise === 'auditory'; });
+  var senseStages = sensory.stages.filter(function(stage) { return stage.exercise === 'sense'; });
+  cards.push({
+    id:'visual', name:'Visualization', icon:'◉', color:'#8ab8e0',
+    summary:visualStages.filter(function(stage) { return stage.mastered; }).length + ' / 2 foundations',
+    rows:visualStages.map(sensoryRow)
+  });
+  cards.push({
+    id:'auditory', name:'Auditory', icon:'◈', color:'#8eccc0',
+    summary:auditoryStages[0] && auditoryStages[0].mastered ? 'Foundation mastered' : 'Single-sound foundation',
+    rows:auditoryStages.map(sensoryRow)
+  });
+  cards.push({
+    id:'sense', name:'Senses', icon:'✺', color:'#e0a8c4',
+    summary:senseStages.filter(function(stage) { return stage.mastered; }).length + ' / 3 foundations',
+    rows:senseStages.map(sensoryRow),
+    footer:sensory.complete
+      ? 'Multi-Sense unlocked · elemental work follows later.'
+      : 'Feeling, Smell, and Taste unlock in order; only one is recommended at a time.'
+  });
+  return cards;
+}
+
 function guideExerciseById(id) {
   return GUIDE_EXERCISES.find(function(ex) { return ex.id === id; }) || GUIDE_EXERCISES[0];
 }
@@ -2284,23 +2445,7 @@ function renderGuidePlan(mode, skipScroll) {
     var beginHtml = item.open
       ? '<button class="path-ex-begin guide-plan-start"' + startAttrs + (item.done ? ' disabled' : '') + '>' + (item.done ? 'Done' : 'Begin') + '</button>'
       : '';
-    var trackGoalSec = item.trackGoalSec || GUIDE_SENSORY_CLEAN_GOAL_SEC;
-    var trackPct = item.sensoryTrack
-      ? Math.max(0, Math.min(100, Math.round((item.trackProgressSec || 0) / trackGoalSec * 100)))
-      : 0;
-    var trackLeft = item.trackComplete
-      ? 'Foundations 6 / 6'
-      : 'Foundation ' + item.trackStage + ' / ' + item.trackTotal;
-    var trackRight = item.trackComplete ? 'Multi-Sense unlocked' : '5:00 clean hold';
-    var trackHtml = item.sensoryTrack
-      ? '<div class="sensory-goal-bar" style="margin-top:9px;">'
-        + '<div style="display:flex;justify-content:space-between;gap:12px;margin-bottom:5px;font-size:7px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);">'
-        + '<span>' + trackLeft + '</span><span style="color:rgba(224,168,196,.82);">' + trackRight + '</span></div>'
-        + '<div role="progressbar" aria-label="' + trackRight + '" aria-valuemin="0" aria-valuemax="100" aria-valuenow="' + trackPct + '" style="height:3px;border-radius:999px;background:rgba(224,168,196,.11);overflow:hidden;">'
-        + '<i style="display:block;width:' + trackPct + '%;height:100%;border-radius:inherit;background:linear-gradient(90deg,rgba(224,168,196,.52),rgba(224,168,196,.9));"></i></div></div>'
-      : '';
-    return '<div class="path-ex-card' + (item.done ? ' done' : '') + '"' + (item.sensoryTrack ? ' style="display:block;"' : '') + '>'
-      + (item.sensoryTrack ? '<div style="display:flex;align-items:center;gap:14px;">' : '')
+    return '<div class="path-ex-card' + (item.done ? ' done' : '') + '">'
       + '<div class="path-ex-icon" style="background:' + accentColor + '1e;border:1px solid ' + accentColor + '38;color:' + accentColor + ';">' + icon + '</div>'
       + '<div class="path-ex-info">'
       + '<div class="path-ex-name" style="color:' + accentColor + ';">' + item.name + modeLabel + '</div>'
@@ -2308,8 +2453,6 @@ function renderGuidePlan(mode, skipScroll) {
       + '</div>'
       + '<div class="path-ex-right">' + checkHtml + beginHtml + '</div>'
       + '<button class="pq-menu-btn" data-ex-id="' + item.id + '"' + (item.mode ? ' data-ex-mode="' + item.mode + '"' : '') + (item.sensoryTrack ? ' data-sensory-track="1"' : '') + (item.added ? ' data-ex-added="1"' : '') + ' title="Options">···</button>'
-      + (item.sensoryTrack ? '</div>' : '')
-      + trackHtml
       + '</div>';
   }
 

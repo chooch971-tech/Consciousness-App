@@ -710,6 +710,34 @@ function renderPathQuests() {
 
   var exIcon = { clock:'⊙', visual:'◉', auditory:'◈', sense:'✺', feeling:'✺', smell:'✺', taste:'✺', multisense:'◇', thought:'◌', observation:'◌', focus:'◌', vacancy:'◌', asana:'✦', soulmirror:'◆', pore:'≋' };
   var exColor = { clock:'#d4b08e', visual:'#8ab8e0', auditory:'#8eccc0', sense:'#e0a8c4', feeling:'#e0a8c4', smell:'#e0a8c4', taste:'#e0a8c4', multisense:'#d4c88e', thought:'#98b4cc', observation:'#98b4cc', focus:'#98b4cc', vacancy:'#98b4cc', asana:'#d49898', soulmirror:'#c4a8d4', pore:'#8ecce0' };
+  var pathView = guideState._pathView === 'progress' ? 'progress' : 'exercises';
+  var progressCards = typeof guideProgressOverview === 'function' ? guideProgressOverview() : [];
+
+  function progressCardsHTML(cards) {
+    return '<div class="pq-progress-view" style="display:flex;flex-direction:column;gap:8px;">'
+      + cards.map(function(card) {
+        var rows = (card.rows || []).map(function(row) {
+          var rowColor = row.mastered ? '#7eb8a4' : row.active ? card.color : 'var(--text)';
+          return '<div style="padding-top:10px;margin-top:10px;border-top:1px solid rgba(255,255,255,.055);">'
+            + '<div style="display:flex;align-items:baseline;justify-content:space-between;gap:12px;">'
+            + '<span style="font-size:9px;color:' + rowColor + ';letter-spacing:.05em;">' + row.label + '</span>'
+            + '<span style="font-size:8px;color:' + rowColor + ';letter-spacing:.08em;text-align:right;">' + row.status + '</span></div>'
+            + '<div style="font-size:8px;color:var(--muted);line-height:1.55;letter-spacing:.035em;margin-top:4px;">' + row.detail + '</div>'
+            + '<div role="progressbar" aria-label="' + card.name + ' · ' + row.label + '" aria-valuemin="0" aria-valuemax="100" aria-valuenow="' + row.pct + '" style="height:2px;border-radius:999px;background:rgba(255,255,255,.055);overflow:hidden;margin-top:7px;">'
+            + '<i style="display:block;width:' + row.pct + '%;height:100%;border-radius:inherit;background:' + card.color + ';opacity:' + (row.active || row.mastered ? '.8' : '.32') + ';"></i></div>'
+            + '</div>';
+        }).join('');
+        return '<section class="pq-progress-card" data-progress-exercise="' + card.id + '" style="padding:13px 14px;background:var(--surface);border:1px solid var(--border);border-radius:14px;">'
+          + '<div style="display:flex;align-items:center;gap:10px;">'
+          + '<div style="width:32px;height:32px;border-radius:9px;display:flex;align-items:center;justify-content:center;background:' + card.color + '16;border:1px solid ' + card.color + '30;color:' + card.color + ';font-size:15px;">' + card.icon + '</div>'
+          + '<div style="flex:1;min-width:0;"><div style="font-family:\'Space Grotesk\',sans-serif;font-size:11px;font-weight:600;color:' + card.color + ';">' + card.name + '</div>'
+          + '<div style="font-size:8px;color:var(--muted);letter-spacing:.05em;margin-top:2px;">' + card.summary + '</div></div></div>'
+          + rows
+          + (card.footer ? '<div style="font-size:8px;color:var(--muted);line-height:1.5;margin-top:10px;">' + card.footer + '</div>' : '')
+          + '</section>';
+      }).join('')
+      + '</div>';
+  }
 
   var dayNames = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
   var monthNames = ['January','February','March','April','May','June','July','August','September','October','November','December'];
@@ -735,18 +763,21 @@ function renderPathQuests() {
     + '</svg>'
     + '</div></div>';
 
-  // ── Section label with cadence toggle inline ──
+  // ── Exercises / Progress toggle with cadence controls ──
   var _twoOn = guideTwoADayEnabled();
   var _canAdd = (typeof guidePathAddableExercises === 'function') && guidePathAddableExercises().length > 0;
   html += '<div>';
   html += '<div style="display:flex;align-items:center;justify-content:space-between;margin:0 2px 6px;">'
-    + '<span style="font-size:8px;letter-spacing:.26em;text-transform:uppercase;color:var(--text);">Exercises</span>'
+    + '<div class="pq-path-view-toggle" style="display:flex;align-items:center;padding:2px;border-radius:7px;background:rgba(255,255,255,.035);border:1px solid rgba(255,255,255,.06);">'
+    + '<button data-pq-view="exercises" aria-pressed="' + (pathView === 'exercises') + '" style="border:0;border-radius:5px;padding:5px 9px;background:' + (pathView === 'exercises' ? 'rgba(142,204,224,.11)' : 'transparent') + ';color:' + (pathView === 'exercises' ? '#8ecce0' : 'var(--muted)') + ';font-family:\'DM Mono\',monospace;font-size:7px;letter-spacing:.16em;text-transform:uppercase;cursor:pointer;">Exercises</button>'
+    + '<button data-pq-view="progress" aria-pressed="' + (pathView === 'progress') + '" style="border:0;border-radius:5px;padding:5px 9px;background:' + (pathView === 'progress' ? 'rgba(142,204,224,.11)' : 'transparent') + ';color:' + (pathView === 'progress' ? '#8ecce0' : 'var(--muted)') + ';font-family:\'DM Mono\',monospace;font-size:7px;letter-spacing:.16em;text-transform:uppercase;cursor:pointer;">Progress</button>'
+    + '</div>'
     + '<div style="display:flex;align-items:center;gap:9px;">'
-    + (_canAdd ? '<button id="pqAddExBtn" class="pq-add-ex-btn" title="Add an exercise to your path">+</button>' : '')
-    + '<button id="pqTwoADayBtn" class="guide-cadence-toggle' + (_twoOn ? '' : ' off') + '">' + (_twoOn ? '2× / day' : '1× / day') + '</button>'
+    + (pathView === 'exercises' && _canAdd ? '<button id="pqAddExBtn" class="pq-add-ex-btn" title="Add an exercise to your path">+</button>' : '')
+    + (pathView === 'exercises' ? '<button id="pqTwoADayBtn" class="guide-cadence-toggle' + (_twoOn ? '' : ' off') + '">' + (_twoOn ? '2× / day' : '1× / day') + '</button>' : '')
     + '</div>'
     + '</div>';
-  html += '<div style="display:flex;flex-direction:column;gap:8px;">';
+  if (pathView === 'exercises') html += '<div style="display:flex;flex-direction:column;gap:8px;">';
   var _isTC = function(id) { return id === 'thought' || id === 'observation' || id === 'focus' || id === 'vacancy'; };
   var _isSense = function(id) { return id === 'sense' || id === 'feeling' || id === 'smell' || id === 'taste'; };
   // Sort: uncompleted exercises to the top, completed to the bottom (stable).
@@ -826,21 +857,6 @@ function renderPathQuests() {
       + (item.done ? 'opacity:.5;' : '') + 'border:1px solid var(--border);border-radius:14px;';
     if (grantsBodyName) outerStyle += 'border-color:rgba(216,184,106,.5);';
     var grantsClass = grantsBodyName ? 'pq-grants-body' : '';
-    var trackGoalSec = item.trackGoalSec || 300;
-    var trackPct = item.sensoryTrack
-      ? Math.max(0, Math.min(100, Math.round((item.trackProgressSec || 0) / trackGoalSec * 100)))
-      : 0;
-    var trackLeft = item.trackComplete
-      ? 'Foundations 6 / 6'
-      : 'Foundation ' + item.trackStage + ' / ' + item.trackTotal;
-    var trackRight = item.trackComplete ? 'Multi-Sense unlocked' : '5:00 clean hold';
-    var trackHtml = item.sensoryTrack
-      ? '<div class="sensory-goal-bar" style="margin-top:10px;">'
-        + '<div style="display:flex;justify-content:space-between;gap:12px;margin-bottom:5px;font-size:7px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);">'
-        + '<span>' + trackLeft + '</span><span style="color:rgba(224,168,196,.82);">' + trackRight + '</span></div>'
-        + '<div role="progressbar" aria-label="' + trackRight + '" aria-valuemin="0" aria-valuemax="100" aria-valuenow="' + trackPct + '" style="height:3px;border-radius:999px;background:rgba(224,168,196,.11);overflow:hidden;">'
-        + '<i style="display:block;width:' + trackPct + '%;height:100%;border-radius:inherit;background:linear-gradient(90deg,rgba(224,168,196,.52),rgba(224,168,196,.9));"></i></div></div>'
-      : '';
     return '<div' + (grantsClass ? ' class="' + grantsClass + '"' : '') + ' style="' + outerStyle + '">'
       + '<div style="display:flex;align-items:center;gap:14px;">'
       + '<div style="' + badgeStyle + '">' + icon + '</div>'
@@ -852,12 +868,15 @@ function renderPathQuests() {
       + '<div style="display:flex;align-items:center;gap:10px;flex-shrink:0;">' + checkHtml + beginHtml + '</div>'
       + menuBtn
       + '</div>'
-      + trackHtml
       + (extraHtml ? '<div style="padding:8px 0 0;">' + extraHtml + '</div>' : '')
       + '</div>';
   };
-  items.forEach(function(item) { html += _pqBuildCard(item); });
-  html += '</div>';  // close cards container
+  if (pathView === 'exercises') {
+    items.forEach(function(item) { html += _pqBuildCard(item); });
+    html += '</div>';  // close cards container
+  } else {
+    html += progressCardsHTML(progressCards);
+  }
   html += '</div>';  // close label+cards wrapper
 
   // Mockup-style quest card builder
@@ -957,6 +976,17 @@ function renderPathQuests() {
   if (pqAddExBtn) {
     pqAddExBtn.onclick = function(e) { e.stopPropagation(); if (typeof pqOpenAddMenu === 'function') pqOpenAddMenu(pqAddExBtn); };
   }
+
+  root.querySelectorAll('[data-pq-view]').forEach(function(btn) {
+    btn.onclick = function(e) {
+      e.stopPropagation();
+      var nextView = btn.dataset.pqView === 'progress' ? 'progress' : 'exercises';
+      if (guideState._pathView === nextView) return;
+      guideState._pathView = nextView;
+      saveGuideState(guideState);
+      renderPathQuests();
+    };
+  });
 
   root.querySelectorAll('.pq-claim').forEach(function(btn) {
     btn.onclick = function(e) { e.stopPropagation(); claimPathQuestReward(btn.dataset.quest); };
