@@ -434,11 +434,23 @@ function showStreakEndedPrompt() {
 function showStreakFrozenPrompt() {
   if (document.getElementById('streakFrozenOverlay')) return;
   if (!state.frozenStreakInfo) return;
-  // Marked only now that it's actually rendering, so an app reload before this
-  // point gets another chance instead of swallowing the moment.
-  state.frozenPromptShown = true;
-  saveState();
   var info = state.frozenStreakInfo;
+  var eventKey = info.eventKey
+    || ('freeze:legacy:' + String(state.lastSessionDate || '') + ':' + String(info.missed || 1));
+  if (state.lastFrozenPromptKey === eventKey) {
+    state.frozenStreakInfo = null;
+    state.frozenPromptShown = true;
+    saveState();
+    return;
+  }
+  // Marked only now that it's actually rendering, so an app reload before this
+  // point gets another chance instead of swallowing the moment. Once rendering
+  // begins, consume the pending event and retain its key so a stale cloud/local
+  // copy cannot replay the same animation on a later launch.
+  state.lastFrozenPromptKey = eventKey;
+  state.frozenPromptShown = true;
+  state.frozenStreakInfo = null;
+  saveState();
   var missed = info.missed || 1;
   var left = info.freezes || 0;
   var streak = state.streak || 0;
@@ -497,8 +509,6 @@ function showStreakFrozenPrompt() {
   }
 
   function dismiss() {
-    state.frozenStreakInfo = null;
-    saveState();
     overlay.classList.remove('sfo-vis');
     setTimeout(function() { if (overlay.parentNode) overlay.parentNode.removeChild(overlay); }, 360);
   }

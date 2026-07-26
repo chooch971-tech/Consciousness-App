@@ -377,6 +377,7 @@ const DEFAULT_STATE = {
   streakEndedPromptShown: false,
   frozenStreakInfo: null,    // {missed, freezes} stashed when a freeze saves the streak, cleared after modal shown
   frozenPromptShown: false,
+  lastFrozenPromptKey: null, // durable event identity: one animation per set of frozen calendar days
 };
 
 function normalizeLevel(value) {
@@ -690,6 +691,24 @@ function _streakISO(d) { return presenceDayKey(d); }
 
 var STREAK_FREEZE_CAP = 3;
 
+// Return only genuinely uncovered calendar days between the last practice and
+// today. Reopening the app must not spend another freeze for a date already
+// present in frozenDates; one freeze permanently covers one missed day.
+function streakUncoveredMissedDates(last, today) {
+  var practiced = {}; (state.practicedDates || []).forEach(function(d) { practiced[d] = true; });
+  var frozen = {}; (state.frozenDates || []).forEach(function(d) { frozen[d] = true; });
+  var dates = [];
+  var cursor = new Date(last);
+  cursor.setHours(0, 0, 0, 0);
+  cursor.setDate(cursor.getDate() + 1);
+  while (cursor < today) {
+    var key = _streakISO(cursor);
+    if (!practiced[key] && !frozen[key]) dates.push(key);
+    cursor.setDate(cursor.getDate() + 1);
+  }
+  return dates;
+}
+
 // Pure: walk backwards from today (or yesterday, since the streak is still alive
 // until midnight) over consecutive practiced-or-frozen days. A frozen day is one
 // a freeze covered, so it keeps the chain unbroken and counts toward the span.
@@ -785,18 +804,17 @@ function checkStreakStatus() {
   var last = new Date(state.lastSessionDate); last.setHours(0,0,0,0);
   var diffDays = Math.round((today - last) / 86400000);
   var prevStreak = state.streak || 0;
-  if (diffDays > 1 && prevStreak > 0) {
-    var missed = diffDays - 1;
+  var missedDates = diffDays > 1 ? streakUncoveredMissedDates(last, today) : [];
+  if (diffDays > 1 && prevStreak > 0 && missedDates.length > 0) {
+    var missed = missedDates.length;
     var available = state.streakFreezes || 0;
     if (missed <= available) {
       // Freezes can fully bridge the gap — spend exactly one per missed day and
       // record those days as frozen so the calendar-derived streak stays intact.
-      for (var i = 1; i <= missed; i++) {
-        var d = new Date(last); d.setDate(d.getDate() + i);
-        var key = _streakISO(d);
+      missedDates.forEach(function(key) {
         if (!state.frozenDates) state.frozenDates = [];
         if (state.frozenDates.indexOf(key) === -1) state.frozenDates.push(key);
-      }
+      });
       state.streakFreezes = available - missed;
       state.freezesUsed = (state.freezesUsed || 0) + missed;
       state.endedStreakInfo = null;
@@ -804,7 +822,12 @@ function checkStreakStatus() {
       // only recomputed from the calendar further down. Mirrors endedStreakInfo:
       // the "shown" flag is set inside the overlay itself, so a reload before it
       // renders gets another chance rather than losing the moment silently.
-      state.frozenStreakInfo = { missed: missed, freezes: state.streakFreezes };
+      state.frozenStreakInfo = {
+        missed: missed,
+        freezes: state.streakFreezes,
+        dates: missedDates.slice(),
+        eventKey: 'freeze:' + missedDates.join('|')
+      };
       state.frozenPromptShown = false;
     } else {
       // Not enough freezes to save the streak — break it, but DON'T waste the
@@ -814,6 +837,13 @@ function checkStreakStatus() {
       state.streakEndedPromptShown = false;
       state.streakGoalBaseDays = 0; // next streak's goal counts from day 1
     }
+    saveState();
+  } else if (diffDays > 1 && prevStreak > 0 && missedDates.length === 0
+      && state.endedStreakInfo) {
+    // Repair the bad state produced by older builds: if every missed calendar
+    // day is already practiced or frozen, the streak never ended.
+    state.endedStreakInfo = null;
+    state.streakEndedPromptShown = false;
     saveState();
   }
   // The streak number always reflects the calendar (never a stale counter).
