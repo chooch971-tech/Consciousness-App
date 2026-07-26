@@ -20,7 +20,9 @@ test('the drawer exposes Report a Bug directly below Donate', () => {
 });
 
 test('the drawer header keeps Presence uncluttered and below the guide figure', () => {
-  assert.match(presence, /#drawerOmniaBtn\s*\{[^}]*margin-bottom:24px/);
+  assert.match(presence, /\.drawer-guide-stage\s*\{[^}]*width:128px[^}]*height:120px[^}]*overflow:hidden/);
+  assert.match(presence, /\.drawer-wordmark\s*\{[^}]*margin-top:12px/);
+  assert.match(presence, /<div class="drawer-guide-stage">\s*<div id="drawerOmniaBtn">/);
   assert.match(presence, /<div class="drawer-wordmark">Presence<\/div>/);
   assert.doesNotMatch(presence, /drawerLevel|drawer-level/);
 });

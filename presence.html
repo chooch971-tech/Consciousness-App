@@ -3049,8 +3049,9 @@
        from independently promoting its normal fixed layer above the page. */
     .drawer-overlay.swipe-back-live { position:fixed; z-index:20; pointer-events:none; transition:none; }
     .drawer-overlay.swipe-back-live .drawer { position:absolute; z-index:1; transition:none; }
-    .drawer-header { padding:0 24px 24px; border-bottom:1px solid var(--border); margin-bottom:8px; }
-    .drawer-wordmark { font-family:Cormorant Garamond,serif; font-size:11px; font-weight:300; letter-spacing:.35em; text-transform:uppercase; color:var(--accent); }
+    .drawer-header { padding:0 24px 16px; border-bottom:1px solid var(--border); margin-bottom:8px; }
+    .drawer-guide-stage { width:128px; height:120px; flex:0 0 auto; display:flex; align-items:center; justify-content:center; overflow:hidden; }
+    .drawer-wordmark { margin-top:12px; font-family:Cormorant Garamond,serif; font-size:11px; font-weight:300; letter-spacing:.35em; text-transform:uppercase; color:var(--accent); }
     .drawer-items { flex:1; display:flex; flex-direction:column; padding:7px 0; overflow-y:auto; scrollbar-width:none; }
     .drawer-items::-webkit-scrollbar { display:none; }
     .drawer-section-label { padding:11px 24px 5px; font-family:'DM Mono',monospace; font-size:8px; letter-spacing:.24em; text-transform:uppercase; color:rgba(221,216,206,.5); }
@@ -5206,7 +5207,7 @@ body:not(.tut-live) #tutCorgi {
 #drawerOmniaBtn {
   background:none; border:none; cursor:default; padding:4px;
   opacity:0.65; transition:opacity 0.2s ease, filter 0.2s ease;
-  line-height:0; margin-bottom:24px; position:relative;
+  line-height:0; margin:0; position:relative;
 }
 
 /* Friends panel */
@@ -8707,7 +8708,8 @@ body:not(.tut-live) #tutCorgi {
 <div class="drawer-overlay" id="drawerOverlay">
   <div class="drawer" id="drawer">
     <div class="drawer-header">
-      <div id="drawerOmniaBtn">
+      <div class="drawer-guide-stage">
+        <div id="drawerOmniaBtn">
         <svg viewBox="0 0 80 130" width="48" height="78" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
           <defs>
             <linearGradient id="dg1" x1="0%" y1="0%" x2="100%" y2="100%">
@@ -8750,6 +8752,7 @@ body:not(.tut-live) #tutCorgi {
             <line x1="71" y1="45" x2="71" y2="51" stroke="#b8eaff" stroke-width="0.9"/>
           </g>
         </svg>
+        </div>
       </div>
       <div class="drawer-wordmark">Presence</div>
     </div>
