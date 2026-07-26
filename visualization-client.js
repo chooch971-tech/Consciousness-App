@@ -1215,6 +1215,7 @@ function saveVisSessionResult() {
       seconds: bestSec,
       cleanSeconds: bestCleanSec,
       halts: totalHalts,
+      sessionDurationSec: _visWallSec,
       eyesMode: visOpenEyesMode ? 'open' : 'closed',
       xpEarned: totalXP,
       reps: visReps.length,

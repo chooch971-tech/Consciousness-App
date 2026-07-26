@@ -17,7 +17,16 @@ const reportsSource = fs.readFileSync(path.join(root, 'reports-client.js'), 'utf
 function loadTrack(history) {
   const start = guideSource.indexOf('var GUIDE_SENSORY_CLEAN_GOAL_SEC');
   const end = guideSource.indexOf('// ── Practice Tree');
-  const context = { concState:{ history:history || [] } };
+  const context = {
+    concState:{ history:history || [] },
+    guideState:{},
+    guideLocalDayKey:() => '2026-07-26',
+    saveGuideState:() => {},
+    guideAdvancedTarget:(_id, minutes) => minutes,
+    guideClamp:(value, min, max) => Math.max(min, Math.min(max, value)),
+    guideFmtTime:seconds => String(seconds),
+    GUIDE_FLOOR_CAP:120
+  };
   vm.runInNewContext(guideSource.slice(start, end), context, { filename:'guide-sensory-track.js' });
   return context;
 }
@@ -64,6 +73,27 @@ test('broken or accumulated reps cannot satisfy a sensory foundation', () => {
   assert.equal(progress.current.bestCleanSec, 299);
 });
 
+test('sensory practice sessions progress through 10–20 minutes while mastery remains a clean five-minute hold', () => {
+  const newStage = loadTrack([]);
+  const firstItem = newStage.guideSensoryTrackItem(1);
+  assert.equal(firstItem.duration, 10);
+  assert.equal(firstItem.done, false);
+  assert.match(firstItem.trackGoal, /Practice 10–20 min/);
+  assert.match(firstItem.trackGoal, /uninterrupted 5:00 hold/);
+
+  const developingStage = loadTrack([
+    { date:'2026-07-20T10:00:00.000Z', type:'visualization', eyesMode:'closed', seconds:120, xpEarned:600, cleanSeconds:120, halts:2 }
+  ]);
+  assert.equal(developingStage.guideSensoryTrackItem(1).duration, 15);
+
+  const establishedStage = loadTrack([
+    { date:'2026-07-20T10:00:00.000Z', type:'visualization', eyesMode:'closed', seconds:180, sessionDurationSec:900, cleanSeconds:180, halts:3 }
+  ]);
+  const establishedItem = establishedStage.guideSensoryTrackItem(1);
+  assert.equal(establishedItem.duration, 20);
+  assert.equal(establishedItem.done, false);
+});
+
 test('exercise records and Path cards expose the evidence and curriculum indicators', () => {
   assert.match(visualSource, /cleanSeconds:\s*bestCleanSec/);
   assert.match(visualSource, /eyesMode:\s*visOpenEyesMode\s*\?\s*'open'\s*:\s*'closed'/);
@@ -78,6 +108,7 @@ test('exercise records and Path cards expose the evidence and curriculum indicat
   assert.match(questSource, /item\.trackLabel/);
   assert.match(questSource, /data-sensory-track/);
   assert.match(reportsSource, /sensory_concentration_track/);
+  assert.match(reportsSource, /recommended_practice_range_min:\[10, 20\]/);
   assert.match(reportsSource, /next_after_foundations:'multi_sense'/);
   assert.match(reportsSource, /later_stage:'elemental_work'/);
 });

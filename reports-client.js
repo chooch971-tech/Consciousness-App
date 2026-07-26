@@ -289,7 +289,7 @@ function reviewPracticeRows(summary, previous) {
         + '<strong>Sensory concentration · ' + track.completedCount + ' / ' + track.stages.length + ' foundations mastered</strong><br>'
         + (track.complete
           ? 'Multi-Sense unlocked · elemental work follows later'
-          : 'Current: ' + currentStage.name + ' · ' + currentStage.label + ' · best clean ' + reviewSeconds(currentStage.bestCleanSec) + ' / 5m')
+          : 'Current: ' + currentStage.name + ' · ' + currentStage.label + ' · practice 10–20m · best clean ' + reviewSeconds(currentStage.bestCleanSec) + ' / 5m')
         + '</div>';
     }
   } catch (e) {}
@@ -429,6 +429,7 @@ function reviewOmniaContext(period, offset, summary, previous, decision) {
       var trackProgress = guideSensoryTrackProgress();
       sensoryTrack = {
         clean_goal_sec:trackProgress.goalSec,
+        recommended_practice_range_min:[10, 20],
         completed_foundations:trackProgress.completedCount,
         total_foundations:trackProgress.stages.length,
         foundations_complete:trackProgress.complete,

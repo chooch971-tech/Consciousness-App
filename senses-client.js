@@ -616,6 +616,7 @@ function saveSenseSessionResult() {
       cue: senseReps.length ? senseReps[0].cue : senseActiveCue,
       seconds: bestSec,
       cleanSeconds: bestCleanSec,
+      sessionDurationSec: wallSec,
       masteryTier: senseMasteryTier(bestCleanSec),
       xpEarned: totalXP,
       reps: senseReps.length,

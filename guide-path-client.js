@@ -49,10 +49,14 @@ var GUIDE_SENSE_TIPS = {
 
 // Bardon-aligned sensory concentration is one sequential curriculum, not a
 // "most neglected sense" rotation. Each foundation stage is mastered by one
-// uninterrupted five-minute rep. Session-duration preferences remain separate:
-// a practitioner may sit longer, but neither a shorter custom target nor total
-// time accumulated across several broken reps can bypass the clean-hold gate.
+// uninterrupted five-minute rep inside a longer practice session. Omnia keeps
+// those sessions in a 10–20 minute training range by default. Session-duration
+// preferences remain separate: a practitioner may sit longer, but neither a
+// shorter custom target nor time accumulated across several broken reps can
+// bypass the clean-hold gate.
 var GUIDE_SENSORY_CLEAN_GOAL_SEC = 300;
+var GUIDE_SENSORY_PRACTICE_MIN = 10;
+var GUIDE_SENSORY_PRACTICE_MAX = 20;
 var GUIDE_SENSORY_STAGES = [
   { id:'visual_closed', exercise:'visual', name:'Visualization', label:'Closed Eyes', open:'visual', eyesMode:'closed' },
   { id:'visual_open', exercise:'visual', name:'Visualization', label:'Open Eyes', open:'visual', eyesMode:'open' },
@@ -67,6 +71,15 @@ function guideSensoryEntryCleanSec(entry) {
   return Math.max(0, parseInt(entry.cleanSeconds, 10) || 0);
 }
 
+function guideSensoryEntryPracticeSec(entry) {
+  if (!entry) return 0;
+  return Math.max(0,
+    parseInt(entry.sessionDurationSec, 10)
+      || parseInt(entry.xpEarned, 10)
+      || parseInt(entry.seconds, 10)
+      || 0);
+}
+
 function guideSensoryStageMatches(stage, entry) {
   if (!stage || !entry) return false;
   if (stage.exercise === 'visual') {
@@ -79,13 +92,15 @@ function guideSensoryStageMatches(stage, entry) {
 function guideSensoryTrackProgress() {
   var history = (typeof concState !== 'undefined' && Array.isArray(concState.history)) ? concState.history : [];
   var stages = GUIDE_SENSORY_STAGES.map(function(def, index) {
-    var bestCleanSec = 0, attempts = 0, halts = 0, qualifyingDates = [];
+    var bestCleanSec = 0, bestPracticeSec = 0, attempts = 0, halts = 0, qualifyingDates = [];
     history.forEach(function(entry) {
       if (!guideSensoryStageMatches(def, entry)) return;
       attempts++;
       halts += Math.max(0, parseInt(entry.halts, 10) || 0);
       var clean = guideSensoryEntryCleanSec(entry);
+      var practice = guideSensoryEntryPracticeSec(entry);
       if (clean > bestCleanSec) bestCleanSec = clean;
+      if (practice > bestPracticeSec) bestPracticeSec = practice;
       if (clean >= GUIDE_SENSORY_CLEAN_GOAL_SEC && entry.date) {
         qualifyingDates.push(entry.date);
       }
@@ -93,6 +108,7 @@ function guideSensoryTrackProgress() {
     return Object.assign({}, def, {
       index:index,
       bestCleanSec:bestCleanSec,
+      bestPracticeSec:bestPracticeSec,
       attempts:attempts,
       halts:halts,
       mastered:false,
@@ -153,6 +169,19 @@ function guideMultiSenseSessionsToday() {
   }).length;
 }
 
+function guideSensoryPracticeMinutes(stage) {
+  // Lengthen the training sit independently of the clean-hold mastery gate.
+  // A completed 10-minute sit moves the next recommendation to 15; a
+  // completed 15-minute sit moves it to 20. Repeated shorter attempts also
+  // progress the range so an imperfect practitioner is never stuck at 10.
+  var minutes = GUIDE_SENSORY_PRACTICE_MIN;
+  if (stage.bestPracticeSec >= 600 || stage.attempts >= 3) minutes = 15;
+  if (stage.bestPracticeSec >= 900 || stage.attempts >= 10) minutes = GUIDE_SENSORY_PRACTICE_MAX;
+  var preferenceId = stage.exercise === 'sense' ? stage.mode : stage.exercise;
+  minutes = guideAdvancedTarget(preferenceId, minutes);
+  return guideClamp(minutes, GUIDE_SENSORY_PRACTICE_MIN, GUIDE_FLOOR_CAP);
+}
+
 function guideSensoryTrackItem(rounds) {
   rounds = rounds || 1;
   var progress = guideSensoryTrackProgress();
@@ -180,11 +209,7 @@ function guideSensoryTrackItem(rounds) {
   }
 
   var stage = guideSensoryStageForToday(progress);
-  var naturalMin = 5;
-  if (stage.exercise === 'auditory' && guideFloorMin('auditory')) naturalMin = guideAuditoryStats().qualTarget || 5;
-  else if (stage.exercise === 'visual') naturalMin = guideAdvancedTarget('visual', 5);
-  else if (stage.exercise === 'sense') naturalMin = guideAdvancedTarget(stage.mode, 5);
-  naturalMin = guideClamp(naturalMin, 1, GUIDE_FLOOR_CAP);
+  var naturalMin = guideSensoryPracticeMinutes(stage);
   var nextStage = progress.stages[stage.index + 1] || null;
   var nextLabel = nextStage
     ? nextStage.name + ' · ' + nextStage.label
@@ -199,13 +224,13 @@ function guideSensoryTrackItem(rounds) {
     done:stage.mastered,
     todayCount:0,
     progress:'best clean ' + guideFmtTime(stage.bestCleanSec) + ' / 5m',
-    tip:'Master one faculty at a time. This stage advances only after one uninterrupted five-minute rep; changing the session time does not change that mastery goal.',
+    tip:'Practice this faculty for the full recommended session. The stage advances when one rep within that practice reaches an uninterrupted five-minute hold; changing the session time does not change that mastery goal.',
     open:stage.open,
     sensoryTrack:true,
     trackStage:stage.index + 1,
     trackTotal:GUIDE_SENSORY_STAGES.length,
     trackLabel:'Sensory concentration · Stage ' + (stage.index + 1) + ' of ' + GUIDE_SENSORY_STAGES.length,
-    trackGoal:'Goal: one uninterrupted 5:00 hold',
+    trackGoal:'Practice 10–20 min · mastery: one uninterrupted 5:00 hold',
     trackNext:'Next: ' + nextLabel
   };
 }
