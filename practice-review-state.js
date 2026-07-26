@@ -84,12 +84,16 @@
       if (Number(entry.cleanSeconds) >= 0) return Math.max(0, Number(entry.cleanSeconds) || 0);
       return Math.max(0, Number(entry.halts) || 0) === 0 ? Math.max(0, Number(entry.seconds) || 0) : 0;
     }
+    if ((practice === 'visualization' || practice === 'auditory')
+        && Object.prototype.hasOwnProperty.call(entry, 'cleanSeconds')) {
+      return Math.max(0, Number(entry.cleanSeconds) || 0);
+    }
     if (practice === 'prayer' || practice === 'awareness') return 0;
     return Math.max(0, Number(entry.seconds) || 0);
   }
 
   function eventId(kind, practice, entry) {
-    const source = [kind, entry.date || '', practice, entry.tcMode || '', entry.eyesMode || '', entry.exercise || '', entry.type || ''].join(':');
+    const source = [kind, entry.date || '', practice, entry.tcMode || entry.mode || '', entry.eyesMode || '', entry.exercise || '', entry.type || ''].join(':');
     let hash = 2166136261;
     for (let index = 0; index < source.length; index += 1) {
       hash ^= source.charCodeAt(index);
@@ -115,7 +119,11 @@
       if (entry.endedEarly) event.e = 1;
     }
     if (entry.tcMode) event.m = String(entry.tcMode).slice(0, 24);
-    if (practice === 'sense' && entry.eyesMode === 'open') event.o = 1;
+    else if (practice === 'sense' && entry.mode) event.m = String(entry.mode).slice(0, 24);
+    if ((practice === 'sense' || practice === 'visualization') && entry.eyesMode === 'open') event.o = 1;
+    if ((practice === 'sense' || practice === 'visualization') && entry.eyesMode === 'closed') event.o = 0;
+    if (Object.prototype.hasOwnProperty.call(entry, 'cleanSeconds')) event.c = 1;
+    if (Number(entry.halts) > 0) event.h = Math.max(0, Math.round(Number(entry.halts) || 0));
     if (Number(entry.xpEarned) > 0) event.x = Math.round(Number(entry.xpEarned));
     return {
       id: eventId(kind, practice, entry),
@@ -244,12 +252,19 @@
       bucket.sessions += 1;
       bucket.seconds += seconds;
       bucket.best = Math.max(bucket.best || 0, value);
-      if (practice === 'sense') {
+      if (practice === 'sense' || (practice === 'visualization' && Number(event.c) === 1)) {
         const openEyes = Number(event.o) === 1;
         const sessionKey = openEyes ? 'openEyesSessions' : 'closedEyesSessions';
         const bestKey = openEyes ? 'openEyesBest' : 'closedEyesBest';
         bucket[sessionKey] = Math.max(0, Number(bucket[sessionKey]) || 0) + 1;
         bucket[bestKey] = Math.max(Math.max(0, Number(bucket[bestKey]) || 0), value);
+      }
+      if (practice === 'sense' && event.m) {
+        const mode = String(event.m);
+        if (mode === 'feeling' || mode === 'smell' || mode === 'taste') {
+          bucket[mode + 'Sessions'] = Math.max(0, Number(bucket[mode + 'Sessions']) || 0) + 1;
+          bucket[mode + 'Best'] = Math.max(Math.max(0, Number(bucket[mode + 'Best']) || 0), value);
+        }
       }
       archive.sessions += 1;
       archive.totalSeconds += seconds;
@@ -283,11 +298,17 @@
         best: Math.max(0, Number(row.best) || 0),
         values: []
       };
-      if (practice === 'sense') {
+      if (practice === 'sense' || practice === 'visualization') {
         summary.byPractice[practice].openEyesSessions = Math.max(0, Number(row.openEyesSessions) || 0);
         summary.byPractice[practice].closedEyesSessions = Math.max(0, Number(row.closedEyesSessions) || 0);
         summary.byPractice[practice].openEyesBest = Math.max(0, Number(row.openEyesBest) || 0);
         summary.byPractice[practice].closedEyesBest = Math.max(0, Number(row.closedEyesBest) || 0);
+      }
+      if (practice === 'sense') {
+        ['feeling','smell','taste'].forEach(mode => {
+          summary.byPractice[practice][mode + 'Sessions'] = Math.max(0, Number(row[mode + 'Sessions']) || 0);
+          summary.byPractice[practice][mode + 'Best'] = Math.max(0, Number(row[mode + 'Best']) || 0);
+        });
       }
     });
     const awareness = archive.awareness || {};
@@ -338,12 +359,21 @@
           bucket.values.push(value);
           if (value > bucket.best) bucket.best = value;
         }
-        if (practice === 'sense') {
+        if (practice === 'sense' || (practice === 'visualization' && Number(event.c) === 1)) {
           const openEyes = Number(event.o) === 1;
           const sessionKey = openEyes ? 'openEyesSessions' : 'closedEyesSessions';
           const bestKey = openEyes ? 'openEyesBest' : 'closedEyesBest';
           bucket[sessionKey] = Math.max(0, Number(bucket[sessionKey]) || 0) + 1;
           bucket[bestKey] = Math.max(Math.max(0, Number(bucket[bestKey]) || 0), value);
+        }
+        if (practice === 'sense' && event.m) {
+          const mode = String(event.m);
+          if (mode === 'feeling' || mode === 'smell' || mode === 'taste') {
+            const modeSessions = mode + 'Sessions';
+            const modeBest = mode + 'Best';
+            bucket[modeSessions] = Math.max(0, Number(bucket[modeSessions]) || 0) + 1;
+            bucket[modeBest] = Math.max(Math.max(0, Number(bucket[modeBest]) || 0), value);
+          }
         }
         summary.sessions += 1;
         summary.totalSeconds += seconds;

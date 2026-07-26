@@ -60,6 +60,31 @@ test('practice review preserves Closed and Open Eyes Senses progress separately'
   }).event.o, 1);
 });
 
+test('practice review preserves clean sensory-track evidence by visual eye mode and sense form', () => {
+  const storage = memoryStorage();
+  Review.record(storage, 'concentration', {
+    date:'2026-07-20T15:00:00.000Z', type:'visualization',
+    eyesMode:'closed', seconds:340, cleanSeconds:300, halts:1
+  });
+  Review.record(storage, 'concentration', {
+    date:'2026-07-21T15:00:00.000Z', type:'visualization',
+    eyesMode:'open', seconds:320, cleanSeconds:310, halts:0
+  });
+  Review.record(storage, 'concentration', {
+    date:'2026-07-21T16:00:00.000Z', exercise:'sense', mode:'smell',
+    eyesMode:'closed', seconds:305, cleanSeconds:305, halts:0
+  });
+
+  const summary = Review.summarize(storage, new Date(2026,6,20), new Date(2026,6,22));
+  assert.equal(summary.byPractice.visualization.closedEyesBest, 300);
+  assert.equal(summary.byPractice.visualization.openEyesBest, 310);
+  assert.equal(summary.byPractice.sense.smellSessions, 1);
+  assert.equal(summary.byPractice.sense.smellBest, 305);
+  assert.equal(Review.normalize('concentration', {
+    date:'2026-07-21T15:00:00.000Z', type:'visualization', eyesMode:'open', cleanSeconds:310
+  }).event.c, 1);
+});
+
 test('backfill is idempotent and current Guide completion is snapshotted by day', () => {
   const storage = memoryStorage();
   const awareness = [{date:'2026-07-21T10:00:00.000Z',durationMin:10,answers:{drift:3,return:3,redundant:3}}];

@@ -261,10 +261,16 @@ function reviewPracticeRows(summary, previous) {
       change = reviewSigned(current.best - prior.best, function(value){ return reviewMetricText(key,value); });
     }
     var modeDetail = '';
-    if (key === 'sense') {
+    if (key === 'sense' || key === 'visualization') {
       var modeBits = [];
       if (current.closedEyesSessions) modeBits.push('Closed eyes ' + current.closedEyesSessions + ' · best ' + reviewSeconds(current.closedEyesBest || 0));
       if (current.openEyesSessions) modeBits.push('Open eyes ' + current.openEyesSessions + ' · best ' + reviewSeconds(current.openEyesBest || 0));
+      if (key === 'sense') {
+        ['feeling','smell','taste'].forEach(function(mode) {
+          var count = current[mode + 'Sessions'] || 0;
+          if (count) modeBits.push(mode.charAt(0).toUpperCase() + mode.slice(1) + ' ' + count + ' · best clean ' + reviewSeconds(current[mode + 'Best'] || 0));
+        });
+      }
       if (modeBits.length) modeDetail = '<div class="review-practice-modes">' + modeBits.join('<br>') + '</div>';
     }
     return '<div class="review-practice-row">'
@@ -274,7 +280,20 @@ function reviewPracticeRows(summary, previous) {
       + '<div class="review-practice-track"><i style="width:' + Math.max(4,current.seconds/maxSeconds*100).toFixed(0) + '%"></i></div></div>'
       + '</div>';
   }).join('');
-  return '<section class="review-section"><div class="review-section-head"><div><span>Practice development</span><small>Each discipline measured on its own terms</small></div></div><div class="review-practice-card">' + rows + '</div></section>';
+  var sensoryTrackHtml = '';
+  try {
+    if (typeof guideSensoryTrackProgress === 'function') {
+      var track = guideSensoryTrackProgress();
+      var currentStage = track.current;
+      sensoryTrackHtml = '<div class="review-practice-modes" style="margin:0 0 10px;">'
+        + '<strong>Sensory concentration · ' + track.completedCount + ' / ' + track.stages.length + ' foundations mastered</strong><br>'
+        + (track.complete
+          ? 'Multi-Sense unlocked · elemental work follows later'
+          : 'Current: ' + currentStage.name + ' · ' + currentStage.label + ' · best clean ' + reviewSeconds(currentStage.bestCleanSec) + ' / 5m')
+        + '</div>';
+    }
+  } catch (e) {}
+  return '<section class="review-section"><div class="review-section-head"><div><span>Practice development</span><small>Each discipline measured on its own terms</small></div></div><div class="review-practice-card">' + sensoryTrackHtml + rows + '</div></section>';
 }
 
 function reviewTimelineHtml(summary, range, period) {
@@ -376,11 +395,20 @@ function reviewOmniaContext(period, offset, summary, previous, decision) {
     var meta = REVIEW_PRACTICES[key] || {label:key,metric:'duration'};
     var measure = meta.metric === 'breaths' ? 'breaths' : meta.metric === 'taps' ? 'taps' : 'seconds';
     concentration[meta.label] = { sessions:row.sessions, total_sec:row.seconds, measure:measure, best:row.best, typical:row.typical };
-    if (key === 'sense') {
+    if (key === 'sense' || key === 'visualization') {
       concentration[meta.label].eyes_modes = {
         closed: { sessions:row.closedEyesSessions || 0, clean_best_sec:row.closedEyesBest || 0 },
         open: { sessions:row.openEyesSessions || 0, clean_best_sec:row.openEyesBest || 0, advanced_successor:true }
       };
+    }
+    if (key === 'sense') {
+      concentration[meta.label].sense_modes = {};
+      ['feeling','smell','taste'].forEach(function(mode) {
+        concentration[meta.label].sense_modes[mode] = {
+          sessions:row[mode + 'Sessions'] || 0,
+          clean_best_sec:row[mode + 'Best'] || 0
+        };
+      });
     }
     if (measure === 'seconds') {
       // Hand Omnia the same human-readable durations shown on screen (minutes,
@@ -395,6 +423,31 @@ function reviewOmniaContext(period, offset, summary, previous, decision) {
   var bestImprovement = reviewBestImprovement(summary,previous);
   var currentItems = [];
   try { currentItems = typeof buildGuideRegimentItems === 'function' ? buildGuideRegimentItems() : []; } catch(e) {}
+  var sensoryTrack = null;
+  try {
+    if (typeof guideSensoryTrackProgress === 'function') {
+      var trackProgress = guideSensoryTrackProgress();
+      sensoryTrack = {
+        clean_goal_sec:trackProgress.goalSec,
+        completed_foundations:trackProgress.completedCount,
+        total_foundations:trackProgress.stages.length,
+        foundations_complete:trackProgress.complete,
+        current_stage:trackProgress.current ? trackProgress.current.id : 'multi_sense',
+        stages:trackProgress.stages.map(function(stage) {
+          return {
+            id:stage.id,
+            mastered:stage.mastered,
+            best_clean_sec:stage.bestCleanSec,
+            attempts:stage.attempts,
+            halts:stage.halts,
+            mastered_at:stage.masteredAt || null
+          };
+        }),
+        next_after_foundations:'multi_sense',
+        later_stage:'elemental_work'
+      };
+    }
+  } catch(e) {}
   // How far through the period we are. A past period is fully elapsed; the
   // current period is only partway, so its running totals are naturally lower
   // than a finished period — Omnia must not read that as a decline.
@@ -428,6 +481,7 @@ function reviewOmniaContext(period, offset, summary, previous, decision) {
     concentration_total_sec:Object.keys(concentration).reduce(function(sum,key){return sum+concentration[key].total_sec;},0),
     concentration_best_sec:Object.keys(concentration).reduce(function(best,key){return Math.max(best,concentration[key].best_sec||0);},0),
     completed_exercises:Object.keys(concentration),
+    sensory_concentration_track:sensoryTrack,
     concentration_by_exercise:concentration,
     current_regimen_exercises:currentItems.map(function(item){return item.name||item.id;}).slice(0,16),
     regimen_total:summary.plan.assigned || null,

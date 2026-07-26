@@ -47,6 +47,169 @@ var GUIDE_SENSE_TIPS = {
   taste:'Bring a taste alive on the tongue with nothing in your mouth, and hold its full body.'
 };
 
+// Bardon-aligned sensory concentration is one sequential curriculum, not a
+// "most neglected sense" rotation. Each foundation stage is mastered by one
+// uninterrupted five-minute rep. Session-duration preferences remain separate:
+// a practitioner may sit longer, but neither a shorter custom target nor total
+// time accumulated across several broken reps can bypass the clean-hold gate.
+var GUIDE_SENSORY_CLEAN_GOAL_SEC = 300;
+var GUIDE_SENSORY_STAGES = [
+  { id:'visual_closed', exercise:'visual', name:'Visualization', label:'Closed Eyes', open:'visual', eyesMode:'closed' },
+  { id:'visual_open', exercise:'visual', name:'Visualization', label:'Open Eyes', open:'visual', eyesMode:'open' },
+  { id:'auditory', exercise:'auditory', name:'Auditory', label:'Single Sound', open:'auditory' },
+  { id:'feeling', exercise:'sense', name:'Senses', label:'Feeling', open:'sense', mode:'feeling' },
+  { id:'smell', exercise:'sense', name:'Senses', label:'Smell', open:'sense', mode:'smell' },
+  { id:'taste', exercise:'sense', name:'Senses', label:'Taste', open:'sense', mode:'taste' }
+];
+
+function guideSensoryEntryCleanSec(entry) {
+  if (!entry || !Object.prototype.hasOwnProperty.call(entry, 'cleanSeconds')) return 0;
+  return Math.max(0, parseInt(entry.cleanSeconds, 10) || 0);
+}
+
+function guideSensoryStageMatches(stage, entry) {
+  if (!stage || !entry) return false;
+  if (stage.exercise === 'visual') {
+    return entry.type === 'visualization' && entry.eyesMode === stage.eyesMode;
+  }
+  if (stage.exercise === 'auditory') return entry.type === 'auditory';
+  return entry.exercise === 'sense' && (entry.mode || 'feeling') === stage.mode;
+}
+
+function guideSensoryTrackProgress() {
+  var history = (typeof concState !== 'undefined' && Array.isArray(concState.history)) ? concState.history : [];
+  var stages = GUIDE_SENSORY_STAGES.map(function(def, index) {
+    var bestCleanSec = 0, attempts = 0, halts = 0, qualifyingDates = [];
+    history.forEach(function(entry) {
+      if (!guideSensoryStageMatches(def, entry)) return;
+      attempts++;
+      halts += Math.max(0, parseInt(entry.halts, 10) || 0);
+      var clean = guideSensoryEntryCleanSec(entry);
+      if (clean > bestCleanSec) bestCleanSec = clean;
+      if (clean >= GUIDE_SENSORY_CLEAN_GOAL_SEC && entry.date) {
+        qualifyingDates.push(entry.date);
+      }
+    });
+    return Object.assign({}, def, {
+      index:index,
+      bestCleanSec:bestCleanSec,
+      attempts:attempts,
+      halts:halts,
+      mastered:false,
+      masteredAt:'',
+      qualifyingDates:qualifyingDates
+    });
+  });
+  // A future faculty practiced manually cannot be banked in advance. Its
+  // qualifying hold must occur after the preceding stage was mastered.
+  var priorMasteryMs = 0, chainOpen = true;
+  stages.forEach(function(stage) {
+    var valid = stage.qualifyingDates.slice().sort().find(function(date) {
+      var ms = new Date(date).getTime();
+      return chainOpen && ms >= priorMasteryMs;
+    });
+    if (valid) {
+      stage.mastered = true;
+      stage.masteredAt = valid;
+      priorMasteryMs = new Date(valid).getTime();
+    } else {
+      stage.mastered = false;
+      stage.masteredAt = '';
+      chainOpen = false;
+    }
+    delete stage.qualifyingDates;
+  });
+  var currentIndex = stages.findIndex(function(stage) { return !stage.mastered; });
+  var complete = currentIndex < 0;
+  if (complete) currentIndex = stages.length;
+  return {
+    goalSec:GUIDE_SENSORY_CLEAN_GOAL_SEC,
+    stages:stages,
+    currentIndex:currentIndex,
+    current:complete ? null : stages[currentIndex],
+    completedCount:stages.filter(function(stage) { return stage.mastered; }).length,
+    complete:complete,
+    next:complete ? null : (stages[currentIndex + 1] || null)
+  };
+}
+
+function guideSensoryStageForToday(progress) {
+  if (!progress || progress.complete) return null;
+  var today = guideLocalDayKey();
+  var pin = guideState._sensoryDailyStageV1;
+  var pinned = pin && pin.day === today
+    ? progress.stages.find(function(stage) { return stage.id === pin.id; })
+    : null;
+  if (pinned) return pinned;
+  guideState._sensoryDailyStageV1 = { day:today, id:progress.current.id };
+  saveGuideState(guideState);
+  return progress.current;
+}
+
+function guideMultiSenseSessionsToday() {
+  var history = (typeof concState !== 'undefined' && Array.isArray(concState.history)) ? concState.history : [];
+  return history.filter(function(entry) {
+    return entry && entry.type === 'multi-sense' && guideIsToday(entry.date);
+  }).length;
+}
+
+function guideSensoryTrackItem(rounds) {
+  rounds = rounds || 1;
+  var progress = guideSensoryTrackProgress();
+  if (progress.complete) {
+    var multiToday = guideMultiSenseSessionsToday();
+    return {
+      id:'multisense',
+      name:'Multi-Sense',
+      duration:null,
+      durationLabel:'Scene practice',
+      done:multiToday >= rounds,
+      todayCount:multiToday,
+      rounds:rounds,
+      progress:'sensory foundations complete',
+      tip:'Combine sight, sound, touch, smell, and atmosphere only after mastering each foundation separately. Elemental work will follow in a later stage.',
+      open:'multisense',
+      sensoryTrack:true,
+      trackComplete:true,
+      trackStage:6,
+      trackTotal:6,
+      trackLabel:'Sensory foundations complete',
+      trackGoal:'Multi-Sense unlocked',
+      trackNext:'Next: elemental work (coming later)'
+    };
+  }
+
+  var stage = guideSensoryStageForToday(progress);
+  var naturalMin = 5;
+  if (stage.exercise === 'auditory' && guideFloorMin('auditory')) naturalMin = guideAuditoryStats().qualTarget || 5;
+  else if (stage.exercise === 'visual') naturalMin = guideAdvancedTarget('visual', 5);
+  else if (stage.exercise === 'sense') naturalMin = guideAdvancedTarget(stage.mode, 5);
+  naturalMin = guideClamp(naturalMin, 1, GUIDE_FLOOR_CAP);
+  var nextStage = progress.stages[stage.index + 1] || null;
+  var nextLabel = nextStage
+    ? nextStage.name + ' · ' + nextStage.label
+    : 'Multi-Sense concentration';
+  return {
+    id:stage.exercise,
+    name:stage.name,
+    mode:stage.mode || null,
+    eyesMode:stage.eyesMode || null,
+    duration:naturalMin,
+    durationLabel:naturalMin + ' min' + (rounds > 1 ? ' x' + rounds : ''),
+    done:stage.mastered,
+    todayCount:0,
+    progress:'best clean ' + guideFmtTime(stage.bestCleanSec) + ' / 5m',
+    tip:'Master one faculty at a time. This stage advances only after one uninterrupted five-minute rep; changing the session time does not change that mastery goal.',
+    open:stage.open,
+    sensoryTrack:true,
+    trackStage:stage.index + 1,
+    trackTotal:GUIDE_SENSORY_STAGES.length,
+    trackLabel:'Sensory concentration · Stage ' + (stage.index + 1) + ' of ' + GUIDE_SENSORY_STAGES.length,
+    trackGoal:'Goal: one uninterrupted 5:00 hold',
+    trackNext:'Next: ' + nextLabel
+  };
+}
+
 // ── Practice Tree ─────────────────────────────────────────
 
 // Soul Mirror star brightness — driven by inventory + transformation
@@ -693,6 +856,7 @@ function guideApplyExRounds(items) {
   function getStats() { if (!_stats) _stats = guideExerciseStats(); return _stats; }
   function getTS()    { if (!_ts)   _ts   = guideThoughtStats();    return _ts;   }
   return items.map(function(it) {
+    if (it.sensoryTrack) return it; // mastery is a clean five-minute rep, never accumulated minutes
     var ov = guideState._exRounds && guideState._exRounds[it.id];
     if (ov !== 1 && ov !== 2) return it;
     if (ov === globalR) return it;           // override matches global — no change
@@ -1206,6 +1370,12 @@ function guideAdvancedTarget(exId, naturalMin) {
 // Used to seed the "I'm Advanced" dialog with a sensible default.
 function guideRecommendedMinutes(exId) {
   try {
+    // While a sensory foundation is active, its Path duration is the exercise
+    // recommendation used by early-end warnings and rewards. The fixed mastery
+    // gate remains one clean 5:00 rep even when an advanced user raises this
+    // session target.
+    var sensoryItem = guideSensoryTrackItem(1);
+    if (sensoryItem && sensoryItem.duration && sensoryItem.id === exId) return sensoryItem.duration;
     // A specific thought discipline (observation/focus/vacancy) computes its
     // own natural target — used to seed the dialog and label its own card.
     if (GUIDE_THOUGHT_MODES[exId]) return guideThoughtTargetMinutes(exId, guideThoughtStats()) || 5;
@@ -1483,6 +1653,12 @@ function buildExperiencedGuideItems() {
     gateItem.todayCount = _gSenseModeSt.todayCount || 0;
   }
 
+  // The historical gate calculation above remains useful for existing
+  // experience/adaptation statistics, but the actual astral recommendation is
+  // now the ordered Bardon sensory curriculum. This guarantees that Auditory,
+  // Feeling, Smell, or Taste cannot appear before the current faculty is held
+  // cleanly for five minutes.
+  gateItem = guideSensoryTrackItem(rounds);
   fixedItems.push(gateItem);
   fixedItems.push({
     id:'soulmirror',
@@ -1567,6 +1743,10 @@ function buildFoundationalGuideItems() {
   var stats = guideExerciseStats();
   var gate = guideFoundationNewGate(stats, thought, rounds);
   var gateForced = guideState.gateForced;
+  if (gateForced === 'visual' || gateForced === 'auditory' || gateForced === 'sense') {
+    gate = guideSensoryTrackItem(rounds);
+    gateForced = null;
+  }
   if (gateForced && (!gate || gate.id !== gateForced)) {
     var dailyTarget5 = 5 * 60 * rounds;
     var forcedGateItems = {
@@ -1582,33 +1762,20 @@ function buildFoundationalGuideItems() {
   var removed = guideState.removed || {};
   var now = Date.now();
   return items.filter(function(item) {
-    if (removed[item.id]) return false;   // permanently removed from the path
+    if (removed[item.id] && !item.sensoryTrack) return false;   // the active curriculum stage stays visible
+    if (item.sensoryTrack) return true;
     var until = postponed[item.id];
     return !until || now >= until;
   });
 }
 
 function guideFoundationNewGate(stats, thoughtStats, rounds) {
-  var visual = stats.visual || { count:0, todaySec:0 };
   var asana = stats.asana || { count:0, todaySec:0 };
-  var auditory = stats.auditory || { count:0, todaySec:0 };
   var clock = guideClockStats();
   var obs = thoughtStats.observation || { bestSec:0 };
   var focus = thoughtStats.focus || { bestSec:0 };
-  var vacancy = thoughtStats.vacancy || { bestSec:0 };
-  var dailyTarget = 5 * 60 * rounds;
-  if (guideExerciseBreadth(stats) >= 5) return null;
-  if (visual.count < 3 && clock.totalSec >= 1800 && obs.bestSec >= 600) {
-    return {
-      id:'visual',
-      name:'Visualization',
-      duration:5,
-      durationLabel:'5 min' + (rounds > 1 ? ' x2' : ''),
-      done:visual.todaySec + 5 * rounds >= dailyTarget,
-      progress:'new gate · ' + visual.count + ' recorded',
-      tip:'Now that attention and observation have some weight, Omnia permits a small image practice. Keep it simple; clarity matters more than ambition.',
-      open:'visual'
-    };
+  if (clock.totalSec >= 1800 && obs.bestSec >= 600) {
+    return guideSensoryTrackItem(rounds);
   }
   if (asana.count < 3 && clock.bestSec >= 300 && focus.bestSec >= 300) {
     var _adNew = guideAsanaStats().qualTarget;
@@ -1623,18 +1790,6 @@ function guideFoundationNewGate(stats, thoughtStats, rounds) {
       open:'asana'
     };
   }
-  if (auditory.count < 3 && visual.count >= 3 && focus.bestSec >= 600 && vacancy.bestSec >= 300) {
-    return {
-      id:'auditory',
-      name:'Auditory',
-      duration:5,
-      durationLabel:'5 min',
-      done:auditory.todaySec + 5 >= 300,
-      progress:'astral refinement gate · ' + auditory.count + ' recorded',
-      tip:'Add sound only after the earlier gates are stable. This broadens the astral body without turning the agenda into a checklist.',
-      open:'auditory'
-    };
-  }
   return null;
 }
 
@@ -1643,11 +1798,8 @@ function guideFoundationalNote() {
   var clock = guideClockStats();
   var thought = guideThoughtStats();
   var obs = thought.observation || { bestSec:0 };
-  if (guideExerciseBreadth(stats) >= 5) {
-    return 'Omnia is keeping the agenda narrow now because you have touched the main disciplines. The work becomes steadiness, not collecting more exercises.';
-  }
   if (clock.totalSec < 1800 || obs.bestSec < 600) {
-    return 'Visualization remains available in Concentration, but Omnia is not placing it on the agenda yet. Build enough attention first so the image work has a real base.';
+    return 'The sensory concentration track begins with Closed Eyes Visualization after attention and Thought Observation have enough stability. Each later faculty unlocks only after one uninterrupted five-minute hold.';
   }
   return '';
 }
@@ -1785,7 +1937,8 @@ function buildGuideRegimentItems(mode) {
   var removed = guideState.removed || {};
   var now = Date.now();
   return guideAttachSessionDone(items.filter(function(item) {
-    if (removed[item.id]) return false;
+    if (removed[item.id] && !item.sensoryTrack) return false;
+    if (item.sensoryTrack) return true;
     var until = postponed[item.id];
     return !until || now >= until;
   }));
@@ -1802,6 +1955,7 @@ function guideAttachSessionDone(items) {
   var exStats = null, thStats = null;
   var thoughtModes = { thought:1, observation:1, focus:1, vacancy:1 };
   items.forEach(function(it) {
+    if (it.sensoryTrack) return;                    // only its clean-hold gate can complete it
     if (it.done) return;                            // already complete by duration
     if (typeof it.duration !== 'number') return;    // open-ended (soulmirror/pore) keep own logic
     if (it.id === 'soulmirror' || it.id === 'pore' || it.id === 'pore_breathing') return;
@@ -1955,6 +2109,11 @@ function guideMergeAddedItems(items) {
   var removed = guideState.removed || {};
   var now = Date.now();
   added.forEach(function(exId) {
+    // The sensory curriculum owns these cards. Keeping a legacy/manual future
+    // sense beside the active stage would train two faculties at once.
+    if (exId === 'visual' || exId === 'auditory' || exId === 'sense'
+        || exId === 'feeling' || exId === 'smell' || exId === 'taste'
+        || exId === 'multisense') return;
     if (present[exId]) return;
     if (removed[exId]) return;
     var until = postponed[exId];
@@ -1974,7 +2133,9 @@ function guidePathAddableExercises() {
   // sense it trains, so it's offered below as three distinguishable
   // sub-modes instead (Feeling/Smell/Taste), same treatment as Thought
   // Control's Observation/Focus/Vacancy.
-  var addable = GUIDE_EXERCISES.filter(function(ex) { return !present[ex.id] && ex.id !== 'sense'; });
+  var addable = GUIDE_EXERCISES.filter(function(ex) {
+    return !present[ex.id] && ex.id !== 'sense' && ex.id !== 'visual' && ex.id !== 'auditory';
+  });
   // Offer thought sub-modes that are NOT the current active mode (already on
   // the path under the 'thought' item) and NOT already added independently.
   var activeMode = guideState.thoughtModeForced || guideCurrentThoughtMode(guideThoughtStats());
@@ -1985,18 +2146,8 @@ function guidePathAddableExercises() {
   });
   // Offer sense sub-modes that aren't already on the path, skipping only the
   // one mode today's rotating gate already covers (if the gate landed on Senses).
-  var activeSenseMode = guideState.senseModeForced || guideCurrentSenseMode(guideSenseStats());
-  GUIDE_SENSE_ORDER.forEach(function(mode) {
-    if (present[mode]) return; // already an independent card on the path
-    if (present['sense'] && mode === activeSenseMode) return; // already covered by today's gate
-    addable.push({ id: mode });
-  });
   // Pore Breathing — addable any time it isn't already on the path.
   if (!present['pore']) addable.push({ id: 'pore' });
-  // Advanced concentration exercises — offered last so they appear at the bottom.
-  ['multisense'].forEach(function(id) {
-    if (!present[id]) addable.push({ id: id });
-  });
   return addable;
 }
 
@@ -2060,7 +2211,7 @@ function renderGuidePlan(mode, skipScroll) {
   renderGuideCadenceControl();
 
   // Exercise icons by type
-  var exIcon = { clock:'⊙', visual:'◉', auditory:'◈', sense:'✺', thought:'◌', observation:'◌', focus:'◌', vacancy:'◌', asana:'✦', soulmirror:'◆', pore:'≋' };
+  var exIcon = { clock:'⊙', visual:'◉', auditory:'◈', sense:'✺', multisense:'◇', thought:'◌', observation:'◌', focus:'◌', vacancy:'◌', asana:'✦', soulmirror:'◆', pore:'≋' };
 
   var doneCount = items.filter(function(i){ return i.done; }).length;
   var totalCount = items.length;
@@ -2081,10 +2232,12 @@ function renderGuidePlan(mode, skipScroll) {
   var _isTC = function(id) { return id === 'thought' || id === 'observation' || id === 'focus' || id === 'vacancy'; };
   function _buildCardHtml(item) {
     var durLabel = item.durationLabel || (item.duration ? item.duration + ' min' : 'Open-ended');
-    var modeLabel = item.mode ? ' · ' + (GUIDE_FOUNDATION_THOUGHT_LABELS[item.mode] || item.mode) : '';
+    var modeLabel = item.mode ? ' · ' + (GUIDE_FOUNDATION_THOUGHT_LABELS[item.mode] || GUIDE_SENSE_LABELS[item.mode] || item.mode) : '';
+    if (item.eyesMode) modeLabel += ' · ' + (item.eyesMode === 'open' ? 'Open Eyes' : 'Closed Eyes');
     var accentColor = item.id === 'clock' ? '#d4b08e'
       : item.id === 'visual'   ? '#8ab8e0'
       : item.id === 'auditory' ? '#8eccc0'
+      : item.id === 'multisense' ? '#d4c88e'
       : _isTC(item.id) ? '#98b4cc'
       : item.id === 'asana'    ? '#d49898'
       : item.id === 'pore'     ? '#8ecce0'
@@ -2093,6 +2246,7 @@ function renderGuidePlan(mode, skipScroll) {
     var startAttrs = item.open
       ? ' data-guide-start="' + item.open + '"'
         + (item.mode ? ' data-guide-mode="' + item.mode + '"' : '')
+        + (item.eyesMode ? ' data-guide-eyes="' + item.eyesMode + '"' : '')
         + (item.duration ? ' data-guide-duration="' + item.duration + '"' : '')
       : '';
     var checkHtml = item.done
@@ -2101,14 +2255,22 @@ function renderGuidePlan(mode, skipScroll) {
     var beginHtml = item.open
       ? '<button class="path-ex-begin guide-plan-start"' + startAttrs + (item.done ? ' disabled' : '') + '>' + (item.done ? 'Done' : 'Begin') + '</button>'
       : '';
-    return '<div class="path-ex-card' + (item.done ? ' done' : '') + '">'
+    var trackHtml = item.sensoryTrack
+      ? '<div style="margin-top:8px;padding-top:8px;border-top:1px solid rgba(224,168,196,.13);font-size:8px;line-height:1.65;letter-spacing:.08em;color:var(--muted);">'
+        + '<strong style="display:block;color:#e0a8c4;letter-spacing:.12em;text-transform:uppercase;">' + item.trackLabel + '</strong>'
+        + '<span>' + item.trackGoal + '</span><br><span>' + item.trackNext + '</span></div>'
+      : '';
+    return '<div class="path-ex-card' + (item.done ? ' done' : '') + '"' + (item.sensoryTrack ? ' style="display:block;"' : '') + '>'
+      + (item.sensoryTrack ? '<div style="display:flex;align-items:center;gap:14px;">' : '')
       + '<div class="path-ex-icon" style="background:' + accentColor + '1e;border:1px solid ' + accentColor + '38;color:' + accentColor + ';">' + icon + '</div>'
       + '<div class="path-ex-info">'
       + '<div class="path-ex-name" style="color:' + accentColor + ';">' + item.name + modeLabel + '</div>'
       + '<div class="path-ex-meta">' + durLabel + (item.progress ? ' · ' + item.progress : '') + '</div>'
       + '</div>'
       + '<div class="path-ex-right">' + checkHtml + beginHtml + '</div>'
-      + '<button class="pq-menu-btn" data-ex-id="' + item.id + '"' + (item.mode ? ' data-ex-mode="' + item.mode + '"' : '') + (item.added ? ' data-ex-added="1"' : '') + ' title="Options">···</button>'
+      + '<button class="pq-menu-btn" data-ex-id="' + item.id + '"' + (item.mode ? ' data-ex-mode="' + item.mode + '"' : '') + (item.sensoryTrack ? ' data-sensory-track="1"' : '') + (item.added ? ' data-ex-added="1"' : '') + ' title="Options">···</button>'
+      + (item.sensoryTrack ? '</div>' : '')
+      + trackHtml
       + '</div>';
   }
 
@@ -2149,6 +2311,7 @@ function beginGuidePlanItem(btn) {
   var ex = btn.dataset.guideStart;
   var duration = parseInt(btn.dataset.guideDuration, 10);
   var mode = btn.dataset.guideMode;
+  var eyesMode = btn.dataset.guideEyes;
   if (ex === 'thought') {
     if (mode && TC_MODE_DEFS[mode]) tcMode = mode;
     if (duration) tcDuration = duration;
@@ -2159,6 +2322,9 @@ function beginGuidePlanItem(btn) {
       var guideSenseChoices = senseChoicesForMode(mode);
       senseSelectedCue = guideSenseChoices.length ? guideSenseChoices[0].label : '';
     }
+  }
+  if (ex === 'visual' && eyesMode) {
+    visOpenEyesMode = eyesMode === 'open';
   }
   if (ex === 'soulmirror') {
     if (typeof _smOriginMode !== 'undefined') _smOriginMode = 'guide';

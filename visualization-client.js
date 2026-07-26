@@ -1199,6 +1199,8 @@ function saveVisSessionResult() {
   var notes = document.getElementById('visNotes').value.trim();
   var totalXP = visReps.reduce(function(a,r) { return a + r.seconds; }, 0);
   var bestSec = visReps.reduce(function(a,r) { return r.seconds > a ? r.seconds : a; }, 0);
+  var bestCleanSec = visReps.reduce(function(a,r) { return r.halts === 0 && r.seconds > a ? r.seconds : a; }, 0);
+  var totalHalts = visReps.reduce(function(a,r) { return a + (r.halts || 0); }, 0);
 
   concState.xp += totalXP;
   if (isConcNewSession()) concState.totalSessions++;
@@ -1211,8 +1213,14 @@ function saveVisSessionResult() {
     entry: {
       date: new Date().toISOString(),
       seconds: bestSec,
+      cleanSeconds: bestCleanSec,
+      halts: totalHalts,
+      eyesMode: visOpenEyesMode ? 'open' : 'closed',
       xpEarned: totalXP,
       reps: visReps.length,
+      visualReps: visReps.map(function(rep) {
+        return { seconds:rep.seconds, halts:rep.halts || 0, object:rep.object && rep.object.label ? rep.object.label : '' };
+      }),
       notes: notes,
       type: 'visualization',
       object: visReps.length > 0 ? visReps[0].object.label : ''
@@ -1765,6 +1773,12 @@ function toggleClkOmnia() {
 }
 
 function openExerciseSetup(ex) {
+  if (ex === 'multisense'
+      && typeof guideSensoryTrackProgress === 'function'
+      && !guideSensoryTrackProgress().complete) {
+    showToast('Complete the six sensory foundations to unlock Multi-Sense.', 3200);
+    return;
+  }
   suppressTutorialForExerciseEntry();
   currentExercise = ex;
   exSetupOriginMode = (typeof currentMode !== 'undefined') ? currentMode : 'concentration';

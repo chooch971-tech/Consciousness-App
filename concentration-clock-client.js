@@ -386,6 +386,22 @@ function renderConcHome() {
       && getTCBestGap('vacancy') >= 900;
     tcStar.style.display = tcAllMastered ? 'inline' : 'none';
   }
+
+  // Multi-Sense follows the six clean sensory foundations. Keep its advanced
+  // card visible as the destination, but clearly locked until Taste is
+  // mastered; openExerciseSetup enforces the same gate.
+  if (typeof guideSensoryTrackProgress === 'function') {
+    var sensoryComplete = guideSensoryTrackProgress().complete;
+    document.querySelectorAll('.exercise-card[data-exercise="multisense"]').forEach(function(card) {
+      card.dataset.trackLocked = sensoryComplete ? '0' : '1';
+      card.style.opacity = sensoryComplete ? '' : '.45';
+      card.setAttribute('aria-disabled', sensoryComplete ? 'false' : 'true');
+      var desc = card.querySelector('.exercise-card-desc');
+      if (desc) desc.textContent = sensoryComplete
+        ? 'Hold sight, sound, texture, and atmosphere simultaneously.'
+        : 'Complete the six sensory foundations to unlock.';
+    });
+  }
 }
 
 var concCountInterval = null; // track countdown so we can cancel it

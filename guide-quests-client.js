@@ -708,8 +708,8 @@ function renderPathQuests() {
   var awarenessDone = awarenessMinutes >= awarenessTarget, awarenessClaimed = !!q.awareness.claimed;
   var awarenessReward = pathQuestReward('awareness');
 
-  var exIcon = { clock:'⊙', visual:'◉', auditory:'◈', sense:'✺', feeling:'✺', smell:'✺', taste:'✺', thought:'◌', observation:'◌', focus:'◌', vacancy:'◌', asana:'✦', soulmirror:'◆', pore:'≋' };
-  var exColor = { clock:'#d4b08e', visual:'#8ab8e0', auditory:'#8eccc0', sense:'#e0a8c4', feeling:'#e0a8c4', smell:'#e0a8c4', taste:'#e0a8c4', thought:'#98b4cc', observation:'#98b4cc', focus:'#98b4cc', vacancy:'#98b4cc', asana:'#d49898', soulmirror:'#c4a8d4', pore:'#8ecce0' };
+  var exIcon = { clock:'⊙', visual:'◉', auditory:'◈', sense:'✺', feeling:'✺', smell:'✺', taste:'✺', multisense:'◇', thought:'◌', observation:'◌', focus:'◌', vacancy:'◌', asana:'✦', soulmirror:'◆', pore:'≋' };
+  var exColor = { clock:'#d4b08e', visual:'#8ab8e0', auditory:'#8eccc0', sense:'#e0a8c4', feeling:'#e0a8c4', smell:'#e0a8c4', taste:'#e0a8c4', multisense:'#d4c88e', thought:'#98b4cc', observation:'#98b4cc', focus:'#98b4cc', vacancy:'#98b4cc', asana:'#d49898', soulmirror:'#c4a8d4', pore:'#8ecce0' };
 
   var dayNames = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
   var monthNames = ['January','February','March','April','May','June','July','August','September','October','November','December'];
@@ -759,6 +759,7 @@ function renderPathQuests() {
     var modeText = item.mode ? (GUIDE_FOUNDATION_THOUGHT_LABELS[item.mode] || GUIDE_SENSE_LABELS[item.mode] || item.mode) : '';
     var metaParts = [];
     if (modeText && (_isTC(item.id) || _isSense(item.id))) metaParts.push(modeText);
+    if (item.eyesMode) metaParts.push(item.eyesMode === 'open' ? 'Open Eyes' : 'Closed Eyes');
     if (item.duration) metaParts.push(item.duration + ' min');
     else if (item.durationLabel) metaParts.push(item.durationLabel.replace(/\s*[x×]\d+\s*$/, ''));
     if (rounds > 1 && !item.done) {
@@ -777,6 +778,7 @@ function renderPathQuests() {
     var startAttrs = item.open
       ? ' data-guide-start="' + item.open + '"'
         + (item.mode ? ' data-guide-mode="' + item.mode + '"' : '')
+        + (item.eyesMode ? ' data-guide-eyes="' + item.eyesMode + '"' : '')
         + (item.duration ? ' data-guide-duration="' + item.duration + '"' : '')
       : '';
     var checkHtml = item.done
@@ -809,7 +811,7 @@ function renderPathQuests() {
     }
 
     var cardPadding = extraHtml ? 'padding:13px 14px 10px;' : 'padding:13px 14px;';
-    var menuBtn = '<button class="pq-menu-btn" data-ex-id="' + item.id + '"' + (item.mode ? ' data-ex-mode="' + item.mode + '"' : '') + (item.added ? ' data-ex-added="1"' : '') + ' title="Options">···</button>';
+    var menuBtn = '<button class="pq-menu-btn" data-ex-id="' + item.id + '"' + (item.mode ? ' data-ex-mode="' + item.mode + '"' : '') + (item.sensoryTrack ? ' data-sensory-track="1"' : '') + (item.added ? ' data-ex-added="1"' : '') + ' title="Options">···</button>';
     var badgeStyle = 'position:relative;width:48px;height:48px;border-radius:12px;background:' + color + '1e;border:1px solid ' + color + '38;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0;font-family:\'DM Mono\',monospace;line-height:1;color:' + color + ';';
     // Highlight cards that will grant a body level if completed right now.
     var grantsBodyName = (typeof omniaCardGrantsBodyLevel === 'function')
@@ -824,6 +826,11 @@ function renderPathQuests() {
       + (item.done ? 'opacity:.5;' : '') + 'border:1px solid var(--border);border-radius:14px;';
     if (grantsBodyName) outerStyle += 'border-color:rgba(216,184,106,.5);';
     var grantsClass = grantsBodyName ? 'pq-grants-body' : '';
+    var trackHtml = item.sensoryTrack
+      ? '<div style="margin-top:10px;padding:9px 11px;border-radius:9px;background:rgba(224,168,196,.055);border:1px solid rgba(224,168,196,.13);font-size:8px;line-height:1.65;letter-spacing:.08em;color:var(--muted);">'
+        + '<strong style="display:block;color:#e0a8c4;letter-spacing:.13em;text-transform:uppercase;">' + item.trackLabel + '</strong>'
+        + '<span>' + item.trackGoal + '</span><br><span>' + item.trackNext + '</span></div>'
+      : '';
     return '<div' + (grantsClass ? ' class="' + grantsClass + '"' : '') + ' style="' + outerStyle + '">'
       + '<div style="display:flex;align-items:center;gap:14px;">'
       + '<div style="' + badgeStyle + '">' + icon + '</div>'
@@ -835,6 +842,7 @@ function renderPathQuests() {
       + '<div style="display:flex;align-items:center;gap:10px;flex-shrink:0;">' + checkHtml + beginHtml + '</div>'
       + menuBtn
       + '</div>'
+      + trackHtml
       + (extraHtml ? '<div style="padding:8px 0 0;">' + extraHtml + '</div>' : '')
       + '</div>';
   };
@@ -980,6 +988,7 @@ function renderPathQuests() {
 (function() {
   var activeExId = null;
   var activeExMode = null;
+  var activeSensoryTrack = false;
   var menu = document.getElementById('pqSkipMenu');
   var advItem = document.getElementById('pqSkipAdvanced');
   var advOverlay = document.getElementById('pqAdvancedOverlay');
@@ -997,6 +1006,7 @@ function renderPathQuests() {
   function openSkipMenu(btn) {
     activeExId = btn.dataset.exId;
     activeExMode = btn.dataset.exMode || null;
+    activeSensoryTrack = btn.dataset.sensoryTrack === '1';
     var isPore = activeExId === 'pore';
     if (advItem) {
       if (isPore) {
@@ -1024,6 +1034,8 @@ function renderPathQuests() {
       freq2Btn.style.display = showFreq ? '' : 'none';
       freq2Btn.classList.toggle('active', showFreq && rounds2);
     }
+    var removeBtn = document.getElementById('pqSkipRemove');
+    if (removeBtn) removeBtn.style.display = activeSensoryTrack ? 'none' : '';
     var r = btn.getBoundingClientRect();
     menu.style.top = (r.bottom + 4) + 'px';
     menu.style.right = (window.innerWidth - r.right) + 'px';

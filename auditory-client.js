@@ -861,12 +861,12 @@ function endAuditorySession() {
   cancelAnimationFrame(audTimerHandle);
   stopAllAudio();
   stopWaveAnimation();
-  audRepActive = false;
   // Record in-progress rep if active
   if (audRepActive && audRepStartTime) {
     var repSec = Math.floor((Date.now() - audRepStartTime) / 1000);
     if (repSec > 2) audReps.push({ seconds: repSec, halts: audHalts, sound: currentSound });
   }
+  audRepActive = false;
   showAudResult();
 }
 
@@ -903,6 +903,8 @@ function saveAudResult() {
   var notes = document.getElementById('audNotes').value.trim();
   var totalXP = audReps.reduce(function(a,r) { return a + r.seconds; }, 0);
   var bestSec = audReps.reduce(function(a,r) { return r.seconds > a ? r.seconds : a; }, 0);
+  var bestCleanSec = audReps.reduce(function(a,r) { return r.halts === 0 && r.seconds > a ? r.seconds : a; }, 0);
+  var totalHalts = audReps.reduce(function(a,r) { return a + (r.halts || 0); }, 0);
   // Actual wall-clock length of the session, so daily progress counts the whole
   // sit (and the sum of multiple sits), not just the best unbroken rep.
   var audSessionDurationSec = audSessionStartTime ? Math.floor((Date.now() - audSessionStartTime) / 1000) : totalXP;
@@ -916,9 +918,14 @@ function saveAudResult() {
     entry: {
       date: new Date().toISOString(),
       seconds: bestSec,
+      cleanSeconds: bestCleanSec,
+      halts: totalHalts,
       xpEarned: totalXP,
       sessionDurationSec: audSessionDurationSec,
       reps: audReps.length,
+      auditoryReps: audReps.map(function(rep) {
+        return { seconds:rep.seconds, halts:rep.halts || 0, sound:rep.sound || currentSound };
+      }),
       notes: notes,
       type: 'auditory',
       object: getAudSoundLabel(currentSound)
