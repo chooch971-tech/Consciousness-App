@@ -826,10 +826,20 @@ function renderPathQuests() {
       + (item.done ? 'opacity:.5;' : '') + 'border:1px solid var(--border);border-radius:14px;';
     if (grantsBodyName) outerStyle += 'border-color:rgba(216,184,106,.5);';
     var grantsClass = grantsBodyName ? 'pq-grants-body' : '';
+    var trackGoalSec = item.trackGoalSec || 300;
+    var trackPct = item.sensoryTrack
+      ? Math.max(0, Math.min(100, Math.round((item.trackProgressSec || 0) / trackGoalSec * 100)))
+      : 0;
+    var trackLeft = item.trackComplete
+      ? 'Foundations 6 / 6'
+      : 'Foundation ' + item.trackStage + ' / ' + item.trackTotal;
+    var trackRight = item.trackComplete ? 'Multi-Sense unlocked' : '5:00 clean hold';
     var trackHtml = item.sensoryTrack
-      ? '<div style="margin-top:10px;padding:9px 11px;border-radius:9px;background:rgba(224,168,196,.055);border:1px solid rgba(224,168,196,.13);font-size:8px;line-height:1.65;letter-spacing:.08em;color:var(--muted);">'
-        + '<strong style="display:block;color:#e0a8c4;letter-spacing:.13em;text-transform:uppercase;">' + item.trackLabel + '</strong>'
-        + '<span>' + item.trackGoal + '</span><br><span>' + item.trackNext + '</span></div>'
+      ? '<div class="sensory-goal-bar" style="margin-top:10px;">'
+        + '<div style="display:flex;justify-content:space-between;gap:12px;margin-bottom:5px;font-size:7px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);">'
+        + '<span>' + trackLeft + '</span><span style="color:rgba(224,168,196,.82);">' + trackRight + '</span></div>'
+        + '<div role="progressbar" aria-label="' + trackRight + '" aria-valuemin="0" aria-valuemax="100" aria-valuenow="' + trackPct + '" style="height:3px;border-radius:999px;background:rgba(224,168,196,.11);overflow:hidden;">'
+        + '<i style="display:block;width:' + trackPct + '%;height:100%;border-radius:inherit;background:linear-gradient(90deg,rgba(224,168,196,.52),rgba(224,168,196,.9));"></i></div></div>'
       : '';
     return '<div' + (grantsClass ? ' class="' + grantsClass + '"' : '') + ' style="' + outerStyle + '">'
       + '<div style="display:flex;align-items:center;gap:14px;">'

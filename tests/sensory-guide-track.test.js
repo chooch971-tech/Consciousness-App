@@ -78,6 +78,8 @@ test('sensory practice sessions progress through 10–20 minutes while mastery r
   const firstItem = newStage.guideSensoryTrackItem(1);
   assert.equal(firstItem.duration, 10);
   assert.equal(firstItem.done, false);
+  assert.equal(firstItem.trackProgressSec, 0);
+  assert.equal(firstItem.trackGoalSec, 300);
   assert.match(firstItem.trackGoal, /Practice 10–20 min/);
   assert.match(firstItem.trackGoal, /uninterrupted 5:00 hold/);
 
@@ -105,7 +107,9 @@ test('exercise records and Path cards expose the evidence and curriculum indicat
   assert.match(guideSource, /changing the session time does not change that mastery goal/);
   assert.match(guideSource, /data-guide-eyes/);
   assert.match(guideSource, /Sensory concentration · Stage/);
-  assert.match(questSource, /item\.trackLabel/);
+  assert.match(questSource, /class="sensory-goal-bar"/);
+  assert.match(questSource, /role="progressbar"/);
+  assert.doesNotMatch(questSource, /item\.trackNext/);
   assert.match(questSource, /data-sensory-track/);
   assert.match(reportsSource, /sensory_concentration_track/);
   assert.match(reportsSource, /recommended_practice_range_min:\[10, 20\]/);

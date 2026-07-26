@@ -202,6 +202,8 @@ function guideSensoryTrackItem(rounds) {
       trackComplete:true,
       trackStage:6,
       trackTotal:6,
+      trackProgressSec:GUIDE_SENSORY_CLEAN_GOAL_SEC,
+      trackGoalSec:GUIDE_SENSORY_CLEAN_GOAL_SEC,
       trackLabel:'Sensory foundations complete',
       trackGoal:'Multi-Sense unlocked',
       trackNext:'Next: elemental work (coming later)'
@@ -229,6 +231,8 @@ function guideSensoryTrackItem(rounds) {
     sensoryTrack:true,
     trackStage:stage.index + 1,
     trackTotal:GUIDE_SENSORY_STAGES.length,
+    trackProgressSec:stage.bestCleanSec,
+    trackGoalSec:GUIDE_SENSORY_CLEAN_GOAL_SEC,
     trackLabel:'Sensory concentration · Stage ' + (stage.index + 1) + ' of ' + GUIDE_SENSORY_STAGES.length,
     trackGoal:'Practice 10–20 min · mastery: one uninterrupted 5:00 hold',
     trackNext:'Next: ' + nextLabel
@@ -2280,10 +2284,20 @@ function renderGuidePlan(mode, skipScroll) {
     var beginHtml = item.open
       ? '<button class="path-ex-begin guide-plan-start"' + startAttrs + (item.done ? ' disabled' : '') + '>' + (item.done ? 'Done' : 'Begin') + '</button>'
       : '';
+    var trackGoalSec = item.trackGoalSec || GUIDE_SENSORY_CLEAN_GOAL_SEC;
+    var trackPct = item.sensoryTrack
+      ? Math.max(0, Math.min(100, Math.round((item.trackProgressSec || 0) / trackGoalSec * 100)))
+      : 0;
+    var trackLeft = item.trackComplete
+      ? 'Foundations 6 / 6'
+      : 'Foundation ' + item.trackStage + ' / ' + item.trackTotal;
+    var trackRight = item.trackComplete ? 'Multi-Sense unlocked' : '5:00 clean hold';
     var trackHtml = item.sensoryTrack
-      ? '<div style="margin-top:8px;padding-top:8px;border-top:1px solid rgba(224,168,196,.13);font-size:8px;line-height:1.65;letter-spacing:.08em;color:var(--muted);">'
-        + '<strong style="display:block;color:#e0a8c4;letter-spacing:.12em;text-transform:uppercase;">' + item.trackLabel + '</strong>'
-        + '<span>' + item.trackGoal + '</span><br><span>' + item.trackNext + '</span></div>'
+      ? '<div class="sensory-goal-bar" style="margin-top:9px;">'
+        + '<div style="display:flex;justify-content:space-between;gap:12px;margin-bottom:5px;font-size:7px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);">'
+        + '<span>' + trackLeft + '</span><span style="color:rgba(224,168,196,.82);">' + trackRight + '</span></div>'
+        + '<div role="progressbar" aria-label="' + trackRight + '" aria-valuemin="0" aria-valuemax="100" aria-valuenow="' + trackPct + '" style="height:3px;border-radius:999px;background:rgba(224,168,196,.11);overflow:hidden;">'
+        + '<i style="display:block;width:' + trackPct + '%;height:100%;border-radius:inherit;background:linear-gradient(90deg,rgba(224,168,196,.52),rgba(224,168,196,.9));"></i></div></div>'
       : '';
     return '<div class="path-ex-card' + (item.done ? ' done' : '') + '"' + (item.sensoryTrack ? ' style="display:block;"' : '') + '>'
       + (item.sensoryTrack ? '<div style="display:flex;align-items:center;gap:14px;">' : '')
