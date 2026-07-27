@@ -13,6 +13,7 @@ const visualSource = fs.readFileSync(path.join(root, 'visualization-client.js'),
 const auditorySource = fs.readFileSync(path.join(root, 'auditory-client.js'), 'utf8');
 const clockSource = fs.readFileSync(path.join(root, 'concentration-clock-client.js'), 'utf8');
 const reportsSource = fs.readFileSync(path.join(root, 'reports-client.js'), 'utf8');
+const presenceSource = fs.readFileSync(path.join(root, 'presence.html'), 'utf8');
 
 function loadTrack(history) {
   const start = guideSource.indexOf('var GUIDE_SENSORY_CLEAN_GOAL_SEC');
@@ -96,23 +97,19 @@ test('sensory practice sessions progress through 10–20 minutes while mastery r
   assert.equal(establishedItem.done, false);
 });
 
-test('the active sensory stage can be manually added before Omnia gates it', () => {
+test('Visualization, Auditory, and Senses can be manually added as separate cards', () => {
   const start = guideSource.indexOf('function guideMergeAddedItems');
   const end = guideSource.indexOf('function guideApplyTutorialPathChoice');
   const context = {
-    guideState:{ _pathAdded:['feeling'] },
+    guideState:{ _pathAdded:['visual', 'auditory', 'sense'] },
     guideTwoADayEnabled:() => false,
-    guideSensoryTrackItem:() => ({
-      id:'sense',
-      name:'Senses',
-      mode:'feeling',
-      sensoryTrack:true,
-      duration:10,
-      open:'sense'
-    }),
-    guideBuildAddedItem:() => null,
+    guideBuildAddedItem:id => ({ id, added:true }),
     buildGuideRegimentItems:() => [],
-    GUIDE_EXERCISES:[],
+    GUIDE_EXERCISES:[
+      { id:'visual', name:'Visualization' },
+      { id:'auditory', name:'Auditory' },
+      { id:'sense', name:'Senses' }
+    ],
     GUIDE_FOUNDATION_THOUGHT_ORDER:[],
     guideCurrentThoughtMode:() => 'observation',
     guideThoughtStats:() => ({})
@@ -120,14 +117,14 @@ test('the active sensory stage can be manually added before Omnia gates it', () 
   vm.runInNewContext(guideSource.slice(start, end), context, { filename:'guide-manual-sensory.js' });
 
   const merged = context.guideMergeAddedItems([]);
-  assert.equal(merged.length, 1);
-  assert.equal(merged[0].mode, 'feeling');
-  assert.equal(merged[0].sensoryTrack, true);
-  assert.equal(merged[0].added, true);
+  assert.deepEqual(Array.from(merged, item => item.id), ['visual', 'auditory', 'sense']);
 
   context.guideState._pathAdded = [];
   const addable = context.guidePathAddableExercises();
-  assert.equal(addable.some(ex => ex.id === 'feeling'), true);
+  assert.deepEqual(
+    Array.from(addable.filter(ex => ['visual', 'auditory', 'sense'].includes(ex.id)), ex => ex.id),
+    ['visual', 'auditory', 'sense']
+  );
 });
 
 test('exercise records and Path cards expose the evidence and curriculum indicators', () => {
@@ -145,15 +142,18 @@ test('exercise records and Path cards expose the evidence and curriculum indicat
   assert.match(guideSource, /id:'visual', name:'Visualization'/);
   assert.match(guideSource, /id:'auditory', name:'Auditory'/);
   assert.match(guideSource, /id:'sense', name:'Senses'/);
-  assert.match(guideSource, /player may manually[\s\S]*CURRENT stage/);
-  assert.match(guideSource, /sensoryAddId = sensoryItem\.id === 'sense' \? sensoryItem\.mode : sensoryItem\.id/);
-  assert.match(guideSource, /items\.push\(Object\.assign\(\{\}, sensoryItem, \{ added:true \}\)\)/);
+  assert.match(guideSource, /Visualization, Auditory, and Senses may each coexist/);
+  assert.match(guideSource, /function guidePathEyesMode/);
+  assert.match(guideSource, /setSenseEyesMode\(eyesMode\)/);
   assert.match(questSource, /class="pq-progress-view"/);
   assert.match(questSource, /pqPathCycleBtn/);
   assert.match(questSource, /1× \/ day → 2× \/ day → Progress/);
   assert.doesNotMatch(questSource, /data-pq-view=/);
   assert.match(questSource, /'Exercise Progress' : 'Exercises'/);
-  assert.match(questSource, /guideState\._pathAdded = guideState\._pathAdded\.filter/);
+  assert.match(questSource, /data-ex-eyes/);
+  assert.match(questSource, /setPathEyesMode/);
+  assert.match(presenceSource, /id="pqEyesClosed"/);
+  assert.match(presenceSource, /id="pqEyesOpen"/);
   assert.match(questSource, /role="progressbar"/);
   assert.doesNotMatch(questSource, /sensory-goal-bar/);
   assert.doesNotMatch(questSource, /item\.trackNext/);

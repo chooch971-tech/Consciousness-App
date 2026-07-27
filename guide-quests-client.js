@@ -841,7 +841,7 @@ function renderPathQuests() {
     }
 
     var cardPadding = extraHtml ? 'padding:13px 14px 10px;' : 'padding:13px 14px;';
-    var menuBtn = '<button class="pq-menu-btn" data-ex-id="' + item.id + '"' + (item.mode ? ' data-ex-mode="' + item.mode + '"' : '') + (item.sensoryTrack ? ' data-sensory-track="1"' : '') + (item.added ? ' data-ex-added="1"' : '') + ' title="Options">···</button>';
+    var menuBtn = '<button class="pq-menu-btn" data-ex-id="' + item.id + '"' + (item.mode ? ' data-ex-mode="' + item.mode + '"' : '') + (item.eyesMode ? ' data-ex-eyes="' + item.eyesMode + '"' : '') + (item.sensoryTrack ? ' data-sensory-track="1"' : '') + (item.added ? ' data-ex-added="1"' : '') + ' title="Options">···</button>';
     var badgeStyle = 'position:relative;width:48px;height:48px;border-radius:12px;background:' + color + '1e;border:1px solid ' + color + '38;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0;font-family:\'DM Mono\',monospace;line-height:1;color:' + color + ';';
     // Highlight cards that will grant a body level if completed right now.
     var grantsBodyName = (typeof omniaCardGrantsBodyLevel === 'function')
@@ -1033,6 +1033,7 @@ function renderPathQuests() {
 (function() {
   var activeExId = null;
   var activeExMode = null;
+  var activeEyesMode = null;
   var activeSensoryTrack = false;
   var menu = document.getElementById('pqSkipMenu');
   var advItem = document.getElementById('pqSkipAdvanced');
@@ -1045,12 +1046,16 @@ function renderPathQuests() {
   var freq1Btn = document.getElementById('pqFreq1x');
   var freq2Btn = document.getElementById('pqFreq2x');
   var freqDiv  = document.getElementById('pqFreqDivider');
+  var eyesClosedBtn = document.getElementById('pqEyesClosed');
+  var eyesOpenBtn = document.getElementById('pqEyesOpen');
+  var eyesDiv = document.getElementById('pqEyesDivider');
   // Exercises that have no "rounds" concept — hide frequency controls for these.
   var OPEN_ENDED_EX = { soulmirror:1, pore:1 };
 
   function openSkipMenu(btn) {
     activeExId = btn.dataset.exId;
     activeExMode = btn.dataset.exMode || null;
+    activeEyesMode = btn.dataset.exEyes || guidePathEyesMode(activeExId, 'closed');
     activeSensoryTrack = btn.dataset.sensoryTrack === '1';
     var isPore = activeExId === 'pore';
     if (advItem) {
@@ -1078,6 +1083,16 @@ function renderPathQuests() {
     if (freq2Btn) {
       freq2Btn.style.display = showFreq ? '' : 'none';
       freq2Btn.classList.toggle('active', showFreq && rounds2);
+    }
+    var showEyes = activeExId === 'visual' || activeExId === 'sense';
+    if (eyesDiv) eyesDiv.style.display = showEyes ? '' : 'none';
+    if (eyesClosedBtn) {
+      eyesClosedBtn.style.display = showEyes ? '' : 'none';
+      eyesClosedBtn.classList.toggle('active', showEyes && activeEyesMode === 'closed');
+    }
+    if (eyesOpenBtn) {
+      eyesOpenBtn.style.display = showEyes ? '' : 'none';
+      eyesOpenBtn.classList.toggle('active', showEyes && activeEyesMode === 'open');
     }
     var removeBtn = document.getElementById('pqSkipRemove');
     if (removeBtn) removeBtn.style.display = activeSensoryTrack ? 'none' : '';
@@ -1185,6 +1200,18 @@ function renderPathQuests() {
     renderPathQuests();
     if (typeof renderGuidePlan === 'function' && guideState._pathLockedV2) renderGuidePlan(guidePathMode);
   });
+  function setPathEyesMode(mode) {
+    if (activeExId !== 'visual' && activeExId !== 'sense') return;
+    if (!guideState._pathEyesModes) guideState._pathEyesModes = {};
+    guideState._pathEyesModes[activeExId] = mode === 'open' ? 'open' : 'closed';
+    saveGuideState(guideState);
+    if (typeof syncPushData === 'function') syncPushData();
+    closeSkipMenu();
+    renderPathQuests();
+    if (typeof renderGuidePlan === 'function' && guideState._pathLockedV2) renderGuidePlan(guidePathMode);
+  }
+  if (eyesClosedBtn) eyesClosedBtn.addEventListener('click', function() { setPathEyesMode('closed'); });
+  if (eyesOpenBtn) eyesOpenBtn.addEventListener('click', function() { setPathEyesMode('open'); });
   var advMinusBtn = document.getElementById('pqAdvMinus');
   var advPlusBtn = document.getElementById('pqAdvPlus');
   if (advMinusBtn) advMinusBtn.addEventListener('click', function() {
@@ -1255,14 +1282,11 @@ function renderPathQuests() {
     multisense:  { icon:'&#127925;', color:'#d4c88e' }
   };
 
-  // Thought Control and Senses each train through several distinct forms
-  // (Observation/Focus/Vacancy, Feeling/Smell/Taste), which used to show as
-  // several flat rows in this menu. Group them under one collapsed parent
-  // row per family — tapping it reveals the specific forms — so the "+"
-  // menu doesn't balloon into a long list of near-duplicate entries.
+  // Thought Control trains through several distinct forms. Keep those under
+  // one parent row; Visualization, Auditory, and Senses remain independent
+  // top-level cards in the "+" menu.
   var ADD_GROUPS = {
-    thought: { label:'Thought Control', memberIds:{ thought:1, observation:1, focus:1, vacancy:1 } },
-    sense:   { label:'Senses',          memberIds:{ feeling:1, smell:1, taste:1 } }
+    thought: { label:'Thought Control', memberIds:{ thought:1, observation:1, focus:1, vacancy:1 } }
   };
 
   function addItemBtnHTML(ex) {
@@ -1287,15 +1311,14 @@ function renderPathQuests() {
   window.pqOpenAddMenu = function(btn) {
     var addable = (typeof guidePathAddableExercises === 'function') ? guidePathAddableExercises() : [];
     if (!addable.length) { menu.style.display = 'none'; return; }
-    var groupMembers = { thought:[], sense:[] };
+    var groupMembers = { thought:[] };
     addable.forEach(function(ex) {
       if (ADD_GROUPS.thought.memberIds[ex.id]) groupMembers.thought.push(ex);
-      else if (ADD_GROUPS.sense.memberIds[ex.id]) groupMembers.sense.push(ex);
     });
-    var groupRendered = { thought:false, sense:false };
+    var groupRendered = { thought:false };
     var html = '';
     addable.forEach(function(ex) {
-      var groupId = ADD_GROUPS.thought.memberIds[ex.id] ? 'thought' : ADD_GROUPS.sense.memberIds[ex.id] ? 'sense' : null;
+      var groupId = ADD_GROUPS.thought.memberIds[ex.id] ? 'thought' : null;
       if (!groupId) { html += addItemBtnHTML(ex); return; }
       if (groupRendered[groupId]) return; // already emitted this family's group row
       groupRendered[groupId] = true;
@@ -1331,17 +1354,10 @@ function renderPathQuests() {
     closeAddMenu();
     function doAdd() {
       if (!Array.isArray(guideState._pathAdded)) guideState._pathAdded = [];
-      var sensoryIds = { visual:1, auditory:1, sense:1, feeling:1, smell:1, taste:1, multisense:1 };
-      if (sensoryIds[exId]) {
-        // Only the current sensory stage may be manually present. Remove a
-        // stale prior-stage addition when the player advances the curriculum.
-        guideState._pathAdded = guideState._pathAdded.filter(function(id) { return !sensoryIds[id]; });
-      }
       if (guideState._pathAdded.indexOf(exId) === -1) guideState._pathAdded.push(exId);
       // Clear any active postpone/removal so the freshly-added exercise shows right away.
       if (guideState.postponed && guideState.postponed[exId]) delete guideState.postponed[exId];
       if (guideState.removed && guideState.removed[exId]) delete guideState.removed[exId];
-      if (guideState.removed && (exId === 'feeling' || exId === 'smell' || exId === 'taste')) delete guideState.removed.sense;
       saveGuideState(guideState);
       // Push immediately so a reload doesn't pull an older cloud snapshot that
       // lacks this change and overwrite _pathAdded.

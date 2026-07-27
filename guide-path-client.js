@@ -182,6 +182,11 @@ function guideSensoryPracticeMinutes(stage) {
   return guideClamp(minutes, GUIDE_SENSORY_PRACTICE_MIN, GUIDE_FLOOR_CAP);
 }
 
+function guidePathEyesMode(exId, fallback) {
+  var saved = guideState && guideState._pathEyesModes && guideState._pathEyesModes[exId];
+  return saved === 'open' || saved === 'closed' ? saved : (fallback || 'closed');
+}
+
 function guideSensoryTrackItem(rounds) {
   rounds = rounds || 1;
   var progress = guideSensoryTrackProgress();
@@ -220,7 +225,9 @@ function guideSensoryTrackItem(rounds) {
     id:stage.exercise,
     name:stage.name,
     mode:stage.mode || null,
-    eyesMode:stage.eyesMode || null,
+    eyesMode:stage.exercise === 'visual' || stage.exercise === 'sense'
+      ? guidePathEyesMode(stage.exercise, stage.eyesMode || 'closed')
+      : null,
     duration:naturalMin,
     durationLabel:naturalMin + ' min' + (rounds > 1 ? ' x' + rounds : ''),
     done:stage.mastered,
@@ -2233,7 +2240,7 @@ function guideBuildAddedItem(exId, rounds) {
     var st = stats[exId] || { count:0, todaySec:0 };
     var names = { visual:'Visualization', auditory:'Auditory' };
     var tips = { visual:'Added by you. Hold a simple mental image clearly — clarity matters more than complexity.', auditory:'Added by you. Focused listening on a single sound; broaden the astral body steadily.' };
-    return { id:exId, name:names[exId], duration:min, durationLabel:min + ' min' + (rounds > 1 ? ' x2' : ''), done:st.todaySec >= target, progress:'added · ' + (st.count || 0) + ' recorded', tip:tips[exId], open:exId, added:true };
+    return { id:exId, name:names[exId], duration:min, durationLabel:min + ' min' + (rounds > 1 ? ' x2' : ''), done:st.todaySec >= target, progress:'added · ' + (st.count || 0) + ' recorded', tip:tips[exId], open:exId, eyesMode:exId === 'visual' ? guidePathEyesMode('visual', 'closed') : null, added:true };
   }
   if (exId === 'feeling' || exId === 'smell' || exId === 'taste') {
     // Senses trains through distinct sub-modes, same as Thought Control's
@@ -2252,7 +2259,7 @@ function guideBuildAddedItem(exId, rounds) {
     var senseDur = guideAdvancedTarget('sense', Math.min(10, guideDurationForScore(senseScore)));
     var senseTarget = senseDur * 60 * rounds;
     var senseSt = stats.sense || { count:0, todaySec:0 };
-    return { id:'sense', name:'Senses', duration:senseDur, durationLabel:senseDur + ' min' + (rounds > 1 ? ' x2' : ''), done:senseSt.todaySec >= senseTarget, progress:'added · ' + (senseSt.count || 0) + ' recorded', tip:'Added by you. Imagine a feeling, smell, or taste as vividly as you can — accuracy matters more than intensity.', open:'sense', added:true };
+    return { id:'sense', name:'Senses', duration:senseDur, durationLabel:senseDur + ' min' + (rounds > 1 ? ' x2' : ''), done:senseSt.todaySec >= senseTarget, progress:'added · ' + (senseSt.count || 0) + ' recorded', tip:'Added by you. Imagine a feeling, smell, or taste as vividly as you can — accuracy matters more than intensity.', open:'sense', eyesMode:guidePathEyesMode('sense', 'closed'), added:true };
   }
   if (exId === 'multisense') {
     var advSt = stats.visual || { count:0, todaySec:0 };
@@ -2293,26 +2300,15 @@ function guideMergeAddedItems(items) {
   var added = (guideState && Array.isArray(guideState._pathAdded)) ? guideState._pathAdded : [];
   if (!added.length) return items;
   var rounds = guideTwoADayEnabled() ? 2 : 1;
-  var sensoryItem = guideSensoryTrackItem(rounds);
-  var sensoryAddId = sensoryItem.id === 'sense' ? sensoryItem.mode : sensoryItem.id;
   var present = {};
   items.forEach(function(it) { present[it.id] = true; });
   var postponed = guideState.postponed || {};
   var removed = guideState.removed || {};
   var now = Date.now();
   added.forEach(function(exId) {
-    // The sensory curriculum owns these cards, but the player may manually
-    // pull the CURRENT stage onto the Path before Omnia's normal gate opens.
-    // Future or already-mastered faculties remain suppressed so the sequence
-    // can never produce two sensory-concentration cards at once.
-    if (exId === 'visual' || exId === 'auditory' || exId === 'sense'
-        || exId === 'feeling' || exId === 'smell' || exId === 'taste'
-        || exId === 'multisense') {
-      if (exId !== sensoryAddId || present[sensoryItem.id]) return;
-      items.push(Object.assign({}, sensoryItem, { added:true }));
-      present[sensoryItem.id] = true;
-      return;
-    }
+    // Legacy sense-submode additions are represented by the single Senses
+    // card now; Visualization, Auditory, and Senses may each coexist.
+    if (exId === 'feeling' || exId === 'smell' || exId === 'taste') return;
     if (present[exId]) return;
     if (removed[exId]) return;
     var until = postponed[exId];
@@ -2328,12 +2324,8 @@ function guidePathAddableExercises() {
   var items = buildGuideRegimentItems();
   var present = {};
   items.forEach(function(it) { present[it.id] = true; });
-  // The raw 'sense' entry is excluded here — it's ambiguous about which
-  // sense it trains, so it's offered below as three distinguishable
-  // sub-modes instead (Feeling/Smell/Taste), same treatment as Thought
-  // Control's Observation/Focus/Vacancy.
   var addable = GUIDE_EXERCISES.filter(function(ex) {
-    return !present[ex.id] && ex.id !== 'sense' && ex.id !== 'visual' && ex.id !== 'auditory';
+    return !present[ex.id];
   });
   // Offer thought sub-modes that are NOT the current active mode (already on
   // the path under the 'thought' item) and NOT already added independently.
@@ -2343,16 +2335,6 @@ function guidePathAddableExercises() {
     if (mode === activeMode) return; // already covered by the 'thought' item
     addable.push({ id: mode });
   });
-  // Offer exactly the CURRENT sensory-curriculum stage when Omnia's normal
-  // gate has not placed it on today's Path yet. This lets a player practice
-  // the faculty they are already on without exposing future stages.
-  var sensoryItem = guideSensoryTrackItem(guideTwoADayEnabled() ? 2 : 1);
-  var sensoryAddId = sensoryItem.id === 'sense' ? sensoryItem.mode : sensoryItem.id;
-  var sensoryAlreadyPresent = items.some(function(item) { return !!item.sensoryTrack; });
-  if (!sensoryAlreadyPresent && sensoryAddId
-      && !addable.some(function(ex) { return ex.id === sensoryAddId; })) {
-    addable.push({ id:sensoryAddId });
-  }
   // Pore Breathing — addable any time it isn't already on the path.
   if (!present['pore']) addable.push({ id: 'pore' });
   return addable;
@@ -2469,7 +2451,7 @@ function renderGuidePlan(mode, skipScroll) {
       + '<div class="path-ex-meta">' + durLabel + (item.progress ? ' · ' + item.progress : '') + '</div>'
       + '</div>'
       + '<div class="path-ex-right">' + checkHtml + beginHtml + '</div>'
-      + '<button class="pq-menu-btn" data-ex-id="' + item.id + '"' + (item.mode ? ' data-ex-mode="' + item.mode + '"' : '') + (item.sensoryTrack ? ' data-sensory-track="1"' : '') + (item.added ? ' data-ex-added="1"' : '') + ' title="Options">···</button>'
+      + '<button class="pq-menu-btn" data-ex-id="' + item.id + '"' + (item.mode ? ' data-ex-mode="' + item.mode + '"' : '') + (item.eyesMode ? ' data-ex-eyes="' + item.eyesMode + '"' : '') + (item.sensoryTrack ? ' data-sensory-track="1"' : '') + (item.added ? ' data-ex-added="1"' : '') + ' title="Options">···</button>'
       + '</div>';
   }
 
@@ -2520,6 +2502,10 @@ function beginGuidePlanItem(btn) {
       senseMode = mode;
       var guideSenseChoices = senseChoicesForMode(mode);
       senseSelectedCue = guideSenseChoices.length ? guideSenseChoices[0].label : '';
+    }
+    if (eyesMode) {
+      if (typeof setSenseEyesMode === 'function') setSenseEyesMode(eyesMode);
+      else senseEyesMode = eyesMode === 'open' ? 'open' : 'closed';
     }
   }
   if (ex === 'visual' && eyesMode) {
