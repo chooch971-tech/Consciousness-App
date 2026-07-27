@@ -3,10 +3,11 @@
 An incremental game built on the Cascading Loop Builder concept from
 `FUTURE_IDEAS.md`, rebuilt to follow Revolution Idle's structure closely.
 
-Ten generators, drawn as concentric rings — red at the core out to magenta.
-Each ring's bright arc is its current lap. Generator N's laps build generator
-N−1; generator I's laps pay Energy. So buying a deep generator compounds
-through everything beneath it.
+Ten generators, drawn as a stack of sequential lines that set each other off.
+Generator I sits at the top because it's the one that pays out; each line below
+feeds the one above it, so a completed lap throws a bead up the connector and
+the line above flashes as it takes the hit. Buying a deep generator compounds
+through everything above it.
 
 The entire moment-to-moment interaction is **tapping a tile in the grid at the
 bottom of the screen**.
@@ -115,8 +116,8 @@ perk list is bought out after **5 Promotes**:
 
 - **A layer above Cores.** Once the eight perks are bought there's nothing left
   to climb. This is the clearest gap.
-- **Ring interaction.** The rings are currently a readout. Tapping one to
-  "spin it up" manually would give the centrepiece something to do.
+- **Line interaction.** The lines are currently a readout. Tapping one to
+  charge it manually would give the centrepiece something to do.
 - **Bigger numbers.** Everything is `Double`, so the ceiling is ~1e308.
   Revolution Idle runs to e3000+, which needs a custom mantissa/exponent type.
 
@@ -132,9 +133,9 @@ Sources/
     GameEngine.swift        tick, buying, promote, offline, persistence
   Views/
     Theme.swift             palette, backdrop, panel chrome
-    RingsView.swift         the concentric rings and the laps/s strip
+    EngineView.swift        the sequential lines, pulse links, laps/s strip
     GeneratorGrid.swift     the tap-to-buy tiles
-    MainView.swift          rings + promote + buy controls + grid
+    MainView.swift          engine + promote + buy controls + grid
     CoresView.swift         prestige currency and the eight perks
     StatsView.swift         readouts and save management
     RootView.swift          shell, tab bar, offline sheet

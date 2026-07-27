@@ -22,7 +22,7 @@ enum Gen {
     /// curve here unlocks all ten generators inside two hours.
     static let costGrowth = 3.0
 
-    /// Red at the core, sweeping out to magenta — the Revolution Idle ordering.
+    /// Red at generator I, sweeping to magenta at generator X.
     static func hue(_ i: Int) -> Double {
         Double(i) / Double(count - 1) * 0.85
     }

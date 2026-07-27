@@ -10,6 +10,9 @@ final class GameEngine {
     var state = GameState.new()
     /// Lap phase per generator, 0…1. Purely cosmetic, never saved.
     var phase = [Double](repeating: 0, count: Gen.count)
+    /// Timestamp of the last visible lap completion, for the fire-off flash.
+    var lastLap = [Double](repeating: -999, count: Gen.count)
+    var now = Date.timeIntervalSinceReferenceDate
     var offlineReport: OfflineReport?
 
     @ObservationIgnored private var timer: Timer?
@@ -40,14 +43,15 @@ final class GameEngine {
     }
 
     private func frame() {
-        let now = Date.timeIntervalSinceReferenceDate
-        let dt = min(max(now - lastTick, 0), 1.0)
-        lastTick = now
+        let t = Date.timeIntervalSinceReferenceDate
+        let dt = min(max(t - lastTick, 0), 1.0)
+        lastTick = t
+        now = t
         tick(dt)
         advancePhase(dt)
         state.playTime += dt
-        if now - lastSave > 5 {
-            lastSave = now
+        if t - lastSave > 5 {
+            lastSave = t
             state.lastSeen = Date()
             save()
         }
@@ -81,8 +85,18 @@ final class GameEngine {
         for i in 0..<Gen.count {
             let spin = min(lapsPerSecond(i), 2.5)
             guard spin > 0 else { continue }
-            phase[i] = (phase[i] + spin * dt).truncatingRemainder(dividingBy: 1)
+            let next = phase[i] + spin * dt
+            if next >= 1 { lastLap[i] = now }
+            phase[i] = next.truncatingRemainder(dividingBy: 1)
         }
+    }
+
+    /// 0…1, decaying — a line flashes as it fires, and the pulse it throws at
+    /// the line above rides the same value.
+    func fire(_ i: Int) -> Double {
+        let age = now - lastLap[i]
+        guard age >= 0, age < 1 else { return 0 }
+        return exp(-age * 7)
     }
 
     // MARK: - Derived
@@ -226,6 +240,7 @@ final class GameEngine {
 
         state = fresh
         phase = [Double](repeating: 0, count: Gen.count)
+        lastLap = [Double](repeating: -999, count: Gen.count)
         haptic(.heavy)
         save()
     }
@@ -302,6 +317,7 @@ final class GameEngine {
     func hardReset() {
         state = GameState.new()
         phase = [Double](repeating: 0, count: Gen.count)
+        lastLap = [Double](repeating: -999, count: Gen.count)
         save()
     }
 

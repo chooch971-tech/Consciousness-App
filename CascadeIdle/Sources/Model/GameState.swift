@@ -25,7 +25,7 @@ struct GameState: Codable {
         var s = GameState()
         s.owned = [Double](repeating: 0, count: Gen.count)
         s.purchases = [Int](repeating: 0, count: Gen.count)
-        s.owned[0] = 1          // one free unit so the core ring turns immediately
+        s.owned[0] = 1          // one free unit so the top line moves immediately
         return s
     }
 

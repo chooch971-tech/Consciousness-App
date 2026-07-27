@@ -17,7 +17,7 @@ extension Font {
     }
 }
 
-/// Flat charcoal, like Revolution Idle — the rings supply all the colour.
+/// Flat charcoal, like Revolution Idle — the engine lines supply all the colour.
 struct Backdrop: View {
     var body: some View {
         ZStack {

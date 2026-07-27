@@ -21,9 +21,9 @@ struct MainView: View {
                         .foregroundStyle(Palette.energy)
                 }
 
-                RingsView()
-                    .padding(.horizontal, 24)
-                    .frame(maxHeight: 320)
+                EngineView()
+                    .padding(.horizontal, 4)
+                    .padding(.vertical, 6)
 
                 promoteBar
                 buyControls
