@@ -3,11 +3,14 @@
 An incremental game built on the Cascading Loop Builder concept from
 `FUTURE_IDEAS.md`, rebuilt to follow Revolution Idle's structure closely.
 
-Ten generators, drawn as a stack of sequential lines that set each other off.
-Generator I sits at the top because it's the one that pays out; each line below
-feeds the one above it, so a completed lap throws a bead up the connector and
-the line above flashes as it takes the hit. Buying a deep generator compounds
-through everything above it.
+Ten generators, drawn as a stack of sequential lines that set each other off,
+housed inside a riveted engine chassis. Generator I sits at the top because
+it's the one that pays out; each line below feeds the one above it, so a
+completed lap throws a bead up the connector and the line above flashes as it
+takes the hit. Buying a deep generator compounds through everything above it.
+
+The chassis carries a mark number that rises with every Promotion, so the
+machine itself is the record of how far you've come.
 
 The entire moment-to-moment interaction is **tapping a tile in the grid at the
 bottom of the screen**.
@@ -98,19 +101,20 @@ the interaction between tiers wrong.
 
 First unlock of each generator, greedy-but-realistic play, from a fresh save:
 
-| Gen | I | II | III | IV | V | VI | VII | VIII | IX–X |
-|---|---|---|---|---|---|---|---|---|---|
-| | 1 min | 6 min | 21 min | 45 min | 1.9 h | 4.2 h | 9 h | 18 h | past 24 h |
+| Gen | I | II | III | IV | V | VI | VII | VIII | IX | X |
+|---|---|---|---|---|---|---|---|---|---|---|
+| | 8 s | 30 s | 2.2 m | 6 m | 15 m | 39 m | 1.4 h | 3.4 h | 7.6 h | 16 h |
 
-Each generator costs roughly double the last one's time. Generators IX and X
-are deliberately post-prestige content.
+The base costs are **calibrated against that schedule**, not picked by hand —
+the gaps between tiers have to widen as you go, because the chain compounds and
+evenly-spaced prices make later generators arrive *faster*, not slower.
 
-First Promote lands around 1 h for 3 Cores. Simulating 4-hour runs, the full
-perk list is bought out after **5 Promotes**:
+First Promote is worth taking around 10 minutes in. Simulating 45-minute runs,
+the full perk list is bought out after **7 Promotes**:
 
-| Promote | 1 | 2 | 3 | 4 | 5 |
-|---|---|---|---|---|---|
-| Cores earned | 11 | 21 | 47 | 56 | 61 |
+| Promote | 1 | 2 | 3 | 4 | 5 | 6 | 7 |
+|---|---|---|---|---|---|---|---|
+| Cores earned | 7 | 11 | 15 | 24 | 27 | 30 | 32 |
 
 ## Where this wants to go next
 
@@ -133,6 +137,7 @@ Sources/
     GameEngine.swift        tick, buying, promote, offline, persistence
   Views/
     Theme.swift             palette, backdrop, panel chrome
+    EngineChassis.swift     the machine housing: nameplate, well, output manifold
     EngineView.swift        the sequential lines, pulse links, laps/s strip
     GeneratorGrid.swift     the tap-to-buy tiles
     MainView.swift          engine + promote + buy controls + grid

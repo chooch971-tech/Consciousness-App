@@ -10,17 +10,18 @@ enum Gen {
     static let count = 10
 
     /// Laps per second contributed by a single unit, before multipliers.
-    static let baseLapRate = 0.5
+    static let baseLapRate = 2.0
 
     /// Price of the first unit of each generator.
+    /// Calibrated against a target unlock schedule rather than picked by hand.
+    /// The gaps between tiers have to *widen* as you go: the chain compounds,
+    /// so evenly-spaced prices make later generators arrive faster, not slower.
     static let baseCost: [Double] = [
-        10, 250, 8e4, 4e7, 3e11, 5e15, 2e20, 1e25, 8e29, 1e35,
+        10, 55, 1.7e4, 1.3e7, 2.8e10, 7.5e14, 1.2e19, 8.0e24, 3.0e30, 5.0e36,
     ]
 
     /// Every purchase of a generator raises its own next price by this much.
-    /// Steep on purpose: the chain compounds nine levels deep, so a shallow
-    /// curve here unlocks all ten generators inside two hours.
-    static let costGrowth = 3.0
+    static let costGrowth = 2.6
 
     /// Red at generator I, sweeping to magenta at generator X.
     static func hue(_ i: Int) -> Double {
@@ -102,8 +103,8 @@ enum Balance {
     /// Energy needed this run before a Promote is worth anything.
     static let promoteFloor = 1e6
     /// Cores = coreScale * (log10(energy this run) - 6) ^ coreExponent
-    static let coreScale = 0.8
-    static let coreExponent = 1.15
+    static let coreScale = 0.55
+    static let coreExponent = 1.1
     /// Each Core ever earned permanently speeds every lap up by this much.
     static let corePermanentBonus = 0.05
 }

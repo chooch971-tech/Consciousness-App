@@ -52,7 +52,7 @@ private struct GenTile: View {
         } label: {
             VStack(alignment: .leading, spacing: 3) {
                 HStack(spacing: 3) {
-                    Text(romanNumerals[index])
+                    Text(roman(index + 1))
                         .font(.system(size: 9, weight: .black, design: .serif))
                     Spacer(minLength: 0)
                     Text("×\(fmt(engine.state.owned[index]))")

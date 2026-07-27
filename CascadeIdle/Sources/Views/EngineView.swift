@@ -35,7 +35,7 @@ private struct LineRow: View {
         let flash = engine.fire(index)
 
         HStack(spacing: 9) {
-            Text(romanNumerals[index])
+            Text(roman(index + 1))
                 .font(.system(size: 10, weight: .black, design: .serif))
                 .foregroundStyle(live ? color : Palette.dim.opacity(0.6))
                 .frame(width: 24, alignment: .trailing)

@@ -30,7 +30,7 @@ struct StatsView: View {
                             if engine.state.owned[i] > 0 || engine.state.unlocked(i) {
                                 HStack(spacing: 9) {
                                     Circle().fill(Gen.color(i)).frame(width: 8, height: 8)
-                                    Text(romanNumerals[i])
+                                    Text(roman(i + 1))
                                         .font(.system(size: 11, weight: .black, design: .serif))
                                         .foregroundStyle(Palette.text)
                                         .frame(width: 30, alignment: .leading)

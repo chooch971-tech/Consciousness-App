@@ -10,20 +10,11 @@ struct MainView: View {
             VStack(spacing: 12) {
                 LapStrip()
 
-                VStack(spacing: 2) {
-                    Text(fmt(engine.state.energy))
-                        .font(.system(size: 32, weight: .black, design: .rounded))
-                        .monospacedDigit()
-                        .foregroundStyle(Palette.text)
-                        .lineLimit(1).minimumScaleFactor(0.5)
-                    Text("+\(fmt(engine.energyPerSecond)) / sec")
-                        .font(.mono(12, .semibold))
-                        .foregroundStyle(Palette.energy)
+                // The energy readout lives inside the chassis now, so the
+                // machine visibly produces the number.
+                EngineChassis {
+                    EngineView()
                 }
-
-                EngineView()
-                    .padding(.horizontal, 4)
-                    .padding(.vertical, 6)
 
                 promoteBar
                 buyControls

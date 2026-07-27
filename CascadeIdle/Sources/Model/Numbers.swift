@@ -51,4 +51,13 @@ func fmtTime(_ seconds: Double) -> String {
     return fmt(seconds / (86_400 * 365)) + "y"
 }
 
-let romanNumerals = ["I", "II", "III", "IV", "V", "VI", "VII", "VIII", "IX", "X"]
+/// Roman numerals for generator labels and the engine's mark number.
+func roman(_ value: Int) -> String {
+    guard value > 0 else { return "0" }
+    let table: [(Int, String)] = [(1000, "M"), (900, "CM"), (500, "D"), (400, "CD"),
+                                  (100, "C"), (90, "XC"), (50, "L"), (40, "XL"),
+                                  (10, "X"), (9, "IX"), (5, "V"), (4, "IV"), (1, "I")]
+    var n = value, out = ""
+    for (v, s) in table { while n >= v { out += s; n -= v } }
+    return out
+}
