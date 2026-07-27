@@ -1,48 +1,42 @@
 import Foundation
 
-struct LoopState: Codable {
-    var unlocked = false
-    var charge: Double = 0
-    var completions: Double = 0
-    var yieldLevel = 0
-    var intakeLevel = 0
-    var pulseLevel = 0
-    var modules: [ModuleID] = []
-}
-
 struct GameState: Codable {
     var energy: Double = 0
-    var resonance: Double = 0
-    var echoes: Double = 0
+    var cores: Double = 0
+    /// Never spent — drives the permanent per-Core lap bonus.
+    var lifetimeCores: Double = 0
 
-    /// Never spent — drives the permanent "+2% per Echo" yield bonus.
-    var lifetimeEchoes: Double = 0
+    /// Units owned of each generator. Fractional, because generators build
+    /// each other continuously rather than in whole steps.
+    var owned: [Double] = []
+    /// Purchases made of each generator, which is what its price scales on.
+    var purchases: [Int] = []
+
+    var perks: Set<Perk> = []
+
     var energyThisRun: Double = 0
     var lifetimeEnergy: Double = 0
-
-    var loops: [LoopState] = []
-    var nodes: Set<String> = []
-    var modulesOwned: [String: Int] = [:]
-
-    /// Flywheel accumulation, reset on Collapse.
-    var flywheel: Double = 0
-    var collapses = 0
+    var promotions = 0
 
     var lastSeen = Date()
-    var runStart = Date()
     var playTime: Double = 0
 
     static func new() -> GameState {
         var s = GameState()
-        s.loops = (0..<LoopConfig.count).map { _ in LoopState() }
-        s.loops[0].unlocked = true
+        s.owned = [Double](repeating: 0, count: Gen.count)
+        s.purchases = [Int](repeating: 0, count: Gen.count)
+        s.owned[0] = 1          // one free unit so the core ring turns immediately
         return s
     }
 
-    /// Highest loop brought online, as an index.
-    var deepestTier: Int {
+    /// A generator becomes visible once the one before it has been bought.
+    func unlocked(_ i: Int) -> Bool {
+        i == 0 || purchases[i - 1] > 0
+    }
+
+    var deepestUnlocked: Int {
         var deepest = 0
-        for (i, l) in loops.enumerated() where l.unlocked { deepest = i }
+        for i in 0..<Gen.count where unlocked(i) { deepest = i }
         return deepest
     }
 }
@@ -52,6 +46,4 @@ struct OfflineReport: Identifiable {
     let elapsed: Double
     let efficiency: Double
     let energy: Double
-    let resonance: Double
-    let completions: Double
 }

@@ -1,158 +1,124 @@
 # CASCADE
 
 An incremental game built on the Cascading Loop Builder concept from
-`FUTURE_IDEAS.md`, with pacing and layer structure taken from Revolution Idle.
+`FUTURE_IDEAS.md`, rebuilt to follow Revolution Idle's structure closely.
 
-Progress is a vertical stack of horizontal loops. The first one fills on its own;
-every other one fills **only** from pulses sent up the chain when the loop below
-it completes. Buying the next loop is the milestone the whole game is built
-around.
+Ten generators, drawn as concentric rings — red at the core out to magenta.
+Each ring's bright arc is its current lap. Generator N's laps build generator
+N−1; generator I's laps pay Energy. So buying a deep generator compounds
+through everything beneath it.
+
+The entire moment-to-moment interaction is **tapping a tile in the grid at the
+bottom of the screen**.
 
 ---
 
 ## Adding it to Xcode
 
-1. **File → New → Project → iOS → App.** Product Name `CascadeIdle`, Interface
-   **SwiftUI**, Language **Swift**.
-2. Delete the generated `ContentView.swift` and `CascadeIdleApp.swift` (this
-   package ships its own `@main`).
+1. **File → New → Project → iOS → App.** Interface **SwiftUI**, Language **Swift**.
+2. Delete the generated `ContentView.swift` and the generated `…App.swift`
+   (this package ships its own `@main`, and two of them will not build).
 3. Drag the `Sources` folder into the project navigator. Check **Copy items if
    needed** and **Create groups**.
 4. Set the deployment target to **iOS 17.0** or later — the code uses the
    `@Observable` macro and `.presentationBackground`.
-5. Build and run. No dependencies, no assets, no network. All the art is drawn
-   in SwiftUI.
+5. Build and run. No dependencies, no assets, no network.
 
-Saves live in `Documents/cascade-save.json`. Delete the app or use **Stats →
-Erase save** to start clean.
+Saves live in `Documents/cascade-save.json`. **Stats → Erase save** starts clean.
 
 ---
 
 ## The design
 
-### The core loop
+### One mechanic
 
-Eight loops, `Spark → Coil → Rotor → Furnace → Cascade → Nexus → Aurora →
-Singularity`. Each has a *requirement*: the charge it needs for one completion.
-
-- The **Spark** gains charge from time, and nothing else.
-- Every other loop gains charge **only** when the loop below it completes and
-  sends a pulse.
-- A completion pays Energy, pays Resonance on the deeper loops, and pulses
-  onward.
-
-Because the chain multiplies, a loop's real cycle time is the product of every
-requirement below it. Loop 4 fires roughly once per 3 000 Spark cycles at base
-rates. That is deliberate: the deep loops are meant to feel like weather, not
-buttons.
-
-### Three currencies, three time horizons
-
-| | Earned from | Spent on | Survives a Collapse |
-|---|---|---|---|
-| **Energy** ⚡ | every completion | loop unlocks, repeatable upgrades | no |
-| **Resonance** 〰️ | Furnace and deeper | Modules | only with Resonance Vault |
-| **Echoes** ⬡ | collapsing a run | Array nodes | always |
-
-### Repeatable upgrades
-
-Three per loop, priced off that loop's `upgradeBase`:
-
-| Upgrade | Effect | Per level | Cost growth |
-|---|---|---|---|
-| **Yield** | Energy per completion | ×1.30 | ×1.55 |
-| **Intake** (Spark: **Speed**) | charge received | ×1.22 | ×1.60 |
-| **Pulse** | strength sent onward | ×1.18 | ×1.70 |
-
-**The one rule that matters:** each track's cost growth must exceed its own
-benefit growth, or the economy runs away. The first pass at this used ×1.65
-yield against ×1.20 cost and the entire eight-loop chain finished in seven
-minutes. Pulse is priced steepest because it compounds through every loop
-downstream of it, not just its own.
-
-### Modules — where builds happen
-
-Bought with Resonance and bolted to **one specific loop**. Slots are scarce (2,
-up to 4 from the Array), so this is a choice, not a checklist. Each copy you own
-raises the price of the next by ×2.6.
-
-| Module | Effect |
-|---|---|
-| **Intake Coil** | ×1.75 charge received |
-| **Amplifier** | ×2 pulse sent out |
-| **Condenser** | ×3 Energy from this loop |
-| **Overflow Valve** | excess charge carries forward instead of being lost |
-| **Splitter** | also pulses the loop *two* ahead, at 50% — the branching hook |
-| **Flywheel** | every completion permanently speeds up the Spark this run |
-| **Resonator** | ×4 Resonance from this loop |
-| **Governor** | −25% charge required per completion |
-
-**Overflow Valve is the sleeper.** Without it a loop can never fire faster than
-its feeder — one completion in, at most one completion out, remainder discarded.
-With it, a single heavy pulse can complete a loop many times at once, and the
-whole chain stops being rate-limited by the Spark. It changes the maths, not
-just the numbers.
-
-### Collapse — the prestige layer
-
-Available once **Cascade** is online and the run has banked ≥ 1 Echo.
+Every generator is identical in kind. It has a count you own, it turns laps,
+and it has exactly one thing you can buy. There are no per-generator upgrade
+tracks, no modules, no slots.
 
 ```
-echoes = ⌊ 2.5 · (log₁₀(energy this run) − 6)^1.55
-           · (1 + 0.35 · loops beyond Cascade)
-           · (1.6 if Deep Echo) ⌋
+laps/s of generator i  =  owned[i] × lapRate
+generator i's laps     →  builds generator i−1
+generator I's laps     →  Energy
 ```
 
-Collapsing resets loops, upgrades and Energy. It keeps the Array, your Echoes,
-and a permanent **+2% Energy per Echo ever earned** — so even spent Echoes keep
-paying.
+`lapRate` is global — perks and Cores raise it for everything at once. That is
+the only multiplier in the game.
 
-The Array is 18 nodes in four columns (Throughput, Head Start, Capacity,
-Automation) with prerequisite chains. Automation is deliberately the deepest and
-most expensive column: autobuyers retire grinds you've already mastered, which
-is the whole reason a prestige layer exists.
+### Buying
+
+One price curve, shared by all ten generators:
+
+```
+cost(i) = baseCost[i] × 3.0 ^ (purchases of i)
+```
+
+`×3.0` is steep on purpose. The chain compounds nine levels deep, so a shallow
+curve unlocks all ten generators inside two hours — the first pass used ×1.42
+and did exactly that.
+
+`MAX` and `Buy All` resolve the price in closed form (it's a geometric series),
+so there's no purchase loop to cap out.
+
+A generator becomes visible once the one before it has been bought at least
+once, so the grid grows as you go.
+
+### Promote
+
+Resets generators and Energy, pays **Cores**:
+
+```
+cores = ⌊ 0.8 × (log₁₀(energy this run) − 6) ^ 1.15 ⌋
+```
+
+Cores buy eight permanent perks — bought once each, no tree, no prerequisites,
+the whole prestige layer on one screen. Every Core ever earned also
+permanently adds +5% lap speed, so spent Cores keep paying.
+
+| Perk | Cost | Effect |
+|---|---|---|
+| Overdrive I / II / III | 2 / 10 / 50 | All laps ×2 / ×3 / ×5 |
+| Head Start | 5 | Begin each run with 10 of generators I–III |
+| Deep Start | 25 | Begin each run with 5 of generators IV–VI |
+| Rich Laps | 8 | Generator I laps pay ×10 Energy |
+| Autobuyer | 30 | Buys generators for you, cheapest first |
+| Cold Storage | 15 | Offline 100%, capped at 24h |
 
 ### Offline
 
-Fast-forwarded on launch at 60% efficiency, capped at 4 h. Cold Storage I/II
-take that to 100% and 24 h. Long absences are simulated in adaptive steps, so
-returning after a week resolves in a frame rather than a spin. Batched
-completions are computed in closed form (`floor(charge / requirement)`) rather
-than looped, so there's no iteration cap to lose progress against.
+Fast-forwarded on launch at 50% efficiency, capped at 4h; Cold Storage takes
+that to 100% and 24h. Generators compound into each other, so this is
+integrated in 2000 steps rather than multiplied out — a closed form would get
+the interaction between tiers wrong.
 
 ---
 
 ## Balance, as simulated
 
-Times to bring each loop online, from a greedy-but-realistic play pattern:
+First unlock of each generator, greedy-but-realistic play, from a fresh save:
 
-| | Run 1 (fresh) | Run 2 (~34 Echoes spent) | Run 4 (deep Array) |
-|---|---|---|---|
-| Coil | 1 min | seeded | seeded |
-| Rotor | 10 min | seeded | seeded |
-| Furnace | 45 min | 3 min | seeded |
-| Cascade | **2.0 h** ← first Collapse | 5 min | seeded |
-| Nexus | 6.7 h | 1.3 h | 2 min |
-| Aurora | — | 7.6 h | 5 min |
-| Singularity | — | — | 0.9 h |
+| Gen | I | II | III | IV | V | VI | VII | VIII | IX–X |
+|---|---|---|---|---|---|---|---|---|---|
+| | 1 min | 6 min | 21 min | 45 min | 1.9 h | 4.2 h | 9 h | 18 h | past 24 h |
 
-Roughly three or four Collapses buy out the Array and complete the chain. That's
-a deliberate v1 arc, not an accident — but it does mean the endgame is thin once
-the Array is full.
+Each generator costs roughly double the last one's time. Generators IX and X
+are deliberately post-prestige content.
+
+First Promote lands around 1 h for 3 Cores. Simulating 4-hour runs, the full
+perk list is bought out after **5 Promotes**:
+
+| Promote | 1 | 2 | 3 | 4 | 5 |
+|---|---|---|---|---|---|
+| Cores earned | 11 | 21 | 47 | 56 | 61 |
 
 ## Where this wants to go next
 
-- **A second prestige layer above Echoes.** The clearest gap: once the Array is
-  bought out there's nothing left to climb. Revolution Idle's answer is a layer
-  that resets the tree itself.
-- **Parallel chains.** The Splitter hints at branching; real parallel chains
-  feeding a shared sink would make module placement a much richer puzzle.
-- **A visible machine.** Right now each loop is a bar. The original note wanted
-  every purchased loop to visibly expand a machine or a city — that's a whole
-  rendering layer, and the honest place to start is a Canvas schematic that
-  grows a node per loop.
-- **Module levels.** Currently one copy per loop, flat effect. Levels would give
-  Resonance a long-term sink.
+- **A layer above Cores.** Once the eight perks are bought there's nothing left
+  to climb. This is the clearest gap.
+- **Ring interaction.** The rings are currently a readout. Tapping one to
+  "spin it up" manually would give the centrepiece something to do.
+- **Bigger numbers.** Everything is `Double`, so the ceiling is ~1e308.
+  Revolution Idle runs to e3000+, which needs a custom mantissa/exponent type.
 
 ## Files
 
@@ -161,17 +127,17 @@ Sources/
   CascadeIdleApp.swift      @main, scene-phase save/restore
   Model/
     Numbers.swift           number and duration formatting
-    Config.swift            loop table, module catalogue, Array tree, balance constants
+    Config.swift            generator table, perks, balance constants
     GameState.swift         Codable save state
-    GameEngine.swift        tick, cascade, upgrades, prestige, offline, persistence
+    GameEngine.swift        tick, buying, promote, offline, persistence
   Views/
-    Theme.swift             palette, backdrop, starfield, panel chrome
-    Components.swift        loop track, pulse connector, buttons, pills
-    RootView.swift          shell, currency bar, tabs, offline sheet
-    LoopsView.swift         the cascade — the main screen
-    ModulesView.swift       slot management and catalogue
-    ArrayView.swift         Collapse panel and the prestige tree
+    Theme.swift             palette, backdrop, panel chrome
+    RingsView.swift         the concentric rings and the laps/s strip
+    GeneratorGrid.swift     the tap-to-buy tiles
+    MainView.swift          rings + promote + buy controls + grid
+    CoresView.swift         prestige currency and the eight perks
     StatsView.swift         readouts and save management
+    RootView.swift          shell, tab bar, offline sheet
 ```
 
-All balance lives in `Config.swift`. Nothing in the views hardcodes a number.
+All balance lives in `Config.swift`.

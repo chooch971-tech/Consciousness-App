@@ -11,42 +11,36 @@ struct StatsView: View {
 
                 Panel(tint: Palette.energy) {
                     VStack(spacing: 0) {
-                        row("Energy per second", fmt(engine.cachedRates.energyPerSecond))
-                        row("Resonance per second", fmt(engine.cachedRates.resonancePerSecond))
+                        row("Energy per second", fmt(engine.energyPerSecond))
+                        row("Laps per second, per unit", fmt(engine.lapRate))
+                        row("Energy per lap", fmt(engine.energyPerLap))
                         row("Energy this run", fmt(engine.state.energyThisRun))
                         row("Energy all time", fmt(engine.state.lifetimeEnergy))
-                        row("Permanent yield bonus", "×\(fmt(engine.echoMultiplier))")
-                        row("Spark speed", "×\(fmt(engine.sparkGain))")
-                        row("Flywheel", "+\(fmt(engine.state.flywheel * 100))%")
-                        row("Collapses", "\(engine.state.collapses)")
+                        row("Promotions", "\(engine.state.promotions)")
                         row("Time played", fmtTime(engine.state.playTime), last: true)
                     }
                     .padding(.vertical, 4)
                 }
 
-                SectionHeader(title: "Chain", subtitle: "Estimated steady-state cycle times.")
+                SectionHeader(title: "Generators")
 
                 Panel {
                     VStack(spacing: 0) {
-                        ForEach(0..<LoopConfig.count, id: \.self) { i in
-                            if engine.state.loops[i].unlocked {
+                        ForEach(0..<Gen.count, id: \.self) { i in
+                            if engine.state.owned[i] > 0 || engine.state.unlocked(i) {
                                 HStack(spacing: 9) {
+                                    Circle().fill(Gen.color(i)).frame(width: 8, height: 8)
                                     Text(romanNumerals[i])
-                                        .font(.system(size: 10, weight: .black, design: .serif))
-                                        .foregroundStyle(Palette.tier(i))
-                                        .frame(width: 24)
-                                    Text(LoopConfig.all[i].name)
-                                        .font(.system(size: 12, weight: .semibold))
+                                        .font(.system(size: 11, weight: .black, design: .serif))
                                         .foregroundStyle(Palette.text)
-                                    Spacer()
-                                    Text(fmtTime(engine.cycleSeconds(i)))
+                                        .frame(width: 30, alignment: .leading)
+                                    Text("×\(fmt(engine.state.owned[i]))")
                                         .font(.mono(11, .bold)).foregroundStyle(Palette.dim)
-                                    Text(fmt(engine.state.loops[i].completions))
-                                        .font(.mono(11, .bold))
-                                        .foregroundStyle(Palette.tier(i))
-                                        .frame(width: 58, alignment: .trailing)
+                                    Spacer()
+                                    Text("\(fmt(engine.lapsPerSecond(i)))/s")
+                                        .font(.mono(11, .bold)).foregroundStyle(Gen.color(i))
                                 }
-                                .padding(.horizontal, 13).padding(.vertical, 9)
+                                .padding(.horizontal, 13).padding(.vertical, 8)
                             }
                         }
                     }
@@ -65,13 +59,13 @@ struct StatsView: View {
                 .padding(.top, 8)
             }
             .padding(.horizontal, 14)
-            .padding(.bottom, 28)
+            .padding(.bottom, 24)
         }
         .alert("Erase everything?", isPresented: $confirmingReset) {
             Button("Erase", role: .destructive) { engine.hardReset() }
             Button("Cancel", role: .cancel) {}
         } message: {
-            Text("This wipes Echoes and the Array too. There is no undo.")
+            Text("This wipes Cores and perks too. There is no undo.")
         }
     }
 

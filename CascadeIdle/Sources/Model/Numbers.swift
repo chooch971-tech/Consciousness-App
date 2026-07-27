@@ -51,4 +51,4 @@ func fmtTime(_ seconds: Double) -> String {
     return fmt(seconds / (86_400 * 365)) + "y"
 }
 
-let romanNumerals = ["I", "II", "III", "IV", "V", "VI", "VII", "VIII"]
+let romanNumerals = ["I", "II", "III", "IV", "V", "VI", "VII", "VIII", "IX", "X"]
