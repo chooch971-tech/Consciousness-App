@@ -769,7 +769,8 @@ function renderPathQuests() {
   var _pathCycleLabel = pathView === 'progress' ? 'Progress' : (_twoOn ? '2× / day' : '1× / day');
   var _pathCycleNext = pathView === 'progress' ? '1× / day' : (_twoOn ? 'Progress' : '2× / day');
   html += '<div>';
-  html += '<div style="display:flex;align-items:center;justify-content:flex-end;margin:0 2px 6px;">'
+  html += '<div style="display:flex;align-items:center;justify-content:space-between;margin:0 2px 6px;">'
+    + '<span style="font-size:8px;letter-spacing:.26em;text-transform:uppercase;color:var(--text);">' + (pathView === 'progress' ? 'Exercise Progress' : 'Exercises') + '</span>'
     + '<div style="display:flex;align-items:center;gap:9px;">'
     + (pathView === 'exercises' && _canAdd ? '<button id="pqAddExBtn" class="pq-add-ex-btn" title="Add an exercise to your path">+</button>' : '')
     + '<button id="pqPathCycleBtn" class="guide-cadence-toggle' + (pathView === 'exercises' && !_twoOn ? ' off' : '') + '" aria-label="' + _pathCycleLabel + '. Click for ' + _pathCycleNext + '.">' + _pathCycleLabel + '</button>'
@@ -1330,10 +1331,17 @@ function renderPathQuests() {
     closeAddMenu();
     function doAdd() {
       if (!Array.isArray(guideState._pathAdded)) guideState._pathAdded = [];
+      var sensoryIds = { visual:1, auditory:1, sense:1, feeling:1, smell:1, taste:1, multisense:1 };
+      if (sensoryIds[exId]) {
+        // Only the current sensory stage may be manually present. Remove a
+        // stale prior-stage addition when the player advances the curriculum.
+        guideState._pathAdded = guideState._pathAdded.filter(function(id) { return !sensoryIds[id]; });
+      }
       if (guideState._pathAdded.indexOf(exId) === -1) guideState._pathAdded.push(exId);
       // Clear any active postpone/removal so the freshly-added exercise shows right away.
       if (guideState.postponed && guideState.postponed[exId]) delete guideState.postponed[exId];
       if (guideState.removed && guideState.removed[exId]) delete guideState.removed[exId];
+      if (guideState.removed && (exId === 'feeling' || exId === 'smell' || exId === 'taste')) delete guideState.removed.sense;
       saveGuideState(guideState);
       // Push immediately so a reload doesn't pull an older cloud snapshot that
       // lacks this change and overwrite _pathAdded.

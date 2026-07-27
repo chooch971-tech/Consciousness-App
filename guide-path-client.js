@@ -2293,17 +2293,26 @@ function guideMergeAddedItems(items) {
   var added = (guideState && Array.isArray(guideState._pathAdded)) ? guideState._pathAdded : [];
   if (!added.length) return items;
   var rounds = guideTwoADayEnabled() ? 2 : 1;
+  var sensoryItem = guideSensoryTrackItem(rounds);
+  var sensoryAddId = sensoryItem.id === 'sense' ? sensoryItem.mode : sensoryItem.id;
   var present = {};
   items.forEach(function(it) { present[it.id] = true; });
   var postponed = guideState.postponed || {};
   var removed = guideState.removed || {};
   var now = Date.now();
   added.forEach(function(exId) {
-    // The sensory curriculum owns these cards. Keeping a legacy/manual future
-    // sense beside the active stage would train two faculties at once.
+    // The sensory curriculum owns these cards, but the player may manually
+    // pull the CURRENT stage onto the Path before Omnia's normal gate opens.
+    // Future or already-mastered faculties remain suppressed so the sequence
+    // can never produce two sensory-concentration cards at once.
     if (exId === 'visual' || exId === 'auditory' || exId === 'sense'
         || exId === 'feeling' || exId === 'smell' || exId === 'taste'
-        || exId === 'multisense') return;
+        || exId === 'multisense') {
+      if (exId !== sensoryAddId || present[sensoryItem.id]) return;
+      items.push(Object.assign({}, sensoryItem, { added:true }));
+      present[sensoryItem.id] = true;
+      return;
+    }
     if (present[exId]) return;
     if (removed[exId]) return;
     var until = postponed[exId];
@@ -2334,8 +2343,16 @@ function guidePathAddableExercises() {
     if (mode === activeMode) return; // already covered by the 'thought' item
     addable.push({ id: mode });
   });
-  // Offer sense sub-modes that aren't already on the path, skipping only the
-  // one mode today's rotating gate already covers (if the gate landed on Senses).
+  // Offer exactly the CURRENT sensory-curriculum stage when Omnia's normal
+  // gate has not placed it on today's Path yet. This lets a player practice
+  // the faculty they are already on without exposing future stages.
+  var sensoryItem = guideSensoryTrackItem(guideTwoADayEnabled() ? 2 : 1);
+  var sensoryAddId = sensoryItem.id === 'sense' ? sensoryItem.mode : sensoryItem.id;
+  var sensoryAlreadyPresent = items.some(function(item) { return !!item.sensoryTrack; });
+  if (!sensoryAlreadyPresent && sensoryAddId
+      && !addable.some(function(ex) { return ex.id === sensoryAddId; })) {
+    addable.push({ id:sensoryAddId });
+  }
   // Pore Breathing — addable any time it isn't already on the path.
   if (!present['pore']) addable.push({ id: 'pore' });
   return addable;

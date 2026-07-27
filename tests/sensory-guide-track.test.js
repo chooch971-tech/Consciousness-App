@@ -96,6 +96,40 @@ test('sensory practice sessions progress through 10–20 minutes while mastery r
   assert.equal(establishedItem.done, false);
 });
 
+test('the active sensory stage can be manually added before Omnia gates it', () => {
+  const start = guideSource.indexOf('function guideMergeAddedItems');
+  const end = guideSource.indexOf('function guideApplyTutorialPathChoice');
+  const context = {
+    guideState:{ _pathAdded:['feeling'] },
+    guideTwoADayEnabled:() => false,
+    guideSensoryTrackItem:() => ({
+      id:'sense',
+      name:'Senses',
+      mode:'feeling',
+      sensoryTrack:true,
+      duration:10,
+      open:'sense'
+    }),
+    guideBuildAddedItem:() => null,
+    buildGuideRegimentItems:() => [],
+    GUIDE_EXERCISES:[],
+    GUIDE_FOUNDATION_THOUGHT_ORDER:[],
+    guideCurrentThoughtMode:() => 'observation',
+    guideThoughtStats:() => ({})
+  };
+  vm.runInNewContext(guideSource.slice(start, end), context, { filename:'guide-manual-sensory.js' });
+
+  const merged = context.guideMergeAddedItems([]);
+  assert.equal(merged.length, 1);
+  assert.equal(merged[0].mode, 'feeling');
+  assert.equal(merged[0].sensoryTrack, true);
+  assert.equal(merged[0].added, true);
+
+  context.guideState._pathAdded = [];
+  const addable = context.guidePathAddableExercises();
+  assert.equal(addable.some(ex => ex.id === 'feeling'), true);
+});
+
 test('exercise records and Path cards expose the evidence and curriculum indicators', () => {
   assert.match(visualSource, /cleanSeconds:\s*bestCleanSec/);
   assert.match(visualSource, /eyesMode:\s*visOpenEyesMode\s*\?\s*'open'\s*:\s*'closed'/);
@@ -111,10 +145,15 @@ test('exercise records and Path cards expose the evidence and curriculum indicat
   assert.match(guideSource, /id:'visual', name:'Visualization'/);
   assert.match(guideSource, /id:'auditory', name:'Auditory'/);
   assert.match(guideSource, /id:'sense', name:'Senses'/);
+  assert.match(guideSource, /player may manually[\s\S]*CURRENT stage/);
+  assert.match(guideSource, /sensoryAddId = sensoryItem\.id === 'sense' \? sensoryItem\.mode : sensoryItem\.id/);
+  assert.match(guideSource, /items\.push\(Object\.assign\(\{\}, sensoryItem, \{ added:true \}\)\)/);
   assert.match(questSource, /class="pq-progress-view"/);
   assert.match(questSource, /pqPathCycleBtn/);
   assert.match(questSource, /1× \/ day → 2× \/ day → Progress/);
   assert.doesNotMatch(questSource, /data-pq-view=/);
+  assert.match(questSource, /'Exercise Progress' : 'Exercises'/);
+  assert.match(questSource, /guideState\._pathAdded = guideState\._pathAdded\.filter/);
   assert.match(questSource, /role="progressbar"/);
   assert.doesNotMatch(questSource, /sensory-goal-bar/);
   assert.doesNotMatch(questSource, /item\.trackNext/);
