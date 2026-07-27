@@ -39,6 +39,15 @@ struct Backdrop: View {
     }
 }
 
+/// Scalar sine behind a real function call. Some Xcode toolchains will
+/// auto-vectorize a bare `sin()` inside a loop into a batched libm symbol
+/// (surfaces at link time as "undefined symbol: __msin") that isn't always
+/// present to link against. `@inline(never)` keeps this call scalar.
+@inline(never)
+private func twinklePhase(_ x: Double) -> Double {
+    0.25 + 0.35 * (0.5 + 0.5 * sin(x))
+}
+
 private struct StarField: View {
     private let stars: [(CGPoint, CGFloat, Double)] = {
         var seed: UInt64 = 0x5EED_CA5C
@@ -56,7 +65,7 @@ private struct StarField: View {
             Canvas { ctx, size in
                 let t = timeline.date.timeIntervalSinceReferenceDate
                 for (p, r, phase) in stars {
-                    let twinkle = 0.25 + 0.35 * (0.5 + 0.5 * sin(t * 0.7 + phase))
+                    let twinkle = twinklePhase(t * 0.7 + phase)
                     let rect = CGRect(x: p.x * size.width - r, y: p.y * size.height - r,
                                       width: r * 2, height: r * 2)
                     ctx.fill(Path(ellipseIn: rect), with: .color(.white.opacity(twinkle)))
