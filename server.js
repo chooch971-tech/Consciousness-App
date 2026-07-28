@@ -651,6 +651,26 @@ function clampText(value, max) {
   return cut.replace(/[\s,;:—-]+$/, '') + '…';
 }
 
+// Some models ignore the requested word count and write several sentences
+// past it. A raw character clamp then lands mid-sentence ("You're making…"),
+// which reads as broken rather than trimmed. Keep only whole sentences that
+// fit within max, so a long completion is shortened cleanly instead of cut
+// off mid-thought. Falls back to the word-boundary clampText only for the
+// rare single run-on sentence that alone exceeds max.
+function clampToSentences(value, max) {
+  const s = String(value === null || value === undefined ? '' : value).replace(/\s+/g, ' ').trim();
+  if (s.length <= max) return s;
+  const sentences = s.match(/[^.!?]+[.!?]?/g) || [s];
+  let out = '';
+  for (let i = 0; i < sentences.length; i++) {
+    const next = out + sentences[i];
+    if (next.trim().length > max) break;
+    out = next;
+  }
+  out = out.trim();
+  return out || clampText(s, max);
+}
+
 function compactContext(value, depth = 0) {
   if (depth > 4) return null;
   if (Array.isArray(value)) return value.slice(0, 16).map(item => compactContext(item, depth + 1));
@@ -751,9 +771,10 @@ async function generateAiMessage(feature, context) {
   }
 
   const text = (data.choices && data.choices[0] && data.choices[0].message && data.choices[0].message.content) || '';
-  // 60-word reflections can run ~400 chars; clamp generously and on a word
-  // boundary so the message is never sliced mid-word.
-  let message = clampText(text.trim(), 600);
+  // 60-word reflections can run ~400 chars; clamp generously and on a
+  // sentence boundary so an over-length completion is shortened cleanly
+  // instead of cut off mid-thought.
+  let message = clampToSentences(text.trim(), 600);
   if (feature === 'omnia_report') message = enforceOmniaReportPolicy(message, context || {});
   if (!message) {
     const err = new Error('OpenAI returned an empty message');
