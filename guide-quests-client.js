@@ -1034,7 +1034,6 @@ function renderPathQuests() {
   var activeExId = null;
   var activeExMode = null;
   var activeEyesMode = null;
-  var activeSensoryTrack = false;
   var menu = document.getElementById('pqSkipMenu');
   var advItem = document.getElementById('pqSkipAdvanced');
   var advOverlay = document.getElementById('pqAdvancedOverlay');
@@ -1056,7 +1055,6 @@ function renderPathQuests() {
     activeExId = btn.dataset.exId;
     activeExMode = btn.dataset.exMode || null;
     activeEyesMode = btn.dataset.exEyes || guidePathEyesMode(activeExId, 'closed');
-    activeSensoryTrack = btn.dataset.sensoryTrack === '1';
     var isPore = activeExId === 'pore';
     if (advItem) {
       if (isPore) {
@@ -1095,7 +1093,7 @@ function renderPathQuests() {
       eyesOpenBtn.classList.toggle('active', showEyes && activeEyesMode === 'open');
     }
     var removeBtn = document.getElementById('pqSkipRemove');
-    if (removeBtn) removeBtn.style.display = activeSensoryTrack ? 'none' : '';
+    if (removeBtn) removeBtn.style.display = '';
     var r = btn.getBoundingClientRect();
     menu.style.top = (r.bottom + 4) + 'px';
     menu.style.right = (window.innerWidth - r.right) + 'px';

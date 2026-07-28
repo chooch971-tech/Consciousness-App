@@ -1959,7 +1959,7 @@ function buildFoundationalGuideItems() {
   var removed = guideState.removed || {};
   var now = Date.now();
   return items.filter(function(item) {
-    if (removed[item.id] && !item.sensoryTrack) return false;   // the active curriculum stage stays visible
+    if (removed[item.id]) return false;   // removing a curriculum stage hides it same as any other item
     if (item.sensoryTrack) return true;
     var until = postponed[item.id];
     return !until || now >= until;
@@ -2134,7 +2134,7 @@ function buildGuideRegimentItems(mode) {
   var removed = guideState.removed || {};
   var now = Date.now();
   return guideAttachSessionDone(items.filter(function(item) {
-    if (removed[item.id] && !item.sensoryTrack) return false;
+    if (removed[item.id]) return false;   // removing a curriculum stage hides it same as any other item
     if (item.sensoryTrack) return true;
     var until = postponed[item.id];
     return !until || now >= until;
