@@ -295,6 +295,15 @@ function practiceTreeTierContribution(bestSec, thresholds) {
   return reached / thresholds.length;
 }
 
+function practiceTreeDisplayBrightness(exId, brightness) {
+  var max = exId === 'clock' ? 15 : 20;
+  return Math.min(20, Math.max(0, (brightness || 0) / max * 20));
+}
+
+function practiceTreeNodeStats(exId, stats) {
+  return exId === 'kether' ? {} : (stats[exId] || {});
+}
+
 function visualizationStarBrightness() {
   if (typeof guideSensoryTrackProgress !== 'function') return 0;
   var visualStages = guideSensoryTrackProgress().stages.filter(function(stage) {
@@ -493,19 +502,20 @@ function renderPracticeTree() {
 
   function nodeCircles(n) {
     var b = bMap[n.id];
+    var displayB = practiceTreeDisplayBrightness(n.ex, b);
     var rec = practiceTreeNodeRecency(n.ex, stats);
     var dep = practiceTreeNodeDepth(n.ex, stats);
     // Increased minimum sizes/opacities so all nodes are visible even at brightness 0
-    var starR = Math.max(3.5, 3 + b * 0.55);
+    var starR = Math.max(3.5, 3 + displayB * 0.55);
     var auraR = (starR * (1.3 + rec * 0.5)).toFixed(1);
     var coronaR = (starR * 4.2).toFixed(1);
     var coreR = Math.max(1.5, starR * 0.38).toFixed(1);
-    var coronaOp = Math.min(0.14, 0.04 + b * 0.005).toFixed(3);
+    var coronaOp = Math.min(0.14, 0.04 + displayB * 0.005).toFixed(3);
     var auraOp = (0.07 + rec * 0.1).toFixed(3);
-    var starOp = Math.min(0.97, 0.32 + b * 0.04).toFixed(3);
-    var coreOp = b > 4 ? '1' : b > 1 ? '0.6' : '0.25';
+    var starOp = Math.min(0.97, 0.32 + displayB * 0.04).toFixed(3);
+    var coreOp = displayB > 4 ? '1' : displayB > 1 ? '0.6' : '0.25';
     var labelY = (n.cy - starR - 5).toFixed(1);
-    var labelOp = b > 5 ? '1' : b > 2 ? '0.9' : '0.78';
+    var labelOp = displayB > 5 ? '1' : displayB > 2 ? '0.9' : '0.78';
 
     var rings = '';
     for (var r = 1; r <= dep; r++) {
@@ -702,10 +712,7 @@ function renderPracticeTree() {
       var isPore = (node.ex === 'pore');
       var isMirror = (node.ex === 'soulmirror');
       var poreBreaths = isPore ? ((typeof concState !== 'undefined' && concState.lifetimeBreaths) ? concState.lifetimeBreaths : 0) : 0;
-      var lookupId = isPore ? null
-        : (node.ex === 'observation' || node.ex === 'focus' || node.ex === 'vacancy') ? 'thought'
-        : node.ex === 'kether' ? null : node.ex;
-      var st = lookupId ? (stats[lookupId] || {}) : {};
+      var st = practiceTreeNodeStats(node.ex, stats);
       var sessions = st.count || 0;
       var bestSec = st.bestSec || 0;
       var recencyStr = rec >= 0.99 ? 'this week'
@@ -1637,7 +1644,7 @@ function guideHistoryExerciseId(h) {
   if (!h) return 'clock';
   if (h.exercise === 'asana') return 'asana';
   if (h.exercise === 'sense') return 'sense';
-  if (h.exercise === 'pore_breathing') return 'soulmirror';
+  if (h.exercise === 'pore_breathing') return 'pore';
   if (h.exercise === 'autosuggestion') return 'soulmirror';
   if (h.type === 'visualization') return 'visual';
   if (h.type === 'all-angles' || h.type === 'multi-sense') return 'visual';
@@ -1649,9 +1656,15 @@ function guideHistoryExerciseId(h) {
 function guideExerciseStats() {
   var stats = {};
   var recentCutoff = Date.now() - 14 * 86400000;
+  function emptyStats() {
+    return { count:0, bestSec:0, preTodayBestSec:0, totalSec:0, todaySec:0, todayCount:0, lastMs:0, recentCount:0, recentSec:0 };
+  }
   GUIDE_EXERCISES.forEach(function(ex) {
-    stats[ex.id] = { count:0, bestSec:0, preTodayBestSec:0, totalSec:0, todaySec:0, todayCount:0, lastMs:0, recentCount:0, recentSec:0 };
+    stats[ex.id] = emptyStats();
   });
+  // Pore Breathing has its own Star and path card, but intentionally does not
+  // add another self-assessment row beside Soul Mirror.
+  stats.pore = emptyStats();
   var history = (typeof concState !== 'undefined' && concState.history) ? concState.history : [];
   history.forEach(function(h) {
     var id = guideHistoryExerciseId(h);

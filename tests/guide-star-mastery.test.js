@@ -49,6 +49,8 @@ test('Clock contributes progressively to Fundamentals Mastery at 5, 10, and 15 m
   const context = loadBrightness();
   const stats = emptyStats();
 
+  assert.equal(context.practiceTreeDisplayBrightness('clock', 15), 20);
+  assert.equal(context.practiceTreeDisplayBrightness('visual', 20), 20);
   stats.clock.bestSec = 299;
   assert.equal(context.practiceTreeNodeBrightness('kether', stats), 0);
   stats.clock.bestSec = 300;
@@ -159,4 +161,19 @@ test('all ten completed branches fully light Fundamentals Mastery', () => {
   stats.asana.bestSec = 1800;
 
   assert.equal(context.practiceTreeNodeBrightness('kether', stats), 20);
+});
+
+test('Thought detail sheets read the selected discipline instead of aggregate Thought stats', () => {
+  const context = loadBrightness();
+  const stats = {
+    thought:{ count:12, bestSec:900 },
+    observation:{ count:3, bestSec:600 },
+    focus:{ count:4, bestSec:750 },
+    vacancy:{ count:5, bestSec:840 }
+  };
+
+  assert.equal(context.practiceTreeNodeStats('observation', stats).count, 3);
+  assert.equal(context.practiceTreeNodeStats('focus', stats).bestSec, 750);
+  assert.equal(context.practiceTreeNodeStats('vacancy', stats).count, 5);
+  assert.equal(Object.keys(context.practiceTreeNodeStats('kether', stats)).length, 0);
 });

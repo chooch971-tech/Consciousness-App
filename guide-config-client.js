@@ -104,5 +104,5 @@ var GUIDE_EXERCISES = [
   { id:'sense',      name:'Senses',          sub:'Imagined feeling, smell, or taste',    opts:['New to me','5 min','10 min','15+ min'] },
   { id:'thought',    name:'Thought Control', sub:'Observation, Focus, or Vacancy',       opts:['New to me','5 min','10 min','15+ min'] },
   { id:'asana',      name:'Asana',           sub:'Motionless seated posture',            opts:['New to me','5 min','10 min','15+ min'] },
-  { id:'soulmirror', name:'Soul Mirror',     sub:'Trait tracking & pore breathing',      opts:['New to me','Familiar'] }
+  { id:'soulmirror', name:'Soul Mirror',     sub:'Trait inventory and transformation',   opts:['New to me','Familiar'] }
 ];
