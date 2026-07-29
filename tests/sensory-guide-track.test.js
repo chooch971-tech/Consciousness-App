@@ -163,3 +163,29 @@ test('exercise records and Path cards expose the evidence and curriculum indicat
   assert.match(reportsSource, /next_after_foundations:'multi_sense'/);
   assert.match(reportsSource, /later_stage:'elemental_work'/);
 });
+
+test('lengthening a sensory practice session requires attempts that were real sits', () => {
+  function attempt(date, seconds) {
+    return {
+      type:'visualization', eyesMode:'closed', date,
+      seconds, sessionDurationSec:seconds, cleanSeconds:30, halts:4
+    };
+  }
+  // Thirty one-minute attempts is what a struggling practitioner produces. It
+  // must not push the recommended session all the way to twenty minutes.
+  const struggling = loadTrack(Array.from({ length:30 }, (_, i) =>
+    attempt('2026-07-' + String(i + 1).padStart(2, '0') + 'T10:00:00.000Z', 60)));
+  const strugglingStage = struggling.guideSensoryTrackProgress().stages[0];
+  assert.equal(strugglingStage.attempts, 30);
+  assert.equal(struggling.guideSensoryPracticeMinutes(strugglingStage), 10);
+
+  // Three attempts that each ran at least half the ten-minute range still earn
+  // the longer session, so an imperfect practitioner is never stuck at 10.
+  const solid = loadTrack(Array.from({ length:3 }, (_, i) =>
+    attempt('2026-07-0' + (i + 1) + 'T10:00:00.000Z', 300)));
+  assert.equal(solid.guideSensoryPracticeMinutes(solid.guideSensoryTrackProgress().stages[0]), 15);
+
+  // A single completed ten-minute sit is enough on its own.
+  const oneLong = loadTrack([attempt('2026-07-01T10:00:00.000Z', 600)]);
+  assert.equal(oneLong.guideSensoryPracticeMinutes(oneLong.guideSensoryTrackProgress().stages[0]), 15);
+});

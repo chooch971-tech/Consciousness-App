@@ -94,6 +94,67 @@ test('Auditory opens at ten minutes and advances through 15 to 20 on seven quali
   assert.equal(long.atCap, true);
 });
 
+// The Thought Control ladder needs the stats collector plus the ladder itself.
+function loadThought(history) {
+  const start = guideSource.indexOf('function guideThoughtStats');
+  const end = guideSource.indexOf('function guideSenseStats');
+  const context = {
+    concState:{ history:history || [] },
+    guideState:{},
+    GUIDE_FOUNDATION_THOUGHT_ORDER:['observation', 'focus', 'vacancy'],
+    guideIsToday:() => false,
+    guideClamp:(value, min, max) => Math.max(min, Math.min(max, value)),
+    guideHistorySeconds:entry => Math.max(0, parseInt(entry && entry.seconds, 10) || 0),
+    guideThoughtDuration:entry => Math.max(0, parseInt(entry && entry.durationSec, 10) || 0),
+    guideFloorMin:() => 0,
+    guideAutoAdvanceOn:() => true,
+    guideAdvanceSetAt:() => 0,
+    guideAdvancedTarget:(_id, minutes) => minutes
+  };
+  vm.runInNewContext(guideSource.slice(start, end), context, { filename:'guide-thought-ladder.js' });
+  return context;
+}
+
+function thoughtSits(count, seconds) {
+  const out = [];
+  for (let i = 0; i < count; i++) {
+    out.push({
+      type:'thought', tcMode:'observation', durationSec:seconds, seconds:seconds,
+      date:new Date(Date.UTC(2026, 0, 1) + i * DAY).toISOString()
+    });
+  }
+  return out;
+}
+
+test('Thought Control will not raise its target off sessions that never reach the rung', () => {
+  // A hundred thirty-second sits used to earn a fifteen-minute recommendation,
+  // because the ladder counted sessions without asking how long they ran.
+  const tiny = loadThought(thoughtSits(100, 30));
+  assert.equal(tiny.guideThoughtTargetMinutes('observation', tiny.guideThoughtStats()), 5);
+
+  // Two genuine ten-minute sits clear every rung below ten at once.
+  const real = loadThought(thoughtSits(2, 600));
+  assert.equal(real.guideThoughtTargetMinutes('observation', real.guideThoughtStats()), 10);
+});
+
+test('Thought Control keeps its original pacing for a practitioner who sits the recommendation', () => {
+  // 2 qualifying sessions per minute up to 10, then 6 per minute up to 15 —
+  // the same forty sessions the count-based ladder took.
+  const history = [];
+  let sessions = 0;
+  let target = 5;
+  while (sessions < 200) {
+    const context = loadThought(history);
+    target = context.guideThoughtTargetMinutes('observation', context.guideThoughtStats());
+    if (target >= 15) break;
+    history.push(thoughtSits(1, target * 60)[0]);
+    history[history.length - 1].date = new Date(Date.UTC(2026, 0, 1) + sessions * DAY).toISOString();
+    sessions++;
+  }
+  assert.equal(target, 15);
+  assert.equal(sessions, 40);
+});
+
 test('an advanced floor sets the starting rung and only later sessions climb past it', () => {
   const setAt = Date.UTC(2026, 5, 1);
   const guideState = {

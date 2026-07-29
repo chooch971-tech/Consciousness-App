@@ -93,6 +93,7 @@ function guideSensoryTrackProgress() {
   var history = (typeof concState !== 'undefined' && Array.isArray(concState.history)) ? concState.history : [];
   var stages = GUIDE_SENSORY_STAGES.map(function(def, index) {
     var bestCleanSec = 0, bestPracticeSec = 0, attempts = 0, halts = 0, qualifyingDates = [];
+    var practiceSecs = [];
     history.forEach(function(entry) {
       if (!guideSensoryStageMatches(def, entry)) return;
       attempts++;
@@ -101,6 +102,9 @@ function guideSensoryTrackProgress() {
       var practice = guideSensoryEntryPracticeSec(entry);
       if (clean > bestCleanSec) bestCleanSec = clean;
       if (practice > bestPracticeSec) bestPracticeSec = practice;
+      // Kept per attempt so lengthening the session can require attempts that
+      // were themselves real sits — see guideSensoryPracticeMinutes.
+      practiceSecs.push(practice);
       if (clean >= GUIDE_SENSORY_CLEAN_GOAL_SEC && entry.date) {
         qualifyingDates.push(entry.date);
       }
@@ -110,6 +114,7 @@ function guideSensoryTrackProgress() {
       bestCleanSec:bestCleanSec,
       bestPracticeSec:bestPracticeSec,
       attempts:attempts,
+      practiceSecs:practiceSecs,
       halts:halts,
       mastered:false,
       masteredAt:'',
@@ -169,14 +174,26 @@ function guideMultiSenseSessionsToday() {
   }).length;
 }
 
+// How many attempts at this stage ran at least the given number of seconds.
+function guideSensorySolidAttempts(stage, sec) {
+  var list = (stage && stage.practiceSecs) || [];
+  var n = 0;
+  for (var i = 0; i < list.length; i++) if (list[i] >= sec) n++;
+  return n;
+}
+
 function guideSensoryPracticeMinutes(stage) {
   // Lengthen the training sit independently of the clean-hold mastery gate.
   // A completed 10-minute sit moves the next recommendation to 15; a
-  // completed 15-minute sit moves it to 20. Repeated shorter attempts also
-  // progress the range so an imperfect practitioner is never stuck at 10.
+  // completed 15-minute sit moves it to 20. Repeated attempts also progress
+  // the range so an imperfect practitioner is never stuck at 10 — but each one
+  // has to be a real sit (at least half the current range) to count. Counting
+  // every attempt regardless of length meant a run of one-minute failures,
+  // exactly what a struggling practitioner produces, pushed the session
+  // recommendation up to twenty minutes precisely when it should hold steady.
   var minutes = GUIDE_SENSORY_PRACTICE_MIN;
-  if (stage.bestPracticeSec >= 600 || stage.attempts >= 3) minutes = 15;
-  if (stage.bestPracticeSec >= 900 || stage.attempts >= 10) minutes = GUIDE_SENSORY_PRACTICE_MAX;
+  if (stage.bestPracticeSec >= 600 || guideSensorySolidAttempts(stage, 300) >= 3) minutes = 15;
+  if (stage.bestPracticeSec >= 900 || guideSensorySolidAttempts(stage, 450) >= 10) minutes = GUIDE_SENSORY_PRACTICE_MAX;
   var preferenceId = stage.exercise === 'sense' ? stage.mode : stage.exercise;
   minutes = guideAdvancedTarget(preferenceId, minutes);
   return guideClamp(minutes, GUIDE_SENSORY_PRACTICE_MIN, GUIDE_FLOOR_CAP);
@@ -1260,14 +1277,17 @@ function guideAuditoryStats() {
 
 function guideThoughtStats() {
   var out = {};
+  function blank() {
+    return { count:0, totalSec:0, bestSec:0, todaySec:0, todayCount:0, lastMs:0, sessions:[] };
+  }
   GUIDE_FOUNDATION_THOUGHT_ORDER.forEach(function(mode) {
-    out[mode] = { count:0, totalSec:0, bestSec:0, todaySec:0, todayCount:0, lastMs:0 };
+    out[mode] = blank();
   });
   var history = (typeof concState !== 'undefined' && concState.history) ? concState.history : [];
   history.forEach(function(h) {
     if (!h || h.type !== 'thought') return;
     var mode = h.tcMode || 'observation';
-    if (!out[mode]) out[mode] = { count:0, totalSec:0, bestSec:0, todaySec:0, todayCount:0, lastMs:0 };
+    if (!out[mode]) out[mode] = blank();
     var dur = guideThoughtDuration(h);
     var best = guideHistorySeconds(h);
     var ms = h.date ? new Date(h.date).getTime() : 0;
@@ -1275,6 +1295,9 @@ function guideThoughtStats() {
     out[mode].totalSec += dur;
     if (best > out[mode].bestSec) out[mode].bestSec = best;
     if (ms > out[mode].lastMs) out[mode].lastMs = ms;
+    // Kept per session so the duration ladder can ask how many sits actually
+    // reached a given length, rather than trusting a bare session count.
+    out[mode].sessions.push({ sec:dur, ms:ms });
     if (guideIsToday(h.date)) {
       out[mode].todayCount++;
       out[mode].todaySec += dur;
@@ -1317,18 +1340,52 @@ function guideCurrentThoughtMode(thoughtStats) {
   return guideLeastRecentThoughtMode(thoughtStats);
 }
 
+// Thought Control climbs 5→10 at one minute per 2 qualifying sessions, then
+// 10→15 at one minute per 6 — the same pacing as before. What changed is what
+// "qualifying" means: a session now has to actually reach the rung's length.
+// Counting bare sessions let a run of thirty-second sits earn a fifteen-minute
+// recommendation, which no other discipline allowed. Qualifying sessions are
+// counted across the whole history, so one long sit counts at every rung it
+// clears, exactly as Clock, Asana, and Auditory do.
+var GUIDE_THOUGHT_MIN_RUNG = 5;
+var GUIDE_THOUGHT_MAX_RUNG = 15;
+function guideThoughtRungRequired(rung) {
+  return rung < 10 ? 2 : 6;
+}
+
+// Ladder state for one thought discipline: the recommended minutes plus the
+// progress toward the next rung, so the Path and the Progress view can both
+// describe it without recomputing the rules.
+function guideThoughtLadder(mode, thoughtStats) {
+  var st = (thoughtStats && thoughtStats[mode]) || { sessions:[] };
+  var list = st.sessions || [];
+  var floor = guideFloorMin(mode);
+  // With an advanced floor, only sessions logged after it was set may climb.
+  var setAt = floor > 0 ? guideAdvanceSetAt(mode) : 0;
+  function qualCount(min) {
+    var n = 0;
+    for (var i = 0; i < list.length; i++) {
+      if (setAt && list[i].ms <= setAt) continue;
+      if (list[i].sec + 5 >= min * 60) n++; // 5s grace for tap-timing variance
+    }
+    return n;
+  }
+  var rung = GUIDE_THOUGHT_MIN_RUNG;
+  while (rung < GUIDE_THOUGHT_MAX_RUNG && qualCount(rung) >= guideThoughtRungRequired(rung)) rung++;
+  var required = guideThoughtRungRequired(rung);
+  var atCap = rung >= GUIDE_THOUGHT_MAX_RUNG;
+  return {
+    natural:rung,
+    // Per-mode floor: Vacancy's override doesn't move Observation or Focus.
+    target:guideAdvancedTarget(mode, rung),
+    qualAtRung:atCap ? required : Math.min(qualCount(rung), required),
+    required:required,
+    atCap:atCap
+  };
+}
+
 function guideThoughtTargetMinutes(mode, thoughtStats) {
-  var st = thoughtStats[mode] || { count:0 };
-  // Climb purely on completed session count for this discipline — including
-  // today's, so steady practice moves the suggestion up right away — with no
-  // all-modes-mastery gate: 5→10 at one minute per 2 sessions, then 10→15 at
-  // one minute per 6 sessions.
-  var c = Math.max(0, st.count || 0);
-  var natural = c < 10
-    ? guideClamp(5 + Math.floor(c / 2), 5, 10)
-    : guideClamp(10 + Math.floor((c - 10) / 6), 10, 15);
-  // Per-mode floor: Vacancy's override doesn't move Observation or Focus.
-  return guideAdvancedTarget(mode, natural);
+  return guideThoughtLadder(mode, thoughtStats).target;
 }
 
 // ── Senses sub-modes: Feeling, Smell, Taste — same distinguishing treatment
@@ -1676,22 +1733,20 @@ function guideProgressOverview() {
 
   var thought = guideThoughtStats();
   var thoughtRows = GUIDE_FOUNDATION_THOUGHT_ORDER.map(function(mode) {
-    var st = thought[mode] || { count:0, bestSec:0 };
-    var target = guideThoughtTargetMinutes(mode, thought);
+    var ladder = guideThoughtLadder(mode, thought);
+    var target = ladder.target;
     var floor = guideFloorMin(mode);
     var detail, pct = 100;
     if (floor) {
       detail = 'Manual ' + floor + '-minute starting point · automatic increases '
         + (guideAutoAdvanceOn(mode) ? 'on.' : 'off.');
-    } else if (target >= 15) {
+    } else if (ladder.atCap) {
       detail = 'The 15-minute recommendation ceiling is reached.';
     } else {
-      var blockSize = st.count < 10 ? 2 : 6;
-      var used = st.count < 10 ? st.count % 2 : (st.count - 10) % 6;
-      var remaining = blockSize - used;
-      detail = remaining + ' more completed session' + (remaining === 1 ? '' : 's')
-        + ' → ' + (target + 1) + ' min';
-      pct = guideProgressPct(used, blockSize);
+      var remaining = Math.max(1, ladder.required - ladder.qualAtRung);
+      detail = remaining + ' more full ' + ladder.natural + '-minute session'
+        + (remaining === 1 ? '' : 's') + ' → ' + (ladder.natural + 1) + ' min';
+      pct = guideProgressPct(ladder.qualAtRung, ladder.required);
     }
     return {
       label:GUIDE_FOUNDATION_THOUGHT_LABELS[mode] || mode,
@@ -1751,13 +1806,13 @@ function guideProgressOverview() {
       status = practiceMin + ' min recommended';
       var increase;
       if (practiceMin < 15) {
-        var toThree = Math.max(1, 3 - stage.attempts);
+        var toThree = Math.max(1, 3 - guideSensorySolidAttempts(stage, 300));
         increase = '15 min after one 10-minute session or ' + toThree + ' more attempt'
-          + (toThree === 1 ? '' : 's') + '.';
+          + (toThree === 1 ? '' : 's') + ' of 5 min or longer.';
       } else if (practiceMin < 20) {
-        var toTen = Math.max(1, 10 - stage.attempts);
+        var toTen = Math.max(1, 10 - guideSensorySolidAttempts(stage, 450));
         increase = '20 min after one 15-minute session or ' + toTen + ' more attempt'
-          + (toTen === 1 ? '' : 's') + '.';
+          + (toTen === 1 ? '' : 's') + ' of 7:30 or longer.';
       } else if (practiceMin === 20) {
         increase = 'At the 20-minute practice range.';
       } else {
