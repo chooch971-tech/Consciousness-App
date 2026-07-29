@@ -1599,6 +1599,70 @@ function guideAdvancedTarget(exId, naturalMin) {
   return Math.max(floor, naturalMin || 0);
 }
 
+// ── Omnia offers the advanced start ───────────────────────────────────────────
+// "I'm Advanced" is the pressure valve for every ladder in here, but it lives
+// behind a card's ··· menu, so the practitioners who most need it are the least
+// likely to find it. When someone's actual sits keep running well past what
+// Omnia asks for, that mismatch is visible in the history — so offer the higher
+// starting point directly on the card instead of waiting to be discovered.
+var GUIDE_ADV_OFFER_SESSIONS = 3;      // consecutive recent sits that must clear
+var GUIDE_ADV_OFFER_MARGIN_SEC = 300;  // the recommendation, by five minutes
+
+// Practiced seconds for one discipline, newest first. Each exercise records
+// duration differently, so route through the same helpers the ladders use.
+function guideRecentSessionSecs(exId, mode, limit) {
+  var history = (typeof concState !== 'undefined' && Array.isArray(concState.history)) ? concState.history : [];
+  var out = [];
+  for (var i = 0; i < history.length && out.length < limit; i++) {
+    var h = history[i];
+    if (!h) continue;
+    if (exId === 'thought' || GUIDE_THOUGHT_MODES[exId]) {
+      if (h.type !== 'thought') continue;
+      if (mode && (h.tcMode || 'observation') !== mode) continue;
+      out.push(guideThoughtDuration(h));
+    } else if (exId === 'sense' || GUIDE_SENSE_MODES[exId]) {
+      if (h.exercise !== 'sense') continue;
+      if (mode && (h.mode || 'feeling') !== mode) continue;
+      out.push(guideSensoryEntryPracticeSec(h));
+    } else if (guideHistoryExerciseId(h) === exId) {
+      out.push(guideSessionSec(h));
+    }
+  }
+  return out;
+}
+
+// Returns { key, minutes, from } when the last few sits all cleared the current
+// recommendation by a clear margin, or null. Never fires for an exercise that
+// already carries a manual floor, and never again once declined.
+function guideAdvancedOffer(exId, mode, currentMin) {
+  if (!exId || !currentMin) return null;
+  if (GUIDE_TIMED_EXERCISES.indexOf(exId) === -1) return null;
+  var key = guideFloorKey(exId, mode);
+  if (guideFloorMin(key)) return null;
+  var dismissed = (guideState && guideState._advOfferDismissed) || {};
+  if (dismissed[key]) return null;
+  var recent = guideRecentSessionSecs(exId, mode, GUIDE_ADV_OFFER_SESSIONS);
+  if (recent.length < GUIDE_ADV_OFFER_SESSIONS) return null;
+  var threshold = currentMin * 60 + GUIDE_ADV_OFFER_MARGIN_SEC;
+  var lowest = Infinity;
+  for (var j = 0; j < recent.length; j++) {
+    if (recent[j] < threshold) return null;   // one short sit and the run is broken
+    if (recent[j] < lowest) lowest = recent[j];
+  }
+  // Offer the largest whole five minutes every one of those sits actually held,
+  // so the suggestion is something they have already demonstrated.
+  var suggest = guideClamp(Math.floor(lowest / 300) * 5, currentMin + 5, GUIDE_FLOOR_CAP);
+  return suggest > currentMin ? { key:key, minutes:suggest, from:currentMin } : null;
+}
+
+function guideDismissAdvancedOffer(key) {
+  if (!guideState._advOfferDismissed || typeof guideState._advOfferDismissed !== 'object') {
+    guideState._advOfferDismissed = {};
+  }
+  guideState._advOfferDismissed[key] = true;
+  saveGuideState(guideState);
+}
+
 // Current recommended minutes for an exercise (already folds in any override).
 // Used to seed the "I'm Advanced" dialog with a sensible default.
 function guideRecommendedMinutes(exId) {

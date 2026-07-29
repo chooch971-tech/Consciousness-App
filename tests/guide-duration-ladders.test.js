@@ -174,3 +174,69 @@ test('an advanced floor sets the starting rung and only later sessions climb pas
   assert.equal(locked.qualTarget, 30);
   assert.equal(locked.locked, true);
 });
+
+// Omnia's proactive "I'm Advanced" offer.
+function loadOffer(history, guideState) {
+  const start = guideSource.indexOf('var GUIDE_ADV_OFFER_SESSIONS');
+  const end = guideSource.indexOf('// Current recommended minutes');
+  const context = {
+    concState:{ history:history || [] },
+    guideState:guideState || {},
+    GUIDE_TIMED_EXERCISES:['clock', 'visual', 'auditory', 'thought', 'asana'],
+    GUIDE_THOUGHT_MODES:{ observation:1, focus:1, vacancy:1 },
+    GUIDE_SENSE_MODES:{ feeling:1, smell:1, taste:1 },
+    GUIDE_FLOOR_CAP:120,
+    guideClamp:(value, min, max) => Math.max(min, Math.min(max, value)),
+    guideFloorKey:(exId) => exId,
+    guideFloorMin:id => (context.guideState._advancedFloors || {})[id] || 0,
+    guideHistoryExerciseId:entry => (entry && entry.ex) || 'clock',
+    guideSessionSec:entry => Math.max(0, parseInt(entry && entry.seconds, 10) || 0),
+    guideThoughtDuration:entry => Math.max(0, parseInt(entry && entry.durationSec, 10) || 0),
+    guideSensoryEntryPracticeSec:entry => Math.max(0, parseInt(entry && entry.seconds, 10) || 0),
+    saveGuideState:() => {}
+  };
+  vm.runInNewContext(guideSource.slice(start, end), context, { filename:'guide-advanced-offer.js' });
+  return context;
+}
+
+function clockSits(seconds) {
+  return seconds.map((sec, i) => ({
+    ex:'clock', seconds:sec,
+    date:new Date(Date.UTC(2026, 0, 10) - i * DAY).toISOString()
+  }));
+}
+
+test('Omnia offers a higher starting point only when recent sits consistently clear it', () => {
+  // Three 20-minute sits against a 10-minute recommendation.
+  const ready = loadOffer(clockSits([1200, 1200, 1200]));
+  const offer = ready.guideAdvancedOffer('clock', null, 10);
+  assert.equal(offer.minutes, 20);
+  assert.equal(offer.from, 10);
+
+  // The offer names a length every one of those sits actually held, not the best.
+  const uneven = loadOffer(clockSits([2400, 1200, 1800]));
+  assert.equal(uneven.guideAdvancedOffer('clock', null, 10).minutes, 20);
+
+  // A single short sit breaks the run, so an inconsistent practitioner is not nagged.
+  const broken = loadOffer(clockSits([120, 1200, 1200]));
+  assert.equal(broken.guideAdvancedOffer('clock', null, 10), null);
+
+  // Sitting only slightly over the recommendation is not a mismatch worth raising.
+  const marginal = loadOffer(clockSits([720, 720, 720]));
+  assert.equal(marginal.guideAdvancedOffer('clock', null, 10), null);
+
+  // Too little history to judge.
+  const sparse = loadOffer(clockSits([1200, 1200]));
+  assert.equal(sparse.guideAdvancedOffer('clock', null, 10), null);
+});
+
+test('the advanced offer stays quiet once a floor exists or the practitioner declines', () => {
+  const withFloor = loadOffer(clockSits([1200, 1200, 1200]), { _advancedFloors:{ clock:15 } });
+  assert.equal(withFloor.guideAdvancedOffer('clock', null, 10), null);
+
+  const context = loadOffer(clockSits([1200, 1200, 1200]));
+  assert.notEqual(context.guideAdvancedOffer('clock', null, 10), null);
+  context.guideDismissAdvancedOffer('clock');
+  assert.equal(context.guideState._advOfferDismissed.clock, true);
+  assert.equal(context.guideAdvancedOffer('clock', null, 10), null);
+});

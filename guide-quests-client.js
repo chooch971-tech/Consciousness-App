@@ -847,6 +847,24 @@ function renderPathQuests() {
         + '</div></div>';
     }
 
+    // Omnia noticing that the practitioner keeps sitting past the suggestion,
+    // and offering the higher starting point rather than waiting for them to
+    // find it in the ··· menu. Appended rather than exclusive: Clock occupies
+    // this slot with its own stepper exactly when it reaches its ceiling, which
+    // is when someone outgrowing the ladder most needs the offer.
+    if (!item.done && typeof guideAdvancedOffer === 'function') {
+      var advOffer = guideAdvancedOffer(item.id, item.mode, item.duration);
+      if (advOffer) {
+        var offerBtn = 'padding:5px 12px;border-radius:6px;font-family:\'DM Mono\',monospace;font-size:8px;letter-spacing:.2em;cursor:pointer;';
+        extraHtml += '<div style="margin-top:10px;padding:10px 12px;border-radius:8px;background:' + color + '12;border:1px solid ' + color + '30;display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;">'
+          + '<div style="font-size:9px;color:' + color + ';letter-spacing:.08em;line-height:1.5;">Your last sessions all ran past ' + advOffer.from + ' min. Start at ' + advOffer.minutes + '?</div>'
+          + '<div style="display:flex;gap:8px;">'
+          + '<button class="pq-adv-offer-yes" data-adv-key="' + advOffer.key + '" data-adv-min="' + advOffer.minutes + '" style="' + offerBtn + 'border:1px solid ' + color + '66;background:' + color + '1a;color:' + color + ';">' + advOffer.minutes + ' min</button>'
+          + '<button class="pq-adv-offer-no" data-adv-key="' + advOffer.key + '" style="' + offerBtn + 'border:1px solid rgba(255,255,255,.08);background:none;color:var(--text);">No thanks</button>'
+          + '</div></div>';
+      }
+    }
+
     var cardPadding = extraHtml ? 'padding:13px 14px 10px;' : 'padding:13px 14px;';
     var menuBtn = '<button class="pq-menu-btn" data-ex-id="' + item.id + '"' + (item.mode ? ' data-ex-mode="' + item.mode + '"' : '') + (item.eyesMode ? ' data-ex-eyes="' + item.eyesMode + '"' : '') + (item.sensoryTrack ? ' data-sensory-track="1"' : '') + (item.added ? ' data-ex-added="1"' : '') + ' title="Options">···</button>';
     var badgeStyle = 'position:relative;width:48px;height:48px;border-radius:12px;background:' + color + '1e;border:1px solid ' + color + '38;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0;font-family:\'DM Mono\',monospace;line-height:1;color:' + color + ';';
@@ -1017,6 +1035,28 @@ function renderPathQuests() {
       renderPathQuests();
     };
   }
+  root.querySelectorAll('.pq-adv-offer-yes').forEach(function(btn) {
+    btn.onclick = function(e) {
+      e.stopPropagation();
+      var minutes = parseInt(btn.dataset.advMin, 10);
+      if (btn.dataset.advKey && minutes) {
+        // Auto-advance stays on, so accepting a start still climbs from there.
+        guideSetAdvanced(btn.dataset.advKey, minutes, true);
+        if (typeof syncPushData === 'function') syncPushData();
+        if (typeof showToast === 'function') showToast('Starting at ' + minutes + ' min · adjustable in the ··· menu');
+      }
+      renderPathQuests();
+    };
+  });
+  root.querySelectorAll('.pq-adv-offer-no').forEach(function(btn) {
+    btn.onclick = function(e) {
+      e.stopPropagation();
+      if (btn.dataset.advKey && typeof guideDismissAdvancedOffer === 'function') {
+        guideDismissAdvancedOffer(btn.dataset.advKey);
+      }
+      renderPathQuests();
+    };
+  });
   root.querySelectorAll('.pq-clock-step').forEach(function(btn) {
     btn.onclick = function(e) {
       e.stopPropagation();
