@@ -7,6 +7,7 @@ const path = require('node:path');
 const vm = require('node:vm');
 
 const guideSource = fs.readFileSync(path.join(__dirname, '..', 'guide-path-client.js'), 'utf8');
+const presenceSource = fs.readFileSync(path.join(__dirname, '..', 'presence.html'), 'utf8');
 
 function loadBrightness(visualMasteries, history, options) {
   const start = guideSource.indexOf('function soulMirrorStarBrightness');
@@ -208,4 +209,14 @@ test('Guide Star keeps ten nodes and replaces the old thought labels', () => {
     guideSource.indexOf('];', guideSource.indexOf('var NODES = ['))
   );
   assert.equal((nodesBlock.match(/id:'/g) || []).length, 10);
+});
+
+test('Guide Star detail sheets do not reserve an empty control-height footer', () => {
+  const ruleStart = presenceSource.indexOf('.ptree-sheet {');
+  const ruleEnd = presenceSource.indexOf('}', ruleStart);
+  const sheetRule = presenceSource.slice(ruleStart, ruleEnd + 1);
+
+  assert.notEqual(ruleStart, -1);
+  assert.match(sheetRule, /padding:0 22px max\(env\(safe-area-inset-bottom,0px\),18px\)/);
+  assert.doesNotMatch(sheetRule, /\+\s*48px/);
 });

@@ -2101,17 +2101,17 @@
     .ptree-legend-item { display:flex; align-items:center; gap:6px; font-size:8px; letter-spacing:.12em; color:var(--text); }
     .ptree-sheet-backdrop { display:none; position:fixed; inset:0; z-index:199; background:rgba(7,8,13,.6); backdrop-filter:blur(3px); -webkit-backdrop-filter:blur(3px); }
     .ptree-sheet-backdrop.open { display:block; }
-    .ptree-sheet { position:fixed; bottom:0; left:0; right:0; z-index:200; background:rgba(12,14,20,.98); border-top:2px solid var(--ptree-accent,#8ecce0); border-radius:20px 20px 0 0; padding:0 22px calc(max(env(safe-area-inset-bottom,0px),20px) + 48px); transform:translateY(105%); transition:transform .3s cubic-bezier(.32,.72,0,1); box-shadow:0 -12px 40px rgba(0,0,0,.6); max-height:72vh; overflow-y:auto; will-change:transform; }
+    .ptree-sheet { position:fixed; bottom:0; left:0; right:0; z-index:200; background:rgba(12,14,20,.98); border-top:2px solid var(--ptree-accent,#8ecce0); border-radius:20px 20px 0 0; padding:0 22px max(env(safe-area-inset-bottom,0px),18px); transform:translateY(105%); transition:transform .3s cubic-bezier(.32,.72,0,1); box-shadow:0 -12px 40px rgba(0,0,0,.6); max-height:72vh; overflow-y:auto; will-change:transform; }
     .ptree-sheet.open { transform:translateY(0); }
     .ptree-sheet-top { display:flex; align-items:center; justify-content:center; position:relative; padding:14px 0 6px; }
     .ptree-sheet-handle { width:40px; height:4px; background:rgba(255,255,255,.18); border-radius:2px; }
     .ptree-sheet-close { position:absolute; right:0; top:8px; width:32px; height:32px; border-radius:50%; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.06); color:var(--muted); font-size:13px; display:flex; align-items:center; justify-content:center; cursor:pointer; font-family:'DM Mono',monospace; line-height:1; transition:background .15s, color .15s; }
     .ptree-sheet-close:hover { background:rgba(255,255,255,.12); color:var(--text); }
     .ptree-sheet-name { font-family:'Cormorant Garamond',serif; font-size:24px; font-weight:300; color:var(--text); margin-bottom:5px; margin-top:10px; }
-    .ptree-sheet-sub { font-size:9px; letter-spacing:.16em; text-transform:uppercase; color:var(--muted); margin-bottom:16px; line-height:1.7; }
-    .ptree-sheet-bar-wrap { background:rgba(255,255,255,.07); border-radius:4px; height:3px; margin-bottom:14px; }
+    .ptree-sheet-sub { font-size:9px; letter-spacing:.16em; text-transform:uppercase; color:var(--muted); margin-bottom:13px; line-height:1.7; }
+    .ptree-sheet-bar-wrap { background:rgba(255,255,255,.07); border-radius:4px; height:3px; margin-bottom:11px; }
     .ptree-sheet-bar { height:3px; border-radius:4px; transition:width .4s ease; }
-    .ptree-sheet-stat { font-size:10px; color:var(--muted); letter-spacing:.06em; line-height:2.1; margin-bottom:20px; }
+    .ptree-sheet-stat { font-size:10px; color:var(--muted); letter-spacing:.06em; line-height:2; margin-bottom:14px; }
     .ptree-sheet-stat strong { color:var(--text); }
     .ptree-sheet-begin { display:block; width:100%; padding:13px 20px; border-radius:10px; border:1px solid var(--ptree-accent,#8ecce0); background:rgba(0,0,0,0); color:var(--ptree-accent,#8ecce0); font-family:'DM Mono',monospace; font-size:10px; letter-spacing:.22em; text-transform:uppercase; cursor:pointer; transition:background .2s, opacity .2s; }
     .ptree-sheet-begin:active { opacity:.7; }
