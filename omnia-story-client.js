@@ -69,15 +69,19 @@ function omniaStoryBeatStep(beat) {
   return 0;
 }
 
-// A short trigger label + glyph for the moment that unlocked a beat.
+// A short trigger label, glyph, and accent for the moment that unlocked a beat.
+// The log already distinguishes five kinds of moment, but drew them all in one
+// blue, so a long story read as an undifferentiated wall. Each kind now carries
+// its own colour — reusing the exercise palette the rest of the app already
+// speaks in — so scrolling the log shows the shape of the journey.
 function omniaStoryBeatTag(beat) {
   var w = (beat && beat.when) || {};
-  if (w.type === 'intro')    return { glyph:'✦', label:'Awakening' };
-  if (w.type === 'step')     return { glyph:'⬆', label:'Ascension' };
-  if (w.type === 'bodies')   return { glyph:'◈', label:'Embodiment' };
-  if (w.type === 'upgrade')  return { glyph:'⟡', label:'Attunement' };
-  if (w.type === 'cosmetic') return { glyph:'✧', label:'New Form' };
-  return { glyph:'◈', label:'Reflection' };
+  if (w.type === 'intro')    return { glyph:'✦', label:'Awakening',  tone:'#e8c87a' };
+  if (w.type === 'step')     return { glyph:'⬆', label:'Ascension',  tone:'#c4a8d4' };
+  if (w.type === 'bodies')   return { glyph:'◈', label:'Embodiment', tone:'#8eccc0' };
+  if (w.type === 'upgrade')  return { glyph:'⟡', label:'Attunement', tone:'#8ab8e0' };
+  if (w.type === 'cosmetic') return { glyph:'✧', label:'New Form',   tone:'#e0a8c4' };
+  return { glyph:'◈', label:'Reflection', tone:'#a9cde6' };
 }
 
 function openOmniaChat() {
@@ -116,8 +120,8 @@ function openOmniaChat() {
         lastStep = stepNum;
       }
       var tag = omniaStoryBeatTag(b);
-      html += '<div class="oe-chat-msg">'
-        + '<div class="oe-chat-msg-avatar" aria-hidden="true">◈</div>'
+      html += '<div class="oe-chat-msg" style="--story-tone:' + tag.tone + ';">'
+        + '<div class="oe-chat-msg-avatar" aria-hidden="true">' + tag.glyph + '</div>'
         + '<div class="oe-chat-msg-body">'
         + '<div class="oe-chat-msg-head">'
         + '<span class="oe-chat-msg-name">Omnia</span>'

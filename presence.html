@@ -2191,7 +2191,7 @@
     .oe-strip-kicker { font-size:7px; letter-spacing:.28em; text-transform:uppercase; color:#8ecce0; line-height:1; }
     .oe-strip-name-row { display:flex; align-items:baseline; gap:10px; margin-top:4px; flex-wrap:wrap; }
     .oe-strip-stage-name { font-family:Cormorant Garamond,serif; font-size:18px; color:var(--text); line-height:1; }
-    .oe-strip-step { font-size:8px; letter-spacing:.22em; text-transform:uppercase; color:var(--muted); }
+    .oe-strip-step { font-size:10px; letter-spacing:.2em; text-transform:uppercase; color:#d2e8f6; }
     .oe-akasha-pill-btn { display:flex; align-items:baseline; gap:6px; padding:7px 13px; border-radius:999px; border:1px solid rgba(142,204,224,.24); background:rgba(142,204,224,.06); color:#b8eaff; font-family:'DM Mono',monospace; cursor:pointer; transition:background .2s, border-color .2s; }
     .oe-akasha-pill-btn:hover, .oe-akasha-pill-btn.open { background:rgba(142,204,224,.12); border-color:rgba(142,204,224,.38); }
     .oe-akasha-pill-val { font-family:Cormorant Garamond,serif; font-size:18px; line-height:1; color:#b8eaff; }
@@ -2243,14 +2243,16 @@
     .oe-story-chapter-name { flex-shrink:0; font-family:'DM Mono',monospace; font-size:8px; letter-spacing:.24em; text-transform:uppercase; color:#a9cde6; }
     /* Story message: avatar + bubble on a timeline spine */
     .oe-chat-msg { position:relative; display:flex; gap:11px; margin-bottom:16px; padding-left:2px; }
-    .oe-chat-msg::before { content:''; position:absolute; left:14px; top:30px; bottom:-16px; width:1px; background:rgba(168,200,232,.14); }
+    .oe-chat-msg::before { content:''; position:absolute; left:14px; top:30px; bottom:-16px; width:1px; background:linear-gradient(180deg, color-mix(in srgb, var(--story-tone, #a9cde6) 34%, transparent), rgba(168,200,232,.1)); }
     .oe-chat-msg:last-child::before { display:none; }
-    .oe-chat-msg-avatar { position:relative; z-index:1; flex-shrink:0; width:28px; height:28px; display:flex; align-items:center; justify-content:center; border-radius:50%; border:1px solid rgba(168,200,232,.3); background:radial-gradient(circle at 50% 35%, rgba(168,200,232,.22), rgba(20,24,40,.95)); color:#bcd9ef; font-size:11px; box-shadow:0 0 12px rgba(168,200,232,.18); }
-    .oe-chat-msg-body { flex:1; min-width:0; padding:13px 16px; border-radius:4px 14px 14px 14px; background:rgba(168,200,232,.05); border:1px solid rgba(168,200,232,.16); }
+    /* Each beat carries --story-tone; the avatar, tag, and body edge take it so
+       the kind of moment is readable at a glance while the prose stays uniform. */
+    .oe-chat-msg-avatar { position:relative; z-index:1; flex-shrink:0; width:28px; height:28px; display:flex; align-items:center; justify-content:center; border-radius:50%; border:1px solid color-mix(in srgb, var(--story-tone, #a9cde6) 55%, transparent); background:radial-gradient(circle at 50% 35%, color-mix(in srgb, var(--story-tone, #a9cde6) 26%, transparent), rgba(20,24,40,.95)); color:var(--story-tone, #bcd9ef); font-size:11px; box-shadow:0 0 12px color-mix(in srgb, var(--story-tone, #a9cde6) 26%, transparent); }
+    .oe-chat-msg-body { flex:1; min-width:0; padding:13px 16px; border-radius:4px 14px 14px 14px; background:color-mix(in srgb, var(--story-tone, #a9cde6) 6%, transparent); border:1px solid color-mix(in srgb, var(--story-tone, #a9cde6) 22%, transparent); border-left:2px solid color-mix(in srgb, var(--story-tone, #a9cde6) 60%, transparent); }
     .oe-chat-msg-head { display:flex; align-items:center; justify-content:space-between; gap:8px; margin-bottom:8px; }
     .oe-chat-msg-name { font-size:8px; letter-spacing:.24em; text-transform:uppercase; color:#a9cde6; font-family:'DM Mono',monospace; }
-    .oe-chat-msg-tag { display:inline-flex; align-items:center; gap:5px; font-size:7.5px; letter-spacing:.18em; text-transform:uppercase; color:#8fb0cc; font-family:'DM Mono',monospace; padding:3px 8px; border-radius:20px; background:rgba(168,200,232,.06); border:1px solid rgba(168,200,232,.14); white-space:nowrap; }
-    .oe-chat-msg-tag-glyph { font-size:9px; color:#bcd9ef; }
+    .oe-chat-msg-tag { display:inline-flex; align-items:center; gap:5px; font-size:8px; letter-spacing:.18em; text-transform:uppercase; color:var(--story-tone, #8fb0cc); font-family:'DM Mono',monospace; padding:3px 8px; border-radius:20px; background:color-mix(in srgb, var(--story-tone, #a9cde6) 12%, transparent); border:1px solid color-mix(in srgb, var(--story-tone, #a9cde6) 34%, transparent); white-space:nowrap; }
+    .oe-chat-msg-tag-glyph { font-size:9px; color:var(--story-tone, #bcd9ef); }
     .oe-chat-msg-text { font-family:'Cormorant Garamond',serif; font-size:16px; font-style:italic; color:#eae4f4; line-height:1.7; }
     .oe-chat-empty { text-align:center; color:var(--muted); font-family:'DM Mono',monospace; font-size:11px; line-height:1.9; letter-spacing:.06em; padding:34px 10px; }
     .oe-aura { position:absolute; inset:0; border-radius:50%; pointer-events:none; mix-blend-mode:screen; transition:opacity .5s ease; }
@@ -2275,7 +2277,7 @@
     }
 
     .oe-stage-step { margin-top:14px; text-align:center; max-width:300px; }
-    .oe-stage-step-label { font-size:8px; letter-spacing:.24em; text-transform:uppercase; color:var(--muted); }
+    .oe-stage-step-label { font-size:10px; letter-spacing:.22em; text-transform:uppercase; color:#d2e8f6; }
     .oe-stage-step-name { font-family:Cormorant Garamond,serif; font-size:15px; color:var(--text); margin-top:4px; }
     .oe-stage-step-need { font-size:9px; color:var(--muted); margin-top:7px; line-height:1.55; }
 
