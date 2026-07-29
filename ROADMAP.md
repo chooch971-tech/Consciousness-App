@@ -1,6 +1,16 @@
 # Presence — Roadmap
 
-Last updated: 2026-07-26
+Last updated: 2026-07-29
+
+---
+
+## ✍️ Copy Still To Write (owner: Chooch)
+
+Content edits that are not blocked on any code work — the screens and their
+wiring are done, only the wording needs a pass.
+
+- [ ] **Achievements** — rewrite the achievement text
+- [ ] **FAQ** — rewrite the FAQ text
 
 ---
 
