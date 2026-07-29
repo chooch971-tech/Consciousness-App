@@ -331,23 +331,33 @@ function visualizationStarBrightness() {
   return Math.min(20, mastered * 10);
 }
 
-function auditoryStarBrightness() {
+function practiceTreeAuditoryBest(eyesMode) {
   var history = (typeof concState !== 'undefined' && concState.history) ? concState.history : [];
-  var mastered = history.some(function(session) {
-    if (!session || session.type !== 'auditory') return false;
+  return history.reduce(function(best, session) {
+    if (!session || session.type !== 'auditory') return best;
+    var sessionEyes = session.eyesMode === 'open' ? 'open' : 'closed';
+    if (sessionEyes !== eyesMode) return best;
     if (Object.prototype.hasOwnProperty.call(session, 'cleanSeconds')) {
-      return Math.max(0, Number(session.cleanSeconds) || 0) >= 300;
+      return Math.max(best, Math.max(0, Number(session.cleanSeconds) || 0));
     }
     if (Array.isArray(session.auditoryReps) && session.auditoryReps.length) {
-      return session.auditoryReps.some(function(rep) {
-        return Math.max(0, Number(rep.seconds) || 0) >= 300
-          && Math.max(0, Number(rep.halts) || 0) === 0;
-      });
+      return session.auditoryReps.reduce(function(repBest, rep) {
+        var repEyes = rep.eyesMode === 'open' ? 'open' : sessionEyes;
+        var seconds = Math.max(0, Number(rep.seconds) || 0);
+        var halts = Math.max(0, Number(rep.halts) || 0);
+        return repEyes === eyesMode && halts === 0 && seconds > repBest ? seconds : repBest;
+      }, best);
     }
-    return Math.max(0, Number(session.seconds) || 0) >= 300
-      && Math.max(0, Number(session.halts) || 0) === 0;
-  });
-  return mastered ? 20 : 0;
+    var seconds = Math.max(0, Number(session.seconds) || 0);
+    var halts = Math.max(0, Number(session.halts) || 0);
+    return halts === 0 && seconds > best ? seconds : best;
+  }, 0);
+}
+
+function auditoryStarBrightness() {
+  var closedMinutes = Math.min(5, Math.floor(practiceTreeAuditoryBest('closed') / 60));
+  var openMinutes = Math.min(5, Math.floor(practiceTreeAuditoryBest('open') / 60));
+  return (closedMinutes + openMinutes) * 2;
 }
 
 function practiceTreeSenseBest(mode, eyesMode) {
@@ -443,8 +453,9 @@ function practiceTreeNodeBrightness(exId, stats) {
     // Observation, Focus, and Vacancy; Awareness brightens continuously
     // through level 100.
     // Visualization contributes half for each sequential five-minute eyes
-    // mastery; Auditory contributes one clean five-minute hold; and every
-    // Senses mode/eyes mastery contributes one-sixth of its branch.
+    // mastery; Auditory contributes at every clean minute from one through
+    // five for each eye mode; and every Senses mode/eyes mastery contributes
+    // one-sixth of its branch.
     var contributions = [
       practiceTreeTierContribution((stats.clock || {}).bestSec, [300, 600, 900]),
       practiceTreeNodeBrightness('thought', stats) / 20,
@@ -768,6 +779,7 @@ function renderPracticeTree() {
       var isMirror = (node.ex === 'soulmirror');
       var isThought = (node.ex === 'thought');
       var isAwareness = (node.ex === 'awareness');
+      var isAuditory = (node.ex === 'auditory');
       var poreBreaths = isPore ? ((typeof concState !== 'undefined' && concState.lifetimeBreaths) ? concState.lifetimeBreaths : 0) : 0;
       var st = practiceTreeNodeStats(node.ex, stats);
       var sessions = st.count || 0;
@@ -812,6 +824,11 @@ function renderPracticeTree() {
         if (sessions > 0) statLines.push('<strong>Last practiced</strong> ' + recencyStr);
       } else if (isAwareness) {
         statLines.push('<strong>Level</strong> ' + (st.level || 1) + ' · full brightness at 100');
+        statLines.push('<strong>Sessions</strong> ' + sessions + (dep > 0 ? ' · ' + dep + ' depth ring' + (dep > 1 ? 's' : '') : ''));
+        if (sessions > 0) statLines.push('<strong>Last practiced</strong> ' + recencyStr);
+      } else if (isAuditory) {
+        statLines.push('<strong>Closed Eyes</strong> ' + guideFmtTime(practiceTreeAuditoryBest('closed')) + ' / 5m');
+        statLines.push('<strong>Open Eyes</strong> ' + guideFmtTime(practiceTreeAuditoryBest('open')) + ' / 5m');
         statLines.push('<strong>Sessions</strong> ' + sessions + (dep > 0 ? ' · ' + dep + ' depth ring' + (dep > 1 ? 's' : '') : ''));
         if (sessions > 0) statLines.push('<strong>Last practiced</strong> ' + recencyStr);
       } else {

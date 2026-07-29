@@ -109,18 +109,58 @@ test('Visualization is half bright after Closed Eyes mastery and full after Open
   assert.equal(complete.practiceTreeNodeBrightness('kether', stats), 2.2);
 });
 
-test('Auditory fully lights after one clean five-minute hold', () => {
+test('Auditory earns two brightness points per clean minute in each eye mode', () => {
   const halted = loadBrightness([], [{
-    type:'auditory', seconds:420, cleanSeconds:299, halts:1
+    type:'auditory', seconds:420, halts:1
   }]);
-  const mastered = loadBrightness([], [{
-    type:'auditory', seconds:420, cleanSeconds:300, halts:1
-  }]);
+  const almostClosed = loadBrightness([], [
+    { type:'auditory', seconds:420, cleanSeconds:290, halts:1 }
+  ]);
+  const closedMastered = loadBrightness([], [
+    { type:'auditory', cleanSeconds:300 }
+  ]);
+  const openProgress = loadBrightness([], [
+    { type:'auditory', cleanSeconds:300 },
+    { type:'auditory', eyesMode:'open', cleanSeconds:179 }
+  ]);
+  const fullyMastered = loadBrightness([], [
+    { type:'auditory', cleanSeconds:300 },
+    { type:'auditory', eyesMode:'open', cleanSeconds:300 }
+  ]);
   const stats = emptyStats();
 
   assert.equal(halted.practiceTreeNodeBrightness('auditory', stats), 0);
-  assert.equal(mastered.practiceTreeNodeBrightness('auditory', stats), 20);
-  assert.equal(mastered.practiceTreeNodeBrightness('kether', stats), 2.2);
+  assert.equal(almostClosed.practiceTreeAuditoryBest('closed'), 290);
+  assert.equal(almostClosed.practiceTreeNodeBrightness('auditory', stats), 8);
+  assert.equal(closedMastered.practiceTreeNodeBrightness('auditory', stats), 10);
+  assert.equal(openProgress.practiceTreeNodeBrightness('auditory', stats), 14);
+  assert.equal(fullyMastered.practiceTreeNodeBrightness('auditory', stats), 20);
+  assert.equal(closedMastered.practiceTreeNodeBrightness('kether', stats), 1.1);
+  assert.equal(fullyMastered.practiceTreeNodeBrightness('kether', stats), 2.2);
+});
+
+test('Auditory falls back to clean rep evidence and treats legacy sessions as Closed Eyes', () => {
+  const context = loadBrightness([], [
+    {
+      type:'auditory',
+      auditoryReps:[
+        { seconds:240, halts:1 },
+        { seconds:180, halts:0 }
+      ]
+    },
+    {
+      type:'auditory',
+      eyesMode:'open',
+      auditoryReps:[
+        { seconds:120, halts:0 }
+      ]
+    }
+  ]);
+  const stats = emptyStats();
+
+  assert.equal(context.practiceTreeAuditoryBest('closed'), 180);
+  assert.equal(context.practiceTreeAuditoryBest('open'), 120);
+  assert.equal(context.practiceTreeNodeBrightness('auditory', stats), 10);
 });
 
 test('each Senses mode and eye-state mastery adds one-sixth of its Star branch', () => {
@@ -170,6 +210,7 @@ test('all nine completed branches fully light Fundamentals Mastery', () => {
     ['closed', 'open'],
     [
       { type:'auditory', cleanSeconds:300 },
+      { type:'auditory', eyesMode:'open', cleanSeconds:300 },
       { exercise:'sense', senseReps }
     ],
     { breaths:5000, transformedTraits:5, awarenessLevel:100 }
