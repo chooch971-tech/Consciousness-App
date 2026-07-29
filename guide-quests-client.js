@@ -720,9 +720,9 @@ function renderPathQuests() {
           var rowColor = row.mastered ? '#7eb8a4' : row.active ? card.color : 'var(--text)';
           return '<div style="padding-top:10px;margin-top:10px;border-top:1px solid rgba(255,255,255,.055);">'
             + '<div style="display:flex;align-items:baseline;justify-content:space-between;gap:12px;">'
-            + '<span style="font-size:9px;color:' + rowColor + ';letter-spacing:.05em;">' + row.label + '</span>'
-            + '<span style="font-size:8px;color:' + rowColor + ';letter-spacing:.08em;text-align:right;">' + row.status + '</span></div>'
-            + '<div style="font-size:8px;color:var(--muted);line-height:1.55;letter-spacing:.035em;margin-top:4px;">' + row.detail + '</div>'
+            + '<span style="font-size:11.5px;color:' + rowColor + ';letter-spacing:.04em;">' + row.label + '</span>'
+            + '<span style="font-size:11px;color:' + rowColor + ';letter-spacing:.06em;text-align:right;flex-shrink:0;">' + row.status + '</span></div>'
+            + '<div style="font-size:10.5px;color:#c3d3e0;line-height:1.6;letter-spacing:.02em;margin-top:5px;">' + row.detail + '</div>'
             + '<div role="progressbar" aria-label="' + card.name + ' · ' + row.label + '" aria-valuemin="0" aria-valuemax="100" aria-valuenow="' + row.pct + '" style="height:2px;border-radius:999px;background:rgba(255,255,255,.055);overflow:hidden;margin-top:7px;">'
             + '<i style="display:block;width:' + row.pct + '%;height:100%;border-radius:inherit;background:' + card.color + ';opacity:' + (row.active || row.mastered ? '.8' : '.32') + ';"></i></div>'
             + '</div>';
@@ -730,10 +730,10 @@ function renderPathQuests() {
         return '<section class="pq-progress-card" data-progress-exercise="' + card.id + '" style="padding:13px 14px;background:var(--surface);border:1px solid var(--border);border-radius:14px;">'
           + '<div style="display:flex;align-items:center;gap:10px;">'
           + '<div style="width:32px;height:32px;border-radius:9px;display:flex;align-items:center;justify-content:center;background:' + card.color + '16;border:1px solid ' + card.color + '30;color:' + card.color + ';font-size:15px;">' + card.icon + '</div>'
-          + '<div style="flex:1;min-width:0;"><div style="font-family:\'Space Grotesk\',sans-serif;font-size:11px;font-weight:600;color:' + card.color + ';">' + card.name + '</div>'
-          + '<div style="font-size:8px;color:var(--muted);letter-spacing:.05em;margin-top:2px;">' + card.summary + '</div></div></div>'
+          + '<div style="flex:1;min-width:0;"><div style="font-family:\'Space Grotesk\',sans-serif;font-size:13px;font-weight:600;color:' + card.color + ';">' + card.name + '</div>'
+          + '<div style="font-size:10px;color:#b9c9d6;letter-spacing:.04em;margin-top:3px;">' + card.summary + '</div></div></div>'
           + rows
-          + (card.footer ? '<div style="font-size:8px;color:var(--muted);line-height:1.5;margin-top:10px;">' + card.footer + '</div>' : '')
+          + (card.footer ? '<div style="font-size:10.5px;color:#b9c9d6;line-height:1.6;margin-top:11px;">' + card.footer + '</div>' : '')
           + '</section>';
       }).join('')
       + '</div>';
