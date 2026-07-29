@@ -779,8 +779,16 @@ function renderPracticeTree() {
       sheet.style.setProperty('--ptree-accent', node.color);
       sheetName.textContent = nameMap[nodeId] || node.label;
       if (sheetSub) sheetSub.textContent = descMap[nodeId] || '';
-      if (sheetBar) sheetBar.style.width = Math.round(b / max * 100) + '%';
-      if (sheetBar) sheetBar.style.background = node.color;
+      if (sheetBar) {
+        // The sheet reuses one bar for every star. Set the selected value
+        // without transition while the sheet is still closed so a prior
+        // star's width can never flash and animate down during opening.
+        sheetBar.style.transition = 'none';
+        sheetBar.style.width = Math.round(b / max * 100) + '%';
+        sheetBar.style.background = node.color;
+        void sheetBar.offsetWidth;
+        sheetBar.style.transition = '';
+      }
 
       var statLines = [];
       statLines.push('<strong>Brightness</strong> ' + b + ' / ' + max);

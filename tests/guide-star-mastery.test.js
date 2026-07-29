@@ -220,3 +220,17 @@ test('Guide Star detail sheets do not reserve an empty control-height footer', (
   assert.match(sheetRule, /padding:0 22px max\(env\(safe-area-inset-bottom,0px\),18px\)/);
   assert.doesNotMatch(sheetRule, /\+\s*48px/);
 });
+
+test('Guide Star progress bars replace stale widths before the sheet opens', () => {
+  const barUpdateStart = guideSource.indexOf("sheetBar.style.transition = 'none'");
+  const barUpdateEnd = guideSource.indexOf("sheetBar.style.transition = ''", barUpdateStart);
+  const sheetOpen = guideSource.indexOf("sheet.classList.add('open')", barUpdateStart);
+
+  assert.notEqual(barUpdateStart, -1);
+  assert.ok(barUpdateEnd > barUpdateStart);
+  assert.ok(sheetOpen > barUpdateEnd);
+  assert.match(
+    guideSource.slice(barUpdateStart, barUpdateEnd),
+    /sheetBar\.style\.width = Math\.round\(b \/ max \* 100\) \+ '%';[\s\S]*void sheetBar\.offsetWidth;/
+  );
+});
