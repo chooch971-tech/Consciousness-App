@@ -301,6 +301,30 @@ function practiceTreeNodeBrightness(exId, stats) {
   return 0;
 }
 
+// Recency is an early-practice encouragement, not a permanent maintenance
+// obligation. Once a node reaches the same first-mastery gate used by
+// Achievements, its aura stays settled at full strength. Thought Control is
+// drawn as three separate nodes, so each discipline stabilizes independently.
+function practiceTreeNodeFirstMasteryMet(exId, stats) {
+  if (exId === 'kether') return false;
+  if (exId === 'observation' || exId === 'focus' || exId === 'vacancy') {
+    if (typeof achTCBest === 'function') return achTCBest(exId) >= 600;
+    return ((stats[exId] || {}).bestSec || 0) >= 600;
+  }
+
+  var achievementName = {
+    clock:'Clock',
+    visual:'Visualization',
+    auditory:'Auditory',
+    asana:'Asana',
+    soulmirror:'Soul Mirror',
+    pore:'Pore Breathing'
+  }[exId];
+  if (!achievementName || typeof ACH_MASTERY_DEFS !== 'function') return false;
+  var mastery = ACH_MASTERY_DEFS().find(function(def) { return def.ex === achievementName; });
+  return !!(mastery && mastery.m);
+}
+
 // Most recent pore_breathing session timestamp (history is newest-first).
 function poreLastSessionMs() {
   var h = (typeof concState !== 'undefined' && concState.history) ? concState.history : [];
@@ -312,8 +336,9 @@ function poreLastSessionMs() {
 
 function practiceTreeNodeRecency(exId, stats) {
   var ms;
+  if (exId === 'kether') return 0.15;
+  if (practiceTreeNodeFirstMasteryMet(exId, stats)) return 1.0;
   if (exId === 'pore') ms = poreLastSessionMs();
-  else if (exId === 'kether') return 0.15;
   else ms = (stats[exId] || {}).lastMs || 0;
   if (!ms) return 0.15;
   var days = (Date.now() - ms) / 86400000;
