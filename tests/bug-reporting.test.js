@@ -10,20 +10,22 @@ const server = fs.readFileSync(path.join(root, 'server.js'), 'utf8');
 const presence = fs.readFileSync(path.join(root, 'presence.html'), 'utf8');
 const settings = fs.readFileSync(path.join(root, 'settings-client.js'), 'utf8');
 
-test('Donate and Report a Bug sit in the drawer footer, on screen without scrolling', () => {
-  // The item list scrolls, so anything near its end can be missed entirely.
-  // Both of these live in the fixed footer instead, and neither is duplicated
-  // back into the list.
+test('the drawer fits without scrolling: Donate an item, Report a Bug in the footer', () => {
+  // Donate reads as a destination and stays in the list; Report a Bug is a
+  // utility and sits in the fixed footer. Neither is duplicated, and the
+  // spacing is tuned so the whole menu is reachable on one screen.
+  const donate = presence.indexOf('class="drawer-item" id="drawerDonate"');
+  const reset = presence.indexOf('id="drawerResetAll"');
   const links = presence.indexOf('class="drawer-footer-links"');
-  const donate = presence.indexOf('id="drawerDonate"');
   const report = presence.indexOf('id="drawerBugReport"');
-  const version = presence.indexOf('class="drawer-version"');
-  assert.notEqual(links, -1);
-  assert.ok(links < donate && donate < report && report < version);
-  assert.doesNotMatch(presence, /class="drawer-item" id="drawerDonate"/);
+  assert.ok(donate !== -1 && donate < reset, 'Donate stays in the item list');
+  assert.ok(links !== -1 && links < report, 'Report a Bug stays in the footer');
   assert.doesNotMatch(presence, /class="drawer-item" id="drawerBugReport"/);
   assert.equal(presence.split('id="drawerDonate"').length - 1, 1);
   assert.equal(presence.split('id="drawerBugReport"').length - 1, 1);
+  // Guards the row heights the fit depends on. 44px is Apple's minimum target.
+  assert.match(presence, /\.drawer-item \{[^}]*min-height:44px/);
+  assert.match(presence, /\.drawer-divider \{[^}]*margin:5px 24px/);
 });
 
 test('the drawer header keeps Presence uncluttered and below the guide figure', () => {

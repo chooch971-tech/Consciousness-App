@@ -3125,13 +3125,13 @@
        from independently promoting its normal fixed layer above the page. */
     .drawer-overlay.swipe-back-live { position:fixed; z-index:20; pointer-events:none; transition:none; }
     .drawer-overlay.swipe-back-live .drawer { position:absolute; z-index:1; transition:none; }
-    .drawer-header { padding:0 24px 16px; border-bottom:1px solid var(--border); margin-bottom:8px; }
+    .drawer-header { padding:0 24px 11px; border-bottom:1px solid var(--border); margin-bottom:5px; }
     .drawer-guide-stage { width:128px; height:120px; flex:0 0 auto; display:flex; align-items:center; justify-content:center; overflow:hidden; }
     .drawer-wordmark { margin-top:12px; font-family:Cormorant Garamond,serif; font-size:11px; font-weight:300; letter-spacing:.35em; text-transform:uppercase; color:var(--accent); }
-    .drawer-items { flex:1; display:flex; flex-direction:column; padding:7px 0; overflow-y:auto; scrollbar-width:none; }
+    .drawer-items { flex:1; display:flex; flex-direction:column; padding:4px 0; overflow-y:auto; scrollbar-width:none; }
     .drawer-items::-webkit-scrollbar { display:none; }
-    .drawer-section-label { padding:11px 24px 5px; font-family:'DM Mono',monospace; font-size:8px; letter-spacing:.24em; text-transform:uppercase; color:rgba(221,216,206,.5); }
-    .drawer-item { --drawer-accent:#8eccc0; --drawer-tint:rgba(142,204,192,.055); position:relative; min-height:48px; display:flex; align-items:center; gap:14px; padding:11px 24px; cursor:pointer; border:none; background:none; color:var(--text); font-family:'DM Mono',monospace; font-size:10.5px; letter-spacing:.08em; text-align:left; width:100%; transition:background .15s,color .15s; touch-action:manipulation; }
+    .drawer-section-label { padding:7px 24px 4px; font-family:'DM Mono',monospace; font-size:8px; letter-spacing:.24em; text-transform:uppercase; color:rgba(221,216,206,.5); }
+    .drawer-item { --drawer-accent:#8eccc0; --drawer-tint:rgba(142,204,192,.055); position:relative; min-height:44px; display:flex; align-items:center; gap:14px; padding:9px 24px; cursor:pointer; border:none; background:none; color:var(--text); font-family:'DM Mono',monospace; font-size:10.5px; letter-spacing:.08em; text-align:left; width:100%; transition:background .15s,color .15s; touch-action:manipulation; }
     .drawer-item::before { content:''; position:absolute; left:0; top:10px; bottom:10px; width:2px; border-radius:0 2px 2px 0; background:var(--drawer-accent); opacity:0; transform:scaleY(.35); transition:opacity .16s,transform .16s; }
     /* Scoped to real hover devices only: on iOS/touch, a :hover rule that
        applies on tap can make WebKit treat the first tap as "reveal hover"
@@ -3156,16 +3156,16 @@
     #drawerLodge { --drawer-accent:#e8c87a; --drawer-tint:rgba(232,200,122,.065); }
     #drawerFaq { --drawer-accent:#98b4cc; --drawer-tint:rgba(152,180,204,.05); }
     #drawerSettings { --drawer-accent:#aaa6b8; --drawer-tint:rgba(170,166,184,.05); }
-    .drawer-divider { height:1px; background:var(--border); margin:8px 24px; }
+    .drawer-divider { height:1px; background:var(--border); margin:5px 24px; }
     @keyframes drawerPulse { 0%,100%{background:transparent} 50%{background:rgba(126,184,164,.12)} }
     .drawer-item-pulse { animation:drawerPulse 1.2s ease-in-out 3; }
     .drawer-item.danger { --drawer-accent:var(--danger); --drawer-tint:rgba(196,122,122,.06); color:var(--danger); }
     .drawer-item.danger .drawer-item-icon { opacity:0.8; }
-    .drawer-footer { padding:16px 24px 0; border-top:1px solid var(--border); }
-    .drawer-footer-links { display:flex; align-items:center; gap:16px; margin-bottom:11px; flex-wrap:wrap; }
+    .drawer-footer { padding:11px 24px 0; border-top:1px solid var(--border); }
+    #drawerDonate { --drawer-accent:#d4a06e; --drawer-tint:rgba(212,160,110,.055); }
+    .drawer-footer-links { display:flex; align-items:center; gap:16px; margin-bottom:8px; flex-wrap:wrap; }
     .drawer-footer-link { position:relative; display:flex; align-items:center; gap:7px; min-height:30px; padding:0; border:none; background:none; cursor:pointer; font-family:'DM Mono',monospace; font-size:9.5px; letter-spacing:.1em; text-align:left; white-space:nowrap; touch-action:manipulation; }
     .drawer-footer-link::before { content:''; position:absolute; inset:-9px -6px; }
-    .drawer-footer-link--donate { color:#d4a06e; }
     .drawer-footer-link--bug { color:#d49898; }
     .drawer-footer-link-icon { display:flex; opacity:.85; flex-shrink:0; }
     .drawer-version { font-size:9px; letter-spacing:.15em; color:var(--muted); opacity:.7; }
@@ -8868,6 +8868,9 @@ body:not(.tut-live) #tutCorgi {
       <button class="drawer-item" id="drawerSettings">
         <span class="drawer-item-icon"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M12 2.8v2.6M12 18.6v2.6M2.8 12h2.6M18.6 12h2.6M5.5 5.5l1.8 1.8M16.7 16.7l1.8 1.8M18.5 5.5l-1.8 1.8M7.3 16.7l-1.8 1.8"/></svg></span>Settings
       </button>
+      <button class="drawer-item" id="drawerDonate">
+        <span class="drawer-item-icon"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 8h11v7a4 4 0 0 1-4 4H9a4 4 0 0 1-4-4V8z"/><path d="M16 9.5h2a2.5 2.5 0 0 1 0 5h-2"/><path d="M8 4.5c0 1 .8 1 .8 2M11.5 4.5c0 1 .8 1 .8 2"/></svg></span>Donate
+      </button>
       <div class="drawer-divider"></div>
       <button class="drawer-item danger" id="drawerResetAll">
         <span class="drawer-item-icon">↺</span>Reset All Progress
@@ -8875,9 +8878,6 @@ body:not(.tut-live) #tutCorgi {
     </div>
     <div class="drawer-footer">
       <div class="drawer-footer-links">
-        <button class="drawer-footer-link drawer-footer-link--donate" id="drawerDonate">
-          <span class="drawer-footer-link-icon"><svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 8h11v7a4 4 0 0 1-4 4H9a4 4 0 0 1-4-4V8z"/><path d="M16 9.5h2a2.5 2.5 0 0 1 0 5h-2"/><path d="M8 4.5c0 1 .8 1 .8 2M11.5 4.5c0 1 .8 1 .8 2"/></svg></span>Donate
-        </button>
         <button class="drawer-footer-link drawer-footer-link--bug" id="drawerBugReport">
           <span class="drawer-footer-link-icon"><svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M8 7.5h8M9 4.5l1.2 3M15 4.5l-1.2 3"/><rect x="6" y="7.5" width="12" height="12" rx="5"/><path d="M3.5 11.5H7M17 11.5h3.5M3.5 16H7M17 16h3.5M12 8v11.5"/></svg></span>Report a Bug
         </button>
