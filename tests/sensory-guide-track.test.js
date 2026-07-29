@@ -146,8 +146,11 @@ test('exercise records and Path cards expose the evidence and curriculum indicat
   assert.match(guideSource, /function guidePathEyesMode/);
   assert.match(guideSource, /setSenseEyesMode\(eyesMode\)/);
   assert.match(questSource, /class="pq-progress-view"/);
-  assert.match(questSource, /pqPathCycleBtn/);
-  assert.match(questSource, /1× \/ day → 2× \/ day → Progress/);
+  // Cadence and view are separate controls: reaching Progress must never
+  // change how many times a day the practitioner is scheduled to sit.
+  assert.match(questSource, /id="pqCadenceBtn"/);
+  assert.match(questSource, /id="pqPathViewBtn"/);
+  assert.doesNotMatch(questSource, /pqPathCycleBtn/);
   assert.doesNotMatch(questSource, /data-pq-view=/);
   assert.match(questSource, /'Exercise Progress' : 'Exercises'/);
   assert.match(questSource, /data-ex-eyes/);

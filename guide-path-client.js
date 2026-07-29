@@ -1277,6 +1277,7 @@ function guideAuditoryStats() {
   while (idx < rungs.length - 1 && auditoryQualCount(rungs[idx]) >= GUIDE_AUDITORY_PER_RUNG) idx++;
   out.qualTarget = rungs[idx];
   out.atCap = idx >= rungs.length - 1;
+  out.nextTarget = out.atCap ? null : rungs[idx + 1];
   out.qualAtTier = Math.min(auditoryQualCount(rungs[idx]), GUIDE_AUDITORY_PER_RUNG);
   out.tierRequired = GUIDE_AUDITORY_PER_RUNG;
   return out;
@@ -1850,10 +1851,33 @@ function guideProgressOverview() {
     summary:visualStages.filter(function(stage) { return stage.mastered; }).length + ' / 2 foundations',
     rows:visualStages.map(sensoryRow)
   });
+  // Auditory's session length has two governors: while the sensory foundation
+  // is still being trained the track sets it, and once that foundation is
+  // mastered (or the exercise is practiced outside the track) the standalone
+  // 10/15/20 ladder does. Only the one actually in force is shown, so the card
+  // never states two different targets at once.
+  var auditoryRows = auditoryStages.map(sensoryRow);
+  if (auditoryStages[0] && auditoryStages[0].mastered) {
+    var aud = guideAuditoryStats();
+    var audDetail, audPct = 100;
+    if (aud.locked) {
+      audDetail = 'Manual target · automatic increases are off.';
+    } else if (aud.atCap) {
+      audDetail = 'At the twenty-minute practice ceiling.';
+    } else {
+      var audRemaining = Math.max(1, aud.tierRequired - aud.qualAtTier);
+      audDetail = audRemaining + ' more full ' + aud.qualTarget + '-minute session'
+        + (audRemaining === 1 ? '' : 's') + ' → ' + aud.nextTarget + ' min';
+      audPct = guideProgressPct(aud.qualAtTier, aud.tierRequired);
+    }
+    auditoryRows.push({
+      label:'Session length', status:aud.qualTarget + ' min', detail:audDetail, pct:audPct
+    });
+  }
   cards.push({
     id:'auditory', name:'Auditory', icon:'◈', color:'#8eccc0',
     summary:auditoryStages[0] && auditoryStages[0].mastered ? 'Foundation mastered' : 'Single-sound foundation',
-    rows:auditoryStages.map(sensoryRow)
+    rows:auditoryRows
   });
   cards.push({
     id:'sense', name:'Senses', icon:'✺', color:'#e0a8c4',
@@ -1864,6 +1888,40 @@ function guideProgressOverview() {
       : 'Feeling, Smell, and Taste unlock in order; only one is recommended at a time.'
   });
   return cards;
+}
+
+// The ladders below explain how long each exercise should run, but the question
+// a practitioner actually asks first is why these exercises and not others.
+// This states the selection rule for whichever regiment is in force, naming the
+// pieces that vary today so the daily list stops looking arbitrary.
+function guideProgressIntro() {
+  var info = guideCurrentRegimentInfo();
+  var rounds = guideTwoADayEnabled() ? ' Each is scheduled <b>twice</b> today.' : '';
+  if (info.mode === 'experienced') {
+    var stats = guideExerciseStats();
+    var gate = null;
+    try {
+      var pick = guideState._dailyPick;
+      if (pick && Array.isArray(pick.ids) && pick.ids.length) gate = pick.ids[0];
+    } catch (e) {}
+    var gateName = gate ? (guideExerciseById(gate) || {}).name : null;
+    return 'Clock and Thought Control anchor every day. Alongside them Omnia rotates in '
+      + 'the single most neglected of Visualization, Auditory, Asana, and Senses'
+      + (gateName ? ' — today that is <b>' + gateName + '</b>' : '')
+      + '. Anything you added yourself stays until you remove it.' + rounds;
+  }
+  var sensory = guideSensoryTrackProgress();
+  if (sensory.complete) {
+    return 'Your day is built from the foundations — Clock and Thought Control — plus '
+      + '<b>Multi-Sense</b>, now that every sensory foundation is mastered.'
+      + ' Anything you added yourself stays until you remove it.' + rounds;
+  }
+  var current = sensory.current;
+  return 'Your day is built from the foundations — Clock and Thought Control — plus one '
+    + 'stage of the sensory curriculum, taken strictly in order'
+    + (current ? ' — currently <b>' + current.name + ' · ' + current.label + '</b>' : '')
+    + '. A stage advances on one uninterrupted five-minute hold, not on time accumulated.'
+    + ' Anything you added yourself stays until you remove it.' + rounds;
 }
 
 function guideExerciseById(id) {

@@ -763,19 +763,26 @@ function renderPathQuests() {
     + '</svg>'
     + '</div></div>';
 
-  // ── One compact control cycles 1× / day → 2× / day → Progress ──
+  // ── Cadence and view are separate controls ──
+  // These used to share one button that cycled 1×/day → 2×/day → Progress, so
+  // reaching Progress from a 1×/day path silently switched the practitioner to
+  // two sessions a day, and leaving Progress switched it back off. Cadence is a
+  // practice decision and the view is not, so they no longer move together.
   var _twoOn = guideTwoADayEnabled();
   var _canAdd = (typeof guidePathAddableExercises === 'function') && guidePathAddableExercises().length > 0;
-  var _pathCycleLabel = pathView === 'progress' ? 'Progress' : (_twoOn ? '2× / day' : '1× / day');
-  var _pathCycleNext = pathView === 'progress' ? '1× / day' : (_twoOn ? 'Progress' : '2× / day');
+  var _isProgress = pathView === 'progress';
   html += '<div>';
-  html += '<div style="display:flex;align-items:center;justify-content:space-between;margin:0 2px 6px;">'
-    + '<span style="font-size:8px;letter-spacing:.26em;text-transform:uppercase;color:var(--text);">' + (pathView === 'progress' ? 'Exercise Progress' : 'Exercises') + '</span>'
+  html += '<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin:0 2px 6px;">'
+    + '<span style="font-size:8px;letter-spacing:.26em;text-transform:uppercase;color:var(--text);">' + (_isProgress ? 'Exercise Progress' : 'Exercises') + '</span>'
     + '<div style="display:flex;align-items:center;gap:9px;">'
-    + (pathView === 'exercises' && _canAdd ? '<button id="pqAddExBtn" class="pq-add-ex-btn" title="Add an exercise to your path">+</button>' : '')
-    + '<button id="pqPathCycleBtn" class="guide-cadence-toggle' + (pathView === 'exercises' && !_twoOn ? ' off' : '') + '" aria-label="' + _pathCycleLabel + '. Click for ' + _pathCycleNext + '.">' + _pathCycleLabel + '</button>'
+    + (!_isProgress && _canAdd ? '<button id="pqAddExBtn" class="pq-add-ex-btn" title="Add an exercise to your path">+</button>' : '')
+    + (!_isProgress ? '<button id="pqCadenceBtn" class="guide-cadence-toggle' + (_twoOn ? '' : ' off') + '" aria-label="Practice cadence: ' + (_twoOn ? 'twice' : 'once') + ' a day. Click to switch.">' + (_twoOn ? '2× / day' : '1× / day') + '</button>' : '')
+    + '<button id="pqPathViewBtn" class="pq-view-toggle' + (_isProgress ? ' is-active' : '') + '" aria-pressed="' + (_isProgress ? 'true' : 'false') + '" aria-label="' + (_isProgress ? 'Back to today\'s exercises' : 'View your exercise progress') + '">' + (_isProgress ? '‹ Exercises' : 'Progress ›') + '</button>'
     + '</div>'
     + '</div>';
+  if (_isProgress && typeof guideProgressIntro === 'function') {
+    html += '<div class="pq-progress-intro">' + guideProgressIntro() + '</div>';
+  }
   if (pathView === 'exercises') html += '<div style="display:flex;flex-direction:column;gap:8px;">';
   var _isTC = function(id) { return id === 'thought' || id === 'observation' || id === 'focus' || id === 'vacancy'; };
   var _isSense = function(id) { return id === 'sense' || id === 'feeling' || id === 'smell' || id === 'taste'; };
@@ -966,25 +973,18 @@ function renderPathQuests() {
   root.innerHTML = html;
   updateGuideQuestBadge();
 
-  var pqPathCycleBtn = root.querySelector('#pqPathCycleBtn');
-  if (pqPathCycleBtn) {
-    pqPathCycleBtn.onclick = function(e) {
+  var pqCadenceBtn = root.querySelector('#pqCadenceBtn');
+  if (pqCadenceBtn) {
+    pqCadenceBtn.onclick = function(e) { e.stopPropagation(); toggleGuideTwoADay(); };
+  }
+
+  var pqPathViewBtn = root.querySelector('#pqPathViewBtn');
+  if (pqPathViewBtn) {
+    pqPathViewBtn.onclick = function(e) {
       e.stopPropagation();
-      if (pathView === 'progress') {
-        guideState._pathView = 'exercises';
-        if (guideTwoADayEnabled()) {
-          toggleGuideTwoADay();
-        } else {
-          saveGuideState(guideState);
-          renderPathQuests();
-        }
-      } else if (!guideTwoADayEnabled()) {
-        toggleGuideTwoADay();
-      } else {
-        guideState._pathView = 'progress';
-        saveGuideState(guideState);
-        renderPathQuests();
-      }
+      guideState._pathView = pathView === 'progress' ? 'exercises' : 'progress';
+      saveGuideState(guideState);
+      renderPathQuests();
     };
   }
 
