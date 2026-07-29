@@ -1067,23 +1067,27 @@ function guideAsanaStats() {
   // Otherwise climb the tier ladder. Floor (when set) raises both the starting
   // rung and the ceiling (to 120); without a floor it's the standard 5→30 ladder.
   var cap = floor > 0 ? GUIDE_FLOOR_CAP : 30;
-  var tier = floor > 0 ? floor : 5, qualAtTier = 0;
   // With an advanced floor, the chosen minute IS the starting recommendation;
   // only sessions logged after it was set count toward climbing higher.
   var setAt = floor > 0 ? guideAdvanceSetAt('asana') : 0;
-  sessions.forEach(function(s) {
-    if (tier >= cap) return;
-    if (setAt && s.ms <= setAt) return;
-    var required = asanaTierRequired(tier);
-    if (s.sec + 5 >= tier * 60) {
-      qualAtTier++;
-      if (qualAtTier >= required) { tier++; qualAtTier = 0; }
+  // Qualifying sessions are counted across the whole history at each rung —
+  // the same way Clock does it — so one long sit counts at every rung it
+  // clears. A practitioner who can already hold 30 minutes is recognized right
+  // away instead of climbing 25 rungs one session at a time.
+  function asanaQualCount(min) {
+    var n = 0;
+    for (var i = 0; i < sessions.length; i++) {
+      if (setAt && sessions[i].ms <= setAt) continue;
+      if (sessions[i].sec + 5 >= min * 60) n++;
     }
-  });
+    return n;
+  }
+  var tier = floor > 0 ? floor : 5;
+  while (tier < cap && asanaQualCount(tier) >= asanaTierRequired(tier)) tier++;
   out.atCap = tier >= cap;
   out.cap = cap;
-  out.qualAtTier = qualAtTier;
   out.tierRequired = asanaTierRequired(Math.min(tier, cap - 1));
+  out.qualAtTier = Math.min(asanaQualCount(tier), out.tierRequired);
   // At the foundational 30-min ceiling the user picks any duration manually.
   if (out.atCap && floor === 0) {
     out.qualTarget = guideClamp(parseInt(localStorage.getItem('presence_asana_duration'), 10) || cap, cap, GUIDE_FLOOR_CAP);
@@ -1095,17 +1099,28 @@ function guideAsanaStats() {
   return out;
 }
 
-// Auditory's own minute-by-minute ladder: plateau at 5 min for 6 sessions,
-// climb 6→9 (2 sessions/min), plateau at 10 for 24, climb 11→14, plateau at
-// 15 for 24, climb 16→19, cap at 20.
-function auditoryTierRequired(tier) {
-  if (tier === 5) return 6;
-  if (tier === 10 || tier === 15 || tier === 20) return 24;
-  return 2;
+// Auditory practices in three rungs — 10, 15, then 20 minutes — the same
+// range the sensory concentration track already uses for this faculty, so the
+// exercise never reports two different targets depending on which route the
+// practitioner is on. Seven qualifying sessions at a rung earn the next one.
+var GUIDE_AUDITORY_RUNGS = [10, 15, 20];
+var GUIDE_AUDITORY_PER_RUNG = 7;
+
+function auditoryTierRequired() {
+  return GUIDE_AUDITORY_PER_RUNG;
+}
+
+// With an advanced floor the rungs continue in the same five-minute steps from
+// the chosen start up to the override ceiling.
+function guideAuditoryRungs(floor) {
+  if (!floor) return GUIDE_AUDITORY_RUNGS.slice();
+  var rungs = [];
+  for (var m = floor; m <= GUIDE_FLOOR_CAP; m += 5) rungs.push(m);
+  return rungs.length ? rungs : [floor];
 }
 
 function guideAuditoryStats() {
-  var out = { count:0, totalSec:0, bestSec:0, todaySec:0, todayCount:0, qualTarget:5, qualAtTier:0, atCap:false, tierRequired:6, locked:false };
+  var out = { count:0, totalSec:0, bestSec:0, todaySec:0, todayCount:0, qualTarget:GUIDE_AUDITORY_RUNGS[0], qualAtTier:0, atCap:false, tierRequired:GUIDE_AUDITORY_PER_RUNG, locked:false };
   var history = (typeof concState !== 'undefined' && concState.history) ? concState.history : [];
   var sessions = [];
   history.forEach(function(h) {
@@ -1130,24 +1145,28 @@ function guideAuditoryStats() {
     return out;
   }
 
-  var cap = floor > 0 ? GUIDE_FLOOR_CAP : 20;
-  var tier = floor > 0 ? floor : 5, qualAtTier = 0;
   // With an advanced floor, the chosen minute IS the starting recommendation;
   // only sessions logged after it was set count toward climbing higher.
   var setAt = floor > 0 ? guideAdvanceSetAt('auditory') : 0;
-  sessions.forEach(function(s) {
-    if (tier >= cap) return;
-    if (setAt && s.ms <= setAt) return;
-    var required = auditoryTierRequired(tier);
-    if (s.sec + 5 >= tier * 60) { // 5s grace for tap-timing variance
-      qualAtTier++;
-      if (qualAtTier >= required) { tier++; qualAtTier = 0; }
+  // Qualifying sessions are counted across the whole history at each rung —
+  // the same way Clock does it — so one long sit counts at every rung it
+  // clears. A practitioner who already sits 20 minutes is recognized right
+  // away instead of grinding up one rung at a time.
+  function auditoryQualCount(min) {
+    var n = 0;
+    for (var i = 0; i < sessions.length; i++) {
+      if (setAt && sessions[i].ms <= setAt) continue;
+      if (sessions[i].sec + 5 >= min * 60) n++; // 5s grace for tap-timing variance
     }
-  });
-  out.atCap = tier >= cap;
-  out.qualTarget = tier;
-  out.qualAtTier = qualAtTier;
-  out.tierRequired = auditoryTierRequired(Math.min(tier, cap));
+    return n;
+  }
+  var rungs = guideAuditoryRungs(floor);
+  var idx = 0;
+  while (idx < rungs.length - 1 && auditoryQualCount(rungs[idx]) >= GUIDE_AUDITORY_PER_RUNG) idx++;
+  out.qualTarget = rungs[idx];
+  out.atCap = idx >= rungs.length - 1;
+  out.qualAtTier = Math.min(auditoryQualCount(rungs[idx]), GUIDE_AUDITORY_PER_RUNG);
+  out.tierRequired = GUIDE_AUDITORY_PER_RUNG;
   return out;
 }
 
