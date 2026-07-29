@@ -66,7 +66,11 @@ test('autonomous Current progression has diminishing percentage returns', () => 
   const deepGain = economy.omniaGeneratorContributionCurve(80, 0)
     / economy.omniaGeneratorContributionCurve(79, 0) - 1;
 
-  assert.ok(earlyGain > deepGain * 20);
+  // Each mastery band spans 20 levels rather than the whole 80, so a late level
+  // inside a band is a ~5% step rather than ~1%. The curve still flattens hard
+  // across a band (≈55% at the start against ≈5% at the end); the factor is
+  // calibrated to the band, not to a single 80-level ramp.
+  assert.ok(earlyGain > deepGain * 8);
   assert.ok(deepGain > 0);
 });
 
@@ -124,10 +128,31 @@ test('autonomous production has useful early payback and bounded unboosted outpu
   const firstPaybackHours = economy.omniaUpgradeCost(currentUpgrade) / firstGain;
   assert.ok(firstPaybackHours >= 36 && firstPaybackHours <= 60);
 
+  // Attaining a mastery is a real prestige: the pump returns to Level 1, so
+  // both its output and its upgrade price drop steeply. What makes the reset
+  // worth taking is that the new band starts well above the old band's start
+  // and ends well above the old band's ceiling.
+  const bandStart = economy.omniaGeneratorContributionCurve(1, 0);
+  const bandPeak = economy.omniaGeneratorContributionCurve(20, 0);
+  const nextBandStart = economy.omniaGeneratorContributionCurve(21, 0);
+  const nextBandPeak = economy.omniaGeneratorContributionCurve(40, 0);
+  assert.ok(nextBandStart < bandPeak, 'a mastery must actually cost present output');
+  assert.ok(nextBandStart > bandStart * 2, 'the new Level 1 must clearly beat the old Level 1');
+  assert.ok(nextBandPeak > bandPeak * 2, 'the new band must clear the old ceiling');
+
   economy.omniaState.upgrades.current = 20;
   economy.omniaState.upgrades.attunement = 20;
-  const masteryGain = economy.omniaGeneratorContributionCurve(21, 0)
-    - economy.omniaGeneratorContributionCurve(20, 0);
+  const costAtPeak = economy.omniaUpgradeCost(currentUpgrade);
+  economy.omniaState.upgrades.current = 21;
+  const costAfterMastery = economy.omniaUpgradeCost(currentUpgrade);
+  // The card reads "Level 1" after a mastery, so it must not still quote the
+  // lifetime-level price (which was 78,612 against 520 at the real Level 1).
+  assert.ok(costAfterMastery < costAtPeak / 10, 'cost must fall back with the level');
+
+  economy.omniaState.upgrades.current = 20;
+  const masteryGain = economy.omniaGeneratorContributionCurve(22, 0)
+    - economy.omniaGeneratorContributionCurve(21, 0);
+  economy.omniaState.upgrades.current = 21;
   const masteryPaybackHours = economy.omniaUpgradeCost(currentUpgrade) / masteryGain;
   assert.ok(masteryPaybackHours < 24 * 30);
 

@@ -244,7 +244,7 @@ function renderOmniaEngine() {
       return '<div class="oe-body" data-body-card="' + body + '" style="--body-color:' + meta.color + ';">'
         + '<div class="oe-body-name">' + shortName + '</div>'
         + '<div class="oe-body-lvl-row"><span class="oe-body-lvl" data-body-lvl="' + body + '">' + lvl + '</span><span class="oe-body-lvl-key">lvl</span></div>'
-        + '<div class="oe-body-need ' + (met ? 'need-met' : '') + '">' + (need > 0 ? ('<span class="' + (met ? 'need-met' : '') + '">' + Math.min(lvl, need) + ' / ' + need + '</span> · step ' + step.roman) : 'no step req') + '</div>'
+        + '<div class="oe-body-need ' + (met ? 'need-met' : '') + '">' + (need > 0 ? ('<span class="' + (met ? 'need-met' : '') + '">' + Math.min(lvl, need) + ' / ' + need + '</span> · step&nbsp;' + step.roman) : 'no step req') + '</div>'
         + '<div class="oe-body-bar"><div class="oe-body-bar-fill" style="width:' + pct + '%;"></div></div>'
         + (met
             ? '<button class="oe-body-btn capped" disabled>At Goal</button>'
@@ -285,7 +285,7 @@ function renderOmniaEngine() {
         ? ' <span style="font-size:8px;color:#8eccc0;letter-spacing:.1em;">→ ' + Math.min(20, displayLvl + 1) + ' · building</span>'
         : ' <span style="font-size:8px;color:var(--muted);letter-spacing:.1em;">/ 20</span>';
       return '<div class="omnia-upgrade-row">'
-        + '<div><div class="omnia-upgrade-name">' + upg.name + ' ' + (masteryRank ? '<span class="omnia-mastery-mark">✦' + omniaMasteryRoman(masteryRank) + '</span> ' : '') + displayLvl + nameTail + '</div><div class="omnia-upgrade-sub">' + sub + '</div></div>'
+        + '<div><div class="omnia-upgrade-name">' + upg.name + ' ' + (masteryRank ? '<span class="omnia-mastery-mark">' + omniaMasteryPips(masteryRank) + '</span> ' : '') + displayLvl + nameTail + '</div><div class="omnia-upgrade-sub">' + sub + '</div></div>'
         + btnHtml
         + '</div>';
     }).join('');
@@ -946,7 +946,7 @@ function renderOmniaGenYard() {
       + _genPictureSvg(i, frac, lvl)
       + '<div class="oe-genpic-lvl">' + (building
           ? '<span class="oe-genpic-build">◷ <span data-build-countdown="' + buildingId + '">' + omniaBuildLabel(building) + '</span></span>'
-          : (omniaUpgradeMasteryRank(meta.id, lvl) ? '<span class="omnia-mastery-mark">✦' + omniaMasteryRoman(omniaUpgradeMasteryRank(meta.id, lvl)) + '</span> ' : '') + 'Lv ' + omniaUpgradeDisplayLevel(meta.id, lvl)) + '</div>'
+          : (omniaUpgradeMasteryRank(meta.id, lvl) ? '<span class="omnia-mastery-mark">' + omniaMasteryPips(omniaUpgradeMasteryRank(meta.id, lvl)) + '</span> ' : '') + 'Lv ' + omniaUpgradeDisplayLevel(meta.id, lvl)) + '</div>'
       + '</button>';
   }
   html = '<div class="oe-genyard-row">' + html + '</div>';
@@ -1101,7 +1101,7 @@ function renderGenSheet(gid) {
     var right = '<div style="display:flex; flex-direction:column; align-items:flex-end; gap:4px; flex-shrink:0;">' + btn
       + (timeLabel ? '<span style="font-size:8px; letter-spacing:.08em; color:rgba(196,168,212,.9);">◷ ' + timeLabel + ' build</span>' : '') + '</div>';
     return '<div class="omnia-upgrade-row" style="border-left:2px solid ' + accent + '55; padding-left:11px;">'
-      + '<div><div class="omnia-upgrade-name" style="color:' + accent + ';"><span style="opacity:.9;margin-right:6px;">' + glyph + '</span>' + name + ' ' + (masteryRank ? '<span class="omnia-mastery-mark">✦' + omniaMasteryRoman(masteryRank) + '</span> ' : '') + displayLvl + ' <span style="font-size:8px;color:rgba(200,230,245,.55);letter-spacing:.1em;">/ 20</span></div>'
+      + '<div><div class="omnia-upgrade-name" style="color:' + accent + ';"><span style="opacity:.9;margin-right:6px;">' + glyph + '</span>' + name + ' ' + (masteryRank ? '<span class="omnia-mastery-mark">' + omniaMasteryPips(masteryRank) + '</span> ' : '') + displayLvl + ' <span style="font-size:8px;color:rgba(200,230,245,.55);letter-spacing:.1em;">/ 20</span></div>'
       + '<div class="omnia-upgrade-sub">' + sub + '</div>' + ratePreview + '</div>' + right + '</div>';
   }
 

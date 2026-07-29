@@ -8,9 +8,16 @@ function omniaBodyTotal() {
 var OMNIA_GEN_BASE_HOUR = [22, 28, 34];
 var OMNIA_GEN_PER_LEVEL_HOUR = [12, 10, 10];
 
+// Production is read from the level shown on the card (1–20 within the current
+// band), not the lifetime level, so attaining a mastery genuinely returns the
+// pump to Level 1 — a real prestige rather than a relabelled counter. The band
+// multiplier makes that reset worth taking: the new Level 1 out-produces the
+// old Level 1 several times over, and the band's ceiling clears the previous
+// band's ceiling by the same factor.
 function omniaGeneratorContributionCurve(level, idx) {
   var lvl = Math.max(1, Number(level) || 1);
-  return ((OMNIA_GEN_BASE_HOUR[idx] || 34) + (lvl - 1) * (OMNIA_GEN_PER_LEVEL_HOUR[idx] || 10))
+  var band = omniaUpgradeDisplayLevel('', lvl);
+  return ((OMNIA_GEN_BASE_HOUR[idx] || 34) + (band - 1) * (OMNIA_GEN_PER_LEVEL_HOUR[idx] || 10))
     * omniaCurrentMasteryMult(lvl);
 }
 
@@ -36,7 +43,21 @@ function omniaUpgradeMasteryReady(upgId) {
   return (lvl === 20 || lvl === 40 || lvl === 60) && lvl < omniaUpgradeStepMax(upgId);
 }
 function omniaMasteryRoman(rank) { return ['', 'I', 'II', 'III'][Math.max(0, Math.min(3, rank || 0))] || ''; }
-function omniaCurrentMasteryMult(level) { return 1 + 0.15 * omniaUpgradeMasteryRank('', level); }
+// What one mastery band is worth. Both production and upgrade cost are read
+// from the band level and then scaled by this, so a mastery drops the pump back
+// to Level 1 on a curve that is this much stronger than the one before it.
+var OMNIA_MASTERY_BAND_MULT = 1.5;
+function omniaMasteryScale(rank) {
+  return 1 + OMNIA_MASTERY_BAND_MULT * Math.max(0, Math.min(OMNIA_MASTERY_CAP, rank || 0));
+}
+// The inline badge sits directly beside names that already carry a roman
+// numeral ("Generator I"), where a second one reads as part of the name rather
+// than as a mastery tier. Pips carry the same count without the collision; the
+// explicit "Mastery II" buttons keep their numerals, where they are unambiguous.
+function omniaMasteryPips(rank) {
+  return new Array(Math.max(0, Math.min(OMNIA_MASTERY_CAP, rank || 0)) + 1).join('\u2726');
+}
+function omniaCurrentMasteryMult(level) { return omniaMasteryScale(omniaUpgradeMasteryRank('', level)); }
 function omniaAttunementDiscountMult(level) {
   var lvl = Math.max(1, Number(level) || 1);
   var mastery = omniaUpgradeMasteryRank('', lvl);
@@ -199,7 +220,15 @@ function omniaCosmeticCost(item) {
 }
 function omniaUpgradeCost(upg) {
   var lvl = omniaState.upgrades[upg.id] || 1;
-  var raw = Math.floor((upg.base + (lvl - 1) * upg.step) * Math.pow(1.14, Math.max(0, lvl - 1)));
+  // Price the level the card is actually showing. Charging against the lifetime
+  // level meant a track that had just attained a mastery displayed "Level 1"
+  // while quoting the level-21 price — 78,612 where Level 1 costs 520, and over
+  // two million after the second mastery. The band multiplier keeps each band's
+  // cost curve proportional to the production it now yields.
+  var band = omniaUpgradeDisplayLevel(upg.id, lvl);
+  var raw = Math.floor((upg.base + (band - 1) * upg.step)
+    * Math.pow(1.14, Math.max(0, band - 1))
+    * omniaMasteryScale(omniaUpgradeMasteryRank(upg.id, lvl)));
   // A pump upgrade is cheapened by that pump's own Attunement; anything else
   // uses the global Attunement (Generator I's).
   var pump = _pumpOfUpgrade(upg.id);

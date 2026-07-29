@@ -75,8 +75,8 @@ test('Akasha mastery thresholds grant bounded category-specific benefits', () =>
   const game = createContext();
 
   assert.equal(game.omniaCurrentMasteryMult(20), 1);
-  assert.equal(game.omniaCurrentMasteryMult(21), 1.15);
-  assert.equal(game.omniaCurrentMasteryMult(61), 1.45);
+  assert.equal(game.omniaCurrentMasteryMult(21), 2.5);
+  assert.equal(game.omniaCurrentMasteryMult(61), 5.5);
   assert.equal(game.omniaAttunementDiscountMult(20), 0.5);
   assert.equal(game.omniaAttunementDiscountMult(21), 0.45);
   assert.equal(game.omniaAttunementDiscountMult(61), 0.35);
