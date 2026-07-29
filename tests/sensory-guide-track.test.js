@@ -192,3 +192,17 @@ test('lengthening a sensory practice session requires attempts that were real si
   const oneLong = loadTrack([attempt('2026-07-01T10:00:00.000Z', 600)]);
   assert.equal(oneLong.guideSensoryPracticeMinutes(oneLong.guideSensoryTrackProgress().stages[0]), 15);
 });
+
+test('the Progress view describes only what is on today\'s path', () => {
+  // Cards are filtered against the real path, so an exercise the practitioner
+  // removed is not explained back to them.
+  assert.match(guideSource, /function guideProgressCardIds/);
+  assert.match(guideSource, /onPath \? cards\.filter/);
+  // The intro reads the path too, rather than announcing a curriculum stage
+  // that was removed from it.
+  assert.match(guideSource, /function guideProgressIntro/);
+  assert.match(guideSource, /buildGuideRegimentItems\(\) \|\| \[\]/);
+  assert.match(guideSource, /No sensory stage is on your path right now/);
+  assert.match(guideSource, /The next sense Omnia will recommend is/);
+  assert.doesNotMatch(guideSource, /the single most neglected of Visualization/);
+});

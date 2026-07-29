@@ -1951,41 +1951,97 @@ function guideProgressOverview() {
       ? 'Multi-Sense unlocked · elemental work follows later.'
       : 'Feeling, Smell, and Taste unlock in order; only one is recommended at a time.'
   });
-  return cards;
+  // Progress describes the ladders behind today's path, so it only covers what
+  // is actually on that path. An exercise the practitioner removed has no
+  // bearing on their practice and should not be explained back to them.
+  var onPath = guideProgressCardIds();
+  return onPath ? cards.filter(function(card) { return onPath[card.id]; }) : cards;
+}
+
+// Maps today's path items onto the Progress cards that describe them. Thought
+// Control is drawn as one card covering its three forms, and the sense
+// sub-modes share the Senses card, so several item ids fold into one.
+var GUIDE_PROGRESS_CARD_FOR_ITEM = {
+  clock:'clock',
+  thought:'thought', observation:'thought', focus:'thought', vacancy:'thought',
+  asana:'asana',
+  visual:'visual',
+  auditory:'auditory',
+  sense:'sense', feeling:'sense', smell:'sense', taste:'sense',
+  multisense:'sense'
+};
+
+function guideProgressCardIds() {
+  var items;
+  try { items = buildGuideRegimentItems(); } catch (e) { return null; }
+  if (!Array.isArray(items)) return null;
+  var present = {};
+  items.forEach(function(item) {
+    var cardId = item && GUIDE_PROGRESS_CARD_FOR_ITEM[item.id];
+    if (cardId) present[cardId] = true;
+  });
+  return present;
 }
 
 // The ladders below explain how long each exercise should run, but the question
 // a practitioner actually asks first is why these exercises and not others.
 // This states the selection rule for whichever regiment is in force, naming the
 // pieces that vary today so the daily list stops looking arbitrary.
+// Names a sensory stage the way the practitioner meets it. Visualization's
+// closed/open split is a curriculum stage in its own right, so the eyes belong
+// in the name; Senses carries the practitioner's own eyes preference instead;
+// Auditory has no eyes dimension at all.
+function guideSensoryStageLabel(stage, eyesMode) {
+  if (!stage) return '';
+  if (stage.exercise === 'visual') {
+    return '<b>Visualization</b> with <b>' + (stage.eyesMode === 'open' ? 'open' : 'closed') + ' eyes</b>';
+  }
+  if (stage.exercise === 'sense') {
+    var eyes = eyesMode || guidePathEyesMode('sense', 'closed');
+    return '<b>' + stage.name + ' · ' + stage.label + '</b> with <b>'
+      + (eyes === 'open' ? 'open' : 'closed') + ' eyes</b>';
+  }
+  return '<b>' + stage.name + ' · ' + stage.label + '</b>';
+}
+
 function guideProgressIntro() {
-  var info = guideCurrentRegimentInfo();
-  var rounds = guideTwoADayEnabled() ? ' Each is scheduled <b>twice</b> today.' : '';
-  if (info.mode === 'experienced') {
-    var stats = guideExerciseStats();
-    var gate = null;
-    try {
-      var pick = guideState._dailyPick;
-      if (pick && Array.isArray(pick.ids) && pick.ids.length) gate = pick.ids[0];
-    } catch (e) {}
-    var gateName = gate ? (guideExerciseById(gate) || {}).name : null;
-    return 'Clock and Thought Control anchor every day. Alongside them Omnia rotates in '
-      + 'the single most neglected of Visualization, Auditory, Asana, and Senses'
-      + (gateName ? ' — today that is <b>' + gateName + '</b>' : '')
-      + '. Anything you added yourself stays until you remove it.' + rounds;
+  // Everything here describes today's actual path. Reading the curriculum
+  // directly would announce a stage the practitioner has removed.
+  var items = [];
+  try { items = buildGuideRegimentItems() || []; } catch (e) { items = []; }
+  var present = {};
+  items.forEach(function(item) { if (item) present[item.id] = true; });
+
+  var hasClock = !!present.clock;
+  var hasThought = !!(present.thought || present.observation || present.focus || present.vacancy);
+  var sentences = [];
+  if (hasClock && hasThought) sentences.push('Clock and Thought Control anchor each day.');
+  else if (hasClock) sentences.push('Clock anchors each day.');
+  else if (hasThought) sentences.push('Thought Control anchors each day.');
+
+  var sensoryItem = null;
+  for (var i = 0; i < items.length; i++) {
+    if (items[i] && items[i].sensoryTrack) { sensoryItem = items[i]; break; }
   }
-  var sensory = guideSensoryTrackProgress();
-  if (sensory.complete) {
-    return 'Your day is built from the foundations — Clock and Thought Control — plus '
-      + '<b>Multi-Sense</b>, now that every sensory foundation is mastered.'
-      + ' Anything you added yourself stays until you remove it.' + rounds;
+  var alongside = sentences.length ? 'Alongside them, ' : '';
+  if (sensoryItem && sensoryItem.trackComplete) {
+    sentences.push(alongside + 'you have mastered every sensory foundation, so Omnia now recommends <b>Multi-Sense</b>.');
+  } else if (sensoryItem) {
+    var sensory = guideSensoryTrackProgress();
+    sentences.push(alongside + 'Omnia automatically rotates in a sense to practice until you master it.');
+    if (sensory.current) {
+      sentences.push('Today that sense is ' + guideSensoryStageLabel(sensory.current, sensoryItem.eyesMode) + '.');
+    }
+    if (sensory.next) {
+      sentences.push('The next sense Omnia will recommend is ' + guideSensoryStageLabel(sensory.next) + '.');
+    }
+  } else {
+    sentences.push('No sensory stage is on your path right now — add one with “+” to resume the curriculum.');
   }
-  var current = sensory.current;
-  return 'Your day is built from the foundations — Clock and Thought Control — plus one '
-    + 'stage of the sensory curriculum, taken strictly in order'
-    + (current ? ' — currently <b>' + current.name + ' · ' + current.label + '</b>' : '')
-    + '. A stage advances on one uninterrupted five-minute hold, not on time accumulated.'
-    + ' Anything you added yourself stays until you remove it.' + rounds;
+
+  sentences.push('Anything you add yourself will stay until you remove it.');
+  sentences.push('Each is scheduled <b>' + (guideTwoADayEnabled() ? 'twice' : 'once') + '</b> today.');
+  return sentences.join(' ');
 }
 
 function guideExerciseById(id) {
