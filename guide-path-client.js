@@ -273,6 +273,20 @@ function soulMirrorStarBrightness() {
   return b;
 }
 
+function practiceTreeTierContribution(bestSec, thresholds) {
+  var reached = thresholds.filter(function(sec) { return (bestSec || 0) >= sec; }).length;
+  return reached / thresholds.length;
+}
+
+function visualizationStarBrightness() {
+  if (typeof guideSensoryTrackProgress !== 'function') return 0;
+  var visualStages = guideSensoryTrackProgress().stages.filter(function(stage) {
+    return stage.exercise === 'visual';
+  });
+  var mastered = visualStages.filter(function(stage) { return stage.mastered; }).length;
+  return Math.min(20, mastered * 10);
+}
+
 function practiceTreeNodeBrightness(exId, stats) {
   var st = stats[exId] || { bestSec:0, count:0 };
   if (exId === 'clock') return Math.min(15, Math.floor((st.bestSec||0)/60));
@@ -286,17 +300,26 @@ function practiceTreeNodeBrightness(exId, stats) {
     var breaths = (typeof concState !== 'undefined' && concState.lifetimeBreaths) ? concState.lifetimeBreaths : 0;
     return Math.min(20, Math.floor(breaths / 500));
   }
-  if (exId === 'visual') return Math.min(20, Math.floor((st.bestSec||0)/30));
+  if (exId === 'visual') return visualizationStarBrightness();
   if (exId === 'auditory') return Math.min(20, Math.floor((st.bestSec||0)/30));
   if (exId === 'kether') {
-    var score = 0;
-    // Each contributor lights its share at a brightness threshold. Vacancy is
-    // held to full brightness (20 = best gap ≥ 15 min, at /45); the rest keep
-    // their halfway mark (10).
-    [['clock',10],['vacancy',20],['asana',10],['soulmirror',10],['visual',10],['auditory',10]].forEach(function(pair) {
-      if (practiceTreeNodeBrightness(pair[0], stats) >= pair[1]) score++;
-    });
-    return Math.round(score / 6 * 20);
+    // Fundamentals Mastery has eight equal branches. Clock and each Thought
+    // discipline contribute at their own three mastery milestones.
+    // Visualization contributes half for each sequential five-minute eyes
+    // mastery. The remaining branches retain their existing gates until their
+    // milestone models receive a dedicated pass.
+    var contributions = [
+      practiceTreeTierContribution((stats.clock || {}).bestSec, [300, 600, 900]),
+      practiceTreeTierContribution((stats.observation || {}).bestSec, [600, 750, 900]),
+      practiceTreeTierContribution((stats.focus || {}).bestSec, [600, 750, 900]),
+      practiceTreeTierContribution((stats.vacancy || {}).bestSec, [600, 750, 900]),
+      practiceTreeNodeBrightness('visual', stats) / 20,
+      practiceTreeNodeBrightness('auditory', stats) >= 10 ? 1 : 0,
+      practiceTreeNodeBrightness('asana', stats) >= 10 ? 1 : 0,
+      practiceTreeNodeBrightness('soulmirror', stats) >= 10 ? 1 : 0
+    ];
+    var score = contributions.reduce(function(total, value) { return total + value; }, 0);
+    return Math.min(20, Math.round(score / contributions.length * 20));
   }
   return 0;
 }
