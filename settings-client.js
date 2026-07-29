@@ -549,6 +549,7 @@ document.getElementById('drawerDonate').addEventListener('click', function() {
 
 (function wireBugReporting() {
   var drawerBtn = document.getElementById('drawerBugReport');
+  var footerBtn = document.getElementById('drawerFooterBugReport');
   var backBtn = document.getElementById('bugReportBack');
   var form = document.getElementById('bugReportForm');
   var category = document.getElementById('bugReportCategory');
@@ -564,12 +565,17 @@ document.getElementById('drawerDonate').addEventListener('click', function() {
     status.textContent = message;
   }
 
-  drawerBtn.addEventListener('click', function() {
+  function openBugReport() {
     closeDrawer();
     status.className = 'bug-report-status';
     status.textContent = '';
     showScreen('bugReportScreen');
-  });
+  }
+
+  drawerBtn.addEventListener('click', openBugReport);
+  // Pinned in the drawer footer (outside the scrolling item list) so the
+  // option is visible the instant the drawer opens, without scrolling.
+  if (footerBtn) footerBtn.addEventListener('click', openBugReport);
   backBtn.addEventListener('click', function() {
     renderHomeForNavigation();
     showScreen('homeScreen');
