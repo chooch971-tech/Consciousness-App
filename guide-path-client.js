@@ -322,13 +322,32 @@ function practiceTreeNodeStats(exId, stats) {
   return exId === 'kether' ? {} : (stats[exId] || {});
 }
 
+function practiceTreeVisualizationBest(eyesMode) {
+  var history = (typeof concState !== 'undefined' && concState.history) ? concState.history : [];
+  return history.reduce(function(best, session) {
+    if (!session || session.type !== 'visualization') return best;
+    var sessionEyes = session.eyesMode === 'open' ? 'open' : 'closed';
+    if (sessionEyes !== eyesMode) return best;
+    if (Object.prototype.hasOwnProperty.call(session, 'cleanSeconds')) {
+      return Math.max(best, Math.max(0, Number(session.cleanSeconds) || 0));
+    }
+    if (Array.isArray(session.visualReps) && session.visualReps.length) {
+      return session.visualReps.reduce(function(repBest, rep) {
+        var seconds = Math.max(0, Number(rep.seconds) || 0);
+        var halts = Math.max(0, Number(rep.halts) || 0);
+        return halts === 0 && seconds > repBest ? seconds : repBest;
+      }, best);
+    }
+    var seconds = Math.max(0, Number(session.seconds) || 0);
+    var halts = Math.max(0, Number(session.halts) || 0);
+    return halts === 0 && seconds > best ? seconds : best;
+  }, 0);
+}
+
 function visualizationStarBrightness() {
-  if (typeof guideSensoryTrackProgress !== 'function') return 0;
-  var visualStages = guideSensoryTrackProgress().stages.filter(function(stage) {
-    return stage.exercise === 'visual';
-  });
-  var mastered = visualStages.filter(function(stage) { return stage.mastered; }).length;
-  return Math.min(20, mastered * 10);
+  var closedMinutes = Math.min(5, Math.floor(practiceTreeVisualizationBest('closed') / 60));
+  var openMinutes = Math.min(5, Math.floor(practiceTreeVisualizationBest('open') / 60));
+  return (closedMinutes + openMinutes) * 2;
 }
 
 function practiceTreeAuditoryBest(eyesMode) {
@@ -394,8 +413,20 @@ function sensesStarMasteryCount(eyesMode) {
   }, 0);
 }
 
+function sensesStarMinuteCount(eyesMode) {
+  var modes = ['feeling', 'smell', 'taste'];
+  var eyes = eyesMode ? [eyesMode] : ['closed', 'open'];
+  return modes.reduce(function(total, mode) {
+    return total + eyes.reduce(function(eyeTotal, modeEyes) {
+      return eyeTotal + Math.min(5, Math.floor(practiceTreeSenseBest(mode, modeEyes) / 60));
+    }, 0);
+  }, 0);
+}
+
 function sensesStarBrightness() {
-  return Math.round(sensesStarMasteryCount() / 6 * 200) / 10;
+  // Thirty equal milestones: minutes 1–5 for Feeling, Smell, and Taste,
+  // first with Closed Eyes and then with Open Eyes.
+  return Math.round(sensesStarMinuteCount() / 30 * 200) / 10;
 }
 
 function thoughtControlStarBrightness(stats) {
@@ -452,10 +483,9 @@ function practiceTreeNodeBrightness(exId, stats) {
     // Fundamentals Mastery has nine equal branches. Thought Control combines
     // Observation, Focus, and Vacancy; Awareness brightens continuously
     // through level 100.
-    // Visualization contributes half for each sequential five-minute eyes
-    // mastery; Auditory contributes at every clean minute from one through
-    // five for each eye mode; and every Senses mode/eyes mastery contributes
-    // one-sixth of its branch.
+    // Visualization and Auditory contribute at every clean minute from one
+    // through five for each eye mode. Senses divides the same five-minute
+    // progression across Feeling, Smell, and Taste in both eye modes.
     var contributions = [
       practiceTreeTierContribution((stats.clock || {}).bestSec, [300, 600, 900]),
       practiceTreeNodeBrightness('thought', stats) / 20,
@@ -779,7 +809,9 @@ function renderPracticeTree() {
       var isMirror = (node.ex === 'soulmirror');
       var isThought = (node.ex === 'thought');
       var isAwareness = (node.ex === 'awareness');
+      var isVisual = (node.ex === 'visual');
       var isAuditory = (node.ex === 'auditory');
+      var isSense = (node.ex === 'sense');
       var poreBreaths = isPore ? ((typeof concState !== 'undefined' && concState.lifetimeBreaths) ? concState.lifetimeBreaths : 0) : 0;
       var st = practiceTreeNodeStats(node.ex, stats);
       var sessions = st.count || 0;
@@ -826,9 +858,23 @@ function renderPracticeTree() {
         statLines.push('<strong>Level</strong> ' + (st.level || 1) + ' · full brightness at 100');
         statLines.push('<strong>Sessions</strong> ' + sessions + (dep > 0 ? ' · ' + dep + ' depth ring' + (dep > 1 ? 's' : '') : ''));
         if (sessions > 0) statLines.push('<strong>Last practiced</strong> ' + recencyStr);
+      } else if (isVisual) {
+        statLines.push('<strong>Closed Eyes</strong> ' + guideFmtTime(practiceTreeVisualizationBest('closed')) + ' / 5m');
+        statLines.push('<strong>Open Eyes</strong> ' + guideFmtTime(practiceTreeVisualizationBest('open')) + ' / 5m');
+        statLines.push('<strong>Sessions</strong> ' + sessions + (dep > 0 ? ' · ' + dep + ' depth ring' + (dep > 1 ? 's' : '') : ''));
+        if (sessions > 0) statLines.push('<strong>Last practiced</strong> ' + recencyStr);
       } else if (isAuditory) {
         statLines.push('<strong>Closed Eyes</strong> ' + guideFmtTime(practiceTreeAuditoryBest('closed')) + ' / 5m');
         statLines.push('<strong>Open Eyes</strong> ' + guideFmtTime(practiceTreeAuditoryBest('open')) + ' / 5m');
+        statLines.push('<strong>Sessions</strong> ' + sessions + (dep > 0 ? ' · ' + dep + ' depth ring' + (dep > 1 ? 's' : '') : ''));
+        if (sessions > 0) statLines.push('<strong>Last practiced</strong> ' + recencyStr);
+      } else if (isSense) {
+        ['feeling', 'smell', 'taste'].forEach(function(mode) {
+          var label = mode.charAt(0).toUpperCase() + mode.slice(1);
+          statLines.push('<strong>' + label + '</strong> Closed '
+            + guideFmtTime(practiceTreeSenseBest(mode, 'closed')) + ' · Open '
+            + guideFmtTime(practiceTreeSenseBest(mode, 'open')));
+        });
         statLines.push('<strong>Sessions</strong> ' + sessions + (dep > 0 ? ' · ' + dep + ' depth ring' + (dep > 1 ? 's' : '') : ''));
         if (sessions > 0) statLines.push('<strong>Last practiced</strong> ' + recencyStr);
       } else {

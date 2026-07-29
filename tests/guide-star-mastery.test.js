@@ -14,8 +14,13 @@ function loadBrightness(visualMasteries, history, options) {
   const end = guideSource.indexOf('// Recency is an early-practice encouragement');
   const visual = visualMasteries || [];
   const opts = options || {};
+  const seededHistory = (history || []).concat(visual.map(eyesMode => ({
+    type:'visualization',
+    eyesMode,
+    cleanSeconds:300
+  })));
   const context = {
-    concState:{ lifetimeBreaths:opts.breaths || 0, history:history || [] },
+    concState:{ lifetimeBreaths:opts.breaths || 0, history:seededHistory },
     state:{
       level:opts.awarenessLevel || 1,
       totalSessions:opts.awarenessSessions || 0,
@@ -98,15 +103,53 @@ test('Awareness brightens continuously and reaches full brightness at level 100'
   assert.equal(complete.practiceTreeNodeBrightness('kether', stats), 2.2);
 });
 
-test('Visualization is half bright after Closed Eyes mastery and full after Open Eyes mastery', () => {
+test('Visualization earns two brightness points per clean minute in each eye mode', () => {
+  const halted = loadBrightness([], [{
+    type:'visualization', seconds:420, halts:1
+  }]);
+  const almostClosed = loadBrightness([], [{
+    type:'visualization', cleanSeconds:290, halts:1
+  }]);
   const closed = loadBrightness(['closed']);
+  const openProgress = loadBrightness([], [
+    { type:'visualization', cleanSeconds:300 },
+    { type:'visualization', eyesMode:'open', cleanSeconds:179 }
+  ]);
   const complete = loadBrightness(['closed', 'open']);
   const stats = emptyStats();
 
+  assert.equal(halted.practiceTreeNodeBrightness('visual', stats), 0);
+  assert.equal(almostClosed.practiceTreeVisualizationBest('closed'), 290);
+  assert.equal(almostClosed.practiceTreeNodeBrightness('visual', stats), 8);
   assert.equal(closed.practiceTreeNodeBrightness('visual', stats), 10);
+  assert.equal(openProgress.practiceTreeNodeBrightness('visual', stats), 14);
   assert.equal(complete.practiceTreeNodeBrightness('visual', stats), 20);
   assert.equal(closed.practiceTreeNodeBrightness('kether', stats), 1.1);
   assert.equal(complete.practiceTreeNodeBrightness('kether', stats), 2.2);
+});
+
+test('Visualization falls back to clean rep evidence and treats legacy sessions as Closed Eyes', () => {
+  const context = loadBrightness([], [
+    {
+      type:'visualization',
+      visualReps:[
+        { seconds:240, halts:1 },
+        { seconds:180, halts:0 }
+      ]
+    },
+    {
+      type:'visualization',
+      eyesMode:'open',
+      visualReps:[
+        { seconds:120, halts:0 }
+      ]
+    }
+  ]);
+  const stats = emptyStats();
+
+  assert.equal(context.practiceTreeVisualizationBest('closed'), 180);
+  assert.equal(context.practiceTreeVisualizationBest('open'), 120);
+  assert.equal(context.practiceTreeNodeBrightness('visual', stats), 10);
 });
 
 test('Auditory earns two brightness points per clean minute in each eye mode', () => {
@@ -163,7 +206,7 @@ test('Auditory falls back to clean rep evidence and treats legacy sessions as Cl
   assert.equal(context.practiceTreeNodeBrightness('auditory', stats), 10);
 });
 
-test('each Senses mode and eye-state mastery adds one-sixth of its Star branch', () => {
+test('each clean minute across Senses modes and eye states advances its Star', () => {
   const history = [
     {
       exercise:'sense',
@@ -180,8 +223,9 @@ test('each Senses mode and eye-state mastery adds one-sixth of its Star branch',
   const stats = emptyStats();
 
   assert.equal(context.sensesStarMasteryCount(), 3);
-  assert.equal(context.practiceTreeNodeBrightness('sense', stats), 10);
-  assert.equal(context.practiceTreeNodeBrightness('kether', stats), 1.1);
+  assert.equal(context.sensesStarMinuteCount(), 19);
+  assert.equal(context.practiceTreeNodeBrightness('sense', stats), 12.7);
+  assert.equal(context.practiceTreeNodeBrightness('kether', stats), 1.4);
 });
 
 test('Asana contributes to Fundamentals at 10, 20, 25, and 30 minutes', () => {
