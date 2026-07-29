@@ -15,6 +15,7 @@ function loadRecency(options) {
   const thoughtBest = Object.assign({}, options && options.thoughtBest);
   const context = {
     concState:{ history:(options && options.history) || [] },
+    state:{ level:(options && options.awarenessLevel) || 1 },
     ACH_MASTERY_DEFS:() => [
       'Clock',
       'Visualization',
@@ -57,20 +58,29 @@ test('first mastery permanently stabilizes an exercise aura and pulse', () => {
   });
 });
 
-test('Thought Control nodes stabilize independently at ten minutes', () => {
-  const context = loadRecency({
-    thoughtBest:{ observation:600, focus:599, vacancy:900 }
-  });
+test('Thought Control stabilizes only after all three modes reach ten minutes', () => {
   const stale = daysAgo(70);
   const stats = {
     observation:{ bestSec:600, lastMs:stale },
     focus:{ bestSec:599, lastMs:stale },
-    vacancy:{ bestSec:900, lastMs:stale }
+    vacancy:{ bestSec:900, lastMs:stale },
+    thought:{ lastMs:stale }
   };
+  const incomplete = loadRecency({
+    thoughtBest:{ observation:600, focus:599, vacancy:900 }
+  });
+  const complete = loadRecency({
+    thoughtBest:{ observation:600, focus:600, vacancy:900 }
+  });
 
-  assert.equal(context.practiceTreeNodeRecency('observation', stats), 1);
-  assert.equal(context.practiceTreeNodeRecency('focus', stats), 0.2);
-  assert.equal(context.practiceTreeNodeRecency('vacancy', stats), 1);
+  assert.equal(incomplete.practiceTreeNodeRecency('thought', stats), 0.2);
+  assert.equal(complete.practiceTreeNodeRecency('thought', stats), 1);
+});
+
+test('Awareness stabilizes at its first level milestone', () => {
+  const staleStats = { awareness:{ lastMs:daysAgo(70) } };
+  assert.equal(loadRecency({ awarenessLevel:24 }).practiceTreeNodeRecency('awareness', staleStats), 0.2);
+  assert.equal(loadRecency({ awarenessLevel:25 }).practiceTreeNodeRecency('awareness', staleStats), 1);
 });
 
 test('Fundamentals Mastery remains a composite rather than a decaying exercise', () => {

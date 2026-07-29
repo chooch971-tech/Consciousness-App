@@ -15,6 +15,11 @@ function loadBrightness(visualMasteries, history, options) {
   const opts = options || {};
   const context = {
     concState:{ lifetimeBreaths:opts.breaths || 0, history:history || [] },
+    state:{
+      level:opts.awarenessLevel || 1,
+      totalSessions:opts.awarenessSessions || 0,
+      history:opts.awarenessHistory || []
+    },
     SOUL_MIRROR_NEG_GOAL:100,
     SOUL_MIRROR_POS_GOAL:60,
     loadSoulMirror:() => ({
@@ -38,6 +43,8 @@ function emptyStats() {
     observation:{ bestSec:0 },
     focus:{ bestSec:0 },
     vacancy:{ bestSec:0 },
+    thought:{ bestSec:0 },
+    awareness:{ bestSec:0 },
     visual:{ bestSec:0 },
     auditory:{ bestSec:0 },
     asana:{ bestSec:0 },
@@ -56,25 +63,38 @@ test('Clock contributes progressively to Fundamentals Mastery at 5, 10, and 15 m
   stats.clock.bestSec = 300;
   assert.equal(context.practiceTreeNodeBrightness('kether', stats), 0.7);
   stats.clock.bestSec = 600;
-  assert.equal(context.practiceTreeNodeBrightness('kether', stats), 1.3);
+  assert.equal(context.practiceTreeNodeBrightness('kether', stats), 1.5);
   stats.clock.bestSec = 900;
-  assert.equal(context.practiceTreeNodeBrightness('kether', stats), 2);
+  assert.equal(context.practiceTreeNodeBrightness('kether', stats), 2.2);
 });
 
-test('Observation, Focus, and Vacancy each contribute independently to the top star', () => {
+test('Thought Control combines Observation, Focus, and Vacancy into one star', () => {
   const context = loadBrightness();
   const stats = emptyStats();
 
   stats.observation.bestSec = 900;
-  const observationOnly = context.practiceTreeNodeBrightness('kether', stats);
+  const observationOnly = context.practiceTreeNodeBrightness('thought', stats);
   stats.focus.bestSec = 900;
-  const withFocus = context.practiceTreeNodeBrightness('kether', stats);
+  const withFocus = context.practiceTreeNodeBrightness('thought', stats);
   stats.vacancy.bestSec = 900;
-  const allThoughtModes = context.practiceTreeNodeBrightness('kether', stats);
+  const allThoughtModes = context.practiceTreeNodeBrightness('thought', stats);
 
-  assert.equal(observationOnly, 2);
-  assert.equal(withFocus, 4);
-  assert.equal(allThoughtModes, 6);
+  assert.equal(observationOnly, 6.7);
+  assert.equal(withFocus, 13.3);
+  assert.equal(allThoughtModes, 20);
+  assert.equal(context.practiceTreeNodeBrightness('kether', stats), 2.2);
+});
+
+test('Awareness brightens continuously and reaches full brightness at level 100', () => {
+  const start = loadBrightness([], [], { awarenessLevel:1 });
+  const halfway = loadBrightness([], [], { awarenessLevel:50 });
+  const complete = loadBrightness([], [], { awarenessLevel:100 });
+  const stats = emptyStats();
+
+  assert.equal(start.practiceTreeNodeBrightness('awareness', stats), 0);
+  assert.equal(halfway.practiceTreeNodeBrightness('awareness', stats), 9.9);
+  assert.equal(complete.practiceTreeNodeBrightness('awareness', stats), 20);
+  assert.equal(complete.practiceTreeNodeBrightness('kether', stats), 2.2);
 });
 
 test('Visualization is half bright after Closed Eyes mastery and full after Open Eyes mastery', () => {
@@ -84,8 +104,8 @@ test('Visualization is half bright after Closed Eyes mastery and full after Open
 
   assert.equal(closed.practiceTreeNodeBrightness('visual', stats), 10);
   assert.equal(complete.practiceTreeNodeBrightness('visual', stats), 20);
-  assert.equal(closed.practiceTreeNodeBrightness('kether', stats), 1);
-  assert.equal(complete.practiceTreeNodeBrightness('kether', stats), 2);
+  assert.equal(closed.practiceTreeNodeBrightness('kether', stats), 1.1);
+  assert.equal(complete.practiceTreeNodeBrightness('kether', stats), 2.2);
 });
 
 test('Auditory fully lights after one clean five-minute hold', () => {
@@ -99,7 +119,7 @@ test('Auditory fully lights after one clean five-minute hold', () => {
 
   assert.equal(halted.practiceTreeNodeBrightness('auditory', stats), 0);
   assert.equal(mastered.practiceTreeNodeBrightness('auditory', stats), 20);
-  assert.equal(mastered.practiceTreeNodeBrightness('kether', stats), 2);
+  assert.equal(mastered.practiceTreeNodeBrightness('kether', stats), 2.2);
 });
 
 test('each Senses mode and eye-state mastery adds one-sixth of its Star branch', () => {
@@ -120,7 +140,7 @@ test('each Senses mode and eye-state mastery adds one-sixth of its Star branch',
 
   assert.equal(context.sensesStarMasteryCount(), 3);
   assert.equal(context.practiceTreeNodeBrightness('sense', stats), 10);
-  assert.equal(context.practiceTreeNodeBrightness('kether', stats), 1);
+  assert.equal(context.practiceTreeNodeBrightness('kether', stats), 1.1);
 });
 
 test('Asana contributes to Fundamentals at 10, 20, 25, and 30 minutes', () => {
@@ -128,10 +148,10 @@ test('Asana contributes to Fundamentals at 10, 20, 25, and 30 minutes', () => {
   const stats = emptyStats();
   const expected = [
     [599, 0],
-    [600, 0.5],
-    [1200, 1],
-    [1500, 1.5],
-    [1800, 2]
+    [600, 0.6],
+    [1200, 1.1],
+    [1500, 1.7],
+    [1800, 2.2]
   ];
 
   expected.forEach(([seconds, brightness]) => {
@@ -140,7 +160,7 @@ test('Asana contributes to Fundamentals at 10, 20, 25, and 30 minutes', () => {
   });
 });
 
-test('all ten completed branches fully light Fundamentals Mastery', () => {
+test('all nine completed branches fully light Fundamentals Mastery', () => {
   const senseReps = ['feeling', 'smell', 'taste'].flatMap(mode => [
     { mode, eyesMode:'closed', seconds:300, halts:0 },
     { mode, eyesMode:'open', seconds:300, halts:0 }
@@ -151,7 +171,7 @@ test('all ten completed branches fully light Fundamentals Mastery', () => {
       { type:'auditory', cleanSeconds:300 },
       { exercise:'sense', senseReps }
     ],
-    { breaths:5000, transformedTraits:5 }
+    { breaths:5000, transformedTraits:5, awarenessLevel:100 }
   );
   const stats = emptyStats();
   stats.clock.bestSec = 900;
@@ -163,7 +183,7 @@ test('all ten completed branches fully light Fundamentals Mastery', () => {
   assert.equal(context.practiceTreeNodeBrightness('kether', stats), 20);
 });
 
-test('Thought detail sheets read the selected discipline instead of aggregate Thought stats', () => {
+test('Thought Control detail sheets use aggregate session stats', () => {
   const context = loadBrightness();
   const stats = {
     thought:{ count:12, bestSec:900 },
@@ -172,8 +192,20 @@ test('Thought detail sheets read the selected discipline instead of aggregate Th
     vacancy:{ count:5, bestSec:840 }
   };
 
-  assert.equal(context.practiceTreeNodeStats('observation', stats).count, 3);
-  assert.equal(context.practiceTreeNodeStats('focus', stats).bestSec, 750);
-  assert.equal(context.practiceTreeNodeStats('vacancy', stats).count, 5);
+  assert.equal(context.practiceTreeNodeStats('thought', stats).count, 12);
   assert.equal(Object.keys(context.practiceTreeNodeStats('kether', stats)).length, 0);
+});
+
+test('Guide Star keeps ten nodes and replaces the old thought labels', () => {
+  assert.doesNotMatch(guideSource, /label:'THT FOCUS'/);
+  assert.doesNotMatch(guideSource, /label:'THOUGHT OBS\.'/);
+  assert.match(guideSource, /id:'binah',\s+ex:'thought'.+label:'THOUGHT', label2:'CONTROL'/);
+  assert.match(guideSource, /id:'geburah',\s+ex:'sense'.+label:'SENSES'/);
+  assert.match(guideSource, /id:'tiphareth',\s+ex:'awareness'.+label:'AWARENESS'/);
+
+  const nodesBlock = guideSource.slice(
+    guideSource.indexOf('var NODES = ['),
+    guideSource.indexOf('];', guideSource.indexOf('var NODES = ['))
+  );
+  assert.equal((nodesBlock.match(/id:'/g) || []).length, 10);
 });

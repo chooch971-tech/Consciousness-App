@@ -388,12 +388,46 @@ function sensesStarBrightness() {
   return Math.round(sensesStarMasteryCount() / 6 * 200) / 10;
 }
 
+function thoughtControlStarBrightness(stats) {
+  var modes = ['observation', 'focus', 'vacancy'];
+  var score = modes.reduce(function(total, mode) {
+    return total + practiceTreeTierContribution((stats[mode] || {}).bestSec, [600, 750, 900]);
+  }, 0);
+  return Math.round(score / modes.length * 200) / 10;
+}
+
+function awarenessStarBrightness() {
+  var awarenessState = (typeof state !== 'undefined' && state) ? state : {};
+  var level = Math.max(1, Number(awarenessState.level) || 1);
+  return Math.min(20, Math.round((level - 1) / 99 * 200) / 10);
+}
+
+function practiceTreeAwarenessStats() {
+  var awarenessState = (typeof state !== 'undefined' && state) ? state : {};
+  var history = Array.isArray(awarenessState.history) ? awarenessState.history : [];
+  var lastMs = history.reduce(function(latest, session) {
+    var ms = session && session.date ? new Date(session.date).getTime() : 0;
+    return ms > latest ? ms : latest;
+  }, 0);
+  if (!lastMs && awarenessState.lastSessionDate) {
+    lastMs = new Date(awarenessState.lastSessionDate).getTime() || 0;
+  }
+  var bestSec = history.reduce(function(best, session) {
+    return Math.max(best, Math.max(0, Number(session && session.durationMin) || 0) * 60);
+  }, 0);
+  return {
+    count:Math.max(history.length, Math.max(0, Number(awarenessState.totalSessions) || 0)),
+    bestSec:bestSec,
+    lastMs:lastMs,
+    level:Math.max(1, Number(awarenessState.level) || 1)
+  };
+}
+
 function practiceTreeNodeBrightness(exId, stats) {
   var st = stats[exId] || { bestSec:0, count:0 };
   if (exId === 'clock') return Math.min(15, Math.floor((st.bestSec||0)/60));
-  if (exId === 'observation' || exId === 'focus' || exId === 'vacancy') {
-    return Math.min(20, Math.floor((st.bestSec||0)/45));
-  }
+  if (exId === 'thought') return thoughtControlStarBrightness(stats);
+  if (exId === 'awareness') return awarenessStarBrightness();
   if (exId === 'asana') return Math.min(20, Math.floor((st.bestSec||0)/90));
   if (exId === 'soulmirror') return soulMirrorStarBrightness();
   if (exId === 'pore') {
@@ -405,16 +439,16 @@ function practiceTreeNodeBrightness(exId, stats) {
   if (exId === 'auditory') return auditoryStarBrightness();
   if (exId === 'sense') return sensesStarBrightness();
   if (exId === 'kether') {
-    // Fundamentals Mastery has ten equal branches. Clock and each Thought
-    // discipline contribute at their own mastery milestones.
+    // Fundamentals Mastery has nine equal branches. Thought Control combines
+    // Observation, Focus, and Vacancy; Awareness brightens continuously
+    // through level 100.
     // Visualization contributes half for each sequential five-minute eyes
     // mastery; Auditory contributes one clean five-minute hold; and every
     // Senses mode/eyes mastery contributes one-sixth of its branch.
     var contributions = [
       practiceTreeTierContribution((stats.clock || {}).bestSec, [300, 600, 900]),
-      practiceTreeTierContribution((stats.observation || {}).bestSec, [600, 750, 900]),
-      practiceTreeTierContribution((stats.focus || {}).bestSec, [600, 750, 900]),
-      practiceTreeTierContribution((stats.vacancy || {}).bestSec, [600, 750, 900]),
+      practiceTreeNodeBrightness('thought', stats) / 20,
+      practiceTreeNodeBrightness('awareness', stats) / 20,
       practiceTreeNodeBrightness('visual', stats) / 20,
       practiceTreeNodeBrightness('auditory', stats) / 20,
       practiceTreeNodeBrightness('sense', stats) / 20,
@@ -430,14 +464,16 @@ function practiceTreeNodeBrightness(exId, stats) {
 
 // Recency is an early-practice encouragement, not a permanent maintenance
 // obligation. Once a node reaches the same first-mastery gate used by
-// Achievements, its aura stays settled at full strength. Thought Control is
-// drawn as three separate nodes, so each discipline stabilizes independently.
+// Achievements, its aura stays settled at full strength.
 function practiceTreeNodeFirstMasteryMet(exId, stats) {
   if (exId === 'kether') return false;
-  if (exId === 'observation' || exId === 'focus' || exId === 'vacancy') {
-    if (typeof achTCBest === 'function') return achTCBest(exId) >= 600;
-    return ((stats[exId] || {}).bestSec || 0) >= 600;
+  if (exId === 'thought') {
+    return ['observation', 'focus', 'vacancy'].every(function(mode) {
+      if (typeof achTCBest === 'function') return achTCBest(mode) >= 600;
+      return ((stats[mode] || {}).bestSec || 0) >= 600;
+    });
   }
+  if (exId === 'awareness') return ((typeof state !== 'undefined' && state) ? state.level : 1) >= 25;
   if (exId === 'sense') return sensesStarMasteryCount('closed') >= 3;
 
   var achievementName = {
@@ -489,18 +525,19 @@ function renderPracticeTree() {
   if (!el) return;
 
   var stats = guideExerciseStats();
-  // Inject per-mode thought stats so observation/focus/vacancy nodes render independently
+  // Thought Control uses the aggregate for depth/recency and the per-mode
+  // records for its combined brightness and mastery.
   var _tStats = guideThoughtStats();
   ['observation','focus','vacancy'].forEach(function(m) { stats[m] = _tStats[m] || { count:0, bestSec:0, lastMs:0 }; });
+  stats.awareness = practiceTreeAwarenessStats();
 
   var NODES = [
     { id:'kether',    ex:'kether',      cx:170, cy:48,  color:'#c8a848', lc:'#f8f0cc', label:'FUNDAMENTALS', label2:'MASTERY', fs:5.5, gf:'pt-gf-gold' },
     { id:'chokmah',   ex:'visual',      cx:242, cy:115, color:'#6e9fd4', lc:'#c4dff8', label:'VISUALIZATION', fs:6.5, gf:'pt-gf-blue' },
-    { id:'binah',     ex:'vacancy',     cx:98,  cy:115, color:'#7898b8', lc:'#ccdaec', label:'VACANCY',       fs:6.5, gf:'pt-gf-purple' },
+    { id:'binah',     ex:'thought',     cx:98,  cy:115, color:'#7898b8', lc:'#ccdaec', label:'THOUGHT', label2:'CONTROL', fs:5.7, gf:'pt-gf-purple' },
     { id:'chesed',    ex:'auditory',    cx:242, cy:190, color:'#6eb8a4', lc:'#c4ece4', label:'AUDITORY',      fs:6.5, gf:'pt-gf-teal-sm' },
-    { id:'geburah',   ex:'focus',       cx:98,  cy:190, color:'#7898b8', lc:'#ccdaec', label:'THT FOCUS',     fs:6.5, gf:'pt-gf-teal-sm' },
-    { id:'tiphareth', ex:'observation', cx:170, cy:260, color:'#7898b8', lc:'#ccdaec', label:'THOUGHT OBS.',  fs:7,   gf:'pt-gf-teal' },
-    { id:'senses',    ex:'sense',       cx:242, cy:265, color:'#cf8fb0', lc:'#f0c6da', label:'SENSES',        fs:7,   gf:'pt-gf-rose' },
+    { id:'geburah',   ex:'sense',       cx:98,  cy:190, color:'#cf8fb0', lc:'#f0c6da', label:'SENSES',        fs:7,   gf:'pt-gf-rose' },
+    { id:'tiphareth', ex:'awareness',   cx:170, cy:260, color:'#7eb8a4', lc:'#c4ece4', label:'AWARENESS',     fs:7,   gf:'pt-gf-teal' },
     { id:'netzach',   ex:'pore',        cx:242, cy:340, color:'#a47eb8', lc:'#e4d0f4', label:'PORE BREATH',   fs:6.5, gf:'pt-gf-blue' },
     { id:'hod',       ex:'soulmirror',  cx:98,  cy:340, color:'#a47eb8', lc:'#e4d0f4', label:'SOUL MIRROR',   fs:6.5, gf:'pt-gf-purple' },
     { id:'yesod',     ex:'asana',       cx:170, cy:400, color:'#c47878', lc:'#f4d0d0', label:'ASANA',         fs:7,   gf:'pt-gf-rose' },
@@ -575,8 +612,6 @@ function renderPracticeTree() {
     pathLine(170,400,242,340,'#8ecce0','yesod'),
     pathLine(98,340,170,260,'#8ecce0','hod'),
     pathLine(242,340,170,260,'#8ecce0','netzach'),
-    pathLine(242,340,242,265,'#cf8fb0','netzach'),
-    pathLine(242,265,242,190,'#cf8fb0','senses'),
     pathLine(170,260,98,190,'#98b4cc','tiphareth'),
     pathLine(170,260,242,190,'#8ecce0','tiphareth'),
     pathLine(98,190,98,115,'#98b4cc','geburah'),
@@ -614,18 +649,17 @@ function renderPracticeTree() {
 
   // Node info data
   var nameMap = {
-    kether:'Fundamentals Mastery', chokmah:'Visualization', binah:'Vacancy of Mind',
-    chesed:'Auditory', geburah:'Thought Focus', tiphareth:'Thought Observation',
-    senses:'Senses', netzach:'Pore Breathing', hod:'Soul Mirror', yesod:'Asana', malkuth:'Clock'
+    kether:'Fundamentals Mastery', chokmah:'Visualization', binah:'Thought Control',
+    chesed:'Auditory', geburah:'Senses', tiphareth:'Awareness',
+    netzach:'Pore Breathing', hod:'Soul Mirror', yesod:'Asana', malkuth:'Clock'
   };
   var descMap = {
     kether:'Lights up as all exercises approach mastery.',
     chokmah:'Hold a mental image clearly for five minutes without halting.',
-    binah:'Let the mind stay empty — note the first sign of content.',
+    binah:'Observation, Focus, and Vacancy brighten this star together.',
     chesed:'Concentrated listening on a single sound.',
-    geburah:'Fix attention on one thought or word and hold it.',
-    tiphareth:'Watch thoughts arise and pass without entering them.',
-    senses:'Master feeling, smell, and taste with both closed and open eyes.',
+    geburah:'Master feeling, smell, and taste with both closed and open eyes.',
+    tiphareth:'Return to the present throughout daily life and formal sessions.',
     netzach:'Breathing through every pore of the body simultaneously.',
     hod:'Honest daily reflection on traits and patterns.',
     yesod:'Seated stillness — no movement for the full duration.',
@@ -707,6 +741,9 @@ function renderPracticeTree() {
               var pbTab = document.querySelector('#soulMirrorTabs [data-tab="breathing"]');
               if (pbTab) pbTab.click();
             }, 320);
+          } else if (ex === 'awareness') {
+            showScreen('homeScreen');
+            switchMode('awareness');
           } else if (ex && ex !== 'kether') {
             openExerciseSetup(ex);
           }
@@ -729,6 +766,8 @@ function renderPracticeTree() {
       var rec = practiceTreeNodeRecency(node.ex, stats);
       var isPore = (node.ex === 'pore');
       var isMirror = (node.ex === 'soulmirror');
+      var isThought = (node.ex === 'thought');
+      var isAwareness = (node.ex === 'awareness');
       var poreBreaths = isPore ? ((typeof concState !== 'undefined' && concState.lifetimeBreaths) ? concState.lifetimeBreaths : 0) : 0;
       var st = practiceTreeNodeStats(node.ex, stats);
       var sessions = st.count || 0;
@@ -757,6 +796,16 @@ function renderPracticeTree() {
         statLines.push('<strong>Inventory</strong> ' + (_mc ? '✓ complete' : (_neg.length + ' / 100 neg · ' + _pos.length + ' / 60 pos')));
         statLines.push('<strong>Transformed</strong> ' + _negDone + ' / 20 trait' + (_negDone === 1 ? '' : 's'));
         if (_inProg > 0) statLines.push('<strong>In progress</strong> ' + _inProg + ' trait' + (_inProg === 1 ? '' : 's'));
+      } else if (isThought) {
+        statLines.push('<strong>Observation</strong> ' + guideFmtTime((stats.observation || {}).bestSec || 0));
+        statLines.push('<strong>Focus</strong> ' + guideFmtTime((stats.focus || {}).bestSec || 0));
+        statLines.push('<strong>Vacancy</strong> ' + guideFmtTime((stats.vacancy || {}).bestSec || 0));
+        statLines.push('<strong>Sessions</strong> ' + sessions + (dep > 0 ? ' · ' + dep + ' depth ring' + (dep > 1 ? 's' : '') : ''));
+        if (sessions > 0) statLines.push('<strong>Last practiced</strong> ' + recencyStr);
+      } else if (isAwareness) {
+        statLines.push('<strong>Level</strong> ' + (st.level || 1) + ' · full brightness at 100');
+        statLines.push('<strong>Sessions</strong> ' + sessions + (dep > 0 ? ' · ' + dep + ' depth ring' + (dep > 1 ? 's' : '') : ''));
+        if (sessions > 0) statLines.push('<strong>Last practiced</strong> ' + recencyStr);
       } else {
         statLines.push('<strong>Sessions</strong> ' + sessions + (dep > 0 ? ' · ' + dep + ' depth ring' + (dep > 1 ? 's' : '') : ''));
         if (bestSec > 0) statLines.push('<strong>Best hold</strong> ' + (bestSec >= 60 ? Math.floor(bestSec/60) + 'm ' + (bestSec%60) + 's' : bestSec + 's'));
