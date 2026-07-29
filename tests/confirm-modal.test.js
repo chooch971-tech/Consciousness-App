@@ -19,7 +19,7 @@ test('nested confirmations preserve the callback installed by the first action',
 });
 
 test('Reset All retains its deliberate two-confirmation safeguard', () => {
-  const resetStart = presence.indexOf("document.getElementById('drawerResetAll').addEventListener");
+  const resetStart = presence.indexOf("document.getElementById('settingsResetAll').addEventListener");
   const resetEnd = presence.indexOf("document.getElementById('settingsResetAwareness')", resetStart);
   const resetHandler = presence.slice(resetStart, resetEnd);
   assert.equal((resetHandler.match(/showConfirm\(/g) || []).length, 2);

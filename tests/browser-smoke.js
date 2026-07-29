@@ -1251,9 +1251,10 @@ async function testResetAll(browser, baseUrl) {
   // Startup performs one stale-lock cleanup at 1s and deliberately closes any
   // open drawer. Begin this journey after that maintenance pass.
   await page.waitForTimeout(1100);
-  // This journey tests Reset, not pointer hit-testing during startup. Invoke
-  // the already-located menu control directly so the splash/drawer animation
-  // cannot intermittently swallow the physical click.
+  // Reset All now lives in Settings' Danger Zone rather than the drawer, so the
+  // journey goes drawer -> Settings. This tests Reset, not pointer hit-testing
+  // during startup, so invoke the located controls directly: the splash and
+  // drawer animations can otherwise intermittently swallow a physical click.
   await page.locator('#hamburgerBtn').evaluate(element => element.click());
   try {
     await page.locator('#drawerOverlay.show').waitFor({ state: 'visible' });
@@ -1261,11 +1262,13 @@ async function testResetAll(browser, baseUrl) {
     const drawerClass = await page.locator('#drawerOverlay').getAttribute('class');
     throw new Error('Reset test could not open the drawer: ' + JSON.stringify({ drawerClass, errors }), { cause: error });
   }
-  // The drawer deliberately animates above the live app. A physical Playwright
-  // click can race that transition and be intercepted by the page beneath it,
-  // even though the drawer item is already visible. This journey verifies the
-  // Reset behavior, so activate the located button directly.
-  await page.locator('#drawerResetAll').evaluate(element => element.click());
+  await page.locator('#drawerSettings').evaluate(element => element.click());
+  try {
+    await page.locator('#settingsScreen.active').waitFor({ state: 'visible' });
+  } catch (error) {
+    throw new Error('Reset test could not open Settings: ' + JSON.stringify({ errors }), { cause: error });
+  }
+  await page.locator('#settingsResetAll').evaluate(element => element.click());
   await page.locator('#confirmModal.show').waitFor({ state: 'visible' });
   await page.locator('#confirmModalOk').click();
   await page.waitForFunction(() => {

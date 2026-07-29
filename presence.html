@@ -3131,7 +3131,7 @@
     .drawer-items { flex:1; display:flex; flex-direction:column; padding:4px 0; overflow-y:auto; scrollbar-width:none; }
     .drawer-items::-webkit-scrollbar { display:none; }
     .drawer-section-label { padding:7px 24px 4px; font-family:'DM Mono',monospace; font-size:8px; letter-spacing:.24em; text-transform:uppercase; color:rgba(221,216,206,.5); }
-    .drawer-item { --drawer-accent:#8eccc0; --drawer-tint:rgba(142,204,192,.055); position:relative; min-height:44px; display:flex; align-items:center; gap:14px; padding:9px 24px; cursor:pointer; border:none; background:none; color:var(--text); font-family:'DM Mono',monospace; font-size:10.5px; letter-spacing:.08em; text-align:left; width:100%; transition:background .15s,color .15s; touch-action:manipulation; }
+    .drawer-item { --drawer-accent:#8eccc0; --drawer-tint:rgba(142,204,192,.055); position:relative; min-height:48px; display:flex; align-items:center; gap:14px; padding:11px 24px; cursor:pointer; border:none; background:none; color:var(--text); font-family:'DM Mono',monospace; font-size:10.5px; letter-spacing:.08em; text-align:left; width:100%; transition:background .15s,color .15s; touch-action:manipulation; }
     .drawer-item::before { content:''; position:absolute; left:0; top:10px; bottom:10px; width:2px; border-radius:0 2px 2px 0; background:var(--drawer-accent); opacity:0; transform:scaleY(.35); transition:opacity .16s,transform .16s; }
     /* Scoped to real hover devices only: on iOS/touch, a :hover rule that
        applies on tap can make WebKit treat the first tap as "reveal hover"
@@ -6282,6 +6282,18 @@ body:not(.tut-live) #tutCorgi {
         Backups contain all your data in a single JSON file.<br>To move to a new device: export here, transfer the file, import there.
       </div>
 
+      <div class="aset-group">
+        <div class="aset-header">Danger Zone</div>
+        <div class="aset-card" style="padding:0;">
+          <button id="settingsResetAll" class="aset-row aset-row--danger">
+            <span class="aset-row__icon">↺</span><span class="aset-row__label">Reset All Progress</span>
+          </button>
+        </div>
+        <div class="aset-note" style="margin-top:8px;">
+          Erases every practice, record, and Omnia level on this account. Export a backup above first if you may want any of it again.
+        </div>
+      </div>
+
       <!-- Hidden parking: functional blocks moved into sub-pages at runtime (preserves bound handlers) -->
       <div id="settingsParking" style="display:none;">
         <div id="acctSyncBlock">
@@ -8871,10 +8883,6 @@ body:not(.tut-live) #tutCorgi {
       <button class="drawer-item" id="drawerDonate">
         <span class="drawer-item-icon"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 8h11v7a4 4 0 0 1-4 4H9a4 4 0 0 1-4-4V8z"/><path d="M16 9.5h2a2.5 2.5 0 0 1 0 5h-2"/><path d="M8 4.5c0 1 .8 1 .8 2M11.5 4.5c0 1 .8 1 .8 2"/></svg></span>Donate
       </button>
-      <div class="drawer-divider"></div>
-      <button class="drawer-item danger" id="drawerResetAll">
-        <span class="drawer-item-icon">↺</span>Reset All Progress
-      </button>
     </div>
     <div class="drawer-footer">
       <div class="drawer-footer-links">
@@ -9327,8 +9335,7 @@ document.getElementById('appPromptOk').addEventListener('click', function() {
   if (cb) cb(document.getElementById('appPromptInput').value);
 });
 
-document.getElementById('drawerResetAll').addEventListener('click', function() {
-  closeDrawer();
+document.getElementById('settingsResetAll').addEventListener('click', function() {
   showConfirm(
     'Reset All Progress',
     'This will permanently erase all Awareness, Concentration, Prayer, Omnia, history, and streaks.',
