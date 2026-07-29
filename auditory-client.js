@@ -27,6 +27,23 @@ var audCtx = null;
 var audNodes = []; // active audio nodes to stop
 var audLoopHandle = null;
 var currentSound = 'bowl';
+// Closed eyes is the foundation; open eyes is its advanced successor, holding
+// the imagined sound against the visible world. The sensory curriculum trains
+// them as separate stages, so each session records which one it was.
+var audEyesMode = 'closed';
+function normalizeAudEyesMode(mode) { return mode === 'open' ? 'open' : 'closed'; }
+function audEyesLabel(mode) { return normalizeAudEyesMode(mode) === 'open' ? 'Open Eyes' : 'Closed Eyes'; }
+function audEyesOptionsHTML() {
+  return '<button type="button" class="sense-eyes-option' + (audEyesMode === 'closed' ? ' on' : '') + '" onclick="setAudEyesMode(\'closed\')">'
+    + '<span class="sense-eye-icon">◉</span><span><strong>Closed Eyes</strong><small>Foundation · default</small></span></button>'
+    + '<button type="button" class="sense-eyes-option sense-eyes-option--advanced' + (audEyesMode === 'open' ? ' on' : '') + '" onclick="setAudEyesMode(\'open\')">'
+    + '<span class="sense-eye-icon">◎</span><span><strong>Open Eyes</strong><small>Advanced</small></span></button>';
+}
+function setAudEyesMode(mode) {
+  audEyesMode = normalizeAudEyesMode(mode);
+  var row = document.getElementById('audEyesRow');
+  if (row) row.innerHTML = audEyesOptionsHTML();
+}
 var customAudElement = null; // <audio> element for custom uploaded sounds
 var customAudObjectUrl = null; // object URL for IndexedDB blob playback (must be revoked)
 var _customSoundToken = 0; // cancels stale async blob loads
@@ -928,6 +945,7 @@ function saveAudResult() {
       }),
       notes: notes,
       type: 'auditory',
+      eyesMode: normalizeAudEyesMode(audEyesMode),
       object: getAudSoundLabel(currentSound)
     },
     exId: 'auditory',

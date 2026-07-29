@@ -1395,6 +1395,13 @@ var EXERCISE_DEFS = {
     // No instruction block — Omnia's head beside the grid opens the tutorial.
     desc: '',
     setupHTML: function() {
+      // Reuses the Senses eyes picker markup; --sn-rgb re-tints it to Auditory.
+      var audEyesHtml = (typeof audEyesOptionsHTML === 'function')
+        ? '<div class="sense-eyes-picker" style="--sn-rgb:110,184,164;">'
+          + '<div class="sense-choice-label">Practice mode</div>'
+          + '<div class="sense-eyes-options" id="audEyesRow">' + audEyesOptionsHTML()
+          + '</div></div>'
+        : '';
       return '<div class="aud-setup">'
         + '<div class="aud-setup-head">'
         + '<div class="vis-object-label" style="margin:0;">Choose a sound</div>'
@@ -1402,6 +1409,7 @@ var EXERCISE_DEFS = {
         + '<span class="clk-omnia-peek-head"><span class="clk-omnia-spin">' + omniaHeadOnlySVG(34, 32) + '</span></span>'
         + '</button>'
         + '</div>'
+        + audEyesHtml
         + '<div class="sound-grid" id="soundGrid"></div></div>';
     },
     begin: function() { startAuditorySession(); }

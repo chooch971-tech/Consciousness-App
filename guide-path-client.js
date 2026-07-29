@@ -57,13 +57,22 @@ var GUIDE_SENSE_TIPS = {
 var GUIDE_SENSORY_CLEAN_GOAL_SEC = 300;
 var GUIDE_SENSORY_PRACTICE_MIN = 10;
 var GUIDE_SENSORY_PRACTICE_MAX = 20;
+// Every faculty is trained twice: first with the eyes closed, then holding the
+// same impression against the visible world. Open eyes is the harder successor
+// in each pair, so the two are separate stages rather than a preference.
+// Legacy history carries no eyesMode for Auditory or the senses; those entries
+// read as closed eyes (see guideSensoryStageMatches), which is what they were.
 var GUIDE_SENSORY_STAGES = [
   { id:'visual_closed', exercise:'visual', name:'Visualization', label:'Closed Eyes', open:'visual', eyesMode:'closed' },
   { id:'visual_open', exercise:'visual', name:'Visualization', label:'Open Eyes', open:'visual', eyesMode:'open' },
-  { id:'auditory', exercise:'auditory', name:'Auditory', label:'Single Sound', open:'auditory' },
-  { id:'feeling', exercise:'sense', name:'Senses', label:'Feeling', open:'sense', mode:'feeling' },
-  { id:'smell', exercise:'sense', name:'Senses', label:'Smell', open:'sense', mode:'smell' },
-  { id:'taste', exercise:'sense', name:'Senses', label:'Taste', open:'sense', mode:'taste' }
+  { id:'auditory_closed', exercise:'auditory', name:'Auditory', label:'Closed Eyes', open:'auditory', eyesMode:'closed' },
+  { id:'auditory_open', exercise:'auditory', name:'Auditory', label:'Open Eyes', open:'auditory', eyesMode:'open' },
+  { id:'feeling', exercise:'sense', name:'Senses', label:'Feeling · Closed Eyes', open:'sense', mode:'feeling', eyesMode:'closed' },
+  { id:'feeling_open', exercise:'sense', name:'Senses', label:'Feeling · Open Eyes', open:'sense', mode:'feeling', eyesMode:'open' },
+  { id:'smell', exercise:'sense', name:'Senses', label:'Smell · Closed Eyes', open:'sense', mode:'smell', eyesMode:'closed' },
+  { id:'smell_open', exercise:'sense', name:'Senses', label:'Smell · Open Eyes', open:'sense', mode:'smell', eyesMode:'open' },
+  { id:'taste', exercise:'sense', name:'Senses', label:'Taste · Closed Eyes', open:'sense', mode:'taste', eyesMode:'closed' },
+  { id:'taste_open', exercise:'sense', name:'Senses', label:'Taste · Open Eyes', open:'sense', mode:'taste', eyesMode:'open' }
 ];
 
 function guideSensoryEntryCleanSec(entry) {
@@ -85,8 +94,16 @@ function guideSensoryStageMatches(stage, entry) {
   if (stage.exercise === 'visual') {
     return entry.type === 'visualization' && entry.eyesMode === stage.eyesMode;
   }
-  if (stage.exercise === 'auditory') return entry.type === 'auditory';
-  return entry.exercise === 'sense' && (entry.mode || 'feeling') === stage.mode;
+  // Auditory and the senses only began recording eyesMode when open eyes
+  // became a stage of its own. Entries without one were practiced closed, so
+  // they keep counting toward the closed-eyes stage instead of matching
+  // nothing and silently revoking a mastery the practitioner already earned.
+  if (stage.exercise === 'auditory') {
+    return entry.type === 'auditory' && (entry.eyesMode || 'closed') === stage.eyesMode;
+  }
+  return entry.exercise === 'sense'
+    && (entry.mode || 'feeling') === stage.mode
+    && (entry.eyesMode || 'closed') === stage.eyesMode;
 }
 
 function guideSensoryTrackProgress() {
@@ -242,9 +259,10 @@ function guideSensoryTrackItem(rounds) {
     id:stage.exercise,
     name:stage.name,
     mode:stage.mode || null,
-    eyesMode:stage.exercise === 'visual' || stage.exercise === 'sense'
-      ? guidePathEyesMode(stage.exercise, stage.eyesMode || 'closed')
-      : null,
+    // The curriculum stage decides the eyes, not a saved preference — the two
+    // are separate stages now, so honoring a preference here would launch the
+    // wrong one and the hold would count toward a stage already mastered.
+    eyesMode:stage.eyesMode || null,
     duration:naturalMin,
     durationLabel:naturalMin + ' min' + (rounds > 1 ? ' x' + rounds : ''),
     done:stage.mastered,
@@ -1921,7 +1939,7 @@ function guideProgressOverview() {
   // 10/15/20 ladder does. Only the one actually in force is shown, so the card
   // never states two different targets at once.
   var auditoryRows = auditoryStages.map(sensoryRow);
-  if (auditoryStages[0] && auditoryStages[0].mastered) {
+  if (auditoryStages.length && auditoryStages.every(function(stage) { return stage.mastered; })) {
     var aud = guideAuditoryStats();
     var audDetail, audPct = 100;
     if (aud.locked) {
@@ -1940,16 +1958,16 @@ function guideProgressOverview() {
   }
   cards.push({
     id:'auditory', name:'Auditory', icon:'◈', color:'#8eccc0',
-    summary:auditoryStages[0] && auditoryStages[0].mastered ? 'Foundation mastered' : 'Single-sound foundation',
+    summary:auditoryStages.filter(function(stage) { return stage.mastered; }).length + ' / 2 foundations',
     rows:auditoryRows
   });
   cards.push({
     id:'sense', name:'Senses', icon:'✺', color:'#e0a8c4',
-    summary:senseStages.filter(function(stage) { return stage.mastered; }).length + ' / 3 foundations',
+    summary:senseStages.filter(function(stage) { return stage.mastered; }).length + ' / 6 foundations',
     rows:senseStages.map(sensoryRow),
     footer:sensory.complete
       ? 'Multi-Sense unlocked · elemental work follows later.'
-      : 'Feeling, Smell, and Taste unlock in order; only one is recommended at a time.'
+      : 'Feeling, Smell, and Taste unlock in order, each closed-eyes then open-eyes; only one is recommended at a time.'
   });
   // Progress describes the ladders behind today's path, so it only covers what
   // is actually on that path. An exercise the practitioner removed has no
@@ -1991,17 +2009,15 @@ function guideProgressCardIds() {
 // closed/open split is a curriculum stage in its own right, so the eyes belong
 // in the name; Senses carries the practitioner's own eyes preference instead;
 // Auditory has no eyes dimension at all.
-function guideSensoryStageLabel(stage, eyesMode) {
+function guideSensoryStageLabel(stage) {
   if (!stage) return '';
-  if (stage.exercise === 'visual') {
-    return '<b>Visualization</b> with <b>' + (stage.eyesMode === 'open' ? 'open' : 'closed') + ' eyes</b>';
-  }
-  if (stage.exercise === 'sense') {
-    var eyes = eyesMode || guidePathEyesMode('sense', 'closed');
-    return '<b>' + stage.name + ' · ' + stage.label + '</b> with <b>'
-      + (eyes === 'open' ? 'open' : 'closed') + ' eyes</b>';
-  }
-  return '<b>' + stage.name + ' · ' + stage.label + '</b>';
+  var eyes = (stage.eyesMode === 'open' ? 'open' : 'closed') + ' eyes';
+  // Every stage now carries its own eyes, so name the faculty and the eyes
+  // rather than repeating the label, which already encodes both.
+  var faculty = stage.exercise === 'sense'
+    ? stage.name + ' · ' + String(stage.label).split(' · ')[0]
+    : stage.name;
+  return '<b>' + faculty + '</b> with <b>' + eyes + '</b>';
 }
 
 function guideProgressIntro() {
@@ -2030,7 +2046,7 @@ function guideProgressIntro() {
     var sensory = guideSensoryTrackProgress();
     sentences.push(alongside + 'Omnia automatically rotates in a sense to practice until you master it.');
     if (sensory.current) {
-      sentences.push('Today that sense is ' + guideSensoryStageLabel(sensory.current, sensoryItem.eyesMode) + '.');
+      sentences.push('Today that sense is ' + guideSensoryStageLabel(sensory.current) + '.');
     }
     if (sensory.next) {
       sentences.push('The next sense Omnia will recommend is ' + guideSensoryStageLabel(sensory.next) + '.');
@@ -2888,6 +2904,10 @@ function beginGuidePlanItem(btn) {
   }
   if (ex === 'visual' && eyesMode) {
     visOpenEyesMode = eyesMode === 'open';
+  }
+  if (ex === 'auditory' && eyesMode) {
+    if (typeof setAudEyesMode === 'function') setAudEyesMode(eyesMode);
+    else if (typeof audEyesMode !== 'undefined') audEyesMode = eyesMode === 'open' ? 'open' : 'closed';
   }
   if (ex === 'soulmirror') {
     if (typeof _smOriginMode !== 'undefined') _smOriginMode = 'guide';

@@ -1122,7 +1122,11 @@ function renderPathQuests() {
       freq2Btn.style.display = showFreq ? '' : 'none';
       freq2Btn.classList.toggle('active', showFreq && rounds2);
     }
-    var showEyes = activeExId === 'visual' || activeExId === 'sense';
+    // On a curriculum card the stage itself decides the eyes — closed and open
+    // are separate stages — so offering a choice there would launch the wrong
+    // one. The toggle stays for exercises the practitioner added themselves.
+    var showEyes = (activeExId === 'visual' || activeExId === 'sense' || activeExId === 'auditory')
+      && btn.dataset.sensoryTrack !== '1';
     if (eyesDiv) eyesDiv.style.display = showEyes ? '' : 'none';
     if (eyesClosedBtn) {
       eyesClosedBtn.style.display = showEyes ? '' : 'none';
@@ -1239,7 +1243,7 @@ function renderPathQuests() {
     if (typeof renderGuidePlan === 'function' && guideState._pathLockedV2) renderGuidePlan(guidePathMode);
   });
   function setPathEyesMode(mode) {
-    if (activeExId !== 'visual' && activeExId !== 'sense') return;
+    if (activeExId !== 'visual' && activeExId !== 'sense' && activeExId !== 'auditory') return;
     if (!guideState._pathEyesModes) guideState._pathEyesModes = {};
     guideState._pathEyesModes[activeExId] = mode === 'open' ? 'open' : 'closed';
     saveGuideState(guideState);

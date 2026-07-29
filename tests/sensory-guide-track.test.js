@@ -43,8 +43,13 @@ test('sensory foundations follow the Bardon order and require sequential clean f
     clean('2026-07-21T10:00:00.000Z', { type:'visualization', eyesMode:'closed' })
   ]);
   const first = context.guideSensoryTrackProgress();
+  // Each faculty is trained closed-eyes first, then open-eyes.
   assert.deepEqual(Array.from(first.stages, stage => stage.id), [
-    'visual_closed', 'visual_open', 'auditory', 'feeling', 'smell', 'taste'
+    'visual_closed', 'visual_open',
+    'auditory_closed', 'auditory_open',
+    'feeling', 'feeling_open',
+    'smell', 'smell_open',
+    'taste', 'taste_open'
   ]);
   assert.equal(first.goalSec, 300);
   assert.equal(first.stages[0].mastered, true);
@@ -53,14 +58,40 @@ test('sensory foundations follow the Bardon order and require sequential clean f
 
   context.concState.history.push(
     clean('2026-07-22T10:00:00.000Z', { type:'visualization', eyesMode:'open' }),
+    // No eyesMode at all — history recorded before open eyes became a stage.
+    // It must still count as the closed-eyes foundation it actually was.
     clean('2026-07-23T10:00:00.000Z', { type:'auditory' }),
-    clean('2026-07-24T10:00:00.000Z', { exercise:'sense', mode:'feeling' }),
-    clean('2026-07-25T10:00:00.000Z', { exercise:'sense', mode:'smell' }),
-    clean('2026-07-26T10:00:00.000Z', { exercise:'sense', mode:'taste' })
+    clean('2026-07-24T10:00:00.000Z', { type:'auditory', eyesMode:'open' }),
+    clean('2026-07-25T10:00:00.000Z', { exercise:'sense', mode:'feeling' }),
+    clean('2026-07-26T10:00:00.000Z', { exercise:'sense', mode:'feeling', eyesMode:'open' }),
+    clean('2026-07-27T10:00:00.000Z', { exercise:'sense', mode:'smell' }),
+    clean('2026-07-28T10:00:00.000Z', { exercise:'sense', mode:'smell', eyesMode:'open' }),
+    clean('2026-07-29T10:00:00.000Z', { exercise:'sense', mode:'taste' }),
+    clean('2026-07-30T10:00:00.000Z', { exercise:'sense', mode:'taste', eyesMode:'open' })
   );
   const complete = context.guideSensoryTrackProgress();
   assert.equal(complete.complete, true);
-  assert.equal(complete.completedCount, 6);
+  assert.equal(complete.completedCount, 10);
+});
+
+test('an open-eyes hold cannot satisfy the closed-eyes foundation that precedes it', () => {
+  // Practicing the harder successor first must not skip the foundation, the
+  // same rule Visualization has always enforced across its two stages.
+  const context = loadTrack([
+    clean('2026-07-20T10:00:00.000Z', { type:'visualization', eyesMode:'closed' }),
+    clean('2026-07-21T10:00:00.000Z', { type:'visualization', eyesMode:'open' }),
+    clean('2026-07-22T10:00:00.000Z', { type:'auditory', eyesMode:'open' })
+  ]);
+  const progress = context.guideSensoryTrackProgress();
+  assert.equal(progress.current.id, 'auditory_closed');
+  assert.equal(progress.stages[2].mastered, false);
+  assert.equal(progress.stages[3].mastered, false);
+
+  // Supplying the closed-eyes hold then unlocks both in order.
+  context.concState.history.push(clean('2026-07-23T10:00:00.000Z', { type:'auditory' }));
+  const after = context.guideSensoryTrackProgress();
+  assert.equal(after.stages[2].mastered, true);
+  assert.equal(after.current.id, 'auditory_open');
 });
 
 test('broken or accumulated reps cannot satisfy a sensory foundation', () => {
