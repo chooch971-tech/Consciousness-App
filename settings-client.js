@@ -548,8 +548,9 @@ document.getElementById('drawerDonate').addEventListener('click', function() {
 });
 
 (function wireBugReporting() {
+  // Lives in the drawer's fixed footer, so it is on screen the moment the
+  // drawer opens rather than below the scrolling item list.
   var drawerBtn = document.getElementById('drawerBugReport');
-  var footerBtn = document.getElementById('drawerFooterBugReport');
   var backBtn = document.getElementById('bugReportBack');
   var form = document.getElementById('bugReportForm');
   var category = document.getElementById('bugReportCategory');
@@ -573,9 +574,6 @@ document.getElementById('drawerDonate').addEventListener('click', function() {
   }
 
   drawerBtn.addEventListener('click', openBugReport);
-  // Pinned in the drawer footer (outside the scrolling item list) so the
-  // option is visible the instant the drawer opens, without scrolling.
-  if (footerBtn) footerBtn.addEventListener('click', openBugReport);
   backBtn.addEventListener('click', function() {
     renderHomeForNavigation();
     showScreen('homeScreen');

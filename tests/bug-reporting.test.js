@@ -10,13 +10,20 @@ const server = fs.readFileSync(path.join(root, 'server.js'), 'utf8');
 const presence = fs.readFileSync(path.join(root, 'presence.html'), 'utf8');
 const settings = fs.readFileSync(path.join(root, 'settings-client.js'), 'utf8');
 
-test('the drawer exposes Report a Bug directly below Donate', () => {
+test('Donate and Report a Bug sit in the drawer footer, on screen without scrolling', () => {
+  // The item list scrolls, so anything near its end can be missed entirely.
+  // Both of these live in the fixed footer instead, and neither is duplicated
+  // back into the list.
+  const links = presence.indexOf('class="drawer-footer-links"');
   const donate = presence.indexOf('id="drawerDonate"');
   const report = presence.indexOf('id="drawerBugReport"');
-  const reset = presence.indexOf('id="drawerResetAll"');
-  assert.notEqual(donate, -1);
-  assert.ok(donate < report);
-  assert.ok(report < reset);
+  const version = presence.indexOf('class="drawer-version"');
+  assert.notEqual(links, -1);
+  assert.ok(links < donate && donate < report && report < version);
+  assert.doesNotMatch(presence, /class="drawer-item" id="drawerDonate"/);
+  assert.doesNotMatch(presence, /class="drawer-item" id="drawerBugReport"/);
+  assert.equal(presence.split('id="drawerDonate"').length - 1, 1);
+  assert.equal(presence.split('id="drawerBugReport"').length - 1, 1);
 });
 
 test('the drawer header keeps Presence uncluttered and below the guide figure', () => {
