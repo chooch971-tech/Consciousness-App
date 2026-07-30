@@ -233,7 +233,10 @@ test('the Progress view describes only what is on today\'s path', () => {
   // that was removed from it.
   assert.match(guideSource, /function guideProgressIntro/);
   assert.match(guideSource, /buildGuideRegimentItems\(\) \|\| \[\]/);
-  assert.match(guideSource, /No sensory stage is on your path right now/);
-  assert.match(guideSource, /The next sense Omnia will recommend is/);
+  // The intro is scannable labelled rows rather than a paragraph of prose.
+  assert.match(guideSource, /class="pq-intro-row"/);
+  assert.match(guideSource, /row\('Schedule'/);
+  assert.match(guideSource, /row\('Next', guideSensoryStageLabel\(sensory\.next\)\)/);
+  assert.match(guideSource, /None on your path/);
   assert.doesNotMatch(guideSource, /the single most neglected of Visualization/);
 });

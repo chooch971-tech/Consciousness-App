@@ -1928,8 +1928,7 @@ function guideProgressOverview() {
     clockDetail = 'Manual target · automatic increases are off.';
   } else if (clock.qualTarget < 10) {
     var clockRemaining = Math.max(0, 2 - (clock.qualAtTier || 0));
-    clockDetail = clockRemaining + ' more ' + clock.qualTarget + '-minute session'
-      + (clockRemaining === 1 ? '' : 's') + ' → ' + (clock.qualTarget + 1) + ' min';
+    clockDetail = clockRemaining + ' more → ' + (clock.qualTarget + 1) + ' min';
     clockPct = guideProgressPct(clock.qualAtTier || 0, 2);
   } else if (guideState.clockUserTarget == null && (clock.qualTenCount || 0) < 14) {
     var tenRemaining = 14 - (clock.qualTenCount || 0);
@@ -1960,8 +1959,7 @@ function guideProgressOverview() {
       detail = 'The 15-minute recommendation ceiling is reached.';
     } else {
       var remaining = Math.max(1, ladder.required - ladder.qualAtRung);
-      detail = remaining + ' more full ' + ladder.natural + '-minute session'
-        + (remaining === 1 ? '' : 's') + ' → ' + (ladder.natural + 1) + ' min';
+      detail = remaining + ' more → ' + (ladder.natural + 1) + ' min';
       pct = guideProgressPct(ladder.qualAtRung, ladder.required);
     }
     return {
@@ -1985,8 +1983,7 @@ function guideProgressOverview() {
     asanaDetail = 'The current ladder ceiling is reached; adjust the target manually.';
   } else {
     var asanaRemaining = Math.max(0, asana.tierRequired - asana.qualAtTier);
-    asanaDetail = asanaRemaining + ' more full ' + asana.qualTarget + '-minute session'
-      + (asanaRemaining === 1 ? '' : 's') + ' → ' + (asana.qualTarget + 1) + ' min';
+    asanaDetail = asanaRemaining + ' more → ' + (asana.qualTarget + 1) + ' min';
     asanaPct = guideProgressPct(asana.qualAtTier, asana.tierRequired);
   }
   cards.push({
@@ -2022,17 +2019,13 @@ function guideProgressOverview() {
       status = practiceMin + ' min recommended';
       var increase;
       if (practiceMin < 15) {
-        var toThree = Math.max(1, 3 - guideSensorySolidAttempts(stage, 300));
-        increase = '15 min after one 10-minute session or ' + toThree + ' more attempt'
-          + (toThree === 1 ? '' : 's') + ' of 5 min or longer.';
+        increase = '→ 15 min after a 10-min sit';
       } else if (practiceMin < 20) {
-        var toTen = Math.max(1, 10 - guideSensorySolidAttempts(stage, 450));
-        increase = '20 min after one 15-minute session or ' + toTen + ' more attempt'
-          + (toTen === 1 ? '' : 's') + ' of 7:30 or longer.';
+        increase = '→ 20 min after a 15-min sit';
       } else if (practiceMin === 20) {
-        increase = 'At the 20-minute practice range.';
+        increase = 'at the 20-min range';
       } else {
-        increase = 'Using your manual ' + practiceMin + '-minute target.';
+        increase = 'your manual ' + practiceMin + '-min target';
       }
       detail = 'Best clean ' + guideFmtTime(stage.bestCleanSec) + ' / 5m · ' + increase;
     }
@@ -2068,8 +2061,7 @@ function guideProgressOverview() {
       audDetail = 'At the twenty-minute practice ceiling.';
     } else {
       var audRemaining = Math.max(1, aud.tierRequired - aud.qualAtTier);
-      audDetail = audRemaining + ' more full ' + aud.qualTarget + '-minute session'
-        + (audRemaining === 1 ? '' : 's') + ' → ' + aud.nextTarget + ' min';
+      audDetail = audRemaining + ' more → ' + aud.nextTarget + ' min';
       audPct = guideProgressPct(aud.qualAtTier, aud.tierRequired);
     }
     auditoryRows.push({
@@ -2131,53 +2123,55 @@ function guideProgressCardIds() {
 // Auditory has no eyes dimension at all.
 function guideSensoryStageLabel(stage) {
   if (!stage) return '';
-  var eyes = (stage.eyesMode === 'open' ? 'open' : 'closed') + ' eyes';
-  // Every stage now carries its own eyes, so name the faculty and the eyes
-  // rather than repeating the label, which already encodes both.
+  // Reads as a value in a labelled row, not a clause in a sentence.
   var faculty = stage.exercise === 'sense'
     ? stage.name + ' · ' + String(stage.label).split(' · ')[0]
     : stage.name;
-  return '<b>' + faculty + '</b> with <b>' + eyes + '</b>';
+  return faculty + ' · ' + (stage.eyesMode === 'open' ? 'open' : 'closed') + ' eyes';
 }
 
 function guideProgressIntro() {
-  // Everything here describes today's actual path. Reading the curriculum
-  // directly would announce a stage the practitioner has removed.
+  // Six sentences of prose read as a wall of text, and every fact in it is a
+  // short answer to a short question. Emit labelled rows instead, so the panel
+  // can be scanned rather than read, with one note carrying the only part that
+  // is genuinely explanatory.
   var items = [];
   try { items = buildGuideRegimentItems() || []; } catch (e) { items = []; }
   var present = {};
   items.forEach(function(item) { if (item) present[item.id] = true; });
 
-  var hasClock = !!present.clock;
-  var hasThought = !!(present.thought || present.observation || present.focus || present.vacancy);
-  var sentences = [];
-  if (hasClock && hasThought) sentences.push('Clock and Thought Control anchor each day.');
-  else if (hasClock) sentences.push('Clock anchors each day.');
-  else if (hasThought) sentences.push('Thought Control anchors each day.');
+  var rows = [];
+  function row(k, v) { rows.push({ k: k, v: v }); }
+
+  var anchors = [];
+  if (present.clock) anchors.push('Clock');
+  if (present.thought || present.observation || present.focus || present.vacancy) anchors.push('Thought Control');
+  if (anchors.length) row('Anchors', anchors.join(' · '));
 
   var sensoryItem = null;
   for (var i = 0; i < items.length; i++) {
     if (items[i] && items[i].sensoryTrack) { sensoryItem = items[i]; break; }
   }
-  var alongside = sentences.length ? 'Alongside them, ' : '';
+  var note;
   if (sensoryItem && sensoryItem.trackComplete) {
-    sentences.push(alongside + 'you have mastered every sensory foundation, so Omnia now recommends <b>Multi-Sense</b>.');
+    row('Sense', 'Multi-Sense');
+    note = 'Every sensory foundation is mastered, so Omnia now recommends Multi-Sense. Anything you add yourself stays until you remove it.';
   } else if (sensoryItem) {
     var sensory = guideSensoryTrackProgress();
-    sentences.push(alongside + 'Omnia automatically rotates in a sense to practice until you master it.');
-    if (sensory.current) {
-      sentences.push('Today that sense is ' + guideSensoryStageLabel(sensory.current) + '.');
-    }
-    if (sensory.next) {
-      sentences.push('The next sense Omnia will recommend is ' + guideSensoryStageLabel(sensory.next) + '.');
-    }
+    if (sensory.current) row('Today', guideSensoryStageLabel(sensory.current));
+    if (sensory.next) row('Next', guideSensoryStageLabel(sensory.next));
+    note = 'Omnia rotates in one sense at a time and keeps it until you master it. Anything you add yourself stays until you remove it.';
   } else {
-    sentences.push('No sensory stage is on your path right now — add one with “+” to resume the curriculum.');
+    row('Sense', 'None on your path');
+    note = 'Add one with “+” to resume the sensory curriculum. Anything you add yourself stays until you remove it.';
   }
 
-  sentences.push('Anything you add yourself will stay until you remove it.');
-  sentences.push('Each is scheduled <b>' + (guideTwoADayEnabled() ? 'twice' : 'once') + '</b> today.');
-  return sentences.join(' ');
+  row('Schedule', guideTwoADayEnabled() ? 'Twice today' : 'Once today');
+
+  return rows.map(function(r) {
+    return '<div class="pq-intro-row"><span class="pq-intro-k">' + r.k + '</span>'
+      + '<span class="pq-intro-v">' + r.v + '</span></div>';
+  }).join('') + '<div class="pq-intro-note">' + note + '</div>';
 }
 
 function guideExerciseById(id) {
