@@ -690,7 +690,7 @@ test('Omnia engine rendering and generator controls live in a dedicated client b
   assert.match(omniaEngineClient, /function\s+buildOmniaBody\s*\(/);
   assert.match(omniaEngineClient, /var\s+OMNIA_GEN_META\s*=\s*\[/);
   assert.match(omniaEngineClient, /var\s+DM_GEN_META\s*=\s*\[/);
-  assert.match(omniaEngineClient, /function\s+confirmOmniaUpgradeMastery\s*\(/);
+  assert.match(omniaEngineClient, /function\s+confirmOmniaGenTier\s*\(/);
   assert.match(omniaEngineClient, /function\s+dmPumpBuildingId\s*\(/);
   assert.match(omniaEngineClient, /function\s+dmResonanceMult\s*\(/);
   assert.match(omniaEngineClient, /function\s+renderOmniaGenYard\s*\(/);

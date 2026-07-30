@@ -9,38 +9,105 @@ var OMNIA_GEN_BASE_HOUR = [22, 28, 34];
 var OMNIA_GEN_PER_LEVEL_HOUR = [12, 10, 10];
 
 // Production is read from the level shown on the card (1–20 within the current
-// band), not the lifetime level, so attaining a mastery genuinely returns the
-// pump to Level 1 — a real prestige rather than a relabelled counter. The band
-// multiplier makes that reset worth taking: the new Level 1 out-produces the
-// old Level 1 several times over, and the band's ceiling clears the previous
-// band's ceiling by the same factor.
+// band), not the lifetime level, so tiering a generator genuinely returns it to
+// Level 1. The tier multiplier makes that reset worth taking: the new Level 1
+// out-produces the old Level 1 several times over, and the band's ceiling
+// clears the previous ceiling by the same factor.
 function omniaGeneratorContributionCurve(level, idx) {
   var lvl = Math.max(1, Number(level) || 1);
-  var band = omniaUpgradeDisplayLevel('', lvl);
+  var genId = (typeof OMNIA_GEN_META !== 'undefined' && OMNIA_GEN_META[idx]) ? OMNIA_GEN_META[idx].id : 'current';
+  var band = omniaUpgradeDisplayLevel(genId, lvl);
   return ((OMNIA_GEN_BASE_HOUR[idx] || 34) + (band - 1) * (OMNIA_GEN_PER_LEVEL_HOUR[idx] || 10))
-    * omniaCurrentMasteryMult(lvl);
+    * omniaCurrentMasteryMult(genId);
 }
 
 var OMNIA_MASTERY_SPAN = 20;
 var OMNIA_MASTERY_CAP = 3;
 var OMNIA_UPGRADE_FINAL_LEVEL = 80;
 
-// Upgrade levels never actually reset in storage. The four 20-level bands are
-// a presentation layer over a monotonic lifetime level, which keeps existing
-// max-merge cloud sync safe while still giving each track three explicit
-// mastery thresholds.
-function omniaUpgradeMasteryRank(upgId, rawLevel) {
-  var lvl = Math.max(1, Number(rawLevel == null ? ((omniaState.upgrades || {})[upgId] || 1) : rawLevel) || 1);
-  return Math.min(OMNIA_MASTERY_CAP, Math.floor((lvl - 1) / OMNIA_MASTERY_SPAN));
+// ── Generator tiers ──────────────────────────────────────────────────────────
+// A generator tiers up as a whole, only once all four of its tracks have been
+// carried to the top of the current band. Tiering used to be per track, which
+// made it a free action on three of them: cost is read from the band while
+// reservoir capacity, the cost discount, and build speed are read from the
+// lifetime level, so resetting Deep Vessel / Attunement / Quickening collapsed
+// their price ~50x and left the reward untouched or better. Requiring all four
+// removes the cherry-pick and makes the four branches develop together.
+//
+// The tier is stored rather than derived because levels are monotonic — cloud
+// sync max-merges them, which is why the bands are presentational — so the tier
+// is a counter that also only ever climbs.
+// Which four tracks belong to which generator. Declared here rather than read
+// from the engine's OMNIA_GEN_META so the economy stays free of that dependency
+// — tiers are an economy concept, and the engine only draws them.
+var OMNIA_GENERATOR_TRACKS = {
+  current: ['current', 'vessel', 'attunement', 'quickening'],
+  gen2:    ['gen2', 'vessel2', 'attune2', 'quick2'],
+  gen3:    ['gen3', 'vessel3', 'attune3', 'quick3']
+};
+var OMNIA_TRACK_GENERATOR = (function() {
+  var out = {};
+  Object.keys(OMNIA_GENERATOR_TRACKS).forEach(function(gen) {
+    OMNIA_GENERATOR_TRACKS[gen].forEach(function(track) { out[track] = gen; });
+  });
+  return out;
+})();
+function omniaGeneratorOfTrack(upgId) { return OMNIA_TRACK_GENERATOR[upgId] || null; }
+
+function omniaGenTier(genId) {
+  var tiers = (omniaState && omniaState.genTiers) || {};
+  return Math.max(0, Math.min(OMNIA_MASTERY_CAP, Number(tiers[genId]) || 0));
 }
+
+// The tier governing one upgrade track, via the generator that owns it.
+function omniaTierForUpgrade(upgId) {
+  var gen = omniaGeneratorOfTrack(upgId);
+  return gen ? omniaGenTier(gen) : 0;
+}
+
+// The level shown on the card: where this track stands inside its current band.
 function omniaUpgradeDisplayLevel(upgId, rawLevel) {
   var lvl = Math.max(1, Number(rawLevel == null ? ((omniaState.upgrades || {})[upgId] || 1) : rawLevel) || 1);
-  if (lvl >= OMNIA_UPGRADE_FINAL_LEVEL) return OMNIA_MASTERY_SPAN;
-  return ((lvl - 1) % OMNIA_MASTERY_SPAN) + 1;
+  var band = lvl - omniaTierForUpgrade(upgId) * OMNIA_MASTERY_SPAN;
+  return Math.max(1, Math.min(OMNIA_MASTERY_SPAN, band));
 }
-function omniaUpgradeMasteryReady(upgId) {
-  var lvl = Math.max(1, Number((omniaState.upgrades || {})[upgId]) || 1);
-  return (lvl === 20 || lvl === 40 || lvl === 60) && lvl < omniaUpgradeStepMax(upgId);
+
+// Kept under its original name: everything that scaled by "mastery rank" now
+// scales by the owning generator's tier.
+function omniaUpgradeMasteryRank(upgId, rawLevel) {
+  return omniaTierForUpgrade(upgId);
+}
+
+// The top of a track's current band — the level it may not be bought past
+// until the whole generator tiers up.
+function omniaUpgradeBandTop(upgId) {
+  return omniaTierForUpgrade(upgId) * OMNIA_MASTERY_SPAN + OMNIA_MASTERY_SPAN;
+}
+function omniaUpgradeAtBandTop(upgId) {
+  return (Math.max(1, Number((omniaState.upgrades || {})[upgId]) || 1)) >= omniaUpgradeBandTop(upgId);
+}
+
+// A generator may tier up only when every one of its four tracks sits at the
+// top of the band, and only while it has tiers left to climb.
+function omniaGenTierReady(genId) {
+  var gen = omniaGeneratorOfTrack(genId);
+  if (!gen) return false;
+  if (omniaGenTier(gen) >= OMNIA_MASTERY_CAP) return false;
+  var top = omniaGenTier(gen) * OMNIA_MASTERY_SPAN + OMNIA_MASTERY_SPAN;
+  if (top > OMNIA_UPGRADE_FINAL_LEVEL) return false;
+  return OMNIA_GENERATOR_TRACKS[gen].every(function(id) {
+    return (Math.max(1, Number((omniaState.upgrades || {})[id]) || 1)) >= top;
+  });
+}
+
+// How many of the four are still short, for the button's own label.
+function omniaGenTracksRemaining(genId) {
+  var gen = omniaGeneratorOfTrack(genId);
+  if (!gen) return 4;
+  var top = omniaGenTier(gen) * OMNIA_MASTERY_SPAN + OMNIA_MASTERY_SPAN;
+  return OMNIA_GENERATOR_TRACKS[gen].filter(function(id) {
+    return (Math.max(1, Number((omniaState.upgrades || {})[id]) || 1)) < top;
+  }).length;
 }
 function omniaMasteryRoman(rank) { return ['', 'I', 'II', 'III'][Math.max(0, Math.min(3, rank || 0))] || ''; }
 // What one mastery band is worth. Both production and upgrade cost are read
@@ -57,10 +124,10 @@ function omniaMasteryScale(rank) {
 function omniaMasteryPips(rank) {
   return new Array(Math.max(0, Math.min(OMNIA_MASTERY_CAP, rank || 0)) + 1).join('\u2726');
 }
-function omniaCurrentMasteryMult(level) { return omniaMasteryScale(omniaUpgradeMasteryRank('', level)); }
-function omniaAttunementDiscountMult(level) {
+function omniaCurrentMasteryMult(genId) { return omniaMasteryScale(omniaGenTier(genId)); }
+function omniaAttunementDiscountMult(level, attuneId) {
   var lvl = Math.max(1, Number(level) || 1);
-  var mastery = omniaUpgradeMasteryRank('', lvl);
+  var mastery = omniaTierForUpgrade(attuneId || 'attunement');
   // Preserve the original early curve and make each mastery break the old 50%
   // floor by another five points, to a firm 65% maximum discount.
   return Math.max(0.35, Math.max(0.5 - mastery * 0.05, 1 - (lvl - 1) * 0.05));
@@ -98,11 +165,17 @@ function omniaReservoirCap() {
 }
 
 function omniaUpgradeStepMax(upgId) {
-  // Dark Matter pumps keep their own finite cap even in Book II.
+  // Dark Matter pumps keep their own finite cap even in Book II. They have no
+  // tier bands, so they return before the band clamp below.
   if (typeof dmUpgradeLevelCap === 'function' && dmUpgradeLevelCap(upgId)) return dmUpgradeLevelCap(upgId);
-  // Once Book II opens, all three mastery thresholds and the final 20-level
-  // band remain available even though bardonStep resets to 1.
-  if (typeof darkMatterUnlocked === 'function' && darkMatterUnlocked()) return OMNIA_UPGRADE_FINAL_LEVEL;
+  // A track can never be bought past the top of its band: the generator has to
+  // tier up first, and that needs all four of its tracks standing there.
+  var bandTop = omniaUpgradeBandTop(upgId);
+  // Once Book II opens, all four bands remain available even though bardonStep
+  // resets to 1 — but the band clamp still applies.
+  if (typeof darkMatterUnlocked === 'function' && darkMatterUnlocked()) {
+    return Math.min(OMNIA_UPGRADE_FINAL_LEVEL, bandTop);
+  }
   var step = omniaState.bardonStep || 1;
   // One finite cap per Step I–X, continuing the early progression's widening
   // deltas (current/vessel +3,+4,+5,…; attunement +2,+3,+4,…) so each step
@@ -121,7 +194,7 @@ function omniaUpgradeStepMax(upgId) {
     quick2:     [2, 4, 7, 11, 16, 22, 29, 37, 56, 80],
     quick3:     [2, 4, 7, 11, 16, 22, 29, 37, 56, 80]
   };
-  return (caps[upgId] || caps.current)[Math.min(step - 1, 9)];
+  return Math.min((caps[upgId] || caps.current)[Math.min(step - 1, 9)], bandTop);
 }
 
 function omniaUpgradeAtMax(upgId) {
@@ -232,8 +305,9 @@ function omniaUpgradeCost(upg) {
   // A pump upgrade is cheapened by that pump's own Attunement; anything else
   // uses the global Attunement (Generator I's).
   var pump = _pumpOfUpgrade(upg.id);
-  var att = pump ? (omniaState.upgrades[pump.attune] || 1) : (omniaState.upgrades.attunement || 1);
-  return Math.floor(raw * omniaAttunementDiscountMult(att));
+  var attId = pump ? pump.attune : 'attunement';
+  var att = omniaState.upgrades[attId] || 1;
+  return Math.floor(raw * omniaAttunementDiscountMult(att, attId));
 }
 
 // ── Prestige (Magical Evocation) ─────────────────────────────────

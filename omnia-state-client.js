@@ -165,6 +165,24 @@ function loadOmniaState() {
     if (!merged.reservoirs || typeof merged.reservoirs !== 'object') {
       merged.reservoirs = (merged.reservoir > 0) ? { current: merged.reservoir } : {};
     }
+    // Generator tiers. Tiering used to be per track, derived from that track's
+    // own lifetime level, so an existing save has no tier recorded and its four
+    // tracks can sit at different bands. Seed each generator from its HIGHEST
+    // track so nobody loses akasha per hour they had already earned; tracks
+    // behind that simply show early band levels again, keeping every lifetime
+    // reward (capacity, discount, build speed) they have accumulated.
+    merged.genTiers = Object.assign({ current:0, gen2:0, gen3:0 }, parsed.genTiers || {});
+    if (!parsed.genTiers) {
+      [['current', 'vessel', 'attunement', 'quickening'],
+       ['gen2', 'vessel2', 'attune2', 'quick2'],
+       ['gen3', 'vessel3', 'attune3', 'quick3']].forEach(function(track) {
+        var highest = track.reduce(function(max, id) {
+          var lvl = Math.max(1, Number(merged.upgrades[id]) || 1);
+          return Math.max(max, Math.floor((lvl - 1) / 20));
+        }, 0);
+        merged.genTiers[track[0]] = Math.min(3, highest);
+      });
+    }
     merged.cosmetics = Object.assign(cloneOmniaDefault().cosmetics, parsed.cosmetics || {});
     merged.cosmetics.unlockedPalettes = merged.cosmetics.unlockedPalettes || ['aether'];
     merged.cosmetics.unlockedEntities = merged.cosmetics.unlockedEntities || ['omnia'];

@@ -63,6 +63,9 @@ test('autonomous Current progression has diminishing percentage returns', () => 
   const economy = createEconomyContext();
   const earlyGain = economy.omniaGeneratorContributionCurve(2, 0)
     / economy.omniaGeneratorContributionCurve(1, 0) - 1;
+  // The deep comparison has to sit inside the top band, which means the
+  // generator must actually be at that tier.
+  economy.omniaState.genTiers = { current: 3, gen2: 3, gen3: 3 };
   const deepGain = economy.omniaGeneratorContributionCurve(80, 0)
     / economy.omniaGeneratorContributionCurve(79, 0) - 1;
 
@@ -78,12 +81,12 @@ test('Akasha pumps produce independently without redistributing neighboring rate
   const economy = createEconomyContext();
   economy.omniaState.bardonStep = 9;
   economy.omniaState.bodies = { physical: 195, astral: 195, mental: 195 };
-  economy.omniaState.upgrades.current = 20;
-  economy.omniaState.upgrades.gen2 = 20;
-  economy.omniaState.upgrades.gen3 = 20;
+  economy.omniaState.upgrades.current = 19;
+  economy.omniaState.upgrades.gen2 = 19;
+  economy.omniaState.upgrades.gen3 = 19;
 
   const before = economy.omniaPumpRatesPerHour();
-  economy.omniaState.upgrades.current = 40;
+  economy.omniaState.upgrades.current = 20;
   const upgraded = economy.omniaPumpRatesPerHour();
 
   assert.ok(upgraded.current > before.current);
@@ -132,24 +135,27 @@ test('autonomous production has useful early payback and bounded unboosted outpu
   // both its output and its upgrade price drop steeply. What makes the reset
   // worth taking is that the new band starts well above the old band's start
   // and ends well above the old band's ceiling.
+  economy.omniaState.genTiers = { current: 0 };
   const bandStart = economy.omniaGeneratorContributionCurve(1, 0);
   const bandPeak = economy.omniaGeneratorContributionCurve(20, 0);
+  economy.omniaState.genTiers = { current: 1 };
   const nextBandStart = economy.omniaGeneratorContributionCurve(21, 0);
   const nextBandPeak = economy.omniaGeneratorContributionCurve(40, 0);
   assert.ok(nextBandStart < bandPeak, 'a mastery must actually cost present output');
   assert.ok(nextBandStart > bandStart * 2, 'the new Level 1 must clearly beat the old Level 1');
   assert.ok(nextBandPeak > bandPeak * 2, 'the new band must clear the old ceiling');
 
+  economy.omniaState.genTiers = { current: 0 };
   economy.omniaState.upgrades.current = 20;
   economy.omniaState.upgrades.attunement = 20;
   const costAtPeak = economy.omniaUpgradeCost(currentUpgrade);
+  economy.omniaState.genTiers = { current: 1 };
   economy.omniaState.upgrades.current = 21;
   const costAfterMastery = economy.omniaUpgradeCost(currentUpgrade);
   // The card reads "Level 1" after a mastery, so it must not still quote the
   // lifetime-level price (which was 78,612 against 520 at the real Level 1).
   assert.ok(costAfterMastery < costAtPeak / 10, 'cost must fall back with the level');
 
-  economy.omniaState.upgrades.current = 20;
   const masteryGain = economy.omniaGeneratorContributionCurve(22, 0)
     - economy.omniaGeneratorContributionCurve(21, 0);
   economy.omniaState.upgrades.current = 21;
@@ -157,6 +163,7 @@ test('autonomous production has useful early payback and bounded unboosted outpu
   assert.ok(masteryPaybackHours < 24 * 30);
 
   economy.omniaState.bardonStep = 10;
+  economy.omniaState.genTiers = { current: 3, gen2: 3, gen3: 3 };
   economy.omniaState.upgrades.current = 80;
   economy.omniaState.upgrades.gen2 = 80;
   economy.omniaState.upgrades.gen3 = 80;
@@ -172,6 +179,8 @@ test('reservoir capacity depends only on Deep Vessel and its mastery', () => {
   assert.equal(economy.omniaReservoirCap(), base);
   assert.equal(base, 180);
 
+  // Capacity keeps reading the lifetime level, and the tier adds its own 25%.
+  economy.omniaState.genTiers = { current: 1 };
   economy.omniaState.upgrades.vessel = 21;
   assert.ok(economy.omniaReservoirCap() > base * 80);
 });

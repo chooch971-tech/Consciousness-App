@@ -13,6 +13,9 @@ var OMNIA_DEFAULT = {
     dm2:1, dmv2:1, dms2:1, dmr2:1,
     dm3:1, dmv3:1, dms3:1, dmr3:1
   },
+  // Per-generator tier (0-3). Increment-only, like every level here: cloud sync
+  // max-merges progress, so nothing may ever count downward.
+  genTiers: { current:0, gen2:0, gen3:0 },
   bardonStep:1,
   prestige:0,
   darkMatter:0,

@@ -48,45 +48,90 @@ function createContext() {
   return context;
 }
 
-test('Akasha upgrade masteries are derived from monotonic lifetime levels', () => {
+test('a generator tiers up only once all four of its branches top the band', () => {
   const game = createContext();
+  game.omniaState.bardonStep = 10;
 
-  game.omniaState.bardonStep = 5;
+  // Akashic Current alone at the top is not enough — that cherry-pick is
+  // exactly what made tiering free on the three non-production branches.
   game.omniaState.upgrades.current = 20;
-  assert.equal(game.omniaUpgradeMasteryReady('current'), true);
-  assert.equal(game.omniaUpgradeMasteryRank('current'), 0);
-  assert.equal(game.omniaUpgradeDisplayLevel('current'), 20);
+  assert.equal(game.omniaGenTierReady('current'), false);
+  assert.equal(game.omniaGenTracksRemaining('current'), 3);
+  assert.equal(game.tierUpOmniaGenerator('current'), false);
 
-  assert.equal(game.masterOmniaUpgrade('current'), true);
+  game.omniaState.upgrades.vessel = 20;
+  game.omniaState.upgrades.attunement = 20;
+  assert.equal(game.omniaGenTierReady('current'), false);
+  assert.equal(game.omniaGenTracksRemaining('current'), 1);
+
+  game.omniaState.upgrades.quickening = 20;
+  assert.equal(game.omniaGenTierReady('current'), true);
+  assert.equal(game.omniaGenTracksRemaining('current'), 0);
+
+  // Tiering advances the counter, never the levels — those stay monotonic for
+  // cloud max-merge, and the band falls out of the tier.
+  assert.equal(game.tierUpOmniaGenerator('current'), true);
+  assert.equal(game.omniaGenTier('current'), 1);
+  // Each track steps one level as it crosses, so the new band's Level 1 sits at
+  // raw 21 — levels only ever climb, which is what cloud max-merge requires.
   assert.equal(game.omniaState.upgrades.current, 21);
-  assert.equal(game.omniaUpgradeMasteryRank('current'), 1);
-  assert.equal(game.omniaUpgradeDisplayLevel('current'), 1);
+  ['current', 'vessel', 'attunement', 'quickening'].forEach(id => {
+    assert.equal(game.omniaState.upgrades[id], 21, id + ' steps rather than resets');
+    assert.equal(game.omniaUpgradeDisplayLevel(id), 1, id + ' restarts its band');
+  });
 
-  game.omniaState.upgrades.current = 66; // grandfathered uncapped Book II save
-  assert.equal(game.omniaUpgradeMasteryRank('current'), 3);
-  assert.equal(game.omniaUpgradeDisplayLevel('current'), 6);
-
-  game.omniaState.upgrades.current = 80;
-  assert.equal(game.omniaUpgradeAtMax('current'), true);
-  assert.equal(game.omniaUpgradeDisplayLevel('current'), 20);
+  // A generator's tier governs only its own tracks.
+  assert.equal(game.omniaGenTier('gen2'), 0);
+  assert.equal(game.omniaUpgradeDisplayLevel('gen2'), 1);
 });
 
-test('Akasha mastery thresholds grant bounded category-specific benefits', () => {
+test('a track cannot be bought past the top of its band until the generator tiers', () => {
+  const game = createContext();
+  game.omniaState.bardonStep = 10;
+  game.omniaState.akasha = 10_000_000;
+
+  assert.equal(game.omniaUpgradeStepMax('current'), 20);
+  game.omniaState.upgrades.current = 20;
+  assert.equal(game.omniaUpgradeAtMax('current'), true);
+  assert.equal(game.omniaUpgradeAtBandTop('current'), true);
+
+  game.omniaState.genTiers.current = 1;
+  assert.equal(game.omniaUpgradeStepMax('current'), 40);
+  assert.equal(game.omniaUpgradeAtMax('current'), false);
+});
+
+test('tier multipliers are keyed to the generator, not to a bare level', () => {
   const game = createContext();
 
-  assert.equal(game.omniaCurrentMasteryMult(20), 1);
-  assert.equal(game.omniaCurrentMasteryMult(21), 2.5);
-  assert.equal(game.omniaCurrentMasteryMult(61), 5.5);
-  assert.equal(game.omniaAttunementDiscountMult(20), 0.5);
-  assert.equal(game.omniaAttunementDiscountMult(21), 0.45);
-  assert.equal(game.omniaAttunementDiscountMult(61), 0.35);
+  assert.equal(game.omniaCurrentMasteryMult('current'), 1);
+  game.omniaState.genTiers.current = 1;
+  assert.equal(game.omniaCurrentMasteryMult('current'), 2.5);
+  game.omniaState.genTiers.current = 3;
+  assert.equal(game.omniaCurrentMasteryMult('current'), 5.5);
+  assert.equal(game.omniaCurrentMasteryMult('gen2'), 1, 'other generators are unaffected');
 
+  // The discount floor still deepens with the tier, on top of the lifetime curve.
+  game.omniaState.genTiers.current = 0;
+  assert.equal(game.omniaAttunementDiscountMult(20, 'attunement'), 0.5);
+  game.omniaState.genTiers.current = 1;
+  assert.equal(game.omniaAttunementDiscountMult(21, 'attunement'), 0.45);
+  game.omniaState.genTiers.current = 3;
+  assert.equal(game.omniaAttunementDiscountMult(61, 'attunement'), 0.35);
+});
+
+test('the rewards a tier is bought with are kept, not reset', () => {
+  const game = createContext();
+  // Capacity, discount, and build speed all read the lifetime level, so they
+  // survive a tier — that persistence is what the 80 levels of work buy.
+  game.omniaState.genTiers.current = 1;
   game.omniaState.upgrades.vessel = 21;
-  const masteredCap = game.omniaPumpReservoirCap(0);
+  const tieredCap = game.omniaPumpReservoirCap(0);
+  game.omniaState.genTiers.current = 0;
   game.omniaState.upgrades.vessel = 20;
   const baseCap = game.omniaPumpReservoirCap(0);
-  assert.ok(masteredCap > baseCap * 1.2);
+  assert.ok(tieredCap > baseCap * 1.2);
 
+  game.omniaState.genTiers.current = 3;
   game.omniaState.upgrades.quickening = 61;
   game.omniaState.upgradeBuilds.current = Date.now() + 60_000;
   assert.ok(Math.abs(game.omniaPumpProductionWhileBuilding(0) - 0.3) < 1e-9);
@@ -247,27 +292,32 @@ test('a genuine post-collect snapshot (newer clock, equal earnings) still wins t
 test('construction time follows the band, so a mastery does not pin every upgrade at the cap', () => {
   const game = createContext();
   const HOUR = 3600 * 1000;
-  const at = (raw) => {
+  // Band position is now a function of the generator's tier, so the tier has to
+  // move with the level the way it does in play.
+  // (tier, band position) -> the build time quoted for the next level.
+  const at = (tier, band) => {
+    game.omniaState.genTiers.current = tier;
+    const raw = tier * 20 + band;
     game.omniaState.upgrades.current = raw;
     return game.omniaBuildDurationMs(raw + 1, 'current');
   };
 
   // Levels 1-20 keep the documented curve: minutes early, many hours late.
-  const early = at(1);
-  const late = at(19);
+  const early = at(0, 1);
+  const late = at(0, 19);
   assert.ok(early < 15 * 60 * 1000, 'the first upgrade is minutes, not hours');
   assert.ok(late > 12 * HOUR && late < 24 * HOUR, 'the end of a band is a long haul');
 
   // Reading the lifetime level put a cubic past the 24h cap around level 21, so
   // every upgrade after the first mastery quoted a full day however early in its
   // band it was. Each band now replays the same curve.
-  const afterMastery = at(21);
-  assert.equal(afterMastery, early, 'a fresh band starts where the first one did');
-  assert.ok(afterMastery < HOUR, 'and is nowhere near the 24h cap');
-  assert.equal(at(41), early);
-  assert.equal(at(61), early);
+  const afterTier = at(1, 1);
+  assert.equal(afterTier, early, 'a fresh band starts where the first one did');
+  assert.ok(afterTier < HOUR, 'and is nowhere near the 24h cap');
+  assert.equal(at(2, 1), early);
+  assert.equal(at(3, 1), early);
 
   // The band position is what matters, not how much lifetime level precedes it.
-  assert.equal(at(25), at(5));
-  assert.equal(at(39), late);
+  assert.equal(at(1, 5), at(0, 5));
+  assert.equal(at(3, 19), late);
 });

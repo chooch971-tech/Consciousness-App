@@ -266,7 +266,6 @@ function renderOmniaEngine() {
       var stepMax = omniaUpgradeStepMax(upg.id);
       var capped = isFinite(stepMax);
       var atMax = capped && lvl >= stepMax;
-      var masteryReady = omniaUpgradeMasteryReady(upg.id);
       var masteryRank = omniaUpgradeMasteryRank(upg.id, lvl);
       var displayLvl = omniaUpgradeDisplayLevel(upg.id, lvl);
       var buildingUntil = omniaUpgradeBuilding(upg.id);
@@ -274,8 +273,8 @@ function renderOmniaEngine() {
       var btnHtml;
       if (buildingUntil) {
         btnHtml = '<button class="omnia-mini-btn omnia-mini-btn--building" disabled>◷ <span data-build-countdown="' + upg.id + '">' + omniaBuildLabel(buildingUntil) + '</span></button>';
-      } else if (masteryReady) {
-        btnHtml = '<button class="omnia-mini-btn omnia-mini-btn--mastery" data-omnia-mastery="' + upg.id + '">Mastery ' + omniaMasteryRoman(masteryRank + 1) + '</button>';
+      } else if (omniaUpgradeAtBandTop(upg.id) && lvl < OMNIA_UPGRADE_FINAL_LEVEL) {
+        btnHtml = '<button class="omnia-mini-btn omnia-mini-btn--ready" disabled>✓ Ready</button>';
       } else if (atMax) {
         btnHtml = '<button class="omnia-mini-btn" disabled style="opacity:.45;cursor:default;">' + (lvl >= OMNIA_UPGRADE_FINAL_LEVEL ? 'Mastered' : 'Step max') + '</button>';
       } else {
@@ -620,28 +619,52 @@ function omniaUpgradeMasteryName(id) {
   if (id === pump.attune) return 'Attunement';
   return 'Quickening';
 }
-function confirmOmniaUpgradeMastery(id) {
-  var upg = OMNIA_UPGRADES.find(function(u) { return u.id === id; });
-  if (!upg || !omniaUpgradeMasteryReady(id) || omniaUpgradeBuilding(id)) return false;
-  var pump = _pumpOfUpgrade(id);
-  if (pump && omniaPumpBuildingId(pump)) return false;
-  var nextRank = omniaUpgradeMasteryRank(id) + 1;
-  var title = 'Attain ' + omniaUpgradeMasteryName(id) + ' Mastery ' + omniaMasteryRoman(nextRank) + '?';
-  var text = 'This track will return to Level 1 and gain the ' + omniaMasteryRoman(nextRank)
-    + ' mastery mark. Lifetime progress, costs, and cloud sync remain intact.\n\n'
-    + omniaUpgradeMasteryBenefit(id, nextRank);
-  showConfirm(title, text, function() { masterOmniaUpgrade(id); }, 'mastery');
+// ── Tier Up ─────────────────────────────────────────────────────────────────
+// One decision per generator, taken only once all four of its tracks stand at
+// the top of the band. It was previously four separate per-track resets, which
+// on three of them cost nothing at all — see the note in omnia-economy-client.
+function omniaGenTierName(genId) {
+  var pump = _pumpOfUpgrade(genId);
+  return 'Generator ' + ((pump && pump.roman) || 'I');
+}
+function omniaGenTierBenefit(nextTier) {
+  var mult = omniaMasteryScale(nextTier);
+  return 'Akashic Current output and upgrade costs both scale to '
+    + (mult % 1 === 0 ? mult : mult.toFixed(1)) + '× the base curve. '
+    + 'Reservoir capacity, the cost discount, and construction speed you have already '
+    + 'earned are all kept.';
+}
+function confirmOmniaGenTier(genId) {
+  var pump = _pumpOfUpgrade(genId);
+  if (!pump || !omniaGenTierReady(pump.id)) return false;
+  if (omniaPumpBuildingId(pump)) return false;
+  var nextTier = omniaGenTier(pump.id) + 1;
+  var title = 'Tier ' + omniaGenTierName(pump.id) + ' to ' + omniaMasteryRoman(nextTier) + '?';
+  var text = 'All four branches return to Level 1 and this generator enters Tier '
+    + omniaMasteryRoman(nextTier) + '. Its output drops back to the start of the new '
+    + 'band, which climbs far higher than the one before it.\n\n'
+    + omniaGenTierBenefit(nextTier);
+  showConfirm(title, text, function() { tierUpOmniaGenerator(pump.id); }, 'mastery');
   return true;
 }
-function masterOmniaUpgrade(id) {
-  if (!omniaUpgradeMasteryReady(id) || omniaUpgradeBuilding(id)) return false;
-  var pump = _pumpOfUpgrade(id);
-  if (pump && omniaPumpBuildingId(pump)) return false;
-  omniaState.upgrades[id] = (omniaState.upgrades[id] || 1) + 1;
+function tierUpOmniaGenerator(genId) {
+  var pump = _pumpOfUpgrade(genId);
+  if (!pump || !omniaGenTierReady(pump.id)) return false;
+  if (omniaPumpBuildingId(pump)) return false;
+  // Levels are monotonic for cloud max-merge, so the tier is what advances and
+  // the displayed band falls out of it. Each track also steps one level as it
+  // crosses, which is what puts the new band's Level 1 at raw tier*20 + 1 —
+  // without it the old top level and the new first level would both render as
+  // Level 1.
+  if (!omniaState.genTiers || typeof omniaState.genTiers !== 'object') omniaState.genTiers = {};
+  OMNIA_GENERATOR_TRACKS[pump.id].forEach(function(id) {
+    omniaState.upgrades[id] = (omniaState.upgrades[id] || 1) + 1;
+  });
+  omniaState.genTiers[pump.id] = omniaGenTier(pump.id) + 1;
   saveOmniaState();
   renderOmniaEngine();
   if (_genSheetId && _pumpOfUpgrade(_genSheetId) === pump) renderGenSheet(_genSheetId);
-  showToast('✦ Mastery ' + omniaMasteryRoman(omniaUpgradeMasteryRank(id)) + ' attained', 3200, 'gold');
+  showToast('✦ ' + omniaGenTierName(pump.id) + ' — Tier ' + omniaMasteryRoman(omniaGenTier(pump.id)) + '', 3200, 'gold');
   playUpgradeHammer();
   return true;
 }
@@ -1057,6 +1080,33 @@ function renderDmSheet(gid) {
   };
 }
 
+// The generator's own tier control, under the four branches. It only becomes
+// live once every branch is at the top of its band, so it doubles as the
+// progress readout for how far off that is.
+function _genTierPanel(meta) {
+  var tier = omniaGenTier(meta.id);
+  if (tier >= OMNIA_MASTERY_CAP) {
+    return '<div class="oe-gen-tier oe-gen-tier--done">'
+      + '<div class="oe-gen-tier-label">Tier ' + omniaMasteryRoman(tier) + ' · fully realised</div></div>';
+  }
+  var ready = omniaGenTierReady(meta.id);
+  var busy = !!omniaPumpBuildingId(meta);
+  var remaining = omniaGenTracksRemaining(meta.id);
+  var next = omniaMasteryRoman(tier + 1);
+  var sub = ready
+    ? (busy ? 'Finish the current build first.'
+            : 'All four branches complete. Output restarts at ' + Math.round(omniaMasteryScale(tier + 1) * 10) / 10 + '× the base curve.')
+    : remaining + ' of 4 branches still short of Level 20.';
+  var btn = ready && !busy
+    ? '<button class="omnia-mini-btn omnia-mini-btn--mastery" data-sheet-tier="' + meta.id + '">Tier Up ' + next + '</button>'
+    : '<button class="omnia-mini-btn" disabled style="opacity:.4;cursor:default;">Tier Up ' + next + '</button>';
+  return '<div class="oe-gen-tier' + (ready && !busy ? ' is-ready' : '') + '">'
+    + '<div><div class="oe-gen-tier-label">'
+    + (tier ? 'Tier ' + omniaMasteryRoman(tier) + ' → ' + next : 'Tier ' + next) + '</div>'
+    + '<div class="oe-gen-tier-sub">' + sub + '</div></div>'
+    + btn + '</div>';
+}
+
 function renderGenSheet(gid) {
   // Dark Matter pumps share the drawer shell but render their own sheet, so
   // every existing refresh path (ticker, collect, buy) keeps working via
@@ -1077,25 +1127,26 @@ function renderGenSheet(gid) {
     var stepMax = omniaUpgradeStepMax(id);
     var capped = isFinite(stepMax);
     var atMax = capped && lvl >= stepMax;
-    var masteryReady = omniaUpgradeMasteryReady(id);
+    var atBandTop = omniaUpgradeAtBandTop(id);
+    var masteryReady = false;   // tiering is a generator-level action now
     var masteryRank = omniaUpgradeMasteryRank(id, lvl);
     var displayLvl = omniaUpgradeDisplayLevel(id, lvl);
     var building = omniaUpgradeBuilding(id);
     var btn;
     if (building) btn = '<button class="omnia-mini-btn omnia-mini-btn--building" disabled>◷ <span data-build-countdown="' + id + '">' + omniaBuildLabel(building) + '</span></button>';
     else if (pumpBusyId) btn = '<button class="omnia-mini-btn" disabled style="opacity:.4;cursor:default;">Waiting</button>';
-    else if (masteryReady) btn = '<button class="omnia-mini-btn omnia-mini-btn--mastery" data-sheet-mastery="' + id + '">Mastery ' + omniaMasteryRoman(masteryRank + 1) + '</button>';
-    else if (atMax) btn = '<button class="omnia-mini-btn" disabled style="opacity:.45;cursor:default;">' + (lvl >= OMNIA_UPGRADE_FINAL_LEVEL ? 'Mastered' : 'Step max') + '</button>';
+    else if (atBandTop && lvl < OMNIA_UPGRADE_FINAL_LEVEL) btn = '<button class="omnia-mini-btn omnia-mini-btn--ready" disabled>✓ Ready</button>';
+    else if (atMax) btn = '<button class="omnia-mini-btn" disabled style="opacity:.45;cursor:default;">' + (lvl >= OMNIA_UPGRADE_FINAL_LEVEL ? 'Complete' : 'Step max') + '</button>';
     else btn = '<button class="omnia-mini-btn" data-sheet-buy="' + id + '"' + ((omniaState.akasha || 0) < cost ? ' disabled' : '') + '>Upgrade ' + cost + '</button>';
     // Build time for the NEXT level, shown under the button so cost + duration
     // sit together. Hidden at max (no next level) and while building (the button
     // already counts the live remaining time down).
-    var timeLabel = (atMax || building || masteryReady || pumpBusyId) ? '' : omniaBuildSpanLabel(omniaBuildDurationMs(lvl + 1, id));
+    var timeLabel = (atMax || atBandTop || building || pumpBusyId) ? '' : omniaBuildSpanLabel(omniaBuildDurationMs(lvl + 1, id));
     // Only the Akashic Current track (id === gid) moves this pump's hourly
     // rate directly — Vessel/Attunement/Quickening don't, so skip the preview
     // there, and skip it here too whenever there's no plain next-level buy.
     var ratePreview = '';
-    if (id === gid && !atMax && !building && !masteryReady && !pumpBusyId) {
+    if (id === gid && !atMax && !atBandTop && !building && !pumpBusyId) {
       var rp = omniaPreviewGenRateGain(gid);
       if (rp.after > rp.before) {
         // Round to a whole number once rates are large enough that a decimal
@@ -1137,14 +1188,15 @@ function renderGenSheet(gid) {
     + row(meta.vessel, 'Deep Vessel', 'This pump\'s reservoir capacity', '#9ed8c4', '▽')
     + row(meta.attune, 'Attunement', 'Cheapens this pump\'s upgrades', '#e8c87a', '✧')
     + row(meta.quick, 'Quickening', 'Speeds this pump\'s construction', '#c4a8d4', '◷')
-    + '</div>';
+    + '</div>'
+    + _genTierPanel(meta);
   var cl = document.getElementById('genSheetClose');
   if (cl) cl.onclick = closeGenSheet;
   // Bound at render time — this script runs before the #genSheet markup is
   // parsed, so a parse-time listener would attach to nothing.
   body.onclick = function(e) {
-    var m = e.target.closest('[data-sheet-mastery]');
-    if (m && !m.disabled) { confirmOmniaUpgradeMastery(m.getAttribute('data-sheet-mastery')); return; }
+    var m = e.target.closest('[data-sheet-tier]');
+    if (m && !m.disabled) { confirmOmniaGenTier(m.getAttribute('data-sheet-tier')); return; }
     var b = e.target.closest('[data-sheet-buy]');
     if (b && !b.disabled && buyOmniaUpgrade(b.getAttribute('data-sheet-buy')) && _genSheetId) { renderGenSheet(_genSheetId); return; }
     // Tap the pump picture to collect its akasha without leaving the menu. If

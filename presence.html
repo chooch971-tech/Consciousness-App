@@ -2408,6 +2408,12 @@
     #genSheetBody .omnia-mini-btn { border-color:rgba(142,204,224,.4); background:rgba(90,184,224,.1); color:#bfeaff; }
     #genSheetBody .omnia-mini-btn:disabled { color:rgba(142,204,224,.5); background:transparent; }
     .omnia-mastery-mark { color:#c899ff; text-shadow:0 0 8px rgba(169,102,238,.72); font-size:.86em; letter-spacing:.03em; white-space:nowrap; }
+    .omnia-mini-btn--ready { border-color:rgba(142,204,192,.5); background:rgba(142,204,192,.12); color:#9ed8c4; opacity:.85; }
+    .oe-gen-tier { display:flex; align-items:center; justify-content:space-between; gap:12px; margin-top:14px; padding:13px 14px; border:1px solid rgba(181,112,242,.26); border-radius:12px; background:linear-gradient(180deg,rgba(151,76,220,.12),rgba(94,42,157,.05)); text-align:left; }
+    .oe-gen-tier.is-ready { border-color:rgba(181,112,242,.72); background:linear-gradient(180deg,rgba(151,76,220,.28),rgba(94,42,157,.14)); box-shadow:0 0 20px -6px rgba(143,73,210,.7); }
+    .oe-gen-tier--done { justify-content:center; }
+    .oe-gen-tier-label { font-family:'DM Mono',monospace; font-size:10px; letter-spacing:.16em; text-transform:uppercase; color:#e2c5ff; }
+    .oe-gen-tier-sub { font-size:9.5px; line-height:1.55; color:rgba(214,196,240,.78); margin-top:4px; }
     #genSheetBody .omnia-mini-btn--mastery, .omnia-mini-btn--mastery { border-color:rgba(181,112,242,.72); background:linear-gradient(180deg,rgba(151,76,220,.34),rgba(94,42,157,.2)); color:#e2c5ff; box-shadow:0 0 15px rgba(143,73,210,.22); }
     #genSheetBody .omnia-mini-btn--mastery:hover, .omnia-mini-btn--mastery:hover { border-color:rgba(210,164,255,.9); background:linear-gradient(180deg,rgba(170,92,236,.44),rgba(104,48,170,.28)); }
     #confirmModal.confirm-mastery { z-index:9900; }
@@ -10153,8 +10159,8 @@ document.getElementById('omniaEngine').addEventListener('click', function(e) {
   }
   var bodyBtn = e.target.closest('[data-omnia-body]');
   if (bodyBtn) { buildOmniaBody(bodyBtn.dataset.omniaBody); return; }
-  var masteryBtn = e.target.closest('[data-omnia-mastery]');
-  if (masteryBtn) { confirmOmniaUpgradeMastery(masteryBtn.dataset.omniaMastery); return; }
+  var tierBtn = e.target.closest('[data-omnia-tier]');
+  if (tierBtn) { confirmOmniaGenTier(tierBtn.dataset.omniaTier); return; }
   var upgBtn = e.target.closest('[data-omnia-upgrade]');
   if (upgBtn) {
     // A press-and-hold already applied its upgrades; ignore the click that
