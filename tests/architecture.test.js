@@ -1238,3 +1238,15 @@ test('first-time tutorial loads through its own end-of-body client boundary', ()
   assert.match(presence, /body:not\(\.tut-live\):not\(\.tut-post\) \.tut-back-btn \{ display:none !important; \}/);
   assert.doesNotThrow(() => new Function(tutorialClient));
 });
+
+test('returning from an exercise keeps the Guide where the practitioner left it', () => {
+  const start = presence.indexOf('function returnAfterExercise');
+  const handler = presence.slice(start, start + 1200);
+  // switchMode zeroes the Guide panel — correct when arriving from another tab,
+  // wrong on the way back from an exercise, which never left the Guide. The
+  // position is captured before that call and re-applied after it, including
+  // once in a following frame to land after the layout refresh's own reset.
+  assert.match(handler, /var keep = gp \? gp\.scrollTop : 0/);
+  assert.match(handler, /switchMode\('guide'\)/);
+  assert.match(handler, /requestAnimationFrame\(function\(\) \{ gp\.scrollTop = keep; \}\)/);
+});

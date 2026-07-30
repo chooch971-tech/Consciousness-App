@@ -10012,8 +10012,22 @@ if (!localStorage.getItem('presence_auth_token')) {
 <script>
 function returnAfterExercise(originMode) {
   if (originMode === 'guide') {
+    // Leaving an exercise never left the Guide tab, so the panel is already
+    // scrolled where the practitioner left it — showScreen restored it on the
+    // way in. switchMode zeroes that scroll, which is right when arriving from
+    // another tab and wrong here, so carry the position across. Without this,
+    // starting an exercise from halfway down the Path and coming back snapped
+    // the page to the top.
+    var gp = document.getElementById('guidePanel');
+    var keep = gp ? gp.scrollTop : 0;
     switchMode('guide');
     openGuide();
+    // switchMode's layout refresh also resets in a following frame, so
+    // re-apply once after it — the same two-step the renderHome restore uses.
+    if (gp && keep > 0) {
+      gp.scrollTop = keep;
+      requestAnimationFrame(function() { gp.scrollTop = keep; });
+    }
   } else {
     switchMode('concentration');
   }
