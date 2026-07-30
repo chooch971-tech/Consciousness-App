@@ -713,27 +713,61 @@ function renderPathQuests() {
   var pathView = guideState._pathView === 'progress' ? 'progress' : 'exercises';
   var progressCards = typeof guideProgressOverview === 'function' ? guideProgressOverview() : [];
 
+  function progressRowState(row) {
+    // Sensory rows carry explicit active/mastered flags; the plain ladder
+    // rows omit them and are always live. Giving each state its own mark
+    // and weight is what stops the column reading as one flat block.
+    return row.mastered ? 'done'
+      : (row.active || row.active === undefined) ? 'live' : 'wait';
+  }
+
   function progressCardsHTML(cards) {
     return '<div class="pq-progress-view" style="display:flex;flex-direction:column;gap:8px;">'
       + cards.map(function(card) {
-        var rows = (card.rows || []).map(function(row) {
-          var rowColor = row.mastered ? '#7eb8a4' : row.active ? card.color : 'var(--text)';
-          return '<div style="padding-top:10px;margin-top:10px;border-top:1px solid rgba(255,255,255,.055);">'
-            + '<div style="display:flex;align-items:baseline;justify-content:space-between;gap:12px;">'
-            + '<span style="font-size:11.5px;color:' + rowColor + ';letter-spacing:.04em;">' + row.label + '</span>'
-            + '<span style="font-size:11px;color:' + rowColor + ';letter-spacing:.06em;text-align:right;flex-shrink:0;">' + row.status + '</span></div>'
-            + '<div style="font-size:10.5px;color:#c3d3e0;line-height:1.6;letter-spacing:.02em;margin-top:5px;">' + row.detail + '</div>'
-            + '<div role="progressbar" aria-label="' + card.name + ' · ' + row.label + '" aria-valuemin="0" aria-valuemax="100" aria-valuenow="' + row.pct + '" style="height:2px;border-radius:999px;background:rgba(255,255,255,.055);overflow:hidden;margin-top:7px;">'
-            + '<i style="display:block;width:' + row.pct + '%;height:100%;border-radius:inherit;background:' + card.color + ';opacity:' + (row.active || row.mastered ? '.8' : '.32') + ';"></i></div>'
-            + '</div>';
+        var all = card.rows || [];
+        // Every locked stage carries the same "recommended after X reaches a
+        // clean 5:00 hold" sentence, so printing all of them in full turns a
+        // long track back into the wall of text this view exists to avoid.
+        // Only the stage that unlocks next earns a full row; the rest become
+        // one compact queue line.
+        var waiting = all.filter(function(r) { return progressRowState(r) === 'wait'; });
+        var deferred = waiting.length > 1 ? waiting.slice(1) : [];
+        var shown = deferred.length ? all.filter(function(r) { return deferred.indexOf(r) === -1; }) : all;
+        var rows = shown.map(function(row) {
+          var state = progressRowState(row);
+          var mark = state === 'done' ? '✓' : state === 'live' ? '●' : '○';
+          var markColor = state === 'done' ? '#7eb8a4' : state === 'live' ? card.color : 'rgba(190,214,230,.35)';
+          var labelColor = state === 'wait' ? 'rgba(190,214,230,.55)' : 'var(--text)';
+          var statusColor = state === 'done' ? '#7eb8a4' : state === 'live' ? card.color : 'rgba(190,214,230,.5)';
+          return '<div class="pq-pv-row' + (state === 'wait' ? ' is-wait' : '') + '">'
+            + '<span class="pq-pv-mark" style="color:' + markColor + ';">' + mark + '</span>'
+            + '<div class="pq-pv-main">'
+            + '<div class="pq-pv-head">'
+            + '<span class="pq-pv-label" style="color:' + labelColor + ';">' + row.label + '</span>'
+            + '<span class="pq-pv-status" style="color:' + statusColor + ';">' + row.status + '</span></div>'
+            + '<div class="pq-pv-detail">' + row.detail + '</div>'
+            + '<div class="pq-pv-bar" role="progressbar" aria-label="' + card.name + ' · ' + row.label + '" aria-valuemin="0" aria-valuemax="100" aria-valuenow="' + row.pct + '">'
+            + '<i style="width:' + row.pct + '%;background:' + (state === 'done' ? '#7eb8a4' : card.color) + ';opacity:' + (state === 'wait' ? '.25' : '.85') + ';"></i></div>'
+            + '</div></div>';
         }).join('');
-        return '<section class="pq-progress-card" data-progress-exercise="' + card.id + '" style="padding:13px 14px;background:var(--surface);border:1px solid var(--border);border-radius:14px;">'
-          + '<div style="display:flex;align-items:center;gap:10px;">'
-          + '<div style="width:32px;height:32px;border-radius:9px;display:flex;align-items:center;justify-content:center;background:' + card.color + '16;border:1px solid ' + card.color + '30;color:' + card.color + ';font-size:15px;">' + card.icon + '</div>'
-          + '<div style="flex:1;min-width:0;"><div style="font-family:\'Space Grotesk\',sans-serif;font-size:13px;font-weight:600;color:' + card.color + ';">' + card.name + '</div>'
-          + '<div style="font-size:10px;color:#b9c9d6;letter-spacing:.04em;margin-top:3px;">' + card.summary + '</div></div></div>'
+        if (deferred.length) {
+          rows += '<div class="pq-pv-queue"><span class="pq-pv-queue-k">Then</span>'
+            + '<span class="pq-pv-queue-v">'
+            // Arrow, not a dot: the stage labels already contain "·" between
+            // faculty and eyes mode, so a dot separator reads as one long list.
+            + deferred.map(function(r) { return r.label; }).join(' <b>→</b> ')
+            + '</span></div>';
+        }
+        // A coloured edge per card separates them down the page at a glance,
+        // rather than leaving a run of identical grey panels.
+        return '<section class="pq-progress-card" data-progress-exercise="' + card.id + '" style="border-left:3px solid ' + card.color + '99;">'
+          + '<div class="pq-pv-cardhead">'
+          + '<div class="pq-pv-icon" style="background:' + card.color + '16;border-color:' + card.color + '3a;color:' + card.color + ';">' + card.icon + '</div>'
+          + '<div style="flex:1;min-width:0;">'
+          + '<div class="pq-pv-name" style="color:' + card.color + ';">' + card.name + '</div>'
+          + '<div class="pq-pv-summary">' + card.summary + '</div></div></div>'
           + rows
-          + (card.footer ? '<div style="font-size:10.5px;color:#b9c9d6;line-height:1.6;margin-top:11px;">' + card.footer + '</div>' : '')
+          + (card.footer ? '<div class="pq-pv-footer">' + card.footer + '</div>' : '')
           + '</section>';
       }).join('')
       + '</div>';

@@ -2166,6 +2166,15 @@ function guideProgressIntro() {
     if (it.sensoryTrack && !sensoryItem) sensoryItem = it;
     if (GUIDE_SENSORY_ITEM_IDS[it.id]) {
       var nm = it.name || it.id;
+      // "Senses" alone says nothing about which faculty is actually being
+      // trained, so name it: Senses · Feeling.
+      if (it.id === 'sense' || GUIDE_SENSE_MODES[it.id]) {
+        var md = it.mode || (GUIDE_SENSE_MODES[it.id] ? it.id : null);
+        if (!md) {
+          try { md = guideState.senseModeForced || guideCurrentSenseMode(guideSenseStats()); } catch (e) {}
+        }
+        if (md && GUIDE_SENSE_LABELS[md]) nm += ' · ' + GUIDE_SENSE_LABELS[md];
+      }
       if (sensoryOnPath.indexOf(nm) === -1) sensoryOnPath.push(nm);
     }
   }
