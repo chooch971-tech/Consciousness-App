@@ -75,6 +75,12 @@ var GUIDE_SENSORY_STAGES = [
   { id:'taste_open', exercise:'sense', name:'Senses', label:'Taste · Open Eyes', open:'sense', mode:'taste', eyesMode:'open' }
 ];
 
+// Every item id that represents sensory work, whether it arrived through the
+// curriculum, the experienced rotation, or the practitioner's own "+".
+var GUIDE_SENSORY_ITEM_IDS = {
+  visual:1, auditory:1, sense:1, feeling:1, smell:1, taste:1, multisense:1
+};
+
 function guideSensoryEntryCleanSec(entry) {
   if (!entry || !Object.prototype.hasOwnProperty.call(entry, 'cleanSeconds')) return 0;
   return Math.max(0, parseInt(entry.cleanSeconds, 10) || 0);
@@ -2148,9 +2154,20 @@ function guideProgressIntro() {
   if (present.thought || present.observation || present.focus || present.vacancy) anchors.push('Thought Control');
   if (anchors.length) row('Anchors', anchors.join(' · '));
 
+  // The sensoryTrack flag marks the sequential curriculum card only. A faculty
+  // added with "+", or rotated in as the most neglected on the experienced
+  // regiment, carries no such flag — so keying solely off it told a
+  // practitioner with Senses right there on their path that they had none.
   var sensoryItem = null;
+  var sensoryOnPath = [];
   for (var i = 0; i < items.length; i++) {
-    if (items[i] && items[i].sensoryTrack) { sensoryItem = items[i]; break; }
+    var it = items[i];
+    if (!it) continue;
+    if (it.sensoryTrack && !sensoryItem) sensoryItem = it;
+    if (GUIDE_SENSORY_ITEM_IDS[it.id]) {
+      var nm = it.name || it.id;
+      if (sensoryOnPath.indexOf(nm) === -1) sensoryOnPath.push(nm);
+    }
   }
   var note;
   if (sensoryItem && sensoryItem.trackComplete) {
@@ -2161,6 +2178,9 @@ function guideProgressIntro() {
     if (sensory.current) row('Today', guideSensoryStageLabel(sensory.current));
     if (sensory.next) row('Next', guideSensoryStageLabel(sensory.next));
     note = 'Omnia rotates in one sense at a time and keeps it until you master it. Anything you add yourself stays until you remove it.';
+  } else if (sensoryOnPath.length) {
+    row('Sense', sensoryOnPath.join(' · '));
+    note = 'Added by you, or rotated in by Omnia, rather than through the sequential curriculum. Anything you add yourself stays until you remove it.';
   } else {
     row('Sense', 'None on your path');
     note = 'Add one with “+” to resume the sensory curriculum. Anything you add yourself stays until you remove it.';

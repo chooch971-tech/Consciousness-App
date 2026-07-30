@@ -238,5 +238,12 @@ test('the Progress view describes only what is on today\'s path', () => {
   assert.match(guideSource, /row\('Schedule'/);
   assert.match(guideSource, /row\('Next', guideSensoryStageLabel\(sensory\.next\)\)/);
   assert.match(guideSource, /None on your path/);
+  // "None on your path" must mean none. The sensoryTrack flag marks only the
+  // sequential curriculum card, so a faculty added with "+" or rotated in on
+  // the experienced regiment carries no flag and was being reported as absent
+  // while sitting right there on the path.
+  assert.match(guideSource, /var GUIDE_SENSORY_ITEM_IDS = \{/);
+  assert.match(guideSource, /GUIDE_SENSORY_ITEM_IDS\[it\.id\]/);
+  assert.match(guideSource, /} else if \(sensoryOnPath\.length\) \{/);
   assert.doesNotMatch(guideSource, /the single most neglected of Visualization/);
 });
