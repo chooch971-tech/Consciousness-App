@@ -9354,8 +9354,34 @@ document.getElementById('settingsResetAll').addEventListener('click', function()
 document.getElementById('settingsResetAwareness').addEventListener('click', function() {
   showConfirm(
     'Reset Awareness Progress',
-    'This will erase your level, XP, history, streak, and all session data. This cannot be undone.',
-    resetAllProgress
+    'This will erase your Awareness level, XP, history, and streak. Concentration, Prayer, and Omnia are left untouched. This cannot be undone.',
+    async function() {
+      // Scoped to presence_v3. This used to call resetAllProgress(), so a button
+      // promising to clear Awareness silently erased Concentration, Prayer, and
+      // Omnia along with it.
+      //
+      // The _resetAt marker is what stops the next cloud pull from restoring
+      // what was just erased: sync-merge keeps only the candidates carrying the
+      // newest reset stamp, so without it the richer cloud slice wins and the
+      // reset quietly undoes itself.
+      state = Object.assign({}, DEFAULT_STATE, { _resetAt: Date.now() });
+      // Written straight to storage because saveState() refuses to persist a
+      // zero-XP state while a pull is pending — exactly what a reset produces.
+      localStorage.setItem('presence_v3', JSON.stringify(state));
+      // Bounded: an offline or slow push must not strand the user looking at
+      // progress that has already been erased locally.
+      try {
+        if (typeof syncPushData === 'function') {
+          await Promise.race([
+            Promise.resolve(syncPushData()),
+            new Promise(function(resolve) { setTimeout(resolve, 4000); })
+          ]);
+        }
+      } catch(e) {}
+      // Awareness feeds the streak header, the Guide, Reports, and Achievements,
+      // so reload rather than repaint one screen and leave the rest stale.
+      window.location.reload();
+    }
   );
 });
 document.getElementById('settingsResetConc').addEventListener('click', function() {

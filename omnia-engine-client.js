@@ -647,10 +647,17 @@ function masterOmniaUpgrade(id) {
 }
 function omniaBuildDurationMs(targetLevel, upgId) {
   // Weighty idle construction on a cubic curve, so deep upgrades are genuine
-  // multi-hour (eventually day-long) commitments and Quickening — which shaves
-  // up to 60% off — carries real weight. ≈11m at L2 → ~27m at L5 → ~2.4h at
-  // L10 → ~9h at L16 → ~20h near max, capped at 24h, eased by Quickening.
-  var secs = Math.floor((600 + 8 * Math.pow(Math.max(1, targetLevel), 3)) * omniaBuildSpeedMult(upgId));
+  // multi-hour commitments and Quickening — which shaves up to 60% off —
+  // carries real weight. ≈11m at L2 → ~27m at L5 → ~2.4h at L10 → ~9h at
+  // L16 → ~18h at L20, eased by Quickening.
+  //
+  // The curve is read from the level shown on the card, not the lifetime
+  // level. A cubic on the lifetime level passed the 24h cap around level 21,
+  // so every upgrade after the first mastery sat pinned at a full day however
+  // early in its band it was — a track reading "Level 1" quoted 24 hours.
+  // Each band now replays the same curve, matching its cost and production.
+  var band = omniaUpgradeDisplayLevel(upgId, Math.max(1, targetLevel));
+  var secs = Math.floor((600 + 8 * Math.pow(band, 3)) * omniaBuildSpeedMult(upgId));
   secs = Math.max(60, Math.min(secs, 24 * 3600));
   return secs * 1000;
 }

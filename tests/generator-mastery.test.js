@@ -243,3 +243,31 @@ test('a genuine post-collect snapshot (newer clock, equal earnings) still wins t
   assert.equal(merged.akasha, 1000, 'the collected balance wins, no double-collect');
   assert.deepEqual(merged.reservoirs, { current: 0 }, 'the emptied reservoir is not restored');
 });
+
+test('construction time follows the band, so a mastery does not pin every upgrade at the cap', () => {
+  const game = createContext();
+  const HOUR = 3600 * 1000;
+  const at = (raw) => {
+    game.omniaState.upgrades.current = raw;
+    return game.omniaBuildDurationMs(raw + 1, 'current');
+  };
+
+  // Levels 1-20 keep the documented curve: minutes early, many hours late.
+  const early = at(1);
+  const late = at(19);
+  assert.ok(early < 15 * 60 * 1000, 'the first upgrade is minutes, not hours');
+  assert.ok(late > 12 * HOUR && late < 24 * HOUR, 'the end of a band is a long haul');
+
+  // Reading the lifetime level put a cubic past the 24h cap around level 21, so
+  // every upgrade after the first mastery quoted a full day however early in its
+  // band it was. Each band now replays the same curve.
+  const afterMastery = at(21);
+  assert.equal(afterMastery, early, 'a fresh band starts where the first one did');
+  assert.ok(afterMastery < HOUR, 'and is nowhere near the 24h cap');
+  assert.equal(at(41), early);
+  assert.equal(at(61), early);
+
+  // The band position is what matters, not how much lifetime level precedes it.
+  assert.equal(at(25), at(5));
+  assert.equal(at(39), late);
+});
