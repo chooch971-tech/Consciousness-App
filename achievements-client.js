@@ -315,8 +315,29 @@ function achEnsureMonth() {
 }
 function achTouchLogin() {
   achEnsureMonth();
+  var days = achState.monthly.loginDays || (achState.monthly.loginDays = []);
+  var changed = false;
   var d = achToday();
-  if (achState.monthly.loginDays.indexOf(d) === -1) { achState.monthly.loginDays.push(d); achSave(); }
+  if (days.indexOf(d) === -1) { days.push(d); changed = true; }
+  // A day carrying a completed session is a day the app was open, so fold the
+  // practice calendar in. loginDays is only ever appended live, on days this
+  // function actually runs, and it sits nested inside presence_ach_v1.monthly
+  // where the cloud merge does not union it — so it could drift below the very
+  // calendar it should exceed, reporting 21 Days Present against 28 practiced
+  // days in the same month. practicedDates drives that calendar and IS merged
+  // as a union, which makes this both a repair of the past and a floor going
+  // forward. Frozen days are deliberately excluded: a freeze is spent for you,
+  // without the app being opened.
+  var prefix = achState.monthly.key + '-';
+  var practiced = (typeof state !== 'undefined' && state && state.practicedDates) || [];
+  for (var i = 0; i < practiced.length; i++) {
+    var day = practiced[i];
+    if (typeof day === 'string' && day.indexOf(prefix) === 0 && days.indexOf(day) === -1) {
+      days.push(day);
+      changed = true;
+    }
+  }
+  if (changed) { days.sort(); achSave(); }
 }
 // One-time repair for the stats-based seed above: re-derive clock/visual/
 // auditory strictly, then revoke any Mastery badges the polluted seed paid
