@@ -1100,8 +1100,20 @@ function _genTierPanel(meta) {
     // banded track is not — a Tier I branch showing 1 / 20 is at lifetime level
     // 21. Name the band target the way the cards write it, and carry the
     // outstanding level count so the line moves on every single purchase.
-    : remaining + ' of 4 branches still short of 20 / 20 · '
-      + omniaGenLevelsRemaining(meta.id) + ' branch levels to go.';
+    // When branches are pinned at their Bardon-step ceiling, say so outright:
+    // otherwise the panel reads as a shopping list for upgrades the step gate
+    // will not sell.
+    : (function() {
+        var blocked = (typeof omniaGenStepBlocked === 'function') ? omniaGenStepBlocked(meta.id) : [];
+        var line = remaining + ' of 4 branches still short of 20 / 20 · '
+          + omniaGenLevelsRemaining(meta.id) + ' branch levels to go.';
+        if (blocked.length) {
+          line += ' ' + blocked.length + ' of them ' + (blocked.length === 1 ? 'is' : 'are')
+            + ' at the Step ' + (omniaState.bardonStep || 1)
+            + ' ceiling — advance the Bardon path to open more.';
+        }
+        return line;
+      })();
   var btn = ready && !busy
     ? '<button class="omnia-mini-btn omnia-mini-btn--mastery" data-sheet-tier="' + meta.id + '">Tier Up ' + next + '</button>'
     : '<button class="omnia-mini-btn" disabled style="opacity:.4;cursor:default;">Tier Up ' + next + '</button>';

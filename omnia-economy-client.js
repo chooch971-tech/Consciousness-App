@@ -129,6 +129,22 @@ function omniaGenLevelsRemaining(genId) {
     return sum + Math.max(0, OMNIA_MASTERY_SPAN - omniaUpgradeDisplayLevel(id));
   }, 0);
 }
+
+// Tracks sitting on their Bardon-step ceiling rather than on anything the
+// player can buy their way past. The step caps lag the band tops on purpose —
+// Tier I's band top is level 40, which Attunement and Quickening cannot reach
+// until Step 9 — so "still short of 20 / 20" can be true while the branch is
+// physically unbuyable. Naming that is the difference between a goal and a
+// dead end the player keeps poking at.
+function omniaGenStepBlocked(genId) {
+  var gen = omniaGeneratorOfTrack(genId);
+  if (!gen || typeof omniaUpgradeStepMax !== 'function') return [];
+  return OMNIA_GENERATOR_TRACKS[gen].filter(function(id) {
+    var lvl = Math.max(1, Number((omniaState.upgrades || {})[id]) || 1);
+    var stepMax = omniaUpgradeStepMax(id);
+    return isFinite(stepMax) && lvl >= stepMax && stepMax < omniaUpgradeBandTop(id);
+  });
+}
 function omniaMasteryRoman(rank) { return ['', 'I', 'II', 'III'][Math.max(0, Math.min(3, rank || 0))] || ''; }
 // What one mastery band is worth. Both production and upgrade cost are read
 // from the band level and then scaled by this, so a mastery drops the pump back
