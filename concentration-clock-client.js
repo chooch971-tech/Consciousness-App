@@ -350,6 +350,33 @@ function isClockSession(h) {
   return !!h && !h.exercise && !h.type;
 }
 
+// Clock history is stored newest-first. Rebuild the record progression from
+// oldest to newest so legacy entries can still show which sits established a
+// new best at the time. New entries persist the boolean explicitly, preserving
+// the milestone even if an older session later rolls out of the history cap.
+function clockHistoryPersonalBestFlags(history) {
+  var flags = {};
+  var best = 0;
+  (history || []).map(function(h, i) { return { h:h, i:i }; })
+    .filter(function(entry) { return isClockSession(entry.h); })
+    .sort(function(a, b) {
+      var aTime = new Date(a.h.date).getTime();
+      var bTime = new Date(b.h.date).getTime();
+      if (!isFinite(aTime)) aTime = 0;
+      if (!isFinite(bTime)) bTime = 0;
+      return aTime - bTime || b.i - a.i;
+    })
+    .forEach(function(entry) {
+      var seconds = Math.max(0, parseInt(entry.h.seconds, 10) || 0);
+      var inferred = seconds > best;
+      flags[entry.i] = typeof entry.h.isPersonalBest === 'boolean'
+        ? entry.h.isPersonalBest
+        : inferred;
+      if (seconds > best) best = seconds;
+    });
+  return flags;
+}
+
 // "Best Hold" counts only exercises whose `seconds` is a genuine unbroken hold:
 // Clock, Thought Control, and Visualization. Auditory, asana, pore breathing,
 // and autosuggestion either aren't holds or store a full session duration.
@@ -753,7 +780,7 @@ function saveConcSession() {
   var _clockPrevToday = concState.history.filter(function(h) { return h.date && presenceDayKey(h.date) === _todayStr && !h.type && !h.exercise; }).length;
   var _akashaCapped = _clockPrevToday + 1 > 3;
   var _akashaDelta = recordExerciseCompletion({
-    entry: { date: new Date().toISOString(), seconds: bestRep, xpEarned: totalXP, sessionDurationSec: sessionDurationSec, notes: '' },
+    entry: { date: new Date().toISOString(), seconds: bestRep, xpEarned: totalXP, sessionDurationSec: sessionDurationSec, notes: '', isPersonalBest: isNewBest },
     exId: 'clock',
     omniaSeconds: totalXP,
     reachedRec: omniaReachedRecommendation('clock', sessionDurationSec),
@@ -840,7 +867,7 @@ function saveConcResult(repeatAfter) {
   var concDidLevelUp1 = awardLevelUps(concState, concSumXpToLevel, concXpForLevel);
 
   var _akashaDelta = recordExerciseCompletion({
-    entry: { date: new Date().toISOString(), seconds: seconds, xpEarned: xpEarned, notes: notes },
+    entry: { date: new Date().toISOString(), seconds: seconds, xpEarned: xpEarned, notes: notes, isPersonalBest: isNewBest },
     exId: 'clock',
     omniaSeconds: seconds
   });
@@ -916,7 +943,7 @@ function deleteConcSession(index, _c) {
 
   // Recalculate best seconds from remaining history
   concState.bestSeconds = concState.history.reduce(function(best, s) {
-    return s.seconds > best ? s.seconds : best;
+    return isClockSession(s) && s.seconds > best ? s.seconds : best;
   }, 0);
 
   saveConcState();
@@ -929,8 +956,11 @@ function deleteConcSession(index, _c) {
 function renderConcHistory() {
   var titleEl = document.querySelector('#concHistoryScreen .history-title');
   if (titleEl) titleEl.textContent = concHistoryFilter === 'clock' ? 'Clock' : concHistoryFilter === 'thought' ? 'Thought Control' : 'Concentration';
+  var screen = document.getElementById('concHistoryScreen');
+  if (screen) screen.classList.toggle('clock-history-mode', concHistoryFilter === 'clock');
   var list = document.getElementById('concHistoryList');
   var allHistory = concState.history;
+  var clockPersonalBests = clockHistoryPersonalBestFlags(allHistory);
   var filtered = concHistoryFilter === 'clock'
     ? allHistory.map(function(h, i) { return { h: h, i: i }; }).filter(function(x) {
         return isClockSession(x.h);
@@ -958,7 +988,15 @@ function renderConcHistory() {
     groupMap[keyStr].entries.push(entry);
   });
 
-  list.innerHTML = groups.map(function(group) {
+  var summaryHtml = concHistoryFilter === 'clock'
+    ? '<div class="clock-history-summary">'
+      + '<div class="clock-history-summary-stat"><span>Best Rep</span><strong>' + fmtSecs(filtered.reduce(function(best, entry) { return Math.max(best, entry.h.seconds || 0); }, 0)) + '</strong></div>'
+      + '<div class="clock-history-summary-rule"></div>'
+      + '<div class="clock-history-summary-stat"><span>Sessions</span><strong>' + filtered.length + '</strong></div>'
+      + '</div>'
+    : '';
+
+  list.innerHTML = summaryHtml + groups.map(function(group) {
     var itemsHtml = group.entries.map(function(entry) {
       var h = entry.h; var idx = entry.i;
       var d = new Date(h.date);
@@ -980,19 +1018,20 @@ function renderConcHistory() {
         ? (Math.floor(h.seconds/60) + ':' + (h.seconds%60 < 10 ? '0' : '') + (h.seconds%60))
         : h.seconds + 's';
       var isClockEntry = !h.type && !h.exercise;
+      var isPersonalBest = isClockEntry && clockPersonalBests[idx] === true;
       var statsHtml = '';
       if (isClockEntry) {
         var totalSessionSec = guideSessionSec(h);
         statsHtml = '<div class="conc-history-stats">'
           + '<div class="conc-history-stat"><span class="conc-history-stat-label">Total Session</span><span class="conc-history-stat-value">' + fmtSecs(totalSessionSec) + '</span></div>'
-          + '<div class="conc-history-stat"><span class="conc-history-stat-label">Personal Best Rep</span><span class="conc-history-stat-value">' + fmtSecs(h.seconds || 0) + '</span></div>'
+          + '<div class="conc-history-stat conc-history-stat--best"><span class="conc-history-stat-label">Best Rep</span><span class="conc-history-stat-value">' + fmtSecs(h.seconds || 0) + '</span></div>'
           + '</div>';
       }
-      return '<div class="conc-history-item" style="position:relative;">'
+      return '<div class="conc-history-item' + (isPersonalBest ? ' is-personal-best' : '') + '" style="position:relative;">'
         + '<button class="history-delete-btn" onclick="deleteConcSession(' + idx + ')">✕</button>'
         + '<div class="conc-history-top" style="padding-right:28px;">'
         + '<span class="conc-history-date">' + timeStr + '</span>'
-        + (isClockEntry ? '' : '<span class="conc-history-time">' + holdStr + '</span>')
+        + (isPersonalBest ? '<span class="conc-history-pb-badge">Personal Best</span>' : (isClockEntry ? '' : '<span class="conc-history-time">' + holdStr + '</span>'))
         + '</div>'
         + statsHtml
         + '<div class="conc-history-foot">'
