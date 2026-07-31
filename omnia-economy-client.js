@@ -116,6 +116,19 @@ function omniaGenTracksRemaining(genId) {
     return (Math.max(1, Number((omniaState.upgrades || {})[id]) || 1)) < top;
   }).length;
 }
+
+// Total branch levels still owed before this generator can tier up, counted in
+// the band levels the cards actually display. "4 of 4 branches short" reads the
+// same at the very start of a band as it does one level from the end, which
+// made it impossible to tell progress — or to tell whether anything had moved
+// at all. This gives the panel a number that changes with every purchase.
+function omniaGenLevelsRemaining(genId) {
+  var gen = omniaGeneratorOfTrack(genId);
+  if (!gen) return 0;
+  return OMNIA_GENERATOR_TRACKS[gen].reduce(function(sum, id) {
+    return sum + Math.max(0, OMNIA_MASTERY_SPAN - omniaUpgradeDisplayLevel(id));
+  }, 0);
+}
 function omniaMasteryRoman(rank) { return ['', 'I', 'II', 'III'][Math.max(0, Math.min(3, rank || 0))] || ''; }
 // What one mastery band is worth. Both production and upgrade cost are read
 // from the band level and then scaled by this, so a mastery drops the pump back

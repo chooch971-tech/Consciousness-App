@@ -116,6 +116,30 @@ test('first-run seeding still takes the highest track, then levels the rest', ()
   }
 });
 
+test('the tier panel counts outstanding band levels, not just branches', () => {
+  // "4 of 4 branches short" reads identically at the start of a band and one
+  // level from the end, so it could not show that a purchase had registered.
+  const ctx = loadSave({
+    upgrades: { current: 22, vessel: 13, attunement: 13, quickening: 13 },
+    genTiers: { current: 1, gen2: 0, gen3: 0 }
+  });
+  const owed = () => vm.runInContext('omniaGenLevelsRemaining("current")', ctx);
+  const before = owed();
+  assert.equal(before, 75, '(20-2) + (20-1) x3');
+  ctx.omniaState.upgrades.attunement += 1;
+  assert.equal(owed(), before - 1, 'one purchase moves the counter by one');
+});
+
+test('a generator ready to tier up owes nothing', () => {
+  const ctx = loadSave({
+    upgrades: { current: 40, vessel: 40, attunement: 40, quickening: 40 },
+    genTiers: { current: 1, gen2: 0, gen3: 0 }
+  });
+  assert.equal(vm.runInContext('omniaGenLevelsRemaining("current")', ctx), 0);
+  assert.equal(vm.runInContext('omniaGenTracksRemaining("current")', ctx), 0);
+  assert.equal(vm.runInContext('omniaGenTierReady("current")', ctx), true);
+});
+
 test('the track groups have one definition shared by both modules', () => {
   const stateSrc = read('omnia-state-client.js');
   const economySrc = read('omnia-economy-client.js');

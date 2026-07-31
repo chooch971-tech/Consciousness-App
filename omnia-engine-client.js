@@ -1096,7 +1096,12 @@ function _genTierPanel(meta) {
   var sub = ready
     ? (busy ? 'Finish the current build first.'
             : 'All four branches complete. Output restarts at ' + Math.round(omniaMasteryScale(tier + 1) * 10) / 10 + '× the base curve.')
-    : remaining + ' of 4 branches still short of Level 20.';
+    // "short of Level 20" read like an absolute level, which is exactly what a
+    // banded track is not — a Tier I branch showing 1 / 20 is at lifetime level
+    // 21. Name the band target the way the cards write it, and carry the
+    // outstanding level count so the line moves on every single purchase.
+    : remaining + ' of 4 branches still short of 20 / 20 · '
+      + omniaGenLevelsRemaining(meta.id) + ' branch levels to go.';
   var btn = ready && !busy
     ? '<button class="omnia-mini-btn omnia-mini-btn--mastery" data-sheet-tier="' + meta.id + '">Tier Up ' + next + '</button>'
     : '<button class="omnia-mini-btn" disabled style="opacity:.4;cursor:default;">Tier Up ' + next + '</button>';
