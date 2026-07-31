@@ -957,6 +957,9 @@ function saveAudResult() {
   });
   var _concDidLevelUpAud = concDidLevelUpA;
   var _audOriginMode = currentMode;
+  if (_concDidLevelUpAud && typeof completionFlowQueueLevelUp === 'function') {
+    completionFlowQueueLevelUp(concState.level, 'concentration');
+  }
   showSessionComplete({
     title: 'Pure focus.',
     sub: audReps.length + ' rep' + (audReps.length !== 1 ? 's' : ''),
@@ -967,7 +970,6 @@ function saveAudResult() {
       renderConcHome();
       showScreen('homeScreen');
       returnAfterExercise(_audOriginMode);
-      if (_concDidLevelUpAud) setTimeout(function() { showConcLevelUp(concState.level); }, 400);
     }
   });
 }

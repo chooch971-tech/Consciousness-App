@@ -383,6 +383,9 @@ function saveTCResult() {
   });
   var _concDidLevelUpTC2 = concDidLevelUpTC;
   var _tcOriginMode = currentMode;
+  if (_concDidLevelUpTC2 && typeof completionFlowQueueLevelUp === 'function') {
+    completionFlowQueueLevelUp(concState.level, 'concentration');
+  }
   showSessionComplete({
     title: 'Mind controlled.',
     sub: fmtTimer(elapsedSec) + (_tcCompletedFlag ? ' · completed' : ''),
@@ -393,7 +396,6 @@ function saveTCResult() {
       renderConcHome();
       showScreen('homeScreen');
       returnAfterExercise(_tcOriginMode);
-      if (_concDidLevelUpTC2) setTimeout(function() { showConcLevelUp(concState.level); }, 400);
     }
   });
 }

@@ -518,7 +518,7 @@ function awardOmniaForExercise(exId, seconds, reachedRec) {
   saveOmniaState();
   // The body level gets a real acknowledgment screen, not just a toast —
   // shown once the session-complete legend has been dismissed.
-  if (awardedBody) setTimeout(maybeShowBodyLevelAward, 1200);
+  if (awardedBody) maybeShowBodyLevelAward();
 }
 
 // TEMPORARY (testing): chronological Akasha ledger grouped by date, built
@@ -634,6 +634,14 @@ function renderAkashaStats() {
 // covering the screen; the player dismisses it explicitly.
 function maybeShowBodyLevelAward() {
   if (!omniaState || !omniaState.lastBodyAward) return;
+  if (typeof completionFlowIsActive === 'function' && completionFlowIsActive()
+      && typeof completionFlowQueue === 'function') {
+    var pendingAward = omniaState.lastBodyAward;
+    completionFlowQueue('body-level-award', 20, function(done) {
+      showBodyLevelAward(pendingAward, done);
+    });
+    return;
+  }
   var sc = document.getElementById('sessionComplete');
   if (sc && sc.classList.contains('sc-show')) {
     setTimeout(maybeShowBodyLevelAward, 700);
@@ -642,10 +650,18 @@ function maybeShowBodyLevelAward() {
   showBodyLevelAward(omniaState.lastBodyAward);
 }
 
-function showBodyLevelAward(award) {
-  if (document.getElementById('bodyLevelAwardOverlay')) return;
+function showBodyLevelAward(award, completionDone) {
+  if (document.getElementById('bodyLevelAwardOverlay')) {
+    if (completionDone) completionDone();
+    return;
+  }
   var bodyMeta = OMNIA_BODY_META[award.body];
-  if (!bodyMeta) { omniaState.lastBodyAward = null; saveOmniaState(); return; }
+  if (!bodyMeta) {
+    omniaState.lastBodyAward = null;
+    saveOmniaState();
+    if (completionDone) completionDone();
+    return;
+  }
   var color = bodyMeta.color;
   var lvl = award.level || (omniaState.bodies && omniaState.bodies[award.body]) || 1;
   var overlay = document.createElement('div');
@@ -663,6 +679,9 @@ function showBodyLevelAward(award) {
     omniaState.lastBodyAward = null;
     saveOmniaState();
     overlay.classList.remove('bla-vis');
+    var done = completionDone;
+    completionDone = null;
+    if (done) done();
     setTimeout(function() { if (overlay.parentNode) overlay.parentNode.removeChild(overlay); }, 360);
   };
   requestAnimationFrame(function() {

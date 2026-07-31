@@ -631,6 +631,9 @@ function saveSenseSessionResult() {
     reachedRec: omniaReachedRecommendation('sense', wallSec)
   });
   var originMode = currentMode;
+  if (didLevelUp && typeof completionFlowQueueLevelUp === 'function') {
+    completionFlowQueueLevelUp(concState.level, 'concentration');
+  }
   showSessionComplete({
     title: 'Senses held.',
     sub: senseEyesLabel(senseActiveEyesMode) + ' · ' + senseReps.length + ' rep' + (senseReps.length === 1 ? '' : 's'),
@@ -641,11 +644,6 @@ function saveSenseSessionResult() {
       renderConcHome();
       showScreen('homeScreen');
       returnAfterExercise(originMode);
-      if (didLevelUp) {
-        setTimeout(function() {
-          showLevelUp(concState.level, getConcRank(concState.level), 'concentration');
-        }, 800);
-      }
     }
   });
 }

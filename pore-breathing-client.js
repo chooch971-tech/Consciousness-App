@@ -221,15 +221,16 @@ function stopPoreBreath(completed) {
   renderConcHome();
   var verse = PORE_LEGEND_VERSES[Math.floor(Math.random() * PORE_LEGEND_VERSES.length)];
   var levelUp = didLevelUp ? concState.level : null;
+  if (levelUp && typeof completionFlowQueueLevelUp === 'function') {
+    completionFlowQueueLevelUp(levelUp, 'concentration');
+  }
   showSessionComplete({
     title: 'Pore breathing complete.',
     sub: verse,
     xp: xpEarned,
     akashaDelta: akashaGained,
     stat3: { label: 'Breaths', color: 'blue', value: breathsDone },
-    onDone: function() {
-      if (levelUp) setTimeout(function() { showConcLevelUp(levelUp); }, 400);
-    }
+    onDone: function() {}
   });
 }
 

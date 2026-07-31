@@ -765,6 +765,9 @@ function saveConcSession() {
   var _originMode = currentMode;
   var _pbLabel = isNewBest ? 'New PB' : 'PB';
   var _fmtBest = fmtSecs(concState.bestSeconds);
+  if (didLevelUp && typeof completionFlowQueueLevelUp === 'function') {
+    completionFlowQueueLevelUp(concState.level, 'concentration');
+  }
 
   var _omniaMsg = null;
   if (concState.bestSeconds > 0 && concState.bestSeconds < 900) {
@@ -784,7 +787,6 @@ function saveConcSession() {
       renderConcHome();
       showScreen('homeScreen');
       returnAfterExercise(_originMode);
-      if (didLevelUp) setTimeout(function() { showConcLevelUp(concState.level); }, 400);
     }
   });
 }
@@ -852,6 +854,9 @@ function saveConcResult(repeatAfter) {
   var _concDidLevelUp = concDidLevelUp1;
   var _originMode = currentMode;
   var _fmtSecs = (Math.floor(seconds/60) > 0 ? Math.floor(seconds/60) + ':' + (seconds%60 < 10 ? '0' : '') + seconds%60 : '0:' + (seconds < 10 ? '0' : '') + seconds);
+  if (_concDidLevelUp && typeof completionFlowQueueLevelUp === 'function') {
+    completionFlowQueueLevelUp(concState.level, 'concentration');
+  }
   showSessionComplete({
     title: 'Meditative legend!',
     sub: 'Clock Exercise',
@@ -862,7 +867,6 @@ function saveConcResult(repeatAfter) {
       renderConcHome();
       showScreen('homeScreen');
       returnAfterExercise(_originMode);
-      if (_concDidLevelUp) setTimeout(function() { showConcLevelUp(concState.level); }, 400);
     }
   });
 }

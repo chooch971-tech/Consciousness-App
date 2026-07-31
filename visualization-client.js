@@ -1238,6 +1238,9 @@ function saveVisSessionResult() {
   var _concDidLevelUpVis = concDidLevelUp2;
   var _visOriginMode = currentMode;
   var _totalSecVis = Math.floor((Date.now() - visSessionStartTime) / 1000);
+  if (_concDidLevelUpVis && typeof completionFlowQueueLevelUp === 'function') {
+    completionFlowQueueLevelUp(concState.level, 'concentration');
+  }
   showSessionComplete({
     title: 'Sharp as ever.',
     sub: visReps.length + ' rep' + (visReps.length !== 1 ? 's' : ''),
@@ -1248,7 +1251,6 @@ function saveVisSessionResult() {
       renderConcHome();
       showScreen('homeScreen');
       returnAfterExercise(_visOriginMode);
-      if (_concDidLevelUpVis) setTimeout(function() { showConcLevelUp(concState.level); }, 400);
     }
   });
 }
@@ -2227,10 +2229,13 @@ document.getElementById('visIntermediateFadedBtn').addEventListener('click', fun
   });
   var _dm = mintDarkMatterFromPractice(DARK_MATTER_PER_ADVANCED);
   showToast('+' + xpEarned + ' XP' + (_dm ? ' · +' + _dm + ' ◆ Dark Matter' : ''));
-  if(didLevelUp) setTimeout(function(){showConcLevelUp(concState.level);},600);
+  if (didLevelUp && typeof completionFlowQueueLevelUp === 'function') {
+    completionFlowQueueLevelUp(concState.level, 'concentration');
+  }
   renderConcHome();
   showScreen('homeScreen');
   switchMode('concentration');
+  if (typeof completionFlowShowNext === 'function') completionFlowShowNext();
 });
 
 document.getElementById('visIntermediateSwitchBtn').addEventListener('click', function() {
@@ -2253,7 +2258,7 @@ document.getElementById('visViewHistoryBtn').addEventListener('click', function(
 });
 
 // ── Concentration level-up overlay ──
-function showConcLevelUp(level) {
+function showConcLevelUp(level, completionDone) {
   var overlay = document.getElementById('levelupOverlay');
   var bg = document.getElementById('levelupBg');
   var particles = document.getElementById('levelupParticles');
@@ -2291,5 +2296,6 @@ function showConcLevelUp(level) {
     particles.appendChild(p);
   }
 
+  overlay._completionFlowDone = typeof completionDone === 'function' ? completionDone : null;
   overlay.classList.add('show');
 }

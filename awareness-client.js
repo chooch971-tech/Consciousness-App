@@ -496,6 +496,7 @@ function recordPracticeReviewEntry(kind, entry) {
 //   skipOmnia    record + count only, no Omnia award (capped clock, multi-sense)
 // Returns the akasha gained by the award (0 when skipped), for the legend.
 function recordExerciseCompletion(opts) {
+  if (typeof completionFlowBegin === 'function') completionFlowBegin();
   pushHistory(concState.history, opts.entry, 100);
   recordPracticeReviewEntry('concentration', opts.entry);
   saveConcState();
@@ -596,9 +597,16 @@ function touchPracticeStreak() {
     // 'presence_tutorialVisited', which nothing ever sets (the tutorial writes
     // 'presence_visited') — so the celebration never fired for anyone.
     if (!window._tutorialFirstClock && localStorage.getItem('presence_visited')) {
-      setTimeout(function() {
-        if (typeof showStreakCelebration === 'function') showStreakCelebration();
-      }, 1400);
+      if (typeof completionFlowQueue === 'function') {
+        completionFlowQueue('streak-celebration', 10, function(done) {
+          if (typeof showStreakCelebration === 'function') showStreakCelebration(done);
+          else done();
+        });
+      } else {
+        setTimeout(function() {
+          if (typeof showStreakCelebration === 'function') showStreakCelebration();
+        }, 1400);
+      }
     }
   }
   if (typeof pathQuestRecordCompletion === 'function') pathQuestRecordCompletion();
@@ -1710,6 +1718,9 @@ function submitSurvey() {
   if (Object.keys(surveyAnswers).length < QUESTIONS.length) {
     showToast('Answer all questions first'); return;
   }
+  // The survey result is Awareness's completion screen. Hold the shared
+  // ceremony sequence behind it until the player taps Done.
+  if (typeof completionFlowSessionOpened === 'function') completionFlowSessionOpened();
   sessionStorage.removeItem('_sessionJustEnded');
 
   var driftScore = 6 - surveyAnswers.drift;
@@ -1739,13 +1750,10 @@ function submitSurvey() {
   state.weeklyScores.push({ date: new Date().toISOString(), score: finalScore, endedEarly: sessionEndedEarly });
   state.totalSessions++;
 
-  // Streak (must be updated before awardSessionClarity so momentum uses fresh streak)
-  var today = new Date().toDateString();
-  if (state.lastSessionDate !== today) {
-    var yesterday = new Date(Date.now() - 86400000).toDateString();
-    state.streak = state.lastSessionDate === yesterday ? state.streak + 1 : 1;
-    state.lastSessionDate = today;
-  }
+  // Streak (must be updated before awardSessionClarity so momentum uses fresh
+  // streak). Use the shared calendar-backed path so Awareness joins the same
+  // celebration queue as every Concentration exercise.
+  touchPracticeStreak();
 
   // Award Clarity with idle game multipliers
   var clarityResult = awardSessionClarity(rawMinutes);
@@ -1811,11 +1819,16 @@ function submitSurvey() {
     var returnBanner = document.getElementById('sessionReturnBanner');
     if (returnBanner) returnBanner.style.display = 'none';
     renderHome(); showScreen('homeScreen');
+    if (typeof completionFlowSessionDone === 'function') completionFlowSessionDone();
   };
 
   // Show level up overlay if leveled up
   if (didLevelUp) {
-    setTimeout(function() { showLevelUp(state.level); }, 600);
+    if (typeof completionFlowQueueLevelUp === 'function') {
+      completionFlowQueueLevelUp(state.level, 'awareness');
+    } else {
+      setTimeout(function() { showLevelUp(state.level); }, 600);
+    }
   }
 }
 
@@ -1858,7 +1871,7 @@ function adapt(score, endedEarly) {
 // LEVEL UP
 // ═══════════════════════════════════════
 
-function showLevelUp(level) {
+function showLevelUp(level, completionDone) {
   var overlay = document.getElementById('levelupOverlay');
   var bg = document.getElementById('levelupBg');
   var particles = document.getElementById('levelupParticles');
@@ -1902,11 +1915,19 @@ function showLevelUp(level) {
   var levelupTiger = document.getElementById('levelupTiger');
   if (levelupTiger) levelupTiger.style.display = TIGER_LEVELS.indexOf(level) !== -1 ? 'block' : 'none';
 
+  overlay._completionFlowDone = typeof completionDone === 'function' ? completionDone : null;
   overlay.classList.add('show');
 }
 
 document.getElementById('levelupContinue').addEventListener('click', function() {
-  document.getElementById('levelupOverlay').classList.remove('show');
+  var overlay = document.getElementById('levelupOverlay');
+  var done = overlay._completionFlowDone;
+  overlay._completionFlowDone = null;
+  // Hide this level before advancing so two level-ups can reuse the same
+  // overlay in a single completion sequence without the first close hiding the
+  // second one.
+  overlay.classList.remove('show');
+  if (done) done();
 });
 
 // ═══════════════════════════════════════

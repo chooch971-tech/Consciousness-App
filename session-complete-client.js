@@ -1,3 +1,109 @@
+// One shared sequence owns every screen earned by a completed exercise.
+// Producers can enqueue their ceremony as soon as the reward is known; the
+// sequence keeps the session-complete screen above the destination, then
+// reveals Streak → body level → level-up → Achievements without flashing the
+// Home/Guide screen between them.
+var _completionFlow = {
+  active:false,
+  sessionOpen:false,
+  current:null,
+  queue:[],
+  seq:0,
+  autoTimer:null,
+  after:null
+};
+
+function completionFlowIsActive() {
+  return !!_completionFlow.active;
+}
+
+function completionFlowBegin() {
+  _completionFlow.active = true;
+  clearTimeout(_completionFlow.autoTimer);
+  // A few completion paths do not use the full session-complete legend. Give
+  // them a short grace period to enqueue everything, then play the same queue.
+  _completionFlow.autoTimer = setTimeout(function() {
+    _completionFlow.autoTimer = null;
+    completionFlowShowNext();
+  }, 1000);
+}
+
+function completionFlowQueue(id, priority, show) {
+  if (!id || typeof show !== 'function') return false;
+  if (_completionFlow.current && _completionFlow.current.id === id) return false;
+  if (_completionFlow.queue.some(function(step) { return step.id === id; })) return false;
+  completionFlowBegin();
+  _completionFlow.queue.push({
+    id:id,
+    priority:Number(priority) || 50,
+    seq:_completionFlow.seq++,
+    show:show
+  });
+  return true;
+}
+
+function completionFlowQueueLevelUp(level, kind) {
+  kind = kind === 'awareness' ? 'awareness' : 'concentration';
+  return completionFlowQueue('level-up:' + kind, kind === 'awareness' ? 31 : 30, function(done) {
+    if (kind === 'concentration' && typeof showConcLevelUp === 'function') {
+      showConcLevelUp(level, done);
+    } else if (typeof showLevelUp === 'function') {
+      showLevelUp(level, done);
+    } else {
+      done();
+    }
+  });
+}
+
+function completionFlowSessionOpened() {
+  completionFlowBegin();
+  clearTimeout(_completionFlow.autoTimer);
+  _completionFlow.autoTimer = null;
+  _completionFlow.sessionOpen = true;
+}
+
+function completionFlowShowNext() {
+  if (!_completionFlow.active || _completionFlow.sessionOpen || _completionFlow.current) return false;
+  clearTimeout(_completionFlow.autoTimer);
+  _completionFlow.autoTimer = null;
+  if (!_completionFlow.queue.length) {
+    _completionFlow.active = false;
+    var after = _completionFlow.after;
+    _completionFlow.after = null;
+    if (after) after();
+    return false;
+  }
+  _completionFlow.queue.sort(function(a, b) {
+    return a.priority === b.priority ? a.seq - b.seq : a.priority - b.priority;
+  });
+  var step = _completionFlow.queue.shift();
+  _completionFlow.current = step;
+  var finished = false;
+  try {
+    step.show(function() {
+      if (finished) return;
+      finished = true;
+      completionFlowStepDone(step.id);
+    });
+  } catch(e) {
+    console.error('[completion-flow] Unable to show ' + step.id, e);
+    completionFlowStepDone(step.id);
+  }
+  return true;
+}
+
+function completionFlowStepDone(id) {
+  if (!_completionFlow.current || _completionFlow.current.id !== id) return false;
+  _completionFlow.current = null;
+  return completionFlowShowNext();
+}
+
+function completionFlowSessionDone(after) {
+  _completionFlow.sessionOpen = false;
+  if (typeof after === 'function') _completionFlow.after = after;
+  return completionFlowShowNext();
+}
+
 function playSessionCompleteSound() {
   try {
     var ctx = new (window.AudioContext || window.webkitAudioContext)();
@@ -57,11 +163,13 @@ function buildOmniaShowerHtml() {
 function showSessionComplete(opts) {
   var el = document.getElementById('sessionComplete');
   if (!el) return;
+  completionFlowSessionOpened();
   playSessionCompleteSound();
   // Consume any pending streak-goal reward so it shows in this overlay,
   // not as a timed toast that fires behind the session-complete screen.
   var _psb = window._pendingStreakBonus || null;
   window._pendingStreakBonus = null;
+  if (_psb && _psb.leveled) completionFlowQueueLevelUp(_psb.level, 'awareness');
   var streakBannerHtml = _psb
     ? '<div style="margin:12px 0 4px;padding:12px 16px;background:rgba(212,149,110,.12);border:1px solid rgba(212,149,110,.35);border-radius:10px;text-align:center;">'
       + '<div style="font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:#d4956e;margin-bottom:6px;">🔥 ' + _psb.days + '-Day Awareness Streak</div>'
@@ -121,19 +229,21 @@ function showSessionComplete(opts) {
     // has painted do we fade the overlay out — this guarantees no flash of the
     // exercise clock between the legend and the home menu.
     if (opts.onDone) opts.onDone();
+    // Start the next earned screen while this opaque one still covers the
+    // destination. Its fade therefore reveals another ceremony, never Home.
+    completionFlowSessionDone();
     requestAnimationFrame(function() {
       el.classList.remove('sc-vis');
       setTimeout(function() {
         el.classList.remove('sc-show');
-        // Fire Awareness level-up after the overlay is gone, not while it's open.
-        if (_psb && _psb.leveled) setTimeout(function() { showLevelUp(_psb.level); }, 300);
       }, 560);
     });
   };
   if (opts.onRepeat) {
     document.getElementById('scRepeatBtn').onclick = function() {
       el.classList.remove('sc-vis');
-      setTimeout(function() { el.classList.remove('sc-show'); opts.onRepeat(); }, 560);
+      completionFlowSessionDone(opts.onRepeat);
+      setTimeout(function() { el.classList.remove('sc-show'); }, 560);
     };
   }
   el.classList.add('sc-show');

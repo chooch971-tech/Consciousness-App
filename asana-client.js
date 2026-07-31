@@ -214,6 +214,9 @@ function showAsanaResult(seconds) {
     reachedRec: omniaReachedRecommendation('asana', seconds, asanaTargetSeconds)
   });
   var _asanaOriginMode = currentMode;
+  if (didLevelUp && typeof completionFlowQueueLevelUp === 'function') {
+    completionFlowQueueLevelUp(concState.level, 'concentration');
+  }
   showSessionComplete({
     title: 'Stillness mastered.',
     sub: currentAsanaPosture,
@@ -223,7 +226,6 @@ function showAsanaResult(seconds) {
     onDone: function() {
       showScreen('homeScreen');
       returnAfterExercise(_asanaOriginMode);
-      if (didLevelUp) setTimeout(function() { showLevelUp(concState.level, getConcRank(concState.level), 'concentration'); }, 800);
     }
   });
 }

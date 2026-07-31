@@ -158,6 +158,17 @@ function queueAchievementReveal(badges) {
     return;
   }
   badges.forEach(function(b) { _achRevealQueue.push(b); });
+  if (typeof completionFlowIsActive === 'function' && completionFlowIsActive()
+      && typeof completionFlowQueue === 'function') {
+    completionFlowQueue('achievement-reveal', 40, function(done) {
+      var batch = _achRevealQueue.slice();
+      _achRevealQueue = [];
+      if (!batch.length) { done(); return; }
+      _achRevealActive = true;
+      _playAchievementReveal(batch, done);
+    });
+    return;
+  }
   // Defer the first pump: achEvaluate often runs mid-completion, before the
   // session-complete screen has been shown — a beat lets it appear so we wait
   // behind it instead of playing underneath.
@@ -178,9 +189,13 @@ function _achRevealPump() {
   _playAchievementReveal(batch);
 }
 
-function _playAchievementReveal(batch) {
+function _playAchievementReveal(batch, completionDone) {
   var el = document.getElementById('achRevealOverlay');
-  if (!el) { _achRevealActive = false; return; }
+  if (!el) {
+    _achRevealActive = false;
+    if (completionDone) completionDone();
+    return;
+  }
   var reduced = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   var total = batch.length, idx = -1, lastAdv = 0;
 
@@ -246,9 +261,13 @@ function _playAchievementReveal(batch) {
   function dismiss() {
     el.onclick = null;
     el.classList.remove('acr-on', 'acr-swap');
+    var done = completionDone;
+    completionDone = null;
+    _achRevealActive = false;
+    if (done) done();
     setTimeout(function() {
       el.classList.remove('acr-show'); el.innerHTML = '';
-      _achRevealActive = false; _achRevealPump();
+      if (!done) { _achRevealActive = false; _achRevealPump(); }
     }, 460);
   }
   el.classList.add('acr-show');

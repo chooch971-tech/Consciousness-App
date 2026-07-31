@@ -1,13 +1,14 @@
-function showStreakCelebration() {
+function showStreakCelebration(completionDone) {
   var el = document.getElementById('streakCelebOverlay');
-  if (!el) return;
-  if (el.classList.contains('sco-show')) return;
+  if (!el) { if (completionDone) completionDone(); return; }
+  if (el.classList.contains('sco-show')) { if (completionDone) completionDone(); return; }
   // Wait until the session-complete legend and body-level award are dismissed —
   // this overlay sits below them (z 9750 vs 9800/9900), so firing now would
   // play the whole ignition invisibly behind the legend.
   var _sc = document.getElementById('sessionComplete');
-  if ((_sc && _sc.classList.contains('sc-show')) || document.getElementById('bodyLevelAwardOverlay')) {
-    setTimeout(showStreakCelebration, 700);
+  if (typeof completionDone !== 'function'
+      && ((_sc && _sc.classList.contains('sc-show')) || document.getElementById('bodyLevelAwardOverlay'))) {
+    setTimeout(function() { showStreakCelebration(); }, 700);
     return;
   }
   var streak = state.streak || 0;
@@ -103,6 +104,9 @@ function showStreakCelebration() {
 
   function close() {
     el.classList.remove('sco-vis');
+    var done = completionDone;
+    completionDone = null;
+    if (done) done();
     setTimeout(function() { el.classList.remove('sco-show'); }, 400);
   }
   document.getElementById('scoCelebBtn').onclick = close;
