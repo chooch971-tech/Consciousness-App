@@ -3110,7 +3110,14 @@
     .review-practice-title small { flex-shrink:0; font:7.5px 'DM Mono',monospace; color:var(--muted); }
     .review-practice-meta { display:flex; align-items:center; flex-wrap:wrap; gap:8px; min-height:16px; margin-top:2px; font:8px 'DM Mono',monospace; color:var(--muted); }
     .review-practice-meta .review-trend { display:inline; margin:0; }
+    /* Sized by its parent .review-practice-meta (font:8px), never on its own. */
     .review-practice-modes { flex-basis:100%; padding-top:2px; line-height:1.55; color:rgba(224,168,196,.72); }
+    /* The sensory summary sits at the top of the card with no .review-practice-meta
+       above it, so borrowing .review-practice-modes left it inheriting the page
+       font and it rendered several times its intended size. It carries its own
+       type now rather than depending on where it happens to be mounted. */
+    .review-sensory-summary { padding:12px 14px; border-bottom:1px solid var(--border); font:8px/1.55 'DM Mono',monospace; color:rgba(224,168,196,.72); }
+    .review-sensory-summary strong { display:block; margin-bottom:3px; font-size:8.5px; font-weight:500; letter-spacing:.04em; color:rgba(236,196,216,.95); }
     .review-practice-track { height:2px; margin-top:8px; overflow:hidden; border-radius:2px; background:rgba(255,255,255,.05); }
     .review-practice-track i { display:block; height:100%; border-radius:2px; background:linear-gradient(90deg,rgba(168,200,232,.3),rgba(126,184,164,.72)); }
     .review-next { padding:16px; margin:2px 0 12px; border:1px solid rgba(216,184,106,.22); border-radius:14px; background:linear-gradient(145deg,rgba(216,184,106,.08),rgba(126,184,164,.035)); }

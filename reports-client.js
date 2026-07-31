@@ -285,8 +285,8 @@ function reviewPracticeRows(summary, previous) {
     if (typeof guideSensoryTrackProgress === 'function') {
       var track = guideSensoryTrackProgress();
       var currentStage = track.current;
-      sensoryTrackHtml = '<div class="review-practice-modes" style="margin:0 0 10px;">'
-        + '<strong>Sensory concentration · ' + track.completedCount + ' / ' + track.stages.length + ' foundations mastered</strong><br>'
+      sensoryTrackHtml = '<div class="review-sensory-summary">'
+        + '<strong>Sensory concentration · ' + track.completedCount + ' / ' + track.stages.length + ' foundations mastered</strong>'
         + (track.complete
           ? 'Multi-Sense unlocked · elemental work follows later'
           : 'Current: ' + currentStage.name + ' · ' + currentStage.label + ' · practice 10–20m · best clean ' + reviewSeconds(currentStage.bestCleanSec) + ' / 5m')
