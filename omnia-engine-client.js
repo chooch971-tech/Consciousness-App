@@ -266,7 +266,6 @@ function renderOmniaEngine() {
       var stepMax = omniaUpgradeStepMax(upg.id);
       var capped = isFinite(stepMax);
       var atMax = capped && lvl >= stepMax;
-      var masteryRank = omniaUpgradeMasteryRank(upg.id, lvl);
       var displayLvl = omniaUpgradeDisplayLevel(upg.id, lvl);
       var buildingUntil = omniaUpgradeBuilding(upg.id);
       var sub = upg.sub;
@@ -286,7 +285,9 @@ function renderOmniaEngine() {
         ? ' <span style="font-size:8px;color:#8eccc0;letter-spacing:.1em;">→ ' + Math.min(20, displayLvl + 1) + ' · building</span>'
         : ' <span style="font-size:8px;color:var(--muted);letter-spacing:.1em;">/ 20</span>';
       return '<div class="omnia-upgrade-row">'
-        + '<div><div class="omnia-upgrade-name">' + upg.name + ' ' + (masteryRank ? '<span class="omnia-mastery-mark">' + omniaMasteryPips(masteryRank) + '</span> ' : '') + displayLvl + nameTail + '</div><div class="omnia-upgrade-sub">' + sub + '</div></div>'
+        // No tier pip here: it is the same mark on all four rows, and the tier
+        // is already stated once by the Tier panel below them.
+        + '<div><div class="omnia-upgrade-name">' + upg.name + ' ' + displayLvl + nameTail + '</div><div class="omnia-upgrade-sub">' + sub + '</div></div>'
         + btnHtml
         + '</div>';
     }).join('');
@@ -1136,7 +1137,6 @@ function renderGenSheet(gid) {
     var atMax = capped && lvl >= stepMax;
     var atBandTop = omniaUpgradeAtBandTop(id);
     var masteryReady = false;   // tiering is a generator-level action now
-    var masteryRank = omniaUpgradeMasteryRank(id, lvl);
     var displayLvl = omniaUpgradeDisplayLevel(id, lvl);
     var building = omniaUpgradeBuilding(id);
     var btn;
@@ -1166,7 +1166,7 @@ function renderGenSheet(gid) {
     var right = '<div style="display:flex; flex-direction:column; align-items:flex-end; gap:4px; flex-shrink:0;">' + btn
       + (timeLabel ? '<span style="font-size:8px; letter-spacing:.08em; color:rgba(196,168,212,.9);">◷ ' + timeLabel + ' build</span>' : '') + '</div>';
     return '<div class="omnia-upgrade-row" style="border-left:2px solid ' + accent + '55; padding-left:11px;">'
-      + '<div><div class="omnia-upgrade-name" style="color:' + accent + ';"><span style="opacity:.9;margin-right:6px;">' + glyph + '</span>' + name + ' ' + (masteryRank ? '<span class="omnia-mastery-mark">' + omniaMasteryPips(masteryRank) + '</span> ' : '') + displayLvl + ' <span style="font-size:8px;color:rgba(200,230,245,.55);letter-spacing:.1em;">/ 20</span></div>'
+      + '<div><div class="omnia-upgrade-name" style="color:' + accent + ';"><span style="opacity:.9;margin-right:6px;">' + glyph + '</span>' + name + ' ' + displayLvl + ' <span style="font-size:8px;color:rgba(200,230,245,.55);letter-spacing:.1em;">/ 20</span></div>'
       + '<div class="omnia-upgrade-sub">' + sub + '</div>' + ratePreview + '</div>' + right + '</div>';
   }
 
