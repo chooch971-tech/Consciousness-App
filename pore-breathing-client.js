@@ -86,21 +86,26 @@ function setPoreOrbPhase(phase) {
   var labels = { inhale: 'inhale', hold_in: 'hold', exhale: 'exhale', hold_out: 'hold' };
   if (phaseLabel) phaseLabel.textContent = labels[phase] || phase;
   if (!orb) return;
+  // The glow is a separate layer faded by opacity rather than a box-shadow
+  // blur animated on the orb: same swell, none of the per-frame rasterisation.
+  var glow = document.getElementById('poreBreathGlow');
   if (phase === 'inhale') {
-    orb.style.transform = 'scale(1.55)'; orb.style.boxShadow = '0 0 40px rgba(164,126,184,.35)';
-    orb.style.background = 'radial-gradient(circle at 40% 35%, rgba(210,185,230,.45), rgba(164,126,184,.18))';
+    orb.style.transform = 'scale(1.55)';
+    if (glow) { glow.style.opacity = '.7'; glow.style.transform = 'scale(3.4)'; }
     if (ringMid) ringMid.style.transform = 'scale(1.18)';
     if (ringOuter) { ringOuter.style.transform = 'scale(1.08)'; ringOuter.style.opacity = '.6'; }
   } else if (phase === 'hold_in') {
-    orb.style.transform = 'scale(1.55)'; orb.style.boxShadow = '0 0 48px rgba(164,126,184,.4)';
+    orb.style.transform = 'scale(1.55)';
+    if (glow) { glow.style.opacity = '.85'; glow.style.transform = 'scale(3.6)'; }
     if (ringOuter) ringOuter.style.opacity = '.8';
   } else if (phase === 'exhale') {
-    orb.style.transform = 'scale(.75)'; orb.style.boxShadow = '0 0 10px rgba(164,126,184,.1)';
-    orb.style.background = 'radial-gradient(circle at 40% 35%, rgba(164,126,184,.15), rgba(100,80,120,.05))';
+    orb.style.transform = 'scale(.75)';
+    if (glow) { glow.style.opacity = '.16'; glow.style.transform = 'scale(1.8)'; }
     if (ringMid) ringMid.style.transform = 'scale(.88)';
     if (ringOuter) { ringOuter.style.transform = 'scale(.94)'; ringOuter.style.opacity = '.2'; }
   } else {
-    orb.style.transform = 'scale(.75)'; orb.style.boxShadow = '0 0 6px rgba(164,126,184,.08)';
+    orb.style.transform = 'scale(.75)';
+    if (glow) { glow.style.opacity = '.1'; glow.style.transform = 'scale(1.6)'; }
     if (ringOuter) ringOuter.style.opacity = '.15';
   }
 }
@@ -178,7 +183,9 @@ function stopPoreBreath(completed) {
   var pcd = document.getElementById('poreBreathCountdownOverlay');
   if (pcd) pcd.style.display = 'none';
   var orb = document.getElementById('poreBreathOrb');
-  if (orb) { orb.style.transform = 'scale(1)'; orb.style.boxShadow = '0 0 20px rgba(164,126,184,.1)'; orb.style.background = 'radial-gradient(circle at 40% 35%, rgba(196,168,212,.35), rgba(164,126,184,.08))'; }
+  if (orb) { orb.style.transform = 'scale(1)'; }
+  var glowEl = document.getElementById('poreBreathGlow');
+  if (glowEl) { glowEl.style.opacity = '.18'; glowEl.style.transform = 'scale(2.2)'; }
   var ringMid = document.getElementById('poreBreathRingMid');
   var ringOuter = document.getElementById('poreBreathRingOuter');
   if (ringMid) ringMid.style.transform = 'scale(1)';

@@ -253,16 +253,29 @@ function startThoughtControl() {
   }, 1000);
 }
 
+// The display is whole seconds, so this only needs to run once a second.
+// It used to re-arm with requestAnimationFrame, which repainted the timer at
+// 60-120fps and wrote the *same* string 59 frames out of 60 — and a textContent
+// write forces text layout, so a motionless number was costing a full frame of
+// layout and paint each time. That is what made the phone hot during a sit.
+//
+// Elapsed is still derived from Date.now() rather than counted up, so the timer
+// stays wall-clock accurate no matter how the browser throttles the timeout,
+// and the next tick is aimed at the next whole-second boundary so the digits
+// still turn over crisply instead of drifting a little later each second.
 function tickTCTimer() {
-  var elapsed = Math.floor((Date.now() - tcStartTime) / 1000);
-  var remaining = Math.max(0, tcDurationSec - elapsed);
-  document.getElementById('tcTimerDisplay').textContent = fmtTimer(remaining);
+  if (!tcStartTime) return;
+  var elapsedMs = Date.now() - tcStartTime;
+  var remaining = Math.max(0, tcDurationSec - Math.floor(elapsedMs / 1000));
+  var el = document.getElementById('tcTimerDisplay');
+  var txt = fmtTimer(remaining);
+  if (el && el.textContent !== txt) el.textContent = txt;
 
   if (remaining <= 0) {
     endThoughtControl(true);
     return;
   }
-  tcTimerHandle = requestAnimationFrame(tickTCTimer);
+  tcTimerHandle = setTimeout(tickTCTimer, 1000 - (elapsedMs % 1000));
 }
 
 function recordThought() {
@@ -286,7 +299,7 @@ function recordThought() {
 
 function endThoughtControl(completed) {
   releaseExerciseWakeLock();
-  cancelAnimationFrame(tcTimerHandle);
+  clearTimeout(tcTimerHandle);
   var elapsed = Math.floor((Date.now() - tcStartTime) / 1000);
   // Under 1 minute and stopped early — no XP, just return to Concentration
   if (!completed && elapsed < 60) {
@@ -392,7 +405,7 @@ document.getElementById('tcTapArea').addEventListener('click', function() {
 document.getElementById('tcEndBtn').addEventListener('click', function() {
   var _tcElapsed = tcStartTime ? Math.floor((Date.now() - tcStartTime) / 1000) : 0;
   omniaConfirmEarlyEnd('thought', _tcElapsed, function() {
-    cancelAnimationFrame(tcTimerHandle);
+    clearTimeout(tcTimerHandle);
     endThoughtControl(false);
   });
 });

@@ -1680,6 +1680,20 @@
     .clock-tick { stroke:var(--muted); stroke-width:1; }
     .clock-tick-major { stroke:var(--text); stroke-width:1.5; }
     .clock-hand-group { transform-origin:100px 100px; }
+    /* The hand sweeps a constant 6°/sec — exactly one turn per minute — so the
+       whole motion is expressible as a single compositor-driven animation.
+       It used to be driven by a requestAnimationFrame loop that wrote
+       style.transform every frame, which re-rasterised the 65-node clock SVG
+       60-120 times a second to move the hand a tenth of a degree at a time.
+       will-change lifts the hand onto its own layer so the 60 static tick
+       marks are not repainted along with it. startClock() sets a negative
+       animation-delay to place the hand at the true elapsed time, and
+       resyncClockHand() re-seats it after any throttling. */
+    @keyframes concHandSpin { from { transform:rotate(0deg); } to { transform:rotate(360deg); } }
+    .clock-hand-group.running { animation:concHandSpin 60s linear infinite; will-change:transform; }
+    @media (prefers-reduced-motion: reduce) {
+      .clock-hand-group.running { animation-duration:60s; }
+    }
     .clock-countdown { position:absolute; inset:0; display:flex; align-items:center; justify-content:center; font-family:Cormorant Garamond,serif; font-size:72px; font-weight:300; color:var(--text); opacity:0; transition:opacity .3s; pointer-events:none; }
     .clock-countdown.show { opacity:1; }
     .clock-hand-sec { stroke:#d4956e; stroke-width:2; stroke-linecap:round; }
@@ -5608,7 +5622,12 @@ body:not(.tut-live) #tutCorgi {
   background:none; border:none; cursor:pointer; padding:0; }
 .clk-omnia-peek-head { position:relative; display:flex; align-items:center; justify-content:center;
   animation:clkOmniaBeckon 3.2s ease-in-out infinite; }
+.clk-omnia-peek-head::before { content:''; position:absolute; inset:-32%; border-radius:50%;
+  background:radial-gradient(circle, rgba(170,222,244,.8) 0%, rgba(142,204,224,0) 70%);
+  opacity:.3; z-index:-1; pointer-events:none;
+  animation:clkOmniaBeckonGlow 3.2s ease-in-out infinite; }
 .clk-omnia-peek:active .clk-omnia-peek-head { animation:none; transform:scale(.92); }
+.clk-omnia-peek:active .clk-omnia-peek-head::before { animation:none; }
 /* Every 10s the crystal spins a full turn — a separate wrapper so the
    rotation doesn't fight the bob/scale animation on the head itself. */
 .clk-omnia-spin { display:flex; transform-origin:50% 50%; animation:clkOmniaSpin 4s ease-in-out infinite; }
@@ -5620,10 +5639,17 @@ body:not(.tut-live) #tutCorgi {
   0% { transform:translateX(-26px) skewX(-22deg); }
   16%,100% { transform:translateX(70px) skewX(-22deg); }
 }
+/* The bob and the glow are split apart deliberately. Pulsing the glow by
+   animating drop-shadow's blur radius meant re-rasterising this element every
+   frame, forever, on any screen the peek appears on — including Soul Mirror,
+   which is where Pore Breathing runs. The glow is now a pre-blurred layer
+   whose opacity is animated instead, which the compositor does for free, and
+   the head keeps its transform-only bob. Same motion, no repaint. */
 @keyframes clkOmniaBeckon {
-  0%,100% { transform:translateY(0) scale(1); filter:drop-shadow(0 0 7px rgba(142,204,224,.5)); }
-  50% { transform:translateY(-7px) scale(1.04); filter:drop-shadow(0 0 20px rgba(170,222,244,1)); }
+  0%,100% { transform:translateY(0) scale(1); }
+  50% { transform:translateY(-7px) scale(1.04); }
 }
+@keyframes clkOmniaBeckonGlow { 0%,100% { opacity:.3; } 50% { opacity:.95; } }
 @keyframes clkOmniaHintBlink { 0%,100% { opacity:.35; } 50% { opacity:1; } }
 .clk-hero-glow { position:absolute; inset:-22%; border-radius:50%;
   background:radial-gradient(circle, rgba(224,124,58,.20) 0%, rgba(224,124,58,.06) 45%, transparent 70%);
@@ -8066,7 +8092,14 @@ body:not(.tut-live) #tutCorgi {
         <div style="position:relative; width:180px; height:180px; display:flex; align-items:center; justify-content:center; margin-bottom:32px;">
           <div id="poreBreathRingOuter" style="position:absolute; inset:0; border-radius:50%; border:1px solid rgba(164,126,184,.15); transition:transform 4s ease-in-out, opacity 4s ease-in-out;"></div>
           <div id="poreBreathRingMid" style="position:absolute; inset:20px; border-radius:50%; border:1px solid rgba(164,126,184,.25); transition:transform 4s ease-in-out;"></div>
-          <div id="poreBreathOrb" style="width:80px; height:80px; border-radius:50%; background:radial-gradient(circle at 40% 35%, rgba(196,168,212,.35), rgba(164,126,184,.08)); border:1px solid rgba(196,168,212,.4); transition:transform 4s ease-in-out, background 1s ease, box-shadow 4s ease-in-out; box-shadow:0 0 20px rgba(164,126,184,.1);"></div>
+          <!-- The glow lives on its own layer and is faded with opacity, which
+               the compositor handles for free. It used to be a box-shadow on
+               the orb transitioned over 4s, which forced the browser to
+               re-rasterise a 40-48px blur every frame for the whole session.
+               The orb still scales with the breath — transform is cheap, and
+               it is the part that actually paces you. -->
+          <div id="poreBreathGlow" aria-hidden="true" style="position:absolute; width:80px; height:80px; border-radius:50%; background:radial-gradient(circle, rgba(196,168,212,.55), rgba(164,126,184,0) 70%); transform:scale(2.2); opacity:.18; transition:opacity 4s ease-in-out, transform 4s ease-in-out; pointer-events:none; will-change:opacity, transform;"></div>
+          <div id="poreBreathOrb" style="position:relative; width:80px; height:80px; border-radius:50%; background:radial-gradient(circle at 40% 35%, rgba(196,168,212,.35), rgba(164,126,184,.08)); border:1px solid rgba(196,168,212,.4); transition:transform 4s ease-in-out; will-change:transform;"></div>
         </div>
         <div id="poreBreathCycleLabel" style="font-size:9px; letter-spacing:.2em; color:var(--muted); margin-bottom:40px;"></div>
         <button id="stopPoreBreathBtn" style="background:none; border:1px solid rgba(255,255,255,.08); border-radius:4px; color:rgba(255,255,255,.2); font-family:'DM Mono',monospace; font-size:9px; letter-spacing:.2em; padding:8px 24px; cursor:pointer; text-transform:uppercase;">Stop</button>

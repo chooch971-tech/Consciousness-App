@@ -300,11 +300,46 @@ function adjustClockStartBuffer(delta) {
 function updateClockHand(elapsedMs) {
   var group = document.getElementById('concHandGroup');
   if (!group) return;
-  // Continuously increasing angle — no modulo, no swing-back
+  // Static placement, used to seat the hand before a session starts (and to
+  // park it when one ends). While the clock is actually running the hand is
+  // driven by the concHandSpin CSS animation instead — see startClockHand.
   var totalSeconds = elapsedMs / 1000;
   var angle = totalSeconds * 6; // 6 degrees per second, grows forever
   group.style.transform = 'rotate(' + angle + 'deg)';
 }
+
+// Hand the rotation to the compositor. A negative animation-delay offsets the
+// animation into its own past, so the hand starts at exactly the angle the
+// elapsed time calls for instead of snapping back to twelve o'clock.
+function startClockHand(elapsedMs) {
+  var group = document.getElementById('concHandGroup');
+  if (!group) return;
+  group.style.transform = '';       // the animation owns the transform now
+  group.classList.remove('running');
+  void group.getBoundingClientRect(); // reflow, so re-adding restarts cleanly
+  group.style.animationDelay = '-' + (elapsedMs / 1000) + 's';
+  group.classList.add('running');
+}
+
+function stopClockHand() {
+  var group = document.getElementById('concHandGroup');
+  if (!group) return;
+  group.classList.remove('running');
+  group.style.animationDelay = '';
+}
+
+// A CSS animation runs off the compositor clock, which browsers pause or slow
+// while the page is backgrounded. The old rAF loop recomputed the angle from
+// Date.now() every frame and so healed itself; this has to be told. Re-seating
+// the delay against real elapsed time on every return to visibility keeps the
+// hand honest — it shows seconds against the tick marks, so drift is legible.
+function resyncClockHand() {
+  if (!concStartTime) return;
+  startClockHand(Date.now() - concStartTime);
+}
+document.addEventListener('visibilitychange', function() {
+  if (document.visibilityState === 'visible') resyncClockHand();
+});
 
 // A "pure" Clock session carries neither an `exercise` tag (asana,
 // autosuggestion, pore_breathing) nor a `type` tag (visualization, auditory,
@@ -536,7 +571,8 @@ function beginCountdown() {
     // Top stop stays hidden during tutorial; otherwise re-enable.
     if (topStopBtn && !isTutorialFirst) { topStopBtn.disabled = false; topStopBtn.style.opacity = ''; }
     concStartTime = Date.now();
-    concTimerHandle = requestAnimationFrame(tickConcentration);
+    startClockHand(0);
+    concTimerHandle = setTimeout(tickConcentration, 1000);
     // Tutorial first session: auto-stop at 60s only for the beginner path.
     if (isTutorialFirst && guidePathMode !== 'experienced') {
       concAutoStopTimer = setTimeout(function() {
@@ -566,12 +602,15 @@ function beginCountdown() {
   }, 1000);
 }
 
+// Keeps concSeconds warm for anything that reads it mid-session. The hand is
+// no longer drawn here, so this runs once a second rather than every frame —
+// stopConcentration recomputes the final figure from concStartTime anyway, so
+// nothing depends on this being fresher than that.
 function tickConcentration() {
   if (!concStartTime) return; // guard against null startTime
   var elapsedMs = Date.now() - concStartTime;
   concSeconds = Math.floor(elapsedMs / 1000);
-  updateClockHand(elapsedMs);
-  concTimerHandle = requestAnimationFrame(tickConcentration);
+  concTimerHandle = setTimeout(tickConcentration, 1000 - (elapsedMs % 1000));
 }
 
 function stopConcentration() {
@@ -598,7 +637,8 @@ function stopConcentration() {
     switchMode('concentration');
     return;
   }
-  cancelAnimationFrame(concTimerHandle);
+  clearTimeout(concTimerHandle);
+  stopClockHand();
   // Guard: if concStartTime is null (shouldn't happen now but just in case)
   concSeconds = concStartTime ? Math.floor((Date.now() - concStartTime) / 1000) : 0;
   concStartTime = null;
