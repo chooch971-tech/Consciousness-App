@@ -7,6 +7,8 @@ const test = require('node:test');
 const vm = require('node:vm');
 
 const source = fs.readFileSync(path.join(__dirname, '..', 'concentration-clock-client.js'), 'utf8');
+const controlsSource = fs.readFileSync(path.join(__dirname, '..', 'concentration-controls-client.js'), 'utf8');
+const presenceSource = fs.readFileSync(path.join(__dirname, '..', 'presence.html'), 'utf8');
 
 function loadPersonalBestFlags() {
   const start = source.indexOf('function clockHistoryPersonalBestFlags');
@@ -55,4 +57,22 @@ test('Clock history uses Best Rep copy and marks personal-best cards', () => {
   assert.match(source, /isPersonalBest \? ' is-personal-best'/);
   assert.match(source, /conc-history-pb-badge">Personal Best/);
   assert.equal((source.match(/isPersonalBest: isNewBest/g) || []).length, 2);
+});
+
+test('Clock history Back and swipe reveal the same originating screen', () => {
+  const start = controlsSource.indexOf('function concHistoryPreviousScreen');
+  const end = controlsSource.indexOf("document.getElementById('concHistoryBack')", start);
+  const fromClock = vm.createContext({ concHistoryFrom:'exSetupScreen' });
+  vm.runInContext(controlsSource.slice(start, end), fromClock);
+  assert.equal(fromClock.concHistoryPreviousScreen(), 'exSetupScreen');
+
+  const fromHome = vm.createContext({ concHistoryFrom:'home' });
+  vm.runInContext(controlsSource.slice(start, end), fromHome);
+  assert.equal(fromHome.concHistoryPreviousScreen(), 'homeScreen');
+
+  assert.match(controlsSource, /var previous = concHistoryPreviousScreen\(\);\s*showScreen\(previous\)/);
+  assert.match(presenceSource, /screenEl\.id === 'concHistoryScreen'[\s\S]*?concHistoryPreviousScreen\(\)/);
+  const dynamicDestination = presenceSource.indexOf("screenEl.id === 'concHistoryScreen'");
+  const homeFallback = presenceSource.indexOf("PREV_SCREEN[screenEl.id] || 'homeScreen'", dynamicDestination);
+  assert.ok(dynamicDestination !== -1 && homeFallback > dynamicDestination, 'history origin resolves before the Home fallback');
 });

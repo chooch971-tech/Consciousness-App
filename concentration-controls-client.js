@@ -5,12 +5,17 @@ document.getElementById('concStopBtn2').addEventListener('click', function() {
   if (concPendingBegin) beginCountdown(); else stopConcentration();
 });
 document.getElementById('concHistoryBtn').addEventListener('click', function() { concHistoryFrom='home'; concHistoryFilter='all'; renderConcHistory(); showScreen('concHistoryScreen'); });
+
+// The same origin must drive both the Back button and the interactive swipe.
+// Otherwise the swipe controller reveals Home while Back ultimately restores
+// the exercise setup, producing a visible Concentration → Clock flash.
+function concHistoryPreviousScreen() {
+  return concHistoryFrom === 'exSetupScreen' ? 'exSetupScreen' : 'homeScreen';
+}
+
 document.getElementById('concHistoryBack').addEventListener('click', function() {
-  if (concHistoryFrom === 'exSetupScreen') {
-    showScreen('exSetupScreen');
-  } else {
-    showScreen('homeScreen');
-    switchMode('concentration');
-  }
+  var previous = concHistoryPreviousScreen();
+  showScreen(previous);
+  if (previous === 'homeScreen') switchMode('concentration');
 });
 document.getElementById('concSaveBtn').addEventListener('click', saveConcResult);

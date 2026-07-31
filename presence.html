@@ -10553,6 +10553,8 @@ startPrayerScheduler();
       ? profilePreviousScreen()
       : (screenEl.id === 'profileActivityScreen' && typeof profileActivityPreviousScreen === 'function')
         ? profileActivityPreviousScreen()
+      : (screenEl.id === 'concHistoryScreen' && typeof concHistoryPreviousScreen === 'function')
+        ? concHistoryPreviousScreen()
       : (screenEl.id === 'clockSettingsScreen' && typeof _clkSettingsFrom === 'string')
       ? _clkSettingsFrom
       : (screenEl.id === 'accountSettingsScreen' && typeof _acctSettingsReturnTo === 'string')
