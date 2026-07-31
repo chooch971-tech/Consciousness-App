@@ -1005,6 +1005,49 @@ function setupVisPreview() {
   if (name) name.textContent = currentVisObject ? currentVisObject.label : '';
 }
 
+// Visualization records follow the same standard as Senses: only a rep with
+// no halts can set the record, and Closed/Open Eyes keep separate bests.
+// Sessions saved before eye modes existed belong to the Closed Eyes foundation.
+function getVisualizationBest(eyesMode) {
+  var targetEyes = eyesMode === 'open' ? 'open' : 'closed';
+  var history = (typeof concState !== 'undefined' && Array.isArray(concState.history)) ? concState.history : [];
+  return history.reduce(function(best, session) {
+    if (!session || session.type !== 'visualization') return best;
+    var sessionEyes = session.eyesMode === 'open' ? 'open' : 'closed';
+    if (sessionEyes !== targetEyes) return best;
+    if (Object.prototype.hasOwnProperty.call(session, 'cleanSeconds')) {
+      return Math.max(best, Math.max(0, Number(session.cleanSeconds) || 0));
+    }
+    if (Array.isArray(session.visualReps) && session.visualReps.length) {
+      return session.visualReps.reduce(function(repBest, rep) {
+        var seconds = Math.max(0, Number(rep.seconds) || 0);
+        var halts = Math.max(0, Number(rep.halts) || 0);
+        return halts === 0 && seconds > repBest ? seconds : repBest;
+      }, best);
+    }
+    var seconds = Math.max(0, Number(session.seconds) || 0);
+    var halts = Math.max(0, Number(session.halts) || 0);
+    return halts === 0 && seconds > best ? seconds : best;
+  }, 0);
+}
+
+function visualizationRecordHTML() {
+  var eyesLabel = visOpenEyesMode ? 'Open Eyes' : 'Closed Eyes';
+  var best = getVisualizationBest(visOpenEyesMode ? 'open' : 'closed');
+  var value = '<div class="sn-record-none">Not set yet</div>';
+  if (best > 0) {
+    value = best >= 60
+      ? '<div class="sn-record-time">' + Math.floor(best / 60) + '<small>m</small> ' + (best % 60) + '<small>s</small></div>'
+      : '<div class="sn-record-time">' + best + '<small>s</small></div>';
+  }
+  return '<div class="sn-record vis-record"><div class="sn-record-label">' + eyesLabel + ' Record</div>' + value + '</div>';
+}
+
+function refreshVisualizationRecord() {
+  var wrap = document.getElementById('visRecordWrap');
+  if (wrap) wrap.innerHTML = visualizationRecordHTML();
+}
+
 function visImageTypeOptionsHTML() {
   currentVisCategory = normalizeVisCategory(currentVisCategory);
   return availableVisImageTypes().map(function(type) {
@@ -1025,6 +1068,7 @@ function setVisEyesMode(mode) {
   visOpenEyesMode = mode === 'open';
   var row = document.getElementById('visEyesRow');
   if (row) row.innerHTML = visEyesOptionsHTML();
+  refreshVisualizationRecord();
 }
 
 function buildVisualizationSetupHTML() {
@@ -1042,7 +1086,9 @@ function buildVisualizationSetupHTML() {
     + '<div class="sense-choice-label vis-preview-kicker">Memorize this image</div>'
     + '<div class="vis-object-wrap" id="visPreviewWrap"></div>'
     + '<div class="vis-preview-name" id="visPreviewName"></div>'
-    + '</div></div></div>';
+    + '</div></div>'
+    + '<div id="visRecordWrap">' + visualizationRecordHTML() + '</div>'
+    + '</div>';
 }
 
 function fmtTimer(totalSec) {

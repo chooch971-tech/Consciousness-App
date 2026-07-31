@@ -838,6 +838,13 @@ test('Visualization setup mirrors Senses with explicit eye modes and image types
   assert.match(presence, /\.vis-setup \{ --sn-rgb:110,159,212; --sn-light:#8ab8e0;/);
 });
 
+test('Visualization shows an eye-mode-specific clean personal record like Senses', () => {
+  assert.match(visualizationClient, /function getVisualizationBest\(eyesMode\)[\s\S]*?session\.type !== 'visualization'[\s\S]*?session\.eyesMode === 'open'[\s\S]*?session\.cleanSeconds[\s\S]*?session\.visualReps/);
+  assert.match(visualizationClient, /function visualizationRecordHTML\(\)[\s\S]*?Open Eyes[\s\S]*?Closed Eyes[\s\S]*?sn-record vis-record[\s\S]*?Record/);
+  assert.match(visualizationClient, /function setVisEyesMode\(mode\)[\s\S]*?refreshVisualizationRecord\(\)/);
+  assert.match(visualizationClient, /id="visRecordWrap">' \+ visualizationRecordHTML\(\)/);
+});
+
 test('Friends manager remembers its opener and closes immediately after an interactive swipe', () => {
   assert.match(socialClient, /function friendsPanelPreviousScreen\(\) \{\s*return _friendsPanelReturnScreen \|\| 'profileScreen';/);
   assert.match(socialClient, /_friendsPanelReturnScreen = returnScreenId \|\| \(activeScreen && activeScreen\.id\) \|\| 'profileScreen'/);

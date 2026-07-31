@@ -115,8 +115,10 @@ async function testExerciseEntry(browser, baseUrl) {
       assert.match((await page.locator('#visEyesRow .sense-eyes-option.on').textContent()).trim(), /Closed Eyes/);
       assert.ok(await page.locator('#visImageTypeRow .sn-mode').count() >= 3,
         'Visualization should expose its image types as cards');
+      assert.match((await page.locator('#visRecordWrap').textContent()).trim(), /Closed Eyes Record/);
       await page.locator('#visEyesRow .sense-eyes-option--advanced').click();
       assert.match((await page.locator('#visEyesRow .sense-eyes-option.on').textContent()).trim(), /Open Eyes/);
+      assert.match((await page.locator('#visRecordWrap').textContent()).trim(), /Open Eyes Record/);
       await page.locator('#visImageTypeRow [data-vis-category="objects"]').click();
       assert.equal(await page.locator('#visImageTypeRow .sn-mode.on').getAttribute('data-vis-category'), 'objects');
       assert.notEqual((await page.locator('#visPreviewName').textContent()).trim(), '');
