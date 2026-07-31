@@ -1994,14 +1994,25 @@ function guideProgressOverview() {
     var target = ladder.target;
     var floor = guideFloorMin(mode);
     var detail, pct = 100;
-    if (floor) {
-      detail = 'Manual ' + floor + '-minute starting point · automatic increases '
-        + (guideAutoAdvanceOn(mode) ? 'on.' : 'off.');
+    // Only a floor with automatic increases turned OFF is genuinely finished —
+    // that is how the Clock, Asana and Auditory rows already read. This one
+    // took the same short-circuit for any floor at all, so a discipline still
+    // climbing announced "automatic increases on" beside a hardcoded full bar
+    // and never moved: the real state underneath could be nought of six
+    // qualifying sits, with none of that visible.
+    if (floor && !guideAutoAdvanceOn(mode)) {
+      detail = 'Manual ' + floor + '-minute target · automatic increases are off.';
     } else if (ladder.atCap) {
       detail = 'The 15-minute recommendation ceiling is reached.';
     } else {
       var remaining = Math.max(1, ladder.required - ladder.qualAtRung);
-      detail = remaining + ' more → ' + (ladder.natural + 1) + ' min';
+      // While the ladder is still below a manual floor, climbing a rung does
+      // not move the recommendation — say that rather than promising a rise
+      // to the number already on screen.
+      var nextMin = Math.max(floor, ladder.natural + 1);
+      detail = nextMin > target
+        ? remaining + ' more → ' + nextMin + ' min'
+        : remaining + ' more before the ladder passes your manual ' + floor + ' min';
       pct = guideProgressPct(ladder.qualAtRung, ladder.required);
     }
     return {
