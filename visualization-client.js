@@ -1351,9 +1351,16 @@ var EXERCISE_DEFS = {
   visual: {
     icon: '&#128065;',
     name: 'Visualization',
-    desc: 'Study the object below, then close your eyes and hold its image in your mind. When the image fades, tap Image Faded. Build the clarity and stability of your inner vision.',
+    // No instruction block — Omnia's head above the picker opens the tutorial.
+    desc: '',
     setupHTML: function() {
-      return '<div>'
+      return '<div class="vis-setup">'
+        + '<div class="aud-setup-head">'
+        + '<div class="vis-object-label" style="margin:0;">Choose an image</div>'
+        + '<button type="button" class="aud-omnia-peek" onclick="openExExplainer(\'visual\')" aria-label="How Visualization works">'
+        + '<span class="clk-omnia-peek-head"><span class="clk-omnia-spin">' + omniaHeadOnlySVG(34, 32) + '</span></span>'
+        + '</button>'
+        + '</div>'
         + '<div style="display:flex; gap:8px; margin-bottom:16px; flex-wrap:wrap;">'
         + '<button class="exercise-tab active" id="visCatShapes" style="font-size:8px; padding:6px 12px;">Shapes</button>'
         + '<button class="exercise-tab" id="visCatObjects" style="font-size:8px; padding:6px 12px;">Objects</button>'
@@ -1549,24 +1556,22 @@ function updateExSetupBanner(ex) {
   var cfg = EX_BANNER_CONFIG[ex] || EX_BANNER_CONFIG.clock;
   var banner = document.getElementById('exSetupBanner');
   if (!banner) return;
-  var visualMinimal = ex === 'visual';
   banner.style.setProperty('--exb-rgb', cfg.rgb);
   banner.style.setProperty('--exb-light', cfg.light);
   banner.classList.toggle('ex-banner--no-ripple', ex === 'clock');
-  banner.classList.toggle('ex-banner--visual-minimal', visualMinimal);
   var label = document.getElementById('exBannerLabel');
   var title = document.getElementById('exBannerTitle');
   var tag   = document.getElementById('exBannerTagline');
   var sym   = document.getElementById('exBannerSym');
   var wm    = document.getElementById('exBannerWatermark');
-  if (label) label.textContent = visualMinimal ? 'Concentration' : (cfg.label || 'Concentration');
+  if (label) label.textContent = cfg.label || 'Concentration';
   if (title) {
-    title.textContent = visualMinimal ? '' : (cfg.title || (EXERCISE_DEFS[ex] && EXERCISE_DEFS[ex].name) || '');
+    title.textContent = cfg.title || (EXERCISE_DEFS[ex] && EXERCISE_DEFS[ex].name) || '';
     title.classList.toggle('clk-title-glow', ex === 'clock');
   }
   if (tag)   tag.textContent = cfg.tagline || '';
-  if (sym)   sym.innerHTML = visualMinimal ? '' : '<svg width="96" height="96" viewBox="0 0 100 100" fill="none">' + cfg.symInner + '</svg>';
-  if (wm)    wm.innerHTML = visualMinimal ? '' : '<svg width="220" height="220" viewBox="0 0 100 100" fill="none">' + cfg.symInner + '</svg>';
+  if (sym)   sym.innerHTML = '<svg width="96" height="96" viewBox="0 0 100 100" fill="none">' + cfg.symInner + '</svg>';
+  if (wm)    wm.innerHTML = '<svg width="220" height="220" viewBox="0 0 100 100" fill="none">' + cfg.symInner + '</svg>';
 }
 
 // Omnia's crystal — used as the clickable "explain this exercise" head.
@@ -1614,6 +1619,16 @@ var EX_EXPLAINERS = {
       'Let <strong>no other thought</strong> enter. The moving hand is the only thing in your mind.',
       'The instant a thought slips in, <strong>tap the screen</strong> — the session ends there.',
       'Your time is logged. Day by day, the gap before the first thought grows longer.'
+    ]
+  },
+  visual: {
+    title: 'Visualization',
+    steps: [
+      'Choose an <strong>image</strong> and study its shape, colour, edges, and proportions until you can recall it precisely.',
+      'Begin with <strong>Closed Eyes</strong> and rebuild the image in imagination alone. <strong>Open Eyes</strong> is the advanced successor.',
+      'Hold the image <strong>still and vivid</strong>. Tap the screen whenever concentration breaks; each tap records one honest halt.',
+      'When the image disappears, tap <strong>Image Faded</strong> to finish the rep, then begin another.',
+      'The central goal is a <strong>5:00 uninterrupted hold</strong> in each eye mode, even when the full practice session is longer.'
     ]
   },
   soulmirror: {
@@ -1806,12 +1821,6 @@ function openExerciseSetup(ex) {
   _descEl.innerHTML = _descHtml;
   _descEl.style.display = _descHtml.trim() ? '' : 'none';
   _descEl.style.marginBottom = _descHtml.trim() ? '32px' : '0';
-  if (ex === 'visual') {
-    document.getElementById('exSetupDesc').innerHTML +=
-      '<div style="margin-top:12px;">'
-      + '<button onclick="showScreen(\'visTutorialScreen\')" style="background:none; border:none; padding:0; font-family:\'DM Mono\',monospace; font-size:9px; letter-spacing:.15em; text-transform:uppercase; color:#d4956e; cursor:pointer; text-decoration:underline; text-underline-offset:3px;">Read Full Tutorial &nbsp;&#8594;</button>'
-      + '</div>';
-  }
   var contentEl = document.getElementById('exSetupContent');
   var html = typeof def.setupHTML === 'function' ? def.setupHTML() : def.setupHTML;
   contentEl.innerHTML = html;

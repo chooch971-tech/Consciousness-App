@@ -107,12 +107,8 @@ async function testExerciseEntry(browser, baseUrl) {
     await page.locator('#exSetupScreen.active').waitFor({ state: 'visible' });
     const bannerTitle = (await page.locator('#exBannerTitle').textContent()).trim();
     const bannerSymbol = (await page.locator('#exBannerSym').innerHTML()).trim();
-    if (exercise === 'visual') {
-      assert.equal(bannerTitle, '', 'Visualization setup should not repeat its title in the banner');
-      assert.equal(bannerSymbol, '', 'Visualization setup should not repeat its eye icon in the banner');
-    } else {
-      assert.equal(bannerTitle, name);
-    }
+    assert.equal(bannerTitle, name);
+    if (exercise === 'visual') assert.notEqual(bannerSymbol, '', 'Visualization setup should show its eye artwork');
     const surface = await page.locator('#exSetupScreen').evaluate(element => ({
       width: element.getBoundingClientRect().width,
       height: element.getBoundingClientRect().height,

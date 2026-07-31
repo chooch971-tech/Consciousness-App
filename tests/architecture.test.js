@@ -820,11 +820,13 @@ test('Clock start buffer is a persisted 0–10 second setting with an immediate-
   assert.match(presence, /id="clkCfgBufferDown"[\s\S]*?id="clkCfgBufferVal"[\s\S]*?id="clkCfgBufferUp"/);
 });
 
-test('Visualization setup does not repeat its name or icon in the banner', () => {
-  assert.match(visualizationClient, /var visualMinimal = ex === 'visual';/);
-  assert.match(visualizationClient, /label\.textContent = visualMinimal \? 'Concentration'/);
-  assert.match(visualizationClient, /title\.textContent = visualMinimal \? ''/);
-  assert.match(presence, /\.ex-banner--visual-minimal \.exb-title,[\s\S]*?\.exb-right,[\s\S]*?\.exb-watermark \{ display:none; \}/);
+test('Visualization setup shows its banner artwork and uses the shared Omnia tutorial', () => {
+  assert.match(visualizationClient, /visual:\s*\{[\s\S]*?label: 'Concentration · Visualization',[\s\S]*?symInner:[\s\S]*?<path d="M9 50 Q50 18 91 50/);
+  assert.match(visualizationClient, /class="aud-omnia-peek" onclick="openExExplainer\(\\'visual\\'\)"/);
+  assert.match(visualizationClient, /visual:\s*\{\s*title: 'Visualization',\s*steps:/);
+  assert.doesNotMatch(visualizationClient, /Read Full Tutorial/);
+  assert.doesNotMatch(visualizationClient, /visualMinimal|ex-banner--visual-minimal/);
+  assert.doesNotMatch(presence, /ex-banner--visual-minimal/);
 });
 
 test('Friends manager remembers its opener and closes immediately after an interactive swipe', () => {
