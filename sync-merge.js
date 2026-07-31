@@ -22,7 +22,10 @@
       // practicedDates and collapse an otherwise-unbroken streak back down to
       // whatever that stale copy happened to cover. A practiced/frozen day is
       // a permanent fact once recorded by either side, so union instead.
-      stringArrays: Object.freeze(['practicedDates', 'frozenDates'])
+      stringArrays: Object.freeze(['practicedDates', 'frozenDates']),
+      // The calendar beginning only ever moves earlier when an older device
+      // supplies missing history; never let a stale snapshot move it forward.
+      minDayKeys: Object.freeze(['streakCalendarStartDate'])
     })
   });
 
@@ -136,6 +139,12 @@
       if (key === 'presence_conc_v1' && !out.clockTheme && candidate.clockTheme) {
         out.clockTheme = candidate.clockTheme;
       }
+    });
+    (spec.minDayKeys || []).forEach(function(field) {
+      const days = candidates.map(function(candidate) { return candidate[field]; })
+        .filter(function(value) { return /^\d{4}-\d{2}-\d{2}$/.test(String(value || '')); })
+        .sort();
+      if (days.length) out[field] = days[0];
     });
     return out;
   }

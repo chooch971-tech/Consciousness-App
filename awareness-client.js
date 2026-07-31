@@ -370,6 +370,7 @@ const DEFAULT_STATE = {
   freezesUsed: 0,            // lifetime freezes consumed
   practicedDates: [],        // array of 'YYYY-MM-DD' strings
   frozenDates: [],           // days a freeze covered (keep the chain unbroken)
+  streakCalendarStartDate: null, // earliest reachable month in the streak calendar
   streakStartDate: null,     // 'YYYY-MM-DD' of current streak's day 1
   streakCommit: 7,           // current commitment goal (7/14/30/45)
   streakGoalBaseDays: 0,     // streak-day count when the current goal was committed; a new goal counts from here, not day 1
@@ -545,6 +546,9 @@ function touchPracticeStreak() {
     if (state.practicedDates.indexOf(todayISO) === -1) {
       state.practicedDates.push(todayISO);
       if (state.practicedDates.length > 365) state.practicedDates = state.practicedDates.slice(-365);
+    }
+    if (!state.streakCalendarStartDate || todayISO < state.streakCalendarStartDate) {
+      state.streakCalendarStartDate = todayISO;
     }
     state.lastSessionDate = today;
     syncStreakFromCalendar();

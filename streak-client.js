@@ -5,6 +5,51 @@ var STREAK_COMMITS = [
   { days:45, xp:300,  akasha:18000 },
 ];
 
+function streakCalendarMonthValue(year, month) {
+  return year * 12 + month;
+}
+
+function streakCalendarDayKeyMonth(key) {
+  var match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(key || ''));
+  if (!match) return null;
+  var year = parseInt(match[1], 10);
+  var month = parseInt(match[2], 10) - 1;
+  var day = parseInt(match[3], 10);
+  var date = new Date(year, month, day);
+  if (date.getFullYear() !== year || date.getMonth() !== month || date.getDate() !== day) return null;
+  return streakCalendarMonthValue(year, month);
+}
+
+// Persist the earliest calendar fact we know. practicedDates is capped for
+// payload size, so the dedicated key keeps the calendar's true beginning even
+// after those oldest day entries eventually roll off.
+function streakCalendarStartDate() {
+  var stored = streakCalendarDayKeyMonth(state.streakCalendarStartDate) !== null
+    ? state.streakCalendarStartDate
+    : null;
+  var known = [];
+  (state.practicedDates || []).concat(state.frozenDates || []).forEach(function(key) {
+    if (streakCalendarDayKeyMonth(key) !== null) known.push(key);
+  });
+  if (streakCalendarDayKeyMonth(state.streakStartDate) !== null) known.push(state.streakStartDate);
+  known.sort();
+  var earliest = known[0] || presenceDayKey(new Date());
+  var start = stored && stored < earliest ? stored : earliest;
+  if (state.streakCalendarStartDate !== start) {
+    state.streakCalendarStartDate = start;
+    saveState();
+  }
+  return start;
+}
+
+function streakCalendarBounds() {
+  var startKey = streakCalendarStartDate();
+  var first = streakCalendarDayKeyMonth(startKey);
+  var now = new Date();
+  var current = streakCalendarMonthValue(now.getFullYear(), now.getMonth());
+  return { first: first === null ? current : Math.min(first, current), last: current + 1 };
+}
+
 function buildStreakCalendar(year, month, commit) {
   var monthNames = ['January','February','March','April','May','June','July','August','September','October','November','December'];
   var dayNames = ['S','M','T','W','T','F','S'];
@@ -22,14 +67,17 @@ function buildStreakCalendar(year, month, commit) {
   }
   var prefix = year + '-' + String(month+1).padStart(2,'0') + '-';
   var practiced7 = practiced.filter(function(d){ return d.startsWith(prefix); }).length;
+  var frozen7 = frozen.filter(function(d){ return d.startsWith(prefix); }).length;
+  var bounds = streakCalendarBounds();
+  var shownMonth = streakCalendarMonthValue(year, month);
   var html = '<div class="so-cal-header">'
-    + '<button class="so-cal-nav" data-dir="prev">◀</button>'
+    + '<button class="so-cal-nav" data-dir="prev" aria-label="Previous month"' + (shownMonth <= bounds.first ? ' disabled' : '') + '>◀</button>'
     + '<div class="so-cal-title">' + monthNames[month] + ' ' + year + '</div>'
-    + '<button class="so-cal-nav" data-dir="next">▶</button>'
+    + '<button class="so-cal-nav" data-dir="next" aria-label="Next month"' + (shownMonth >= bounds.last ? ' disabled' : '') + '>▶</button>'
     + '</div>'
     + '<div class="so-cal-stats">'
     + '<div class="so-cal-stat"><div class="so-cal-stat-val">' + practiced7 + '</div><div class="so-cal-stat-lbl">✓ Practiced</div></div>'
-    + '<div class="so-cal-stat"><div class="so-cal-stat-val">' + (state.freezesUsed || 0) + '</div><div class="so-cal-stat-lbl">Freezes used</div></div>'
+    + '<div class="so-cal-stat"><div class="so-cal-stat-val">' + frozen7 + '</div><div class="so-cal-stat-lbl">❄ Freezes used</div></div>'
     + '</div>'
     + '<div class="so-cal-grid-head">' + dayNames.map(function(d){return '<span>'+d+'</span>';}).join('') + '</div>'
     + '<div class="so-cal-grid">';
@@ -192,8 +240,11 @@ function showStreakScreen() {
       if (!btn) return;
       var yr = parseInt(el.dataset.calYear, 10);
       var mo = parseInt(el.dataset.calMonth, 10);
-      if (btn.dataset.dir === 'prev') { mo--; if(mo<0){mo=11;yr--;} }
-      else { mo++; if(mo>11){mo=0;yr++;} }
+      var target = streakCalendarMonthValue(yr, mo) + (btn.dataset.dir === 'prev' ? -1 : 1);
+      var bounds = streakCalendarBounds();
+      if (target < bounds.first || target > bounds.last) return;
+      yr = Math.floor(target / 12);
+      mo = target - yr * 12;
       el.dataset.calYear = yr; el.dataset.calMonth = mo;
       var cal = el.querySelector('.so-cal-card');
       if (cal) cal.innerHTML = buildStreakCalendar(yr, mo, state.streakCommit || 7);
