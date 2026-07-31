@@ -430,11 +430,10 @@ function renderConcHome() {
     document.querySelectorAll('.exercise-card[data-exercise="multisense"]').forEach(function(card) {
       card.dataset.trackLocked = sensoryComplete ? '0' : '1';
       card.style.opacity = sensoryComplete ? '' : '.45';
+      card.style.pointerEvents = sensoryComplete ? '' : 'none';
       card.setAttribute('aria-disabled', sensoryComplete ? 'false' : 'true');
       var desc = card.querySelector('.exercise-card-desc');
-      if (desc) desc.textContent = sensoryComplete
-        ? 'Hold sight, sound, texture, and atmosphere simultaneously.'
-        : 'Complete the six sensory foundations to unlock.';
+      if (desc) desc.textContent = 'Hold sight, sound, texture, and atmosphere simultaneously.';
     });
   }
 }

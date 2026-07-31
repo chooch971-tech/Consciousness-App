@@ -1787,7 +1787,6 @@ function openExerciseSetup(ex) {
   if (ex === 'multisense'
       && typeof guideSensoryTrackProgress === 'function'
       && !guideSensoryTrackProgress().complete) {
-    showToast('Complete the six sensory foundations to unlock Multi-Sense.', 3200);
     return;
   }
   suppressTutorialForExerciseEntry();

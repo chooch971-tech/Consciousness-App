@@ -164,8 +164,10 @@ test('exercise records and Path cards expose the evidence and curriculum indicat
   assert.match(visualSource, /visualReps:\s*visReps\.map/);
   assert.match(auditorySource, /cleanSeconds:\s*bestCleanSec/);
   assert.match(auditorySource, /auditoryReps:\s*audReps\.map/);
-  assert.match(visualSource, /Complete the six sensory foundations to unlock Multi-Sense/);
+  assert.doesNotMatch(visualSource, /Complete the six sensory foundations to unlock Multi-Sense/);
+  assert.doesNotMatch(clockSource, /Complete the six sensory foundations to unlock/);
   assert.match(clockSource, /card\.dataset\.trackLocked/);
+  assert.match(clockSource, /card\.style\.pointerEvents = sensoryComplete \? '' : 'none'/);
   assert.match(guideSource, /changing the session time does not change that mastery goal/);
   assert.match(guideSource, /data-guide-eyes/);
   assert.match(guideSource, /Sensory concentration · Stage/);
