@@ -240,15 +240,16 @@
     .so-freeze-gem { width:14px; height:14px; transform:rotate(45deg); border-radius:3px; border:1px solid rgba(142,204,224,.3); background:rgba(142,204,224,.05); transition:background .3s,border-color .3s,box-shadow .3s; }
     .so-freeze-gem.active { background:rgba(142,204,224,.3); border-color:#8ecce0; box-shadow:0 0 9px rgba(142,204,224,.45); }
     /* Calendar */
-    .so-cal-card { background:linear-gradient(rgba(13,14,21,.98),rgba(9,10,16,.98)) padding-box,linear-gradient(135deg,rgba(232,200,122,.88),rgba(212,149,110,.68) 48%,rgba(142,204,224,.82)) border-box; border:1.5px solid transparent; border-radius:12px; padding:16px 14px 18px; box-shadow:0 0 0 1px rgba(232,200,122,.06),0 0 24px rgba(212,149,110,.10); }
+    .so-cal-card { position:relative; overflow:hidden; background:linear-gradient(180deg,rgba(255,255,255,.025),rgba(255,255,255,.012)); border:1px solid rgba(221,216,206,.16); border-radius:12px; padding:16px 14px 18px; box-shadow:inset 0 1px 0 rgba(255,255,255,.025),0 10px 28px rgba(0,0,0,.15); }
+    .so-cal-card::before { content:''; position:absolute; top:0; left:18px; right:18px; height:1px; background:linear-gradient(90deg,transparent,rgba(232,200,122,.34),rgba(142,204,224,.28),transparent); opacity:.7; pointer-events:none; }
     .so-cal-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:12px; }
     .so-cal-title { font-family:Cormorant Garamond,serif; font-size:19px; font-weight:300; color:var(--fg); }
-    .so-cal-nav { background:rgba(232,200,122,.035); border:1px solid rgba(232,200,122,.34); color:rgba(232,216,184,.82); cursor:pointer; font-size:13px; padding:4px 11px; border-radius:7px; }
+    .so-cal-nav { background:rgba(255,255,255,.018); border:1px solid rgba(221,216,206,.14); color:rgba(221,216,206,.72); cursor:pointer; font-size:13px; padding:4px 11px; border-radius:7px; }
     .so-cal-nav:active { background:var(--border); }
     .so-cal-nav:disabled { opacity:.25; cursor:default; filter:none; }
     .so-cal-stats { display:flex; gap:8px; margin-bottom:12px; }
-    .so-cal-stat { flex:1; border:1px solid rgba(212,149,110,.38); border-radius:10px; padding:9px 8px; text-align:center; background:linear-gradient(145deg,rgba(212,149,110,.055),rgba(255,255,255,.012)); }
-    .so-cal-stat + .so-cal-stat { border-color:rgba(142,204,224,.42); background:linear-gradient(145deg,rgba(142,204,224,.055),rgba(255,255,255,.012)); }
+    .so-cal-stat { flex:1; border:1px solid rgba(212,149,110,.24); border-radius:10px; padding:9px 8px; text-align:center; background:linear-gradient(145deg,rgba(212,149,110,.04),rgba(255,255,255,.01)); }
+    .so-cal-stat + .so-cal-stat { border-color:rgba(142,204,224,.26); background:linear-gradient(145deg,rgba(142,204,224,.04),rgba(255,255,255,.01)); }
     .so-cal-stat-val { font-family:Cormorant Garamond,serif; font-size:22px; color:#e8c87a; line-height:1; }
     .so-cal-stat-lbl { font-family:'DM Mono',monospace; font-size:7.5px; letter-spacing:.14em; text-transform:uppercase; color:rgba(221,216,206,.6); margin-top:4px; }
     .so-cal-grid-head { display:grid; grid-template-columns:repeat(7,1fr); text-align:center; margin-bottom:4px; }
