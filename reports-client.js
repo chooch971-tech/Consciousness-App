@@ -452,6 +452,7 @@ function reviewOmniaContext(period, offset, summary, previous, decision) {
   // How far through the period we are. A past period is fully elapsed; the
   // current period is only partway, so its running totals are naturally lower
   // than a finished period — Omnia must not read that as a decline.
+  var _concentrationSec = Object.keys(concentration).reduce(function(sum,key){return sum+(concentration[key].total_sec||0);},0);
   var _totalDays = reviewDaysFor(period, offset);
   var _elapsedDays = _totalDays;
   if ((Number(offset) || 0) === 0) {
@@ -473,14 +474,33 @@ function reviewOmniaContext(period, offset, summary, previous, decision) {
     period_total_days:_totalDays,
     active_days:summary.activeDays,
     total_sessions:summary.sessions,
+    // total_practice_sec blends every discipline, and an Awareness sitting can
+    // run to eight hours — long enough on its own to bury a week of
+    // concentration work. It stays for continuity, but it is now explicitly
+    // labelled as combined and given a breakdown, because the prompt asks the
+    // model to reuse the human-readable labels verbatim and concentration had
+    // no label of its own to reach for.
     total_practice_sec:summary.totalSeconds,
     total_practice:reviewSeconds(summary.totalSeconds),
+    total_practice_is_combined:true,
     awareness_sessions:(summary.byPractice.awareness || {}).sessions || 0,
     awareness_minutes:Math.round(((summary.byPractice.awareness || {}).seconds || 0)/60),
+    awareness_total_sec:(summary.byPractice.awareness || {}).seconds || 0,
+    awareness_practice:reviewSeconds((summary.byPractice.awareness || {}).seconds || 0),
     awareness_quality:summary.awareness,
     concentration_sessions:Object.keys(concentration).reduce(function(sum,key){return sum+concentration[key].sessions;},0),
-    concentration_total_sec:Object.keys(concentration).reduce(function(sum,key){return sum+concentration[key].total_sec;},0),
+    concentration_total_sec:_concentrationSec,
+    concentration_practice:reviewSeconds(_concentrationSec),
     concentration_best_sec:Object.keys(concentration).reduce(function(best,key){return Math.max(best,concentration[key].best_sec||0);},0),
+    // Both disciplines have a real place, but they are not interchangeable:
+    // the concentration exercises are the training this app exists for, and
+    // Awareness supports them. Stated as data so the insight cannot read a
+    // heavy Awareness week as progress while the holds stood still.
+    practice_emphasis:{
+      primary:'concentration',
+      secondary:'awareness',
+      note:'Concentration is the core training; Awareness supports it. Judge progress on concentration first.'
+    },
     completed_exercises:Object.keys(concentration),
     sensory_concentration_track:sensoryTrack,
     concentration_by_exercise:concentration,
