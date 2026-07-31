@@ -130,21 +130,6 @@ function omniaGenLevelsRemaining(genId) {
   }, 0);
 }
 
-// Tracks sitting on their Bardon-step ceiling rather than on anything the
-// player can buy their way past. The step caps lag the band tops on purpose —
-// Tier I's band top is level 40, which Attunement and Quickening cannot reach
-// until Step 9 — so "still short of 20 / 20" can be true while the branch is
-// physically unbuyable. Naming that is the difference between a goal and a
-// dead end the player keeps poking at.
-function omniaGenStepBlocked(genId) {
-  var gen = omniaGeneratorOfTrack(genId);
-  if (!gen || typeof omniaUpgradeStepMax !== 'function') return [];
-  return OMNIA_GENERATOR_TRACKS[gen].filter(function(id) {
-    var lvl = Math.max(1, Number((omniaState.upgrades || {})[id]) || 1);
-    var stepMax = omniaUpgradeStepMax(id);
-    return isFinite(stepMax) && lvl >= stepMax && stepMax < omniaUpgradeBandTop(id);
-  });
-}
 function omniaMasteryRoman(rank) { return ['', 'I', 'II', 'III'][Math.max(0, Math.min(3, rank || 0))] || ''; }
 // What one mastery band is worth. Both production and upgrade cost are read
 // from the band level and then scaled by this, so a mastery drops the pump back
@@ -206,31 +191,16 @@ function omniaUpgradeStepMax(upgId) {
   if (typeof dmUpgradeLevelCap === 'function' && dmUpgradeLevelCap(upgId)) return dmUpgradeLevelCap(upgId);
   // A track can never be bought past the top of its band: the generator has to
   // tier up first, and that needs all four of its tracks standing there.
-  var bandTop = omniaUpgradeBandTop(upgId);
-  // Once Book II opens, all four bands remain available even though bardonStep
-  // resets to 1 — but the band clamp still applies.
-  if (typeof darkMatterUnlocked === 'function' && darkMatterUnlocked()) {
-    return Math.min(OMNIA_UPGRADE_FINAL_LEVEL, bandTop);
-  }
-  var step = omniaState.bardonStep || 1;
-  // One finite cap per Step I–X, continuing the early progression's widening
-  // deltas (current/vessel +3,+4,+5,…; attunement +2,+3,+4,…) so each step
-  // opens a few more levels rather than jumping to an "unlimited" placeholder.
-  var caps = {
-    current:    [3, 6, 10, 15, 21, 28, 36, 45, 60, 80],
-    gen2:       [3, 6, 10, 15, 21, 28, 36, 45, 60, 80],
-    gen3:       [3, 6, 10, 15, 21, 28, 36, 45, 60, 80],
-    vessel:     [3, 6, 10, 15, 21, 28, 36, 45, 60, 80],
-    vessel2:    [3, 6, 10, 15, 21, 28, 36, 45, 60, 80],
-    vessel3:    [3, 6, 10, 15, 21, 28, 36, 45, 60, 80],
-    attunement: [2, 4, 7, 11, 16, 22, 29, 37, 56, 80],
-    attune2:    [2, 4, 7, 11, 16, 22, 29, 37, 56, 80],
-    attune3:    [2, 4, 7, 11, 16, 22, 29, 37, 56, 80],
-    quickening: [2, 4, 7, 11, 16, 22, 29, 37, 56, 80],
-    quick2:     [2, 4, 7, 11, 16, 22, 29, 37, 56, 80],
-    quick3:     [2, 4, 7, 11, 16, 22, 29, 37, 56, 80]
-  };
-  return Math.min((caps[upgId] || caps.current)[Math.min(step - 1, 9)], bandTop);
+  // The band top is the only ceiling on an Akasha generator branch. There used
+  // to be a second one: a per-Bardon-step cap table, which meant a branch could
+  // read "Step Max" and refuse every purchase at any price until the player
+  // advanced the practice path. Those caps lagged the band tops badly — a Step
+  // 6 player was held at Attunement 22 while Tier I's band runs to 40 — so a
+  // generator could sit in a band it had no way to finish for three more steps.
+  // Progress inside a band is now paced by the cost curve alone (roughly a 52x
+  // climb from band level 1 to 20), and the one real gate is Tier Up, which
+  // still needs all four branches standing at the top of the band.
+  return Math.min(OMNIA_UPGRADE_FINAL_LEVEL, omniaUpgradeBandTop(upgId));
 }
 
 function omniaUpgradeAtMax(upgId) {

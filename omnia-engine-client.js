@@ -276,7 +276,9 @@ function renderOmniaEngine() {
       } else if (omniaUpgradeAtBandTop(upg.id) && lvl < OMNIA_UPGRADE_FINAL_LEVEL) {
         btnHtml = '<button class="omnia-mini-btn omnia-mini-btn--ready" disabled>✓ Ready</button>';
       } else if (atMax) {
-        btnHtml = '<button class="omnia-mini-btn" disabled style="opacity:.45;cursor:default;">' + (lvl >= OMNIA_UPGRADE_FINAL_LEVEL ? 'Mastered' : 'Step max') + '</button>';
+        // Only reachable at the very last level now that the band top is the
+        // sole ceiling — the atBandTop branch above catches everything else.
+        btnHtml = '<button class="omnia-mini-btn" disabled style="opacity:.45;cursor:default;">Mastered</button>';
       } else {
         btnHtml = '<button class="omnia-mini-btn" data-omnia-upgrade="' + upg.id + '"' + ((omniaState.akasha || 0) < cost ? ' disabled' : '') + '>Upgrade ' + cost + '</button>';
       }
@@ -1100,20 +1102,8 @@ function _genTierPanel(meta) {
     // banded track is not — a Tier I branch showing 1 / 20 is at lifetime level
     // 21. Name the band target the way the cards write it, and carry the
     // outstanding level count so the line moves on every single purchase.
-    // When branches are pinned at their Bardon-step ceiling, say so outright:
-    // otherwise the panel reads as a shopping list for upgrades the step gate
-    // will not sell.
-    : (function() {
-        var blocked = (typeof omniaGenStepBlocked === 'function') ? omniaGenStepBlocked(meta.id) : [];
-        var line = remaining + ' of 4 branches still short of 20 / 20 · '
-          + omniaGenLevelsRemaining(meta.id) + ' branch levels to go.';
-        if (blocked.length) {
-          line += ' ' + blocked.length + ' of them ' + (blocked.length === 1 ? 'is' : 'are')
-            + ' at the Step ' + (omniaState.bardonStep || 1)
-            + ' ceiling — advance the Bardon path to open more.';
-        }
-        return line;
-      })();
+    : remaining + ' of 4 branches still short of 20 / 20 · '
+      + omniaGenLevelsRemaining(meta.id) + ' branch levels to go.';
   var btn = ready && !busy
     ? '<button class="omnia-mini-btn omnia-mini-btn--mastery" data-sheet-tier="' + meta.id + '">Tier Up ' + next + '</button>'
     : '<button class="omnia-mini-btn" disabled style="opacity:.4;cursor:default;">Tier Up ' + next + '</button>';
@@ -1153,7 +1143,7 @@ function renderGenSheet(gid) {
     if (building) btn = '<button class="omnia-mini-btn omnia-mini-btn--building" disabled>◷ <span data-build-countdown="' + id + '">' + omniaBuildLabel(building) + '</span></button>';
     else if (pumpBusyId) btn = '<button class="omnia-mini-btn" disabled style="opacity:.4;cursor:default;">Waiting</button>';
     else if (atBandTop && lvl < OMNIA_UPGRADE_FINAL_LEVEL) btn = '<button class="omnia-mini-btn omnia-mini-btn--ready" disabled>✓ Ready</button>';
-    else if (atMax) btn = '<button class="omnia-mini-btn" disabled style="opacity:.45;cursor:default;">' + (lvl >= OMNIA_UPGRADE_FINAL_LEVEL ? 'Complete' : 'Step max') + '</button>';
+    else if (atMax) btn = '<button class="omnia-mini-btn" disabled style="opacity:.45;cursor:default;">Complete</button>';
     else btn = '<button class="omnia-mini-btn" data-sheet-buy="' + id + '"' + ((omniaState.akasha || 0) < cost ? ' disabled' : '') + '>Upgrade ' + cost + '</button>';
     // Build time for the NEXT level, shown under the button so cost + duration
     // sit together. Hidden at max (no next level) and while building (the button

@@ -69,6 +69,42 @@ test('correcting the tier never costs the player buying room', () => {
   assert.equal(room, 7, 'all seven remaining attunement purchases survive');
 });
 
+test('the Bardon step no longer caps a generator branch', () => {
+  // A branch used to stop dead at a per-step ceiling: at Step 6 Attunement was
+  // held at 22 while Tier I's band runs to 40, so it refused every purchase at
+  // any price until the practice path advanced. The band top is the only wall.
+  const low = loadSave({
+    bardonStep: 1,
+    upgrades: { current: 21, vessel: 21, attunement: 21, quickening: 21 },
+    genTiers: { current: 1, gen2: 0, gen3: 0 }
+  });
+  const high = loadSave({
+    bardonStep: 10,
+    upgrades: { current: 21, vessel: 21, attunement: 21, quickening: 21 },
+    genTiers: { current: 1, gen2: 0, gen3: 0 }
+  });
+  for (const id of GEN1) {
+    const a = vm.runInContext(`omniaUpgradeStepMax(${JSON.stringify(id)})`, low);
+    const b = vm.runInContext(`omniaUpgradeStepMax(${JSON.stringify(id)})`, high);
+    assert.equal(a, b, id + ' ceiling is identical at Step 1 and Step 10');
+    assert.equal(a, 40, id + ' can climb to the Tier I band top');
+  }
+});
+
+test('the band top is still a hard wall until Tier Up', () => {
+  const ctx = loadSave({
+    bardonStep: 10,
+    upgrades: { current: 40, vessel: 40, attunement: 40, quickening: 40 },
+    genTiers: { current: 1, gen2: 0, gen3: 0 }
+  });
+  for (const id of GEN1) {
+    assert.equal(vm.runInContext(`omniaUpgradeAtBandTop(${JSON.stringify(id)})`, ctx), true,
+      id + ' is held at the band top');
+  }
+  assert.equal(vm.runInContext('omniaGenTierReady("current")', ctx), true,
+    'and Tier Up is the way past it');
+});
+
 test('no track can ever sit below its generator band floor', () => {
   const ctx = loadSave({
     upgrades: { current: 45, vessel: 3, attunement: 1, quickening: 41 },
