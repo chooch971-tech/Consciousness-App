@@ -446,8 +446,8 @@ function showStreakEndedPrompt() {
     + '<ellipse cx="26" cy="54" rx="13" ry="4" fill="rgba(180,80,20,0.30)"/>'
     + '</svg>'
     + embersHTML + smokeHTML + ashHTML
-    + '<div class="so-ended-daysbig">' + (info.days || 0) + ' <span class="u">day' + (info.days === 1 ? '' : 's') + '</span></div>'
     + '</div>'
+    + '<div class="so-ended-daysbig">' + (info.days || 0) + ' <span class="u">day' + (info.days === 1 ? '' : 's') + '</span></div>'
     + '<div class="so-ended-reveal">'
     + '<div class="so-ended-title">Streak Ended</div>'
     + '<div class="so-ended-sub">Your <span class="seo-days">' + (info ? info.days : 0) + ' day</span> streak ended. Every master has fallen — and risen. Commit to a new goal and begin again.</div>'

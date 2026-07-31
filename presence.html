@@ -342,8 +342,10 @@
     .so-ended-ash { position:absolute; top:64%; width:3px; height:3px; background:#9aa2b2; border-radius:1px; opacity:0; pointer-events:none; }
     .so-ended-overlay[data-seophase="ash"] .so-ended-ash,
     .so-ended-overlay[data-seophase="reveal"] .so-ended-ash { animation:seoAshFall 1.7s ease-in forwards; animation-delay:var(--ad,0s); }
-    @keyframes seoAshFall { 0%{opacity:0;transform:translateY(0) rotate(0);} 12%{opacity:.8;} 100%{opacity:0;transform:translateY(58px) translateX(var(--ax,4px)) rotate(160deg);} }
-    .so-ended-daysbig { position:absolute; left:0; right:0; bottom:-14px; font-family:Cormorant Garamond,serif; font-size:44px; font-weight:300; line-height:1; background:linear-gradient(100deg,#ffb070,#ffe2b8 48%,#e8945e); -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent; filter:drop-shadow(0 0 14px rgba(255,160,90,.35)); transition:filter 1.2s ease; }
+    @keyframes seoAshFall { 0%{opacity:0;transform:translateY(0) rotate(0);} 12%{opacity:.8;} 100%{opacity:0;transform:translateY(30px) translateX(var(--ax,4px)) rotate(160deg);} }
+    /* Keep the streak count in normal flow beneath the animation stage. This
+       prevents the live flame, falling ash, and revealed title sharing its row. */
+    .so-ended-daysbig { position:relative; min-height:44px; margin:0 0 8px; white-space:nowrap; font-family:Cormorant Garamond,serif; font-size:44px; font-weight:300; line-height:1; background:linear-gradient(100deg,#ffb070,#ffe2b8 48%,#e8945e); -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent; filter:drop-shadow(0 0 14px rgba(255,160,90,.35)); transition:filter 1.2s ease; }
     .so-ended-daysbig .u { font-size:12px; letter-spacing:.22em; text-transform:uppercase; }
     .so-ended-overlay[data-seophase="ash"] .so-ended-daysbig,
     .so-ended-overlay[data-seophase="reveal"] .so-ended-daysbig { background:linear-gradient(100deg,#5d6470,#8b93a2 48%,#555c68); -webkit-background-clip:text; background-clip:text; filter:none; animation:seoAshSettle 1s ease forwards; }
