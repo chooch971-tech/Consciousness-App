@@ -1590,6 +1590,31 @@ function guideCurrentSenseMode(senseStats) {
   return guideLeastRecentSenseMode(senseStats);
 }
 
+// Which faculty the practitioner is actually on.
+//
+// Two selectors had grown up side by side and they disagree. The sequential
+// curriculum advances only on a clean 5:00 hold, three times over; the rotation
+// above advances on a single 10-minute best. Sit with Feeling for twelve
+// minutes and never once hold it clean and the curriculum rightly keeps you
+// there, while the rotation has already declared it finished and moved to
+// Smell — so the Progress panel announced a faculty the practitioner was not
+// training, and the recommendation followed it.
+//
+// While the curriculum is still running it is the authority. Its stages cover
+// Visualization and Auditory too, which are not sense faculties, so the
+// override only applies when the live stage really is one; otherwise the
+// rotation still answers.
+function guideActiveSenseMode(senseStats) {
+  try {
+    var progress = guideSensoryTrackProgress();
+    if (progress && !progress.complete && progress.current
+        && GUIDE_SENSE_MODES[progress.current.mode]) {
+      return progress.current.mode;
+    }
+  } catch (e) {}
+  return guideCurrentSenseMode(senseStats);
+}
+
 // Senses is held to its own 2/5/10 duration model (matching the exercise's
 // own duration picker), so the same score used by the old flat gate just
 // gets clamped to 10 rather than scaling further like Thought Control does.
@@ -1831,7 +1856,7 @@ function guideRecommendedMinutes(exId) {
     }
     if (exId === 'sense') {
       var ss = guideSenseStats();
-      var smode = guideState.senseModeForced || guideCurrentSenseMode(ss);
+      var smode = guideState.senseModeForced || guideActiveSenseMode(ss);
       return guideSenseTargetMinutes(smode, ss) || 5;
     }
     var st = guideExerciseStats();
@@ -2171,7 +2196,7 @@ function guideProgressIntro() {
       if (it.id === 'sense' || GUIDE_SENSE_MODES[it.id]) {
         var md = it.mode || (GUIDE_SENSE_MODES[it.id] ? it.id : null);
         if (!md) {
-          try { md = guideState.senseModeForced || guideCurrentSenseMode(guideSenseStats()); } catch (e) {}
+          try { md = guideState.senseModeForced || guideActiveSenseMode(guideSenseStats()); } catch (e) {}
         }
         if (md && GUIDE_SENSE_LABELS[md]) nm += ' · ' + GUIDE_SENSE_LABELS[md];
       }
@@ -2326,7 +2351,7 @@ function buildExperiencedGuideItems() {
     // as Thought Control's Observation/Focus/Vacancy — pick whichever is
     // least mastered and hold to the exercise's own 2/5/10 duration model.
     gSenseStats = guideSenseStats();
-    gSenseMode = guideState.senseModeForced || guideCurrentSenseMode(gSenseStats);
+    gSenseMode = guideState.senseModeForced || guideActiveSenseMode(gSenseStats);
     gDur = guideSenseTargetMinutes(gSenseMode, gSenseStats);
   }
   var gTip;
