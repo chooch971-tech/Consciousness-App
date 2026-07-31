@@ -1582,6 +1582,17 @@ function guideLeastRecentSenseMode(senseStats) {
   })[0];
 }
 
+// The faculty actually being trained lately, newest first. Used to describe a
+// generic Senses card, which commits to no mode of its own.
+function guideRecentSenseMode(senseStats) {
+  var best = null, bestMs = 0;
+  GUIDE_SENSE_ORDER.forEach(function(mode) {
+    var st = senseStats[mode] || { lastMs:0, count:0 };
+    if ((st.count || 0) > 0 && (st.lastMs || 0) >= bestMs) { bestMs = st.lastMs || 0; best = mode; }
+  });
+  return best;
+}
+
 function guideCurrentSenseMode(senseStats) {
   for (var i = 0; i < GUIDE_SENSE_ORDER.length; i++) {
     var mode = GUIDE_SENSE_ORDER[i];
@@ -2196,7 +2207,16 @@ function guideProgressIntro() {
       if (it.id === 'sense' || GUIDE_SENSE_MODES[it.id]) {
         var md = it.mode || (GUIDE_SENSE_MODES[it.id] ? it.id : null);
         if (!md) {
-          try { md = guideState.senseModeForced || guideActiveSenseMode(guideSenseStats()); } catch (e) {}
+          // A generic "Senses" card carries no mode: the practitioner chooses
+          // the faculty inside the exercise. Asking the rotation what to do
+          // NEXT and printing that as the card's identity announced a faculty
+          // they were not training — a card sat entirely in Feeling read as
+          // "Senses · Smell" because Feeling had cleared the rotation's gate.
+          // Report what the sessions actually say, and if there are none, say
+          // nothing rather than inventing a faculty.
+          try {
+            md = guideState.senseModeForced || guideRecentSenseMode(guideSenseStats());
+          } catch (e) {}
         }
         if (md && GUIDE_SENSE_LABELS[md]) nm += ' · ' + GUIDE_SENSE_LABELS[md];
       }
