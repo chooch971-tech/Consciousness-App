@@ -5,6 +5,10 @@ var STREAK_COMMITS = [
   { days:45, xp:300,  akasha:18000 },
 ];
 
+function streakGoalIsComplete(streak, base, commit) {
+  return Math.max(0, (streak || 0) - (base || 0)) >= (commit || 7);
+}
+
 function streakCalendarMonthValue(year, month) {
   return year * 12 + month;
 }
@@ -116,19 +120,21 @@ function showStreakScreen() {
   var goalPct = commit > 0 ? Math.min(100, Math.round(streak / commit * 100)) : 100;
   var societyLocked = streak < 7;
 
-  // The Streak Goal card is interactive: the player can commit to a longer goal
-  // at any time — crucially after completing one — to chase the next milestone.
-  // The streak-bonus award is keyed by (streakStartDate, commitDays), so simply
-  // raising the goal lets the new milestone pay out when it's reached. Goals the
-  // current streak has already passed are locked (🏆) so a bonus can't be claimed
-  // retroactively by re-selecting a smaller goal.
+  // A commitment stays locked until it is complete. Only then may the player
+  // choose a fresh goal, measured from the current streak day. Goals already
+  // passed remain locked so rewards cannot be claimed retroactively.
   function goalCardInner() {
     var commitNow = state.streakCommit || 7;
     var base = state.streakGoalBaseDays || 0;
     var done = Math.max(0, streak - base);          // days completed toward THIS goal
     var pct = commitNow > 0 ? Math.min(100, Math.round(done / commitNow * 100)) : 100;
-    var completedCurrent = done >= commitNow;
-    var selLabel = completedCurrent ? 'Choose your next goal' : 'Change your goal';
+    var completedCurrent = streakGoalIsComplete(streak, base, commitNow);
+    var hasNextGoal = completedCurrent && STREAK_COMMITS.some(function(c) {
+      return c.days !== commitNow && done < c.days;
+    });
+    var selLabel = !completedCurrent
+      ? 'Goal locked · complete this commitment'
+      : (hasNextGoal ? 'Choose your next goal' : 'Commitment complete');
     var tiersHTML = STREAK_COMMITS.map(function(c) {
       var isCurrent = commitNow === c.days;
       var isReached = done >= c.days;               // already cleared this many days in the window
@@ -136,6 +142,7 @@ function showStreakScreen() {
       var disabled = false;
       if (isCurrent) { cls += ' selected'; disabled = true; }
       else if (isReached) { cls += ' reached'; disabled = true; }
+      else if (!completedCurrent) { cls += ' locked'; disabled = true; }
       return '<button class="' + cls + '" data-days="' + c.days + '"' + (disabled ? ' disabled' : '') + '>'
         + '<span class="so-goal-tier-days">' + c.days + '</span>'
         + '<span class="so-goal-tier-unit">days</span>'
@@ -151,8 +158,10 @@ function showStreakScreen() {
   function wireGoalCard() {
     var card = document.getElementById('soGoalCard');
     if (!card) return;
+    if (!streakGoalIsComplete(streak, state.streakGoalBaseDays || 0, state.streakCommit || 7)) return;
     card.querySelectorAll('.so-goal-tier:not([disabled])').forEach(function(btn) {
       btn.addEventListener('click', function() {
+        if (!streakGoalIsComplete(streak, state.streakGoalBaseDays || 0, state.streakCommit || 7)) return;
         var days = parseInt(btn.dataset.days, 10);
         if (!days) return;
         // If the current goal is already complete, the new goal is a fresh
