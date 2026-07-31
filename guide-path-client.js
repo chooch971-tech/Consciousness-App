@@ -2053,6 +2053,16 @@ function guideProgressOverview() {
   var sensoryActiveStage = sensoryPinnedStage
     ? (sensoryPinnedStage.mastered ? null : sensoryPinnedStage)
     : sensory.current;
+  // A foundation the practitioner has explicitly REMOVED can never reach its
+  // clean hold, so anything waiting on it waits forever until they add it back.
+  // This has to read the removal flag rather than today's card list: the
+  // curriculum only ever surfaces its current stage, so Auditory is legitimately
+  // absent from the path while Visualization is still being trained, and
+  // treating that as removed would tell everyone their curriculum was broken.
+  function stageOnPath(stage) {
+    var removed = (typeof guideState !== 'undefined' && guideState && guideState.removed) || {};
+    return !removed[stage.exercise];
+  }
   function sensoryRow(stage) {
     var active = !!(sensoryActiveStage && sensoryActiveStage.id === stage.id);
     var prior = stage.index > 0 ? sensory.stages[stage.index - 1] : null;
@@ -2061,12 +2071,26 @@ function guideProgressOverview() {
       status = 'Mastered';
       detail = 'Clean hold ' + guideFmtTime(stage.bestCleanSec) + ' / 5m';
     } else if (!active) {
-      status = prior && prior.mastered ? 'Next' : 'Waiting';
-      detail = prior && prior.mastered
-        ? 'Omnia will recommend this on your next practice day.'
-        : 'Omnia recommends this after '
-          + (prior ? prior.name + ' · ' + prior.label : 'the prior foundation')
-          + ' reaches a clean 5:00 hold.';
+      if (prior && prior.mastered) {
+        status = 'Next';
+        detail = 'Omnia will recommend this on your next practice day.';
+      } else {
+        status = 'Waiting';
+        var priorName = prior ? prior.name + ' · ' + prior.label : 'the prior foundation';
+        // "Waiting" with no reachable cause is the confusing case. Two of them:
+        // the foundation it waits on may have been removed from the path, so
+        // there is no card to practise it on and nothing the practitioner can
+        // do from here; or the hold for THIS stage may already be banked and
+        // simply not counted yet, because foundations are credited in order.
+        // Saying only "after X reaches a clean 5:00 hold" answers neither.
+        if (prior && !stageOnPath(prior)) {
+          detail = priorName + ' is not on your path, so this cannot advance — add it back with “+” to carry on.';
+        } else if (stage.bestCleanSec >= GUIDE_SENSORY_CLEAN_GOAL_SEC) {
+          detail = 'Your clean hold here already clears 5:00 — it counts once ' + priorName + ' is mastered.';
+        } else {
+          detail = 'Omnia recommends this after ' + priorName + ' reaches a clean 5:00 hold.';
+        }
+      }
     } else {
       var practiceMin = guideSensoryPracticeMinutes(stage);
       status = practiceMin + ' min recommended';
