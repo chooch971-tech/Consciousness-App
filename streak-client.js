@@ -98,6 +98,97 @@ function buildStreakCalendar(year, month, commit) {
   return html + '</div>';
 }
 
+// The Streak view is a fixed overlay rather than a `.screen`, so it cannot use
+// the app-wide swipe-back controller. Give it the same left-edge interaction
+// locally while leaving vertical calendar scrolling and ordinary taps alone.
+function wireStreakSwipeDismiss(el, dismiss) {
+  if (!el) return;
+  el._streakSwipeDismiss = dismiss;
+  if (el._streakSwipeBound) return;
+  el._streakSwipeBound = true;
+
+  var gesture = null;
+  var dragging = false;
+  var settleTimer = 0;
+  var EASE = 'cubic-bezier(0.25,0.46,0.45,0.94)';
+
+  function clearSwipeStyles() {
+    el.classList.remove('so-swipe-live');
+    el.style.transform = '';
+    el.style.transition = '';
+    el.style.willChange = '';
+  }
+
+  function settleBack() {
+    el.style.transition = 'transform .22s ' + EASE;
+    el.style.transform = 'translate3d(0,0,0)';
+    settleTimer = setTimeout(function() {
+      settleTimer = 0;
+      clearSwipeStyles();
+    }, 220);
+  }
+
+  el.addEventListener('touchstart', function(e) {
+    if (!el.classList.contains('so-show') || settleTimer) return;
+    // Society is a child view above Streak. Its own Back button should win;
+    // never dismiss the parent invisibly beneath it.
+    var society = document.getElementById('societyOverlay');
+    if (society && society.classList.contains('soc-show')) return;
+    var t = e.touches && e.touches[0];
+    if (!t || t.clientX > 44) return;
+    gesture = { x:t.clientX, y:t.clientY };
+    dragging = false;
+  }, { passive:true });
+
+  el.addEventListener('touchmove', function(e) {
+    if (!gesture) return;
+    var t = e.touches && e.touches[0];
+    if (!t) return;
+    var dx = t.clientX - gesture.x;
+    var dy = Math.abs(t.clientY - gesture.y);
+    if (!dragging) {
+      if (dy > Math.abs(dx) + 8) { gesture = null; return; }
+      if (Math.abs(dx) < 6) return;
+      if (dx <= 0) { gesture = null; return; }
+      dragging = true;
+      el.classList.add('so-swipe-live');
+      el.style.transition = 'none';
+      el.style.willChange = 'transform';
+    }
+    if (e.cancelable) e.preventDefault();
+    el.style.transform = 'translate3d(' + Math.max(0, dx) + 'px,0,0)';
+  }, { passive:false });
+
+  el.addEventListener('touchend', function(e) {
+    if (!gesture) return;
+    var t = e.changedTouches && e.changedTouches[0];
+    var dx = t ? Math.max(0, t.clientX - gesture.x) : 0;
+    gesture = null;
+    if (!dragging) return;
+    dragging = false;
+    var width = Math.max(window.innerWidth || 375, 320);
+    if (dx > width * 0.3) {
+      el.style.transition = 'transform .26s ' + EASE;
+      el.style.transform = 'translate3d(100%,0,0)';
+      settleTimer = setTimeout(function() {
+        var close = el._streakSwipeDismiss;
+        if (typeof close === 'function') close(true);
+        settleTimer = 0;
+        clearSwipeStyles();
+      }, 260);
+    } else {
+      settleBack();
+    }
+  }, { passive:true });
+
+  el.addEventListener('touchcancel', function() {
+    gesture = null;
+    if (!dragging) return;
+    dragging = false;
+    settleBack();
+  }, { passive:true });
+}
+
 function showStreakScreen() {
   var el = document.getElementById('streakOverlay');
   if (!el) return;
@@ -259,10 +350,15 @@ function showStreakScreen() {
       if (cal) cal.innerHTML = buildStreakCalendar(yr, mo, state.streakCommit || 7);
     });
   }
-  function closeStreakOverlay() {
+  function closeStreakOverlay(immediate) {
     el.classList.remove('so-vis');
+    if (immediate === true) {
+      el.classList.remove('so-show');
+      return;
+    }
     setTimeout(function() { el.classList.remove('so-show'); }, 420);
   }
+  wireStreakSwipeDismiss(el, closeStreakOverlay);
   document.getElementById('soBackBtn').onclick = closeStreakOverlay;
   document.getElementById('soCloseBtn').onclick = closeStreakOverlay;
   var vigilBtn = document.getElementById('soVigilBtn');

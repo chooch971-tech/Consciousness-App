@@ -199,6 +199,7 @@
       flex-direction:column; align-items:stretch; justify-content:flex-start;
       padding:0;
       overflow-y:auto; -webkit-overflow-scrolling:touch;
+      touch-action:pan-y; overscroll-behavior-x:none;
       opacity:0; transition:opacity 0.45s ease;
     }
     #streakOverlay.so-show { display:flex; }
@@ -9273,9 +9274,11 @@ document.getElementById('hamburgerBtn').addEventListener('click', function() { o
     var t = e.touches[0];
     if (t.clientX > 30) return;
     // A full-screen modal owns its own edge swipe. Letting Home track the same
-    // touch would dismiss 7x2 and open the hamburger drawer in one gesture.
+    // touch would dismiss it and open the hamburger drawer in one gesture.
     var giftPath = document.getElementById('giftPathOverlay');
     if (giftPath && giftPath.classList.contains('gp-show')) return;
+    var streakScreen = document.getElementById('streakOverlay');
+    if (streakScreen && streakScreen.classList.contains('so-show')) return;
     var hs = document.getElementById('homeScreen');
     if (!hs || hs.style.display === 'none') return;
     var overlay = document.getElementById('drawerOverlay');

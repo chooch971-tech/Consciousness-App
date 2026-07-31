@@ -1146,6 +1146,10 @@ test('Streak screen and ended-state UI load through their own client boundary', 
   assert.match(streakClient, /function\s+showStreakScreen\s*\(/);
   assert.match(streakClient, /function\s+openStreakSociety\s*\(/);
   assert.match(streakClient, /function\s+showStreakEndedPrompt\s*\(/);
+  assert.match(streakClient, /function\s+wireStreakSwipeDismiss\s*\(/);
+  assert.match(streakClient, /touchstart[\s\S]*?touchmove[\s\S]*?preventDefault\(\)[\s\S]*?touchend/);
+  assert.match(streakClient, /dx > width \* 0\.3[\s\S]*?close\(true\)/);
+  assert.match(presence, /streakOverlay[\s\S]*?classList\.contains\('so-show'\)/);
   // The Recommendation Streak card was removed from the Streak screen; the
   // underlying omniaState.recStreak bonus keeps applying invisibly.
   assert.doesNotMatch(streakClient, /Recommendation Streak/);
