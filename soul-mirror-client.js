@@ -475,19 +475,18 @@ _wireAutosugTapsStepper();
 var AUTOSUG_XP=30;
 var autosugCount=0;
 var autosugStartTime=null;
-var autosugWakeLock=null;
-
 // Keep the phone awake during the practice (Screen Wake Lock API — works in
 // installed/HTTPS contexts; harmlessly does nothing where unsupported).
-function autosugAcquireWakeLock(){
-  if(!('wakeLock' in navigator))return;
-  try{
-    navigator.wakeLock.request('screen').then(function(lock){autosugWakeLock=lock;}).catch(function(){});
-  }catch(e){}
-}
-function autosugReleaseWakeLock(){
-  if(autosugWakeLock){try{autosugWakeLock.release();}catch(e){}autosugWakeLock=null;}
-}
+// Uses the shared holder from asana-client.js (loaded earlier) because this
+// one is asked for repeatedly — soulMirrorShowPanel() re-acquires on every
+// switch into Autosuggestion and the visibilitychange handler below asks
+// again on every return — and the old inline version leaked a lock on each
+// repeat call, leaving the screen permanently awake.
+var _autosugWakeLockHolder = (typeof makeWakeLockHolder === 'function')
+  ? makeWakeLockHolder()
+  : { acquire: function(){}, release: function(){} };
+function autosugAcquireWakeLock(){ _autosugWakeLockHolder.acquire(); }
+function autosugReleaseWakeLock(){ _autosugWakeLockHolder.release(); }
 document.addEventListener('visibilitychange',function(){
   // The browser drops wake locks when the tab is hidden — re-acquire if the
   // user comes back mid-practice.

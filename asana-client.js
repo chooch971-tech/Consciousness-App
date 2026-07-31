@@ -3,14 +3,52 @@
 // ══════════════════════════════════════════
 
 // ── Shared Screen Wake Lock for all exercises ──────────────────────────────
-var _exerciseWakeLock = null;
-function requestExerciseWakeLock() {
-  if (!('wakeLock' in navigator)) return;
-  navigator.wakeLock.request('screen').then(function(wl) { _exerciseWakeLock = wl; }).catch(function() {});
+// Acquiring a wake lock is asynchronous, so the obvious "request it, stash
+// whatever comes back" shape leaks. Ask twice and the browser hands out two
+// locks while only the second is remembered — the first stays held with
+// nothing left able to release it, and the screen never sleeps again until
+// the tab is destroyed. The callers really are re-entrant (a session asks on
+// start and again on resume; Soul Mirror asks on every tab switch and on
+// every return to visibility), so intent and the in-flight request are both
+// tracked explicitly rather than assumed.
+function makeWakeLockHolder() {
+  var held = null;     // the live sentinel
+  var pending = null;  // a request that has not resolved yet
+  var wanted = false;  // whether we still want one by the time it arrives
+  return {
+    acquire: function() {
+      if (!('wakeLock' in navigator)) return;
+      wanted = true;
+      if (held || pending) return; // already covered — asking again would leak
+      try {
+        pending = navigator.wakeLock.request('screen').then(function(wl) {
+          pending = null;
+          // Released while the request was still in flight: drop it now
+          // instead of holding a lock nobody wants any more.
+          if (!wanted) { try { wl.release(); } catch (e) {} return; }
+          held = wl;
+          // The browser drops the lock itself when the page hides. Clear our
+          // handle when that happens so a later acquire() genuinely re-asks
+          // rather than believing one is still active.
+          try {
+            wl.addEventListener('release', function() { if (held === wl) held = null; });
+          } catch (e) {}
+        }).catch(function() { pending = null; });
+      } catch (e) { pending = null; }
+    },
+    release: function() {
+      wanted = false;
+      if (!held) return;
+      var wl = held;
+      held = null; // clear first, so a failed release cannot strand the handle
+      try { wl.release().catch(function() {}); } catch (e) {}
+    }
+  };
 }
-function releaseExerciseWakeLock() {
-  if (_exerciseWakeLock) { _exerciseWakeLock.release().catch(function() {}); _exerciseWakeLock = null; }
-}
+
+var _exerciseWakeLockHolder = makeWakeLockHolder();
+function requestExerciseWakeLock() { _exerciseWakeLockHolder.acquire(); }
+function releaseExerciseWakeLock() { _exerciseWakeLockHolder.release(); }
 
 var asanaStartTime = null;
 var asanaTimerHandle = null;
