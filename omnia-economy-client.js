@@ -40,11 +40,18 @@ var OMNIA_UPGRADE_FINAL_LEVEL = 80;
 // Which four tracks belong to which generator. Declared here rather than read
 // from the engine's OMNIA_GEN_META so the economy stays free of that dependency
 // — tiers are an economy concept, and the engine only draws them.
-var OMNIA_GENERATOR_TRACKS = {
-  current: ['current', 'vessel', 'attunement', 'quickening'],
-  gen2:    ['gen2', 'vessel2', 'attune2', 'quick2'],
-  gen3:    ['gen3', 'vessel3', 'attune3', 'quick3']
-};
+// Built from the groups declared in omnia-state-client.js (which loads first
+// and needs them for the save migration), so the two can never drift apart.
+var OMNIA_GENERATOR_TRACKS = (function() {
+  var groups = (typeof OMNIA_TIER_TRACK_GROUPS !== 'undefined') ? OMNIA_TIER_TRACK_GROUPS : [
+    ['current', 'vessel', 'attunement', 'quickening'],
+    ['gen2', 'vessel2', 'attune2', 'quick2'],
+    ['gen3', 'vessel3', 'attune3', 'quick3']
+  ];
+  var out = {};
+  groups.forEach(function(g) { out[g[0]] = g.slice(); });
+  return out;
+})();
 var OMNIA_TRACK_GENERATOR = (function() {
   var out = {};
   Object.keys(OMNIA_GENERATOR_TRACKS).forEach(function(gen) {

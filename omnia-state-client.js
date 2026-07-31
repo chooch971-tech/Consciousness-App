@@ -2,6 +2,16 @@ function cloneOmniaDefault() {
   return JSON.parse(JSON.stringify(OMNIA_DEFAULT));
 }
 
+// The four upgrade tracks behind each generator, listed generator-first.
+// Defined here rather than in omnia-economy-client.js because the save
+// migration below needs them and this file loads first; the economy layer
+// builds OMNIA_GENERATOR_TRACKS from this so there is one source of truth.
+var OMNIA_TIER_TRACK_GROUPS = [
+  ['current', 'vessel', 'attunement', 'quickening'],
+  ['gen2', 'vessel2', 'attune2', 'quick2'],
+  ['gen3', 'vessel3', 'attune3', 'quick3']
+];
+
 // Body levels must never exceed the current Bardon step's requirement.
 // Both gameplay paths (build button + recommended-exercise award) enforce this,
 // but data arriving via cloud sync / localStorage bypasses those guards — so we
@@ -168,14 +178,12 @@ function loadOmniaState() {
     // Generator tiers. Tiering used to be per track, derived from that track's
     // own lifetime level, so an existing save has no tier recorded and its four
     // tracks can sit at different bands. Seed each generator from its HIGHEST
-    // track so nobody loses akasha per hour they had already earned; tracks
-    // behind that simply show early band levels again, keeping every lifetime
-    // reward (capacity, discount, build speed) they have accumulated.
+    // track so nobody loses akasha per hour they had already earned — dropping
+    // to the lowest would cut the production multiplier a player had already
+    // banked.
     merged.genTiers = Object.assign({ current:0, gen2:0, gen3:0 }, parsed.genTiers || {});
     if (!parsed.genTiers) {
-      [['current', 'vessel', 'attunement', 'quickening'],
-       ['gen2', 'vessel2', 'attune2', 'quick2'],
-       ['gen3', 'vessel3', 'attune3', 'quick3']].forEach(function(track) {
+      OMNIA_TIER_TRACK_GROUPS.forEach(function(track) {
         var highest = track.reduce(function(max, id) {
           var lvl = Math.max(1, Number(merged.upgrades[id]) || 1);
           return Math.max(max, Math.floor((lvl - 1) / 20));
@@ -183,6 +191,26 @@ function loadOmniaState() {
         merged.genTiers[track[0]] = Math.min(3, highest);
       });
     }
+    // Seeding from the highest track leaves the other three sitting BELOW the
+    // band their generator now occupies, and the card clamps anything under the
+    // band floor to "1 / 20". A save with one track at 22 and the rest at 13
+    // therefore showed three tracks frozen at 1/20 while charging band-1 prices
+    // for them — buying an upgrade took the akasha and moved nothing visible,
+    // for eight purchases in a row, and the tier-up gate silently wanted 40.
+    //
+    // The card already claims these tracks are at level 1 of the band, and the
+    // price already carries the band multiplier, so the honest repair is to make
+    // the stored level match what is being displayed and charged: lift anything
+    // below its generator's band floor up to that floor. This runs on every load
+    // rather than only on first migration, because saves that already took the
+    // bad seeding need healing too.
+    OMNIA_TIER_TRACK_GROUPS.forEach(function(track) {
+      var floor = (Math.max(0, Math.min(3, Number(merged.genTiers[track[0]]) || 0)) * 20) + 1;
+      track.forEach(function(id) {
+        var lvl = Math.max(1, Number(merged.upgrades[id]) || 1);
+        if (lvl < floor) merged.upgrades[id] = floor;
+      });
+    });
     merged.cosmetics = Object.assign(cloneOmniaDefault().cosmetics, parsed.cosmetics || {});
     merged.cosmetics.unlockedPalettes = merged.cosmetics.unlockedPalettes || ['aether'];
     merged.cosmetics.unlockedEntities = merged.cosmetics.unlockedEntities || ['omnia'];
