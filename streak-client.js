@@ -56,7 +56,7 @@ function showStreakScreen() {
   var freezes = state.streakFreezes || 0;
   var subText = streak === 0 ? 'The wick is dry. Light it today.'
     : streak === 1 ? 'First light — shelter it.'
-    : streak < 7  ? 'A young flame. Feed it daily.'
+    : streak < 7  ? ''
     : streak < 30 ? 'It burns steady now. Keep the vigil.'
     : 'A long-kept fire. Few hold one this long.';
   var now = new Date();
@@ -128,8 +128,8 @@ function showStreakScreen() {
   el.innerHTML =
     '<button class="so-back-btn" id="soBackBtn" aria-label="Back">&#8592;</button>'
     + '<div class="so-hero">'
-    + '<div class="so-vigil">'
-    + '<div class="so-vigil-glow"' + (streak === 0 ? ' style="opacity:.25;animation:none;"' : '') + '></div>'
+    + '<button class="so-vigil" id="soVigilBtn" type="button" aria-label="Flicker the streak candle">'
+    + '<div class="so-vigil-glow' + (streak === 0 ? ' so-vigil-glow--unlit' : '') + '"></div>'
     + '<svg class="so-vigil-svg" viewBox="0 0 96 132" fill="none" aria-hidden="true">'
     + '<defs>'
     + '<linearGradient id="soVigC" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#efe4cc"/><stop offset=".6" stop-color="#d9c8a6"/><stop offset="1" stop-color="#b3a17e"/></linearGradient>'
@@ -152,10 +152,10 @@ function showStreakScreen() {
           + '<i class="so-vigil-ember" style="left:52%;--drift:7px;animation-delay:1.3s;"></i>'
           + '<i class="so-vigil-ember" style="left:49%;--drift:-3px;animation-delay:2.4s;"></i>'
         : '')
-    + '</div>'
+    + '</button>'
     + '<div class="so-hero-num">' + streak + '</div>'
     + '<div class="so-hero-label">Day Streak</div>'
-    + '<div class="so-hero-sub">' + subText + '</div>'
+    + (subText ? '<div class="so-hero-sub">' + subText + '</div>' : '')
     + '<div class="so-hero-rule"></div>'
     + '</div>'
     + '<div class="so-body">'
@@ -205,6 +205,19 @@ function showStreakScreen() {
   }
   document.getElementById('soBackBtn').onclick = closeStreakOverlay;
   document.getElementById('soCloseBtn').onclick = closeStreakOverlay;
+  var vigilBtn = document.getElementById('soVigilBtn');
+  if (vigilBtn) {
+    vigilBtn.onclick = function() {
+      clearTimeout(vigilBtn._flickerTimer);
+      vigilBtn.classList.remove('so-vigil-flicker');
+      // Force a style flush so every tap restarts the one-shot flicker.
+      void vigilBtn.offsetWidth;
+      vigilBtn.classList.add('so-vigil-flicker');
+      vigilBtn._flickerTimer = setTimeout(function() {
+        vigilBtn.classList.remove('so-vigil-flicker');
+      }, 700);
+    };
+  }
   if (!societyLocked) {
     var socCard = document.getElementById('soSocietyCard');
     if (socCard) socCard.onclick = openStreakSociety;

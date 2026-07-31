@@ -206,15 +206,28 @@
     /* Streak overlay — the vigil. A kept candle on dark ground (the living
        counterpart of the streak-ended snuff sequence), not a banner. */
     .so-hero { position:relative; width:100%; padding:max(env(safe-area-inset-top),40px) 24px 10px; display:flex; flex-direction:column; align-items:center; }
-    .so-vigil { position:relative; width:150px; height:132px; }
+    .so-vigil { position:relative; width:150px; height:132px; appearance:none; -webkit-appearance:none; padding:0; border:0; background:none; color:inherit; font:inherit; cursor:pointer; touch-action:manipulation; -webkit-tap-highlight-color:transparent; }
+    .so-vigil:focus-visible { outline:1px solid rgba(240,184,112,.72); outline-offset:4px; border-radius:50%; }
     .so-vigil-glow { position:absolute; left:50%; top:38%; width:170px; height:170px; transform:translate(-50%,-50%); border-radius:50%; background:radial-gradient(circle, rgba(255,170,80,.26) 0%, rgba(255,140,50,.10) 46%, transparent 70%); animation:seoGlowPulse 3.2s ease-in-out infinite; pointer-events:none; }
+    .so-vigil-glow--unlit { opacity:.25; animation:none; }
     .so-vigil-svg { position:absolute; inset:0; width:100%; height:100%; }
     .so-vigil-flame { transform-box:fill-box; transform-origin:50% 94%; animation:seoFlameSway 2.6s ease-in-out infinite; }
     .so-vigil-ember { position:absolute; left:50%; bottom:52px; width:3.5px; height:3.5px; border-radius:50%; background:#ffc080; box-shadow:0 0 6px #ff9850, 0 0 12px rgba(255,140,60,.6); opacity:0; animation:seoEmber 3.4s ease-in infinite; pointer-events:none; }
-    .so-hero-num { font-family:Cormorant Garamond,serif; font-size:92px; font-weight:300; color:#f0d8ac; line-height:1; margin:2px 0 10px; text-shadow:0 0 38px rgba(240,170,80,.35); font-variant-numeric:oldstyle-nums; }
+    .so-vigil.so-vigil-flicker .so-vigil-glow { animation:soVigilTapGlow .65s ease-out both; }
+    .so-vigil.so-vigil-flicker .so-vigil-svg { animation:soVigilTapLight .65s ease-out both; }
+    .so-vigil.so-vigil-flicker .so-vigil-flame { animation:soVigilTapFlame .65s cubic-bezier(.25,.8,.35,1) both; }
+    .so-hero-num { font-family:Cormorant Garamond,serif; font-size:92px; font-weight:300; color:#f0d8ac; line-height:1; margin:-10px 0 10px; text-shadow:0 0 38px rgba(240,170,80,.35); font-variant-numeric:oldstyle-nums; }
     .so-hero-label { font-family:'DM Mono',monospace; font-size:9px; letter-spacing:.34em; text-transform:uppercase; color:rgba(232,205,148,.85); margin-bottom:9px; }
     .so-hero-sub { font-family:Cormorant Garamond,serif; font-size:15px; color:rgba(221,216,206,.72); font-style:italic; text-align:center; max-width:280px; line-height:1.6; }
     .so-hero-rule { width:48px; height:1px; margin:18px auto 0; background:linear-gradient(90deg, transparent, rgba(212,149,110,.7), transparent); }
+    @keyframes soVigilTapGlow { 0%,100%{opacity:.85;transform:translate(-50%,-50%) scale(1);} 16%{opacity:1;transform:translate(-50%,-50%) scale(1.18);} 34%{opacity:.72;transform:translate(-50%,-50%) scale(.96);} 55%{opacity:1;transform:translate(-50%,-50%) scale(1.13);} 76%{opacity:.82;transform:translate(-50%,-50%) scale(1.02);} }
+    @keyframes soVigilTapLight { 0%,100%{filter:none;} 16%{filter:brightness(1.42) drop-shadow(0 0 15px rgba(255,164,74,.5));} 34%{filter:brightness(.96);} 55%{filter:brightness(1.28) drop-shadow(0 0 11px rgba(255,164,74,.38));} }
+    @keyframes soVigilTapFlame { 0%,100%{transform:scale(1) rotate(0deg);} 16%{transform:scale(1.1,1.18) rotate(-3deg);} 34%{transform:scale(.94,.88) rotate(2.5deg);} 55%{transform:scale(1.06,1.12) rotate(-1.5deg);} 76%{transform:scale(.98,.95) rotate(1deg);} }
+    @media (prefers-reduced-motion: reduce) {
+      .so-vigil.so-vigil-flicker .so-vigil-glow { animation:none; opacity:1; }
+      .so-vigil.so-vigil-flicker .so-vigil-svg { animation:none; filter:brightness(1.2) drop-shadow(0 0 10px rgba(255,164,74,.35)); }
+      .so-vigil.so-vigil-flicker .so-vigil-flame { animation:none; }
+    }
     /* Body */
     .so-body { width:100%; max-width:420px; padding:18px 20px max(env(safe-area-inset-bottom),36px); display:flex; flex-direction:column; gap:14px; }
     /* Freeze card — frost holds the flame through a missed day */
