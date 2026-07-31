@@ -275,6 +275,39 @@ var VIS_REALLIFE = [
 var VIS_OBJECTS = VIS_SHAPES; // default
 var currentVisCategory = 'shapes';
 
+var VIS_IMAGE_TYPE_DEFS = [
+  {
+    id: 'shapes', label: 'Shapes', accent: '--sn-card-rgb:110,159,212; --sn-card-light:#8ab8e0;',
+    glyph: '<svg viewBox="0 0 24 22" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">'
+      + '<circle cx="7" cy="8" r="3.5"/><path d="M14 12.5 18.5 5l4.5 7.5Z"/><rect x="5" y="14.5" width="7" height="6" rx="1"/></svg>'
+  },
+  {
+    id: 'objects', label: 'Objects', accent: '--sn-card-rgb:130,151,211; --sn-card-light:#a8b9e8;',
+    glyph: '<svg viewBox="0 0 24 22" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" aria-hidden="true">'
+      + '<path d="M6 7.5h10v11H6z"/><path d="M16 10h2.2a2.8 2.8 0 0 1 0 5.6H16"/><path d="M8.5 4.5c0 1 1 1.2 1 2.2m3-2.2c0 1 1 1.2 1 2.2"/></svg>'
+  },
+  {
+    id: 'reallife', label: 'Photos', accent: '--sn-card-rgb:110,184,164; --sn-card-light:#8eccc0;',
+    glyph: '<svg viewBox="0 0 24 22" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" aria-hidden="true">'
+      + '<rect x="2.5" y="3" width="19" height="16" rx="2"/><circle cx="8" cy="8" r="2"/><path d="m4.5 17 5-5 3.5 3 2.5-2.5 4 4.5"/></svg>'
+  },
+  {
+    id: 'custom', label: 'Custom', accent: '--sn-card-rgb:178,143,207; --sn-card-light:#c8a8e0;',
+    glyph: '<svg viewBox="0 0 24 22" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" aria-hidden="true">'
+      + '<rect x="3" y="3" width="18" height="16" rx="2"/><path d="M12 7v8M8 11h8"/></svg>'
+  }
+];
+
+function availableVisImageTypes() {
+  return VIS_IMAGE_TYPE_DEFS.filter(function(type) {
+    return type.id !== 'custom' || loadCustomVisImages().length > 0;
+  });
+}
+
+function normalizeVisCategory(category) {
+  return availableVisImageTypes().some(function(type) { return type.id === category; }) ? category : 'shapes';
+}
+
 var VIS_OBJECTS = [
   { shape:'circle',   color:'#e05555', label:'Red Circle'       },
   { shape:'triangle', color:'#55a855', label:'Green Triangle'    },
@@ -964,9 +997,52 @@ function renderVisObject(obj, size) {
 }
 
 function setupVisPreview() {
+  currentVisCategory = normalizeVisCategory(currentVisCategory);
   currentVisObject = pickVisObject();
   var wrap = document.getElementById('visPreviewWrap');
   if (wrap) wrap.innerHTML = renderVisObject(currentVisObject, 230);
+  var name = document.getElementById('visPreviewName');
+  if (name) name.textContent = currentVisObject ? currentVisObject.label : '';
+}
+
+function visImageTypeOptionsHTML() {
+  currentVisCategory = normalizeVisCategory(currentVisCategory);
+  return availableVisImageTypes().map(function(type) {
+    return '<button type="button" class="sn-mode' + (type.id === currentVisCategory ? ' on' : '') + '"'
+      + ' data-vis-category="' + type.id + '" style="' + type.accent + '" onclick="switchVisCategory(\'' + type.id + '\')">'
+      + type.glyph + '<span class="sn-mode__lbl">' + type.label + '</span></button>';
+  }).join('');
+}
+
+function visEyesOptionsHTML() {
+  return '<button type="button" class="sense-eyes-option' + (!visOpenEyesMode ? ' on' : '') + '" onclick="setVisEyesMode(\'closed\')">'
+    + '<span class="sense-eye-icon">◉</span><span><strong>Closed Eyes</strong><small>Foundation · default</small></span></button>'
+    + '<button type="button" class="sense-eyes-option sense-eyes-option--advanced' + (visOpenEyesMode ? ' on' : '') + '" onclick="setVisEyesMode(\'open\')">'
+    + '<span class="sense-eye-icon">◎</span><span><strong>Open Eyes</strong><small>Advanced</small></span></button>';
+}
+
+function setVisEyesMode(mode) {
+  visOpenEyesMode = mode === 'open';
+  var row = document.getElementById('visEyesRow');
+  if (row) row.innerHTML = visEyesOptionsHTML();
+}
+
+function buildVisualizationSetupHTML() {
+  return '<div class="sn-setup vis-setup">'
+    + '<div class="sn-hero-card vis-hero-card">'
+    + '<div class="sn-head"><div class="sn-head__label">Build an image</div>'
+    + '<button type="button" class="aud-omnia-peek" onclick="openExExplainer(\'visual\')" aria-label="How Visualization works">'
+    + '<span class="clk-omnia-peek-head"><span class="clk-omnia-spin">' + omniaHeadOnlySVG(34, 32) + '</span></span></button></div>'
+    + '<div class="sense-choice-label">Image type</div>'
+    + '<div class="sn-modes vis-image-types" id="visImageTypeRow">' + visImageTypeOptionsHTML() + '</div>'
+    + '<div class="sense-eyes-picker">'
+    + '<div class="sense-choice-label">Practice mode</div>'
+    + '<div class="sense-eyes-options" id="visEyesRow">' + visEyesOptionsHTML() + '</div></div>'
+    + '<div class="vis-preview-card">'
+    + '<div class="sense-choice-label vis-preview-kicker">Memorize this image</div>'
+    + '<div class="vis-object-wrap" id="visPreviewWrap"></div>'
+    + '<div class="vis-preview-name" id="visPreviewName"></div>'
+    + '</div></div></div>';
 }
 
 function fmtTimer(totalSec) {
@@ -1353,32 +1429,7 @@ var EXERCISE_DEFS = {
     name: 'Visualization',
     // No instruction block — Omnia's head above the picker opens the tutorial.
     desc: '',
-    setupHTML: function() {
-      return '<div class="vis-setup">'
-        + '<div class="aud-setup-head">'
-        + '<div class="vis-object-label" style="margin:0;">Choose an image</div>'
-        + '<button type="button" class="aud-omnia-peek" onclick="openExExplainer(\'visual\')" aria-label="How Visualization works">'
-        + '<span class="clk-omnia-peek-head"><span class="clk-omnia-spin">' + omniaHeadOnlySVG(34, 32) + '</span></span>'
-        + '</button>'
-        + '</div>'
-        + '<div style="display:flex; gap:8px; margin-bottom:16px; flex-wrap:wrap;">'
-        + '<button class="exercise-tab active" id="visCatShapes" style="font-size:8px; padding:6px 12px;">Shapes</button>'
-        + '<button class="exercise-tab" id="visCatObjects" style="font-size:8px; padding:6px 12px;">Objects</button>'
-        + '<button class="exercise-tab" id="visCatRealLife" style="font-size:8px; padding:6px 12px;">Real Life</button>'
-        + (loadCustomVisImages().length ? '<button class="exercise-tab" id="visCatCustom" style="font-size:8px; padding:6px 12px;">Custom</button>' : '')
-        + '</div>'
-        + '<div style="display:flex; align-items:center; gap:10px; margin-bottom:24px;">'
-        + '<span style="font-size:9px; letter-spacing:.15em; text-transform:uppercase; color:var(--muted);">Closed Eyes</span>'
-        + '<label style="position:relative; display:inline-block; width:38px; height:22px; cursor:pointer; flex-shrink:0;">'
-        + '<input type="checkbox" id="visModeToggle" style="opacity:0; position:absolute; width:0; height:0;">'
-        + '<span id="visModeSlider" style="position:absolute; inset:0; background:rgba(212,149,110,.2); border-radius:22px; transition:background .2s;"><span id="visModeDot" style="position:absolute; left:3px; top:3px; width:16px; height:16px; background:#d4956e; border-radius:50%; transition:transform .2s; opacity:.5;"></span></span>'
-        + '</label>'
-        + '<span style="font-size:9px; letter-spacing:.15em; text-transform:uppercase; color:var(--muted);">Open Eyes</span>'
-        + '</div>'
-        + '<div class="vis-object-label" style="margin-bottom:16px;">Memorize this object</div>'
-        + '<div class="vis-object-wrap" id="visPreviewWrap" style="margin:0 auto 20px; width:240px; height:240px;"></div>'
-        + '</div>';
-    },
+    setupHTML: function() { return buildVisualizationSetupHTML(); },
     begin: function() {
       startVisSession();
     }
@@ -1828,27 +1879,6 @@ function openExerciseSetup(ex) {
   // Wire dynamic content AFTER screen is shown so elements are in visible DOM
   if (ex === 'visual') {
     setupVisPreview();
-    var shapesBtn2 = document.getElementById('visCatShapes');
-    var objectsBtn2 = document.getElementById('visCatObjects');
-    if (shapesBtn2) shapesBtn2.addEventListener('click', function() { switchVisCategory('shapes'); });
-    if (objectsBtn2) objectsBtn2.addEventListener('click', function() { switchVisCategory('objects'); });
-    var realLifeBtn2 = document.getElementById('visCatRealLife');
-    if (realLifeBtn2) realLifeBtn2.addEventListener('click', function() { switchVisCategory('reallife'); });
-    var customBtn2 = document.getElementById('visCatCustom');
-    if (customBtn2) customBtn2.addEventListener('click', function() { switchVisCategory('custom'); });
-    // Open/closed eyes toggle
-    var modeToggle = document.getElementById('visModeToggle');
-    var modeDot = document.getElementById('visModeDot');
-    var modeSlider = document.getElementById('visModeSlider');
-    // Reflect current state
-    if (modeToggle) modeToggle.checked = visOpenEyesMode;
-    if (modeDot) modeDot.style.transform = visOpenEyesMode ? 'translateX(16px)' : '';
-    if (modeDot) modeDot.style.opacity = visOpenEyesMode ? '1' : '.5';
-    if (modeToggle) modeToggle.addEventListener('change', function() {
-      visOpenEyesMode = modeToggle.checked;
-      if (modeDot) modeDot.style.transform = visOpenEyesMode ? 'translateX(16px)' : '';
-      if (modeDot) modeDot.style.opacity = visOpenEyesMode ? '1' : '.5';
-    });
   }
   if (ex === 'auditory') { buildSoundGrid(); }
   if (ex === 'clock') { activeClockEditPart = null; applyHeroClockTheme(); }
@@ -2127,18 +2157,15 @@ document.getElementById('exSetupBeginBtn').addEventListener('click', function() 
 });
 
 function switchVisCategory(cat) {
-  currentVisCategory = cat;
-  var shapesBtn = document.getElementById('visCatShapes');
-  var objectsBtn = document.getElementById('visCatObjects');
-  var realLifeBtn = document.getElementById('visCatRealLife');
-  var customBtn = document.getElementById('visCatCustom');
-  if (shapesBtn) shapesBtn.classList.toggle('active', cat === 'shapes');
-  if (objectsBtn) objectsBtn.classList.toggle('active', cat === 'objects');
-  if (realLifeBtn) realLifeBtn.classList.toggle('active', cat === 'reallife');
-  if (customBtn) customBtn.classList.toggle('active', cat === 'custom');
+  currentVisCategory = normalizeVisCategory(cat);
+  var row = document.getElementById('visImageTypeRow');
+  if (row) {
+    Array.prototype.forEach.call(row.children, function(button) {
+      button.classList.toggle('on', button.getAttribute('data-vis-category') === currentVisCategory);
+    });
+  }
   setupVisPreview();
 }
-// visCat listeners wired dynamically in openExerciseSetup
 
 // Exercise routing now handled by exSetupBeginBtn
 

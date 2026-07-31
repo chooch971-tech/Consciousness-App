@@ -108,7 +108,19 @@ async function testExerciseEntry(browser, baseUrl) {
     const bannerTitle = (await page.locator('#exBannerTitle').textContent()).trim();
     const bannerSymbol = (await page.locator('#exBannerSym').innerHTML()).trim();
     assert.equal(bannerTitle, name);
-    if (exercise === 'visual') assert.notEqual(bannerSymbol, '', 'Visualization setup should show its eye artwork');
+    if (exercise === 'visual') {
+      assert.notEqual(bannerSymbol, '', 'Visualization setup should show its eye artwork');
+      assert.equal(await page.locator('#visEyesRow .sense-eyes-option').count(), 2,
+        'Visualization should expose Closed and Open Eyes as separate choices');
+      assert.match((await page.locator('#visEyesRow .sense-eyes-option.on').textContent()).trim(), /Closed Eyes/);
+      assert.ok(await page.locator('#visImageTypeRow .sn-mode').count() >= 3,
+        'Visualization should expose its image types as cards');
+      await page.locator('#visEyesRow .sense-eyes-option--advanced').click();
+      assert.match((await page.locator('#visEyesRow .sense-eyes-option.on').textContent()).trim(), /Open Eyes/);
+      await page.locator('#visImageTypeRow [data-vis-category="objects"]').click();
+      assert.equal(await page.locator('#visImageTypeRow .sn-mode.on').getAttribute('data-vis-category'), 'objects');
+      assert.notEqual((await page.locator('#visPreviewName').textContent()).trim(), '');
+    }
     const surface = await page.locator('#exSetupScreen').evaluate(element => ({
       width: element.getBoundingClientRect().width,
       height: element.getBoundingClientRect().height,

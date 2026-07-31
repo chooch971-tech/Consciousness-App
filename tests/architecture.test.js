@@ -829,6 +829,15 @@ test('Visualization setup shows its banner artwork and uses the shared Omnia tut
   assert.doesNotMatch(presence, /ex-banner--visual-minimal/);
 });
 
+test('Visualization setup mirrors Senses with explicit eye modes and image types', () => {
+  assert.match(visualizationClient, /function visEyesOptionsHTML\(\)[\s\S]*?Closed Eyes[\s\S]*?Foundation · default[\s\S]*?Open Eyes[\s\S]*?Advanced/);
+  assert.match(visualizationClient, /function setVisEyesMode\(mode\)[\s\S]*?visOpenEyesMode = mode === 'open'/);
+  assert.match(visualizationClient, /var VIS_IMAGE_TYPE_DEFS = \[[\s\S]*?id: 'shapes'[\s\S]*?id: 'objects'[\s\S]*?id: 'reallife'[\s\S]*?id: 'custom'/);
+  assert.match(visualizationClient, /function buildVisualizationSetupHTML\(\)[\s\S]*?class="sn-hero-card vis-hero-card"[\s\S]*?id="visImageTypeRow"[\s\S]*?id="visEyesRow"[\s\S]*?id="visPreviewWrap"/);
+  assert.doesNotMatch(visualizationClient, /visModeToggle|visModeSlider|visModeDot|visCatShapes|visCatObjects|visCatRealLife/);
+  assert.match(presence, /\.vis-setup \{ --sn-rgb:110,159,212; --sn-light:#8ab8e0;/);
+});
+
 test('Friends manager remembers its opener and closes immediately after an interactive swipe', () => {
   assert.match(socialClient, /function friendsPanelPreviousScreen\(\) \{\s*return _friendsPanelReturnScreen \|\| 'profileScreen';/);
   assert.match(socialClient, /_friendsPanelReturnScreen = returnScreenId \|\| \(activeScreen && activeScreen\.id\) \|\| 'profileScreen'/);
