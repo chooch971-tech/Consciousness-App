@@ -110,12 +110,34 @@ function updateGuideQuestBadge() {
 }
 
 function claimPathQuestReward(type) {
+  // Read the stored window BEFORE pathQuestState() rolls it over. A Claim
+  // button rendered while a quest was ready stays on screen as long as the
+  // page does, and the Guide only re-renders on a visibility change while the
+  // Path tab is open — so leaving the app sitting there across midnight left a
+  // live-looking button attached to a quest that no longer exists. Tapping it
+  // reset the counter, awarded nothing, played no animation and said nothing.
+  var storedWindow = (guideState.quests && guideState.quests[type]) || null;
+  var windowClosed = !!storedWindow && (type === 'weekend'
+    ? storedWindow.weekId !== pathQuestWeekendKey()
+    : storedWindow.date !== pathQuestTodayKey());
+
   var q = pathQuestState();
   var data = q[type];
-  if (!data || data.claimed) return;
+  if (!data) return;
+  if (data.claimed) { renderPathQuests(); return; }
   var target = type === 'daily' ? 2 : type === 'awareness' ? 15 : pathQuestWeekendTarget();
   var progress = type === 'awareness' ? (data.minutes || 0) : (data.count || 0);
-  if (progress < target) return;
+  if (progress < target) {
+    // Never let a tap do nothing at all: say why, and repaint so the card stops
+    // offering something it cannot give.
+    if (windowClosed && typeof showToast === 'function') {
+      showToast(type === 'weekend'
+        ? 'That weekend quest closed when the week rolled over.'
+        : 'That quest closed at midnight — today’s is ready to earn again.', 3800);
+    }
+    renderPathQuests();
+    return;
+  }
   var amount = pathQuestReward(type);
   if (typeof omniaState !== 'undefined') {
     omniaCreditAkasha(amount, 'path-quest', { questType: type });
@@ -323,7 +345,21 @@ function playChestOpenAnimation(amount, onDone, bonus) {
     coins += '<div class="chest-coin" style="width:' + sz + 'px;height:' + sz + 'px;--tx:' + tx + 'px;--ty:' + ty + 'px;--cd:' + cd + 's;--cdelay:' + cdelay + 's;"></div>';
   }
 
-  var omnia = OMNIA_CRYSTAL_SVG_RPT.replace('class="rpt-omnia-crystal"', 'class="chest-omnia-crystal"');
+  // OMNIA_CRYSTAL_SVG_RPT is not defined anywhere in the app — only referenced.
+  // reports-client.js guards its use with a typeof check and quietly falls back
+  // to a glyph; this one did not, so the ReferenceError threw here, above the
+  // overlay that gets created below, and killed the whole chest animation
+  // before a single element of it was built. Draw Omnia with the helper that
+  // actually exists, and keep the reference only as an override in case that
+  // constant is ever introduced.
+  var omnia;
+  if (typeof OMNIA_CRYSTAL_SVG_RPT !== 'undefined' && OMNIA_CRYSTAL_SVG_RPT) {
+    omnia = OMNIA_CRYSTAL_SVG_RPT.replace('class="rpt-omnia-crystal"', 'class="chest-omnia-crystal"');
+  } else if (typeof omniaHeadOnlySVG === 'function') {
+    omnia = '<div class="chest-omnia-crystal">' + omniaHeadOnlySVG(52, 48) + '</div>';
+  } else {
+    omnia = '';
+  }
 
   var overlay = document.createElement('div');
   overlay.className = 'chest-overlay';
@@ -674,9 +710,29 @@ function openGiftPath() {
 function closeGiftPath() { var el = document.getElementById('giftPathOverlay'); el.classList.remove('gp-vis'); setTimeout(function(){ el.classList.remove('gp-show'); }, 400); }
 
 
+// The quest card is only repainted on a visibility change, and only while the
+// Path tab is open, so an app left sitting on this screen carries a Claim
+// button straight through midnight into a quest window that no longer exists.
+// A cheap minute tick repaints it the moment the day key turns over, so the
+// stale button is gone before it can be tapped.
+var _pqDayKeyWatch = null;
+var _pqLastDayKey = null;
+function pqWatchDayRollover() {
+  if (_pqDayKeyWatch) return;
+  _pqLastDayKey = pathQuestTodayKey();
+  _pqDayKeyWatch = setInterval(function() {
+    if (document.visibilityState !== 'visible') return; // nothing to repaint
+    var key = pathQuestTodayKey();
+    if (key === _pqLastDayKey) return;
+    _pqLastDayKey = key;
+    if (document.getElementById('pathQuestRoot')) renderPathQuests();
+  }, 60000);
+}
+
 function renderPathQuests() {
   var root = document.getElementById('pathQuestRoot');
   if (!root) return;
+  pqWatchDayRollover();
   var q = pathQuestState();
 
   var regiment = (typeof guideCurrentRegimentInfo === 'function') ? guideCurrentRegimentInfo() : { mode:'beginner', focus:'Step I · Fundamentals' };
