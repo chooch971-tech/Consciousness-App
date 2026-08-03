@@ -279,6 +279,9 @@ function _achRevealSound(first) {
   if (typeof appSoundEnabled === 'function' && !appSoundEnabled()) return;
   try {
     var ctx = new (window.AudioContext || window.webkitAudioContext)();
+    // The reveal fires after a session ends rather than from a tap, so the
+    // context can arrive suspended under an autoplay policy and play silently.
+    if (ctx.state === 'suspended' && ctx.resume) ctx.resume();
     var t = ctx.currentTime;
     if (first) {
       var sub = ctx.createOscillator(), sg = ctx.createGain();

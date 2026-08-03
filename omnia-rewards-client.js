@@ -650,6 +650,59 @@ function maybeShowBodyLevelAward() {
   showBodyLevelAward(omniaState.lastBodyAward);
 }
 
+// A body level had no sound at all, while the achievement reveal has had its
+// bright C-major arpeggio all along. This is deliberately the opposite shape:
+// low, warm and slow-blooming rather than bright and percussive, so the two
+// ceremonies are told apart with the phone in a pocket. The root is pitched per
+// body — physical lowest, mental highest — which keeps it one recognisable
+// sound while quietly naming which body grew.
+var BLA_SOUND_ROOT = { physical: 196.00, astral: 261.63, mental: 329.63 };
+function playBodyLevelSound(body) {
+  if (typeof appSoundEnabled === 'function' && !appSoundEnabled()) return;
+  try {
+    var ctx = new (window.AudioContext || window.webkitAudioContext)();
+    // Ceremonies fire outside a user gesture, so the context can arrive
+    // suspended under an autoplay policy and play nothing at all.
+    if (ctx.state === 'suspended' && ctx.resume) ctx.resume();
+    var t = ctx.currentTime;
+    var root = BLA_SOUND_ROOT[body] || BLA_SOUND_ROOT.astral;
+
+    // Warmth: everything sits behind a gentle lowpass so it reads as a swell
+    // rather than the achievement's glassy bells.
+    var filter = ctx.createBiquadFilter();
+    filter.type = 'lowpass';
+    filter.frequency.setValueAtTime(900, t);
+    filter.frequency.linearRampToValueAtTime(2200, t + 0.5);
+    filter.Q.value = 0.6;
+    filter.connect(ctx.destination);
+
+    // Root and its fifth, swelling in together — an interval opening, not a
+    // run of separate notes.
+    [[root, 0.16, 0], [root * 1.5, 0.11, 0.09], [root * 2, 0.05, 0.18]].forEach(function(spec) {
+      var freq = spec[0], peak = spec[1], delay = spec[2];
+      var osc = ctx.createOscillator(), gain = ctx.createGain();
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(freq, t + delay);
+      gain.gain.setValueAtTime(0.0001, t + delay);
+      gain.gain.linearRampToValueAtTime(peak, t + delay + 0.14);   // slow attack
+      gain.gain.exponentialRampToValueAtTime(0.0001, t + delay + 1.9);
+      osc.connect(gain); gain.connect(filter);
+      osc.start(t + delay); osc.stop(t + delay + 2.0);
+    });
+
+    // A soft body under it so the swell has weight on a phone speaker.
+    var sub = ctx.createOscillator(), sg = ctx.createGain();
+    sub.type = 'triangle';
+    sub.frequency.setValueAtTime(root / 2, t);
+    sub.frequency.linearRampToValueAtTime(root / 2 * 1.02, t + 0.9);
+    sg.gain.setValueAtTime(0.0001, t);
+    sg.gain.linearRampToValueAtTime(0.13, t + 0.1);
+    sg.gain.exponentialRampToValueAtTime(0.0001, t + 1.2);
+    sub.connect(sg); sg.connect(filter);
+    sub.start(t); sub.stop(t + 1.3);
+  } catch (e) {}
+}
+
 function showBodyLevelAward(award, completionDone) {
   if (document.getElementById('bodyLevelAwardOverlay')) {
     if (completionDone) completionDone();
@@ -688,4 +741,6 @@ function showBodyLevelAward(award, completionDone) {
     overlay.classList.add('bla-show');
     requestAnimationFrame(function() { overlay.classList.add('bla-vis'); });
   });
+  playBodyLevelSound(award.body);
+  if (navigator.vibrate) navigator.vibrate([30, 50, 90]);
 }
