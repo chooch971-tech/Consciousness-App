@@ -14,7 +14,25 @@
     return ledger.credit(root.omniaState, amount, source, meta);
   };
   root.omniaSpendAkasha = function(amount, source, meta) {
-    return ledger.spend(root.omniaState, amount, source, meta);
+    var spent = ledger.spend(root.omniaState, amount, source, meta);
+    // Spending has its own badge family ("Spend N Akasha", monthly), but
+    // nothing re-checked achievements when the wallet moved — achEvaluate only
+    // ran on a completed session, an awareness session, a profile visit or app
+    // launch. So crossing a spend tier recorded nothing at all until one of
+    // those happened, and the badge appeared to arrive on the back of an
+    // unrelated exercise.
+    //
+    // Deferred by a tick so the caller finishes its own transaction first: a
+    // spend is followed by the levelling-up and saveOmniaState that go with it,
+    // and settling achievements mid-transaction would evaluate half-applied
+    // state and could paint a reveal over a screen still being rebuilt.
+    //
+    // Only the spend side is hooked. achEvaluate credits the badge reward
+    // through omniaCreditAkasha, so hooking credit would recurse.
+    if (spent && typeof root.achEvaluate === 'function') {
+      setTimeout(function() { try { root.achEvaluate(); } catch (e) {} }, 0);
+    }
+    return spent;
   };
   root.omniaTransferAkasha = function(amount, source, meta) {
     return ledger.transfer(root.omniaState, amount, source, meta);
