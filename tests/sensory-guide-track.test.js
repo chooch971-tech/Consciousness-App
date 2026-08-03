@@ -36,10 +36,8 @@ function clean(date, fields) {
   return Object.assign({ date, seconds:300, cleanSeconds:300, halts:0 }, fields);
 }
 
-test('sensory foundations follow the Bardon order and require sequential clean five-minute holds', () => {
+test('sensory foundations keep Bardon order as the recommendation', () => {
   const context = loadTrack([
-    // Practicing Open Eyes early cannot be banked before Closed Eyes mastery.
-    clean('2026-07-20T10:00:00.000Z', { type:'visualization', eyesMode:'open' }),
     clean('2026-07-21T10:00:00.000Z', { type:'visualization', eyesMode:'closed' })
   ]);
   const first = context.guideSensoryTrackProgress();
@@ -54,6 +52,7 @@ test('sensory foundations follow the Bardon order and require sequential clean f
   assert.equal(first.goalSec, 300);
   assert.equal(first.stages[0].mastered, true);
   assert.equal(first.stages[1].mastered, false);
+  // The recommendation still walks the sequence from the first unmastered stage.
   assert.equal(first.current.id, 'visual_open');
 
   context.concState.history.push(
@@ -74,24 +73,46 @@ test('sensory foundations follow the Bardon order and require sequential clean f
   assert.equal(complete.completedCount, 10);
 });
 
-test('an open-eyes hold cannot satisfy the closed-eyes foundation that precedes it', () => {
-  // Practicing the harder successor first must not skip the foundation, the
-  // same rule Visualization has always enforced across its two stages.
+test('a stage is mastered on its own evidence, whatever order it came in', () => {
+  // These stages used to be chain-gated: a hold only counted if it came after
+  // the preceding stage was mastered, so one gap voided everything behind it.
+  // The faculties are not built on each other -- they rest on the same capacity
+  // to hold attention clean -- so a hold earns its own stage whenever it
+  // happened. The order remains what Omnia recommends, not a prerequisite.
   const context = loadTrack([
     clean('2026-07-20T10:00:00.000Z', { type:'visualization', eyesMode:'closed' }),
     clean('2026-07-21T10:00:00.000Z', { type:'visualization', eyesMode:'open' }),
     clean('2026-07-22T10:00:00.000Z', { type:'auditory', eyesMode:'open' })
   ]);
   const progress = context.guideSensoryTrackProgress();
-  assert.equal(progress.current.id, 'auditory_closed');
-  assert.equal(progress.stages[2].mastered, false);
-  assert.equal(progress.stages[3].mastered, false);
+  assert.equal(progress.stages[3].mastered, true, 'the open-eyes hold earns its own stage');
+  assert.equal(progress.stages[2].mastered, false, 'the closed-eyes stage was never held');
+  assert.equal(progress.current.id, 'auditory_closed', 'and is still what Omnia recommends next');
+  assert.equal(progress.completedCount, 3);
+});
 
-  // Supplying the closed-eyes hold then unlocks both in order.
-  context.concState.history.push(clean('2026-07-23T10:00:00.000Z', { type:'auditory' }));
-  const after = context.guideSensoryTrackProgress();
-  assert.equal(after.stages[2].mastered, true);
-  assert.equal(after.current.id, 'auditory_open');
+test('a far-ahead faculty counts without the foundations before it', () => {
+  // The reported case: a practitioner with a clean eleven-minute Feeling hold
+  // and no Visualization at all was told they had mastered nothing.
+  const context = loadTrack([
+    { date:'2026-07-22T10:00:00.000Z', exercise:'sense', mode:'feeling',
+      eyesMode:'closed', seconds:660, cleanSeconds:660, halts:0 }
+  ]);
+  const progress = context.guideSensoryTrackProgress();
+  assert.equal(progress.completedCount, 1, 'the hold counts');
+  assert.equal(progress.stages.find(s => s.id === 'feeling').mastered, true);
+  assert.equal(progress.current.id, 'visual_closed', 'Visualization is still recommended first');
+});
+
+test('removing a foundation can no longer stall the track', () => {
+  // Nothing is gated on a prior stage now, so a foundation the practitioner
+  // removed from their path cannot wedge everything behind it.
+  const context = loadTrack([
+    { date:'2026-07-22T10:00:00.000Z', exercise:'sense', mode:'smell',
+      eyesMode:'closed', seconds:400, cleanSeconds:400, halts:0 }
+  ]);
+  const progress = context.guideSensoryTrackProgress();
+  assert.equal(progress.stages.find(s => s.id === 'smell').mastered, true);
 });
 
 test('broken or accumulated reps cannot satisfy a sensory foundation', () => {

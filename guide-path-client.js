@@ -144,23 +144,26 @@ function guideSensoryTrackProgress() {
       qualifyingDates:qualifyingDates
     });
   });
-  // A future faculty practiced manually cannot be banked in advance. Its
-  // qualifying hold must occur after the preceding stage was mastered.
-  var priorMasteryMs = 0, chainOpen = true;
+  // A stage is mastered on its own evidence: one clean five-minute hold in that
+  // faculty, whenever it happened.
+  //
+  // These stages used to be chain-gated — a qualifying hold only counted if it
+  // came after the preceding stage was mastered, so the first gap voided
+  // everything behind it. That treats the order as a prerequisite chain, but
+  // the faculties are not built on each other; they all rest on the same
+  // capacity to hold attention clean. A practitioner sitting eleven clean
+  // minutes in Feeling has demonstrated exactly what the five-minute gate asks
+  // for, and voiding it because they had not first done Visualization said
+  // their work did not count when plainly it did — and left the whole track
+  // dead if they ever removed a foundation from their path.
+  //
+  // The order survives as a recommendation, not a gate: `current` below is
+  // still the first unmastered stage in Bardon's sequence, so Omnia keeps
+  // pointing at Visualization first for anyone who has not done it.
   stages.forEach(function(stage) {
-    var valid = stage.qualifyingDates.slice().sort().find(function(date) {
-      var ms = new Date(date).getTime();
-      return chainOpen && ms >= priorMasteryMs;
-    });
-    if (valid) {
-      stage.mastered = true;
-      stage.masteredAt = valid;
-      priorMasteryMs = new Date(valid).getTime();
-    } else {
-      stage.mastered = false;
-      stage.masteredAt = '';
-      chainOpen = false;
-    }
+    var earned = stage.qualifyingDates.slice().sort()[0];
+    stage.mastered = !!earned;
+    stage.masteredAt = earned || '';
     delete stage.qualifyingDates;
   });
   var currentIndex = stages.findIndex(function(stage) { return !stage.mastered; });
@@ -2053,16 +2056,6 @@ function guideProgressOverview() {
   var sensoryActiveStage = sensoryPinnedStage
     ? (sensoryPinnedStage.mastered ? null : sensoryPinnedStage)
     : sensory.current;
-  // A foundation the practitioner has explicitly REMOVED can never reach its
-  // clean hold, so anything waiting on it waits forever until they add it back.
-  // This has to read the removal flag rather than today's card list: the
-  // curriculum only ever surfaces its current stage, so Auditory is legitimately
-  // absent from the path while Visualization is still being trained, and
-  // treating that as removed would tell everyone their curriculum was broken.
-  function stageOnPath(stage) {
-    var removed = (typeof guideState !== 'undefined' && guideState && guideState.removed) || {};
-    return !removed[stage.exercise];
-  }
   function sensoryRow(stage) {
     var active = !!(sensoryActiveStage && sensoryActiveStage.id === stage.id);
     var prior = stage.index > 0 ? sensory.stages[stage.index - 1] : null;
@@ -2071,25 +2064,23 @@ function guideProgressOverview() {
       status = 'Mastered';
       detail = 'Clean hold ' + guideFmtTime(stage.bestCleanSec) + ' / 5m';
     } else if (!active) {
-      if (prior && prior.mastered) {
-        status = 'Next';
-        detail = 'Omnia will recommend this on your next practice day.';
+      // Nothing is blocked any more — the order is a recommendation, so a stage
+      // that is not today's is simply one not yet held clean. "Waiting" was
+      // gate language from when a gap voided everything behind it, and it left
+      // rows waiting on foundations that had been removed from the path and so
+      // could never arrive.
+      var earlier = sensory.stages.some(function(other) {
+        return other.index < stage.index && !other.mastered;
+      });
+      status = earlier ? 'Later' : 'Next';
+      if (stage.attempts > 0) {
+        detail = 'Best clean ' + guideFmtTime(stage.bestCleanSec) + ' / 5m'
+          + (earlier ? ' · Omnia recommends the earlier foundations first, but this counts whenever you hold it.'
+                     : ' · one clean 5:00 hold masters it.');
       } else {
-        status = 'Waiting';
-        var priorName = prior ? prior.name + ' · ' + prior.label : 'the prior foundation';
-        // "Waiting" with no reachable cause is the confusing case. Two of them:
-        // the foundation it waits on may have been removed from the path, so
-        // there is no card to practise it on and nothing the practitioner can
-        // do from here; or the hold for THIS stage may already be banked and
-        // simply not counted yet, because foundations are credited in order.
-        // Saying only "after X reaches a clean 5:00 hold" answers neither.
-        if (prior && !stageOnPath(prior)) {
-          detail = priorName + ' is not on your path, so this cannot advance — add it back with “+” to carry on.';
-        } else if (stage.bestCleanSec >= GUIDE_SENSORY_CLEAN_GOAL_SEC) {
-          detail = 'Your clean hold here already clears 5:00 — it counts once ' + priorName + ' is mastered.';
-        } else {
-          detail = 'Omnia recommends this after ' + priorName + ' reaches a clean 5:00 hold.';
-        }
+        detail = earlier
+          ? 'Omnia recommends the earlier foundations first — practise this any time; a clean 5:00 hold masters it.'
+          : 'Omnia will recommend this on your next practice day.';
       }
     } else {
       var practiceMin = guideSensoryPracticeMinutes(stage);
