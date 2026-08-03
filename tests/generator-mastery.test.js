@@ -32,6 +32,10 @@ function createContext() {
       context.omniaState.akasha -= amount;
       context.omniaState.totalAkashaSpent += amount;
       return true;
+    },
+    omniaTransferAkasha(amount) {
+      context.omniaState.akasha += amount;
+      return amount;
     }
   };
   vm.createContext(context);
@@ -119,22 +123,37 @@ test('tier multipliers are keyed to the generator, not to a bare level', () => {
   assert.equal(game.omniaAttunementDiscountMult(61, 'attunement'), 0.35);
 });
 
-test('the rewards a tier is bought with are kept, not reset', () => {
+test('the discount and build speed a tier is bought with are kept', () => {
   const game = createContext();
-  // Capacity, discount, and build speed all read the lifetime level, so they
-  // survive a tier — that persistence is what the 80 levels of work buy.
-  game.omniaState.genTiers.current = 1;
-  game.omniaState.upgrades.vessel = 21;
-  const tieredCap = game.omniaPumpReservoirCap(0);
-  game.omniaState.genTiers.current = 0;
-  game.omniaState.upgrades.vessel = 20;
-  const baseCap = game.omniaPumpReservoirCap(0);
-  assert.ok(tieredCap > baseCap * 1.2);
-
+  // Attunement's discount and Quickening's build speed still read the lifetime
+  // level, so they survive a tier — that persistence is what the levels buy.
+  // Reservoir capacity deliberately does NOT; see the test below.
   game.omniaState.genTiers.current = 3;
   game.omniaState.upgrades.quickening = 61;
   game.omniaState.upgradeBuilds.current = Date.now() + 60_000;
   assert.ok(Math.abs(game.omniaPumpProductionWhileBuilding(0) - 0.3) < 1e-9);
+});
+
+test('reservoir capacity falls back with the band on a tier up', () => {
+  // It used to read the lifetime level, so output dropped to the bottom of the
+  // new band while the vessel kept its full size — the reservoir went from
+  // filling in 44 hours to 11.5 days and the pump stopped needing collecting.
+  const game = createContext();
+  game.omniaState.genTiers.current = 0;
+  game.omniaState.upgrades.vessel = 20;              // band 20, top of tier 0
+  const atBandTop = game.omniaPumpReservoirCap(0);
+  game.omniaState.genTiers.current = 1;
+  game.omniaState.upgrades.vessel = 21;              // band 1, bottom of tier 1
+  const afterTier = game.omniaPumpReservoirCap(0);
+  assert.ok(afterTier < atBandTop,
+    'capacity must fall back with the band, got ' + afterTier + ' vs ' + atBandTop);
+
+  // The tier still counts for something: band 1 of a higher tier holds more
+  // than band 1 of a lower one, by the same factor output gains.
+  game.omniaState.genTiers.current = 0;
+  game.omniaState.upgrades.vessel = 1;
+  const tier0Band1 = game.omniaPumpReservoirCap(0);
+  assert.ok(afterTier > tier0Band1, 'a higher tier must still hold more at band 1');
 });
 
 test('Dark Matter pumps expose four bounded tracks with dual-currency resonance', () => {
@@ -320,4 +339,37 @@ test('construction time follows the band, so a mastery does not pin every upgrad
   // The band position is what matters, not how much lifetime level precedes it.
   assert.equal(at(1, 5), at(0, 5));
   assert.equal(at(3, 19), late);
+});
+
+test('tiering up banks the reservoir before capacity shrinks', () => {
+  // omniaAccrue stores with Math.min(cap, ...), and capacity now falls back
+  // with the band, so anything standing above the new ceiling would be wiped by
+  // the next tick. It was earned, so it goes to the wallet.
+  const game = createContext();
+  ['current', 'vessel', 'attunement', 'quickening'].forEach((id) => {
+    game.omniaState.upgrades[id] = 20;               // every branch at band top
+  });
+  game.omniaState.genTiers.current = 0;
+  const full = game.omniaPumpReservoirCap(0);
+  game.omniaState.reservoirs.current = full;
+  game.omniaState.akasha = 1000;
+
+  assert.equal(game.omniaGenTierReady('current'), true);
+  assert.equal(game.tierUpOmniaGenerator('current'), true);
+
+  assert.equal(game.omniaState.reservoirs.current, 0, 'the reservoir is emptied');
+  assert.equal(game.omniaState.akasha, 1000 + full, 'and every akasha of it lands in the wallet');
+  assert.ok(game.omniaPumpReservoirCap(0) < full, 'capacity did fall back');
+});
+
+test('tiering up an empty pump moves nothing', () => {
+  const game = createContext();
+  ['current', 'vessel', 'attunement', 'quickening'].forEach((id) => {
+    game.omniaState.upgrades[id] = 20;
+  });
+  game.omniaState.genTiers.current = 0;
+  game.omniaState.reservoirs.current = 0;
+  game.omniaState.akasha = 500;
+  assert.equal(game.tierUpOmniaGenerator('current'), true);
+  assert.equal(game.omniaState.akasha, 500, 'no phantom credit');
 });

@@ -177,12 +177,27 @@ function omniaRatePerHour() {
   return Math.floor(Object.keys(rates).reduce(function(sum, gid) { return sum + (rates[gid] || 0); }, 0));
 }
 
+// Reservoir capacity is autonomous: only this pump's own Deep Vessel matters.
+// The wallet itself remains intentionally uncapped.
+//
+// Read from the BAND level, and scaled by the same tier multiplier as output.
+// It used to read the lifetime level with a weaker multiplier of its own, so a
+// tier-up dropped production back to the bottom of the new band while the
+// vessel kept its full lifetime size. The reservoir then took eleven days to
+// fill instead of forty-four hours — thirty-four days by Tier II — and the
+// pump stopped ever needing to be collected. Because the tier now scales
+// capacity and output by the same factor, fill time depends only on how far
+// through a band the pump is, so the rhythm learned at Tier 0 holds at every
+// tier: roughly eight hours at band level 1, forty-four at band level 20.
+function omniaVesselReservoirCap(vesselId, rawLevel) {
+  var raw = Math.max(1, Number(rawLevel) || 1);
+  var band = omniaUpgradeDisplayLevel(vesselId, raw);
+  var gen = omniaGeneratorOfTrack(vesselId);
+  var tierMult = omniaMasteryScale(gen ? omniaGenTier(gen) : 0);
+  return Math.floor((180 + Math.pow(band - 1, 2) * 30) * tierMult);
+}
 function omniaReservoirCap() {
-  // Reservoir capacity is autonomous too: only this pump's Deep Vessel and its
-  // mastery matter. The wallet itself remains intentionally uncapped.
-  var vessel = omniaState.upgrades.vessel || 1;
-  var masteryMult = 1 + 0.25 * omniaUpgradeMasteryRank('vessel', vessel);
-  return Math.floor((180 + Math.pow(vessel - 1, 2) * 30) * masteryMult);
+  return omniaVesselReservoirCap('vessel', omniaState.upgrades.vessel || 1);
 }
 
 function omniaUpgradeStepMax(upgId) {

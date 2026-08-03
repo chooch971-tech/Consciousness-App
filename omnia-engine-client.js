@@ -555,9 +555,10 @@ function _pumpOfUpgrade(id) {
   return null;
 }
 function omniaPumpReservoirCap(idx) {
-  var vLvl = (omniaState.upgrades && omniaState.upgrades[OMNIA_GEN_META[idx].vessel]) || 1;
-  var masteryMult = 1 + 0.25 * omniaUpgradeMasteryRank(OMNIA_GEN_META[idx].vessel, vLvl);
-  return Math.floor((180 + Math.pow(vLvl - 1, 2) * 30) * masteryMult);
+  // One formula, in omnia-economy-client.js. This used to carry its own copy,
+  // which is how it and omniaReservoirCap could drift apart.
+  var vesselId = OMNIA_GEN_META[idx].vessel;
+  return omniaVesselReservoirCap(vesselId, (omniaState.upgrades && omniaState.upgrades[vesselId]) || 1);
 }
 // Pump rates are already independent and additive; retain this accessor name
 // for the accrual and rendering paths that consume the per-pump map.
@@ -660,6 +661,16 @@ function tierUpOmniaGenerator(genId) {
   // without it the old top level and the new first level would both render as
   // Level 1.
   if (!omniaState.genTiers || typeof omniaState.genTiers !== 'object') omniaState.genTiers = {};
+  // Bank whatever is standing in the reservoir FIRST. Capacity is read from the
+  // band, so tiering up drops it from the top of the old band to the bottom of
+  // the new one, and omniaAccrue stores with Math.min(cap, ...) — anything held
+  // above the new ceiling would be silently destroyed by the next tick. It was
+  // earned, so it goes to the wallet rather than evaporating.
+  var _pumpRes = Math.floor((omniaState.reservoirs || {})[pump.id] || 0);
+  if (_pumpRes > 0) {
+    omniaState.reservoirs[pump.id] = 0;
+    omniaTransferAkasha(_pumpRes, 'tier-up-reservoir', { generator: pump.id });
+  }
   OMNIA_GENERATOR_TRACKS[pump.id].forEach(function(id) {
     omniaState.upgrades[id] = (omniaState.upgrades[id] || 1) + 1;
   });
@@ -667,7 +678,8 @@ function tierUpOmniaGenerator(genId) {
   saveOmniaState();
   renderOmniaEngine();
   if (_genSheetId && _pumpOfUpgrade(_genSheetId) === pump) renderGenSheet(_genSheetId);
-  showToast('✦ ' + omniaGenTierName(pump.id) + ' — Tier ' + omniaMasteryRoman(omniaGenTier(pump.id)) + '', 3200, 'gold');
+  showToast('✦ ' + omniaGenTierName(pump.id) + ' — Tier ' + omniaMasteryRoman(omniaGenTier(pump.id))
+    + (_pumpRes > 0 ? ' · ' + _pumpRes.toLocaleString() + ' akasha collected' : ''), 3200, 'gold');
   playUpgradeHammer();
   return true;
 }

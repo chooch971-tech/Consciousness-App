@@ -179,10 +179,21 @@ test('reservoir capacity depends only on Deep Vessel and its mastery', () => {
   assert.equal(economy.omniaReservoirCap(), base);
   assert.equal(base, 180);
 
-  // Capacity keeps reading the lifetime level, and the tier adds its own 25%.
+  // Capacity reads the BAND level and shares output's tier multiplier, so fill
+  // time depends on how far through a band the pump is and never on the tier.
+  // Reading the lifetime level meant a tier-up left an enormous vessel behind a
+  // band-1 trickle, and the reservoir effectively stopped filling.
   economy.omniaState.genTiers = { current: 1 };
-  economy.omniaState.upgrades.vessel = 21;
-  assert.ok(economy.omniaReservoirCap() > base * 80);
+  economy.omniaState.upgrades.vessel = 21;           // band 1 of tier 1
+  const tier1Band1 = economy.omniaReservoirCap();
+  assert.equal(tier1Band1, Math.floor(180 * 2.5), 'band 1 capacity, scaled by the tier');
+
+  // Same band level one tier up: capacity and output both scale by the tier, so
+  // the ratio between them — the fill time — is unchanged.
+  economy.omniaState.genTiers = { current: 0 };
+  economy.omniaState.upgrades.vessel = 1;
+  assert.equal(economy.omniaReservoirCap(), 180);
+  assert.equal(tier1Band1 / 180, 2.5, 'the tier multiplies capacity exactly as it does output');
 });
 
 test('practice rewards scale with progression without Attunement reducing income', () => {
