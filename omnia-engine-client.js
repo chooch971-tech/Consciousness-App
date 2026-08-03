@@ -603,8 +603,18 @@ function omniaPumpProductionWhileBuilding(idx) {
 // (Attunement no longer touches build time — it's cost-only again.)
 function omniaBuildSpeedMult(upgId) {
   var pump = _pumpOfUpgrade(upgId);
-  var q = (pump ? omniaState.upgrades[pump.quick] : (omniaState.upgrades && omniaState.upgrades.quickening)) || 1;
-  return Math.max(0.4, 1 - (q - 1) * 0.06);
+  var quickId = pump ? pump.quick : 'quickening';
+  var q = (omniaState.upgrades && omniaState.upgrades[quickId]) || 1;
+  // Band-read and spread across the band, same as Attunement's discount and for
+  // the same reason: on the lifetime level at 6% a step this floored at level
+  // 11 and never moved again — not even for a tier — so every Quickening level
+  // past the eleventh was bought for nothing. The tier now deepens where the
+  // band ends, reaching the documented 60%-faster cap at the foot of Tier III.
+  var band = omniaUpgradeDisplayLevel(quickId, q);
+  var tier = omniaTierForUpgrade(quickId);
+  var depth = 0.45 + tier * 0.05;
+  var curve = 1 - ((band - 1) / (OMNIA_MASTERY_SPAN - 1)) * depth;
+  return Math.min(curve, omniaLegacyBranchMult(quickId));
 }
 
 function omniaUpgradeMasteryBenefit(id, nextRank) {

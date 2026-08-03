@@ -146,12 +146,32 @@ function omniaMasteryPips(rank) {
   return new Array(Math.max(0, Math.min(OMNIA_MASTERY_CAP, rank || 0)) + 1).join('\u2726');
 }
 function omniaCurrentMasteryMult(genId) { return omniaMasteryScale(omniaGenTier(genId)); }
+// Whatever a branch's effect was worth under the retired lifetime-level
+// formulas is kept, so nobody loses ground they had already paid for. The new
+// band curve takes over the moment it beats that.
+function omniaLegacyBranchMult(id) {
+  var kept = (omniaState && omniaState.legacyBranchMults) || {};
+  var v = Number(kept[id]);
+  return (isFinite(v) && v > 0) ? v : 1;
+}
+
 function omniaAttunementDiscountMult(level, attuneId) {
+  var id = attuneId || 'attunement';
   var lvl = Math.max(1, Number(level) || 1);
-  var mastery = omniaTierForUpgrade(attuneId || 'attunement');
-  // Preserve the original early curve and make each mastery break the old 50%
-  // floor by another five points, to a firm 65% maximum discount.
-  return Math.max(0.35, Math.max(0.5 - mastery * 0.05, 1 - (lvl - 1) * 0.05));
+  var tier = omniaTierForUpgrade(id);
+  // Read from the band, spread across all twenty of its levels, with the tier
+  // deepening where the band ends: 50% off at the foot of Tier 0, 65% at the
+  // foot of Tier III — exactly the caps the mastery blurb already promises.
+  //
+  // It used to read the LIFETIME level on a 5%-per-level slope that hit its
+  // floor at level 11. Every level after that changed nothing, at a price that
+  // kept climbing about 52x across a band, and the tier-up gate still required
+  // buying twenty of them. Measured on a real save, the 6,321 upgrade on the
+  // card moved the cost of an Akashic Current upgrade by exactly zero.
+  var band = omniaUpgradeDisplayLevel(id, lvl);
+  var depth = 0.50 + tier * 0.05;
+  var curve = 1 - ((band - 1) / (OMNIA_MASTERY_SPAN - 1)) * depth;
+  return Math.min(curve, omniaLegacyBranchMult(id));
 }
 
 // Each Akasha pump owns an additive hourly rate. Step, sessions, and body levels

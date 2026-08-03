@@ -114,13 +114,50 @@ test('tier multipliers are keyed to the generator, not to a bare level', () => {
   assert.equal(game.omniaCurrentMasteryMult('current'), 5.5);
   assert.equal(game.omniaCurrentMasteryMult('gen2'), 1, 'other generators are unaffected');
 
-  // The discount floor still deepens with the tier, on top of the lifetime curve.
+  // The tier deepens where a band ENDS, not where it starts: every band opens at
+  // full price and the twenty levels walk it down to that tier's best.
   game.omniaState.genTiers.current = 0;
-  assert.equal(game.omniaAttunementDiscountMult(20, 'attunement'), 0.5);
+  assert.equal(game.omniaAttunementDiscountMult(1, 'attunement'), 1, 'band 1 is full price');
+  assert.ok(Math.abs(game.omniaAttunementDiscountMult(20, 'attunement') - 0.5) < 1e-9,
+    '50% off at the foot of Tier 0');
   game.omniaState.genTiers.current = 1;
-  assert.equal(game.omniaAttunementDiscountMult(21, 'attunement'), 0.45);
+  assert.ok(Math.abs(game.omniaAttunementDiscountMult(40, 'attunement') - 0.45) < 1e-9,
+    '55% off at the foot of Tier I');
   game.omniaState.genTiers.current = 3;
-  assert.equal(game.omniaAttunementDiscountMult(61, 'attunement'), 0.35);
+  assert.ok(Math.abs(game.omniaAttunementDiscountMult(80, 'attunement') - 0.35) < 1e-9,
+    '65% off at the foot of Tier III — the caps the mastery blurb promises');
+});
+
+test('every level of a branch band changes what it is worth', () => {
+  // Both branches used to read the LIFETIME level on a slope that bottomed out
+  // at level 11, so levels 12-80 bought nothing while their price kept climbing
+  // and the tier-up gate still demanded twenty of them.
+  const game = createContext();
+  game.omniaState.genTiers.current = 0;
+  let prevAtt = Infinity, prevQui = Infinity;
+  for (let lvl = 1; lvl <= 20; lvl += 1) {
+    game.omniaState.upgrades.attunement = lvl;
+    game.omniaState.upgrades.quickening = lvl;
+    const att = game.omniaAttunementDiscountMult(lvl, 'attunement');
+    const qui = game.omniaBuildSpeedMult('current');
+    if (lvl > 1) {
+      assert.ok(att < prevAtt, 'attunement level ' + lvl + ' must improve on ' + (lvl - 1));
+      assert.ok(qui < prevQui, 'quickening level ' + lvl + ' must improve on ' + (lvl - 1));
+    }
+    prevAtt = att; prevQui = qui;
+  }
+});
+
+test('a legacy branch value is kept and never worsened', () => {
+  // Anyone who reached the old floor paid for those levels; the new curve must
+  // not take the benefit back. It simply takes over once it beats what they had.
+  const game = createContext();
+  game.omniaState.legacyBranchMults = { attunement: 0.45, quickening: 0.4 };
+  game.omniaState.genTiers.current = 1;
+  game.omniaState.upgrades.attunement = 21;   // band 1 — the new curve alone says 1.0
+  game.omniaState.upgrades.quickening = 21;
+  assert.equal(game.omniaAttunementDiscountMult(21, 'attunement'), 0.45, 'kept, not reset to full price');
+  assert.equal(game.omniaBuildSpeedMult('current'), 0.4);
 });
 
 test('the discount and build speed a tier is bought with are kept', () => {
