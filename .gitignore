@@ -15,3 +15,6 @@ npm-debug.log*
 .DS_Store
 .vscode/
 .idea/
+
+# Screenshots written by Playwright verification runs
+shots/
