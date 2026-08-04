@@ -769,51 +769,26 @@ function renderPathQuests() {
   var pathView = guideState._pathView === 'progress' ? 'progress' : 'exercises';
   var progressCards = typeof guideProgressOverview === 'function' ? guideProgressOverview() : [];
 
-  function progressRowState(row) {
-    // Sensory rows carry explicit active/mastered flags; the plain ladder
-    // rows omit them and are always live. Giving each state its own mark
-    // and weight is what stops the column reading as one flat block.
-    return row.mastered ? 'done'
-      : (row.active || row.active === undefined) ? 'live' : 'wait';
-  }
-
   function progressCardsHTML(cards) {
     return '<div class="pq-progress-view" style="display:flex;flex-direction:column;gap:8px;">'
       + cards.map(function(card) {
-        var all = card.rows || [];
-        // Every locked stage carries the same "recommended after X reaches a
-        // clean 5:00 hold" sentence, so printing all of them in full turns a
-        // long track back into the wall of text this view exists to avoid.
-        // Only the stage that unlocks next earns a full row; the rest become
-        // one compact queue line.
-        var waiting = all.filter(function(r) { return progressRowState(r) === 'wait'; });
-        var deferred = waiting.length > 1 ? waiting.slice(1) : [];
-        var shown = deferred.length ? all.filter(function(r) { return deferred.indexOf(r) === -1; }) : all;
-        var rows = shown.map(function(row) {
-          var state = progressRowState(row);
-          var mark = state === 'done' ? '✓' : state === 'live' ? '●' : '○';
-          var markColor = state === 'done' ? '#7eb8a4' : state === 'live' ? card.color : 'rgba(190,214,230,.35)';
-          var labelColor = state === 'wait' ? 'rgba(190,214,230,.55)' : 'var(--text)';
-          var statusColor = state === 'done' ? '#7eb8a4' : state === 'live' ? card.color : 'rgba(190,214,230,.5)';
-          return '<div class="pq-pv-row' + (state === 'wait' ? ' is-wait' : '') + '">'
-            + '<span class="pq-pv-mark" style="color:' + markColor + ';">' + mark + '</span>'
+        // Every card states one live ladder now: how long to sit, and what
+        // lengthens it. The done/waiting row states -- and the "Then" queue
+        // that compacted the waiting ones -- belonged to the sensory stage
+        // lists this view no longer draws. Where a track stands is said in
+        // the card footer instead.
+        var rows = (card.rows || []).map(function(row) {
+          return '<div class="pq-pv-row">'
+            + '<span class="pq-pv-mark" style="color:' + card.color + ';">●</span>'
             + '<div class="pq-pv-main">'
             + '<div class="pq-pv-head">'
-            + '<span class="pq-pv-label" style="color:' + labelColor + ';">' + row.label + '</span>'
-            + '<span class="pq-pv-status" style="color:' + statusColor + ';">' + row.status + '</span></div>'
+            + '<span class="pq-pv-label">' + row.label + '</span>'
+            + '<span class="pq-pv-status" style="color:' + card.color + ';">' + row.status + '</span></div>'
             + '<div class="pq-pv-detail">' + row.detail + '</div>'
             + '<div class="pq-pv-bar" role="progressbar" aria-label="' + card.name + ' · ' + row.label + '" aria-valuemin="0" aria-valuemax="100" aria-valuenow="' + row.pct + '">'
-            + '<i style="width:' + row.pct + '%;background:' + (state === 'done' ? '#7eb8a4' : card.color) + ';opacity:' + (state === 'wait' ? '.25' : '.85') + ';"></i></div>'
+            + '<i style="width:' + row.pct + '%;background:' + card.color + ';opacity:.85;"></i></div>'
             + '</div></div>';
         }).join('');
-        if (deferred.length) {
-          rows += '<div class="pq-pv-queue"><span class="pq-pv-queue-k">Then</span>'
-            + '<span class="pq-pv-queue-v">'
-            // Arrow, not a dot: the stage labels already contain "·" between
-            // faculty and eyes mode, so a dot separator reads as one long list.
-            + deferred.map(function(r) { return r.label; }).join(' <b>→</b> ')
-            + '</span></div>';
-        }
         // A coloured edge per card separates them down the page at a glance,
         // rather than leaving a run of identical grey panels.
         return '<section class="pq-progress-card" data-progress-exercise="' + card.id + '" style="border-left:3px solid ' + card.color + '99;">'

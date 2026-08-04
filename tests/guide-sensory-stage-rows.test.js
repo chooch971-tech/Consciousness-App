@@ -8,32 +8,45 @@ const path = require('node:path');
 const root = path.join(__dirname, '..');
 const guideSource = fs.readFileSync(path.join(root, 'guide-path-client.js'), 'utf8');
 
-function sensoryRowBlock() {
-  const start = guideSource.indexOf('function sensoryRow(stage)');
-  const end = guideSource.indexOf('var visualStages =');
-  assert.ok(start > -1 && end > start, 'sensoryRow must still be here');
+function sensoryCardBlock() {
+  const start = guideSource.indexOf('function sensoryLengthCard(stages');
+  const end = guideSource.indexOf('var onPath = guideProgressCardIds();');
+  assert.ok(start > -1 && end > start, 'the sensory Progress cards must still be here');
   return guideSource.slice(start, end);
 }
 
-test('no sensory row is described as blocked any more', () => {
+test('no sensory row is described as blocked or pending', () => {
   // "Waiting" was gate language from when a gap in the sequence voided every
   // stage behind it. With mastery earned per stage, nothing is blocked, and a
   // row can no longer wait on a foundation removed from the path — a state the
   // practitioner had no way to act on from that screen.
-  const block = sensoryRowBlock();
+  const block = sensoryCardBlock();
   assert.doesNotMatch(block, /'Waiting'/, 'no row may be labelled Waiting');
+  assert.doesNotMatch(block, /'Later'/, 'nor deferred to Later');
   assert.doesNotMatch(block, /is not on your path, so this cannot advance/);
   assert.doesNotMatch(block, /it counts once .* is mastered/);
 });
 
-test('an unreached stage says it can be practised whenever', () => {
-  const block = sensoryRowBlock();
-  assert.match(block, /'Later'/, 'stages behind the recommendation read as Later');
-  assert.match(block, /'Next'/, 'the next one up still reads as Next');
-  assert.match(block, /practise this any time/i,
-    'must say the stage is reachable, not gated');
-  assert.match(block, /clean 5:00 hold masters it/,
-    'and name what actually earns it');
+test('all three sensory cards report session length, like Clock and Asana', () => {
+  const block = sensoryCardBlock();
+  // One builder, so Visualization, Auditory and Senses cannot drift apart.
+  assert.match(block, /sensoryLengthCard\(visualStages/, 'Visualization uses it');
+  assert.match(block, /sensoryLengthCard\(auditoryStages/, 'Auditory uses it');
+  assert.match(block, /sensoryLengthCard\(senseStages/, 'Senses uses it');
+  assert.match(block, /label:'Session length'/, 'and the row is the session length');
+  // The old shape counted foundations in the collapsed header instead of
+  // naming the length, which is the number the practitioner acts on.
+  assert.doesNotMatch(block, /' \/ 2 foundations'/, 'no foundation tally as the summary');
+  assert.match(block, /summary:min \+ ' min recommended'/,
+    'the summary states the recommended length');
+});
+
+test('the mastery sequence is stated in the footer, not as a row per stage', () => {
+  const block = sensoryCardBlock();
+  assert.match(block, /'Training ' \+ stage\.label/, 'the footer names what is being trained');
+  assert.match(block, /foundations mastered/, 'and how many are done');
+  assert.match(block, /Next in sequence: /, 'and what follows');
+  assert.doesNotMatch(block, /stages\.map\(/, 'no per-stage row list any more');
 });
 
 test('mastery is earned per stage, not chained', () => {

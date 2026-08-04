@@ -2056,71 +2056,62 @@ function guideProgressOverview() {
   var sensoryActiveStage = sensoryPinnedStage
     ? (sensoryPinnedStage.mastered ? null : sensoryPinnedStage)
     : sensory.current;
-  function sensoryRow(stage) {
-    var active = !!(sensoryActiveStage && sensoryActiveStage.id === stage.id);
-    var prior = stage.index > 0 ? sensory.stages[stage.index - 1] : null;
-    var status, detail;
-    if (stage.mastered) {
-      status = 'Mastered';
-      detail = 'Clean hold ' + guideFmtTime(stage.bestCleanSec) + ' / 5m';
-    } else if (!active) {
-      // Nothing is blocked any more — the order is a recommendation, so a stage
-      // that is not today's is simply one not yet held clean. "Waiting" was
-      // gate language from when a gap voided everything behind it, and it left
-      // rows waiting on foundations that had been removed from the path and so
-      // could never arrive.
-      var earlier = sensory.stages.some(function(other) {
-        return other.index < stage.index && !other.mastered;
-      });
-      status = earlier ? 'Later' : 'Next';
-      if (stage.attempts > 0) {
-        detail = 'Best clean ' + guideFmtTime(stage.bestCleanSec) + ' / 5m'
-          + (earlier ? ' · Omnia recommends the earlier foundations first, but this counts whenever you hold it.'
-                     : ' · one clean 5:00 hold masters it.');
-      } else {
-        detail = earlier
-          ? 'Omnia recommends the earlier foundations first — practise this any time; a clean 5:00 hold masters it.'
-          : 'Omnia will recommend this on your next practice day.';
-      }
+  // Every sensory card answers the same question the Clock and Asana cards do:
+  // how long to sit, and what lengthens it. They used to list each foundation
+  // with its clean-hold state, which describes the mastery track instead — a
+  // different question, and one that buried the session length underneath it.
+  // The foundation being trained and the one after it move to the footer.
+  function sensoryLengthCard(stages, allMasteredFooter) {
+    // Which foundation sets today's length: the one pinned for today if it
+    // belongs to this exercise (mastering a stage mid-day must not shorten the
+    // sit already under way), otherwise the first still unmastered.
+    var stage = (sensoryActiveStage && sensoryActiveStage.exercise === stages[0].exercise)
+      ? sensoryActiveStage
+      : (stages.filter(function(s) { return !s.mastered; })[0] || stages[stages.length - 1]);
+    var mastered = stages.filter(function(s) { return s.mastered; }).length;
+    var min = guideSensoryPracticeMinutes(stage);
+    var detail, pct = 100;
+    if (min >= GUIDE_SENSORY_PRACTICE_MAX) {
+      detail = 'At the ' + GUIDE_SENSORY_PRACTICE_MAX + '-minute practice ceiling.';
+    } else if (min >= 15) {
+      var solid15 = Math.max(1, 10 - guideSensorySolidAttempts(stage, 450));
+      detail = solid15 + ' more sit' + (solid15 === 1 ? '' : 's')
+        + ' of 7½ min, or one 15-minute sit → ' + GUIDE_SENSORY_PRACTICE_MAX + ' min';
+      pct = guideProgressPct(guideSensorySolidAttempts(stage, 450), 10);
     } else {
-      var practiceMin = guideSensoryPracticeMinutes(stage);
-      status = practiceMin + ' min recommended';
-      var increase;
-      if (practiceMin < 15) {
-        increase = '→ 15 min after a 10-min sit';
-      } else if (practiceMin < 20) {
-        increase = '→ 20 min after a 15-min sit';
-      } else if (practiceMin === 20) {
-        increase = 'at the 20-min range';
-      } else {
-        increase = 'your manual ' + practiceMin + '-min target';
-      }
-      detail = 'Best clean ' + guideFmtTime(stage.bestCleanSec) + ' / 5m · ' + increase;
+      var solid10 = Math.max(1, 3 - guideSensorySolidAttempts(stage, 300));
+      detail = solid10 + ' more sit' + (solid10 === 1 ? '' : 's')
+        + ' of 5 min, or one 10-minute sit → 15 min';
+      pct = guideProgressPct(guideSensorySolidAttempts(stage, 300), 3);
     }
+    var next = stages[stage.index - stages[0].index + 1] || null;
     return {
-      label:stage.label,
-      status:status,
-      detail:detail,
-      pct:guideProgressPct(stage.bestCleanSec, GUIDE_SENSORY_CLEAN_GOAL_SEC),
-      active:active,
-      mastered:stage.mastered
+      summary:min + ' min recommended',
+      rows:[{ label:'Session length', status:min + ' min', detail:detail, pct:pct }],
+      footer:mastered >= stages.length
+        ? allMasteredFooter
+        : 'Training ' + stage.label + ' · ' + mastered + ' of ' + stages.length
+          + ' foundations mastered' + (next ? '. Next in sequence: ' + next.label + '.' : '.')
     };
   }
   var visualStages = sensory.stages.filter(function(stage) { return stage.exercise === 'visual'; });
   var auditoryStages = sensory.stages.filter(function(stage) { return stage.exercise === 'auditory'; });
   var senseStages = sensory.stages.filter(function(stage) { return stage.exercise === 'sense'; });
+
+  var visualCard = sensoryLengthCard(visualStages,
+    'Both foundations mastered — keep the image steady at this length.');
   cards.push({
     id:'visual', name:'Visualization', icon:'◉', color:'#8ab8e0',
-    summary:visualStages.filter(function(stage) { return stage.mastered; }).length + ' / 2 foundations',
-    rows:visualStages.map(sensoryRow)
+    summary:visualCard.summary, rows:visualCard.rows, footer:visualCard.footer
   });
+
   // Auditory's session length has two governors: while the sensory foundation
   // is still being trained the track sets it, and once that foundation is
   // mastered (or the exercise is practiced outside the track) the standalone
   // 10/15/20 ladder does. Only the one actually in force is shown, so the card
   // never states two different targets at once.
-  var auditoryRows = auditoryStages.map(sensoryRow);
-  if (auditoryStages.length && auditoryStages.every(function(stage) { return stage.mastered; })) {
+  var auditoryCard;
+  if (auditoryStages.every(function(stage) { return stage.mastered; })) {
     var aud = guideAuditoryStats();
     var audDetail, audPct = 100;
     if (aud.locked) {
@@ -2132,47 +2123,25 @@ function guideProgressOverview() {
       audDetail = audRemaining + ' more → ' + aud.nextTarget + ' min';
       audPct = guideProgressPct(aud.qualAtTier, aud.tierRequired);
     }
-    auditoryRows.push({
-      label:'Session length', status:aud.qualTarget + ' min', detail:audDetail, pct:audPct
-    });
+    auditoryCard = {
+      summary:aud.qualTarget + ' min recommended',
+      rows:[{ label:'Session length', status:aud.qualTarget + ' min', detail:audDetail, pct:audPct }],
+      footer:'Both foundations mastered — listening now trains on its own ladder.'
+    };
+  } else {
+    auditoryCard = sensoryLengthCard(auditoryStages, '');
   }
   cards.push({
     id:'auditory', name:'Auditory', icon:'◈', color:'#8eccc0',
-    summary:auditoryStages.filter(function(stage) { return stage.mastered; }).length + ' / 2 foundations',
-    rows:auditoryRows
+    summary:auditoryCard.summary, rows:auditoryCard.rows, footer:auditoryCard.footer
   });
-  // Senses reads like every other exercise card: how long to sit, and what
-  // lengthens it. It used to list all six foundations with their clean-hold
-  // state, which answered a different question from the one this panel is for
-  // and buried the session length the practitioner actually needs. The faculty
-  // being trained, and the one after it, are named in the footer instead.
-  var senseStage = senseStages.filter(function(stage) { return !stage.mastered; })[0]
-    || senseStages[senseStages.length - 1];
-  var senseMastered = senseStages.filter(function(stage) { return stage.mastered; }).length;
-  var senseMin = guideSensoryPracticeMinutes(senseStage);
-  var senseDetail, sensePct = 100;
-  if (senseMin >= GUIDE_SENSORY_PRACTICE_MAX) {
-    senseDetail = 'At the ' + GUIDE_SENSORY_PRACTICE_MAX + '-minute practice ceiling.';
-  } else if (senseMin >= 15) {
-    var solid15 = Math.max(1, 10 - guideSensorySolidAttempts(senseStage, 450));
-    senseDetail = solid15 + ' more sit' + (solid15 === 1 ? '' : 's')
-      + ' of 7½ min, or one 15-minute sit → ' + GUIDE_SENSORY_PRACTICE_MAX + ' min';
-    sensePct = guideProgressPct(guideSensorySolidAttempts(senseStage, 450), 10);
-  } else {
-    var solid10 = Math.max(1, 3 - guideSensorySolidAttempts(senseStage, 300));
-    senseDetail = solid10 + ' more sit' + (solid10 === 1 ? '' : 's')
-      + ' of 5 min, or one 10-minute sit → 15 min';
-    sensePct = guideProgressPct(guideSensorySolidAttempts(senseStage, 300), 3);
-  }
-  var senseNext = senseStages[senseStage.index - senseStages[0].index + 1] || null;
+
+  var senseCard = sensoryLengthCard(senseStages, sensory.complete
+    ? 'Every foundation is mastered — Multi-Sense is unlocked, and elemental work follows later.'
+    : 'All six sense foundations are mastered — Multi-Sense opens once the earlier foundations are too.');
   cards.push({
     id:'sense', name:'Senses', icon:'✺', color:'#e0a8c4',
-    summary:senseMin + ' min recommended',
-    rows:[{ label:'Session length', status:senseMin + ' min', detail:senseDetail, pct:sensePct }],
-    footer:sensory.complete
-      ? 'Every foundation is mastered — Multi-Sense is unlocked, and elemental work follows later.'
-      : 'Training ' + senseStage.label + ' · ' + senseMastered + ' of 6 foundations mastered'
-        + (senseNext ? '. Next in sequence: ' + senseNext.label + '.' : '.')
+    summary:senseCard.summary, rows:senseCard.rows, footer:senseCard.footer
   });
   // Progress describes the ladders behind today's path, so it only covers what
   // is actually on that path. An exercise the practitioner removed has no
