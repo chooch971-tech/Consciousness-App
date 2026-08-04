@@ -148,16 +148,38 @@ test('every level of a branch band changes what it is worth', () => {
   }
 });
 
-test('a legacy branch value is kept and never worsened', () => {
-  // Anyone who reached the old floor paid for those levels; the new curve must
-  // not take the benefit back. It simply takes over once it beats what they had.
+test('a tier up lands worse than the band it just maxed, then climbs past it', () => {
+  // That arc is the whole point of tiering, and it only works if the band truly
+  // resets. An earlier attempt kept the old value as a floor so nobody lost
+  // ground — which pinned the entire band flat and recreated the dead levels it
+  // was meant to end. No floor: every band starts at full price and every level
+  // of it is worth buying.
   const game = createContext();
-  game.omniaState.legacyBranchMults = { attunement: 0.45, quickening: 0.4 };
-  game.omniaState.genTiers.current = 1;
-  game.omniaState.upgrades.attunement = 21;   // band 1 — the new curve alone says 1.0
-  game.omniaState.upgrades.quickening = 21;
-  assert.equal(game.omniaAttunementDiscountMult(21, 'attunement'), 0.45, 'kept, not reset to full price');
-  assert.equal(game.omniaBuildSpeedMult('current'), 0.4);
+  const at = (tier, band) => {
+    game.omniaState.genTiers.current = tier;
+    const raw = tier * 20 + band;
+    game.omniaState.upgrades.attunement = raw;
+    game.omniaState.upgrades.quickening = raw;
+    return { att: game.omniaAttunementDiscountMult(raw, 'attunement'),
+             qui: game.omniaBuildSpeedMult('current') };
+  };
+
+  const maxedT0 = at(0, 20);
+  const freshT1 = at(1, 1);
+  assert.ok(freshT1.att > maxedT0.att, 'a fresh tier is initially worse on discount');
+  assert.ok(freshT1.qui > maxedT0.qui, 'and on build speed');
+  assert.equal(freshT1.att, 1, 'the band genuinely resets, no legacy floor');
+
+  const maxedT1 = at(1, 20);
+  assert.ok(maxedT1.att < maxedT0.att, 'and ends up better than the tier before');
+  assert.ok(maxedT1.qui < maxedT0.qui);
+
+  // Every tier's ceiling beats the one below it, all the way up.
+  const ceilings = [0, 1, 2, 3].map((t) => at(t, 20));
+  for (let i = 1; i < ceilings.length; i += 1) {
+    assert.ok(ceilings[i].att < ceilings[i - 1].att, 'tier ' + i + ' discount ceiling improves');
+    assert.ok(ceilings[i].qui < ceilings[i - 1].qui, 'tier ' + i + ' build ceiling improves');
+  }
 });
 
 test('the discount and build speed a tier is bought with are kept', () => {

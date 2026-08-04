@@ -146,15 +146,6 @@ function omniaMasteryPips(rank) {
   return new Array(Math.max(0, Math.min(OMNIA_MASTERY_CAP, rank || 0)) + 1).join('\u2726');
 }
 function omniaCurrentMasteryMult(genId) { return omniaMasteryScale(omniaGenTier(genId)); }
-// Whatever a branch's effect was worth under the retired lifetime-level
-// formulas is kept, so nobody loses ground they had already paid for. The new
-// band curve takes over the moment it beats that.
-function omniaLegacyBranchMult(id) {
-  var kept = (omniaState && omniaState.legacyBranchMults) || {};
-  var v = Number(kept[id]);
-  return (isFinite(v) && v > 0) ? v : 1;
-}
-
 function omniaAttunementDiscountMult(level, attuneId) {
   var id = attuneId || 'attunement';
   var lvl = Math.max(1, Number(level) || 1);
@@ -168,10 +159,16 @@ function omniaAttunementDiscountMult(level, attuneId) {
   // kept climbing about 52x across a band, and the tier-up gate still required
   // buying twenty of them. Measured on a real save, the 6,321 upgrade on the
   // card moved the cost of an Akashic Current upgrade by exactly zero.
+  //
+  // The band resets deliberately. A tier up should land you worse off than the
+  // tier you just maxed and then climb past it — that arc is the point of
+  // tiering, and it only works if every level of the new band is worth buying.
+  // An earlier version of this kept the old value as a floor so nobody lost
+  // ground; that protected the balance but pinned the whole band flat, which is
+  // the very dead zone this was meant to end.
   var band = omniaUpgradeDisplayLevel(id, lvl);
   var depth = 0.50 + tier * 0.05;
-  var curve = 1 - ((band - 1) / (OMNIA_MASTERY_SPAN - 1)) * depth;
-  return Math.min(curve, omniaLegacyBranchMult(id));
+  return 1 - ((band - 1) / (OMNIA_MASTERY_SPAN - 1)) * depth;
 }
 
 // Each Akasha pump owns an additive hourly rate. Step, sessions, and body levels

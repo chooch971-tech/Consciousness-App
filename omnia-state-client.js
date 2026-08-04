@@ -201,33 +201,6 @@ function loadOmniaState() {
       // that sits above what its four tracks actually support.
       merged.genTiers[track[0]] = Math.min(stored, supported);
     });
-    // Attunement's discount and Quickening's build speed used to read the
-    // lifetime level on a curve that bottomed out at level 11 — so levels 12
-    // through 80 bought nothing at all, at a cost that kept climbing, and the
-    // tier-up gate still demanded them. Both now read the band, which makes
-    // every level of every band count.
-    //
-    // That change would otherwise take a discount away from anyone who had
-    // already reached the old floor, having paid for those dead levels. This
-    // records what the old formula was giving them, once, and the live values
-    // never go worse than it — the new curve simply takes over as soon as it
-    // beats what they had.
-    if (!merged.legacyBranchMults || typeof merged.legacyBranchMults !== 'object') {
-      merged.legacyBranchMults = {};
-      OMNIA_TIER_TRACK_GROUPS.forEach(function(track) {
-        var tier = Math.max(0, Math.min(3, Number(merged.genTiers[track[0]]) || 0));
-        var attLvl = Math.max(1, Number(merged.upgrades[track[2]]) || 1);
-        var quiLvl = Math.max(1, Number(merged.upgrades[track[3]]) || 1);
-        // The retired formulas, preserved here only to value what was bought.
-        if (attLvl > 1) {
-          merged.legacyBranchMults[track[2]] =
-            Math.max(0.35, Math.max(0.5 - tier * 0.05, 1 - (attLvl - 1) * 0.05));
-        }
-        if (quiLvl > 1) {
-          merged.legacyBranchMults[track[3]] = Math.max(0.4, 1 - (quiLvl - 1) * 0.06);
-        }
-      });
-    }
     merged.cosmetics = Object.assign(cloneOmniaDefault().cosmetics, parsed.cosmetics || {});
     merged.cosmetics.unlockedPalettes = merged.cosmetics.unlockedPalettes || ['aether'];
     merged.cosmetics.unlockedEntities = merged.cosmetics.unlockedEntities || ['omnia'];

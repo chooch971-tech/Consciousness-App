@@ -613,8 +613,7 @@ function omniaBuildSpeedMult(upgId) {
   var band = omniaUpgradeDisplayLevel(quickId, q);
   var tier = omniaTierForUpgrade(quickId);
   var depth = 0.45 + tier * 0.05;
-  var curve = 1 - ((band - 1) / (OMNIA_MASTERY_SPAN - 1)) * depth;
-  return Math.min(curve, omniaLegacyBranchMult(quickId));
+  return 1 - ((band - 1) / (OMNIA_MASTERY_SPAN - 1)) * depth;
 }
 
 function omniaUpgradeMasteryBenefit(id, nextRank) {
