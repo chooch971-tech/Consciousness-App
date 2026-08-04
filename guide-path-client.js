@@ -2141,13 +2141,38 @@ function guideProgressOverview() {
     summary:auditoryStages.filter(function(stage) { return stage.mastered; }).length + ' / 2 foundations',
     rows:auditoryRows
   });
+  // Senses reads like every other exercise card: how long to sit, and what
+  // lengthens it. It used to list all six foundations with their clean-hold
+  // state, which answered a different question from the one this panel is for
+  // and buried the session length the practitioner actually needs. The faculty
+  // being trained, and the one after it, are named in the footer instead.
+  var senseStage = senseStages.filter(function(stage) { return !stage.mastered; })[0]
+    || senseStages[senseStages.length - 1];
+  var senseMastered = senseStages.filter(function(stage) { return stage.mastered; }).length;
+  var senseMin = guideSensoryPracticeMinutes(senseStage);
+  var senseDetail, sensePct = 100;
+  if (senseMin >= GUIDE_SENSORY_PRACTICE_MAX) {
+    senseDetail = 'At the ' + GUIDE_SENSORY_PRACTICE_MAX + '-minute practice ceiling.';
+  } else if (senseMin >= 15) {
+    var solid15 = Math.max(1, 10 - guideSensorySolidAttempts(senseStage, 450));
+    senseDetail = solid15 + ' more sit' + (solid15 === 1 ? '' : 's')
+      + ' of 7½ min, or one 15-minute sit → ' + GUIDE_SENSORY_PRACTICE_MAX + ' min';
+    sensePct = guideProgressPct(guideSensorySolidAttempts(senseStage, 450), 10);
+  } else {
+    var solid10 = Math.max(1, 3 - guideSensorySolidAttempts(senseStage, 300));
+    senseDetail = solid10 + ' more sit' + (solid10 === 1 ? '' : 's')
+      + ' of 5 min, or one 10-minute sit → 15 min';
+    sensePct = guideProgressPct(guideSensorySolidAttempts(senseStage, 300), 3);
+  }
+  var senseNext = senseStages[senseStage.index - senseStages[0].index + 1] || null;
   cards.push({
     id:'sense', name:'Senses', icon:'✺', color:'#e0a8c4',
-    summary:senseStages.filter(function(stage) { return stage.mastered; }).length + ' / 6 foundations',
-    rows:senseStages.map(sensoryRow),
+    summary:senseMin + ' min recommended',
+    rows:[{ label:'Session length', status:senseMin + ' min', detail:senseDetail, pct:sensePct }],
     footer:sensory.complete
-      ? 'Multi-Sense unlocked · elemental work follows later.'
-      : 'Feeling, Smell, and Taste unlock in order, each closed-eyes then open-eyes; only one is recommended at a time.'
+      ? 'Every foundation is mastered — Multi-Sense is unlocked, and elemental work follows later.'
+      : 'Training ' + senseStage.label + ' · ' + senseMastered + ' of 6 foundations mastered'
+        + (senseNext ? '. Next in sequence: ' + senseNext.label + '.' : '.')
   });
   // Progress describes the ladders behind today's path, so it only covers what
   // is actually on that path. An exercise the practitioner removed has no
