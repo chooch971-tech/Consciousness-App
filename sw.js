@@ -1,7 +1,7 @@
 // Service Worker for Presence app
 // Handles background push notifications + shell caching
 // Cache version — bump this string when you need to force-evict all clients
-const CACHE = 'presence-shell-v488';
+const CACHE = 'presence-shell-v489';
 
 const APP_URL = self.registration
   ? self.registration.scope + 'presence.html'
@@ -10,6 +10,17 @@ const APP_URL = self.registration
 // Assets to precache on install (small, stable files)
 const PRECACHE = [
   'manifest.webmanifest',
+  'fonts.css',
+  'fonts/cormorant-garamond-300-italic-latin-ext.woff2',
+  'fonts/cormorant-garamond-300-italic-latin.woff2',
+  'fonts/cormorant-garamond-300-latin-ext.woff2',
+  'fonts/cormorant-garamond-300-latin.woff2',
+  'fonts/dm-mono-300-latin-ext.woff2',
+  'fonts/dm-mono-300-latin.woff2',
+  'fonts/dm-mono-400-latin-ext.woff2',
+  'fonts/dm-mono-400-latin.woff2',
+  'fonts/space-grotesk-400-latin-ext.woff2',
+  'fonts/space-grotesk-400-latin.woff2',
   'calendar.js',
   'sync-contract.js',
   'progress-state.js',
