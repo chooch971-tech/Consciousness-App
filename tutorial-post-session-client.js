@@ -207,7 +207,8 @@ function showTutorialStreakCommit() {
   _tutSetPostBack(showTutorialStreakCelebration);
   tutFadeStage(function(ps) {
     var tiers = [1, 2, 3, 4];
-    var rowsHTML = STREAK_COMMITS.map(function(c, i) {
+    var rowsHTML = STREAK_STARTER_COMMITS.map(function(c, i) {
+      var reward = streakMilestoneReward(c);
       return '<div class="tut-commit-row" data-tier="' + tiers[i] + '" data-days="' + c.days + '">'
         + '<div class="tut-commit-days-wrap">'
         +   '<span class="tut-commit-days">' + c.days + '</span>'
@@ -215,8 +216,8 @@ function showTutorialStreakCommit() {
         + '</div>'
         + '<div class="tut-commit-divider"></div>'
         + '<div class="tut-commit-rewards">'
-        +   '<span class="tut-commit-xp">+' + c.xp.toLocaleString() + ' XP</span>'
-        +   '<span class="tut-commit-akasha">+' + c.akasha + ' Akasha</span>'
+        +   '<span class="tut-commit-xp">+' + reward.xp.toLocaleString() + ' XP</span>'
+        +   '<span class="tut-commit-akasha">+' + reward.akasha.toLocaleString() + ' Akasha</span>'
         + '</div>'
         + '<span class="tut-commit-arrow">→</span>'
         + '</div>';
@@ -232,7 +233,9 @@ function showTutorialStreakCommit() {
       row.addEventListener('click', function() {
         var days = parseInt(row.dataset.days, 10);
         localStorage.setItem('presence_streak_commit', String(days));
-        state.streakCommit = days; saveState();
+        state.streakCommit = days;
+        state.streakGoalBaseDays = 0;
+        saveState();
         ps.querySelectorAll('.tut-commit-row').forEach(function(r) { r.classList.remove('selected'); });
         row.classList.add('selected');
         setTimeout(showTutorialReminder, 400);

@@ -3,10 +3,44 @@ var STREAK_COMMITS = [
   { days:14, xp:100,  akasha:4500  },
   { days:30, xp:200,  akasha:10000 },
   { days:45, xp:300,  akasha:18000 },
+  { days:75, xp:450,  akasha:32000 },
+  { days:120,xp:700,  akasha:55000 },
+  { days:180,xp:1000, akasha:90000 },
 ];
 
-function streakGoalIsComplete(streak, base, commit) {
-  return Math.max(0, (streak || 0) - (base || 0)) >= (commit || 7);
+var STREAK_STARTER_COMMITS = STREAK_COMMITS.filter(function(c) { return c.days <= 45; });
+var STREAK_LONG_COMMITS = STREAK_COMMITS.filter(function(c) { return c.days >= 45; });
+
+function streakGoalIsComplete(streak, commit) {
+  return Math.max(0, streak || 0) >= (commit || 7);
+}
+
+function streakVisibleCommits(streak) {
+  return (streak || 0) >= 45 ? STREAK_LONG_COMMITS : STREAK_STARTER_COMMITS;
+}
+
+// Milestone Akasha follows the player's current economy rank. Step contributes
+// +8% apiece and prestige uses the same capped +25% tiers as ordinary practice;
+// the base Step-I rewards therefore remain exactly what existing cards showed.
+function streakMilestoneReward(def, economyState) {
+  var economy = economyState || (typeof omniaState !== 'undefined' ? omniaState : null) || {};
+  var step = Math.max(1, Math.min(10, Number(economy.bardonStep) || 1));
+  var prestige = Math.max(0, Math.min(3, Number(economy.prestige) || 0));
+  var multiplier = (1 + (step - 1) * 0.08) * (1 + prestige * 0.25);
+  return {
+    days:def.days,
+    xp:def.xp,
+    akasha:Math.max(def.akasha, Math.round(def.akasha * multiplier / 50) * 50),
+    step:step,
+    prestige:prestige
+  };
+}
+
+function streakUnawardedMilestones(streak, awardedDays) {
+  var awarded = Array.isArray(awardedDays) ? awardedDays : [];
+  return STREAK_COMMITS.filter(function(c) {
+    return c.days <= (streak || 0) && awarded.indexOf(c.days) === -1;
+  });
 }
 
 function streakCalendarMonthValue(year, month) {
@@ -66,7 +100,7 @@ function buildStreakCalendar(year, month, commit) {
   var goalEndStr = null;
   if (state.streakStartDate && commit) {
     var sd = presenceDateFromDayKey(state.streakStartDate);
-    sd.setDate(sd.getDate() + (state.streakGoalBaseDays || 0) + commit - 1);
+    sd.setDate(sd.getDate() + commit - 1);
     goalEndStr = presenceDayKey(sd);
   }
   var prefix = year + '-' + String(month+1).padStart(2,'0') + '-';
@@ -193,7 +227,7 @@ function showStreakScreen() {
   var el = document.getElementById('streakOverlay');
   if (!el) return;
   if (typeof backfillPracticedDates === 'function') backfillPracticedDates();
-  if (typeof migrateStreakGoalBase === 'function') migrateStreakGoalBase();
+  if (typeof migrateAbsoluteStreakMilestones === 'function') migrateAbsoluteStreakMilestones();
   var streak = state.streak || 0;
   var commit = state.streakCommit || 7;
   var freezes = state.streakFreezes || 0;
@@ -208,58 +242,56 @@ function showStreakScreen() {
   var gemsHTML = [0,1,2].map(function(i){
     return '<div class="so-freeze-gem' + (i < freezes ? ' active' : '') + '"></div>';
   }).join('');
-  var goalPct = commit > 0 ? Math.min(100, Math.round(streak / commit * 100)) : 100;
   var societyLocked = streak < 7;
 
   // A commitment stays locked until it is complete. Only then may the player
-  // choose a fresh goal, measured from the current streak day. Goals already
-  // passed remain locked so rewards cannot be claimed retroactively.
+  // choose a later absolute milestone. The milestone rewards themselves are
+  // earned from the live streak, so choosing 45 days never skips 7, 14, or 30.
   function goalCardInner() {
     var commitNow = state.streakCommit || 7;
-    var base = state.streakGoalBaseDays || 0;
-    var done = Math.max(0, streak - base);          // days completed toward THIS goal
+    var done = Math.max(0, streak);
     var pct = commitNow > 0 ? Math.min(100, Math.round(done / commitNow * 100)) : 100;
-    var completedCurrent = streakGoalIsComplete(streak, base, commitNow);
+    var completedCurrent = streakGoalIsComplete(streak, commitNow);
+    var visibleCommits = streakVisibleCommits(streak);
+    var awarded = Array.isArray(state.streakMilestonesAwarded) ? state.streakMilestonesAwarded : [];
     var hasNextGoal = completedCurrent && STREAK_COMMITS.some(function(c) {
-      return c.days !== commitNow && done < c.days;
+      return c.days > streak;
     });
     var selLabel = completedCurrent
-      ? (hasNextGoal ? 'Choose your next goal' : 'Commitment complete')
-      : '';
-    var tiersHTML = STREAK_COMMITS.map(function(c) {
+      ? (hasNextGoal ? 'Choose your next milestone' : 'All milestones complete')
+      : 'Complete each milestone to earn its reward';
+    var tiersHTML = visibleCommits.map(function(c) {
       var isCurrent = commitNow === c.days;
-      var isReached = done >= c.days;               // already cleared this many days in the window
+      var isReached = awarded.indexOf(c.days) !== -1 || streak >= c.days;
       var cls = 'so-goal-tier';
       var disabled = false;
       if (isCurrent) { cls += ' selected'; disabled = true; }
       else if (isReached) { cls += ' reached'; disabled = true; }
       else if (!completedCurrent) { cls += ' locked'; disabled = true; }
+      var reward = streakMilestoneReward(c);
       return '<button class="' + cls + '" data-days="' + c.days + '"' + (disabled ? ' disabled' : '') + '>'
         + '<span class="so-goal-tier-days">' + c.days + '</span>'
         + '<span class="so-goal-tier-unit">days</span>'
-        + '<span class="so-goal-tier-reward">+' + c.akasha.toLocaleString() + '</span>'
+        + '<span class="so-goal-tier-reward">+' + reward.akasha.toLocaleString() + '</span>'
         + '</button>';
     }).join('');
     return '<div class="so-goal-header"><span class="so-goal-title">Streak Goal</span><span class="so-goal-fraction">' + Math.min(done, commitNow) + ' / ' + commitNow + ' days</span></div>'
       + '<div class="so-goal-track"><div class="so-goal-fill" style="width:' + pct + '%"></div></div>'
-      + '<div class="so-goal-labels"><span class="so-goal-lbl">' + (base > 0 ? 'Day ' + (base + 1) : 'Day 1') + '</span><span class="so-goal-lbl">✦ ' + commitNow + ' days</span></div>'
+      + '<div class="so-goal-labels"><span class="so-goal-lbl">Day 1</span><span class="so-goal-lbl">✦ Day ' + commitNow + '</span></div>'
       + (selLabel ? '<div class="so-goal-select-label">' + selLabel + '</div>' : '')
       + '<div class="so-goal-tiers">' + tiersHTML + '</div>';
   }
   function wireGoalCard() {
     var card = document.getElementById('soGoalCard');
     if (!card) return;
-    if (!streakGoalIsComplete(streak, state.streakGoalBaseDays || 0, state.streakCommit || 7)) return;
+    if (!streakGoalIsComplete(streak, state.streakCommit || 7)) return;
     card.querySelectorAll('.so-goal-tier:not([disabled])').forEach(function(btn) {
       btn.addEventListener('click', function() {
-        if (!streakGoalIsComplete(streak, state.streakGoalBaseDays || 0, state.streakCommit || 7)) return;
+        if (!streakGoalIsComplete(streak, state.streakCommit || 7)) return;
         var days = parseInt(btn.dataset.days, 10);
-        if (!days) return;
-        // If the current goal is already complete, the new goal is a fresh
-        // challenge measured from here — so it reads 0 / N, not N-already-done.
-        var base = state.streakGoalBaseDays || 0;
-        if (streak - base >= (state.streakCommit || 7)) state.streakGoalBaseDays = streak;
+        if (!days || days <= streak) return;
         state.streakCommit = days;
+        state.streakGoalBaseDays = 0; // retired additive field; keep old saves neutral
         localStorage.setItem('presence_streak_commit', String(days));
         saveState();
         if (syncEnabled && authToken) syncPushData();
@@ -513,13 +545,14 @@ function showStreakEndedPrompt() {
   var overlay = document.createElement('div');
   overlay.className = 'so-ended-overlay';
   overlay.id = 'streakEndedOverlay';
-  var cardsHTML = STREAK_COMMITS.map(function(c, ti) {
+  var cardsHTML = STREAK_STARTER_COMMITS.map(function(c, ti) {
     var sel = (state.streakCommit || 7) === c.days ? ' selected' : '';
+    var reward = streakMilestoneReward(c);
     return '<div class="so-ended-commit-card seo-t' + ti + sel + '" data-days="' + c.days + '">'
       + '<div class="so-ended-commit-days">' + c.days + '</div>'
       + '<div class="so-ended-commit-unit">days</div>'
-      + '<div class="so-ended-commit-xp">+' + c.xp.toLocaleString() + ' XP</div>'
-      + '<div class="so-ended-commit-akasha">+' + c.akasha + ' Akasha</div>'
+      + '<div class="so-ended-commit-xp">+' + reward.xp.toLocaleString() + ' XP</div>'
+      + '<div class="so-ended-commit-akasha">+' + reward.akasha.toLocaleString() + ' Akasha</div>'
       + '</div>';
   }).join('');
   var embersHTML = [[34,0,-8],[48,.7,5],[60,1.3,12],[42,1.9,-4]].map(function(e) {
@@ -576,6 +609,7 @@ function showStreakEndedPrompt() {
   overlay.querySelectorAll('.so-ended-commit-card').forEach(function(card) {
     card.addEventListener('click', function() {
       state.streakCommit = parseInt(card.dataset.days, 10);
+      state.streakGoalBaseDays = 0;
       overlay.querySelectorAll('.so-ended-commit-card').forEach(function(c) { c.classList.remove('selected'); });
       card.classList.add('selected');
       saveState();

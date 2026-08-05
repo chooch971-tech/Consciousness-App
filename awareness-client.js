@@ -372,8 +372,11 @@ const DEFAULT_STATE = {
   frozenDates: [],           // days a freeze covered (keep the chain unbroken)
   streakCalendarStartDate: null, // earliest reachable month in the streak calendar
   streakStartDate: null,     // 'YYYY-MM-DD' of current streak's day 1
-  streakCommit: 7,           // current commitment goal (7/14/30/45)
-  streakGoalBaseDays: 0,     // streak-day count when the current goal was committed; a new goal counts from here, not day 1
+  streakCommit: 7,           // current absolute commitment milestone (7–180)
+  streakGoalBaseDays: 0,     // retired additive baseline; retained as zero for old synced saves
+  streakMilestoneRunKey: null, // streakStartDate whose milestone rewards are tracked below
+  streakMilestonesAwarded: [], // absolute milestone days already rewarded in this streak
+  streakMilestonesAbsoluteV1: false,
   endedStreakInfo: null,     // {days, date} stashed when streak ends, cleared after modal shown
   streakEndedPromptShown: false,
   frozenStreakInfo: null,    // {missed, freezes} stashed when a freeze saves the streak, cleared after modal shown
@@ -554,8 +557,11 @@ function touchPracticeStreak() {
     syncStreakFromCalendar();
     // Freeze gifts, keyed off the calendar-derived streak:
     if (state.streak === 1) {
-      // Fresh streak — top up to 3 freezes and reset the goal baseline to day 1.
+      // Fresh streak — top up to 3 freezes and begin a new absolute milestone run.
       state.streakGoalBaseDays = 0;
+      state.streakMilestoneRunKey = state.streakStartDate || todayISO;
+      state.streakMilestonesAwarded = [];
+      state.streakMilestonesAbsoluteV1 = true;
       var fGift = Math.min(3, 3 - (state.streakFreezes || 0));
       if (fGift > 0) {
         state.streakFreezes = (state.streakFreezes || 0) + fGift;
@@ -566,32 +572,43 @@ function touchPracticeStreak() {
       state.streakFreezes = Math.min(3, (state.streakFreezes || 0) + 1);
       state.streakFreezesEverEarned = (state.streakFreezesEverEarned || 0) + 1;
     }
-    // Award the committed streak goal's XP + Akasha when the streak reaches it.
-    // Progress is measured from the goal's baseline (where the previous goal was
-    // reached), so a goal is "N more days," and keyed by (streak start, baseline,
-    // goal days) so each goal pays out exactly once.
-    var commitDays = state.streakCommit || 7;
-    var goalBase = state.streakGoalBaseDays || 0;
-    if (state.streak - goalBase >= commitDays) {
-      var awardKey = (state.streakStartDate || 'legacy') + ':' + goalBase + ':' + commitDays;
-      if (state.streakCommitAwardedKey !== awardKey) {
-        state.streakCommitAwardedKey = awardKey;
-        var commitDef = null;
-        for (var _ci = 0; _ci < STREAK_COMMITS.length; _ci++) {
-          if (STREAK_COMMITS[_ci].days === commitDays) { commitDef = STREAK_COMMITS[_ci]; break; }
+    // Absolute milestones reward the live streak, independently of which future
+    // target the player selected. Choosing 45 days therefore still pays 7, 14,
+    // and 30 on the way, and the first ladder finishes on day 45—not day 96.
+    var reachedMilestones = streakUnawardedMilestones(state.streak, state.streakMilestonesAwarded);
+    if (reachedMilestones.length) {
+      var milestoneXp = 0;
+      var milestoneAkasha = 0;
+      var milestoneDays = 0;
+      var milestoneLeveled = false;
+      reachedMilestones.forEach(function(commitDef) {
+        var reward = streakMilestoneReward(commitDef);
+        milestoneDays = commitDef.days;
+        milestoneXp += reward.xp;
+        milestoneAkasha += reward.akasha;
+        state.xp += reward.xp;
+        if (!Array.isArray(state.streakMilestonesAwarded)) state.streakMilestonesAwarded = [];
+        state.streakMilestonesAwarded.push(commitDef.days);
+        if (typeof omniaState !== 'undefined' && omniaState) {
+          omniaCreditAkasha(reward.akasha, 'streak-milestone', {
+            days:commitDef.days,
+            step:reward.step,
+            prestige:reward.prestige,
+            run:state.streakMilestoneRunKey || state.streakStartDate || 'legacy'
+          });
         }
-        if (commitDef) {
-          state.xp += commitDef.xp;
-          var _scLeveled = awardLevelUps(state, sumXpToLevel, xpForLevel);
-          if (typeof omniaState !== 'undefined' && omniaState) {
-            omniaCreditAkasha(commitDef.akasha, 'streak-commitment', { days: commitDays });
-            if (typeof saveOmniaState === 'function') saveOmniaState();
-          }
-          // Queue the reward notification so it surfaces inside the session-complete
-          // overlay (not buried behind it as a timed toast).
-          window._pendingStreakBonus = { days: commitDays, xp: commitDef.xp, akasha: commitDef.akasha, leveled: _scLeveled, level: state.level };
-        }
-      }
+      });
+      milestoneLeveled = awardLevelUps(state, sumXpToLevel, xpForLevel);
+      if (typeof saveOmniaState === 'function') saveOmniaState();
+      // Queue one combined notification so a restored/frozen calendar that
+      // crosses more than one threshold never stacks several completion cards.
+      window._pendingStreakBonus = {
+        days:milestoneDays,
+        xp:milestoneXp,
+        akasha:milestoneAkasha,
+        leveled:milestoneLeveled,
+        level:state.level
+      };
     }
     saveState();
     if (syncEnabled && authToken) syncPushData();
@@ -776,22 +793,17 @@ function reconcileLegacyStreak() {
   saveState();
 }
 
-// A streak goal is a fresh challenge measured from where the previous goal was
-// reached — not from day 1 — so picking "45 days" after finishing "30 days"
-// means "45 more days," never showing you as already 37/45. This one-time
-// migration seeds the baseline for existing streaks at the highest milestone the
-// current streak has already cleared (below the current goal).
-function migrateStreakGoalBase() {
-  if (state.streakGoalBaseMigrated) return;
-  state.streakGoalBaseMigrated = true;
-  if (typeof state.streakGoalBaseDays !== 'number') state.streakGoalBaseDays = 0;
-  var commit = state.streakCommit || 7;
-  var streak = state.streak || 0;
-  var base = 0;
-  STREAK_COMMITS.forEach(function(c) {
-    if (c.days < commit && streak >= c.days && c.days > base) base = c.days;
-  });
-  state.streakGoalBaseDays = base;
+// Convert additive goals to absolute day-from-start milestones. Existing runs
+// are marked through their current day without paying retroactive rewards; all
+// future thresholds use the new reward list and each new streak starts clean.
+function migrateAbsoluteStreakMilestones() {
+  if (state.streakMilestonesAbsoluteV1) return;
+  state.streakMilestonesAbsoluteV1 = true;
+  state.streakGoalBaseDays = 0;
+  state.streakMilestoneRunKey = state.streakStartDate || null;
+  state.streakMilestonesAwarded = STREAK_COMMITS.filter(function(c) {
+    return c.days <= (state.streak || 0);
+  }).map(function(c) { return c.days; });
   saveState();
 }
 
@@ -847,7 +859,9 @@ function checkStreakStatus() {
       // freeze numbers so the Streak Ended popup can explain why it broke.
       state.endedStreakInfo = { days: prevStreak, date: state.lastSessionDate, missed: missed, freezes: available };
       state.streakEndedPromptShown = false;
-      state.streakGoalBaseDays = 0; // next streak's goal counts from day 1
+      state.streakGoalBaseDays = 0;
+      state.streakMilestoneRunKey = null;
+      state.streakMilestonesAwarded = [];
     }
     saveState();
   } else if (diffDays > 1 && prevStreak > 0 && missedDates.length === 0
@@ -860,7 +874,7 @@ function checkStreakStatus() {
   }
   // The streak number always reflects the calendar (never a stale counter).
   syncStreakFromCalendar();
-  migrateStreakGoalBase();
+  if (typeof migrateAbsoluteStreakMilestones === 'function') migrateAbsoluteStreakMilestones();
   saveState();
   // Surface a pending "Streak Ended" popup — even if the streak is already 0
   // (e.g. the app reloaded before the prompt could render last time). The
