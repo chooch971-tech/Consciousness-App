@@ -9874,6 +9874,9 @@ function enterAppAfterSignIn(onEntered) {
       .catch(function() {
         // Cold/unavailable server: retry a few times with light backoff. We still
         // enter the app (showing whatever's local) rather than trapping the user.
+        // A device with no network at all is a different case — see the note on
+        // _startupPull. Enter immediately and let the online listener pull.
+        if (navigator.onLine === false) { finish(); return; }
         if (attempt < 6) { setTimeout(pull, Math.min(1500 * attempt, 6000)); }
         else {
           finish();
@@ -10082,6 +10085,20 @@ if (!localStorage.getItem('presence_auth_token')) {
       if (result === null) return; // 401 already handled
       _applyStartupPull(result);
     }).catch(function(err) {
+      // The retry ladder below exists for a free-tier host cold-starting, which
+      // is worth waiting out. A device that is simply offline is not: the
+      // request cannot succeed however many times it is repeated, and eight
+      // attempts over ~44 seconds held the splash for its full 28-second cap in
+      // front of an app that works entirely offline. navigator.onLine can be
+      // wrong when it says true (a captive portal), but false is trustworthy,
+      // so treat only that as a definite no-network and enter straight away.
+      // The listener below pulls as soon as the connection returns.
+      if (navigator.onLine === false) {
+        window._syncPullPending = false;
+        renderHome();
+        if (window.__dismissSplash) window.__dismissSplash();
+        return;
+      }
       if (attempt < 8) {
         console.warn('[Sync] Startup pull attempt ' + attempt + ' failed (' + (err && err.message) + ') — retrying');
         setTimeout(function() { _startupPull(attempt + 1); }, Math.min(2000 * attempt, 8000));
@@ -10103,6 +10120,15 @@ if (!localStorage.getItem('presence_auth_token')) {
     renderHome();
   }
   }
+
+  // Entering the app offline is correct, but it leaves cloud progress unread
+  // until the next launch. Pull once the connection returns instead, and only
+  // then — the splash is long gone, so this is silent.
+  window.addEventListener('online', function() {
+    if (!(syncEnabled && authToken)) return;
+    if (window._syncPullPending) return;
+    if (typeof syncPullData === 'function') syncPullData();
+  });
   var savedSession = localStorage.getItem('presence_session');
   if (savedSession) {
     try {
