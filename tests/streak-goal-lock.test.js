@@ -23,7 +23,8 @@ test('an active streak commitment cannot be replaced before completion', () => {
   assert.equal(isComplete(29, 7, 30), false);
   assert.equal(isComplete(37, 7, 30), true);
 
-  assert.match(streakSource, /Goal locked · complete this commitment/);
+  assert.doesNotMatch(streakSource, /Goal locked/);
+  assert.match(streakSource, /selLabel \? '<div class="so-goal-select-label">'/);
   assert.match(streakSource, /else if \(!completedCurrent\) \{ cls \+= ' locked'; disabled = true; \}/);
   assert.match(streakSource, /if \(!streakGoalIsComplete\(streak, state\.streakGoalBaseDays \|\| 0, state\.streakCommit \|\| 7\)\) return;/);
   assert.match(presenceSource, /\.so-goal-tier\.locked \{[^}]*cursor:default;/);

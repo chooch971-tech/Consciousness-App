@@ -223,9 +223,9 @@ function showStreakScreen() {
     var hasNextGoal = completedCurrent && STREAK_COMMITS.some(function(c) {
       return c.days !== commitNow && done < c.days;
     });
-    var selLabel = !completedCurrent
-      ? 'Goal locked · complete this commitment'
-      : (hasNextGoal ? 'Choose your next goal' : 'Commitment complete');
+    var selLabel = completedCurrent
+      ? (hasNextGoal ? 'Choose your next goal' : 'Commitment complete')
+      : '';
     var tiersHTML = STREAK_COMMITS.map(function(c) {
       var isCurrent = commitNow === c.days;
       var isReached = done >= c.days;               // already cleared this many days in the window
@@ -243,7 +243,7 @@ function showStreakScreen() {
     return '<div class="so-goal-header"><span class="so-goal-title">Streak Goal</span><span class="so-goal-fraction">' + Math.min(done, commitNow) + ' / ' + commitNow + ' days</span></div>'
       + '<div class="so-goal-track"><div class="so-goal-fill" style="width:' + pct + '%"></div></div>'
       + '<div class="so-goal-labels"><span class="so-goal-lbl">' + (base > 0 ? 'Day ' + (base + 1) : 'Day 1') + '</span><span class="so-goal-lbl">✦ ' + commitNow + ' days</span></div>'
-      + '<div class="so-goal-select-label">' + selLabel + '</div>'
+      + (selLabel ? '<div class="so-goal-select-label">' + selLabel + '</div>' : '')
       + '<div class="so-goal-tiers">' + tiersHTML + '</div>';
   }
   function wireGoalCard() {
