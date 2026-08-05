@@ -1618,6 +1618,59 @@ function guideCurrentSenseMode(senseStats) {
 // Visualization and Auditory too, which are not sense faculties, so the
 // override only applies when the live stage really is one; otherwise the
 // rotation still answers.
+// Which sensory stage a readout outside the Guide Path should name as the one
+// being trained. The curriculum's next stage is only the right answer when the
+// curriculum is actually on the practitioner's path: someone whose only
+// sensory work is a Senses exercise they added themselves is training that
+// faculty, and naming Visualization at them describes a sequence they are not
+// following — and reports a clean-hold best belonging to a stage they have
+// never sat. Returns null once every foundation is mastered.
+function guideSensoryHeadlineStage() {
+  var progress;
+  try { progress = guideSensoryTrackProgress(); } catch (e) { return null; }
+  if (!progress || progress.complete) return null;
+  var items = [];
+  try {
+    var built = buildGuideRegimentItems();
+    if (Array.isArray(built)) items = built;
+  } catch (e) { items = []; }
+  // A curriculum item wins over one the practitioner added, whatever order the
+  // path happens to list them in: this line also carries the mastery count, so
+  // the sequence item is the one it is about. Only when there is no curriculum
+  // item does an added one speak for the practitioner's sensory work.
+  var sensoryItem = null, addedItem = null;
+  for (var i = 0; i < items.length; i++) {
+    var it = items[i];
+    if (!it || !GUIDE_SENSORY_ITEM_IDS[it.id]) continue;
+    if (it.sensoryTrack) { sensoryItem = it; break; }
+    if (!addedItem) addedItem = it;
+  }
+  if (!sensoryItem) sensoryItem = addedItem;
+  // Nothing sensory on the path at all: the sequence's next stage is the only
+  // honest answer, since there is no live practice to describe instead.
+  if (!sensoryItem) return progress.current;
+  // The curriculum item drives the sequence — report the stage it opens today.
+  if (sensoryItem.sensoryTrack) {
+    try { return guideSensoryStageForToday(progress); } catch (e) { return progress.current; }
+  }
+  // Otherwise the practitioner put this on the path themselves. Name the
+  // faculty they are practising rather than the stage they have not reached.
+  if (sensoryItem.id === 'visual' || sensoryItem.id === 'auditory') {
+    var eyesPref = sensoryItem.eyesMode || 'closed';
+    return progress.stages.filter(function(s) {
+      return s.exercise === sensoryItem.id && s.eyesMode === eyesPref;
+    })[0] || progress.current;
+  }
+  var senseStats = {};
+  try { senseStats = guideSenseStats(); } catch (e) { senseStats = {}; }
+  var mode = sensoryItem.mode || guideRecentSenseMode(senseStats);
+  if (!mode) return progress.current;
+  var eyes = sensoryItem.eyesMode || guidePathEyesMode('sense', 'closed');
+  return progress.stages.filter(function(s) {
+    return s.exercise === 'sense' && s.mode === mode && s.eyesMode === eyes;
+  })[0] || progress.current;
+}
+
 function guideActiveSenseMode(senseStats) {
   try {
     var progress = guideSensoryTrackProgress();

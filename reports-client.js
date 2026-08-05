@@ -262,15 +262,34 @@ function reviewPracticeRows(summary, previous) {
     }
     var modeDetail = '';
     if (key === 'sense' || key === 'visualization') {
-      var modeBits = [];
-      if (current.closedEyesSessions) modeBits.push('Closed eyes ' + current.closedEyesSessions + ' · best ' + reviewSeconds(current.closedEyesBest || 0));
-      if (current.openEyesSessions) modeBits.push('Open eyes ' + current.openEyesSessions + ' · best ' + reviewSeconds(current.openEyesBest || 0));
+      // Both breakdowns slice the same sessions on the same metric — one by
+      // eyes, one by faculty. A slice is only worth its numbers when it
+      // actually divides the practice: with every sit in one eyes mode and one
+      // faculty, each line repeated the count and the best from the row
+      // directly above it, three times over. A bare "Closed eyes 9" also never
+      // said what the 9 counted.
+      var eyeSlices = [];
+      if (current.closedEyesSessions) eyeSlices.push({ label:'Closed eyes', sessions:current.closedEyesSessions, best:current.closedEyesBest || 0 });
+      if (current.openEyesSessions) eyeSlices.push({ label:'Open eyes', sessions:current.openEyesSessions, best:current.openEyesBest || 0 });
+      var senseSlices = [];
       if (key === 'sense') {
         ['feeling','smell','taste'].forEach(function(mode) {
           var count = current[mode + 'Sessions'] || 0;
-          if (count) modeBits.push(mode.charAt(0).toUpperCase() + mode.slice(1) + ' ' + count + ' · best clean ' + reviewSeconds(current[mode + 'Best'] || 0));
+          if (count) senseSlices.push({ label:mode.charAt(0).toUpperCase() + mode.slice(1), sessions:count, best:current[mode + 'Best'] || 0 });
         });
       }
+      var modeBits = [];
+      function sliceLine(slice) {
+        return slice.label + ' · ' + slice.sessions + ' session' + (slice.sessions === 1 ? '' : 's')
+          + ' · best clean ' + reviewSeconds(slice.best);
+      }
+      if (eyeSlices.length > 1) eyeSlices.forEach(function(s) { modeBits.push(sliceLine(s)); });
+      if (senseSlices.length > 1) senseSlices.forEach(function(s) { modeBits.push(sliceLine(s)); });
+      // Whatever did not divide is stated once, as the fact it carries.
+      var uniform = [];
+      if (senseSlices.length === 1) uniform.push(senseSlices[0].label);
+      if (eyeSlices.length === 1) uniform.push(eyeSlices[0].label.toLowerCase());
+      if (uniform.length) modeBits.push('Every sit · ' + uniform.join(' · '));
       if (modeBits.length) modeDetail = '<div class="review-practice-modes">' + modeBits.join('<br>') + '</div>';
     }
     return '<div class="review-practice-row">'
@@ -284,12 +303,18 @@ function reviewPracticeRows(summary, previous) {
   try {
     if (typeof guideSensoryTrackProgress === 'function') {
       var track = guideSensoryTrackProgress();
-      var currentStage = track.current;
+      // The stage the practitioner is actually training, not simply the next
+      // unmastered one in Bardon order — those differ whenever the sensory
+      // work on their path is something they chose themselves, and naming the
+      // sequence stage then reported a clean-hold best from a stage they have
+      // never sat.
+      var currentStage = (typeof guideSensoryHeadlineStage === 'function'
+        ? guideSensoryHeadlineStage() : null) || track.current;
       sensoryTrackHtml = '<div class="review-sensory-summary">'
         + '<strong>Sensory concentration · ' + track.completedCount + ' / ' + track.stages.length + ' foundations mastered</strong>'
-        + (track.complete
+        + (track.complete || !currentStage
           ? 'Multi-Sense unlocked · elemental work follows later'
-          : 'Current: ' + currentStage.name + ' · ' + currentStage.label + ' · practice 10–20m · best clean ' + reviewSeconds(currentStage.bestCleanSec) + ' / 5m')
+          : 'Training: ' + currentStage.name + ' · ' + currentStage.label + ' · practice 10–20m · best clean ' + reviewSeconds(currentStage.bestCleanSec) + ' / 5m')
         + '</div>';
     }
   } catch (e) {}
