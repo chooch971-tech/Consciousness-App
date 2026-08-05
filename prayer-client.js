@@ -114,8 +114,14 @@ function loadPrayerState() {
     // Reset daily done/skipped if new day
     var today = new Date().toDateString();
     if (p.todayDate !== today) {
-      // Check streak
-      var yesterday = new Date(Date.now() - 86400000).toDateString();
+      // Step back one calendar day rather than subtracting 24 hours. On the
+      // Sunday a fall-back ends daylight saving the local day runs 25 hours,
+      // so between 23:00 and midnight "now minus 86,400,000 ms" lands inside
+      // that same day: yesterday read as today, lastFullDay never matched, and
+      // the prayer streak silently skipped a day once a year in every region
+      // that observes the change.
+      var yd = new Date(); yd.setHours(0, 0, 0, 0); yd.setDate(yd.getDate() - 1);
+      var yesterday = yd.toDateString();
       if (p.todayDone.length >= p.count && p.lastFullDay === yesterday) p.streak++;
       else if (p.todayDone.length < p.count) p.streak = 0;
       p.todayDate = today;

@@ -978,9 +978,15 @@ function getNextBestAction() {
 (function initIdleState() {
   // Decay momentum for days missed since last session
   if (state.lastSessionDate) {
-    var last = new Date(state.lastSessionDate);
-    var now = new Date();
-    var daysMissed = Math.floor((now - last) / 86400000) - 1;
+    // Calendar days, not elapsed 24-hour blocks. Comparing raw timestamps made
+    // this depend on the hour of day: a session at 23:00 Monday followed by an
+    // app open at 01:00 Wednesday is 26 hours, so it scored nought days missed
+    // when Tuesday plainly was. Normalising both ends to midnight and rounding
+    // also absorbs the 23- and 25-hour days either side of a daylight-saving
+    // change — the same shape checkStreakStatus already uses.
+    var last = new Date(state.lastSessionDate); last.setHours(0, 0, 0, 0);
+    var now = new Date(); now.setHours(0, 0, 0, 0);
+    var daysMissed = Math.round((now - last) / 86400000) - 1;
     if (daysMissed > 0) {
       state.momentum = Math.max(0.7, (state.momentum || 1.0) - 0.1 * daysMissed);
     }
