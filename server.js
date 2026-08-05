@@ -113,6 +113,7 @@ let notificationsCollection;
 let conversationsCollection;
 let messagesCollection;
 let userPushSubsCollection;
+let aiBudgetCollection;
 let subscriptions = [];
 let prayerSchedules = [];
 let practiceSchedules = [];
@@ -214,6 +215,7 @@ async function connectDB() {
     conversationsCollection = db.collection('conversations');
     messagesCollection = db.collection('messages');
     userPushSubsCollection = db.collection('user_push_subs');
+    aiBudgetCollection = db.collection('ai_budget');
 
     try {
       await dedupeOmniaReportCache();
@@ -252,6 +254,7 @@ async function connectDB() {
       { label: 'bug-reports.reporter-created', collection: bugReportsCollection, keys: { reporterId: 1, createdAt: -1 } },
       { label: 'omnia-reports.cache', collection: omniaReportsCollection, keys: { userId: 1, period: 1, periodKey: 1, version: 1 }, options: { unique: true } },
       { label: 'omnia-reports.expiry', collection: omniaReportsCollection, keys: { expiresAt: 1 }, options: { expireAfterSeconds: 0 } },
+      { label: 'ai-budget.expiry', collection: aiBudgetCollection, keys: { expiresAt: 1 }, options: { expireAfterSeconds: 0 } },
       { label: 'push-subscriptions.endpoint', collection: userPushSubsCollection, keys: { endpoint: 1 }, options: { unique: true } },
       { label: 'push-subscriptions.user', collection: userPushSubsCollection, keys: { userId: 1 } },
       // TTL sweeps stale beacons; reads independently guard expiresAt.
@@ -459,6 +462,67 @@ function aiChargeUser(userId) {
   if (n >= AI_USER_DAILY_CAP) return false;
   aiUserDay.counts.set(userId, n + 1);
   return true;
+}
+
+// The two caps above live in process memory, which is only a day's ceiling if
+// the process lasts a day. Render restarts on every deploy, on a crash, and on
+// a cold start after idling, and each restart resets the counters to zero — so
+// "3000 a day" was really "3000 since the last restart", and several restarts
+// in a day multiplied the ceiling by however many there were. Running more than
+// one instance would divide it the same way.
+//
+// So the authoritative count lives in Mongo, one row per UTC day (and one per
+// user per day), incremented atomically and dropped by TTL a couple of days
+// later. The in-memory counters stay as a first, free check: they can only ever
+// refuse earlier than the durable count, never allow past it.
+//
+// On a database error this allows the generation: the in-memory caps still
+// bound spend within the process, and losing insights entirely because a
+// counter could not be written is the worse failure.
+const AI_BUDGET_ROW_TTL_MS = 3 * 86400000;
+async function aiConsumeDurableBudget(userId) {
+  if (!aiBudgetCollection) return { ok: true, reason: 'no-store' };
+  const day = aiCurrentDayKey();
+  const expiresAt = new Date(Date.now() + AI_BUDGET_ROW_TTL_MS);
+  try {
+    const globalRow = await aiBudgetCollection.findOneAndUpdate(
+      { _id: 'global:' + day },
+      { $inc: { count: 1 }, $set: { expiresAt } },
+      { upsert: true, returnDocument: 'after' }
+    );
+    const globalCount = (globalRow && globalRow.count) || (globalRow && globalRow.value && globalRow.value.count) || 0;
+    if (globalCount > AI_GLOBAL_DAILY_CAP) {
+      aiLogCapOnce('global', day, globalCount);
+      return { ok: false, status: 429, error: 'AI temporarily at capacity. Try again later.' };
+    }
+    const userRow = await aiBudgetCollection.findOneAndUpdate(
+      { _id: 'user:' + day + ':' + userId },
+      { $inc: { count: 1 }, $set: { expiresAt } },
+      { upsert: true, returnDocument: 'after' }
+    );
+    const userCount = (userRow && userRow.count) || (userRow && userRow.value && userRow.value.count) || 0;
+    if (userCount > AI_USER_DAILY_CAP) {
+      aiLogCapOnce('user', day, userCount);
+      return { ok: false, status: 429, error: 'Daily AI limit reached. Try again tomorrow.' };
+    }
+    return { ok: true, globalCount, userCount };
+  } catch (error) {
+    console.error('[AI] budget store unavailable, falling back to in-memory caps:', error.message);
+    return { ok: true, reason: 'store-error' };
+  }
+}
+
+// Hitting a spend ceiling should be visible to the operator, not only to the
+// user who gets told the AI is busy. Logged once per kind per day so a capped
+// day leaves a mark without flooding the log.
+const aiCapLogged = new Map();
+function aiLogCapOnce(kind, day, count) {
+  const key = kind + ':' + day;
+  if (aiCapLogged.get(key)) return;
+  if (aiCapLogged.size > 64) aiCapLogged.clear();
+  aiCapLogged.set(key, true);
+  console.warn('[AI] ' + kind + ' daily cap reached on ' + day + ' at ' + count
+    + ' generations (global cap ' + AI_GLOBAL_DAILY_CAP + ', per-user cap ' + AI_USER_DAILY_CAP + ')');
 }
 
 function aiRateLimit(req, res, next) {
@@ -3470,6 +3534,8 @@ app.post('/api/ai/progress-comment', verifyToken, aiRateLimit, aiGlobalBudget, a
     if (!aiChargeUser(req.user.userId)) {
       return res.status(429).json({ error: 'Daily AI limit reached. Try again tomorrow.' });
     }
+    const budget = await aiConsumeDurableBudget(req.user.userId);
+    if (!budget.ok) return res.status(budget.status).json({ error: budget.error });
     const message = await generateAiMessage('progress_report', req.body?.context || {});
     res.json({ message, model: OPENAI_MODEL });
   } catch (err) {
@@ -3537,6 +3603,12 @@ app.post('/api/sync/omnia/report', verifyToken, aiRateLimit, async (req, res) =>
         if (!aiChargeUser(userId)) {
           const err = new Error('Daily AI limit reached. Try again tomorrow.');
           err.status = 429;
+          throw err;
+        }
+        const budget = await aiConsumeDurableBudget(userId);
+        if (!budget.ok) {
+          const err = new Error(budget.error);
+          err.status = budget.status;
           throw err;
         }
         const commentary = await generateAiMessage('omnia_report', context || {});
