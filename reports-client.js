@@ -365,6 +365,89 @@ function reviewBestImprovement(summary, previous) {
   return best;
 }
 
+// How many disciplines the window actually touched.
+function reviewDisciplineCount(summary) {
+  return Object.keys(summary.byPractice || {}).filter(function(key) {
+    return (summary.byPractice[key].sessions || 0) > 0;
+  }).length;
+}
+
+// How far the sensory track is from its next mastery hold. Unlike every
+// window-over-window comparison this needs no previous window, so it also
+// speaks to a practitioner's first week — and it is the number they are
+// actually working toward. Held to the live window: in a past review it would
+// report today's standing against a window that closed long ago.
+function reviewSensoryGateText() {
+  try {
+    if ((Number(typeof reportOffset !== 'undefined' ? reportOffset : 0) || 0) !== 0) return '';
+    if (typeof guideSensoryHeadlineStage !== 'function') return '';
+    var stage = guideSensoryHeadlineStage();
+    if (!stage) return '';
+    var goal = typeof GUIDE_SENSORY_CLEAN_GOAL_SEC === 'number' ? GUIDE_SENSORY_CLEAN_GOAL_SEC : 300;
+    var best = Math.max(0, stage.bestCleanSec || 0);
+    // Nothing held yet says only that they have not started; a hold already at
+    // the goal is a mastery the track reports on its own.
+    if (best <= 0 || best >= goal) return '';
+    return stage.name + ' · ' + stage.label + ' is ' + reviewSeconds(goal - best)
+      + ' from the ' + reviewSeconds(goal) + ' clean hold that masters it.';
+  } catch (e) { return ''; }
+}
+
+// The one observation worth the top of the screen, or '' when there is none.
+//
+// The hero tiles directly beneath this card already state practice days and
+// practice time, so a sentence reciting them is the most prominent element on
+// the page saying what the next row says. That is exactly what this used to
+// fall back to whenever no discipline set a personal best — which, for anyone
+// past the beginner stretch, is most windows, and on the in-progress month is
+// every window, since the AI insight is never generated there.
+//
+// Each rung below states something the numbers on screen do not. When none of
+// them can, the caller drops the card rather than filling it.
+function reviewObservation(summary, previous, period) {
+  var improvement = reviewBestImprovement(summary,previous);
+  if (improvement) {
+    var meta = REVIEW_PRACTICES[improvement.key] || {label:improvement.key};
+    return meta.label + ' moved forward: your best reached ' + reviewMetricText(improvement.key,improvement.current) + ' in this window.';
+  }
+  var gate = reviewSensoryGateText();
+  if (gate) return gate;
+  if (summary.awareness.stability != null && previous && previous.awareness.stability != null
+      && summary.awareness.stability - previous.awareness.stability >= .25) {
+    return 'Your attention was more stable than in the preceding window, improving from '
+      + previous.awareness.stability.toFixed(1) + ' to ' + summary.awareness.stability.toFixed(1) + ' out of 5.';
+  }
+  // Window-over-window movement. Each needs a real prior window to have moved
+  // from — rising from nothing is a start, not a trend, and the tiles say it.
+  var span = period === 'monthly' ? 'month' : 'week';
+  if (previous) {
+    if (previous.totalSeconds > 0 && summary.totalSeconds >= previous.totalSeconds * 1.15) {
+      return 'You practiced ' + reviewSeconds(summary.totalSeconds) + ' this ' + span
+        + ', up from ' + reviewSeconds(previous.totalSeconds) + ' the ' + span + ' before.';
+    }
+    if (previous.activeDays > 0 && summary.activeDays > previous.activeDays) {
+      return 'You practiced on ' + summary.activeDays + ' day' + (summary.activeDays === 1 ? '' : 's')
+        + ' this ' + span + ', against ' + previous.activeDays + ' the ' + span + ' before.';
+    }
+    var breadth = reviewDisciplineCount(summary), priorBreadth = reviewDisciplineCount(previous);
+    if (priorBreadth > 0 && breadth > priorBreadth) {
+      return 'You worked across ' + breadth + ' disciplines this ' + span
+        + ', against ' + priorBreadth + ' the ' + span + ' before.';
+    }
+    // Holding level is the story of a maintenance window, and for a practice
+    // measured in years it is the one that matters most. Stated flatly rather
+    // than as praise — and it is still a comparison, which the tiles are not.
+    if (previous.activeDays >= 2 && summary.activeDays === previous.activeDays) {
+      return 'You kept the same rhythm as the ' + span + ' before: '
+        + summary.activeDays + ' practice days.';
+    }
+  }
+  // A window that fell behind the one before it gets no observation. Reciting
+  // the tiles back would not inform, and this card is not the place to scold;
+  // "Carry forward" below already names the next step.
+  return '';
+}
+
 function buildReviewGuidance(summary, previous, period) {
   if (!summary.sessions) {
     return {
@@ -372,16 +455,7 @@ function buildReviewGuidance(summary, previous, period) {
       action:'Choose one small practice from the Guide and complete it without trying to make up for lost time.'
     };
   }
-  var insight;
-  var improvement = reviewBestImprovement(summary,previous);
-  if (improvement) {
-    var meta = REVIEW_PRACTICES[improvement.key] || {label:improvement.key};
-    insight = meta.label + ' moved forward: your best reached ' + reviewMetricText(improvement.key,improvement.current) + ' in this window.';
-  } else if (summary.awareness.stability != null && previous && previous.awareness.stability != null && summary.awareness.stability - previous.awareness.stability >= .25) {
-    insight = 'Your attention was more stable than in the preceding window, improving from ' + previous.awareness.stability.toFixed(1) + ' to ' + summary.awareness.stability.toFixed(1) + ' out of 5.';
-  } else {
-    insight = 'You practiced on ' + summary.activeDays + ' of ' + (reviewDaysFor(period) || summary.activeDays) + ' days for ' + reviewSeconds(summary.totalSeconds) + ' across ' + summary.sessions + ' sessions.';
-  }
+  var insight = reviewObservation(summary,previous,period);
 
   var action;
   if (summary.plan.assigned > 0 && summary.plan.completed / summary.plan.assigned < .7) {
@@ -610,7 +684,17 @@ function loadReviewOmnia(period, offset, summary, previous, fallback, decision) 
   var requestPeriod = period === 'monthly' ? 'review30' : 'review7';
   function _applyInsight(textVal) {
     var el = document.getElementById('reviewInsightText');
-    if (el) { el.textContent = textVal; el.classList.remove('is-loading'); }
+    if (!el) return;
+    // A generation that fails back onto an empty local observation must take
+    // the card with it, or the loading line resolves into a blank card — the
+    // one state this whole card is meant not to reach.
+    if (!textVal) {
+      var section = el.closest ? el.closest('.review-insight') : null;
+      if (section && section.remove) section.remove();
+      return;
+    }
+    el.textContent = textVal;
+    el.classList.remove('is-loading');
   }
   fetchOmniaReport(requestPeriod,reviewOmniaContext(period,offset,summary,previous,decision),key)
     .then(function(data){
@@ -668,6 +752,10 @@ function prewarmReviewOmnia() {
 
 function reviewInsightHtml(guidance, period, loading) {
   if (period === 'yearly') return '';
+  // An observation with nothing to observe is worse than no card: it sits
+  // above the hero tiles, so it would be the most prominent thing on screen
+  // saying nothing. "Carry forward" below still names the next action.
+  if (!loading && !guidance.insight) return '';
   var body = loading ? 'Reading your ' + (period === 'monthly' ? 'month' : 'week') + '…' : escHtml(guidance.insight);
   return '<section class="review-insight">'
     + '<div class="review-insight-glyph">' + (typeof OMNIA_CRYSTAL_SVG_RPT !== 'undefined' ? OMNIA_CRYSTAL_SVG_RPT : '◇') + '</div>'
