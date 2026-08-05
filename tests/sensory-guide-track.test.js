@@ -187,8 +187,8 @@ test('exercise records and Path cards expose the evidence and curriculum indicat
   assert.match(auditorySource, /auditoryReps:\s*audReps\.map/);
   assert.doesNotMatch(visualSource, /Complete the six sensory foundations to unlock Multi-Sense/);
   assert.doesNotMatch(clockSource, /Complete the six sensory foundations to unlock/);
-  assert.match(clockSource, /card\.dataset\.trackLocked/);
-  assert.match(clockSource, /card\.style\.pointerEvents = sensoryComplete \? '' : 'none'/);
+  assert.doesNotMatch(clockSource, /card\.dataset\.trackLocked/);
+  assert.doesNotMatch(clockSource, /card\.style\.pointerEvents = sensoryComplete/);
   assert.match(guideSource, /changing the session time does not change that mastery goal/);
   assert.match(guideSource, /data-guide-eyes/);
   assert.match(guideSource, /Sensory concentration · Stage/);
@@ -219,6 +219,16 @@ test('exercise records and Path cards expose the evidence and curriculum indicat
   assert.match(reportsSource, /recommended_practice_range_min:\[10, 20\]/);
   assert.match(reportsSource, /next_after_foundations:'multi_sense'/);
   assert.match(reportsSource, /later_stage:'elemental_work'/);
+});
+
+test('Multi-Sense can open before the sensory curriculum is complete', () => {
+  const openSetup = visualSource.slice(
+    visualSource.indexOf('function openExerciseSetup(ex)'),
+    visualSource.indexOf('function setAsanaDuration(min)')
+  );
+  assert.doesNotMatch(openSetup, /guideSensoryTrackProgress/);
+  assert.doesNotMatch(openSetup, /ex === 'multisense'[\s\S]*?return;/);
+  assert.match(visualSource, /concExpertGrid[\s\S]*?openExerciseSetup\(card\.dataset\.exercise\)/);
 });
 
 test('lengthening a sensory practice session requires attempts that were real sits', () => {

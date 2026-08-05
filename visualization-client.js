@@ -1896,11 +1896,6 @@ function toggleClkOmnia() {
 }
 
 function openExerciseSetup(ex) {
-  if (ex === 'multisense'
-      && typeof guideSensoryTrackProgress === 'function'
-      && !guideSensoryTrackProgress().complete) {
-    return;
-  }
   suppressTutorialForExerciseEntry();
   currentExercise = ex;
   exSetupOriginMode = (typeof currentMode !== 'undefined') ? currentMode : 'concentration';

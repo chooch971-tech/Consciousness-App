@@ -59,7 +59,7 @@ const journalClient = fs.readFileSync(path.join(root, 'journal-client.js'), 'utf
 const socialClient = fs.readFileSync(path.join(root, 'social-client.js'), 'utf8');
 
 test('every declared client module parses and is precached', () => {
-  const clientScripts = [...presence.matchAll(/<script\s+src="([^"]+-client\.js)"><\/script>/g)]
+  const clientScripts = [...presence.matchAll(/<script\s+src="([^"]+-client\.js)(?:\?[^"]*)?"><\/script>/g)]
     .map(match => match[1]);
   assert.ok(clientScripts.length >= 45, 'expected the complete feature-module graph');
   clientScripts.forEach(file => {
@@ -210,12 +210,12 @@ test('returning-account restoration cannot race the first-run tutorial', () => {
 
 test('Clock sessions and Concentration history load through their own client boundary', () => {
   const stateTag = presence.indexOf('<script src="concentration-state-client.js"></script>');
-  const clockTag = presence.indexOf('<script src="concentration-clock-client.js"></script>');
-  const visualizationTag = presence.indexOf('<script src="visualization-client.js"></script>');
+  const clockTag = presence.indexOf('<script src="concentration-clock-client.js?v=2"></script>');
+  const visualizationTag = presence.indexOf('<script src="visualization-client.js?v=2"></script>');
   assert.notEqual(clockTag, -1);
   assert.ok(stateTag < clockTag, 'Clock sessions require Concentration state');
   assert.ok(clockTag < visualizationTag, 'Clock helpers initialize before shared exercise clients');
-  assert.equal(presence.split('<script src="concentration-clock-client.js"></script>').length - 1, 1);
+  assert.equal(presence.split('<script src="concentration-clock-client.js?v=2"></script>').length - 1, 1);
   assert.doesNotMatch(presence, /function\s+buildClockSVG\s*\(|function\s+startConcentration\s*\(/);
   assert.doesNotMatch(presence, /function\s+saveConcResult\s*\(|function\s+renderConcHistory\s*\(/);
   assert.match(concentrationClockClient, /function\s+buildClockSVG\s*\(/);
@@ -315,9 +315,9 @@ test('top-level drawer screens reveal the open drawer during swipe-back', () => 
 });
 
 test('Visualization and the shared exercise gateway load before Auditory', () => {
-  const visualizationTag = presence.indexOf('<script src="visualization-client.js"></script>');
+  const visualizationTag = presence.indexOf('<script src="visualization-client.js?v=2"></script>');
   const concentrationStateTag = presence.indexOf('<script src="concentration-state-client.js"></script>');
-  const concentrationClockTag = presence.indexOf('<script src="concentration-clock-client.js"></script>');
+  const concentrationClockTag = presence.indexOf('<script src="concentration-clock-client.js?v=2"></script>');
   const modeDeclaration = presence.indexOf('var currentMode;');
   const auditoryTag = presence.indexOf('<script src="auditory-client.js"></script>');
   assert.notEqual(visualizationTag, -1);
@@ -325,7 +325,7 @@ test('Visualization and the shared exercise gateway load before Auditory', () =>
   assert.ok(concentrationClockTag < visualizationTag, 'Visualization shares Concentration results and history');
   assert.ok(modeDeclaration < visualizationTag, 'shared mode state must be declared before startup and exercise clients');
   assert.ok(visualizationTag < auditoryTag, 'Visualization must initialize before Auditory');
-  assert.equal(presence.split('<script src="visualization-client.js"></script>').length - 1, 1);
+  assert.equal(presence.split('<script src="visualization-client.js?v=2"></script>').length - 1, 1);
   assert.doesNotMatch(presence, /function\s+openExerciseSetup\s*\(|function\s+startVisSession\s*\(/);
   assert.doesNotMatch(presence, /function\s+endVisSession\s*\(|function\s+showConcLevelUp\s*\(/);
   assert.match(visualizationClient, /function\s+openExerciseSetup\s*\(/);
@@ -338,7 +338,7 @@ test('Visualization and the shared exercise gateway load before Auditory', () =>
 });
 
 test('Auditory sound and session behavior load before Thought Control', () => {
-  const visualizationTag = presence.indexOf('<script src="visualization-client.js"></script>');
+  const visualizationTag = presence.indexOf('<script src="visualization-client.js?v=2"></script>');
   const auditoryTag = presence.indexOf('<script src="auditory-client.js"></script>');
   const thoughtTag = presence.indexOf('<script src="thought-control-client.js"></script>');
   assert.notEqual(auditoryTag, -1);
