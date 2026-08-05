@@ -1153,7 +1153,7 @@ test('Streak screen and ended-state UI load through their own client boundary', 
   const streakTag = presence.indexOf('<script src="streak-client.js"></script>');
   const companionTag = presence.indexOf('<script src="omnia-companion-client.js"></script>');
   assert.notEqual(streakTag, -1);
-  assert.ok(profileTag < streakTag, 'Streak Society requires Profile friend helpers');
+  assert.ok(profileTag < streakTag, 'Friends Streaks requires Profile friend helpers');
   assert.ok(streakTag < companionTag, 'streak UI initializes before later end-of-body clients');
   assert.equal(presence.split('<script src="streak-client.js"></script>').length - 1, 1);
   assert.doesNotMatch(presence, /function\s+buildStreakCalendar\s*\(|function\s+showStreakScreen\s*\(/);
@@ -1165,6 +1165,10 @@ test('Streak screen and ended-state UI load through their own client boundary', 
   assert.match(streakClient, /function\s+openStreakSociety\s*\(/);
   assert.match(streakClient, /function\s+showStreakEndedPrompt\s*\(/);
   assert.match(streakClient, /function\s+wireStreakSwipeDismiss\s*\(/);
+  assert.equal((streakClient.match(/Friends Streaks/g) || []).length, 4);
+  assert.doesNotMatch(streakClient, /Streak\s+Society/);
+  assert.match(socialClient, /removed from Friends Streaks/);
+  assert.doesNotMatch(socialClient, /Streak\s+Society/);
   assert.match(streakClient, /touchstart[\s\S]*?touchmove[\s\S]*?preventDefault\(\)[\s\S]*?touchend/);
   assert.match(streakClient, /dx > width \* 0\.3[\s\S]*?close\(true\)/);
   assert.match(presence, /streakOverlay[\s\S]*?classList\.contains\('so-show'\)/);

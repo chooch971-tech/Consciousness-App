@@ -265,7 +265,7 @@ sections). Highlights the user cares about:
   private-account toggle, make grey text more legible, maybe drop backup/restore.
 - **FAQ**: different banner color, absorb the About tab (then remove About).
 - **Streak page**: tap candle to flicker, trim text, unalterable+repeatable streak
-  goal, rename "Streak Society" (too close to Duolingo), reach it from Friends.
+  goal, use "Friends Streaks" for shared vigils, reach it from Friends.
 - **Character/Level-up page**: 2nd Akasha generator at Step V + consolidate the
   two, finish Steps I–X storyline, rewrite all the "goofy" Seven-Gifts/step/
   color copy, scale gift akasha by step (keep 2% same).

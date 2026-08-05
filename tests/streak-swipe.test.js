@@ -94,7 +94,7 @@ test('Streak edge swipe preserves vertical scrolling and can cancel or dismiss c
   assert.equal(h.el.style.transition, '');
 });
 
-test('Streak swipe waits at the edge and does not dismiss behind Society', () => {
+test('Streak swipe waits at the edge and does not dismiss behind Friends Streaks', () => {
   const h = loadSwipeHarness();
   h.listeners.touchstart(makeTouchEvent(60, 300, false));
   h.listeners.touchmove(makeTouchEvent(220, 302, false));

@@ -1865,7 +1865,7 @@ async function declineFriend(userId) {
 
 async function removeFriend(userId, _c) {
   if (!authToken) return;
-  if (!_c) { showConfirm('Remove Friend', 'They will be removed from your Streak Society.', function(){ removeFriend(userId, true); }); return; }
+  if (!_c) { showConfirm('Remove Friend', 'They will be removed from Friends Streaks.', function(){ removeFriend(userId, true); }); return; }
   try {
     await fetch(SYNC_API_URL + '/friends/decline', {
       method:'POST', headers:{'Content-Type':'application/json','Authorization':'Bearer ' + authToken},

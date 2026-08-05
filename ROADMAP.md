@@ -34,8 +34,8 @@ wiring are done, only the wording needs a pass.
 ### Streak Screen
 - [ ] Design polish (less vibecoded)
 - [ ] Streak animation when a new day is added
-- [ ] Design Streak Society section
-- [ ] Rename Streak Society
+- [ ] Design Friends Streaks section
+- [x] Rename the shared-streak feature to Friends Streaks
 
 ### Progress Reports
 - [ ] Design overhaul (less vibecoded)

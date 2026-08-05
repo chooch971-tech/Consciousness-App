@@ -319,7 +319,7 @@ function showStreakScreen() {
     + '<div class="so-society-card" id="soSocietyCard" style="opacity:' + (societyLocked ? '.45' : '1') + (societyLocked ? '' : ';cursor:pointer') + '">'
     + '<div class="so-society-icon"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="8.5" r="2.8"/><path d="M3.8 19c.9-3 2.9-4.6 5.2-4.6s4.3 1.6 5.2 4.6"/><circle cx="16.6" cy="9.5" r="2.2"/><path d="M15.4 14.7c2.1.2 3.9 1.7 4.7 4.3"/></svg></div>'
     + '<div class="so-society-text">'
-    + '<div class="so-society-title">Streak Society</div>'
+    + '<div class="so-society-title">Friends Streaks</div>'
     + '<div class="so-society-sub">' + (societyLocked ? 'Reach a 7 day streak to join and see friends\' streaks' : 'Compare streaks with friends') + '</div>'
     + '</div>'
     + '<div class="so-society-lock">' + (societyLocked
@@ -383,7 +383,7 @@ function showStreakScreen() {
   requestAnimationFrame(function() { requestAnimationFrame(function() { el.classList.add('so-vis'); }); });
 }
 
-// Streak Society — the roster of shared vigils. Each accepted friend pair keeps
+// Friends Streaks — the roster of shared vigils. Each accepted friend pair keeps
 // a run of consecutive days both practiced; today is a grace day.
 function openStreakSociety() {
   var el = document.getElementById('societyOverlay');
@@ -397,7 +397,7 @@ function openStreakSociety() {
   var bannerHtml =
     '<div class="soc-banner-wrap">'
     + '<div class="ex-banner" style="--exb-rgb:126,184,164; --exb-light:#9ed8c4; margin:0; height:140px;">'
-    + '<div class="soc-banner-title">Streak Society</div>'
+    + '<div class="soc-banner-title">Friends Streaks</div>'
     + '<div class="exb-right">'
     + '<div class="exb-glow"></div>'
     + '<div class="exb-ripple"></div><div class="exb-ripple"></div><div class="exb-ripple"></div>'
@@ -427,7 +427,7 @@ function openStreakSociety() {
     body.innerHTML = '<div class="soc-msg">Sign in to keep vigils with friends.</div>';
   }
   function renderUnreachable() {
-    body.innerHTML = '<div class="soc-msg">The society is unreachable &mdash; try again later.</div>';
+    body.innerHTML = '<div class="soc-msg">Friends Streaks is unavailable &mdash; try again later.</div>';
   }
   function renderEmpty() {
     body.innerHTML = '<div class="soc-msg">A vigil kept together burns brighter. Add a friend to begin.'
