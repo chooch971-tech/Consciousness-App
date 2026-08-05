@@ -250,8 +250,8 @@ test('lengthening a sensory practice session requires attempts that were real si
 test('the Progress view describes only what is on today\'s path', () => {
   // Cards are filtered against the real path, so an exercise the practitioner
   // removed is not explained back to them.
-  assert.match(guideSource, /function guideProgressCardIds/);
-  assert.match(guideSource, /onPath \? cards\.filter/);
+  assert.match(guideSource, /function pathItemForCard\(cardId\)/);
+  assert.match(guideSource, /cards\.filter\(function\(card\) \{ return !!pathItemForCard\(card\.id\); \}\)/);
   // The intro reads the path too, rather than announcing a curriculum stage
   // that was removed from it.
   assert.match(guideSource, /function guideProgressIntro/);

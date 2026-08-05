@@ -1965,6 +1965,23 @@ function guideProgressPct(value, total) {
 // behind those choices without placing a large instruction box on each card.
 function guideProgressOverview() {
   var cards = [];
+  // Today's real path items. This panel exists to explain the path, so a card
+  // has to describe the ladder actually driving its exercise — computing an
+  // independent one is how the Senses card came to recommend twenty minutes
+  // beside a path item reading twelve.
+  var pathItems = null;
+  try {
+    var built = buildGuideRegimentItems();
+    if (Array.isArray(built)) pathItems = built;
+  } catch (e) { pathItems = null; }
+  function pathItemForCard(cardId) {
+    if (!pathItems) return null;
+    for (var i = 0; i < pathItems.length; i++) {
+      var it = pathItems[i];
+      if (it && GUIDE_PROGRESS_CARD_FOR_ITEM[it.id] === cardId) return it;
+    }
+    return null;
+  }
   var clock = guideClockStats();
   var clockTarget = guideClockFinalTarget(clock);
   var clockFloor = guideFloorMin('clock');
@@ -2061,7 +2078,7 @@ function guideProgressOverview() {
   // with its clean-hold state, which describes the mastery track instead — a
   // different question, and one that buried the session length underneath it.
   // The foundation being trained and the one after it move to the footer.
-  function sensoryLengthCard(stages, allMasteredFooter) {
+  function sensoryLengthCard(stages, allMasteredFooter, pathItem) {
     // Which foundation sets today's length: the one pinned for today if it
     // belongs to this exercise (mastering a stage mid-day must not shorten the
     // sit already under way), otherwise the first still unmastered.
@@ -2069,6 +2086,28 @@ function guideProgressOverview() {
       ? sensoryActiveStage
       : (stages.filter(function(s) { return !s.mastered; })[0] || stages[stages.length - 1]);
     var mastered = stages.filter(function(s) { return s.mastered; }).length;
+    // An exercise added to the path by hand does not run the curriculum ladder
+    // at all — it follows its own target, and its manual floor is stored under
+    // the item's own id rather than the faculty's. Reporting the curriculum's
+    // number for it put two different lengths for one exercise on two screens,
+    // with the one on this panel belonging to nothing the practitioner does.
+    if (pathItem && pathItem.added && typeof pathItem.duration === 'number') {
+      var addedFloor = guideFloorMin(pathItem.mode || pathItem.id);
+      var addedDetail;
+      if (addedFloor && !guideAutoAdvanceOn(pathItem.mode || pathItem.id)) {
+        addedDetail = 'Manual ' + addedFloor + '-minute target · automatic increases are off.';
+      } else if (addedFloor) {
+        addedDetail = 'Your manual ' + addedFloor + '-minute start · practice lengthens it from there.';
+      } else {
+        addedDetail = 'Added by you · practice lengthens this session over time.';
+      }
+      return {
+        summary:pathItem.duration + ' min recommended',
+        rows:[{ label:'Session length', status:pathItem.duration + ' min', detail:addedDetail, pct:100 }],
+        footer:'You added this yourself, so it follows your own target rather than the '
+          + 'sequence ladder · ' + mastered + ' of ' + stages.length + ' foundations mastered.'
+      };
+    }
     var min = guideSensoryPracticeMinutes(stage);
     var detail, pct = 100;
     if (min >= GUIDE_SENSORY_PRACTICE_MAX) {
@@ -2099,7 +2138,8 @@ function guideProgressOverview() {
   var senseStages = sensory.stages.filter(function(stage) { return stage.exercise === 'sense'; });
 
   var visualCard = sensoryLengthCard(visualStages,
-    'Both foundations mastered — keep the image steady at this length.');
+    'Both foundations mastered — keep the image steady at this length.',
+    pathItemForCard('visual'));
   cards.push({
     id:'visual', name:'Visualization', icon:'◉', color:'#8ab8e0',
     summary:visualCard.summary, rows:visualCard.rows, footer:visualCard.footer
@@ -2129,7 +2169,7 @@ function guideProgressOverview() {
       footer:'Both foundations mastered — listening now trains on its own ladder.'
     };
   } else {
-    auditoryCard = sensoryLengthCard(auditoryStages, '');
+    auditoryCard = sensoryLengthCard(auditoryStages, '', pathItemForCard('auditory'));
   }
   cards.push({
     id:'auditory', name:'Auditory', icon:'◈', color:'#8eccc0',
@@ -2138,7 +2178,8 @@ function guideProgressOverview() {
 
   var senseCard = sensoryLengthCard(senseStages, sensory.complete
     ? 'Every foundation is mastered — Multi-Sense is unlocked, and elemental work follows later.'
-    : 'All six sense foundations are mastered — Multi-Sense opens once the earlier foundations are too.');
+    : 'All six sense foundations are mastered — Multi-Sense opens once the earlier foundations are too.',
+    pathItemForCard('sense'));
   cards.push({
     id:'sense', name:'Senses', icon:'✺', color:'#e0a8c4',
     summary:senseCard.summary, rows:senseCard.rows, footer:senseCard.footer
@@ -2146,8 +2187,8 @@ function guideProgressOverview() {
   // Progress describes the ladders behind today's path, so it only covers what
   // is actually on that path. An exercise the practitioner removed has no
   // bearing on their practice and should not be explained back to them.
-  var onPath = guideProgressCardIds();
-  return onPath ? cards.filter(function(card) { return onPath[card.id]; }) : cards;
+  if (!pathItems) return cards;
+  return cards.filter(function(card) { return !!pathItemForCard(card.id); });
 }
 
 // Maps today's path items onto the Progress cards that describe them. Thought
@@ -2162,18 +2203,6 @@ var GUIDE_PROGRESS_CARD_FOR_ITEM = {
   sense:'sense', feeling:'sense', smell:'sense', taste:'sense',
   multisense:'sense'
 };
-
-function guideProgressCardIds() {
-  var items;
-  try { items = buildGuideRegimentItems(); } catch (e) { return null; }
-  if (!Array.isArray(items)) return null;
-  var present = {};
-  items.forEach(function(item) {
-    var cardId = item && GUIDE_PROGRESS_CARD_FOR_ITEM[item.id];
-    if (cardId) present[cardId] = true;
-  });
-  return present;
-}
 
 // The ladders below explain how long each exercise should run, but the question
 // a practitioner actually asks first is why these exercises and not others.

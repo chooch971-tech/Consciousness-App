@@ -829,11 +829,23 @@ function dmGenRatePerDay(idx) {
   return Math.floor(DM_GEN_BASE_DAY[idx] + DM_GEN_PER_DAY[idx] * Math.min(9, built)
     + DM_GEN_PER_DAY[idx] * 0.5 * Math.max(0, built - 9));
 }
+// Split out so the live vat size and the upgrade preview cannot drift apart:
+// both read this one formula, just at different levels.
+function dmVesselReservoirCap(idx, vesselLevel) {
+  var lvl = Math.max(1, Number(vesselLevel) || 1);
+  // Starts at the original two days and reaches 4.25 days at Void Vessel 10.
+  return Math.floor(dmGenRatePerDay(idx) * (2 + (lvl - 1) * 0.25));
+}
 function dmPumpReservoirCap(idx) {
   var meta = DM_GEN_META[idx];
-  var vessel = (omniaState.upgrades && omniaState.upgrades[meta.vessel]) || 1;
-  // Starts at the original two days and reaches 4.25 days at Void Vessel 10.
-  return Math.floor(dmGenRatePerDay(idx) * (2 + (vessel - 1) * 0.25));
+  return dmVesselReservoirCap(idx, (omniaState.upgrades && omniaState.upgrades[meta.vessel]) || 1);
+}
+// Void Vessel's sub-line names the two-to-4.25-day range but not where this
+// pump currently sits in it, so the size of the level being bought was the one
+// thing the row never said.
+function dmPreviewVesselCapGain(idx) {
+  var lvl = (omniaState.upgrades && omniaState.upgrades[DM_GEN_META[idx].vessel]) || 1;
+  return { before: dmVesselReservoirCap(idx, lvl), after: dmVesselReservoirCap(idx, lvl + 1) };
 }
 function dmStabilizationMult(idx) {
   var meta = DM_GEN_META[idx];
@@ -1074,10 +1086,21 @@ function renderDmSheet(gid) {
     else if (atMax) btn = '<button class="omnia-mini-btn" disabled style="opacity:.45;cursor:default;">Mastered</button>';
     else btn = '<button class="omnia-mini-btn" data-dm-buy="' + id + '"' + (disabled ? ' disabled' : '') + '>Upgrade ' + priceLabel + '</button>';
     var timeLabel = (atMax || trackBuild || pumpBusyId) ? '' : omniaBuildSpanLabel(dmBuildDurationMs(trackLvl + 1));
+    // Same rule as the akasha sheet: the one track whose effect is a plain
+    // number states it before the player pays, and never once there is no
+    // next level to preview.
+    var capPreview = '';
+    if (id === meta.vessel && !atMax && !trackBuild && !pumpBusyId) {
+      var vp = dmPreviewVesselCapGain(idx);
+      if (vp.after > vp.before) {
+        capPreview = '<div class="omnia-upgrade-preview">' + vp.before.toLocaleString()
+          + ' → ' + vp.after.toLocaleString() + ' ◆ vat</div>';
+      }
+    }
     return '<div class="omnia-upgrade-row" style="border-left:2px solid ' + accent + '55; padding-left:11px;">'
       + '<div><div class="omnia-upgrade-name" style="color:' + accent + ';"><span style="opacity:.9;margin-right:6px;">' + glyph + '</span>' + name + ' ' + trackLvl
       + ' <span style="font-size:8px;color:rgba(220,204,240,.58);letter-spacing:.1em;">/ ' + levelCap + '</span></div>'
-      + '<div class="omnia-upgrade-sub">' + sub + '</div></div>'
+      + '<div class="omnia-upgrade-sub">' + sub + '</div>' + capPreview + '</div>'
       + '<div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px;flex-shrink:0;">' + btn
       + (timeLabel ? '<span style="font-size:8px;letter-spacing:.08em;color:rgba(196,168,212,.9);">◷ ' + timeLabel + ' build</span>' : '')
       + '</div></div>';

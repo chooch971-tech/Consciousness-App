@@ -10,7 +10,7 @@ const guideSource = fs.readFileSync(path.join(root, 'guide-path-client.js'), 'ut
 
 function sensoryCardBlock() {
   const start = guideSource.indexOf('function sensoryLengthCard(stages');
-  const end = guideSource.indexOf('var onPath = guideProgressCardIds();');
+  const end = guideSource.indexOf('// Progress describes the ladders behind');
   assert.ok(start > -1 && end > start, 'the sensory Progress cards must still be here');
   return guideSource.slice(start, end);
 }

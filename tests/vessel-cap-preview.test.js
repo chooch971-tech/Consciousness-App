@@ -101,3 +101,38 @@ test('the sheet prints the preview for Deep Vessel, not only the current track',
   assert.match(block, /!atMax && !atBandTop && !building && !pumpBusyId/,
     'suppressed at the band top, mid-build, and while another track builds');
 });
+
+test('the Dark Matter vat previews the same way', () => {
+  const game = createContext();
+  game.omniaState.prestige = 8;
+  Object.assign(game.omniaState.upgrades, { dm1: 6, dmv1: 4 });
+  const p = game.dmPreviewVesselCapGain(0);
+  assert.equal(p.before, game.dmVesselReservoirCap(0, 4));
+  assert.equal(p.after, game.dmVesselReservoirCap(0, 5));
+  assert.ok(p.after > p.before, 'a Void Vessel level must buy vat');
+  // The "before" figure is the vat size the sheet header already prints, so
+  // the two readouts on one screen cannot disagree.
+  assert.equal(p.before, game.dmPumpReservoirCap(0));
+});
+
+test('the live Dark Matter vat and its preview share one formula', () => {
+  // They used to be one inline expression; splitting the preview out without
+  // splitting the formula is how the two would drift.
+  const block = engineSrc.slice(engineSrc.indexOf('function dmVesselReservoirCap'),
+                                engineSrc.indexOf('function dmStabilizationMult'));
+  assert.match(block, /function dmPumpReservoirCap\(idx\) \{[\s\S]*dmVesselReservoirCap\(idx,/,
+    'the live cap delegates to the shared formula');
+  assert.match(block, /function dmPreviewVesselCapGain\(idx\)[\s\S]*dmVesselReservoirCap\(idx, lvl\)[\s\S]*dmVesselReservoirCap\(idx, lvl \+ 1\)/,
+    'and so does the preview');
+});
+
+test('the Dark Matter sheet prints the vat preview, and hides it at the cap', () => {
+  const start = engineSrc.indexOf("var capPreview = '';");
+  const end = engineSrc.indexOf('return \'<div class="omnia-upgrade-row"', start);
+  assert.ok(start > -1 && end > start, 'the DM preview block must still be here');
+  const block = engineSrc.slice(start, end);
+  assert.match(block, /id === meta\.vessel/, 'only the vessel track');
+  assert.match(block, /!atMax && !trackBuild && !pumpBusyId/,
+    'suppressed at the cap, mid-build, and while another track builds');
+  assert.match(block, /vat<\/div>/, 'labelled as vat, not capacity or a rate');
+});
