@@ -466,10 +466,26 @@ function sensesStarBrightness() {
   return Math.round(sensesStarMinuteCount() / 30 * 200) / 10;
 }
 
+// Every clean minute counts, in each of the three forms.
+//
+// This used to award nothing below a ten-minute hold — thresholds of 10, 12.5
+// and 15 minutes — while every neighbouring star steps at each minute:
+// Visualization and Auditory from one minute in each eyes mode, Senses across
+// thirty per-minute milestones, Clock at bestSec/60, Asana at bestSec/90. The
+// Guide's own Thought Control ladder starts recommending five minutes and
+// climbs a minute at a time, so a practitioner could follow it exactly for
+// months with nine sessions behind them and see a star pixel-identical to one
+// never practised.
+//
+// The ceiling is unchanged: full brightness still means the fifteen minutes
+// the ladder tops out at, held in all three forms — read from the ladder's own
+// constant so the two cannot drift apart.
 function thoughtControlStarBrightness(stats) {
   var modes = ['observation', 'focus', 'vacancy'];
+  var cap = typeof GUIDE_THOUGHT_MAX_RUNG === 'number' ? GUIDE_THOUGHT_MAX_RUNG : 15;
   var score = modes.reduce(function(total, mode) {
-    return total + practiceTreeTierContribution((stats[mode] || {}).bestSec, [600, 750, 900]);
+    var minutes = Math.min(cap, Math.floor(((stats[mode] || {}).bestSec || 0) / 60));
+    return total + minutes / cap;
   }, 0);
   return Math.round(score / modes.length * 200) / 10;
 }
