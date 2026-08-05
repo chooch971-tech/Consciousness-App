@@ -136,8 +136,12 @@ test('sensory practice sessions progress through 10–20 minutes while mastery r
   assert.match(firstItem.trackGoal, /Practice 10–20 min/);
   assert.match(firstItem.trackGoal, /uninterrupted 5:00 hold/);
 
+  // A ten-minute sit saved without a wall clock: its practised time is the sum
+  // of its reps. (This case used to be written with xpEarned:600, which read as
+  // a duration only because these exercises award one XP per second.)
   const developingStage = loadTrack([
-    { date:'2026-07-20T10:00:00.000Z', type:'visualization', eyesMode:'closed', seconds:120, xpEarned:600, cleanSeconds:120, halts:2 }
+    { date:'2026-07-20T10:00:00.000Z', type:'visualization', eyesMode:'closed', seconds:120, cleanSeconds:120, halts:2,
+      visualReps:[{ seconds:120 }, { seconds:180 }, { seconds:300 }] }
   ]);
   assert.equal(developingStage.guideSensoryTrackItem(1).duration, 15);
 

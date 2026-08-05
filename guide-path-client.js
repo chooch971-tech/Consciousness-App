@@ -86,13 +86,41 @@ function guideSensoryEntryCleanSec(entry) {
   return Math.max(0, parseInt(entry.cleanSeconds, 10) || 0);
 }
 
+// Every sensory exercise records the reps it was made of; each rep's seconds
+// are seconds. Summing them recovers the practised time of a session saved
+// without a wall clock.
+var GUIDE_SENSORY_REP_KEYS = ['senseReps', 'visualReps', 'auditoryReps'];
+function guideSensoryEntryRepSec(entry) {
+  for (var i = 0; i < GUIDE_SENSORY_REP_KEYS.length; i++) {
+    var reps = entry[GUIDE_SENSORY_REP_KEYS[i]];
+    if (!Array.isArray(reps) || !reps.length) continue;
+    var total = 0;
+    for (var r = 0; r < reps.length; r++) {
+      total += Math.max(0, parseInt(reps[r] && reps[r].seconds, 10) || 0);
+    }
+    if (total > 0) return total;
+  }
+  return 0;
+}
+
+// How long a sensory session was actually practised, in seconds.
+//
+// This used to fall back to entry.xpEarned, which is a duration only by
+// coincidence: these exercises award one XP per practised second, so the two
+// numbers happen to match today. Nothing holds them together — a boost
+// multiplier or any change to the XP curve would silently reinterpret a score
+// as minutes of practice, and one save path already stores a flat 50 XP. Since
+// this figure drives the 10/15/20 session-length ladder, a wrong reading there
+// moves what the practitioner is told to sit.
+//
+// The rep sum replaces it: same purpose, from fields that really are seconds.
 function guideSensoryEntryPracticeSec(entry) {
   if (!entry) return 0;
-  return Math.max(0,
-    parseInt(entry.sessionDurationSec, 10)
-      || parseInt(entry.xpEarned, 10)
-      || parseInt(entry.seconds, 10)
-      || 0);
+  var wall = Math.max(0, parseInt(entry.sessionDurationSec, 10) || 0);
+  if (wall > 0) return wall;
+  var reps = guideSensoryEntryRepSec(entry);
+  if (reps > 0) return reps;
+  return Math.max(0, parseInt(entry.seconds, 10) || 0);
 }
 
 function guideSensoryStageMatches(stage, entry) {
