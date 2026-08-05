@@ -511,8 +511,17 @@ async function clearDeletedAccountFromDevice() {
       if (subscription) await subscription.unsubscribe();
     }
   } catch(e) {}
+  // Every IndexedDB this app creates, not only the audio store. The service
+  // worker opens presence_session_flags to decide whether a practice reminder
+  // should be suppressed mid-exercise; leaving it behind meant a flow that
+  // promises to remove everything left a record of the deleted account's
+  // practice behind on the device.
   try {
-    if (window.indexedDB) indexedDB.deleteDatabase('presence_audio');
+    if (window.indexedDB) {
+      ['presence_audio', 'presence_session_flags'].forEach(function(name) {
+        try { indexedDB.deleteDatabase(name); } catch(e) {}
+      });
+    }
   } catch(e) {}
   localStorage.clear();
   sessionStorage.clear();
