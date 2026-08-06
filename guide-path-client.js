@@ -1729,6 +1729,18 @@ function guideActiveSenseMode(senseStats) {
 // Senses is held to its own 2/5/10 duration model (matching the exercise's
 // own duration picker), so the same score used by the old flat gate just
 // gets clamped to 10 rather than scaling further like Thought Control does.
+// How high an exercise added to the path by hand can climb on its own, before
+// any manual floor. The sense family is deliberately held to ten minutes --
+// guideSenseTargetMinutes and its mode-less legacy sibling both clamp there --
+// while an added Visualization or Auditory climbs its real ladder and has no
+// ceiling worth naming here. This matters because a manual start at or above
+// the ceiling can never be raised by practice, and saying otherwise promises
+// progress the code cannot deliver.
+var GUIDE_ADDED_NATURAL_CEIL = { sense:10, feeling:10, smell:10, taste:10 };
+function guideAddedNaturalCeiling(id) {
+  return GUIDE_ADDED_NATURAL_CEIL[id] || 0;
+}
+
 function guideSenseTargetMinutes(mode, senseStats) {
   var st = senseStats[mode] || { count:0, bestSec:0 };
   var score = guideExperienceScore('sense');
@@ -2194,7 +2206,16 @@ function guideProgressOverview() {
       if (addedFloor && !guideAutoAdvanceOn(pathItem.mode || pathItem.id)) {
         addedDetail = 'Manual ' + addedFloor + '-minute target · automatic increases are off.';
       } else if (addedFloor) {
-        addedDetail = 'Your manual ' + addedFloor + '-minute start · practice lengthens it from there.';
+        // A floor at or above this exercise's own ceiling is the whole target
+        // for good: max(floor, natural) can never exceed it however much is
+        // practised. Saying "practice lengthens it from there" there was a
+        // promise the ladder cannot keep.
+        var addedCeil = guideAddedNaturalCeiling(pathItem.id);
+        addedDetail = (addedCeil && addedFloor >= addedCeil)
+          ? 'Your manual ' + addedFloor + '-minute target. This exercise climbs to '
+            + addedCeil + ' min on its own, so practice will not raise it further — '
+            + 'change the number yourself to go higher.'
+          : 'Your manual ' + addedFloor + '-minute start · practice lengthens it from there.';
       } else {
         addedDetail = 'Added by you · practice lengthens this session over time.';
       }

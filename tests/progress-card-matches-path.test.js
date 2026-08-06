@@ -67,3 +67,34 @@ test('the curriculum ladder still drives an item the practitioner did not add', 
   assert.match(afterAdded, /Training ' \+ stage\.label/,
     'and it still names the foundation being trained');
 });
+
+test('a manual target the ladder cannot exceed is not described as a start', () => {
+  // An added Senses item climbs to ten minutes on its own — guideSenseTargetMinutes
+  // and its mode-less legacy sibling both clamp there — and the floor is applied
+  // as max(floor, natural). So a manual twelve can never be raised by practice,
+  // however much is practised. Saying "practice lengthens it from there" was a
+  // promise the ladder cannot keep.
+  const block = overviewBlock();
+  assert.match(block, /guideAddedNaturalCeiling\(pathItem\.id\)/);
+  assert.match(block, /addedCeil && addedFloor >= addedCeil/,
+    'the fixed case is the floor at or above the ceiling');
+  assert.match(block, /practice will not raise it further/);
+  assert.match(block, /change the number yourself to go higher/,
+    'and it names the way out');
+  // Below the ceiling, growth is real and should still be promised.
+  assert.match(block, /'-minute start · practice lengthens it from there\.'/);
+});
+
+test('the ceiling table matches the ladders it describes', () => {
+  const guide = fs.readFileSync(path.join(root, 'guide-path-client.js'), 'utf8');
+  assert.match(guide, /var GUIDE_ADDED_NATURAL_CEIL = \{ sense:10, feeling:10, smell:10, taste:10 \};/);
+  // Those tens must be what the sense ladders actually clamp to.
+  assert.match(guide, /var natural = Math\.min\(10, guideDurationForScore\(score\)\);/,
+    'guideSenseTargetMinutes clamps at ten');
+  assert.match(guide, /guideAdvancedTarget\('sense', Math\.min\(10, guideDurationForScore\(senseScore\)\)\)/,
+    'and so does the mode-less legacy item');
+  // Visualization and Auditory climb real ladders, so they get no ceiling entry
+  // and keep the growth wording.
+  assert.doesNotMatch(guide, /GUIDE_ADDED_NATURAL_CEIL = \{[^}]*visual/);
+  assert.doesNotMatch(guide, /GUIDE_ADDED_NATURAL_CEIL = \{[^}]*auditory/);
+});
