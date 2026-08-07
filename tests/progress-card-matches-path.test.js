@@ -85,15 +85,48 @@ test('a manual target the ladder cannot exceed is not described as a start', () 
   assert.match(block, /'-minute start · practice lengthens it from there\.'/);
 });
 
-test('the ceiling table matches the ladders it describes', () => {
+test('an added sensory card runs the same ladder as the curriculum', () => {
+  // It used to run a progression of its own clamped at ten minutes, so the
+  // same practice measured two ways depending on how its card reached the
+  // path — and a manual start of ten or more could never move at all.
   const guide = fs.readFileSync(path.join(root, 'guide-path-client.js'), 'utf8');
-  assert.match(guide, /var GUIDE_ADDED_NATURAL_CEIL = \{ sense:10, feeling:10, smell:10, taste:10 \};/);
-  // Those tens must be what the sense ladders actually clamp to.
-  assert.match(guide, /var natural = Math\.min\(10, guideDurationForScore\(score\)\);/,
-    'guideSenseTargetMinutes clamps at ten');
-  assert.match(guide, /guideAdvancedTarget\('sense', Math\.min\(10, guideDurationForScore\(senseScore\)\)\)/,
-    'and so does the mode-less legacy item');
-  // Visualization and Auditory climb real ladders, so they get no ceiling entry
+  assert.doesNotMatch(guide, /Math\.min\(10, guideDurationForScore/,
+    'the ten-minute clamp must be gone from both sense paths');
+  // One unfloored ladder, read by the curriculum and by an added card alike.
+  assert.match(guide, /function guideSensoryNaturalMinutes\(stage\)/);
+  const senseTarget = guide.slice(guide.indexOf('function guideSenseTargetMinutes'),
+                                  guide.indexOf('\n}', guide.indexOf('function guideSenseTargetMinutes')));
+  assert.match(senseTarget, /guideSensoryNaturalMinutes\(stage\)/);
+  assert.match(senseTarget, /guideAdvancedTarget\(mode,/, 'and each mode keeps its own floor');
+  const practice = guide.slice(guide.indexOf('function guideSensoryPracticeMinutes'),
+                               guide.indexOf('\n}', guide.indexOf('function guideSensoryPracticeMinutes')));
+  assert.match(practice, /guideSensoryNaturalMinutes\(stage\)/,
+    'the curriculum reads the very same function');
+});
+
+test('the mode-less legacy card measures the faculty being practised', () => {
+  // guideCurrentSenseMode rotates on to Smell once Feeling has practice behind
+  // it, so reading the length from it measured weeks of Feeling against an
+  // untouched Smell stage: the more that was practised, the shorter the
+  // recommendation became.
+  const guide = fs.readFileSync(path.join(root, 'guide-path-client.js'), 'utf8');
+  const legacy = guide.slice(guide.indexOf("var senseEyes = guidePathEyesMode"),
+                             guide.indexOf("var senseTarget = senseDur"));
+  assert.ok(legacy, 'the legacy sense item must still be here');
+  assert.match(legacy, /guideRecentSenseMode\(senseLegacyStats\)/,
+    'the newest-practised faculty decides the length');
+  assert.ok(legacy.indexOf('guideRecentSenseMode') < legacy.indexOf('guideActiveSenseMode'),
+    'and the rotation is only the fallback');
+  assert.match(legacy, /guideSensoryNaturalMinutes\(guideSensoryStageFor\(senseLegacyMode, senseEyes\)\)/);
+});
+
+test('the ceiling table matches the ladder it describes', () => {
+  const guide = fs.readFileSync(path.join(root, 'guide-path-client.js'), 'utf8');
+  assert.match(guide, /var GUIDE_ADDED_NATURAL_CEIL = \{ sense:20, feeling:20, smell:20, taste:20 \};/,
+    'the sense family now tops out where the curriculum does');
+  assert.match(guide, /minutes = GUIDE_SENSORY_PRACTICE_MAX;/);
+  assert.match(guide, /var GUIDE_SENSORY_PRACTICE_MAX = 20;/, 'and that maximum really is twenty');
+  // Visualization and Auditory climb their own ladders, so they get no entry
   // and keep the growth wording.
   assert.doesNotMatch(guide, /GUIDE_ADDED_NATURAL_CEIL = \{[^}]*visual/);
   assert.doesNotMatch(guide, /GUIDE_ADDED_NATURAL_CEIL = \{[^}]*auditory/);

@@ -236,20 +236,39 @@ function guideSensorySolidAttempts(stage, sec) {
   return n;
 }
 
-function guideSensoryPracticeMinutes(stage) {
-  // Lengthen the training sit independently of the clean-hold mastery gate.
-  // A completed 10-minute sit moves the next recommendation to 15; a
-  // completed 15-minute sit moves it to 20. Repeated attempts also progress
-  // the range so an imperfect practitioner is never stuck at 10 — but each one
-  // has to be a real sit (at least half the current range) to count. Counting
-  // every attempt regardless of length meant a run of one-minute failures,
-  // exactly what a struggling practitioner produces, pushed the session
-  // recommendation up to twenty minutes precisely when it should hold steady.
+// The session length this stage has earned, before any manual floor.
+//
+// Lengthen the training sit independently of the clean-hold mastery gate.
+// A completed 10-minute sit moves the next recommendation to 15; a
+// completed 15-minute sit moves it to 20. Repeated attempts also progress
+// the range so an imperfect practitioner is never stuck at 10 — but each one
+// has to be a real sit (at least half the current range) to count. Counting
+// every attempt regardless of length meant a run of one-minute failures,
+// exactly what a struggling practitioner produces, pushed the session
+// recommendation up to twenty minutes precisely when it should hold steady.
+function guideSensoryNaturalMinutes(stage) {
+  if (!stage) return GUIDE_SENSORY_PRACTICE_MIN;
   var minutes = GUIDE_SENSORY_PRACTICE_MIN;
   if (stage.bestPracticeSec >= 600 || guideSensorySolidAttempts(stage, 300) >= 3) minutes = 15;
   if (stage.bestPracticeSec >= 900 || guideSensorySolidAttempts(stage, 450) >= 10) minutes = GUIDE_SENSORY_PRACTICE_MAX;
+  return minutes;
+}
+
+// The stage that trains one sense faculty at one eyes mode, or null.
+function guideSensoryStageFor(mode, eyesMode) {
+  try {
+    var stages = guideSensoryTrackProgress().stages;
+    for (var i = 0; i < stages.length; i++) {
+      if (stages[i].exercise === 'sense' && stages[i].mode === mode
+          && stages[i].eyesMode === eyesMode) return stages[i];
+    }
+  } catch (e) {}
+  return null;
+}
+
+function guideSensoryPracticeMinutes(stage) {
   var preferenceId = stage.exercise === 'sense' ? stage.mode : stage.exercise;
-  minutes = guideAdvancedTarget(preferenceId, minutes);
+  var minutes = guideAdvancedTarget(preferenceId, guideSensoryNaturalMinutes(stage));
   return guideClamp(minutes, GUIDE_SENSORY_PRACTICE_MIN, GUIDE_FLOOR_CAP);
 }
 
@@ -1730,26 +1749,31 @@ function guideActiveSenseMode(senseStats) {
 // own duration picker), so the same score used by the old flat gate just
 // gets clamped to 10 rather than scaling further like Thought Control does.
 // How high an exercise added to the path by hand can climb on its own, before
-// any manual floor. The sense family is deliberately held to ten minutes --
-// guideSenseTargetMinutes and its mode-less legacy sibling both clamp there --
-// while an added Visualization or Auditory climbs its real ladder and has no
-// ceiling worth naming here. This matters because a manual start at or above
-// the ceiling can never be raised by practice, and saying otherwise promises
-// progress the code cannot deliver.
-var GUIDE_ADDED_NATURAL_CEIL = { sense:10, feeling:10, smell:10, taste:10 };
+// any manual floor. The sense family now shares the curriculum's 10/15/20
+// ladder, so its ceiling is that twenty; an added Visualization or Auditory
+// climbs its own ladder and has no ceiling worth naming here. This matters
+// because a manual start at or above the ceiling can never be raised by
+// practice — the floor applies as max(floor, natural) — and saying otherwise
+// promises progress the code cannot deliver.
+var GUIDE_ADDED_NATURAL_CEIL = { sense:20, feeling:20, smell:20, taste:20 };
 function guideAddedNaturalCeiling(id) {
   return GUIDE_ADDED_NATURAL_CEIL[id] || 0;
 }
 
-function guideSenseTargetMinutes(mode, senseStats) {
-  var st = senseStats[mode] || { count:0, bestSec:0 };
-  var score = guideExperienceScore('sense');
-  if (st.count >= 3) score = Math.max(score, 1);
-  if (st.bestSec >= 600) score = Math.max(score, 2);
-  if (st.bestSec >= 900 || st.count >= 10) score = Math.max(score, 3);
-  var natural = Math.min(10, guideDurationForScore(score));
+// Same exercise, same ladder, however the card reached the path.
+//
+// This used to run a progression of its own that clamped at ten minutes — a
+// relic from before the sense sub-modes existed. It meant a Senses card added
+// by hand could never be recommended past ten, and a manual start of ten or
+// more could never move at all: the floor is applied as max(floor, natural),
+// so twelve stayed twelve through any amount of practice. The curriculum
+// trains the same faculty on the 10/15/20 ladder, and there is no reason for
+// one practice to measure two ways depending on how its card got there.
+function guideSenseTargetMinutes(mode, senseStats, eyesMode) {
+  var stage = guideSensoryStageFor(mode, eyesMode || guidePathEyesMode('sense', 'closed'));
   // Per-mode floor: an advanced start in Feeling doesn't move Smell or Taste.
-  return guideAdvancedTarget(mode, natural);
+  var minutes = guideAdvancedTarget(mode, guideSensoryNaturalMinutes(stage));
+  return guideClamp(minutes, GUIDE_SENSORY_PRACTICE_MIN, GUIDE_FLOOR_CAP);
 }
 
 function guideClockTargetMinutes(clockStats) {
@@ -3004,8 +3028,21 @@ function guideBuildAddedItem(exId, rounds) {
     // Legacy: a generic (mode-less) "Senses" addition from before the sense
     // sub-modes existed. Kept so anything already saved under the bare id
     // keeps working; new additions always go through feeling/smell/taste above.
-    var senseScore = guideMonitoredScore('sense', stats);
-    var senseDur = guideAdvancedTarget('sense', Math.min(10, guideDurationForScore(senseScore)));
+    // Its floor lives under the bare 'sense' key, but the length it climbs is
+    // the curriculum's, read from whichever faculty is actually being trained.
+    var senseEyes = guidePathEyesMode('sense', 'closed');
+    // The faculty actually being practised, not the one the legacy rotation
+    // would nominate next. guideCurrentSenseMode moves on to Smell once Feeling
+    // has some practice behind it, so reading the length from it meant weeks of
+    // Feeling work were measured against an untouched Smell stage — the more
+    // the practitioner practised, the shorter the recommendation became.
+    var senseLegacyStats = guideSenseStats();
+    var senseLegacyMode = guideState.senseModeForced
+      || guideRecentSenseMode(senseLegacyStats)
+      || guideActiveSenseMode(senseLegacyStats);
+    var senseNatural = guideSensoryNaturalMinutes(guideSensoryStageFor(senseLegacyMode, senseEyes));
+    var senseDur = guideClamp(guideAdvancedTarget('sense', senseNatural),
+      GUIDE_SENSORY_PRACTICE_MIN, GUIDE_FLOOR_CAP);
     var senseTarget = senseDur * 60 * rounds;
     var senseSt = stats.sense || { count:0, todaySec:0 };
     return { id:'sense', name:'Senses', duration:senseDur, durationLabel:senseDur + ' min' + (rounds > 1 ? ' x2' : ''), done:senseSt.todaySec >= senseTarget, progress:'added · ' + (senseSt.count || 0) + ' recorded', tip:'Added by you. Imagine a feeling, smell, or taste as vividly as you can — accuracy matters more than intensity.', open:'sense', eyesMode:guidePathEyesMode('sense', 'closed'), added:true };
