@@ -325,7 +325,7 @@ function showTutorialAccountPrompt() {
   _tutSetPostBack(showTutorialReminder);
   tutFadeStage(function(ps) {
     ps.innerHTML =
-      '<div style="font-size:28px;margin-bottom:6px;">🔥</div>'
+      '<div style="font-size:1.75rem;margin-bottom:6px;">🔥</div>'
       + '<div class="tut-stage-headline" style="font-size:clamp(22px,6vw,30px);margin-bottom:6px;">Protect your streak.</div>'
       + '<div class="tut-stage-sub" style="margin-bottom:20px;">Create a free account to save your progress<br>and sync across devices.</div>'
       + '<div class="tut-acct-btns">'
@@ -335,7 +335,7 @@ function showTutorialAccountPrompt() {
       +     '<input class="tut-acct-input" type="email" id="tutAcctEmail" placeholder="Email" autocomplete="email"/>'
       +     '<input class="tut-acct-input" type="password" id="tutAcctPassword" placeholder="Password" autocomplete="new-password"/>'
       +     '<button class="tut-acct-email-submit" id="tutAcctSubmit">Create Account</button>'
-      +     '<button class="tut-acct-email-toggle" id="tutAcctModeToggle" style="font-size:8px;opacity:.6;">Already have an account? Sign in →</button>'
+      +     '<button class="tut-acct-email-toggle" id="tutAcctModeToggle" style="font-size:0.5rem;opacity:.6;">Already have an account? Sign in →</button>'
       +     '<div class="tut-acct-email-err" id="tutAcctErr"></div>'
       +   '</div>'
       +   '<button class="tut-acct-skip" id="tutAcct-skip">Continue without saving</button>'

@@ -196,15 +196,15 @@ function renderCustomAudSoundList() {
   var cleaned = sounds.filter(function(s) { return s.kind !== 'youtube'; });
   if (cleaned.length !== sounds.length) { saveCustomAudSounds(cleaned); sounds = cleaned; }
   if (!sounds.length) {
-    list.innerHTML = '<div style="font-size:10px;color:var(--muted);text-align:center;padding:4px 0;opacity:.6;">No sounds uploaded yet.</div>';
+    list.innerHTML = '<div style="font-size:0.625rem;color:var(--muted);text-align:center;padding:4px 0;opacity:.6;">No sounds uploaded yet.</div>';
     return;
   }
   list.innerHTML = sounds.map(function(s) {
     var icon = s.kind === 'url' ? '<span style="color:#6eb8a4;">&#128279;</span>' : '&#127911;';
     return '<div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--border);">'
-      + '<span style="font-size:18px;flex-shrink:0;">' + icon + '</span>'
-      + '<span style="flex:1;font-size:10px;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + escHtml(s.name) + '</span>'
-      + '<button onclick="deleteCustomAudSound(\'' + s.id + '\')" style="background:none;border:none;color:var(--muted);font-size:14px;cursor:pointer;padding:4px 6px;flex-shrink:0;">✕</button>'
+      + '<span style="font-size:1.125rem;flex-shrink:0;">' + icon + '</span>'
+      + '<span style="flex:1;font-size:0.625rem;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + escHtml(s.name) + '</span>'
+      + '<button onclick="deleteCustomAudSound(\'' + s.id + '\')" style="background:none;border:none;color:var(--muted);font-size:0.875rem;cursor:pointer;padding:4px 6px;flex-shrink:0;">✕</button>'
       + '</div>';
   }).join('');
 }
@@ -229,14 +229,14 @@ function renderCustomVisImageList() {
   if (!list) return;
   var imgs = loadCustomVisImages();
   if (!imgs.length) {
-    list.innerHTML = '<div style="font-size:10px;color:var(--muted);text-align:center;padding:4px 0;opacity:.6;">No images uploaded yet.</div>';
+    list.innerHTML = '<div style="font-size:0.625rem;color:var(--muted);text-align:center;padding:4px 0;opacity:.6;">No images uploaded yet.</div>';
     return;
   }
   list.innerHTML = imgs.map(function(img) {
     return '<div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--border);">'
       + '<img src="' + img.dataUrl + '" style="width:40px;height:40px;object-fit:cover;border-radius:4px;flex-shrink:0;">'
-      + '<span style="flex:1;font-size:10px;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + escHtml(img.name) + '</span>'
-      + '<button onclick="deleteCustomVisImage(\'' + img.id + '\')" style="background:none;border:none;color:var(--muted);font-size:14px;cursor:pointer;padding:4px 6px;flex-shrink:0;">✕</button>'
+      + '<span style="flex:1;font-size:0.625rem;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + escHtml(img.name) + '</span>'
+      + '<button onclick="deleteCustomVisImage(\'' + img.id + '\')" style="background:none;border:none;color:var(--muted);font-size:0.875rem;cursor:pointer;padding:4px 6px;flex-shrink:0;">✕</button>'
       + '</div>';
   }).join('');
 }
@@ -817,20 +817,20 @@ function renderVisIntermediateSession(type) {
     var scene = currentMultiSenseScene || pickMultiSenseScene();
     screen.innerHTML =
       renderMultiSenseMedia(scene)
-      + '<div style="font-size:20px; font-family:Cormorant Garamond,serif; font-weight:300; color:var(--text); margin-bottom:20px; letter-spacing:.02em;">' + scene.name + '</div>'
+      + '<div style="font-size:1.25rem; font-family:Cormorant Garamond,serif; font-weight:300; color:var(--text); margin-bottom:20px; letter-spacing:.02em;">' + scene.name + '</div>'
       + '<div style="background:var(--surface); border:1px solid var(--border); border-radius:10px; padding:18px; margin-bottom:12px;">'
-      + '<div style="font-size:9px; letter-spacing:.2em; text-transform:uppercase; color:#d4956e; margin-bottom:8px;">Sight</div>'
-      + '<div style="font-size:11px; color:var(--muted); line-height:1.75;">' + scene.sight + '</div>'
+      + '<div style="font-size:0.5625rem; letter-spacing:.2em; text-transform:uppercase; color:#d4956e; margin-bottom:8px;">Sight</div>'
+      + '<div style="font-size:0.6875rem; color:var(--muted); line-height:1.75;">' + scene.sight + '</div>'
       + '</div>'
       + '<div style="background:var(--surface); border:1px solid var(--border); border-radius:10px; padding:18px; margin-bottom:12px;">'
-      + '<div style="font-size:9px; letter-spacing:.2em; text-transform:uppercase; color:#d4956e; margin-bottom:8px;">Sound</div>'
-      + '<div style="font-size:11px; color:var(--muted); line-height:1.75;">' + scene.sound_desc + '</div>'
+      + '<div style="font-size:0.5625rem; letter-spacing:.2em; text-transform:uppercase; color:#d4956e; margin-bottom:8px;">Sound</div>'
+      + '<div style="font-size:0.6875rem; color:var(--muted); line-height:1.75;">' + scene.sound_desc + '</div>'
       + '</div>'
       + '<div style="background:var(--surface); border:1px solid var(--border); border-radius:10px; padding:18px; margin-bottom:16px;">'
-      + '<div style="font-size:9px; letter-spacing:.2em; text-transform:uppercase; color:#d4956e; margin-bottom:8px;">Touch &amp; Smell</div>'
-      + '<div style="font-size:11px; color:var(--muted); line-height:1.75;">' + scene.touch + '<br><br>' + scene.smell + '</div>'
+      + '<div style="font-size:0.5625rem; letter-spacing:.2em; text-transform:uppercase; color:#d4956e; margin-bottom:8px;">Touch &amp; Smell</div>'
+      + '<div style="font-size:0.6875rem; color:var(--muted); line-height:1.75;">' + scene.touch + '<br><br>' + scene.smell + '</div>'
       + '</div>'
-      + '<div style="font-size:11px; color:var(--text); line-height:1.75; font-style:italic; padding:0 4px; margin-bottom:24px;">' + scene.instruction + '</div>';
+      + '<div style="font-size:0.6875rem; color:var(--text); line-height:1.75; font-style:italic; padding:0 4px; margin-bottom:24px;">' + scene.instruction + '</div>';
     startSceneAudio(scene.sound || 'silence', scene);
     var fadedBtn = document.getElementById('visIntermediateFadedBtn');
     if (fadedBtn) fadedBtn.textContent = 'Scene Collapsed';
@@ -1301,13 +1301,13 @@ function showVisSessionResult() {
     return '<div style="display:flex; justify-content:space-between; align-items:center; padding:10px 14px; background:var(--surface); border:1px solid var(--border); border-radius:6px;">'
         + '<div style="display:flex; align-items:center; gap:10px;">'
         + renderVisObject(r.object, 28)
-        + '<div><div style="font-size:10px; letter-spacing:.1em; color:var(--muted);">Rep ' + (i+1) + ' · ' + r.object.label + '</div>'
-        + (haltStr ? '<div style="font-size:9px; color:#d4956e; opacity:0.7;">' + haltStr + '</div>' : '')
+        + '<div><div style="font-size:0.625rem; letter-spacing:.1em; color:var(--muted);">Rep ' + (i+1) + ' · ' + r.object.label + '</div>'
+        + (haltStr ? '<div style="font-size:0.5625rem; color:#d4956e; opacity:0.7;">' + haltStr + '</div>' : '')
         + '</div>'
         + '</div>'
         + '<div style="display:flex; align-items:center; gap:8px;">'
-        + (isBest ? '<span style="font-size:8px; letter-spacing:.1em; color:#d4956e;">best</span>' : '')
-        + '<span style="font-family:serif; font-size:20px; color:#d4b08e;">' + fmtTimer(r.seconds) + '</span>'
+        + (isBest ? '<span style="font-size:0.5rem; letter-spacing:.1em; color:#d4956e;">best</span>' : '')
+        + '<span style="font-family:serif; font-size:1.25rem; color:#d4b08e;">' + fmtTimer(r.seconds) + '</span>'
         + '</div>'
         + '</div>';
     }).join('');
@@ -1543,7 +1543,7 @@ var EXERCISE_DEFS = {
     setupHTML: function() {
       var as = guideAsanaStats();
       var html = '<div style="margin-bottom:20px;">'
-        + '<div style="font-size:9px; letter-spacing:.2em; text-transform:uppercase; color:var(--muted); margin-bottom:2px; font-family:\'DM Mono\',monospace;">Session Target</div>';
+        + '<div style="font-size:0.5625rem; letter-spacing:.2em; text-transform:uppercase; color:var(--muted); margin-bottom:2px; font-family:\'DM Mono\',monospace;">Session Target</div>';
       if (as.showStepper) {
         var stepVal = as.qualTarget;
         var capNote = as.locked
@@ -1554,7 +1554,7 @@ var EXERCISE_DEFS = {
           + '<div class="asana-step-val" id="asanaStepperVal">' + stepVal + ' min</div>'
           + '<button class="asana-step-btn" onclick="adjustAsanaDuration(1)">&#43;</button>'
           + '</div>'
-          + '<div style="text-align:center; font-size:9px; color:var(--muted); font-family:\'DM Mono\',monospace; letter-spacing:.08em; margin-top:6px;">' + capNote + '</div>';
+          + '<div style="text-align:center; font-size:0.5625rem; color:var(--muted); font-family:\'DM Mono\',monospace; letter-spacing:.08em; margin-top:6px;">' + capNote + '</div>';
       } else {
         var pct = Math.round((as.qualAtTier / as.tierRequired) * 100);
         var sessWord = as.tierRequired === 1 ? 'session' : 'sessions';
@@ -1568,7 +1568,7 @@ var EXERCISE_DEFS = {
           + '<div class="asana-tier-prog" style="text-align:center; margin-top:8px;">' + as.qualAtTier + ' / ' + as.tierRequired + ' ' + sessWord + ' · ' + remaining + ' more to reach ' + nextTier + ' min</div>';
       }
       html += '</div>'
-        + '<div style="text-align:center; padding:8px 0; font-size:11px; color:var(--muted); line-height:1.6; font-family:\'Cormorant Garamond\',serif; font-style:italic;">Settle into your posture before beginning.<br>An alarm will sound when the time is up.</div>';
+        + '<div style="text-align:center; padding:8px 0; font-size:0.6875rem; color:var(--muted); line-height:1.6; font-family:\'Cormorant Garamond\',serif; font-style:italic;">Settle into your posture before beginning.<br>An alarm will sound when the time is up.</div>';
       return html;
     },
     begin: function() { startAsana(); }

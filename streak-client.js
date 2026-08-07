@@ -518,7 +518,7 @@ function openStreakSociety() {
     // network refresh below then updates streak state.
     var _socCached = (typeof getCachedFriendsList === 'function') ? getCachedFriendsList() : [];
     if (_socCached.length) renderFriends(_socCached);
-    else body.innerHTML = '<div class="soc-msg" style="font-family:\'DM Mono\',monospace;font-size:10px;letter-spacing:.24em;text-transform:uppercase;font-style:normal;">Loading&hellip;</div>';
+    else body.innerHTML = '<div class="soc-msg" style="font-family:\'DM Mono\',monospace;font-size:0.625rem;letter-spacing:.24em;text-transform:uppercase;font-style:normal;">Loading&hellip;</div>';
     fetch(SYNC_API_URL + '/friends/list', { headers: { 'Authorization': 'Bearer ' + authToken } })
       .then(function(res) { return res.json(); })
       .then(function(data) {

@@ -1798,7 +1798,7 @@ function renderFriendRequests(requests, followReqs) {
       + '</div></div>';
   }).join('') + followReqs.map(function(r) {
     return '<div class="fp-request-row">'
-      + '<span class="fp-user-name">@' + escHtml(r.username) + ' <span style="color:var(--muted);font-size:9px;">wants to follow you</span></span>'
+      + '<span class="fp-user-name">@' + escHtml(r.username) + ' <span style="color:var(--muted);font-size:0.5625rem;">wants to follow you</span></span>'
       + '<div style="display:flex;gap:6px;">'
       + '<button class="fp-accept-btn" onclick="approveFollow(\'' + escHtml(r.userId) + '\')">Approve</button>'
       + '<button class="fp-decline-btn" onclick="declineFollow(\'' + escHtml(r.userId) + '\')">Decline</button>'

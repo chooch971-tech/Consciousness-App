@@ -282,8 +282,8 @@ function renderOmniaEngine() {
         btnHtml = '<button class="omnia-mini-btn" data-omnia-upgrade="' + upg.id + '"' + ((omniaState.akasha || 0) < cost ? ' disabled' : '') + '>Upgrade ' + cost + '</button>';
       }
       var nameTail = buildingUntil
-        ? ' <span style="font-size:8px;color:#8eccc0;letter-spacing:.1em;">→ ' + Math.min(20, displayLvl + 1) + ' · building</span>'
-        : ' <span style="font-size:8px;color:var(--muted);letter-spacing:.1em;">/ 20</span>';
+        ? ' <span style="font-size:0.5rem;color:#8eccc0;letter-spacing:.1em;">→ ' + Math.min(20, displayLvl + 1) + ' · building</span>'
+        : ' <span style="font-size:0.5rem;color:var(--muted);letter-spacing:.1em;">/ 20</span>';
       return '<div class="omnia-upgrade-row">'
         // No tier pip here: it is the same mark on all four rows, and the tier
         // is already stated once by the Tier panel below them.
@@ -1099,10 +1099,10 @@ function renderDmSheet(gid) {
     }
     return '<div class="omnia-upgrade-row" style="border-left:2px solid ' + accent + '55; padding-left:11px;">'
       + '<div><div class="omnia-upgrade-name" style="color:' + accent + ';"><span style="opacity:.9;margin-right:6px;">' + glyph + '</span>' + name + ' ' + trackLvl
-      + ' <span style="font-size:8px;color:rgba(220,204,240,.58);letter-spacing:.1em;">/ ' + levelCap + '</span></div>'
+      + ' <span style="font-size:0.5rem;color:rgba(220,204,240,.58);letter-spacing:.1em;">/ ' + levelCap + '</span></div>'
       + '<div class="omnia-upgrade-sub">' + sub + '</div>' + capPreview + '</div>'
       + '<div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px;flex-shrink:0;">' + btn
-      + (timeLabel ? '<span style="font-size:8px;letter-spacing:.08em;color:rgba(196,168,212,.9);">◷ ' + timeLabel + ' build</span>' : '')
+      + (timeLabel ? '<span style="font-size:0.5rem;letter-spacing:.08em;color:rgba(196,168,212,.9);">◷ ' + timeLabel + ' build</span>' : '')
       + '</div></div>';
   }
   var stablePct = Math.max(0, (((omniaState.upgrades || {})[meta.stable] || 1) - 1) * 5);
@@ -1228,9 +1228,9 @@ function renderGenSheet(gid) {
       }
     }
     var right = '<div style="display:flex; flex-direction:column; align-items:flex-end; gap:4px; flex-shrink:0;">' + btn
-      + (timeLabel ? '<span style="font-size:8px; letter-spacing:.08em; color:rgba(196,168,212,.9);">◷ ' + timeLabel + ' build</span>' : '') + '</div>';
+      + (timeLabel ? '<span style="font-size:0.5rem; letter-spacing:.08em; color:rgba(196,168,212,.9);">◷ ' + timeLabel + ' build</span>' : '') + '</div>';
     return '<div class="omnia-upgrade-row" style="border-left:2px solid ' + accent + '55; padding-left:11px;">'
-      + '<div><div class="omnia-upgrade-name" style="color:' + accent + ';"><span style="opacity:.9;margin-right:6px;">' + glyph + '</span>' + name + ' ' + displayLvl + ' <span style="font-size:8px;color:rgba(200,230,245,.55);letter-spacing:.1em;">/ 20</span></div>'
+      + '<div><div class="omnia-upgrade-name" style="color:' + accent + ';"><span style="opacity:.9;margin-right:6px;">' + glyph + '</span>' + name + ' ' + displayLvl + ' <span style="font-size:0.5rem;color:rgba(200,230,245,.55);letter-spacing:.1em;">/ 20</span></div>'
       + '<div class="omnia-upgrade-sub">' + sub + '</div>' + ratePreview + '</div>' + right + '</div>';
   }
 

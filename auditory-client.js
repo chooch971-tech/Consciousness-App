@@ -903,12 +903,12 @@ function showAudResult() {
       var isBest = r.seconds === bestRep.seconds && i === audReps.indexOf(bestRep);
       var haltStr = r.halts ? r.halts + ' halt' + (r.halts !== 1 ? 's' : '') : '';
       return '<div style="display:flex; justify-content:space-between; align-items:center; padding:10px 14px; background:var(--surface); border:1px solid var(--border); border-radius:6px;">'
-        + '<div><div style="font-size:10px; letter-spacing:.1em; color:var(--muted);">Rep ' + (i+1) + '</div>'
-        + (haltStr ? '<div style="font-size:9px; color:#d4956e; opacity:.7;">' + haltStr + '</div>' : '')
+        + '<div><div style="font-size:0.625rem; letter-spacing:.1em; color:var(--muted);">Rep ' + (i+1) + '</div>'
+        + (haltStr ? '<div style="font-size:0.5625rem; color:#d4956e; opacity:.7;">' + haltStr + '</div>' : '')
         + '</div>'
         + '<div style="display:flex; align-items:center; gap:8px;">'
-        + (isBest ? '<span style="font-size:8px; letter-spacing:.1em; color:#d4956e;">best</span>' : '')
-        + '<span style="font-family:serif; font-size:20px; color:#d4b08e;">' + fmtTimer(r.seconds) + '</span>'
+        + (isBest ? '<span style="font-size:0.5rem; letter-spacing:.1em; color:#d4956e;">best</span>' : '')
+        + '<span style="font-family:serif; font-size:1.25rem; color:#d4b08e;">' + fmtTimer(r.seconds) + '</span>'
         + '</div></div>';
     }).join('');
   }

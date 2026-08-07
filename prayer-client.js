@@ -641,9 +641,9 @@ function renderPrayerTimesSettings() {
   wrap.innerHTML = prayerState.times.slice(0, prayerState.count).map(function(t, i) {
     var meta = prayerHourMeta(i, prayerState.count);
     return '<div style="display:flex; align-items:center; justify-content:space-between;">'
-      + '<span style="font-size:10px; letter-spacing:.15em; color:' + meta.c + ';">' + prayerHourName(i, prayerState.count) + '</span>'
+      + '<span style="font-size:0.625rem; letter-spacing:.15em; color:' + meta.c + ';">' + prayerHourName(i, prayerState.count) + '</span>'
       + '<input type="time" value="' + t + '" data-idx="' + i + '" onchange="updatePrayerTime(this)" '
-      + 'style="background:var(--bg); border:1px solid var(--border2); border-radius:4px; padding:6px 10px; color:var(--text); font-family:monospace; font-size:13px; outline:none;"/>'
+      + 'style="background:var(--bg); border:1px solid var(--border2); border-radius:4px; padding:6px 10px; color:var(--text); font-family:monospace; font-size:0.8125rem; outline:none;"/>'
       + '</div>';
   }).join('');
   // Highlight active count btn
@@ -706,7 +706,7 @@ function renderPrayerHistory() {
     var durStr = m + ':' + String(s).padStart(2,'0');
     var labelStr = h.voluntary ? 'Voluntary' : (h.label || ('Prayer ' + ((h.index||0)+1)));
     var promptHtml = h.prompt
-      ? '<div style="font-family:Cormorant Garamond,serif; font-style:italic; font-size:13px; color:var(--text); margin-top:8px; line-height:1.5;">' + escHtml(h.prompt) + '</div>'
+      ? '<div style="font-family:Cormorant Garamond,serif; font-style:italic; font-size:0.8125rem; color:var(--text); margin-top:8px; line-height:1.5;">' + escHtml(h.prompt) + '</div>'
       : '';
     var reflectionHtml = h.reflection
       ? '<div class="history-notes">' + escHtml(h.reflection) + '</div>'
@@ -719,7 +719,7 @@ function renderPrayerHistory() {
       + '</div>'
       + '<div style="display:flex;gap:12px;align-items:center;">'
       + '<span class="conc-history-xp" style="color:#9b8ec4;">+' + (h.xpEarned || 0) + ' xp</span>'
-      + '<span style="font-size:9px;color:var(--muted);letter-spacing:.1em;">' + escHtml(labelStr) + '</span>'
+      + '<span style="font-size:0.5625rem;color:var(--muted);letter-spacing:.1em;">' + escHtml(labelStr) + '</span>'
       + '</div>'
       + promptHtml
       + reflectionHtml
