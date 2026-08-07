@@ -124,8 +124,9 @@ test('the ceiling table matches the ladder it describes', () => {
   const guide = fs.readFileSync(path.join(root, 'guide-path-client.js'), 'utf8');
   assert.match(guide, /var GUIDE_ADDED_NATURAL_CEIL = \{ sense:20, feeling:20, smell:20, taste:20 \};/,
     'the sense family now tops out where the curriculum does');
-  assert.match(guide, /minutes = GUIDE_SENSORY_PRACTICE_MAX;/);
   assert.match(guide, /var GUIDE_SENSORY_PRACTICE_MAX = 20;/, 'and that maximum really is twenty');
+  // The rung ladder must stop there rather than climbing on.
+  assert.match(guide, /while \(rung < GUIDE_SENSORY_PRACTICE_MAX/);
   // Visualization and Auditory climb their own ladders, so they get no entry
   // and keep the growth wording.
   assert.doesNotMatch(guide, /GUIDE_ADDED_NATURAL_CEIL = \{[^}]*visual/);

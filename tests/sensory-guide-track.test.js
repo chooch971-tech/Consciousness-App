@@ -28,7 +28,13 @@ function loadTrack(history) {
     guideFmtTime:seconds => String(seconds),
     GUIDE_FLOOR_CAP:120
   };
-  vm.runInNewContext(guideSource.slice(start, end), context, { filename:'guide-sensory-track.js' });
+  // The sensory ladder reads its per-rung requirement from Thought Control's,
+  // which lives outside this slice. Pull in the real function rather than a
+  // stub, so a test claiming the two match is actually comparing them.
+  const rungStart = guideSource.indexOf('function guideThoughtRungRequired');
+  const rungEnd = guideSource.indexOf('\n}', rungStart) + 2;
+  vm.runInNewContext(guideSource.slice(rungStart, rungEnd) + '\n'
+    + guideSource.slice(start, end), context, { filename:'guide-sensory-track.js' });
   return context;
 }
 
@@ -126,31 +132,45 @@ test('broken or accumulated reps cannot satisfy a sensory foundation', () => {
   assert.equal(progress.current.bestCleanSec, 299);
 });
 
-test('sensory practice sessions progress through 10–20 minutes while mastery remains a clean five-minute hold', () => {
+test('a sensory session climbs a minute at a time from ten, like Thought Control', () => {
   const newStage = loadTrack([]);
   const firstItem = newStage.guideSensoryTrackItem(1);
-  assert.equal(firstItem.duration, 10);
+  assert.equal(firstItem.duration, 10, 'everyone starts at ten');
   assert.equal(firstItem.done, false);
   assert.equal(firstItem.trackProgressSec, 0);
   assert.equal(firstItem.trackGoalSec, 300);
   assert.match(firstItem.trackGoal, /Practice 10–20 min/);
   assert.match(firstItem.trackGoal, /uninterrupted 5:00 hold/);
 
-  // A ten-minute sit saved without a wall clock: its practised time is the sum
-  // of its reps. (This case used to be written with xpEarned:600, which read as
-  // a duration only because these exercises award one XP per second.)
-  const developingStage = loadTrack([
-    { date:'2026-07-20T10:00:00.000Z', type:'visualization', eyesMode:'closed', seconds:120, cleanSeconds:120, halts:2,
-      visualReps:[{ seconds:120 }, { seconds:180 }, { seconds:300 }] }
-  ]);
-  assert.equal(developingStage.guideSensoryTrackItem(1).duration, 15);
+  function sit(day, seconds) {
+    return { date:'2026-07-' + String(day).padStart(2, '0') + 'T10:00:00.000Z',
+             type:'visualization', eyesMode:'closed', seconds, sessionDurationSec:seconds,
+             cleanSeconds:120, halts:2 };
+  }
+  const rung = list => {
+    const track = loadTrack(list);
+    return track.guideSensoryPracticeMinutes(track.guideSensoryTrackProgress().stages[0]);
+  };
 
-  const establishedStage = loadTrack([
-    { date:'2026-07-20T10:00:00.000Z', type:'visualization', eyesMode:'closed', seconds:180, sessionDurationSec:900, cleanSeconds:180, halts:3 }
-  ]);
-  const establishedItem = establishedStage.guideSensoryTrackItem(1);
-  assert.equal(establishedItem.duration, 20);
-  assert.equal(establishedItem.done, false);
+  // Five sits at the rung is not enough; the sixth earns the next minute.
+  assert.equal(rung(Array.from({length:5}, (_, i) => sit(i + 1, 600))), 10);
+  assert.equal(rung(Array.from({length:6}, (_, i) => sit(i + 1, 600))), 11);
+
+  // Six ten-minute sits earn 11 but cannot also earn 12 — that needs six
+  // sits of eleven.
+  assert.equal(rung(Array.from({length:12}, (_, i) => sit(i + 1, 600))), 11);
+  assert.equal(rung(Array.from({length:6}, (_, i) => sit(i + 1, 660))), 12);
+});
+
+test('the sensory ladder keeps Thought Control\'s pace exactly', () => {
+  // Read from guideThoughtRungRequired rather than restated, so the two can
+  // never drift apart.
+  assert.match(guideSource, /function guideSensoryRungRequired\(rung\) \{\s*\n\s*return guideThoughtRungRequired\(rung\);/);
+  const track = loadTrack([]);
+  [10, 11, 12, 15, 19].forEach(r => {
+    assert.equal(track.guideSensoryRungRequired(r), track.guideThoughtRungRequired(r),
+      'rung ' + r + ' must ask what Thought Control asks');
+  });
 });
 
 test('Visualization, Auditory, and Senses can be manually added as separate cards', () => {
@@ -235,30 +255,33 @@ test('Multi-Sense can open before the sensory curriculum is complete', () => {
   assert.match(visualSource, /concExpertGrid[\s\S]*?openExerciseSetup\(card\.dataset\.exercise\)/);
 });
 
-test('lengthening a sensory practice session requires attempts that were real sits', () => {
+test('short attempts never lengthen the session', () => {
   function attempt(date, seconds) {
     return {
       type:'visualization', eyesMode:'closed', date,
       seconds, sessionDurationSec:seconds, cleanSeconds:30, halts:4
     };
   }
-  // Thirty one-minute attempts is what a struggling practitioner produces. It
-  // must not push the recommended session all the way to twenty minutes.
-  const struggling = loadTrack(Array.from({ length:30 }, (_, i) =>
-    attempt('2026-07-' + String(i + 1).padStart(2, '0') + 'T10:00:00.000Z', 60)));
-  const strugglingStage = struggling.guideSensoryTrackProgress().stages[0];
-  assert.equal(strugglingStage.attempts, 30);
-  assert.equal(struggling.guideSensoryPracticeMinutes(strugglingStage), 10);
+  const rung = list => {
+    const track = loadTrack(list);
+    return track.guideSensoryPracticeMinutes(track.guideSensoryTrackProgress().stages[0]);
+  };
 
-  // Three attempts that each ran at least half the ten-minute range still earn
-  // the longer session, so an imperfect practitioner is never stuck at 10.
-  const solid = loadTrack(Array.from({ length:3 }, (_, i) =>
-    attempt('2026-07-0' + (i + 1) + 'T10:00:00.000Z', 300)));
-  assert.equal(solid.guideSensoryPracticeMinutes(solid.guideSensoryTrackProgress().stages[0]), 15);
+  // Thirty one-minute attempts is what a struggling practitioner produces. A
+  // sit only counts at a rung it actually reached, so none of these count.
+  const struggling = Array.from({ length:30 }, (_, i) =>
+    attempt('2026-07-' + String(i + 1).padStart(2, '0') + 'T10:00:00.000Z', 60));
+  assert.equal(loadTrack(struggling).guideSensoryTrackProgress().stages[0].attempts, 30);
+  assert.equal(rung(struggling), 10, 'and the recommendation holds steady at ten');
 
-  // A single completed ten-minute sit is enough on its own.
-  const oneLong = loadTrack([attempt('2026-07-01T10:00:00.000Z', 600)]);
-  assert.equal(oneLong.guideSensoryPracticeMinutes(oneLong.guideSensoryTrackProgress().stages[0]), 15);
+  // Nor do sits that fall just short of the rung.
+  assert.equal(rung(Array.from({length:10}, (_, i) => attempt('2026-07-0' + (i % 9 + 1) + 'T10:00:00.000Z', 540))), 10);
+
+  // One very long sit qualifies at every rung it clears — the same rule Clock,
+  // Asana and Thought Control use — but a rung still needs its six sits, so a
+  // single hour cannot vault the ladder.
+  assert.equal(rung([attempt('2026-07-01T10:00:00.000Z', 3600)]), 10);
+  assert.equal(rung(Array.from({length:6}, (_, i) => attempt('2026-07-0' + (i + 1) + 'T10:00:00.000Z', 3600))), 20);
 });
 
 test('the Progress view describes only what is on today\'s path', () => {

@@ -228,30 +228,39 @@ function guideMultiSenseSessionsToday() {
   }).length;
 }
 
-// How many attempts at this stage ran at least the given number of seconds.
-function guideSensorySolidAttempts(stage, sec) {
-  var list = (stage && stage.practiceSecs) || [];
+// How many sits at a rung earn the next minute. Read straight from Thought
+// Control so the two cannot drift: sensory work starts at ten, where that rule
+// asks six, and stays there all the way up.
+function guideSensoryRungRequired(rung) {
+  return guideThoughtRungRequired(rung);
+}
+
+// How many of this stage's sits ran at least the given minutes.
+function guideSensoryRungQualCount(stage, minutes) {
+  var secs = (stage && stage.practiceSecs) || [];
   var n = 0;
-  for (var i = 0; i < list.length; i++) if (list[i] >= sec) n++;
+  for (var i = 0; i < secs.length; i++) {
+    if (secs[i] + 5 >= minutes * 60) n++;   // 5s grace for tap-timing variance
+  }
   return n;
 }
 
 // The session length this stage has earned, before any manual floor.
 //
-// Lengthen the training sit independently of the clean-hold mastery gate.
-// A completed 10-minute sit moves the next recommendation to 15; a
-// completed 15-minute sit moves it to 20. Repeated attempts also progress
-// the range so an imperfect practitioner is never stuck at 10 — but each one
-// has to be a real sit (at least half the current range) to count. Counting
-// every attempt regardless of length meant a run of one-minute failures,
-// exactly what a struggling practitioner produces, pushed the session
-// recommendation up to twenty minutes precisely when it should hold steady.
+// A rung ladder in one-minute steps, exactly like Thought Control's, starting
+// at ten. It used to jump 10 → 15 → 20 on a couple of long sits, which made a
+// session length lurch by five minutes at a time and left long flat stretches
+// between. Climbing a minute at a time on the same per-rung requirement gives
+// the practitioner a visible next step from wherever they are, and keeps every
+// timed discipline in the app measured the same way.
+//
+// The clean-hold mastery gate is untouched: this is only how long to sit.
 function guideSensoryNaturalMinutes(stage) {
   if (!stage) return GUIDE_SENSORY_PRACTICE_MIN;
-  var minutes = GUIDE_SENSORY_PRACTICE_MIN;
-  if (stage.bestPracticeSec >= 600 || guideSensorySolidAttempts(stage, 300) >= 3) minutes = 15;
-  if (stage.bestPracticeSec >= 900 || guideSensorySolidAttempts(stage, 450) >= 10) minutes = GUIDE_SENSORY_PRACTICE_MAX;
-  return minutes;
+  var rung = GUIDE_SENSORY_PRACTICE_MIN;
+  while (rung < GUIDE_SENSORY_PRACTICE_MAX
+         && guideSensoryRungQualCount(stage, rung) >= guideSensoryRungRequired(rung)) rung++;
+  return rung;
 }
 
 // The stage that trains one sense faculty at one eyes mode, or null.
@@ -2252,18 +2261,21 @@ function guideProgressOverview() {
     }
     var min = guideSensoryPracticeMinutes(stage);
     var detail, pct = 100;
+    var rung = guideSensoryNaturalMinutes(stage);
+    var rungFloor = guideFloorMin(stage.exercise === 'sense' ? stage.mode : stage.exercise);
     if (min >= GUIDE_SENSORY_PRACTICE_MAX) {
       detail = 'At the ' + GUIDE_SENSORY_PRACTICE_MAX + '-minute practice ceiling.';
-    } else if (min >= 15) {
-      var solid15 = Math.max(1, 10 - guideSensorySolidAttempts(stage, 450));
-      detail = solid15 + ' more sit' + (solid15 === 1 ? '' : 's')
-        + ' of 7½ min, or one 15-minute sit → ' + GUIDE_SENSORY_PRACTICE_MAX + ' min';
-      pct = guideProgressPct(guideSensorySolidAttempts(stage, 450), 10);
     } else {
-      var solid10 = Math.max(1, 3 - guideSensorySolidAttempts(stage, 300));
-      detail = solid10 + ' more sit' + (solid10 === 1 ? '' : 's')
-        + ' of 5 min, or one 10-minute sit → 15 min';
-      pct = guideProgressPct(guideSensorySolidAttempts(stage, 300), 3);
+      var rungNeed = guideSensoryRungRequired(rung);
+      var rungHave = Math.min(guideSensoryRungQualCount(stage, rung), rungNeed);
+      var rungLeft = Math.max(1, rungNeed - rungHave);
+      // While the ladder still sits below a manual start, climbing a rung does
+      // not move the recommendation — say that rather than promising a rise to
+      // the number already on screen.
+      detail = (rung + 1 > min)
+        ? rungLeft + ' more sit' + (rungLeft === 1 ? '' : 's') + ' of ' + rung + ' min → ' + (rung + 1) + ' min'
+        : rungLeft + ' more before the ladder passes your manual ' + rungFloor + ' min';
+      pct = guideProgressPct(rungHave, rungNeed);
     }
     var next = stages[stage.index - stages[0].index + 1] || null;
     return {
