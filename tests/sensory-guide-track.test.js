@@ -173,6 +173,104 @@ test('the sensory ladder keeps Thought Control\'s pace exactly', () => {
   });
 });
 
+// Six sits at every rung from ten up to `top` is exactly what lifts a stage
+// to `top`; anything on top of that is the stage's own further evidence.
+function ladderTo(top, fields) {
+  const out = [];
+  for (let rung = 10; rung <= top; rung++) {
+    for (let i = 0; i < 6; i++) {
+      out.push(Object.assign({
+        date:'2026-07-26T10:00:00.000Z', seconds:rung * 60, sessionDurationSec:rung * 60,
+        cleanSeconds:120, halts:2
+      }, fields));
+    }
+  }
+  return out;
+}
+
+const FEELING_CLOSED = { exercise:'sense', type:'sense', mode:'feeling', eyesMode:'closed' };
+const FEELING_OPEN = Object.assign({}, FEELING_CLOSED, { eyesMode:'open' });
+
+function naturalFor(history, mode, eyesMode) {
+  const track = loadTrack(history);
+  return track.guideSensoryNaturalMinutes(track.guideSensoryStageFor(mode, eyesMode));
+}
+
+test('opening the eyes on a sense steps the session back five minutes', () => {
+  // Holding a feeling against the visible world is the harder version of the
+  // same practice, so it must not open at whatever length closed eyes reached.
+  // Reach fifteen closed and open eyes starts at ten; reach twenty and it
+  // starts at fifteen — never below the ten everything starts at.
+  [[10, 10], [11, 10], [15, 10], [18, 13], [20, 15]].forEach(([closedRung, openStart]) => {
+    const history = ladderTo(closedRung - 1, FEELING_CLOSED);
+    assert.equal(naturalFor(history, 'feeling', 'closed'), closedRung,
+      'the fixture must really put closed eyes at ' + closedRung);
+    assert.equal(naturalFor(history, 'feeling', 'open'), openStart,
+      'closed ' + closedRung + ' must open the eyes at ' + openStart);
+  });
+});
+
+test('an open-eyes sense stage climbs on from the stepped-back start', () => {
+  // The step back sets where the stage begins, not a ceiling: its own sits
+  // move it from there.
+  const openSits = n => Array.from({length:n}, () => Object.assign({}, FEELING_OPEN,
+    { date:'2026-07-26T10:00:00.000Z', seconds:900, sessionDurationSec:900, cleanSeconds:120, halts:2 }));
+  const withOpen = n => ladderTo(19, FEELING_CLOSED).concat(openSits(n));
+
+  assert.equal(naturalFor(withOpen(0), 'feeling', 'closed'), 20);
+  // Five fifteen-minute sits is one short of the rung, so it is still sitting
+  // at the start the step back gave it. Without the step back this reads ten —
+  // this is the assertion that tells the two ladders apart.
+  assert.equal(naturalFor(withOpen(5), 'feeling', 'open'), 15,
+    'five sits have not earned a rung, so it holds at the stepped-back fifteen');
+  assert.equal(naturalFor(withOpen(6), 'feeling', 'open'), 16,
+    'the sixth earns sixteen');
+});
+
+test('Visualization and Auditory keep two independent ladders, with no step back', () => {
+  // Their open-eyes stage is a separate stage with its own sits, so it neither
+  // inherits the closed length nor is pushed down by it.
+  const track = loadTrack(ladderTo(14, { type:'visualization', eyesMode:'closed' })
+    .concat(Array.from({length:6}, () => ({ date:'2026-07-26T10:00:00.000Z',
+      type:'visualization', eyesMode:'open', seconds:600, sessionDurationSec:600,
+      cleanSeconds:120, halts:2 }))));
+  const stage = id => track.guideSensoryTrackProgress().stages.filter(s => s.id === id)[0];
+  assert.equal(track.guideSensoryNaturalMinutes(stage('visual_closed')), 15);
+  assert.equal(track.guideSensoryNaturalMinutes(stage('visual_open')), 11,
+    'six of its own ten-minute sits earn eleven, whatever closed eyes reached');
+  // The guard is on the exercise, not on the eyes, so this holds for auditory too.
+  assert.match(guideSource, /stage\.exercise !== 'sense' \|\| stage\.eyesMode !== 'open'/);
+});
+
+test('the step back is explained only when it is the number on screen', () => {
+  // The note answers "why did my session get shorter". Showing it beside a
+  // length the step back did not set explains a number nobody is looking at —
+  // the exact defect that put twelve on the path and twenty on this panel.
+  const note = (history, eyesMode, shown) =>
+    loadTrack(history).guideSensoryStepBackNote('feeling', eyesMode, shown);
+  const closedAt20 = ladderTo(19, FEELING_CLOSED);
+
+  assert.match(note(closedAt20, 'open', 15), /Open eyes starts 5 min below your closed-eyes length/,
+    'the stepped-back start itself is explained');
+  assert.equal(note(closedAt20, 'closed', 15), '', 'closed eyes never stepped back');
+  assert.equal(note(closedAt20, 'open', 16), '',
+    'once its own sits have carried it off the start, the number speaks for itself');
+  assert.equal(note(closedAt20, 'open', 12), '',
+    'a manual target that outranks the start is not the step back either');
+  // Nothing to step down from: a faculty with no closed-eyes practice starts at
+  // ten because everything does, not because it was stepped back.
+  assert.equal(note([], 'open', 10), '');
+});
+
+test('the step back can never drop a stage below the ten everyone starts at', () => {
+  const track = loadTrack([]);
+  assert.equal(track.GUIDE_SENSORY_OPEN_EYES_STEP_BACK, 5);
+  // A stage with no closed-eyes evidence at all still starts at ten, not five.
+  assert.equal(track.guideSensoryStartRung(track.guideSensoryStageFor('smell', 'open')),
+    track.GUIDE_SENSORY_PRACTICE_MIN);
+  assert.equal(track.guideSensoryStartRung(null), track.GUIDE_SENSORY_PRACTICE_MIN);
+});
+
 test('Visualization, Auditory, and Senses can be manually added as separate cards', () => {
   const start = guideSource.indexOf('function guideMergeAddedItems');
   const end = guideSource.indexOf('function guideApplyTutorialPathChoice');

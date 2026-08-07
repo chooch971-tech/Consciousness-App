@@ -85,6 +85,34 @@ test('a manual target the ladder cannot exceed is not described as a start', () 
   assert.match(block, /'-minute start · practice lengthens it from there\.'/);
 });
 
+test('a manual target practice has already passed is not called the current start', () => {
+  // The floor is a minimum, not the length on screen. An open-eyes Senses card
+  // stepping back to fifteen above a manual twelve showed "Your manual
+  // 12-minute start" beside a fifteen — a number belonging to nothing visible.
+  const block = overviewBlock();
+  assert.match(block, /pathItem\.duration > addedFloor/, 'the passed case is recognised');
+  assert.match(block, /'Past your manual ' \+ addedFloor \+ '-minute start/);
+});
+
+test('both sensory branches explain a stepped-back open-eyes start the same way', () => {
+  const block = overviewBlock();
+  // The curriculum card and a hand-added card run one ladder, so they must give
+  // one explanation — restating it in two places is how the two drifted before.
+  assert.equal((guideSource.match(/Open eyes starts ' \+ GUIDE_SENSORY_OPEN_EYES_STEP_BACK/g) || []).length, 1,
+    'the sentence is written once, in guideSensoryStepBackNote');
+  assert.equal((block.match(/guideSensoryStepBackNote\(/g) || []).length, 2,
+    'and both branches of the card call it');
+  // Each branch must pass the length it actually displays, or the note appears
+  // beside a number it does not explain.
+  assert.match(block, /guideSensoryStepBackNote\(stage\.mode, stage\.eyesMode, min\)/);
+  assert.match(block, /guideSensoryStepBackNote\(pathItem\.mode \|\| pathItem\.senseMode,[\s\S]*?pathItem\.duration\)/);
+  // The legacy mode-less item carries the faculty it was measured from under a
+  // field of its own: reusing `mode` would redirect its manual-target lookup.
+  assert.match(guideSource, /senseMode:senseLegacyMode/);
+  assert.match(block, /guideFloorMin\(pathItem\.mode \|\| pathItem\.id\)/,
+    'and the floor is still read under the id the target was saved with');
+});
+
 test('an added sensory card runs the same ladder as the curriculum', () => {
   // It used to run a progression of its own clamped at ten minutes, so the
   // same practice measured two ways depending on how its card reached the

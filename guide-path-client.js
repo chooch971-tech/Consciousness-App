@@ -245,22 +245,63 @@ function guideSensoryRungQualCount(stage, minutes) {
   return n;
 }
 
+// Opening the eyes on a sense faculty steps the session back one interval.
+//
+// Holding a feeling, smell or taste against the visible world is a harder
+// version of the same practice, so the length it starts from is the one
+// closed eyes reached, less five minutes, never below the ten everything
+// starts at. Reach fifteen with the eyes closed and open eyes begins at ten;
+// reach twenty and it begins at fifteen. From there it climbs the same rungs
+// on its own sits.
+//
+// This is the senses only. Visualization and Auditory each run one continuous
+// ladder across their two stages, so their open-eyes stage carries on from
+// wherever the closed one left the ladder rather than stepping back.
+var GUIDE_SENSORY_OPEN_EYES_STEP_BACK = 5;
+function guideSensoryStartRung(stage) {
+  if (!stage || stage.exercise !== 'sense' || stage.eyesMode !== 'open') {
+    return GUIDE_SENSORY_PRACTICE_MIN;
+  }
+  var closed = guideSensoryStageFor(stage.mode, 'closed');
+  if (!closed) return GUIDE_SENSORY_PRACTICE_MIN;
+  // The closed stage is never open-eyed, so this recurses exactly one level.
+  return guideClamp(guideSensoryNaturalMinutes(closed) - GUIDE_SENSORY_OPEN_EYES_STEP_BACK,
+    GUIDE_SENSORY_PRACTICE_MIN, GUIDE_SENSORY_PRACTICE_MAX);
+}
+
 // The session length this stage has earned, before any manual floor.
 //
-// A rung ladder in one-minute steps, exactly like Thought Control's, starting
-// at ten. It used to jump 10 → 15 → 20 on a couple of long sits, which made a
-// session length lurch by five minutes at a time and left long flat stretches
-// between. Climbing a minute at a time on the same per-rung requirement gives
-// the practitioner a visible next step from wherever they are, and keeps every
-// timed discipline in the app measured the same way.
+// A rung ladder in one-minute steps, exactly like Thought Control's, from
+// whatever this stage starts at. It used to jump 10 → 15 → 20 on a couple of
+// long sits, which made a session length lurch by five minutes at a time and
+// left long flat stretches between. Climbing a minute at a time on the same
+// per-rung requirement gives the practitioner a visible next step from wherever
+// they are, and keeps every timed discipline in the app measured the same way.
 //
 // The clean-hold mastery gate is untouched: this is only how long to sit.
 function guideSensoryNaturalMinutes(stage) {
   if (!stage) return GUIDE_SENSORY_PRACTICE_MIN;
-  var rung = GUIDE_SENSORY_PRACTICE_MIN;
+  var rung = guideSensoryStartRung(stage);
   while (rung < GUIDE_SENSORY_PRACTICE_MAX
          && guideSensoryRungQualCount(stage, rung) >= guideSensoryRungRequired(rung)) rung++;
   return rung;
+}
+
+// The sentence that explains a stepped-back open-eyes start, or '' when the
+// step back is not what put `shownMinutes` on screen — because the eyes are
+// closed, because this faculty has no closed-eyes length to step down from, or
+// because a manual target or the stage's own sits have already carried it past
+// the start. Saying it in any of those cases would explain a number the
+// practitioner is not looking at.
+function guideSensoryStepBackNote(mode, eyesMode, shownMinutes) {
+  if (eyesMode !== 'open') return '';
+  var open = guideSensoryStageFor(mode, 'open');
+  var closed = guideSensoryStageFor(mode, 'closed');
+  if (!open || !closed) return '';
+  var start = guideSensoryStartRung(open);
+  if (shownMinutes !== start || guideSensoryNaturalMinutes(closed) <= start) return '';
+  return 'Open eyes starts ' + GUIDE_SENSORY_OPEN_EYES_STEP_BACK
+    + ' min below your closed-eyes length';
 }
 
 // The stage that trains one sense faculty at one eyes mode, or null.
@@ -2244,14 +2285,28 @@ function guideProgressOverview() {
         // practised. Saying "practice lengthens it from there" there was a
         // promise the ladder cannot keep.
         var addedCeil = guideAddedNaturalCeiling(pathItem.id);
-        addedDetail = (addedCeil && addedFloor >= addedCeil)
-          ? 'Your manual ' + addedFloor + '-minute target. This exercise climbs to '
+        if (addedCeil && addedFloor >= addedCeil) {
+          addedDetail = 'Your manual ' + addedFloor + '-minute target. This exercise climbs to '
             + addedCeil + ' min on its own, so practice will not raise it further — '
-            + 'change the number yourself to go higher.'
-          : 'Your manual ' + addedFloor + '-minute start · practice lengthens it from there.';
+            + 'change the number yourself to go higher.';
+        } else if (pathItem.duration > addedFloor) {
+          // The floor is a minimum, not the current number. Once practice has
+          // carried the session past it, calling it "your start" points at a
+          // length that is no longer on screen anywhere.
+          addedDetail = 'Past your manual ' + addedFloor + '-minute start · practice '
+            + 'lengthens this session over time.';
+        } else {
+          addedDetail = 'Your manual ' + addedFloor + '-minute start · practice lengthens it from there.';
+        }
       } else {
         addedDetail = 'Added by you · practice lengthens this session over time.';
       }
+      // A hand-added sense card runs the same ladder, so it steps back on open
+      // eyes too. Explain the drop wherever it is the number being shown — a
+      // manual target above the stepped start suppresses this by itself.
+      var addedStepNote = guideSensoryStepBackNote(pathItem.mode || pathItem.senseMode,
+        guidePathEyesMode('sense', 'closed'), pathItem.duration);
+      if (addedStepNote) addedDetail = addedStepNote + ' · ' + addedDetail;
       return {
         summary:pathItem.duration + ' min recommended',
         rows:[{ label:'Session length', status:pathItem.duration + ' min', detail:addedDetail, pct:100 }],
@@ -2275,6 +2330,13 @@ function guideProgressOverview() {
       detail = (rung + 1 > min)
         ? rungLeft + ' more sit' + (rungLeft === 1 ? '' : 's') + ' of ' + rung + ' min → ' + (rung + 1) + ' min'
         : rungLeft + ' more before the ladder passes your manual ' + rungFloor + ' min';
+      // Say why an open-eyes sense stage opened lower than the closed one, but
+      // only while that stepped-back start is the number on screen — once it
+      // has climbed, or a manual target has overtaken it, the number speaks for
+      // itself.
+      var stepNote = stage.exercise === 'sense'
+        ? guideSensoryStepBackNote(stage.mode, stage.eyesMode, min) : '';
+      if (stepNote) detail = stepNote + ' · ' + detail;
       pct = guideProgressPct(rungHave, rungNeed);
     }
     var next = stages[stage.index - stages[0].index + 1] || null;
@@ -3057,7 +3119,11 @@ function guideBuildAddedItem(exId, rounds) {
       GUIDE_SENSORY_PRACTICE_MIN, GUIDE_FLOOR_CAP);
     var senseTarget = senseDur * 60 * rounds;
     var senseSt = stats.sense || { count:0, todaySec:0 };
-    return { id:'sense', name:'Senses', duration:senseDur, durationLabel:senseDur + ' min' + (rounds > 1 ? ' x2' : ''), done:senseSt.todaySec >= senseTarget, progress:'added · ' + (senseSt.count || 0) + ' recorded', tip:'Added by you. Imagine a feeling, smell, or taste as vividly as you can — accuracy matters more than intensity.', open:'sense', eyesMode:guidePathEyesMode('sense', 'closed'), added:true };
+    // senseMode carries the faculty this length was measured from, so the
+    // Progress panel can explain the same number. It is deliberately not `mode`:
+    // this item's manual target is stored under the bare 'sense' id, and the
+    // panel reads that floor from `mode || id`.
+    return { id:'sense', name:'Senses', senseMode:senseLegacyMode, duration:senseDur, durationLabel:senseDur + ' min' + (rounds > 1 ? ' x2' : ''), done:senseSt.todaySec >= senseTarget, progress:'added · ' + (senseSt.count || 0) + ' recorded', tip:'Added by you. Imagine a feeling, smell, or taste as vividly as you can — accuracy matters more than intensity.', open:'sense', eyesMode:guidePathEyesMode('sense', 'closed'), added:true };
   }
   if (exId === 'multisense') {
     var advSt = stats.visual || { count:0, todaySec:0 };
