@@ -9,7 +9,11 @@
        focus a text field smaller than 16px (the app's inputs are deliberately
        ~11-12px). Modern iOS still allows manual pinch-zoom for accessibility
        regardless, so this only suppresses the jarring focus-zoom. -->
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, viewport-fit=cover"/>
+  <!-- No maximum-scale: capping it stops a low-vision user pinch-zooming, which
+       is WCAG 1.4.4 and one of the first things an App Store accessibility pass
+       looks for. iOS Safari has ignored the cap since iOS 10, but Android Chrome
+       still honours it, so this was a real block there. -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"/>
   <meta name="apple-mobile-web-app-capable" content="yes"/>
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
   <meta name="apple-mobile-web-app-title" content="Presence"/>
@@ -755,6 +759,27 @@
     /* Matches .gp-back (7x2 Challenge) — the standard small round back button used app-wide. */
     .history-back { width:38px; height:38px; display:flex; align-items:center; justify-content:center; border-radius:50%; border:1px solid rgba(255,255,255,.12); background:rgba(255,255,255,.05); color:rgba(221,216,206,.8); cursor:pointer; transition:background .15s, border-color .15s; flex-shrink:0; padding:0; }
     .history-back:active { background:rgba(255,255,255,.12); border-color:rgba(255,255,255,.2); }
+
+    /* ── Minimum tap target ──────────────────────────────────────────────────
+       Apple's HIG asks for 44×44pt of tappable area. Several controls here are
+       drawn smaller on purpose — a 38px round back button, a 32px chevron — and
+       growing them would re-space the headers they sit in. So the drawn size is
+       left alone and an invisible centred 44×44 area is laid over each one.
+       The overlay is a child of the control, so taps on it are taps on it.
+       Anything already 44px in a dimension keeps its own size there. */
+    .tap44,
+    .history-back, .lodge-back, .lodge-filter, .prof-gear, .prof-section__more,
+    .mode-tab, .hamburger, .soul-tab, .pq-menu-btn, .pq-add-ex-btn,
+    #reportNavPrev, #reportNavNext, #soulMirrorTutBtn { position:relative; }
+    .tap44::after,
+    .history-back::after, .lodge-back::after, .lodge-filter::after, .prof-gear::after,
+    .prof-section__more::after, .mode-tab::after, .hamburger::after, .soul-tab::after,
+    .pq-menu-btn::after, .pq-add-ex-btn::after,
+    #reportNavPrev::after, #reportNavNext::after, #soulMirrorTutBtn::after {
+      content:''; position:absolute; left:50%; top:50%;
+      transform:translate(-50%, -50%);
+      min-width:44px; min-height:44px; width:100%; height:100%;
+    }
     /* ── Apple-style grouped settings ── */
     /* Account Settings leans on --muted for most of its body copy (section
        headers, descriptions, Sign Out) — the global 0.38 opacity reads as
@@ -6347,7 +6372,7 @@ body:not(.tut-live) #tutCorgi {
             <div id="omniaCandorValue" style="font-family:Cormorant Garamond,serif; font-size:26px; color:#8eccc0; line-height:1;">1</div>
           </div>
           <div style="font-size:10px; color:var(--muted); line-height:1.6; margin-bottom:16px;">How frank Omnia is in your progress reflections. Higher means more pitiless, straightforward criticism. Applies to future reports only — past reflections stay as written.</div>
-          <input type="range" id="omniaCandorSlider" min="1" max="5" value="1" step="1" style="width:100%; -webkit-appearance:none; appearance:none; height:2px; background:rgba(142,204,224,.3); border-radius:1px; outline:none; cursor:pointer;"/>
+          <input type="range" id="omniaCandorSlider" min="1" max="5" value="1" step="1" aria-label="Omnia candor" style="width:100%; -webkit-appearance:none; appearance:none; height:2px; background:rgba(142,204,224,.3); border-radius:1px; outline:none; cursor:pointer;"/>
           <div style="display:flex; justify-content:space-between; margin-top:8px;">
             <span style="font-size:8px; letter-spacing:.1em; text-transform:uppercase; color:var(--muted);">Gentle</span>
             <span style="font-size:8px; letter-spacing:.1em; text-transform:uppercase; color:var(--muted);">Pitiless</span>
@@ -6695,12 +6720,12 @@ body:not(.tut-live) #tutCorgi {
       </div>
 
       <div class="prof-section" id="profBadgesSection">
-        <div class="prof-section__head"><span>Monthly Badges</span><button class="prof-section__more" id="profBadgesMore">&#8250;</button></div>
+        <div class="prof-section__head"><span>Monthly Badges</span><button class="prof-section__more" id="profBadgesMore" aria-label="See all monthly badges">&#8250;</button></div>
         <div class="prof-badges" id="profBadges"></div>
       </div>
 
       <div class="prof-section" id="profAchievementsSection">
-        <div class="prof-section__head"><span>Achievements</span><button class="prof-section__more" id="profAchMore">&#8250;</button></div>
+        <div class="prof-section__head"><span>Achievements</span><button class="prof-section__more" id="profAchMore" aria-label="See all achievements">&#8250;</button></div>
         <div class="prof-ach" id="profAchievements"></div>
       </div>
     </div>
@@ -8012,7 +8037,7 @@ body:not(.tut-live) #tutCorgi {
             <span style="font-size:10px; letter-spacing:.22em; text-transform:uppercase; color:var(--accent);">Positive Traits</span>
             <span id="positiveCount" style="font-size:9px; color:var(--muted); background:rgba(126,184,164,.1); border-radius:10px; padding:2px 8px; font-family:'DM Mono',monospace;">0</span>
           </button>
-          <button id="addPositiveBtn" style="background:rgba(126,184,164,.08); border:1px solid rgba(126,184,164,.2); border-radius:4px; color:var(--accent); font-size:12px; padding:4px 12px; cursor:pointer; font-family:'DM Mono',monospace;">+</button>
+          <button id="addPositiveBtn" aria-label="Add a positive trait" style="background:rgba(126,184,164,.08); border:1px solid rgba(126,184,164,.2); border-radius:4px; color:var(--accent); font-size:12px; padding:4px 12px; cursor:pointer; font-family:'DM Mono',monospace;">+</button>
         </div>
         <div id="positiveSection">
           <div id="positiveTraitsList"></div>
@@ -8032,7 +8057,7 @@ body:not(.tut-live) #tutCorgi {
             <span style="font-size:10px; letter-spacing:.22em; text-transform:uppercase; color:#c4788c;">Negative Traits</span>
             <span id="negativeCount" style="font-size:9px; color:var(--muted); background:rgba(196,120,140,.1); border-radius:10px; padding:2px 8px; font-family:'DM Mono',monospace;">0</span>
           </button>
-          <button id="addNegativeBtn" style="background:rgba(196,120,140,.08); border:1px solid rgba(196,120,140,.2); border-radius:4px; color:#c4788c; font-size:12px; padding:4px 12px; cursor:pointer; font-family:'DM Mono',monospace;">+</button>
+          <button id="addNegativeBtn" aria-label="Add a negative trait" style="background:rgba(196,120,140,.08); border:1px solid rgba(196,120,140,.2); border-radius:4px; color:#c4788c; font-size:12px; padding:4px 12px; cursor:pointer; font-family:'DM Mono',monospace;">+</button>
         </div>
         <div id="negativeSection">
           <!-- Group-by control (element/severity) — Bardon-style sorting -->
@@ -8859,9 +8884,9 @@ body:not(.tut-live) #tutCorgi {
       </div>
     </div>
     <div class="rpt-navrow" style="display:flex;align-items:center;gap:8px;padding:8px 20px 10px;flex-shrink:0;border-bottom:1px solid var(--border);position:relative;">
-      <button id="reportNavPrev" style="width:32px;height:32px;display:flex;align-items:center;justify-content:center;background:none;border:none;color:var(--text);font-size:20px;cursor:pointer;opacity:.7;flex-shrink:0;">‹</button>
+      <button id="reportNavPrev" aria-label="Earlier period" style="width:32px;height:32px;display:flex;align-items:center;justify-content:center;background:none;border:none;color:var(--text);font-size:20px;cursor:pointer;opacity:.7;flex-shrink:0;">‹</button>
       <span id="reportNavLabel" style="flex:1;text-align:center;font-family:'DM Mono',monospace;font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:var(--muted);">Last 7 days</span>
-      <button id="reportNavNext" style="width:32px;height:32px;display:flex;align-items:center;justify-content:center;background:none;border:none;color:var(--text);font-size:20px;cursor:pointer;opacity:.25;pointer-events:none;flex-shrink:0;">›</button>
+      <button id="reportNavNext" aria-label="Later period" style="width:32px;height:32px;display:flex;align-items:center;justify-content:center;background:none;border:none;color:var(--text);font-size:20px;cursor:pointer;opacity:.25;pointer-events:none;flex-shrink:0;">›</button>
       <button id="reportFilterBtn" class="rpt-filter-btn" aria-label="Select period">
         <svg viewBox="0 0 18 15" width="16" height="14" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round">
           <line x1="1" y1="2.5" x2="17" y2="2.5"/><circle cx="5.5" cy="2.5" r="2" fill="var(--bg)" stroke="currentColor" stroke-width="1.6"/>
@@ -9063,11 +9088,13 @@ body:not(.tut-live) #tutCorgi {
 </div>
 
 <!-- Reusable styled prompt (replaces window.prompt) -->
-<div class="modal-overlay" id="appPromptModal">
+<div class="modal-overlay" id="appPromptModal" role="dialog" aria-modal="true" aria-labelledby="appPromptTitle">
   <div class="modal-sheet" style="padding:24px 24px 32px;">
     <div id="appPromptTitle" style="font-family:'Cormorant Garamond',serif; font-size:20px; font-weight:300; color:var(--text); margin-bottom:6px;"></div>
     <div id="appPromptText" style="font-size:11px; color:var(--muted); line-height:1.6; margin-bottom:14px;"></div>
-    <input id="appPromptInput" type="text" style="width:100%; box-sizing:border-box; background:rgba(255,255,255,.04); border:1px solid var(--border2); border-radius:9px; padding:12px 14px; color:var(--text); font-family:'Cormorant Garamond',serif; font-size:16px; outline:none; margin-bottom:18px;"/>
+    <!-- Named by the prompt's own title and body, which showAppPrompt rewrites
+         per use, so the field is never announced as a bare unlabelled textbox. -->
+    <input id="appPromptInput" type="text" aria-labelledby="appPromptTitle appPromptText" style="width:100%; box-sizing:border-box; background:rgba(255,255,255,.04); border:1px solid var(--border2); border-radius:9px; padding:12px 14px; color:var(--text); font-family:'Cormorant Garamond',serif; font-size:16px; outline:none; margin-bottom:18px;"/>
     <div style="display:flex; gap:10px;">
       <button class="btn ghost" id="appPromptCancel" style="flex:1;">Cancel</button>
       <button class="btn primary" id="appPromptOk" style="flex:1; background:rgba(226,196,140,.14); border-color:rgba(226,196,140,.45); color:#e8cd94;">Save</button>

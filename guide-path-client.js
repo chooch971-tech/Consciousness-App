@@ -3315,7 +3315,7 @@ function renderGuidePlan(mode, skipScroll) {
       + '<div class="path-ex-meta">' + durLabel + (item.progress ? ' · ' + item.progress : '') + '</div>'
       + '</div>'
       + '<div class="path-ex-right">' + checkHtml + beginHtml + '</div>'
-      + '<button class="pq-menu-btn" data-ex-id="' + item.id + '"' + (item.mode ? ' data-ex-mode="' + item.mode + '"' : '') + (item.eyesMode ? ' data-ex-eyes="' + item.eyesMode + '"' : '') + (item.sensoryTrack ? ' data-sensory-track="1"' : '') + (item.added ? ' data-ex-added="1"' : '') + ' title="Options">···</button>'
+      + '<button class="pq-menu-btn" data-ex-id="' + item.id + '"' + (item.mode ? ' data-ex-mode="' + item.mode + '"' : '') + (item.eyesMode ? ' data-ex-eyes="' + item.eyesMode + '"' : '') + (item.sensoryTrack ? ' data-sensory-track="1"' : '') + (item.added ? ' data-ex-added="1"' : '') + ' aria-label="Options for ' + escHtml(item.name) + '" title="Options">···</button>'
       + '</div>';
   }
 

@@ -840,7 +840,7 @@ function renderPathQuests() {
   html += '<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin:0 2px 6px;">'
     + '<span style="font-size:8px;letter-spacing:.26em;text-transform:uppercase;color:var(--text);">' + (_isProgress ? 'Exercise Progress' : 'Exercises') + '</span>'
     + '<div style="display:flex;align-items:center;gap:9px;">'
-    + (!_isProgress && _canAdd ? '<button id="pqAddExBtn" class="pq-add-ex-btn" title="Add an exercise to your path">+</button>' : '')
+    + (!_isProgress && _canAdd ? '<button id="pqAddExBtn" class="pq-add-ex-btn" aria-label="Add an exercise to your path" title="Add an exercise to your path">+</button>' : '')
     + (!_isProgress ? '<button id="pqCadenceBtn" class="guide-cadence-toggle' + (_twoOn ? '' : ' off') + '" aria-label="Practice cadence: ' + (_twoOn ? 'twice' : 'once') + ' a day. Click to switch.">' + (_twoOn ? '2× / day' : '1× / day') + '</button>' : '')
     + '<button id="pqPathViewBtn" class="pq-view-toggle' + (_isProgress ? ' is-active' : '') + '" aria-pressed="' + (_isProgress ? 'true' : 'false') + '" aria-label="' + (_isProgress ? 'Back to today\'s exercises' : 'View your exercise progress') + '">' + (_isProgress ? '‹ Exercises' : 'Progress ›') + '</button>'
     + '</div>'
@@ -931,7 +931,7 @@ function renderPathQuests() {
     }
 
     var cardPadding = extraHtml ? 'padding:13px 14px 10px;' : 'padding:13px 14px;';
-    var menuBtn = '<button class="pq-menu-btn" data-ex-id="' + item.id + '"' + (item.mode ? ' data-ex-mode="' + item.mode + '"' : '') + (item.eyesMode ? ' data-ex-eyes="' + item.eyesMode + '"' : '') + (item.sensoryTrack ? ' data-sensory-track="1"' : '') + (item.added ? ' data-ex-added="1"' : '') + ' title="Options">···</button>';
+    var menuBtn = '<button class="pq-menu-btn" data-ex-id="' + item.id + '"' + (item.mode ? ' data-ex-mode="' + item.mode + '"' : '') + (item.eyesMode ? ' data-ex-eyes="' + item.eyesMode + '"' : '') + (item.sensoryTrack ? ' data-sensory-track="1"' : '') + (item.added ? ' data-ex-added="1"' : '') + ' aria-label="Options for ' + escHtml(item.name) + '" title="Options">···</button>';
     var badgeStyle = 'position:relative;width:48px;height:48px;border-radius:12px;background:' + color + '1e;border:1px solid ' + color + '38;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0;font-family:\'DM Mono\',monospace;line-height:1;color:' + color + ';';
     // Highlight cards that will grant a body level if completed right now.
     var grantsBodyName = (typeof omniaCardGrantsBodyLevel === 'function')
