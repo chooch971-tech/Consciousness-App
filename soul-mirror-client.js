@@ -82,8 +82,8 @@ var soulSections=loadSoulSections();
 var soulExpandedNeg=null; // index of the negative trait whose editor is open
 var soulAutoSugState=null; // current autosug object from loadSoulMirror(), refreshed on each render
 
-function soulEmpty(msg){return '<div style="font-size:11px;color:var(--muted);font-style:italic;padding:8px 0;">'+msg+'</div>';}
-function soulNoMatch(){return '<div style="font-size:11px;color:var(--muted);font-style:italic;padding:8px 0;">No matches for "'+escHtml(soulMirrorQuery.trim())+'".</div>';}
+function soulEmpty(msg){return '<div style="font-size:0.6875rem;color:var(--muted);font-style:italic;padding:8px 0;">'+msg+'</div>';}
+function soulNoMatch(){return '<div style="font-size:0.6875rem;color:var(--muted);font-style:italic;padding:8px 0;">No matches for "'+escHtml(soulMirrorQuery.trim())+'".</div>';}
 
 // A positive trait card — clean and simple (no element/severity).
 function soulPosCard(t,i){
@@ -92,21 +92,21 @@ function soulPosCard(t,i){
   var bg,borderMain,borderLeft,extra='',textStyle='';
   if(inProg){
     bg='212,180,100'; borderMain='rgba(212,180,100,.22)'; borderLeft='rgba(212,180,100,.85)';
-    extra='<div style="font-size:8px;letter-spacing:.18em;text-transform:uppercase;color:rgb(212,180,100);margin-top:4px;">◉ In Progress</div>';
+    extra='<div style="font-size:0.5rem;letter-spacing:.18em;text-transform:uppercase;color:rgb(212,180,100);margin-top:4px;">◉ In Progress</div>';
   } else if(done){
     bg='126,184,164'; borderMain='rgba(126,184,164,.2)'; borderLeft='rgba(126,184,164,.7)';
-    extra='<div style="font-size:8px;letter-spacing:.18em;text-transform:uppercase;color:var(--accent);margin-top:4px;">✓ Transformed</div>';
+    extra='<div style="font-size:0.5rem;letter-spacing:.18em;text-transform:uppercase;color:var(--accent);margin-top:4px;">✓ Transformed</div>';
     textStyle='text-decoration:line-through;opacity:.7;';
   } else {
     bg='126,184,164'; borderMain='rgba(126,184,164,.18)'; borderLeft='rgba(126,184,164,.85)';
   }
   return '<div style="display:flex;align-items:center;gap:12px;padding:13px 14px;background:rgba('+bg+',.06);border:1px solid '+borderMain+';border-left:3px solid '+borderLeft+';border-radius:10px;margin-bottom:8px;">'
     +'<div style="flex:1;min-width:0;">'
-      +'<div style="font-size:13px;color:var(--text);line-height:1.3;'+textStyle+'">'+escHtml(t.text)+'</div>'
+      +'<div style="font-size:0.8125rem;color:var(--text);line-height:1.3;'+textStyle+'">'+escHtml(t.text)+'</div>'
       +extra
     +'</div>'
-    +(done?'<button onclick="soulRestoreTrait(\'positive\','+i+')" aria-label="Mark as not complete" title="Mark as not complete" style="flex-shrink:0;background:none;border:none;color:rgba(126,184,164,.8);font-size:15px;cursor:pointer;padding:4px 6px;line-height:1;">&#8617;</button>':'')
-    +'<button onclick="deletePositiveTrait('+i+')" aria-label="Remove trait" style="flex-shrink:0;background:none;border:none;color:rgba(255,255,255,.28);font-size:14px;cursor:pointer;padding:4px 6px;line-height:1;">✕</button>'
+    +(done?'<button onclick="soulRestoreTrait(\'positive\','+i+')" aria-label="Mark as not complete" title="Mark as not complete" style="flex-shrink:0;background:none;border:none;color:rgba(126,184,164,.8);font-size:0.9375rem;cursor:pointer;padding:4px 6px;line-height:1;">&#8617;</button>':'')
+    +'<button onclick="deletePositiveTrait('+i+')" aria-label="Remove trait" style="flex-shrink:0;background:none;border:none;color:rgba(255,255,255,.28);font-size:0.875rem;cursor:pointer;padding:4px 6px;line-height:1;">✕</button>'
     +'</div>';
 }
 
@@ -121,20 +121,20 @@ function soulNegCard(t,i){
   var badges='';
   if(el){var e=SOUL_ELEMENTS[el];badges+='<span class="soul-elem-pill" style="color:rgb('+e.color+');background:rgba('+e.color+',.13);border:1px solid rgba('+e.color+',.4);">'+e.label+'</span>';}
   if(t.severity&&SOUL_SEVERITY[t.severity]){var sv=SOUL_SEVERITY[t.severity];badges+='<span class="soul-sev-pill" style="color:rgb('+sv.color+');background:rgba('+sv.color+',.12);border-color:rgba('+sv.color+',.35);">'+sv.label+'</span>';}
-  if(!el&&!t.severity)badges+='<span style="font-size:8px;color:var(--muted);letter-spacing:.06em;">tap to classify</span>';
+  if(!el&&!t.severity)badges+='<span style="font-size:0.5rem;color:var(--muted);letter-spacing:.06em;">tap to classify</span>';
 
-  var stateBadge=inProg?'<div style="font-size:8px;letter-spacing:.18em;text-transform:uppercase;color:rgb(212,180,100);margin-top:4px;">◉ In Progress</div>'
-    :done?'<div style="font-size:8px;letter-spacing:.18em;text-transform:uppercase;color:var(--accent);margin-top:4px;">✓ Transformed</div>':'';
+  var stateBadge=inProg?'<div style="font-size:0.5rem;letter-spacing:.18em;text-transform:uppercase;color:rgb(212,180,100);margin-top:4px;">◉ In Progress</div>'
+    :done?'<div style="font-size:0.5rem;letter-spacing:.18em;text-transform:uppercase;color:var(--accent);margin-top:4px;">✓ Transformed</div>':'';
   var textStyle=done?'text-decoration:line-through;opacity:.7;':'';
 
   var head='<div style="display:flex;align-items:center;gap:12px;padding:13px 14px;">'
     +'<div onclick="soulToggleNegEditor('+i+')" style="flex:1;min-width:0;cursor:pointer;">'
-      +'<div style="font-size:13px;color:var(--text);line-height:1.3;'+textStyle+'">'+escHtml(t.text)+'</div>'
+      +'<div style="font-size:0.8125rem;color:var(--text);line-height:1.3;'+textStyle+'">'+escHtml(t.text)+'</div>'
       +'<div style="display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-top:6px;">'+badges+'</div>'
       +stateBadge
     +'</div>'
-    +(done?'<button onclick="event.stopPropagation();soulRestoreTrait(\'negative\','+i+')" aria-label="Mark as not complete" title="Mark as not complete" style="flex-shrink:0;background:none;border:none;color:rgba(126,184,164,.8);font-size:15px;cursor:pointer;padding:4px 6px;line-height:1;">&#8617;</button>':'')
-    +'<button onclick="deleteNegativeTrait('+i+')" aria-label="Remove trait" style="flex-shrink:0;background:none;border:none;color:rgba(255,255,255,.28);font-size:14px;cursor:pointer;padding:4px 6px;line-height:1;">✕</button>'
+    +(done?'<button onclick="event.stopPropagation();soulRestoreTrait(\'negative\','+i+')" aria-label="Mark as not complete" title="Mark as not complete" style="flex-shrink:0;background:none;border:none;color:rgba(126,184,164,.8);font-size:0.9375rem;cursor:pointer;padding:4px 6px;line-height:1;">&#8617;</button>':'')
+    +'<button onclick="deleteNegativeTrait('+i+')" aria-label="Remove trait" style="flex-shrink:0;background:none;border:none;color:rgba(255,255,255,.28);font-size:0.875rem;cursor:pointer;padding:4px 6px;line-height:1;">✕</button>'
     +'</div>';
 
   var editor='';
@@ -148,9 +148,9 @@ function soulNegCard(t,i){
       return '<button class="soul-edit-chip" onclick="soulSetNegSeverity('+i+','+s+')" style="'+(sel?'color:rgb('+sv.color+');background:rgba('+sv.color+',.16);border-color:rgba('+sv.color+',.5);':'')+'">'+sv.label+'</button>';
     }).join('');
     editor='<div style="padding:12px 14px 13px;border-top:1px solid rgba(255,255,255,.06);">'
-      +'<div style="font-size:8px;letter-spacing:.18em;text-transform:uppercase;color:var(--muted);margin-bottom:7px;">Element</div>'
+      +'<div style="font-size:0.5rem;letter-spacing:.18em;text-transform:uppercase;color:var(--muted);margin-bottom:7px;">Element</div>'
       +'<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:13px;">'+elemBtns+'</div>'
-      +'<div style="font-size:8px;letter-spacing:.18em;text-transform:uppercase;color:var(--muted);margin-bottom:7px;">Severity</div>'
+      +'<div style="font-size:0.5rem;letter-spacing:.18em;text-transform:uppercase;color:var(--muted);margin-bottom:7px;">Severity</div>'
       +'<div style="display:flex;gap:6px;flex-wrap:wrap;">'+sevBtns+'</div>'
       +'</div>';
   }
@@ -216,7 +216,7 @@ function renderSoulMirrorTraits(){
   var finishWrap=document.getElementById('soulMirrorFinishWrap');
   if(finishWrap){
     if(data.mirrorFinished){
-      finishWrap.innerHTML='<div class="soul-finished-banner"><span style="font-size:13px;flex-shrink:0;">≋</span><span>Mirror complete · Omnia now guides you to Pore Breathing. Edit the Mirror anytime.</span></div>';
+      finishWrap.innerHTML='<div class="soul-finished-banner"><span style="font-size:0.8125rem;flex-shrink:0;">≋</span><span>Mirror complete · Omnia now guides you to Pore Breathing. Edit the Mirror anytime.</span></div>';
     } else if(soulMirrorThresholdMet(data)){
       finishWrap.innerHTML='<button onclick="soulMirrorFinish()" class="soul-finish-btn">✦ Finished with Mirror</button>';
     } else {
@@ -660,22 +660,22 @@ function renderAutosug(){
   if(!sel){
     var negAvail=data.negative.map(function(t,i){return{t:t,i:i};}).filter(function(x){return !x.t.done;});
     var posAvail=data.positive.map(function(t,i){return{t:t,i:i};}).filter(function(x){return !x.t.done;});
-    var html='<div style="font-size:14px; color:var(--muted); line-height:1.8; margin-bottom:24px; font-family:Cormorant Garamond,serif; font-style:italic;">'
+    var html='<div style="font-size:0.875rem; color:var(--muted); line-height:1.8; margin-bottom:24px; font-family:Cormorant Garamond,serif; font-style:italic;">'
       +'Choose one trait from your mirror to transform. Each sitting, tap once for every silent repetition of your formula — forty taps, spoken with full conviction.'
       +'</div>';
     if(!negAvail.length&&!posAvail.length){
-      html+='<div style="font-size:11px;color:var(--muted);font-style:italic;padding:8px 0;">Your mirror is empty. Add traits in the Mirror mode first.</div>';
+      html+='<div style="font-size:0.6875rem;color:var(--muted);font-style:italic;padding:8px 0;">Your mirror is empty. Add traits in the Mirror mode first.</div>';
     }else{
       if(negAvail.length){
-        html+='<div style="font-size:9px; letter-spacing:.25em; text-transform:uppercase; color:#c4788c; margin-bottom:12px;">Negative Traits</div>';
+        html+='<div style="font-size:0.5625rem; letter-spacing:.25em; text-transform:uppercase; color:#c4788c; margin-bottom:12px;">Negative Traits</div>';
         html+=negAvail.map(function(x){
-          return '<button onclick="autosugPick(\'negative\','+x.i+')" style="display:block;width:100%;text-align:left;padding:12px 14px;background:rgba(196,120,140,.05);border:1px solid rgba(196,120,140,.18);border-radius:8px;margin-bottom:6px;color:var(--text);font-family:\'DM Mono\',monospace;font-size:11px;cursor:pointer;">'+escHtml(x.t.text)+'</button>';
+          return '<button onclick="autosugPick(\'negative\','+x.i+')" style="display:block;width:100%;text-align:left;padding:12px 14px;background:rgba(196,120,140,.05);border:1px solid rgba(196,120,140,.18);border-radius:8px;margin-bottom:6px;color:var(--text);font-family:\'DM Mono\',monospace;font-size:0.6875rem;cursor:pointer;">'+escHtml(x.t.text)+'</button>';
         }).join('');
       }
       if(posAvail.length){
-        html+='<div style="font-size:9px; letter-spacing:.25em; text-transform:uppercase; color:var(--accent); margin:20px 0 12px;">Positive Traits</div>';
+        html+='<div style="font-size:0.5625rem; letter-spacing:.25em; text-transform:uppercase; color:var(--accent); margin:20px 0 12px;">Positive Traits</div>';
         html+=posAvail.map(function(x){
-          return '<button onclick="autosugPick(\'positive\','+x.i+')" style="display:block;width:100%;text-align:left;padding:12px 14px;background:rgba(126,184,164,.05);border:1px solid rgba(126,184,164,.18);border-radius:8px;margin-bottom:6px;color:var(--text);font-family:\'DM Mono\',monospace;font-size:11px;cursor:pointer;">'+escHtml(x.t.text)+'</button>';
+          return '<button onclick="autosugPick(\'positive\','+x.i+')" style="display:block;width:100%;text-align:left;padding:12px 14px;background:rgba(126,184,164,.05);border:1px solid rgba(126,184,164,.18);border-radius:8px;margin-bottom:6px;color:var(--text);font-family:\'DM Mono\',monospace;font-size:0.6875rem;cursor:pointer;">'+escHtml(x.t.text)+'</button>';
         }).join('');
       }
     }
@@ -690,29 +690,29 @@ function renderAutosug(){
     '<div style="border:1px solid rgba(196,168,212,.38); border-left:3px solid #c4a8d4; border-radius:12px; padding:16px 18px; margin-bottom:18px; background:linear-gradient(135deg, rgba(164,126,184,.18) 0%, rgba(120,90,160,.07) 100%); box-shadow:0 4px 20px rgba(120,80,160,.12);">'
       +'<div style="display:flex; justify-content:space-between; align-items:center; gap:12px;">'
         +'<div style="min-width:0;">'
-          +'<div style="font-size:9px; letter-spacing:.25em; text-transform:uppercase; color:#c8a8e0; margin-bottom:6px;">Working On</div>'
-          +'<div style="font-family:Cormorant Garamond,serif; font-size:22px; font-weight:300; color:#f2eaf8; overflow-wrap:break-word;">'+escHtml(sel.text)+'</div>'
+          +'<div style="font-size:0.5625rem; letter-spacing:.25em; text-transform:uppercase; color:#c8a8e0; margin-bottom:6px;">Working On</div>'
+          +'<div style="font-family:Cormorant Garamond,serif; font-size:1.375rem; font-weight:300; color:#f2eaf8; overflow-wrap:break-word;">'+escHtml(sel.text)+'</div>'
         +'</div>'
         +'<div style="text-align:right; flex-shrink:0;">'
-          +'<div style="font-family:Cormorant Garamond,serif; font-size:34px; color:#d8c2ec; line-height:1; text-shadow:0 0 16px rgba(196,168,212,.55);">Day '+day+'</div>'
-          +'<div style="font-size:9px; color:#9a86b0; letter-spacing:.1em; margin-top:4px;">since '+escHtml(sel.start)+'</div>'
+          +'<div style="font-family:Cormorant Garamond,serif; font-size:2.125rem; color:#d8c2ec; line-height:1; text-shadow:0 0 16px rgba(196,168,212,.55);">Day '+day+'</div>'
+          +'<div style="font-size:0.5625rem; color:#9a86b0; letter-spacing:.1em; margin-top:4px;">since '+escHtml(sel.start)+'</div>'
         +'</div>'
       +'</div>'
     +'</div>'
     +'<div id="autosugPad" onclick="autosugTap()" style="border:1px solid rgba(196,168,212,.4); border-radius:16px; min-height:300px; display:flex; flex-direction:column; align-items:center; justify-content:center; cursor:pointer; -webkit-tap-highlight-color:transparent; user-select:none; -webkit-user-select:none; background:radial-gradient(circle at 50% 36%, rgba(176,134,204,.22) 0%, rgba(120,86,158,.08) 55%, rgba(120,86,158,.02) 100%); box-shadow:inset 0 0 70px rgba(164,126,184,.12), 0 4px 24px rgba(110,74,150,.14); transition:border-color .12s, box-shadow .12s;">'
       +(done
-        ?'<div style="font-family:Cormorant Garamond,serif; font-size:40px; font-weight:300; color:#e6d4f6; line-height:1; text-shadow:0 0 22px rgba(196,168,212,.7);">Complete</div>'
-         +'<div style="font-size:10px; color:#7eb8a4; letter-spacing:.18em; text-transform:uppercase; margin-top:12px;">&#10003; +'+AUTOSUG_XP+' XP</div>'
-        :'<div style="font-family:Cormorant Garamond,serif; font-size:72px; font-weight:300; line-height:1;"><span id="autosugCountNum" style="color:#f4ecfa; text-shadow:0 0 24px rgba(196,168,212,.4);">'+autosugCount+'</span><span style="font-size:26px; color:#b89ccc;"> / '+AUTOSUG_TAPS+'</span></div>'
-         +'<div style="font-size:9px; color:#bfa4d8; letter-spacing:.2em; text-transform:uppercase; margin-top:14px;">Tap with each repetition</div>')
+        ?'<div style="font-family:Cormorant Garamond,serif; font-size:2.5rem; font-weight:300; color:#e6d4f6; line-height:1; text-shadow:0 0 22px rgba(196,168,212,.7);">Complete</div>'
+         +'<div style="font-size:0.625rem; color:#7eb8a4; letter-spacing:.18em; text-transform:uppercase; margin-top:12px;">&#10003; +'+AUTOSUG_XP+' XP</div>'
+        :'<div style="font-family:Cormorant Garamond,serif; font-size:4.5rem; font-weight:300; line-height:1;"><span id="autosugCountNum" style="color:#f4ecfa; text-shadow:0 0 24px rgba(196,168,212,.4);">'+autosugCount+'</span><span style="font-size:1.625rem; color:#b89ccc;"> / '+AUTOSUG_TAPS+'</span></div>'
+         +'<div style="font-size:0.5625rem; color:#bfa4d8; letter-spacing:.2em; text-transform:uppercase; margin-top:14px;">Tap with each repetition</div>')
     +'</div>'
     +'<div style="height:6px; border-radius:3px; background:rgba(164,126,184,.15); margin-top:14px; overflow:hidden;">'
       +'<div id="autosugBar" style="height:100%; width:'+pct+'%; background:linear-gradient(90deg, #8e6aae, #d8b8ec); border-radius:3px; box-shadow:0 0 12px rgba(196,168,212,.55); transition:width .15s;"></div>'
     +'</div>'
     +'<div style="display:flex; gap:8px; margin-top:18px;">'
       +(done
-        ?'<button onclick="autosugBeginAgain()" class="btn primary" style="flex:1; font-size:9px; background:linear-gradient(135deg, rgba(164,126,184,.28), rgba(196,168,212,.14)); border-color:rgba(196,168,212,.5); color:#e6d4f6;">Begin Again</button>'
-        :'<button onclick="autosugChangeTrait()" class="btn ghost" style="flex:1; font-size:9px; color:#bfa4d8; border-color:rgba(196,168,212,.28);">Change Trait</button>')
-      +'<button onclick="autosugMarkComplete()" class="btn ghost" style="flex:1; font-size:9px; color:#d4b8ec; border-color:rgba(196,168,212,.45); background:rgba(164,126,184,.08);">Trait Complete</button>'
+        ?'<button onclick="autosugBeginAgain()" class="btn primary" style="flex:1; font-size:0.5625rem; background:linear-gradient(135deg, rgba(164,126,184,.28), rgba(196,168,212,.14)); border-color:rgba(196,168,212,.5); color:#e6d4f6;">Begin Again</button>'
+        :'<button onclick="autosugChangeTrait()" class="btn ghost" style="flex:1; font-size:0.5625rem; color:#bfa4d8; border-color:rgba(196,168,212,.28);">Change Trait</button>')
+      +'<button onclick="autosugMarkComplete()" class="btn ghost" style="flex:1; font-size:0.5625rem; color:#d4b8ec; border-color:rgba(196,168,212,.45); background:rgba(164,126,184,.08);">Trait Complete</button>'
     +'</div>';
 }

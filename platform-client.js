@@ -754,10 +754,10 @@ function showAppUpdateBanner() {
   bar.style.cssText = 'position:fixed;left:50%;transform:translateX(-50%);bottom:max(env(safe-area-inset-bottom),18px);'
     + 'z-index:99999;display:flex;align-items:center;gap:9px;padding:11px 18px;border-radius:999px;'
     + 'background:rgba(126,184,164,.16);border:1px solid rgba(126,184,164,.42);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);'
-    + 'color:#bfe3d4;font-family:\'DM Mono\',monospace;font-size:11px;letter-spacing:.05em;cursor:pointer;'
+    + 'color:#bfe3d4;font-family:\'DM Mono\',monospace;font-size:0.6875rem;letter-spacing:.05em;cursor:pointer;'
     + 'box-shadow:0 6px 24px rgba(0,0,0,.35);max-width:calc(100vw - 32px);transition:opacity .4s ease;opacity:0;';
   setTimeout(function() { bar.style.opacity = '1'; }, 30);
-  bar.innerHTML = '<span style="font-size:13px;">✦</span><span>New version ready — tap to refresh</span>';
+  bar.innerHTML = '<span style="font-size:0.8125rem;">✦</span><span>New version ready — tap to refresh</span>';
   bar.addEventListener('click', function() {
     try { sessionStorage.setItem('_postUpdatePull', '1'); } catch(e) {}
     window.location.reload();

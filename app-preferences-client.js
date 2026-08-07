@@ -38,6 +38,37 @@ function syncOmniaCandorUI() {
   });
 })();
 
+// ── Text size ────────────────────────────────────────────────────────────────
+// The scale itself is read and applied in the document head, before first
+// paint. This is only the Settings control that writes it.
+//
+// The slider is a percentage on top of whatever the reader's browser or OS
+// already asks for, not an absolute size — the root rule is calc(100% * --fs),
+// so someone who has enlarged text system-wide keeps that and adds to it.
+function syncTextScaleUI() {
+  var scale = typeof presenceReadTextScale === 'function' ? presenceReadTextScale() : 1;
+  var pct = Math.round(scale * 100);
+  var slider = document.getElementById('textScaleSlider');
+  var label = document.getElementById('textScaleValue');
+  if (slider) slider.value = pct;
+  if (label) label.textContent = pct + '%';
+}
+
+(function bindTextScaleControl() {
+  var slider = document.getElementById('textScaleSlider');
+  if (!slider) return;
+  syncTextScaleUI();
+  slider.addEventListener('input', function() {
+    var pct = parseInt(this.value, 10);
+    if (!isFinite(pct)) pct = 100;
+    var scale = Math.min(2, Math.max(1, pct / 100));
+    try { localStorage.setItem('presence_text_scale', String(scale)); } catch (e) {}
+    if (typeof presenceApplyTextScale === 'function') presenceApplyTextScale(scale);
+    var label = document.getElementById('textScaleValue');
+    if (label) label.textContent = Math.round(scale * 100) + '%';
+  });
+})();
+
 window.appSoundEnabled = function() {
   return localStorage.getItem('presence_sound_enabled') !== '0';
 };

@@ -683,7 +683,7 @@ function renderAchDetail(p) {
     var mm = achMasteryCounts();
     extra = '<div class="ach-detail-desc" style="margin-top:8px;line-height:1.9;">' + mm.defs.map(function(d) {
       var stars = d.c ? '<span style="color:#e8c87a;">✱✱</span>' : d.m ? '<span style="color:#e8c87a;">✱</span><span style="opacity:.3;">✱</span>' : '<span style="opacity:.3;">✱✱</span>';
-      return '<span style="white-space:nowrap;">' + d.ex + ' ' + stars + ' <span style="opacity:.55;font-size:10px;">(' + d.mDesc + ' · ✱✱ ' + d.cDesc + ')</span></span>';
+      return '<span style="white-space:nowrap;">' + d.ex + ' ' + stars + ' <span style="opacity:.55;font-size:0.625rem;">(' + d.mDesc + ' · ✱✱ ' + d.cDesc + ')</span></span>';
     }).join('<br>') + '</div>';
   }
   box.style.display = '';

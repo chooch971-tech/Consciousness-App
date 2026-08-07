@@ -18,11 +18,14 @@ function ruleFor(selector) {
 
 test('the sensory summary carries its own type size', () => {
   // It used to reuse .review-practice-modes, which has no font-size because it
-  // is always nested inside .review-practice-meta (font:8px). Mounted at the
+  // is always nested inside .review-practice-meta (font:0.5rem). Mounted at the
   // top of the card instead, with no such parent, it inherited the page font
   // and rendered several times its intended size.
   const rule = ruleFor('.review-sensory-summary');
-  assert.match(rule, /font:\s*8px\//, 'must set its own font shorthand');
+  // 0.5rem is the same 8px it always was — sizes moved to rem so the reader's
+  // chosen text size can move them. What matters here is unchanged: the rule
+  // states a size of its own instead of inheriting one.
+  assert.match(rule, /font:\s*0\.5rem\//, 'must set its own font shorthand');
   assert.match(ruleFor('.review-sensory-summary strong'), /font-size:/,
     'the heading line needs an explicit size too');
 });

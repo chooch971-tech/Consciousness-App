@@ -83,15 +83,15 @@ function renderPracticeReminderSettings() {
     + '<button class="pvk-toggle ' + (p.enabled ? 'on' : 'off') + '" onclick="practiceReminderToggle()"></button>'
     + '</div>';
   if (p.enabled) {
-    html += '<div style="margin-top:12px;font-size:9px;letter-spacing:.16em;text-transform:uppercase;color:var(--muted);margin-bottom:8px;">How often</div>';
+    html += '<div style="margin-top:12px;font-size:0.5625rem;letter-spacing:.16em;text-transform:uppercase;color:var(--muted);margin-bottom:8px;">How often</div>';
     html += ['gentle','balanced','frequent'].map(function(lv) {
       var def = PRACTICE_REMINDER_LEVELS[lv];
       var sel = p.level === lv;
       return '<button onclick="practiceReminderSetLevel(\'' + lv + '\')" style="display:flex;justify-content:space-between;align-items:center;width:100%;text-align:left;padding:11px 13px;margin-bottom:6px;border-radius:9px;cursor:pointer;'
         + 'background:' + (sel ? 'rgba(142,204,224,.12)' : 'rgba(255,255,255,.03)') + ';'
         + 'border:1px solid ' + (sel ? 'rgba(142,204,224,.45)' : 'var(--border)') + ';">'
-        + '<div><div style="font-size:11px;color:' + (sel ? '#8eccc0' : 'var(--text)') + ';">' + def.label + '</div>'
-        + '<div style="font-size:9px;color:var(--muted);margin-top:2px;">' + def.sub + '</div></div>'
+        + '<div><div style="font-size:0.6875rem;color:' + (sel ? '#8eccc0' : 'var(--text)') + ';">' + def.label + '</div>'
+        + '<div style="font-size:0.5625rem;color:var(--muted);margin-top:2px;">' + def.sub + '</div></div>'
         + '<div style="width:16px;height:16px;border-radius:50%;flex-shrink:0;border:1px solid ' + (sel ? '#8eccc0' : 'var(--border2)') + ';background:' + (sel ? '#8eccc0' : 'transparent') + ';"></div>'
         + '</button>';
     }).join('');

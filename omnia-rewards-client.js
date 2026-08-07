@@ -586,12 +586,12 @@ function renderAkashaStats() {
   if (!body) return;
   var balance = Math.round((typeof omniaState !== 'undefined' && omniaState && omniaState.akasha) || 0);
   var balanceHtml = '<div style="display:flex; justify-content:space-between; align-items:baseline; border:1px solid var(--border); border-radius:12px; padding:14px 16px; margin-bottom:20px; background:rgba(232,200,122,.06);">'
-    + '<div style="font-family:\'DM Mono\',monospace; font-size:9px; letter-spacing:.14em; text-transform:uppercase; color:var(--muted-readable);">Current Balance</div>'
-    + '<div style="font-family:\'Cormorant Garamond\',serif; font-size:24px; font-weight:500; color:#e8c87a;">' + balance.toLocaleString() + '</div>'
+    + '<div style="font-family:\'DM Mono\',monospace; font-size:0.5625rem; letter-spacing:.14em; text-transform:uppercase; color:var(--muted-readable);">Current Balance</div>'
+    + '<div style="font-family:\'Cormorant Garamond\',serif; font-size:1.5rem; font-weight:500; color:#e8c87a;">' + balance.toLocaleString() + '</div>'
     + '</div>';
   var log = typeof omniaReadAkashaLedger === 'function' ? omniaReadAkashaLedger() : [];
   if (!log.length) {
-    body.innerHTML = balanceHtml + '<div style="font-family:\'DM Mono\',monospace; font-size:11px; color:var(--muted); text-align:center; padding:40px 20px; line-height:1.7;">No activity logged yet.<br>Complete an exercise to start seeing your Akasha history here.</div>';
+    body.innerHTML = balanceHtml + '<div style="font-family:\'DM Mono\',monospace; font-size:0.6875rem; color:var(--muted); text-align:center; padding:40px 20px; line-height:1.7;">No activity logged yet.<br>Complete an exercise to start seeing your Akasha history here.</div>';
     return;
   }
   var entries = log.slice().reverse(); // newest first
@@ -606,8 +606,8 @@ function renderAkashaStats() {
     var dayTotal = g.items.reduce(function(sum, e) { return sum + (e.kind === 'spend' || e.kind === 'reversal' ? -e.amount : e.amount); }, 0);
     var dayTotalStr = (dayTotal >= 0 ? '+' : '−') + Math.abs(Math.round(dayTotal)).toLocaleString();
     return '<div style="display:flex; justify-content:space-between; align-items:baseline; margin:22px 0 8px; padding-bottom:6px; border-bottom:1px solid var(--border);">'
-      + '<div style="font-family:\'DM Mono\',monospace; font-size:9px; letter-spacing:.16em; text-transform:uppercase; color:var(--muted-readable);">' + g.label + '</div>'
-      + '<div style="font-family:\'DM Mono\',monospace; font-size:9px; color:var(--muted-readable);">' + dayTotalStr + '</div>'
+      + '<div style="font-family:\'DM Mono\',monospace; font-size:0.5625rem; letter-spacing:.16em; text-transform:uppercase; color:var(--muted-readable);">' + g.label + '</div>'
+      + '<div style="font-family:\'DM Mono\',monospace; font-size:0.5625rem; color:var(--muted-readable);">' + dayTotalStr + '</div>'
       + '</div>'
       + g.items.map(function(entry) {
         var isAchievement = entry.source === 'achievement';
@@ -618,12 +618,12 @@ function renderAkashaStats() {
         return '<div style="display:flex; justify-content:space-between; align-items:center; gap:10px; padding:10px 12px; margin-bottom:6px; border-radius:10px;'
           + (isAchievement ? ' background:rgba(232,200,122,.1); border:1px solid rgba(232,200,122,.28);' : ' background:rgba(255,255,255,.02);') + '">'
           + '<div style="min-width:0;">'
-          + '<div style="font-family:\'Cormorant Garamond\',serif; font-size:16px; font-weight:' + (isAchievement ? '500' : '300') + '; color:' + (isAchievement ? '#e8c87a' : 'var(--text)') + ';">' + (isAchievement ? '✦ ' : '') + escHtml(label) + '</div>'
-          + (detail ? '<div style="font-family:\'DM Mono\',monospace; font-size:9px; letter-spacing:.03em; color:var(--muted-readable); margin-top:2px;">' + escHtml(String(detail)) + '</div>' : '')
+          + '<div style="font-family:\'Cormorant Garamond\',serif; font-size:1rem; font-weight:' + (isAchievement ? '500' : '300') + '; color:' + (isAchievement ? '#e8c87a' : 'var(--text)') + ';">' + (isAchievement ? '✦ ' : '') + escHtml(label) + '</div>'
+          + (detail ? '<div style="font-family:\'DM Mono\',monospace; font-size:0.5625rem; letter-spacing:.03em; color:var(--muted-readable); margin-top:2px;">' + escHtml(String(detail)) + '</div>' : '')
           + '</div>'
           + '<div style="text-align:right; flex-shrink:0;">'
-          + '<div style="font-family:\'DM Mono\',monospace; font-size:14px; color:' + (negative ? 'var(--muted-readable)' : '#e8c87a') + ';">' + sign + Math.round(entry.amount).toLocaleString() + '</div>'
-          + '<div style="font-family:\'DM Mono\',monospace; font-size:8px; color:var(--muted-readable); margin-top:2px;">' + _akashaStatsFmtClock(entry.at) + ' · bal ' + Math.round(entry.balance).toLocaleString() + '</div>'
+          + '<div style="font-family:\'DM Mono\',monospace; font-size:0.875rem; color:' + (negative ? 'var(--muted-readable)' : '#e8c87a') + ';">' + sign + Math.round(entry.amount).toLocaleString() + '</div>'
+          + '<div style="font-family:\'DM Mono\',monospace; font-size:0.5rem; color:var(--muted-readable); margin-top:2px;">' + _akashaStatsFmtClock(entry.at) + ' · bal ' + Math.round(entry.balance).toLocaleString() + '</div>'
           + '</div>'
           + '</div>';
       }).join('');

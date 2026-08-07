@@ -821,7 +821,7 @@ function renderPathQuests() {
   html += '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;padding:0 2px;">'
     + '<div class="path-day-name">' + dayName + '</div>'
     + '<div style="display:flex;align-items:center;gap:10px;">'
-    + '<span style="font-size:9px;color:var(--text);letter-spacing:.05em;"><strong style="color:var(--text);">' + pathDone + '</strong> / ' + pathTotal + ' done</span>'
+    + '<span style="font-size:0.5625rem;color:var(--text);letter-spacing:.05em;"><strong style="color:var(--text);">' + pathDone + '</strong> / ' + pathTotal + ' done</span>'
     + '<svg width="32" height="32" viewBox="0 0 32 32">'
     + '<circle cx="16" cy="16" r="13" fill="none" stroke="rgba(255,255,255,.07)" stroke-width="2.5"/>'
     + '<circle cx="16" cy="16" r="13" fill="none" stroke="#8ecce0" stroke-width="2.5" stroke-dasharray="' + ringCirc + '" stroke-dashoffset="' + ringOffset + '" stroke-linecap="round" transform="rotate(-90 16 16)" opacity=".85"/>'
@@ -837,8 +837,10 @@ function renderPathQuests() {
   var _canAdd = (typeof guidePathAddableExercises === 'function') && guidePathAddableExercises().length > 0;
   var _isProgress = pathView === 'progress';
   html += '<div>';
-  html += '<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin:0 2px 6px;">'
-    + '<span style="font-size:8px;letter-spacing:.26em;text-transform:uppercase;color:var(--text);">' + (_isProgress ? 'Exercise Progress' : 'Exercises') + '</span>'
+  // flex-wrap so this row breaks onto a second line at a large text scale
+  // rather than pushing the Progress button off the edge of the card.
+  html += '<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;margin:0 2px 6px;">'
+    + '<span style="font-size:0.5rem;letter-spacing:.26em;text-transform:uppercase;color:var(--text);">' + (_isProgress ? 'Exercise Progress' : 'Exercises') + '</span>'
     + '<div style="display:flex;align-items:center;gap:9px;">'
     + (!_isProgress && _canAdd ? '<button id="pqAddExBtn" class="pq-add-ex-btn" aria-label="Add an exercise to your path" title="Add an exercise to your path">+</button>' : '')
     + (!_isProgress ? '<button id="pqCadenceBtn" class="guide-cadence-toggle' + (_twoOn ? '' : ' off') + '" aria-label="Practice cadence: ' + (_twoOn ? 'twice' : 'once') + ' a day. Click to switch.">' + (_twoOn ? '2× / day' : '1× / day') + '</button>' : '')
@@ -884,7 +886,7 @@ function renderPathQuests() {
         + (item.duration ? ' data-guide-duration="' + item.duration + '"' : '')
       : '';
     var checkHtml = item.done
-      ? '<div style="width:22px;height:22px;border-radius:50%;background:rgba(126,184,164,.15);color:var(--accent);display:flex;align-items:center;justify-content:center;font-size:11px;">✓</div>'
+      ? '<div style="width:22px;height:22px;border-radius:50%;background:rgba(126,184,164,.15);color:var(--accent);display:flex;align-items:center;justify-content:center;font-size:0.6875rem;">✓</div>'
       : '<div style="width:22px;height:22px;border-radius:50%;border:1px solid var(--border);"></div>';
     var beginStyle = 'padding:8px 14px;border-radius:8px;border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.04);color:var(--text);font-family:\'DM Mono\',monospace;letter-spacing:.2em;text-transform:uppercase;cursor:pointer;'
       + (item.done ? 'opacity:.35;cursor:default;pointer-events:none;' : '');
@@ -896,19 +898,19 @@ function renderPathQuests() {
     var extraHtml = '';
     if (item.clockExtra === 'upsell') {
       extraHtml = '<div style="margin-top:10px;padding:10px 12px;border-radius:8px;background:rgba(212,176,142,.07);border:1px solid rgba(212,176,142,.18);display:flex;align-items:center;justify-content:space-between;gap:10px;">'
-        + '<div style="font-size:9px;color:#d4b08e;letter-spacing:.1em;">Ready for 15 min intervals?</div>'
+        + '<div style="font-size:0.5625rem;color:#d4b08e;letter-spacing:.1em;">Ready for 15 min intervals?</div>'
         + '<div style="display:flex;gap:8px;">'
-        + '<button class="pq-clock-upsell-yes" style="padding:5px 12px;border-radius:6px;border:1px solid rgba(212,176,142,.4);background:rgba(212,176,142,.1);color:#d4b08e;font-family:\'DM Mono\',monospace;font-size:8px;letter-spacing:.2em;cursor:pointer;">Yes</button>'
-        + '<button class="pq-clock-upsell-no" style="padding:5px 12px;border-radius:6px;border:1px solid rgba(255,255,255,.08);background:none;color:var(--text);font-family:\'DM Mono\',monospace;font-size:8px;letter-spacing:.2em;cursor:pointer;">Stay at 10</button>'
+        + '<button class="pq-clock-upsell-yes" style="padding:5px 12px;border-radius:6px;border:1px solid rgba(212,176,142,.4);background:rgba(212,176,142,.1);color:#d4b08e;font-family:\'DM Mono\',monospace;font-size:0.5rem;letter-spacing:.2em;cursor:pointer;">Yes</button>'
+        + '<button class="pq-clock-upsell-no" style="padding:5px 12px;border-radius:6px;border:1px solid rgba(255,255,255,.08);background:none;color:var(--text);font-family:\'DM Mono\',monospace;font-size:0.5rem;letter-spacing:.2em;cursor:pointer;">Stay at 10</button>'
         + '</div></div>';
     } else if (item.clockExtra === 'stepper') {
       var cur = guideClamp(guideState.clockUserTarget != null ? guideState.clockUserTarget : 10, 10, 15);
       extraHtml = '<div style="margin-top:10px;display:flex;align-items:center;gap:10px;">'
-        + '<div style="font-size:9px;color:var(--text);letter-spacing:.1em;">Your target</div>'
+        + '<div style="font-size:0.5625rem;color:var(--text);letter-spacing:.1em;">Your target</div>'
         + '<div style="display:flex;align-items:center;gap:6px;">'
-        + '<button class="pq-clock-step" data-dir="-1" style="width:24px;height:24px;border-radius:6px;border:1px solid rgba(255,255,255,.1);background:rgba(255,255,255,.04);color:var(--text);font-size:14px;cursor:pointer;display:flex;align-items:center;justify-content:center;">−</button>'
-        + '<span style="font-family:\'Cormorant Garamond\',serif;font-size:18px;font-weight:300;color:var(--text);min-width:36px;text-align:center;">' + cur + ' min</span>'
-        + '<button class="pq-clock-step" data-dir="1" style="width:24px;height:24px;border-radius:6px;border:1px solid rgba(255,255,255,.1);background:rgba(255,255,255,.04);color:var(--text);font-size:14px;cursor:pointer;display:flex;align-items:center;justify-content:center;">+</button>'
+        + '<button class="pq-clock-step" data-dir="-1" style="width:24px;height:24px;border-radius:6px;border:1px solid rgba(255,255,255,.1);background:rgba(255,255,255,.04);color:var(--text);font-size:0.875rem;cursor:pointer;display:flex;align-items:center;justify-content:center;">−</button>'
+        + '<span style="font-family:\'Cormorant Garamond\',serif;font-size:1.125rem;font-weight:300;color:var(--text);min-width:36px;text-align:center;">' + cur + ' min</span>'
+        + '<button class="pq-clock-step" data-dir="1" style="width:24px;height:24px;border-radius:6px;border:1px solid rgba(255,255,255,.1);background:rgba(255,255,255,.04);color:var(--text);font-size:0.875rem;cursor:pointer;display:flex;align-items:center;justify-content:center;">+</button>'
         + '</div></div>';
     }
 
@@ -920,9 +922,9 @@ function renderPathQuests() {
     if (!item.done && typeof guideAdvancedOffer === 'function') {
       var advOffer = guideAdvancedOffer(item.id, item.mode, item.duration);
       if (advOffer) {
-        var offerBtn = 'padding:5px 12px;border-radius:6px;font-family:\'DM Mono\',monospace;font-size:8px;letter-spacing:.2em;cursor:pointer;';
+        var offerBtn = 'padding:5px 12px;border-radius:6px;font-family:\'DM Mono\',monospace;font-size:0.5rem;letter-spacing:.2em;cursor:pointer;';
         extraHtml += '<div style="margin-top:10px;padding:10px 12px;border-radius:8px;background:' + color + '12;border:1px solid ' + color + '30;display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;">'
-          + '<div style="font-size:9px;color:' + color + ';letter-spacing:.08em;line-height:1.5;">Your last sessions all ran past ' + advOffer.from + ' min. Start at ' + advOffer.minutes + '?</div>'
+          + '<div style="font-size:0.5625rem;color:' + color + ';letter-spacing:.08em;line-height:1.5;">Your last sessions all ran past ' + advOffer.from + ' min. Start at ' + advOffer.minutes + '?</div>'
           + '<div style="display:flex;gap:8px;">'
           + '<button class="pq-adv-offer-yes" data-adv-key="' + advOffer.key + '" data-adv-min="' + advOffer.minutes + '" style="' + offerBtn + 'border:1px solid ' + color + '66;background:' + color + '1a;color:' + color + ';">' + advOffer.minutes + ' min</button>'
           + '<button class="pq-adv-offer-no" data-adv-key="' + advOffer.key + '" style="' + offerBtn + 'border:1px solid rgba(255,255,255,.08);background:none;color:var(--text);">No thanks</button>'
@@ -932,7 +934,7 @@ function renderPathQuests() {
 
     var cardPadding = extraHtml ? 'padding:13px 14px 10px;' : 'padding:13px 14px;';
     var menuBtn = '<button class="pq-menu-btn" data-ex-id="' + item.id + '"' + (item.mode ? ' data-ex-mode="' + item.mode + '"' : '') + (item.eyesMode ? ' data-ex-eyes="' + item.eyesMode + '"' : '') + (item.sensoryTrack ? ' data-sensory-track="1"' : '') + (item.added ? ' data-ex-added="1"' : '') + ' aria-label="Options for ' + escHtml(item.name) + '" title="Options">···</button>';
-    var badgeStyle = 'position:relative;width:48px;height:48px;border-radius:12px;background:' + color + '1e;border:1px solid ' + color + '38;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0;font-family:\'DM Mono\',monospace;line-height:1;color:' + color + ';';
+    var badgeStyle = 'position:relative;width:48px;height:48px;border-radius:12px;background:' + color + '1e;border:1px solid ' + color + '38;display:flex;align-items:center;justify-content:center;font-size:1.25rem;flex-shrink:0;font-family:\'DM Mono\',monospace;line-height:1;color:' + color + ';';
     // Highlight cards that will grant a body level if completed right now.
     var grantsBodyName = (typeof omniaCardGrantsBodyLevel === 'function')
       ? omniaCardGrantsBodyLevel(item.id, item.done, _highlighted)
@@ -950,8 +952,8 @@ function renderPathQuests() {
       + '<div style="display:flex;align-items:center;gap:14px;">'
       + '<div style="' + badgeStyle + '">' + icon + '</div>'
       + '<div style="flex:1;min-width:0;">'
-      + '<div style="font-family:\'Space Grotesk\',sans-serif;font-size:12px;font-weight:600;letter-spacing:.01em;color:' + color + ';margin-bottom:3px;line-height:1.25;">' + displayName + '</div>'
-      + '<div style="font-size:9px;color:var(--text);letter-spacing:.06em;">' + meta + '</div>'
+      + '<div style="font-family:\'Space Grotesk\',sans-serif;font-size:0.75rem;font-weight:600;letter-spacing:.01em;color:' + color + ';margin-bottom:3px;line-height:1.25;">' + displayName + '</div>'
+      + '<div style="font-size:0.5625rem;color:var(--text);letter-spacing:.06em;">' + meta + '</div>'
       + bodyBadgeHtml
       + '</div>'
       + '<div style="display:flex;align-items:center;gap:10px;flex-shrink:0;">' + checkHtml + beginHtml + '</div>'
@@ -974,19 +976,19 @@ function renderPathQuests() {
     return '<div style="border-radius:16px;border:1px solid ' + opts.borderColor + ';background:' + opts.bgGrad + ';padding:18px 20px;position:relative;overflow:hidden;">'
       + '<div style="content:\'\';position:absolute;top:-30px;right:-20px;width:100px;height:100px;border-radius:50%;background:radial-gradient(circle,' + opts.glowColor + ' 0%,transparent 70%);pointer-events:none;"></div>'
       + '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;position:relative;">'
-      + '<div style="font-size:8px;letter-spacing:.26em;text-transform:uppercase;color:' + opts.labelColor + ';">' + opts.label + '</div>'
-      + '<div style="display:flex;align-items:center;gap:5px;font-size:9px;letter-spacing:.1em;color:var(--text);"><div style="width:6px;height:6px;border-radius:50%;border:1px solid ' + opts.labelColor + ';"></div>' + opts.timerText + '</div>'
+      + '<div style="font-size:0.5rem;letter-spacing:.26em;text-transform:uppercase;color:' + opts.labelColor + ';">' + opts.label + '</div>'
+      + '<div style="display:flex;align-items:center;gap:5px;font-size:0.5625rem;letter-spacing:.1em;color:var(--text);"><div style="width:6px;height:6px;border-radius:50%;border:1px solid ' + opts.labelColor + ';"></div>' + opts.timerText + '</div>'
       + '</div>'
-      + '<div style="font-family:\'Cormorant Garamond\',serif;font-size:19px;font-weight:300;color:var(--text);margin-bottom:14px;line-height:1.2;position:relative;">' + opts.title + '</div>'
+      + '<div style="font-family:\'Cormorant Garamond\',serif;font-size:1.1875rem;font-weight:300;color:var(--text);margin-bottom:14px;line-height:1.2;position:relative;">' + opts.title + '</div>'
       + '<div style="height:3px;border-radius:2px;background:rgba(255,255,255,.06);overflow:hidden;margin-bottom:8px;position:relative;">'
       + '<div style="height:100%;border-radius:2px;background:' + opts.fillGrad + ';width:' + opts.pct + '%;transition:width .5s ease;"></div>'
       + '</div>'
-      + '<div style="font-size:9px;color:var(--text);letter-spacing:.08em;position:relative;"><strong style="color:var(--text);">' + opts.progressNumerator + '</strong> / ' + opts.progressDenominator + (opts.progressUnit ? ' ' + opts.progressUnit : '') + '</div>'
+      + '<div style="font-size:0.5625rem;color:var(--text);letter-spacing:.08em;position:relative;"><strong style="color:var(--text);">' + opts.progressNumerator + '</strong> / ' + opts.progressDenominator + (opts.progressUnit ? ' ' + opts.progressUnit : '') + '</div>'
       + '<div style="display:flex;align-items:center;gap:12px;margin-top:14px;position:relative;">'
       + '<div class="pq-reward-icon">' + pathQuestChestSVG(opts.done) + '</div>'
       + '<div style="flex:1;">'
-      +   '<div style="font-family:\'DM Mono\',monospace;font-size:11px;letter-spacing:.1em;color:#d4a874;">+' + opts.reward + ' Akasha</div>'
-      +   (opts.boostPct ? '<div style="font-family:\'DM Mono\',monospace;font-size:8.5px;letter-spacing:.14em;text-transform:uppercase;color:#8ecce0;margin-top:4px;">+' + opts.boostPct + '% boost · ' + opts.boostHours + 'h</div>' : '')
+      +   '<div style="font-family:\'DM Mono\',monospace;font-size:0.6875rem;letter-spacing:.1em;color:#d4a874;">+' + opts.reward + ' Akasha</div>'
+      +   (opts.boostPct ? '<div style="font-family:\'DM Mono\',monospace;font-size:0.53125rem;letter-spacing:.14em;text-transform:uppercase;color:#8ecce0;margin-top:4px;">+' + opts.boostPct + '% boost · ' + opts.boostHours + 'h</div>' : '')
       + '</div>'
       + (opts.done && !opts.claimed ? '<button class="pq-claim" data-quest="' + opts.dataQuest + '">Claim</button>' : opts.claimed ? '<div class="pq-claimed">Claimed</div>' : '')
       + '</div></div>';
@@ -1047,10 +1049,10 @@ function renderPathQuests() {
   var streakTitle = streakVal > 0 ? 'Keep your streak alive' : 'Start your streak today';
   var streakSub = streakVal > 0 ? "Complete today's practice before midnight" : 'Complete one exercise to begin';
   html += '<div style="display:flex;align-items:center;gap:12px;border:1px solid var(--border);border-radius:12px;background:rgba(255,255,255,.02);padding:12px 16px;">'
-    + '<div style="font-size:20px;">🔥</div>'
-    + '<div style="flex:1;"><div style="font-size:10px;color:var(--text);letter-spacing:.06em;margin-bottom:2px;">' + streakTitle + '</div>'
-    + '<div style="font-size:9px;color:var(--text);letter-spacing:.05em;">' + streakSub + '</div></div>'
-    + '<div style="font-family:\'Cormorant Garamond\',serif;font-size:22px;font-weight:300;color:#d4b08e;">' + streakVal + 'd</div>'
+    + '<div style="font-size:1.25rem;">🔥</div>'
+    + '<div style="flex:1;"><div style="font-size:0.625rem;color:var(--text);letter-spacing:.06em;margin-bottom:2px;">' + streakTitle + '</div>'
+    + '<div style="font-size:0.5625rem;color:var(--text);letter-spacing:.05em;">' + streakSub + '</div></div>'
+    + '<div style="font-family:\'Cormorant Garamond\',serif;font-size:1.375rem;font-weight:300;color:#d4b08e;">' + streakVal + 'd</div>'
     + '</div>';
 
   root.innerHTML = html;
@@ -1399,7 +1401,7 @@ function renderPathQuests() {
   function addItemBtnHTML(ex) {
     var meta = ADD_ICONS[ex.id] || { icon:'✦', color:'var(--muted)' };
     return '<button class="pq-skip-item" data-add-ex="' + ex.id + '" style="display:flex;align-items:center;gap:10px;">'
-      + '<span style="font-size:14px;color:' + meta.color + ';flex-shrink:0;opacity:.9;">' + meta.icon + '</span>'
+      + '<span style="font-size:0.875rem;color:' + meta.color + ';flex-shrink:0;opacity:.9;">' + meta.icon + '</span>'
       + '<span style="color:' + meta.color + ';">' + (ADD_NAMES[ex.id] || ex.name) + '</span>'
       + '</button>';
   }
@@ -1408,9 +1410,9 @@ function renderPathQuests() {
     var meta = ADD_ICONS[groupId] || { icon:'✦', color:'var(--muted)' };
     var sub = members.map(addItemBtnHTML).join('');
     return '<button class="pq-skip-item pq-add-group-toggle" data-add-group="' + groupId + '" style="display:flex;align-items:center;gap:10px;">'
-      + '<span style="font-size:14px;color:' + meta.color + ';flex-shrink:0;opacity:.9;">' + meta.icon + '</span>'
+      + '<span style="font-size:0.875rem;color:' + meta.color + ';flex-shrink:0;opacity:.9;">' + meta.icon + '</span>'
       + '<span style="color:' + meta.color + ';flex:1;">' + group.label + '</span>'
-      + '<span class="pq-add-group-chevron" style="font-size:9px;color:var(--muted);flex-shrink:0;display:inline-block;transition:transform .18s;">&#9662;</span>'
+      + '<span class="pq-add-group-chevron" style="font-size:0.5625rem;color:var(--muted);flex-shrink:0;display:inline-block;transition:transform .18s;">&#9662;</span>'
       + '</button>'
       + '<div class="pq-add-group-sub" data-group-sub="' + groupId + '" style="display:none;background:rgba(255,255,255,.02);border-top:1px solid var(--border);">' + sub + '</div>';
   }

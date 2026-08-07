@@ -113,8 +113,8 @@ function renderPavlokSettings() {
 
   if (!token) {
     card.innerHTML = ''
-      + '<div style="font-size:12px;color:var(--text);margin-bottom:4px;">Connect your Pavlok</div>'
-      + '<div style="font-size:10px;color:var(--muted);line-height:1.6;margin-bottom:14px;">Use your Pavlok account credentials. Your password is never stored — only the session token is saved locally.</div>'
+      + '<div style="font-size:0.75rem;color:var(--text);margin-bottom:4px;">Connect your Pavlok</div>'
+      + '<div style="font-size:0.625rem;color:var(--muted);line-height:1.6;margin-bottom:14px;">Use your Pavlok account credentials. Your password is never stored — only the session token is saved locally.</div>'
       + '<div class="pvk-connect-form" style="display:flex;flex-direction:column;gap:10px;">'
       + '<input class="pvk-input" id="pvkEmail" type="email" placeholder="Pavlok account email" autocomplete="email"/>'
       + '<input class="pvk-input" id="pvkPass" type="password" placeholder="Password" autocomplete="current-password"/>'
@@ -125,7 +125,7 @@ function renderPavlokSettings() {
     card.innerHTML = ''
       + '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">'
       + '<span class="pvk-connected-badge">' + (email || 'Connected') + '</span>'
-      + '<button onclick="pavlokDisconnect()" style="background:none;border:none;font-family:\'DM Mono\',monospace;font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);cursor:pointer;padding:4px 0;">Disconnect</button>'
+      + '<button onclick="pavlokDisconnect()" style="background:none;border:none;font-family:\'DM Mono\',monospace;font-size:0.5625rem;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);cursor:pointer;padding:4px 0;">Disconnect</button>'
       + '</div>'
       + '<div class="pvk-row">'
       + '<div><div class="pvk-row-label">Awareness reminder</div><div class="pvk-row-sub">' + (p.awareness.type === 'zap' ? 'Zap' : p.awareness.type === 'beep' ? 'Beep' : 'Vibrate') + ' at each interval bell</div></div>'
@@ -148,7 +148,7 @@ function renderPavlokSettings() {
       + '<button class="pvk-toggle ' + (p.concentration.enabled ? 'on' : 'off') + '" onclick="pavlokToggle(\'concentration\')"></button>'
       + '</div>'
       + (p.concentration.enabled ? '<div style="padding:8px 0 12px;">' + intensityHtml('concentration') + '</div>' : '')
-      + '<button onclick="pavlokTest()" style="margin-top:8px;width:100%;padding:10px;border-radius:8px;border:1px solid var(--border);background:none;color:var(--muted);font-family:\'DM Mono\',monospace;font-size:9px;letter-spacing:.18em;text-transform:uppercase;cursor:pointer;">Test vibration</button>';
+      + '<button onclick="pavlokTest()" style="margin-top:8px;width:100%;padding:10px;border-radius:8px;border:1px solid var(--border);background:none;color:var(--muted);font-family:\'DM Mono\',monospace;font-size:0.5625rem;letter-spacing:.18em;text-transform:uppercase;cursor:pointer;">Test vibration</button>';
   }
 }
 

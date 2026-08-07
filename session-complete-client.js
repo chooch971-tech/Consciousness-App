@@ -172,10 +172,10 @@ function showSessionComplete(opts) {
   if (_psb && _psb.leveled) completionFlowQueueLevelUp(_psb.level, 'awareness');
   var streakBannerHtml = _psb
     ? '<div style="margin:12px 0 4px;padding:12px 16px;background:rgba(212,149,110,.12);border:1px solid rgba(212,149,110,.35);border-radius:10px;text-align:center;">'
-      + '<div style="font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:#d4956e;margin-bottom:6px;">🔥 ' + _psb.days + '-Day Awareness Streak</div>'
+      + '<div style="font-size:0.5625rem;letter-spacing:.14em;text-transform:uppercase;color:#d4956e;margin-bottom:6px;">🔥 ' + _psb.days + '-Day Awareness Streak</div>'
       + '<div style="display:flex;justify-content:center;gap:16px;">'
-      + '<span style="font-family:serif;font-size:18px;color:#d4b08e;">+' + _psb.akasha.toLocaleString() + ' <span style="font-size:11px;font-family:\'DM Mono\',monospace;letter-spacing:.08em;color:#d4956e;">Akasha</span></span>'
-      + '<span style="font-family:serif;font-size:18px;color:#d4b08e;">+' + _psb.xp + ' <span style="font-size:11px;font-family:\'DM Mono\',monospace;letter-spacing:.08em;color:#d4956e;">Awareness XP</span></span>'
+      + '<span style="font-family:serif;font-size:1.125rem;color:#d4b08e;">+' + _psb.akasha.toLocaleString() + ' <span style="font-size:0.6875rem;font-family:\'DM Mono\',monospace;letter-spacing:.08em;color:#d4956e;">Akasha</span></span>'
+      + '<span style="font-family:serif;font-size:1.125rem;color:#d4b08e;">+' + _psb.xp + ' <span style="font-size:0.6875rem;font-family:\'DM Mono\',monospace;letter-spacing:.08em;color:#d4956e;">Awareness XP</span></span>'
       + '</div>'
       + '</div>'
     : '';
@@ -193,9 +193,9 @@ function showSessionComplete(opts) {
     if (_pcb.gift > 0) _bonusRows.push(['✦ Gift Path', _pcb.gift]);
     bonusBannerHtml = _bonusRows.map(function(row) {
       return '<div style="margin:12px 0 4px;padding:12px 16px;background:rgba(216,184,106,.12);border:1px solid rgba(216,184,106,.35);border-radius:10px;text-align:center;">'
-        + '<div style="font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:#d4b064;margin-bottom:6px;">' + row[0] + '</div>'
+        + '<div style="font-size:0.5625rem;letter-spacing:.14em;text-transform:uppercase;color:#d4b064;margin-bottom:6px;">' + row[0] + '</div>'
         + '<div style="display:flex;justify-content:center;gap:16px;">'
-        + '<span style="font-family:serif;font-size:18px;color:#e8cd8e;">+' + row[1].toLocaleString() + ' <span style="font-size:11px;font-family:\'DM Mono\',monospace;letter-spacing:.08em;color:#d4b064;">Akasha</span></span>'
+        + '<span style="font-family:serif;font-size:1.125rem;color:#e8cd8e;">+' + row[1].toLocaleString() + ' <span style="font-size:0.6875rem;font-family:\'DM Mono\',monospace;letter-spacing:.08em;color:#d4b064;">Akasha</span></span>'
         + '</div></div>';
     }).join('');
   }

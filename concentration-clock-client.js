@@ -684,10 +684,10 @@ function showConcRepOverlay(repSecs) {
 
   el.style.zIndex = '';
   el.innerHTML =
-    '<div style="font-family:\'DM Mono\',monospace;font-size:9px;letter-spacing:.18em;text-transform:uppercase;color:var(--text);margin-bottom:6px;">'
+    '<div style="font-family:\'DM Mono\',monospace;font-size:0.5625rem;letter-spacing:.18em;text-transform:uppercase;color:var(--text);margin-bottom:6px;">'
     + (tooShort ? 'Too short to record' : 'Rep ' + repNum + ' complete') + '</div>'
-    + '<div style="font-family:\'Cormorant Garamond\',serif;font-size:64px;font-weight:300;color:var(--text);line-height:1;">' + fmtSecs(repSecs) + '</div>'
-    + '<div style="margin-top:16px;font-family:\'DM Mono\',monospace;font-size:10px;letter-spacing:.22em;text-transform:uppercase;color:var(--text);">Session · <span id="concSessionTimer">0:00</span></div>'
+    + '<div style="font-family:\'Cormorant Garamond\',serif;font-size:4rem;font-weight:300;color:var(--text);line-height:1;">' + fmtSecs(repSecs) + '</div>'
+    + '<div style="margin-top:16px;font-family:\'DM Mono\',monospace;font-size:0.625rem;letter-spacing:.22em;text-transform:uppercase;color:var(--text);">Session · <span id="concSessionTimer">0:00</span></div>'
     + '<button id="concRepNextBtn" class="sc-done-btn" style="margin-top:28px;">Rep ' + (repNum + 1) + ' →</button>'
     + '<button id="concEndSessionBtn" class="sc-end-btn">End Session</button>';
 
@@ -1022,7 +1022,7 @@ function renderConcHistory() {
         + statsHtml
         + '<div class="conc-history-foot">'
         + '<span class="conc-history-xp">+' + h.xpEarned + ' xp</span>'
-        + '<span style="font-size:9px;color:var(--muted);letter-spacing:.1em;">' + typeStr + '</span>'
+        + '<span style="font-size:0.5625rem;color:var(--muted);letter-spacing:.1em;">' + typeStr + '</span>'
         + '</div>'
         + notesHtml
         + '</div>';
