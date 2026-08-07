@@ -1226,9 +1226,18 @@ function refreshGuidePathLayoutIfReady() {
     scheduleGuidePathLayoutRefresh(false);
   }
 }
+// A resize only moves the panel's box, so it re-measures rather than rebuilding
+// the list — on a phone the collapsing URL bar fires resize all the way through
+// a scroll, and rebuilding on each one churned the DOM under the finger.
+// Restoring from the back/forward cache is different: the page may have been
+// away long enough for the path itself to be stale, so that still rebuilds.
+function relayoutGuidePathIfReady() {
+  if (typeof scheduleGuidePathRelayout === 'function') scheduleGuidePathRelayout();
+  else refreshGuidePathLayoutIfReady();
+}
 window.addEventListener('pageshow', refreshGuidePathLayoutIfReady);
-window.addEventListener('resize', refreshGuidePathLayoutIfReady);
-window.addEventListener('orientationchange', refreshGuidePathLayoutIfReady);
+window.addEventListener('resize', relayoutGuidePathIfReady);
+window.addEventListener('orientationchange', relayoutGuidePathIfReady);
 function randomPrompt(exclude) { var p; do { p = PROMPTS[Math.floor(Math.random() * PROMPTS.length)]; } while (p === exclude); return p; }
 
 // ═══════════════════════════════════════

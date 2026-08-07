@@ -1081,6 +1081,37 @@ function scheduleGuidePathLayoutRefresh(resetScroll) {
   });
 }
 
+// Re-measure the panel without rebuilding what is inside it.
+//
+// A viewport change moves the panel's box; it does not change which exercises
+// are on the path or what they say. Routing resize through the full refresh
+// above meant every resize rebuilt the whole list — and on a phone the URL bar
+// collapsing and expanding fires resize throughout a scroll, so one flick to
+// the bottom of the Guide rebuilt the path 34 times, each rebuild also adding
+// and removing a compositing transform on the element being scrolled.
+//
+// Rebuilding is still right when the content really may have changed — arriving
+// on the tab, or coming back from the background on a new day — so those paths
+// keep calling scheduleGuidePathLayoutRefresh.
+var guidePathRelayoutTimer = null;
+var guidePathRelayoutTimers = [];
+function scheduleGuidePathRelayout() {
+  if (guidePathRelayoutTimer) clearTimeout(guidePathRelayoutTimer);
+  guidePathRelayoutTimers.forEach(function(timer) { clearTimeout(timer); });
+  guidePathRelayoutTimers = [];
+  // Coalesce a burst of resizes into one measure once the gesture settles.
+  guidePathRelayoutTimer = setTimeout(function() {
+    guidePathRelayoutTimer = null;
+    if (typeof currentMode === 'undefined' || currentMode !== 'guide') return;
+    refreshGuidePanelLayout(false);
+    // One late pass, for viewport chrome that finishes animating after the
+    // resize events stop.
+    guidePathRelayoutTimers.push(setTimeout(function() {
+      if (typeof currentMode !== 'undefined' && currentMode === 'guide') refreshGuidePanelLayout(false);
+    }, 400));
+  }, 140);
+}
+
 // The star-map detail sheet is appended to <body>, so it overlays everything
 // until explicitly closed. Call this on any navigation away from the tree.
 function closeStarMapSheet() {
