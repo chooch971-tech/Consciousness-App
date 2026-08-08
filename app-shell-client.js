@@ -16,6 +16,32 @@ function closeAwarenessSubMenu() {
   if (m) m.style.display = 'none';
 }
 
+// The bottom stop of each mode's #homeScreen backdrop.
+//
+// Two surfaces sit behind that backdrop and were both a flat near-black
+// (--bg, #07080d) whatever mode was showing: the canvas, which <html>'s own
+// background paints, and the standalone window's own colour, which iOS takes
+// from <meta name="theme-color">. Against the Guide's violet #0f0c1c that
+// near-black reads as a band the app failed to cover — most visibly behind
+// the home indicator, where the page's own paint may not reach.
+//
+// Matching both to the backdrop's own bottom colour means anything the page
+// does not paint is the colour it would have been anyway.
+var MODE_CANVAS_COLORS = {
+  guide:         '#0f0c1c',
+  concentration: '#130e08',
+  awareness:     '#091410',
+  prayer:        '#0a0b18'
+};
+function applyModeCanvasColor(mode) {
+  var color = MODE_CANVAS_COLORS[mode] || '#07080d';
+  try {
+    document.documentElement.style.backgroundColor = color;
+    var meta = document.querySelector('meta[name="theme-color"]');
+    if (meta) meta.setAttribute('content', color);
+  } catch (e) {}
+}
+
 function switchMode(mode) {
   currentMode = mode;
   // An explicit mode switch is a fresh entry — discard any Guide scroll position
@@ -27,6 +53,7 @@ function switchMode(mode) {
   ['guide', 'concentration', 'awareness', 'prayer'].forEach(function(m) {
     document.body.classList.toggle('mode-' + m, mode === m);
   });
+  applyModeCanvasColor(mode);
   if (typeof closeStarMapSheet === 'function') closeStarMapSheet();
   if(window._omniaQuickDismiss && mode==='guide') window._omniaQuickDismiss();
   if (mode !== 'guide') document.body.classList.remove('upgrade-stage');
@@ -122,3 +149,17 @@ document.getElementById('concHomeSymbolFill').addEventListener('click', function
 });
 document.getElementById('modeConcentration').addEventListener('click', function() { switchMode('concentration'); });
 document.getElementById('modePrayer').addEventListener('click', function() { switchMode('guide'); });
+
+// Boot: the app starts in whichever mode the body class already carries (Guide
+// by default) without necessarily going through switchMode, so the canvas would
+// otherwise stay the flat default until the first tab tap.
+(function applyModeCanvasColorOnBoot() {
+  var modes = ['guide', 'concentration', 'awareness', 'prayer'];
+  for (var i = 0; i < modes.length; i++) {
+    if (document.body.classList.contains('mode-' + modes[i])) {
+      applyModeCanvasColor(modes[i]);
+      return;
+    }
+  }
+  applyModeCanvasColor('guide');
+})();
