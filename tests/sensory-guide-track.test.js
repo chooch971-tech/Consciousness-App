@@ -21,7 +21,8 @@ function loadTrack(history) {
   const context = {
     concState:{ history:history || [] },
     guideState:{},
-    guideLocalDayKey:() => '2026-07-26',
+    guideLocalDayKey:value => value ? String(value).slice(0, 10) : '2026-07-26',
+    guideTwoADayEnabled:() => true,
     saveGuideState:() => {},
     guideAdvancedTarget:(_id, minutes) => minutes,
     guideClamp:(value, min, max) => Math.max(min, Math.min(max, value)),
@@ -35,6 +36,10 @@ function loadTrack(history) {
   const rungEnd = guideSource.indexOf('\n}', rungStart) + 2;
   vm.runInNewContext(guideSource.slice(rungStart, rungEnd) + '\n'
     + guideSource.slice(start, end), context, { filename:'guide-sensory-track.js' });
+  const attachStart = guideSource.indexOf('function guideAttachSessionDone');
+  const attachEnd = guideSource.indexOf('// Has a Pore Breathing session', attachStart);
+  vm.runInNewContext(guideSource.slice(attachStart, attachEnd), context,
+    { filename:'guide-sensory-daily-credit.js' });
   return context;
 }
 
@@ -130,6 +135,75 @@ test('broken or accumulated reps cannot satisfy a sensory foundation', () => {
   assert.equal(progress.completedCount, 0);
   assert.equal(progress.current.id, 'visual_closed');
   assert.equal(progress.current.bestCleanSec, 299);
+});
+
+test('the current sensory card counts only today\'s matching faculty and eyes mode', () => {
+  const foundations = [
+    clean('2026-07-20T10:00:00.000Z', { type:'visualization', eyesMode:'closed' }),
+    clean('2026-07-21T10:00:00.000Z', { type:'visualization', eyesMode:'open' }),
+    clean('2026-07-22T10:00:00.000Z', { type:'auditory', eyesMode:'closed' }),
+    clean('2026-07-23T10:00:00.000Z', { type:'auditory', eyesMode:'open' })
+  ];
+  const one = loadTrack(foundations.concat([
+    { date:'2026-07-26T09:00:00.000Z', exercise:'sense', type:'sense', mode:'feeling',
+      eyesMode:'closed', seconds:600, sessionDurationSec:600, cleanSeconds:120, halts:2 },
+    // Same faculty, wrong eyes; right eyes, wrong faculty; and yesterday must
+    // not decrement today's Feeling · Closed Eyes recommendation.
+    { date:'2026-07-26T10:00:00.000Z', exercise:'sense', type:'sense', mode:'feeling',
+      eyesMode:'open', seconds:600, sessionDurationSec:600, cleanSeconds:120, halts:2 },
+    { date:'2026-07-26T11:00:00.000Z', exercise:'sense', type:'sense', mode:'smell',
+      eyesMode:'closed', seconds:600, sessionDurationSec:600, cleanSeconds:120, halts:2 },
+    { date:'2026-07-25T11:00:00.000Z', exercise:'sense', type:'sense', mode:'feeling',
+      eyesMode:'closed', seconds:600, sessionDurationSec:600, cleanSeconds:120, halts:2 }
+  ]));
+  const stage = one.guideSensoryTrackProgress().current;
+  const item = one.guideSensoryTrackItem(2);
+  assert.equal(stage.id, 'feeling');
+  assert.equal(stage.todayCount, 1);
+  assert.equal(item.todayCount, 1);
+  assert.equal(item.done, false, 'daily practice must not impersonate clean-hold mastery');
+  one.guideAttachSessionDone([item]);
+  assert.equal(item.sessionDone, undefined, 'one of two sessions leaves one remaining');
+});
+
+test('two matching sensory sessions complete the day without granting mastery', () => {
+  const history = [
+    clean('2026-07-20T10:00:00.000Z', { type:'visualization', eyesMode:'closed' }),
+    clean('2026-07-21T10:00:00.000Z', { type:'visualization', eyesMode:'open' }),
+    clean('2026-07-22T10:00:00.000Z', { type:'auditory', eyesMode:'closed' }),
+    clean('2026-07-23T10:00:00.000Z', { type:'auditory', eyesMode:'open' }),
+    { date:'2026-07-26T09:00:00.000Z', exercise:'sense', type:'sense', mode:'feeling',
+      eyesMode:'closed', seconds:600, sessionDurationSec:600, cleanSeconds:180, halts:2 },
+    { date:'2026-07-26T18:00:00.000Z', exercise:'sense', type:'sense', mode:'feeling',
+      eyesMode:'closed', seconds:600, sessionDurationSec:600, cleanSeconds:240, halts:1 }
+  ];
+  const context = loadTrack(history);
+  const item = context.guideSensoryTrackItem(2);
+  assert.equal(item.todayCount, 2);
+  assert.equal(item.done, false, 'neither interrupted rep mastered the curriculum stage');
+  context.guideAttachSessionDone([item]);
+  assert.equal(item.sessionDone, true, 'the separate daily two-session commitment is complete');
+});
+
+test('Visualization and Auditory sensory stages receive the same daily credit', () => {
+  const visual = loadTrack([
+    { date:'2026-07-26T09:00:00.000Z', type:'visualization', eyesMode:'closed',
+      seconds:600, sessionDurationSec:600, cleanSeconds:90, halts:3 }
+  ]).guideSensoryTrackItem(2);
+  assert.equal(visual.id, 'visual');
+  assert.equal(visual.eyesMode, 'closed');
+  assert.equal(visual.todayCount, 1);
+
+  const auditoryHistory = [
+    clean('2026-07-20T10:00:00.000Z', { type:'visualization', eyesMode:'closed' }),
+    clean('2026-07-21T10:00:00.000Z', { type:'visualization', eyesMode:'open' }),
+    { date:'2026-07-26T09:00:00.000Z', type:'auditory', eyesMode:'closed',
+      seconds:600, sessionDurationSec:600, cleanSeconds:90, halts:3 }
+  ];
+  const auditory = loadTrack(auditoryHistory).guideSensoryTrackItem(2);
+  assert.equal(auditory.id, 'auditory');
+  assert.equal(auditory.eyesMode, 'closed');
+  assert.equal(auditory.todayCount, 1);
 });
 
 test('a sensory session climbs a minute at a time from ten, like Thought Control', () => {

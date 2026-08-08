@@ -143,11 +143,15 @@ function guideSensoryStageMatches(stage, entry) {
 function guideSensoryTrackProgress() {
   var history = (typeof concState !== 'undefined' && Array.isArray(concState.history)) ? concState.history : [];
   var stages = GUIDE_SENSORY_STAGES.map(function(def, index) {
-    var bestCleanSec = 0, bestPracticeSec = 0, attempts = 0, halts = 0, qualifyingDates = [];
+    var bestCleanSec = 0, bestPracticeSec = 0, attempts = 0, todayCount = 0, halts = 0, qualifyingDates = [];
     var practiceSecs = [];
     history.forEach(function(entry) {
       if (!guideSensoryStageMatches(def, entry)) return;
       attempts++;
+      // Daily Path credit belongs only to the exact faculty and eyes mode
+      // Omnia recommended. A Feeling/Open session must not decrement a
+      // Feeling/Closed card, and neither may an Auditory or Visualization sit.
+      if (guideLocalDayKey(entry.date) === guideLocalDayKey()) todayCount++;
       halts += Math.max(0, parseInt(entry.halts, 10) || 0);
       var clean = guideSensoryEntryCleanSec(entry);
       var practice = guideSensoryEntryPracticeSec(entry);
@@ -165,6 +169,7 @@ function guideSensoryTrackProgress() {
       bestCleanSec:bestCleanSec,
       bestPracticeSec:bestPracticeSec,
       attempts:attempts,
+      todayCount:todayCount,
       practiceSecs:practiceSecs,
       halts:halts,
       mastered:false,
@@ -372,7 +377,8 @@ function guideSensoryTrackItem(rounds) {
     duration:naturalMin,
     durationLabel:naturalMin + ' min' + (rounds > 1 ? ' x' + rounds : ''),
     done:stage.mastered,
-    todayCount:0,
+    todayCount:stage.todayCount || 0,
+    rounds:rounds,
     progress:'best clean ' + guideFmtTime(stage.bestCleanSec) + ' / 5m',
     tip:'Practice this faculty for the full recommended session. The stage advances when one rep within that practice reaches an uninterrupted five-minute hold; changing the session time does not change that mastery goal.',
     open:stage.open,
@@ -3030,14 +3036,13 @@ function guideAttachSessionDone(items) {
   var exStats = null, thStats = null;
   var thoughtModes = { thought:1, observation:1, focus:1, vacancy:1 };
   items.forEach(function(it) {
-    if (it.sensoryTrack) return;                    // only its clean-hold gate can complete it
     if (it.done) return;                            // already complete by duration
     if (typeof it.duration !== 'number') return;    // open-ended (soulmirror/pore) keep own logic
     if (it.id === 'soulmirror' || it.id === 'pore' || it.id === 'pore_breathing') return;
-    var rounds = 1;
+    var rounds = it.rounds === 1 || it.rounds === 2 ? it.rounds : 1;
     var ov = guideState._exRounds && guideState._exRounds[it.id];
     if (ov === 1 || ov === 2) rounds = ov;
-    else rounds = guideTwoADayEnabled() ? 2 : 1;
+    else if (it.rounds !== 1 && it.rounds !== 2) rounds = guideTwoADayEnabled() ? 2 : 1;
     var todayCount;
     if (typeof it.todayCount === 'number') {
       todayCount = it.todayCount;
