@@ -154,7 +154,9 @@ test('the current sensory card counts only today\'s matching faculty and eyes mo
     { date:'2026-07-26T11:00:00.000Z', exercise:'sense', type:'sense', mode:'smell',
       eyesMode:'closed', seconds:600, sessionDurationSec:600, cleanSeconds:120, halts:2 },
     { date:'2026-07-25T11:00:00.000Z', exercise:'sense', type:'sense', mode:'feeling',
-      eyesMode:'closed', seconds:600, sessionDurationSec:600, cleanSeconds:120, halts:2 }
+      eyesMode:'closed', seconds:600, sessionDurationSec:600, cleanSeconds:120, halts:2 },
+    { exercise:'sense', type:'sense', mode:'feeling', eyesMode:'closed',
+      seconds:600, sessionDurationSec:600, cleanSeconds:120, halts:2 }
   ]));
   const stage = one.guideSensoryTrackProgress().current;
   const item = one.guideSensoryTrackItem(2);

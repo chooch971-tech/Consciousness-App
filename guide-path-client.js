@@ -151,7 +151,7 @@ function guideSensoryTrackProgress() {
       // Daily Path credit belongs only to the exact faculty and eyes mode
       // Omnia recommended. A Feeling/Open session must not decrement a
       // Feeling/Closed card, and neither may an Auditory or Visualization sit.
-      if (guideLocalDayKey(entry.date) === guideLocalDayKey()) todayCount++;
+      if (entry.date && guideLocalDayKey(entry.date) === guideLocalDayKey()) todayCount++;
       halts += Math.max(0, parseInt(entry.halts, 10) || 0);
       var clean = guideSensoryEntryCleanSec(entry);
       var practice = guideSensoryEntryPracticeSec(entry);
