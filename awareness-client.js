@@ -117,8 +117,79 @@ var SYMBOL_DESCRIPTIONS = {
   void:     "The Void · Levels 721–777 · Sunyata. The empty circle that contains all. You have arrived at the beginning. There is no difference between presence and absence, between practice and rest.",
 };
 
-// 🐯 Hidden tiger — Connor's easter egg
-var TIGER_LEVELS = [108, 216, 324, 432, 540, 648, 756];  // every 108 levels
+// Hidden tiger — Connor's easter egg. The original 108-level cadence remains,
+// with a handful of deliberately irregular early sightings.
+var TIGER_LEVELS = [11, 32, 67, 69, 92, 108, 216, 324, 432, 540, 648, 756];
+
+function isTigerLevel(level) {
+  return TIGER_LEVELS.indexOf(parseInt(level, 10)) !== -1;
+}
+
+// One code-native illustration is shared by rank details and both level-up
+// flows. Keeping the tiger in SVG makes the tiny facial details and the
+// yin-yang crisp at every phone/text scale while CSS can animate individual
+// pieces without introducing a heavyweight video or sprite sheet.
+function renderTigerYinYang() {
+  return [
+    '<svg class="tiger-yinyang-art" viewBox="0 0 220 210" xmlns="http://www.w3.org/2000/svg">',
+    '<title>Tiger holding a yin-yang symbol</title>',
+    '<g class="tiger-spark tiger-spark--one"><path d="M28 55v12M22 61h12"/></g>',
+    '<g class="tiger-spark tiger-spark--two"><path d="M190 84v10M185 89h10"/></g>',
+    '<g class="tiger-spark tiger-spark--three"><path d="M177 31v8M173 35h8"/></g>',
+    '<g class="tiger-tail">',
+    '<path class="tiger-tail-base" d="M65 150C38 172 14 154 22 126c4-15 17-24 29-17 10 6 7 20-2 22-7 2-12-4-9-9"/>',
+    '<path class="tiger-tail-light" d="M63 149C39 165 21 151 28 128"/>',
+    '<path class="tiger-stripe" d="M33 151l9-10M22 136l13-3M34 111l10 9"/>',
+    '</g>',
+    '<ellipse class="tiger-ground" cx="111" cy="194" rx="72" ry="8"/>',
+    '<g class="tiger-breathe">',
+    '<ellipse class="tiger-body" cx="110" cy="145" rx="58" ry="52"/>',
+    '<ellipse class="tiger-belly" cx="110" cy="151" rx="34" ry="38"/>',
+    '<ellipse class="tiger-foot" cx="71" cy="181" rx="24" ry="15" transform="rotate(-9 71 181)"/>',
+    '<ellipse class="tiger-foot" cx="149" cy="181" rx="24" ry="15" transform="rotate(9 149 181)"/>',
+    '<path class="tiger-toes" d="M61 181q5 5 10 0M139 181q5 5 10 0"/>',
+    '<path class="tiger-arm" d="M72 112c-18 9-20 34-4 49 6 6 16 5 20-3 4-7-2-13-7-18-5-5-4-14 3-20z"/>',
+    '<path class="tiger-arm" d="M148 112c18 9 20 34 4 49-6 6-16 5-20-3-4-7 2-13 7-18 5-5 4-14-3-20z"/>',
+    '<g class="tiger-head">',
+    '<path class="tiger-ear" d="M76 50C66 34 55 28 45 31c-1 15 7 27 22 33z"/>',
+    '<path class="tiger-ear" d="M144 50c10-16 21-22 31-19 1 15-7 27-22 33z"/>',
+    '<path class="tiger-ear-inner" d="M68 49c-6-8-11-11-16-11 1 8 5 14 12 18z"/>',
+    '<path class="tiger-ear-inner" d="M152 49c6-8 11-11 16-11-1 8-5 14-12 18z"/>',
+    '<path class="tiger-face" d="M61 75c0-29 20-48 49-48s49 19 49 48c0 31-18 49-49 49S61 106 61 75z"/>',
+    '<path class="tiger-face-light" d="M75 91c8 4 18 8 35 8s27-4 35-8c-3 22-16 31-35 31S78 113 75 91z"/>',
+    '<path class="tiger-stripe tiger-stripe--face" d="M110 30v18M95 33l7 17M125 33l-7 17M67 62l18 7M153 62l-18 7M66 83l18-2M154 83l-18-2"/>',
+    '<g class="tiger-eyes"><path class="tiger-eye" d="M78 76q10-9 20 0-10 8-20 0z"/><path class="tiger-eye" d="M122 76q10-9 20 0-10 8-20 0z"/></g>',
+    '<circle class="tiger-eye-glint" cx="90" cy="74" r="2"/><circle class="tiger-eye-glint" cx="134" cy="74" r="2"/>',
+    '<ellipse class="tiger-muzzle" cx="97" cy="95" rx="18" ry="14"/><ellipse class="tiger-muzzle" cx="123" cy="95" rx="18" ry="14"/>',
+    '<path class="tiger-nose" d="M102 89q8-6 16 0l-8 8z"/>',
+    '<path class="tiger-mouth" d="M110 97v6m0 0q-8 8-15 1m15-1q8 8 15 1"/>',
+    '<path class="tiger-whisker" d="M91 97L55 91M91 103l-38 5M129 97l36-6M129 103l38 5"/>',
+    '</g>',
+    '<g class="tiger-yin-yang-disc">',
+    '<circle class="tiger-yin-rim" cx="110" cy="150" r="39"/>',
+    '<circle class="tiger-yin-light" cx="110" cy="150" r="34"/>',
+    '<path class="tiger-yin-dark" d="M110 116a34 34 0 0 1 0 68 17 17 0 0 1 0-34 17 17 0 0 0 0-34z"/>',
+    '<circle class="tiger-yin-dark" cx="110" cy="133" r="5"/>',
+    '<circle class="tiger-yin-light" cx="110" cy="167" r="5"/>',
+    '<circle class="tiger-yin-shine" cx="97" cy="129" r="3"/>',
+    '</g>',
+    '<g class="tiger-paws">',
+    '<ellipse class="tiger-paw" cx="77" cy="150" rx="16" ry="13" transform="rotate(-18 77 150)"/>',
+    '<ellipse class="tiger-paw" cx="143" cy="150" rx="16" ry="13" transform="rotate(18 143 150)"/>',
+    '<path class="tiger-claw" d="M72 147l-1 7M79 146v7M148 147l1 7M141 146v7"/>',
+    '</g>',
+    '</g></svg>'
+  ].join('');
+}
+
+function updateTigerEasterEgg(element, level) {
+  if (!element) return false;
+  var visible = isTigerLevel(level);
+  element.classList.toggle('is-visible', visible);
+  element.setAttribute('aria-hidden', visible ? 'false' : 'true');
+  element.innerHTML = visible ? renderTigerYinYang() : '';
+  return visible;
+}
 
 function getSymbolDescription(symbolId) {
   return SYMBOL_DESCRIPTIONS[symbolId] || '';
@@ -153,9 +224,9 @@ function showRankModal(level, xp, mode) {
   if (fillEl) { fillEl.textContent = group.name + ' · ' + fill; fillEl.style.color = color; }
   if (descEl) descEl.textContent = desc;
 
-  // 🐯 Tiger easter egg — appears silently at every 108th level
   var tigerEl = document.getElementById('rankModalTiger');
-  if (tigerEl) tigerEl.style.display = TIGER_LEVELS.indexOf(level) !== -1 ? 'block' : 'none';
+  var tigerVisible = updateTigerEasterEgg(tigerEl, level);
+  if (modal) modal.classList.toggle('tiger-level', tigerVisible);
   if (hoursEl) {
     if (mode === 'awareness') {
       var hoursLeft = Math.max(0, 10000 - hours);
@@ -1925,6 +1996,7 @@ function showLevelUp(level, completionDone) {
   document.getElementById('levelupFill').style.color = color;
   document.getElementById('levelupContinue').style.borderColor = color + '44';
   document.getElementById('levelupContinue').style.color = color;
+  document.getElementById('levelupSub').textContent = 'awareness level reached';
 
   // Background gradient
   bg.style.background = 'radial-gradient(ellipse 80% 60% at 50% 40%, ' + color + '18 0%, #07080d 70%)';
@@ -1944,9 +2016,9 @@ function showLevelUp(level, completionDone) {
     particles.appendChild(p);
   }
 
-  // 🐯 Tiger easter egg — appears silently at every 108th level
   var levelupTiger = document.getElementById('levelupTiger');
-  if (levelupTiger) levelupTiger.style.display = TIGER_LEVELS.indexOf(level) !== -1 ? 'block' : 'none';
+  var tigerVisible = updateTigerEasterEgg(levelupTiger, level);
+  overlay.classList.toggle('tiger-level', tigerVisible);
 
   overlay._completionFlowDone = typeof completionDone === 'function' ? completionDone : null;
   overlay.classList.add('show');

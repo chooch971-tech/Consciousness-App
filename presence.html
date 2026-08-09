@@ -3385,6 +3385,62 @@
     @keyframes particleFade { 0%{opacity:0;transform:translateY(0) scale(0)} 20%{opacity:1} 100%{opacity:0;transform:translateY(-120px) scale(1.5)} }
     .levelup-particles { position:absolute; inset:0; pointer-events:none; overflow:hidden; }
     .particle { position:absolute; border-radius:50%; animation:particleFade 2s ease forwards; }
+
+    /* TIGER / YIN-YANG EASTER EGG */
+    .tiger-easter-egg { display:none; width:min(10.5rem,43vw); margin:0 auto 8px; color:#f3b563; filter:drop-shadow(0 8px 16px rgba(0,0,0,.34)) drop-shadow(0 0 16px rgba(220,133,55,.16)); }
+    .tiger-easter-egg.is-visible { display:block; }
+    .tiger-easter-egg--levelup { width:min(7.4rem,32vw); margin-bottom:12px; }
+    .tiger-yinyang-art { display:block; width:100%; height:auto; overflow:visible; }
+    .tiger-ground { fill:rgba(0,0,0,.24); }
+    .tiger-tail { transform-origin:62px 147px; animation:tigerTailSway 3.8s ease-in-out infinite; }
+    .tiger-tail-base { fill:none; stroke:#d77632; stroke-width:18; stroke-linecap:round; stroke-linejoin:round; }
+    .tiger-tail-light { fill:none; stroke:#ef9b4b; stroke-width:5; stroke-linecap:round; opacity:.62; }
+    .tiger-breathe { transform-origin:110px 184px; animation:tigerBreathe 3.6s ease-in-out infinite; }
+    .tiger-body,.tiger-arm,.tiger-paw,.tiger-foot,.tiger-ear,.tiger-face { fill:#d97832; stroke:#f0ad5c; stroke-width:2; stroke-linejoin:round; }
+    .tiger-belly,.tiger-face-light,.tiger-muzzle { fill:#f3c982; }
+    .tiger-foot { stroke:#bd5929; }
+    .tiger-toes,.tiger-claw { fill:none; stroke:#7b3b28; stroke-width:2; stroke-linecap:round; opacity:.62; }
+    .tiger-head { transform-origin:110px 102px; animation:tigerHeadNod 5.4s ease-in-out infinite; }
+    .tiger-ear { transform-box:fill-box; transform-origin:center bottom; }
+    .tiger-ear:first-child { animation:tigerEarLeft 6.2s ease-in-out infinite; }
+    .tiger-ear:nth-child(2) { animation:tigerEarRight 6.2s ease-in-out infinite; }
+    .tiger-ear-inner { fill:#9a5149; opacity:.82; }
+    .tiger-stripe { fill:none; stroke:#4d302b; stroke-width:7; stroke-linecap:round; stroke-linejoin:round; opacity:.88; }
+    .tiger-stripe--face { stroke-width:6; }
+    .tiger-eyes { transform-origin:110px 76px; animation:tigerBlink 5.6s linear infinite; }
+    .tiger-eye { fill:#2a2526; }
+    .tiger-eye-glint { fill:#fff6da; opacity:.88; }
+    .tiger-nose { fill:#5e3132; }
+    .tiger-mouth,.tiger-whisker { fill:none; stroke:#593432; stroke-width:2; stroke-linecap:round; }
+    .tiger-whisker { opacity:.6; }
+    .tiger-yin-yang-disc { transform-box:fill-box; transform-origin:center; animation:tigerYinTurn 13s linear infinite; }
+    .tiger-yin-rim { fill:#d8b66e; stroke:#fff0c7; stroke-width:2; filter:drop-shadow(0 0 7px rgba(255,218,147,.34)); }
+    .tiger-yin-light { fill:#f7f0dc; }
+    .tiger-yin-dark { fill:#202533; }
+    .tiger-yin-shine { fill:rgba(255,255,255,.72); }
+    .tiger-paws { transform-origin:110px 151px; animation:tigerHold 3.6s ease-in-out infinite; }
+    .tiger-spark { fill:none; stroke:#f4d195; stroke-width:2; stroke-linecap:round; opacity:.2; animation:tigerSpark 3.2s ease-in-out infinite; }
+    .tiger-spark--two { animation-delay:-1.1s; }
+    .tiger-spark--three { animation-delay:-2.2s; }
+    #rankModal.tiger-level #rankModalSymbol { display:none; }
+    #rankModal.tiger-level #rankModalDesc { margin-bottom:14px !important; }
+    .levelup-overlay.tiger-level .levelup-tier { margin-bottom:8px; }
+    .levelup-overlay.tiger-level #levelupSymbol { display:none; }
+    .levelup-overlay.tiger-level .levelup-num { font-size:4.5rem; }
+    .levelup-overlay.tiger-level .levelup-title { margin-bottom:12px; }
+    .levelup-overlay.tiger-level .levelup-sub { margin-bottom:8px; }
+    @keyframes tigerTailSway { 0%,100%{transform:rotate(-3deg)} 50%{transform:rotate(7deg)} }
+    @keyframes tigerBreathe { 0%,100%{transform:translateY(0) scale(1)} 50%{transform:translateY(-2px) scale(1.012,.994)} }
+    @keyframes tigerHeadNod { 0%,70%,100%{transform:rotate(0)} 78%{transform:rotate(-2deg)} 86%{transform:rotate(1.5deg)} }
+    @keyframes tigerBlink { 0%,43%,47%,100%{transform:scaleY(1)} 45%{transform:scaleY(.08)} }
+    @keyframes tigerEarLeft { 0%,72%,78%,100%{transform:rotate(0)} 74%{transform:rotate(-9deg)} 76%{transform:rotate(5deg)} }
+    @keyframes tigerEarRight { 0%,82%,88%,100%{transform:rotate(0)} 84%{transform:rotate(9deg)} 86%{transform:rotate(-5deg)} }
+    @keyframes tigerYinTurn { to{transform:rotate(360deg)} }
+    @keyframes tigerHold { 0%,100%{transform:scale(1)} 50%{transform:scale(.985)} }
+    @keyframes tigerSpark { 0%,100%{opacity:.12;transform:scale(.76)} 50%{opacity:.72;transform:scale(1.15)} }
+    @media (prefers-reduced-motion:reduce) {
+      .tiger-easter-egg * { animation:none !important; }
+    }
   
 
 
@@ -9180,7 +9236,7 @@ body:not(.tut-live) #tutCorgi {
 
 <div id="rankModal" style="display:none; position:fixed; inset:0; z-index:450; background:rgba(7,8,13,0.92); backdrop-filter:blur(8px); flex-direction:column; align-items:center; justify-content:center; text-align:center; padding:40px;">
   <div id="rankModalSymbol" style="margin-bottom:16px;"></div>
-  <div id="rankModalTiger" style="display:none; font-size:1.75rem; margin-bottom:4px; opacity:0.35; letter-spacing:.3em;">🐯</div>
+  <div id="rankModalTiger" class="tiger-easter-egg tiger-easter-egg--rank" role="img" aria-label="Tiger holding a yin-yang symbol" aria-hidden="true"></div>
   <div id="rankModalNum" style="font-size:0.6875rem; letter-spacing:.3em; text-transform:uppercase; color:var(--muted); margin-bottom:8px;"></div>
   <div id="rankModalTitle" style="font-family:Cormorant Garamond,serif; font-size:1.75rem; font-weight:300; font-style:italic; margin-bottom:6px;"></div>
   <div id="rankModalFill" style="font-size:0.5625rem; letter-spacing:.2em; margin-bottom:24px; opacity:.7;"></div>
@@ -9198,8 +9254,8 @@ body:not(.tut-live) #tutCorgi {
     <div class="levelup-num" id="levelupNum">2</div>
     <div class="levelup-title" id="levelupTitle">Observer</div>
     <div class="levelup-fill" id="levelupFill" style="font-size:0.6875rem;letter-spacing:.3em;margin-bottom:8px;opacity:.5;"></div>
-    <div class="levelup-sub">awareness level reached</div>
-    <div id="levelupTiger" style="display:none; font-size:1.375rem; opacity:0.3; letter-spacing:.4em; margin-bottom:4px;">🐯</div>
+    <div class="levelup-sub" id="levelupSub">awareness level reached</div>
+    <div id="levelupTiger" class="tiger-easter-egg tiger-easter-egg--levelup" role="img" aria-label="Tiger holding a yin-yang symbol" aria-hidden="true"></div>
     <button class="levelup-continue" id="levelupContinue">Continue</button>
   </div>
 </div>

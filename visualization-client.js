@@ -258,6 +258,12 @@ function resizeImageForStorage(dataUrl, callback) {
 }
 
 var VIS_REALLIFE = [
+  // Local study photographs stay available offline and cannot disappear when
+  // a third-party image host changes a filename or refuses a mobile request.
+  { shape:'photo', src:'assets/visualization/blue-mug.jpg',    label:'Blue Mug'         },
+  { shape:'photo', src:'assets/visualization/brass-keys.jpg', label:'Brass Keys'       },
+  { shape:'photo', src:'assets/visualization/yellow-lamp.jpg',label:'Yellow Lamp'       },
+  { shape:'photo', src:'assets/visualization/houseplant.jpg', label:'Potted Houseplant'},
   { shape:'photo', src:'https://commons.wikimedia.org/wiki/Special:FilePath/Candle_flame.JPG?width=600',                label:'Candle'          },
   { shape:'photo', src:'https://commons.wikimedia.org/wiki/Special:FilePath/Red_rose.jpg?width=600',                    label:'Red Rose'        },
   { shape:'photo', src:'https://commons.wikimedia.org/wiki/Special:FilePath/Red_Delicious_Apple_2021.jpg?width=600',                                       label:'Apple'           },
@@ -2355,6 +2361,7 @@ function showConcLevelUp(level, completionDone) {
   document.getElementById('levelupFill').style.color = color;
   document.getElementById('levelupContinue').style.borderColor = color + '44';
   document.getElementById('levelupContinue').style.color = color;
+  document.getElementById('levelupSub').textContent = 'concentration level reached';
 
   bg.style.background = 'radial-gradient(ellipse 80% 60% at 50% 40%, ' + color + '18 0%, #07080d 70%)';
 
@@ -2371,6 +2378,10 @@ function showConcLevelUp(level, completionDone) {
       + 'animation-duration:' + (1.5 + Math.random()) + 's;';
     particles.appendChild(p);
   }
+
+  var levelupTiger = document.getElementById('levelupTiger');
+  var tigerVisible = updateTigerEasterEgg(levelupTiger, level);
+  overlay.classList.toggle('tiger-level', tigerVisible);
 
   overlay._completionFlowDone = typeof completionDone === 'function' ? completionDone : null;
   overlay.classList.add('show');
