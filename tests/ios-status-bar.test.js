@@ -34,26 +34,32 @@ test('the top padding follows the reported inset, with no fixed status bar allow
   assert.doesNotMatch(script.slice(0, 1600), /setProperty\([^)]*(44|52)px/);
 });
 
-test('the bar follows the screen being shown, not only the mode', () => {
-  // Settings, Profile, the Lodge, the Journal and each session have a sky of
-  // their own; a mode-coloured bar would sit over them as a seam.
-  assert.match(awareness, /if \(typeof applyScreenBarColor === 'function'\) applyScreenBarColor\(id\);/);
-  assert.match(awareness, /applyModeCanvasColor\(currentMode\);/,
-    'and returning Home restores the mode colour');
-  // Each family measured with its own top must be in the table.
-  ['settingsScreen', 'profileScreen', 'chatThreadScreen', 'journalScreen', 'lodgeScreen',
-   'senseSessionScreen', 'concSessionScreen'].forEach(id => {
-    assert.match(shell, new RegExp(id + ":'#[0-9a-f]{6}'"), id + ' needs its own bar colour');
-  });
+test('screens fade into the cached status bar colour instead of recolouring it', () => {
+  // iOS draws the bar from the theme-color it cached and ignores runtime
+  // changes: on device the bar stayed #07080d while a script had set it to the
+  // Guide's violet, leaving a hard black edge. So the bar colour is held fixed
+  // and every screen's top fades into it.
+  assert.match(presence, /<meta name="theme-color" content="#07080d"\/>/);
+  const rule = presence.slice(presence.indexOf('html.is-standalone body::after {'));
+  const body = rule.slice(0, rule.indexOf('}'));
+  assert.match(body, /position:fixed; top:0; left:0; right:0;/);
+  assert.match(body, /linear-gradient\(180deg, #07080d 0%/, 'starts exactly at the bar colour');
+  assert.match(body, /rgba\(7,8,13,0\) 100%/, 'and fades to nothing');
+  assert.match(body, /pointer-events:none/, 'it must never swallow a tap on the header');
+  assert.match(body, /z-index:10000/, 'above every overlay, so they blend the same way');
 });
 
-test('the bar and the canvas are different colours per mode', () => {
-  // The bar meets the top of the backdrop and the canvas meets its bottom; one
-  // shared value would be wrong at one end or the other.
-  const pick = name => {
-    const block = shell.slice(shell.indexOf('var ' + name + ' = {'));
-    return (block.slice(0, block.indexOf('};')).match(/guide:\s*'(#[0-9a-f]{6})'/) || [])[1];
-  };
-  assert.equal(pick('MODE_BAR_COLORS'), '#1e1933', 'Guide top, as rendered');
-  assert.equal(pick('MODE_CANVAS_COLORS'), '#0f0c1c', 'Guide bottom stop');
+test('the blend exists only in the installed app', () => {
+  // In a Safari tab the browser's own chrome sits above the page.
+  const script = presence.slice(presence.indexOf('Set safe-area padding variables before first paint'));
+  const pwaBlock = script.slice(script.indexOf('if (pwa) {'), script.indexOf('}', script.indexOf('if (pwa) {')));
+  assert.match(pwaBlock, /root\.classList\.add\('is-standalone'\)/);
+});
+
+test('nothing tries to recolour the status bar at runtime any more', () => {
+  // It does nothing on current iOS, and if a later iOS did honour it the bar
+  // would turn violet above a fade that runs to near-black — a new seam.
+  assert.doesNotMatch(shell, /meta\[name="theme-color"\]/);
+  assert.doesNotMatch(shell, /SCREEN_BAR_COLORS|MODE_BAR_COLORS|presenceSetBarColor/);
+  assert.doesNotMatch(awareness, /applyScreenBarColor/);
 });

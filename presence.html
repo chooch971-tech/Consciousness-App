@@ -119,6 +119,24 @@
         radial-gradient(ellipse 50% 40% at 80% 90%, rgba(100,90,160,0.05) 0%, transparent 60%);
       pointer-events:none; z-index:0;
     }
+    /* ── Status bar blend (installed app only) ──────────────────────────────
+       iOS draws an opaque status bar above the installed app and colours it
+       from the theme-color it cached — #07080d, the app's own base colour.
+       It does not follow theme-color changes made at runtime: measured from a
+       device screenshot, the bar stayed #07080d while the script had set it
+       to the Guide's violet. So instead of trying to recolour the bar, every
+       screen's top fades into it. Screens already at #07080d up there (24 of
+       44) are unchanged; the ones with a sky of their own — the Guide,
+       Settings, Profile, the Lodge — lose the hard edge where their colour
+       met the bar.
+
+       Short and front-loaded so it is mostly spent above the header text,
+       and above everything else on screen so overlays blend the same way. */
+    html.is-standalone body::after {
+      content:''; position:fixed; top:0; left:0; right:0; height:22px;
+      background:linear-gradient(180deg, #07080d 0%, rgba(7,8,13,.55) 40%, rgba(7,8,13,0) 100%);
+      pointer-events:none; z-index:10000;
+    }
     .app { position:fixed; inset:0; z-index:1; display:flex; flex-direction:column; overflow:hidden; }
     .screen { display:none; flex-direction:column; height:100%; padding:var(--safe-top) 24px max(env(safe-area-inset-bottom),28px); }
     .screen.active { display:flex; position:fixed; inset:0; z-index:20; background:var(--bg); }
@@ -6130,6 +6148,9 @@ body:not(.tut-live) #tutCorgi {
     if (pwa) {
       root.style.setProperty('--safe-top',    'max(env(safe-area-inset-top),8px)');
       root.style.setProperty('--safe-top-lg', 'max(env(safe-area-inset-top),12px)');
+      // Scopes the status-bar blend below to the installed app, where iOS
+      // draws its own opaque bar above the page.
+      root.classList.add('is-standalone');
     }
     // browser mode: keep the CSS defaults (8px / 12px)
   })();

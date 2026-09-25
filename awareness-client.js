@@ -1214,10 +1214,6 @@ function showScreen(id) {
       s.classList.remove('swipe-back-arrival');
     });
     document.getElementById('homeScreen').style.display = 'flex';
-    // Back on Home: the status bar returns to the current mode's own top.
-    if (typeof applyModeCanvasColor === 'function' && typeof currentMode !== 'undefined') {
-      applyModeCanvasColor(currentMode);
-    }
     // Restore the Guide's scroll the instant Home reappears, not on the deferred
     // renderHome (which can lag ~500ms and made the panel visibly sit at the top
     // before snapping back). Force a reflow first so the just-shown panel has its
@@ -1254,9 +1250,6 @@ function showScreen(id) {
     // A screen shown right after the drawer closed was opened FROM the drawer.
     if (Date.now() - (window._drawerClosedAt || 0) < 500) window._returnToDrawer = true;
     if (window._omniaQuickDismiss) window._omniaQuickDismiss();
-    // The status bar sits against this screen's top, so it takes this
-    // screen's colour — not the mode's, which may be a different sky.
-    if (typeof applyScreenBarColor === 'function') applyScreenBarColor(id);
   }
 }
 window.addEventListener('load', function() {
