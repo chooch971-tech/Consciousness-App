@@ -16,30 +16,68 @@ function closeAwarenessSubMenu() {
   if (m) m.style.display = 'none';
 }
 
-// The bottom stop of each mode's #homeScreen backdrop.
+// ── The two surfaces around the page ────────────────────────────────────────
 //
-// Two surfaces sit behind that backdrop and were both a flat near-black
-// (--bg, #07080d) whatever mode was showing: the canvas, which <html>'s own
-// background paints, and the standalone window's own colour, which iOS takes
-// from <meta name="theme-color">. Against the Guide's violet #0f0c1c that
-// near-black reads as a band the app failed to cover — most visibly behind
-// the home indicator, where the page's own paint may not reach.
+// Canvas: <html>'s own background, which shows anywhere the page's paint does
+// not reach — behind the home indicator most visibly. It follows the BOTTOM of
+// each mode's backdrop. It used to be a flat #07080d in every mode, which
+// against the Guide's violet read as a band the app had failed to cover.
 //
-// Matching both to the backdrop's own bottom colour means anything the page
-// does not paint is the colour it would have been anyway.
+// Status bar: since the switch to status-bar-style default, iOS draws an
+// opaque bar across the top and tints it from <meta name="theme-color">. It
+// sits against the TOP of whatever is on screen, so it follows the top — and
+// not just per mode: Settings, Profile, the Lodge and the sessions each have a
+// sky of their own, and a mode-coloured bar would sit over them as a seam.
+//
+// Every value below is measured, not read off a stylesheet: the top 3px of
+// each screen averaged as rendered. The glows layered over the gradients make
+// the real top noticeably lighter than the gradient's own first stop — the
+// Guide renders #1e1933 there against a #131022 stop.
 var MODE_CANVAS_COLORS = {
   guide:         '#0f0c1c',
   concentration: '#130e08',
   awareness:     '#091410',
   prayer:        '#0a0b18'
 };
-function applyModeCanvasColor(mode) {
-  var color = MODE_CANVAS_COLORS[mode] || '#07080d';
+var MODE_BAR_COLORS = {
+  guide:         '#1e1933',
+  concentration: '#20160c',
+  awareness:     '#11241a',
+  prayer:        '#111229'
+};
+// Screens whose top is not the plain #07080d. Anything absent — 24 of the 44
+// screens as measured — uses that default.
+var SCREEN_BAR_COLORS = {
+  settingsScreen:'#0e162a', exerciseSettingsScreen:'#0e162a', accountSettingsScreen:'#0e162a',
+  bugReportScreen:'#0e162a', clockSettingsScreen:'#0e162a',
+  profileScreen:'#152026', friendProfileScreen:'#152026', profileActivityScreen:'#152026',
+  chatListScreen:'#152026', chatThreadScreen:'#152026',
+  journalScreen:'#0d0e1c', journalEntryScreen:'#0d0e1c',
+  lodgeScreen:'#1f1a33',
+  prayerSessionScreen:'#11111a', mantraScreen:'#121213', concSessionScreen:'#140f10',
+  visSessionScreen:'#0d1119', audSessionScreen:'#131013', asanaSessionScreen:'#120f13',
+  senseSessionScreen:'#2f1f2b'
+};
+var DEFAULT_SURFACE_COLOR = '#07080d';
+
+function presenceSetBarColor(color) {
   try {
-    document.documentElement.style.backgroundColor = color;
     var meta = document.querySelector('meta[name="theme-color"]');
-    if (meta) meta.setAttribute('content', color);
+    if (meta) meta.setAttribute('content', color || DEFAULT_SURFACE_COLOR);
   } catch (e) {}
+}
+
+// Home in a given mode: canvas to the backdrop's bottom, bar to its top.
+function applyModeCanvasColor(mode) {
+  try {
+    document.documentElement.style.backgroundColor = MODE_CANVAS_COLORS[mode] || DEFAULT_SURFACE_COLOR;
+  } catch (e) {}
+  presenceSetBarColor(MODE_BAR_COLORS[mode] || DEFAULT_SURFACE_COLOR);
+}
+
+// Any other screen: the bar follows that screen's own top.
+function applyScreenBarColor(screenId) {
+  presenceSetBarColor(SCREEN_BAR_COLORS[screenId] || DEFAULT_SURFACE_COLOR);
 }
 
 function switchMode(mode) {

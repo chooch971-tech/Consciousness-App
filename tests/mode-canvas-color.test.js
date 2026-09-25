@@ -33,11 +33,16 @@ test('the canvas behind each mode matches that mode, not a flat near-black', () 
   });
 });
 
-test('the standalone window is tinted to match too', () => {
-  // iOS takes the window's own colour from this meta, and that surface is
-  // outside anything CSS can paint.
-  assert.match(shell, /meta\[name="theme-color"\]/);
-  assert.match(shell, /meta\.setAttribute\('content', color\)/);
+test('the status bar is tinted separately, to the top of the screen', () => {
+  // With status-bar-style default, iOS draws an opaque bar across the top and
+  // tints it from theme-color. It sits against the TOP of the screen, while the
+  // canvas shows at the bottom — so the two take different colours.
+  assert.match(shell, /function presenceSetBarColor\(color\)/);
+  assert.match(shell, /meta\.setAttribute\('content', color \|\| DEFAULT_SURFACE_COLOR\)/);
+  const fn = shell.slice(shell.indexOf('function applyModeCanvasColor(mode)'),
+                         shell.indexOf('function applyScreenBarColor'));
+  assert.match(fn, /MODE_CANVAS_COLORS\[mode\]/, 'canvas from the bottom table');
+  assert.match(fn, /presenceSetBarColor\(MODE_BAR_COLORS\[mode\]/, 'bar from the top table');
   assert.match(presence, /<meta name="theme-color" content="#[0-9a-f]{6}"\/>/i,
     'the meta must still be there for the script to find');
 });
@@ -55,9 +60,12 @@ test('the colour is applied on a switch and on boot', () => {
   assert.match(boot, /applyModeCanvasColor\('guide'\)/, 'with a fallback');
 });
 
-test('an unknown mode falls back rather than throwing', () => {
-  const fn = shell.slice(shell.indexOf('function applyModeCanvasColor(mode)'),
-                         shell.indexOf('function switchMode'));
-  assert.match(fn, /MODE_CANVAS_COLORS\[mode\] \|\| '#07080d'/);
-  assert.match(fn, /catch \(e\) \{\}/, 'and never breaks a mode switch');
+test('an unknown mode or screen falls back rather than throwing', () => {
+  assert.match(shell, /var DEFAULT_SURFACE_COLOR = '#07080d';/);
+  assert.match(shell, /MODE_CANVAS_COLORS\[mode\] \|\| DEFAULT_SURFACE_COLOR/);
+  assert.match(shell, /MODE_BAR_COLORS\[mode\] \|\| DEFAULT_SURFACE_COLOR/);
+  assert.match(shell, /SCREEN_BAR_COLORS\[screenId\] \|\| DEFAULT_SURFACE_COLOR/);
+  const setter = shell.slice(shell.indexOf('function presenceSetBarColor'),
+                             shell.indexOf('function applyModeCanvasColor'));
+  assert.match(setter, /catch \(e\) \{\}/, 'and never breaks a navigation');
 });

@@ -15,7 +15,19 @@
        still honours it, so this was a real block there. -->
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"/>
   <meta name="apple-mobile-web-app-capable" content="yes"/>
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+  <!-- default, not black-translucent. With black-translucent the page runs
+       under the status bar, and from iOS 26 the system lays its Liquid Glass
+       "scroll edge" blur over that inset — reaching roughly 35pt past the bar,
+       straight across the wordmark, menu button and streak. It is drawn above
+       the web view, so nothing the page paints can cover it, and there is no
+       CSS or meta switch that turns it off. With default the web view starts
+       below an opaque bar instead, which iOS tints from theme-color, and
+       there is nothing of ours under it to blur.
+
+       iOS reads this tag once, when the icon is added to the Home Screen, and
+       caches it with the icon: an install made before this change keeps the
+       blur until the icon is removed and added again. -->
+  <meta name="apple-mobile-web-app-status-bar-style" content="default"/>
   <meta name="apple-mobile-web-app-title" content="Presence"/>
   <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png"/>
   <!-- iOS PWA launch screens (solid #07080d) to kill the white launch flash -->
@@ -6104,9 +6116,20 @@ body:not(.tut-live) #tutCorgi {
     var pwa = window.navigator.standalone === true
       || window.matchMedia('(display-mode: standalone)').matches;
     var root = document.documentElement;
+    // Clear the status bar by exactly what iOS reports, never a fixed guess.
+    //
+    // These used to floor at 44px / 52px, which only made sense while the page
+    // was drawn under a translucent status bar. The web app now starts below
+    // an opaque bar (status-bar-style default), so the reported inset is 0
+    // and a hard 44px floor would leave an empty strip under it.
+    //
+    // env() is kept rather than dropped because an icon added before the
+    // switch keeps black-translucent until it is re-added — for that install
+    // the inset is still the full status bar height, and following it keeps
+    // the layout correct in both states rather than only the new one.
     if (pwa) {
-      root.style.setProperty('--safe-top',    'max(env(safe-area-inset-top),44px)');
-      root.style.setProperty('--safe-top-lg', 'max(env(safe-area-inset-top),52px)');
+      root.style.setProperty('--safe-top',    'max(env(safe-area-inset-top),8px)');
+      root.style.setProperty('--safe-top-lg', 'max(env(safe-area-inset-top),12px)');
     }
     // browser mode: keep the CSS defaults (8px / 12px)
   })();
