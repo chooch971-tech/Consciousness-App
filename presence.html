@@ -106,6 +106,31 @@
          resolves to exactly the px it replaced — the conversion is lossless
          because each value is N/16 and 16 is a power of two. */
       --fs: 1;
+
+      /* ── Status bar blend ─────────────────────────────────────────────────
+         iOS draws an opaque status bar above the installed app and colours it
+         from the theme-color it cached — #07080d, the app's own base colour —
+         ignoring runtime changes. Screens with a sky of their own (the four
+         home modes, Settings, Profile, the Lodge, the Senses session) met it
+         at a hard edge, so their backgrounds start with this layer, which
+         fades from exactly that colour to nothing.
+
+         It must be a BACKGROUND LAYER, not an element. WebKit decides what to
+         draw at the top edge by hit-testing 8px inside it, walking up to the
+         first fixed or sticky element, and reading its plain background-color;
+         gradients do not count, and where it cannot read one it lays its own
+         Liquid Glass blur over the page. A fixed overlay carrying this same
+         gradient was exactly that case and brought the blur straight back. As
+         a layer it adds nothing WebKit walks, so the top edge presents the
+         same fixed elements as it did before any blend existed — and, painted
+         beneath the content, it never dims the header text.
+
+         Inert everywhere but the installed app, where Safari's own chrome is
+         not what sits above the page. */
+      --top-blend: linear-gradient(transparent, transparent);
+    }
+    html.is-standalone {
+      --top-blend: linear-gradient(180deg, #07080d 0px, rgba(7,8,13,.6) 10px, rgba(7,8,13,0) 32px);
     }
     *, *::before, *::after { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
     /* text-size-adjust:100% stops iOS inflating text on its own, which would
@@ -118,24 +143,6 @@
       background: radial-gradient(ellipse 70% 55% at 30% 10%, rgba(126,184,164,0.06) 0%, transparent 65%),
         radial-gradient(ellipse 50% 40% at 80% 90%, rgba(100,90,160,0.05) 0%, transparent 60%);
       pointer-events:none; z-index:0;
-    }
-    /* ── Status bar blend (installed app only) ──────────────────────────────
-       iOS draws an opaque status bar above the installed app and colours it
-       from the theme-color it cached — #07080d, the app's own base colour.
-       It does not follow theme-color changes made at runtime: measured from a
-       device screenshot, the bar stayed #07080d while the script had set it
-       to the Guide's violet. So instead of trying to recolour the bar, every
-       screen's top fades into it. Screens already at #07080d up there (24 of
-       44) are unchanged; the ones with a sky of their own — the Guide,
-       Settings, Profile, the Lodge — lose the hard edge where their colour
-       met the bar.
-
-       Short and front-loaded so it is mostly spent above the header text,
-       and above everything else on screen so overlays blend the same way. */
-    html.is-standalone body::after {
-      content:''; position:fixed; top:0; left:0; right:0; height:22px;
-      background:linear-gradient(180deg, #07080d 0%, rgba(7,8,13,.55) 40%, rgba(7,8,13,0) 100%);
-      pointer-events:none; z-index:10000;
     }
     .app { position:fixed; inset:0; z-index:1; display:flex; flex-direction:column; overflow:hidden; }
     .screen { display:none; flex-direction:column; height:100%; padding:var(--safe-top) 24px max(env(safe-area-inset-bottom),28px); }
@@ -184,6 +191,7 @@
        nothing on scroll. */
     body.mode-guide #homeScreen {
       background:
+        var(--top-blend),
         radial-gradient(1.5px 1.5px at 18% 8%, rgba(210,196,242,.42), transparent),
         radial-gradient(1.5px 1.5px at 82% 12%, rgba(221,216,206,.36), transparent),
         radial-gradient(1px 1px at 62% 22%, rgba(199,169,255,.3), transparent),
@@ -208,6 +216,7 @@
        firelight rising rather than a sky. */
     body.mode-concentration #homeScreen {
       background:
+        var(--top-blend),
         radial-gradient(2.5px 2.5px at 22% 16%, rgba(232,160,90,.20), transparent),
         radial-gradient(2px 2px at 78% 24%, rgba(212,149,110,.18), transparent),
         radial-gradient(3px 3px at 40% 45%, rgba(232,180,120,.13), transparent),
@@ -222,6 +231,7 @@
        attention shouldn't have anything in it to fixate on. */
     body.mode-awareness #homeScreen {
       background:
+        var(--top-blend),
         radial-gradient(ellipse 130% 55% at 50% -10%, rgba(90,190,140,.15) 0%, transparent 64%),
         radial-gradient(ellipse 100% 48% at 50% 106%, rgba(60,150,110,.11) 0%, transparent 70%),
         radial-gradient(ellipse 74% 32% at 22% 44%, rgba(120,210,170,.055) 0%, transparent 72%),
@@ -234,6 +244,7 @@
        keeps the two clearly apart. */
     body.mode-prayer #homeScreen {
       background:
+        var(--top-blend),
         radial-gradient(1.5px 1.5px at 24% 14%, rgba(240,214,150,.34), transparent),
         radial-gradient(1px 1px at 74% 22%, rgba(240,214,150,.26), transparent),
         radial-gradient(1.5px 1.5px at 46% 40%, rgba(232,200,140,.22), transparent),
@@ -931,6 +942,7 @@
     #chatListScreen,
     #chatThreadScreen {
       background:
+        var(--top-blend),
         radial-gradient(2px 2px at 12% 6%, rgba(232,200,122,.6), transparent),
         radial-gradient(1.5px 1.5px at 82% 4%, rgba(221,216,206,.55), transparent),
         radial-gradient(1.5px 1.5px at 62% 12%, rgba(158,216,196,.5), transparent),
@@ -983,6 +995,7 @@
     #clockSettingsScreen,
     #bugReportScreen {
       background:
+        var(--top-blend),
         radial-gradient(1.5px 1.5px at 12% 5%, rgba(207,226,255,.28), transparent),
         radial-gradient(2px 2px at 82% 9%, rgba(142,184,255,.24), transparent),
         radial-gradient(1px 1px at 48% 15%, rgba(221,216,206,.22), transparent),
@@ -1102,6 +1115,7 @@
        than cards on flat black. */
     #lodgeScreen {
       background:
+        var(--top-blend),
         radial-gradient(1.5px 1.5px at 14% 5%, rgba(221,216,206,.5), transparent),
         radial-gradient(2px 2px at 80% 8%, rgba(199,169,255,.45), transparent),
         radial-gradient(1.5px 1.5px at 55% 15%, rgba(221,216,206,.4), transparent),
@@ -1356,6 +1370,7 @@
       padding:0;
       overflow:hidden;
       background:
+        var(--top-blend),
         radial-gradient(1.5px 1.5px at 14% 18%, rgba(238,214,225,.5), transparent),
         radial-gradient(1px 1px at 82% 14%, rgba(232,200,122,.46), transparent),
         radial-gradient(1.5px 1.5px at 74% 38%, rgba(224,168,196,.42), transparent),

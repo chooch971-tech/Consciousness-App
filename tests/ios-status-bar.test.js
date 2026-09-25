@@ -37,16 +37,33 @@ test('the top padding follows the reported inset, with no fixed status bar allow
 test('screens fade into the cached status bar colour instead of recolouring it', () => {
   // iOS draws the bar from the theme-color it cached and ignores runtime
   // changes: on device the bar stayed #07080d while a script had set it to the
-  // Guide's violet, leaving a hard black edge. So the bar colour is held fixed
-  // and every screen's top fades into it.
+  // Guide's violet, leaving a hard edge. So the bar colour is held fixed and
+  // every coloured sky starts with a layer fading out of it.
   assert.match(presence, /<meta name="theme-color" content="#07080d"\/>/);
-  const rule = presence.slice(presence.indexOf('html.is-standalone body::after {'));
-  const body = rule.slice(0, rule.indexOf('}'));
-  assert.match(body, /position:fixed; top:0; left:0; right:0;/);
-  assert.match(body, /linear-gradient\(180deg, #07080d 0%/, 'starts exactly at the bar colour');
-  assert.match(body, /rgba\(7,8,13,0\) 100%/, 'and fades to nothing');
-  assert.match(body, /pointer-events:none/, 'it must never swallow a tap on the header');
-  assert.match(body, /z-index:10000/, 'above every overlay, so they blend the same way');
+  assert.match(presence, /--top-blend: linear-gradient\(transparent, transparent\);/,
+    'inert by default');
+  assert.match(presence, /html\.is-standalone \{\s*--top-blend: linear-gradient\(180deg, #07080d 0px,[^;]*rgba\(7,8,13,0\) 32px\);/,
+    'starting exactly at the bar colour in the installed app');
+  // Every sky measured with a top other than #07080d carries the layer first.
+  ['body.mode-guide #homeScreen', 'body.mode-concentration #homeScreen',
+   'body.mode-awareness #homeScreen', 'body.mode-prayer #homeScreen',
+   '#settingsScreen,', '#profileScreen,', '#senseSessionScreen'].forEach(sel => {
+    const at = presence.indexOf('    ' + sel);
+    assert.ok(at > -1, sel + ' must still be here');
+    const rule = presence.slice(at, presence.indexOf('}', at));
+    assert.match(rule, /background:\s*\n\s*var\(--top-blend\),/, sel + ' must start with the blend layer');
+  });
+  assert.equal((presence.match(/var\(--top-blend\),/g) || []).length, 8, 'eight skies');
+});
+
+test('the blend is never a fixed element', () => {
+  // WebKit hit-tests 8px inside the top edge, walks up to the first fixed or
+  // sticky element and reads its plain background-color; gradients do not
+  // count, and where it cannot read one it draws its own blur over the page.
+  // A fixed overlay carrying this gradient was exactly that case and brought
+  // the blur back on device. As a background layer it adds nothing WebKit walks.
+  assert.doesNotMatch(presence, /body::after/);
+  assert.doesNotMatch(presence, /position:fixed;[^}]*#07080d 0%/);
 });
 
 test('the blend exists only in the installed app', () => {
