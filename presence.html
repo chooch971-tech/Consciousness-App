@@ -214,7 +214,20 @@
         radial-gradient(ellipse 124% 44% at 50% -8%, rgba(70,66,150,.17) 0%, transparent 64%),
         linear-gradient(180deg, #0c0d1e 0%, #070811 55%, #0a0b18 100%);
     }
-    .top-bar { position:relative; display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; opacity:0; animation:fadeUp .7s ease forwards .1s; }
+    /* fill-mode is backwards, not forwards, and the resting state is the
+       visible one. A forwards fill keeps a FINISHED animation applied for the
+       life of the page, which left an identity transform — matrix(1,0,0,1,0,0)
+       — permanently on this bar. An element carrying a transform is painted on
+       its own composited layer instead of being snapped to the pixel grid, and
+       iOS rasterises that layer at its own scale, so the wordmark, hamburger
+       and streak rendered visibly soft while the crisp tabs directly below
+       them, which carry no transform, did not.
+
+       backwards still hides the bar through the delay and animates it in
+       identically; it simply drops the fill once finished, leaving
+       transform:none. It also means the bar is visible if the animation never
+       runs at all, rather than being stuck at opacity:0 forever. */
+    .top-bar { position:relative; display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; animation:fadeUp .7s ease .1s backwards; }
     .top-bar > *:first-child { flex:1; }
     .top-bar > *:last-child { flex:1; text-align:right; }
     .wordmark { position:absolute; left:50%; transform:translateX(-50%); font-family:Cormorant Garamond,serif; font-size:0.6875rem; font-weight:300; letter-spacing:.35em; text-transform:uppercase; color:var(--accent); pointer-events:none; }
@@ -687,7 +700,8 @@
     .chain-badge { display:inline-block; font-size:0.5rem; letter-spacing:.15em; text-transform:uppercase; color:#d4b08e; border:1px solid rgba(212,176,142,.25); border-radius:3px; padding:2px 7px; margin-left:8px; }
     .momentum-bar { height:2px; background:var(--border); border-radius:2px; margin: 4px 0 0; overflow:hidden; }
     .momentum-fill { height:100%; border-radius:2px; background: linear-gradient(90deg, var(--accent), #d4b08e); transition: width 0.6s ease; }
-    .hero { flex:1; display:flex; flex-direction:column; justify-content:flex-start; padding-top:16px; align-items:center; text-align:center; opacity:0; animation:fadeUp .7s ease forwards .25s; }
+    /* backwards fill, resting state visible — see .top-bar above. */
+    .hero { flex:1; display:flex; flex-direction:column; justify-content:flex-start; padding-top:16px; align-items:center; text-align:center; animation:fadeUp .7s ease .25s backwards; }
     .level-label { font-size:0.5625rem; letter-spacing:.3em; text-transform:uppercase; color:var(--muted); margin-bottom:20px; }
     .level-ring { position:relative; width:140px; height:140px; margin-bottom:28px; }
     .level-ring svg { width:140px; height:140px; transform:rotate(-90deg); }
@@ -704,7 +718,8 @@
     .next-row { display:flex; justify-content:space-between; align-items:center; }
     .next-key { font-size:0.5625rem; letter-spacing:.2em; text-transform:uppercase; color:var(--muted); }
     .next-val { font-size:0.75rem; color:var(--text); }
-    .home-actions { display:flex; flex-direction:column; gap:10px; opacity:0; animation:fadeUp .7s ease forwards .4s; }
+    /* backwards fill, resting state visible — see .top-bar above. */
+    .home-actions { display:flex; flex-direction:column; gap:10px; animation:fadeUp .7s ease .4s backwards; }
 
     /* SESSION */
     #sessionScreen { justify-content:space-between; }
