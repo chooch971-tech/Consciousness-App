@@ -73,6 +73,10 @@ const PRECACHE = [
   'platform-client.js',
   'journal-client.js',
   'social-client.js',
+  'assets/visualization/blue-mug.jpg',
+  'assets/visualization/brass-keys.jpg',
+  'assets/visualization/yellow-lamp.jpg',
+  'assets/visualization/houseplant.jpg',
   'apple-touch-icon.png',
 ];
 
