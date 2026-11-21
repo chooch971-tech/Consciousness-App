@@ -676,11 +676,37 @@ async function getSubscription() {
 // Resolve sw.js relative to this page so it works from any sub-path
 var SW_PATH = (location.pathname.includes('/app/') ? '../' : '') + 'sw.js';
 
+// ── Notifications that may not exist ────────────────────────────────────────
+// Not every browser has the Notification API. A phone without Google's
+// services (a Mudita Kompakt, for one) can lack it outright, or have it and
+// never complete a push subscription. Reading Notification.permission bare
+// threw a ReferenceError in the Begin Session handler, so tapping it did
+// nothing at all. Everything here reads it through these instead.
+function presenceNotificationApi() {
+  return (typeof Notification !== 'undefined') ? Notification : null;
+}
+function presenceNotificationPermission() {
+  var N = presenceNotificationApi();
+  try { return N ? (N.permission || 'default') : 'unsupported'; } catch (e) { return 'unsupported'; }
+}
+// Older engines take a callback and return nothing; newer ones return a
+// promise. Accept both, and treat a throw as a refusal.
+function presenceRequestNotificationPermission() {
+  var N = presenceNotificationApi();
+  if (!N || typeof N.requestPermission !== 'function') return Promise.resolve('unsupported');
+  return new Promise(function(resolve) {
+    try {
+      var ret = N.requestPermission(function(p) { resolve(p); });
+      if (ret && typeof ret.then === 'function') ret.then(resolve, function() { resolve('denied'); });
+    } catch (e) { resolve('denied'); }
+  });
+}
+
 async function registerWebPush() {
-  if (!('serviceWorker' in navigator) || !('PushManager' in window)) return;
+  if (!('serviceWorker' in navigator) || !('PushManager' in window) || !presenceNotificationApi()) return;
   try {
     var reg = await navigator.serviceWorker.register(SW_PATH);
-    var permission = await Notification.requestPermission();
+    var permission = await presenceRequestNotificationPermission();
     if (permission !== 'granted') { showToast('Enable notifications for background reminders'); return; }
     var sub = await reg.pushManager.getSubscription();
     if (!sub) {
@@ -688,6 +714,42 @@ async function registerWebPush() {
     }
     await fetch(SERVER_URL + '/subscribe', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(sub) });
   } catch(err) { console.error('Web Push registration failed:', err); showToast('Push setup failed: ' + err.message, 4000); }
+}
+
+// Push decides whether reminders reach a locked phone. It must never decide
+// whether a session starts. Starting used to await registerWebPush outright,
+// so a permission prompt that never answered, or a push service that never
+// replied, held Begin Session forever with nothing on screen.
+//
+// Now the session waits a few seconds at most. Anything still pending carries
+// on in the background, and if it finishes after the session has started the
+// server is told then, so background reminders still arrive once push works.
+// Where the browser has no notifications at all, the session runs on its own
+// on-screen bells, and the player is told once why nothing reaches a locked
+// screen.
+var PUSH_SETUP_WAIT_MS = 6000;
+var _presencePushUnsupportedToldThisLoad = false;
+function preparePushForSession() {
+  var perm = presenceNotificationPermission();
+  if (perm === 'unsupported' || !('serviceWorker' in navigator) || !('PushManager' in window)) {
+    if (!_presencePushUnsupportedToldThisLoad) {
+      _presencePushUnsupportedToldThisLoad = true;
+      showToast('This browser cannot show notifications — keep Presence open to hear its bells', 4200);
+    }
+    return Promise.resolve();
+  }
+  if (perm === 'denied') return Promise.resolve();
+  var settled = false, startedWithout = false;
+  var setup = registerWebPush().then(function() {
+    settled = true;
+    if (startedWithout && typeof sessionStartTime !== 'undefined' && sessionStartTime
+        && typeof notifyServerSessionStart === 'function') {
+      notifyServerSessionStart();
+    }
+  }, function() { settled = true; });
+  return Promise.race([setup, new Promise(function(resolve) {
+    setTimeout(function() { if (!settled) startedWithout = true; resolve(); }, PUSH_SETUP_WAIT_MS);
+  })]);
 }
 
 async function notifyServerSessionStart() {
@@ -799,7 +861,7 @@ if ('serviceWorker' in navigator) {
       // on install, so a fresh version activates immediately and fires the
       // controllerchange handler above — which surfaces the refresh banner.
       try { reg.update(); } catch(e) {}
-      if (Notification.permission === 'granted') {
+      if (presenceNotificationPermission() === 'granted') {
         var sub = await reg.pushManager.getSubscription();
         if (!sub) { sub = await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY) }); }
         await fetch(SERVER_URL + '/subscribe', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(sub) });

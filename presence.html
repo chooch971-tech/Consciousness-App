@@ -9392,9 +9392,8 @@ document.getElementById('customStartBtn').addEventListener('click', async functi
 
   document.getElementById('customModal').classList.remove('show');
   customSessionParams = { durationMin: totalMin, intervalSec: totalIntervalSec };
-  if (Notification.permission === 'granted' || Notification.permission === 'default') {
-    try { await registerWebPush(); } catch(e) { console.log('Push skipped:', e); }
-  }
+  // Never let notification setup hold the session back — see preparePushForSession.
+  try { await preparePushForSession(); } catch(e) { console.log('Push skipped:', e); }
   await startSession();
 });
 
@@ -9464,10 +9463,10 @@ setupNudgeBtn('durationNudgePlus', function() {
   saveState(); renderHome();
 });
 document.getElementById('startBtn').addEventListener('click', async function() {
-  // Register push first so server knows our subscription
-  if (Notification.permission === 'granted' || Notification.permission === 'default') {
-    try { await registerWebPush(); } catch(e) { console.log('Push registration skipped:', e); }
-  }
+  // Register push first so the server knows our subscription — but never let it
+  // hold the session back. On a browser without notifications, or one whose
+  // push service never answers, this used to leave Begin Session doing nothing.
+  try { await preparePushForSession(); } catch(e) { console.log('Push registration skipped:', e); }
   await startSession();
 });
 document.getElementById('endBtn').addEventListener('click', function() {
