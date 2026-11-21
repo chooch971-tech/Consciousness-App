@@ -761,6 +761,11 @@ function preparePushForSession() {
 
 async function notifyServerSessionStart() {
   pavlokServerManaged = false;
+  // A new /session/start replaces whatever session the server held for this
+  // subscription, so an end still pending from an earlier session is moot —
+  // and retrying it later could cut this new one short.
+  try { localStorage.removeItem(PRESENCE_SERVER_END_PENDING_KEY); } catch (e) {}
+  if (typeof setAwarenessPushFlag === 'function') setAwarenessPushFlag('active');
   try {
     var sub = await getSubscription();
     if (!sub) { console.log('Push not registered — session running locally'); return; }
@@ -780,6 +785,10 @@ async function notifyServerSessionStart() {
     var data = await res.json();
     // When the server is firing Pavlok, the client must NOT also fire it (avoids double-zaps)
     pavlokServerManaged = !!(data && data.pavlokManaged);
+    // Remember exactly which subscription the server is now running a session
+    // for, so ending it later never depends on looking the subscription up
+    // again (see notifyServerSessionEnd).
+    if (res.ok) rememberServerSession({ endpoint: sub.endpoint, authKey: pushAuthKey(sub) });
     console.log('Server session started:', JSON.stringify(data));
   } catch(e) { console.error('session/start error:', e); /* Server may be waking up, retry silently */ }
 }
@@ -810,13 +819,88 @@ async function notifyServerPavlokUpdate() {
   } catch(e) { /* silent — client fallback still works */ }
 }
 
+// ── Ending the server's session reliably ────────────────────────────────────
+// The server pushes a reminder every interval until it hears /session/end or
+// the session's full length runs out — up to four hours. Ending used to be a
+// single fire-and-forget request that first had to look the subscription up
+// again (two async hops) before anything left the phone: end a session and
+// swipe the app away, or end it while the server is waking or the signal is
+// poor, and the request never arrived, so the reminders kept coming long
+// after the session was over.
+//
+// Now: the subscription the session was started with is remembered, the end
+// goes out at once with keepalive (which outlives the page being closed), and
+// it stays pending until the server answers, retried whenever the app is
+// opened, brought back to the foreground or reconnects. The service worker
+// also learns the session is over, so a reminder that still slips through is
+// replaced with a notice and ends the session from the phone itself.
+var PRESENCE_SERVER_SESSION_KEY = 'presence_server_session';
+var PRESENCE_SERVER_END_PENDING_KEY = 'presence_server_session_end_pending';
+
+function _readJsonKey(key) {
+  try { var v = JSON.parse(localStorage.getItem(key)); return (v && v.endpoint) ? v : null; } catch (e) { return null; }
+}
+function rememberServerSession(target) {
+  if (!target || !target.endpoint) return;
+  try { localStorage.setItem(PRESENCE_SERVER_SESSION_KEY, JSON.stringify(target)); } catch (e) {}
+}
+
+// Send one /session/end. A 2xx, or a 4xx (the server has no such session, or
+// will never accept this key), settles it; a network error or 5xx leaves it
+// pending for the next retry.
+function sendServerSessionEnd(target) {
+  if (!target || !target.endpoint) return Promise.resolve(false);
+  var body = JSON.stringify({ endpoint: target.endpoint, authKey: target.authKey || '' });
+  return fetch(SERVER_URL + '/session/end', {
+    method: 'POST', keepalive: true,
+    headers: { 'Content-Type': 'application/json' }, body: body
+  }).then(function(r) {
+    if (r.status >= 500) return false;
+    var pending = _readJsonKey(PRESENCE_SERVER_END_PENDING_KEY);
+    if (pending && pending.endpoint === target.endpoint) localStorage.removeItem(PRESENCE_SERVER_END_PENDING_KEY);
+    var remembered = _readJsonKey(PRESENCE_SERVER_SESSION_KEY);
+    if (remembered && remembered.endpoint === target.endpoint) localStorage.removeItem(PRESENCE_SERVER_SESSION_KEY);
+    return true;
+  }).catch(function() { return false; });
+}
+
 async function notifyServerSessionEnd() {
+  // Tell the service worker first: it is synchronous-ish and local, so it
+  // lands even if everything below is cut off by the app being closed.
+  if (typeof setAwarenessPushFlag === 'function') setAwarenessPushFlag('ended');
+  // The remembered subscription goes out immediately, with no await before
+  // the request is on its way.
+  var remembered = _readJsonKey(PRESENCE_SERVER_SESSION_KEY);
+  if (remembered) {
+    try { localStorage.setItem(PRESENCE_SERVER_END_PENDING_KEY, JSON.stringify(remembered)); } catch (e) {}
+    sendServerSessionEnd(remembered);
+  }
+  // The current subscription too, if it is different — iOS can rotate a
+  // subscription mid-session — or if nothing was remembered (a session
+  // started before this change).
   try {
     var sub = await getSubscription();
-    if (!sub) return;
-    await fetch(SERVER_URL + '/session/end', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ endpoint: sub.endpoint, authKey: pushAuthKey(sub) }) });
-  } catch(e) { console.error('session/end error:', e); }
+    if (sub && (!remembered || sub.endpoint !== remembered.endpoint)) {
+      var current = { endpoint: sub.endpoint, authKey: pushAuthKey(sub) };
+      if (!remembered) { try { localStorage.setItem(PRESENCE_SERVER_END_PENDING_KEY, JSON.stringify(current)); } catch (e) {} }
+      await sendServerSessionEnd(current);
+    }
+  } catch (e) { console.error('session/end error:', e); }
 }
+
+// Re-send an end that never got an answer — but never while a session is
+// actually running on this device, which would cut it short.
+function retryPendingServerSessionEnd() {
+  var pending = _readJsonKey(PRESENCE_SERVER_END_PENDING_KEY);
+  if (!pending) return;
+  if (typeof sessionStartTime !== 'undefined' && sessionStartTime) return;
+  sendServerSessionEnd(pending);
+}
+window.addEventListener('load', retryPendingServerSessionEnd);
+window.addEventListener('online', retryPendingServerSessionEnd);
+document.addEventListener('visibilitychange', function() {
+  if (document.visibilityState === 'visible') retryPendingServerSessionEnd();
+});
 
 // A gentle, tappable "new version ready" pill. Tapping reloads into the fresh
 // shell and flags a one-time reconciliation pull so the updated (correct) merge

@@ -1,7 +1,7 @@
 // Service Worker for Presence app
 // Handles background push notifications + shell caching
 // Cache version — bump this string when you need to force-evict all clients
-const CACHE = 'presence-shell-v505';
+const CACHE = 'presence-shell-v506';
 
 const APP_URL = self.registration
   ? self.registration.scope + 'presence.html'
@@ -163,6 +163,50 @@ function presenceIsInConcentrationSession() {
   });
 }
 
+// ── A reminder that arrives after the session was ended ──────────────────────
+// The server pushes Awareness reminders until it hears /session/end. If that
+// never arrived — the app was closed straight after ending, the server was
+// waking, the signal dropped — reminders kept coming for the rest of the
+// session's length. The page records 'ended' in IndexedDB the moment a
+// session ends; when a reminder lands after that, this worker ends the
+// session with the server itself, using the push subscription it already
+// holds, and shows a quiet notice in place of the prompt.
+//
+// It must still show something: iOS revokes push for a web app whose pushes
+// do not produce a notification, which would silently break every reminder.
+// The notice reuses the reminder tag, so at most one sits in the tray.
+const PRESENCE_SERVER_URL = 'https://presence-server-acik.onrender.com';
+const AWARENESS_PUSH_FLAG_KEY = 'awarenessSession';
+function presenceAwarenessSessionState() {
+  return new Promise(resolve => {
+    if (!self.indexedDB) { resolve(null); return; }
+    const req = self.indexedDB.open(PRESENCE_SESSION_FLAG_DB, 1);
+    req.onupgradeneeded = () => {
+      const db = req.result;
+      if (!db.objectStoreNames.contains(PRESENCE_SESSION_FLAG_STORE)) db.createObjectStore(PRESENCE_SESSION_FLAG_STORE);
+    };
+    req.onsuccess = () => {
+      try {
+        const tx = req.result.transaction(PRESENCE_SESSION_FLAG_STORE, 'readonly');
+        const getReq = tx.objectStore(PRESENCE_SESSION_FLAG_STORE).get(AWARENESS_PUSH_FLAG_KEY);
+        getReq.onsuccess = () => resolve((getReq.result && getReq.result.state) || null);
+        getReq.onerror = () => resolve(null);
+      } catch (e) { resolve(null); }
+    };
+    req.onerror = () => resolve(null);
+  });
+}
+function presenceEndServerSessionFromWorker() {
+  return self.registration.pushManager.getSubscription().then(sub => {
+    if (!sub) return;
+    const json = sub.toJSON ? sub.toJSON() : {};
+    return fetch(PRESENCE_SERVER_URL + '/session/end', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ endpoint: sub.endpoint, authKey: (json.keys && json.keys.auth) || '' })
+    });
+  }).catch(() => {});
+}
+
 self.addEventListener('push', event => {
   let data = {};
   try {
@@ -183,6 +227,22 @@ self.addEventListener('push', event => {
   };
 
   const isPracticeReminder = data.tag === 'presence-practice-reminder';
+  // Awareness session reminders are the only pushes with no tag and the
+  // default title; prayer pushes are titled 'Prayer', practice reminders tagged.
+  const isAwarenessReminder = !data.tag && (data.title || 'Presence') === 'Presence';
+  if (isAwarenessReminder) {
+    event.waitUntil(presenceAwarenessSessionState().then(state => {
+      if (state !== 'ended') return self.registration.showNotification(data.title || 'Presence', options);
+      return Promise.all([
+        presenceEndServerSessionFromWorker(),
+        self.registration.showNotification('Presence', Object.assign({}, options, {
+          body: 'Session ended — reminders stopped.',
+          renotify: false, silent: true
+        }))
+      ]);
+    }));
+    return;
+  }
   // Pavlok is fired server-side (firePavlokServer) — exactly once per bell.
   // The SW must NOT also fire it, or the duplicate trips Pavlok's rate limit
   // and zaps go silent after a couple of hits. Just show the notification.

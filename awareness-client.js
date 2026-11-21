@@ -1172,6 +1172,19 @@ function _presenceSessionFlagDb() {
     req.onerror = function() { reject(req.error); };
   });
 }
+// Whether this device's Awareness session is running or was ended, for the
+// service worker. If a reminder push arrives after the player ended the
+// session — the server never heard the end — the worker reads 'ended' here
+// and stops the session from the phone instead of showing another prompt.
+// Absent means unknown, and the worker then behaves exactly as before.
+var AWARENESS_PUSH_FLAG_KEY = 'awarenessSession';
+function setAwarenessPushFlag(state) {
+  _presenceSessionFlagDb().then(function(db) {
+    var tx = db.transaction(PRESENCE_SESSION_FLAG_STORE, 'readwrite');
+    tx.objectStore(PRESENCE_SESSION_FLAG_STORE).put({ state: state, at: Date.now() }, AWARENESS_PUSH_FLAG_KEY);
+  }).catch(function() {}); // best-effort — never block a session on this
+}
+
 function setConcentrationSessionFlag(active) {
   _presenceSessionFlagDb().then(function(db) {
     var tx = db.transaction(PRESENCE_SESSION_FLAG_STORE, 'readwrite');
@@ -1542,6 +1555,7 @@ async function resumeSession(sess) {
   // guessing wrong here was a source of double/surprise zaps on reopen.
   var pvkR = getPavlokPrefs();
   pavlokServerManaged = !!(getPavlokToken() && pvkR.awareness.enabled);
+  if (typeof setAwarenessPushFlag === 'function') setAwarenessPushFlag('active');
   startPresenceBeacon(currentMode === 'prayer' ? 'prayer' : 'awareness', '');
 
   showScreen('sessionScreen');
