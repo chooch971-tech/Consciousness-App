@@ -19,7 +19,13 @@ test('a resumed session hands the Pavlok back to the phone when there is no push
   assert.match(awareness, /if \(pavlokServerManaged\) \{ try \{ notifyServerPavlokUpdate\(\)/,
     'and still confirmed in the background');
   const fn = platform.slice(platform.indexOf('async function notifyServerPavlokUpdate'));
-  assert.match(fn.slice(0, 900), /if \(!sub\) \{ pavlokServerManaged = false; return; \}/);
+  // Without push, who fires is settled with the server's Pavlok-only session:
+  // the server if it confirms one, otherwise the phone. Never left assumed.
+  assert.match(fn.slice(0, 900), /if \(!sub\) \{ pavlokServerManaged = await syncServerPavlokSession\(\); return; \}/);
+  const sync = platform.slice(platform.indexOf('async function syncServerPavlokSession'));
+  const body = sync.slice(0, sync.indexOf('\n}\n'));
+  assert.match(body, /if \(res\.status !== 404\) return false;/, 'an unreachable server leaves the phone firing');
+  assert.match(body, /return startServerPavlokSession\(\);/, 'a lost session is started again');
   assert.match(fn.slice(0, 1600), /pavlokServerManaged = !!\(data && data\.pavlokManaged\);/,
     'with push, the server still decides — no double zap');
 });

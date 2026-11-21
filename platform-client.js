@@ -768,7 +768,14 @@ async function notifyServerSessionStart() {
   if (typeof setAwarenessPushFlag === 'function') setAwarenessPushFlag('active');
   try {
     var sub = await getSubscription();
-    if (!sub) { console.log('Push not registered — session running locally'); return; }
+    if (!sub) {
+      // No push on this device: the server can still fire the Pavlok on every
+      // bell, so it keeps working while the phone sleeps or is switched off.
+      pavlokServerManaged = await startServerPavlokSession();
+      console.log(pavlokServerManaged ? 'Push not registered — Pavlok fired by the server'
+                                      : 'Push not registered — session running locally');
+      return;
+    }
     var pvk = getPavlokPrefs();
     var pavlokPayload = null;
     if (getPavlokToken() && pvk.awareness.enabled) {
@@ -804,7 +811,7 @@ async function notifyServerPavlokUpdate() {
     // say otherwise; returning here without clearing the flag left it set for
     // the rest of the session, so no phone without push got a single stimulus
     // after a reload or a return from the background — bells rang, nothing fired.
-    if (!sub) { pavlokServerManaged = false; return; }
+    if (!sub) { pavlokServerManaged = await syncServerPavlokSession(); return; }
     var pvk = getPavlokPrefs();
     var pavlokPayload = null;
     if (getPavlokToken() && pvk.awareness.enabled) {
@@ -817,6 +824,104 @@ async function notifyServerPavlokUpdate() {
     var data = await res.json();
     pavlokServerManaged = !!(data && data.pavlokManaged);
   } catch(e) { /* silent — client fallback still works */ }
+}
+
+// ── Pavlok-only sessions (no push) ──────────────────────────────────────────
+// A phone that cannot receive push (one without Google's services, such as a
+// Mudita Kompakt) used to fire the Pavlok only from this page, so once the
+// phone slept or was switched off nothing fired at all. The server now runs a
+// Pavlok-only session for it: just the band's settings and the session's own
+// timing, fired from the server on every bell.
+//
+// The phone hands the Pavlok over only once the server has confirmed the
+// session; until then, or whenever it cannot reach the server, it keeps
+// firing itself while it is awake — never both at once, never neither.
+var PRESENCE_PAVLOK_SESSION_KEY = 'presence_pavlok_session';
+var PRESENCE_PAVLOK_END_PENDING_KEY = 'presence_pavlok_session_end_pending';
+
+function _readIdKey(key) {
+  try { var v = JSON.parse(localStorage.getItem(key)); return (v && /^[a-f0-9]{32}$/.test(v.id || '')) ? v : null; } catch (e) { return null; }
+}
+function _awarenessPavlokSettings() {
+  var pvk = getPavlokPrefs();
+  if (!getPavlokToken() || !pvk.awareness || !pvk.awareness.enabled) return null;
+  return { token: getPavlokToken(), type: pvk.awareness.type || 'vibe', intensity: pvk.awareness.intensity || 50 };
+}
+
+// Start (or replace) the server's Pavlok-only session. True once the server
+// holds it, and the phone should stop firing.
+async function startServerPavlokSession() {
+  var settings = _awarenessPavlokSettings();
+  if (!settings || !sessionStartTime) return false;
+  var prev = _readIdKey(PRESENCE_PAVLOK_SESSION_KEY);
+  try {
+    var res = await fetch(SERVER_URL + '/pavlok-session/start', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(Object.assign({
+        id: prev ? prev.id : undefined,
+        intervalSec: sessionIntervalSec,
+        // The phone's own bell timing, so a server slow to wake does not
+        // shift every zap off its bell.
+        epochStart: reminderEpochStart || sessionStartTime,
+        endsAt: sessionStartTime + sessionDurationSec * 1000
+      }, settings))
+    });
+    if (!res.ok) return false;
+    var data = await res.json();
+    if (!data || !/^[a-f0-9]{32}$/.test(data.id || '')) return false;
+    // Ended while the request was in flight — a slow server — so undo it.
+    if (!sessionStartTime) { sendPavlokSessionEnd({ id: data.id }); return false; }
+    try { localStorage.setItem(PRESENCE_PAVLOK_SESSION_KEY, JSON.stringify({ id: data.id })); } catch (e) {}
+    return true;
+  } catch (e) { return false; }
+}
+
+// Bring the server's Pavlok-only session in line with the current settings:
+// update it, start one if the server has lost it, or end it if Pavlok was
+// switched off. Returns who fires: true for the server, false for the phone.
+async function syncServerPavlokSession() {
+  var settings = _awarenessPavlokSettings();
+  var current = _readIdKey(PRESENCE_PAVLOK_SESSION_KEY);
+  if (!settings) {
+    if (current) endServerPavlokSession();
+    return false;
+  }
+  if (current) {
+    try {
+      var res = await fetch(SERVER_URL + '/pavlok-session/update', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(Object.assign({ id: current.id }, settings))
+      });
+      if (res.ok) return true;
+      if (res.status !== 404) return false;      // unreachable or failing: the phone fires
+      try { localStorage.removeItem(PRESENCE_PAVLOK_SESSION_KEY); } catch (e) {}
+    } catch (e) { return false; }
+  }
+  return startServerPavlokSession();
+}
+
+function sendPavlokSessionEnd(target) {
+  if (!target || !target.id) return Promise.resolve(false);
+  return fetch(SERVER_URL + '/pavlok-session/end', {
+    method: 'POST', keepalive: true,
+    headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: target.id })
+  }).then(function(r) {
+    if (r.status >= 500) return false;
+    var pending = _readIdKey(PRESENCE_PAVLOK_END_PENDING_KEY);
+    if (pending && pending.id === target.id) localStorage.removeItem(PRESENCE_PAVLOK_END_PENDING_KEY);
+    return true;
+  }).catch(function() { return false; });
+}
+// Ends the current Pavlok-only session at once, kept pending until answered —
+// the same guarantee as the push session's end below.
+function endServerPavlokSession() {
+  var current = _readIdKey(PRESENCE_PAVLOK_SESSION_KEY);
+  if (!current) return;
+  try {
+    localStorage.setItem(PRESENCE_PAVLOK_END_PENDING_KEY, JSON.stringify(current));
+    localStorage.removeItem(PRESENCE_PAVLOK_SESSION_KEY);
+  } catch (e) {}
+  sendPavlokSessionEnd(current);
 }
 
 // ── Ending the server's session reliably ────────────────────────────────────
@@ -868,6 +973,7 @@ async function notifyServerSessionEnd() {
   // Tell the service worker first: it is synchronous-ish and local, so it
   // lands even if everything below is cut off by the app being closed.
   if (typeof setAwarenessPushFlag === 'function') setAwarenessPushFlag('ended');
+  endServerPavlokSession();
   // The remembered subscription goes out immediately, with no await before
   // the request is on its way.
   var remembered = _readJsonKey(PRESENCE_SERVER_SESSION_KEY);
@@ -891,6 +997,8 @@ async function notifyServerSessionEnd() {
 // Re-send an end that never got an answer — but never while a session is
 // actually running on this device, which would cut it short.
 function retryPendingServerSessionEnd() {
+  var pendingPavlok = _readIdKey(PRESENCE_PAVLOK_END_PENDING_KEY);
+  if (pendingPavlok) sendPavlokSessionEnd(pendingPavlok);
   var pending = _readJsonKey(PRESENCE_SERVER_END_PENDING_KEY);
   if (!pending) return;
   if (typeof sessionStartTime !== 'undefined' && sessionStartTime) return;

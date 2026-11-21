@@ -114,7 +114,11 @@ let conversationsCollection;
 let messagesCollection;
 let userPushSubsCollection;
 let aiBudgetCollection;
+let pavlokSessionsCollection;
 let subscriptions = [];
+// Pavlok-only Awareness sessions, for devices that cannot receive push. See
+// processPavlokSessions.
+let pavlokSessions = [];
 let prayerSchedules = [];
 let practiceSchedules = [];
 const omniaReportFlights = new Map();
@@ -202,6 +206,7 @@ async function connectDB() {
     friendsCollection = db.collection('friends');
     beaconsCollection = db.collection('presence_beacons');
     practiceCollection = db.collection('practice_schedules');
+    pavlokSessionsCollection = db.collection('pavlok_sessions');
     followsCollection = db.collection('follows');
     postsCollection = db.collection('posts');
     likesCollection = db.collection('likes');
@@ -286,6 +291,18 @@ async function connectDB() {
         }
       }
     }
+    // Pavlok-only sessions survive a restart. Like the push sessions above, a
+    // bell missed while the server was down is not fired late on boot.
+    pavlokSessions = await pavlokSessionsCollection.find({}).toArray();
+    for (const ps of pavlokSessions.slice()) {
+      if (!ps.endsAt || ps.endsAt <= now) {
+        pavlokSessions = pavlokSessions.filter(x => x.id !== ps.id);
+        await pavlokSessionsCollection.deleteOne({ id: ps.id });
+        continue;
+      }
+      const cycle = pavlokSessionCycle(ps, now);
+      if (cycle > (ps.lastFiredCycle ?? -1)) { ps.lastFiredCycle = cycle; await savePavlokSession(ps); }
+    }
     prayerSchedules = await prayerCollection.find({}).toArray();
     practiceSchedules = await practiceCollection.find({}).toArray();
     try { await migrateLegacyUsernames(); } catch (e) { logger.warn('database_migration_skipped', { migration: 'legacy-usernames', error: errorDetails(e) }); }
@@ -304,6 +321,19 @@ async function saveSub(sub) {
 
 async function deleteSub(endpoint) {
   await subsCollection.deleteOne({ endpoint });
+}
+
+async function savePavlokSession(ps) {
+  const { _id, ...data } = ps;
+  await pavlokSessionsCollection.updateOne({ id: ps.id }, { $set: data }, { upsert: true });
+}
+async function deletePavlokSession(id) {
+  pavlokSessions = pavlokSessions.filter(x => x.id !== id);
+  await pavlokSessionsCollection.deleteOne({ id });
+}
+// The last bell boundary that has passed, counted from the session's epoch.
+function pavlokSessionCycle(ps, now) {
+  return Math.floor(Math.max(0, now - ps.epochStart) / 1000 / ps.intervalSec);
 }
 
 async function savePrayerSchedule(schedule) {
@@ -942,6 +972,37 @@ async function processAwarenessSessions() {
   }
 }
 
+// ── Pavlok-only session loop (every 5s) ─────────────────
+// An Awareness session on a device that cannot receive push (a phone without
+// Google's services, such as a Mudita Kompakt) used to fire the Pavlok only
+// from the page itself, so nothing fired once the phone slept or was switched
+// off. These sessions carry just the Pavlok settings and the session's own
+// timing, and fire the band from here on every bell.
+//
+// The cycle is marked fired BEFORE the stimulus goes out, so a failing Pavlok
+// call costs that one bell instead of being retried every five seconds — the
+// push loop above retries on failure, which is right for a notification and
+// wrong for a shock.
+async function processPavlokSessions() {
+  if (!pavlokSessions.length) return;
+  const now = Date.now();
+  for (const ps of pavlokSessions.slice()) {
+    const finished = now >= ps.endsAt;
+    const cycleNow = pavlokSessionCycle(ps, finished ? ps.endsAt : now);
+    const lastFired = ps.lastFiredCycle ?? -1;
+    if (cycleNow > lastFired && cycleNow >= 1) {
+      ps.lastFiredCycle = cycleNow;
+      await savePavlokSession(ps);
+      console.log(`[Pavlok] Pavlok-only session bell ${cycleNow}: firing ${ps.type}@${ps.intensity}`);
+      firePavlokServer(ps.token, ps.type, ps.intensity);
+    }
+    if (finished) {
+      await deletePavlokSession(ps.id);
+      console.log('[Pavlok] Pavlok-only session finished');
+    }
+  }
+}
+
 // ── Prayer schedule loop (every 60s) ────────────────────
 async function processPrayerSchedules() {
   if (!prayerSchedules.length) return;
@@ -1054,6 +1115,12 @@ function startBackgroundJobs() {
       name: 'awareness-sessions',
       intervalMs: 5000,
       task: processAwarenessSessions,
+      logger
+    }),
+    createRecurringJob({
+      name: 'pavlok-sessions',
+      intervalMs: 5000,
+      task: processPavlokSessions,
       logger
     }),
     createRecurringJob({
@@ -3807,6 +3874,68 @@ app.post('/session/end', verifyPushOwner, subscriptionRateLimit, async (req, res
   const next = { ...sub, sessionStart: null, lastFiredCycle: -1, pavlok: null };
   await saveSub(next);
   Object.assign(sub, next);
+  res.json({ success: true });
+});
+
+// ── Pavlok-only sessions ────────────────────────────────
+// For devices without push. The session id is a random secret returned by
+// /start; holding it is what lets a device update or end the session. Anyone
+// who holds a Pavlok token can already fire it through /api/pavlok/stimulus,
+// so starting a session by token grants nothing new — and one band has one
+// session: starting again with the same token replaces the old one rather
+// than letting two schedules fire the same band.
+const PAVLOK_SESSION_ID = /^[a-f0-9]{32}$/;
+function pavlokSessionSettings(body) {
+  const token = typeof body.token === 'string' ? body.token : '';
+  if (!token || token.length > 4096) return null;
+  return {
+    token,
+    type: PAVLOK_VALID_TYPES.has(body.type) ? body.type : 'vibe',
+    intensity: Math.max(1, Math.min(100, parseInt(body.intensity, 10) || 50))
+  };
+}
+app.post('/pavlok-session/start', pavlokRateLimit, async (req, res) => {
+  const body = req.body || {};
+  const settings = pavlokSessionSettings(body);
+  if (!settings) return res.status(400).json({ error: 'Token required' });
+  const now = Date.now();
+  const intervalSec = Math.max(30, Math.min(3600, parseInt(body.intervalSec, 10) || 120));
+  // Timed from the phone's own session start, not from when this request
+  // landed: a sleeping server can take most of a minute to wake, and every
+  // zap would otherwise trail its bell by that much. Clamped so a wrong phone
+  // clock cannot schedule into the far past or the future.
+  let epochStart = parseInt(body.epochStart, 10);
+  if (!Number.isFinite(epochStart) || epochStart > now + 10000 || epochStart < now - 4 * 3600 * 1000) epochStart = now;
+  let endsAt = parseInt(body.endsAt, 10);
+  if (!Number.isFinite(endsAt) || endsAt <= now || endsAt > now + 4 * 3600 * 1000) {
+    endsAt = now + Math.max(60, Math.min(14400, parseInt(body.durationSec, 10) || 1800)) * 1000;
+  }
+  const replacing = pavlokSessions.filter(x => x.token === settings.token
+    || (PAVLOK_SESSION_ID.test(body.id || '') && x.id === body.id));
+  for (const old of replacing) await deletePavlokSession(old.id);
+  const ps = { id: crypto.randomBytes(16).toString('hex'), ...settings, intervalSec, epochStart, endsAt, createdAt: now };
+  // Bells already behind us were rung by the phone; start from the next one.
+  ps.lastFiredCycle = pavlokSessionCycle(ps, now);
+  await savePavlokSession(ps);
+  pavlokSessions.push(ps);
+  res.json({ success: true, id: ps.id, pavlokManaged: true });
+});
+app.post('/pavlok-session/update', pavlokRateLimit, async (req, res) => {
+  const body = req.body || {};
+  const ps = PAVLOK_SESSION_ID.test(body.id || '') && pavlokSessions.find(x => x.id === body.id);
+  if (!ps) return res.status(404).json({ error: 'Session not found' });
+  const settings = pavlokSessionSettings(body);
+  if (!settings) return res.status(400).json({ error: 'Token required' });
+  Object.assign(ps, settings);
+  await savePavlokSession(ps);
+  res.json({ success: true, pavlokManaged: true });
+});
+app.post('/pavlok-session/end', pavlokRateLimit, async (req, res) => {
+  const id = (req.body || {}).id;
+  if (!PAVLOK_SESSION_ID.test(id || '') || !pavlokSessions.some(x => x.id === id)) {
+    return res.status(404).json({ error: 'Session not found' });
+  }
+  await deletePavlokSession(id);
   res.json({ success: true });
 });
 
