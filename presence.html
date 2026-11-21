@@ -381,10 +381,18 @@
     /* Close */
     .so-close-btn { font-family:'DM Mono',monospace; font-size:0.6875rem; letter-spacing:.18em; text-transform:uppercase; color:var(--muted); background:none; border:none; cursor:pointer; padding:12px 24px; align-self:center; }
     /* Streak-ended modal */
-    .so-ended-overlay { display:none; position:fixed; inset:0; z-index:9800; background:rgba(7,8,13,0.93); flex-direction:column; align-items:center; justify-content:center; padding:24px; opacity:0; transition:opacity 0.35s ease; }
+    /* Scrolls when the card is taller than the screen. It used to centre with
+       justify-content:center and no overflow, so on a short screen (a Mudita
+       Kompakt, about 320x460) the card was squeezed to the window and clipped
+       its own buttons — Begin Again and Maybe Later sat below its bottom edge
+       with nothing able to scroll to them. The card now keeps its full height
+       (flex-shrink:0) and centres with auto margins, which centre it when it
+       fits and fall back to the top when it does not, so nothing is ever
+       pushed off the top edge where no scroll can reach it. */
+    .so-ended-overlay { display:none; position:fixed; inset:0; z-index:9800; background:rgba(7,8,13,0.93); flex-direction:column; align-items:center; justify-content:flex-start; padding:24px; overflow-y:auto; overflow-x:hidden; -webkit-overflow-scrolling:touch; overscroll-behavior:contain; opacity:0; transition:opacity 0.35s ease; }
     .so-ended-overlay.seo-show { display:flex; }
     .so-ended-overlay.seo-vis { opacity:1; }
-    .so-ended-card { position:relative; overflow:hidden; background:linear-gradient(168deg,#1e1410 0%,#141019 52%,#100c16 100%); border:1px solid rgba(228,152,94,.35); border-radius:20px; padding:26px 22px 24px; max-width:340px; width:100%; text-align:center; box-shadow:0 0 54px rgba(228,140,70,.16), inset 0 1px 0 rgba(255,255,255,.06); }
+    .so-ended-card { position:relative; overflow:hidden; flex-shrink:0; margin:auto 0; background:linear-gradient(168deg,#1e1410 0%,#141019 52%,#100c16 100%); border:1px solid rgba(228,152,94,.35); border-radius:20px; padding:26px 22px 24px; max-width:340px; width:100%; text-align:center; box-shadow:0 0 54px rgba(228,140,70,.16), inset 0 1px 0 rgba(255,255,255,.06); }
     .so-ended-card::before { content:''; position:absolute; top:0; left:14%; right:14%; height:1px; background:linear-gradient(90deg,transparent,rgba(255,212,160,.55),transparent); }
     /* The extinguish sequence is choreographed via data-seophase on the overlay:
        alive → struggle (flame gutters) → out (snuffed, smoke) → ash (number
