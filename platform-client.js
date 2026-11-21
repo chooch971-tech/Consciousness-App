@@ -669,8 +669,15 @@ function pushAuthKey(sub) {
 }
 async function getSubscription() {
   if (!('serviceWorker' in navigator) || !('PushManager' in window)) return null;
-  try { var reg = await navigator.serviceWorker.ready; return await reg.pushManager.getSubscription(); }
-  catch(e) { return null; }
+  // getRegistration, not .ready: .ready never settles where no service worker
+  // ever activates, and every caller that awaited it hung for good — including
+  // the check that decides who fires the Pavlok. getRegistration answers at
+  // once, with nothing when there is nothing.
+  try {
+    var reg = await navigator.serviceWorker.getRegistration();
+    if (!reg || !reg.pushManager) return null;
+    return await reg.pushManager.getSubscription();
+  } catch(e) { return null; }
 }
 
 // Resolve sw.js relative to this page so it works from any sub-path
@@ -782,7 +789,13 @@ async function notifyServerSessionStart() {
 async function notifyServerPavlokUpdate() {
   try {
     var sub = await getSubscription();
-    if (!sub) return;
+    // No subscription means the server cannot be running this session, so the
+    // phone must fire the Pavlok itself. A resumed session starts by assuming
+    // the server owns it (to avoid a double zap) and relies on this call to
+    // say otherwise; returning here without clearing the flag left it set for
+    // the rest of the session, so no phone without push got a single stimulus
+    // after a reload or a return from the background — bells rang, nothing fired.
+    if (!sub) { pavlokServerManaged = false; return; }
     var pvk = getPavlokPrefs();
     var pavlokPayload = null;
     if (getPavlokToken() && pvk.awareness.enabled) {
