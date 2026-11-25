@@ -109,6 +109,47 @@ function updateGuideQuestBadge() {
   el.style.display = pathQuestHasUnclaimed() ? 'block' : 'none';
 }
 
+// ── Chest tiers ──
+// A chest's contents vary, which is what makes opening one exciting, but the
+// odds follow the quality of today's practice rather than luck alone: more
+// minutes sat today and a personal best set today both raise the chance of a
+// richer chest. Rolled once, at the moment the reward is credited, so there
+// is nothing to reroll.
+var CHEST_TIERS = [
+  { id:'radiant', label:'Radiant chest', mult:2 },
+  { id:'rich',    label:'Rich chest',    mult:1.5 },
+  { id:'common',  label:'',              mult:1 }
+];
+var CHEST_QUALITY_MINUTES = 30; // minutes of practice today for full minute credit
+var PB_DAY_KEY = 'presence_pb_day';
+
+// 0..1: today's practice minutes (up to 0.7) plus a personal best today (0.3).
+function pathQuestPracticeQuality() {
+  var today = presenceDayKey();
+  var minutes = 0;
+  var sameDay = function(h) { return h && h.date && presenceDayKey(h.date) === today; };
+  ((typeof concState !== 'undefined' && concState && concState.history) || []).filter(sameDay).forEach(function(h) {
+    minutes += Math.max(h.durationSec || 0, h.sessionDurationSec || 0, h.seconds || 0) / 60;
+  });
+  ((typeof state !== 'undefined' && state && state.history) || []).filter(sameDay).forEach(function(h) {
+    minutes += Number(h.durationMin) || 0;
+  });
+  var pbToday = false;
+  try { pbToday = localStorage.getItem(PB_DAY_KEY) === today; } catch (e) {}
+  return Math.min(1, minutes / CHEST_QUALITY_MINUTES) * 0.7 + (pbToday ? 0.3 : 0);
+}
+
+// Pure: odds are 5–15% Radiant and 20–35% Rich, rising with quality.
+function pathQuestChestRoll(quality, rand) {
+  var q = Math.max(0, Math.min(1, Number(quality) || 0));
+  var r = typeof rand === 'number' ? rand : Math.random();
+  var radiant = 0.05 + 0.10 * q;
+  var rich = 0.20 + 0.15 * q;
+  if (r < radiant) return CHEST_TIERS[0];
+  if (r < radiant + rich) return CHEST_TIERS[1];
+  return CHEST_TIERS[2];
+}
+
 function claimPathQuestReward(type) {
   // Read the stored window BEFORE pathQuestState() rolls it over. A Claim
   // button rendered while a quest was ready stays on screen as long as the
@@ -138,9 +179,10 @@ function claimPathQuestReward(type) {
     renderPathQuests();
     return;
   }
-  var amount = pathQuestReward(type);
+  var tier = pathQuestChestRoll(pathQuestPracticeQuality());
+  var amount = Math.round(pathQuestReward(type) * tier.mult);
   if (typeof omniaState !== 'undefined') {
-    omniaCreditAkasha(amount, 'path-quest', { questType: type });
+    omniaCreditAkasha(amount, 'path-quest', { questType: type, chest: tier.id });
     var boostMult = type === 'weekend' ? 1.3 : 1.2;
     var boostDuration = type === 'weekend' ? 8 * 3600000 : 4 * 3600000;
     var now = Date.now();
@@ -162,7 +204,7 @@ function claimPathQuestReward(type) {
   var boostPct = Math.round(((boostMult || 1) - 1) * 100);
   var boostHrs = Math.round((boostDuration || 0) / 3600000);
   if (typeof playChestOpenAnimation === 'function') {
-    playChestOpenAnimation(amount, afterClaim, { pct: boostPct, hours: boostHrs });
+    playChestOpenAnimation(amount, afterClaim, { pct: boostPct, hours: boostHrs, tier: tier });
   } else {
     afterClaim();
   }
@@ -363,8 +405,11 @@ function playChestOpenAnimation(amount, onDone, bonus) {
 
   var overlay = document.createElement('div');
   overlay.className = 'chest-overlay';
+  var tier = bonus && bonus.tier && bonus.tier.label ? bonus.tier : null;
+  if (tier) overlay.classList.add('chest-overlay--' + tier.id);
   overlay.innerHTML = '<div class="chest-scene">'
     + '<div class="chest-omnia" id="chestOmnia">' + omnia + '</div>'
+    + (tier ? '<div class="chest-tier">✦ ' + tier.label + ' · ×' + tier.mult + '</div>' : '')
     + '<div class="chest-rig" id="chestRig">'
     + raysSVG
     + '<div class="chest-burst"></div>'
@@ -372,7 +417,8 @@ function playChestOpenAnimation(amount, onDone, bonus) {
     + lidSVG
     + coins
     + '</div>'
-    + '<div class="chest-akasha" id="chestAkasha"><div class="chest-akasha__amt">+' + amount + '</div><div class="chest-akasha__lbl">Akasha</div>'
+    + '<div class="chest-akasha" id="chestAkasha">'
+    +   '<div class="chest-akasha__amt">+' + amount + '</div><div class="chest-akasha__lbl">Akasha</div>'
     +   (bonus && bonus.pct > 0 ? '<div class="chest-akasha__boost">+' + bonus.pct + '% akasha boost · ' + bonus.hours + 'h</div>' : '')
     + '</div>'
     + '<div class="chest-tap-hint">tap to continue</div>'

@@ -132,6 +132,10 @@ function pbOnCompletion(entry) {
       if (typeof achSave === 'function') achSave();
     }
     window._pendingPersonalBest = report;
+    // A record set today improves today's chest odds (guide-quests-client.js).
+    if (report.isNewBest && typeof presenceDayKey === 'function') {
+      try { localStorage.setItem('presence_pb_day', presenceDayKey()); } catch (e) {}
+    }
   } catch (e) {
     console.error('[personal-best]', e);
   }
