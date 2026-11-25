@@ -99,6 +99,8 @@ let usersCollection;
 let syncDataCollection;
 let friendsCollection;
 let beaconsCollection;
+let sittingCollection;
+let vigilsCollection;
 let practiceCollection;
 let followsCollection;
 let postsCollection;
@@ -205,6 +207,8 @@ async function connectDB() {
     syncDataCollection = db.collection('sync_data');
     friendsCollection = db.collection('friends');
     beaconsCollection = db.collection('presence_beacons');
+    sittingCollection = db.collection('sitting_now');
+    vigilsCollection = db.collection('vigils');
     practiceCollection = db.collection('practice_schedules');
     pavlokSessionsCollection = db.collection('pavlok_sessions');
     followsCollection = db.collection('follows');
@@ -266,6 +270,12 @@ async function connectDB() {
       { label: 'beacons.expiry', collection: beaconsCollection, keys: { expiresAt: 1 }, options: { expireAfterSeconds: 0 } },
       { label: 'beacons.user-device', collection: beaconsCollection, keys: { userId: 1, deviceId: 1 } },
       { label: 'beacons.user-expiry-updated', collection: beaconsCollection, keys: { userId: 1, expiresAt: 1, updatedAt: -1 } },
+      { label: 'sitting.expiry', collection: sittingCollection, keys: { expiresAt: 1 }, options: { expireAfterSeconds: 0 } },
+      { label: 'sitting.user', collection: sittingCollection, keys: { userId: 1 }, options: { unique: true } },
+      { label: 'vigils.from-status', collection: vigilsCollection, keys: { fromId: 1, status: 1, createdAt: -1 } },
+      { label: 'vigils.to-status', collection: vigilsCollection, keys: { toId: 1, status: 1, createdAt: -1 } },
+      // Vigils are only interesting for a day; let MongoDB sweep old ones.
+      { label: 'vigils.expiry', collection: vigilsCollection, keys: { purgeAt: 1 }, options: { expireAfterSeconds: 0 } },
       { label: 'sync.user-synced', collection: syncDataCollection, keys: { userId: 1, syncedAt: -1 } },
       { label: 'sync.user-device', collection: syncDataCollection, keys: { userId: 1, deviceId: 1 }, options: { unique: true, partialFilterExpression: { deviceId: { $type: 'string' } } } },
       { label: 'users.email', collection: usersCollection, keys: { email: 1 }, options: { unique: true, sparse: true } },
@@ -3542,6 +3552,204 @@ async function sendDmPush(userId, senderId, text) {
     }
   } catch(e) { console.error('[DM Push] ' + e.message); }
 }
+
+// ── SITTING NOW + SHARED VIGILS ─────────────────────────
+// "Sitting now" is a TTL'd heartbeat every exercise sends while it runs. It is
+// separate from the presence beacon on purpose: that beacon is a cross-device
+// lock for one account, this is an anonymous count across everyone. Only
+// mutual friends are ever named; strangers are only a number.
+const SITTING_TTL_MS = 90 * 1000;
+
+app.post('/api/social/sitting', verifyToken, mutationRateLimit, async (req, res) => {
+  try {
+    const userId = req.user.userId;
+    if (req.body && req.body.active === false) {
+      await sittingCollection.deleteOne({ userId });
+      return res.json({ ok: true });
+    }
+    const now = Date.now();
+    await sittingCollection.updateOne(
+      { userId },
+      { $set: { expiresAt: new Date(now + SITTING_TTL_MS) }, $setOnInsert: { userId, startedAt: new Date(now) } },
+      { upsert: true }
+    );
+    res.json({ ok: true });
+  } catch (err) { res.status(500).json({ error: 'Sitting update failed' }); }
+});
+
+app.get('/api/social/sitting', verifyToken, async (req, res) => {
+  try {
+    const selfId = req.user.userId;
+    const rows = await sittingCollection.find({ expiresAt: { $gt: new Date() }, userId: { $ne: selfId } })
+      .project({ userId: 1 }).limit(2000).toArray();
+    const sittingIds = rows.map(r => r.userId);
+    let friends = [];
+    if (sittingIds.length) {
+      const [outgoing, blocked] = await Promise.all([
+        followsCollection.find({ followerId: selfId, followeeId: { $in: sittingIds }, status: 'active' }).project({ followeeId: 1 }).toArray(),
+        blockedIdSet(selfId)
+      ]);
+      const followedIds = outgoing.map(f => f.followeeId).filter(id => !blocked.has(id));
+      const mutual = followedIds.length ? await followsCollection.find({ followerId: { $in: followedIds }, followeeId: selfId, status: 'active' })
+        .project({ followerId: 1 }).toArray() : [];
+      const friendIds = mutual.map(m => m.followerId).filter(id => ObjectId.isValid(id)).slice(0, 20);
+      if (friendIds.length) {
+        const users = await usersCollection.find({ _id: { $in: friendIds.map(id => new ObjectId(id)) } }).project({ username: 1 }).toArray();
+        friends = users.map(u => ({ userId: String(u._id), username: u.username || 'practitioner' }));
+      }
+    }
+    res.json({ count: sittingIds.length, friends });
+  } catch (err) { res.status(500).json({ error: 'Sitting lookup failed' }); }
+});
+
+// A Shared Vigil: one friend invites another to sit "now". Once accepted, the
+// vigil is kept when both finish a session before the window closes. Rewards
+// are claimed through the server so each person is paid exactly once, however
+// many devices they use.
+const VIGIL_INVITE_TTL_MS = 30 * 60 * 1000;   // time to accept
+const VIGIL_WINDOW_MS = 60 * 60 * 1000;       // time to sit once accepted
+const VIGIL_COMPLETE_GRACE_MS = 60 * 60 * 1000; // a sit begun in the window may finish after it
+const VIGIL_PURGE_MS = 7 * 24 * 60 * 60 * 1000;
+
+function vigilView(v, selfId, otherName) {
+  const otherId = v.fromId === selfId ? v.toId : v.fromId;
+  return {
+    id: String(v._id),
+    status: v.status,
+    incoming: v.toId === selfId,
+    otherId,
+    otherUsername: otherName || 'practitioner',
+    createdAt: v.createdAt,
+    inviteExpiresAt: v.inviteExpiresAt,
+    windowEndsAt: v.windowEndsAt || null,
+    youCompleted: (v.completedBy || []).includes(selfId),
+    theyCompleted: (v.completedBy || []).includes(otherId),
+    claimed: (v.claimedBy || []).includes(selfId)
+  };
+}
+
+async function sendVigilPush(userId, fromId) {
+  try {
+    const subs = await userPushSubsCollection.find({ userId }).limit(5).toArray();
+    if (!subs.length) return;
+    const sender = await usersCollection.findOne({ _id: new ObjectId(fromId) }, { projection: { username: 1 } });
+    const payload = JSON.stringify({
+      title: 'Sit together?',
+      body: '@' + ((sender && sender.username) || 'a friend') + ' invites you to keep a vigil now.',
+      tag: 'presence-vigil',
+      url: 'https://chooch971-tech.github.io/Consciousness-App/presence.html'
+    });
+    for (const sub of subs) {
+      try { await webpush.sendNotification(sub.subscription, payload); }
+      catch (err) {
+        if (err.statusCode === 410 || err.statusCode === 404) {
+          try { await userPushSubsCollection.deleteOne({ _id: sub._id }); } catch(e) {}
+        }
+      }
+    }
+  } catch (e) { console.error('[Vigil Push] ' + e.message); }
+}
+
+app.post('/api/social/vigils', verifyToken, mutationRateLimit, async (req, res) => {
+  try {
+    const selfId = req.user.userId; const { userId } = req.body || {};
+    if (typeof userId !== 'string' || !ObjectId.isValid(userId)) return res.status(400).json({ error: 'userId required' });
+    if (userId === selfId) return res.status(400).json({ error: 'Cannot invite yourself' });
+    const blocked = await blocksCollection.findOne({ $or: [{ userId: selfId, blockedId: userId }, { userId, blockedId: selfId }] });
+    if (blocked || !(await isMutualFollow(selfId, userId))) return res.status(403).json({ error: 'Vigils are for friends' });
+    const now = new Date();
+    // One open vigil per pair, whichever of the two sent it.
+    const open = await vigilsCollection.findOne({
+      $or: [{ fromId: selfId, toId: userId }, { fromId: userId, toId: selfId }],
+      $and: [{ $or: [
+        { status: 'pending', inviteExpiresAt: { $gt: now } },
+        { status: 'accepted', windowEndsAt: { $gt: now } }
+      ] }]
+    });
+    if (open) return res.status(409).json({ error: 'A vigil with this friend is already open' });
+    const doc = {
+      fromId: selfId, toId: userId, status: 'pending', createdAt: now,
+      inviteExpiresAt: new Date(now.getTime() + VIGIL_INVITE_TTL_MS),
+      windowEndsAt: null, completedBy: [], claimedBy: [],
+      purgeAt: new Date(now.getTime() + VIGIL_PURGE_MS)
+    };
+    const result = await vigilsCollection.insertOne(doc);
+    sendVigilPush(userId, selfId);
+    res.json({ ok: true, id: String(result.insertedId) });
+  } catch (err) { res.status(500).json({ error: 'Invite failed' }); }
+});
+
+app.get('/api/social/vigils', verifyToken, async (req, res) => {
+  try {
+    const selfId = req.user.userId;
+    const now = new Date();
+    const since = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+    const rows = await vigilsCollection.find({
+      $or: [{ fromId: selfId }, { toId: selfId }],
+      createdAt: { $gt: since },
+      status: { $in: ['pending', 'accepted', 'kept'] }
+    }).sort({ createdAt: -1 }).limit(20).toArray();
+    // Drop invites nobody answered in time and windows that closed unkept.
+    const live = rows.filter(v => v.status === 'kept'
+      || (v.status === 'pending' && v.inviteExpiresAt > now)
+      || (v.status === 'accepted' && v.windowEndsAt && v.windowEndsAt.getTime() + VIGIL_COMPLETE_GRACE_MS > now.getTime()));
+    const otherIds = [...new Set(live.map(v => (v.fromId === selfId ? v.toId : v.fromId)))].filter(id => ObjectId.isValid(id));
+    const users = otherIds.length ? await usersCollection.find({ _id: { $in: otherIds.map(id => new ObjectId(id)) } }).project({ username: 1 }).toArray() : [];
+    const names = new Map(users.map(u => [String(u._id), u.username]));
+    res.json({ vigils: live.map(v => vigilView(v, selfId, names.get(v.fromId === selfId ? v.toId : v.fromId))) });
+  } catch (err) { res.status(500).json({ error: 'Vigil lookup failed' }); }
+});
+
+app.post('/api/social/vigils/:id/respond', verifyToken, mutationRateLimit, async (req, res) => {
+  try {
+    const selfId = req.user.userId;
+    const accept = !!(req.body && req.body.accept);
+    const now = new Date();
+    const update = accept
+      ? { $set: { status: 'accepted', acceptedAt: now, windowEndsAt: new Date(now.getTime() + VIGIL_WINDOW_MS) } }
+      : { $set: { status: 'declined' } };
+    const result = await vigilsCollection.findOneAndUpdate(
+      { _id: new ObjectId(req.params.id), toId: selfId, status: 'pending', inviteExpiresAt: { $gt: now } },
+      update, { returnDocument: 'after' }
+    );
+    const v = result && result.value !== undefined ? result.value : result;
+    if (!v) return res.status(404).json({ error: 'Invite is no longer open' });
+    res.json({ ok: true, vigil: vigilView(v, selfId) });
+  } catch (err) { res.status(500).json({ error: 'Response failed' }); }
+});
+
+// A participant finished a session. The vigil is kept once both have.
+app.post('/api/social/vigils/:id/complete', verifyToken, mutationRateLimit, async (req, res) => {
+  try {
+    const selfId = req.user.userId;
+    const now = new Date();
+    const id = new ObjectId(req.params.id);
+    const v = await vigilsCollection.findOne({ _id: id, $or: [{ fromId: selfId }, { toId: selfId }], status: { $in: ['accepted', 'kept'] } });
+    if (!v || !v.windowEndsAt || v.windowEndsAt.getTime() + VIGIL_COMPLETE_GRACE_MS < now.getTime()) {
+      return res.status(404).json({ error: 'Vigil is no longer open' });
+    }
+    await vigilsCollection.updateOne({ _id: id }, { $addToSet: { completedBy: selfId } });
+    // Both done → kept. The status filter makes this transition happen once.
+    await vigilsCollection.updateOne(
+      { _id: id, status: 'accepted', completedBy: { $all: [v.fromId, v.toId] } },
+      { $set: { status: 'kept', keptAt: now } }
+    );
+    const after = await vigilsCollection.findOne({ _id: id });
+    res.json({ ok: true, vigil: vigilView(after, selfId) });
+  } catch (err) { res.status(500).json({ error: 'Completion failed' }); }
+});
+
+// Pay-once gate for a kept vigil's reward: firstClaim is true exactly once per person.
+app.post('/api/social/vigils/:id/claim', verifyToken, mutationRateLimit, async (req, res) => {
+  try {
+    const selfId = req.user.userId;
+    const result = await vigilsCollection.updateOne(
+      { _id: new ObjectId(req.params.id), status: 'kept', $or: [{ fromId: selfId }, { toId: selfId }], claimedBy: { $ne: selfId } },
+      { $addToSet: { claimedBy: selfId } }
+    );
+    res.json({ ok: true, firstClaim: result.modifiedCount === 1 });
+  } catch (err) { res.status(500).json({ error: 'Claim failed' }); }
+});
 
 // ── EXISTING ROUTES ──────────────────────────────────────
 

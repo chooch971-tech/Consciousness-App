@@ -47,8 +47,16 @@ function makeWakeLockHolder() {
 }
 
 var _exerciseWakeLockHolder = makeWakeLockHolder();
-function requestExerciseWakeLock() { _exerciseWakeLockHolder.acquire(); }
-function releaseExerciseWakeLock() { _exerciseWakeLockHolder.release(); }
+// Every exercise holds this lock exactly while it runs, so it also drives the
+// anonymous "sitting now" heartbeat (vigil-client.js).
+function requestExerciseWakeLock() {
+  _exerciseWakeLockHolder.acquire();
+  if (typeof sittingStart === 'function') sittingStart();
+}
+function releaseExerciseWakeLock() {
+  _exerciseWakeLockHolder.release();
+  if (typeof sittingStop === 'function') sittingStop();
+}
 
 var asanaStartTime = null;
 var asanaTimerHandle = null;

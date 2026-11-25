@@ -535,6 +535,7 @@ var AKASHA_SOURCE_LABELS = {
   'morning-offering': function() { return 'Morning Offering'; },
   'generator-collection': function() { return 'Generator Collection'; },
   'path-quest': function() { return 'Guide Path Quest'; },
+  'vigil': function() { return 'Shared Vigil'; },
   'gift-path': function() { return 'Gift Path'; },
   'tutorial-clock': function() { return 'Clock Tutorial'; },
   'streak-commitment': function() { return 'Streak Commitment'; },

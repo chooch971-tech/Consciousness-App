@@ -578,6 +578,10 @@ function recordExerciseCompletion(opts) {
   if (typeof pbOnCompletion === 'function') pbOnCompletion(opts.entry);
   pushHistory(concState.history, opts.entry, 100);
   recordPracticeReviewEntry('concentration', opts.entry);
+  if (typeof vigilOnSessionComplete === 'function') {
+    var _e = opts.entry || {};
+    vigilOnSessionComplete(Math.max(_e.durationSec || 0, _e.sessionDurationSec || 0, _e.seconds || 0, opts.omniaSeconds || 0));
+  }
   saveConcState();
   if (syncEnabled && authToken) syncPushData();
   touchPracticeStreak();
@@ -1940,6 +1944,7 @@ function submitSurvey() {
   state.weeklyScores.push({ date: new Date().toISOString(), score: finalScore, endedEarly: sessionEndedEarly });
   state.totalSessions++;
 
+  if (typeof vigilOnSessionComplete === 'function') vigilOnSessionComplete(Math.round(surveyDurationMin * 60));
   // Streak (must be updated before awardSessionClarity so momentum uses fresh
   // streak). Use the shared calendar-backed path so Awareness joins the same
   // celebration queue as every Concentration exercise.

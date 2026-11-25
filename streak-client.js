@@ -504,6 +504,7 @@ function openStreakSociety() {
         + '<div class="soc-row-mid">'
         + '<div class="soc-name">@' + escHtml(uname) + '</div>'
         + '<div class="soc-state' + stateCls + '">' + stateTxt + '</div>'
+        + (f.userId ? '<button class="soc-sit-btn" type="button" data-sit="' + escHtml(f.userId) + '" data-name="' + escHtml(uname) + '">Sit together</button>' : '')
         + '</div>'
         + '<div class="soc-right">'
         + '<div class="soc-count"><span class="soc-count-num' + (r.streak === 0 ? ' zero' : '') + '">' + r.streak + '</span>'
@@ -517,6 +518,11 @@ function openStreakSociety() {
     });
     html += '</div>';
     body.innerHTML = html;
+    body.querySelectorAll('[data-sit]').forEach(function(btn) {
+      btn.onclick = function() {
+        if (typeof vigilInvite === 'function') vigilInvite(btn.dataset.sit, btn.dataset.name, btn);
+      };
+    });
   }
 
   if (!authToken) {
