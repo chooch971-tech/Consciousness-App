@@ -1077,10 +1077,30 @@ const PRACTICE_REMINDER_MESSAGES = [
 // Fires a real push at each scheduled local time so users are reminded to
 // practice even when the app is closed. Mirrors the prayer loop, but fires
 // once per time per day (a single 15-minute window, one notification).
+const PRACTICE_INTENTION_WINDOW_MS = 15 * 60 * 1000;
+const PRACTICE_INTENTION_MAX_AHEAD_MS = 2 * 24 * 60 * 60 * 1000;
+const PRACTICE_INTENTION_PLACE_MAX = 40;
+
 async function processPracticeSchedules() {
   if (!practiceSchedules.length) return;
   const nowUtc = new Date();
   for (const schedule of practiceSchedules) {
+    // A practitioner's own "I will sit at…" intention fires even when the
+    // daily reminders are off: they asked for this one specifically.
+    const intent = schedule.intention;
+    if (intent && !intent.fired && nowUtc.getTime() >= intent.at) {
+      if (nowUtc.getTime() < intent.at + PRACTICE_INTENTION_WINDOW_MS) {
+        const sub = subscriptions.find(s => s.endpoint === schedule.endpoint);
+        if (sub) {
+          const msg = intent.place ? 'Time for the sit you planned ' + intent.place + '.' : 'Time for the sit you planned.';
+          const result = await pushTo(sub, msg, 'Omnia', 'presence-practice-intention');
+          if (result === true) { intent.fired = true; await savePracticeSchedule(schedule); }
+        }
+      } else {
+        intent.fired = true; // missed its window (server was down); never fire late
+        await savePracticeSchedule(schedule);
+      }
+    }
     if (!schedule.enabled) continue;
     if (!schedule.times || !schedule.times.length) continue;
     let dirty = false;
@@ -4182,6 +4202,30 @@ app.post('/practice/schedule', verifyPushOwner, subscriptionRateLimit, async (re
     await savePracticeSchedule(newSchedule);
     practiceSchedules.push(newSchedule);
   }
+  res.json({ success: true });
+});
+
+// One-shot reminder for a planned sit ("tomorrow at 7:00, at my desk").
+// Stored on the practice schedule row, which is created disabled if the
+// practitioner has no daily reminders, so only this push is sent.
+app.post('/practice/intention', verifyPushOwner, subscriptionRateLimit, async (req, res) => {
+  const { endpoint, at, place } = req.body;
+  const atMs = Number(at);
+  const now = Date.now();
+  if (!Number.isFinite(atMs) || atMs <= now || atMs > now + PRACTICE_INTENTION_MAX_AHEAD_MS) {
+    return res.status(400).json({ error: 'Intention time must be within the next two days' });
+  }
+  const cleanPlace = typeof place === 'string'
+    ? place.replace(/[\u0000-\u001f\u007f]/g, ' ').trim().slice(0, PRACTICE_INTENTION_PLACE_MAX)
+    : '';
+  const intention = { at: atMs, place: cleanPlace, fired: false };
+  let schedule = practiceSchedules.find(s => s.endpoint === endpoint);
+  if (!schedule) {
+    schedule = { endpoint, times: [], enabled: false, tzOffset: 0, firedToday: { date: '', fired: {} } };
+    practiceSchedules.push(schedule);
+  }
+  schedule.intention = intention;
+  await savePracticeSchedule(schedule);
   res.json({ success: true });
 });
 

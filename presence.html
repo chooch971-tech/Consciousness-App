@@ -3886,6 +3886,24 @@ body.omnia-tier-crown .omnia-diadem { display:block; }
 .vg-btn:disabled { opacity:.5; }
 .soc-sit-btn { margin-top:6px; padding:4px 8px; border-radius:5px; border:1px solid rgba(126,184,164,.3); background:none; color:#9ed8c4; font-family:'DM Mono',monospace; font-size:0.5rem; letter-spacing:.12em; text-transform:uppercase; cursor:pointer; white-space:nowrap; }
 .soc-sit-btn:disabled { opacity:.5; }
+.in-kept { margin:12px 0 4px; padding:12px 16px; background:rgba(126,184,164,.1); border:1px solid rgba(126,184,164,.35); border-radius:10px; text-align:center; }
+.in-kept-kicker { font-size:0.5625rem; letter-spacing:.14em; text-transform:uppercase; color:#9ed8c4; margin-bottom:6px; }
+.in-kept-text { font-family:serif; font-size:1rem; color:#d8ece4; line-height:1.4; }
+.in-overlay { position:fixed; inset:0; z-index:9000; display:flex; align-items:flex-end; justify-content:center; background:rgba(4,6,10,.72); opacity:0; transition:opacity .3s ease; }
+.in-overlay.in-vis { opacity:1; }
+.in-sheet { width:100%; max-width:480px; box-sizing:border-box; padding:24px 20px calc(20px + env(safe-area-inset-bottom)); background:#0d1117; border-top:1px solid rgba(255,255,255,.08); border-radius:18px 18px 0 0; transform:translateY(24px); transition:transform .35s cubic-bezier(.34,1.2,.5,1); max-height:92vh; overflow-y:auto; }
+.in-overlay.in-vis .in-sheet { transform:none; }
+.in-title { font-family:'Cormorant Garamond',serif; font-size:1.5rem; color:#efe6d6; text-align:center; }
+.in-sub { margin-top:6px; font-size:0.75rem; color:var(--muted); text-align:center; line-height:1.6; }
+.in-label { margin:18px 0 8px; font-family:'DM Mono',monospace; font-size:0.5625rem; letter-spacing:.2em; text-transform:uppercase; color:var(--muted); }
+.in-chips { display:flex; flex-wrap:wrap; gap:8px; }
+.in-chip { display:flex; flex-direction:column; align-items:center; gap:2px; padding:9px 12px; border-radius:8px; border:1px solid rgba(255,255,255,.12); background:none; color:#d8d2c6; font-family:'DM Mono',monospace; font-size:0.625rem; letter-spacing:.06em; cursor:pointer; }
+.in-chip span { font-size:0.5625rem; color:var(--muted); }
+.in-chip.on { border-color:rgba(126,184,164,.6); background:rgba(126,184,164,.14); color:#c8ece0; }
+.in-chip--input input { margin-top:2px; background:none; border:none; color:inherit; font:inherit; font-size:0.5625rem; width:76px; text-align:center; color-scheme:dark; }
+.in-place-input { width:100%; box-sizing:border-box; margin-top:10px; padding:10px 12px; border-radius:8px; border:1px solid rgba(255,255,255,.12); background:rgba(255,255,255,.03); color:#e8e2d6; font-family:'DM Mono',monospace; font-size:1rem; }
+.in-set { width:100%; margin-top:20px; padding:13px; border-radius:10px; border:1px solid rgba(126,184,164,.45); background:rgba(126,184,164,.16); color:#c8ece0; font-family:'DM Mono',monospace; font-size:0.625rem; letter-spacing:.2em; text-transform:uppercase; cursor:pointer; }
+.in-skip { display:block; margin:10px auto 0; background:none; border:none; color:var(--muted); font-family:'DM Mono',monospace; font-size:0.5625rem; letter-spacing:.14em; text-transform:uppercase; cursor:pointer; padding:8px; }
 .pb-banner { margin:12px 0 4px; padding:12px 16px 10px; background:rgba(142,204,224,.07); border:1px solid rgba(142,204,224,.22); border-radius:10px; text-align:center; }
 .pb-banner--record { background:rgba(216,184,106,.12); border-color:rgba(216,184,106,.45); animation:pbGlow 2.4s ease-out 1; }
 .pb-kicker { font-size:0.5625rem; letter-spacing:.14em; text-transform:uppercase; color:#d4b064; margin-bottom:6px; }
@@ -11496,6 +11514,7 @@ function openSoulMirrorTutorial(){
 <script src="personal-best-client.js"></script>
 <script src="session-complete-client.js"></script>
 <script src="vigil-client.js"></script>
+<script src="intention-client.js"></script>
 <script src="streak-client.js"></script>
 <script src="omnia-companion-client.js"></script>
 <script src="reminders-client.js"></script>

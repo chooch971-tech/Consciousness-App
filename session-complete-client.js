@@ -207,6 +207,10 @@ function showSessionComplete(opts) {
   // Progress toward relighting a just-broken streak (set by rekindleOnSession).
   var _prk = window._pendingRekindle || null;
   window._pendingRekindle = null;
+  // Yesterday's "I will sit…" intention, kept today (set by intentionOnSession).
+  var _pik = window._pendingIntentionKept || null;
+  window._pendingIntentionKept = null;
+  var intentionHtml = typeof intentionKeptBannerHtml === 'function' ? intentionKeptBannerHtml(_pik) : '';
   var rekindleHtml = !_prk ? ''
     : _prk.rekindled
       ? '<div class="so-rekindle-card so-rekindle-card--lit"><div class="so-rekindle-kicker">🔥 Streak rekindled</div>'
@@ -233,6 +237,7 @@ function showSessionComplete(opts) {
     + '</div>'
     + '</div>'
     + rekindleHtml
+    + intentionHtml
     + personalBestHtml
     + streakBannerHtml
     + bonusBannerHtml

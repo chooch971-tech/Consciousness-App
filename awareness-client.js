@@ -619,6 +619,7 @@ function recordExerciseCompletion(opts) {
 
 function touchPracticeStreak() {
   rekindleOnSession();
+  if (typeof intentionOnSession === 'function') intentionOnSession();
   var today = new Date().toDateString();
   var todayISO = presenceDayKey();
   if (state.lastSessionDate !== today) {
