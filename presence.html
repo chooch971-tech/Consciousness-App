@@ -3906,6 +3906,13 @@ body.omnia-tier-crown .omnia-diadem { display:block; }
 .in-skip { display:block; margin:10px auto 0; background:none; border:none; color:var(--muted); font-family:'DM Mono',monospace; font-size:0.5625rem; letter-spacing:.14em; text-transform:uppercase; cursor:pointer; padding:8px; }
 .so-share-btn { display:block; width:100%; margin:-4px 0 14px; padding:10px; border-radius:10px; border:1px solid rgba(255,255,255,.09); background:rgba(255,255,255,.04); color:var(--muted); font-family:'DM Mono',monospace; font-size:0.5625rem; letter-spacing:.18em; text-transform:uppercase; cursor:pointer; }
 .sc-card-preview { display:block; width:72%; max-width:300px; margin:18px auto 0; border-radius:12px; border:1px solid rgba(255,255,255,.08); }
+.conc-step-row { display:flex; gap:3px; padding:0 0 10px; overflow-x:auto; scrollbar-width:none; -ms-overflow-style:none; }
+.conc-step-row::-webkit-scrollbar { display:none; }
+.conc-step-tab { flex:1 1 0; min-width:0; padding:8px 0; border-radius:7px; border:1px solid var(--border); background:none; color:var(--muted); font-family:'Cormorant Garamond',serif; font-size:0.875rem; cursor:pointer; white-space:nowrap; transition:background .15s, color .15s, border-color .15s; }
+.conc-step-tab.active { color:#f4d2a4; border-color:rgba(212,149,110,.6); background:rgba(212,149,110,.12); }
+.conc-step-tab.reached:not(.active) { color:#d4b08e; }
+.conc-step-head { display:flex; align-items:center; justify-content:space-between; padding:0 2px 14px; }
+.conc-step-name { font-family:'DM Mono',monospace; font-size:0.5625rem; letter-spacing:.18em; text-transform:uppercase; color:var(--muted); }
 .pb-banner { margin:12px 0 4px; padding:12px 16px 10px; background:rgba(142,204,224,.07); border:1px solid rgba(142,204,224,.22); border-radius:10px; text-align:center; }
 .pb-banner--record { background:rgba(216,184,106,.12); border-color:rgba(216,184,106,.45); animation:pbGlow 2.4s ease-out 1; }
 .pb-kicker { font-size:0.5625rem; letter-spacing:.14em; text-transform:uppercase; color:#d4b064; margin-bottom:6px; }
@@ -7682,23 +7689,44 @@ body:not(.tut-live) #tutCorgi {
       </div>
       <!-- Exercise grid -->
       <div style="padding-bottom:calc(80px + env(safe-area-inset-bottom));" id="concScrollArea">
-        <!-- Level toggle -->
-        <div style="display:flex; gap:8px; padding:0 0 16px 0; align-items:center; justify-content:center;">
-          <button class="conc-level-tab active" id="concLevelBeginner">Beginner</button>
-          <button class="conc-level-tab" id="concLevelExpert">Advanced</button>
-          <div style="width:1px; height:14px; background:var(--border); margin:0 2px; flex-shrink:0;"></div>
-          <button class="conc-view-btn" id="concViewToggle" title="Expanded view">⊞</button>
+        <!-- Step view: Bardon's Steps I–X, each with its own exercises -->
+        <div class="conc-step-row" id="concStepRow" role="tablist" aria-label="Bardon Steps">
+          <button class="conc-step-tab active" role="tab" data-step="1" aria-label="Step I">I</button>
+          <button class="conc-step-tab" role="tab" data-step="2" aria-label="Step II">II</button>
+          <button class="conc-step-tab" role="tab" data-step="3" aria-label="Step III">III</button>
+          <button class="conc-step-tab" role="tab" data-step="4" aria-label="Step IV">IV</button>
+          <button class="conc-step-tab" role="tab" data-step="5" aria-label="Step V">V</button>
+          <button class="conc-step-tab" role="tab" data-step="6" aria-label="Step VI">VI</button>
+          <button class="conc-step-tab" role="tab" data-step="7" aria-label="Step VII">VII</button>
+          <button class="conc-step-tab" role="tab" data-step="8" aria-label="Step VIII">VIII</button>
+          <button class="conc-step-tab" role="tab" data-step="9" aria-label="Step IX">IX</button>
+          <button class="conc-step-tab" role="tab" data-step="10" aria-label="Step X">X</button>
         </div>
-
-        <!-- Beginner grid -->
-        <div id="concBeginnerGrid">
-          <div class="carousel-dots" id="concBeginnerDots"></div>
+        <div class="conc-step-head"><span class="conc-step-name" id="concStepName">Step I</span><button class="conc-view-btn" id="concViewToggle" title="Expanded view">⊞</button></div>
+        <div id="concStepGrids">
+        <div class="conc-step-grid" data-step="1">
+          <div class="carousel-dots"></div>
           <div class="exercise-grid" id="exerciseGrid">
             <div class="exercise-card" data-exercise="clock" style="--conc-card-accent:#e07c3a; border-color:rgba(224,124,58,.55); background:rgba(224,124,58,.08);">
               <div class="exercise-card-icon"><svg width="22" height="22" viewBox="0 0 100 100" fill="none"><circle cx="50" cy="50" r="44" stroke="#e07c3a" stroke-width="5" opacity=".9"/><line x1="50" y1="50" x2="50" y2="18" stroke="#e07c3a" stroke-width="5" stroke-linecap="round"/><line x1="50" y1="50" x2="72" y2="62" stroke="#e07c3a" stroke-width="4" stroke-linecap="round" opacity=".75"/><circle cx="50" cy="50" r="4" fill="#e07c3a"/></svg></div>
               <div class="exercise-card-name" style="color:#e8a070;">Clock<span id="clockMasteredStar" style="display:none; color:#c0403a; margin-left:3px;">*</span></div>
               <div class="exercise-card-desc">Follow the seconds hand. Stop when focus breaks.</div>
             </div>
+            <div class="exercise-card" data-exercise="thought" style="--conc-card-accent:#7898b8; border-color:rgba(120,152,184,.55); background:rgba(120,152,184,.08);">
+              <div class="exercise-card-icon"><svg width="22" height="22" viewBox="0 0 100 100" fill="none"><circle cx="50" cy="50" r="42" stroke="#7898b8" stroke-width="4" opacity=".9"/><circle cx="50" cy="50" r="5" fill="#7898b8" opacity=".5"/></svg></div>
+              <div class="exercise-card-name" style="color:#98b4cc;">Thought Control<span id="tcMasteredStar" style="display:none; color:#c0403a; margin-left:3px;">*</span></div>
+              <div class="exercise-card-desc">Think of nothing. Tap each intrusion.</div>
+            </div>
+            <div class="exercise-card" data-exercise="soulmirror" style="--conc-card-accent:#a47eb8; border-color:rgba(164,126,184,.55); background:rgba(164,126,184,.08);">
+              <div class="exercise-card-icon"><svg width="22" height="22" viewBox="0 0 100 100" fill="none"><ellipse cx="50" cy="42" rx="24" ry="30" stroke="#a47eb8" stroke-width="4" opacity=".9"/><line x1="50" y1="72" x2="50" y2="88" stroke="#a47eb8" stroke-width="4" stroke-linecap="round" opacity=".6"/><line x1="34" y1="88" x2="66" y2="88" stroke="#a47eb8" stroke-width="4" stroke-linecap="round" opacity=".5"/></svg></div>
+              <div class="exercise-card-name" style="color:#c4a8d4;">Soul Mirror</div>
+              <div class="exercise-card-desc">Track your traits honestly, element by element.</div>
+            </div>
+          </div>
+        </div>
+        <div class="conc-step-grid" data-step="2" style="display:none;">
+          <div class="carousel-dots"></div>
+          <div class="exercise-grid">
             <div class="exercise-card" data-exercise="visual" style="--conc-card-accent:#6e9fd4; border-color:rgba(110,159,212,.55); background:rgba(110,159,212,.08);">
               <div class="exercise-card-icon"><svg width="22" height="22" viewBox="0 0 100 100" fill="none"><path d="M10 50 Q50 10 90 50 Q50 90 10 50Z" stroke="#6e9fd4" stroke-width="4.5" opacity=".9"/><circle cx="50" cy="50" r="14" stroke="#6e9fd4" stroke-width="3.5"/><circle cx="50" cy="50" r="6" fill="#6e9fd4" opacity=".9"/></svg></div>
               <div class="exercise-card-name" style="color:#8ab8e0;">Visualization</div>
@@ -7714,32 +7742,25 @@ body:not(.tut-live) #tutCorgi {
               <div class="exercise-card-name" style="color:#e0a8c4;">Senses</div>
               <div class="exercise-card-desc">Hold an imagined feeling, smell, or taste.</div>
             </div>
-            <div class="exercise-card" data-exercise="thought" style="--conc-card-accent:#7898b8; border-color:rgba(120,152,184,.55); background:rgba(120,152,184,.08);">
-              <div class="exercise-card-icon"><svg width="22" height="22" viewBox="0 0 100 100" fill="none"><circle cx="50" cy="50" r="42" stroke="#7898b8" stroke-width="4" opacity=".9"/><circle cx="50" cy="50" r="5" fill="#7898b8" opacity=".5"/></svg></div>
-              <div class="exercise-card-name" style="color:#98b4cc;">Thought Control<span id="tcMasteredStar" style="display:none; color:#c0403a; margin-left:3px;">*</span></div>
-              <div class="exercise-card-desc">Think of nothing. Tap each intrusion.</div>
-            </div>
             <div class="exercise-card" data-exercise="asana" style="--conc-card-accent:#c47878; border-color:rgba(196,120,120,.55); background:rgba(196,120,120,.08);">
               <div class="exercise-card-icon"><svg width="22" height="22" viewBox="0 0 100 100" fill="none"><circle cx="50" cy="22" r="9" stroke="#c47878" stroke-width="4"/><path d="M50 31 L50 58" stroke="#c47878" stroke-width="4.5" stroke-linecap="round"/><path d="M28 44 L50 38 L72 44" stroke="#c47878" stroke-width="4" stroke-linecap="round" opacity=".8"/><path d="M32 80 Q50 65 68 80" stroke="#c47878" stroke-width="4" stroke-linecap="round"/></svg></div>
               <div class="exercise-card-name" style="color:#d49898;">Asana</div>
               <div class="exercise-card-desc">Sit completely motionless. Hold as long as possible.</div>
             </div>
-            <div class="exercise-card" data-exercise="soulmirror" style="--conc-card-accent:#a47eb8; border-color:rgba(164,126,184,.55); background:rgba(164,126,184,.08);">
-              <div class="exercise-card-icon"><svg width="22" height="22" viewBox="0 0 100 100" fill="none"><ellipse cx="50" cy="42" rx="24" ry="30" stroke="#a47eb8" stroke-width="4" opacity=".9"/><line x1="50" y1="72" x2="50" y2="88" stroke="#a47eb8" stroke-width="4" stroke-linecap="round" opacity=".6"/><line x1="34" y1="88" x2="66" y2="88" stroke="#a47eb8" stroke-width="4" stroke-linecap="round" opacity=".5"/></svg></div>
-              <div class="exercise-card-name" style="color:#c4a8d4;">Soul Mirror</div>
-              <div class="exercise-card-desc">Track traits. Pore breathing.</div>
+            <div class="exercise-card" data-exercise="pore" style="--conc-card-accent:#6eaec4; border-color:rgba(110,174,196,.55); background:rgba(110,174,196,.08);">
+              <div class="exercise-card-icon"><svg width="22" height="22" viewBox="0 0 100 100" fill="none"><circle cx="50" cy="50" r="14" stroke="#6eaec4" stroke-width="4"/><circle cx="50" cy="50" r="28" stroke="#6eaec4" stroke-width="3" opacity=".6" stroke-dasharray="4 7"/><circle cx="50" cy="50" r="42" stroke="#6eaec4" stroke-width="2.5" opacity=".35" stroke-dasharray="3 9"/></svg></div>
+              <div class="exercise-card-name" style="color:#8ecce0;">Pore Breathing</div>
+              <div class="exercise-card-desc">Breathe vitality in through every pore of the body.</div>
             </div>
-            <div class="exercise-card" style="--conc-card-accent:#8888aa; border-color:rgba(136,136,170,.2); background:rgba(136,136,170,.04); opacity:.45; pointer-events:none;">
-              <div class="exercise-card-icon"><svg width="22" height="22" viewBox="0 0 100 100" fill="none"><circle cx="50" cy="50" r="30" stroke="#8888aa" stroke-width="3.5" opacity=".6"/><line x1="50" y1="20" x2="50" y2="36" stroke="#8888aa" stroke-width="3" stroke-linecap="round" opacity=".5"/><line x1="50" y1="64" x2="50" y2="80" stroke="#8888aa" stroke-width="3" stroke-linecap="round" opacity=".5"/><line x1="20" y1="50" x2="36" y2="50" stroke="#8888aa" stroke-width="3" stroke-linecap="round" opacity=".5"/><line x1="64" y1="50" x2="80" y2="50" stroke="#8888aa" stroke-width="3" stroke-linecap="round" opacity=".5"/></svg></div>
-              <div class="exercise-card-name" style="color:#aaaacc;">More<span style="font-size:0.5rem; letter-spacing:.15em; text-transform:uppercase; color:rgba(255,255,255,.5); margin-left:6px;">· Coming Soon</span></div>
-              <div class="exercise-card-desc">Additional beginner exercises are in development.</div>
+            <div class="exercise-card" data-exercise="autosug" style="--conc-card-accent:#a47eb8; border-color:rgba(164,126,184,.55); background:rgba(164,126,184,.08);">
+              <div class="exercise-card-icon"><svg width="22" height="22" viewBox="0 0 100 100" fill="none"><path d="M50 14 L56 42 L84 50 L56 58 L50 86 L44 58 L16 50 L44 42 Z" stroke="#a47eb8" stroke-width="4" stroke-linejoin="round" opacity=".9"/><circle cx="50" cy="50" r="5" fill="#a47eb8"/></svg></div>
+              <div class="exercise-card-name" style="color:#c4a8d4;">Autosuggestion</div>
+              <div class="exercise-card-desc">Plant a formula in the subconscious, one bead at a time.</div>
             </div>
           </div>
         </div>
-
-        <!-- Advanced grid -->
-        <div id="concExpertGrid" style="display:none;">
-          <div class="carousel-dots" id="concExpertDots"></div>
+        <div class="conc-step-grid" data-step="3" style="display:none;">
+          <div class="carousel-dots"></div>
           <div class="exercise-grid">
             <div class="exercise-card" data-exercise="multisense" style="--conc-card-accent:#d4b86e; border-color:rgba(212,184,110,.55); background:rgba(212,184,110,.08);">
               <div class="exercise-card-icon"><svg width="22" height="22" viewBox="0 0 100 100" fill="none"><circle cx="50" cy="50" r="18" stroke="#d4b86e" stroke-width="4"/><path d="M50 10 Q78 28 78 50 Q78 72 50 90 Q22 72 22 50 Q22 28 50 10Z" stroke="#d4b86e" stroke-width="3.5" opacity=".55"/><circle cx="50" cy="50" r="5" fill="#d4b86e" opacity=".8"/></svg></div>
@@ -7751,12 +7772,78 @@ body:not(.tut-live) #tutCorgi {
               <div class="exercise-card-name" style="color:#9ec4e0;">Elemental Work<span style="font-size:0.5rem; letter-spacing:.15em; text-transform:uppercase; color:rgba(255,255,255,.68); margin-left:6px;">· Coming Soon</span></div>
               <div class="exercise-card-desc">Charge and condense the four elements through the body. Bardon&#39;s method.</div>
             </div>
-            <div class="exercise-card" style="--conc-card-accent:#a47eb8; border-color:rgba(164,126,184,.2); background:rgba(164,126,184,.04); opacity:.5; pointer-events:none;">
-              <div class="exercise-card-icon"><svg width="22" height="22" viewBox="0 0 100 100" fill="none"><circle cx="50" cy="50" r="32" stroke="#a47eb8" stroke-width="3.5" opacity=".55"/><path d="M50 18 L56 38 L76 38 L60 50 L66 70 L50 58 L34 70 L40 50 L24 38 L44 38 Z" stroke="#a47eb8" stroke-width="2.8" stroke-linejoin="round" opacity=".7"/></svg></div>
-              <div class="exercise-card-name" style="color:#c4a8d4;">More<span style="font-size:0.5rem; letter-spacing:.15em; text-transform:uppercase; color:rgba(255,255,255,.5); margin-left:6px;">· Coming Soon</span></div>
-              <div class="exercise-card-desc">Additional advanced exercises are in development.</div>
+          </div>
+        </div>
+        <div class="conc-step-grid" data-step="4" style="display:none;">
+          <div class="carousel-dots"></div>
+          <div class="exercise-grid">
+            <div class="exercise-card" style="--conc-card-accent:#8888aa; border-color:rgba(136,136,170,.2); background:rgba(136,136,170,.04); opacity:.45; pointer-events:none;">
+              <div class="exercise-card-icon"><svg width="22" height="22" viewBox="0 0 100 100" fill="none"><circle cx="50" cy="50" r="30" stroke="#8888aa" stroke-width="3.5" opacity=".6"/><path d="M50 34v18l10 8" stroke="#8888aa" stroke-width="3.5" stroke-linecap="round" opacity=".6"/></svg></div>
+              <div class="exercise-card-name" style="color:#aaaacc;">In development</div>
+              <div class="exercise-card-desc">Step IV exercises are being written.</div>
             </div>
           </div>
+        </div>
+        <div class="conc-step-grid" data-step="5" style="display:none;">
+          <div class="carousel-dots"></div>
+          <div class="exercise-grid">
+            <div class="exercise-card" style="--conc-card-accent:#8888aa; border-color:rgba(136,136,170,.2); background:rgba(136,136,170,.04); opacity:.45; pointer-events:none;">
+              <div class="exercise-card-icon"><svg width="22" height="22" viewBox="0 0 100 100" fill="none"><circle cx="50" cy="50" r="30" stroke="#8888aa" stroke-width="3.5" opacity=".6"/><path d="M50 34v18l10 8" stroke="#8888aa" stroke-width="3.5" stroke-linecap="round" opacity=".6"/></svg></div>
+              <div class="exercise-card-name" style="color:#aaaacc;">In development</div>
+              <div class="exercise-card-desc">Step V exercises are being written.</div>
+            </div>
+          </div>
+        </div>
+        <div class="conc-step-grid" data-step="6" style="display:none;">
+          <div class="carousel-dots"></div>
+          <div class="exercise-grid">
+            <div class="exercise-card" style="--conc-card-accent:#8888aa; border-color:rgba(136,136,170,.2); background:rgba(136,136,170,.04); opacity:.45; pointer-events:none;">
+              <div class="exercise-card-icon"><svg width="22" height="22" viewBox="0 0 100 100" fill="none"><circle cx="50" cy="50" r="30" stroke="#8888aa" stroke-width="3.5" opacity=".6"/><path d="M50 34v18l10 8" stroke="#8888aa" stroke-width="3.5" stroke-linecap="round" opacity=".6"/></svg></div>
+              <div class="exercise-card-name" style="color:#aaaacc;">In development</div>
+              <div class="exercise-card-desc">Step VI exercises are being written.</div>
+            </div>
+          </div>
+        </div>
+        <div class="conc-step-grid" data-step="7" style="display:none;">
+          <div class="carousel-dots"></div>
+          <div class="exercise-grid">
+            <div class="exercise-card" style="--conc-card-accent:#8888aa; border-color:rgba(136,136,170,.2); background:rgba(136,136,170,.04); opacity:.45; pointer-events:none;">
+              <div class="exercise-card-icon"><svg width="22" height="22" viewBox="0 0 100 100" fill="none"><circle cx="50" cy="50" r="30" stroke="#8888aa" stroke-width="3.5" opacity=".6"/><path d="M50 34v18l10 8" stroke="#8888aa" stroke-width="3.5" stroke-linecap="round" opacity=".6"/></svg></div>
+              <div class="exercise-card-name" style="color:#aaaacc;">In development</div>
+              <div class="exercise-card-desc">Step VII exercises are being written.</div>
+            </div>
+          </div>
+        </div>
+        <div class="conc-step-grid" data-step="8" style="display:none;">
+          <div class="carousel-dots"></div>
+          <div class="exercise-grid">
+            <div class="exercise-card" style="--conc-card-accent:#8888aa; border-color:rgba(136,136,170,.2); background:rgba(136,136,170,.04); opacity:.45; pointer-events:none;">
+              <div class="exercise-card-icon"><svg width="22" height="22" viewBox="0 0 100 100" fill="none"><circle cx="50" cy="50" r="30" stroke="#8888aa" stroke-width="3.5" opacity=".6"/><path d="M50 34v18l10 8" stroke="#8888aa" stroke-width="3.5" stroke-linecap="round" opacity=".6"/></svg></div>
+              <div class="exercise-card-name" style="color:#aaaacc;">In development</div>
+              <div class="exercise-card-desc">Step VIII exercises are being written.</div>
+            </div>
+          </div>
+        </div>
+        <div class="conc-step-grid" data-step="9" style="display:none;">
+          <div class="carousel-dots"></div>
+          <div class="exercise-grid">
+            <div class="exercise-card" style="--conc-card-accent:#8888aa; border-color:rgba(136,136,170,.2); background:rgba(136,136,170,.04); opacity:.45; pointer-events:none;">
+              <div class="exercise-card-icon"><svg width="22" height="22" viewBox="0 0 100 100" fill="none"><circle cx="50" cy="50" r="30" stroke="#8888aa" stroke-width="3.5" opacity=".6"/><path d="M50 34v18l10 8" stroke="#8888aa" stroke-width="3.5" stroke-linecap="round" opacity=".6"/></svg></div>
+              <div class="exercise-card-name" style="color:#aaaacc;">In development</div>
+              <div class="exercise-card-desc">Step IX exercises are being written.</div>
+            </div>
+          </div>
+        </div>
+        <div class="conc-step-grid" data-step="10" style="display:none;">
+          <div class="carousel-dots"></div>
+          <div class="exercise-grid">
+            <div class="exercise-card" style="--conc-card-accent:#8888aa; border-color:rgba(136,136,170,.2); background:rgba(136,136,170,.04); opacity:.45; pointer-events:none;">
+              <div class="exercise-card-icon"><svg width="22" height="22" viewBox="0 0 100 100" fill="none"><circle cx="50" cy="50" r="30" stroke="#8888aa" stroke-width="3.5" opacity=".6"/><path d="M50 34v18l10 8" stroke="#8888aa" stroke-width="3.5" stroke-linecap="round" opacity=".6"/></svg></div>
+              <div class="exercise-card-name" style="color:#aaaacc;">In development</div>
+              <div class="exercise-card-desc">Step X exercises are being written.</div>
+            </div>
+          </div>
+        </div>
         </div>
 
         <button class="btn ghost conc-btn" id="concHistoryBtn" style="width:100%; margin-top:10px; font-size:0.5625rem;">View All Concentration History</button>

@@ -417,6 +417,11 @@ function renderConcHome() {
     concBannerSymbol.innerHTML = renderSymbolSVG(bGroup.id, 'rgba(255,200,140,.75)', 16);
   }
   if (typeof renderAkashaBoostBadge === 'function') renderAkashaBoostBadge();
+  // Keep the Step row's "reached" marks in step with Omnia.
+  if (typeof selectConcStep === 'function') {
+    var _activeStep = document.querySelector('#concStepRow .conc-step-tab.active');
+    selectConcStep(_activeStep ? _activeStep.dataset.step : concDefaultStep(), false);
+  }
   var concXPHint = document.getElementById('concXPHint');
   if (concXPHint) {
     if (concState.level >= 777) {

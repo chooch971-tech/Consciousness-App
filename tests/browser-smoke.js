@@ -103,7 +103,11 @@ async function testExerciseEntry(browser, baseUrl) {
     thought: 'Thought Control', asana: 'Asana'
   };
   for (const [exercise, name] of Object.entries(expectedNames)) {
-    await page.locator(`#concBeginnerGrid .exercise-card[data-exercise="${exercise}"]`).click();
+    // Cards live under their Bardon Step; open that Step's grid first.
+    const step = await page.locator(`#concStepGrids .exercise-card[data-exercise="${exercise}"]`)
+      .evaluate(card => card.closest('.conc-step-grid').dataset.step);
+    await page.locator(`#concStepRow .conc-step-tab[data-step="${step}"]`).click();
+    await page.locator(`#concStepGrids .exercise-card[data-exercise="${exercise}"]`).click();
     await page.locator('#exSetupScreen.active').waitFor({ state: 'visible' });
     const bannerTitle = (await page.locator('#exBannerTitle').textContent()).trim();
     const bannerSymbol = (await page.locator('#exBannerSym').innerHTML()).trim();

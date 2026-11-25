@@ -1969,46 +1969,42 @@ function adjustAsanaDuration(delta) {
   if (el) el.textContent = next + ' min';
 }
 
-// Exercise card clicks
-document.getElementById('concBeginnerGrid').addEventListener('click', function(e) {
-  var card = e.target.closest('.exercise-card');
-  if (card && card.dataset.exercise) openExerciseSetup(card.dataset.exercise);
-});
+// Exercise card clicks. Every Step's grid shares one handler, so a card
+// behaves the same whichever Step it sits under.
+// Soul Mirror, Pore Breathing and Autosuggestion live on the Soul Mirror
+// screen; their cards open it on the matching tab and mode.
+function openSoulMirrorFromCard(tab, mode) {
+  if (typeof _smOriginMode !== 'undefined') _smOriginMode = 'concentration';
+  suppressTutorialForExerciseEntry();
+  if (mode) soulMirrorMode = mode;
+  var accent = tab === 'breathing' ? '#8ecce0' : '#c4a8d4';
+  var underline = tab === 'breathing' ? '#6eaec4' : '#a47eb8';
+  document.querySelectorAll('.soul-tab').forEach(function(t) {
+    t.style.borderBottomColor = 'transparent';
+    t.style.color = 'var(--muted)';
+  });
+  var activeTab = document.querySelector('.soul-tab[data-tab="' + tab + '"]');
+  if (activeTab) { activeTab.style.borderBottomColor = underline; activeTab.style.color = accent; }
+  var smDd = document.getElementById('soulMirrorDropdown');
+  if (smDd) smDd.style.display = 'none';
+  soulMirrorShowPanel(tab);
+  if (tab === 'mirror' && soulMirrorMode === 'mirror') renderSoulMirrorTraits();
+  showScreen('soulMirrorScreen');
+}
 
-document.getElementById('concExpertGrid').addEventListener('click', function(e) {
+function openConcCard(ex) {
+  if (ex === 'soulmirror') openSoulMirrorFromCard('mirror', 'mirror');
+  else if (ex === 'autosug') openSoulMirrorFromCard('mirror', 'autosug');
+  else if (ex === 'pore') openSoulMirrorFromCard('breathing');
+  else openExerciseSetup(ex);
+}
+
+// Multi-Sense once had no setup screen and its card went straight to
+// def.begin(); every card now routes through openExerciseSetup so
+// exSetupScreen's data-ex/content are always freshly set.
+document.getElementById('concStepGrids').addEventListener('click', function(e) {
   var card = e.target.closest('.exercise-card[data-exercise]');
-  if (!card) return;
-  // Written back when advanced exercises (Multi-Sense, the retired All
-  // Angles) had no setup screen of their own, so going straight to
-  // def.begin() was the only option. Multi-Sense has a real landing now —
-  // route through it like every card in the Beginner grid, so exSetupScreen's
-  // data-ex/content are always freshly set instead of carrying over whatever
-  // was last opened through the proper setup path (this is what made the
-  // session's back button land on a stale, unrelated exercise).
-  openExerciseSetup(card.dataset.exercise);
-});
-
-document.getElementById('exerciseGrid').addEventListener('click', function(e) {
-  var card = e.target.closest('.exercise-card');
-  if (!card || !card.dataset.exercise) return;
-  if (card.dataset.exercise === 'soulmirror') {
-    if (typeof _smOriginMode !== 'undefined') _smOriginMode = 'concentration';
-    suppressTutorialForExerciseEntry();
-    // Reset to mirror tab (in whichever mirror mode was last used)
-    document.querySelectorAll('.soul-tab').forEach(function(t) {
-      t.style.borderBottomColor = 'transparent';
-      t.style.color = 'var(--muted)';
-    });
-    var mt = document.querySelector('.soul-tab[data-tab="mirror"]');
-    if (mt) { mt.style.borderBottomColor = '#a47eb8'; mt.style.color = '#c4a8d4'; }
-    var smDd = document.getElementById('soulMirrorDropdown');
-    if (smDd) smDd.style.display = 'none';
-    soulMirrorShowPanel('mirror');
-    renderSoulMirrorTraits();
-    showScreen('soulMirrorScreen');
-  } else {
-    openExerciseSetup(card.dataset.exercise);
-  }
+  if (card) openConcCard(card.dataset.exercise);
 });
 
 // ── Discard session (red X button on all session screens) ─
@@ -2158,31 +2154,58 @@ function toggleConcView() {
     btn.classList.toggle('active', concViewMode === 'carousel');
     btn.title = concViewMode === 'carousel' ? 'Grid view' : 'Expanded view';
   }
-  [
-    document.getElementById('concBeginnerGrid'),
-    document.getElementById('concExpertGrid')
-  ].forEach(function(w) { if (w) applyConcCarouselToGrid(w); });
+  document.querySelectorAll('#concStepGrids .conc-step-grid').forEach(applyConcCarouselToGrid);
 }
 
 document.getElementById('concViewToggle').addEventListener('click', toggleConcView);
 
-// Level tab toggle
-(function() {
-  var tabs = [
-    { btn: document.getElementById('concLevelBeginner'), grid: document.getElementById('concBeginnerGrid') },
-    { btn: document.getElementById('concLevelExpert'),   grid: document.getElementById('concExpertGrid') }
-  ];
-  tabs.forEach(function(t) {
-    if (!t.btn) return;
-    t.btn.addEventListener('click', function() {
-      tabs.forEach(function(x) { x.btn.classList.remove('active'); x.grid.style.display = 'none'; });
-      t.btn.classList.add('active');
-      t.grid.style.display = '';
-      // Re-apply carousel state to newly visible grid
-      if (concViewMode === 'carousel') applyConcCarouselToGrid(t.grid);
-    });
+// ── Step view ──────────────────────────────────────────
+// The Concentration exercises are grouped by Bardon's Steps. Every Step is
+// open to practice; the row only marks which ones Omnia has reached. The
+// Step last viewed is remembered, and a first visit opens on Omnia's own
+// Step (or the last one that has exercises yet).
+var CONC_STEP_KEY = 'presence_conc_step';
+var CONC_STEPS_WITH_EXERCISES = 3;
+
+function concDefaultStep() {
+  try {
+    var saved = parseInt(localStorage.getItem(CONC_STEP_KEY), 10);
+    if (saved >= 1 && saved <= 10) return saved;
+  } catch (e) {}
+  var reached = (typeof omniaState !== 'undefined' && omniaState && omniaState.bardonStep) || 1;
+  return Math.max(1, Math.min(reached, CONC_STEPS_WITH_EXERCISES));
+}
+
+function selectConcStep(step, remember) {
+  step = Math.max(1, Math.min(10, Number(step) || 1));
+  var reached = (typeof omniaState !== 'undefined' && omniaState && omniaState.bardonStep) || 1;
+  document.querySelectorAll('#concStepRow .conc-step-tab').forEach(function(btn) {
+    var n = Number(btn.dataset.step);
+    btn.classList.toggle('active', n === step);
+    btn.classList.toggle('reached', n <= reached);
+    btn.setAttribute('aria-selected', n === step ? 'true' : 'false');
   });
-})();
+  document.querySelectorAll('#concStepGrids .conc-step-grid').forEach(function(grid) {
+    var show = Number(grid.dataset.step) === step;
+    grid.style.display = show ? '' : 'none';
+    if (show && concViewMode === 'carousel') applyConcCarouselToGrid(grid);
+  });
+  var nameEl = document.getElementById('concStepName');
+  if (nameEl) {
+    var def = typeof OMNIA_BARDON_STEPS !== 'undefined'
+      ? OMNIA_BARDON_STEPS.find(function(s) { return s.step === step; }) : null;
+    nameEl.textContent = def ? def.name : 'Step ' + step;
+  }
+  if (remember) { try { localStorage.setItem(CONC_STEP_KEY, String(step)); } catch (e) {} }
+}
+
+document.getElementById('concStepRow').addEventListener('click', function(e) {
+  var btn = e.target.closest('.conc-step-tab');
+  if (btn) selectConcStep(btn.dataset.step, true);
+});
+// Omnia's Step data loads after this file, so pick the opening Step once the
+// whole page has parsed.
+window.addEventListener('DOMContentLoaded', function() { selectConcStep(concDefaultStep(), false); });
 
 // Setup screen back and begin
 document.getElementById('exSetupBack').addEventListener('click', function() {

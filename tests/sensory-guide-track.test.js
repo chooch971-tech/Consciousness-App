@@ -426,7 +426,9 @@ test('Multi-Sense can open before the sensory curriculum is complete', () => {
   );
   assert.doesNotMatch(openSetup, /guideSensoryTrackProgress/);
   assert.doesNotMatch(openSetup, /ex === 'multisense'[\s\S]*?return;/);
-  assert.match(visualSource, /concExpertGrid[\s\S]*?openExerciseSetup\(card\.dataset\.exercise\)/);
+  // Multi-Sense's card goes through the same setup landing as every other card.
+  assert.match(visualSource, /function openConcCard\(ex\)[\s\S]*?else openExerciseSetup\(ex\)/);
+  assert.match(visualSource, /concStepGrids[\s\S]*?openConcCard\(card\.dataset\.exercise\)/);
 });
 
 test('short attempts never lengthen the session', () => {

@@ -332,7 +332,7 @@ test('Visualization and the shared exercise gateway load before Auditory', () =>
   assert.match(visualizationClient, /function\s+startVisSession\s*\(/);
   assert.match(visualizationClient, /function\s+endVisSession\s*\(/);
   assert.match(visualizationClient, /function\s+renderVisIntermediateSession\s*\(/);
-  assert.match(visualizationClient, /document\.getElementById\('exerciseGrid'\)\.addEventListener/);
+  assert.match(visualizationClient, /document\.getElementById\('concStepGrids'\)\.addEventListener/);
   assert.match(visualizationClient, /function\s+showConcLevelUp\s*\(/);
   assert.doesNotThrow(() => new Function(visualizationClient));
 });
