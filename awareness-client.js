@@ -441,6 +441,8 @@ const DEFAULT_STATE = {
   freezesUsed: 0,            // lifetime freezes consumed
   practicedDates: [],        // array of 'YYYY-MM-DD' strings
   frozenDates: [],           // days a freeze covered (keep the chain unbroken)
+  rekindleMonths: [],        // 'YYYY-MM' months whose one rekindle was used
+  rekindle: null,            // pending same-day offer to relight a just-broken streak
   streakCalendarStartDate: null, // earliest reachable month in the streak calendar
   streakStartDate: null,     // 'YYYY-MM-DD' of current streak's day 1
   streakCommit: 7,           // current absolute commitment milestone (7–180)
@@ -612,6 +614,7 @@ function recordExerciseCompletion(opts) {
 }
 
 function touchPracticeStreak() {
+  rekindleOnSession();
   var today = new Date().toDateString();
   var todayISO = presenceDayKey();
   if (state.lastSessionDate !== today) {
@@ -892,10 +895,74 @@ function syncStreakFromCalendar() {
   return prev;
 }
 
+// ── Rekindle ──────────────────────────────────────────────────────────────
+// Losing a long streak is where most people give up on a practice. When a
+// streak of REKINDLE_MIN_DAYS+ breaks over at most REKINDLE_MAX_MISSED days,
+// the player may relight it by completing REKINDLE_SESSIONS sessions on the
+// day they return — once per calendar month. The missed days are then covered
+// exactly as a freeze covers them (frozenDates), so the calendar-derived
+// streak needs no special case, and the milestone run is restored so a
+// break-and-rekindle can never pay the same milestones twice.
+var REKINDLE_MIN_DAYS = 3;
+var REKINDLE_MAX_MISSED = 2;
+var REKINDLE_SESSIONS = 2;
+
+function rekindleMonthKey(dayKey) { return String(dayKey || '').slice(0, 7); }
+
+// Pure: the offer to stash when a streak breaks, or null when none is due.
+function rekindleOffer(prevStreak, missedDates, todayKey, freezesKept) {
+  if ((prevStreak || 0) < REKINDLE_MIN_DAYS) return null;
+  if (!missedDates || !missedDates.length || missedDates.length > REKINDLE_MAX_MISSED) return null;
+  if ((state.rekindleMonths || []).indexOf(rekindleMonthKey(todayKey)) !== -1) return null;
+  return {
+    day: todayKey,
+    dates: missedDates.slice(),
+    prevDays: prevStreak,
+    need: REKINDLE_SESSIONS,
+    done: 0,
+    freezes: freezesKept || 0,
+    runKey: state.streakMilestoneRunKey || null,
+    awarded: Array.isArray(state.streakMilestonesAwarded) ? state.streakMilestonesAwarded.slice() : [],
+    goalBase: state.streakGoalBaseDays || 0
+  };
+}
+
+function rekindleOnSession() {
+  window._pendingRekindle = null;
+  var r = state.rekindle;
+  if (!r) return;
+  var todayKey = presenceDayKey();
+  if (r.day !== todayKey) { state.rekindle = null; return; }
+  r.done = (r.done || 0) + 1;
+  if (r.done < r.need) {
+    window._pendingRekindle = { done: r.done, need: r.need, prevDays: r.prevDays };
+    saveState();
+    return;
+  }
+  if (!state.frozenDates) state.frozenDates = [];
+  r.dates.forEach(function(key) {
+    if (state.frozenDates.indexOf(key) === -1) state.frozenDates.push(key);
+  });
+  if (!state.rekindleMonths) state.rekindleMonths = [];
+  state.rekindleMonths.push(rekindleMonthKey(todayKey));
+  // Undo what the break and the fresh day-one session reset.
+  state.streakMilestoneRunKey = r.runKey;
+  state.streakMilestonesAwarded = r.awarded;
+  state.streakGoalBaseDays = r.goalBase;
+  state.streakFreezes = r.freezes;
+  state.endedStreakInfo = null;
+  state.rekindle = null;
+  syncStreakFromCalendar();
+  window._pendingRekindle = { rekindled: true, days: state.streak, prevDays: r.prevDays };
+  saveState();
+}
+
 function checkStreakStatus() {
   backfillPracticedDates();
   migratePracticedDatesToLocal();
   reconcileLegacyStreak();
+  // A rekindle must be finished on the day it was offered.
+  if (state.rekindle && state.rekindle.day !== presenceDayKey()) { state.rekindle = null; saveState(); }
   if (!state.lastSessionDate) { syncStreakFromCalendar(); return; }
   var today = new Date(); today.setHours(0,0,0,0);
   var last = new Date(state.lastSessionDate); last.setHours(0,0,0,0);
@@ -932,6 +999,9 @@ function checkStreakStatus() {
       // freeze numbers so the Streak Ended popup can explain why it broke.
       state.endedStreakInfo = { days: prevStreak, date: state.lastSessionDate, missed: missed, freezes: available };
       state.streakEndedPromptShown = false;
+      // Captured before the milestone run is reset below, so a rekindle can
+      // restore it instead of paying the same milestones a second time.
+      state.rekindle = rekindleOffer(prevStreak, missedDates, presenceDayKey(), available);
       state.streakGoalBaseDays = 0;
       state.streakMilestoneRunKey = null;
       state.streakMilestonesAwarded = [];

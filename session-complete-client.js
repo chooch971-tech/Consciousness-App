@@ -204,6 +204,15 @@ function showSessionComplete(opts) {
   var _ppb = window._pendingPersonalBest || null;
   window._pendingPersonalBest = null;
   var personalBestHtml = typeof pbBannerHtml === 'function' ? pbBannerHtml(_ppb) : '';
+  // Progress toward relighting a just-broken streak (set by rekindleOnSession).
+  var _prk = window._pendingRekindle || null;
+  window._pendingRekindle = null;
+  var rekindleHtml = !_prk ? ''
+    : _prk.rekindled
+      ? '<div class="so-rekindle-card so-rekindle-card--lit"><div class="so-rekindle-kicker">🔥 Streak rekindled</div>'
+        + '<div class="so-rekindle-text">The flame is back · <b>' + _prk.days + ' day' + (_prk.days === 1 ? '' : 's') + '</b></div></div>'
+      : '<div class="so-rekindle-card"><div class="so-rekindle-kicker">🔥 Rekindling · ' + _prk.done + ' of ' + _prk.need + '</div>'
+        + '<div class="so-rekindle-text">One more session today relights your ' + _prk.prevDays + '-day streak.</div></div>';
 
   el.innerHTML =
     buildOmniaShowerHtml()
@@ -223,6 +232,7 @@ function showSessionComplete(opts) {
     + '<span class="tut-legend-card-value">' + opts.stat3.value + '</span>'
     + '</div>'
     + '</div>'
+    + rekindleHtml
     + personalBestHtml
     + streakBannerHtml
     + bonusBannerHtml

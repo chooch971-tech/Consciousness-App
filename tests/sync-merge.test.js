@@ -275,3 +275,13 @@ test('guide merge honors legacy explicit cadence via its guide timestamp', () =>
   assert.equal(merged._exRounds.asana, 1);
   assert.equal(merged._cadenceUpdatedAt, 200);
 });
+
+test('a month whose streak rekindle was used on one device stays used on every device', () => {
+  // Rekindle is limited to once a month. If a stale snapshot without the used
+  // month won the merge, the player could relight a second break that month.
+  const used = { xp: 100, history: [], practicedDates: [], frozenDates: ['2026-11-20'], rekindleMonths: ['2026-11'] };
+  const stale = { xp: 200, history: [], practicedDates: [], frozenDates: [], rekindleMonths: [] };
+  const merged = mergeHistoryValues('presence_v3', [stale, used]);
+  assert.deepEqual(merged.rekindleMonths, ['2026-11']);
+  assert.deepEqual(merged.frozenDates, ['2026-11-20'], 'the rekindled day keeps covering the streak');
+});

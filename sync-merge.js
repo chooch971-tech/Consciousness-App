@@ -22,7 +22,9 @@
       // practicedDates and collapse an otherwise-unbroken streak back down to
       // whatever that stale copy happened to cover. A practiced/frozen day is
       // a permanent fact once recorded by either side, so union instead.
-      stringArrays: Object.freeze(['practicedDates', 'frozenDates']),
+      // rekindleMonths follows the same rule: a month whose rekindle was used on
+      // any device stays used everywhere.
+      stringArrays: Object.freeze(['practicedDates', 'frozenDates', 'rekindleMonths']),
       // The calendar beginning only ever moves earlier when an older device
       // supplies missing history; never let a stale snapshot move it forward.
       minDayKeys: Object.freeze(['streakCalendarStartDate'])

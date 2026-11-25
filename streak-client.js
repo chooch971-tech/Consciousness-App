@@ -243,6 +243,13 @@ function showStreakScreen() {
     return '<div class="so-freeze-gem' + (i < freezes ? ' active' : '') + '"></div>';
   }).join('');
   var societyLocked = streak < 7;
+  var _rk = state.rekindle && state.rekindle.day === presenceDayKey() ? state.rekindle : null;
+  var rekindleCardHTML = _rk
+    ? '<div class="so-rekindle-card">'
+      + '<div class="so-rekindle-kicker">🔥 Rekindle · ' + (_rk.done || 0) + ' of ' + _rk.need + ' sessions</div>'
+      + '<div class="so-rekindle-text">Finish ' + (_rk.need - (_rk.done || 0)) + ' more session' + (_rk.need - (_rk.done || 0) === 1 ? '' : 's') + ' before midnight to relight your ' + _rk.prevDays + '-day streak.</div>'
+      + '</div>'
+    : '';
 
   // A commitment stays locked until it is complete. Only then may the player
   // choose a later absolute milestone. The milestone rewards themselves are
@@ -346,6 +353,7 @@ function showStreakScreen() {
     + '<div class="so-freeze-sub">Frost holds the flame through a missed day · +1 every 7 streak days</div>'
     + '<div class="so-freeze-gems">' + gemsHTML + '</div>'
     + '</div></div>'
+    + rekindleCardHTML
     + '<div class="so-cal-card" id="soCalCard">' + buildStreakCalendar(calYear, calMonth, commit) + '</div>'
     + '<div class="so-goal-card" id="soGoalCard">' + goalCardInner() + '</div>'
     + '<div class="so-society-card" id="soSocietyCard" style="opacity:' + (societyLocked ? '.45' : '1') + (societyLocked ? '' : ';cursor:pointer') + '">'
@@ -542,6 +550,7 @@ function showStreakEndedPrompt() {
   state.streakEndedPromptShown = true;
   saveState();
   var info = state.endedStreakInfo;
+  var rk = state.rekindle && state.rekindle.day === presenceDayKey() ? state.rekindle : null;
   var overlay = document.createElement('div');
   overlay.className = 'so-ended-overlay';
   overlay.id = 'streakEndedOverlay';
@@ -588,10 +597,19 @@ function showStreakEndedPrompt() {
     + '<div class="so-ended-daysbig">' + (info.days || 0) + ' <span class="u">day' + (info.days === 1 ? '' : 's') + '</span></div>'
     + '<div class="so-ended-reveal">'
     + '<div class="so-ended-title">Streak Ended</div>'
-    + '<div class="so-ended-sub">Your <span class="seo-days">' + (info ? info.days : 0) + ' day</span> streak ended. Every master has fallen — and risen. Commit to a new goal and begin again.</div>'
-    + freezeNote
-    + '<div class="so-ended-commits">' + cardsHTML + '</div>'
-    + '<button class="so-ended-start" id="seoPrimaryBtn">Begin Again →</button>'
+    + (rk
+      ? '<div class="so-ended-sub">Your <span class="seo-days">' + (info ? info.days : 0) + ' day</span> streak went out — but the embers are still warm.</div>'
+        + freezeNote
+        + '<div class="so-rekindle-card">'
+        + '<div class="so-rekindle-kicker">🔥 Rekindle</div>'
+        + '<div class="so-rekindle-text">Complete <b>' + rk.need + ' sessions today</b> and your ' + rk.prevDays + '-day streak lights again, missed day' + (rk.dates.length === 1 ? '' : 's') + ' included.</div>'
+        + '<div class="so-rekindle-fine">Once a month · ends at midnight</div>'
+        + '</div>'
+        + '<button class="so-ended-start" id="seoPrimaryBtn">Rekindle it →</button>'
+      : '<div class="so-ended-sub">Your <span class="seo-days">' + (info ? info.days : 0) + ' day</span> streak ended. Every master has fallen — and risen. Commit to a new goal and begin again.</div>'
+        + freezeNote
+        + '<div class="so-ended-commits">' + cardsHTML + '</div>'
+        + '<button class="so-ended-start" id="seoPrimaryBtn">Begin Again →</button>')
     + '<button class="so-ended-dismiss" id="seoDismissBtn">Maybe later</button>'
     + '</div>'
     + '</div>';
