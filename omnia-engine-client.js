@@ -1365,6 +1365,7 @@ function advanceOmniaStep() {
   saveOmniaState();
   performOmniaAction('advance');
   renderOmniaEngine();
+  if (typeof offerStepShareCard === 'function') setTimeout(function() { offerStepShareCard(next); }, 1600);
 }
 
 function beginOmniaRecommendation() {

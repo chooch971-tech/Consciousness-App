@@ -355,6 +355,7 @@ function showStreakScreen() {
     + '</div></div>'
     + rekindleCardHTML
     + '<div class="so-cal-card" id="soCalCard">' + buildStreakCalendar(calYear, calMonth, commit) + '</div>'
+    + '<button class="so-share-btn" id="soShareBtn" type="button">Share this month ↗</button>'
     + '<div class="so-goal-card" id="soGoalCard">' + goalCardInner() + '</div>'
     + '<div class="so-society-card" id="soSocietyCard" style="opacity:' + (societyLocked ? '.45' : '1') + (societyLocked ? '' : ';cursor:pointer') + '">'
     + '<div class="so-society-icon"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="8.5" r="2.8"/><path d="M3.8 19c.9-3 2.9-4.6 5.2-4.6s4.3 1.6 5.2 4.6"/><circle cx="16.6" cy="9.5" r="2.2"/><path d="M15.4 14.7c2.1.2 3.9 1.7 4.7 4.3"/></svg></div>'
@@ -401,6 +402,8 @@ function showStreakScreen() {
   wireStreakSwipeDismiss(el, closeStreakOverlay);
   document.getElementById('soBackBtn').onclick = closeStreakOverlay;
   document.getElementById('soCloseBtn').onclick = closeStreakOverlay;
+  var shareBtn = document.getElementById('soShareBtn');
+  if (shareBtn) shareBtn.onclick = function() { if (typeof shareMonthCard === 'function') shareMonthCard(); };
   var vigilBtn = document.getElementById('soVigilBtn');
   if (vigilBtn) {
     vigilBtn.onclick = function() {
