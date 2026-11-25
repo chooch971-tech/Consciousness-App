@@ -572,6 +572,8 @@ function recordPracticeReviewEntry(kind, entry) {
 // Returns the akasha gained by the award (0 when skipped), for the legend.
 function recordExerciseCompletion(opts) {
   if (typeof completionFlowBegin === 'function') completionFlowBegin();
+  // Compare with past sessions before this one joins the history.
+  if (typeof pbOnCompletion === 'function') pbOnCompletion(opts.entry);
   pushHistory(concState.history, opts.entry, 100);
   recordPracticeReviewEntry('concentration', opts.entry);
   saveConcState();

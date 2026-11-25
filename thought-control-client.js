@@ -375,6 +375,7 @@ function saveTCResult() {
       type: 'thought',
       tcMode: tcMode,
       durationSec: elapsedSec,
+      intrusions: tcIntrusions.length,
       object: tcIntrusions.length + ' thoughts in ' + fmtTimer(elapsedSec)
     },
     exId: 'thought',

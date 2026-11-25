@@ -3863,6 +3863,15 @@ body.omnia-tier-crown .omnia-diadem { display:block; }
 .omnia-apo-card.c4 { right:5%; top:50%; margin-top:-4px; }
 .oe-omnia-figure .omnia-apo-card { font-size:0.5625rem; }
 .omnia-name { font-family:Cormorant Garamond,serif; font-size:0.6875rem; letter-spacing:.42em; text-transform:uppercase; color:#8ecce0; margin-top:10px; opacity:.85; }
+.pb-banner { margin:12px 0 4px; padding:12px 16px 10px; background:rgba(142,204,224,.07); border:1px solid rgba(142,204,224,.22); border-radius:10px; text-align:center; }
+.pb-banner--record { background:rgba(216,184,106,.12); border-color:rgba(216,184,106,.45); animation:pbGlow 2.4s ease-out 1; }
+.pb-kicker { font-size:0.5625rem; letter-spacing:.14em; text-transform:uppercase; color:#d4b064; margin-bottom:6px; }
+.pb-record { font-family:serif; font-size:1rem; color:#e8cd8e; }
+.pb-record b { font-weight:600; }
+.pb-was { font-family:'DM Mono',monospace; font-size:0.625rem; letter-spacing:.06em; color:rgba(232,205,142,.6); }
+.pb-spark { display:block; margin:8px auto 2px; max-width:100%; height:auto; }
+.pb-caption { font-family:'DM Mono',monospace; font-size:0.625rem; letter-spacing:.04em; color:rgba(255,255,255,.7); }
+@keyframes pbGlow { 0% { box-shadow:0 0 0 rgba(216,184,106,0); } 30% { box-shadow:0 0 26px rgba(216,184,106,.45); } 100% { box-shadow:0 0 0 rgba(216,184,106,0); } }
 .omnia-speak { font-size:0.75rem; color:var(--muted); line-height:1.85; text-align:center; padding:0 4px; margin-top:10px; font-style:italic; }
 #sessionComplete .omnia-speak { color:rgba(255,255,255,.85); }
 .omnia-speak em { color:#a8d8ec; font-style:normal; }
@@ -11460,6 +11469,7 @@ function openSoulMirrorTutorial(){
 </div>
 
 <script src="streak-celebration-client.js"></script>
+<script src="personal-best-client.js"></script>
 <script src="session-complete-client.js"></script>
 <script src="streak-client.js"></script>
 <script src="omnia-companion-client.js"></script>

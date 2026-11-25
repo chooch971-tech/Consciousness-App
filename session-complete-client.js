@@ -200,6 +200,11 @@ function showSessionComplete(opts) {
     }).join('');
   }
 
+  // How this sit compares with your own past (set by recordExerciseCompletion).
+  var _ppb = window._pendingPersonalBest || null;
+  window._pendingPersonalBest = null;
+  var personalBestHtml = typeof pbBannerHtml === 'function' ? pbBannerHtml(_ppb) : '';
+
   el.innerHTML =
     buildOmniaShowerHtml()
     + '<div class="tut-legend-title">' + opts.title + '</div>'
@@ -218,6 +223,7 @@ function showSessionComplete(opts) {
     + '<span class="tut-legend-card-value">' + opts.stat3.value + '</span>'
     + '</div>'
     + '</div>'
+    + personalBestHtml
     + streakBannerHtml
     + bonusBannerHtml
     + (opts.omniaMsg ? '<div class="omnia-speak">' + opts.omniaMsg + '</div>' : '')
