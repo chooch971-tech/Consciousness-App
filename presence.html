@@ -3911,6 +3911,10 @@ body.omnia-tier-crown .omnia-diadem { display:block; }
 .conc-step-tab { flex:1 1 0; min-width:0; padding:8px 0; border-radius:7px; border:1px solid var(--border); background:none; color:var(--muted); font-family:'Cormorant Garamond',serif; font-size:0.875rem; cursor:pointer; white-space:nowrap; transition:background .15s, color .15s, border-color .15s; }
 .conc-step-tab.active { color:#f4d2a4; border-color:rgba(212,149,110,.6); background:rgba(212,149,110,.12); }
 .conc-step-tab.reached:not(.active) { color:#d4b08e; }
+#concStepGrids { display:flex; align-items:flex-start; overflow-x:auto; overflow-y:hidden; scroll-snap-type:x mandatory; scrollbar-width:none; -ms-overflow-style:none; overscroll-behavior-x:contain; transition:height .25s ease; }
+#concStepGrids::-webkit-scrollbar { display:none; }
+.conc-step-grid { flex:0 0 100%; min-width:0; box-sizing:border-box; scroll-snap-align:start; scroll-snap-stop:always; }
+.conc-step-hint { font-family:'DM Mono',monospace; font-size:0.5rem; letter-spacing:.14em; text-transform:uppercase; color:rgba(255,255,255,.25); }
 .conc-step-head { display:flex; align-items:center; justify-content:space-between; padding:0 2px 14px; }
 .conc-step-name { font-family:'DM Mono',monospace; font-size:0.5625rem; letter-spacing:.18em; text-transform:uppercase; color:var(--muted); }
 .ms3-kicker { font-family:'DM Mono',monospace; font-size:0.5rem; letter-spacing:.2em; text-transform:uppercase; color:rgba(var(--ms-rgb),.75); }
@@ -7742,10 +7746,9 @@ body:not(.tut-live) #tutCorgi {
           <button class="conc-step-tab" role="tab" data-step="9" aria-label="Step IX">IX</button>
           <button class="conc-step-tab" role="tab" data-step="10" aria-label="Step X">X</button>
         </div>
-        <div class="conc-step-head"><span class="conc-step-name" id="concStepName">Step I</span><button class="conc-view-btn" id="concViewToggle" title="Expanded view">⊞</button></div>
+        <div class="conc-step-head"><span class="conc-step-name" id="concStepName">Step I</span><span class="conc-step-hint" id="concStepHint">swipe ⟷</span></div>
         <div id="concStepGrids">
         <div class="conc-step-grid" data-step="1">
-          <div class="carousel-dots"></div>
           <div class="exercise-grid" id="exerciseGrid">
             <div class="exercise-card" data-exercise="clock" style="--conc-card-accent:#e07c3a; border-color:rgba(224,124,58,.55); background:rgba(224,124,58,.08);">
               <div class="exercise-card-icon"><svg width="22" height="22" viewBox="0 0 100 100" fill="none"><circle cx="50" cy="50" r="44" stroke="#e07c3a" stroke-width="5" opacity=".9"/><line x1="50" y1="50" x2="50" y2="18" stroke="#e07c3a" stroke-width="5" stroke-linecap="round"/><line x1="50" y1="50" x2="72" y2="62" stroke="#e07c3a" stroke-width="4" stroke-linecap="round" opacity=".75"/><circle cx="50" cy="50" r="4" fill="#e07c3a"/></svg></div>
@@ -7764,8 +7767,7 @@ body:not(.tut-live) #tutCorgi {
             </div>
           </div>
         </div>
-        <div class="conc-step-grid" data-step="2" style="display:none;">
-          <div class="carousel-dots"></div>
+        <div class="conc-step-grid" data-step="2">
           <div class="exercise-grid">
             <div class="exercise-card" data-exercise="visual" style="--conc-card-accent:#6e9fd4; border-color:rgba(110,159,212,.55); background:rgba(110,159,212,.08);">
               <div class="exercise-card-icon"><svg width="22" height="22" viewBox="0 0 100 100" fill="none"><path d="M10 50 Q50 10 90 50 Q50 90 10 50Z" stroke="#6e9fd4" stroke-width="4.5" opacity=".9"/><circle cx="50" cy="50" r="14" stroke="#6e9fd4" stroke-width="3.5"/><circle cx="50" cy="50" r="6" fill="#6e9fd4" opacity=".9"/></svg></div>
@@ -7799,8 +7801,7 @@ body:not(.tut-live) #tutCorgi {
             </div>
           </div>
         </div>
-        <div class="conc-step-grid" data-step="3" style="display:none;">
-          <div class="carousel-dots"></div>
+        <div class="conc-step-grid" data-step="3">
           <div class="exercise-grid">
             <div class="exercise-card" data-exercise="multisense" style="--conc-card-accent:#d4b86e; border-color:rgba(212,184,110,.55); background:rgba(212,184,110,.08);">
               <div class="exercise-card-icon"><svg width="22" height="22" viewBox="0 0 100 100" fill="none"><circle cx="50" cy="50" r="18" stroke="#d4b86e" stroke-width="4"/><path d="M50 10 Q78 28 78 50 Q78 72 50 90 Q22 72 22 50 Q22 28 50 10Z" stroke="#d4b86e" stroke-width="3.5" opacity=".55"/><circle cx="50" cy="50" r="5" fill="#d4b86e" opacity=".8"/></svg></div>
@@ -7814,8 +7815,7 @@ body:not(.tut-live) #tutCorgi {
             </div>
           </div>
         </div>
-        <div class="conc-step-grid" data-step="4" style="display:none;">
-          <div class="carousel-dots"></div>
+        <div class="conc-step-grid" data-step="4">
           <div class="exercise-grid">
             <div class="exercise-card" style="--conc-card-accent:#8888aa; border-color:rgba(136,136,170,.2); background:rgba(136,136,170,.04); opacity:.45; pointer-events:none;">
               <div class="exercise-card-icon"><svg width="22" height="22" viewBox="0 0 100 100" fill="none"><circle cx="50" cy="50" r="30" stroke="#8888aa" stroke-width="3.5" opacity=".6"/><path d="M50 34v18l10 8" stroke="#8888aa" stroke-width="3.5" stroke-linecap="round" opacity=".6"/></svg></div>
@@ -7824,8 +7824,7 @@ body:not(.tut-live) #tutCorgi {
             </div>
           </div>
         </div>
-        <div class="conc-step-grid" data-step="5" style="display:none;">
-          <div class="carousel-dots"></div>
+        <div class="conc-step-grid" data-step="5">
           <div class="exercise-grid">
             <div class="exercise-card" style="--conc-card-accent:#8888aa; border-color:rgba(136,136,170,.2); background:rgba(136,136,170,.04); opacity:.45; pointer-events:none;">
               <div class="exercise-card-icon"><svg width="22" height="22" viewBox="0 0 100 100" fill="none"><circle cx="50" cy="50" r="30" stroke="#8888aa" stroke-width="3.5" opacity=".6"/><path d="M50 34v18l10 8" stroke="#8888aa" stroke-width="3.5" stroke-linecap="round" opacity=".6"/></svg></div>
@@ -7834,8 +7833,7 @@ body:not(.tut-live) #tutCorgi {
             </div>
           </div>
         </div>
-        <div class="conc-step-grid" data-step="6" style="display:none;">
-          <div class="carousel-dots"></div>
+        <div class="conc-step-grid" data-step="6">
           <div class="exercise-grid">
             <div class="exercise-card" style="--conc-card-accent:#8888aa; border-color:rgba(136,136,170,.2); background:rgba(136,136,170,.04); opacity:.45; pointer-events:none;">
               <div class="exercise-card-icon"><svg width="22" height="22" viewBox="0 0 100 100" fill="none"><circle cx="50" cy="50" r="30" stroke="#8888aa" stroke-width="3.5" opacity=".6"/><path d="M50 34v18l10 8" stroke="#8888aa" stroke-width="3.5" stroke-linecap="round" opacity=".6"/></svg></div>
@@ -7844,8 +7842,7 @@ body:not(.tut-live) #tutCorgi {
             </div>
           </div>
         </div>
-        <div class="conc-step-grid" data-step="7" style="display:none;">
-          <div class="carousel-dots"></div>
+        <div class="conc-step-grid" data-step="7">
           <div class="exercise-grid">
             <div class="exercise-card" style="--conc-card-accent:#8888aa; border-color:rgba(136,136,170,.2); background:rgba(136,136,170,.04); opacity:.45; pointer-events:none;">
               <div class="exercise-card-icon"><svg width="22" height="22" viewBox="0 0 100 100" fill="none"><circle cx="50" cy="50" r="30" stroke="#8888aa" stroke-width="3.5" opacity=".6"/><path d="M50 34v18l10 8" stroke="#8888aa" stroke-width="3.5" stroke-linecap="round" opacity=".6"/></svg></div>
@@ -7854,8 +7851,7 @@ body:not(.tut-live) #tutCorgi {
             </div>
           </div>
         </div>
-        <div class="conc-step-grid" data-step="8" style="display:none;">
-          <div class="carousel-dots"></div>
+        <div class="conc-step-grid" data-step="8">
           <div class="exercise-grid">
             <div class="exercise-card" style="--conc-card-accent:#8888aa; border-color:rgba(136,136,170,.2); background:rgba(136,136,170,.04); opacity:.45; pointer-events:none;">
               <div class="exercise-card-icon"><svg width="22" height="22" viewBox="0 0 100 100" fill="none"><circle cx="50" cy="50" r="30" stroke="#8888aa" stroke-width="3.5" opacity=".6"/><path d="M50 34v18l10 8" stroke="#8888aa" stroke-width="3.5" stroke-linecap="round" opacity=".6"/></svg></div>
@@ -7864,8 +7860,7 @@ body:not(.tut-live) #tutCorgi {
             </div>
           </div>
         </div>
-        <div class="conc-step-grid" data-step="9" style="display:none;">
-          <div class="carousel-dots"></div>
+        <div class="conc-step-grid" data-step="9">
           <div class="exercise-grid">
             <div class="exercise-card" style="--conc-card-accent:#8888aa; border-color:rgba(136,136,170,.2); background:rgba(136,136,170,.04); opacity:.45; pointer-events:none;">
               <div class="exercise-card-icon"><svg width="22" height="22" viewBox="0 0 100 100" fill="none"><circle cx="50" cy="50" r="30" stroke="#8888aa" stroke-width="3.5" opacity=".6"/><path d="M50 34v18l10 8" stroke="#8888aa" stroke-width="3.5" stroke-linecap="round" opacity=".6"/></svg></div>
@@ -7874,8 +7869,7 @@ body:not(.tut-live) #tutCorgi {
             </div>
           </div>
         </div>
-        <div class="conc-step-grid" data-step="10" style="display:none;">
-          <div class="carousel-dots"></div>
+        <div class="conc-step-grid" data-step="10">
           <div class="exercise-grid">
             <div class="exercise-card" style="--conc-card-accent:#8888aa; border-color:rgba(136,136,170,.2); background:rgba(136,136,170,.04); opacity:.45; pointer-events:none;">
               <div class="exercise-card-icon"><svg width="22" height="22" viewBox="0 0 100 100" fill="none"><circle cx="50" cy="50" r="30" stroke="#8888aa" stroke-width="3.5" opacity=".6"/><path d="M50 34v18l10 8" stroke="#8888aa" stroke-width="3.5" stroke-linecap="round" opacity=".6"/></svg></div>

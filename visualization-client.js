@@ -2103,57 +2103,6 @@ function discardSession(type, _c) {
   }
 }
 
-// ── Expanded / carousel view ──────────────────────────────
-var concViewMode = 'grid';
-
-function applyConcCarouselToGrid(wrapper) {
-  var gridEl = wrapper.querySelector('.exercise-grid');
-  var dotsEl = wrapper.querySelector('.carousel-dots');
-  if (!gridEl || !dotsEl) return;
-  if (concViewMode === 'carousel') {
-    gridEl.classList.add('carousel-mode');
-    gridEl.scrollLeft = 0;
-    // Build dot indicators
-    var cards = gridEl.querySelectorAll('.exercise-card');
-    dotsEl.innerHTML = '';
-    cards.forEach(function(c, i) {
-      var dot = document.createElement('span');
-      dot.className = 'carousel-dot' + (i === 0 ? ' active' : '');
-      dotsEl.appendChild(dot);
-    });
-    dotsEl.classList.add('visible');
-    // Attach scroll listener (store ref so we can remove it later)
-    if (gridEl._carouselFn) gridEl.removeEventListener('scroll', gridEl._carouselFn);
-    gridEl._carouselFn = function() {
-      var idx = Math.round(gridEl.scrollLeft / gridEl.clientWidth);
-      dotsEl.querySelectorAll('.carousel-dot').forEach(function(d, i) {
-        d.classList.toggle('active', i === idx);
-      });
-    };
-    gridEl.addEventListener('scroll', gridEl._carouselFn, { passive: true });
-  } else {
-    gridEl.classList.remove('carousel-mode');
-    dotsEl.classList.remove('visible');
-    if (gridEl._carouselFn) {
-      gridEl.removeEventListener('scroll', gridEl._carouselFn);
-      gridEl._carouselFn = null;
-    }
-  }
-}
-
-function toggleConcView() {
-  concViewMode = concViewMode === 'grid' ? 'carousel' : 'grid';
-  var btn = document.getElementById('concViewToggle');
-  if (btn) {
-    btn.textContent = concViewMode === 'carousel' ? '⊟' : '⊞';
-    btn.classList.toggle('active', concViewMode === 'carousel');
-    btn.title = concViewMode === 'carousel' ? 'Grid view' : 'Expanded view';
-  }
-  document.querySelectorAll('#concStepGrids .conc-step-grid').forEach(applyConcCarouselToGrid);
-}
-
-document.getElementById('concViewToggle').addEventListener('click', toggleConcView);
-
 // ── Step view ──────────────────────────────────────────
 // The Concentration exercises are grouped by Bardon's Steps. Every Step is
 // open to practice; the row only marks which ones Omnia has reached. The
@@ -2171,8 +2120,14 @@ function concDefaultStep() {
   return Math.max(1, Math.min(reached, CONC_STEPS_WITH_EXERCISES));
 }
 
-function selectConcStep(step, remember) {
-  step = Math.max(1, Math.min(10, Number(step) || 1));
+// The Steps are pages of one horizontal pager: swipe between neighbouring
+// Steps, or tap a numeral to jump. The pager's height follows the page on
+// screen, so a short Step doesn't leave the tallest one's empty space below.
+function concStepPages() {
+  return Array.prototype.slice.call(document.querySelectorAll('#concStepGrids .conc-step-grid'));
+}
+
+function concMarkStep(step) {
   var reached = (typeof omniaState !== 'undefined' && omniaState && omniaState.bardonStep) || 1;
   document.querySelectorAll('#concStepRow .conc-step-tab').forEach(function(btn) {
     var n = Number(btn.dataset.step);
@@ -2180,24 +2135,50 @@ function selectConcStep(step, remember) {
     btn.classList.toggle('reached', n <= reached);
     btn.setAttribute('aria-selected', n === step ? 'true' : 'false');
   });
-  document.querySelectorAll('#concStepGrids .conc-step-grid').forEach(function(grid) {
-    var show = Number(grid.dataset.step) === step;
-    grid.style.display = show ? '' : 'none';
-    if (show && concViewMode === 'carousel') applyConcCarouselToGrid(grid);
-  });
   var nameEl = document.getElementById('concStepName');
   if (nameEl) {
     var def = typeof OMNIA_BARDON_STEPS !== 'undefined'
       ? OMNIA_BARDON_STEPS.find(function(s) { return s.step === step; }) : null;
     nameEl.textContent = def ? def.name : 'Step ' + step;
   }
+  var pager = document.getElementById('concStepGrids');
+  var page = concStepPages()[step - 1];
+  if (pager && page && page.offsetHeight) pager.style.height = page.offsetHeight + 'px';
+}
+
+var _concStepShown = 1;
+function selectConcStep(step, remember, smooth) {
+  step = Math.max(1, Math.min(10, Number(step) || 1));
+  _concStepShown = step;
+  concMarkStep(step);
+  var pager = document.getElementById('concStepGrids');
+  if (pager && pager.clientWidth) {
+    pager.scrollTo({ left: (step - 1) * pager.clientWidth, behavior: smooth ? 'smooth' : 'auto' });
+  }
   if (remember) { try { localStorage.setItem(CONC_STEP_KEY, String(step)); } catch (e) {} }
 }
 
 document.getElementById('concStepRow').addEventListener('click', function(e) {
   var btn = e.target.closest('.conc-step-tab');
-  if (btn) selectConcStep(btn.dataset.step, true);
+  if (btn) selectConcStep(btn.dataset.step, true, true);
 });
+
+// Follow the swipe: once the pager settles on a page, that Step is the one
+// shown and remembered.
+(function() {
+  var pager = document.getElementById('concStepGrids');
+  var settle = null;
+  pager.addEventListener('scroll', function() {
+    if (!pager.clientWidth) return;
+    var step = Math.round(pager.scrollLeft / pager.clientWidth) + 1;
+    if (step !== _concStepShown) { _concStepShown = step; concMarkStep(step); }
+    clearTimeout(settle);
+    settle = setTimeout(function() {
+      try { localStorage.setItem(CONC_STEP_KEY, String(_concStepShown)); } catch (e) {}
+    }, 160);
+  }, { passive: true });
+})();
+
 // Omnia's Step data loads after this file, so pick the opening Step once the
 // whole page has parsed.
 window.addEventListener('DOMContentLoaded', function() { selectConcStep(concDefaultStep(), false); });
