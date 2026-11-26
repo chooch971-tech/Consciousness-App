@@ -789,7 +789,7 @@ function buildMultiSenseSetupHTML() {
 function swapMultiSenseSetupScene() {
   pickMultiSenseScene();
   var contentEl = document.getElementById('exSetupContent');
-  if (contentEl) contentEl.innerHTML = buildMultiSenseSetupHTML();
+  if (contentEl) contentEl.innerHTML = typeof buildMs3SetupHTML === 'function' ? buildMs3SetupHTML() : buildMultiSenseSetupHTML();
 }
 
 function renderMultiSenseMedia(scene) {
@@ -1492,14 +1492,9 @@ var EXERCISE_DEFS = {
     // The landing carries the framing now, so the description block would just
     // repeat it above the scene card.
     desc: '',
-    setupHTML: function() { return buildMultiSenseSetupHTML(); },
-    begin: function() {
-      window.visCurrentDifficulty = 'intermediate';
-      window.visIntermediateExercise = 'multisense';
-      pickMultiSenseScene();
-      showScreen('visIntermediateScreen');
-      renderVisIntermediateSession('multisense');
-    }
+    // Step III sections (multisense-steps-client.js); Objects keeps the scenes.
+    setupHTML: function() { return buildMs3SetupHTML(); },
+    begin: function() { ms3Begin(); }
   },
   auditory: {
     icon: '&#127911;',

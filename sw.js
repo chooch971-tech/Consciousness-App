@@ -1,7 +1,7 @@
 // Service Worker for Presence app
 // Handles background push notifications + shell caching
 // Cache version — bump this string when you need to force-evict all clients
-const CACHE = 'presence-shell-v514';
+const CACHE = 'presence-shell-v515';
 
 const APP_URL = self.registration
   ? self.registration.scope + 'presence.html'
@@ -66,6 +66,7 @@ const PRECACHE = [
   'vigil-client.js',
   'intention-client.js',
   'share-card-client.js',
+  'multisense-steps-client.js',
   'streak-client.js',
   'omnia-companion-client.js',
   'reminders-client.js',

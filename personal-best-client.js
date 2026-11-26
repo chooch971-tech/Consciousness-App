@@ -34,6 +34,18 @@ function pbDescribe(entry) {
       trendIsTime: false
     };
   }
+  // Step III Multi-Sense holds; older flat Multi-Sense logs carry no time.
+  if (entry.type === 'multi-sense' && entry.msSection) {
+    return {
+      group: 'multi-sense:' + entry.msSection + ':' + entry.msStage + ':' + (entry.eyesMode || 'closed'),
+      bestLabel: 'Longest held scene',
+      best: Number(entry.seconds) || 0,
+      trendLabel: 'longest hold',
+      trend: Number(entry.seconds) || 0,
+      trendHigher: true,
+      trendIsTime: true
+    };
+  }
   if (entry.type === 'visualization' || entry.type === 'auditory') {
     var vis = entry.type === 'visualization';
     return {
