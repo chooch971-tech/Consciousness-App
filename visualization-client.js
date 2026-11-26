@@ -1486,6 +1486,13 @@ var EXERCISE_DEFS = {
       startVisSession();
     }
   },
+  elements: {
+    icon: '🜂',
+    name: 'Elemental Work',
+    desc: '',
+    setupHTML: function() { return buildElementsSetupHTML(); },
+    begin: function() { elBegin(); }
+  },
   multisense: {
     icon: '🎵',
     name: 'Multi-Sense Visualization',
@@ -1591,6 +1598,16 @@ var EX_BANNER_CONFIG = {
       + '<circle cx="50" cy="50" r="7" fill="#e8cf8a" opacity="0.9"/>'
       + '<path d="M50 16v14M50 70v14M16 50h14M70 50h14" stroke="#e8cf8a" stroke-width="2.4" stroke-linecap="round" opacity="0.85"/>'
       + '<path d="M26 26l10 10M74 26L64 36M26 74l10-10M74 74L64 64" stroke="#e8cf8a" stroke-width="2" stroke-linecap="round" opacity="0.55"/>',
+  },
+  elements: {
+    rgb: '212,128,90', light: '#e8a888', label: 'Soul · Step III',
+    title: 'Elemental Work',
+    tagline: 'Breathe in the element. Release it entirely.',
+    symInner:
+      '<path d="M50 14 L82 70 L18 70 Z" stroke="#e0603a" stroke-width="2.4" stroke-linejoin="round" opacity="0.9"/>'
+      + '<path d="M50 86 L18 30 L82 30 Z" stroke="#4fb0a8" stroke-width="2" stroke-linejoin="round" opacity="0.6"/>'
+      + '<path d="M28 50 L72 50" stroke="#6f9fe0" stroke-width="2.2" stroke-linecap="round" opacity="0.8"/>'
+      + '<circle cx="50" cy="50" r="6" fill="#c8a24a" opacity="0.9"/>',
   },
   clock: {
     rgb: '224,124,58', light: '#e8a070', label: 'Concentration', title: 'Clock',
