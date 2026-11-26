@@ -5766,13 +5766,17 @@ body:not(.tut-live) #tutCorgi {
 #splash {
   position: fixed; inset: 0; background: #07080d;
   display: flex; flex-direction: column; align-items: center; justify-content: center;
+  /* Lifts the flex-centred wordmark by half the status bar (see the splash
+     script): extra space at the bottom moves the centre up by half of it. */
+  padding-bottom: var(--splash-bar, 0px); box-sizing: border-box;
   z-index: 9999; pointer-events: none;
   transition: opacity 0.9s ease, transform 0.9s ease;
 }
 #splash.splash-out { opacity: 0; transform: scale(1.06); }
 #splash::before {
   content: ''; position: absolute; inset: 0;
-  background: radial-gradient(ellipse 60% 40% at 50% 55%, rgba(126,184,164,0.09) 0%, transparent 70%);
+  /* Centred behind the wordmark, which sits half a status bar above the page's middle. */
+  background: radial-gradient(ellipse 60% 40% at 50% calc(50% - var(--splash-bar, 0px) / 2), rgba(126,184,164,0.09) 0%, transparent 70%);
   opacity: 0; animation: splashGlow 2s ease forwards 0.4s; pointer-events: none;
 }
 .splash-wordmark {
@@ -6358,6 +6362,16 @@ body:not(.tut-live) #tutCorgi {
   // the note on .splash-resumed above. Skip the entrance animation so this
   // reads as a continuation of the same splash, not a fresh one flashing in.
   try { if (sessionStorage.getItem('_pullReloaded') === '1') s.classList.add('splash-resumed'); } catch(e) {}
+  // Centre on the physical screen, not the page. The installed app starts
+  // below iOS's opaque status bar, so the page's middle sits half a bar
+  // lower than the screen's. The bar's height is whatever the page lacks of
+  // the screen; anything implausible (a browser tab, an odd report) is ignored.
+  try {
+    var bar = Math.round(window.screen.height - window.innerHeight);
+    if (document.documentElement.classList.contains('is-standalone') && bar > 0 && bar <= 80) {
+      s.style.setProperty('--splash-bar', bar + 'px');
+    }
+  } catch(e) {}
   // Don't show the wordmark until Cormorant Garamond is genuinely PAINTING —
   // see the note on .fonts-ready above. document.fonts.check()/ready both lie
   // on iOS Safari: they report the face ready a frame or two before it
