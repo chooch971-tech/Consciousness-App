@@ -55,7 +55,11 @@ var OMNIA_EXERCISE_META = {
   sense: { name:'Sense Concentration', body:'astral', open:'sense', text:'Evoke a feeling, smell, or taste from imagination alone. The astral body is built from inner sensation.' },
   thought: { name:'Thought Control', body:'mental', open:'thought', text:'Observe, focus, or empty the mind. This strengthens Omnia\'s mental body.' },
   asana: { name:'Asana', body:'physical', open:'asana', text:'Make the body still enough to become a reliable instrument.' },
-  pore_breathing: { name:'Pore Breathing', body:'physical', open:'soulmirror', text:'Draw vitality through the whole body. Omnia needs a living vessel, not only light.' }
+  pore_breathing: { name:'Pore Breathing', body:'physical', open:'soulmirror', text:'Draw vitality through the whole body. Omnia needs a living vessel, not only light.' },
+  // Step III. minStep keeps Omnia from recommending them before that Step;
+  // they still pay Akasha to anyone who practices them.
+  multisense: { name:'Multi-Sense', body:'mental', open:'multisense', minStep:3, text:'Hold a whole scene with two or three senses at once. The spirit learns to carry more than one sense.' },
+  elements: { name:'Elemental Work', body:'astral', open:'elements', minStep:3, text:'Breathe an element into the body and release it again. The soul learns to call forth and dissolve the elements.' }
 };
 
 var OMNIA_UPGRADES = [

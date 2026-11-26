@@ -371,6 +371,9 @@ function ms3Lost() {
 }
 
 function ms3Leave() {
+  // Empty the session screen so it never shows through the result overlay.
+  var _scr = document.getElementById('msHoldScreen');
+  if (_scr) _scr.innerHTML = '';
   if (ms3Session) clearInterval(ms3Session.timer);
   ms3Session = null;
   if (typeof releaseExerciseWakeLock === 'function') releaseExerciseWakeLock();
@@ -426,8 +429,9 @@ function ms3End() {
   concState.xp += entry.xpEarned;
   if (isConcNewSession()) concState.totalSessions++;
   var leveled = awardLevelUps(concState, concSumXpToLevel, concXpForLevel);
-  // Advanced drills feed Dark Matter, not Akasha (see BOOK2_ECONOMY.md).
-  recordExerciseCompletion({ entry: entry, omniaSeconds: wallSec, skipOmnia: true });
+  // Akasha like every exercise (capped at 15 minutes inside the reward), and
+  // from Prestige 3 the advanced-drill Dark Matter on top.
+  var akasha = recordExerciseCompletion({ entry: entry, exId: 'multisense', omniaSeconds: wallSec, reachedRec: entry.seconds >= MS3_GOAL_SEC });
   var dm = typeof mintDarkMatterFromPractice === 'function' ? mintDarkMatterFromPractice(DARK_MATTER_PER_ADVANCED) : 0;
   if (leveled && typeof completionFlowQueueLevelUp === 'function') completionFlowQueueLevelUp(concState.level, 'concentration');
 
@@ -445,9 +449,9 @@ function ms3End() {
     title: nowDone && !wasDone ? 'Stage complete.' : 'Scene held.',
     sub: section.short + ' · ' + stage.name + ' · eyes ' + pick.eyes,
     xp: entry.xpEarned,
-    akashaDelta: 0,
-    stat3: { label: dm ? '◆ +' + dm : 'Best hold', color: 'blue', value: ms3FmtTime(entry.seconds) },
-    omniaMsg: msg,
+    akashaDelta: akasha,
+    stat3: { label: 'Best hold', color: 'blue', value: ms3FmtTime(entry.seconds) },
+    omniaMsg: [msg, dm ? '+' + dm + ' ◆ Dark Matter.' : ''].filter(Boolean).join(' ') || null,
     onDone: function() {
       if (typeof renderConcHome === 'function') renderConcHome();
       showScreen('homeScreen');

@@ -230,6 +230,9 @@ function elStartRelease() {
 }
 
 function elLeave() {
+  // Empty the session screen so it never shows through the result overlay.
+  var _scr = document.getElementById('elHoldScreen');
+  if (_scr) _scr.innerHTML = '';
   if (elSession) clearInterval(elSession.timer);
   elSession = null;
   if (typeof releaseExerciseWakeLock === 'function') releaseExerciseWakeLock();
@@ -286,8 +289,9 @@ function elFinish(feeling) {
   concState.xp += entry.xpEarned;
   if (isConcNewSession()) concState.totalSessions++;
   var leveled = awardLevelUps(concState, concSumXpToLevel, concXpForLevel);
-  // Advanced practice feeds Dark Matter, not Akasha (see BOOK2_ECONOMY.md).
-  recordExerciseCompletion({ entry: entry, omniaSeconds: durationSec, skipOmnia: true });
+  // Akasha like every exercise (capped at 15 minutes inside the reward), and
+  // from Prestige 3 the advanced-drill Dark Matter on top.
+  var akasha = recordExerciseCompletion({ entry: entry, exId: 'elements', omniaSeconds: durationSec, reachedRec: inCount >= pick.breaths });
   var dm = typeof mintDarkMatterFromPractice === 'function' ? mintDarkMatterFromPractice(DARK_MATTER_PER_ADVANCED) : 0;
   if (leveled && typeof completionFlowQueueLevelUp === 'function') completionFlowQueueLevelUp(concState.level, 'concentration');
   elPick = null; // next time: one more breath
@@ -298,9 +302,10 @@ function elFinish(feeling) {
     title: deeper ? 'The ' + element.quality + ' deepens.' : element.name + ' released.',
     sub: inCount + ' breaths in, ' + inCount + ' out · eyes ' + pick.eyes,
     xp: entry.xpEarned,
-    akashaDelta: 0,
-    stat3: { label: dm ? '◆ +' + dm : 'Felt', color: 'blue', value: EL_FEELINGS[feeling - 1].label.split(',')[0] },
-    omniaMsg: 'Next ' + element.name + ' session: ' + next + ' breaths.',
+    akashaDelta: akasha,
+    stat3: dm ? { label: 'Dark Matter', color: 'blue', value: '+' + dm }
+      : { label: 'Breaths', color: 'blue', value: inCount },
+    omniaMsg: 'Felt: ' + EL_FEELINGS[feeling - 1].label.toLowerCase() + '. Next ' + element.name + ' session: ' + next + ' breaths.',
     onDone: function() {
       if (typeof renderConcHome === 'function') renderConcHome();
       showScreen('homeScreen');

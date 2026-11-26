@@ -22,7 +22,10 @@ function omniaPickRecommendation(forceNew) {
 
   var history = (typeof concState !== 'undefined' && concState.history) ? concState.history : [];
   var bodies = omniaState.bodies;
-  var allIds = Object.keys(OMNIA_EXERCISE_META);
+  var reachedStep = omniaState.bardonStep || 1;
+  var allIds = Object.keys(OMNIA_EXERCISE_META).filter(function(id) {
+    return !OMNIA_EXERCISE_META[id].minStep || reachedStep >= OMNIA_EXERCISE_META[id].minStep;
+  });
 
   // Count how many times each exercise appears in all history (lifetime) and last 20 sessions (affinity)
   var lifetimeCounts = {}, recentCounts = {};
@@ -276,6 +279,8 @@ function omniaHistoryMatches(id, h) {
   if (id === 'thought') return h.type === 'thought';
   if (id === 'asana') return h.exercise === 'asana';
   if (id === 'pore_breathing') return h.exercise === 'pore_breathing';
+  if (id === 'multisense') return h.type === 'multi-sense';
+  if (id === 'elements') return h.type === 'elements';
   return false;
 }
 

@@ -82,3 +82,20 @@ test('Elemental Work is a live Step III card with its own setup and banner', () 
   assert.match(vis, /elements: \{[\s\S]*?setupHTML: function\(\) \{ return buildElementsSetupHTML\(\); \}/);
   assert.match(fs.readFileSync(path.join(root, 'sw.js'), 'utf8'), /'elements-client\.js'/);
 });
+
+test('Step III exercises pay Akasha like every exercise, not only Dark Matter after Prestige 3', () => {
+  // Dark Matter only exists from Prestige 3, so skipping Akasha left these
+  // exercises paying nothing but XP for most practitioners.
+  const el = fs.readFileSync(path.join(root, 'elements-client.js'), 'utf8');
+  const ms = fs.readFileSync(path.join(root, 'multisense-steps-client.js'), 'utf8');
+  [el, ms].forEach(src => {
+    assert.doesNotMatch(src, /skipOmnia: true/);
+    assert.match(src, /recordExerciseCompletion\(\{ entry: entry, exId: '(elements|multisense)'/);
+    assert.match(src, /akashaDelta: akasha/);
+  });
+  const meta = fs.readFileSync(path.join(root, 'omnia-economy-config-client.js'), 'utf8');
+  assert.match(meta, /elements: \{[^}]*minStep:3/);
+  assert.match(meta, /multisense: \{[^}]*minStep:3/);
+  const rewards = fs.readFileSync(path.join(root, 'omnia-rewards-client.js'), 'utf8');
+  assert.match(rewards, /reachedStep >= OMNIA_EXERCISE_META\[id\]\.minStep/, 'Omnia never recommends them before Step III');
+});
